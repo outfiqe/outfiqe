@@ -14,12 +14,76 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  email        String   @unique
-  name         String
-  passwordHash String   @map("password_hash")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id            String        @id @default(uuid()) @db.Uuid
+  email         String        @unique
+  name          String
+  phone         String        @unique
+  passwordHash  String        @map("password_hash")
+  role          UserRole      @default(CUSTOMER)
+  isCreator     Boolean       @default(false) @map("is_creator")
+  creatorStatus CreatorStatus @default(NONE) @map("creator_status")
+  emailVerified Boolean       @default(false) @map("email_verified")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  memberships   BrandMembership[]
+  refreshTokens RefreshToken[]
 
   @@map("users")
+}
+
+enum UserRole {
+  CUSTOMER
+  BRAND_OWNER
+  ADMIN
+}
+
+enum CreatorStatus {
+  NONE
+  PENDING
+  APPROVED
+}
+
+// One row per issued refresh token. Only the sha256 hash is stored — see
+// src/shared/utils/opaque-token.utils.ts — so a DB read alone can't be
+// replayed as a valid cookie value. Rotated (deleted + reissued) on every
+// use, so a row's presence also means "not yet redeemed".
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  userId    String   @db.Uuid @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// Single-use invite that lets a brand owner register without an open signup
+// flow. Created manually for now (see auth prompt: "What not to build yet").
+model BrandInvite {
+  id         String    @id @default(uuid()) @db.Uuid
+  brandId    String    @db.Uuid @map("brand_id")
+  email      String
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  acceptedAt DateTime? @map("accepted_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@map("brand_invites")
+}
+
+model BrandMembership {
+  userId  String    @db.Uuid @map("user_id")
+  brandId String    @db.Uuid @map("brand_id")
+  role    BrandRole @default(OWNER)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, brandId])
+  @@map("brand_memberships")
+}
+
+enum BrandRole {
+  OWNER
+  STAFF
 }
