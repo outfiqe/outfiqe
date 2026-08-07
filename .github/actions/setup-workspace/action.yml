@@ -1,0 +1,24 @@
+name: Setup workspace
+description: Install pnpm/Node and workspace dependencies (with pnpm store caching). Shared by every CI job so the setup steps live in exactly one place. Requires actions/checkout to have already run in the calling job — a local composite action can't check out the repo that contains itself.
+
+inputs:
+  node-version:
+    description: Node.js version to install.
+    required: false
+    default: "22"
+
+runs:
+  using: composite
+  steps:
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile

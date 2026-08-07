@@ -31,6 +31,8 @@ jobs:
     name: Lint & Format
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Setup workspace
         uses: ./.github/actions/setup-workspace
       - name: Check formatting
@@ -42,6 +44,8 @@ jobs:
     name: Typecheck
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Setup workspace
         uses: ./.github/actions/setup-workspace
       - name: Run tsc --noEmit
@@ -51,6 +55,8 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Setup workspace
         uses: ./.github/actions/setup-workspace
       - name: Build all packages
@@ -61,10 +67,12 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: Setup workspace
-        uses: ./.github/actions/setup-workspace
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           # Full history needed so commitlint can walk the base..head range.
           fetch-depth: "0"
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
       - name: Validate commit messages
         run: pnpm exec commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
