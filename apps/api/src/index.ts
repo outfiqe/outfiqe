@@ -1,16 +1,17 @@
 import { createApp } from "./app.js";
-import { env } from "./config/env.js";
+import { env } from "./config/env.config.js";
 import { disconnectDb } from "./shared/db/prisma.js";
+
+import logger from "#lib/winston.utils.js";
 
 const app = createApp();
 const server = app.listen(env.PORT, () => {
-  console.log(`API listening on http://localhost:${env.PORT}`);
+  logger.info(`API listening on http://localhost:${env.PORT}`);
 });
 
-// Close the DB pool on shutdown so containers stop cleanly instead of
-// hanging on an open connection.
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => {
+    logger.info(`${signal} received, shutting down gracefully`);
     server.close(async () => {
       await disconnectDb();
       process.exit(0);

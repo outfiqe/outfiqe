@@ -1,39 +1,49 @@
 import type { NextFunction, Request, Response } from "express";
-import type { ZodType } from "zod";
-import { AppError } from "./errorHandler.js";
+import type { z, ZodType } from "zod";
+import { AppError } from "./error-handler.js";
 
-interface Schemas {
+type Schemas = {
   body?: ZodType;
   params?: ZodType;
   query?: ZodType;
-}
+};
 
-// Validates incoming requests at the edge so services can trust their input.
-// Parsed values are stashed on res.locals (Express 5 makes req.query a
-// getter, so we don't mutate the request object).
-export function validate(schemas: Schemas) {
+type Infer<S extends Schemas> = {
+  [K in keyof S]: S[K] extends ZodType ? z.infer<S[K]> : never;
+};
+
+export const validate = <S extends Schemas>(schemas: S) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      if (schemas.body) res.locals.body = schemas.body.parse(req.body);
-      if (schemas.params) res.locals.params = schemas.params.parse(req.params);
-      if (schemas.query) res.locals.query = schemas.query.parse(req.query);
-      next();
-    } catch (err) {
-      next(
-        new AppError(
-          "VALIDATION_ERROR",
-          "Invalid request",
-          422,
-          (err as { issues?: unknown }).issues,
-        ),
-      );
-    }
-  };
-}
+    const data: Record<string, unknown> = {};
+    const issues: z.core.$ZodIssue[] = [];
 
-// Typed accessors so controllers don't sprinkle casts everywhere.
+    for (const key of ["body", "params", "query"] as const) {
+      const schema = schemas[key];
+      if (!schema) continue;
+
+      const result = schema.safeParse(req[key]);
+
+      if (result.success) {
+        data[key] = result.data;
+      } else {
+        issues.push(...result.error.issues);
+      }
+    }
+
+    const isNotEmpty = issues.length > 0;
+
+    if (isNotEmpty) return next(new AppError("VALIDATION_ERROR", "Invalid request", 422, issues));
+
+    res.locals.validated = data;
+    next();
+  };
+};
+
+// Typed accessors for the data `validate()` stashed on res.locals — lets
+// controllers pull `validated.body<T>(res)` / `validated.params<T>(res)`
+// without re-parsing or casting inline.
 export const validated = {
-  body: <T>(res: Response): T => res.locals.body as T,
-  params: <T>(res: Response): T => res.locals.params as T,
-  query: <T>(res: Response): T => res.locals.query as T,
+  body: <T>(res: Response): T => (res.locals.validated as Infer<Schemas>).body as T,
+  params: <T>(res: Response): T => (res.locals.validated as Infer<Schemas>).params as T,
+  query: <T>(res: Response): T => (res.locals.validated as Infer<Schemas>).query as T,
 };
