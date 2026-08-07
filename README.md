@@ -1,7 +1,3 @@
-# Feature-Based Outfiqe Web
-
-A Node.js + React monorepo starter, structured so you can move fast for the MVP
-and split pieces into microservices later **without a rewrite**.
 # Outfiqe
 
 Node.js + React monorepo, structured as a modular monolith so it can move fast now and split into separate services later without a rewrite.
