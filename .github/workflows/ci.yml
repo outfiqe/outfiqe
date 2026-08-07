@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on the same branch/PR instead of letting them queue.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Not real secrets — just enough for `prisma generate` and `tsc` to run
+# without a live database. Nothing here connects to an actual Postgres
+# instance; these checks are build/typecheck only.
+#
+# Sourced from repo Settings → Secrets and variables → Actions → Variables
+# (vars.*), with a fallback baked in so CI still passes before those exist.
+# See the "GitHub Variables" section in README for the exact values to set.
+env:
+  DATABASE_URL: ${{ vars.CI_DATABASE_URL || 'postgresql://outfiqe:outfiqe@localhost:5432/outfiqe_db?schema=public' }}
+  JWT_SECRET: ${{ vars.CI_JWT_SECRET || 'ci-placeholder-secret-not-used-for-anything-real' }}
+  VITE_API_URL: ${{ vars.CI_VITE_API_URL }}
+
+jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Check formatting
+        run: pnpm format:check
+      - name: Run ESLint
+        run: pnpm lint
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run tsc --noEmit
+        run: pnpm typecheck
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Build all packages
+        run: pnpm build
+
+  commitlint:
+    name: Commit Messages
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          # Full history needed so commitlint can walk the base..head range.
+          fetch-depth: "0"
+      - name: Validate commit messages
+        run: pnpm exec commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
