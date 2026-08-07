@@ -1,0 +1,17 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# pnpm 11 blocks dependency postinstall scripts by default (supply-chain
+# guard). Each package must be explicitly allowed or denied here.
+allowBuilds:
+  esbuild: true
+  prisma: true
+  "@prisma/engines": true
+
+# pnpm 11 also quarantines packages published within the last ~24h, so a
+# compromised fresh release can't slip straight into your install.
+# Anything listed here is explicitly exempted from that wait.
+minimumReleaseAgeExclude:
+  - tsx
+  - vite

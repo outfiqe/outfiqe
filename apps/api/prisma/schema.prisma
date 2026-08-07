@@ -1,0 +1,25 @@
+// Prisma 7: the Rust query engine is gone. The client is TypeScript + WASM
+// and a driver adapter is mandatory (see src/shared/db/prisma.ts).
+generator client {
+  provider = "prisma-client"
+  // Prisma 7 REQUIRES an explicit output. The client is no longer emitted
+  // into node_modules, so it is imported from this path, not "@prisma/client".
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  // No `url` here on purpose. In Prisma 7 the connection string for the CLI
+  // lives in prisma.config.ts; the runtime one is passed to the adapter.
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  name         String
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}

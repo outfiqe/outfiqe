@@ -1,0 +1,14 @@
+node_modules
+dist
+.turbo
+*.log
+*.tsbuildinfo
+.DS_Store
+
+# Env files - only .env.example is committed
+.env
+.env.*
+!.env.example
+
+# Prisma 7 generates the client into src/, not node_modules
+apps/api/src/generated

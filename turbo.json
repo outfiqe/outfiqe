@@ -1,0 +1,24 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["NODE_ENV"],
+  "tasks": {
+    "db:generate": {
+      "cache": false,
+      "inputs": ["prisma/schema.prisma"]
+    },
+    "dev": {
+      "dependsOn": ["db:generate"],
+      "cache": false,
+      "persistent": true
+    },
+    "build": {
+      "dependsOn": ["^build", "db:generate"],
+      "env": ["DATABASE_URL", "JWT_SECRET", "VITE_API_URL"],
+      "outputs": ["dist/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["db:generate"]
+    },
+    "lint": {}
+  }
+}
