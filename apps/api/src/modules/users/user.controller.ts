@@ -3,23 +3,25 @@ import { validated } from "../../shared/middlewares/validate.js";
 import type { CreateUserBody, UserIdParam } from "./user.schemas.js";
 import { userService } from "./user.service.js";
 
-// Controllers read already-validated input off res.locals via validated.*,
-// so they never re-parse or cast raw req.body / req.params themselves.
+import { sendSuccess } from "#lib/api-response.utils.js";
+
+const CREATED_STATUS = 201;
+
 export const userController = {
   async create(_req: Request, res: Response) {
     const body = validated.body<CreateUserBody>(res);
     const user = await userService.createUser(body);
-    res.status(201).json(user);
+    sendSuccess(res, user, "User created successfully", CREATED_STATUS);
   },
 
   async get(_req: Request, res: Response) {
     const { id } = validated.params<UserIdParam>(res);
     const user = await userService.getUser(id);
-    res.json(user);
+    sendSuccess(res, user, "User fetched successfully");
   },
 
   async list(_req: Request, res: Response) {
     const users = await userService.listUsers();
-    res.json(users);
+    sendSuccess(res, users, "Users fetched successfully");
   },
 };

@@ -1,10 +1,11 @@
 import { z } from "zod";
 
-// Schemas live next to the module they belong to, and are the single
-// source of truth for both validation and inferred input types.
+import { phoneSchema } from "#lib/phone.utils.js";
+
 export const createUserSchema = z.object({
   email: z.email(),
   name: z.string().min(1).max(100),
+  phone: phoneSchema,
   password: z.string().min(8).max(200),
 });
 

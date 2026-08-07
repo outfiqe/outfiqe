@@ -1,10 +1,9 @@
-import { AppError } from "../../shared/middlewares/errorHandler.js";
-import { DomainEvents, eventBus } from "../../shared/events/eventBus.js";
-import { hashPassword } from "../../shared/utils/password.js";
+import { AppError } from "../../shared/middlewares/error-handler.js";
+import { DomainEvents, eventBus } from "../../shared/events/event-bus.js";
+import { hashPassword } from "../../shared/utils/password.utils.js";
 import { userRepository } from "./user.repository.js";
 import type { CreateUserInput, PublicUser, UserRecord } from "./user.types.js";
 
-// Business logic lives here - controllers stay thin, repositories stay dumb.
 export const userService = {
   async createUser(input: CreateUserInput): Promise<PublicUser> {
     const existing = await userRepository.findByEmail(input.email);
@@ -32,12 +31,15 @@ export const userService = {
   },
 };
 
-// Strips passwordHash before anything leaves the service layer.
 function toPublicUser(user: UserRecord): PublicUser {
   return {
     id: user.id,
     email: user.email,
     name: user.name,
+    role: user.role,
+    isCreator: user.isCreator,
+    creatorStatus: user.creatorStatus,
+    emailVerified: user.emailVerified,
     createdAt: user.createdAt.toISOString(),
   };
 }

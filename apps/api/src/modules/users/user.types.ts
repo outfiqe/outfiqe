@@ -1,11 +1,15 @@
-// Kept hand-written rather than re-exported from the generated Prisma types,
-// so the rest of the app never depends on Prisma directly. Only the
-// repository imports Prisma.
+import type { CreatorStatus, UserRole } from "../../generated/prisma/enums.js";
+
 export interface UserRecord {
   id: string;
   email: string;
   name: string;
+  phone: string;
   passwordHash: string;
+  role: UserRole;
+  isCreator: boolean;
+  creatorStatus: CreatorStatus;
+  emailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -13,13 +17,19 @@ export interface UserRecord {
 export interface CreateUserInput {
   email: string;
   name: string;
+  phone: string;
   password: string;
+  role?: UserRole;
+  emailVerified?: boolean;
 }
 
-// What the API actually returns - never includes passwordHash.
 export interface PublicUser {
   id: string;
   email: string;
   name: string;
+  role: UserRole;
+  isCreator: boolean;
+  creatorStatus: CreatorStatus;
+  emailVerified: boolean;
   createdAt: string;
 }

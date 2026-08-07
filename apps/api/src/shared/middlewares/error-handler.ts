@@ -1,24 +1,28 @@
 import type { ErrorRequestHandler } from "express";
 
+import logger from "#lib/winston.utils.js";
+
+const FALLBACK_STATUS = 400;
+const SERVER_ERROR_THRESHOLD = 500;
+
 export class AppError extends Error {
   constructor(
     public code: string,
     message: string,
-    public status = 400,
+    public status = FALLBACK_STATUS,
     public details?: unknown,
   ) {
     super(message);
   }
 }
 
-// Central place for turning thrown errors into a consistent HTTP shape.
-// Every module throws AppError instead of formatting its own responses.
-//
-// Express 5 forwards rejected promises from async handlers here automatically,
-// so route handlers no longer need an asyncHandler() wrapper.
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof AppError) {
+    const level = err.status >= SERVER_ERROR_THRESHOLD ? "error" : "warn";
+    logger[level](`${err.code}: ${err.message}`);
+
     res.status(err.status).json({
+      success: false,
       message: err.message,
       code: err.code,
       details: err.details,
@@ -26,8 +30,11 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
-  console.error(err);
-  res.status(500).json({
+  const unexpectedError = err instanceof Error ? (err.stack ?? err.message) : String(err);
+  logger.error(`UNHANDLED_ERROR: ${unexpectedError}`);
+
+  res.status(SERVER_ERROR_THRESHOLD).json({
+    success: false,
     message: "Internal server error",
     code: "INTERNAL_ERROR",
   });
