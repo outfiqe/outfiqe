@@ -1,3 +1,5 @@
+"use client";
+
 import { useUsers } from "../hooks/useUsers";
 
 export function UserList() {

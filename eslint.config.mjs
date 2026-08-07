@@ -3,8 +3,8 @@
 // apps/web walks up and finds it automatically, no per-package config needed.
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
-import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
+import nextTypescript from "eslint-config-next/typescript";
 import eslintConfigPrettier from "eslint-config-prettier";
 import globals from "globals";
 
@@ -46,19 +46,21 @@ export default tseslint.config(
     },
   },
 
-  // Web app only: React Hooks correctness + Vite Fast Refresh compatibility.
+  // Web app only: Next.js's own rule set (Core Web Vitals + its TS rules),
+  // which also brings React/React Hooks/jsx-a11y/import resolution — no
+  // need to configure those separately for this package.
   {
     files: ["apps/web/**/*.{ts,tsx}"],
-    plugins: {
-      "react-hooks": reactHooks,
-      "react-refresh": reactRefresh,
-    },
+    extends: [nextCoreWebVitals, nextTypescript],
     languageOptions: {
       globals: globals.browser,
     },
-    rules: {
-      ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+    settings: {
+      // eslint-plugin-react@7.37.5 (bundled by eslint-config-next) defaults
+      // to auto-detecting the React version via context.getFilename() —
+      // an API ESLint 10 removed, which crashes the linter outright.
+      // Pinning the version explicitly skips that code path entirely.
+      react: { version: "19.2.8" },
     },
   },
 

@@ -14,8 +14,8 @@
     },
     "build": {
       "dependsOn": ["^build", "db:generate"],
-      "env": ["DATABASE_URL", "JWT_SECRET", "VITE_API_URL"],
-      "outputs": ["dist/**"]
+      "env": ["DATABASE_URL", "JWT_SECRET", "API_URL", "SITE_URL"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "typecheck": {
       "dependsOn": ["db:generate"]

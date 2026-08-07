@@ -2,8 +2,10 @@
 // instead of calling fetch() directly, so pointing a feature at a different
 // origin (or a different microservice) later is a one-line change.
 //
-// Empty VITE_API_URL means "use the Vite dev proxy" (/api -> localhost:4000).
-const BASE_URL = `${import.meta.env.VITE_API_URL ?? ""}/api`;
+// Always same-origin. next.config.ts rewrites /api/* to the real API origin
+// (API_URL, server-only) — the browser never sees or needs that origin
+// directly, so there's no CORS setup and nothing to expose to the client.
+const BASE_URL = "/api";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
