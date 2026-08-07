@@ -4,7 +4,7 @@ import { promisify } from "node:util";
 const scryptAsync = promisify(scrypt) as (
   password: string,
   salt: Buffer,
-  keylen: number
+  keylen: number,
 ) => Promise<Buffer>;
 
 const KEY_LEN = 64;

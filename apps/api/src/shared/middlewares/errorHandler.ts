@@ -5,7 +5,7 @@ export class AppError extends Error {
     public code: string,
     message: string,
     public status = 400,
-    public details?: unknown
+    public details?: unknown,
   ) {
     super(message);
   }

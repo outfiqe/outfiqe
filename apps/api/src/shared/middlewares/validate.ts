@@ -20,7 +20,12 @@ export function validate(schemas: Schemas) {
       next();
     } catch (err) {
       next(
-        new AppError("VALIDATION_ERROR", "Invalid request", 422, (err as { issues?: unknown }).issues)
+        new AppError(
+          "VALIDATION_ERROR",
+          "Invalid request",
+          422,
+          (err as { issues?: unknown }).issues,
+        ),
       );
     }
   };
