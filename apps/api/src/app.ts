@@ -1,29 +1,31 @@
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
-import { errorHandler } from "./shared/middlewares/errorHandler.js";
+import { errorHandler } from "./shared/middlewares/error-handler.js";
+import { httpLogger } from "./shared/middlewares/http-logger.js";
 import { userRoutes } from "./modules/users/user.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 
-export function createApp() {
+import { sendSuccess } from "#lib/api-response.utils.js";
+
+export const createApp = () => {
   const app = express();
 
   app.use(helmet());
   app.use(cors());
   app.use(express.json());
+  app.use(cookieParser());
+  app.use(httpLogger);
 
   app.get("/health", (_req, res) => {
-    res.json({ status: "ok" });
+    sendSuccess(res, { status: "ok" }, "Service is healthy");
   });
 
-  // Each module is mounted under its own namespace. If "users" later
-  // becomes its own microservice, this line is roughly all that changes -
-  // it becomes a proxy route or gets removed entirely from the gateway.
   app.use("/api/users", userRoutes);
   app.use("/api/auth", authRoutes);
 
-  // Keep error handler registered last.
   app.use(errorHandler);
 
   return app;
-}
+};

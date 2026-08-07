@@ -1,26 +1,364 @@
-import jwt from "jsonwebtoken";
-import { env } from "../../config/env.js";
-import { AppError } from "../../shared/middlewares/errorHandler.js";
-import { verifyPassword } from "../../shared/utils/password.js";
+import { AppError } from "../../shared/middlewares/error-handler.js";
+import { DomainEvents, eventBus } from "../../shared/events/event-bus.js";
 import { userRepository } from "../users/user.repository.js";
+import { authRepository } from "./auth.repository.js";
+
+import { TokenPurpose, TokenTypeEnum } from "#constants/enums/auth.enum.js";
+import { env } from "#config/env.config.js";
+import { parseDurationMs } from "#lib/duration.utils.js";
+import { sendEmail } from "#lib/email.utils.js";
+import { generateToken } from "#lib/generate-token.utils.js";
+import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
+import { hashPassword, verifyPassword } from "#lib/password.utils.js";
+import { signPurposeToken, verifyPurposeToken } from "#lib/purpose-token.utils.js";
+import logger from "#lib/winston.utils.js";
+
+import { BrandRole, UserRole } from "../../generated/prisma/enums.js";
+import type { UserRecord } from "../users/user.types.js";
+import type {
+  AuthSession,
+  BrandAuthSession,
+  IssuedTokens,
+  RegisterBrandInput,
+  RegisterInput,
+} from "./auth.types.js";
+
+const CONFLICT_STATUS = 409;
+const BAD_REQUEST_STATUS = 400;
+const UNAUTHORIZED_STATUS = 401;
+const FORBIDDEN_STATUS = 403;
+const NOT_FOUND_STATUS = 404;
+const MS_PER_SECOND = 1000;
+
+const EMAIL_VERIFICATION_TTL = "24h";
+const PASSWORD_RESET_TTL = "1h";
+const EMAIL_VERIFICATION_URL = "https://outfiqe.com/verify-email";
+const PASSWORD_RESET_URL = "https://outfiqe.com/reset-password";
+
+const INVALID_CREDENTIALS_MESSAGE = "Incorrect email or password.";
+const USER_NOT_FOUND_MESSAGE = "User not found.";
+
+const issueTokens = async (user: Pick<UserRecord, "id" | "role">): Promise<IssuedTokens> => {
+  const accessToken = generateToken({ sub: user.id, role: user.role }, TokenTypeEnum.ACCESS);
+
+  const rawRefreshToken = generateOpaqueToken();
+  const refreshTokenTtlMs = parseDurationMs(env.JWT_REFRESH_TTL);
+
+  await authRepository.createRefreshToken({
+    userId: user.id,
+    tokenHash: hashToken(rawRefreshToken),
+    expiresAt: new Date(Date.now() + refreshTokenTtlMs),
+  });
+
+  return {
+    accessToken,
+    refreshToken: rawRefreshToken,
+    refreshTokenTtlSeconds: Math.floor(refreshTokenTtlMs / MS_PER_SECOND),
+  };
+};
 
 export const authService = {
-  async login(email: string, password: string) {
-    const user = await userRepository.findByEmail(email);
+  async register(input: RegisterInput): Promise<{ userId: string }> {
+    const { name, email, phone, password } = input;
 
-    // Same error for "no such user" and "wrong password" so the endpoint
-    // can't be used to enumerate which emails are registered.
-    if (!user || !(await verifyPassword(password, user.passwordHash))) {
-      throw new AppError("INVALID_CREDENTIALS", "Invalid email or password", 401);
+    const existingByEmail = await userRepository.findByEmail(email);
+    if (existingByEmail) {
+      logger.warn(`Register failed: email already exists (${email})`);
+      throw new AppError(
+        "USER_EXISTS",
+        "An account with this email already exists.",
+        CONFLICT_STATUS,
+      );
     }
 
-    const accessToken = jwt.sign({ sub: user.id }, env.JWT_SECRET, {
-      expiresIn: env.JWT_ACCESS_TTL as jwt.SignOptions["expiresIn"],
-    });
-    const refreshToken = jwt.sign({ sub: user.id }, env.JWT_SECRET, {
-      expiresIn: env.JWT_REFRESH_TTL as jwt.SignOptions["expiresIn"],
+    const existingByPhone = await userRepository.findByPhone(phone);
+    if (existingByPhone) {
+      logger.warn(`Register failed: phone already exists (${phone})`);
+      throw new AppError(
+        "PHONE_EXISTS",
+        "An account with this phone number already exists.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const passwordHash = await hashPassword(password);
+    const user = await userRepository.create({ name, email, phone, password, passwordHash });
+
+    const verificationToken = signPurposeToken(
+      { sub: user.id, purpose: TokenPurpose.EMAIL_VERIFICATION },
+      EMAIL_VERIFICATION_TTL,
+    );
+
+    await sendEmail({
+      to: user.email,
+      subject: "Verify your Outfiqe account",
+      body: `Welcome to Outfiqe! Verify your email: ${EMAIL_VERIFICATION_URL}?token=${verificationToken}`,
     });
 
-    return { accessToken, refreshToken };
+    eventBus.emit(DomainEvents.USER_CREATED, {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    logger.info(`User registered: ${user.id}`);
+
+    return { userId: user.id };
+  },
+
+  async verifyEmail(token: string): Promise<void> {
+    let payload;
+    try {
+      payload = verifyPurposeToken(token);
+    } catch {
+      throw new AppError(
+        "INVALID_TOKEN",
+        "This verification link is invalid or has expired.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    if (payload.purpose !== TokenPurpose.EMAIL_VERIFICATION) {
+      throw new AppError(
+        "INVALID_TOKEN",
+        "This verification link is invalid or has expired.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    const user = await userRepository.findById(payload.sub);
+    if (!user) {
+      throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
+    }
+
+    if (user.emailVerified) {
+      logger.info(`Email already verified for user ${user.id}`);
+      return;
+    }
+
+    await userRepository.markEmailVerified(user.id);
+    eventBus.emit(DomainEvents.USER_EMAIL_VERIFIED, { userId: user.id, email: user.email });
+
+    logger.info(`Email verified for user ${user.id}`);
+  },
+
+  async login(email: string, password: string): Promise<AuthSession> {
+    const user = await userRepository.findByEmail(email);
+    const isValid = user ? await verifyPassword(password, user.passwordHash) : false;
+
+    if (!user || !isValid) {
+      logger.warn(`Login failed: invalid credentials for ${email}`);
+      throw new AppError("INVALID_CREDENTIALS", INVALID_CREDENTIALS_MESSAGE, UNAUTHORIZED_STATUS);
+    }
+
+    if (!user.emailVerified) {
+      logger.warn(`Login blocked: email not verified for user ${user.id}`);
+      throw new AppError(
+        "EMAIL_NOT_VERIFIED",
+        "Please verify your email before signing in.",
+        FORBIDDEN_STATUS,
+      );
+    }
+
+    const tokens = await issueTokens(user);
+
+    logger.info(`Login succeeded for user ${user.id}`);
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isCreator: user.isCreator,
+        creatorStatus: user.creatorStatus,
+      },
+    };
+  },
+
+  async refresh(rawRefreshToken: string | undefined): Promise<IssuedTokens> {
+    if (!rawRefreshToken) {
+      throw new AppError("MISSING_TOKEN", "No refresh token provided.", UNAUTHORIZED_STATUS);
+    }
+
+    const stored = await authRepository.findRefreshTokenByHash(hashToken(rawRefreshToken));
+    if (!stored) {
+      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
+    }
+
+    if (stored.expiresAt.getTime() <= Date.now()) {
+      await authRepository.deleteRefreshTokenById(stored.id);
+      throw new AppError(
+        "TOKEN_EXPIRED",
+        "Refresh token has expired. Please sign in again.",
+        UNAUTHORIZED_STATUS,
+      );
+    }
+
+    const user = await userRepository.findById(stored.userId);
+
+    // Rotation: the presented token is single-use regardless of outcome below.
+    await authRepository.deleteRefreshTokenById(stored.id);
+
+    if (!user) {
+      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
+    }
+
+    const tokens = await issueTokens(user);
+
+    logger.info(`Refresh succeeded for user ${user.id}`);
+
+    return tokens;
+  },
+
+  async logout(rawRefreshToken: string | undefined): Promise<void> {
+    if (!rawRefreshToken) return;
+
+    await authRepository.deleteRefreshTokenByHash(hashToken(rawRefreshToken));
+
+    logger.info("Logout: refresh token invalidated");
+  },
+
+  async forgotPassword(email: string): Promise<void> {
+    const user = await userRepository.findByEmail(email);
+
+    if (!user) {
+      logger.info(`Password reset requested for unregistered email (${email})`);
+      return;
+    }
+
+    const resetToken = signPurposeToken(
+      { sub: user.id, purpose: TokenPurpose.PASSWORD_RESET },
+      PASSWORD_RESET_TTL,
+    );
+
+    await sendEmail({
+      to: user.email,
+      subject: "Reset your Outfiqe password",
+      body: `Reset your password: ${PASSWORD_RESET_URL}?token=${resetToken}`,
+    });
+
+    logger.info(`Password reset email sent to user ${user.id}`);
+  },
+
+  async resetPassword(token: string, password: string): Promise<void> {
+    let payload;
+    try {
+      payload = verifyPurposeToken(token);
+    } catch {
+      throw new AppError(
+        "INVALID_TOKEN",
+        "This reset link is invalid or has expired.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    if (payload.purpose !== TokenPurpose.PASSWORD_RESET) {
+      throw new AppError(
+        "INVALID_TOKEN",
+        "This reset link is invalid or has expired.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    const user = await userRepository.findById(payload.sub);
+    if (!user) {
+      throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
+    }
+
+    const passwordHash = await hashPassword(password);
+    await userRepository.updatePasswordHash(user.id, passwordHash);
+    await authRepository.deleteAllRefreshTokensForUser(user.id);
+
+    eventBus.emit(DomainEvents.USER_PASSWORD_RESET, { userId: user.id });
+
+    logger.info(`Password reset for user ${user.id}`);
+  },
+
+  async registerBrand(input: RegisterBrandInput): Promise<BrandAuthSession> {
+    const { inviteToken, name, phone, password } = input;
+
+    const invite = await authRepository.findBrandInviteByTokenHash(hashToken(inviteToken));
+    if (!invite) {
+      throw new AppError(
+        "INVALID_INVITE",
+        "This invite link is not valid or has already been used.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    if (invite.expiresAt.getTime() <= Date.now()) {
+      throw new AppError(
+        "INVITE_EXPIRED",
+        "This invite link has expired. Please contact us for a new one.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    if (invite.acceptedAt) {
+      throw new AppError(
+        "INVITE_USED",
+        "This invite link has already been used.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    const existingByEmail = await userRepository.findByEmail(invite.email);
+    if (existingByEmail) {
+      throw new AppError(
+        "USER_EXISTS",
+        "An account with this email already exists.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const existingByPhone = await userRepository.findByPhone(phone);
+    if (existingByPhone) {
+      throw new AppError(
+        "PHONE_EXISTS",
+        "An account with this phone number already exists.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const passwordHash = await hashPassword(password);
+    const user = await userRepository.create({
+      name,
+      email: invite.email,
+      phone,
+      password,
+      passwordHash,
+      role: UserRole.BRAND_OWNER,
+      emailVerified: true,
+    });
+
+    await authRepository.createBrandMembership({
+      userId: user.id,
+      brandId: invite.brandId,
+      role: BrandRole.OWNER,
+    });
+    await authRepository.markBrandInviteAccepted(invite.id);
+
+    eventBus.emit(DomainEvents.BRAND_OWNER_REGISTERED, {
+      userId: user.id,
+      brandId: invite.brandId,
+      email: user.email,
+    });
+
+    const tokens = await issueTokens(user);
+
+    logger.info(`Brand owner registered: ${user.id} for brand ${invite.brandId}`);
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        brandId: invite.brandId,
+      },
+    };
   },
 };
