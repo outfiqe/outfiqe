@@ -1,16 +1,16 @@
 import { prisma } from "../../shared/db/prisma.js";
 import type { CreateUserInput, UserRecord } from "./user.types.js";
 
-// The only file that knows how users are persisted. Swapping Postgres for
-// something else, or extracting a standalone "users service" later, means
-// changing this file and nothing above it.
 export const userRepository = {
   async create(input: CreateUserInput & { passwordHash: string }): Promise<UserRecord> {
     return prisma.user.create({
       data: {
         email: input.email,
         name: input.name,
+        phone: input.phone,
         passwordHash: input.passwordHash,
+        ...(input.role !== undefined ? { role: input.role } : {}),
+        ...(input.emailVerified !== undefined ? { emailVerified: input.emailVerified } : {}),
       },
     });
   },
@@ -19,11 +19,23 @@ export const userRepository = {
     return prisma.user.findUnique({ where: { email } });
   },
 
+  async findByPhone(phone: string): Promise<UserRecord | null> {
+    return prisma.user.findUnique({ where: { phone } });
+  },
+
   async findById(id: string): Promise<UserRecord | null> {
     return prisma.user.findUnique({ where: { id } });
   },
 
   async list(): Promise<UserRecord[]> {
     return prisma.user.findMany({ orderBy: { createdAt: "desc" } });
+  },
+
+  async markEmailVerified(id: string): Promise<void> {
+    await prisma.user.update({ where: { id }, data: { emailVerified: true } });
+  },
+
+  async updatePasswordHash(id: string, passwordHash: string): Promise<void> {
+    await prisma.user.update({ where: { id }, data: { passwordHash } });
   },
 };
