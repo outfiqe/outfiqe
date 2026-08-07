@@ -6,7 +6,7 @@ Node.js + React monorepo, structured as a modular monolith so it can move fast n
 
 - **Monorepo:** pnpm workspaces + Turborepo
 - **API:** Node 22, Express 5, Zod, Prisma 7 + PostgreSQL 16
-- **Web:** React 19, Vite, React Router, TanStack Query
+- **Web:** Next.js 16 (App Router, SSR/ISR), React 19, TanStack Query
 - **Language:** TypeScript
 
 ## Getting Started
@@ -33,18 +33,32 @@ pnpm dev
 ```
 
 - API: [http://localhost:4000](http://localhost:4000)
-- Web: [http://localhost:5173](http://localhost:5173)
+- Web: [http://localhost:3000](http://localhost:3000)
 
 ## Project Structure
 
 ```
 apps/
   api/            Express API (modular monolith — one folder per domain)
-  web/            React app (features mirror the API's modules)
+  web/            Next.js storefront (App Router) — features mirror the API's modules,
+                   routed via app/. SSR/ISR by default, for SEO.
 packages/
   shared-types/   Types shared between api and web
 docker-compose.yml  Local Postgres
 ```
+
+## SEO
+
+`apps/web` is a real SSR app, not a client-rendered SPA — search engines and
+social-share crawlers get fully-rendered HTML, not an empty `<div>`.
+
+- Per-page `metadata` (title/description) — see `app/layout.tsx` (site-wide
+  default + template) and `app/login/page.tsx` (per-page override).
+- `app/sitemap.ts` / `app/robots.ts` — generated routes, not static files.
+  Extend `sitemap.ts` with product/category URLs once those exist.
+- New pages that need their own title/description just export a `metadata`
+  object (static) or `generateMetadata()` (dynamic, e.g. per-product) —
+  [Next's metadata docs](https://nextjs.org/docs/app/getting-started/metadata-and-og-images).
 
 ## Database Scripts
 
@@ -60,11 +74,11 @@ Run from `apps/api` (or via `pnpm --filter @outfiqe/api <script>`):
 
 ## Environment Variables
 
-| File            | Used by              | Notes                                                  |
-| --------------- | -------------------- | ------------------------------------------------------ |
-| `.env`          | `docker-compose.yml` | Postgres credentials                                   |
-| `apps/api/.env` | API                  | `DATABASE_URL`, `JWT_SECRET`, token TTLs               |
-| `apps/web/.env` | Web                  | `VITE_API_URL` only — ships to the browser, no secrets |
+| File            | Used by              | Notes                                                                                             |
+| --------------- | -------------------- | ------------------------------------------------------------------------------------------------- |
+| `.env`          | `docker-compose.yml` | Postgres credentials                                                                              |
+| `apps/api/.env` | API                  | `DATABASE_URL`, `JWT_SECRET`, token TTLs                                                          |
+| `apps/web/.env` | Web                  | `API_URL`, `SITE_URL` — both server-only (no `NEXT_PUBLIC_` prefix), never shipped to the browser |
 
 `.env` files are gitignored; only the `.env.example` templates are committed.
 
@@ -81,7 +95,8 @@ them only if you want to change what CI uses.
 | ----------------- | ---------------------------------------------------------------------- |
 | `CI_DATABASE_URL` | `postgresql://outfiqe:outfiqe@localhost:5432/outfiqe_db?schema=public` |
 | `CI_JWT_SECRET`   | any string ≥ 16 characters                                             |
-| `CI_VITE_API_URL` | usually left empty                                                     |
+| `CI_API_URL`      | `http://localhost:4000` (workflow default, rarely needs overriding)    |
+| `CI_SITE_URL`     | `http://localhost:3000` (workflow default, rarely needs overriding)    |
 
 Via `gh` CLI instead of the UI:
 

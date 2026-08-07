@@ -8,10 +8,13 @@ allowBuilds:
   esbuild: true
   prisma: true
   "@prisma/engines": true
+  # Native TS path resolver used by eslint-plugin-import (pulled in by
+  # eslint-config-next). No install-time side effects beyond compiling
+  # its own native binding.
+  unrs-resolver: true
 
 # pnpm 11 also quarantines packages published within the last ~24h, so a
 # compromised fresh release can't slip straight into your install.
 # Anything listed here is explicitly exempted from that wait.
 minimumReleaseAgeExclude:
   - tsx
-  - vite

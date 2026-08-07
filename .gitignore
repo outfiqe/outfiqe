@@ -1,5 +1,6 @@
 node_modules
 dist
+.next
 .turbo
 *.log
 *.tsbuildinfo
@@ -12,3 +13,8 @@ dist
 
 # Prisma 7 generates the client into src/, not node_modules
 apps/api/src/generated
+
+# Next.js auto-generates these (next dev/build regenerate them if missing).
+# Kept local-only rather than committed.
+apps/web/AGENTS.md
+apps/web/CLAUDE.md

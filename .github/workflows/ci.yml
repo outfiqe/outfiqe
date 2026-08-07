@@ -21,10 +21,12 @@ permissions:
 # Sourced from repo Settings → Secrets and variables → Actions → Variables
 # (vars.*), with a fallback baked in so CI still passes before those exist.
 # See the "GitHub Variables" section in README for the exact values to set.
+
 env:
   DATABASE_URL: ${{ vars.CI_DATABASE_URL || 'postgresql://outfiqe:outfiqe@localhost:5432/outfiqe_db?schema=public' }}
   JWT_SECRET: ${{ vars.CI_JWT_SECRET || 'ci-placeholder-secret-not-used-for-anything-real' }}
-  VITE_API_URL: ${{ vars.CI_VITE_API_URL }}
+  API_URL: ${{ vars.CI_API_URL || 'http://localhost:4000' }}
+  SITE_URL: ${{ vars.CI_SITE_URL || 'http://localhost:3000' }}
 
 jobs:
   lint:
