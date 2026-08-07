@@ -1,4 +1,4 @@
-# Feature-Based
+# Feature-Based Outfiqe Web
 
 A Node.js + React monorepo starter, structured so you can move fast for the MVP
 and split pieces into microservices later **without a rewrite**.
