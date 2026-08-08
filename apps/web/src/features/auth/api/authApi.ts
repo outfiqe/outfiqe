@@ -28,11 +28,8 @@ export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
 export type { BrandInviteInfo };
 export type MessageResponse = { message: string };
 
-// All network calls for this feature live in one place. Components and
-// hooks never call apiClient/fetch directly. Every response is parsed
-// through a zod schema at this boundary — a real drift between this file
-// and apps/api's contract surfaces as a thrown ZodError instead of a
-// silently-wrong `as` cast.
+//TODO: Add Proper Data TYPES
+
 export const authApi = {
   async register(input: RegisterInput): Promise<RegisterResponse> {
     const res = await apiClient.post<unknown>("/auth/register", input);
@@ -55,9 +52,6 @@ export const authApi = {
     await apiClient.post("/auth/logout");
   },
 
-  // skipAuthRetry: this call *is* the refresh — it must not trigger the
-  // apiClient interceptor's own refresh-and-retry on a 401, or a truly
-  // expired session would recurse.
   async refresh(): Promise<RefreshResponse> {
     const res = await apiClient.post<unknown>("/auth/refresh", undefined, {
       skipAuthRetry: true,
@@ -65,9 +59,6 @@ export const authApi = {
     return refreshResponseSchema.parse(res.data);
   },
 
-  // Requires an access token (attached automatically by apiClient) — used
-  // right after refresh() to restore full session state, since refresh()
-  // itself only returns a token, not whose it is.
   async getCurrentUser(): Promise<UserSession> {
     const res = await apiClient.get<unknown>("/auth/me");
     return toUserSession(currentUserSchema.parse(res.data));

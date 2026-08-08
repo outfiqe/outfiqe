@@ -35,14 +35,16 @@ export const serverApiRequest = async <T>(
       ...(options.cookie ? { Cookie: options.cookie } : {}),
       ...(options.accessToken ? { Authorization: `Bearer ${options.accessToken}` } : {}),
     },
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    body: options.body ? JSON.stringify(options.body) : undefined,
     cache: "no-store",
   });
 
-  const json: unknown = await res.json().catch(() => null);
+  const json = await res.json().catch(() => null);
 
-  if (!res.ok || !json || (json as { success?: boolean }).success !== true) {
-    const err = json as Partial<ErrorEnvelope> | null;
+  const isFailure = !res.ok || !json || !json.success;
+
+  if (isFailure) {
+    const err: Partial<ErrorEnvelope> | null = json;
     throw new ServerApiError(
       err?.message ?? `Request failed with ${res.status}`,
       err?.code ?? "UNKNOWN_ERROR",
@@ -50,5 +52,6 @@ export const serverApiRequest = async <T>(
     );
   }
 
-  return (json as SuccessEnvelope<T>).data;
+  const success: SuccessEnvelope<T> = json;
+  return success.data;
 };
