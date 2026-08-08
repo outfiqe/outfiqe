@@ -58,9 +58,25 @@ export const registerBrandSchema = z
   })
   .refine(passwordsMatch, CONFIRM_PASSWORD_ISSUE);
 
+export const brandInviteQuerySchema = z.object({
+  token: z.string().min(1),
+});
+
+export const validateTokenQuerySchema = z.object({
+  token: z.string().min(1),
+  purpose: z.enum(["email-verification", "password-reset"]),
+});
+
+export const resendVerificationSchema = z.object({
+  email: z.email(),
+});
+
 export type RegisterBody = z.infer<typeof registerSchema>;
 export type VerifyEmailBody = z.infer<typeof verifyEmailSchema>;
 export type LoginBody = z.infer<typeof loginSchema>;
 export type ForgotPasswordBody = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordBody = z.infer<typeof resetPasswordSchema>;
 export type RegisterBrandBody = z.infer<typeof registerBrandSchema>;
+export type BrandInviteQuery = z.infer<typeof brandInviteQuerySchema>;
+export type ValidateTokenQuery = z.infer<typeof validateTokenQuerySchema>;
+export type ResendVerificationBody = z.infer<typeof resendVerificationSchema>;

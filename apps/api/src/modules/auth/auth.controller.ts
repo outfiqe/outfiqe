@@ -1,19 +1,30 @@
 import type { Request, Response } from "express";
 import { validated } from "../../shared/middlewares/validate.js";
 import type {
+  BrandInviteQuery,
   ForgotPasswordBody,
   LoginBody,
   RegisterBody,
   RegisterBrandBody,
+  ResendVerificationBody,
   ResetPasswordBody,
+  ValidateTokenQuery,
   VerifyEmailBody,
 } from "./auth.schemas.js";
 import { authService } from "./auth.service.js";
 
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { clearRefreshCookie, getRefreshTokenCookie, setRefreshCookie } from "#lib/cookie.utils.js";
+import { getAuthPrincipal } from "../../shared/middlewares/require-auth.js";
+
+import { TokenPurpose } from "#constants/enums/auth.enum.js";
 
 const CREATED_STATUS = 201;
+
+const QUERY_PURPOSE_TO_TOKEN_PURPOSE: Record<ValidateTokenQuery["purpose"], TokenPurpose> = {
+  "email-verification": TokenPurpose.EMAIL_VERIFICATION,
+  "password-reset": TokenPurpose.PASSWORD_RESET,
+};
 
 export const authController = {
   async register(_req: Request, res: Response) {
@@ -84,5 +95,40 @@ export const authController = {
 
     setRefreshCookie(res, refreshToken, refreshTokenTtlSeconds);
     sendSuccess(res, { accessToken, user }, "Brand account created.", CREATED_STATUS);
+  },
+
+  async getBrandInvite(_req: Request, res: Response) {
+    const { token } = validated.query<BrandInviteQuery>(res);
+    const invite = await authService.getBrandInvite(token);
+
+    sendSuccess(res, invite, "Invite is valid.");
+  },
+
+  async validateToken(_req: Request, res: Response) {
+    const { token, purpose } = validated.query<ValidateTokenQuery>(res);
+    await authService.validateToken(token, QUERY_PURPOSE_TO_TOKEN_PURPOSE[purpose]);
+
+    sendSuccess(res, { valid: true }, "Token is valid.");
+  },
+
+  async resendVerification(_req: Request, res: Response) {
+    const { email } = validated.body<ResendVerificationBody>(res);
+    await authService.resendVerification(email);
+
+    sendSuccess(res, null, "If that email is registered, a new verification link is on its way.");
+  },
+
+  // Protected by requireAuth (see auth.routes.ts) — userId comes from a
+  // verified access token, never from the request body/query.
+  async me(_req: Request, res: Response) {
+    const principal = getAuthPrincipal(res);
+    if (!principal) {
+      // Unreachable in practice: requireAuth always sets res.locals.auth
+      // before this handler runs, or short-circuits with 401 first.
+      throw new Error("me() reached without an auth principal");
+    }
+
+    const user = await authService.getCurrentUser(principal.userId);
+    sendSuccess(res, user, "Current user.");
   },
 };

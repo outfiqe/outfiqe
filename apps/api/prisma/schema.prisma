@@ -64,6 +64,12 @@ model RefreshToken {
 model BrandInvite {
   id         String    @id @default(uuid()) @db.Uuid
   brandId    String    @db.Uuid @map("brand_id")
+  // Denormalized on purpose: there is no Brand catalog table yet (brands are
+  // reviewed and invited by hand — see auth prompt). This lets the
+  // registration screen show "Set up your account for <brandName>" without
+  // a join that doesn't exist yet. Once a real Brand model lands, this can
+  // be dropped in favor of a relation.
+  brandName  String    @map("brand_name")
   email      String
   tokenHash  String    @unique @map("token_hash")
   expiresAt  DateTime  @map("expires_at")
@@ -71,6 +77,34 @@ model BrandInvite {
   createdAt  DateTime  @default(now()) @map("created_at")
 
   @@map("brand_invites")
+}
+
+model BrandApplication {
+  id             String         @id @default(uuid()) @db.Uuid
+  brandName      String         @map("brand_name")
+  contactName    String         @map("contact_name")
+  email          String
+  phone          String
+  instagram      String
+  category       BrandCategory
+  makesOwnPieces MakesOwnPieces @map("makes_own_pieces")
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  @@map("brand_applications")
+}
+
+enum BrandCategory {
+  STREETWEAR
+  TRADITIONAL
+  THRIFT
+  KIDS
+  FORMAL
+}
+
+enum MakesOwnPieces {
+  MAKES
+  RESELLS
+  BOTH
 }
 
 model BrandMembership {

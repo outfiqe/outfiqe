@@ -11,12 +11,18 @@ export interface RefreshTokenRecord {
 export interface BrandInviteRecord {
   id: string;
   brandId: string;
+  brandName: string;
   email: string;
   tokenHash: string;
   expiresAt: Date;
   acceptedAt: Date | null;
   createdAt: Date;
 }
+
+export type BrandInviteInfo = {
+  email: string;
+  brandName: string;
+};
 
 export type RegisterInput = {
   name: string;

@@ -1,3 +1,5 @@
+import jwt from "jsonwebtoken";
+
 import { AppError } from "../../shared/middlewares/error-handler.js";
 import { DomainEvents, eventBus } from "../../shared/events/event-bus.js";
 import { userRepository } from "../users/user.repository.js";
@@ -17,11 +19,15 @@ import { BrandRole, UserRole } from "../../generated/prisma/enums.js";
 import type { UserRecord } from "../users/user.types.js";
 import type {
   AuthSession,
+  AuthUser,
   BrandAuthSession,
+  BrandAuthUser,
+  BrandInviteInfo,
   IssuedTokens,
   RegisterBrandInput,
   RegisterInput,
 } from "./auth.types.js";
+import type { PurposeTokenPayload } from "#types/token.types.js";
 
 const CONFLICT_STATUS = 409;
 const BAD_REQUEST_STATUS = 400;
@@ -37,6 +43,37 @@ const PASSWORD_RESET_URL = "https://outfiqe.com/reset-password";
 
 const INVALID_CREDENTIALS_MESSAGE = "Incorrect email or password.";
 const USER_NOT_FOUND_MESSAGE = "User not found.";
+
+const PURPOSE_ERROR_COPY: Record<TokenPurpose, { invalid: string; expired: string }> = {
+  [TokenPurpose.EMAIL_VERIFICATION]: {
+    invalid: "This verification link is invalid or has expired.",
+    expired: "This verification link has expired. Please request a new one.",
+  },
+  [TokenPurpose.PASSWORD_RESET]: {
+    invalid: "This reset link is invalid or has expired.",
+    expired: "This reset link has expired. Please request a new one.",
+  },
+};
+
+const verifyPurposeTokenOrThrow = (token: string, purpose: TokenPurpose): PurposeTokenPayload => {
+  const copy = PURPOSE_ERROR_COPY[purpose];
+
+  let payload: PurposeTokenPayload;
+  try {
+    payload = verifyPurposeToken(token);
+  } catch (err) {
+    if (err instanceof jwt.TokenExpiredError) {
+      throw new AppError("TOKEN_EXPIRED", copy.expired, BAD_REQUEST_STATUS);
+    }
+    throw new AppError("INVALID_TOKEN", copy.invalid, BAD_REQUEST_STATUS);
+  }
+
+  if (payload.purpose !== purpose) {
+    throw new AppError("INVALID_TOKEN", copy.invalid, BAD_REQUEST_STATUS);
+  }
+
+  return payload;
+};
 
 const issueTokens = async (user: Pick<UserRecord, "id" | "role">): Promise<IssuedTokens> => {
   const accessToken = generateToken({ sub: user.id, role: user.role }, TokenTypeEnum.ACCESS);
@@ -55,6 +92,20 @@ const issueTokens = async (user: Pick<UserRecord, "id" | "role">): Promise<Issue
     refreshToken: rawRefreshToken,
     refreshTokenTtlSeconds: Math.floor(refreshTokenTtlMs / MS_PER_SECOND),
   };
+};
+
+// Shared by register() and resendVerification() so the two flows can't drift.
+const sendVerificationEmail = async (user: Pick<UserRecord, "id" | "email">): Promise<void> => {
+  const verificationToken = signPurposeToken(
+    { sub: user.id, purpose: TokenPurpose.EMAIL_VERIFICATION },
+    EMAIL_VERIFICATION_TTL,
+  );
+
+  await sendEmail({
+    to: user.email,
+    subject: "Verify your Outfiqe account",
+    body: `Welcome to Outfiqe! Verify your email: ${EMAIL_VERIFICATION_URL}?token=${verificationToken}`,
+  });
 };
 
 export const authService = {
@@ -84,16 +135,7 @@ export const authService = {
     const passwordHash = await hashPassword(password);
     const user = await userRepository.create({ name, email, phone, password, passwordHash });
 
-    const verificationToken = signPurposeToken(
-      { sub: user.id, purpose: TokenPurpose.EMAIL_VERIFICATION },
-      EMAIL_VERIFICATION_TTL,
-    );
-
-    await sendEmail({
-      to: user.email,
-      subject: "Verify your Outfiqe account",
-      body: `Welcome to Outfiqe! Verify your email: ${EMAIL_VERIFICATION_URL}?token=${verificationToken}`,
-    });
+    await sendVerificationEmail(user);
 
     eventBus.emit(DomainEvents.USER_CREATED, {
       userId: user.id,
@@ -107,24 +149,7 @@ export const authService = {
   },
 
   async verifyEmail(token: string): Promise<void> {
-    let payload;
-    try {
-      payload = verifyPurposeToken(token);
-    } catch {
-      throw new AppError(
-        "INVALID_TOKEN",
-        "This verification link is invalid or has expired.",
-        BAD_REQUEST_STATUS,
-      );
-    }
-
-    if (payload.purpose !== TokenPurpose.EMAIL_VERIFICATION) {
-      throw new AppError(
-        "INVALID_TOKEN",
-        "This verification link is invalid or has expired.",
-        BAD_REQUEST_STATUS,
-      );
-    }
+    const payload = verifyPurposeTokenOrThrow(token, TokenPurpose.EMAIL_VERIFICATION);
 
     const user = await userRepository.findById(payload.sub);
     if (!user) {
@@ -140,6 +165,27 @@ export const authService = {
     eventBus.emit(DomainEvents.USER_EMAIL_VERIFIED, { userId: user.id, email: user.email });
 
     logger.info(`Email verified for user ${user.id}`);
+  },
+
+  // Re-sends the verification email without revealing whether the address
+  // is registered or already verified — same non-enumeration stance as
+  // forgotPassword below.
+  async resendVerification(email: string): Promise<void> {
+    const user = await userRepository.findByEmail(email);
+    if (!user || user.emailVerified) {
+      logger.info(`Resend verification requested for ${email} (no-op)`);
+      return;
+    }
+
+    await sendVerificationEmail(user);
+    logger.info(`Verification email re-sent to user ${user.id}`);
+  },
+
+  // Used by the reset-password screen to check a token *before* rendering
+  // the form, so a user never fills it out only to learn it was already
+  // expired. Throws (via verifyPurposeTokenOrThrow) if invalid/expired.
+  async validateToken(token: string, purpose: TokenPurpose): Promise<void> {
+    verifyPurposeTokenOrThrow(token, purpose);
   },
 
   async login(email: string, password: string): Promise<AuthSession> {
@@ -243,24 +289,7 @@ export const authService = {
   },
 
   async resetPassword(token: string, password: string): Promise<void> {
-    let payload;
-    try {
-      payload = verifyPurposeToken(token);
-    } catch {
-      throw new AppError(
-        "INVALID_TOKEN",
-        "This reset link is invalid or has expired.",
-        BAD_REQUEST_STATUS,
-      );
-    }
-
-    if (payload.purpose !== TokenPurpose.PASSWORD_RESET) {
-      throw new AppError(
-        "INVALID_TOKEN",
-        "This reset link is invalid or has expired.",
-        BAD_REQUEST_STATUS,
-      );
-    }
+    const payload = verifyPurposeTokenOrThrow(token, TokenPurpose.PASSWORD_RESET);
 
     const user = await userRepository.findById(payload.sub);
     if (!user) {
@@ -274,6 +303,71 @@ export const authService = {
     eventBus.emit(DomainEvents.USER_PASSWORD_RESET, { userId: user.id });
 
     logger.info(`Password reset for user ${user.id}`);
+  },
+
+  // Looks the invite up and validates it without consuming it, so the brand
+  // register screen can show the locked, pre-filled email before the owner
+  // has typed anything. registerBrand() re-validates independently at
+  // submit time — this is a read for UX, not the source of truth.
+  async getBrandInvite(inviteToken: string): Promise<BrandInviteInfo> {
+    const invite = await authRepository.findBrandInviteByTokenHash(hashToken(inviteToken));
+    if (!invite) {
+      throw new AppError("INVALID_INVITE", "This invite link is not valid.", BAD_REQUEST_STATUS);
+    }
+
+    if (invite.expiresAt.getTime() <= Date.now()) {
+      throw new AppError(
+        "INVITE_EXPIRED",
+        "This invite link has expired. Please contact us for a new one.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    if (invite.acceptedAt) {
+      throw new AppError(
+        "INVITE_USED",
+        "This invite link has already been used.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    return { email: invite.email, brandName: invite.brandName };
+  },
+
+  // Backs GET /auth/me: turns an access token's userId into the same
+  // AuthUser/BrandAuthUser shape login() and registerBrand() return, so the
+  // frontend can restore full session state (role, isCreator, brandId, ...)
+  // after a boot-time silent refresh — refresh() itself only returns a new
+  // access token, not who that token belongs to.
+  async getCurrentUser(userId: string): Promise<AuthUser | BrandAuthUser> {
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
+    }
+
+    if (user.role === UserRole.BRAND_OWNER) {
+      const membership = await authRepository.findBrandMembershipByUserId(user.id);
+      if (membership) {
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          brandId: membership.brandId,
+        };
+      }
+      // Data anomaly (BRAND_OWNER with no membership row) — fall through
+      // and answer as a plain user rather than 500ing the whole session.
+    }
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isCreator: user.isCreator,
+      creatorStatus: user.creatorStatus,
+    };
   },
 
   async registerBrand(input: RegisterBrandInput): Promise<BrandAuthSession> {

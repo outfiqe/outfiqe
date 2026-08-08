@@ -43,4 +43,11 @@ export const authRepository = {
   }): Promise<void> {
     await prisma.brandMembership.create({ data: input });
   },
+
+  async findBrandMembershipByUserId(userId: string): Promise<{ brandId: string } | null> {
+    return prisma.brandMembership.findFirst({
+      where: { userId },
+      select: { brandId: true },
+    });
+  },
 };
