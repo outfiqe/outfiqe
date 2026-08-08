@@ -14,6 +14,7 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/dist/**",
       "**/.turbo/**",
+      "**/.next/**",
       // Prisma-generated client — not hand-written, not ours to lint.
       "apps/api/src/generated/**",
     ],
