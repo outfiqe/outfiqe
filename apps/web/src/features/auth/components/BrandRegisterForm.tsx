@@ -22,13 +22,13 @@ import { brandRegisterSchema, type BrandRegisterInput } from "../schemas/brandRe
 import { useBrandRegister } from "../hooks/useBrandRegister";
 import { getAuthErrorMessage } from "../utils/authErrors";
 
-interface BrandRegisterFormProps {
+type BrandRegisterFormProps = {
   inviteToken: string;
   email: string;
   brandName: string;
-}
+};
 
-export function BrandRegisterForm({ inviteToken, email, brandName }: BrandRegisterFormProps) {
+export const BrandRegisterForm = ({ inviteToken, email, brandName }: BrandRegisterFormProps) => {
   const brandRegister = useBrandRegister();
   const showPending = useDelayedPending(brandRegister.isPending);
 
@@ -141,4 +141,4 @@ export function BrandRegisterForm({ inviteToken, email, brandName }: BrandRegist
       </Form>
     </div>
   );
-}
+};

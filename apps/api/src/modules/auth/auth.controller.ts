@@ -118,15 +118,9 @@ export const authController = {
     sendSuccess(res, null, "If that email is registered, a new verification link is on its way.");
   },
 
-  // Protected by requireAuth (see auth.routes.ts) — userId comes from a
-  // verified access token, never from the request body/query.
   async me(_req: Request, res: Response) {
     const principal = getAuthPrincipal(res);
-    if (!principal) {
-      // Unreachable in practice: requireAuth always sets res.locals.auth
-      // before this handler runs, or short-circuits with 401 first.
-      throw new Error("me() reached without an auth principal");
-    }
+    if (!principal) throw new Error("me() reached without an auth principal");
 
     const user = await authService.getCurrentUser(principal.userId);
     sendSuccess(res, user, "Current user.");

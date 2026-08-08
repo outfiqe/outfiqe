@@ -21,19 +21,19 @@ export const setAccessToken = (token: string | null): void => {
   accessToken = token;
 };
 
-export function getAccessToken(): string | null {
+export const getAccessToken = (): string | null => {
   return accessToken;
-}
+};
 
 let unauthorizedHandler: (() => void) | null = null;
 
-export function setUnauthorizedHandler(handler: (() => void) | null): void {
+export const setUnauthorizedHandler = (handler: (() => void) | null): void => {
   unauthorizedHandler = handler;
-}
+};
 
 let refreshPromise: Promise<string> | null = null;
 
-async function refreshAccessToken(): Promise<string> {
+const refreshAccessToken = async (): Promise<string> => {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       const res = await fetch(`${BASE_URL}/auth/refresh`, {
@@ -54,11 +54,14 @@ async function refreshAccessToken(): Promise<string> {
   }
 
   return refreshPromise;
-}
+};
 
 type RequestOptions = Omit<RequestInit, "body"> & { body?: unknown; skipAuthRetry?: boolean };
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<SuccessEnvelope<T>> {
+const request = async <T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<SuccessEnvelope<T>> => {
   const { body, skipAuthRetry, headers, ...rest } = options;
 
   const doFetch = () =>
@@ -104,7 +107,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<S
   }
 
   return json;
-}
+};
 
 export const apiClient = {
   get: <T>(path: string) => request<T>(path, { method: "GET" }),

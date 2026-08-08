@@ -11,7 +11,7 @@ import { getDefaultRouteForUser } from "../utils/getDefaultRoute";
 import { getSafeRedirect } from "../utils/safeRedirect";
 import type { LoginInput } from "../schemas/login.schema";
 
-export function useLogin() {
+export const useLogin = () => {
   const { dispatch } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,12 +25,8 @@ export function useLogin() {
       });
 
       const requested = getSafeRedirect(searchParams.get("redirect"));
-      // replace(), not push() — a signed-in user hitting back shouldn't
-      // land on the login form again.
+
       router.replace(requested ?? getDefaultRouteForUser(data.user));
     },
-    // No onError UI here on purpose — the component reads mutation.error
-    // and decides how to show it (inline vs banner). Keeps this hook
-    // testable without a UI layer.
   });
-}
+};

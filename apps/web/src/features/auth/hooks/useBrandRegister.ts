@@ -9,10 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import { AuthActionType } from "../types";
 import type { BrandRegisterInput } from "../schemas/brandRegister.schema";
 
-// Unlike customer registration, this *does* authenticate immediately — the
-// invite already proved the email, so apps/api's registerBrand() issues
-// tokens straight away (see auth.service.ts: emailVerified: true).
-export function useBrandRegister() {
+export const useBrandRegister = () => {
   const { dispatch } = useAuth();
   const router = useRouter();
 
@@ -23,8 +20,8 @@ export function useBrandRegister() {
         type: AuthActionType.AUTH_SUCCESS,
         payload: { user: data.user, accessToken: data.accessToken },
       });
-      // Always /dashboard — registerBrand() only ever returns a BRAND_OWNER.
+
       router.replace("/dashboard");
     },
   });
-}
+};

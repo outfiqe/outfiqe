@@ -45,5 +45,4 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
   }
 };
 
-export const getAuthPrincipal = (res: Response): AuthPrincipal | undefined =>
-  res.locals.auth as AuthPrincipal | undefined;
+export const getAuthPrincipal = (res: Response): AuthPrincipal | undefined => res.locals.auth;

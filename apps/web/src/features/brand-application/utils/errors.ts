@@ -3,9 +3,9 @@ const MESSAGES: Record<string, string> = {
   VALIDATION_ERROR: "Please check the form for errors and try again.",
 };
 
-export function getBrandApplicationErrorMessage(code: string | undefined): string {
+export const getBrandApplicationErrorMessage = (code: string | undefined): string => {
   if (!code) return "Something went wrong. Please try again.";
   return (
     MESSAGES[code] ?? "We couldn't send your application right now. Please try again in a moment."
   );
-}
+};

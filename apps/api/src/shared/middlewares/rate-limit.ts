@@ -12,6 +12,7 @@ const DEFAULT_MESSAGE = "Too many requests. Please try again later.";
 const TOO_MANY_REQUESTS_STATUS = 429;
 
 /* 
+TODO: Redis Later
 Fixed-window, in-memory, single-process. Once the API runs more than one
 instance this Map needs to move behind a shared store (Redis INCR/EXPIRE)
 so counts are consistent across processes.

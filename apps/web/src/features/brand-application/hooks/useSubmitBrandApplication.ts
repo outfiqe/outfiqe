@@ -6,8 +6,8 @@ import type { ApiClientError } from "@/shared/lib/apiClient";
 import { brandApplicationApi } from "../api/brandApplicationApi";
 import type { BrandApplicationInput } from "../schemas/brandApplication.schema";
 
-export function useSubmitBrandApplication() {
+export const useSubmitBrandApplication = () => {
   return useMutation<void, ApiClientError, BrandApplicationInput>({
     mutationFn: brandApplicationApi.submit,
   });
-}
+};

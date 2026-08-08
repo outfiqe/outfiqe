@@ -24,7 +24,7 @@ import { useRegister } from "../../hooks/useRegister";
 import { AuthErrorCode, getAuthErrorMessage } from "../../utils/authErrors";
 import { RegisterSuccess } from "./RegisterSuccess";
 
-export function RegisterForm() {
+export const RegisterForm = () => {
   const register = useRegister();
   const showPending = useDelayedPending(register.isPending);
 
@@ -175,4 +175,4 @@ export function RegisterForm() {
       </p>
     </div>
   );
-}
+};
