@@ -6,6 +6,7 @@ import { errorHandler } from "./shared/middlewares/error-handler.js";
 import { httpLogger } from "./shared/middlewares/http-logger.js";
 import { userRoutes } from "./modules/users/user.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
+import { brandApplicationRoutes } from "./modules/brand-applications/brandApplication.routes.js";
 
 import { sendSuccess } from "#lib/api-response.utils.js";
 
@@ -24,6 +25,7 @@ export const createApp = () => {
 
   app.use("/api/users", userRoutes);
   app.use("/api/auth", authRoutes);
+  app.use("/api/brand-applications", brandApplicationRoutes);
 
   app.use(errorHandler);
 

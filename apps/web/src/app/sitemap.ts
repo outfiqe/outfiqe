@@ -7,6 +7,7 @@ const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
 // regenerates this route on each request (or on a revalidate interval, see
 // https://nextjs.org/docs/app/api-reference/file-conventions/metadata/sitemap),
 // so there's no separate build step to remember.
+
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {

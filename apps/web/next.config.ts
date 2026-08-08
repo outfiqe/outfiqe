@@ -9,7 +9,10 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
 
   async rewrites() {
-    return [{ source: "/api/:path*", destination: `${apiUrl}/:path*` }];
+    // Keep the /api prefix on the way through — the Express app itself
+    // mounts routes at /api/auth/* and /api/users/* (see apps/api/src/app.ts),
+    // it does not strip the prefix. Dropping it here would 404 every call.
+    return [{ source: "/api/:path*", destination: `${apiUrl}/api/:path*` }];
   },
 };
 
