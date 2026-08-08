@@ -14,9 +14,7 @@ const envSchema = z.object({
     .min(JWT_SECRET_MIN_LENGTH, `JWT_SECRET must be at least ${JWT_SECRET_MIN_LENGTH} characters`),
   JWT_ACCESS_TTL: z.string().default("15m"),
   JWT_REFRESH_TTL: z.string().default("7d"),
-  // Gmail SMTP sender. GMAIL_APP_PASSWORD is optional — without it,
-  // sendEmail() falls back to the console stub (shared/utils/email.utils.ts).
-  // Generate one at https://myaccount.google.com/apppasswords (needs 2FA on).
+  //TODO: ADD real smtp server when MVP is finished
   GMAIL_USER: z.email().default("anjesh67890@gmail.com"),
   GMAIL_APP_PASSWORD: z.string().optional(),
 });

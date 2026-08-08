@@ -94,7 +94,6 @@ const issueTokens = async (user: Pick<UserRecord, "id" | "role">): Promise<Issue
   };
 };
 
-// Shared by register() and resendVerification() so the two flows can't drift.
 const sendVerificationEmail = async (user: Pick<UserRecord, "id" | "email">): Promise<void> => {
   const verificationToken = signPurposeToken(
     { sub: user.id, purpose: TokenPurpose.EMAIL_VERIFICATION },
@@ -167,9 +166,6 @@ export const authService = {
     logger.info(`Email verified for user ${user.id}`);
   },
 
-  // Re-sends the verification email without revealing whether the address
-  // is registered or already verified — same non-enumeration stance as
-  // forgotPassword below.
   async resendVerification(email: string): Promise<void> {
     const user = await userRepository.findByEmail(email);
     if (!user || user.emailVerified) {
@@ -181,9 +177,6 @@ export const authService = {
     logger.info(`Verification email re-sent to user ${user.id}`);
   },
 
-  // Used by the reset-password screen to check a token *before* rendering
-  // the form, so a user never fills it out only to learn it was already
-  // expired. Throws (via verifyPurposeTokenOrThrow) if invalid/expired.
   async validateToken(token: string, purpose: TokenPurpose): Promise<void> {
     verifyPurposeTokenOrThrow(token, purpose);
   },
@@ -305,10 +298,6 @@ export const authService = {
     logger.info(`Password reset for user ${user.id}`);
   },
 
-  // Looks the invite up and validates it without consuming it, so the brand
-  // register screen can show the locked, pre-filled email before the owner
-  // has typed anything. registerBrand() re-validates independently at
-  // submit time — this is a read for UX, not the source of truth.
   async getBrandInvite(inviteToken: string): Promise<BrandInviteInfo> {
     const invite = await authRepository.findBrandInviteByTokenHash(hashToken(inviteToken));
     if (!invite) {
@@ -334,11 +323,6 @@ export const authService = {
     return { email: invite.email, brandName: invite.brandName };
   },
 
-  // Backs GET /auth/me: turns an access token's userId into the same
-  // AuthUser/BrandAuthUser shape login() and registerBrand() return, so the
-  // frontend can restore full session state (role, isCreator, brandId, ...)
-  // after a boot-time silent refresh — refresh() itself only returns a new
-  // access token, not who that token belongs to.
   async getCurrentUser(userId: string): Promise<AuthUser | BrandAuthUser> {
     const user = await userRepository.findById(userId);
     if (!user) {
@@ -356,8 +340,6 @@ export const authService = {
           brandId: membership.brandId,
         };
       }
-      // Data anomaly (BRAND_OWNER with no membership row) — fall through
-      // and answer as a plain user rather than 500ing the whole session.
     }
 
     return {

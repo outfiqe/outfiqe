@@ -24,7 +24,7 @@ import { useLogin } from "../hooks/useLogin";
 import { useResendVerification } from "../hooks/useResendVerification";
 import { AuthErrorCode, getAuthErrorMessage } from "../utils/authErrors";
 
-export function LoginForm() {
+export const LoginForm = () => {
   const login = useLogin();
   const resend = useResendVerification();
   const searchParams = useSearchParams();
@@ -40,7 +40,6 @@ export function LoginForm() {
   const onSubmit = form.handleSubmit(async (values) => {
     try {
       await login.mutateAsync(values);
-      // Navigation on success happens inside useLogin's onSuccess.
     } catch {
       // Surfaced below via login.error — nothing else to do here.
     }
@@ -140,4 +139,4 @@ export function LoginForm() {
       </p>
     </div>
   );
-}
+};

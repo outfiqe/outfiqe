@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { useAuth } from "../context/AuthContext";
 
-export function useLogout() {
+export const useLogout = () => {
   const { logout } = useAuth();
   const router = useRouter();
 
@@ -15,4 +15,4 @@ export function useLogout() {
       router.replace("/login");
     },
   });
-}
+};

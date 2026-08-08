@@ -67,7 +67,7 @@ export const FormItem = React.forwardRef<HTMLDivElement, React.ComponentPropsWit
     const id = React.useId();
     return (
       <FormItemContext.Provider value={{ id }}>
-        <div ref={ref} className={cn("first:mt-0", className)} {...props} />
+        <div ref={ref} className={cn("mt-4 first:mt-0", className)} {...props} />
       </FormItemContext.Provider>
     );
   },

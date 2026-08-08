@@ -15,14 +15,14 @@ import { authApi } from "../api/authApi";
 import { authReducer, initialAuthState } from "./authReducer";
 import { AuthActionType, AuthStatus, UserRole, type AuthAction, type AuthState } from "../types";
 
-interface AuthContextValue {
+type AuthContextValue = {
   state: AuthState;
   dispatch: Dispatch<AuthAction>;
   isAuthenticated: boolean;
   isBrandOwner: boolean;
   isCreator: boolean;
   logout: () => Promise<void>;
-}
+};
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 

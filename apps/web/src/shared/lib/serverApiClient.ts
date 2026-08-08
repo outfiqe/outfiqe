@@ -24,10 +24,10 @@ type ServerRequestOptions = {
   accessToken?: string;
 };
 
-export async function serverApiRequest<T>(
+export const serverApiRequest = async <T>(
   path: string,
   options: ServerRequestOptions = {},
-): Promise<T> {
+): Promise<T> => {
   const res = await fetch(`${API_URL}/api${path}`, {
     method: options.method ?? "GET",
     headers: {
@@ -51,4 +51,4 @@ export async function serverApiRequest<T>(
   }
 
   return (json as SuccessEnvelope<T>).data;
-}
+};

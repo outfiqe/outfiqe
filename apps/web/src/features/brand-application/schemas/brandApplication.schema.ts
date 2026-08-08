@@ -9,6 +9,7 @@ export const brandCategorySchema = z.enum([
   "KIDS",
   "FORMAL",
 ]);
+
 export type BrandCategory = z.infer<typeof brandCategorySchema>;
 
 export const makesOwnPiecesSchema = z.enum(["MAKES", "RESELLS", "BOTH"]);
