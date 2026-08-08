@@ -7,7 +7,6 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      // No account/auth pages indexed — nothing to rank there.
       disallow: ["/login"],
     },
     sitemap: `${siteUrl}/sitemap.xml`,

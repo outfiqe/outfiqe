@@ -1,8 +1,107 @@
+import { z } from "zod";
+
 import { apiClient } from "@/shared/lib/apiClient";
-import type { AuthTokens, LoginInput } from "../types";
+import type { TokenPurpose, UserSession } from "../types";
+import {
+  brandInviteInfoSchema,
+  brandUserSchema,
+  currentUserSchema,
+  customerUserSchema,
+  toUserSession,
+  validateTokenResponseSchema,
+} from "./userSchemas";
+import type { BrandInviteInfo } from "./userSchemas";
+import type { BrandRegisterInput } from "../schemas/brandRegister.schema";
+import type { ForgotPasswordInput } from "../schemas/forgotPassword.schema";
+import type { LoginInput } from "../schemas/login.schema";
+import type { RegisterInput } from "../schemas/register.schema";
+import type { ResetPasswordInput } from "../schemas/resetPassword.schema";
+
+const registerResponseSchema = z.object({ userId: z.string() });
+const loginResponseSchema = z.object({ accessToken: z.string(), user: customerUserSchema });
+const brandLoginResponseSchema = z.object({ accessToken: z.string(), user: brandUserSchema });
+const refreshResponseSchema = z.object({ accessToken: z.string() });
+
+export type RegisterResponse = z.infer<typeof registerResponseSchema>;
+export type LoginResponse = { accessToken: string; user: UserSession };
+export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
+export type { BrandInviteInfo };
+export type MessageResponse = { message: string };
 
 // All network calls for this feature live in one place. Components and
-// hooks never call fetch/apiClient directly.
+// hooks never call apiClient/fetch directly. Every response is parsed
+// through a zod schema at this boundary — a real drift between this file
+// and apps/api's contract surfaces as a thrown ZodError instead of a
+// silently-wrong `as` cast.
 export const authApi = {
-  login: (input: LoginInput) => apiClient.post<AuthTokens>("/auth/login", input),
+  async register(input: RegisterInput): Promise<RegisterResponse> {
+    const res = await apiClient.post<unknown>("/auth/register", input);
+    return registerResponseSchema.parse(res.data);
+  },
+
+  async registerBrand(input: BrandRegisterInput): Promise<LoginResponse> {
+    const res = await apiClient.post<unknown>("/auth/register/brand", input);
+    const { accessToken, user } = brandLoginResponseSchema.parse(res.data);
+    return { accessToken, user: toUserSession(user) };
+  },
+
+  async login(input: LoginInput): Promise<LoginResponse> {
+    const res = await apiClient.post<unknown>("/auth/login", input);
+    const { accessToken, user } = loginResponseSchema.parse(res.data);
+    return { accessToken, user: toUserSession(user) };
+  },
+
+  async logout(): Promise<void> {
+    await apiClient.post("/auth/logout");
+  },
+
+  // skipAuthRetry: this call *is* the refresh — it must not trigger the
+  // apiClient interceptor's own refresh-and-retry on a 401, or a truly
+  // expired session would recurse.
+  async refresh(): Promise<RefreshResponse> {
+    const res = await apiClient.post<unknown>("/auth/refresh", undefined, {
+      skipAuthRetry: true,
+    });
+    return refreshResponseSchema.parse(res.data);
+  },
+
+  // Requires an access token (attached automatically by apiClient) — used
+  // right after refresh() to restore full session state, since refresh()
+  // itself only returns a token, not whose it is.
+  async getCurrentUser(): Promise<UserSession> {
+    const res = await apiClient.get<unknown>("/auth/me");
+    return toUserSession(currentUserSchema.parse(res.data));
+  },
+
+  async forgotPassword(input: ForgotPasswordInput): Promise<MessageResponse> {
+    const res = await apiClient.post<unknown>("/auth/forgot-password", input);
+    return { message: res.message };
+  },
+
+  async resetPassword(input: ResetPasswordInput): Promise<MessageResponse> {
+    const res = await apiClient.post<unknown>("/auth/reset-password", input);
+    return { message: res.message };
+  },
+
+  async verifyEmail(token: string): Promise<MessageResponse> {
+    const res = await apiClient.post<unknown>("/auth/verify-email", { token });
+    return { message: res.message };
+  },
+
+  async resendVerification(email: string): Promise<MessageResponse> {
+    const res = await apiClient.post<unknown>("/auth/resend-verification", { email });
+    return { message: res.message };
+  },
+
+  async getBrandInvite(token: string): Promise<BrandInviteInfo> {
+    const res = await apiClient.get<unknown>(`/auth/invite?token=${encodeURIComponent(token)}`);
+    return brandInviteInfoSchema.parse(res.data);
+  },
+
+  async validateToken(token: string, purpose: TokenPurpose): Promise<boolean> {
+    const res = await apiClient.get<unknown>(
+      `/auth/validate-token?token=${encodeURIComponent(token)}&purpose=${purpose}`,
+    );
+    return validateTokenResponseSchema.parse(res.data).valid;
+  },
 };
