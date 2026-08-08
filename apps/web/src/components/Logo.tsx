@@ -8,10 +8,10 @@ const SIZES = {
   lg: "text-4xl",
 } as const;
 
-interface LogoProps {
+type LogoProps = {
   size?: keyof typeof SIZES;
   className?: string;
-}
+};
 
 export function Logo({ size = "md", className }: LogoProps) {
   return (

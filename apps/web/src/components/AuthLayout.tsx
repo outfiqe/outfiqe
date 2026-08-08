@@ -2,9 +2,9 @@ import type { ReactNode } from "react";
 
 import { Logo } from "./Logo";
 
-interface AuthLayoutProps {
+type AuthLayoutProps = {
   children: ReactNode;
-}
+};
 
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (

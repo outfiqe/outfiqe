@@ -2,6 +2,11 @@ const BASE_URL = "/api";
 
 type SuccessEnvelope<T> = { success: true; message: string; data: T };
 type ErrorEnvelope = { success: false; message: string; code: string; details?: unknown };
+type RequestOptions = Omit<RequestInit, "body"> & { body?: unknown; skipAuthRetry?: boolean };
+
+let accessToken: string | null = null;
+let unauthorizedHandler: (() => void) | null = null;
+let refreshPromise: Promise<string> | null = null;
 
 export class ApiClientError extends Error {
   code: string;
@@ -15,8 +20,6 @@ export class ApiClientError extends Error {
   }
 }
 
-let accessToken: string | null = null;
-
 export const setAccessToken = (token: string | null): void => {
   accessToken = token;
 };
@@ -25,13 +28,15 @@ export const getAccessToken = (): string | null => {
   return accessToken;
 };
 
-let unauthorizedHandler: (() => void) | null = null;
-
 export const setUnauthorizedHandler = (handler: (() => void) | null): void => {
   unauthorizedHandler = handler;
 };
 
-let refreshPromise: Promise<string> | null = null;
+const forceLogout = (): void => {
+  if (accessToken === null) return;
+  setAccessToken(null);
+  unauthorizedHandler?.();
+};
 
 const refreshAccessToken = async (): Promise<string> => {
   if (!refreshPromise) {
@@ -45,7 +50,7 @@ const refreshAccessToken = async (): Promise<string> => {
         throw new Error("refresh failed");
       }
 
-      const body = (await res.json()) as SuccessEnvelope<{ accessToken: string }>;
+      const body: SuccessEnvelope<{ accessToken: string }> = await res.json();
       setAccessToken(body.data.accessToken);
       return body.data.accessToken;
     })().finally(() => {
@@ -55,8 +60,6 @@ const refreshAccessToken = async (): Promise<string> => {
 
   return refreshPromise;
 };
-
-type RequestOptions = Omit<RequestInit, "body"> & { body?: unknown; skipAuthRetry?: boolean };
 
 const request = async <T>(
   path: string,
@@ -72,7 +75,7 @@ const request = async <T>(
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...headers,
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body ? JSON.stringify(body) : undefined,
     });
 
   let res = await doFetch();
@@ -82,8 +85,7 @@ const request = async <T>(
       await refreshAccessToken();
       res = await doFetch();
     } catch {
-      setAccessToken(null);
-      unauthorizedHandler?.();
+      forceLogout();
       throw new ApiClientError(
         "Your session has expired. Please sign in again.",
         "SESSION_EXPIRED",
@@ -93,11 +95,12 @@ const request = async <T>(
 
   const json = await res.json().catch(() => null);
 
-  if (!res.ok || !json || (json as { success?: boolean }).success !== true) {
-    const err = json as Partial<ErrorEnvelope> | null;
+  const isFailure = !res.ok || !json || !json.success;
+
+  if (isFailure) {
+    const err: Partial<ErrorEnvelope> | null = json;
     if (res.status === 401 && !skipAuthRetry) {
-      setAccessToken(null);
-      unauthorizedHandler?.();
+      forceLogout();
     }
     throw new ApiClientError(
       err?.message ?? `Request failed with ${res.status}`,
