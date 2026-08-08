@@ -1,11 +1,12 @@
 import Link from "next/link";
 
 import { cn } from "@/shared/lib/cn";
+import { LogoMark } from "./LogoMark";
 
 const SIZES = {
-  sm: "text-lg",
-  md: "text-2xl",
-  lg: "text-4xl",
+  sm: { text: "text-lg", mark: "size-5" },
+  md: { text: "text-2xl", mark: "size-7" },
+  lg: { text: "text-4xl", mark: "size-10" },
 } as const;
 
 interface LogoProps {
@@ -14,17 +15,21 @@ interface LogoProps {
 }
 
 export function Logo({ size = "md", className }: LogoProps) {
+  const styles = SIZES[size];
+
   return (
     <Link
       href="/"
       className={cn(
-        "font-display font-bold tracking-tight text-foreground",
-        SIZES[size],
+        "inline-flex items-center gap-2 font-display font-bold tracking-tight",
         className,
       )}
     >
-      outfiqe
-      <span className="text-primary">.</span>
+      <LogoMark className={cn(styles.mark, "shrink-0")} />
+      <span className={styles.text}>
+        <span className="text-primary">out</span>
+        <span className="text-secondary">fiqe.</span>
+      </span>
     </Link>
   );
 }
