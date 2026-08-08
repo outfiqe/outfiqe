@@ -40,7 +40,6 @@ interface ProductCardProps {
   product: ExploreProduct;
 }
 
-// TODO: swap the Shirt placeholder for product.image once real product photos exist
 export function ProductCard({ product }: ProductCardProps) {
   const avatarCount = Math.min(product.wornByCount, 3);
   const badgeLabel = product.isNew ? "New" : product.lowStock ? "Low stock" : null;

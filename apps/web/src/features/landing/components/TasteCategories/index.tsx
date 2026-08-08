@@ -6,7 +6,7 @@ import { Button } from "@/design-system/components/ui/button";
 import { cn } from "@/shared/lib/cn";
 import { TASTE_CATEGORIES } from "./tasteCategories.constants";
 
-// Client-side + router.replace instead of Link, so switching category updates instantly with no page refresh.
+// client-side + router.replace instead of link, which helps with category switches instantly without page refreshing
 export function TasteCategories() {
   const router = useRouter();
   const searchParams = useSearchParams();

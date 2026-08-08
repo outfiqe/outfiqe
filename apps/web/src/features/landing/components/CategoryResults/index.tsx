@@ -17,7 +17,6 @@ export function CategoryResults() {
   const categorySlug = searchParams.get("category");
   const activeType = searchParams.get("type") ?? "all";
 
-  // TASTE_CATEGORIES is a fixed, non-empty list, so the fallback always exists.
   const category = TASTE_CATEGORIES.find((c) => c.slug === categorySlug) ?? TASTE_CATEGORIES[0]!;
 
   const categoryProducts = EXPLORE_PRODUCTS.filter(

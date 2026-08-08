@@ -3,7 +3,6 @@ export interface FooterLinkGroup {
   links: { label: string; href: string }[];
 }
 
-// TODO: About/Careers/Contact/Terms/Privacy/Shipping are placeholders until those pages exist
 export const FOOTER_LINK_GROUPS: FooterLinkGroup[] = [
   {
     title: "Shop",

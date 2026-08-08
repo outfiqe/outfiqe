@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import { Button } from "@/design-system/components/ui/button";
 
-// TODO: placeholder copy — replace once positioning/messaging is finalized
 export function BrandCallout() {
   return (
     <section className="px-6 py-16 sm:py-24 lg:px-10">
