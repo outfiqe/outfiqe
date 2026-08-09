@@ -1,4 +1,5 @@
 import { prisma } from "../../shared/db/prisma.js";
+import type { CreatorStatus } from "../../generated/prisma/enums.js";
 import type { CreateUserInput, UserRecord } from "./user.types.js";
 
 export const userRepository = {
@@ -37,5 +38,19 @@ export const userRepository = {
 
   async updatePasswordHash(id: string, passwordHash: string): Promise<void> {
     await prisma.user.update({ where: { id }, data: { passwordHash } });
+  },
+
+  async updateCreatorStatus(
+    id: string,
+    data: { creatorStatus: CreatorStatus; isCreator?: boolean },
+  ): Promise<UserRecord> {
+    return prisma.user.update({ where: { id }, data });
+  },
+
+  async listByCreatorStatus(status?: CreatorStatus): Promise<UserRecord[]> {
+    return prisma.user.findMany({
+      where: status ? { creatorStatus: status } : undefined,
+      orderBy: { createdAt: "desc" },
+    });
   },
 };

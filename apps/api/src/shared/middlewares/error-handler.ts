@@ -1,4 +1,5 @@
 import type { ErrorRequestHandler } from "express";
+import type { ApiErrorEnvelope } from "@outfiqe/shared-types";
 
 import logger from "#lib/winston.utils.js";
 
@@ -21,21 +22,23 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     const level = err.status >= SERVER_ERROR_THRESHOLD ? "error" : "warn";
     logger[level](`${err.code}: ${err.message}`);
 
-    res.status(err.status).json({
+    const body: ApiErrorEnvelope = {
       success: false,
       message: err.message,
       code: err.code,
       details: err.details,
-    });
+    };
+    res.status(err.status).json(body);
     return;
   }
 
   const unexpectedError = err instanceof Error ? (err.stack ?? err.message) : String(err);
   logger.error(`UNHANDLED_ERROR: ${unexpectedError}`);
 
-  res.status(SERVER_ERROR_THRESHOLD).json({
+  const body: ApiErrorEnvelope = {
     success: false,
     message: "Internal server error",
     code: "INTERNAL_ERROR",
-  });
+  };
+  res.status(SERVER_ERROR_THRESHOLD).json(body);
 };

@@ -1,16 +1,24 @@
 import { z } from "zod";
 
-export enum UserRole {
-  CUSTOMER = "CUSTOMER",
-  BRAND_OWNER = "BRAND_OWNER",
-  ADMIN = "ADMIN",
-}
+import type {
+  CreatorStatus as CreatorStatusType,
+  UserRole as UserRoleType,
+} from "@outfiqe/shared-types";
 
-export enum CreatorStatus {
-  NONE = "NONE",
-  PENDING = "PENDING",
-  APPROVED = "APPROVED",
-}
+export const UserRole = {
+  CUSTOMER: "CUSTOMER",
+  BRAND_OWNER: "BRAND_OWNER",
+  ADMIN: "ADMIN",
+} as const satisfies Record<string, UserRoleType>;
+export type UserRole = UserRoleType;
+
+export const CreatorStatus = {
+  NONE: "NONE",
+  PENDING: "PENDING",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+} as const satisfies Record<string, CreatorStatusType>;
+export type CreatorStatus = CreatorStatusType;
 
 export enum TokenPurpose {
   EMAIL_VERIFICATION = "email-verification",

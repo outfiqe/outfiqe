@@ -1,12 +1,14 @@
+import { getFeaturedCreatorLooksServer } from "@/features/products/api/getProductsServer";
 import { ProductRail } from "../ProductRail";
-import { CREATOR_LOOKS_PRODUCTS } from "./creatorLooks.constants";
 
-export function CreatorLooks() {
+export async function CreatorLooks() {
+  const products = await getFeaturedCreatorLooksServer();
+
   return (
     <ProductRail
       title="Creator looks"
       description="Real fits from Nepali creators. Tap any tagged piece to shop it."
-      products={CREATOR_LOOKS_PRODUCTS}
+      products={products}
     />
   );
 }

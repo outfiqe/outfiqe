@@ -27,6 +27,9 @@ env:
   JWT_SECRET: ${{ vars.CI_JWT_SECRET || 'ci-placeholder-secret-not-used-for-anything-real' }}
   API_URL: ${{ vars.CI_API_URL || 'http://localhost:4000' }}
   SITE_URL: ${{ vars.CI_SITE_URL || 'http://localhost:3000' }}
+  VITE_API_URL: ${{ vars.CI_API_URL || 'http://localhost:4000' }}
+  VITE_WEB_URL: ${{ vars.CI_SITE_URL || 'http://localhost:3000' }}
+  NEXT_PUBLIC_ADMIN_URL: ${{ vars.CI_ADMIN_URL || 'http://localhost:5173' }}
 
 jobs:
   lint:

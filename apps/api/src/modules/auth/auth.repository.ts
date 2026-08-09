@@ -29,7 +29,10 @@ export const authRepository = {
   },
 
   async findBrandInviteByTokenHash(tokenHash: string): Promise<BrandInviteRecord | null> {
-    return prisma.brandInvite.findUnique({ where: { tokenHash } });
+    return prisma.brandInvite.findUnique({
+      where: { tokenHash },
+      include: { brand: { select: { name: true } } },
+    });
   },
 
   async markBrandInviteAccepted(id: string): Promise<void> {

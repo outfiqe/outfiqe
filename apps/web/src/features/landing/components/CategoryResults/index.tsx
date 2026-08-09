@@ -4,12 +4,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
 import { Button } from "@/design-system/components/ui/button";
+import { toExploreProduct } from "@/features/products/api/toExploreProduct";
+import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
+import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { TASTE_CATEGORIES } from "../TasteCategories/tasteCategories.constants";
 import { ProductCard } from "../ProductCard";
 import { CategoryFilters } from "./CategoryFilters";
-import { EXPLORE_PRODUCTS } from "./categoryResults.constants";
-
-const GRID_SIZE = 10; // 2 rows x 5 columns
 
 export function CategoryResults() {
   const router = useRouter();
@@ -19,15 +19,18 @@ export function CategoryResults() {
 
   const category = TASTE_CATEGORIES.find((c) => c.slug === categorySlug) ?? TASTE_CATEGORIES[0]!;
 
-  const categoryProducts = EXPLORE_PRODUCTS.filter(
-    (product) => product.categorySlug === category.slug,
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteProducts(
+    category.slug,
+    activeType === "all" ? undefined : activeType,
   );
-  const brandCount = new Set(categoryProducts.map((product) => product.brand)).size;
 
-  const visibleProducts =
-    activeType === "all"
-      ? categoryProducts
-      : categoryProducts.filter((product) => product.type === activeType);
+  const sentinelRef = useLoadMoreOnVisible(
+    () => fetchNextPage(),
+    Boolean(hasNextPage) && !isFetchingNextPage,
+  );
+
+  const products = data?.pages.flatMap((page) => page.products) ?? [];
+  const firstPage = data?.pages[0];
 
   return (
     <section className="px-6 pb-10 pt-2 sm:pb-14 sm:pt-3 lg:px-10">
@@ -37,7 +40,9 @@ export function CategoryResults() {
             In {category.name}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {categoryProducts.length} pieces from {brandCount} brands
+            {firstPage
+              ? `${firstPage.total} pieces from ${firstPage.brandCount} brands`
+              : "Loading…"}
           </p>
         </div>
 
@@ -55,13 +60,21 @@ export function CategoryResults() {
         <CategoryFilters categorySlug={category.slug} activeType={activeType} />
       </div>
 
-      {visibleProducts.length === 0 ? (
+      {!isLoading && products.length === 0 ? (
         <p className="mt-12 text-sm text-muted-foreground">No pieces in this filter yet.</p>
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
-          {visibleProducts.slice(0, GRID_SIZE).map((product) => (
-            <ProductCard key={product.id} product={product} />
+          {products.map((product) => (
+            <ProductCard key={product.id} product={toExploreProduct(product)} />
           ))}
+        </div>
+      )}
+
+      {hasNextPage && (
+        <div ref={sentinelRef} className="mt-10 flex justify-center">
+          <span className="text-xs text-muted-foreground">
+            {isFetchingNextPage ? "Loading more…" : ""}
+          </span>
         </div>
       )}
     </section>

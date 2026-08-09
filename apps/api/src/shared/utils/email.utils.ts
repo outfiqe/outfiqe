@@ -8,6 +8,7 @@ type SendEmailInput = {
   to: string;
   subject: string;
   body: string;
+  html?: string;
 };
 
 const transporter = env.GMAIL_APP_PASSWORD
@@ -17,7 +18,7 @@ const transporter = env.GMAIL_APP_PASSWORD
     })
   : null;
 
-export const sendEmail = async ({ to, subject, body }: SendEmailInput): Promise<void> => {
+export const sendEmail = async ({ to, subject, body, html }: SendEmailInput): Promise<void> => {
   if (!transporter) {
     logger.warn("GMAIL_APP_PASSWORD not set — falling back to console stub for outgoing email.");
     logger.info(`[email] from=${env.GMAIL_USER} to=${to} subject="${subject}"\n${body}`);
@@ -25,7 +26,7 @@ export const sendEmail = async ({ to, subject, body }: SendEmailInput): Promise<
   }
 
   try {
-    await transporter.sendMail({ from: env.GMAIL_USER, to, subject, text: body });
+    await transporter.sendMail({ from: env.GMAIL_USER, to, subject, text: body, html });
   } catch (err) {
     logger.error(`Gmail send failed (to=${to}, subject="${subject}"): ${String(err)}`);
   }

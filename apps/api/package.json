@@ -11,20 +11,20 @@
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -b tsconfig.json",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b tsconfig.json",
     "lint": "eslint .",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset",
-    "create-invite": "tsx prisma/create-brand-invite.ts"
+    "db:reset": "prisma migrate reset"
   },
   "dependencies": {
     "@outfiqe/shared-types": "workspace:*",
+    "@outfiqe/shared-utils": "workspace:*",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "cookie-parser": "^1.4.7",

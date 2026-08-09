@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-const PHONE_REGEX = /^98\d{8}$/;
+import { NEPAL_PHONE_REGEX } from "@outfiqe/shared-utils";
+
 const NAME_MIN = 2;
 const NAME_MAX = 100;
 const PASSWORD_MIN = 8;
@@ -15,7 +16,7 @@ export const nameField = z
 export const phoneField = z
   .string()
   .transform((v) => v.replace(/[\s-]/g, ""))
-  .pipe(z.string().regex(PHONE_REGEX, "Enter a valid Nepali phone number starting with 98"));
+  .pipe(z.string().regex(NEPAL_PHONE_REGEX, "Enter a valid Nepali phone number starting with 98"));
 
 export const emailField = z
   .email("Enter a valid email address")

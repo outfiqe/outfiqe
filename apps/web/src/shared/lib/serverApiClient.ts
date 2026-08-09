@@ -1,9 +1,8 @@
 import "server-only";
 
-const API_URL = process.env.API_URL ?? "http://localhost:4000";
+import type { ApiErrorEnvelope, ApiSuccessEnvelope } from "@outfiqe/shared-types";
 
-type SuccessEnvelope<T> = { success: true; message: string; data: T };
-type ErrorEnvelope = { success: false; message: string; code: string; details?: unknown };
+const API_URL = process.env.API_URL ?? "http://localhost:4000";
 
 export class ServerApiError extends Error {
   code: string;
@@ -44,7 +43,7 @@ export const serverApiRequest = async <T>(
   const isFailure = !res.ok || !json || !json.success;
 
   if (isFailure) {
-    const err: Partial<ErrorEnvelope> | null = json;
+    const err: Partial<ApiErrorEnvelope> | null = json;
     throw new ServerApiError(
       err?.message ?? `Request failed with ${res.status}`,
       err?.code ?? "UNKNOWN_ERROR",
@@ -52,6 +51,6 @@ export const serverApiRequest = async <T>(
     );
   }
 
-  const success: SuccessEnvelope<T> = json;
+  const success: ApiSuccessEnvelope<T> = json;
   return success.data;
 };

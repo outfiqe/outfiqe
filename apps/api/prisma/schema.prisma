@@ -26,8 +26,13 @@ model User {
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
 
-  memberships   BrandMembership[]
-  refreshTokens RefreshToken[]
+  memberships          BrandMembership[]
+  refreshTokens        RefreshToken[]
+  reviewedApplications BrandApplication[] @relation("BrandApplicationReviewer")
+  approvedInvites      BrandInvite[]      @relation("BrandInviteApprover")
+  sentAdminInvites     AdminInvite[]      @relation("AdminInviteSender")
+  reviewedProducts     Product[]          @relation("ProductReviewer")
+  creatorLooks         CreatorLook[]      @relation("CreatorLooks")
 
   @@map("users")
 }
@@ -42,6 +47,7 @@ enum CreatorStatus {
   NONE
   PENDING
   APPROVED
+  REJECTED
 }
 
 // One row per issued refresh token. Only the sha256 hash is stored — see
@@ -51,7 +57,7 @@ enum CreatorStatus {
 model RefreshToken {
   id        String   @id @default(uuid()) @db.Uuid
   tokenHash String   @unique @map("token_hash")
-  userId    String   @db.Uuid @map("user_id")
+  userId    String   @map("user_id") @db.Uuid
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -59,38 +65,45 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
-// Single-use invite that lets a brand owner register without an open signup
-// flow. Created manually for now (see auth prompt: "What not to build yet").
 model BrandInvite {
-  id         String    @id @default(uuid()) @db.Uuid
-  brandId    String    @db.Uuid @map("brand_id")
-  // Denormalized on purpose: there is no Brand catalog table yet (brands are
-  // reviewed and invited by hand — see auth prompt). This lets the
-  // registration screen show "Set up your account for <brandName>" without
-  // a join that doesn't exist yet. Once a real Brand model lands, this can
-  // be dropped in favor of a relation.
-  brandName  String    @map("brand_name")
-  email      String
-  tokenHash  String    @unique @map("token_hash")
-  expiresAt  DateTime  @map("expires_at")
-  acceptedAt DateTime? @map("accepted_at")
-  createdAt  DateTime  @default(now()) @map("created_at")
+  id           String    @id @default(uuid()) @db.Uuid
+  brandId      String    @map("brand_id") @db.Uuid
+  brand        Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  email        String
+  tokenHash    String    @unique @map("token_hash")
+  expiresAt    DateTime  @map("expires_at")
+  acceptedAt   DateTime? @map("accepted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  approvedById String    @map("approved_by_id") @db.Uuid
+  approvedBy   User      @relation("BrandInviteApprover", fields: [approvedById], references: [id])
 
   @@map("brand_invites")
 }
 
 model BrandApplication {
-  id             String         @id @default(uuid()) @db.Uuid
-  brandName      String         @map("brand_name")
-  contactName    String         @map("contact_name")
+  id             String                 @id @default(uuid()) @db.Uuid
+  brandName      String                 @map("brand_name")
+  contactName    String                 @map("contact_name")
   email          String
   phone          String
   instagram      String
   category       BrandCategory
-  makesOwnPieces MakesOwnPieces @map("makes_own_pieces")
-  createdAt      DateTime       @default(now()) @map("created_at")
+  makesOwnPieces MakesOwnPieces         @map("makes_own_pieces")
+  status         BrandApplicationStatus @default(PENDING)
+  reviewedAt     DateTime?              @map("reviewed_at")
+  reviewedById   String?                @map("reviewed_by_id") @db.Uuid
+  reviewedBy     User?                  @relation("BrandApplicationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdAt      DateTime               @default(now()) @map("created_at")
+
+  brand Brand?
 
   @@map("brand_applications")
+}
+
+enum BrandApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum BrandCategory {
@@ -107,11 +120,105 @@ enum MakesOwnPieces {
   BOTH
 }
 
+model Brand {
+  id            String            @id @default(uuid()) @db.Uuid
+  name          String
+  category      BrandCategory
+  contactName   String            @map("contact_name")
+  email         String
+  phone         String
+  instagram     String
+  madeInNepal   Boolean           @default(true) @map("made_in_nepal")
+  applicationId String?           @unique @map("application_id") @db.Uuid
+  application   BrandApplication? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  invites     BrandInvite[]
+  memberships BrandMembership[]
+  products    Product[]
+
+  @@map("brands")
+}
+
+model Product {
+  id           String        @id @default(uuid()) @db.Uuid
+  brandId      String        @map("brand_id") @db.Uuid
+  brand        Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  name         String
+  price        Int
+  type         ProductType
+  category     TasteCategory
+  imageUrl     String?       @map("image_url")
+  lowStock     Boolean       @default(false) @map("low_stock")
+  status       ProductStatus @default(PENDING)
+  reviewedAt   DateTime?     @map("reviewed_at")
+  reviewedById String?       @map("reviewed_by_id") @db.Uuid
+  reviewedBy   User?         @relation("ProductReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  taggedInLooks CreatorLookProduct[]
+
+  @@map("products")
+}
+
+model CreatorLook {
+  id        String   @id @default(uuid()) @db.Uuid
+  creatorId String   @map("creator_id") @db.Uuid
+  creator   User     @relation("CreatorLooks", fields: [creatorId], references: [id], onDelete: Cascade)
+  imageUrl  String   @map("image_url")
+  caption   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  taggedProducts CreatorLookProduct[]
+
+  @@map("creator_looks")
+}
+
+model CreatorLookProduct {
+  id            String      @id @default(uuid()) @db.Uuid
+  creatorLookId String      @map("creator_look_id") @db.Uuid
+  creatorLook   CreatorLook @relation(fields: [creatorLookId], references: [id], onDelete: Cascade)
+  productId     String      @map("product_id") @db.Uuid
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  @@unique([creatorLookId, productId])
+  @@map("creator_look_products")
+}
+
+enum ProductType {
+  TOPS
+  BOTTOMS
+  PANTS
+  HEADWEAR
+  OUTERWEAR
+  DRESSES
+}
+
+enum TasteCategory {
+  FORMAL
+  TRADITIONAL
+  STREETWEAR
+  CASUAL
+  MINIMAL
+  Y2K
+  OLD_MONEY
+}
+
+enum ProductStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model BrandMembership {
-  userId  String    @db.Uuid @map("user_id")
-  brandId String    @db.Uuid @map("brand_id")
+  userId  String    @map("user_id") @db.Uuid
+  brandId String    @map("brand_id") @db.Uuid
   role    BrandRole @default(OWNER)
   user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  brand   Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
 
   @@id([userId, brandId])
   @@map("brand_memberships")
@@ -120,4 +227,18 @@ model BrandMembership {
 enum BrandRole {
   OWNER
   STAFF
+}
+
+model AdminInvite {
+  id          String    @id @default(uuid()) @db.Uuid
+  email       String
+  name        String
+  tokenHash   String    @unique @map("token_hash")
+  expiresAt   DateTime  @map("expires_at")
+  acceptedAt  DateTime? @map("accepted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  invitedById String    @map("invited_by_id") @db.Uuid
+  invitedBy   User      @relation("AdminInviteSender", fields: [invitedById], references: [id])
+
+  @@map("admin_invites")
 }
