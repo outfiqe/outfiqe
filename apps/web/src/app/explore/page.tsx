@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Explore" };
 
 export default function ExplorePage() {
   return (
-    <div className="pb-20 md:pb-0">
+    <div className="pb-20 lg:pb-0">
       <SiteHeader />
       <main className="mx-auto max-w-5xl px-4 py-24 text-center">
         <p className="text-sm text-muted-foreground">Explore is coming soon.</p>

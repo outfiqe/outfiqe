@@ -15,7 +15,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 
 export default function HomePage() {
   return (
-    <div className="pb-20 md:pb-0">
+    <div className="pb-20 lg:pb-0">
       <SiteHeader />
       <main>
         <Hero />

@@ -32,19 +32,19 @@ export function Hero() {
   }, [api]);
 
   return (
-    <section className="px-6 pb-4 lg:px-10">
+    <section className="pb-4 sm:px-6 lg:px-10">
       <Carousel
         opts={{ loop: hasMultipleSlides }}
         plugins={[Autoplay({ delay: 4000 })]}
         setApi={setApi}
-        className="overflow-hidden rounded-3xl"
+        className="overflow-hidden rounded-none sm:rounded-3xl"
       >
         <CarouselContent className="ml-0">
           {HERO_SLIDES.map((slide, i) => (
             <CarouselItem key={slide.id} inert={i !== selectedIndex} className="pl-0">
               <div
                 className={cn(
-                  "flex h-72 flex-col justify-center bg-cover bg-center px-5 py-6 sm:h-105 sm:px-12 sm:py-10 lg:px-16",
+                  "flex h-48 flex-col justify-center bg-cover bg-center px-4 py-4 sm:h-105 sm:px-12 sm:py-10 lg:px-16",
                   !slide.image && "bg-linear-to-r from-[#241006] via-[#7a3010] to-primary",
                 )}
                 style={
@@ -55,18 +55,22 @@ export function Hero() {
                     : undefined
                 }
               >
-                <span className="text-xs font-bold uppercase tracking-widest text-background/70">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-background/70 sm:text-xs">
                   {slide.tag}
                 </span>
-                <h1 className="mt-3 max-w-xl whitespace-pre-line font-display text-3xl font-extrabold uppercase leading-[0.95] text-background sm:text-5xl lg:text-6xl">
+                <h1 className="mt-1.5 max-w-xl whitespace-pre-line font-display text-xl font-extrabold uppercase leading-[0.95] text-background sm:mt-3 sm:text-5xl lg:text-6xl">
                   {slide.title}
                 </h1>
-                <p className="mt-4 max-w-md text-sm text-background/80 sm:text-base">
+                <p className="mt-2 max-w-md text-xs text-background/80 sm:mt-4 sm:text-base">
                   {slide.description}
                 </p>
 
-                <div className="mt-6">
-                  <Button size="lg" asChild>
+                <div className="mt-3 sm:mt-6">
+                  <Button
+                    size="default"
+                    className="h-9 px-4 text-xs sm:h-11 sm:px-7 sm:text-base"
+                    asChild
+                  >
                     <Link href={slide.cta.href}>
                       {slide.cta.label}
                       <ArrowRight className="size-4" />

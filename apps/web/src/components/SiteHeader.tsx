@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronDown, Heart, Search, ShoppingBag } from "lucide-react";
+import { ChevronDown, Heart, Home, LayoutGrid, Search, ShoppingBag, Trophy } from "lucide-react";
 
 import { Button } from "@/design-system/components/ui/button";
 import { Logo } from "./Logo";
@@ -9,22 +9,34 @@ import { LEADERBOARD_LINKS } from "./siteNav.constants";
 
 export function SiteHeader() {
   return (
-    <header className="relative flex items-center justify-between gap-6 px-6 py-5 lg:px-10">
+    <header className="relative flex items-center justify-between gap-6 px-6 py-3 lg:px-10">
       <div className="flex items-center gap-10">
         <Logo />
-        <nav className="hidden items-center gap-7 text-sm md:flex">
-          <Link href="/" className="font-semibold text-foreground">
-            Home
+        <nav className="hidden items-center gap-5 text-sm lg:flex xl:gap-7">
+          <Link
+            href="/"
+            aria-label="Home"
+            className="flex items-center gap-1.5 font-semibold text-foreground"
+          >
+            <Home className="size-4 shrink-0" />
+            <span className="hidden xl:inline">Home</span>
           </Link>
-          <Link href="#" className="text-muted-foreground transition-colors hover:text-foreground">
-            Collections
+          <Link
+            href="#"
+            aria-label="Collections"
+            className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <LayoutGrid className="size-4 shrink-0" />
+            <span className="hidden xl:inline">Collections</span>
           </Link>
           <div className="group relative">
             <Link
               href="#"
-              className="flex items-center gap-1 py-2 text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Brand leaderboard"
+              className="flex items-center gap-1.5 py-2 text-muted-foreground transition-colors hover:text-foreground"
             >
-              Brand leaderboard
+              <Trophy className="size-4 shrink-0" />
+              <span className="hidden xl:inline">Brand leaderboard</span>
               <ChevronDown className="size-4 transition-transform group-hover:rotate-180" />
             </Link>
 
@@ -45,7 +57,7 @@ export function SiteHeader() {
         </nav>
       </div>
 
-      <div className="hidden items-center gap-4 md:flex">
+      <div className="hidden items-center gap-4 lg:flex">
         <ShopExploreToggle />
 
         <div className="hidden items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-muted-foreground lg:flex">
@@ -53,7 +65,7 @@ export function SiteHeader() {
           <input
             type="search"
             placeholder="Search kurta, kastha, creators"
-            className="w-56 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+            className="w-40 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground xl:w-56"
           />
         </div>
       </div>
@@ -69,7 +81,7 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 lg:flex">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/login">Log in</Link>
           </Button>
