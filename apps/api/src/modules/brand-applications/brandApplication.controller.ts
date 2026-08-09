@@ -5,8 +5,14 @@ import { brandApplicationService } from "./brandApplication.service.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 
 import { validated } from "../../shared/middlewares/validate.js";
+import { getAuthPrincipal } from "../../shared/middlewares/require-auth.js";
 
-import type { CreateBrandApplicationBody } from "./brandApplication.schemas.js";
+import type {
+  BrandApplicationIdParam,
+  CreateBrandApplicationBody,
+  ListBrandApplicationsQuery,
+  RejectBrandApplicationBody,
+} from "./brandApplication.schemas.js";
 
 const CREATED_STATUS = 201;
 
@@ -21,5 +27,33 @@ export const brandApplicationController = {
       "Application received. We'll be in touch within a week.",
       CREATED_STATUS,
     );
+  },
+
+  async list(_req: Request, res: Response) {
+    const { status } = validated.query<ListBrandApplicationsQuery>(res);
+    const applications = await brandApplicationService.list(status);
+
+    sendSuccess(res, applications, "Brand applications.");
+  },
+
+  async approve(_req: Request, res: Response) {
+    const { id } = validated.params<BrandApplicationIdParam>(res);
+    const principal = getAuthPrincipal(res);
+    if (!principal) throw new Error("approve() reached without an auth principal");
+
+    await brandApplicationService.approve(id, principal.userId);
+
+    sendSuccess(res, null, "Application approved. Invite sent.");
+  },
+
+  async reject(_req: Request, res: Response) {
+    const { id } = validated.params<BrandApplicationIdParam>(res);
+    const { reason } = validated.body<RejectBrandApplicationBody>(res);
+    const principal = getAuthPrincipal(res);
+    if (!principal) throw new Error("reject() reached without an auth principal");
+
+    await brandApplicationService.reject(id, principal.userId, reason);
+
+    sendSuccess(res, null, "Application rejected.");
   },
 };
