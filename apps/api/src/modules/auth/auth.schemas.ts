@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { phoneSchema } from "#lib/phone.utils.js";
+import { TokenPurpose } from "#constants/enums/auth.enum.js";
 
 const NAME_MIN = 2;
 const NAME_MAX = 100;
@@ -62,9 +63,22 @@ export const brandInviteQuerySchema = z.object({
   token: z.string().min(1),
 });
 
+export const registerAdminSchema = z
+  .object({
+    inviteToken: z.string().min(1),
+    phone: phoneSchema,
+    password: passwordField,
+    confirmPassword: z.string(),
+  })
+  .refine(passwordsMatch, CONFIRM_PASSWORD_ISSUE);
+
+export const adminInviteQuerySchema = z.object({
+  token: z.string().min(1),
+});
+
 export const validateTokenQuerySchema = z.object({
   token: z.string().min(1),
-  purpose: z.enum(["email-verification", "password-reset"]),
+  purpose: z.enum(TokenPurpose),
 });
 
 export const resendVerificationSchema = z.object({
@@ -78,5 +92,7 @@ export type ForgotPasswordBody = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordBody = z.infer<typeof resetPasswordSchema>;
 export type RegisterBrandBody = z.infer<typeof registerBrandSchema>;
 export type BrandInviteQuery = z.infer<typeof brandInviteQuerySchema>;
+export type RegisterAdminBody = z.infer<typeof registerAdminSchema>;
+export type AdminInviteQuery = z.infer<typeof adminInviteQuerySchema>;
 export type ValidateTokenQuery = z.infer<typeof validateTokenQuerySchema>;
 export type ResendVerificationBody = z.infer<typeof resendVerificationSchema>;

@@ -1,9 +1,11 @@
 import type { Request, Response } from "express";
 import { validated } from "../../shared/middlewares/validate.js";
 import type {
+  AdminInviteQuery,
   BrandInviteQuery,
   ForgotPasswordBody,
   LoginBody,
+  RegisterAdminBody,
   RegisterBody,
   RegisterBrandBody,
   ResendVerificationBody,
@@ -100,6 +102,22 @@ export const authController = {
   async getBrandInvite(_req: Request, res: Response) {
     const { token } = validated.query<BrandInviteQuery>(res);
     const invite = await authService.getBrandInvite(token);
+
+    sendSuccess(res, invite, "Invite is valid.");
+  },
+
+  async registerAdmin(_req: Request, res: Response) {
+    const { inviteToken, phone, password } = validated.body<RegisterAdminBody>(res);
+    const { accessToken, refreshToken, refreshTokenTtlSeconds, user } =
+      await authService.registerAdmin({ inviteToken, phone, password });
+
+    setRefreshCookie(res, refreshToken, refreshTokenTtlSeconds);
+    sendSuccess(res, { accessToken, user }, "Admin account created.", CREATED_STATUS);
+  },
+
+  async getAdminInvite(_req: Request, res: Response) {
+    const { token } = validated.query<AdminInviteQuery>(res);
+    const invite = await authService.getAdminInvite(token);
 
     sendSuccess(res, invite, "Invite is valid.");
   },

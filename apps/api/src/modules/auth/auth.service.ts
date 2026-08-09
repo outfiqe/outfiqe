@@ -3,12 +3,17 @@ import jwt from "jsonwebtoken";
 import { AppError } from "../../shared/middlewares/error-handler.js";
 import { DomainEvents, eventBus } from "../../shared/events/event-bus.js";
 import { userRepository } from "../users/user.repository.js";
+import { adminInviteRepository } from "../admin-invites/adminInvite.repository.js";
 import { authRepository } from "./auth.repository.js";
 
 import { TokenPurpose, TokenTypeEnum } from "#constants/enums/auth.enum.js";
 import { env } from "#config/env.config.js";
 import { parseDurationMs } from "#lib/duration.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
+import {
+  passwordResetTemplate,
+  verifyEmailTemplate,
+} from "../../shared/email-templates/templates.js";
 import { generateToken } from "#lib/generate-token.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { hashPassword, verifyPassword } from "#lib/password.utils.js";
@@ -18,12 +23,14 @@ import logger from "#lib/winston.utils.js";
 import { BrandRole, UserRole } from "../../generated/prisma/enums.js";
 import type { UserRecord } from "../users/user.types.js";
 import type {
+  AdminInviteInfo,
   AuthSession,
   AuthUser,
   BrandAuthSession,
   BrandAuthUser,
   BrandInviteInfo,
   IssuedTokens,
+  RegisterAdminInput,
   RegisterBrandInput,
   RegisterInput,
 } from "./auth.types.js";
@@ -38,8 +45,8 @@ const MS_PER_SECOND = 1000;
 
 const EMAIL_VERIFICATION_TTL = "24h";
 const PASSWORD_RESET_TTL = "1h";
-const EMAIL_VERIFICATION_URL = "https://outfiqe.com/verify-email";
-const PASSWORD_RESET_URL = "https://outfiqe.com/reset-password";
+const EMAIL_VERIFICATION_URL = `${env.FRONTEND_URL}/verify-email`;
+const PASSWORD_RESET_URL = `${env.FRONTEND_URL}/reset-password`;
 
 const INVALID_CREDENTIALS_MESSAGE = "Incorrect email or password.";
 const USER_NOT_FOUND_MESSAGE = "User not found.";
@@ -99,11 +106,14 @@ const sendVerificationEmail = async (user: Pick<UserRecord, "id" | "email">): Pr
     { sub: user.id, purpose: TokenPurpose.EMAIL_VERIFICATION },
     EMAIL_VERIFICATION_TTL,
   );
+  const url = `${EMAIL_VERIFICATION_URL}?token=${verificationToken}`;
+  const { subject, html } = verifyEmailTemplate(url);
 
   await sendEmail({
     to: user.email,
-    subject: "Verify your Outfiqe account",
-    body: `Welcome to Outfiqe! Verify your email: ${EMAIL_VERIFICATION_URL}?token=${verificationToken}`,
+    subject,
+    body: `Welcome to Outfiqe! Verify your email: ${url}`,
+    html,
   });
 };
 
@@ -271,11 +281,14 @@ export const authService = {
       { sub: user.id, purpose: TokenPurpose.PASSWORD_RESET },
       PASSWORD_RESET_TTL,
     );
+    const url = `${PASSWORD_RESET_URL}?token=${resetToken}`;
+    const { subject, html } = passwordResetTemplate(url);
 
     await sendEmail({
       to: user.email,
-      subject: "Reset your Outfiqe password",
-      body: `Reset your password: ${PASSWORD_RESET_URL}?token=${resetToken}`,
+      subject,
+      body: `Reset your password: ${url}`,
+      html,
     });
 
     logger.info(`Password reset email sent to user ${user.id}`);
@@ -320,7 +333,7 @@ export const authService = {
       );
     }
 
-    return { email: invite.email, brandName: invite.brandName };
+    return { email: invite.email, brandName: invite.brand.name };
   },
 
   async getCurrentUser(userId: string): Promise<AuthUser | BrandAuthUser> {
@@ -434,6 +447,109 @@ export const authService = {
         email: user.email,
         role: user.role,
         brandId: invite.brandId,
+      },
+    };
+  },
+
+  async getAdminInvite(inviteToken: string): Promise<AdminInviteInfo> {
+    const invite = await adminInviteRepository.findByTokenHash(hashToken(inviteToken));
+    if (!invite) {
+      throw new AppError("INVALID_INVITE", "This invite link is not valid.", BAD_REQUEST_STATUS);
+    }
+
+    if (invite.expiresAt.getTime() <= Date.now()) {
+      throw new AppError(
+        "INVITE_EXPIRED",
+        "This invite link has expired. Please contact us for a new one.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    if (invite.acceptedAt) {
+      throw new AppError(
+        "INVITE_USED",
+        "This invite link has already been used.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    return { email: invite.email, name: invite.name };
+  },
+
+  async registerAdmin(input: RegisterAdminInput): Promise<AuthSession> {
+    const { inviteToken, phone, password } = input;
+
+    const invite = await adminInviteRepository.findByTokenHash(hashToken(inviteToken));
+    if (!invite) {
+      throw new AppError(
+        "INVALID_INVITE",
+        "This invite link is not valid or has already been used.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    if (invite.expiresAt.getTime() <= Date.now()) {
+      throw new AppError(
+        "INVITE_EXPIRED",
+        "This invite link has expired. Please contact us for a new one.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    if (invite.acceptedAt) {
+      throw new AppError(
+        "INVITE_USED",
+        "This invite link has already been used.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    const existingByEmail = await userRepository.findByEmail(invite.email);
+    if (existingByEmail) {
+      throw new AppError(
+        "USER_EXISTS",
+        "An account with this email already exists.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const existingByPhone = await userRepository.findByPhone(phone);
+    if (existingByPhone) {
+      throw new AppError(
+        "PHONE_EXISTS",
+        "An account with this phone number already exists.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const passwordHash = await hashPassword(password);
+    const user = await userRepository.create({
+      name: invite.name,
+      email: invite.email,
+      phone,
+      password,
+      passwordHash,
+      role: UserRole.ADMIN,
+      emailVerified: true,
+    });
+
+    await adminInviteRepository.markAccepted(invite.id);
+
+    eventBus.emit(DomainEvents.ADMIN_REGISTERED, { userId: user.id, email: user.email });
+
+    const tokens = await issueTokens(user);
+
+    logger.info(`Admin registered: ${user.id}`);
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isCreator: user.isCreator,
+        creatorStatus: user.creatorStatus,
       },
     };
   },

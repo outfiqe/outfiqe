@@ -3,9 +3,11 @@ import { validate, validated } from "../../shared/middlewares/validate.js";
 import { rateLimit } from "../../shared/middlewares/rate-limit.js";
 import { requireAuth } from "../../shared/middlewares/require-auth.js";
 import {
+  adminInviteQuerySchema,
   brandInviteQuerySchema,
   forgotPasswordSchema,
   loginSchema,
+  registerAdminSchema,
   registerBrandSchema,
   registerSchema,
   resendVerificationSchema,
@@ -60,6 +62,16 @@ authRoutes.get(
   "/invite",
   validate({ query: brandInviteQuerySchema }),
   authController.getBrandInvite,
+);
+authRoutes.post(
+  "/register/admin",
+  validate({ body: registerAdminSchema }),
+  authController.registerAdmin,
+);
+authRoutes.get(
+  "/invite/admin",
+  validate({ query: adminInviteQuerySchema }),
+  authController.getAdminInvite,
 );
 authRoutes.get(
   "/validate-token",
