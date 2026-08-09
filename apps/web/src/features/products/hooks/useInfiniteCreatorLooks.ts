@@ -1,8 +1,8 @@
 "use client";
 
 import { creatorLookFeedApi } from "../api/creatorLookFeedApi";
-import { useInfiniteProductPage } from "./useInfiniteProductPage";
+import { useInfiniteCursorPage } from "@/shared/hooks/useInfiniteCursorPage";
 
 export const useInfiniteCreatorLooks = () => {
-  return useInfiniteProductPage(["creator-looks"], (cursor) => creatorLookFeedApi.list({ cursor }));
+  return useInfiniteCursorPage(["creator-looks"], (cursor) => creatorLookFeedApi.list({ cursor }));
 };

@@ -2,10 +2,35 @@ import { prisma } from "../../shared/db/prisma.js";
 import type { CreatorStatus } from "../../generated/prisma/enums.js";
 import type { CreateUserInput, UserRecord } from "./user.types.js";
 
+import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
+
+const MAX_HANDLE_ATTEMPTS = 5;
+
+// Handles aren't user-chosen yet, so collisions are rare, but retry a few times under the
+// unique constraint rather than trusting a single findUnique + create isn't racy.
+const createWithUniqueHandle = async (
+  data: Omit<Parameters<typeof prisma.user.create>[0]["data"], "handle">,
+  name: string,
+): Promise<UserRecord> => {
+  const base = slugifyHandle(name);
+
+  for (let attempt = 0; attempt < MAX_HANDLE_ATTEMPTS; attempt++) {
+    const handle = attempt === 0 ? base : withHandleSuffix(base);
+    try {
+      return await prisma.user.create({ data: { ...data, handle } });
+    } catch (error) {
+      const isHandleCollision = error instanceof Error && "code" in error && error.code === "P2002";
+      if (!isHandleCollision || attempt === MAX_HANDLE_ATTEMPTS - 1) throw error;
+    }
+  }
+
+  throw new Error("unreachable");
+};
+
 export const userRepository = {
   async create(input: CreateUserInput & { passwordHash: string }): Promise<UserRecord> {
-    return prisma.user.create({
-      data: {
+    return createWithUniqueHandle(
+      {
         email: input.email,
         name: input.name,
         phone: input.phone,
@@ -13,7 +38,8 @@ export const userRepository = {
         ...(input.role !== undefined ? { role: input.role } : {}),
         ...(input.emailVerified !== undefined ? { emailVerified: input.emailVerified } : {}),
       },
-    });
+      input.name,
+    );
   },
 
   async findByEmail(email: string): Promise<UserRecord | null> {
@@ -26,6 +52,10 @@ export const userRepository = {
 
   async findById(id: string): Promise<UserRecord | null> {
     return prisma.user.findUnique({ where: { id } });
+  },
+
+  async findByHandle(handle: string): Promise<UserRecord | null> {
+    return prisma.user.findUnique({ where: { handle } });
   },
 
   async list(): Promise<UserRecord[]> {

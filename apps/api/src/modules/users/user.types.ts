@@ -4,12 +4,16 @@ export interface UserRecord {
   id: string;
   email: string;
   name: string;
+  handle: string;
   phone: string;
   passwordHash: string;
   role: UserRole;
   isCreator: boolean;
   creatorStatus: CreatorStatus;
+  heightCm: number | null;
   emailVerified: boolean;
+  followerCount: number;
+  followingCount: number;
   createdAt: Date;
   updatedAt: Date;
 }

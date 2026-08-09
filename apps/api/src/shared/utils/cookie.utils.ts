@@ -3,7 +3,7 @@ import type { CookieOptions, Request, Response } from "express";
 import { env } from "#config/env.config.js";
 
 const REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
-const AUTH_COOKIE_PATH = "/api/auth";
+const AUTH_COOKIE_PATH = "/";
 const MS_PER_SECOND = 1000;
 
 const baseCookieOptions: CookieOptions = {

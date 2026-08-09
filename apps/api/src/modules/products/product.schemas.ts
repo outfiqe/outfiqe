@@ -38,8 +38,14 @@ export const listPublicProductsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
 
+export const listBrandProductsQuerySchema = z.object({
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
+});
+
 export type CreateProductBody = z.infer<typeof createProductSchema>;
 export type UpdateProductBody = z.infer<typeof updateProductSchema>;
 export type ProductIdParam = z.infer<typeof productIdParamSchema>;
 export type ListReviewProductsQuery = z.infer<typeof listReviewProductsQuerySchema>;
 export type ListPublicProductsQuery = z.infer<typeof listPublicProductsQuerySchema>;
+export type ListBrandProductsQuery = z.infer<typeof listBrandProductsQuerySchema>;

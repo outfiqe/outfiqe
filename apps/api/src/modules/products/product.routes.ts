@@ -9,6 +9,7 @@ import {
   updateProductSchema,
 } from "./product.schemas.js";
 
+import { optionalAuth } from "../../shared/middlewares/optional-auth.js";
 import { requireAuth } from "../../shared/middlewares/require-auth.js";
 import { requireRole } from "../../shared/middlewares/require-role.js";
 import { validate } from "../../shared/middlewares/validate.js";
@@ -34,6 +35,12 @@ productRoutes.get(
   "/",
   validate({ query: listPublicProductsQuerySchema }),
   productController.listPublic,
+);
+productRoutes.get(
+  "/:id",
+  optionalAuth,
+  validate({ params: productIdParamSchema }),
+  productController.getPublicById,
 );
 
 productRoutes.post(

@@ -25,7 +25,7 @@ export const getServerSessionWithToken = async (): Promise<ServerSession | null>
   const cookieHeader = `${REFRESH_COOKIE_NAME}=${refreshToken}`;
 
   try {
-    const { accessToken } = await serverApiRequest<{ accessToken: string }>("/auth/refresh", {
+    const { accessToken } = await serverApiRequest<{ accessToken: string }>("/auth/session", {
       method: "POST",
       cookie: cookieHeader,
     });

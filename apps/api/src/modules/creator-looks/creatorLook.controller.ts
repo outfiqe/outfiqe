@@ -8,7 +8,16 @@ import { getAuthPrincipal } from "../../shared/middlewares/require-auth.js";
 import { validated } from "../../shared/middlewares/validate.js";
 
 import type { AuthPrincipal } from "#types/token.types.js";
-import type { CreateCreatorLookBody, ListCreatorLooksQuery } from "./creatorLook.schemas.js";
+import type {
+  CommentsQuery,
+  CreateCommentBody,
+  CreateCreatorLookBody,
+  FeedQuery,
+  ListCreatorLooksQuery,
+  LookIdParams,
+  TagClickBody,
+  TagClickParams,
+} from "./creatorLook.schemas.js";
 
 const CREATED_STATUS = 201;
 
@@ -38,5 +47,76 @@ export const creatorLookController = {
     const query = validated.query<ListCreatorLooksQuery>(res);
     const page = await creatorLookService.listPublic(query);
     sendSuccess(res, page, "Creator looks.");
+  },
+
+  async feed(_req: Request, res: Response) {
+    const viewerId = getAuthPrincipal(res)?.userId;
+    const query = validated.query<FeedQuery>(res);
+
+    const page = await creatorLookService.feed(viewerId, query);
+    sendSuccess(res, page, "Explore feed.");
+  },
+
+  async trendingTags(_req: Request, res: Response) {
+    const tags = await creatorLookService.trendingTags();
+    sendSuccess(res, { tags }, "Trending tags.");
+  },
+
+  async like(_req: Request, res: Response) {
+    const { userId } = requirePrincipal(res);
+    const { lookId } = validated.params<LookIdParams>(res);
+
+    const result = await creatorLookService.like(lookId, userId);
+    sendSuccess(res, result, "Liked.");
+  },
+
+  async unlike(_req: Request, res: Response) {
+    const { userId } = requirePrincipal(res);
+    const { lookId } = validated.params<LookIdParams>(res);
+
+    const result = await creatorLookService.unlike(lookId, userId);
+    sendSuccess(res, result, "Unliked.");
+  },
+
+  async save(_req: Request, res: Response) {
+    const { userId } = requirePrincipal(res);
+    const { lookId } = validated.params<LookIdParams>(res);
+
+    const result = await creatorLookService.save(lookId, userId);
+    sendSuccess(res, result, "Saved.");
+  },
+
+  async unsave(_req: Request, res: Response) {
+    const { userId } = requirePrincipal(res);
+    const { lookId } = validated.params<LookIdParams>(res);
+
+    const result = await creatorLookService.unsave(lookId, userId);
+    sendSuccess(res, result, "Unsaved.");
+  },
+
+  async listComments(_req: Request, res: Response) {
+    const { lookId } = validated.params<LookIdParams>(res);
+    const query = validated.query<CommentsQuery>(res);
+
+    const page = await creatorLookService.listComments(lookId, query);
+    sendSuccess(res, page, "Comments.");
+  },
+
+  async addComment(_req: Request, res: Response) {
+    const { userId } = requirePrincipal(res);
+    const { lookId } = validated.params<LookIdParams>(res);
+    const { body } = validated.body<CreateCommentBody>(res);
+
+    const comment = await creatorLookService.addComment(lookId, userId, body);
+    sendSuccess(res, comment, "Comment added.", CREATED_STATUS);
+  },
+
+  async recordTagClick(_req: Request, res: Response) {
+    const viewerId = getAuthPrincipal(res)?.userId;
+    const { lookId, productId } = validated.params<TagClickParams>(res);
+    const body = validated.body<TagClickBody>(res);
+
+    await creatorLookService.recordTagClick(lookId, productId, viewerId, body);
+    sendSuccess(res, { recorded: true }, "Recorded.");
   },
 };

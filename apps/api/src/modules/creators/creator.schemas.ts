@@ -12,5 +12,19 @@ export const creatorUserIdParamSchema = z.object({
   userId: z.uuid(),
 });
 
+export const creatorHandleParamSchema = z.object({
+  handle: z.string().min(1),
+});
+
+const DEFAULT_PAGE_SIZE = 12;
+const MAX_PAGE_SIZE = 50;
+
+export const listCreatorLooksQuerySchema = z.object({
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
+});
+
 export type ListCreatorsQuery = z.infer<typeof listCreatorsQuerySchema>;
 export type CreatorUserIdParam = z.infer<typeof creatorUserIdParamSchema>;
+export type CreatorHandleParam = z.infer<typeof creatorHandleParamSchema>;
+export type ListCreatorLooksQuery = z.infer<typeof listCreatorLooksQuerySchema>;

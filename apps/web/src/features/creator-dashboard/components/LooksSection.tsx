@@ -28,7 +28,7 @@ export function LooksSection() {
 
   const form = useForm<LookFormInput>({
     resolver: zodResolver(lookFormSchema),
-    defaultValues: { imageUrl: "", caption: "", productIds: [] },
+    defaultValues: { imageUrl: "", caption: "", taggedProducts: [] },
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -117,10 +117,10 @@ export function LooksSection() {
 
             <FormField
               control={form.control}
-              name="productIds"
+              name="taggedProducts"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tag products (1–6)</FormLabel>
+                  <FormLabel>Tag products (1–6) — size worn is required for each</FormLabel>
                   <Input
                     placeholder="Filter products…"
                     value={productFilter}
@@ -133,27 +133,45 @@ export function LooksSection() {
                         <p className="p-2 text-sm text-muted-foreground">Loading products…</p>
                       )}
                       {filteredProducts.map((product) => {
-                        const checked = field.value.includes(product.id);
+                        const tag = field.value.find((t) => t.productId === product.id);
                         return (
-                          <label
+                          <div
                             key={product.id}
                             className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
                           >
-                            <input
-                              type="checkbox"
-                              className="size-4 rounded border-border"
-                              checked={checked}
-                              onChange={(e) => {
-                                field.onChange(
-                                  e.target.checked
-                                    ? [...field.value, product.id]
-                                    : field.value.filter((id: string) => id !== product.id),
-                                );
-                              }}
-                            />
-                            <span className="text-foreground">{product.name}</span>
-                            <span className="text-muted-foreground">— {product.brand}</span>
-                          </label>
+                            <label className="flex flex-1 items-center gap-2">
+                              <input
+                                type="checkbox"
+                                className="size-4 rounded border-border"
+                                checked={tag !== undefined}
+                                onChange={(e) => {
+                                  field.onChange(
+                                    e.target.checked
+                                      ? [...field.value, { productId: product.id, sizeWorn: "" }]
+                                      : field.value.filter((t) => t.productId !== product.id),
+                                  );
+                                }}
+                              />
+                              <span className="text-foreground">{product.name}</span>
+                              <span className="text-muted-foreground">— {product.brand}</span>
+                            </label>
+                            {tag && (
+                              <Input
+                                placeholder="Size worn (e.g. M)"
+                                className="w-32"
+                                value={tag.sizeWorn}
+                                onChange={(e) =>
+                                  field.onChange(
+                                    field.value.map((t) =>
+                                      t.productId === product.id
+                                        ? { ...t, sizeWorn: e.target.value }
+                                        : t,
+                                    ),
+                                  )
+                                }
+                              />
+                            )}
+                          </div>
                         );
                       })}
                     </div>

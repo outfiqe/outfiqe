@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 
 import { creatorService } from "./creator.service.js";
+import { creatorLookService } from "../creator-looks/creatorLook.service.js";
 
 import { sendSuccess } from "#lib/api-response.utils.js";
 
@@ -8,7 +9,12 @@ import { getAuthPrincipal } from "../../shared/middlewares/require-auth.js";
 import { validated } from "../../shared/middlewares/validate.js";
 
 import type { AuthPrincipal } from "#types/token.types.js";
-import type { CreatorUserIdParam, ListCreatorsQuery } from "./creator.schemas.js";
+import type {
+  CreatorHandleParam,
+  CreatorUserIdParam,
+  ListCreatorLooksQuery,
+  ListCreatorsQuery,
+} from "./creator.schemas.js";
 
 const requirePrincipal = (res: Response): AuthPrincipal => {
   const principal = getAuthPrincipal(res);
@@ -52,5 +58,22 @@ export const creatorController = {
 
     await creatorService.reject(userId, principal.userId);
     sendSuccess(res, null, "Creator rejected.");
+  },
+
+  async getPublicByHandle(_req: Request, res: Response) {
+    const { handle } = validated.params<CreatorHandleParam>(res);
+    const principal = getAuthPrincipal(res);
+
+    const profile = await creatorService.getPublicProfile(handle, principal?.userId);
+    sendSuccess(res, profile, "Creator.");
+  },
+
+  async listLooksByHandle(_req: Request, res: Response) {
+    const { handle } = validated.params<CreatorHandleParam>(res);
+    const query = validated.query<ListCreatorLooksQuery>(res);
+
+    const profile = await creatorService.getPublicProfile(handle);
+    const page = await creatorLookService.listPublicByCreator(profile.userId, query);
+    sendSuccess(res, page, "Creator's tagged pieces.");
   },
 };

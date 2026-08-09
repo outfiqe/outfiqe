@@ -70,6 +70,13 @@ export const productController = {
     sendSuccess(res, products, "New arrivals.");
   },
 
+  async getPublicById(_req: Request, res: Response) {
+    const { id } = validated.params<ProductIdParam>(res);
+    const principal = getAuthPrincipal(res);
+    const product = await productService.getPublicDetail(id, principal?.userId);
+    sendSuccess(res, product, "Product.");
+  },
+
   async approve(_req: Request, res: Response) {
     const { userId } = requirePrincipal(res);
     const { id } = validated.params<ProductIdParam>(res);

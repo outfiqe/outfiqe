@@ -1,17 +1,21 @@
 import { userRepository } from "../users/user.repository.js";
+import { productRepository } from "../products/product.repository.js";
+import { productService } from "../products/product.service.js";
+import { creatorLookRepository } from "../creator-looks/creatorLook.repository.js";
+import { followRepository } from "../follows/follow.repository.js";
 
 import { sendEmail } from "#lib/email.utils.js";
 import logger from "#lib/winston.utils.js";
 
 import { AppError } from "../../shared/middlewares/error-handler.js";
-import { CreatorStatus } from "../../generated/prisma/enums.js";
+import { CreatorStatus, FollowTargetType } from "../../generated/prisma/enums.js";
 import {
   creatorApprovedTemplate,
   creatorRejectedTemplate,
 } from "../../shared/email-templates/templates.js";
 
 import type { UserRecord } from "../users/user.types.js";
-import type { CreatorProfile } from "./creator.types.js";
+import type { CreatorProfile, PublicCreatorProfile } from "./creator.types.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
@@ -69,6 +73,31 @@ export const creatorService = {
     return toProfile(await requireUser(userId));
   },
 
+  async getPublicProfile(handle: string, viewerId?: string): Promise<PublicCreatorProfile> {
+    const user = await userRepository.findByHandle(handle);
+    if (!user || !user.isCreator) {
+      throw new AppError("NOT_FOUND", "Creator not found.", NOT_FOUND_STATUS);
+    }
+
+    const [postsCount, taggedProductIds, isFollowing] = await Promise.all([
+      creatorLookRepository.countByCreatorId(user.id),
+      productRepository.listProductIdsTaggedByCreator(user.id),
+      viewerId ? followRepository.isFollowing(viewerId, FollowTargetType.USER, user.id) : false,
+    ]);
+
+    return {
+      userId: user.id,
+      name: user.name,
+      handle: user.handle,
+      heightCm: user.heightCm,
+      creatorStatus: user.creatorStatus,
+      postsCount,
+      followerCount: user.followerCount,
+      taggedPiecesCount: taggedProductIds.length,
+      isFollowing,
+    };
+  },
+
   async list(status?: CreatorStatus): Promise<CreatorProfile[]> {
     const users = await userRepository.listByCreatorStatus(status);
     return users.map(toProfile);
@@ -81,6 +110,7 @@ export const creatorService = {
       creatorStatus: CreatorStatus.APPROVED,
       isCreator: true,
     });
+    await productService.recountWornByForCreator(userId);
 
     const { subject, html } = creatorApprovedTemplate();
     await sendEmail({

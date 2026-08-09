@@ -106,7 +106,12 @@ export function createApiClient({
     return res.data;
   };
 
-  return { get, post, patch, setAccessToken, getAccessToken, setUnauthorizedHandler };
+  const del = async <T>(path: string, options?: RequestOptions): Promise<ApiSuccessEnvelope<T>> => {
+    const res = await http.delete<ApiSuccessEnvelope<T>>(path, options);
+    return res.data;
+  };
+
+  return { get, post, patch, del, setAccessToken, getAccessToken, setUnauthorizedHandler };
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;

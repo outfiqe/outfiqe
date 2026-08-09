@@ -45,7 +45,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const badgeLabel = product.isNew ? "New" : product.lowStock ? "Low stock" : null;
 
   return (
-    <Link href="#" className="group block">
+    <Link href={`/product/${product.id}`} className="group block">
       <div
         className="relative flex aspect-4/5 items-center justify-center rounded-2xl bg-cover bg-center"
         style={{
