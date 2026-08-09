@@ -7,6 +7,8 @@ Node.js + React monorepo, structured as a modular monolith so it can move fast n
 - **Monorepo:** pnpm workspaces + Turborepo
 - **API:** Node 22, Express 5, Zod, Prisma 7 + PostgreSQL 16
 - **Web:** Next.js 16 (App Router, SSR/ISR), React 19, TanStack Query
+- **Admin:** React 19 + Vite, TanStack Query, axios — internal panel for reviewing brand
+  applications, approving creators, and managing admin access
 - **Language:** TypeScript
 
 ## Getting Started
@@ -19,6 +21,7 @@ pnpm install
 cp .env.example .env
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
+cp apps/admin/.env.example apps/admin/.env
 
 # 3. Start Postgres
 docker compose up -d
@@ -34,6 +37,8 @@ pnpm dev
 
 - API: [http://localhost:4000](http://localhost:4000)
 - Web: [http://localhost:3000](http://localhost:3000)
+- Admin: [http://localhost:5173](http://localhost:5173) — no login form of its own, sign in via
+  Web and it redirects you here if your account is `ADMIN`; see "Admin access" below
 
 ## Project Structure
 
@@ -42,10 +47,32 @@ apps/
   api/            Express API (modular monolith — one folder per domain)
   web/            Next.js storefront (App Router) — features mirror the API's modules,
                    routed via app/. SSR/ISR by default, for SEO.
+  admin/          Vite + React admin panel — brand application/product review, creator
+                   approval, admin team management. No login form — reuses web's session.
 packages/
-  shared-types/   Types shared between api and web
+  shared-types/   Types shared across api/web/admin (enums, API response envelope)
+  shared-utils/   Small runtime helpers shared across api/web/admin (e.g. phone regex)
 docker-compose.yml  Local Postgres
 ```
+
+## Admin access
+
+There's no self-serve signup for the admin panel, and no separate login form either — `apps/admin`
+has no `/login` page at all. Signing in always happens on `apps/web`'s `/login`; on success, an
+`ADMIN`-role account is sent straight to the admin panel instead of the regular dashboard (same
+shared cookie session, just a client-side redirect — see `getDefaultRouteForUser`/`getSafeRedirect`
+in `apps/web/src/features/auth`). Visiting the admin panel while signed out bounces you to
+`apps/web`'s login and back.
+
+The **first** admin in an environment is created by the API on boot from env vars
+(`ADMIN_BOOTSTRAP_EMAIL`/`ADMIN_BOOTSTRAP_PASSWORD`/`ADMIN_BOOTSTRAP_PHONE` in `apps/api/.env`,
+see `apps/api/.env.example`) — set all three, start the API once, then unset or rotate the
+password. From there, sign in (via `apps/web`) and use **Team** to invite further admins (email +
+link, same pattern as brand invites).
+
+Brand applications are approved from the admin panel too — approving one creates a real `Brand`
+row and emails the applicant an invite link to set up their account at `apps/web`'s
+`/register/brand`. There is no manual CLI step anymore.
 
 ## SEO
 
@@ -74,11 +101,12 @@ Run from `apps/api` (or via `pnpm --filter @outfiqe/api <script>`):
 
 ## Environment Variables
 
-| File            | Used by              | Notes                                                                                             |
-| --------------- | -------------------- | ------------------------------------------------------------------------------------------------- |
-| `.env`          | `docker-compose.yml` | Postgres credentials                                                                              |
-| `apps/api/.env` | API                  | `DATABASE_URL`, `JWT_SECRET`, token TTLs                                                          |
-| `apps/web/.env` | Web                  | `API_URL`, `SITE_URL` — both server-only (no `NEXT_PUBLIC_` prefix), never shipped to the browser |
+| File              | Used by              | Notes                                                                                                                                  |
+| ----------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `.env`            | `docker-compose.yml` | Postgres credentials                                                                                                                   |
+| `apps/api/.env`   | API                  | `DATABASE_URL`, `JWT_SECRET`, token TTLs, `ALLOWED_ORIGINS` (CORS allowlist for web + admin), `ADMIN_BOOTSTRAP_*` (see "Admin access") |
+| `apps/web/.env`   | Web                  | `API_URL`, `SITE_URL` (server-only) and `NEXT_PUBLIC_ADMIN_URL` (client-exposed — the post-login redirect target for admins)           |
+| `apps/admin/.env` | Admin                | `VITE_API_URL` (the API), `VITE_WEB_URL` (where signed-out visitors get bounced to sign in) — both sent to the browser bundle          |
 
 `.env` files are gitignored; only the `.env.example` templates are committed.
 
