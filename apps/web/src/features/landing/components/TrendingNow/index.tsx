@@ -1,14 +1,16 @@
+import { getTrendingProductsServer } from "@/features/products/api/getProductsServer";
 import { ProductRail } from "../ProductRail";
-import { TRENDING_PRODUCTS } from "./trendingNow.constants";
 
-export function TrendingNow() {
+export async function TrendingNow() {
+  const products = await getTrendingProductsServer();
+
   return (
     <ProductRail
       eyebrow="Moving fast this week"
       title="Trending now"
       viewAllHref="#"
       viewAllLabel="See More"
-      products={TRENDING_PRODUCTS}
+      products={products}
     />
   );
 }
