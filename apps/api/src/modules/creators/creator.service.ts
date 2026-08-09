@@ -1,0 +1,114 @@
+import { userRepository } from "../users/user.repository.js";
+
+import { sendEmail } from "#lib/email.utils.js";
+import logger from "#lib/winston.utils.js";
+
+import { AppError } from "../../shared/middlewares/error-handler.js";
+import { CreatorStatus } from "../../generated/prisma/enums.js";
+import {
+  creatorApprovedTemplate,
+  creatorRejectedTemplate,
+} from "../../shared/email-templates/templates.js";
+
+import type { UserRecord } from "../users/user.types.js";
+import type { CreatorProfile } from "./creator.types.js";
+
+const NOT_FOUND_STATUS = 404;
+const CONFLICT_STATUS = 409;
+
+const toProfile = (user: UserRecord): CreatorProfile => ({
+  userId: user.id,
+  name: user.name,
+  email: user.email,
+  isCreator: user.isCreator,
+  creatorStatus: user.creatorStatus,
+});
+
+const requireUser = async (userId: string): Promise<UserRecord> => {
+  const user = await userRepository.findById(userId);
+  if (!user) throw new AppError("USER_NOT_FOUND", "User not found.", NOT_FOUND_STATUS);
+  return user;
+};
+
+const requirePendingCreator = async (userId: string): Promise<UserRecord> => {
+  const user = await requireUser(userId);
+  if (user.creatorStatus !== CreatorStatus.PENDING) {
+    throw new AppError(
+      "NOT_PENDING",
+      "This creator application is not pending review.",
+      CONFLICT_STATUS,
+    );
+  }
+  return user;
+};
+
+export const creatorService = {
+  async apply(userId: string): Promise<CreatorProfile> {
+    const user = await requireUser(userId);
+
+    if (
+      user.creatorStatus === CreatorStatus.PENDING ||
+      user.creatorStatus === CreatorStatus.APPROVED
+    ) {
+      throw new AppError(
+        "ALREADY_APPLIED",
+        "You've already applied to become a creator.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const updated = await userRepository.updateCreatorStatus(userId, {
+      creatorStatus: CreatorStatus.PENDING,
+    });
+
+    logger.info(`Creator application submitted: ${userId}`);
+    return toProfile(updated);
+  },
+
+  async getMine(userId: string): Promise<CreatorProfile> {
+    return toProfile(await requireUser(userId));
+  },
+
+  async list(status?: CreatorStatus): Promise<CreatorProfile[]> {
+    const users = await userRepository.listByCreatorStatus(status);
+    return users.map(toProfile);
+  },
+
+  async approve(userId: string, adminUserId: string): Promise<void> {
+    const user = await requirePendingCreator(userId);
+
+    await userRepository.updateCreatorStatus(userId, {
+      creatorStatus: CreatorStatus.APPROVED,
+      isCreator: true,
+    });
+
+    const { subject, html } = creatorApprovedTemplate();
+    await sendEmail({
+      to: user.email,
+      subject,
+      body: "Your Outfiqe creator account is approved.",
+      html,
+    });
+
+    logger.info(`Creator approved: ${userId} by admin ${adminUserId}`);
+  },
+
+  async reject(userId: string, adminUserId: string): Promise<void> {
+    const user = await requirePendingCreator(userId);
+
+    await userRepository.updateCreatorStatus(userId, {
+      creatorStatus: CreatorStatus.REJECTED,
+      isCreator: false,
+    });
+
+    const { subject, html } = creatorRejectedTemplate();
+    await sendEmail({
+      to: user.email,
+      subject,
+      body: "An update on your Outfiqe creator application.",
+      html,
+    });
+
+    logger.info(`Creator rejected: ${userId} by admin ${adminUserId}`);
+  },
+};
