@@ -15,7 +15,9 @@ export { getDefaultRouteForUser } from "../utils/getDefaultRoute";
 
 const REFRESH_COOKIE_NAME = "refresh_token";
 
-export const getServerSession = async (): Promise<UserSession | null> => {
+export type ServerSession = { user: UserSession; accessToken: string };
+
+export const getServerSessionWithToken = async (): Promise<ServerSession | null> => {
   const cookieStore = await cookies();
   const refreshToken = cookieStore.get(REFRESH_COOKIE_NAME)?.value;
   if (!refreshToken) return null;
@@ -29,11 +31,16 @@ export const getServerSession = async (): Promise<UserSession | null> => {
     });
     //TODO: ADD real Types for Api Data
     const rawUser = await serverApiRequest<unknown>("/auth/me", { accessToken });
-    return toUserSession(currentUserSchema.parse(rawUser));
+    return { user: toUserSession(currentUserSchema.parse(rawUser)), accessToken };
   } catch {
     // No valid session — not an error state for the guard, just "signed out".
     return null;
   }
+};
+
+export const getServerSession = async (): Promise<UserSession | null> => {
+  const session = await getServerSessionWithToken();
+  return session?.user ?? null;
 };
 
 export const getBrandInviteServer = async (token: string): Promise<BrandInviteInfo | null> => {
