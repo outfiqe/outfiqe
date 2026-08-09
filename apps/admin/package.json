@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/generate-routes.mjs",
     "build": "tsc -b && vite build",
+    "pretypecheck": "node scripts/generate-routes.mjs",
     "typecheck": "tsc -b",
     "lint": "oxlint",
     "preview": "vite preview",
@@ -23,6 +25,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "@tanstack/router-generator": "^1.167.26",
     "@tanstack/router-plugin": "^1.168.28",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
