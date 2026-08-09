@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-export const PHONE_REGEX = /^98\d{8}$/;
+import { NEPAL_PHONE_REGEX } from "@outfiqe/shared-utils";
 
 export const phoneSchema = z
   .string()
-  .regex(PHONE_REGEX, "Phone must be 10 digits starting with 98");
+  .regex(NEPAL_PHONE_REGEX, "Phone must be 10 digits starting with 98");

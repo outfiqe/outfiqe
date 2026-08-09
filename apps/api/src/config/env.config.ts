@@ -17,6 +17,15 @@ const envSchema = z.object({
   //TODO: ADD real smtp server when MVP is finished
   GMAIL_USER: z.email().default("anjesh67890@gmail.com"),
   GMAIL_APP_PASSWORD: z.string().optional(),
+  FRONTEND_URL: z.url().default("http://localhost:3000"),
+  ADMIN_URL: z.url().default("http://localhost:5173"),
+  ALLOWED_ORIGINS: z
+    .string()
+    .default("http://localhost:3000,http://localhost:5173")
+    .transform((value) => value.split(",").map((origin) => origin.trim())),
+  ADMIN_BOOTSTRAP_EMAIL: z.email().optional(),
+  ADMIN_BOOTSTRAP_PASSWORD: z.string().min(1).optional(),
+  ADMIN_BOOTSTRAP_PHONE: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
