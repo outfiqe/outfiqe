@@ -13,6 +13,9 @@ export const metadata: Metadata = {
     template: "%s · Outfiqe",
   },
   description: "Outfiqe — placeholder description, replace before launch.",
+  icons: {
+    icon: "/logo.svg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

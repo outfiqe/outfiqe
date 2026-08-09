@@ -18,6 +18,9 @@
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-primary-strong: hsl(var(--primary-strong));
 
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
 
