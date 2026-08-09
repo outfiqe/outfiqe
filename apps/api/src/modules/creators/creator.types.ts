@@ -7,3 +7,15 @@ export type CreatorProfile = {
   isCreator: boolean;
   creatorStatus: CreatorStatus;
 };
+
+export type PublicCreatorProfile = {
+  userId: string;
+  name: string;
+  handle: string;
+  heightCm: number | null;
+  creatorStatus: CreatorStatus;
+  postsCount: number;
+  followerCount: number;
+  taggedPiecesCount: number;
+  isFollowing: boolean;
+};

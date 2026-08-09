@@ -1,17 +1,42 @@
 import { creatorLookRepository } from "./creatorLook.repository.js";
+import { followRepository } from "../follows/follow.repository.js";
 import { productRepository } from "../products/product.repository.js";
-import { toPublicProduct } from "../products/product.service.js";
+import { productService, toPublicProduct } from "../products/product.service.js";
 import { userRepository } from "../users/user.repository.js";
 
 import { AppError } from "../../shared/middlewares/error-handler.js";
-import { CreatorStatus } from "../../generated/prisma/enums.js";
+import { DomainEvents, eventBus } from "../../shared/events/event-bus.js";
+import { CreatorStatus, FollowTargetType } from "../../generated/prisma/enums.js";
+import { extractHashtags } from "#lib/hashtags.utils.js";
 
-import type { CreateCreatorLookBody, ListCreatorLooksQuery } from "./creatorLook.schemas.js";
-import type { CreatorLookSummary, TaggedProductPage } from "./creatorLook.types.js";
+import type {
+  CreateCreatorLookBody,
+  ListCreatorLooksQuery,
+  TagClickBody,
+} from "./creatorLook.schemas.js";
+import type {
+  CommentPage,
+  CreatorLookSummary,
+  FeedPage,
+  TaggedProductPage,
+  TrendingTag,
+} from "./creatorLook.types.js";
 import type { PublicProduct } from "../products/product.types.js";
+import type { CreatorLookTagClickSource } from "../../generated/prisma/enums.js";
 
 const NOT_FOUND_STATUS = 404;
 const FORBIDDEN_STATUS = 403;
+const UNAUTHORIZED_STATUS = 401;
+
+const FOLLOWING_TAB = "following";
+const TRENDING_TAB = "trending";
+const FOR_YOU_TAB = "for_you";
+
+const requireActiveLook = async (lookId: string): Promise<{ id: string }> => {
+  const look = await creatorLookRepository.findActiveById(lookId);
+  if (!look) throw new AppError("LOOK_NOT_FOUND", "This look no longer exists.", NOT_FOUND_STATUS);
+  return look;
+};
 
 const requireApprovedCreator = async (userId: string): Promise<void> => {
   const user = await userRepository.findById(userId);
@@ -34,14 +59,20 @@ const requireApprovedProducts = async (productIds: string[]): Promise<void> => {
 export const creatorLookService = {
   async create(userId: string, input: CreateCreatorLookBody): Promise<CreatorLookSummary> {
     await requireApprovedCreator(userId);
-    await requireApprovedProducts(input.productIds);
+    const productIds = input.taggedProducts.map((tag) => tag.productId);
+    await requireApprovedProducts(productIds);
 
-    return creatorLookRepository.create({
+    const look = await creatorLookRepository.create({
       creatorId: userId,
       imageUrl: input.imageUrl,
       caption: input.caption,
-      productIds: input.productIds,
+      taggedProducts: input.taggedProducts,
+      hashtags: extractHashtags(input.caption ?? ""),
     });
+
+    await Promise.all(productIds.map((productId) => productService.recountWornBy(productId)));
+
+    return look;
   },
 
   async listMine(userId: string): Promise<CreatorLookSummary[]> {
@@ -51,5 +82,137 @@ export const creatorLookService = {
   async listPublic(query: ListCreatorLooksQuery): Promise<TaggedProductPage<PublicProduct>> {
     const page = await creatorLookRepository.listPublicTaggedProducts(query);
     return { products: page.products.map(toPublicProduct), nextCursor: page.nextCursor };
+  },
+
+  async listPublicByCreator(
+    creatorId: string,
+    query: ListCreatorLooksQuery,
+  ): Promise<TaggedProductPage<PublicProduct>> {
+    const page = await creatorLookRepository.listTaggedProductsByCreatorId(creatorId, query);
+    return { products: page.products.map(toPublicProduct), nextCursor: page.nextCursor };
+  },
+
+  async feed(
+    viewerId: string | undefined,
+    query: { tab: string; cursor?: string; limit: number },
+  ): Promise<FeedPage> {
+    const tab = query.tab;
+
+    if (tab === FOLLOWING_TAB) {
+      if (!viewerId) {
+        throw new AppError(
+          "UNAUTHORIZED",
+          "Sign in to see posts from creators you follow.",
+          UNAUTHORIZED_STATUS,
+        );
+      }
+
+      const followingCreatorIds = await followRepository.listFollowingIds(
+        viewerId,
+        FollowTargetType.USER,
+      );
+      if (followingCreatorIds.length === 0) {
+        // Nobody followed yet: fall back to trending rather than showing an empty feed.
+        return creatorLookRepository.feed({
+          tab: TRENDING_TAB,
+          cursor: query.cursor,
+          limit: query.limit,
+          viewerId,
+          followingCreatorIds: [],
+        });
+      }
+
+      return creatorLookRepository.feed({
+        tab: FOLLOWING_TAB,
+        cursor: query.cursor,
+        limit: query.limit,
+        viewerId,
+        followingCreatorIds,
+      });
+    }
+
+    // for_you has no dedicated personalisation query yet — it reuses the trending
+    // ranking (same fallback the spec itself defines for low-activity viewers),
+    // applied unconditionally for now. Swap in real scoring later without an API change.
+    const tabToUse = tab === FOR_YOU_TAB ? TRENDING_TAB : tab;
+
+    return creatorLookRepository.feed({
+      tab: tabToUse,
+      cursor: query.cursor,
+      limit: query.limit,
+      viewerId,
+      followingCreatorIds: [],
+    });
+  },
+
+  async trendingTags(): Promise<TrendingTag[]> {
+    return creatorLookRepository.trendingTags();
+  },
+
+  async like(lookId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
+    await requireActiveLook(lookId);
+    const result = await creatorLookRepository.like(lookId, userId);
+    eventBus.emit(DomainEvents.LOOK_LIKED, { lookId, userId });
+    return { liked: true, likeCount: result.likeCount };
+  },
+
+  async unlike(lookId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
+    await requireActiveLook(lookId);
+    const result = await creatorLookRepository.unlike(lookId, userId);
+    return { liked: false, likeCount: result.likeCount };
+  },
+
+  async save(lookId: string, userId: string): Promise<{ saved: boolean; saveCount: number }> {
+    await requireActiveLook(lookId);
+    const result = await creatorLookRepository.save(lookId, userId);
+    eventBus.emit(DomainEvents.LOOK_SAVED, { lookId, userId });
+    return { saved: true, saveCount: result.saveCount };
+  },
+
+  async unsave(lookId: string, userId: string): Promise<{ saved: boolean; saveCount: number }> {
+    await requireActiveLook(lookId);
+    const result = await creatorLookRepository.unsave(lookId, userId);
+    return { saved: false, saveCount: result.saveCount };
+  },
+
+  async listComments(
+    lookId: string,
+    query: { cursor?: string; limit: number },
+  ): Promise<CommentPage> {
+    await requireActiveLook(lookId);
+    return creatorLookRepository.listComments(lookId, query);
+  },
+
+  async addComment(lookId: string, userId: string, body: string) {
+    await requireActiveLook(lookId);
+    const comment = await creatorLookRepository.createComment(lookId, userId, body);
+    eventBus.emit(DomainEvents.LOOK_COMMENTED, { lookId, commentId: comment.id, userId });
+    return comment;
+  },
+
+  async recordTagClick(
+    lookId: string,
+    productId: string,
+    userId: string | undefined,
+    body: TagClickBody,
+  ): Promise<void> {
+    await requireActiveLook(lookId);
+
+    const tagged = await creatorLookRepository.tagExists(lookId, productId);
+    if (!tagged) {
+      throw new AppError(
+        "TAG_NOT_FOUND",
+        "This product isn't tagged in this look.",
+        NOT_FOUND_STATUS,
+      );
+    }
+
+    await creatorLookRepository.recordTagClick({
+      lookId,
+      productId,
+      userId,
+      sessionId: body.sessionId,
+      source: body.source as CreatorLookTagClickSource,
+    });
   },
 };

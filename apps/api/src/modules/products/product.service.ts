@@ -1,5 +1,6 @@
 import { productRepository } from "./product.repository.js";
 import { brandRepository } from "../brands/brand.repository.js";
+import { wishlistRepository } from "../wishlist/wishlist.repository.js";
 
 import { sendEmail } from "#lib/email.utils.js";
 import logger from "#lib/winston.utils.js";
@@ -19,6 +20,7 @@ import {
 
 import type {
   CreateProductBody,
+  ListBrandProductsQuery,
   ListPublicProductsQuery,
   UpdateProductBody,
 } from "./product.schemas.js";
@@ -26,6 +28,7 @@ import type {
   ProductRecord,
   ProductWithBrand,
   PublicProduct,
+  PublicProductDetail,
   PublicProductPage,
 } from "./product.types.js";
 
@@ -146,6 +149,56 @@ export const productService = {
     const [rows, counts] = await Promise.all([
       productRepository.listPublic({ category, type, cursor: query.cursor, limit: query.limit }),
       productRepository.countPublic({ category, type }),
+    ]);
+
+    const hasMore = rows.length > query.limit;
+    const page = hasMore ? rows.slice(0, query.limit) : rows;
+    const lastRow = page[page.length - 1];
+
+    return {
+      products: page.map(toPublicProduct),
+      nextCursor: hasMore && lastRow ? lastRow.id : null,
+      total: counts.total,
+      brandCount: counts.brandCount,
+    };
+  },
+
+  async getPublicDetail(id: string, viewerId?: string): Promise<PublicProductDetail> {
+    const product = await productRepository.findPublicById(id);
+    if (!product) throw new AppError("NOT_FOUND", "Product not found.", NOT_FOUND_STATUS);
+
+    const [seenOnCreators, isSaved] = await Promise.all([
+      productRepository.listSeenOnCreators(id),
+      viewerId ? wishlistRepository.isSaved(viewerId, id) : false,
+    ]);
+
+    return {
+      ...toPublicProduct(product),
+      brand: { id: product.brandId, name: product.brand.name },
+      sizes: product.sizes,
+      wornByCount: product.wornByCount,
+      seenOnCreators,
+      isSaved,
+    };
+  },
+
+  async recountWornBy(productId: string): Promise<void> {
+    const count = await productRepository.countDistinctApprovedCreators(productId);
+    await productRepository.updateWornByCount(productId, count);
+  },
+
+  async recountWornByForCreator(creatorId: string): Promise<void> {
+    const productIds = await productRepository.listProductIdsTaggedByCreator(creatorId);
+    await Promise.all(productIds.map((productId) => productService.recountWornBy(productId)));
+  },
+
+  async listPublicByBrand(
+    brandId: string,
+    query: ListBrandProductsQuery,
+  ): Promise<PublicProductPage> {
+    const [rows, counts] = await Promise.all([
+      productRepository.listPublic({ brandId, cursor: query.cursor, limit: query.limit }),
+      productRepository.countPublic({ brandId }),
     ]);
 
     const hasMore = rows.length > query.limit;

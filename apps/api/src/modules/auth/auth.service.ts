@@ -261,6 +261,36 @@ export const authService = {
     return tokens;
   },
 
+  // Non-rotating counterpart to refresh(): used by server-side session checks
+  // (SSR pages) that call this on every render and can't propagate a Set-Cookie
+  // back to the browser. Rotating there would burn the browser's refresh token
+  // on its first server-side use, logging the user out on the very next check.
+  async validateSession(rawRefreshToken: string | undefined): Promise<{ accessToken: string }> {
+    if (!rawRefreshToken) {
+      throw new AppError("MISSING_TOKEN", "No refresh token provided.", UNAUTHORIZED_STATUS);
+    }
+
+    const stored = await authRepository.findRefreshTokenByHash(hashToken(rawRefreshToken));
+    if (!stored) {
+      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
+    }
+
+    if (stored.expiresAt.getTime() <= Date.now()) {
+      throw new AppError(
+        "TOKEN_EXPIRED",
+        "Refresh token has expired. Please sign in again.",
+        UNAUTHORIZED_STATUS,
+      );
+    }
+
+    const user = await userRepository.findById(stored.userId);
+    if (!user) {
+      throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
+    }
+
+    return { accessToken: generateToken({ sub: user.id, role: user.role }, TokenTypeEnum.ACCESS) };
+  },
+
   async logout(rawRefreshToken: string | undefined): Promise<void> {
     if (!rawRefreshToken) return;
 

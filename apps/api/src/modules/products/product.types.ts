@@ -13,8 +13,24 @@ export type ProductRecord = {
   status: ProductStatus;
   reviewedAt: Date | null;
   reviewedById: string | null;
+  wornByCount: number;
   createdAt: Date;
   updatedAt: Date;
+};
+
+export type ProductSizeRecord = {
+  label: string;
+  inStock: boolean;
+};
+
+export type SeenOnCreator = {
+  creatorId: string;
+  name: string;
+  handle: string;
+  heightCm: number | null;
+  sizeWorn: string | null;
+  lookId: string;
+  lookImageUrl: string;
 };
 
 export type ProductWithBrand = ProductRecord & { brand: { name: string } };
@@ -48,4 +64,12 @@ export type PublicProductPage = {
   nextCursor: string | null;
   total: number;
   brandCount: number;
+};
+
+export type PublicProductDetail = Omit<PublicProduct, "brand"> & {
+  brand: { id: string; name: string };
+  sizes: ProductSizeRecord[];
+  wornByCount: number;
+  seenOnCreators: SeenOnCreator[];
+  isSaved: boolean;
 };

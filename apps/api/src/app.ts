@@ -12,6 +12,8 @@ import { creatorRoutes } from "./modules/creators/creator.routes.js";
 import { adminInviteRoutes } from "./modules/admin-invites/adminInvite.routes.js";
 import { productRoutes } from "./modules/products/product.routes.js";
 import { creatorLookRoutes } from "./modules/creator-looks/creatorLook.routes.js";
+import { followRoutes } from "./modules/follows/follow.routes.js";
+import { wishlistRoutes } from "./modules/wishlist/wishlist.routes.js";
 
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { env } from "#config/env.config.js";
@@ -37,6 +39,8 @@ export const createApp = () => {
   app.use("/api/admin/invites", adminInviteRoutes);
   app.use("/api/products", productRoutes);
   app.use("/api/creator-looks", creatorLookRoutes);
+  app.use("/api/follows", followRoutes);
+  app.use("/api/wishlist", wishlistRoutes);
 
   app.use(errorHandler);
 

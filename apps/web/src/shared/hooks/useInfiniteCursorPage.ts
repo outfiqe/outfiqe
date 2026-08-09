@@ -4,7 +4,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 
 type CursorPage = { nextCursor: string | null };
 
-export const useInfiniteProductPage = <T extends CursorPage>(
+export const useInfiniteCursorPage = <T extends CursorPage>(
   queryKey: readonly unknown[],
   fetchPage: (cursor?: string) => Promise<T>,
 ) => {

@@ -10,6 +10,8 @@ export type BrandRecord = {
   instagram: string;
   madeInNepal: boolean;
   applicationId: string | null;
+  followerCount: number;
+  rating: number | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -17,4 +19,15 @@ export type BrandRecord = {
 export type BrandProfile = {
   brand: BrandRecord;
   membershipRole: BrandRole;
+};
+
+export type PublicBrandProfile = {
+  id: string;
+  name: string;
+  category: BrandCategory;
+  madeInNepal: boolean;
+  rating: number | null;
+  productCount: number;
+  followerCount: number;
+  isFollowing: boolean;
 };

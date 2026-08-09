@@ -1,7 +1,9 @@
 import { brandRepository } from "./brand.repository.js";
+import { followRepository } from "../follows/follow.repository.js";
 
 import { AppError } from "../../shared/middlewares/error-handler.js";
-import type { BrandProfile } from "./brand.types.js";
+import { FollowTargetType } from "../../generated/prisma/enums.js";
+import type { BrandProfile, PublicBrandProfile } from "./brand.types.js";
 
 const NOT_FOUND_STATUS = 404;
 
@@ -18,5 +20,26 @@ export const brandService = {
     }
 
     return profile;
+  },
+
+  async getPublicProfile(id: string, viewerId?: string): Promise<PublicBrandProfile> {
+    const brand = await brandRepository.findById(id);
+    if (!brand) throw new AppError("NOT_FOUND", "Brand not found.", NOT_FOUND_STATUS);
+
+    const [productCount, isFollowing] = await Promise.all([
+      brandRepository.countApprovedProducts(id),
+      viewerId ? followRepository.isFollowing(viewerId, FollowTargetType.BRAND, id) : false,
+    ]);
+
+    return {
+      id: brand.id,
+      name: brand.name,
+      category: brand.category,
+      madeInNepal: brand.madeInNepal,
+      rating: brand.rating,
+      productCount,
+      followerCount: brand.followerCount,
+      isFollowing,
+    };
   },
 };

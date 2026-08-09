@@ -1,5 +1,6 @@
 import { prisma } from "../../shared/db/prisma.js";
 
+import { ProductStatus } from "../../generated/prisma/enums.js";
 import type { BrandProfile, BrandRecord } from "./brand.types.js";
 
 export const brandRepository = {
@@ -16,5 +17,9 @@ export const brandRepository = {
 
   async findById(id: string): Promise<BrandRecord | null> {
     return prisma.brand.findUnique({ where: { id } });
+  },
+
+  async countApprovedProducts(brandId: string): Promise<number> {
+    return prisma.product.count({ where: { brandId, status: ProductStatus.APPROVED } });
   },
 };

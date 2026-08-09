@@ -1,0 +1,37 @@
+import { z } from "zod";
+
+import { productTypeSchema } from "@/features/products/api/productSchemas";
+
+export const productSizeSchema = z.object({
+  label: z.string(),
+  inStock: z.boolean(),
+});
+export type ProductSize = z.infer<typeof productSizeSchema>;
+
+export const seenOnCreatorSchema = z.object({
+  creatorId: z.string(),
+  name: z.string(),
+  handle: z.string(),
+  heightCm: z.number().nullable(),
+  sizeWorn: z.string().nullable(),
+  lookId: z.string(),
+  lookImageUrl: z.string(),
+});
+export type SeenOnCreator = z.infer<typeof seenOnCreatorSchema>;
+
+export const productDetailSchema = z.object({
+  id: z.string(),
+  brand: z.object({ id: z.string(), name: z.string() }),
+  name: z.string(),
+  price: z.number(),
+  type: productTypeSchema,
+  categorySlug: z.string(),
+  imageUrl: z.string().nullable(),
+  lowStock: z.boolean(),
+  isNew: z.boolean(),
+  sizes: z.array(productSizeSchema),
+  wornByCount: z.number(),
+  seenOnCreators: z.array(seenOnCreatorSchema),
+  isSaved: z.boolean(),
+});
+export type ProductDetail = z.infer<typeof productDetailSchema>;

@@ -41,6 +41,7 @@ authRoutes.post("/register", validate({ body: registerSchema }), authController.
 authRoutes.post("/verify-email", validate({ body: verifyEmailSchema }), authController.verifyEmail);
 authRoutes.post("/login", validate({ body: loginSchema }), authController.login);
 authRoutes.post("/refresh", authController.refresh);
+authRoutes.post("/session", authController.session);
 authRoutes.post("/logout", authController.logout);
 authRoutes.post(
   "/forgot-password",
