@@ -71,9 +71,14 @@ export const creatorController = {
   async listLooksByHandle(_req: Request, res: Response) {
     const { handle } = validated.params<CreatorHandleParam>(res);
     const query = validated.query<ListCreatorLooksQuery>(res);
+    const principal = getAuthPrincipal(res);
 
     const profile = await creatorService.getPublicProfile(handle);
-    const page = await creatorLookService.listPublicByCreator(profile.userId, query);
-    sendSuccess(res, page, "Creator's tagged pieces.");
+    const page = await creatorLookService.listPublicByCreator(
+      profile.userId,
+      query,
+      principal?.userId,
+    );
+    sendSuccess(res, page, "Creator's posts.");
   },
 };

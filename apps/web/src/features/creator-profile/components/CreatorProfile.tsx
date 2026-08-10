@@ -9,10 +9,8 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { Button } from "@/design-system/components/ui/button";
 import { Badge } from "@/design-system/components/ui/badge";
-import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
-import { ProductCard } from "@/features/landing/components/ProductCard";
-import { toExploreProduct } from "@/features/products/api/toExploreProduct";
-import { useInfiniteCreatorTaggedPieces } from "../hooks/useInfiniteCreatorTaggedPieces";
+import { ExploreFeedSkeleton, PostCard } from "@/features/explore";
+import { useInfiniteCreatorLooks } from "../hooks/useInfiniteCreatorLooks";
 import type { CreatorProfile as CreatorProfileType } from "../api/creatorProfileSchemas";
 
 interface CreatorProfileProps {
@@ -23,7 +21,7 @@ export function CreatorProfile({ creator }: CreatorProfileProps) {
   const router = useRouter();
   const { isAuthenticated, state } = useAuth();
   const followMutation = useToggleFollow("user");
-  const looks = useInfiniteCreatorTaggedPieces(creator.handle);
+  const looks = useInfiniteCreatorLooks(creator.handle);
 
   const [isFollowing, setIsFollowing] = useState(creator.isFollowing);
   const [followerCount, setFollowerCount] = useState(creator.followerCount);
@@ -48,7 +46,7 @@ export function CreatorProfile({ creator }: CreatorProfileProps) {
     );
   };
 
-  const items = looks.data?.pages.flatMap((page) => page.products) ?? [];
+  const posts = looks.data?.pages.flatMap((page) => page.posts) ?? [];
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
@@ -106,13 +104,13 @@ export function CreatorProfile({ creator }: CreatorProfileProps) {
       </div>
 
       {looks.isLoading ? (
-        <ProductGridSkeleton className="grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4" />
-      ) : items.length === 0 ? (
-        <p className="py-10 text-sm text-muted-foreground">No tagged pieces yet.</p>
+        <ExploreFeedSkeleton />
+      ) : posts.length === 0 ? (
+        <p className="py-10 text-sm text-muted-foreground">No posts yet.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
-          {items.map((product) => (
-            <ProductCard key={product.id} product={toExploreProduct(product)} />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {posts.map((post) => (
+            <PostCard key={post.id} post={post} />
           ))}
         </div>
       )}

@@ -393,6 +393,20 @@ export const creatorLookRepository = {
     return { posts, nextCursor: listed.nextCursor };
   },
 
+  async feedByCreatorId(params: {
+    creatorId: string;
+    cursor?: string;
+    limit: number;
+    viewerId?: string;
+  }): Promise<FeedPage> {
+    const listed = await listIdsByFilter(
+      { creatorId: params.creatorId },
+      { cursor: params.cursor, limit: params.limit },
+    );
+    const posts = await hydrateFeedPosts(listed.ids, params.viewerId);
+    return { posts, nextCursor: listed.nextCursor };
+  },
+
   async trendingTags(): Promise<TrendingTag[]> {
     return fetchTrendingTags();
   },

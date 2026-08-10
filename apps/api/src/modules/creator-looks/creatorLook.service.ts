@@ -87,9 +87,14 @@ export const creatorLookService = {
   async listPublicByCreator(
     creatorId: string,
     query: ListCreatorLooksQuery,
-  ): Promise<TaggedProductPage<PublicProduct>> {
-    const page = await creatorLookRepository.listTaggedProductsByCreatorId(creatorId, query);
-    return { products: page.products.map(toPublicProduct), nextCursor: page.nextCursor };
+    viewerId?: string,
+  ): Promise<FeedPage> {
+    return creatorLookRepository.feedByCreatorId({
+      creatorId,
+      cursor: query.cursor,
+      limit: query.limit,
+      viewerId,
+    });
   },
 
   async feed(
