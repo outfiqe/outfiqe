@@ -10,11 +10,11 @@ import { ApplyAsCreatorButton } from "./ApplyAsCreatorButton";
 import { PostModal } from "./PostModal";
 import { useMyLooks } from "../hooks/useMyLooks";
 
-interface LooksSectionProps {
+type LooksSectionProps = {
   creatorStatus: CreatorStatus;
-}
+};
 
-export function LooksSection({ creatorStatus }: LooksSectionProps) {
+export const LooksSection = ({ creatorStatus }: LooksSectionProps) => {
   const [postModalOpen, setPostModalOpen] = useState(false);
   const looks = useMyLooks();
 
@@ -112,4 +112,4 @@ export function LooksSection({ creatorStatus }: LooksSectionProps) {
       <PostModal open={postModalOpen} onClose={() => setPostModalOpen(false)} />
     </div>
   );
-}
+};

@@ -1,7 +1,5 @@
 import { RotateCcw, Truck } from "lucide-react";
 
-// Mock delivery fee — no shipping/rates API exists yet, and free delivery isn't offered yet
-// either, so this is a flat fee with no threshold logic for now.
 const FLAT_SHIPPING_FEE = 150;
 
 export function ShippingInfo() {

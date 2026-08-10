@@ -20,7 +20,7 @@ const STATUS_LABEL: Record<CreatorStatus, string> = {
   [CreatorStatus.NONE]: "Not a creator yet",
 };
 
-export function CreatorProfileView({ profile }: { profile: CreatorProfile }) {
+export const CreatorProfileView = ({ profile }: { profile: CreatorProfile }) => {
   const looks = useMyLooks();
   const [name, setName] = useState(profile.name);
   const [editOpen, setEditOpen] = useState(false);
@@ -107,4 +107,4 @@ export function CreatorProfileView({ profile }: { profile: CreatorProfile }) {
       </Modal>
     </div>
   );
-}
+};

@@ -7,14 +7,12 @@ import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { useRecordSeenOnClick } from "../hooks/useRecordSeenOnClick";
 import type { SeenOnCreator } from "../api/productDetailSchemas";
 
-interface SeenOnCreatorsProps {
+type SeenOnCreatorsProps = {
   productId: string;
   creators: SeenOnCreator[];
-}
+};
 
-// Zone 2 of the page: real photos of real people, kept visually separate from the brand's
-// official product shots above. Height + size worn are what actually answer "will this fit me".
-export function SeenOnCreators({ productId, creators }: SeenOnCreatorsProps) {
+export const SeenOnCreators = ({ productId, creators }: SeenOnCreatorsProps) => {
   const recordClick = useRecordSeenOnClick();
   if (creators.length === 0) return null;
 
@@ -60,4 +58,4 @@ export function SeenOnCreators({ productId, creators }: SeenOnCreatorsProps) {
       </div>
     </section>
   );
-}
+};

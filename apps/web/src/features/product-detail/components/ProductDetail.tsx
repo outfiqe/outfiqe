@@ -17,11 +17,11 @@ import { ShippingInfo } from "./ShippingInfo";
 import { SeenOnCreators } from "./SeenOnCreators";
 import type { ProductDetail as ProductDetailType } from "../api/productDetailSchemas";
 
-interface ProductDetailProps {
+type ProductDetailProps = {
   product: ProductDetailType;
-}
+};
 
-export function ProductDetail({ product }: ProductDetailProps) {
+export const ProductDetail = ({ product }: ProductDetailProps) => {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const wishlistMutation = useToggleWishlist();
@@ -138,4 +138,4 @@ export function ProductDetail({ product }: ProductDetailProps) {
       <SeenOnCreators productId={product.id} creators={product.seenOnCreators} />
     </div>
   );
-}
+};

@@ -12,7 +12,7 @@ import { TASTE_CATEGORIES } from "../TasteCategories/tasteCategories.constants";
 import { ProductCard } from "../ProductCard";
 import { CategoryFilters } from "./CategoryFilters";
 
-export function CategoryResults() {
+export const CategoryResults = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const categorySlug = searchParams.get("category");
@@ -82,4 +82,4 @@ export function CategoryResults() {
       )}
     </section>
   );
-}
+};

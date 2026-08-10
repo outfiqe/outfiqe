@@ -22,12 +22,12 @@ const textareaClass =
   "w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-foreground";
 const SEARCH_DEBOUNCE_MS = 300;
 
-interface PostModalProps {
+type PostModalProps = {
   open: boolean;
   onClose: () => void;
-}
+};
 
-export function PostModal({ open, onClose }: PostModalProps) {
+export const PostModal = ({ open, onClose }: PostModalProps) => {
   const [productFilter, setProductFilter] = useState("");
   const debouncedFilter = useDebouncedValue(productFilter, SEARCH_DEBOUNCE_MS);
   const taggableProducts = useTaggableProducts(debouncedFilter);
@@ -195,4 +195,4 @@ export function PostModal({ open, onClose }: PostModalProps) {
       </form>
     </Modal>
   );
-}
+};

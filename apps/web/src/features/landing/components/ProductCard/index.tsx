@@ -39,30 +39,25 @@ const SWATCH_PALETTE = [
 
 const AVATAR_COLORS = ["#c9a27a", "#7d8fa3", "#a3785a"];
 
-// Mock "bought" count — no purchase-tracking API exists yet, so this is a stable, deterministic
-// display value derived from the product id (not a random one, so it doesn't jitter on re-render).
 const MOCK_BOUGHT_LABELS = ["300+", "800+", "1.2k+", "2.4k+", "5k+", "8k+", "12k+"];
 
-function getSwatchColor(productId: string) {
+const getSwatchColor = (productId: string) => {
   const charCodeSum = [...productId].reduce((sum, char) => sum + char.charCodeAt(0), 0);
   return SWATCH_PALETTE[charCodeSum % SWATCH_PALETTE.length];
-}
+};
 
-function getMockBoughtLabel(productId: string) {
-  // Position-weighted so this doesn't move in lockstep with the other id-derived hashes on this
-  // card (swatch color, worn-by count) — a flat sum with a constant multiplier equal to the
-  // modulus would collapse every product onto the same bucket.
+const getMockBoughtLabel = (productId: string) => {
   const weightedSum = [...productId].reduce(
     (sum, char, index) => sum + char.charCodeAt(0) * (index + 1),
     0,
   );
   return MOCK_BOUGHT_LABELS[weightedSum % MOCK_BOUGHT_LABELS.length];
-}
+};
 
-interface ProductCardProps {
+type ProductCardProps = {
   product: ExploreProduct;
   onToggleSaved?: (productId: string, saved: boolean) => void;
-}
+};
 
 export function ProductCard({ product, onToggleSaved }: ProductCardProps) {
   const router = useRouter();

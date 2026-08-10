@@ -9,8 +9,6 @@ interface TrustLineProps {
   onClick: () => void;
 }
 
-// "Worn by N creators" — the single most important element on the page. Hidden entirely at
-// zero (per spec: showing nothing beats "Worn by 0 creators"), and counts creators, not posts.
 export function TrustLine({ wornByCount, creators, onClick }: TrustLineProps) {
   if (wornByCount === 0) return null;
 

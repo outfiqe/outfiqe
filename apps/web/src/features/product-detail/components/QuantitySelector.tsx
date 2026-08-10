@@ -5,17 +5,17 @@ import { Minus, Plus } from "lucide-react";
 const MIN_QUANTITY = 1;
 const DEFAULT_MAX_QUANTITY = 10;
 
-interface QuantitySelectorProps {
+type QuantitySelectorProps = {
   quantity: number;
   onChange: (quantity: number) => void;
   max?: number;
-}
+};
 
-export function QuantitySelector({
+export const QuantitySelector = ({
   quantity,
   onChange,
   max = DEFAULT_MAX_QUANTITY,
-}: QuantitySelectorProps) {
+}: QuantitySelectorProps) => {
   return (
     <div className="border-t border-border pt-4">
       <p className="mb-2 text-xs text-muted-foreground">Quantity</p>
@@ -44,4 +44,4 @@ export function QuantitySelector({
       </div>
     </div>
   );
-}
+};

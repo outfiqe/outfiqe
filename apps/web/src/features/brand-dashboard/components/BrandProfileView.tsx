@@ -19,13 +19,13 @@ const CATEGORY_LABEL: Record<BrandCategory, string> = {
   FORMAL: "Formal",
 };
 
-interface EditableFields {
+type EditableFields = {
   contactName: string;
   phone: string;
   instagram: string;
-}
+};
 
-export function BrandProfileView({ profile }: { profile: BrandProfile }) {
+export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
   const products = useBrandProducts();
   const { brand } = profile;
 
@@ -146,4 +146,4 @@ export function BrandProfileView({ profile }: { profile: BrandProfile }) {
       </Modal>
     </div>
   );
-}
+};

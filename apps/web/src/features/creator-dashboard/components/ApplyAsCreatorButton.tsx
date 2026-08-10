@@ -4,7 +4,7 @@ import { Button } from "@/design-system/components/ui/button";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { useApplyAsCreator } from "../hooks/useApplyAsCreator";
 
-export function ApplyAsCreatorButton() {
+export const ApplyAsCreatorButton = () => {
   const apply = useApplyAsCreator();
 
   return (
@@ -17,4 +17,4 @@ export function ApplyAsCreatorButton() {
       )}
     </div>
   );
-}
+};

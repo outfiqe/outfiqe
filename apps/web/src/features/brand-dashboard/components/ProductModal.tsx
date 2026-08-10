@@ -23,12 +23,12 @@ import {
 const selectClass =
   "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-foreground";
 
-interface ProductModalProps {
+type ProductModalProps = {
   open: boolean;
   onClose: () => void;
-}
+};
 
-export function ProductModal({ open, onClose }: ProductModalProps) {
+export const ProductModal = ({ open, onClose }: ProductModalProps) => {
   const create = useCreateProduct();
 
   const form = useForm<ProductFormInput>({
@@ -166,4 +166,4 @@ export function ProductModal({ open, onClose }: ProductModalProps) {
       </form>
     </Modal>
   );
-}
+};

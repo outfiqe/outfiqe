@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { Button } from "@/design-system/components/ui/button";
 
-export function BrandCallout() {
+export const BrandCallout = () => {
   return (
     <section className="px-6 py-16 sm:py-24 lg:px-10">
       <div className="rounded-3xl bg-linear-to-br from-[#241006] via-[#7a3010] to-primary px-6 py-10 sm:px-10 sm:py-14">
@@ -24,4 +24,4 @@ export function BrandCallout() {
       </div>
     </section>
   );
-}
+};

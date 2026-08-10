@@ -4,23 +4,23 @@ import { ArrowRight } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 import { ProductCard, type ExploreProduct } from "../ProductCard";
 
-interface ProductRailProps {
+type ProductRailProps = {
   eyebrow?: string;
   title: string;
   description?: string;
   viewAllHref?: string;
   viewAllLabel?: string;
   products: ExploreProduct[];
-}
+};
 
-export function ProductRail({
+export const ProductRail = ({
   eyebrow,
   title,
   description,
   viewAllHref,
   viewAllLabel = "View all",
   products,
-}: ProductRailProps) {
+}: ProductRailProps) => {
   return (
     <section className="px-6 py-10 sm:py-14 lg:px-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -61,4 +61,4 @@ export function ProductRail({
       </div>
     </section>
   );
-}
+};
