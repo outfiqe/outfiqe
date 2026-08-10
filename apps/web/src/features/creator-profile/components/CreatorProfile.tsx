@@ -9,6 +9,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { Button } from "@/design-system/components/ui/button";
 import { Badge } from "@/design-system/components/ui/badge";
+import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useInfiniteCreatorTaggedPieces } from "../hooks/useInfiniteCreatorTaggedPieces";
@@ -104,15 +105,17 @@ export function CreatorProfile({ creator }: CreatorProfileProps) {
         )}
       </div>
 
-      {items.length === 0 && !looks.isLoading && (
+      {looks.isLoading ? (
+        <ProductGridSkeleton className="grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4" />
+      ) : items.length === 0 ? (
         <p className="py-10 text-sm text-muted-foreground">No tagged pieces yet.</p>
+      ) : (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+          {items.map((product) => (
+            <ProductCard key={product.id} product={toExploreProduct(product)} />
+          ))}
+        </div>
       )}
-
-      <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
-        {items.map((product) => (
-          <ProductCard key={product.id} product={toExploreProduct(product)} />
-        ))}
-      </div>
 
       {looks.hasNextPage && (
         <div className="mt-8 flex justify-center">

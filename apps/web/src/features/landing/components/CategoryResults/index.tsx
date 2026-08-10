@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
 import { Button } from "@/design-system/components/ui/button";
+import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
@@ -60,7 +61,9 @@ export function CategoryResults() {
         <CategoryFilters categorySlug={category.slug} activeType={activeType} />
       </div>
 
-      {!isLoading && products.length === 0 ? (
+      {isLoading ? (
+        <ProductGridSkeleton className="mt-8" />
+      ) : products.length === 0 ? (
         <p className="mt-12 text-sm text-muted-foreground">No pieces in this filter yet.</p>
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { cn } from "@/shared/lib/cn";
+import { Skeleton } from "@/design-system/components/ui/skeleton";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useFollowCreator } from "../hooks/useFollowCreator";
 import { useSuggestedCreators } from "../hooks/useSuggestedCreators";
@@ -26,7 +27,7 @@ export function Sidebar({ onTagClick }: SidebarProps) {
 function SuggestedCreators() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const { data: creators } = useSuggestedCreators();
+  const { data: creators, isLoading } = useSuggestedCreators();
   const followMutation = useFollowCreator();
 
   return (
@@ -53,6 +54,20 @@ function SuggestedCreators() {
       )}
 
       <div className="mt-3 flex flex-col">
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-2.5 border-b border-border py-2.5 last:border-b-0"
+            >
+              <Skeleton className="size-8 shrink-0 rounded-full" />
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-2.5 w-16" />
+              </div>
+            </div>
+          ))}
+
         {creators?.map((creator) => (
           <div
             key={creator.id}
@@ -88,8 +103,8 @@ function SuggestedCreators() {
 }
 
 function TrendingTags({ onTagClick }: { onTagClick: (tag: string) => void }) {
-  const { data: tags } = useTrendingTags();
-  if (!tags || tags.length === 0) return null;
+  const { data: tags, isLoading } = useTrendingTags();
+  if (!isLoading && (!tags || tags.length === 0)) return null;
 
   return (
     <div className="rounded-xl border border-border p-4">
@@ -97,7 +112,12 @@ function TrendingTags({ onTagClick }: { onTagClick: (tag: string) => void }) {
         Trending tags
       </h4>
       <div className="mt-3 flex flex-wrap gap-1.5">
-        {tags.map((entry) => (
+        {isLoading &&
+          Array.from({ length: 5 }).map((_, index) => (
+            <Skeleton key={index} className="h-7 w-16 rounded-full" />
+          ))}
+
+        {tags?.map((entry) => (
           <button
             key={entry.tag}
             type="button"
