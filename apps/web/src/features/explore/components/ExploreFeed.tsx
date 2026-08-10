@@ -3,13 +3,16 @@
 import { useState } from "react";
 
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
-import { FeedFilterTabs } from "./FeedFilterTabs";
+import { FeedFilterTabs, type FeedLayout } from "./FeedFilterTabs";
 import { PostCard } from "./PostCard";
+import { PostListItem } from "./PostListItem";
+import { ExploreFeedSkeleton } from "./PostCardSkeleton";
 import { Sidebar } from "./Sidebar";
 import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";
 
 export function ExploreFeed() {
   const [tab, setTab] = useState("for_you");
+  const [layout, setLayout] = useState<FeedLayout>("grid");
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useInfiniteExploreFeed(tab);
@@ -23,18 +26,26 @@ export function ExploreFeed() {
 
   return (
     <>
-      <FeedFilterTabs tab={tab} onChange={setTab} />
+      <FeedFilterTabs tab={tab} onChange={setTab} layout={layout} onLayoutChange={setLayout} />
 
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-9 px-4 pb-16 pt-6 lg:grid-cols-[1fr_296px]">
         <div>
-          {!isLoading && posts.length === 0 ? (
+          {isLoading ? (
+            <ExploreFeedSkeleton layout={layout} />
+          ) : posts.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
               Nothing here yet — try a different tab.
             </p>
-          ) : (
+          ) : layout === "grid" ? (
             <div className="columns-1 gap-4 sm:columns-2 xl:columns-3">
               {posts.map((post) => (
                 <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {posts.map((post) => (
+                <PostListItem key={post.id} post={post} />
               ))}
             </div>
           )}

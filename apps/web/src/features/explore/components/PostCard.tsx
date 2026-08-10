@@ -1,19 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bookmark, Heart, MessageCircle } from "lucide-react";
 
 import { cn } from "@/shared/lib/cn";
-import { useAuth } from "@/features/auth/context/AuthContext";
+import { Skeleton } from "@/design-system/components/ui/skeleton";
 import { exploreFeedApi } from "../api/exploreFeedApi";
-import { useFollowCreator } from "../hooks/useFollowCreator";
-import { useLikeLook } from "../hooks/useLikeLook";
-import { useSaveLook } from "../hooks/useSaveLook";
+import { usePostCardState } from "../hooks/usePostCardState";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
-import { patchPostInFeedCaches } from "../hooks/feedCacheUpdate";
 import type { FeedPost } from "../api/exploreFeedSchemas";
 
 interface PostCardProps {
@@ -21,39 +15,21 @@ interface PostCardProps {
 }
 
 export function PostCard({ post }: PostCardProps) {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const { isAuthenticated, state } = useAuth();
-  const likeMutation = useLikeLook();
-  const saveMutation = useSaveLook();
-  const followMutation = useFollowCreator();
-  const [commentsOpen, setCommentsOpen] = useState(false);
-  const [draft, setDraft] = useState("");
-
-  const isOwnPost = state.user?.id === post.creator.id;
-  const primaryTag = post.taggedProducts[0];
-
-  const goToSignIn = () => router.push("/login?redirect=/explore");
-  const gated = (action: () => void) => (isAuthenticated ? action() : goToSignIn());
-
-  const comments = useQuery({
-    queryKey: ["look-comments", post.id],
-    queryFn: () => exploreFeedApi.listComments(post.id),
-    enabled: commentsOpen,
-  });
-
-  const submitComment = async () => {
-    const body = draft.trim();
-    if (!body) return;
-
-    setDraft("");
-    await exploreFeedApi.addComment(post.id, body);
-    patchPostInFeedCaches(queryClient, post.id, (current) => ({
-      ...current,
-      commentCount: current.commentCount + 1,
-    }));
-    await queryClient.invalidateQueries({ queryKey: ["look-comments", post.id] });
-  };
+  const {
+    isAuthenticated,
+    isOwnPost,
+    primaryTag,
+    gated,
+    likeMutation,
+    saveMutation,
+    followMutation,
+    commentsOpen,
+    setCommentsOpen,
+    draft,
+    setDraft,
+    comments,
+    submitComment,
+  } = usePostCardState(post);
 
   return (
     <article className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30">
@@ -168,7 +144,10 @@ export function PostCard({ post }: PostCardProps) {
         {commentsOpen && (
           <div className="mt-2.5 border-t border-border pt-2.5">
             {comments.isLoading && (
-              <p className="text-[12px] text-muted-foreground">Loading comments…</p>
+              <div className="space-y-1.5" role="status" aria-label="Loading comments">
+                <Skeleton className="h-3 w-4/5" />
+                <Skeleton className="h-3 w-3/5" />
+              </div>
             )}
             {comments.data?.comments.length === 0 && (
               <p className="text-[12px] text-muted-foreground">No comments yet.</p>
