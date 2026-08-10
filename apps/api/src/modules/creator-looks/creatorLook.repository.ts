@@ -312,6 +312,7 @@ export const creatorLookRepository = {
     const rows = await prisma.creatorLookProduct.findMany({
       where: { product: { status: ProductStatus.APPROVED } },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      distinct: ["productId"],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
       include: { product: { include: { brand: { select: { name: true } } } } },
@@ -341,6 +342,7 @@ export const creatorLookRepository = {
         creatorLook: { creatorId, deletedAt: null },
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      distinct: ["productId"],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
       include: { product: { include: { brand: { select: { name: true } } } } },
