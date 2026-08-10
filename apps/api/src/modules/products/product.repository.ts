@@ -18,7 +18,7 @@ const SEEN_ON_CREATORS_LIMIT = 5;
 
 const withBrandName = { brand: { select: { name: true } } };
 
-type PublicFilter = { category?: TasteCategory; type?: ProductType; brandId?: string };
+type PublicFilter = { category?: TasteCategory; type?: ProductType; brandId?: string; q?: string };
 
 export const productRepository = {
   async create(input: CreateProductInput): Promise<ProductRecord> {
@@ -74,6 +74,7 @@ export const productRepository = {
         category: filter.category,
         type: filter.type,
         brandId: filter.brandId,
+        name: filter.q ? { contains: filter.q, mode: "insensitive" } : undefined,
       },
       include: withBrandName,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -90,6 +91,7 @@ export const productRepository = {
         category: filter.category,
         type: filter.type,
         brandId: filter.brandId,
+        name: filter.q ? { contains: filter.q, mode: "insensitive" } : undefined,
       },
       _count: { _all: true },
     });

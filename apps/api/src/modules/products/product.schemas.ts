@@ -34,6 +34,7 @@ export const listReviewProductsQuerySchema = z.object({
 export const listPublicProductsQuerySchema = z.object({
   category: tasteCategorySlugSchema.optional(),
   type: productTypeSlugSchema.optional(),
+  q: z.string().trim().min(1).max(100).optional(),
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });

@@ -4,9 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 
 import { creatorLooksApi } from "../api/creatorLooksApi";
 
-export const useTaggableProducts = () => {
+export const useTaggableProducts = (q?: string) => {
   return useQuery({
-    queryKey: ["products", "taggable"],
-    queryFn: creatorLooksApi.listTaggableProducts,
+    queryKey: ["products", "taggable", q ?? ""],
+    queryFn: () => creatorLooksApi.listTaggableProducts(q),
+    placeholderData: (previous) => previous,
   });
 };
