@@ -1,7 +1,14 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { Heart, Shirt } from "lucide-react";
 
 import { Button } from "@/design-system/components/ui/button";
+import { cn } from "@/shared/lib/cn";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { useToggleWishlist } from "@/features/wishlist";
 
 export type ProductType = "tops" | "bottoms" | "pants" | "headwear" | "outerwear" | "dresses";
 
@@ -16,6 +23,7 @@ export interface ExploreProduct {
   lowStock?: boolean;
   isNew?: boolean;
   image?: string;
+  isSaved?: boolean;
 }
 
 const SWATCH_PALETTE = [
@@ -31,18 +39,59 @@ const SWATCH_PALETTE = [
 
 const AVATAR_COLORS = ["#c9a27a", "#7d8fa3", "#a3785a"];
 
+// Mock "bought" count — no purchase-tracking API exists yet, so this is a stable, deterministic
+// display value derived from the product id (not a random one, so it doesn't jitter on re-render).
+const MOCK_BOUGHT_LABELS = ["300+", "800+", "1.2k+", "2.4k+", "5k+", "8k+", "12k+"];
+
 function getSwatchColor(productId: string) {
   const charCodeSum = [...productId].reduce((sum, char) => sum + char.charCodeAt(0), 0);
   return SWATCH_PALETTE[charCodeSum % SWATCH_PALETTE.length];
 }
 
-interface ProductCardProps {
-  product: ExploreProduct;
+function getMockBoughtLabel(productId: string) {
+  // Position-weighted so this doesn't move in lockstep with the other id-derived hashes on this
+  // card (swatch color, worn-by count) — a flat sum with a constant multiplier equal to the
+  // modulus would collapse every product onto the same bucket.
+  const weightedSum = [...productId].reduce(
+    (sum, char, index) => sum + char.charCodeAt(0) * (index + 1),
+    0,
+  );
+  return MOCK_BOUGHT_LABELS[weightedSum % MOCK_BOUGHT_LABELS.length];
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+interface ProductCardProps {
+  product: ExploreProduct;
+  onToggleSaved?: (productId: string, saved: boolean) => void;
+}
+
+export function ProductCard({ product, onToggleSaved }: ProductCardProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { isAuthenticated } = useAuth();
+  const wishlistMutation = useToggleWishlist();
+  const [saved, setSaved] = useState(product.isSaved ?? false);
+
   const avatarCount = Math.min(product.wornByCount, 3);
   const badgeLabel = product.isNew ? "New" : product.lowStock ? "Low stock" : null;
+
+  const toggleSaved = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!isAuthenticated) {
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    const wasSaved = saved;
+    const next = !wasSaved;
+    setSaved(next);
+    wishlistMutation.mutate(
+      { productId: product.id, saved: wasSaved },
+      { onError: () => setSaved(wasSaved) },
+    );
+    onToggleSaved?.(product.id, next);
+  };
 
   return (
     <Link href={`/product/${product.id}`} className="group block">
@@ -62,10 +111,15 @@ export function ProductCard({ product }: ProductCardProps) {
         <Button
           variant="ghost"
           size="icon"
-          aria-label="Save to wishlist"
-          className="absolute right-3 top-3 size-8 bg-background/90 text-foreground hover:bg-background"
+          aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
+          aria-pressed={saved}
+          onClick={toggleSaved}
+          className={cn(
+            "absolute right-3 top-3 size-8 bg-background/90 text-foreground hover:bg-background",
+            saved && "text-primary",
+          )}
         >
-          <Heart className="size-4" />
+          <Heart className={cn("size-4", saved && "fill-primary")} />
         </Button>
 
         {!product.image && <Shirt className="size-16 text-foreground/25" strokeWidth={1} />}
@@ -74,7 +128,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <p className="mt-3 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
         {product.brand}
       </p>
-      <p className="mt-0.5 text-sm font-semibold text-foreground">{product.name}</p>
+      <p className="mt-0.5 text-sm text-foreground">{product.name}</p>
       <p className="mt-1 text-sm font-bold text-foreground">Rs. {product.price.toLocaleString()}</p>
 
       {product.wornByCount > 0 && (
@@ -90,6 +144,8 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
           <span className="text-xs text-muted-foreground">
             Worn by {product.wornByCount} {product.wornByCount === 1 ? "creator" : "creators"}
+            <span aria-hidden> · </span>
+            {getMockBoughtLabel(product.id)} bought
           </span>
         </div>
       )}

@@ -8,6 +8,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { Button } from "@/design-system/components/ui/button";
 import { Badge } from "@/design-system/components/ui/badge";
+import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useInfiniteBrandProducts } from "../hooks/useInfiniteBrandProducts";
@@ -108,15 +109,17 @@ export function BrandProfile({ brand }: BrandProfileProps) {
         </Button>
       </div>
 
-      {items.length === 0 && !products.isLoading && (
+      {products.isLoading ? (
+        <ProductGridSkeleton className="gap-x-4 gap-y-8" />
+      ) : items.length === 0 ? (
         <p className="py-10 text-sm text-muted-foreground">No products listed yet.</p>
+      ) : (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
+          {items.map((product) => (
+            <ProductCard key={product.id} product={toExploreProduct(product)} />
+          ))}
+        </div>
       )}
-
-      <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
-        {items.map((product) => (
-          <ProductCard key={product.id} product={toExploreProduct(product)} />
-        ))}
-      </div>
 
       {products.hasNextPage && (
         <div className="mt-8 flex justify-center">

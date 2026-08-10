@@ -147,8 +147,14 @@ export const productService = {
     const type = query.type ? SLUG_TO_PRODUCT_TYPE[query.type] : undefined;
 
     const [rows, counts] = await Promise.all([
-      productRepository.listPublic({ category, type, cursor: query.cursor, limit: query.limit }),
-      productRepository.countPublic({ category, type }),
+      productRepository.listPublic({
+        category,
+        type,
+        q: query.q,
+        cursor: query.cursor,
+        limit: query.limit,
+      }),
+      productRepository.countPublic({ category, type, q: query.q }),
     ]);
 
     const hasMore = rows.length > query.limit;

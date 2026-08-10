@@ -1,8 +1,5 @@
 import { apiClient } from "@/shared/lib/apiClient";
-import {
-  creatorLookProductPageSchema,
-  type CreatorLookProductPage,
-} from "@/features/products/api/productSchemas";
+import { feedPageSchema, type FeedPage } from "@/features/explore/api/exploreFeedSchemas";
 import { creatorProfileSchema, type CreatorProfile } from "./creatorProfileSchemas";
 
 export const creatorProfileApi = {
@@ -11,13 +8,13 @@ export const creatorProfileApi = {
     return creatorProfileSchema.parse(res.data);
   },
 
-  async listLooks(handle: string, cursor?: string): Promise<CreatorLookProductPage> {
+  async listLooks(handle: string, cursor?: string): Promise<FeedPage> {
     const params = new URLSearchParams();
     if (cursor) params.set("cursor", cursor);
 
-    const res = await apiClient.get<CreatorLookProductPage>(
+    const res = await apiClient.get<FeedPage>(
       `/creators/by-handle/${handle}/looks?${params.toString()}`,
     );
-    return creatorLookProductPageSchema.parse(res.data);
+    return feedPageSchema.parse(res.data);
   },
 };

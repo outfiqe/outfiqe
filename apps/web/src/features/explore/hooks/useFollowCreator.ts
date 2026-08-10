@@ -2,6 +2,8 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { toast } from "@/design-system/components/ui/toast";
+import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { exploreFeedApi } from "../api/exploreFeedApi";
 import { patchCreatorInFeedCaches } from "./feedCacheUpdate";
 
@@ -16,8 +18,9 @@ export const useFollowCreator = () => {
       patchCreatorInFeedCaches(queryClient, creatorId, !following);
     },
 
-    onError: (_err, { creatorId, following }) => {
+    onError: (error, { creatorId, following }) => {
       patchCreatorInFeedCaches(queryClient, creatorId, following);
+      toast.error(getErrorMessage(error));
     },
 
     onSettled: () => {

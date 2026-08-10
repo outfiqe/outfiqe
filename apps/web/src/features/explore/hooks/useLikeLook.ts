@@ -2,6 +2,8 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { toast } from "@/design-system/components/ui/toast";
+import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { exploreFeedApi } from "../api/exploreFeedApi";
 import { patchPostInFeedCaches } from "./feedCacheUpdate";
 
@@ -20,13 +22,14 @@ export const useLikeLook = () => {
       }));
     },
 
-    onError: (_err, { lookId, liked }) => {
+    onError: (error, { lookId, liked }) => {
       // Revert the optimistic flip — the request failed, so the prior state still holds.
       patchPostInFeedCaches(queryClient, lookId, (post) => ({
         ...post,
         isLiked: liked,
         likeCount: post.likeCount + (liked ? 1 : -1),
       }));
+      toast.error(getErrorMessage(error));
     },
   });
 };

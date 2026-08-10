@@ -13,21 +13,40 @@ const MODES = [
 
 const SIZE_STYLES = {
   sm: { container: "p-1", button: "gap-1.5 px-4 py-1.5 text-sm", icon: "size-4", showLabel: true },
+  header: {
+    container: "p-1",
+    button: "gap-2 px-5 py-2 text-base",
+    icon: "size-5",
+    showLabel: true,
+  },
   lg: { container: "p-1.5", button: "px-6 py-3", icon: "size-6", showLabel: false },
+  icon: { container: "p-1", button: "px-3 py-1.5", icon: "size-4", showLabel: false },
 } as const;
 
 interface ShopExploreToggleProps {
   size?: keyof typeof SIZE_STYLES;
+  className?: string;
 }
 
-export function ShopExploreToggle({ size = "sm" }: ShopExploreToggleProps) {
+export function ShopExploreToggle({ size = "sm", className }: ShopExploreToggleProps) {
   const pathname = usePathname();
   const styles = SIZE_STYLES[size];
+  // "Explore" only owns its own subtree; every other route (shop, product,
+  // brand/creator profiles, wishlist, dashboard) reads as "Shop" so the
+  // toggle always has exactly one side lit up instead of going dark on
+  // pages that aren't the literal "/" or "/explore" href.
+  const isExploreRoute = pathname?.startsWith("/explore") ?? false;
 
   return (
-    <div className={cn("flex items-center rounded-full bg-muted font-semibold", styles.container)}>
+    <div
+      className={cn(
+        "flex items-center rounded-full bg-muted font-semibold",
+        styles.container,
+        className,
+      )}
+    >
       {MODES.map((m) => {
-        const active = pathname === m.href;
+        const active = m.href === "/explore" ? isExploreRoute : !isExploreRoute;
         return (
           <Link
             key={m.href}

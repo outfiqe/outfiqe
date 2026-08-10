@@ -3,14 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Heart, Shirt } from "lucide-react";
+import { ChevronLeft, Heart, Shirt, Zap } from "lucide-react";
 
 import { cn } from "@/shared/lib/cn";
 import { Button } from "@/design-system/components/ui/button";
+import { toast } from "@/design-system/components/ui/toast";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useToggleWishlist } from "@/features/wishlist";
 import { TrustLine } from "./TrustLine";
 import { SizeSelector } from "./SizeSelector";
+import { QuantitySelector } from "./QuantitySelector";
+import { ShippingInfo } from "./ShippingInfo";
 import { SeenOnCreators } from "./SeenOnCreators";
 import type { ProductDetail as ProductDetailType } from "../api/productDetailSchemas";
 
@@ -27,7 +30,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
   const [selectedSize, setSelectedSize] = useState<string | null>(
     product.sizes.find((size) => size.inStock)?.label ?? null,
   );
+  const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+
+  const needsSize = product.sizes.length > 0 && !selectedSize;
 
   const goToSignIn = () => router.push(`/login?redirect=/product/${product.id}`);
   const gated = (action: () => void) => (isAuthenticated ? action() : goToSignIn());
@@ -44,6 +50,11 @@ export function ProductDetail({ product }: ProductDetailProps) {
   const addToCart = () => {
     setAdded(true);
     window.setTimeout(() => setAdded(false), 2000);
+  };
+
+  const buyNow = () => {
+    const sizeLabel = selectedSize ? ` (Size ${selectedSize})` : "";
+    toast.success(`Redirecting to checkout for ${quantity} × ${product.name}${sizeLabel}…`);
   };
 
   const scrollToSeenOn = () => {
@@ -92,9 +103,20 @@ export function ProductDetail({ product }: ProductDetailProps) {
 
           <SizeSelector sizes={product.sizes} selected={selectedSize} onSelect={setSelectedSize} />
 
+          <QuantitySelector quantity={quantity} onChange={setQuantity} />
+
           <div className="mt-5 flex gap-2.5">
-            <Button className="flex-1" onClick={() => gated(addToCart)}>
+            <Button
+              variant="outline"
+              className="flex-1"
+              disabled={needsSize}
+              onClick={() => gated(addToCart)}
+            >
               {added ? "Added ✓" : "Add to cart"}
+            </Button>
+            <Button className="flex-1" disabled={needsSize} onClick={() => gated(buyNow)}>
+              <Zap className="size-4" />
+              Buy now
             </Button>
             <Button
               variant="outline"
@@ -107,12 +129,9 @@ export function ProductDetail({ product }: ProductDetailProps) {
               <Heart className={cn("size-[18px]", isSaved && "fill-primary")} />
             </Button>
           </div>
+          {needsSize && <p className="mt-2 text-xs text-destructive">Select a size to continue.</p>}
 
-          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-            Delivery in Kathmandu 2–3 days · Free over Rs. 5,000
-            <br />
-            Returns within 7 days if unworn.
-          </p>
+          <ShippingInfo />
         </div>
       </div>
 

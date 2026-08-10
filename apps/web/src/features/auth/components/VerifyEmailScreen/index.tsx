@@ -6,10 +6,12 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/design-system/components/ui/button";
 import { Input } from "@/design-system/components/ui/input";
 import { Label } from "@/design-system/components/ui/label";
+import { ApiClientError } from "@/shared/lib/apiClient";
 import { useFocusOnMount } from "@/shared/hooks/useFocusOnMount";
 import { authApi } from "../../api/authApi";
 import { useResendVerification } from "../../hooks/useResendVerification";
 import { emailField } from "../../schemas/shared.schema";
+import { AuthErrorCode, getAuthErrorMessage } from "../../utils/authErrors";
 import { VerifyEmailLoading } from "./VerifyEmailLoading";
 import { VerifyEmailSuccess } from "./VerifyEmailSuccess";
 
@@ -21,7 +23,15 @@ enum VerifyStatusEnum {
 
 type VerifyStatus = VerifyStatusEnum.LOADING | VerifyStatusEnum.SUCCESS | VerifyStatusEnum.ERROR;
 
-const VerifyEmailError = () => {
+// INVALID_TOKEN/TOKEN_EXPIRED (and a missing token) are exactly what this screen's
+// copy already describes; anything else (network failure, rate limiting, ...) gets
+// its own accurate message instead of the misleading "link no longer valid" text.
+const isExpiredOrInvalidLink = (error: unknown): boolean => {
+  if (!(error instanceof ApiClientError)) return true;
+  return error.code === AuthErrorCode.INVALID_TOKEN || error.code === AuthErrorCode.TOKEN_EXPIRED;
+};
+
+const VerifyEmailError = ({ error }: { error: unknown }) => {
   const headingRef = useFocusOnMount<HTMLHeadingElement>();
   const resend = useResendVerification();
   const [email, setEmail] = useState("");
@@ -36,6 +46,11 @@ const VerifyEmailError = () => {
     if (isEmailValid) resend.mutate(parsedEmail.data);
   };
 
+  const description = isExpiredOrInvalidLink(error)
+    ? "This verification link is invalid or has expired."
+    : (getAuthErrorMessage(error instanceof ApiClientError ? error.code : undefined) ??
+      "This verification link is invalid or has expired.");
+
   return (
     <div>
       <h1
@@ -45,9 +60,7 @@ const VerifyEmailError = () => {
       >
         Link no longer valid
       </h1>
-      <p className="mt-2.5 text-sm text-muted-foreground">
-        This verification link is invalid or has expired.
-      </p>
+      <p className="mt-2.5 text-sm text-muted-foreground">{description}</p>
 
       {resend.isSuccess ? (
         <p className="mt-5 text-sm text-muted-foreground" role="alert">
@@ -83,6 +96,7 @@ export const VerifyEmailScreen = () => {
   const token = searchParams.get("token");
 
   const [asyncStatus, setAsyncStatus] = useState<VerifyStatus>(VerifyStatusEnum.LOADING);
+  const [error, setError] = useState<unknown>(null);
 
   const called = useRef(false);
 
@@ -93,12 +107,15 @@ export const VerifyEmailScreen = () => {
     authApi
       .verifyEmail(token)
       .then(() => setAsyncStatus(VerifyStatusEnum.SUCCESS))
-      .catch(() => setAsyncStatus(VerifyStatusEnum.ERROR));
+      .catch((err: unknown) => {
+        setError(err);
+        setAsyncStatus(VerifyStatusEnum.ERROR);
+      });
   }, [token]);
 
   const status: VerifyStatusEnum = token ? asyncStatus : VerifyStatusEnum.ERROR;
 
   if (status === VerifyStatusEnum.LOADING) return <VerifyEmailLoading />;
   if (status === VerifyStatusEnum.SUCCESS) return <VerifyEmailSuccess />;
-  return <VerifyEmailError />;
+  return <VerifyEmailError error={error} />;
 };

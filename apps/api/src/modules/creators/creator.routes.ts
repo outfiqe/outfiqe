@@ -29,6 +29,7 @@ creatorRoutes.get(
 );
 creatorRoutes.get(
   "/by-handle/:handle/looks",
+  optionalAuth,
   validate({ params: creatorHandleParamSchema, query: listCreatorLooksQuerySchema }),
   creatorController.listLooksByHandle,
 );

@@ -5,7 +5,6 @@ import {
   useContext,
   useEffect,
   useReducer,
-  useRef,
   type Dispatch,
   type ReactNode,
 } from "react";
@@ -33,12 +32,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setAccessToken(state.accessToken);
   }, [state.accessToken]);
 
-  const bootStarted = useRef(false);
-
   useEffect(() => {
     setUnauthorizedHandler(() => dispatch({ type: AuthActionType.AUTH_LOGOUT }));
-    if (bootStarted.current) return;
-    bootStarted.current = true;
 
     let cancelled = false;
     dispatch({ type: AuthActionType.AUTH_LOADING });

@@ -19,8 +19,10 @@ export const creatorLooksApi = {
     return creatorLookSchema.parse(res.data);
   },
 
-  async listTaggableProducts(): Promise<ProductPage> {
-    const res = await apiClient.get<unknown>(`/products?limit=${TAGGABLE_PRODUCTS_LIMIT}`);
+  async listTaggableProducts(q?: string): Promise<ProductPage> {
+    const params = new URLSearchParams({ limit: String(TAGGABLE_PRODUCTS_LIMIT) });
+    if (q) params.set("q", q);
+    const res = await apiClient.get<unknown>(`/products?${params.toString()}`);
     return productPageSchema.parse(res.data);
   },
 };

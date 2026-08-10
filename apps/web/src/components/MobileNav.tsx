@@ -2,15 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Menu, Search, X } from "lucide-react";
+import { ChevronDown, Menu, Search, User, X } from "lucide-react";
 
 import { Button } from "@/design-system/components/ui/button";
+import { useAuth, useLogout } from "@/features/auth";
+import { AuthStatus } from "@/features/auth/types";
 import { cn } from "@/shared/lib/cn";
 import { LEADERBOARD_LINKS, NAV_LINKS } from "./siteNav.constants";
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const { state, isAuthenticated } = useAuth();
+  const logout = useLogout();
 
   return (
     <div className="lg:hidden">
@@ -81,16 +85,42 @@ export function MobileNav() {
           </nav>
 
           <div className="mt-6 flex flex-col gap-2 border-t border-border pt-6">
-            <Button variant="outline" asChild>
-              <Link href="/login" onClick={() => setOpen(false)}>
-                Log in
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link href="/register" onClick={() => setOpen(false)}>
-                Sign up
-              </Link>
-            </Button>
+            {state.status === AuthStatus.IDLE ||
+            state.status === AuthStatus.LOADING ? null : isAuthenticated ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-semibold text-foreground hover:bg-muted"
+                >
+                  <User className="size-4 shrink-0" />
+                  {state.user?.name}
+                </Link>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setOpen(false);
+                    logout.mutate();
+                  }}
+                  disabled={logout.isPending}
+                >
+                  {logout.isPending ? "Signing out…" : "Sign out"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" asChild>
+                  <Link href="/login" onClick={() => setOpen(false)}>
+                    Log in
+                  </Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/register" onClick={() => setOpen(false)}>
+                    Sign up
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}

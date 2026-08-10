@@ -1,15 +1,21 @@
 "use client";
 
+import { useState } from "react";
+
+import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useInfiniteWishlist } from "../hooks/useInfiniteWishlist";
 
 export function WishlistGrid() {
   const wishlist = useInfiniteWishlist();
-  const products = wishlist.data?.pages.flatMap((page) => page.products) ?? [];
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+  const products = (wishlist.data?.pages.flatMap((page) => page.products) ?? []).filter(
+    (product) => !removedIds.has(product.id),
+  );
 
   if (wishlist.isLoading) {
-    return <p className="py-10 text-sm text-muted-foreground">Loading…</p>;
+    return <ProductGridSkeleton className="gap-x-4 gap-y-8 pb-16" />;
   }
 
   if (products.length === 0) {
@@ -23,7 +29,13 @@ export function WishlistGrid() {
   return (
     <div className="grid grid-cols-2 gap-x-4 gap-y-8 pb-16 sm:grid-cols-3 lg:grid-cols-5">
       {products.map((product) => (
-        <ProductCard key={product.id} product={toExploreProduct(product)} />
+        <ProductCard
+          key={product.id}
+          product={{ ...toExploreProduct(product), isSaved: true }}
+          onToggleSaved={(productId, saved) => {
+            if (!saved) setRemovedIds((prev) => new Set(prev).add(productId));
+          }}
+        />
       ))}
       {wishlist.hasNextPage && (
         <button

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const CAPTION_MAX = 280;
-const MIN_TAGGED_PRODUCTS = 1;
+const MIN_TAGGED_PRODUCTS = 0;
 const MAX_TAGGED_PRODUCTS = 6;
 
 export const taggedProductInputSchema = z.object({
