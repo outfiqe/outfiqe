@@ -20,6 +20,7 @@ export function Logo({ size = "md", className }: LogoProps) {
   return (
     <Link
       href="/"
+      aria-label="Outfique home"
       className={cn(
         "inline-flex items-center gap-2 font-display font-bold tracking-tight",
         className,
