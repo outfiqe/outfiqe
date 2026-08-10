@@ -2,7 +2,7 @@
 
 import { useUsers } from "../hooks/useUsers";
 
-export function UserList() {
+export const UserList = () => {
   const { data: users, isLoading, isError } = useUsers();
 
   if (isLoading) return <p>Loading users...</p>;
@@ -17,4 +17,4 @@ export function UserList() {
       ))}
     </ul>
   );
-}
+};

@@ -7,7 +7,7 @@ import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useInfiniteWishlist } from "../hooks/useInfiniteWishlist";
 
-export function WishlistGrid() {
+export const WishlistGrid = () => {
   const wishlist = useInfiniteWishlist();
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   const products = (wishlist.data?.pages.flatMap((page) => page.products) ?? []).filter(
@@ -49,4 +49,4 @@ export function WishlistGrid() {
       )}
     </div>
   );
-}
+};

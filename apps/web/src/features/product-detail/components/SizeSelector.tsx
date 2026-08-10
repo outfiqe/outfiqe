@@ -3,15 +3,13 @@
 import { cn } from "@/shared/lib/cn";
 import type { ProductSize } from "../api/productDetailSchemas";
 
-interface SizeSelectorProps {
+type SizeSelectorProps = {
   sizes: ProductSize[];
   selected: string | null;
   onSelect: (label: string) => void;
-}
+};
 
-// Sold-out sizes render disabled and crossed out, never hidden — the spec is explicit
-// that hiding them is wrong (the buyer should see what exists, just not be able to pick it).
-export function SizeSelector({ sizes, selected, onSelect }: SizeSelectorProps) {
+export const SizeSelector = ({ sizes, selected, onSelect }: SizeSelectorProps) => {
   if (sizes.length === 0) return null;
 
   return (
@@ -43,4 +41,4 @@ export function SizeSelector({ sizes, selected, onSelect }: SizeSelectorProps) {
       </div>
     </div>
   );
-}
+};

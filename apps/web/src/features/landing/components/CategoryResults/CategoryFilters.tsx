@@ -6,12 +6,12 @@ import { Button } from "@/design-system/components/ui/button";
 import { cn } from "@/shared/lib/cn";
 import { PRODUCT_TYPE_FILTERS } from "./categoryResults.constants";
 
-interface CategoryFiltersProps {
+type CategoryFiltersProps = {
   categorySlug: string;
   activeType: string;
-}
+};
 
-export function CategoryFilters({ categorySlug, activeType }: CategoryFiltersProps) {
+export const CategoryFilters = ({ categorySlug, activeType }: CategoryFiltersProps) => {
   const router = useRouter();
 
   const selectType = (typeId: string) => {
@@ -44,4 +44,4 @@ export function CategoryFilters({ categorySlug, activeType }: CategoryFiltersPro
       })}
     </div>
   );
-}
+};

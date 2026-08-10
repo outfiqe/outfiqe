@@ -21,11 +21,11 @@ const toTitleCase = (value: string): string =>
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
-interface BrandProfileProps {
+type BrandProfileProps = {
   brand: BrandProfileType;
-}
+};
 
-export function BrandProfile({ brand }: BrandProfileProps) {
+export const BrandProfile = ({ brand }: BrandProfileProps) => {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const followMutation = useToggleFollow("brand");
@@ -135,4 +135,4 @@ export function BrandProfile({ brand }: BrandProfileProps) {
       )}
     </div>
   );
-}
+};
