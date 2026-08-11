@@ -3,8 +3,8 @@ import jwt from "jsonwebtoken";
 
 import { AppError } from "./error-handler.js";
 
-import { verifyToken } from "#lib/verify-token.utils.js";
-import type { AuthPrincipal, JWTPayload } from "#types/token.types.js";
+import { isJWTPayload, verifyToken } from "#lib/verify-token.utils.js";
+import type { AuthPrincipal } from "#types/token.types.js";
 
 const BEARER_PREFIX = "Bearer ";
 const UNAUTHORIZED_STATUS = 401;
@@ -23,13 +23,13 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
   }
 
   try {
-    const payload = verifyToken(token) as JWTPayload;
+    const decoded = verifyToken(token);
 
-    if (!payload.sub || !payload.role) {
+    if (!isJWTPayload(decoded) || !decoded.role) {
       return next(new AppError("UNAUTHORIZED", UNAUTHORIZED_MESSAGE, UNAUTHORIZED_STATUS));
     }
 
-    res.locals.auth = { userId: payload.sub, role: payload.role } satisfies AuthPrincipal;
+    res.locals.auth = { userId: decoded.sub, role: decoded.role } satisfies AuthPrincipal;
     next();
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {

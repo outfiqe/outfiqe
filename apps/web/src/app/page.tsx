@@ -9,6 +9,7 @@ import {
   TasteCategories,
   TrendingNow,
 } from "@/features/landing";
+import { CollectionsSection } from "@/features/collections";
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -22,6 +23,9 @@ export default function HomePage() {
         <Suspense fallback={null}>
           <TasteCategories />
           <CategoryResults />
+        </Suspense>
+        <Suspense fallback={null}>
+          <CollectionsSection />
         </Suspense>
         <TrendingNow />
         <CreatorLooks />

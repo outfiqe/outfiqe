@@ -14,7 +14,7 @@ export const generateToken = (
     type === TokenTypeEnum.ACCESS ? TOKEN.ACCESS_TOKEN_EXPIRY : TOKEN.REFRESH_TOKEN_EXPIRY;
 
   const options: jwt.SignOptions = {
-    algorithm: TOKEN.ALGORITHM as jwt.SignOptions["algorithm"],
+    algorithm: TOKEN.ALGORITHM,
     audience: TOKEN.AUDIENCE,
     expiresIn: expiresIn as jwt.SignOptions["expiresIn"],
     issuer: TOKEN.ISSUER,

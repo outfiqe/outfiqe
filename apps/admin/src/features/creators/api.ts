@@ -1,14 +1,21 @@
 import { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
-import { creatorProfileSchema, type CreatorProfile, type CreatorStatusValue } from "./schemas";
+import { creatorProfileSchema, type CreatorStatusValue } from "./schemas";
 
-const listSchema = z.array(creatorProfileSchema);
+const creatorPageSchema = z.object({
+  creators: z.array(creatorProfileSchema),
+  nextCursor: z.string().nullable(),
+});
+export type CreatorPage = z.infer<typeof creatorPageSchema>;
 
 export const creatorsApi = {
-  async list(status: CreatorStatusValue): Promise<CreatorProfile[]> {
-    const res = await apiClient.get<unknown>(`/creators?status=${status}`);
-    return listSchema.parse(res.data);
+  async list(status: CreatorStatusValue, cursor?: string): Promise<CreatorPage> {
+    const params = new URLSearchParams({ status });
+    if (cursor) params.set("cursor", cursor);
+
+    const res = await apiClient.get<CreatorPage>(`/creators?${params.toString()}`);
+    return creatorPageSchema.parse(res.data);
   },
 
   async approve(userId: string): Promise<void> {

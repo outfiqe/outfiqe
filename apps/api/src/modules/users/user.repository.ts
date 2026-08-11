@@ -77,10 +77,15 @@ export const userRepository = {
     return prisma.user.update({ where: { id }, data });
   },
 
-  async listByCreatorStatus(status?: CreatorStatus): Promise<UserRecord[]> {
+  async listByCreatorStatus(
+    status: CreatorStatus | undefined,
+    params: { cursor?: string; limit: number },
+  ): Promise<UserRecord[]> {
     return prisma.user.findMany({
       where: status ? { creatorStatus: status } : undefined,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: params.limit + 1,
+      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
     });
   },
 };

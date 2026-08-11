@@ -26,6 +26,9 @@ const envSchema = z.object({
   ADMIN_BOOTSTRAP_EMAIL: z.email().optional(),
   ADMIN_BOOTSTRAP_PASSWORD: z.string().min(1).optional(),
   ADMIN_BOOTSTRAP_PHONE: z.string().min(1).optional(),
+  STORAGE_DRIVER: z.enum(["local"]).default("local"),
+  UPLOADS_DIR: z.string().default("uploads"),
+  API_PUBLIC_URL: z.url().default("http://localhost:4000"),
 });
 
 const parsed = envSchema.safeParse(process.env);

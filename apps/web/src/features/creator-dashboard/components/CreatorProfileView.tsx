@@ -70,7 +70,7 @@ export const CreatorProfileView = ({ profile }: { profile: CreatorProfile }) => 
           </Badge>
           {profile.creatorStatus === CreatorStatus.APPROVED && (
             <span className="text-sm text-muted-foreground">
-              {looks.data?.length ?? 0} looks posted
+              {looks.data?.pages.flatMap((page) => page.looks).length ?? 0} looks posted
             </span>
           )}
         </div>

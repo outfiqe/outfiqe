@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/Button";
 import { creatorsApi } from "./api";
+import { useInfiniteCreators } from "./hooks/useInfiniteCreators";
 import type { CreatorStatusValue } from "./schemas";
 
 const TABS: CreatorStatusValue[] = ["PENDING", "APPROVED", "REJECTED"];
@@ -11,10 +12,9 @@ export function CreatorsPage() {
   const [tab, setTab] = useState<CreatorStatusValue>("PENDING");
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["creators", tab],
-    queryFn: () => creatorsApi.list(tab),
-  });
+  const { data, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
+    useInfiniteCreators(tab);
+  const creators = data?.pages.flatMap((page) => page.creators) ?? [];
 
   const approve = useMutation({
     mutationFn: (userId: string) => creatorsApi.approve(userId),
@@ -50,11 +50,11 @@ export function CreatorsPage() {
       <div className="mt-6 space-y-3">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load creators.</p>}
-        {data?.length === 0 && (
+        {!isLoading && creators.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
         )}
 
-        {data?.map((creator) => (
+        {creators.map((creator) => (
           <div
             key={creator.userId}
             className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
@@ -83,6 +83,17 @@ export function CreatorsPage() {
             )}
           </div>
         ))}
+
+        {hasNextPage && (
+          <Button
+            variant="outline"
+            onClick={() => void fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="mx-auto"
+          >
+            {isFetchingNextPage ? "Loading…" : "Load more"}
+          </Button>
+        )}
       </div>
     </div>
   );

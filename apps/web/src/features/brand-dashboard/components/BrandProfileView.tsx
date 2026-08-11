@@ -98,7 +98,7 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
         </dl>
 
         <p className="mt-6 text-sm text-muted-foreground">
-          {products.data?.length ?? 0} products listed
+          {products.data?.pages.flatMap((page) => page.products).length ?? 0} products listed
         </p>
       </div>
 

@@ -22,6 +22,11 @@ export type BrandApplicationRecord = CreateBrandApplicationInput & {
   createdAt: Date;
 };
 
+export type BrandApplicationPage = {
+  applications: BrandApplicationRecord[];
+  nextCursor: string | null;
+};
+
 export type ApproveBrandApplicationInput = {
   reviewedById: string;
   tokenHash: string;

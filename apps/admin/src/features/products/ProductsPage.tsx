@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Badge } from "@/components/Badge";
 import { Button } from "@/components/Button";
 import { productsApi } from "./api";
+import { useInfiniteProducts } from "./hooks/useInfiniteProducts";
 import type { ProductStatusValue } from "./schemas";
 
 const TABS: ProductStatusValue[] = ["PENDING", "APPROVED", "REJECTED"];
@@ -18,10 +19,9 @@ export function ProductsPage() {
   const [tab, setTab] = useState<ProductStatusValue>("PENDING");
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["products", tab],
-    queryFn: () => productsApi.list(tab),
-  });
+  const { data, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
+    useInfiniteProducts(tab);
+  const products = data?.pages.flatMap((page) => page.products) ?? [];
 
   const approve = useMutation({
     mutationFn: (id: string) => productsApi.approve(id),
@@ -57,11 +57,11 @@ export function ProductsPage() {
       <div className="mt-6 space-y-3">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load products.</p>}
-        {data?.length === 0 && (
+        {!isLoading && products.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
         )}
 
-        {data?.map((product) => (
+        {products.map((product) => (
           <div
             key={product.id}
             className="flex flex-wrap items-start gap-4 rounded-xl border border-border bg-card p-4"
@@ -109,6 +109,17 @@ export function ProductsPage() {
             )}
           </div>
         ))}
+
+        {hasNextPage && (
+          <Button
+            variant="outline"
+            onClick={() => void fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="mx-auto"
+          >
+            {isFetchingNextPage ? "Loading…" : "Load more"}
+          </Button>
+        )}
       </div>
     </div>
   );

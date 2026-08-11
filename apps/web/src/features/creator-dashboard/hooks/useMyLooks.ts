@@ -1,12 +1,11 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteCursorPage } from "@outfiqe/shared-hooks";
 
 import { creatorLooksApi } from "../api/creatorLooksApi";
 
 export const useMyLooks = () => {
-  return useQuery({
-    queryKey: ["creator-looks", "mine"],
-    queryFn: creatorLooksApi.listMine,
-  });
+  return useInfiniteCursorPage(["creator-looks", "mine"], (cursor) =>
+    creatorLooksApi.listMine(cursor),
+  );
 };

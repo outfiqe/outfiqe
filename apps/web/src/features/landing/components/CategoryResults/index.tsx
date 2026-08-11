@@ -8,7 +8,7 @@ import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
-import { TASTE_CATEGORIES } from "../TasteCategories/tasteCategories.constants";
+import { useCategories } from "@/features/categories/hooks/useCategories";
 import { ProductCard } from "../ProductCard";
 import { CategoryFilters } from "./CategoryFilters";
 
@@ -18,10 +18,11 @@ export const CategoryResults = () => {
   const categorySlug = searchParams.get("category");
   const activeType = searchParams.get("type") ?? "all";
 
-  const category = TASTE_CATEGORIES.find((c) => c.slug === categorySlug) ?? TASTE_CATEGORIES[0]!;
+  const categories = useCategories();
+  const category = categories.data?.find((c) => c.slug === categorySlug) ?? categories.data?.[0];
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteProducts(
-    category.slug,
+    category?.slug ?? "",
     activeType === "all" ? undefined : activeType,
   );
 
@@ -29,6 +30,10 @@ export const CategoryResults = () => {
     () => fetchNextPage(),
     Boolean(hasNextPage) && !isFetchingNextPage,
   );
+
+  if (!category) {
+    return <ProductGridSkeleton className="mt-8 px-6 lg:px-10" />;
+  }
 
   const products = data?.pages.flatMap((page) => page.products) ?? [];
   const firstPage = data?.pages[0];

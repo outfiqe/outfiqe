@@ -10,7 +10,9 @@ import { cn } from "@/shared/lib/cn";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useToggleWishlist } from "@/features/wishlist";
 
-export type ProductType = "tops" | "bottoms" | "pants" | "headwear" | "outerwear" | "dresses";
+import type { ProductTypeSlug } from "@outfiqe/shared-utils";
+
+export type ProductType = ProductTypeSlug;
 
 export interface ExploreProduct {
   id: string;

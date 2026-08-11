@@ -2,7 +2,14 @@ import { prisma } from "../src/shared/db/prisma.js";
 
 import { hashPassword } from "#lib/password.utils.js";
 import { slugifyHandle } from "#lib/handle.utils.js";
-import { CreatorStatus, FollowTargetType, ProductStatus } from "../src/generated/prisma/enums.js";
+import {
+  CategoryStatus,
+  CollectionStatus,
+  CreatorStatus,
+  FollowTargetType,
+  HeroSlideStatus,
+  ProductStatus,
+} from "../src/generated/prisma/enums.js";
 
 const CREATOR_NAMES = [
   "Sabin Shrestha",
@@ -404,7 +411,157 @@ async function seedWornByCounts() {
   console.log(`Recomputed wornByCount for ${approvedProducts.length} products`);
 }
 
+const DEFAULT_CATEGORIES = [
+  { slug: "formal", name: "Formal" },
+  { slug: "traditional", name: "Traditional" },
+  { slug: "streetwear", name: "Streetwear" },
+  { slug: "casual", name: "Casual" },
+  { slug: "minimal", name: "Minimal" },
+  { slug: "y2k", name: "Y2K" },
+  { slug: "old-money", name: "Old Money" },
+];
+
+const seedCategories = async () => {
+  const existing = await prisma.category.count();
+  if (existing > 0) {
+    console.log(`Categories already seeded (${existing}) — skipping.`);
+    return;
+  }
+
+  for (const [index, category] of DEFAULT_CATEGORIES.entries()) {
+    await prisma.category.create({
+      data: { ...category, status: CategoryStatus.PUBLISHED, sortOrder: index },
+    });
+  }
+
+  console.log(`Seeded ${DEFAULT_CATEGORIES.length} categories`);
+};
+
+type SeedCollection = {
+  name: string;
+  slug: string;
+  description: string;
+  pick: (product: { id: string; category: { slug: string }; price: number }) => boolean;
+};
+
+const SEED_COLLECTIONS: SeedCollection[] = [
+  {
+    name: "Dashain Edit '26",
+    slug: "dashain-edit-26",
+    description: "Daura suruwal, kurta sets and modern cuts styled as full looks for Dashain.",
+    pick: (product) =>
+      product.category.slug === "traditional" || product.category.slug === "formal",
+  },
+  {
+    name: "Under Rs. 3,000",
+    slug: "under-3000",
+    description: "Real pieces from Nepali brands, all under three thousand rupees.",
+    pick: (product) => product.price < 3000,
+  },
+  {
+    name: "Office Ready",
+    slug: "office-ready",
+    description: "Structured, put-together pieces that work from desk to dinner.",
+    pick: (product) => product.category.slug === "formal",
+  },
+  {
+    name: "Weekend Fits",
+    slug: "weekend-fits",
+    description: "Easy, off-duty pieces for days with nowhere to be.",
+    pick: (product) => product.category.slug === "casual" || product.category.slug === "streetwear",
+  },
+];
+
+const COLLECTION_PRODUCT_LIMIT = 8;
+
+const seedCollections = async () => {
+  const existing = await prisma.collection.count();
+  if (existing > 0) {
+    console.log(`Collections already seeded (${existing}) — skipping.`);
+    return;
+  }
+
+  const approvedProducts = await prisma.product.findMany({
+    where: { status: ProductStatus.APPROVED },
+    select: { id: true, category: { select: { slug: true } }, price: true },
+  });
+
+  if (approvedProducts.length === 0) {
+    console.log("No approved products yet — skipping collection seed.");
+    return;
+  }
+
+  for (const [index, collection] of SEED_COLLECTIONS.entries()) {
+    const matches = approvedProducts.filter(collection.pick);
+    const products = shuffledSample(
+      matches.length > 0 ? matches : approvedProducts,
+      COLLECTION_PRODUCT_LIMIT,
+    );
+
+    await prisma.collection.create({
+      data: {
+        name: collection.name,
+        slug: collection.slug,
+        description: collection.description,
+        status: CollectionStatus.PUBLISHED,
+        sortOrder: index,
+        products: {
+          create: products.map((product, productIndex) => ({
+            productId: product.id,
+            sortOrder: productIndex,
+          })),
+        },
+      },
+    });
+  }
+
+  console.log(`Seeded ${SEED_COLLECTIONS.length} collections`);
+};
+
+const SEED_HERO_SLIDES = [
+  {
+    tag: "Collection 01: Festive",
+    title: "Dashain\nEdit '26",
+    description:
+      "Daura suruwal, kurta sets and modern cuts from eleven Kathmandu labels. Styled as full looks, not loose items.",
+    ctaLabel: "Explore collection",
+    ctaHref: "/collections/dashain-edit-26",
+  },
+  {
+    tag: "Collection 02: Creators",
+    title: "Shop the\nlooks you scroll",
+    description:
+      "Every outfit tagged by the Nepali creators who styled it. Tap a look, get the full fit.",
+    ctaLabel: "See creator looks",
+    ctaHref: "/explore",
+  },
+  {
+    tag: "Collection 03: Just In",
+    title: "New brands,\nfresh this week",
+    description: "Five new Kathmandu labels just went live, all vetted and set up by our team.",
+    ctaLabel: "Browse new brands",
+    ctaHref: "/collections",
+  },
+];
+
+const seedHeroSlides = async () => {
+  const existing = await prisma.heroSlide.count();
+  if (existing > 0) {
+    console.log(`Hero slides already seeded (${existing}) — skipping.`);
+    return;
+  }
+
+  for (const [index, slide] of SEED_HERO_SLIDES.entries()) {
+    await prisma.heroSlide.create({
+      data: { ...slide, status: HeroSlideStatus.PUBLISHED, sortOrder: index },
+    });
+  }
+
+  console.log(`Seeded ${SEED_HERO_SLIDES.length} hero slides`);
+};
+
 async function main() {
+  await seedCategories();
   await seedDemoUser();
   const creators = await seedCreators();
   const shoppers = await seedShoppers();
@@ -419,6 +576,8 @@ async function main() {
   await seedBrandFollows(actors);
   await seedEngagement(actors);
   await seedWornByCounts();
+  await seedCollections();
+  await seedHeroSlides();
 }
 
 main()

@@ -40,19 +40,22 @@ export const wishlistRepository = {
   async listSaved(
     userId: string,
     params: { cursor?: string; limit: number },
-  ): Promise<{ products: ProductWithBrand[]; hasMore: boolean }> {
-    const rows = await prisma.savedProduct.findMany({
+  ): Promise<{ product: ProductWithBrand; productId: string }[]> {
+    return prisma.savedProduct.findMany({
       where: { userId, product: { status: ProductStatus.APPROVED } },
       orderBy: [{ createdAt: "desc" }, { productId: "desc" }],
       take: params.limit + 1,
       ...(params.cursor
         ? { cursor: { userId_productId: { userId, productId: params.cursor } }, skip: 1 }
         : {}),
-      include: { product: { include: { brand: { select: { name: true } } } } },
+      include: {
+        product: {
+          include: {
+            brand: { select: { name: true } },
+            category: { select: { slug: true, name: true } },
+          },
+        },
+      },
     });
-
-    const hasMore = rows.length > params.limit;
-    const page = hasMore ? rows.slice(0, params.limit) : rows;
-    return { products: page.map((row) => row.product), hasMore };
   },
 };

@@ -3,7 +3,7 @@ import { creatorProfileSchema, type CreatorProfile } from "./creatorDashboardSch
 
 export const creatorDashboardApi = {
   async apply(): Promise<CreatorProfile> {
-    const res = await apiClient.post<unknown>("/creators/apply");
+    const res = await apiClient.post<CreatorProfile>("/creators/apply");
     return creatorProfileSchema.parse(res.data);
   },
 };

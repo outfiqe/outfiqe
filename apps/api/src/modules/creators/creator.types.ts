@@ -8,6 +8,11 @@ export type CreatorProfile = {
   creatorStatus: CreatorStatus;
 };
 
+export type CreatorProfilePage = {
+  creators: CreatorProfile[];
+  nextCursor: string | null;
+};
+
 export type PublicCreatorProfile = {
   userId: string;
   name: string;

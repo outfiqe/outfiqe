@@ -27,7 +27,12 @@ creatorLookRoutes.get(
   creatorLookController.feed,
 );
 creatorLookRoutes.get("/tags/trending", creatorLookController.trendingTags);
-creatorLookRoutes.get("/mine", requireAuth, creatorLookController.listMine);
+creatorLookRoutes.get(
+  "/mine",
+  requireAuth,
+  validate({ query: listCreatorLooksQuerySchema }),
+  creatorLookController.listMine,
+);
 
 creatorLookRoutes.get(
   "/",

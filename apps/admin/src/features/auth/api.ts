@@ -1,3 +1,5 @@
+import type { z } from "zod";
+
 import { apiClient } from "@/lib/apiClient";
 import {
   adminInviteInfoSchema,
@@ -8,16 +10,19 @@ import {
   type AdminUser,
 } from "./schemas";
 
-type LoginResult = { accessToken: string; user: AdminUser };
+type LoginResult = z.infer<typeof loginResponseSchema>;
+type RefreshResult = z.infer<typeof refreshResponseSchema>;
 
 export const authApi = {
-  async refresh(): Promise<{ accessToken: string }> {
-    const res = await apiClient.post<unknown>("/auth/refresh", undefined, { skipAuthRetry: true });
+  async refresh(): Promise<RefreshResult> {
+    const res = await apiClient.post<RefreshResult>("/auth/refresh", undefined, {
+      skipAuthRetry: true,
+    });
     return refreshResponseSchema.parse(res.data);
   },
 
   async me(): Promise<AdminUser> {
-    const res = await apiClient.get<unknown>("/auth/me");
+    const res = await apiClient.get<AdminUser>("/auth/me");
     return adminUserSchema.parse(res.data);
   },
 
@@ -26,7 +31,7 @@ export const authApi = {
   },
 
   async getAdminInvite(token: string): Promise<AdminInviteInfo> {
-    const res = await apiClient.get<unknown>(
+    const res = await apiClient.get<AdminInviteInfo>(
       `/auth/invite/admin?token=${encodeURIComponent(token)}`,
     );
     return adminInviteInfoSchema.parse(res.data);
@@ -37,7 +42,7 @@ export const authApi = {
     phone: string;
     password: string;
   }): Promise<LoginResult> {
-    const res = await apiClient.post<unknown>("/auth/register/admin", input);
+    const res = await apiClient.post<LoginResult>("/auth/register/admin", input);
     return loginResponseSchema.parse(res.data);
   },
 };

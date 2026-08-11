@@ -2,6 +2,7 @@ import { prisma } from "../../shared/db/prisma.js";
 
 import { CreatorStatus, ProductStatus } from "../../generated/prisma/enums.js";
 import { Prisma } from "../../generated/prisma/client.js";
+import { buildCursorPage } from "#lib/pagination.utils.js";
 import type { CreatorLookTagClickSource } from "../../generated/prisma/enums.js";
 import type { ProductWithBrand } from "../products/product.types.js";
 import type {
@@ -10,6 +11,7 @@ import type {
   CreateCreatorLookInput,
   CreatorLookFeedPost,
   CreatorLookSummary,
+  CreatorLookSummaryPage,
   FeedPage,
   TaggedProductPage,
   TrendingTag,
@@ -66,7 +68,14 @@ const isUniqueConstraintError = (error: unknown): boolean =>
 const feedRelationsInclude = {
   creator: { select: { id: true, name: true, handle: true, creatorStatus: true } },
   taggedProducts: {
-    include: { product: { include: { brand: { select: { name: true } } } } },
+    include: {
+      product: {
+        include: {
+          brand: { select: { name: true } },
+          category: { select: { slug: true, name: true } },
+        },
+      },
+    },
   },
   hashtags: { select: { tag: true } },
 } as const;
@@ -183,21 +192,11 @@ const listTrendingIds = async (params: {
     LIMIT ${params.limit + 1}
   `);
 
-  const hasMore = rows.length > params.limit;
-  const page = hasMore ? rows.slice(0, params.limit) : rows;
-  const last = page[page.length - 1];
+  const { items, nextCursor } = buildCursorPage(rows, params.limit, (row) =>
+    encodeCursor<ScoredCursor>({ s: row.score, c: row.created_at.toISOString(), i: row.id }),
+  );
 
-  return {
-    ids: page.map((row) => row.id),
-    nextCursor:
-      hasMore && last
-        ? encodeCursor<ScoredCursor>({
-            s: last.score,
-            c: last.created_at.toISOString(),
-            i: last.id,
-          })
-        : null,
-  };
+  return { ids: items.map((row) => row.id), nextCursor };
 };
 
 const listIdsByFilter = async (
@@ -221,17 +220,11 @@ const listIdsByFilter = async (
     select: { id: true, createdAt: true },
   });
 
-  const hasMore = rows.length > params.limit;
-  const page = hasMore ? rows.slice(0, params.limit) : rows;
-  const last = page[page.length - 1];
+  const { items, nextCursor } = buildCursorPage(rows, params.limit, (row) =>
+    encodeCursor<SimpleCursor>({ c: row.createdAt.toISOString(), i: row.id }),
+  );
 
-  return {
-    ids: page.map((row) => row.id),
-    nextCursor:
-      hasMore && last
-        ? encodeCursor<SimpleCursor>({ c: last.createdAt.toISOString(), i: last.id })
-        : null,
-  };
+  return { ids: items.map((row) => row.id), nextCursor };
 };
 
 // --- trending tags (in-memory cache) ---------------------------------------
@@ -271,8 +264,11 @@ export const creatorLookRepository = {
       const created = await tx.creatorLook.create({
         data: {
           creatorId: input.creatorId,
-          imageUrl: input.imageUrl,
+          imageUrl: input.imageUrls[0],
           caption: input.caption,
+          images: {
+            create: input.imageUrls.map((url, sortOrder) => ({ url, sortOrder })),
+          },
           taggedProducts: {
             create: input.taggedProducts.map(({ productId, sizeWorn }) => ({
               productId,
@@ -295,14 +291,20 @@ export const creatorLookRepository = {
     return toSummary(look);
   },
 
-  async listByCreatorId(creatorId: string): Promise<CreatorLookSummary[]> {
+  async listByCreatorId(
+    creatorId: string,
+    params: { cursor?: string; limit: number },
+  ): Promise<CreatorLookSummaryPage> {
     const looks = await prisma.creatorLook.findMany({
       where: { creatorId, deletedAt: null },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: params.limit + 1,
+      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
       include: taggedProductsInclude,
     });
 
-    return looks.map(toSummary);
+    const { items, nextCursor } = buildCursorPage(looks, params.limit, (row) => row.id);
+    return { looks: items.map(toSummary), nextCursor };
   },
 
   async listPublicTaggedProducts(params: {
@@ -315,17 +317,19 @@ export const creatorLookRepository = {
       distinct: ["productId"],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
-      include: { product: { include: { brand: { select: { name: true } } } } },
+      include: {
+        product: {
+          include: {
+            brand: { select: { name: true } },
+            category: { select: { slug: true, name: true } },
+          },
+        },
+      },
     });
 
-    const hasMore = rows.length > params.limit;
-    const page = hasMore ? rows.slice(0, params.limit) : rows;
-    const lastRow = page[page.length - 1];
+    const { items, nextCursor } = buildCursorPage(rows, params.limit, (row) => row.id);
 
-    return {
-      products: page.map((row) => row.product),
-      nextCursor: hasMore && lastRow ? lastRow.id : null,
-    };
+    return { products: items.map((row) => row.product), nextCursor };
   },
 
   async countByCreatorId(creatorId: string): Promise<number> {
@@ -345,17 +349,19 @@ export const creatorLookRepository = {
       distinct: ["productId"],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
-      include: { product: { include: { brand: { select: { name: true } } } } },
+      include: {
+        product: {
+          include: {
+            brand: { select: { name: true } },
+            category: { select: { slug: true, name: true } },
+          },
+        },
+      },
     });
 
-    const hasMore = rows.length > params.limit;
-    const page = hasMore ? rows.slice(0, params.limit) : rows;
-    const lastRow = page[page.length - 1];
+    const { items, nextCursor } = buildCursorPage(rows, params.limit, (row) => row.id);
 
-    return {
-      products: page.map((row) => row.product),
-      nextCursor: hasMore && lastRow ? lastRow.id : null,
-    };
+    return { products: items.map((row) => row.product), nextCursor };
   },
 
   async findActiveById(id: string): Promise<{ id: string; likeCount: number } | null> {
@@ -500,12 +506,12 @@ export const creatorLookRepository = {
       include: { user: { select: { id: true, name: true, handle: true } } },
     });
 
-    const hasMore = rows.length > params.limit;
-    const page = hasMore ? rows.slice(0, params.limit) : rows;
-    const last = page[page.length - 1];
+    const { items, nextCursor } = buildCursorPage(rows, params.limit, (row) =>
+      encodeCursor<SimpleCursor>({ c: row.createdAt.toISOString(), i: row.id }),
+    );
 
     return {
-      comments: page.map((row): CommentRecord => ({
+      comments: items.map((row): CommentRecord => ({
         id: row.id,
         userId: row.userId,
         userName: row.user.name,
@@ -513,10 +519,7 @@ export const creatorLookRepository = {
         body: row.body,
         createdAt: row.createdAt,
       })),
-      nextCursor:
-        hasMore && last
-          ? encodeCursor<SimpleCursor>({ c: last.createdAt.toISOString(), i: last.id })
-          : null,
+      nextCursor,
     };
   },
 

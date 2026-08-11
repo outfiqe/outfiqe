@@ -10,6 +10,7 @@ import { validated } from "../../shared/middlewares/validate.js";
 import type { AuthPrincipal } from "#types/token.types.js";
 import type {
   CreateProductBody,
+  ListMineProductsQuery,
   ListPublicProductsQuery,
   ListReviewProductsQuery,
   ProductIdParam,
@@ -44,20 +45,26 @@ export const productController = {
 
   async listMine(_req: Request, res: Response) {
     const { userId } = requirePrincipal(res);
-    const products = await productService.listMine(userId);
-    sendSuccess(res, products, "Your products.");
+    const query = validated.query<ListMineProductsQuery>(res);
+    const page = await productService.listMine(userId, query);
+    sendSuccess(res, page, "Your products.");
   },
 
   async listForReview(_req: Request, res: Response) {
-    const { status } = validated.query<ListReviewProductsQuery>(res);
-    const products = await productService.listForReview(status);
-    sendSuccess(res, products, "Products awaiting review.");
+    const query = validated.query<ListReviewProductsQuery>(res);
+    const page = await productService.listForReview(query);
+    sendSuccess(res, page, "Products awaiting review.");
   },
 
   async listPublic(_req: Request, res: Response) {
     const query = validated.query<ListPublicProductsQuery>(res);
     const page = await productService.listPublic(query);
     sendSuccess(res, page, "Products.");
+  },
+
+  async listTypes(_req: Request, res: Response) {
+    const types = await productService.listTypes();
+    sendSuccess(res, types, "Product types.");
   },
 
   async listTrending(_req: Request, res: Response) {

@@ -30,6 +30,7 @@ export const productDetailSchema = z.object({
   lowStock: z.boolean(),
   isNew: z.boolean(),
   sizes: z.array(productSizeSchema),
+  images: z.array(z.string()),
   wornByCount: z.number(),
   seenOnCreators: z.array(seenOnCreatorSchema),
   isSaved: z.boolean(),

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/design-system/components/ui/button";
 import { cn } from "@/shared/lib/cn";
-import { PRODUCT_TYPE_FILTERS } from "./categoryResults.constants";
+import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 
 type CategoryFiltersProps = {
   categorySlug: string;
@@ -13,6 +13,12 @@ type CategoryFiltersProps = {
 
 export const CategoryFilters = ({ categorySlug, activeType }: CategoryFiltersProps) => {
   const router = useRouter();
+  const productTypes = useProductTypes();
+
+  const filters = [
+    { id: "all", label: "All" },
+    ...(productTypes.data ?? []).map((type) => ({ id: type.slug, label: type.label })),
+  ];
 
   const selectType = (typeId: string) => {
     const url =
@@ -22,7 +28,7 @@ export const CategoryFilters = ({ categorySlug, activeType }: CategoryFiltersPro
 
   return (
     <div className="flex flex-wrap gap-2">
-      {PRODUCT_TYPE_FILTERS.map((filter) => {
+      {filters.map((filter) => {
         const isActive = filter.id === activeType;
 
         return (

@@ -21,10 +21,15 @@ export const createBrandApplicationSchema = z.object({
   makesOwnPieces: makesOwnPiecesSchema,
 });
 
+const DEFAULT_PAGE_SIZE = 12;
+const MAX_PAGE_SIZE = 50;
+
 export const brandApplicationStatusSchema = z.enum(BrandApplicationStatus);
 
 export const listBrandApplicationsQuerySchema = z.object({
   status: brandApplicationStatusSchema.optional(),
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
 
 export const brandApplicationIdParamSchema = z.object({

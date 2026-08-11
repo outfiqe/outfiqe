@@ -33,6 +33,11 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
+  const galleryImages =
+    product.images.length > 0 ? product.images : product.imageUrl ? [product.imageUrl] : [];
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const activeImage = galleryImages[selectedImageIndex] ?? galleryImages[0];
+
   const needsSize = product.sizes.length > 0 && !selectedSize;
 
   const goToSignIn = () => router.push(`/login?redirect=/product/${product.id}`);
@@ -74,11 +79,32 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
 
       <div className="grid gap-8 pb-10 lg:grid-cols-2 lg:gap-14">
         {/* Zone 1: official product photography — the brand's, never mixed with creator photos. */}
-        <div
-          className="flex aspect-4/5 items-center justify-center rounded-2xl bg-muted bg-cover bg-center"
-          style={{ backgroundImage: product.imageUrl ? `url(${product.imageUrl})` : undefined }}
-        >
-          {!product.imageUrl && <Shirt className="size-20 text-foreground/25" strokeWidth={1} />}
+        <div>
+          <div
+            className="flex aspect-4/5 items-center justify-center rounded-2xl bg-muted bg-cover bg-center"
+            style={{ backgroundImage: activeImage ? `url(${activeImage})` : undefined }}
+          >
+            {!activeImage && <Shirt className="size-20 text-foreground/25" strokeWidth={1} />}
+          </div>
+
+          {galleryImages.length > 1 && (
+            <div className="mt-3 flex gap-2.5">
+              {galleryImages.map((image, index) => (
+                <button
+                  key={image}
+                  type="button"
+                  onClick={() => setSelectedImageIndex(index)}
+                  aria-label={`Show photo ${index + 1}`}
+                  aria-current={index === selectedImageIndex}
+                  className={cn(
+                    "aspect-square w-16 shrink-0 overflow-hidden rounded-lg border bg-muted bg-cover bg-center transition-colors",
+                    index === selectedImageIndex ? "border-foreground" : "border-transparent",
+                  )}
+                  style={{ backgroundImage: `url(${image})` }}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         <div>

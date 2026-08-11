@@ -7,6 +7,8 @@ const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
 
 const SIZE_WORN_MAX = 20;
+const MIN_IMAGES = 1;
+const MAX_IMAGES = 6;
 
 export const taggedProductInputSchema = z.object({
   productId: z.uuid(),
@@ -14,7 +16,7 @@ export const taggedProductInputSchema = z.object({
 });
 
 export const createCreatorLookSchema = z.object({
-  imageUrl: z.url(),
+  imageUrls: z.array(z.url()).min(MIN_IMAGES).max(MAX_IMAGES),
   caption: z.string().max(CAPTION_MAX).optional(),
   taggedProducts: z
     .array(taggedProductInputSchema)

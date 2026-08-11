@@ -2,23 +2,18 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { ImageIcon } from "lucide-react";
 
 import { Button } from "@/design-system/components/ui/button";
 import { Input } from "@/design-system/components/ui/input";
 import { Modal } from "@/design-system/components/ui/modal";
+import { ImageUploader } from "@/design-system/components/ui/image-uploader";
 import { toast } from "@/design-system/components/ui/toast";
 import { FormBanner } from "@/components/FormBanner";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
+import { useCategories } from "@/features/categories/hooks/useCategories";
+import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 import { useCreateProduct } from "../hooks/useCreateProduct";
-import {
-  PRODUCT_TYPE_LABEL,
-  PRODUCT_TYPE_VALUES,
-  TASTE_CATEGORY_LABEL,
-  TASTE_CATEGORY_VALUES,
-  productFormSchema,
-  type ProductFormInput,
-} from "../schemas/productForm.schema";
+import { productFormSchema, type ProductFormInput } from "../schemas/productForm.schema";
 
 const selectClass =
   "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-foreground";
@@ -30,6 +25,8 @@ type ProductModalProps = {
 
 export const ProductModal = ({ open, onClose }: ProductModalProps) => {
   const create = useCreateProduct();
+  const productTypes = useProductTypes();
+  const categories = useCategories();
 
   const form = useForm<ProductFormInput>({
     resolver: zodResolver(productFormSchema),
@@ -38,12 +35,12 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
       price: 0,
       type: "tops",
       category: "formal",
-      imageUrl: "",
+      imageUrls: [],
       lowStock: false,
     },
   });
 
-  const imageUrl = form.watch("imageUrl");
+  const imageUrls = form.watch("imageUrls") ?? [];
 
   const close = () => {
     form.reset();
@@ -80,42 +77,22 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
       {create.isError && <FormBanner>{getErrorMessage(create.error)}</FormBanner>}
 
       <form onSubmit={onSubmit} noValidate className="space-y-5">
-        <div className="grid gap-4 sm:grid-cols-[10rem_1fr]">
-          <div
-            className="aspect-square w-full shrink-0 overflow-hidden rounded-xl border border-border bg-muted bg-cover bg-center sm:w-40"
-            style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
-          >
-            {!imageUrl && (
-              <div className="flex h-full items-center justify-center text-muted-foreground">
-                <ImageIcon className="size-6" />
-              </div>
-            )}
-          </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-foreground">
+            Photos (optional)
+          </label>
+          <ImageUploader
+            value={imageUrls}
+            onChange={(urls) => form.setValue("imageUrls", urls, { shouldValidate: true })}
+          />
+        </div>
 
-          <div className="min-w-0 space-y-4">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">
-                Product name
-              </label>
-              <Input placeholder="Linen band-collar shirt" {...form.register("name")} />
-              {form.formState.errors.name && (
-                <p className="mt-1.5 text-xs text-destructive">
-                  {form.formState.errors.name.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">
-                Image URL (optional)
-              </label>
-              <Input placeholder="https://…" {...form.register("imageUrl")} />
-              {form.formState.errors.imageUrl && (
-                <p className="mt-1.5 text-xs text-destructive">
-                  {form.formState.errors.imageUrl.message}
-                </p>
-              )}
-            </div>
-          </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-foreground">Product name</label>
+          <Input placeholder="Linen band-collar shirt" {...form.register("name")} />
+          {form.formState.errors.name && (
+            <p className="mt-1.5 text-xs text-destructive">{form.formState.errors.name.message}</p>
+          )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -145,9 +122,9 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">Type</label>
             <select className={selectClass} {...form.register("type")}>
-              {PRODUCT_TYPE_VALUES.map((value) => (
-                <option key={value} value={value}>
-                  {PRODUCT_TYPE_LABEL[value]}
+              {productTypes.data?.map((productType) => (
+                <option key={productType.slug} value={productType.slug}>
+                  {productType.label}
                 </option>
               ))}
             </select>
@@ -155,9 +132,9 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">Category</label>
             <select className={selectClass} {...form.register("category")}>
-              {TASTE_CATEGORY_VALUES.map((value) => (
-                <option key={value} value={value}>
-                  {TASTE_CATEGORY_LABEL[value]}
+              {categories.data?.map((category) => (
+                <option key={category.slug} value={category.slug}>
+                  {category.name}
                 </option>
               ))}
             </select>

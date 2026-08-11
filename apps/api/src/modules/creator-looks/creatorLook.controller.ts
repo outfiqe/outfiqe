@@ -38,9 +38,10 @@ export const creatorLookController = {
 
   async listMine(_req: Request, res: Response) {
     const { userId } = requirePrincipal(res);
-    const looks = await creatorLookService.listMine(userId);
+    const query = validated.query<ListCreatorLooksQuery>(res);
+    const page = await creatorLookService.listMine(userId, query);
 
-    sendSuccess(res, looks, "Your looks.");
+    sendSuccess(res, page, "Your looks.");
   },
 
   async listFeatured(_req: Request, res: Response) {

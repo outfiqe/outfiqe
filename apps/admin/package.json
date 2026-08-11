@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@outfiqe/api-client": "workspace:*",
+    "@outfiqe/shared-hooks": "workspace:*",
     "@outfiqe/shared-types": "workspace:*",
     "@outfiqe/shared-utils": "workspace:*",
     "@tanstack/react-query": "^5.101.4",

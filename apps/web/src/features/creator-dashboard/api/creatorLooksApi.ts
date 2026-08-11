@@ -5,24 +5,30 @@ import { productPageSchema, type ProductPage } from "@/features/products/api/pro
 import { creatorLookSchema, type CreatorLook } from "./creatorLooksSchemas";
 import type { LookFormInput } from "../schemas/lookForm.schema";
 
-const listSchema = z.array(creatorLookSchema);
+const creatorLookPageSchema = z.object({
+  looks: z.array(creatorLookSchema),
+  nextCursor: z.string().nullable(),
+});
+export type CreatorLookPage = z.infer<typeof creatorLookPageSchema>;
+
 const TAGGABLE_PRODUCTS_LIMIT = 20;
 
 export const creatorLooksApi = {
-  async listMine(): Promise<CreatorLook[]> {
-    const res = await apiClient.get<unknown>("/creator-looks/mine");
-    return listSchema.parse(res.data);
+  async listMine(cursor?: string): Promise<CreatorLookPage> {
+    const params = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+    const res = await apiClient.get<CreatorLookPage>(`/creator-looks/mine${params}`);
+    return creatorLookPageSchema.parse(res.data);
   },
 
   async create(input: LookFormInput): Promise<CreatorLook> {
-    const res = await apiClient.post<unknown>("/creator-looks", input);
+    const res = await apiClient.post<CreatorLook>("/creator-looks", input);
     return creatorLookSchema.parse(res.data);
   },
 
   async listTaggableProducts(q?: string): Promise<ProductPage> {
     const params = new URLSearchParams({ limit: String(TAGGABLE_PRODUCTS_LIMIT) });
     if (q) params.set("q", q);
-    const res = await apiClient.get<unknown>(`/products?${params.toString()}`);
+    const res = await apiClient.get<ProductPage>(`/products?${params.toString()}`);
     return productPageSchema.parse(res.data);
   },
 };

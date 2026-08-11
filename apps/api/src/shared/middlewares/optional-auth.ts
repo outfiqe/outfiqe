@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { verifyToken } from "#lib/verify-token.utils.js";
-import type { AuthPrincipal, JWTPayload } from "#types/token.types.js";
+import { isJWTPayload, verifyToken } from "#lib/verify-token.utils.js";
+import type { AuthPrincipal } from "#types/token.types.js";
 
 const BEARER_PREFIX = "Bearer ";
 
@@ -15,9 +15,9 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction) =>
   if (!token) return next();
 
   try {
-    const payload = verifyToken(token) as JWTPayload;
-    if (payload.sub && payload.role) {
-      res.locals.auth = { userId: payload.sub, role: payload.role } satisfies AuthPrincipal;
+    const decoded = verifyToken(token);
+    if (isJWTPayload(decoded) && decoded.role) {
+      res.locals.auth = { userId: decoded.sub, role: decoded.role } satisfies AuthPrincipal;
     }
   } catch {
     // Invalid/expired token on a public route: proceed unauthenticated instead of failing the request.

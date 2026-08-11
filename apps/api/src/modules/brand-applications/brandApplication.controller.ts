@@ -30,10 +30,10 @@ export const brandApplicationController = {
   },
 
   async list(_req: Request, res: Response) {
-    const { status } = validated.query<ListBrandApplicationsQuery>(res);
-    const applications = await brandApplicationService.list(status);
+    const query = validated.query<ListBrandApplicationsQuery>(res);
+    const page = await brandApplicationService.list(query);
 
-    sendSuccess(res, applications, "Brand applications.");
+    sendSuccess(res, page, "Brand applications.");
   },
 
   async approve(_req: Request, res: Response) {

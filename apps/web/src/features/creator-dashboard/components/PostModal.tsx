@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { ImageIcon } from "lucide-react";
 
 import { Button } from "@/design-system/components/ui/button";
 import { Input } from "@/design-system/components/ui/input";
 import { Modal } from "@/design-system/components/ui/modal";
 import { Skeleton } from "@/design-system/components/ui/skeleton";
+import { ImageUploader } from "@/design-system/components/ui/image-uploader";
 import { toast } from "@/design-system/components/ui/toast";
 import { FormBanner } from "@/components/FormBanner";
 import { cn } from "@/shared/lib/cn";
@@ -35,10 +35,10 @@ export const PostModal = ({ open, onClose }: PostModalProps) => {
 
   const form = useForm<LookFormInput>({
     resolver: zodResolver(lookFormSchema),
-    defaultValues: { imageUrl: "", caption: "", taggedProducts: [] },
+    defaultValues: { imageUrls: [], caption: "", taggedProducts: [] },
   });
 
-  const imageUrl = form.watch("imageUrl");
+  const imageUrls = form.watch("imageUrls");
   const taggedProducts = form.watch("taggedProducts");
 
   const close = () => {
@@ -79,40 +79,29 @@ export const PostModal = ({ open, onClose }: PostModalProps) => {
       {create.isError && <FormBanner>{getErrorMessage(create.error)}</FormBanner>}
 
       <form onSubmit={onSubmit} noValidate className="space-y-5">
-        <div className="grid gap-4 sm:grid-cols-[10rem_1fr]">
-          <div
-            className="aspect-[4/5] w-full shrink-0 overflow-hidden rounded-xl border border-border bg-muted bg-cover bg-center sm:w-40"
-            style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
-          >
-            {!imageUrl && (
-              <div className="flex h-full items-center justify-center text-muted-foreground">
-                <ImageIcon className="size-6" />
-              </div>
-            )}
-          </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-foreground">Photos</label>
+          <ImageUploader
+            value={imageUrls}
+            onChange={(urls) => form.setValue("imageUrls", urls, { shouldValidate: true })}
+          />
+          {form.formState.errors.imageUrls && (
+            <p className="mt-1.5 text-xs text-destructive">
+              {form.formState.errors.imageUrls.message}
+            </p>
+          )}
+        </div>
 
-          <div className="min-w-0 space-y-4">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Image URL</label>
-              <Input placeholder="https://…" {...form.register("imageUrl")} />
-              {form.formState.errors.imageUrl && (
-                <p className="mt-1.5 text-xs text-destructive">
-                  {form.formState.errors.imageUrl.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">
-                Caption (optional)
-              </label>
-              <textarea
-                rows={3}
-                placeholder="Layering for Kathmandu winters"
-                className={textareaClass}
-                {...form.register("caption")}
-              />
-            </div>
-          </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-foreground">
+            Caption (optional)
+          </label>
+          <textarea
+            rows={3}
+            placeholder="Layering for Kathmandu winters"
+            className={textareaClass}
+            {...form.register("caption")}
+          />
         </div>
 
         <div>
