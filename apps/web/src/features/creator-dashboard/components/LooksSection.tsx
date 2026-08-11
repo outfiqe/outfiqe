@@ -17,6 +17,7 @@ type LooksSectionProps = {
 export const LooksSection = ({ creatorStatus }: LooksSectionProps) => {
   const [postModalOpen, setPostModalOpen] = useState(false);
   const looks = useMyLooks();
+  const items = looks.data?.pages.flatMap((page) => page.looks) ?? [];
 
   if (creatorStatus === CreatorStatus.PENDING) {
     return (
@@ -56,7 +57,7 @@ export const LooksSection = ({ creatorStatus }: LooksSectionProps) => {
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Your posts</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {looks.data?.length ?? 0} look{looks.data?.length === 1 ? "" : "s"} posted
+            {items.length} look{items.length === 1 ? "" : "s"} posted
           </p>
         </div>
         <Button onClick={() => setPostModalOpen(true)}>
@@ -73,7 +74,7 @@ export const LooksSection = ({ creatorStatus }: LooksSectionProps) => {
         </div>
       )}
 
-      {looks.data?.length === 0 && (
+      {!looks.isLoading && items.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">
             Nothing posted yet — share your first fit.
@@ -84,9 +85,9 @@ export const LooksSection = ({ creatorStatus }: LooksSectionProps) => {
         </div>
       )}
 
-      {looks.data && looks.data.length > 0 && (
+      {items.length > 0 && (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {looks.data.map((look) => (
+          {items.map((look) => (
             <div
               key={look.id}
               className="overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30"
@@ -106,6 +107,18 @@ export const LooksSection = ({ creatorStatus }: LooksSectionProps) => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {looks.hasNextPage && (
+        <div className="mt-6 flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => void looks.fetchNextPage()}
+            disabled={looks.isFetchingNextPage}
+          >
+            {looks.isFetchingNextPage ? "Loading…" : "Load more"}
+          </Button>
         </div>
       )}
 

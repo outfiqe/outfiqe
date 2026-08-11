@@ -16,6 +16,11 @@ export type CreatorLookSummary = CreatorLookRecord & {
   taggedProducts: TaggedProduct[];
 };
 
+export type CreatorLookSummaryPage = {
+  looks: CreatorLookSummary[];
+  nextCursor: string | null;
+};
+
 export type TaggedProductInput = {
   productId: string;
   sizeWorn: string;
@@ -23,7 +28,7 @@ export type TaggedProductInput = {
 
 export type CreateCreatorLookInput = {
   creatorId: string;
-  imageUrl: string;
+  imageUrls: [string, ...string[]];
   caption?: string;
   taggedProducts: TaggedProductInput[];
   hashtags: string[];

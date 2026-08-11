@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@outfiqe/shared-types": "workspace:*",
-    "axios": "^1.19.0"
+    "axios": "^1.19.0",
+    "zod": "^4.4.3"
   }
 }

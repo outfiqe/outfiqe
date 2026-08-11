@@ -17,16 +17,17 @@ import type {
 import type {
   CommentPage,
   CreatorLookSummary,
+  CreatorLookSummaryPage,
   FeedPage,
   TaggedProductPage,
   TrendingTag,
 } from "./creatorLook.types.js";
 import type { PublicProduct } from "../products/product.types.js";
-import type { CreatorLookTagClickSource } from "../../generated/prisma/enums.js";
 
 const NOT_FOUND_STATUS = 404;
 const FORBIDDEN_STATUS = 403;
 const UNAUTHORIZED_STATUS = 401;
+const VALIDATION_STATUS = 422;
 
 const FOLLOWING_TAB = "following";
 const TRENDING_TAB = "trending";
@@ -62,9 +63,14 @@ export const creatorLookService = {
     const productIds = input.taggedProducts.map((tag) => tag.productId);
     await requireApprovedProducts(productIds);
 
+    const [coverImageUrl, ...restImageUrls] = input.imageUrls;
+    if (!coverImageUrl) {
+      throw new AppError("VALIDATION_ERROR", "At least one image is required.", VALIDATION_STATUS);
+    }
+
     const look = await creatorLookRepository.create({
       creatorId: userId,
-      imageUrl: input.imageUrl,
+      imageUrls: [coverImageUrl, ...restImageUrls],
       caption: input.caption,
       taggedProducts: input.taggedProducts,
       hashtags: extractHashtags(input.caption ?? ""),
@@ -75,8 +81,11 @@ export const creatorLookService = {
     return look;
   },
 
-  async listMine(userId: string): Promise<CreatorLookSummary[]> {
-    return creatorLookRepository.listByCreatorId(userId);
+  async listMine(userId: string, query: ListCreatorLooksQuery): Promise<CreatorLookSummaryPage> {
+    return creatorLookRepository.listByCreatorId(userId, {
+      cursor: query.cursor,
+      limit: query.limit,
+    });
   },
 
   async listPublic(query: ListCreatorLooksQuery): Promise<TaggedProductPage<PublicProduct>> {
@@ -217,7 +226,7 @@ export const creatorLookService = {
       productId,
       userId,
       sessionId: body.sessionId,
-      source: body.source as CreatorLookTagClickSource,
+      source: body.source,
     });
   },
 };

@@ -10,7 +10,7 @@ export const creatorLookFeedApi = {
     const params = new URLSearchParams();
     if (cursor) params.set("cursor", cursor);
 
-    const res = await apiClient.get<unknown>(`/creator-looks?${params.toString()}`);
+    const res = await apiClient.get<CreatorLookProductPage>(`/creator-looks?${params.toString()}`);
     return creatorLookProductPageSchema.parse(res.data);
   },
 };

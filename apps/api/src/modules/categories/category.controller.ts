@@ -1,0 +1,40 @@
+import type { Request, Response } from "express";
+
+import { categoryService } from "./category.service.js";
+
+import { sendSuccess } from "#lib/api-response.utils.js";
+
+import { validated } from "../../shared/middlewares/validate.js";
+
+import type {
+  CategoryIdParam,
+  CreateCategoryBody,
+  UpdateCategoryBody,
+} from "./category.schemas.js";
+
+const CREATED_STATUS = 201;
+
+export const categoryController = {
+  async create(_req: Request, res: Response) {
+    const body = validated.body<CreateCategoryBody>(res);
+    const category = await categoryService.create(body);
+    sendSuccess(res, category, "Category created.", CREATED_STATUS);
+  },
+
+  async update(_req: Request, res: Response) {
+    const { id } = validated.params<CategoryIdParam>(res);
+    const body = validated.body<UpdateCategoryBody>(res);
+    const category = await categoryService.update(id, body);
+    sendSuccess(res, category, "Category updated.");
+  },
+
+  async listAll(_req: Request, res: Response) {
+    const categories = await categoryService.listAll();
+    sendSuccess(res, categories, "Categories.");
+  },
+
+  async listPublic(_req: Request, res: Response) {
+    const categories = await categoryService.listPublic();
+    sendSuccess(res, categories, "Categories.");
+  },
+};

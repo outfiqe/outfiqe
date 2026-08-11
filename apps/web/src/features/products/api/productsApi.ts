@@ -13,7 +13,7 @@ export const productsApi = {
     if (type) params.set("type", type);
     if (cursor) params.set("cursor", cursor);
 
-    const res = await apiClient.get<unknown>(`/products?${params.toString()}`);
+    const res = await apiClient.get<ProductPage>(`/products?${params.toString()}`);
     return productPageSchema.parse(res.data);
   },
 };

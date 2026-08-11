@@ -8,6 +8,7 @@ export const FOOTER_LINK_GROUPS: FooterLinkGroup[] = [
     title: "Shop",
     links: [
       { label: "Home", href: "/" },
+      { label: "Collections", href: "/collections" },
       { label: "Explore", href: "/explore" },
       { label: "For brands", href: "/apply" },
     ],

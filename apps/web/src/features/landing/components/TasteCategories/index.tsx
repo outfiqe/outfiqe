@@ -3,13 +3,16 @@
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/design-system/components/ui/button";
+import { Skeleton } from "@/design-system/components/ui/skeleton";
 import { cn } from "@/shared/lib/cn";
-import { TASTE_CATEGORIES } from "./tasteCategories.constants";
+import { getAvatarColor } from "@/shared/lib/avatarColor";
+import { useCategories } from "@/features/categories/hooks/useCategories";
 
 export const TasteCategories = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const activeSlug = searchParams.get("category") ?? TASTE_CATEGORIES[0]!.slug;
+  const categories = useCategories();
+  const activeSlug = searchParams.get("category") ?? categories.data?.[0]?.slug;
 
   const selectCategory = (slug: string) => {
     router.replace(`/?category=${slug}`, { scroll: false });
@@ -28,17 +31,22 @@ export const TasteCategories = () => {
       </p>
 
       <div className="-mx-2 mt-5 flex gap-3 overflow-x-auto p-2">
-        {TASTE_CATEGORIES.map((category) => (
+        {categories.isLoading &&
+          Array.from({ length: 7 }).map((_, index) => (
+            <Skeleton key={index} className="size-28 shrink-0 rounded-2xl sm:size-32" />
+          ))}
+
+        {categories.data?.map((category) => (
           <Button
-            key={category.id}
+            key={category.slug}
             variant="ghost"
             onClick={() => selectCategory(category.slug)}
             style={
-              category.image
+              category.imageUrl
                 ? {
-                    backgroundImage: `linear-gradient(to top, rgba(20,16,14,0.75), rgba(20,16,14,0.05)), url(${category.image})`,
+                    backgroundImage: `linear-gradient(to top, rgba(20,16,14,0.75), rgba(20,16,14,0.05)), url(${category.imageUrl})`,
                   }
-                : { backgroundColor: category.color }
+                : { backgroundColor: getAvatarColor(category.slug) }
             }
             className={cn(
               "relative size-28 shrink-0 items-end justify-start rounded-2xl bg-cover bg-center p-3 text-left font-normal transition-transform hover:-translate-y-0.5 hover:bg-transparent sm:size-32",

@@ -28,22 +28,25 @@ export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
 export type { BrandInviteInfo };
 export type MessageResponse = { message: string };
 
-//TODO: Add Proper Data TYPES
+type LoginApiResponse = z.infer<typeof loginResponseSchema>;
+type BrandLoginApiResponse = z.infer<typeof brandLoginResponseSchema>;
+type CurrentUser = z.infer<typeof currentUserSchema>;
+type ValidateTokenResponse = z.infer<typeof validateTokenResponseSchema>;
 
 export const authApi = {
   async register(input: RegisterInput): Promise<RegisterResponse> {
-    const res = await apiClient.post<unknown>("/auth/register", input);
+    const res = await apiClient.post<RegisterResponse>("/auth/register", input);
     return registerResponseSchema.parse(res.data);
   },
 
   async registerBrand(input: BrandRegisterInput): Promise<LoginResponse> {
-    const res = await apiClient.post<unknown>("/auth/register/brand", input);
+    const res = await apiClient.post<BrandLoginApiResponse>("/auth/register/brand", input);
     const { accessToken, user } = brandLoginResponseSchema.parse(res.data);
     return { accessToken, user: toUserSession(user) };
   },
 
   async login(input: LoginInput): Promise<LoginResponse> {
-    const res = await apiClient.post<unknown>("/auth/login", input);
+    const res = await apiClient.post<LoginApiResponse>("/auth/login", input);
     const { accessToken, user } = loginResponseSchema.parse(res.data);
     return { accessToken, user: toUserSession(user) };
   },
@@ -53,44 +56,46 @@ export const authApi = {
   },
 
   async refresh(): Promise<RefreshResponse> {
-    const res = await apiClient.post<unknown>("/auth/refresh", undefined, {
+    const res = await apiClient.post<RefreshResponse>("/auth/refresh", undefined, {
       skipAuthRetry: true,
     });
     return refreshResponseSchema.parse(res.data);
   },
 
   async getCurrentUser(): Promise<UserSession> {
-    const res = await apiClient.get<unknown>("/auth/me");
+    const res = await apiClient.get<CurrentUser>("/auth/me");
     return toUserSession(currentUserSchema.parse(res.data));
   },
 
   async forgotPassword(input: ForgotPasswordInput): Promise<MessageResponse> {
-    const res = await apiClient.post<unknown>("/auth/forgot-password", input);
+    const res = await apiClient.post<null>("/auth/forgot-password", input);
     return { message: res.message };
   },
 
   async resetPassword(input: ResetPasswordInput): Promise<MessageResponse> {
-    const res = await apiClient.post<unknown>("/auth/reset-password", input);
+    const res = await apiClient.post<null>("/auth/reset-password", input);
     return { message: res.message };
   },
 
   async verifyEmail(token: string): Promise<MessageResponse> {
-    const res = await apiClient.post<unknown>("/auth/verify-email", { token });
+    const res = await apiClient.post<null>("/auth/verify-email", { token });
     return { message: res.message };
   },
 
   async resendVerification(email: string): Promise<MessageResponse> {
-    const res = await apiClient.post<unknown>("/auth/resend-verification", { email });
+    const res = await apiClient.post<null>("/auth/resend-verification", { email });
     return { message: res.message };
   },
 
   async getBrandInvite(token: string): Promise<BrandInviteInfo> {
-    const res = await apiClient.get<unknown>(`/auth/invite?token=${encodeURIComponent(token)}`);
+    const res = await apiClient.get<BrandInviteInfo>(
+      `/auth/invite?token=${encodeURIComponent(token)}`,
+    );
     return brandInviteInfoSchema.parse(res.data);
   },
 
   async validateToken(token: string, purpose: TokenPurpose): Promise<boolean> {
-    const res = await apiClient.get<unknown>(
+    const res = await apiClient.get<ValidateTokenResponse>(
       `/auth/validate-token?token=${encodeURIComponent(token)}&purpose=${purpose}`,
     );
     return validateTokenResponseSchema.parse(res.data).valid;

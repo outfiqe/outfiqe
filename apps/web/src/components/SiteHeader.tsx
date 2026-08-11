@@ -20,7 +20,7 @@ const EXPLORE_LINKS = [
   { label: "Trending", href: "#" },
   { label: "Outfits", href: "#" },
   { label: "Creators", href: "#" },
-  { label: "Collections", href: "#" },
+  { label: "Collections", href: "/collections" },
   { label: "Trends", href: "#" },
 ];
 

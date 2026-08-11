@@ -3,6 +3,7 @@ import { Router } from "express";
 import { productController } from "./product.controller.js";
 import {
   createProductSchema,
+  listMineProductsQuerySchema,
   listPublicProductsQuerySchema,
   listReviewProductsQuerySchema,
   productIdParamSchema,
@@ -21,7 +22,12 @@ const requireAdmin = [requireAuth, requireRole(UserRole.ADMIN)];
 
 export const productRoutes = Router();
 
-productRoutes.get("/mine", ...requireBrandOwner, productController.listMine);
+productRoutes.get(
+  "/mine",
+  ...requireBrandOwner,
+  validate({ query: listMineProductsQuerySchema }),
+  productController.listMine,
+);
 productRoutes.get(
   "/review",
   ...requireAdmin,
@@ -30,6 +36,7 @@ productRoutes.get(
 );
 productRoutes.get("/trending", productController.listTrending);
 productRoutes.get("/new-arrivals", productController.listNewArrivals);
+productRoutes.get("/types", productController.listTypes);
 
 productRoutes.get(
   "/",

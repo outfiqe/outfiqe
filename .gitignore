@@ -17,6 +17,9 @@ apps/api/src/generated
 # Runtime winston log output (rotated logs + rotation audit files)
 apps/api/src/storage/logs
 
+# Local-disk upload storage (STORAGE_DRIVER=local) - dev/self-hosted only
+apps/api/uploads
+
 # Next.js auto-generates these (next dev/build regenerate them if missing).
 # Kept local-only rather than committed.
 apps/web/AGENTS.md

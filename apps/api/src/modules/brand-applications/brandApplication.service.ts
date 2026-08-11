@@ -3,6 +3,7 @@ import { brandApplicationRepository } from "./brandApplication.repository.js";
 import { env } from "#config/env.config.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
+import { buildCursorPage } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
 
 import { AppError } from "../../shared/middlewares/error-handler.js";
@@ -13,7 +14,9 @@ import {
   brandRejectedTemplate,
 } from "../../shared/email-templates/templates.js";
 
+import type { ListBrandApplicationsQuery } from "./brandApplication.schemas.js";
 import type {
+  BrandApplicationPage,
   BrandApplicationRecord,
   CreateBrandApplicationInput,
 } from "./brandApplication.types.js";
@@ -61,8 +64,14 @@ export const brandApplicationService = {
     return application;
   },
 
-  async list(status?: BrandApplicationStatus): Promise<BrandApplicationRecord[]> {
-    return brandApplicationRepository.list(status);
+  async list(query: ListBrandApplicationsQuery): Promise<BrandApplicationPage> {
+    const rows = await brandApplicationRepository.list(query.status, {
+      cursor: query.cursor,
+      limit: query.limit,
+    });
+
+    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
+    return { applications: items, nextCursor };
   },
 
   async approve(applicationId: string, adminUserId: string): Promise<void> {

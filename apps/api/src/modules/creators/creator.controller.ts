@@ -38,10 +38,10 @@ export const creatorController = {
   },
 
   async list(_req: Request, res: Response) {
-    const { status } = validated.query<ListCreatorsQuery>(res);
-    const profiles = await creatorService.list(status);
+    const query = validated.query<ListCreatorsQuery>(res);
+    const page = await creatorService.list(query);
 
-    sendSuccess(res, profiles, "Creators.");
+    sendSuccess(res, page, "Creators.");
   },
 
   async approve(_req: Request, res: Response) {

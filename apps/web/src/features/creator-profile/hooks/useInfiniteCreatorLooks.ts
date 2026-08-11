@@ -1,6 +1,6 @@
 "use client";
 
-import { useInfiniteCursorPage } from "@/shared/hooks/useInfiniteCursorPage";
+import { useInfiniteCursorPage } from "@outfiqe/shared-hooks";
 import { creatorProfileApi } from "../api/creatorProfileApi";
 
 export const useInfiniteCreatorLooks = (handle: string) => {

@@ -2,7 +2,7 @@
 
 import { useInfiniteQuery } from "@tanstack/react-query";
 
-type CursorPage = { nextCursor: string | null };
+export type CursorPage = { nextCursor: string | null };
 
 export const useInfiniteCursorPage = <T extends CursorPage>(
   queryKey: readonly unknown[],

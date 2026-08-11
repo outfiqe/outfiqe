@@ -1,5 +1,5 @@
-import type { ProductStatus, ProductType, TasteCategory } from "../../generated/prisma/enums.js";
-import type { ProductTypeSlug, TasteCategorySlug } from "./product.constants.js";
+import type { ProductStatus, ProductType } from "../../generated/prisma/enums.js";
+import type { ProductTypeSlug } from "./product.constants.js";
 
 export type ProductRecord = {
   id: string;
@@ -7,7 +7,7 @@ export type ProductRecord = {
   name: string;
   price: number;
   type: ProductType;
-  category: TasteCategory;
+  categoryId: string;
   imageUrl: string | null;
   lowStock: boolean;
   status: ProductStatus;
@@ -33,15 +33,42 @@ export type SeenOnCreator = {
   lookImageUrl: string;
 };
 
-export type ProductWithBrand = ProductRecord & { brand: { name: string } };
+export type ProductWithBrand = ProductRecord & {
+  brand: { name: string };
+  category: { slug: string; name: string };
+};
+
+export type ProductReviewSummary = Omit<ProductWithBrand, "category"> & { category: string };
+
+export type ProductReviewPage = {
+  products: ProductReviewSummary[];
+  nextCursor: string | null;
+};
+
+export type ProductBrandSummary = {
+  id: string;
+  name: string;
+  price: number;
+  type: ProductTypeSlug;
+  category: string;
+  imageUrl: string | null;
+  lowStock: boolean;
+  status: ProductStatus;
+  createdAt: Date;
+};
+
+export type ProductBrandSummaryPage = {
+  products: ProductBrandSummary[];
+  nextCursor: string | null;
+};
 
 export type CreateProductInput = {
   brandId: string;
   name: string;
   price: number;
   type: ProductType;
-  category: TasteCategory;
-  imageUrl?: string;
+  categoryId: string;
+  imageUrls?: string[];
   lowStock?: boolean;
 };
 
@@ -53,7 +80,7 @@ export type PublicProduct = {
   name: string;
   price: number;
   type: ProductTypeSlug;
-  categorySlug: TasteCategorySlug;
+  categorySlug: string;
   imageUrl: string | null;
   lowStock: boolean;
   isNew: boolean;
@@ -69,7 +96,13 @@ export type PublicProductPage = {
 export type PublicProductDetail = Omit<PublicProduct, "brand"> & {
   brand: { id: string; name: string };
   sizes: ProductSizeRecord[];
+  images: string[];
   wornByCount: number;
   seenOnCreators: SeenOnCreator[];
   isSaved: boolean;
+};
+
+export type PublicProductType = {
+  slug: ProductTypeSlug;
+  label: string;
 };

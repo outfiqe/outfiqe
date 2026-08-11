@@ -6,5 +6,8 @@
   "types": "src/index.ts",
   "scripts": {
     "lint": "eslint ."
+  },
+  "dependencies": {
+    "@outfiqe/shared-utils": "workspace:*"
   }
 }

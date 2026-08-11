@@ -7,7 +7,7 @@ const listSchema = z.array(adminInviteSummarySchema);
 
 export const teamApi = {
   async list(): Promise<AdminInviteSummary[]> {
-    const res = await apiClient.get<unknown>("/admin/invites");
+    const res = await apiClient.get<AdminInviteSummary[]>("/admin/invites");
     return listSchema.parse(res.data);
   },
 

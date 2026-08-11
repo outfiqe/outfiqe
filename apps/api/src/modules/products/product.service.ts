@@ -1,17 +1,18 @@
 import { productRepository } from "./product.repository.js";
 import { brandRepository } from "../brands/brand.repository.js";
 import { wishlistRepository } from "../wishlist/wishlist.repository.js";
+import { categoryService } from "../categories/category.service.js";
 
 import { sendEmail } from "#lib/email.utils.js";
+import { buildCursorPage } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
 
 import { AppError } from "../../shared/middlewares/error-handler.js";
 import { ProductStatus } from "../../generated/prisma/enums.js";
 import {
+  PRODUCT_TYPE_SLUGS,
   PRODUCT_TYPE_TO_SLUG,
   SLUG_TO_PRODUCT_TYPE,
-  SLUG_TO_TASTE_CATEGORY,
-  TASTE_CATEGORY_TO_SLUG,
 } from "./product.constants.js";
 import {
   productApprovedTemplate,
@@ -21,15 +22,21 @@ import {
 import type {
   CreateProductBody,
   ListBrandProductsQuery,
+  ListMineProductsQuery,
   ListPublicProductsQuery,
+  ListReviewProductsQuery,
   UpdateProductBody,
 } from "./product.schemas.js";
 import type {
+  ProductBrandSummary,
+  ProductBrandSummaryPage,
   ProductRecord,
+  ProductReviewPage,
   ProductWithBrand,
   PublicProduct,
   PublicProductDetail,
   PublicProductPage,
+  PublicProductType,
 } from "./product.types.js";
 
 const NOT_FOUND_STATUS = 404;
@@ -39,13 +46,19 @@ const NEW_ARRIVAL_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const isNew = (createdAt: Date): boolean =>
   Date.now() - createdAt.getTime() <= NEW_ARRIVAL_WINDOW_MS;
 
+const humanizeSlug = (slug: string): string =>
+  slug
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
 export const toPublicProduct = (product: ProductWithBrand): PublicProduct => ({
   id: product.id,
   brand: product.brand.name,
   name: product.name,
   price: product.price,
   type: PRODUCT_TYPE_TO_SLUG[product.type],
-  categorySlug: TASTE_CATEGORY_TO_SLUG[product.category],
+  categorySlug: product.category.slug,
   imageUrl: product.imageUrl,
   lowStock: product.lowStock,
   isNew: isNew(product.createdAt),
@@ -92,19 +105,33 @@ const notifyBrand = async (
   await sendEmail({ to: brand.email, subject, body: fallbackBody, html });
 };
 
-export const productService = {
-  async create(userId: string, input: CreateProductBody): Promise<ProductRecord> {
-    const brandId = await requireBrandId(userId);
+const toBrandSummary = ({
+  category,
+  brand: _brand,
+  type,
+  ...rest
+}: ProductWithBrand): ProductBrandSummary => ({
+  ...rest,
+  type: PRODUCT_TYPE_TO_SLUG[type],
+  category: category.name,
+});
 
-    return productRepository.create({
+export const productService = {
+  async create(userId: string, input: CreateProductBody): Promise<ProductBrandSummary> {
+    const brandId = await requireBrandId(userId);
+    const category = await categoryService.getBySlug(input.category);
+
+    const product = await productRepository.create({
       brandId,
       name: input.name,
       price: input.price,
       type: SLUG_TO_PRODUCT_TYPE[input.type],
-      category: SLUG_TO_TASTE_CATEGORY[input.category],
-      imageUrl: input.imageUrl,
+      categoryId: category.id,
+      imageUrls: input.imageUrls,
       lowStock: input.lowStock,
     });
+
+    return toBrandSummary(product);
   },
 
   async update(
@@ -123,47 +150,67 @@ export const productService = {
       );
     }
 
+    const categoryId = input.category
+      ? (await categoryService.getBySlug(input.category)).id
+      : undefined;
+
     return productRepository.update(productId, {
       name: input.name,
       price: input.price,
       type: input.type ? SLUG_TO_PRODUCT_TYPE[input.type] : undefined,
-      category: input.category ? SLUG_TO_TASTE_CATEGORY[input.category] : undefined,
-      imageUrl: input.imageUrl,
+      categoryId,
+      imageUrls: input.imageUrls,
       lowStock: input.lowStock,
     });
   },
 
-  async listMine(userId: string): Promise<ProductRecord[]> {
+  async listMine(userId: string, query: ListMineProductsQuery): Promise<ProductBrandSummaryPage> {
     const brandId = await requireBrandId(userId);
-    return productRepository.listByBrandId(brandId);
+    const rows = await productRepository.listByBrandId(brandId, {
+      cursor: query.cursor,
+      limit: query.limit,
+    });
+
+    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
+    return { products: items.map(toBrandSummary), nextCursor };
   },
 
-  async listForReview(status: ProductStatus = ProductStatus.PENDING): Promise<ProductWithBrand[]> {
-    return productRepository.listForReview(status);
+  async listForReview(query: ListReviewProductsQuery): Promise<ProductReviewPage> {
+    const status = query.status ?? ProductStatus.PENDING;
+    const rows = await productRepository.listForReview(status, {
+      cursor: query.cursor,
+      limit: query.limit,
+    });
+
+    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
+    return {
+      products: items.map(({ category, ...rest }) => ({ ...rest, category: category.name })),
+      nextCursor,
+    };
   },
 
   async listPublic(query: ListPublicProductsQuery): Promise<PublicProductPage> {
-    const category = query.category ? SLUG_TO_TASTE_CATEGORY[query.category] : undefined;
     const type = query.type ? SLUG_TO_PRODUCT_TYPE[query.type] : undefined;
+    const categoryId = query.category
+      ? (await categoryService.getBySlug(query.category)).id
+      : undefined;
 
     const [rows, counts] = await Promise.all([
       productRepository.listPublic({
-        category,
+        categoryId,
         type,
         q: query.q,
         cursor: query.cursor,
         limit: query.limit,
       }),
-      productRepository.countPublic({ category, type, q: query.q }),
+      productRepository.countPublic({ categoryId, type, q: query.q }),
     ]);
 
-    const hasMore = rows.length > query.limit;
-    const page = hasMore ? rows.slice(0, query.limit) : rows;
-    const lastRow = page[page.length - 1];
+    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
 
     return {
-      products: page.map(toPublicProduct),
-      nextCursor: hasMore && lastRow ? lastRow.id : null,
+      products: items.map(toPublicProduct),
+      nextCursor,
       total: counts.total,
       brandCount: counts.brandCount,
     };
@@ -182,6 +229,7 @@ export const productService = {
       ...toPublicProduct(product),
       brand: { id: product.brandId, name: product.brand.name },
       sizes: product.sizes,
+      images: product.images.map((image) => image.url),
       wornByCount: product.wornByCount,
       seenOnCreators,
       isSaved,
@@ -207,16 +255,18 @@ export const productService = {
       productRepository.countPublic({ brandId }),
     ]);
 
-    const hasMore = rows.length > query.limit;
-    const page = hasMore ? rows.slice(0, query.limit) : rows;
-    const lastRow = page[page.length - 1];
+    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
 
     return {
-      products: page.map(toPublicProduct),
-      nextCursor: hasMore && lastRow ? lastRow.id : null,
+      products: items.map(toPublicProduct),
+      nextCursor,
       total: counts.total,
       brandCount: counts.brandCount,
     };
+  },
+
+  async listTypes(): Promise<PublicProductType[]> {
+    return PRODUCT_TYPE_SLUGS.map((slug) => ({ slug, label: humanizeSlug(slug) }));
   },
 
   async listTrending(): Promise<PublicProduct[]> {

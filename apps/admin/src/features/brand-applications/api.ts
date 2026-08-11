@@ -1,19 +1,25 @@
 import { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
-import {
-  brandApplicationSchema,
-  type BrandApplication,
-  type BrandApplicationStatusValue,
-} from "./schemas";
+import { brandApplicationSchema, type BrandApplicationStatusValue } from "./schemas";
 
-const listSchema = z.array(brandApplicationSchema);
+const brandApplicationPageSchema = z.object({
+  applications: z.array(brandApplicationSchema),
+  nextCursor: z.string().nullable(),
+});
+export type BrandApplicationPage = z.infer<typeof brandApplicationPageSchema>;
 
 export const brandApplicationsApi = {
-  async list(status?: BrandApplicationStatusValue): Promise<BrandApplication[]> {
-    const query = status ? `?status=${status}` : "";
-    const res = await apiClient.get<unknown>(`/brand-applications${query}`);
-    return listSchema.parse(res.data);
+  async list(status?: BrandApplicationStatusValue, cursor?: string): Promise<BrandApplicationPage> {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    if (cursor) params.set("cursor", cursor);
+
+    const query = params.toString();
+    const res = await apiClient.get<BrandApplicationPage>(
+      `/brand-applications${query ? `?${query}` : ""}`,
+    );
+    return brandApplicationPageSchema.parse(res.data);
   },
 
   async approve(id: string): Promise<void> {

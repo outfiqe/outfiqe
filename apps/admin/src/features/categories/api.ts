@@ -1,0 +1,34 @@
+import { z } from "zod";
+
+import { apiClient } from "@/lib/apiClient";
+import { categorySchema, type Category, type CategoryStatusValue } from "./schemas";
+
+const listSchema = z.array(categorySchema);
+
+export type CreateCategoryInput = {
+  name: string;
+  slug: string;
+  imageUrl?: string;
+};
+
+export const categoriesApi = {
+  async list(): Promise<Category[]> {
+    const res = await apiClient.get<Category[]>("/categories/admin");
+    return listSchema.parse(res.data);
+  },
+
+  async create(input: CreateCategoryInput): Promise<Category> {
+    const res = await apiClient.post<Category>("/categories", input);
+    return categorySchema.parse(res.data);
+  },
+
+  async setStatus(id: string, status: CategoryStatusValue): Promise<Category> {
+    const res = await apiClient.patch<Category>(`/categories/${id}`, { status });
+    return categorySchema.parse(res.data);
+  },
+
+  async setImage(id: string, imageUrl: string): Promise<Category> {
+    const res = await apiClient.patch<Category>(`/categories/${id}`, { imageUrl });
+    return categorySchema.parse(res.data);
+  },
+};

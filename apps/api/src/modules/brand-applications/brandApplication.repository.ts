@@ -12,10 +12,15 @@ export const brandApplicationRepository = {
     return prisma.brandApplication.create({ data: input });
   },
 
-  async list(status?: BrandApplicationStatus): Promise<BrandApplicationRecord[]> {
+  async list(
+    status: BrandApplicationStatus | undefined,
+    params: { cursor?: string; limit: number },
+  ): Promise<BrandApplicationRecord[]> {
     return prisma.brandApplication.findMany({
       where: status ? { status } : undefined,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: params.limit + 1,
+      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
     });
   },
 

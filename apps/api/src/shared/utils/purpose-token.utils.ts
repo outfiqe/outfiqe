@@ -18,7 +18,7 @@ const isPurposeTokenPayload = (payload: JwtPayload): payload is PurposeTokenPayl
 
 export const signPurposeToken = (payload: SignPurposeTokenInput, expiresIn: string): string => {
   const options: jwt.SignOptions = {
-    algorithm: TOKEN.ALGORITHM as jwt.SignOptions["algorithm"],
+    algorithm: TOKEN.ALGORITHM,
     audience: TOKEN.AUDIENCE,
     issuer: TOKEN.ISSUER,
     expiresIn: expiresIn as jwt.SignOptions["expiresIn"],
@@ -29,7 +29,7 @@ export const signPurposeToken = (payload: SignPurposeTokenInput, expiresIn: stri
 
 export const verifyPurposeToken = (token: string): PurposeTokenPayload => {
   const options: jwt.VerifyOptions = {
-    algorithms: [TOKEN.ALGORITHM] as jwt.VerifyOptions["algorithms"],
+    algorithms: [TOKEN.ALGORITHM],
     audience: TOKEN.AUDIENCE,
     issuer: TOKEN.ISSUER,
     clockTolerance: TOKEN.CLOCK_TOLERANCE,

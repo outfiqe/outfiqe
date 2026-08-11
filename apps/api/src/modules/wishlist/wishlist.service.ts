@@ -3,6 +3,7 @@ import { productRepository } from "../products/product.repository.js";
 import { toPublicProduct } from "../products/product.service.js";
 
 import { AppError } from "../../shared/middlewares/error-handler.js";
+import { buildCursorPage } from "#lib/pagination.utils.js";
 
 import type { ListWishlistQuery } from "./wishlist.schemas.js";
 import type { WishlistResult } from "./wishlist.types.js";
@@ -29,16 +30,15 @@ export const wishlistService = {
   },
 
   async list(userId: string, query: ListWishlistQuery): Promise<PublicProductPage> {
-    const [{ products, hasMore }, total] = await Promise.all([
+    const [rows, total] = await Promise.all([
       wishlistRepository.listSaved(userId, query),
       wishlistRepository.count(userId),
     ]);
-    const publicProducts = products.map(toPublicProduct);
-    const last = publicProducts[publicProducts.length - 1];
+    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.productId);
 
     return {
-      products: publicProducts,
-      nextCursor: hasMore && last ? last.id : null,
+      products: items.map((row) => toPublicProduct(row.product)),
+      nextCursor,
       total,
       brandCount: 0,
     };

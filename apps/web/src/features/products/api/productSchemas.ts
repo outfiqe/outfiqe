@@ -1,17 +1,7 @@
 import { z } from "zod";
+import { PRODUCT_TYPE_SLUGS } from "@outfiqe/shared-utils";
 
-import type { ProductType } from "@/features/landing/components/ProductCard";
-
-const PRODUCT_TYPE_VALUES = [
-  "tops",
-  "bottoms",
-  "pants",
-  "headwear",
-  "outerwear",
-  "dresses",
-] satisfies ProductType[];
-
-export const productTypeSchema = z.enum(PRODUCT_TYPE_VALUES);
+export const productTypeSchema = z.enum(PRODUCT_TYPE_SLUGS);
 
 export const publicProductSchema = z.object({
   id: z.string(),

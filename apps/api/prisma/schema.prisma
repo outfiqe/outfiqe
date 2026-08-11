@@ -160,7 +160,8 @@ model Product {
   name         String
   price        Int
   type         ProductType
-  category     TasteCategory
+  categoryId   String        @map("category_id") @db.Uuid
+  category     Category      @relation(fields: [categoryId], references: [id])
   imageUrl     String?       @map("image_url")
   lowStock     Boolean       @default(false) @map("low_stock")
   status       ProductStatus @default(PENDING)
@@ -175,8 +176,98 @@ model Product {
   taggedInLooks CreatorLookProduct[]
   tagClicks     CreatorLookTagClick[]
   savedBy       SavedProduct[]
+  collections   CollectionProduct[]
+  images        ProductImage[]
 
   @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("product_images")
+}
+
+model Collection {
+  id          String           @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String           @unique
+  description String?
+  imageUrl    String?          @map("image_url")
+  status      CollectionStatus @default(DRAFT)
+  sortOrder   Int              @default(0) @map("sort_order")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  products CollectionProduct[]
+
+  @@index([status, sortOrder])
+  @@map("collections")
+}
+
+enum CollectionStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model Category {
+  id        String         @id @default(uuid()) @db.Uuid
+  slug      String         @unique
+  name      String
+  imageUrl  String?        @map("image_url")
+  status    CategoryStatus @default(PUBLISHED)
+  sortOrder Int            @default(0) @map("sort_order")
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  products Product[]
+
+  @@index([status, sortOrder])
+  @@map("categories")
+}
+
+enum CategoryStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model HeroSlide {
+  id          String          @id @default(uuid()) @db.Uuid
+  tag         String
+  title       String
+  description String
+  imageUrl    String?         @map("image_url")
+  ctaLabel    String          @map("cta_label")
+  ctaHref     String          @map("cta_href")
+  status      HeroSlideStatus @default(DRAFT)
+  sortOrder   Int             @default(0) @map("sort_order")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  @@index([status, sortOrder])
+  @@map("hero_slides")
+}
+
+enum HeroSlideStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model CollectionProduct {
+  collectionId String     @map("collection_id") @db.Uuid
+  productId    String     @map("product_id") @db.Uuid
+  sortOrder    Int        @default(0) @map("sort_order")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, productId])
+  @@map("collection_products")
 }
 
 model ProductSize {
@@ -210,10 +301,22 @@ model CreatorLook {
   comments       CreatorLookComment[]
   hashtags       CreatorLookHashtag[]
   tagClicks      CreatorLookTagClick[]
+  images         CreatorLookImage[]
 
   @@index([deletedAt])
   @@index([createdAt])
   @@map("creator_looks")
+}
+
+model CreatorLookImage {
+  id            String      @id @default(uuid()) @db.Uuid
+  creatorLookId String      @map("creator_look_id") @db.Uuid
+  creatorLook   CreatorLook @relation(fields: [creatorLookId], references: [id], onDelete: Cascade)
+  url           String
+  sortOrder     Int         @default(0) @map("sort_order")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  @@map("creator_look_images")
 }
 
 model CreatorLookProduct {
@@ -330,16 +433,6 @@ enum ProductType {
   HEADWEAR
   OUTERWEAR
   DRESSES
-}
-
-enum TasteCategory {
-  FORMAL
-  TRADITIONAL
-  STREETWEAR
-  CASUAL
-  MINIMAL
-  Y2K
-  OLD_MONEY
 }
 
 enum ProductStatus {

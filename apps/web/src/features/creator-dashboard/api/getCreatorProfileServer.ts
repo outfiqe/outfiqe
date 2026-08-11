@@ -7,7 +7,7 @@ export const getCreatorProfileServer = async (
   accessToken: string,
 ): Promise<CreatorProfile | null> => {
   try {
-    const raw = await serverApiRequest<unknown>("/creators/me", { accessToken });
+    const raw = await serverApiRequest<CreatorProfile>("/creators/me", { accessToken });
     return creatorProfileSchema.parse(raw);
   } catch {
     return null;

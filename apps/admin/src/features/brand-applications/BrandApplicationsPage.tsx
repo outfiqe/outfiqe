@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Badge } from "@/components/Badge";
 import { Button } from "@/components/Button";
 import { brandApplicationsApi } from "./api";
+import { useInfiniteBrandApplications } from "./hooks/useInfiniteBrandApplications";
 import type { BrandApplicationStatusValue } from "./schemas";
 
 const TABS: BrandApplicationStatusValue[] = ["PENDING", "APPROVED", "REJECTED"];
@@ -18,10 +19,9 @@ export function BrandApplicationsPage() {
   const [tab, setTab] = useState<BrandApplicationStatusValue>("PENDING");
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["brand-applications", tab],
-    queryFn: () => brandApplicationsApi.list(tab),
-  });
+  const { data, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
+    useInfiniteBrandApplications(tab);
+  const applications = data?.pages.flatMap((page) => page.applications) ?? [];
 
   const approve = useMutation({
     mutationFn: (id: string) => brandApplicationsApi.approve(id),
@@ -63,11 +63,11 @@ export function BrandApplicationsPage() {
       <div className="mt-6 space-y-3">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load applications.</p>}
-        {data?.length === 0 && (
+        {!isLoading && applications.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
         )}
 
-        {data?.map((app) => (
+        {applications.map((app) => (
           <div key={app.id} className="rounded-xl border border-border bg-card p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -105,6 +105,17 @@ export function BrandApplicationsPage() {
             </div>
           </div>
         ))}
+
+        {hasNextPage && (
+          <Button
+            variant="outline"
+            onClick={() => void fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="mx-auto"
+          >
+            {isFetchingNextPage ? "Loading…" : "Load more"}
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -7,6 +7,9 @@ import { Button } from "./Button";
 const NAV_LINKS = [
   { to: "/", label: "Brand applications" },
   { to: "/products", label: "Products" },
+  { to: "/collections", label: "Collections" },
+  { to: "/categories", label: "Categories" },
+  { to: "/hero-slides", label: "Hero slides" },
   { to: "/creators", label: "Creators" },
   { to: "/team", label: "Team" },
 ] as const;

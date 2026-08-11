@@ -8,14 +8,16 @@ import { sendEmail } from "#lib/email.utils.js";
 import logger from "#lib/winston.utils.js";
 
 import { AppError } from "../../shared/middlewares/error-handler.js";
+import { buildCursorPage } from "#lib/pagination.utils.js";
 import { CreatorStatus, FollowTargetType } from "../../generated/prisma/enums.js";
 import {
   creatorApprovedTemplate,
   creatorRejectedTemplate,
 } from "../../shared/email-templates/templates.js";
 
+import type { ListCreatorsQuery } from "./creator.schemas.js";
 import type { UserRecord } from "../users/user.types.js";
-import type { CreatorProfile, PublicCreatorProfile } from "./creator.types.js";
+import type { CreatorProfile, CreatorProfilePage, PublicCreatorProfile } from "./creator.types.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
@@ -98,9 +100,14 @@ export const creatorService = {
     };
   },
 
-  async list(status?: CreatorStatus): Promise<CreatorProfile[]> {
-    const users = await userRepository.listByCreatorStatus(status);
-    return users.map(toProfile);
+  async list(query: ListCreatorsQuery): Promise<CreatorProfilePage> {
+    const rows = await userRepository.listByCreatorStatus(query.status, {
+      cursor: query.cursor,
+      limit: query.limit,
+    });
+
+    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
+    return { creators: items.map(toProfile), nextCursor };
   },
 
   async approve(userId: string, adminUserId: string): Promise<void> {
