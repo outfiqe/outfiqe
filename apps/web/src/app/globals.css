@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../../../packages/shared-components/src";
 @import "../design-system/tokens.css";
 
 @theme inline {
