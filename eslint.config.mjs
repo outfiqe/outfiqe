@@ -47,11 +47,11 @@ export default tseslint.config(
     },
   },
 
-  // Web app only: Next.js's own rule set (Core Web Vitals + its TS rules),
-  // which also brings React/React Hooks/jsx-a11y/import resolution — no
-  // need to configure those separately for this package.
+  // Web app + shared React components: Next.js's own rule set (Core Web
+  // Vitals + its TS rules), which also brings React/React Hooks/jsx-a11y/
+  // import resolution — no need to configure those separately for this package.
   {
-    files: ["apps/web/**/*.{ts,tsx}"],
+    files: ["apps/web/**/*.{ts,tsx}", "packages/shared-components/**/*.{ts,tsx}"],
     extends: [nextCoreWebVitals, nextTypescript],
     languageOptions: {
       globals: globals.browser,

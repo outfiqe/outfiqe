@@ -111,7 +111,16 @@ export function createApiClient({
     return res.data;
   };
 
-  return { get, post, patch, del, setAccessToken, getAccessToken, setUnauthorizedHandler };
+  return {
+    get,
+    post,
+    patch,
+    del,
+    setAccessToken,
+    getAccessToken,
+    setUnauthorizedHandler,
+    refresh: refreshAccessToken,
+  };
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;

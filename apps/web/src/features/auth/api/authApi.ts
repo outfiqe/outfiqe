@@ -20,11 +20,10 @@ import type { ResetPasswordInput } from "../schemas/resetPassword.schema";
 const registerResponseSchema = z.object({ userId: z.string() });
 const loginResponseSchema = z.object({ accessToken: z.string(), user: customerUserSchema });
 const brandLoginResponseSchema = z.object({ accessToken: z.string(), user: brandUserSchema });
-const refreshResponseSchema = z.object({ accessToken: z.string() });
 
 export type RegisterResponse = z.infer<typeof registerResponseSchema>;
 export type LoginResponse = { accessToken: string; user: UserSession };
-export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
+export type RefreshResponse = { accessToken: string };
 export type { BrandInviteInfo };
 export type MessageResponse = { message: string };
 
@@ -56,10 +55,7 @@ export const authApi = {
   },
 
   async refresh(): Promise<RefreshResponse> {
-    const res = await apiClient.post<RefreshResponse>("/auth/refresh", undefined, {
-      skipAuthRetry: true,
-    });
-    return refreshResponseSchema.parse(res.data);
+    return { accessToken: await apiClient.refresh() };
   },
 
   async getCurrentUser(): Promise<UserSession> {

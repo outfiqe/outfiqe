@@ -14,6 +14,10 @@ import { authApi } from "../api/authApi";
 import { authReducer, initialAuthState } from "./authReducer";
 import { AuthActionType, AuthStatus, UserRole, type AuthAction, type AuthState } from "../types";
 
+// Mirrors the non-httpOnly companion cookie the API sets/clears alongside
+// refresh_token (see apps/api/src/shared/utils/cookie.utils.ts).
+const HAS_SESSION_COOKIE_NAME = "has_session";
+
 type AuthContextValue = {
   state: AuthState;
   dispatch: Dispatch<AuthAction>;
@@ -36,20 +40,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUnauthorizedHandler(() => dispatch({ type: AuthActionType.AUTH_LOGOUT }));
 
     let cancelled = false;
-    dispatch({ type: AuthActionType.AUTH_LOADING });
 
-    (async () => {
-      try {
-        const { accessToken } = await authApi.refresh();
-        setAccessToken(accessToken);
-        const user = await authApi.getCurrentUser();
-        if (cancelled) return;
-        dispatch({ type: AuthActionType.AUTH_SUCCESS, payload: { user, accessToken } });
-      } catch {
-        if (cancelled) return;
-        dispatch({ type: AuthActionType.AUTH_LOGOUT });
-      }
-    })();
+    // refresh_token is httpOnly, so this non-secret companion cookie is the
+    // only way to know a session might exist without a doomed 401 round trip.
+    if (document.cookie.includes(`${HAS_SESSION_COOKIE_NAME}=1`)) {
+      dispatch({ type: AuthActionType.AUTH_LOADING });
+
+      (async () => {
+        try {
+          const { accessToken } = await authApi.refresh();
+          setAccessToken(accessToken);
+          const user = await authApi.getCurrentUser();
+          if (cancelled) return;
+          dispatch({ type: AuthActionType.AUTH_SUCCESS, payload: { user, accessToken } });
+        } catch {
+          if (cancelled) return;
+          dispatch({ type: AuthActionType.AUTH_LOGOUT });
+        }
+      })();
+    } else {
+      dispatch({ type: AuthActionType.AUTH_LOGOUT });
+    }
 
     return () => {
       cancelled = true;

@@ -53,6 +53,9 @@ importers:
       '@outfiqe/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@outfiqe/shared-components':
+        specifier: workspace:*
+        version: link:../../packages/shared-components
       '@outfiqe/shared-hooks':
         specifier: workspace:*
         version: link:../../packages/shared-hooks
@@ -68,6 +71,9 @@ importers:
       '@tanstack/react-router':
         specifier: ^1.170.24
         version: 1.170.24(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      lucide-react:
+        specifier: ^1.29.0
+        version: 1.29.0(react@19.2.8)
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -205,6 +211,9 @@ importers:
       '@outfiqe/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@outfiqe/shared-components':
+        specifier: workspace:*
+        version: link:../../packages/shared-components
       '@outfiqe/shared-hooks':
         specifier: workspace:*
         version: link:../../packages/shared-hooks
@@ -293,6 +302,16 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+
+  packages/shared-components:
+    dependencies:
+      react:
+        specifier: ^19.2.8
+        version: 19.2.8
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.18
+        version: 19.2.18
 
   packages/shared-hooks:
     dependencies:

@@ -15,11 +15,13 @@
   },
   "dependencies": {
     "@outfiqe/api-client": "workspace:*",
+    "@outfiqe/shared-components": "workspace:*",
     "@outfiqe/shared-hooks": "workspace:*",
     "@outfiqe/shared-types": "workspace:*",
     "@outfiqe/shared-utils": "workspace:*",
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-router": "^1.170.24",
+    "lucide-react": "^1.29.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "zod": "^4.4.3"

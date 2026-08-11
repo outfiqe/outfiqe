@@ -15,10 +15,7 @@ type RefreshResult = z.infer<typeof refreshResponseSchema>;
 
 export const authApi = {
   async refresh(): Promise<RefreshResult> {
-    const res = await apiClient.post<RefreshResult>("/auth/refresh", undefined, {
-      skipAuthRetry: true,
-    });
-    return refreshResponseSchema.parse(res.data);
+    return { accessToken: await apiClient.refresh() };
   },
 
   async me(): Promise<AdminUser> {

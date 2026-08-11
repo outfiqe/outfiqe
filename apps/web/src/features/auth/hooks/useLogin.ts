@@ -19,14 +19,21 @@ export const useLogin = () => {
   return useMutation<LoginResponse, ApiClientError, LoginInput>({
     mutationFn: authApi.login,
     onSuccess: (data) => {
+      const requested = getSafeRedirect(searchParams.get("redirect"));
+      const destination = requested ?? getDefaultRouteForUser(data.user);
+      const isExternal =
+        destination.startsWith("http") && !destination.startsWith(window.location.origin);
+
+      if (isExternal) {
+        window.location.assign(destination);
+        return;
+      }
+
       dispatch({
         type: AuthActionType.AUTH_SUCCESS,
         payload: { user: data.user, accessToken: data.accessToken },
       });
-
-      const requested = getSafeRedirect(searchParams.get("redirect"));
-
-      router.replace(requested ?? getDefaultRouteForUser(data.user));
+      router.replace(destination);
     },
   });
 };
