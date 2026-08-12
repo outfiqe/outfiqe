@@ -6,6 +6,7 @@ export interface UserRecord {
   name: string;
   handle: string;
   phone: string;
+  avatarUrl: string | null;
   passwordHash: string;
   role: UserRole;
   isCreator: boolean;
@@ -27,10 +28,13 @@ export interface CreateUserInput {
   emailVerified?: boolean;
 }
 
+export type UpdateUserProfileInput = Partial<Pick<UserRecord, "name" | "avatarUrl">>;
+
 export interface PublicUser {
   id: string;
   email: string;
   name: string;
+  avatarUrl: string | null;
   role: UserRole;
   isCreator: boolean;
   creatorStatus: CreatorStatus;

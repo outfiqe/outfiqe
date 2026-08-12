@@ -19,6 +19,7 @@ model User {
   name           String
   handle         String        @unique
   phone          String        @unique
+  avatarUrl      String?       @map("avatar_url")
   passwordHash   String        @map("password_hash")
   role           UserRole      @default(CUSTOMER)
   isCreator      Boolean       @default(false) @map("is_creator")
@@ -32,16 +33,16 @@ model User {
 
   memberships          BrandMembership[]
   refreshTokens        RefreshToken[]
-  reviewedApplications BrandApplication[]   @relation("BrandApplicationReviewer")
-  approvedInvites      BrandInvite[]        @relation("BrandInviteApprover")
-  sentAdminInvites     AdminInvite[]        @relation("AdminInviteSender")
-  reviewedProducts     Product[]            @relation("ProductReviewer")
-  creatorLooks         CreatorLook[]        @relation("CreatorLooks")
+  reviewedApplications BrandApplication[]    @relation("BrandApplicationReviewer")
+  approvedInvites      BrandInvite[]         @relation("BrandInviteApprover")
+  sentAdminInvites     AdminInvite[]         @relation("AdminInviteSender")
+  reviewedProducts     Product[]             @relation("ProductReviewer")
+  creatorLooks         CreatorLook[]         @relation("CreatorLooks")
   lookLikes            CreatorLookLike[]
   lookSaves            CreatorLookSave[]
   lookComments         CreatorLookComment[]
   tagClicks            CreatorLookTagClick[]
-  following            Follow[]             @relation("FollowerEdges")
+  following            Follow[]              @relation("FollowerEdges")
   savedProducts        SavedProduct[]
 
   @@map("users")
@@ -138,6 +139,7 @@ model Brand {
   email         String
   phone         String
   instagram     String
+  avatarUrl     String?           @map("avatar_url")
   madeInNepal   Boolean           @default(true) @map("made_in_nepal")
   applicationId String?           @unique @map("application_id") @db.Uuid
   application   BrandApplication? @relation(fields: [applicationId], references: [id], onDelete: SetNull)

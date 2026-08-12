@@ -15,7 +15,7 @@ import {
   creatorRejectedTemplate,
 } from "../../shared/email-templates/templates.js";
 
-import type { ListCreatorsQuery } from "./creator.schemas.js";
+import type { ListCreatorsQuery, UpdateCreatorProfileBody } from "./creator.schemas.js";
 import type { UserRecord } from "../users/user.types.js";
 import type { CreatorProfile, CreatorProfilePage, PublicCreatorProfile } from "./creator.types.js";
 
@@ -26,6 +26,7 @@ const toProfile = (user: UserRecord): CreatorProfile => ({
   userId: user.id,
   name: user.name,
   email: user.email,
+  avatarUrl: user.avatarUrl,
   isCreator: user.isCreator,
   creatorStatus: user.creatorStatus,
 });
@@ -73,6 +74,12 @@ export const creatorService = {
 
   async getMine(userId: string): Promise<CreatorProfile> {
     return toProfile(await requireUser(userId));
+  },
+
+  async updateMe(userId: string, input: UpdateCreatorProfileBody): Promise<CreatorProfile> {
+    await requireUser(userId);
+    const updated = await userRepository.updateProfile(userId, input);
+    return toProfile(updated);
   },
 
   async getPublicProfile(handle: string, viewerId?: string): Promise<PublicCreatorProfile> {

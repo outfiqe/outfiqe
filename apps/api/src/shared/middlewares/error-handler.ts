@@ -1,5 +1,5 @@
 import type { ErrorRequestHandler } from "express";
-import type { ApiErrorEnvelope } from "@outfiqe/shared-types";
+import type { ApiErrorEnvelope } from "@outfiqe/types";
 
 import logger from "#lib/winston.utils.js";
 

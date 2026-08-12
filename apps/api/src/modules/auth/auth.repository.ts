@@ -31,7 +31,7 @@ export const authRepository = {
   async findBrandInviteByTokenHash(tokenHash: string): Promise<BrandInviteRecord | null> {
     return prisma.brandInvite.findUnique({
       where: { tokenHash },
-      include: { brand: { select: { name: true } } },
+      include: { brand: { select: { name: true, avatarUrl: true } } },
     });
   },
 
@@ -47,10 +47,15 @@ export const authRepository = {
     await prisma.brandMembership.create({ data: input });
   },
 
-  async findBrandMembershipByUserId(userId: string): Promise<{ brandId: string } | null> {
-    return prisma.brandMembership.findFirst({
+  async findBrandMembershipByUserId(
+    userId: string,
+  ): Promise<{ brandId: string; brandAvatarUrl: string | null } | null> {
+    const membership = await prisma.brandMembership.findFirst({
       where: { userId },
-      select: { brandId: true },
+      select: { brandId: true, brand: { select: { avatarUrl: true } } },
     });
+
+    if (!membership) return null;
+    return { brandId: membership.brandId, brandAvatarUrl: membership.brand.avatarUrl };
   },
 };

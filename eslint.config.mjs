@@ -23,7 +23,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
 
-  // Defaults for everything (API, shared-types, config files).
+  // Defaults for everything (API, types, config files).
   {
     languageOptions: {
       globals: globals.node,
@@ -51,7 +51,11 @@ export default tseslint.config(
   // Vitals + its TS rules), which also brings React/React Hooks/jsx-a11y/
   // import resolution — no need to configure those separately for this package.
   {
-    files: ["apps/web/**/*.{ts,tsx}", "packages/shared-components/**/*.{ts,tsx}"],
+    files: [
+      "apps/web/**/*.{ts,tsx}",
+      "packages/components/**/*.{ts,tsx}",
+      "packages/design-system/**/*.{ts,tsx}",
+    ],
     extends: [nextCoreWebVitals, nextTypescript],
     languageOptions: {
       globals: globals.browser,

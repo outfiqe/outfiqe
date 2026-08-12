@@ -20,6 +20,7 @@
         "API_URL",
         "SITE_URL",
         "NEXT_PUBLIC_ADMIN_URL",
+        "ADMIN_ORIGIN_URL",
         "ALLOWED_ORIGINS",
         "VITE_API_URL",
         "VITE_WEB_URL"

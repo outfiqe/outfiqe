@@ -14,6 +14,7 @@ import type {
   CreatorUserIdParam,
   ListCreatorLooksQuery,
   ListCreatorsQuery,
+  UpdateCreatorProfileBody,
 } from "./creator.schemas.js";
 
 const requirePrincipal = (res: Response): AuthPrincipal => {
@@ -35,6 +36,14 @@ export const creatorController = {
     const profile = await creatorService.getMine(userId);
 
     sendSuccess(res, profile, "Your creator profile.");
+  },
+
+  async updateMe(_req: Request, res: Response) {
+    const { userId } = requirePrincipal(res);
+    const body = validated.body<UpdateCreatorProfileBody>(res);
+
+    const profile = await creatorService.updateMe(userId, body);
+    sendSuccess(res, profile, "Profile updated.");
   },
 
   async list(_req: Request, res: Response) {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { HeroSlideStatus } from "@outfiqe/shared-types";
+import type { HeroSlideStatus } from "@outfiqe/types";
 
 const TAG_MAX = 60;
 const TITLE_MAX = 120;

@@ -1,6 +1,6 @@
 import { prisma } from "../../shared/db/prisma.js";
 import type { CreatorStatus } from "../../generated/prisma/enums.js";
-import type { CreateUserInput, UserRecord } from "./user.types.js";
+import type { CreateUserInput, UpdateUserProfileInput, UserRecord } from "./user.types.js";
 
 import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
 
@@ -68,6 +68,10 @@ export const userRepository = {
 
   async updatePasswordHash(id: string, passwordHash: string): Promise<void> {
     await prisma.user.update({ where: { id }, data: { passwordHash } });
+  },
+
+  async updateProfile(id: string, data: UpdateUserProfileInput): Promise<UserRecord> {
+    return prisma.user.update({ where: { id }, data });
   },
 
   async updateCreatorStatus(

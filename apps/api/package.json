@@ -23,8 +23,8 @@
     "db:reset": "prisma migrate reset"
   },
   "dependencies": {
-    "@outfiqe/shared-types": "workspace:*",
-    "@outfiqe/shared-utils": "workspace:*",
+    "@outfiqe/types": "workspace:*",
+    "@outfiqe/utils": "workspace:*",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "cookie-parser": "^1.4.7",

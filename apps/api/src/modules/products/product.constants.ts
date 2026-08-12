@@ -1,6 +1,6 @@
 import { ProductType } from "../../generated/prisma/enums.js";
 
-import type { ProductTypeSlug } from "@outfiqe/shared-utils";
+import type { ProductTypeSlug } from "@outfiqe/utils";
 
 export const PRODUCT_TYPE_TO_SLUG: Record<ProductType, ProductTypeSlug> = {
   [ProductType.TOPS]: "tops",

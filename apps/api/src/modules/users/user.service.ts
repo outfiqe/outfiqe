@@ -2,7 +2,12 @@ import { AppError } from "../../shared/middlewares/error-handler.js";
 import { DomainEvents, eventBus } from "../../shared/events/event-bus.js";
 import { hashPassword } from "../../shared/utils/password.utils.js";
 import { userRepository } from "./user.repository.js";
-import type { CreateUserInput, PublicUser, UserRecord } from "./user.types.js";
+import type {
+  CreateUserInput,
+  PublicUser,
+  UpdateUserProfileInput,
+  UserRecord,
+} from "./user.types.js";
 
 export const userService = {
   async createUser(input: CreateUserInput): Promise<PublicUser> {
@@ -29,6 +34,11 @@ export const userService = {
     const users = await userRepository.list();
     return users.map(toPublicUser);
   },
+
+  async updateMe(id: string, input: UpdateUserProfileInput): Promise<PublicUser> {
+    const updated = await userRepository.updateProfile(id, input);
+    return toPublicUser(updated);
+  },
 };
 
 function toPublicUser(user: UserRecord): PublicUser {
@@ -36,6 +46,7 @@ function toPublicUser(user: UserRecord): PublicUser {
     id: user.id,
     email: user.email,
     name: user.name,
+    avatarUrl: user.avatarUrl,
     role: user.role,
     isCreator: user.isCreator,
     creatorStatus: user.creatorStatus,

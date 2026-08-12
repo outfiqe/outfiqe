@@ -4,6 +4,7 @@ import { followRepository } from "../follows/follow.repository.js";
 import { AppError } from "../../shared/middlewares/error-handler.js";
 import { FollowTargetType } from "../../generated/prisma/enums.js";
 import type { BrandProfile, PublicBrandProfile } from "./brand.types.js";
+import type { UpdateBrandProfileBody } from "./brand.schemas.js";
 
 const NOT_FOUND_STATUS = 404;
 
@@ -20,6 +21,21 @@ export const brandService = {
     }
 
     return profile;
+  },
+
+  async updateMyBrand(userId: string, input: UpdateBrandProfileBody): Promise<BrandProfile> {
+    const profile = await brandRepository.findByMemberUserId(userId);
+
+    if (!profile) {
+      throw new AppError(
+        "BRAND_NOT_FOUND",
+        "No brand is linked to this account.",
+        NOT_FOUND_STATUS,
+      );
+    }
+
+    const brand = await brandRepository.update(profile.brand.id, input);
+    return { brand, membershipRole: profile.membershipRole };
   },
 
   async getPublicProfile(id: string, viewerId?: string): Promise<PublicBrandProfile> {

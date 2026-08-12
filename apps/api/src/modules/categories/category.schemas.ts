@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CategoryStatus } from "@outfiqe/shared-types";
+import type { CategoryStatus } from "@outfiqe/types";
 
 const NAME_MIN = 2;
 const NAME_MAX = 60;
