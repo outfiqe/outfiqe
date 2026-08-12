@@ -2,7 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 
-import { toast } from "@/design-system/components/ui/toast";
+import { toast } from "@outfiqe/design-system";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { wishlistApi } from "../api/wishlistApi";
 

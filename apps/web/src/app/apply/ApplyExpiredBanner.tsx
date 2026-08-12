@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 
-import { FormBanner } from "@/components/FormBanner";
+import { FormBanner } from "@outfiqe/design-system";
 
 export function ApplyExpiredBanner() {
   const searchParams = useSearchParams();

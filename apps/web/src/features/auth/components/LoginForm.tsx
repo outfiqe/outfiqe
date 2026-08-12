@@ -5,19 +5,19 @@ import { useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-import { Button } from "@/design-system/components/ui/button";
-import { Input } from "@/design-system/components/ui/input";
 import {
+  Button,
+  Input,
   Form,
+  FormBanner,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/design-system/components/ui/form";
+} from "@outfiqe/design-system";
 import { PasswordInput } from "@/components/PasswordInput";
 import { FormFieldError } from "@/components/FormFieldError";
-import { FormBanner } from "@/components/FormBanner";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 import { loginSchema, type LoginInput } from "../schemas/login.schema";
 import { useLogin } from "../hooks/useLogin";

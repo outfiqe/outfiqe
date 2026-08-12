@@ -21,6 +21,10 @@ export const authReducer = (state: AuthState, action: AuthAction): AuthState => 
     case AuthActionType.TOKEN_REFRESHED:
       return { ...state, accessToken: action.payload.accessToken };
 
+    case AuthActionType.USER_UPDATED:
+      if (!state.user) return state;
+      return { ...state, user: { ...state.user, ...action.payload.user } };
+
     case AuthActionType.AUTH_LOGOUT:
       return { user: null, accessToken: null, status: AuthStatus.UNAUTHENTICATED };
 

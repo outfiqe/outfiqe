@@ -4,7 +4,7 @@ import * as React from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 import { cn } from "@/shared/lib/cn";
-import { Input } from "@/design-system/components/ui/input";
+import { Input } from "@outfiqe/design-system";
 
 export type PasswordInputProps = React.ComponentPropsWithoutRef<"input">;
 

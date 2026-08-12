@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 
-import { Button } from "@/design-system/components/ui/button";
-import { Skeleton } from "@/design-system/components/ui/skeleton";
+import { Button, Skeleton } from "@outfiqe/design-system";
 import { CreatorStatus } from "@/features/auth/types";
 import { ApplyAsCreatorButton } from "./ApplyAsCreatorButton";
 import { PostModal } from "./PostModal";

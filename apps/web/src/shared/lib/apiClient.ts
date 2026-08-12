@@ -1,4 +1,4 @@
-import { ApiClientError, createApiClient } from "@outfiqe/api-client";
+import { ApiClientError, createApiClient } from "@outfiqe/client";
 
 const client = createApiClient({ baseURL: "/api" });
 

@@ -4,6 +4,7 @@ export type CreatorProfile = {
   userId: string;
   name: string;
   email: string;
+  avatarUrl: string | null;
   isCreator: boolean;
   creatorStatus: CreatorStatus;
 };

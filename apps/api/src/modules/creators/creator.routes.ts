@@ -6,6 +6,7 @@ import {
   creatorUserIdParamSchema,
   listCreatorLooksQuerySchema,
   listCreatorsQuerySchema,
+  updateCreatorProfileSchema,
 } from "./creator.schemas.js";
 
 import { optionalAuth } from "../../shared/middlewares/optional-auth.js";
@@ -21,6 +22,12 @@ export const creatorRoutes = Router();
 
 creatorRoutes.post("/apply", requireAuth, creatorController.apply);
 creatorRoutes.get("/me", requireAuth, creatorController.me);
+creatorRoutes.patch(
+  "/me",
+  requireAuth,
+  validate({ body: updateCreatorProfileSchema }),
+  creatorController.updateMe,
+);
 creatorRoutes.get(
   "/by-handle/:handle",
   optionalAuth,

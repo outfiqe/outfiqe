@@ -1,4 +1,4 @@
-import { createUploadsApi } from "@outfiqe/api-client";
+import { createUploadsApi } from "@outfiqe/client";
 
 import { apiClient } from "@/shared/lib/apiClient";
 

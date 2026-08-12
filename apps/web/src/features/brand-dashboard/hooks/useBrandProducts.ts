@@ -1,6 +1,6 @@
 "use client";
 
-import { useInfiniteCursorPage } from "@outfiqe/shared-hooks";
+import { useInfiniteCursorPage } from "@outfiqe/hooks";
 
 import { brandProductsApi } from "../api/brandProductsApi";
 

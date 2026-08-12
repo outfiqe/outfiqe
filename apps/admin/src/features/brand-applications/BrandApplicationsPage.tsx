@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "@/components/Badge";
-import { Button } from "@/components/Button";
+import { Badge, Button } from "@outfiqe/design-system";
 import { brandApplicationsApi } from "./api";
 import { useInfiniteBrandApplications } from "./hooks/useInfiniteBrandApplications";
 import type { BrandApplicationStatusValue } from "./schemas";
@@ -75,7 +74,9 @@ export function BrandApplicationsPage() {
                   <h2 className="font-display text-base font-bold text-foreground">
                     {app.brandName}
                   </h2>
-                  <Badge tone={STATUS_TONE[app.status]}>{app.status}</Badge>
+                  <Badge tone={STATUS_TONE[app.status]} showDot={false}>
+                    {app.status}
+                  </Badge>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {app.contactName} &middot; {app.category} &middot; {app.makesOwnPieces}

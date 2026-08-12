@@ -4,20 +4,20 @@ import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-import { Button } from "@/design-system/components/ui/button";
-import { Input } from "@/design-system/components/ui/input";
 import {
+  Button,
+  Input,
   Form,
+  FormBanner,
   FormControl,
   FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/design-system/components/ui/form";
+} from "@outfiqe/design-system";
 import { PasswordInput } from "@/components/PasswordInput";
 import { FormFieldError } from "@/components/FormFieldError";
-import { FormBanner } from "@/components/FormBanner";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 import { registerSchema, type RegisterInput } from "../../schemas/register.schema";
 import { useRegister } from "../../hooks/useRegister";

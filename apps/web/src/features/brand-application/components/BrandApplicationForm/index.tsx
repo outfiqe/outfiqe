@@ -3,17 +3,17 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 
-import { Button } from "@/design-system/components/ui/button";
-import { Input } from "@/design-system/components/ui/input";
 import {
+  Button,
+  Input,
   Form,
+  FormBanner,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/design-system/components/ui/form";
-import { FormBanner } from "@/components/FormBanner";
+} from "@outfiqe/design-system";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 import {
   brandApplicationSchema,

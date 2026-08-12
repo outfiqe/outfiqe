@@ -11,7 +11,7 @@ export interface RefreshTokenRecord {
 export interface BrandInviteRecord {
   id: string;
   brandId: string;
-  brand: { name: string };
+  brand: { name: string; avatarUrl: string | null };
   email: string;
   tokenHash: string;
   expiresAt: Date;
@@ -59,6 +59,7 @@ export type AuthUser = {
   id: string;
   name: string;
   email: string;
+  avatarUrl: string | null;
   role: UserRole;
   isCreator: boolean;
   creatorStatus: CreatorStatus;
@@ -68,6 +69,7 @@ export type BrandAuthUser = {
   id: string;
   name: string;
   email: string;
+  avatarUrl: string | null;
   role: UserRole;
   brandId: string;
 };

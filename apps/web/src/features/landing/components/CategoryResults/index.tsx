@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
-import { Button } from "@/design-system/components/ui/button";
+import { Button } from "@outfiqe/design-system";
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";

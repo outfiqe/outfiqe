@@ -2,8 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { Button } from "@/design-system/components/ui/button";
-import { Skeleton } from "@/design-system/components/ui/skeleton";
+import { Button, Skeleton } from "@outfiqe/design-system";
 import { cn } from "@/shared/lib/cn";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { useCategories } from "@/features/categories/hooks/useCategories";

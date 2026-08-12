@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Bookmark, Heart, MessageCircle } from "lucide-react";
 
 import { cn } from "@/shared/lib/cn";
-import { Skeleton } from "@/design-system/components/ui/skeleton";
+import { Skeleton } from "@outfiqe/design-system";
 import { exploreFeedApi } from "../api/exploreFeedApi";
 import { usePostCardState } from "../hooks/usePostCardState";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";

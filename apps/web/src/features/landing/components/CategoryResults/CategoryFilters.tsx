@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 
-import { Button } from "@/design-system/components/ui/button";
+import { Button } from "@outfiqe/design-system";
 import { cn } from "@/shared/lib/cn";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 

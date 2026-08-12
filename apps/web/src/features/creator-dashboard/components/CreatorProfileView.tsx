@@ -3,14 +3,13 @@
 import { useState } from "react";
 import { Mail } from "lucide-react";
 
-import { Badge } from "@/design-system/components/ui/badge";
-import { Button } from "@/design-system/components/ui/button";
-import { Input } from "@/design-system/components/ui/input";
-import { Modal } from "@/design-system/components/ui/modal";
-import { toast } from "@/design-system/components/ui/toast";
+import { AvatarUploader, Badge, Button, Input, Modal, toast } from "@outfiqe/design-system";
+import { uploadsApi } from "@/shared/api/uploadsApi";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+import { useAuth } from "@/features/auth";
 import { CreatorStatus } from "@/features/auth/types";
 import { useMyLooks } from "../hooks/useMyLooks";
+import { useUpdateCreatorProfile } from "../hooks/useUpdateCreatorProfile";
 import type { CreatorProfile } from "../api/creatorDashboardSchemas";
 
 const STATUS_LABEL: Record<CreatorStatus, string> = {
@@ -22,34 +21,62 @@ const STATUS_LABEL: Record<CreatorStatus, string> = {
 
 export const CreatorProfileView = ({ profile }: { profile: CreatorProfile }) => {
   const looks = useMyLooks();
+  const updateProfile = useUpdateCreatorProfile();
+  const { updateUser } = useAuth();
   const [name, setName] = useState(profile.name);
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
   const [editOpen, setEditOpen] = useState(false);
   const [draftName, setDraftName] = useState(name);
+  const [draftAvatarUrl, setDraftAvatarUrl] = useState(avatarUrl);
 
   const openEdit = () => {
     setDraftName(name);
+    setDraftAvatarUrl(avatarUrl);
     setEditOpen(true);
   };
 
   const save = () => {
     const trimmed = draftName.trim();
-    if (trimmed) setName(trimmed);
-    setEditOpen(false);
-    toast.success("Profile updated");
+    if (!trimmed) return;
+
+    updateProfile.mutate(
+      { name: trimmed, avatarUrl: draftAvatarUrl },
+      {
+        onSuccess: (updated) => {
+          setName(updated.name);
+          setAvatarUrl(updated.avatarUrl);
+          updateUser({ name: updated.name, avatarUrl: updated.avatarUrl });
+          setEditOpen(false);
+          toast.success("Profile updated");
+        },
+        onError: (error) => {
+          toast.error(error.message);
+        },
+      },
+    );
   };
+
+  const initialsBadge = (
+    <span
+      aria-hidden
+      className="flex size-full items-center justify-center text-lg font-bold text-white"
+      style={{ backgroundColor: getAvatarColor(profile.userId) }}
+    >
+      {initialsFor(name)}
+    </span>
+  );
 
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-border bg-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <span
-              aria-hidden
-              className="flex size-14 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white"
-              style={{ backgroundColor: getAvatarColor(profile.userId) }}
+            <div
+              className="size-14 shrink-0 overflow-hidden rounded-full bg-cover bg-center"
+              style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
             >
-              {initialsFor(name)}
-            </span>
+              {!avatarUrl && initialsBadge}
+            </div>
             <div>
               <h1 className="font-display text-2xl font-bold text-foreground">{name}</h1>
               <p className="mt-0.5 text-sm text-muted-foreground">{profile.email}</p>
@@ -80,17 +107,27 @@ export const CreatorProfileView = ({ profile }: { profile: CreatorProfile }) => 
         open={editOpen}
         onClose={() => setEditOpen(false)}
         title="Edit profile"
-        description="Changes are saved to your session for now."
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setEditOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={save}>Save</Button>
+            <Button onClick={save} disabled={updateProfile.isPending}>
+              {updateProfile.isPending ? "Saving…" : "Save"}
+            </Button>
           </div>
         }
       >
         <div className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Photo</label>
+            <AvatarUploader
+              value={draftAvatarUrl}
+              onChange={setDraftAvatarUrl}
+              onUpload={uploadsApi.upload}
+              fallback={initialsBadge}
+            />
+          </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">Display name</label>
             <Input value={draftName} onChange={(event) => setDraftName(event.target.value)} />

@@ -1,9 +1,6 @@
 import { z } from "zod";
 
-import type {
-  CreatorStatus as CreatorStatusType,
-  UserRole as UserRoleType,
-} from "@outfiqe/shared-types";
+import type { CreatorStatus as CreatorStatusType, UserRole as UserRoleType } from "@outfiqe/types";
 
 export const UserRole = {
   CUSTOMER: "CUSTOMER",
@@ -32,6 +29,7 @@ export const userSessionSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.email(),
+  avatarUrl: z.url().nullable(),
   role: userRoleSchema,
   isCreator: z.boolean(),
   creatorStatus: creatorStatusSchema,
@@ -57,10 +55,12 @@ export enum AuthActionType {
   AUTH_LOGOUT = "AUTH_LOGOUT",
   AUTH_LOADING = "AUTH_LOADING",
   TOKEN_REFRESHED = "TOKEN_REFRESHED",
+  USER_UPDATED = "USER_UPDATED",
 }
 
 export type AuthAction =
   | { type: AuthActionType.AUTH_SUCCESS; payload: { user: UserSession; accessToken: string } }
   | { type: AuthActionType.AUTH_LOGOUT }
   | { type: AuthActionType.AUTH_LOADING }
-  | { type: AuthActionType.TOKEN_REFRESHED; payload: { accessToken: string } };
+  | { type: AuthActionType.TOKEN_REFRESHED; payload: { accessToken: string } }
+  | { type: AuthActionType.USER_UPDATED; payload: { user: Partial<UserSession> } };

@@ -1,11 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "@/components/Badge";
-import { Button } from "@/components/Button";
-import { FormError } from "@/components/FormError";
+import { Badge, Button, FormBanner, Input } from "@outfiqe/design-system";
 import { ImageUpload } from "@/components/ImageUpload";
-import { Input } from "@/components/Input";
 import { categoriesApi } from "./api";
 import type { Category, CategoryStatusValue } from "./schemas";
 
@@ -114,11 +111,7 @@ export const CategoriesPage = () => {
         </Button>
       </form>
 
-      {error && (
-        <div className="mt-3">
-          <FormError message={error} />
-        </div>
-      )}
+      {error && <FormBanner className="mt-3">{error}</FormBanner>}
 
       <div className="mt-6 space-y-3">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
@@ -139,7 +132,9 @@ export const CategoriesPage = () => {
                 <h2 className="font-display text-base font-bold text-foreground">
                   {category.name}
                 </h2>
-                <Badge tone={STATUS_TONE[category.status]}>{category.status}</Badge>
+                <Badge tone={STATUS_TONE[category.status]} showDot={false}>
+                  {category.status}
+                </Badge>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
                 /{category.slug} · {category.productCount} products
@@ -147,7 +142,7 @@ export const CategoriesPage = () => {
             </div>
 
             <Button
-              variant={category.status === "PUBLISHED" ? "ghost" : "primary"}
+              variant={category.status === "PUBLISHED" ? "ghost" : "default"}
               onClick={() => toggleStatus.mutate(category)}
               disabled={toggleStatus.isPending}
             >

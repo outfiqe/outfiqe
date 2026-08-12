@@ -1,4 +1,4 @@
-import { Button } from "@/design-system/components/ui/button";
+import { Button } from "@outfiqe/design-system";
 import { useFocusOnMount } from "@/shared/hooks/useFocusOnMount";
 import Link from "next/link";
 

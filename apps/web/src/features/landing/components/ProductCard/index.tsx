@@ -5,12 +5,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Heart, Shirt } from "lucide-react";
 
-import { Button } from "@/design-system/components/ui/button";
+import { Button } from "@outfiqe/design-system";
 import { cn } from "@/shared/lib/cn";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useToggleWishlist } from "@/features/wishlist";
 
-import type { ProductTypeSlug } from "@outfiqe/shared-utils";
+import type { ProductTypeSlug } from "@outfiqe/utils";
 
 export type ProductType = ProductTypeSlug;
 

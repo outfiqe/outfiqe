@@ -8,6 +8,7 @@ export type BrandRecord = {
   email: string;
   phone: string;
   instagram: string;
+  avatarUrl: string | null;
   madeInNepal: boolean;
   applicationId: string | null;
   followerCount: number;
@@ -20,6 +21,10 @@ export type BrandProfile = {
   brand: BrandRecord;
   membershipRole: BrandRole;
 };
+
+export type UpdateBrandInput = Partial<
+  Pick<BrandRecord, "contactName" | "phone" | "instagram" | "avatarUrl">
+>;
 
 export type PublicBrandProfile = {
   id: string;

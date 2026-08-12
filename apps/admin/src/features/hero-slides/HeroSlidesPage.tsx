@@ -1,11 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "@/components/Badge";
-import { Button } from "@/components/Button";
-import { FormError } from "@/components/FormError";
+import { Badge, Button, FormBanner, Input } from "@outfiqe/design-system";
 import { ImageUpload } from "@/components/ImageUpload";
-import { Input } from "@/components/Input";
 import { heroSlidesApi } from "./api";
 import type { HeroSlide, HeroSlideStatusValue } from "./schemas";
 
@@ -152,11 +149,7 @@ export const HeroSlidesPage = () => {
         </Button>
       </form>
 
-      {error && (
-        <div className="mt-3">
-          <FormError message={error} />
-        </div>
-      )}
+      {error && <FormBanner className="mt-3">{error}</FormBanner>}
 
       <div className="mt-6 space-y-3">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
@@ -175,7 +168,9 @@ export const HeroSlidesPage = () => {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h2 className="font-display text-base font-bold text-foreground">{slide.title}</h2>
-                <Badge tone={STATUS_TONE[slide.status]}>{slide.status}</Badge>
+                <Badge tone={STATUS_TONE[slide.status]} showDot={false}>
+                  {slide.status}
+                </Badge>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
                 {slide.tag} · {slide.ctaLabel} → {slide.ctaHref}
@@ -183,7 +178,7 @@ export const HeroSlidesPage = () => {
             </div>
 
             <Button
-              variant={slide.status === "PUBLISHED" ? "ghost" : "primary"}
+              variant={slide.status === "PUBLISHED" ? "ghost" : "default"}
               onClick={() => toggleStatus.mutate(slide)}
               disabled={toggleStatus.isPending}
             >

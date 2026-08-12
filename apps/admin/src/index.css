@@ -1,6 +1,7 @@
 @import "tailwindcss";
-@source "../../../packages/shared-components/src";
-@import "./design/tokens.css";
+@source "../../../packages/components/src";
+@source "../../../packages/design-system/src";
+@import "@outfiqe/design-system/tokens.css";
 
 @theme inline {
   --color-background: hsl(var(--background));

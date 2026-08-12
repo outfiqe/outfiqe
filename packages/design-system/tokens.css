@@ -1,0 +1,30 @@
+@import "./fonts.css";
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 20 14% 7%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 20 14% 7%;
+
+  --muted: 30 14% 96%;
+  --muted-foreground: 25 6% 44%;
+
+  --border: 30 10% 90%;
+  --input: 30 10% 90%;
+
+  --primary: 20 95% 50%;
+  --primary-foreground: 0 0% 100%;
+
+  --primary-strong: 20 96% 38%;
+
+  --secondary: 18 13% 15%;
+  --secondary-foreground: 0 0% 100%;
+
+  --destructive: 6 78% 46%;
+  --destructive-foreground: 0 0% 100%;
+
+  --ring: 20 95% 50%;
+
+  --radius: 0.5rem;
+}

@@ -1,4 +1,4 @@
-import { Skeleton } from "@/design-system/components/ui/skeleton";
+import { Skeleton } from "@outfiqe/design-system";
 import type { FeedLayout } from "./FeedFilterTabs";
 
 export function PostCardSkeleton() {

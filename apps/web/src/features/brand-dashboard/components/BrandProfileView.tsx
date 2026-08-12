@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { AtSign, Mail, Phone, User } from "lucide-react";
 
-import { Badge } from "@/design-system/components/ui/badge";
-import { Button } from "@/design-system/components/ui/button";
-import { Input } from "@/design-system/components/ui/input";
-import { Modal } from "@/design-system/components/ui/modal";
-import { toast } from "@/design-system/components/ui/toast";
+import { AvatarUploader, Badge, Button, Input, Modal, toast } from "@outfiqe/design-system";
+import { uploadsApi } from "@/shared/api/uploadsApi";
+import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+import { useAuth } from "@/features/auth";
 import { useBrandProducts } from "../hooks/useBrandProducts";
+import { useUpdateBrandProfile } from "../hooks/useUpdateBrandProfile";
 import type { BrandCategory, BrandProfile } from "../api/brandDashboardSchemas";
 
 const CATEGORY_LABEL: Record<BrandCategory, string> = {
@@ -23,16 +23,20 @@ type EditableFields = {
   contactName: string;
   phone: string;
   instagram: string;
+  avatarUrl: string | null;
 };
 
 export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
   const products = useBrandProducts();
+  const updateProfile = useUpdateBrandProfile();
+  const { updateUser } = useAuth();
   const { brand } = profile;
 
   const [fields, setFields] = useState<EditableFields>({
     contactName: brand.contactName,
     phone: brand.phone,
     instagram: brand.instagram,
+    avatarUrl: brand.avatarUrl,
   });
   const [draft, setDraft] = useState<EditableFields>(fields);
   const [editOpen, setEditOpen] = useState(false);
@@ -43,20 +47,51 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
   };
 
   const save = () => {
-    setFields(draft);
-    setEditOpen(false);
-    toast.success("Profile updated");
+    updateProfile.mutate(draft, {
+      onSuccess: (updated) => {
+        setFields({
+          contactName: updated.brand.contactName,
+          phone: updated.brand.phone,
+          instagram: updated.brand.instagram,
+          avatarUrl: updated.brand.avatarUrl,
+        });
+        updateUser({ avatarUrl: updated.brand.avatarUrl });
+        setEditOpen(false);
+        toast.success("Profile updated");
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    });
   };
+
+  const initialsBadge = (
+    <span
+      aria-hidden
+      className="flex size-full items-center justify-center text-lg font-bold text-white"
+      style={{ backgroundColor: getAvatarColor(brand.id) }}
+    >
+      {initialsFor(brand.name)}
+    </span>
+  );
 
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-border bg-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <span className="font-display text-xs font-bold uppercase tracking-wider text-primary-strong">
-              {CATEGORY_LABEL[brand.category]}
-            </span>
-            <h1 className="mt-1 font-display text-2xl font-bold text-foreground">{brand.name}</h1>
+          <div className="flex items-center gap-4">
+            <div
+              className="size-14 shrink-0 overflow-hidden rounded-full bg-cover bg-center"
+              style={fields.avatarUrl ? { backgroundImage: `url(${fields.avatarUrl})` } : undefined}
+            >
+              {!fields.avatarUrl && initialsBadge}
+            </div>
+            <div>
+              <span className="font-display text-xs font-bold uppercase tracking-wider text-primary-strong">
+                {CATEGORY_LABEL[brand.category]}
+              </span>
+              <h1 className="mt-1 font-display text-2xl font-bold text-foreground">{brand.name}</h1>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {brand.madeInNepal && <Badge>Made in Nepal</Badge>}
@@ -106,17 +141,27 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
         open={editOpen}
         onClose={() => setEditOpen(false)}
         title="Edit profile"
-        description="Changes are saved to your session for now."
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setEditOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={save}>Save</Button>
+            <Button onClick={save} disabled={updateProfile.isPending}>
+              {updateProfile.isPending ? "Saving…" : "Save"}
+            </Button>
           </div>
         }
       >
         <div className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Logo</label>
+            <AvatarUploader
+              value={draft.avatarUrl}
+              onChange={(avatarUrl) => setDraft({ ...draft, avatarUrl })}
+              onUpload={uploadsApi.upload}
+              fallback={initialsBadge}
+            />
+          </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">Contact name</label>
             <Input

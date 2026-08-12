@@ -1,7 +1,7 @@
 import { Router } from "express";
 
 import { brandController } from "./brand.controller.js";
-import { brandIdParamSchema } from "./brand.schemas.js";
+import { brandIdParamSchema, updateBrandProfileSchema } from "./brand.schemas.js";
 import { listBrandProductsQuerySchema } from "../products/product.schemas.js";
 
 import { optionalAuth } from "../../shared/middlewares/optional-auth.js";
@@ -14,6 +14,13 @@ import { UserRole } from "../../generated/prisma/enums.js";
 export const brandRoutes = Router();
 
 brandRoutes.get("/me", requireAuth, requireRole(UserRole.BRAND_OWNER), brandController.me);
+brandRoutes.patch(
+  "/me",
+  requireAuth,
+  requireRole(UserRole.BRAND_OWNER),
+  validate({ body: updateBrandProfileSchema }),
+  brandController.updateMe,
+);
 
 brandRoutes.get(
   "/:id",

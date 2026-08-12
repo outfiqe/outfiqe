@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { validate } from "../../shared/middlewares/validate.js";
-import { createUserSchema, userIdParamSchema } from "./user.schemas.js";
+import { createUserSchema, updateOwnProfileSchema, userIdParamSchema } from "./user.schemas.js";
 import { userController } from "./user.controller.js";
 
 import { requireAuth } from "../../shared/middlewares/require-auth.js";
@@ -13,6 +13,12 @@ const requireAdmin = [requireAuth, requireRole(UserRole.ADMIN)];
 export const userRoutes = Router();
 
 userRoutes.post("/", validate({ body: createUserSchema }), userController.create);
+userRoutes.patch(
+  "/me",
+  requireAuth,
+  validate({ body: updateOwnProfileSchema }),
+  userController.updateMe,
+);
 userRoutes.get("/", ...requireAdmin, userController.list);
 userRoutes.get(
   "/:id",
