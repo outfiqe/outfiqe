@@ -6,8 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, Heart, Shirt, Zap } from "lucide-react";
 
 import { cn } from "@/shared/lib/cn";
-import { Button } from "@/design-system/components/ui/button";
-import { toast } from "@/design-system/components/ui/toast";
+import { Button, toast } from "@outfiqe/design-system";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useToggleWishlist } from "@/features/wishlist";
 import { TrustLine } from "./TrustLine";

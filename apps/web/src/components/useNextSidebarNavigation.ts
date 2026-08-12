@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo } from "react";
 
-import type { SidebarNavigationAdapter } from "@outfiqe/shared-components";
+import type { SidebarNavigationAdapter } from "@outfiqe/components";
 
 export const useNextSidebarNavigation = (): SidebarNavigationAdapter => {
   const pathname = usePathname();

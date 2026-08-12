@@ -3,7 +3,7 @@ const AUTH_SCREENS = new Set(["/login", "/register"]);
 // The only external redirect target we ever allow — everything else must be
 // a same-app relative path. Admins land here straight out of login instead
 // of getting a second, duplicated login form inside apps/admin.
-const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:5173";
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "/admin";
 
 export const getSafeRedirect = (from: string | null | undefined): string | null => {
   if (!from) return null;

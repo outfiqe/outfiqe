@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { User } from "lucide-react";
 
-import { Button } from "@/design-system/components/ui/button";
+import { Button } from "@outfiqe/design-system";
+import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
 import { CreatorModeModal } from "./CreatorModeModal";
 
 export function AccountMenu() {
-  const { state, isAuthenticated, isBrandOwner, isCreator } = useAuth();
+  const { state, isAuthenticated, isBrandOwner, isAdmin, isCreator } = useAuth();
   const logout = useLogout();
   const [creatorModalOpen, setCreatorModalOpen] = useState(false);
 
@@ -31,21 +31,34 @@ export function AccountMenu() {
     );
   }
 
+  const user = state.user;
+
   return (
     <div className="group relative hidden lg:block">
       <Link
         href="/dashboard"
         aria-label="Your account"
-        className="flex size-9 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
+        className="block size-9 shrink-0 overflow-hidden rounded-full bg-muted transition-opacity hover:opacity-80"
       >
-        <User className="size-5" />
+        <div
+          className="flex size-full items-center justify-center bg-cover bg-center"
+          style={user?.avatarUrl ? { backgroundImage: `url(${user.avatarUrl})` } : undefined}
+        >
+          {!user?.avatarUrl && (
+            <span
+              aria-hidden
+              className="flex size-full items-center justify-center text-xs font-bold text-white"
+              style={{ backgroundColor: getAvatarColor(user?.id ?? "") }}
+            >
+              {initialsFor(user?.name ?? "")}
+            </span>
+          )}
+        </div>
       </Link>
 
       <div className="invisible absolute right-0 top-full z-20 w-56 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
         <div className="mt-2 rounded-xl border border-border bg-card p-2 shadow-lg">
-          <p className="truncate px-3 py-2 text-sm font-semibold text-foreground">
-            {state.user?.name}
-          </p>
+          <p className="truncate px-3 py-2 text-sm font-semibold text-foreground">{user?.name}</p>
 
           <Link
             href="/dashboard"
@@ -66,7 +79,7 @@ export function AccountMenu() {
             Your bag
           </Link>
 
-          {!isBrandOwner && (
+          {!isBrandOwner && !isAdmin && (
             <>
               <div className="my-1.5 h-px bg-border" />
               {isCreator ? (

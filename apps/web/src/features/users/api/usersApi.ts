@@ -1,5 +1,5 @@
 import { apiClient } from "@/shared/lib/apiClient";
-import type { User } from "@outfiqe/shared-types";
+import type { User } from "@outfiqe/types";
 
 export const usersApi = {
   list: () => apiClient.get<User[]>("/users").then((res) => res.data),

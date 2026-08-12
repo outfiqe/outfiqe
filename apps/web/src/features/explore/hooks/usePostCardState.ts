@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { toast } from "@/design-system/components/ui/toast";
+import { toast } from "@outfiqe/design-system";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { exploreFeedApi } from "../api/exploreFeedApi";

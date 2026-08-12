@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PRODUCT_TYPE_SLUGS } from "@outfiqe/shared-utils";
+import { PRODUCT_TYPE_SLUGS } from "@outfiqe/utils";
 
 export const productTypeSchema = z.enum(PRODUCT_TYPE_SLUGS);
 

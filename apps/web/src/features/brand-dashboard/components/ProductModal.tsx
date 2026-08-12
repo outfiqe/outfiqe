@@ -3,12 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-import { Button } from "@/design-system/components/ui/button";
-import { Input } from "@/design-system/components/ui/input";
-import { Modal } from "@/design-system/components/ui/modal";
-import { ImageUploader } from "@/design-system/components/ui/image-uploader";
-import { toast } from "@/design-system/components/ui/toast";
-import { FormBanner } from "@/components/FormBanner";
+import { Button, Input, Modal, ImageUploader, toast, FormBanner } from "@outfiqe/design-system";
+import { uploadsApi } from "@/shared/api/uploadsApi";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
@@ -84,6 +80,7 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
           <ImageUploader
             value={imageUrls}
             onChange={(urls) => form.setValue("imageUrls", urls, { shouldValidate: true })}
+            onUpload={uploadsApi.upload}
           />
         </div>
 

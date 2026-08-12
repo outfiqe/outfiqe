@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { cn } from "@/shared/lib/cn";
-import { Skeleton } from "@/design-system/components/ui/skeleton";
+import { Skeleton } from "@outfiqe/design-system";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useFollowCreator } from "../hooks/useFollowCreator";
 import { useSuggestedCreators } from "../hooks/useSuggestedCreators";

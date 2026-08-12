@@ -14,7 +14,7 @@ import { getSafeRedirect } from "@/features/auth/utils/safeRedirect";
  */
 
 const API_URL = process.env.API_URL ?? "http://localhost:4000";
-const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:5173";
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "/admin";
 const REFRESH_COOKIE_NAME = "refresh_token";
 
 type ProxyUser = { role: UserRole };
@@ -73,7 +73,7 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
     if (user.role === UserRole.ADMIN) {
-      return NextResponse.redirect(ADMIN_URL);
+      return NextResponse.redirect(new URL(ADMIN_URL, request.url));
     }
 
     const rule = DASHBOARD_ROLE_RULES[pathname];

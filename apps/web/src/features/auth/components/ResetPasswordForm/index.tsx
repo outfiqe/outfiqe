@@ -3,17 +3,17 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-import { Button } from "@/design-system/components/ui/button";
 import {
+  Button,
   Form,
+  FormBanner,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/design-system/components/ui/form";
+} from "@outfiqe/design-system";
 import { PasswordInput } from "@/components/PasswordInput";
-import { FormBanner } from "@/components/FormBanner";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 import { resetPasswordSchema, type ResetPasswordInput } from "../../schemas/resetPassword.schema";
 import { useResetPassword } from "../../hooks/useResetPassword";

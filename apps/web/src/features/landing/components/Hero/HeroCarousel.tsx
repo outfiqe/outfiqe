@@ -5,13 +5,13 @@ import Link from "next/link";
 import Autoplay from "embla-carousel-autoplay";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
-import { Button } from "@/design-system/components/ui/button";
 import {
+  Button,
   Carousel,
   CarouselContent,
   CarouselItem,
   type CarouselApi,
-} from "@/design-system/components/ui/carousel";
+} from "@outfiqe/design-system";
 import { cn } from "@/shared/lib/cn";
 import type { PublicHeroSlide } from "./heroSlideSchemas";
 

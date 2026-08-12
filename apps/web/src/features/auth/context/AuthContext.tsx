@@ -12,7 +12,14 @@ import {
 import { setAccessToken, setUnauthorizedHandler } from "@/shared/lib/apiClient";
 import { authApi } from "../api/authApi";
 import { authReducer, initialAuthState } from "./authReducer";
-import { AuthActionType, AuthStatus, UserRole, type AuthAction, type AuthState } from "../types";
+import {
+  AuthActionType,
+  AuthStatus,
+  UserRole,
+  type AuthAction,
+  type AuthState,
+  type UserSession,
+} from "../types";
 
 // Mirrors the non-httpOnly companion cookie the API sets/clears alongside
 // refresh_token (see apps/api/src/shared/utils/cookie.utils.ts).
@@ -23,8 +30,10 @@ type AuthContextValue = {
   dispatch: Dispatch<AuthAction>;
   isAuthenticated: boolean;
   isBrandOwner: boolean;
+  isAdmin: boolean;
   isCreator: boolean;
   logout: () => Promise<void>;
+  updateUser: (patch: Partial<UserSession>) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -76,13 +85,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateUser = (patch: Partial<UserSession>): void => {
+    dispatch({ type: AuthActionType.USER_UPDATED, payload: { user: patch } });
+  };
+
   const value: AuthContextValue = {
     state,
     dispatch,
     isAuthenticated: state.status === AuthStatus.AUTHENTICATED,
     isBrandOwner: state.user?.role === UserRole.BRAND_OWNER,
+    isAdmin: state.user?.role === UserRole.ADMIN,
     isCreator: state.user?.isCreator === true,
     logout,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

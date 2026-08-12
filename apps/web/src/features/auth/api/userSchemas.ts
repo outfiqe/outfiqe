@@ -6,6 +6,7 @@ export const customerUserSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.email(),
+  avatarUrl: z.url().nullable(),
   role: userRoleSchema,
   isCreator: z.boolean(),
   creatorStatus: creatorStatusSchema,
@@ -15,6 +16,7 @@ export const brandUserSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.email(),
+  avatarUrl: z.url().nullable(),
   role: userRoleSchema,
   brandId: z.string(),
 });
@@ -33,6 +35,7 @@ export const toUserSession = (
     id: user.id,
     name: user.name,
     email: user.email,
+    avatarUrl: user.avatarUrl,
     role: user.role,
     isCreator: "isCreator" in user ? user.isCreator : false,
     creatorStatus: "creatorStatus" in user ? user.creatorStatus : CreatorStatus.NONE,

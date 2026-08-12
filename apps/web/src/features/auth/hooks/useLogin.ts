@@ -7,7 +7,7 @@ import type { ApiClientError } from "@/shared/lib/apiClient";
 import { authApi, type LoginResponse } from "../api/authApi";
 import { useAuth } from "../context/AuthContext";
 import { AuthActionType } from "../types";
-import { getDefaultRouteForUser } from "../utils/getDefaultRoute";
+import { ADMIN_URL, getDefaultRouteForUser } from "../utils/getDefaultRoute";
 import { getSafeRedirect } from "../utils/safeRedirect";
 import type { LoginInput } from "../schemas/login.schema";
 
@@ -22,10 +22,11 @@ export const useLogin = () => {
       const requested = getSafeRedirect(searchParams.get("redirect"));
       const destination = requested ?? getDefaultRouteForUser(data.user);
       const isExternal =
-        destination.startsWith("http") && !destination.startsWith(window.location.origin);
+        destination === ADMIN_URL ||
+        (destination.startsWith("http") && !destination.startsWith(window.location.origin));
 
       if (isExternal) {
-        window.location.assign(destination);
+        window.location.replace(destination);
         return;
       }
 

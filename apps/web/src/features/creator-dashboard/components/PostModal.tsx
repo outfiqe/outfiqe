@@ -4,13 +4,16 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-import { Button } from "@/design-system/components/ui/button";
-import { Input } from "@/design-system/components/ui/input";
-import { Modal } from "@/design-system/components/ui/modal";
-import { Skeleton } from "@/design-system/components/ui/skeleton";
-import { ImageUploader } from "@/design-system/components/ui/image-uploader";
-import { toast } from "@/design-system/components/ui/toast";
-import { FormBanner } from "@/components/FormBanner";
+import {
+  Button,
+  Input,
+  Modal,
+  Skeleton,
+  ImageUploader,
+  toast,
+  FormBanner,
+} from "@outfiqe/design-system";
+import { uploadsApi } from "@/shared/api/uploadsApi";
 import { cn } from "@/shared/lib/cn";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
@@ -84,6 +87,7 @@ export const PostModal = ({ open, onClose }: PostModalProps) => {
           <ImageUploader
             value={imageUrls}
             onChange={(urls) => form.setValue("imageUrls", urls, { shouldValidate: true })}
+            onUpload={uploadsApi.upload}
           />
           {form.formState.errors.imageUrls && (
             <p className="mt-1.5 text-xs text-destructive">

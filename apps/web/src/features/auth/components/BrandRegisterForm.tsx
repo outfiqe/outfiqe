@@ -3,20 +3,20 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-import { Button } from "@/design-system/components/ui/button";
-import { Input } from "@/design-system/components/ui/input";
-import { Label } from "@/design-system/components/ui/label";
 import {
+  Button,
+  Input,
+  Label,
   Form,
+  FormBanner,
   FormControl,
   FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/design-system/components/ui/form";
+} from "@outfiqe/design-system";
 import { PasswordInput } from "@/components/PasswordInput";
-import { FormBanner } from "@/components/FormBanner";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 import { brandRegisterSchema, type BrandRegisterInput } from "../schemas/brandRegister.schema";
 import { useBrandRegister } from "../hooks/useBrandRegister";

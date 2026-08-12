@@ -3,9 +3,7 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { Button } from "@/design-system/components/ui/button";
-import { Input } from "@/design-system/components/ui/input";
-import { Label } from "@/design-system/components/ui/label";
+import { Button, Input, Label } from "@outfiqe/design-system";
 import { ApiClientError } from "@/shared/lib/apiClient";
 import { useFocusOnMount } from "@/shared/hooks/useFocusOnMount";
 import { authApi } from "../../api/authApi";
