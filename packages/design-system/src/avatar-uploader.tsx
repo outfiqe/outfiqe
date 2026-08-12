@@ -3,6 +3,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import { Camera, Loader2, X } from "lucide-react";
 
+import { AvatarCropModal } from "./avatar-crop-modal";
 import { cn } from "./cn";
 
 type AvatarUploaderProps = {
@@ -12,6 +13,8 @@ type AvatarUploaderProps = {
   fallback: ReactNode;
   className?: string;
 };
+
+type PendingCrop = { file: File; objectUrl: string };
 
 export const AvatarUploader = ({
   value,
@@ -23,11 +26,9 @@ export const AvatarUploader = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingCrop, setPendingCrop] = useState<PendingCrop | null>(null);
 
-  const handleFile = async (fileList: FileList | null) => {
-    const file = fileList?.[0];
-    if (!file) return;
-
+  const uploadFile = async (file: File) => {
     setIsUploading(true);
     setError(null);
     try {
@@ -37,8 +38,24 @@ export const AvatarUploader = ({
       setError(err instanceof Error ? err.message : "Upload failed. Try again.");
     } finally {
       setIsUploading(false);
-      if (inputRef.current) inputRef.current.value = "";
     }
+  };
+
+  const handleFileSelect = (fileList: FileList | null) => {
+    const file = fileList?.[0];
+    if (inputRef.current) inputRef.current.value = "";
+    if (!file) return;
+    setPendingCrop({ file, objectUrl: URL.createObjectURL(file) });
+  };
+
+  const closeCropModal = () => {
+    if (pendingCrop) URL.revokeObjectURL(pendingCrop.objectUrl);
+    setPendingCrop(null);
+  };
+
+  const handleCropConfirm = (croppedFile: File) => {
+    closeCropModal();
+    void uploadFile(croppedFile);
   };
 
   return (
@@ -94,10 +111,20 @@ export const AvatarUploader = ({
         type="file"
         accept="image/jpeg,image/png,image/webp"
         className="hidden"
-        onChange={(event) => void handleFile(event.target.files)}
+        onChange={(event) => handleFileSelect(event.target.files)}
       />
 
       {error && <p className="text-xs text-destructive">{error}</p>}
+
+      {pendingCrop && (
+        <AvatarCropModal
+          imageSrc={pendingCrop.objectUrl}
+          fileName={pendingCrop.file.name}
+          mimeType={pendingCrop.file.type || "image/jpeg"}
+          onCancel={closeCropModal}
+          onConfirm={handleCropConfirm}
+        />
+      )}
     </div>
   );
 };
