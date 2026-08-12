@@ -1,7 +1,8 @@
 import type { ReactElement } from "react";
 
 import { SidebarNavItemView } from "./SidebarNavItemView";
-import { sectionHeadingClass } from "./styles";
+import { cx } from "./cx";
+import { cardClass, navListClass, sectionHeadingClass } from "./styles";
 import type { SidebarNavSection, SidebarNavigationAdapter } from "./types";
 import type { ExpandedGroups } from "./useExpandedGroups";
 
@@ -21,13 +22,13 @@ export const SidebarSection = ({
   const headingId = section.label ? `${section.id}-heading` : undefined;
 
   return (
-    <div className="space-y-1">
+    <div className={cx(cardClass, "shrink-0 space-y-1")}>
       {section.label && !collapsed && (
         <h3 id={headingId} className={sectionHeadingClass}>
           {section.label}
         </h3>
       )}
-      <ul aria-labelledby={headingId} className="space-y-1">
+      <ul aria-labelledby={headingId} className={navListClass}>
         {section.items.map((item) => (
           <SidebarNavItemView
             key={item.id}
