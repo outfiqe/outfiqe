@@ -1,10 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { getRouteApi, Navigate, useNavigate } from "@tanstack/react-router";
-import { NEPAL_PHONE_REGEX } from "@outfiqe/shared-utils";
+import { NEPAL_PHONE_REGEX } from "@outfiqe/utils";
 
-import { Button } from "@/components/Button";
-import { FormError } from "@/components/FormError";
-import { Input } from "@/components/Input";
+import { Button, FormBanner, Input } from "@outfiqe/design-system";
 import { authApi } from "./api";
 import { useAuth } from "./AuthContext";
 import type { AdminInviteInfo } from "./schemas";
@@ -90,7 +88,7 @@ export function RegisterInvitePage() {
           <p className="text-sm text-muted-foreground">Checking your invite…</p>
         )}
 
-        {inviteState.status === "invalid" && <FormError message={inviteState.message} />}
+        {inviteState.status === "invalid" && <FormBanner>{inviteState.message}</FormBanner>}
 
         {inviteState.status === "valid" && (
           <>
@@ -100,7 +98,7 @@ export function RegisterInvitePage() {
             <p className="mt-1 text-sm text-muted-foreground">{inviteState.invite.email}</p>
 
             <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-              <FormError message={error} />
+              {error && <FormBanner>{error}</FormBanner>}
 
               <div className="space-y-1.5">
                 <label htmlFor="phone" className="text-xs text-muted-foreground">

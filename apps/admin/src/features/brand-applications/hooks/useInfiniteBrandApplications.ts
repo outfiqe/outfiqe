@@ -1,4 +1,4 @@
-import { useInfiniteCursorPage } from "@outfiqe/shared-hooks";
+import { useInfiniteCursorPage } from "@outfiqe/hooks";
 
 import { brandApplicationsApi } from "../api";
 import type { BrandApplicationStatusValue } from "../schemas";

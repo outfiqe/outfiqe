@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "@/components/Badge";
-import { Button } from "@/components/Button";
+import { Badge, Button } from "@outfiqe/design-system";
 import { productsApi } from "./api";
 import { useInfiniteProducts } from "./hooks/useInfiniteProducts";
 import type { ProductStatusValue } from "./schemas";
@@ -79,8 +78,14 @@ export function ProductsPage() {
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <h2 className="font-display text-base font-bold text-foreground">{product.name}</h2>
-                <Badge tone={STATUS_TONE[product.status]}>{product.status}</Badge>
-                {product.lowStock && <Badge tone="negative">Low stock</Badge>}
+                <Badge tone={STATUS_TONE[product.status]} showDot={false}>
+                  {product.status}
+                </Badge>
+                {product.lowStock && (
+                  <Badge tone="negative" showDot={false}>
+                    Low stock
+                  </Badge>
+                )}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
                 {product.brand.name} &middot; Rs. {product.price.toLocaleString()}

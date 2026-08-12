@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CreatorStatus } from "@outfiqe/shared-types";
+import type { CreatorStatus } from "@outfiqe/types";
 
 const statusValues = ["NONE", "PENDING", "APPROVED", "REJECTED"] satisfies CreatorStatus[];
 export const creatorStatusSchema = z.enum(statusValues);

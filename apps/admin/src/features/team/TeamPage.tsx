@@ -1,10 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "@/components/Badge";
-import { Button } from "@/components/Button";
-import { FormError } from "@/components/FormError";
-import { Input } from "@/components/Input";
+import { Badge, Button, FormBanner, Input } from "@outfiqe/design-system";
 import { teamApi } from "./api";
 import type { AdminInviteSummary } from "./schemas";
 
@@ -76,11 +73,7 @@ export function TeamPage() {
         </Button>
       </form>
 
-      {error && (
-        <div className="mt-3">
-          <FormError message={error} />
-        </div>
-      )}
+      {error && <FormBanner className="mt-3">{error}</FormBanner>}
 
       <div className="mt-6 space-y-3">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
@@ -95,7 +88,9 @@ export function TeamPage() {
               <h2 className="font-display text-base font-bold text-foreground">{invite.name}</h2>
               <p className="mt-1 text-sm text-muted-foreground">{invite.email}</p>
             </div>
-            <Badge tone={STATUS_TONE[invite.status]}>{invite.status}</Badge>
+            <Badge tone={STATUS_TONE[invite.status]} showDot={false}>
+              {invite.status}
+            </Badge>
           </div>
         ))}
       </div>

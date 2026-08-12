@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 
-import type { SidebarNavigationAdapter } from "@outfiqe/shared-components";
+import type { SidebarNavigationAdapter } from "@outfiqe/components";
 
 export const useTanStackSidebarNavigation = (): SidebarNavigationAdapter => {
   const pathname = useRouterState({ select: (state) => state.location.pathname });

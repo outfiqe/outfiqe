@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { HeroSlideStatus } from "@outfiqe/shared-types";
+import type { HeroSlideStatus } from "@outfiqe/types";
 
 const statusValues = ["DRAFT", "PUBLISHED"] satisfies HeroSlideStatus[];
 export const heroSlideStatusSchema = z.enum(statusValues);

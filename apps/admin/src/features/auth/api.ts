@@ -8,6 +8,7 @@ import {
   refreshResponseSchema,
   type AdminInviteInfo,
   type AdminUser,
+  type UpdateProfileInput,
 } from "./schemas";
 
 type LoginResult = z.infer<typeof loginResponseSchema>;
@@ -25,6 +26,11 @@ export const authApi = {
 
   async logout(): Promise<void> {
     await apiClient.post("/auth/logout");
+  },
+
+  async updateProfile(input: UpdateProfileInput): Promise<AdminUser> {
+    const res = await apiClient.patch<AdminUser>("/users/me", input);
+    return adminUserSchema.parse(res.data);
   },
 
   async getAdminInvite(token: string): Promise<AdminInviteInfo> {

@@ -10,6 +10,7 @@ type AuthState =
 type AuthContextValue = {
   state: AuthState;
   logout: () => Promise<void>;
+  updateUser: (patch: Partial<AdminUser>) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -41,7 +42,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ status: "signed-out" });
   };
 
-  return <AuthContext.Provider value={{ state, logout }}>{children}</AuthContext.Provider>;
+  const updateUser = (patch: Partial<AdminUser>) => {
+    setState((prev) =>
+      prev.status === "signed-in" ? { ...prev, user: { ...prev.user, ...patch } } : prev,
+    );
+  };
+
+  return (
+    <AuthContext.Provider value={{ state, logout, updateUser }}>{children}</AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthContextValue {

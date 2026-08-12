@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 
+import { Button } from "@outfiqe/design-system";
 import { uploadsApi } from "@/lib/uploadsApi";
-import { Button } from "./Button";
 
 type ImageUploadProps = {
   value: string | null;

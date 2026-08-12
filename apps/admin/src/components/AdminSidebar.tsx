@@ -12,7 +12,7 @@ import {
   sidebarWidthClass,
   useSidebarCollapse,
   type SidebarNavSection,
-} from "@outfiqe/shared-components";
+} from "@outfiqe/components";
 
 import { useTanStackSidebarNavigation } from "./useTanStackSidebarNavigation";
 

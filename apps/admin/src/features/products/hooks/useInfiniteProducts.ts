@@ -1,4 +1,4 @@
-import { useInfiniteCursorPage } from "@outfiqe/shared-hooks";
+import { useInfiniteCursorPage } from "@outfiqe/hooks";
 
 import { productsApi } from "../api";
 import type { ProductStatusValue } from "../schemas";

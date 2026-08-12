@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { UserRole } from "@outfiqe/shared-types";
+import type { UserRole } from "@outfiqe/types";
 
 const userRoleValues = ["CUSTOMER", "BRAND_OWNER", "ADMIN"] satisfies UserRole[];
 export const userRoleSchema = z.enum(userRoleValues);
@@ -8,9 +8,18 @@ export const adminUserSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.email(),
+  avatarUrl: z.url().nullable(),
   role: userRoleSchema,
 });
 export type AdminUser = z.infer<typeof adminUserSchema>;
+
+export const updateProfileInputSchema = z
+  .object({
+    name: z.string().trim().min(1).max(100),
+    avatarUrl: z.url().nullable(),
+  })
+  .partial();
+export type UpdateProfileInput = z.infer<typeof updateProfileInputSchema>;
 
 export const loginResponseSchema = z.object({
   accessToken: z.string(),

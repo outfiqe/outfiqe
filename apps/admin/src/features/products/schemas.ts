@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ProductStatus } from "@outfiqe/shared-types";
+import type { ProductStatus } from "@outfiqe/types";
 
 const statusValues = ["PENDING", "APPROVED", "REJECTED"] satisfies ProductStatus[];
 export const productStatusSchema = z.enum(statusValues);

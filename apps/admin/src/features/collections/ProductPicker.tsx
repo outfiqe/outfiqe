@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Button } from "@/components/Button";
-import { Input } from "@/components/Input";
+import { Button, Input } from "@outfiqe/design-system";
 import { collectionsApi } from "./api";
 import type { Collection, ProductSearchResult } from "./schemas";
 

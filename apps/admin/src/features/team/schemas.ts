@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AdminInviteStatus } from "@outfiqe/shared-types";
+import type { AdminInviteStatus } from "@outfiqe/types";
 
 const statusValues = ["PENDING", "ACCEPTED", "EXPIRED"] satisfies AdminInviteStatus[];
 export const adminInviteStatusSchema = z.enum(statusValues);

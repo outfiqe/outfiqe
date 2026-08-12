@@ -1,11 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Badge } from "@/components/Badge";
-import { Button } from "@/components/Button";
-import { FormError } from "@/components/FormError";
+import { Badge, Button, FormBanner, Input } from "@outfiqe/design-system";
 import { ImageUpload } from "@/components/ImageUpload";
-import { Input } from "@/components/Input";
 import { collectionsApi } from "./api";
 import { ProductPicker } from "./ProductPicker";
 import type { Collection, CollectionStatusValue } from "./schemas";
@@ -139,11 +136,7 @@ export const CollectionsPage = () => {
         </Button>
       </form>
 
-      {error && (
-        <div className="mt-3">
-          <FormError message={error} />
-        </div>
-      )}
+      {error && <FormBanner className="mt-3">{error}</FormBanner>}
 
       <div className="mt-6 space-y-3">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
@@ -162,7 +155,9 @@ export const CollectionsPage = () => {
                   <h2 className="font-display text-base font-bold text-foreground">
                     {collection.name}
                   </h2>
-                  <Badge tone={STATUS_TONE[collection.status]}>{collection.status}</Badge>
+                  <Badge tone={STATUS_TONE[collection.status]} showDot={false}>
+                    {collection.status}
+                  </Badge>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
                   /{collection.slug} · {collection.productCount} products
@@ -176,7 +171,7 @@ export const CollectionsPage = () => {
                 {managingId === collection.id ? "Close" : "Manage products"}
               </Button>
               <Button
-                variant={collection.status === "PUBLISHED" ? "ghost" : "primary"}
+                variant={collection.status === "PUBLISHED" ? "ghost" : "default"}
                 onClick={() => toggleStatus.mutate(collection)}
                 disabled={toggleStatus.isPending}
               >

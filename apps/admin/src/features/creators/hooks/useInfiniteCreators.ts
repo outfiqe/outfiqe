@@ -1,4 +1,4 @@
-import { useInfiniteCursorPage } from "@outfiqe/shared-hooks";
+import { useInfiniteCursorPage } from "@outfiqe/hooks";
 
 import { creatorsApi } from "../api";
 import type { CreatorStatusValue } from "../schemas";
