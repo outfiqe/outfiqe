@@ -3,16 +3,15 @@ import { HeaderBar } from "@outfiqe/components";
 
 import { AccountMenu } from "./AccountMenu";
 import { AdminSidebar } from "./AdminSidebar";
+import { Logo } from "./Logo";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh">
       <HeaderBar>
-        <span className="font-display text-lg font-bold tracking-tight text-foreground">
-          outfiqe<span className="text-primary">.</span>
-          <span className="ml-1 hidden align-middle text-xs font-semibold uppercase tracking-widest text-muted-foreground sm:inline">
-            Admin
-          </span>
+        <Logo className="shrink-0" />
+        <span className="hidden self-center text-xs font-semibold uppercase tracking-widest text-muted-foreground sm:inline">
+          Admin
         </span>
 
         <div className="ml-auto flex items-center gap-3">
