@@ -20,7 +20,7 @@ export interface ExploreProduct {
   name: string;
   price: number;
   wornByCount: number;
-  categorySlug?: string;
+  categorySlugs?: string[];
   type?: ProductType;
   lowStock?: boolean;
   isNew?: boolean;

@@ -163,8 +163,7 @@ model Product {
   name         String
   price        Int
   type         ProductType
-  categoryId   String        @map("category_id") @db.Uuid
-  category     Category      @relation(fields: [categoryId], references: [id])
+  categories   Category[]
   imageUrl     String?       @map("image_url")
   lowStock     Boolean       @default(false) @map("low_stock")
   status       ProductStatus @default(PENDING)

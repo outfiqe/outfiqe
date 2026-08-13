@@ -38,6 +38,10 @@ export const categoryRepository = {
     return prisma.category.findUnique({ where: { slug } });
   },
 
+  async findManyBySlugs(slugs: string[]): Promise<CategoryRecord[]> {
+    return prisma.category.findMany({ where: { slug: { in: slugs } } });
+  },
+
   async listAll(): Promise<CategoryWithProductCount[]> {
     const rows = await prisma.category.findMany({
       include: withProductCount,

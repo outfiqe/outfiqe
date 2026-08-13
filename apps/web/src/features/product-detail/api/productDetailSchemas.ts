@@ -25,7 +25,7 @@ export const productDetailSchema = z.object({
   name: z.string(),
   price: z.number(),
   type: productTypeSchema,
-  categorySlug: z.string(),
+  categorySlugs: z.array(z.string()),
   imageUrl: z.string().nullable(),
   lowStock: z.boolean(),
   isNew: z.boolean(),

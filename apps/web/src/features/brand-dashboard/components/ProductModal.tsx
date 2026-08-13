@@ -3,7 +3,15 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-import { Button, Input, Modal, ImageUploader, toast, FormBanner } from "@outfiqe/design-system";
+import {
+  Button,
+  Input,
+  Modal,
+  ImageUploader,
+  MultiSelect,
+  toast,
+  FormBanner,
+} from "@outfiqe/design-system";
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { useCategories } from "@/features/categories/hooks/useCategories";
@@ -30,7 +38,7 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
       name: "",
       price: 0,
       type: "tops",
-      category: "formal",
+      categories: [],
       imageUrls: [],
       lowStock: false,
     },
@@ -115,27 +123,35 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Type</label>
-            <select className={selectClass} {...form.register("type")}>
-              {productTypes.data?.map((productType) => (
-                <option key={productType.slug} value={productType.slug}>
-                  {productType.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Category</label>
-            <select className={selectClass} {...form.register("category")}>
-              {categories.data?.map((category) => (
-                <option key={category.slug} value={category.slug}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-foreground">Type</label>
+          <select className={selectClass} {...form.register("type")}>
+            {productTypes.data?.map((productType) => (
+              <option key={productType.slug} value={productType.slug}>
+                {productType.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-foreground">Categories</label>
+          <MultiSelect
+            options={
+              categories.data?.map((category) => ({
+                value: category.slug,
+                label: category.name,
+              })) ?? []
+            }
+            value={form.watch("categories") ?? []}
+            onChange={(next) => form.setValue("categories", next, { shouldValidate: true })}
+            placeholder="Add a category"
+          />
+          {form.formState.errors.categories && (
+            <p className="mt-1.5 text-xs text-destructive">
+              {form.formState.errors.categories.message}
+            </p>
+          )}
         </div>
       </form>
     </Modal>

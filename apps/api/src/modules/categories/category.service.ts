@@ -67,4 +67,16 @@ export const categoryService = {
     }
     return category;
   },
+
+  async getManyBySlugs(slugs: string[]): Promise<CategoryRecord[]> {
+    const categories = await categoryRepository.findManyBySlugs(slugs);
+    if (categories.length !== new Set(slugs).size) {
+      throw new AppError(
+        "CATEGORY_NOT_FOUND",
+        "One or more categories were not found.",
+        NOT_FOUND_STATUS,
+      );
+    }
+    return categories;
+  },
 };

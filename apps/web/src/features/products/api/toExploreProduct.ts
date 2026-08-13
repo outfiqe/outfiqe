@@ -15,7 +15,7 @@ export const toExploreProduct = (product: PublicProduct): ExploreProduct => ({
   name: product.name,
   price: product.price,
   wornByCount: getMockWornByCount(product.id),
-  categorySlug: product.categorySlug,
+  categorySlugs: product.categorySlugs,
   type: product.type,
   lowStock: product.lowStock,
   isNew: product.isNew,

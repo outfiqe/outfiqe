@@ -58,7 +58,7 @@ export const toPublicProduct = (product: ProductWithBrand): PublicProduct => ({
   name: product.name,
   price: product.price,
   type: PRODUCT_TYPE_TO_SLUG[product.type],
-  categorySlug: product.category.slug,
+  categorySlugs: product.categories.map((category) => category.slug),
   imageUrl: product.imageUrl,
   lowStock: product.lowStock,
   isNew: isNew(product.createdAt),
@@ -106,27 +106,27 @@ const notifyBrand = async (
 };
 
 const toBrandSummary = ({
-  category,
+  categories,
   brand: _brand,
   type,
   ...rest
 }: ProductWithBrand): ProductBrandSummary => ({
   ...rest,
   type: PRODUCT_TYPE_TO_SLUG[type],
-  category: category.name,
+  categories: categories.map((category) => category.name),
 });
 
 export const productService = {
   async create(userId: string, input: CreateProductBody): Promise<ProductBrandSummary> {
     const brandId = await requireBrandId(userId);
-    const category = await categoryService.getBySlug(input.category);
+    const categories = await categoryService.getManyBySlugs(input.categories);
 
     const product = await productRepository.create({
       brandId,
       name: input.name,
       price: input.price,
       type: SLUG_TO_PRODUCT_TYPE[input.type],
-      categoryId: category.id,
+      categoryIds: categories.map((category) => category.id),
       imageUrls: input.imageUrls,
       lowStock: input.lowStock,
     });
@@ -150,15 +150,15 @@ export const productService = {
       );
     }
 
-    const categoryId = input.category
-      ? (await categoryService.getBySlug(input.category)).id
+    const categoryIds = input.categories
+      ? (await categoryService.getManyBySlugs(input.categories)).map((category) => category.id)
       : undefined;
 
     return productRepository.update(productId, {
       name: input.name,
       price: input.price,
       type: input.type ? SLUG_TO_PRODUCT_TYPE[input.type] : undefined,
-      categoryId,
+      categoryIds,
       imageUrls: input.imageUrls,
       lowStock: input.lowStock,
     });
@@ -184,7 +184,10 @@ export const productService = {
 
     const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
     return {
-      products: items.map(({ category, ...rest }) => ({ ...rest, category: category.name })),
+      products: items.map(({ categories, ...rest }) => ({
+        ...rest,
+        categories: categories.map((category) => category.name),
+      })),
       nextCursor,
     };
   },

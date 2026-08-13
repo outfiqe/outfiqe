@@ -52,7 +52,7 @@ export const wishlistRepository = {
         product: {
           include: {
             brand: { select: { name: true } },
-            category: { select: { slug: true, name: true } },
+            categories: { select: { slug: true, name: true } },
           },
         },
       },
