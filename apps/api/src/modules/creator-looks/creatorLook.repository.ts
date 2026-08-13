@@ -40,11 +40,6 @@ const toSummary = (
   taggedProducts: look.taggedProducts.map((tagged) => tagged.product),
 });
 
-// --- feed cursor codec ---------------------------------------------------
-// Opaque, tab-shaped cursors. "Simple" tabs (following/hashtag) keyset on
-// (createdAt, id); the trending/for_you tab keysets on (score, createdAt, id)
-// since score is computed, not a column. Comment ids are random UUIDs (not
-// sortable), so comment pagination reuses the "simple" shape too.
 type SimpleCursor = { c: string; i: string };
 type ScoredCursor = SimpleCursor & { s: number };
 
@@ -62,8 +57,6 @@ const decodeCursor = <T extends SimpleCursor>(cursor?: string): T | undefined =>
 
 const isUniqueConstraintError = (error: unknown): boolean =>
   error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
-
-// --- feed hydration --------------------------------------------------------
 
 const feedRelationsInclude = {
   creator: { select: { id: true, name: true, handle: true, creatorStatus: true } },
@@ -159,13 +152,8 @@ const hydrateFeedPosts = async (
     .map((look) => toFeedPost(look, viewer));
 };
 
-// --- feed id listings --------------------------------------------------------
-
 const TRENDING_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
-// trending/for_you: score isn't a column, so ordering + keyset pagination needs a raw query.
-// Every other lookup here stays through the query builder — this is intentionally the one place
-// that isn't.
 const listTrendingIds = async (params: {
   cursor?: string;
   limit: number;
@@ -227,20 +215,18 @@ const listIdsByFilter = async (
   return { ids: items.map((row) => row.id), nextCursor };
 };
 
-// --- trending tags (in-memory cache) ---------------------------------------
-
 const TRENDING_TAGS_LIMIT = 15;
 const TRENDING_TAGS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const TRENDING_TAGS_TTL_MS = 10 * 60 * 1000;
 
-// A Map + timestamp is enough at this scale. Swap this for a Redis GET/SETEX
-// (same 10-minute TTL) here once this needs to be shared across instances.
+/* 
+A Map + timestamp is enough at this scale. Swap this for a Redis GET/SETEX
+(same 10-minute TTL) here once this needs to be shared across instances.
+*/
 let trendingTagsCache: { data: TrendingTag[]; expiresAt: number } | null = null;
 
 const fetchTrendingTags = async (): Promise<TrendingTag[]> => {
-  if (trendingTagsCache && trendingTagsCache.expiresAt > Date.now()) {
-    return trendingTagsCache.data;
-  }
+  if (trendingTagsCache && trendingTagsCache.expiresAt > Date.now()) return trendingTagsCache.data;
 
   const since = new Date(Date.now() - TRENDING_TAGS_WINDOW_MS);
   const rows = await prisma.$queryRaw<{ tag: string; post_count: bigint }[]>(Prisma.sql`

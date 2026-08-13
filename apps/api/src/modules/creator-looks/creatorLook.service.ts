@@ -145,9 +145,10 @@ export const creatorLookService = {
       });
     }
 
-    // for_you has no dedicated personalisation query yet — it reuses the trending
-    // ranking (same fallback the spec itself defines for low-activity viewers),
-    // applied unconditionally for now. Swap in real scoring later without an API change.
+    /* for_you has no dedicated personalization query yet — it reuses the trending
+     ranking (same fallback the spec itself defines for low-activity viewers),
+     applied unconditionally for now. Swap in real scoring later without an API change.
+     */
     const tabToUse = tab === FOR_YOU_TAB ? TRENDING_TAB : tab;
 
     return creatorLookRepository.feed({

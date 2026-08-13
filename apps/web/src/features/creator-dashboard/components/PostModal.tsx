@@ -33,7 +33,7 @@ type PostModalProps = {
 export const PostModal = ({ open, onClose }: PostModalProps) => {
   const [productFilter, setProductFilter] = useState("");
   const debouncedFilter = useDebouncedValue(productFilter, SEARCH_DEBOUNCE_MS);
-  const taggableProducts = useTaggableProducts(debouncedFilter);
+  const taggableProducts = useTaggableProducts(debouncedFilter, open);
   const create = useCreateLook();
 
   const form = useForm<LookFormInput>({

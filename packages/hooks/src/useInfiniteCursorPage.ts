@@ -7,11 +7,13 @@ export type CursorPage = { nextCursor: string | null };
 export const useInfiniteCursorPage = <T extends CursorPage>(
   queryKey: readonly unknown[],
   fetchPage: (cursor?: string) => Promise<T>,
+  enabled = true,
 ) => {
   return useInfiniteQuery({
     queryKey,
     queryFn: ({ pageParam }) => fetchPage(pageParam),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    enabled,
   });
 };

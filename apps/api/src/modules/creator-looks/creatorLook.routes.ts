@@ -18,8 +18,10 @@ import { validate } from "../../shared/middlewares/validate.js";
 
 export const creatorLookRoutes = Router();
 
-// Static/prefixed paths first — Express would otherwise never reach them once a
-// "/:lookId"-shaped route below matched the same segment.
+/*  
+  Static/prefixed paths first — Express would otherwise never reach them once a
+  "/:lookId"-shaped route below matched the same segment.
+ */
 creatorLookRoutes.get(
   "/feed",
   optionalAuth,
