@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 
 import {
   Button,
@@ -14,7 +14,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@outfiqe/design-system";
-import { FormFieldError } from "@/components/FormFieldError";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 import {
   brandApplicationSchema,
@@ -23,8 +22,8 @@ import {
 import { useSubmitBrandApplication } from "../../hooks/useSubmitBrandApplication";
 import { getBrandApplicationErrorMessage } from "../../utils/errors";
 import { BrandApplicationSuccess } from "./BrandApplicationSuccess";
-import { ChipGroup, MultiChipGroup } from "./ChildGroup";
-import { CATEGORY_OPTIONS, PRODUCTION_OPTIONS } from "./brandApplicationForm.constants";
+import { CategoryField } from "./CategoryField";
+import { ProductionField } from "./ProductionField";
 
 export const BrandApplicationForm = () => {
   const submit = useSubmitBrandApplication();
@@ -143,45 +142,9 @@ export const BrandApplicationForm = () => {
             )}
           />
 
-          <div>
-            <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Category
-            </span>
-            <p className="mb-2 text-xs text-muted-foreground">Select all that apply.</p>
-            <Controller
-              control={form.control}
-              name="categories"
-              render={({ field }) => (
-                <MultiChipGroup
-                  label="Category"
-                  options={CATEGORY_OPTIONS}
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-            {form.formState.errors.categories && (
-              <FormFieldError>{form.formState.errors.categories.message}</FormFieldError>
-            )}
-          </div>
+          <CategoryField control={form.control} error={form.formState.errors.categories?.message} />
 
-          <div className="rounded-lg border-[1.5px] border-primary bg-background p-4">
-            <p className="mb-2.5 text-sm font-semibold text-primary-strong">
-              Do you design or make your own pieces?
-            </p>
-            <Controller
-              control={form.control}
-              name="makesOwnPieces"
-              render={({ field }) => (
-                <ChipGroup
-                  label="Production"
-                  options={PRODUCTION_OPTIONS}
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-          </div>
+          <ProductionField control={form.control} />
 
           <div className="flex flex-wrap items-center gap-4 pt-2">
             <Button type="submit" disabled={submit.isPending}>

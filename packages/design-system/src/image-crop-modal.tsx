@@ -7,7 +7,12 @@ import { Button } from "./button";
 import { getCroppedImageFile } from "./crop-image";
 import { Modal } from "./modal";
 
-type ImageCropShape = "round" | "rect";
+export const IMAGE_CROP_SHAPE = {
+  ROUND: "round",
+  RECT: "rect",
+} as const;
+
+type ImageCropShape = (typeof IMAGE_CROP_SHAPE)[keyof typeof IMAGE_CROP_SHAPE];
 
 type ImageCropModalProps = {
   imageSrc: string;
@@ -27,7 +32,7 @@ export const ImageCropModal = ({
   fileName,
   mimeType,
   aspect,
-  cropShape = "rect",
+  cropShape = IMAGE_CROP_SHAPE.RECT,
   title = "Adjust photo",
   description = "Drag to reposition, use the slider to zoom.",
   cropAreaClassName = "h-72",

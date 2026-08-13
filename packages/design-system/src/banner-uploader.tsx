@@ -4,7 +4,7 @@ import { ImagePlus, Loader2, X } from "lucide-react";
 
 import { cn } from "./cn";
 import { HiddenFileInput } from "./hidden-file-input";
-import { ImageCropModal } from "./image-crop-modal";
+import { IMAGE_CROP_SHAPE, ImageCropModal } from "./image-crop-modal";
 import { useImageCropUpload } from "./use-image-crop-upload";
 
 const BANNER_ASPECT = 3.5;
@@ -81,7 +81,7 @@ export const BannerUploader = ({ value, onChange, onUpload, className }: BannerU
           fileName={pendingCrop.file.name}
           mimeType={pendingCrop.file.type || "image/jpeg"}
           aspect={BANNER_ASPECT}
-          cropShape="rect"
+          cropShape={IMAGE_CROP_SHAPE.RECT}
           title="Adjust banner"
           cropAreaClassName="h-56"
           onCancel={closeCropModal}

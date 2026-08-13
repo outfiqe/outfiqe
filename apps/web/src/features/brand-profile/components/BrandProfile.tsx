@@ -17,6 +17,7 @@ import { useInfiniteBrandProducts } from "../hooks/useInfiniteBrandProducts";
 import type { BrandProfile as BrandProfileType } from "../api/brandProfileSchemas";
 
 const PRODUCT_GRID_CLASS = "grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-5";
+const ALL_PRODUCT_TYPE = "all";
 
 type BrandProfileProps = {
   brand: BrandProfileType;
@@ -30,11 +31,11 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
 
   const [isFollowing, setIsFollowing] = useState(brand.isFollowing);
   const [followerCount, setFollowerCount] = useState(brand.followerCount);
-  const [activeType, setActiveType] = useState("all");
+  const [activeType, setActiveType] = useState(ALL_PRODUCT_TYPE);
 
   const products = useInfiniteBrandProducts(
     brand.id,
-    activeType === "all" ? undefined : activeType,
+    activeType === ALL_PRODUCT_TYPE ? undefined : activeType,
   );
 
   const toggleFollow = () => {
@@ -56,6 +57,8 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
     );
   };
 
+  const categoryLabel = brand.categories.map(toTitleCase).join(" · ");
+
   const items = useMemo(
     () => products.data?.pages.flatMap((page) => page.products) ?? [],
     [products.data],
@@ -71,7 +74,7 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
     return groups;
   }, [items]);
 
-  const filters = [{ slug: "all", label: "All" }, ...(productTypes.data ?? [])];
+  const filters = [{ slug: ALL_PRODUCT_TYPE, label: "All" }, ...(productTypes.data ?? [])];
   const isLoading = products.isLoading || productTypes.isLoading;
   const sectionedTypes = (productTypes.data ?? []).filter((type) => groupedByType.has(type.slug));
 
@@ -105,9 +108,7 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
           <h1 className="mt-4 font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl">
             {brand.name}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {brand.categories.map(toTitleCase).join(" · ")} · Kathmandu
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{categoryLabel} · Kathmandu</p>
           {brand.madeInNepal && <Badge className="mt-2">Made in Nepal</Badge>}
 
           <div className="mt-5 flex gap-8">
@@ -172,7 +173,7 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
         <ProductGridSkeleton className="mt-8 gap-x-4 gap-y-8" />
       ) : items.length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">No products listed yet.</p>
-      ) : activeType === "all" ? (
+      ) : activeType === ALL_PRODUCT_TYPE ? (
         <div className="mt-8 space-y-10">
           {sectionedTypes.map((type) => (
             <section key={type.slug}>

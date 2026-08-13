@@ -5,7 +5,7 @@ import { Camera, Loader2, X } from "lucide-react";
 
 import { cn } from "./cn";
 import { HiddenFileInput } from "./hidden-file-input";
-import { ImageCropModal } from "./image-crop-modal";
+import { IMAGE_CROP_SHAPE, ImageCropModal } from "./image-crop-modal";
 import { useImageCropUpload } from "./use-image-crop-upload";
 
 type AvatarUploaderProps = {
@@ -91,7 +91,7 @@ export const AvatarUploader = ({
           fileName={pendingCrop.file.name}
           mimeType={pendingCrop.file.type || "image/jpeg"}
           aspect={1}
-          cropShape="round"
+          cropShape={IMAGE_CROP_SHAPE.ROUND}
           title="Adjust photo"
           onCancel={closeCropModal}
           onConfirm={handleCropConfirm}

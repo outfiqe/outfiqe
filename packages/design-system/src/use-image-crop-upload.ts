@@ -29,7 +29,7 @@ export const useImageCropUpload = ({ onChange, onUpload }: UseImageCropUploadOpt
   };
 
   const handleFileSelect = (fileList: FileList | null) => {
-    const file = fileList?.[0];
+    const file = fileList?.item(0);
     if (inputRef.current) inputRef.current.value = "";
     if (!file) return;
     setPendingCrop({ file, objectUrl: URL.createObjectURL(file) });
