@@ -1,12 +1,9 @@
 import { z } from "zod";
 
-const brandCategorySchema = z.enum(["STREETWEAR", "TRADITIONAL", "THRIFT", "KIDS", "FORMAL"]);
-
 export const brandProfileSchema = z.object({
   brand: z.object({
     id: z.string(),
     name: z.string(),
-    categories: z.array(brandCategorySchema),
     contactName: z.string(),
     email: z.email(),
     phone: z.string(),
@@ -20,7 +17,6 @@ export const brandProfileSchema = z.object({
 });
 
 export type BrandProfile = z.infer<typeof brandProfileSchema>;
-export type BrandCategory = z.infer<typeof brandCategorySchema>;
 
 export const updateBrandProfileInputSchema = z
   .object({

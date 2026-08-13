@@ -12,7 +12,6 @@ import {
   Modal,
   toast,
 } from "@outfiqe/design-system";
-import { toTitleCase } from "@outfiqe/utils";
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { cn } from "@/shared/lib/cn";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
@@ -104,14 +103,7 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
                 {!fields.avatarUrl && initialsBadge}
               </div>
               <div>
-                {brand.categories.length > 0 && (
-                  <span className="font-display text-xs font-bold uppercase tracking-wider text-primary-strong">
-                    {brand.categories.map(toTitleCase).join(" · ")}
-                  </span>
-                )}
-                <h1 className="mt-1 font-display text-2xl font-bold text-foreground">
-                  {brand.name}
-                </h1>
+                <h1 className="font-display text-2xl font-bold text-foreground">{brand.name}</h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -214,8 +206,7 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            Brand name, category, and origin are verified fields — reach out to support to change
-            those.
+            Brand name and origin are verified fields — reach out to support to change those.
           </p>
         </div>
       </Modal>
