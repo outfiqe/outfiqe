@@ -116,14 +116,6 @@ enum BrandApplicationStatus {
   REJECTED
 }
 
-enum BrandCategory {
-  STREETWEAR
-  TRADITIONAL
-  THRIFT
-  KIDS
-  FORMAL
-}
-
 enum MakesOwnPieces {
   MAKES
   RESELLS
@@ -133,7 +125,6 @@ enum MakesOwnPieces {
 model Brand {
   id            String            @id @default(uuid()) @db.Uuid
   name          String
-  categories    BrandCategory[]
   contactName   String            @map("contact_name")
   email         String
   phone         String

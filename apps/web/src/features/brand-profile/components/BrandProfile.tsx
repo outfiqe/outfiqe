@@ -8,7 +8,6 @@ import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { Button, Badge } from "@outfiqe/design-system";
-import { toTitleCase } from "@outfiqe/utils";
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
@@ -56,8 +55,6 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
       },
     );
   };
-
-  const categoryLabel = brand.categories.map(toTitleCase).join(" · ");
 
   const items = useMemo(
     () => products.data?.pages.flatMap((page) => page.products) ?? [],
@@ -108,9 +105,7 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
           <h1 className="mt-4 font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl">
             {brand.name}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {categoryLabel ? `${categoryLabel} · ` : ""}Kathmandu
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">Kathmandu</p>
           {brand.madeInNepal && <Badge className="mt-2">Made in Nepal</Badge>}
 
           <div className="mt-5 flex gap-8">

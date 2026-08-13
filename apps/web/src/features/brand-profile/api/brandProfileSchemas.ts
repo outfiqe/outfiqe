@@ -3,7 +3,6 @@ import { z } from "zod";
 export const brandProfileSchema = z.object({
   id: z.string(),
   name: z.string(),
-  categories: z.array(z.string()),
   avatarUrl: z.url().nullable(),
   bannerUrl: z.url().nullable(),
   madeInNepal: z.boolean(),

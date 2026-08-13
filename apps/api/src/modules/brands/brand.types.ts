@@ -1,9 +1,8 @@
-import type { BrandCategory, BrandRole } from "../../generated/prisma/enums.js";
+import type { BrandRole } from "../../generated/prisma/enums.js";
 
 export type BrandRecord = {
   id: string;
   name: string;
-  categories: BrandCategory[];
   contactName: string;
   email: string;
   phone: string;
@@ -30,7 +29,6 @@ export type UpdateBrandInput = Partial<
 export type PublicBrandProfile = {
   id: string;
   name: string;
-  categories: BrandCategory[];
   avatarUrl: string | null;
   bannerUrl: string | null;
   madeInNepal: boolean;
