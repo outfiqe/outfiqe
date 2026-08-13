@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import { cn } from "./cn";
 
@@ -14,6 +14,11 @@ interface ModalProps {
   className?: string;
 }
 
+// Tracks how many Modals are currently open so that when one Modal is
+// stacked on top of another (e.g. a crop dialog opened from inside an edit
+// modal), Escape only closes the topmost one instead of every open Modal.
+let openModalCount = 0;
+
 export function Modal({
   open,
   onClose,
@@ -23,15 +28,21 @@ export function Modal({
   footer,
   className,
 }: ModalProps) {
+  const depthRef = useRef(0);
+
   useEffect(() => {
     if (!open) return;
+    openModalCount += 1;
+    depthRef.current = openModalCount;
+
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && depthRef.current === openModalCount) onClose();
     };
     window.addEventListener("keydown", onKeyDown);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
+      openModalCount -= 1;
       window.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
     };

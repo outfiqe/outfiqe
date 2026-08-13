@@ -10,7 +10,7 @@ export type CreateBrandApplicationInput = {
   email: string;
   phone: string;
   instagram: string;
-  category: BrandCategory;
+  categories: BrandCategory[];
   makesOwnPieces: MakesOwnPieces;
 };
 

@@ -43,7 +43,7 @@ export const brandApplicationRepository = {
       const brand = await tx.brand.create({
         data: {
           name: application.brandName,
-          category: application.category,
+          categories: application.categories,
           contactName: application.contactName,
           email: application.email,
           phone: application.phone,

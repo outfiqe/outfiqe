@@ -7,25 +7,38 @@ import { Button } from "./button";
 import { getCroppedImageFile } from "./crop-image";
 import { Modal } from "./modal";
 
-type AvatarCropModalProps = {
+type ImageCropShape = "round" | "rect";
+
+type ImageCropModalProps = {
   imageSrc: string;
   fileName: string;
   mimeType: string;
+  aspect: number;
+  cropShape?: ImageCropShape;
+  title?: string;
+  description?: string;
+  cropAreaClassName?: string;
   onCancel: () => void;
   onConfirm: (file: File) => void;
 };
 
-export const AvatarCropModal = ({
+export const ImageCropModal = ({
   imageSrc,
   fileName,
   mimeType,
+  aspect,
+  cropShape = "rect",
+  title = "Adjust photo",
+  description = "Drag to reposition, use the slider to zoom.",
+  cropAreaClassName = "h-72",
   onCancel,
   onConfirm,
-}: AvatarCropModalProps) => {
+}: ImageCropModalProps) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleCropComplete = useCallback((_area: Area, areaPixels: Area) => {
     setCroppedAreaPixels(areaPixels);
@@ -34,9 +47,12 @@ export const AvatarCropModal = ({
   const handleConfirm = async () => {
     if (!croppedAreaPixels) return;
     setIsSaving(true);
+    setError(null);
     try {
       const file = await getCroppedImageFile(imageSrc, croppedAreaPixels, fileName, mimeType);
       onConfirm(file);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't process that image. Try again.");
     } finally {
       setIsSaving(false);
     }
@@ -46,8 +62,8 @@ export const AvatarCropModal = ({
     <Modal
       open
       onClose={onCancel}
-      title="Adjust photo"
-      description="Drag to reposition, use the slider to zoom."
+      title={title}
+      description={description}
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel} disabled={isSaving}>
@@ -59,13 +75,13 @@ export const AvatarCropModal = ({
         </div>
       }
     >
-      <div className="relative h-72 w-full overflow-hidden rounded-xl bg-muted">
+      <div className={`relative w-full overflow-hidden rounded-xl bg-muted ${cropAreaClassName}`}>
         <Cropper
           image={imageSrc}
           crop={crop}
           zoom={zoom}
-          aspect={1}
-          cropShape="round"
+          aspect={aspect}
+          cropShape={cropShape}
           showGrid={false}
           onCropChange={setCrop}
           onZoomChange={setZoom}
@@ -85,6 +101,8 @@ export const AvatarCropModal = ({
           aria-label="Zoom"
         />
       </div>
+
+      {error && <p className="mt-3 text-xs text-destructive">{error}</p>}
     </Modal>
   );
 };

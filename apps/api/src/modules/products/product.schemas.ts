@@ -43,6 +43,7 @@ export const listPublicProductsQuerySchema = z.object({
 });
 
 export const listBrandProductsQuerySchema = z.object({
+  type: productTypeSlugSchema.optional(),
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });

@@ -6,12 +6,13 @@ export const brandProfileSchema = z.object({
   brand: z.object({
     id: z.string(),
     name: z.string(),
-    category: brandCategorySchema,
+    categories: z.array(brandCategorySchema),
     contactName: z.string(),
     email: z.email(),
     phone: z.string(),
     instagram: z.string(),
     avatarUrl: z.url().nullable(),
+    bannerUrl: z.url().nullable(),
     madeInNepal: z.boolean(),
     createdAt: z.string(),
   }),
@@ -27,6 +28,7 @@ export const updateBrandProfileInputSchema = z
     phone: z.string().trim().min(1),
     instagram: z.string().trim().min(1).max(100),
     avatarUrl: z.url().nullable(),
+    bannerUrl: z.url().nullable(),
   })
   .partial();
 

@@ -8,9 +8,10 @@ export const brandProfileApi = {
     return brandProfileSchema.parse(res.data);
   },
 
-  async listProducts(id: string, cursor?: string): Promise<ProductPage> {
+  async listProducts(id: string, cursor?: string, type?: string): Promise<ProductPage> {
     const params = new URLSearchParams();
     if (cursor) params.set("cursor", cursor);
+    if (type) params.set("type", type);
 
     const res = await apiClient.get<ProductPage>(`/brands/${id}/products?${params.toString()}`);
     return productPageSchema.parse(res.data);

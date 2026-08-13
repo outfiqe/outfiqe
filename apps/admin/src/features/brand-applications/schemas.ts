@@ -24,7 +24,7 @@ export const brandApplicationSchema = z.object({
   email: z.string(),
   phone: z.string(),
   instagram: z.string(),
-  category: brandCategorySchema,
+  categories: z.array(brandCategorySchema),
   makesOwnPieces: makesOwnPiecesSchema,
   status: brandApplicationStatusSchema,
   reviewedAt: z.string().nullable(),

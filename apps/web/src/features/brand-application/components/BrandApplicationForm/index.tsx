@@ -14,6 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@outfiqe/design-system";
+import { FormFieldError } from "@/components/FormFieldError";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 import {
   brandApplicationSchema,
@@ -22,7 +23,7 @@ import {
 import { useSubmitBrandApplication } from "../../hooks/useSubmitBrandApplication";
 import { getBrandApplicationErrorMessage } from "../../utils/errors";
 import { BrandApplicationSuccess } from "./BrandApplicationSuccess";
-import { ChipGroup } from "./ChildGroup";
+import { ChipGroup, MultiChipGroup } from "./ChildGroup";
 import { CATEGORY_OPTIONS, PRODUCTION_OPTIONS } from "./brandApplicationForm.constants";
 
 export const BrandApplicationForm = () => {
@@ -37,7 +38,7 @@ export const BrandApplicationForm = () => {
       email: "",
       phone: "",
       instagram: "",
-      category: "STREETWEAR",
+      categories: ["STREETWEAR"],
       makesOwnPieces: "MAKES",
     },
     mode: "onBlur",
@@ -146,11 +147,12 @@ export const BrandApplicationForm = () => {
             <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Category
             </span>
+            <p className="mb-2 text-xs text-muted-foreground">Select all that apply.</p>
             <Controller
               control={form.control}
-              name="category"
+              name="categories"
               render={({ field }) => (
-                <ChipGroup
+                <MultiChipGroup
                   label="Category"
                   options={CATEGORY_OPTIONS}
                   value={field.value}
@@ -158,6 +160,9 @@ export const BrandApplicationForm = () => {
                 />
               )}
             />
+            {form.formState.errors.categories && (
+              <FormFieldError>{form.formState.errors.categories.message}</FormFieldError>
+            )}
           </div>
 
           <div className="rounded-lg border-[1.5px] border-primary bg-background p-4">

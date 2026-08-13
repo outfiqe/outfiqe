@@ -26,7 +26,7 @@ export const brandApplicationSchema = z.object({
       z.string().regex(NEPAL_PHONE_REGEX, "Enter a valid Nepali phone number starting with 98"),
     ),
   instagram: z.string().trim().min(1, "Enter your Instagram or TikTok handle").max(100),
-  category: brandCategorySchema,
+  categories: z.array(brandCategorySchema).min(1, "Select at least one category"),
   makesOwnPieces: makesOwnPiecesSchema,
 });
 

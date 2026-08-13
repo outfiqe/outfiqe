@@ -79,7 +79,8 @@ export function BrandApplicationsPage() {
                   </Badge>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {app.contactName} &middot; {app.category} &middot; {app.makesOwnPieces}
+                  {app.contactName} &middot; {app.categories.join(", ")} &middot;{" "}
+                  {app.makesOwnPieces}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {app.email || "No email on file"} &middot; {app.phone} &middot; {app.instagram}

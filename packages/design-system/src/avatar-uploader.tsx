@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Camera, Loader2, X } from "lucide-react";
 
-import { AvatarCropModal } from "./avatar-crop-modal";
 import { cn } from "./cn";
+import { HiddenFileInput } from "./hidden-file-input";
+import { ImageCropModal } from "./image-crop-modal";
+import { useImageCropUpload } from "./use-image-crop-upload";
 
 type AvatarUploaderProps = {
   value: string | null;
@@ -14,8 +16,6 @@ type AvatarUploaderProps = {
   className?: string;
 };
 
-type PendingCrop = { file: File; objectUrl: string };
-
 export const AvatarUploader = ({
   value,
   onChange,
@@ -23,40 +23,15 @@ export const AvatarUploader = ({
   fallback,
   className,
 }: AvatarUploaderProps) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pendingCrop, setPendingCrop] = useState<PendingCrop | null>(null);
-
-  const uploadFile = async (file: File) => {
-    setIsUploading(true);
-    setError(null);
-    try {
-      const [url] = await onUpload([file]);
-      if (url) onChange(url);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed. Try again.");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleFileSelect = (fileList: FileList | null) => {
-    const file = fileList?.[0];
-    if (inputRef.current) inputRef.current.value = "";
-    if (!file) return;
-    setPendingCrop({ file, objectUrl: URL.createObjectURL(file) });
-  };
-
-  const closeCropModal = () => {
-    if (pendingCrop) URL.revokeObjectURL(pendingCrop.objectUrl);
-    setPendingCrop(null);
-  };
-
-  const handleCropConfirm = (croppedFile: File) => {
-    closeCropModal();
-    void uploadFile(croppedFile);
-  };
+  const {
+    inputRef,
+    isUploading,
+    error,
+    pendingCrop,
+    handleFileSelect,
+    closeCropModal,
+    handleCropConfirm,
+  } = useImageCropUpload({ onChange, onUpload });
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -106,21 +81,18 @@ export const AvatarUploader = ({
         </div>
       </div>
 
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        className="hidden"
-        onChange={(event) => handleFileSelect(event.target.files)}
-      />
+      <HiddenFileInput inputRef={inputRef} onFilesSelected={handleFileSelect} />
 
       {error && <p className="text-xs text-destructive">{error}</p>}
 
       {pendingCrop && (
-        <AvatarCropModal
+        <ImageCropModal
           imageSrc={pendingCrop.objectUrl}
           fileName={pendingCrop.file.name}
           mimeType={pendingCrop.file.type || "image/jpeg"}
+          aspect={1}
+          cropShape="round"
+          title="Adjust photo"
           onCancel={closeCropModal}
           onConfirm={handleCropConfirm}
         />

@@ -98,7 +98,7 @@ model BrandApplication {
   email          String
   phone          String
   instagram      String
-  category       BrandCategory
+  categories     BrandCategory[]
   makesOwnPieces MakesOwnPieces         @map("makes_own_pieces")
   status         BrandApplicationStatus @default(PENDING)
   reviewedAt     DateTime?              @map("reviewed_at")
@@ -134,12 +134,13 @@ enum MakesOwnPieces {
 model Brand {
   id            String            @id @default(uuid()) @db.Uuid
   name          String
-  category      BrandCategory
+  categories    BrandCategory[]
   contactName   String            @map("contact_name")
   email         String
   phone         String
   instagram     String
   avatarUrl     String?           @map("avatar_url")
+  bannerUrl     String?           @map("banner_url")
   madeInNepal   Boolean           @default(true) @map("made_in_nepal")
   applicationId String?           @unique @map("application_id") @db.Uuid
   application   BrandApplication? @relation(fields: [applicationId], references: [id], onDelete: SetNull)

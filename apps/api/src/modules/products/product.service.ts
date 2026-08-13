@@ -250,9 +250,11 @@ export const productService = {
     brandId: string,
     query: ListBrandProductsQuery,
   ): Promise<PublicProductPage> {
+    const type = query.type ? SLUG_TO_PRODUCT_TYPE[query.type] : undefined;
+
     const [rows, counts] = await Promise.all([
-      productRepository.listPublic({ brandId, cursor: query.cursor, limit: query.limit }),
-      productRepository.countPublic({ brandId }),
+      productRepository.listPublic({ brandId, type, cursor: query.cursor, limit: query.limit }),
+      productRepository.countPublic({ brandId, type }),
     ]);
 
     const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
