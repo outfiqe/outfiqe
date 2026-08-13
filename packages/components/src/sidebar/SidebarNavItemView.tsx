@@ -5,8 +5,9 @@ import { cx } from "./cx";
 import { isNavItemActive } from "./isNavItemActive";
 import {
   navLinkActiveClass,
-  navLinkActiveIndicatorClass,
   navLinkBaseClass,
+  navLinkCollapsedClass,
+  navLinkExpandedClass,
   navLinkInactiveClass,
   toggleButtonClass,
 } from "./styles";
@@ -55,12 +56,11 @@ export const SidebarNavItemView = ({
       style={indent}
       className={cx(
         navLinkBaseClass,
+        collapsed ? navLinkCollapsedClass : navLinkExpandedClass,
         active ? navLinkActiveClass : navLinkInactiveClass,
-        collapsed ? "justify-center px-0" : "pl-3.5 pr-3",
       )}
     >
-      {active && <span aria-hidden className={navLinkActiveIndicatorClass} />}
-      {Icon && <Icon className="size-4 shrink-0" />}
+      {Icon && <Icon className="size-[18px] shrink-0" />}
       <span className={cx("truncate", collapsed && "sr-only")}>{item.label}</span>
     </a>
   );

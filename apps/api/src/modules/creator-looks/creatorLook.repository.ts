@@ -72,7 +72,7 @@ const feedRelationsInclude = {
       product: {
         include: {
           brand: { select: { name: true } },
-          category: { select: { slug: true, name: true } },
+          categories: { select: { slug: true, name: true } },
         },
       },
     },
@@ -321,7 +321,7 @@ export const creatorLookRepository = {
         product: {
           include: {
             brand: { select: { name: true } },
-            category: { select: { slug: true, name: true } },
+            categories: { select: { slug: true, name: true } },
           },
         },
       },
@@ -353,7 +353,7 @@ export const creatorLookRepository = {
         product: {
           include: {
             brand: { select: { name: true } },
-            category: { select: { slug: true, name: true } },
+            categories: { select: { slug: true, name: true } },
           },
         },
       },

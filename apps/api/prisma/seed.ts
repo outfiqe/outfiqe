@@ -441,16 +441,18 @@ type SeedCollection = {
   name: string;
   slug: string;
   description: string;
-  pick: (product: { id: string; category: { slug: string }; price: number }) => boolean;
+  pick: (product: { id: string; categories: { slug: string }[]; price: number }) => boolean;
 };
+
+const hasCategory = (product: { categories: { slug: string }[] }, slug: string): boolean =>
+  product.categories.some((category) => category.slug === slug);
 
 const SEED_COLLECTIONS: SeedCollection[] = [
   {
     name: "Dashain Edit '26",
     slug: "dashain-edit-26",
     description: "Daura suruwal, kurta sets and modern cuts styled as full looks for Dashain.",
-    pick: (product) =>
-      product.category.slug === "traditional" || product.category.slug === "formal",
+    pick: (product) => hasCategory(product, "traditional") || hasCategory(product, "formal"),
   },
   {
     name: "Under Rs. 3,000",
@@ -462,13 +464,13 @@ const SEED_COLLECTIONS: SeedCollection[] = [
     name: "Office Ready",
     slug: "office-ready",
     description: "Structured, put-together pieces that work from desk to dinner.",
-    pick: (product) => product.category.slug === "formal",
+    pick: (product) => hasCategory(product, "formal"),
   },
   {
     name: "Weekend Fits",
     slug: "weekend-fits",
     description: "Easy, off-duty pieces for days with nowhere to be.",
-    pick: (product) => product.category.slug === "casual" || product.category.slug === "streetwear",
+    pick: (product) => hasCategory(product, "casual") || hasCategory(product, "streetwear"),
   },
 ];
 
@@ -483,7 +485,7 @@ const seedCollections = async () => {
 
   const approvedProducts = await prisma.product.findMany({
     where: { status: ProductStatus.APPROVED },
-    select: { id: true, category: { select: { slug: true } }, price: true },
+    select: { id: true, categories: { select: { slug: true } }, price: true },
   });
 
   if (approvedProducts.length === 0) {

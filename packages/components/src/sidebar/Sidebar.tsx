@@ -5,7 +5,7 @@ import type { ReactElement, ReactNode } from "react";
 import { PanelToggleIcon } from "./PanelToggleIcon";
 import { SidebarSection } from "./SidebarSection";
 import { cx } from "./cx";
-import { dividerClass, railClass, toggleButtonClass } from "./styles";
+import { cardClass, footerListClass, railClass, toggleButtonClass } from "./styles";
 import type { SidebarNavSection, SidebarNavigationAdapter } from "./types";
 import { useExpandedGroups } from "./useExpandedGroups";
 
@@ -38,7 +38,8 @@ export const Sidebar = ({
       {hasTopRow && (
         <div
           className={cx(
-            "flex items-center gap-2",
+            cardClass,
+            "flex shrink-0 items-center gap-2",
             collapsed ? "flex-col justify-center" : header ? "justify-between" : "justify-end",
           )}
         >
@@ -58,9 +59,7 @@ export const Sidebar = ({
         </div>
       )}
 
-      {hasTopRow && <div className={dividerClass} />}
-
-      <div className="space-y-5">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
         {sections.map((section) => (
           <SidebarSection
             key={section.id}
@@ -73,10 +72,7 @@ export const Sidebar = ({
       </div>
 
       {footer && (
-        <>
-          <div className={dividerClass} />
-          {footer}
-        </>
+        <div className={cx(footerListClass, "shrink-0", collapsed && "items-center")}>{footer}</div>
       )}
     </nav>
   );

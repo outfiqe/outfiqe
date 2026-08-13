@@ -80,28 +80,26 @@ export function DashboardSidebar() {
       disabled={logout.isPending}
       title={collapsed ? "Sign out" : undefined}
       className={cn(
-        "flex w-full items-center gap-3 rounded-lg py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-60",
-        collapsed ? "justify-center px-0" : "pl-3.5 pr-3",
+        "flex items-center gap-3 rounded-2xl border border-border bg-card text-sm font-medium text-muted-foreground shadow-sm transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-60",
+        collapsed ? "size-11 justify-center" : "w-full px-3.5 py-2.5",
       )}
     >
-      <LogOut className="size-4 shrink-0" />
+      <LogOut className="size-[18px] shrink-0" />
       {!collapsed && (logout.isPending ? "Signing out…" : "Sign out")}
     </button>
   );
 
   return (
     <aside className={cn("shrink-0", sidebarWidthClass(collapsed))}>
-      <div className="sticky top-24">
-        <Sidebar
-          sections={sections}
-          navigation={navigation}
-          ariaLabel="Dashboard"
-          collapsed={collapsed}
-          onToggleCollapse={toggle}
-          header={header}
-          footer={footer}
-        />
-      </div>
+      <Sidebar
+        sections={sections}
+        navigation={navigation}
+        ariaLabel="Dashboard"
+        collapsed={collapsed}
+        onToggleCollapse={toggle}
+        header={header}
+        footer={footer}
+      />
     </aside>
   );
 }

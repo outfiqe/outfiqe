@@ -50,7 +50,8 @@ export const brandService = {
     return {
       id: brand.id,
       name: brand.name,
-      category: brand.category,
+      avatarUrl: brand.avatarUrl,
+      bannerUrl: brand.bannerUrl,
       madeInNepal: brand.madeInNepal,
       rating: brand.rating,
       productCount,

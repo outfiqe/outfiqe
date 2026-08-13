@@ -15,6 +15,7 @@ export const updateBrandProfileSchema = z
     phone: phoneSchema,
     instagram: z.string().trim().min(INSTAGRAM_MIN).max(INSTAGRAM_MAX),
     avatarUrl: z.url().nullable(),
+    bannerUrl: z.url().nullable(),
   })
   .partial();
 

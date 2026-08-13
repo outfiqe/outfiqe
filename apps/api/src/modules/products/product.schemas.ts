@@ -19,7 +19,7 @@ export const createProductSchema = z.object({
   name: z.string().min(NAME_MIN).max(NAME_MAX),
   price: z.number().int().min(PRICE_MIN).max(PRICE_MAX),
   type: productTypeSlugSchema,
-  category: categorySlugFieldSchema,
+  categories: z.array(categorySlugFieldSchema).min(1),
   imageUrls: z.array(z.url()).max(MAX_IMAGES).optional(),
   lowStock: z.boolean().optional(),
 });
@@ -43,6 +43,7 @@ export const listPublicProductsQuerySchema = z.object({
 });
 
 export const listBrandProductsQuerySchema = z.object({
+  type: productTypeSlugSchema.optional(),
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });

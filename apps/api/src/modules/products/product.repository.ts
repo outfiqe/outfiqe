@@ -16,34 +16,36 @@ const NEW_ARRIVALS_LIMIT = 10;
 const NEW_ARRIVAL_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const SEEN_ON_CREATORS_LIMIT = 5;
 
-const withBrandAndCategory = {
+const withBrandAndCategories = {
   brand: { select: { name: true } },
-  category: { select: { slug: true, name: true } },
+  categories: { select: { slug: true, name: true } },
 };
 
 type PublicFilter = { categoryId?: string; type?: ProductType; brandId?: string; q?: string };
 
 export const productRepository = {
   async create(input: CreateProductInput): Promise<ProductWithBrand> {
-    const { imageUrls, ...rest } = input;
+    const { imageUrls, categoryIds, ...rest } = input;
     return prisma.product.create({
       data: {
         ...rest,
+        categories: { connect: categoryIds.map((id) => ({ id })) },
         imageUrl: imageUrls?.[0],
         images: imageUrls?.length
           ? { create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })) }
           : undefined,
       },
-      include: withBrandAndCategory,
+      include: withBrandAndCategories,
     });
   },
 
   async update(id: string, input: UpdateProductInput): Promise<ProductRecord> {
-    const { imageUrls, ...rest } = input;
+    const { imageUrls, categoryIds, ...rest } = input;
     return prisma.product.update({
       where: { id },
       data: {
         ...rest,
+        ...(categoryIds ? { categories: { set: categoryIds.map((id) => ({ id })) } } : {}),
         ...(imageUrls
           ? {
               imageUrl: imageUrls[0],
@@ -87,7 +89,7 @@ export const productRepository = {
   ): Promise<ProductWithBrand[]> {
     return prisma.product.findMany({
       where: { brandId },
-      include: withBrandAndCategory,
+      include: withBrandAndCategories,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
@@ -100,7 +102,7 @@ export const productRepository = {
   ): Promise<ProductWithBrand[]> {
     return prisma.product.findMany({
       where: { status },
-      include: withBrandAndCategory,
+      include: withBrandAndCategories,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
@@ -113,12 +115,12 @@ export const productRepository = {
     return prisma.product.findMany({
       where: {
         status: ProductStatus.APPROVED,
-        categoryId: filter.categoryId,
+        categories: filter.categoryId ? { some: { id: filter.categoryId } } : undefined,
         type: filter.type,
         brandId: filter.brandId,
         name: filter.q ? { contains: filter.q, mode: "insensitive" } : undefined,
       },
-      include: withBrandAndCategory,
+      include: withBrandAndCategories,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: filter.limit + 1,
       ...(filter.cursor ? { cursor: { id: filter.cursor }, skip: 1 } : {}),
@@ -130,7 +132,7 @@ export const productRepository = {
       by: ["brandId"],
       where: {
         status: ProductStatus.APPROVED,
-        categoryId: filter.categoryId,
+        categories: filter.categoryId ? { some: { id: filter.categoryId } } : undefined,
         type: filter.type,
         brandId: filter.brandId,
         name: filter.q ? { contains: filter.q, mode: "insensitive" } : undefined,
@@ -147,7 +149,7 @@ export const productRepository = {
   async listTrending(): Promise<ProductWithBrand[]> {
     return prisma.product.findMany({
       where: { status: ProductStatus.APPROVED },
-      include: withBrandAndCategory,
+      include: withBrandAndCategories,
       orderBy: { reviewedAt: "desc" },
       take: TRENDING_LIMIT,
     });
@@ -159,7 +161,7 @@ export const productRepository = {
         status: ProductStatus.APPROVED,
         createdAt: { gte: new Date(Date.now() - NEW_ARRIVAL_WINDOW_MS) },
       },
-      include: withBrandAndCategory,
+      include: withBrandAndCategories,
       orderBy: { createdAt: "desc" },
       take: NEW_ARRIVALS_LIMIT,
     });
@@ -177,7 +179,7 @@ export const productRepository = {
       where: { id, status: ProductStatus.APPROVED },
       include: {
         brand: { select: { name: true } },
-        category: { select: { slug: true, name: true } },
+        categories: { select: { slug: true, name: true } },
         sizes: { orderBy: { sortOrder: "asc" }, select: { label: true, inStock: true } },
         images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
       },

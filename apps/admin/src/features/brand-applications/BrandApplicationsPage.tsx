@@ -14,6 +14,12 @@ const STATUS_TONE: Record<BrandApplicationStatusValue, "neutral" | "positive" | 
   REJECTED: "negative",
 };
 
+const STATUS_LABEL: Record<BrandApplicationStatusValue, string> = {
+  PENDING: "Pending",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+};
+
 export function BrandApplicationsPage() {
   const [tab, setTab] = useState<BrandApplicationStatusValue>("PENDING");
   const queryClient = useQueryClient();
@@ -53,8 +59,7 @@ export function BrandApplicationsPage() {
                 : "border border-border text-muted-foreground hover:text-foreground"
             }`}
           >
-            {status[0]}
-            {status.slice(1).toLowerCase()}
+            {STATUS_LABEL[status]}
           </button>
         ))}
       </div>
@@ -66,46 +71,51 @@ export function BrandApplicationsPage() {
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
         )}
 
-        {applications.map((app) => (
-          <div key={app.id} className="rounded-xl border border-border bg-card p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="font-display text-base font-bold text-foreground">
-                    {app.brandName}
-                  </h2>
-                  <Badge tone={STATUS_TONE[app.status]} showDot={false}>
-                    {app.status}
-                  </Badge>
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {app.contactName} &middot; {app.category} &middot; {app.makesOwnPieces}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {app.email || "No email on file"} &middot; {app.phone} &middot; {app.instagram}
-                </p>
-              </div>
+        {applications.map((application) => {
+          const { id, brandName, status, contactName, makesOwnPieces, email, phone, instagram } =
+            application;
 
-              {app.status === "PENDING" && (
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => approve.mutate(app.id)}
-                    disabled={approve.isPending || reject.isPending}
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleReject(app.id)}
-                    disabled={approve.isPending || reject.isPending}
-                  >
-                    Reject
-                  </Button>
+          const summaryLine = [contactName, makesOwnPieces].filter(Boolean).join(" · ");
+
+          return (
+            <div key={id} className="rounded-xl border border-border bg-card p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-base font-bold text-foreground">
+                      {brandName}
+                    </h2>
+                    <Badge tone={STATUS_TONE[status]} showDot={false}>
+                      {STATUS_LABEL[status]}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">{summaryLine}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {email || "No email on file"} &middot; {phone} &middot; {instagram}
+                  </p>
                 </div>
-              )}
+
+                {status === "PENDING" && (
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => approve.mutate(id)}
+                      disabled={approve.isPending || reject.isPending}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleReject(id)}
+                      disabled={approve.isPending || reject.isPending}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {hasNextPage && (
           <Button

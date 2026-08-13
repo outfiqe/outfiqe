@@ -10,7 +10,7 @@ export const productSchema = z.object({
   name: z.string(),
   price: z.number(),
   type: z.string(),
-  category: z.string(),
+  categories: z.array(z.string()),
   imageUrl: z.string().nullable(),
   lowStock: z.boolean(),
   status: productStatusSchema,

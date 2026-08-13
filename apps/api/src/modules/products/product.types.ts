@@ -7,7 +7,6 @@ export type ProductRecord = {
   name: string;
   price: number;
   type: ProductType;
-  categoryId: string;
   imageUrl: string | null;
   lowStock: boolean;
   status: ProductStatus;
@@ -35,10 +34,10 @@ export type SeenOnCreator = {
 
 export type ProductWithBrand = ProductRecord & {
   brand: { name: string };
-  category: { slug: string; name: string };
+  categories: { slug: string; name: string }[];
 };
 
-export type ProductReviewSummary = Omit<ProductWithBrand, "category"> & { category: string };
+export type ProductReviewSummary = Omit<ProductWithBrand, "categories"> & { categories: string[] };
 
 export type ProductReviewPage = {
   products: ProductReviewSummary[];
@@ -50,7 +49,7 @@ export type ProductBrandSummary = {
   name: string;
   price: number;
   type: ProductTypeSlug;
-  category: string;
+  categories: string[];
   imageUrl: string | null;
   lowStock: boolean;
   status: ProductStatus;
@@ -67,7 +66,7 @@ export type CreateProductInput = {
   name: string;
   price: number;
   type: ProductType;
-  categoryId: string;
+  categoryIds: string[];
   imageUrls?: string[];
   lowStock?: boolean;
 };
@@ -80,7 +79,7 @@ export type PublicProduct = {
   name: string;
   price: number;
   type: ProductTypeSlug;
-  categorySlug: string;
+  categorySlugs: string[];
   imageUrl: string | null;
   lowStock: boolean;
   isNew: boolean;

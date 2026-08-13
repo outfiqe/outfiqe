@@ -91,7 +91,7 @@ export function ProductsPage() {
                 {product.brand.name} &middot; Rs. {product.price.toLocaleString()}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {product.type} &middot; {product.category}
+                {product.type} &middot; {product.categories.join(", ")}
               </p>
             </div>
 

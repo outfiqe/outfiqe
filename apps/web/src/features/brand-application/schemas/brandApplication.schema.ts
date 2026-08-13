@@ -2,16 +2,6 @@ import { z } from "zod";
 
 import { NEPAL_PHONE_REGEX } from "@outfiqe/utils";
 
-export const brandCategorySchema = z.enum([
-  "STREETWEAR",
-  "TRADITIONAL",
-  "THRIFT",
-  "KIDS",
-  "FORMAL",
-]);
-
-export type BrandCategory = z.infer<typeof brandCategorySchema>;
-
 export const makesOwnPiecesSchema = z.enum(["MAKES", "RESELLS", "BOTH"]);
 export type MakesOwnPieces = z.infer<typeof makesOwnPiecesSchema>;
 
@@ -26,7 +16,6 @@ export const brandApplicationSchema = z.object({
       z.string().regex(NEPAL_PHONE_REGEX, "Enter a valid Nepali phone number starting with 98"),
     ),
   instagram: z.string().trim().min(1, "Enter your Instagram or TikTok handle").max(100),
-  category: brandCategorySchema,
   makesOwnPieces: makesOwnPiecesSchema,
 });
 

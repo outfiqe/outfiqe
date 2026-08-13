@@ -2,13 +2,8 @@ import { z } from "zod";
 
 import { phoneSchema } from "#lib/phone.utils.js";
 
-import {
-  BrandApplicationStatus,
-  BrandCategory,
-  MakesOwnPieces,
-} from "../../generated/prisma/enums.js";
+import { BrandApplicationStatus, MakesOwnPieces } from "../../generated/prisma/enums.js";
 
-export const brandCategorySchema = z.enum(BrandCategory);
 export const makesOwnPiecesSchema = z.enum(MakesOwnPieces);
 
 export const createBrandApplicationSchema = z.object({
@@ -17,7 +12,6 @@ export const createBrandApplicationSchema = z.object({
   email: z.email(),
   phone: phoneSchema,
   instagram: z.string().min(1).max(100),
-  category: brandCategorySchema,
   makesOwnPieces: makesOwnPiecesSchema,
 });
 

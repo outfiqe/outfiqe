@@ -30,7 +30,6 @@ type BrandApplicationReceivedInput = {
   email: string;
   phone: string;
   instagram: string;
-  category: string;
   makesOwnPieces: string;
   reviewUrl: string;
 };
@@ -47,7 +46,6 @@ export const brandApplicationReceivedInternalTemplate = (
       <p style="margin:4px 0;"><strong>Email:</strong> ${input.email}</p>
       <p style="margin:4px 0;"><strong>Phone:</strong> ${input.phone}</p>
       <p style="margin:4px 0;"><strong>Instagram:</strong> ${input.instagram}</p>
-      <p style="margin:4px 0;"><strong>Category:</strong> ${input.category}</p>
       <p style="margin:4px 0;"><strong>Makes own pieces:</strong> ${input.makesOwnPieces}</p>
       ${emailButtonHtml("Review in admin panel", input.reviewUrl)}
     `,

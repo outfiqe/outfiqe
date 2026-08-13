@@ -1,8 +1,4 @@
-import type {
-  BrandApplicationStatus,
-  BrandCategory,
-  MakesOwnPieces,
-} from "../../generated/prisma/enums.js";
+import type { BrandApplicationStatus, MakesOwnPieces } from "../../generated/prisma/enums.js";
 
 export type CreateBrandApplicationInput = {
   brandName: string;
@@ -10,7 +6,6 @@ export type CreateBrandApplicationInput = {
   email: string;
   phone: string;
   instagram: string;
-  category: BrandCategory;
   makesOwnPieces: MakesOwnPieces;
 };
 

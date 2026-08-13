@@ -3,27 +3,29 @@
 import { useState } from "react";
 import { AtSign, Mail, Phone, User } from "lucide-react";
 
-import { AvatarUploader, Badge, Button, Input, Modal, toast } from "@outfiqe/design-system";
+import {
+  AvatarUploader,
+  Badge,
+  BannerUploader,
+  Button,
+  Input,
+  Modal,
+  toast,
+} from "@outfiqe/design-system";
 import { uploadsApi } from "@/shared/api/uploadsApi";
+import { cn } from "@/shared/lib/cn";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { useAuth } from "@/features/auth";
 import { useBrandProducts } from "../hooks/useBrandProducts";
 import { useUpdateBrandProfile } from "../hooks/useUpdateBrandProfile";
-import type { BrandCategory, BrandProfile } from "../api/brandDashboardSchemas";
-
-const CATEGORY_LABEL: Record<BrandCategory, string> = {
-  STREETWEAR: "Streetwear",
-  TRADITIONAL: "Traditional",
-  THRIFT: "Thrift",
-  KIDS: "Kids",
-  FORMAL: "Formal",
-};
+import type { BrandProfile } from "../api/brandDashboardSchemas";
 
 type EditableFields = {
   contactName: string;
   phone: string;
   instagram: string;
   avatarUrl: string | null;
+  bannerUrl: string | null;
 };
 
 export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
@@ -37,6 +39,7 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
     phone: brand.phone,
     instagram: brand.instagram,
     avatarUrl: brand.avatarUrl,
+    bannerUrl: brand.bannerUrl,
   });
   const [draft, setDraft] = useState<EditableFields>(fields);
   const [editOpen, setEditOpen] = useState(false);
@@ -54,6 +57,7 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
           phone: updated.brand.phone,
           instagram: updated.brand.instagram,
           avatarUrl: updated.brand.avatarUrl,
+          bannerUrl: updated.brand.bannerUrl,
         });
         updateUser({ avatarUrl: updated.brand.avatarUrl });
         setEditOpen(false);
@@ -77,64 +81,74 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div
-              className="size-14 shrink-0 overflow-hidden rounded-full bg-cover bg-center"
-              style={fields.avatarUrl ? { backgroundImage: `url(${fields.avatarUrl})` } : undefined}
-            >
-              {!fields.avatarUrl && initialsBadge}
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        {fields.bannerUrl && (
+          <div
+            className="h-28 w-full bg-cover bg-center sm:h-36"
+            style={{ backgroundImage: `url(${fields.bannerUrl})` }}
+          />
+        )}
+        <div className="p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div
+                className={cn(
+                  "size-14 shrink-0 overflow-hidden rounded-full bg-cover bg-center",
+                  fields.bannerUrl && "-mt-10 ring-4 ring-card",
+                )}
+                style={
+                  fields.avatarUrl ? { backgroundImage: `url(${fields.avatarUrl})` } : undefined
+                }
+              >
+                {!fields.avatarUrl && initialsBadge}
+              </div>
+              <div>
+                <h1 className="font-display text-2xl font-bold text-foreground">{brand.name}</h1>
+              </div>
             </div>
-            <div>
-              <span className="font-display text-xs font-bold uppercase tracking-wider text-primary-strong">
-                {CATEGORY_LABEL[brand.category]}
-              </span>
-              <h1 className="mt-1 font-display text-2xl font-bold text-foreground">{brand.name}</h1>
+            <div className="flex items-center gap-2">
+              {brand.madeInNepal && <Badge>Made in Nepal</Badge>}
+              <Button variant="outline" size="sm" onClick={openEdit}>
+                Edit profile
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {brand.madeInNepal && <Badge>Made in Nepal</Badge>}
-            <Button variant="outline" size="sm" onClick={openEdit}>
-              Edit profile
-            </Button>
-          </div>
+
+          <dl className="mt-6 grid gap-4 text-sm sm:grid-cols-2">
+            <div className="flex items-start gap-2.5">
+              <User className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+              <div>
+                <dt className="text-muted-foreground">Contact</dt>
+                <dd className="mt-0.5 text-foreground">{fields.contactName}</dd>
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <Mail className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+              <div>
+                <dt className="text-muted-foreground">Email</dt>
+                <dd className="mt-0.5 text-foreground">{brand.email}</dd>
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <Phone className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+              <div>
+                <dt className="text-muted-foreground">Phone</dt>
+                <dd className="mt-0.5 text-foreground">{fields.phone}</dd>
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <AtSign className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+              <div>
+                <dt className="text-muted-foreground">Instagram</dt>
+                <dd className="mt-0.5 text-foreground">{fields.instagram}</dd>
+              </div>
+            </div>
+          </dl>
+
+          <p className="mt-6 text-sm text-muted-foreground">
+            {products.data?.pages.flatMap((page) => page.products).length ?? 0} products listed
+          </p>
         </div>
-
-        <dl className="mt-6 grid gap-4 text-sm sm:grid-cols-2">
-          <div className="flex items-start gap-2.5">
-            <User className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-            <div>
-              <dt className="text-muted-foreground">Contact</dt>
-              <dd className="mt-0.5 text-foreground">{fields.contactName}</dd>
-            </div>
-          </div>
-          <div className="flex items-start gap-2.5">
-            <Mail className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-            <div>
-              <dt className="text-muted-foreground">Email</dt>
-              <dd className="mt-0.5 text-foreground">{brand.email}</dd>
-            </div>
-          </div>
-          <div className="flex items-start gap-2.5">
-            <Phone className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-            <div>
-              <dt className="text-muted-foreground">Phone</dt>
-              <dd className="mt-0.5 text-foreground">{fields.phone}</dd>
-            </div>
-          </div>
-          <div className="flex items-start gap-2.5">
-            <AtSign className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-            <div>
-              <dt className="text-muted-foreground">Instagram</dt>
-              <dd className="mt-0.5 text-foreground">{fields.instagram}</dd>
-            </div>
-          </div>
-        </dl>
-
-        <p className="mt-6 text-sm text-muted-foreground">
-          {products.data?.pages.flatMap((page) => page.products).length ?? 0} products listed
-        </p>
       </div>
 
       <Modal
@@ -153,6 +167,14 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
         }
       >
         <div className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Banner</label>
+            <BannerUploader
+              value={draft.bannerUrl}
+              onChange={(bannerUrl) => setDraft({ ...draft, bannerUrl })}
+              onUpload={uploadsApi.upload}
+            />
+          </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">Logo</label>
             <AvatarUploader
@@ -184,8 +206,7 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            Brand name, category, and origin are verified fields — reach out to support to change
-            those.
+            Brand name and origin are verified fields — reach out to support to change those.
           </p>
         </div>
       </Modal>

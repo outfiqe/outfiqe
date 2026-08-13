@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 
 import {
   Button,
@@ -22,8 +22,7 @@ import {
 import { useSubmitBrandApplication } from "../../hooks/useSubmitBrandApplication";
 import { getBrandApplicationErrorMessage } from "../../utils/errors";
 import { BrandApplicationSuccess } from "./BrandApplicationSuccess";
-import { ChipGroup } from "./ChildGroup";
-import { CATEGORY_OPTIONS, PRODUCTION_OPTIONS } from "./brandApplicationForm.constants";
+import { ProductionField } from "./ProductionField";
 
 export const BrandApplicationForm = () => {
   const submit = useSubmitBrandApplication();
@@ -37,7 +36,6 @@ export const BrandApplicationForm = () => {
       email: "",
       phone: "",
       instagram: "",
-      category: "STREETWEAR",
       makesOwnPieces: "MAKES",
     },
     mode: "onBlur",
@@ -85,7 +83,7 @@ export const BrandApplicationForm = () => {
               control={form.control}
               name="contactName"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="mt-0">
                   <FormLabel>Your name</FormLabel>
                   <FormControl>
                     <Input placeholder="Anjesh Shrestha" {...field} />
@@ -98,7 +96,7 @@ export const BrandApplicationForm = () => {
               control={form.control}
               name="email"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="mt-0">
                   <FormLabel>Email address</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="you@example.com" {...field} />
@@ -109,21 +107,19 @@ export const BrandApplicationForm = () => {
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone or WhatsApp</FormLabel>
-                  <FormControl>
-                    <Input placeholder="98XXXXXXXX" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone or WhatsApp</FormLabel>
+                <FormControl>
+                  <Input placeholder="98XXXXXXXX" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <FormField
             control={form.control}
@@ -142,41 +138,7 @@ export const BrandApplicationForm = () => {
             )}
           />
 
-          <div>
-            <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Category
-            </span>
-            <Controller
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <ChipGroup
-                  label="Category"
-                  options={CATEGORY_OPTIONS}
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-          </div>
-
-          <div className="rounded-lg border-[1.5px] border-primary bg-background p-4">
-            <p className="mb-2.5 text-sm font-semibold text-primary-strong">
-              Do you design or make your own pieces?
-            </p>
-            <Controller
-              control={form.control}
-              name="makesOwnPieces"
-              render={({ field }) => (
-                <ChipGroup
-                  label="Production"
-                  options={PRODUCTION_OPTIONS}
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-          </div>
+          <ProductionField control={form.control} />
 
           <div className="flex flex-wrap items-center gap-4 pt-2">
             <Button type="submit" disabled={submit.isPending}>

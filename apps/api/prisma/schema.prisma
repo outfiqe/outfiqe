@@ -98,7 +98,6 @@ model BrandApplication {
   email          String
   phone          String
   instagram      String
-  category       BrandCategory
   makesOwnPieces MakesOwnPieces         @map("makes_own_pieces")
   status         BrandApplicationStatus @default(PENDING)
   reviewedAt     DateTime?              @map("reviewed_at")
@@ -117,14 +116,6 @@ enum BrandApplicationStatus {
   REJECTED
 }
 
-enum BrandCategory {
-  STREETWEAR
-  TRADITIONAL
-  THRIFT
-  KIDS
-  FORMAL
-}
-
 enum MakesOwnPieces {
   MAKES
   RESELLS
@@ -134,12 +125,12 @@ enum MakesOwnPieces {
 model Brand {
   id            String            @id @default(uuid()) @db.Uuid
   name          String
-  category      BrandCategory
   contactName   String            @map("contact_name")
   email         String
   phone         String
   instagram     String
   avatarUrl     String?           @map("avatar_url")
+  bannerUrl     String?           @map("banner_url")
   madeInNepal   Boolean           @default(true) @map("made_in_nepal")
   applicationId String?           @unique @map("application_id") @db.Uuid
   application   BrandApplication? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
@@ -162,8 +153,7 @@ model Product {
   name         String
   price        Int
   type         ProductType
-  categoryId   String        @map("category_id") @db.Uuid
-  category     Category      @relation(fields: [categoryId], references: [id])
+  categories   Category[]
   imageUrl     String?       @map("image_url")
   lowStock     Boolean       @default(false) @map("low_stock")
   status       ProductStatus @default(PENDING)
