@@ -10,12 +10,12 @@ export type CreateBrandApplicationInput = {
   email: string;
   phone: string;
   instagram: string;
-  categories: BrandCategory[];
   makesOwnPieces: MakesOwnPieces;
 };
 
 export type BrandApplicationRecord = CreateBrandApplicationInput & {
   id: string;
+  categories: BrandCategory[];
   status: BrandApplicationStatus;
   reviewedAt: Date | null;
   reviewedById: string | null;

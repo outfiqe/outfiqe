@@ -83,7 +83,7 @@ export const BrandApplicationForm = () => {
               control={form.control}
               name="contactName"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="mt-0">
                   <FormLabel>Your name</FormLabel>
                   <FormControl>
                     <Input placeholder="Anjesh Shrestha" {...field} />
@@ -96,7 +96,7 @@ export const BrandApplicationForm = () => {
               control={form.control}
               name="email"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="mt-0">
                   <FormLabel>Email address</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="you@example.com" {...field} />
@@ -107,21 +107,19 @@ export const BrandApplicationForm = () => {
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone or WhatsApp</FormLabel>
-                  <FormControl>
-                    <Input placeholder="98XXXXXXXX" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone or WhatsApp</FormLabel>
+                <FormControl>
+                  <Input placeholder="98XXXXXXXX" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <FormField
             control={form.control}
