@@ -14,6 +14,12 @@ const STATUS_TONE: Record<BrandApplicationStatusValue, "neutral" | "positive" | 
   REJECTED: "negative",
 };
 
+const STATUS_LABEL: Record<BrandApplicationStatusValue, string> = {
+  PENDING: "Pending",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+};
+
 export function BrandApplicationsPage() {
   const [tab, setTab] = useState<BrandApplicationStatusValue>("PENDING");
   const queryClient = useQueryClient();
@@ -53,8 +59,7 @@ export function BrandApplicationsPage() {
                 : "border border-border text-muted-foreground hover:text-foreground"
             }`}
           >
-            {status[0]}
-            {status.slice(1).toLowerCase()}
+            {STATUS_LABEL[status]}
           </button>
         ))}
       </div>
@@ -81,7 +86,7 @@ export function BrandApplicationsPage() {
                       {brandName}
                     </h2>
                     <Badge tone={STATUS_TONE[status]} showDot={false}>
-                      {status}
+                      {STATUS_LABEL[status]}
                     </Badge>
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">{summaryLine}</p>
