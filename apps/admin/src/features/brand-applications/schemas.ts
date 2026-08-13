@@ -1,18 +1,9 @@
 import { z } from "zod";
-import type { BrandApplicationStatus, BrandCategory, MakesOwnPieces } from "@outfiqe/types";
+import type { BrandApplicationStatus, MakesOwnPieces } from "@outfiqe/types";
 
 const statusValues = ["PENDING", "APPROVED", "REJECTED"] satisfies BrandApplicationStatus[];
 export const brandApplicationStatusSchema = z.enum(statusValues);
 export type BrandApplicationStatusValue = z.infer<typeof brandApplicationStatusSchema>;
-
-const categoryValues = [
-  "STREETWEAR",
-  "TRADITIONAL",
-  "THRIFT",
-  "KIDS",
-  "FORMAL",
-] satisfies BrandCategory[];
-export const brandCategorySchema = z.enum(categoryValues);
 
 const makesOwnPiecesValues = ["MAKES", "RESELLS", "BOTH"] satisfies MakesOwnPieces[];
 export const makesOwnPiecesSchema = z.enum(makesOwnPiecesValues);
@@ -24,7 +15,6 @@ export const brandApplicationSchema = z.object({
   email: z.string(),
   phone: z.string(),
   instagram: z.string(),
-  categories: z.array(brandCategorySchema),
   makesOwnPieces: makesOwnPiecesSchema,
   status: brandApplicationStatusSchema,
   reviewedAt: z.string().nullable(),

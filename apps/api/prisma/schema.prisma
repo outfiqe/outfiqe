@@ -98,7 +98,6 @@ model BrandApplication {
   email          String
   phone          String
   instagram      String
-  categories     BrandCategory[]
   makesOwnPieces MakesOwnPieces         @map("makes_own_pieces")
   status         BrandApplicationStatus @default(PENDING)
   reviewedAt     DateTime?              @map("reviewed_at")

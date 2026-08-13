@@ -9,7 +9,7 @@ import type {
 
 export const brandApplicationRepository = {
   async create(input: CreateBrandApplicationInput): Promise<BrandApplicationRecord> {
-    return prisma.brandApplication.create({ data: { ...input, categories: [] } });
+    return prisma.brandApplication.create({ data: input });
   },
 
   async list(
@@ -43,7 +43,7 @@ export const brandApplicationRepository = {
       const brand = await tx.brand.create({
         data: {
           name: application.brandName,
-          categories: application.categories,
+          categories: [],
           contactName: application.contactName,
           email: application.email,
           phone: application.phone,

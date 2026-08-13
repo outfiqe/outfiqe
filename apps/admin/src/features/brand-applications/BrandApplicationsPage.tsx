@@ -67,21 +67,10 @@ export function BrandApplicationsPage() {
         )}
 
         {applications.map((application) => {
-          const {
-            id,
-            brandName,
-            status,
-            contactName,
-            categories,
-            makesOwnPieces,
-            email,
-            phone,
-            instagram,
-          } = application;
+          const { id, brandName, status, contactName, makesOwnPieces, email, phone, instagram } =
+            application;
 
-          const summaryLine = [contactName, categories.join(", ") || null, makesOwnPieces]
-            .filter(Boolean)
-            .join(" · ");
+          const summaryLine = [contactName, makesOwnPieces].filter(Boolean).join(" · ");
 
           return (
             <div key={id} className="rounded-xl border border-border bg-card p-4">
