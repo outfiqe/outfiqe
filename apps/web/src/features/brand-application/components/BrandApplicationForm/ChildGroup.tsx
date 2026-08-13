@@ -9,7 +9,7 @@ const chipClass = (checked: boolean): string =>
   );
 
 type ChipProps = {
-  role: "radio" | "checkbox";
+  role: "radio";
   checked: boolean;
   label: string;
   onClick: () => void;
@@ -47,38 +47,6 @@ export const ChipGroup = <T extends string>({
           checked={value === opt.value}
           label={opt.label}
           onClick={() => onChange(opt.value)}
-        />
-      ))}
-    </div>
-  );
-};
-
-export const MultiChipGroup = <T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  options: { value: T; label: string }[];
-  value: T[];
-  onChange: (value: T[]) => void;
-}) => {
-  const toggle = (option: T) => {
-    onChange(
-      value.includes(option) ? value.filter((selected) => selected !== option) : [...value, option],
-    );
-  };
-
-  return (
-    <div role="group" aria-label={label} className="flex flex-wrap gap-2">
-      {options.map((opt) => (
-        <Chip
-          key={opt.value}
-          role="checkbox"
-          checked={value.includes(opt.value)}
-          label={opt.label}
-          onClick={() => toggle(opt.value)}
         />
       ))}
     </div>

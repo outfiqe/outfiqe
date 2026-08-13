@@ -108,7 +108,9 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
           <h1 className="mt-4 font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl">
             {brand.name}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{categoryLabel} · Kathmandu</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {categoryLabel ? `${categoryLabel} · ` : ""}Kathmandu
+          </p>
           {brand.madeInNepal && <Badge className="mt-2">Made in Nepal</Badge>}
 
           <div className="mt-5 flex gap-8">

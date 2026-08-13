@@ -17,7 +17,7 @@ export const createBrandApplicationSchema = z.object({
   email: z.email(),
   phone: phoneSchema,
   instagram: z.string().min(1).max(100),
-  categories: z.array(brandCategorySchema).min(1),
+  categories: z.array(brandCategorySchema).default([]),
   makesOwnPieces: makesOwnPiecesSchema,
 });
 

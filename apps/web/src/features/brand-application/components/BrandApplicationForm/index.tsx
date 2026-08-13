@@ -22,7 +22,6 @@ import {
 import { useSubmitBrandApplication } from "../../hooks/useSubmitBrandApplication";
 import { getBrandApplicationErrorMessage } from "../../utils/errors";
 import { BrandApplicationSuccess } from "./BrandApplicationSuccess";
-import { CategoryField } from "./CategoryField";
 import { ProductionField } from "./ProductionField";
 
 export const BrandApplicationForm = () => {
@@ -37,7 +36,6 @@ export const BrandApplicationForm = () => {
       email: "",
       phone: "",
       instagram: "",
-      categories: ["STREETWEAR"],
       makesOwnPieces: "MAKES",
     },
     mode: "onBlur",
@@ -141,8 +139,6 @@ export const BrandApplicationForm = () => {
               </FormItem>
             )}
           />
-
-          <CategoryField control={form.control} error={form.formState.errors.categories?.message} />
 
           <ProductionField control={form.control} />
 

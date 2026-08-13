@@ -104,9 +104,11 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
                 {!fields.avatarUrl && initialsBadge}
               </div>
               <div>
-                <span className="font-display text-xs font-bold uppercase tracking-wider text-primary-strong">
-                  {brand.categories.map(toTitleCase).join(" · ")}
-                </span>
+                {brand.categories.length > 0 && (
+                  <span className="font-display text-xs font-bold uppercase tracking-wider text-primary-strong">
+                    {brand.categories.map(toTitleCase).join(" · ")}
+                  </span>
+                )}
                 <h1 className="mt-1 font-display text-2xl font-bold text-foreground">
                   {brand.name}
                 </h1>
