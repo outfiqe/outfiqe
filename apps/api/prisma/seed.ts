@@ -20,8 +20,6 @@ const CREATOR_NAMES = [
   "Sujan Lama",
 ];
 
-// Centimeters, one per CREATOR_NAMES entry, matching the "5 feet 4 inches, wearing S" pattern
-// the product page and creator profile display.
 const CREATOR_HEIGHTS_CM = [178, 163, 183, 160, 168, 175];
 const CREATOR_SIZES_WORN = ["M", "S", "L", "XS", "S", "M"];
 
@@ -52,8 +50,6 @@ const MAX_TAGGED_PRODUCTS = 3;
 const MIN_FOLLOWS_PER_USER = 2;
 const MAX_FOLLOWS_PER_USER = 4;
 
-// Real outfit photography from Unsplash, grouped by the style each LOOK_CAPTIONS entry
-// describes, so seeded creator looks show an actual fit instead of a random placeholder image.
 const unsplashUrl = (id: string) =>
   `https://images.unsplash.com/photo-${id}?w=800&q=80&auto=format&fit=crop`;
 
@@ -107,16 +103,15 @@ const OLD_MONEY_PHOTOS = [
   "1668086682634-726157bfdece",
 ];
 
-// Indexed to match LOOK_CAPTIONS above, one photo pool per caption's style/hashtag.
 const LOOK_CAPTION_PHOTO_POOLS = [
-  CASUAL_PHOTOS, // winter layering
-  STREETWEAR_PHOTOS, // Thamel street style
-  OLD_MONEY_PHOTOS, // old-money brunch fit
-  STREETWEAR_PHOTOS, // streetwear pulled together
-  TRADITIONAL_PHOTOS, // dhaka / traditional
-  MINIMAL_PHOTOS, // minimal fit
-  Y2K_PHOTOS, // y2k revival
-  FORMAL_PHOTOS, // office / dashain formal
+  CASUAL_PHOTOS,
+  STREETWEAR_PHOTOS,
+  OLD_MONEY_PHOTOS,
+  STREETWEAR_PHOTOS,
+  TRADITIONAL_PHOTOS,
+  MINIMAL_PHOTOS,
+  Y2K_PHOTOS,
+  FORMAL_PHOTOS,
 ];
 
 const lookPhotoUrl = (lookIndex: number): string => {
@@ -227,17 +222,10 @@ async function seedCreatorLooks(creators: { id: string }[]) {
   console.log(`Seeded ${LOOK_COUNT} creator looks across ${creators.length} creators`);
 }
 
-// Strips the trailing "#tag #tag" tokens LOOK_CAPTIONS carries, since older seeded rows were
-// written before hashtags were appended to these captions and only have the base text.
 const captionBase = (caption: string): string => caption.replace(/\s*#\w+/g, "").trim();
 
 const LOOK_CAPTION_BASES = LOOK_CAPTIONS.map(captionBase);
 
-// Backfills imageUrl on already-seeded creator looks (e.g. rows created before real photo pools
-// existed here) so re-running the seed script upgrades placeholder images without touching
-// captions, tags, or engagement counts. Matches by caption so the pool stays consistent with
-// LOOK_CAPTION_PHOTO_POOLS above; rows with an unrecognized caption (ad hoc QA test data) fall
-// back to CASUAL_PHOTOS so every look still gets a real photo instead of a placeholder.
 async function seedCreatorLookImages() {
   const looks = await prisma.creatorLook.findMany({ select: { id: true, caption: true } });
   let updated = 0;
@@ -254,8 +242,6 @@ async function seedCreatorLookImages() {
   console.log(`Refreshed ${updated} creator look images`);
 }
 
-// Extracts the "#tag" tokens already baked into LOOK_CAPTIONS above and stores them as
-// CreatorLookHashtag rows, so the trending-tags endpoint has real data to rank.
 async function seedHashtags() {
   const existing = await prisma.creatorLookHashtag.count();
   if (existing > 0) {
@@ -279,9 +265,6 @@ async function seedHashtags() {
   console.log(`Seeded ${created} look hashtags`);
 }
 
-// Every seeded user follows a handful of others, giving the "following" feed tab and the
-// suggested-creators sidebar something to show locally. Bypasses follow.repository (this is a
-// bulk fixture load, not the request path) so followerCount/followingCount are kept in sync here.
 async function seedFollows(actors: { id: string }[]) {
   const existing = await prisma.follow.count({ where: { followingType: FollowTargetType.USER } });
   if (existing > 0) {
@@ -318,9 +301,6 @@ async function seedFollows(actors: { id: string }[]) {
   console.log(`Seeded ${created} follows across ${actors.length} users`);
 }
 
-// Likes, saves, and comments are seeded the same way: guard by an overall count, then insert
-// directly and bump the denormalized counters on CreatorLook to match (bypassing
-// creatorLook.repository for the same bulk-fixture reason as seedFollows above).
 async function seedEngagement(actors: { id: string }[]) {
   const looks = await prisma.creatorLook.findMany({ select: { id: true } });
   if (looks.length === 0) return;
@@ -427,8 +407,6 @@ async function seedProductSizes() {
   console.log(`Seeded ${created} product sizes across ${products.length} products`);
 }
 
-// Product photography from Unsplash, one pool per seeded product name. Matched loosely by
-// garment type since these are demo listings, not brand-submitted photos.
 const TROUSERS_PHOTOS = [
   "1767631338127-8cd80ee2f9df",
   "1778865576128-77027a3cb354",
@@ -472,9 +450,6 @@ const PRODUCT_IMAGE_POOLS: Record<string, string[]> = {
 
 const IMAGES_PER_PRODUCT = 2;
 
-// Re-derives each product's images from PRODUCT_IMAGE_POOLS on every run (delete + recreate),
-// so this stays safe to re-run without accumulating duplicates or leaving stale/broken URLs
-// (e.g. local upload paths from earlier manual testing) in place.
 async function seedProductImages() {
   const products = await prisma.product.findMany({ select: { id: true, name: true } });
   let created = 0;
@@ -556,9 +531,6 @@ async function seedBrandFollows(actors: { id: string }[]) {
   console.log(`Seeded ${created} brand follows across ${brands.length} brands`);
 }
 
-// The API keeps Product.wornByCount denormalized, recomputed on write (see
-// productService.recountWornBy). Seed data is written directly with $transaction-free
-// prisma calls, bypassing that path, so it's recomputed once here at the end.
 async function seedWornByCounts() {
   const approvedProducts = await prisma.product.findMany({
     where: { status: ProductStatus.APPROVED },
