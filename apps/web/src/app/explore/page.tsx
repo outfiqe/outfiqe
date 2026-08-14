@@ -7,7 +7,7 @@ import { ExploreFeed } from "@/features/explore";
 
 export const metadata: Metadata = { title: "Explore" };
 
-export default function ExplorePage() {
+const ExplorePage = () => {
   return (
     <div className="pb-20 lg:pb-0">
       <SiteHeader />
@@ -18,4 +18,6 @@ export default function ExplorePage() {
       <MobileTabBar />
     </div>
   );
-}
+};
+
+export default ExplorePage;

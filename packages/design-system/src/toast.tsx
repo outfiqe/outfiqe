@@ -20,7 +20,7 @@ const notify = () => {
 };
 
 const dismiss = (id: number) => {
-  toasts = toasts.filter((item) => item.id !== id);
+  toasts = toasts.filter((toastMessage) => toastMessage.id !== id);
   notify();
 };
 
@@ -36,17 +36,17 @@ export const toast = {
   success: push,
 };
 
-export function Toaster() {
-  const [items, setItems] = useState<ToastMessage[]>(toasts);
+export const Toaster = () => {
+  const [visibleToasts, setVisibleToasts] = useState<ToastMessage[]>(toasts);
 
   useEffect(() => {
-    listeners.add(setItems);
+    listeners.add(setVisibleToasts);
     return () => {
-      listeners.delete(setItems);
+      listeners.delete(setVisibleToasts);
     };
   }, []);
 
-  if (items.length === 0) return null;
+  if (visibleToasts.length === 0) return null;
 
   return (
     <div
@@ -54,14 +54,14 @@ export function Toaster() {
       aria-live="polite"
       className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4 lg:bottom-6"
     >
-      {items.map((item) => (
+      {visibleToasts.map((toastMessage) => (
         <div
-          key={item.id}
+          key={toastMessage.id}
           className="pointer-events-auto max-w-sm rounded-full bg-foreground px-4 py-2.5 text-center text-sm font-medium text-background shadow-lg"
         >
-          {item.message}
+          {toastMessage.message}
         </div>
       ))}
     </div>
   );
-}
+};

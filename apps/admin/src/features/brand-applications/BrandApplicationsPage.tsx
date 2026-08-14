@@ -20,13 +20,19 @@ const STATUS_LABEL: Record<BrandApplicationStatusValue, string> = {
   REJECTED: "Rejected",
 };
 
-export function BrandApplicationsPage() {
+export const BrandApplicationsPage = () => {
   const [tab, setTab] = useState<BrandApplicationStatusValue>("PENDING");
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
-    useInfiniteBrandApplications(tab);
-  const applications = data?.pages.flatMap((page) => page.applications) ?? [];
+  const {
+    data: applicationsQuery,
+    isLoading,
+    error,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteBrandApplications(tab);
+  const applications = applicationsQuery?.pages.flatMap((page) => page.applications) ?? [];
 
   const approve = useMutation({
     mutationFn: (id: string) => brandApplicationsApi.approve(id),
@@ -130,4 +136,4 @@ export function BrandApplicationsPage() {
       </div>
     </div>
   );
-}
+};

@@ -8,7 +8,7 @@ const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
 // https://nextjs.org/docs/app/api-reference/file-conventions/metadata/sitemap),
 // so there's no separate build step to remember.
 
-export default function sitemap(): MetadataRoute.Sitemap {
+const sitemap = (): MetadataRoute.Sitemap => {
   return [
     {
       url: siteUrl,
@@ -17,4 +17,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
   ];
-}
+};
+
+export default sitemap;

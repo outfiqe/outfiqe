@@ -9,6 +9,7 @@ export const DomainEvents = {
   USER_PASSWORD_RESET: "user.password.reset",
   BRAND_OWNER_REGISTERED: "brand.owner.registered",
   ADMIN_REGISTERED: "admin.registered",
+  LOOK_CREATED: "look.created",
   LOOK_LIKED: "look.liked",
   LOOK_SAVED: "look.saved",
   LOOK_COMMENTED: "look.commented",

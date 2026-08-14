@@ -9,11 +9,11 @@ const AVATAR_PALETTE = [
   "#4a5a4a",
 ];
 
-export function getAvatarColor(id: string): string {
+export const getAvatarColor = (id: string): string => {
   const charCodeSum = [...id].reduce((sum, char) => sum + char.charCodeAt(0), 0);
   return AVATAR_PALETTE[charCodeSum % AVATAR_PALETTE.length] ?? AVATAR_PALETTE[0]!;
-}
+};
 
-export function initialsFor(name: string): string {
+export const initialsFor = (name: string): string => {
   return name.trim().slice(0, 1).toUpperCase();
-}
+};

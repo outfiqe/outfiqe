@@ -11,7 +11,7 @@ interface ResetPasswordPageProps {
   searchParams: Promise<{ token?: string }>;
 }
 
-export default async function ResetPasswordPage({ searchParams }: ResetPasswordPageProps) {
+const ResetPasswordPage = async ({ searchParams }: ResetPasswordPageProps) => {
   const { token } = await searchParams;
   if (!token) redirect("/forgot-password");
 
@@ -19,4 +19,6 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
   if (!valid) redirect("/forgot-password?expired=1");
 
   return <ResetPasswordForm token={token} />;
-}
+};
+
+export default ResetPasswordPage;

@@ -6,7 +6,7 @@ import { ImageUpload } from "@/components/ImageUpload";
 import { authApi } from "@/features/auth/api";
 import { useAuth } from "@/features/auth/AuthContext";
 
-export function ProfilePage() {
+export const ProfilePage = () => {
   const { state, updateUser } = useAuth();
   const user = state.status === "signed-in" ? state.user : null;
 
@@ -75,4 +75,4 @@ export function ProfilePage() {
       </form>
     </div>
   );
-}
+};

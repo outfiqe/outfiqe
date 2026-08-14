@@ -8,9 +8,11 @@ import { requireDashboardSession } from "../requireDashboardSession";
 
 export const metadata: Metadata = { title: "Posts" };
 
-export default async function DashboardPostsPage() {
-  const session = await requireDashboardSession("/dashboard/posts");
-  if (session.user.role === UserRole.BRAND_OWNER) redirect("/dashboard/products");
+const DashboardPostsPage = async () => {
+  const { user } = await requireDashboardSession("/dashboard/posts");
+  if (user.role === UserRole.BRAND_OWNER) redirect("/dashboard/products");
 
-  return <LooksSection creatorStatus={session.user.creatorStatus} />;
-}
+  return <LooksSection creatorStatus={user.creatorStatus} />;
+};
+
+export default DashboardPostsPage;

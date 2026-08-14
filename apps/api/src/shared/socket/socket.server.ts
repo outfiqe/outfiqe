@@ -8,9 +8,9 @@ import logger from "#lib/winston.utils.js";
 import { redis } from "#redis/redis.client.js";
 
 import { socketAuth } from "./socket.auth.js";
+import { EXPLORE_ROOM, userRoom } from "./socket.keys.js";
+import { socketConnectionRateLimit } from "./socket.rate-limit.js";
 import type { AppSocketServer } from "./socket.types.js";
-
-const userRoom = (userId: string) => `user:${userId}`;
 
 type SocketRuntime = {
   io: AppSocketServer;
@@ -31,15 +31,25 @@ export const initSocket = (httpServer: HttpServer): AppSocketServer => {
     adapter: createAdapter(pubClient, subClient),
   });
 
+  io.use(socketConnectionRateLimit);
   io.use(socketAuth);
 
   io.on("connection", (socket) => {
-    const { userId } = socket.data.auth;
-    socket.join(userRoom(userId));
-    logger.info(`Socket connected: user=${userId} socket=${socket.id}`);
+    const { id } = socket;
+    socket.join(EXPLORE_ROOM);
+
+    const auth = socket.data.auth;
+    if (auth) {
+      socket.join(userRoom(auth.userId));
+      logger.info(`Socket connected: user=${auth.userId} socket=${id}`);
+    } else {
+      logger.info(`Socket connected: guest socket=${id}`);
+    }
 
     socket.on("disconnect", (reason) => {
-      logger.info(`Socket disconnected: user=${userId} socket=${socket.id} reason=${reason}`);
+      logger.info(
+        `Socket disconnected: user=${auth?.userId ?? "guest"} socket=${id} reason=${reason}`,
+      );
     });
   });
 

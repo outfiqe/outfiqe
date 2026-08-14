@@ -26,7 +26,7 @@ const BRAND_NAV: SidebarNavItem[] = [
   { id: "products", href: "/dashboard/products", label: "Products", icon: Package },
 ];
 
-export function DashboardSidebar() {
+export const DashboardSidebar = () => {
   const { state } = useAuth();
   const logout = useLogout();
   const navigation = useNextSidebarNavigation();
@@ -39,7 +39,9 @@ export function DashboardSidebar() {
   const user = state.user;
   if (!user) return null;
 
-  const isBrand = user.role === UserRole.BRAND_OWNER;
+  const { role, avatarUrl, id, name } = user;
+
+  const isBrand = role === UserRole.BRAND_OWNER;
   const navItems = isBrand ? BRAND_NAV : CREATOR_NAV;
   const sections: SidebarNavSection[] = [{ id: isBrand ? "brand" : "creator", items: navItems }];
 
@@ -48,23 +50,23 @@ export function DashboardSidebar() {
       <div className="size-9 shrink-0 overflow-hidden rounded-full">
         <div
           className="flex size-full items-center justify-center bg-cover bg-center"
-          style={user.avatarUrl ? { backgroundImage: `url(${user.avatarUrl})` } : undefined}
+          style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
         >
-          {!user.avatarUrl && (
+          {!avatarUrl && (
             <span
               aria-hidden
               className="flex size-full items-center justify-center text-xs font-bold text-white"
-              style={{ backgroundColor: getAvatarColor(user.id) }}
+              style={{ backgroundColor: getAvatarColor(id) }}
             >
-              {initialsFor(user.name)}
+              {initialsFor(name)}
             </span>
           )}
         </div>
       </div>
       {!collapsed && (
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground" title={user.name}>
-            {user.name}
+          <p className="truncate text-sm font-semibold text-foreground" title={name}>
+            {name}
           </p>
           <p className="truncate text-[11px] text-muted-foreground">
             {isBrand ? "Brand account" : "Creator account"}
@@ -103,4 +105,4 @@ export function DashboardSidebar() {
       />
     </aside>
   );
-}
+};

@@ -75,20 +75,22 @@ export const creatorService = {
       throw new AppError("NOT_FOUND", "Creator not found.", NOT_FOUND_STATUS);
     }
 
+    const { id, name, handle: userHandle, heightCm, creatorStatus, followerCount } = user;
+
     const [postsCount, taggedProductIds, isFollowing] = await Promise.all([
-      creatorLookRepository.countByCreatorId(user.id),
-      productRepository.listProductIdsTaggedByCreator(user.id),
-      viewerId ? followRepository.isFollowing(viewerId, FollowTargetType.USER, user.id) : false,
+      creatorLookRepository.countByCreatorId(id),
+      productRepository.listProductIdsTaggedByCreator(id),
+      viewerId ? followRepository.isFollowing(viewerId, FollowTargetType.USER, id) : false,
     ]);
 
     return {
-      userId: user.id,
-      name: user.name,
-      handle: user.handle,
-      heightCm: user.heightCm,
-      creatorStatus: user.creatorStatus,
+      userId: id,
+      name,
+      handle: userHandle,
+      heightCm,
+      creatorStatus,
       postsCount,
-      followerCount: user.followerCount,
+      followerCount,
       taggedPiecesCount: taggedProductIds.length,
       isFollowing,
     };
@@ -100,8 +102,12 @@ export const creatorService = {
       limit: query.limit,
     });
 
-    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
-    return { creators: items.map(toProfile), nextCursor };
+    const { items: pagedCreators, nextCursor } = buildCursorPage(
+      rows,
+      query.limit,
+      (row) => row.id,
+    );
+    return { creators: pagedCreators.map(toProfile), nextCursor };
   },
 
   async approve(userId: string, adminUserId: string): Promise<void> {

@@ -3,7 +3,7 @@
 import { FormBanner } from "@outfiqe/design-system";
 import { useSearchParams } from "next/navigation";
 
-export function ApplyExpiredBanner() {
+export const ApplyExpiredBanner = () => {
   const searchParams = useSearchParams();
   if (searchParams.get("expired") !== "1") return null;
 
@@ -14,4 +14,4 @@ export function ApplyExpiredBanner() {
       </FormBanner>
     </div>
   );
-}
+};

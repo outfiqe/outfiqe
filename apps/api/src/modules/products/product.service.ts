@@ -75,18 +75,21 @@ const notifyBrand = async (
 };
 
 export const productService = {
-  async create(userId: string, input: CreateProductBody): Promise<ProductBrandSummary> {
+  async create(
+    userId: string,
+    { categories: categorySlugs, name, price, type, imageUrls, lowStock }: CreateProductBody,
+  ): Promise<ProductBrandSummary> {
     const brandId = await requireBrandId(userId);
-    const categories = await categoryService.getManyBySlugs(input.categories);
+    const categories = await categoryService.getManyBySlugs(categorySlugs);
 
     const product = await productRepository.create({
       brandId,
-      name: input.name,
-      price: input.price,
-      type: SLUG_TO_PRODUCT_TYPE[input.type],
+      name,
+      price,
+      type: SLUG_TO_PRODUCT_TYPE[type],
       categoryIds: categories.map((category) => category.id),
-      imageUrls: input.imageUrls,
-      lowStock: input.lowStock,
+      imageUrls,
+      lowStock,
     });
 
     return toBrandSummary(product);
@@ -95,7 +98,7 @@ export const productService = {
   async update(
     userId: string,
     productId: string,
-    input: UpdateProductBody,
+    { categories, name, price, type, imageUrls, lowStock }: UpdateProductBody,
   ): Promise<ProductRecord> {
     const brandId = await requireBrandId(userId);
     const product = await requireOwnedProduct(productId, brandId);
@@ -108,41 +111,42 @@ export const productService = {
       );
     }
 
-    const categoryIds = input.categories
-      ? (await categoryService.getManyBySlugs(input.categories)).map((category) => category.id)
+    const categoryIds = categories
+      ? (await categoryService.getManyBySlugs(categories)).map((category) => category.id)
       : undefined;
 
     return productRepository.update(productId, {
-      name: input.name,
-      price: input.price,
-      type: input.type ? SLUG_TO_PRODUCT_TYPE[input.type] : undefined,
+      name,
+      price,
+      type: type ? SLUG_TO_PRODUCT_TYPE[type] : undefined,
       categoryIds,
-      imageUrls: input.imageUrls,
-      lowStock: input.lowStock,
+      imageUrls,
+      lowStock,
     });
   },
 
-  async listMine(userId: string, query: ListMineProductsQuery): Promise<ProductBrandSummaryPage> {
+  async listMine(
+    userId: string,
+    { cursor, limit }: ListMineProductsQuery,
+  ): Promise<ProductBrandSummaryPage> {
     const brandId = await requireBrandId(userId);
-    const rows = await productRepository.listByBrandId(brandId, {
-      cursor: query.cursor,
-      limit: query.limit,
-    });
+    const rows = await productRepository.listByBrandId(brandId, { cursor, limit });
 
-    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
-    return { products: items.map(toBrandSummary), nextCursor };
+    const { items: pagedProducts, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
+    return { products: pagedProducts.map(toBrandSummary), nextCursor };
   },
 
-  async listForReview(query: ListReviewProductsQuery): Promise<ProductReviewPage> {
-    const status = query.status ?? ProductStatus.PENDING;
-    const rows = await productRepository.listForReview(status, {
-      cursor: query.cursor,
-      limit: query.limit,
-    });
+  async listForReview({
+    status: rawStatus,
+    cursor,
+    limit,
+  }: ListReviewProductsQuery): Promise<ProductReviewPage> {
+    const status = rawStatus ?? ProductStatus.PENDING;
+    const rows = await productRepository.listForReview(status, { cursor, limit });
 
-    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
+    const { items: pagedProducts, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
     return {
-      products: items.map(({ categories, ...rest }) => ({
+      products: pagedProducts.map(({ categories, ...rest }) => ({
         ...rest,
         categories: categories.map((category) => category.name),
       })),
@@ -150,27 +154,25 @@ export const productService = {
     };
   },
 
-  async listPublic(query: ListPublicProductsQuery): Promise<PublicProductPage> {
-    const type = query.type ? SLUG_TO_PRODUCT_TYPE[query.type] : undefined;
-    const categoryId = query.category
-      ? (await categoryService.getBySlug(query.category)).id
-      : undefined;
+  async listPublic({
+    type: typeSlug,
+    category,
+    q,
+    cursor,
+    limit,
+  }: ListPublicProductsQuery): Promise<PublicProductPage> {
+    const type = typeSlug ? SLUG_TO_PRODUCT_TYPE[typeSlug] : undefined;
+    const categoryId = category ? (await categoryService.getBySlug(category)).id : undefined;
 
     const [rows, counts] = await Promise.all([
-      productRepository.listPublic({
-        categoryId,
-        type,
-        q: query.q,
-        cursor: query.cursor,
-        limit: query.limit,
-      }),
-      productRepository.countPublic({ categoryId, type, q: query.q }),
+      productRepository.listPublic({ categoryId, type, q, cursor, limit }),
+      productRepository.countPublic({ categoryId, type, q }),
     ]);
 
-    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
+    const { items: pagedProducts, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
 
     return {
-      products: items.map(toPublicProduct),
+      products: pagedProducts.map(toPublicProduct),
       nextCursor,
       total: counts.total,
       brandCount: counts.brandCount,
@@ -181,6 +183,8 @@ export const productService = {
     const product = await productRepository.findPublicById(id);
     if (!product) throw new AppError("NOT_FOUND", "Product not found.", NOT_FOUND_STATUS);
 
+    const { brandId, brand, sizes, images, wornByCount } = product;
+
     const [seenOnCreators, isSaved] = await Promise.all([
       productRepository.listSeenOnCreators(id),
       viewerId ? wishlistRepository.isSaved(viewerId, id) : false,
@@ -188,10 +192,10 @@ export const productService = {
 
     return {
       ...toPublicProduct(product),
-      brand: { id: product.brandId, name: product.brand.name },
-      sizes: product.sizes,
-      images: product.images.map((image) => image.url),
-      wornByCount: product.wornByCount,
+      brand: { id: brandId, name: brand.name },
+      sizes,
+      images: images.map((image) => image.url),
+      wornByCount,
       seenOnCreators,
       isSaved,
     };
@@ -209,19 +213,19 @@ export const productService = {
 
   async listPublicByBrand(
     brandId: string,
-    query: ListBrandProductsQuery,
+    { type: typeSlug, cursor, limit }: ListBrandProductsQuery,
   ): Promise<PublicProductPage> {
-    const type = query.type ? SLUG_TO_PRODUCT_TYPE[query.type] : undefined;
+    const type = typeSlug ? SLUG_TO_PRODUCT_TYPE[typeSlug] : undefined;
 
     const [rows, counts] = await Promise.all([
-      productRepository.listPublic({ brandId, type, cursor: query.cursor, limit: query.limit }),
+      productRepository.listPublic({ brandId, type, cursor, limit }),
       productRepository.countPublic({ brandId, type }),
     ]);
 
-    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
+    const { items: pagedProducts, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
 
     return {
-      products: items.map(toPublicProduct),
+      products: pagedProducts.map(toPublicProduct),
       nextCursor,
       total: counts.total,
       brandCount: counts.brandCount,

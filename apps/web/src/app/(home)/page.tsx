@@ -14,7 +14,7 @@ import {
   TrendingNow,
 } from "@/features/landing";
 
-export default function HomePage() {
+const HomePage = () => {
   return (
     <div className="pb-20 lg:pb-0">
       <SiteHeader />
@@ -36,4 +36,6 @@ export default function HomePage() {
       <MobileTabBar />
     </div>
   );
-}
+};
+
+export default HomePage;

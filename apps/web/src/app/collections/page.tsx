@@ -7,7 +7,7 @@ import { CollectionsGrid } from "@/features/collections";
 
 export const metadata: Metadata = { title: "Collections" };
 
-export default function CollectionsPage() {
+const CollectionsPage = () => {
   return (
     <div className="pb-20 lg:pb-0">
       <SiteHeader />
@@ -32,4 +32,6 @@ export default function CollectionsPage() {
       <MobileTabBar />
     </div>
   );
-}
+};
+
+export default CollectionsPage;

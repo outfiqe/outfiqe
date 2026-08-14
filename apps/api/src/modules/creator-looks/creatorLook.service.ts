@@ -58,12 +58,15 @@ const requireApprovedProducts = async (productIds: string[]): Promise<void> => {
 };
 
 export const creatorLookService = {
-  async create(userId: string, input: CreateCreatorLookBody): Promise<CreatorLookSummary> {
+  async create(
+    userId: string,
+    { taggedProducts, imageUrls, caption }: CreateCreatorLookBody,
+  ): Promise<CreatorLookSummary> {
     await requireApprovedCreator(userId);
-    const productIds = input.taggedProducts.map((tag) => tag.productId);
+    const productIds = taggedProducts.map((tag) => tag.productId);
     await requireApprovedProducts(productIds);
 
-    const [coverImageUrl, ...restImageUrls] = input.imageUrls;
+    const [coverImageUrl, ...restImageUrls] = imageUrls;
     if (!coverImageUrl) {
       throw new AppError("VALIDATION_ERROR", "At least one image is required.", VALIDATION_STATUS);
     }
@@ -71,12 +74,18 @@ export const creatorLookService = {
     const look = await creatorLookRepository.create({
       creatorId: userId,
       imageUrls: [coverImageUrl, ...restImageUrls],
-      caption: input.caption,
-      taggedProducts: input.taggedProducts,
-      hashtags: extractHashtags(input.caption ?? ""),
+      caption,
+      taggedProducts,
+      hashtags: extractHashtags(caption ?? ""),
     });
 
     await Promise.all(productIds.map((productId) => productService.recountWornBy(productId)));
+
+    eventBus.emit(DomainEvents.LOOK_CREATED, {
+      lookId: look.id,
+      creatorId: userId,
+      createdAt: look.createdAt,
+    });
 
     return look;
   },
@@ -108,10 +117,8 @@ export const creatorLookService = {
 
   async feed(
     viewerId: string | undefined,
-    query: { tab: string; cursor?: string; limit: number },
+    { tab, cursor, limit }: { tab: string; cursor?: string; limit: number },
   ): Promise<FeedPage> {
-    const tab = query.tab;
-
     if (tab === FOLLOWING_TAB) {
       if (!viewerId) {
         throw new AppError(
@@ -129,8 +136,8 @@ export const creatorLookService = {
         // Nobody followed yet: fall back to trending rather than showing an empty feed.
         return creatorLookRepository.feed({
           tab: TRENDING_TAB,
-          cursor: query.cursor,
-          limit: query.limit,
+          cursor,
+          limit,
           viewerId,
           followingCreatorIds: [],
         });
@@ -138,23 +145,19 @@ export const creatorLookService = {
 
       return creatorLookRepository.feed({
         tab: FOLLOWING_TAB,
-        cursor: query.cursor,
-        limit: query.limit,
+        cursor,
+        limit,
         viewerId,
         followingCreatorIds,
       });
     }
 
-    /* for_you has no dedicated personalization query yet — it reuses the trending
-     ranking (same fallback the spec itself defines for low-activity viewers),
-     applied unconditionally for now. Swap in real scoring later without an API change.
-     */
     const tabToUse = tab === FOR_YOU_TAB ? TRENDING_TAB : tab;
 
     return creatorLookRepository.feed({
       tab: tabToUse,
-      cursor: query.cursor,
-      limit: query.limit,
+      cursor,
+      limit,
       viewerId,
       followingCreatorIds: [],
     });
@@ -166,28 +169,28 @@ export const creatorLookService = {
 
   async like(lookId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
     await requireActiveLook(lookId);
-    const result = await creatorLookRepository.like(lookId, userId);
+    const { likeCount } = await creatorLookRepository.like(lookId, userId);
     eventBus.emit(DomainEvents.LOOK_LIKED, { lookId, userId });
-    return { liked: true, likeCount: result.likeCount };
+    return { liked: true, likeCount };
   },
 
   async unlike(lookId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
     await requireActiveLook(lookId);
-    const result = await creatorLookRepository.unlike(lookId, userId);
-    return { liked: false, likeCount: result.likeCount };
+    const { likeCount } = await creatorLookRepository.unlike(lookId, userId);
+    return { liked: false, likeCount };
   },
 
   async save(lookId: string, userId: string): Promise<{ saved: boolean; saveCount: number }> {
     await requireActiveLook(lookId);
-    const result = await creatorLookRepository.save(lookId, userId);
+    const { saveCount } = await creatorLookRepository.save(lookId, userId);
     eventBus.emit(DomainEvents.LOOK_SAVED, { lookId, userId });
-    return { saved: true, saveCount: result.saveCount };
+    return { saved: true, saveCount };
   },
 
   async unsave(lookId: string, userId: string): Promise<{ saved: boolean; saveCount: number }> {
     await requireActiveLook(lookId);
-    const result = await creatorLookRepository.unsave(lookId, userId);
-    return { saved: false, saveCount: result.saveCount };
+    const { saveCount } = await creatorLookRepository.unsave(lookId, userId);
+    return { saved: false, saveCount };
   },
 
   async listComments(

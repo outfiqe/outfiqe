@@ -2,7 +2,7 @@ import { Skeleton } from "@outfiqe/design-system";
 
 import type { FeedLayout } from "./FeedFilterTabs";
 
-export function PostCardSkeleton() {
+export const PostCardSkeleton = () => {
   return (
     <div className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-border">
       <div className="flex items-center gap-2 px-3 py-2.5">
@@ -21,9 +21,9 @@ export function PostCardSkeleton() {
       </div>
     </div>
   );
-}
+};
 
-function PostListItemSkeleton() {
+const PostListItemSkeleton = () => {
   return (
     <div className="flex gap-4 border-b border-border py-4 first:pt-0">
       <Skeleton className="size-28 shrink-0 rounded-xl sm:size-32" />
@@ -40,9 +40,9 @@ function PostListItemSkeleton() {
       </div>
     </div>
   );
-}
+};
 
-export function ExploreFeedSkeleton({ layout = "grid" }: { layout?: FeedLayout }) {
+export const ExploreFeedSkeleton = ({ layout = "grid" }: { layout?: FeedLayout }) => {
   if (layout === "list") {
     return (
       <div role="status" aria-label="Loading feed">
@@ -64,4 +64,4 @@ export function ExploreFeedSkeleton({ layout = "grid" }: { layout?: FeedLayout }
       ))}
     </div>
   );
-}
+};

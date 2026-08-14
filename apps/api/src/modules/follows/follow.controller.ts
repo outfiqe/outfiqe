@@ -12,16 +12,16 @@ export const followController = {
     const { userId } = requireAuthPrincipal(res);
     const { targetType, targetId } = validated.params<FollowParams>(res);
 
-    const result = await followService.follow(userId, targetType, targetId);
-    sendSuccess(res, result, "Followed.");
+    const followResult = await followService.follow(userId, targetType, targetId);
+    sendSuccess(res, followResult, "Followed.");
   },
 
   async unfollow(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const { targetType, targetId } = validated.params<FollowParams>(res);
 
-    const result = await followService.unfollow(userId, targetType, targetId);
-    sendSuccess(res, result, "Unfollowed.");
+    const unfollowResult = await followService.unfollow(userId, targetType, targetId);
+    sendSuccess(res, unfollowResult, "Unfollowed.");
   },
 
   async suggestedCreators(_req: Request, res: Response) {

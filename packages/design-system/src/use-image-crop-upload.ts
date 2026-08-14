@@ -21,8 +21,8 @@ export const useImageCropUpload = ({ onChange, onUpload }: UseImageCropUploadOpt
     try {
       const [url] = await onUpload([file]);
       if (url) onChange(url);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed. Try again.");
+    } catch {
+      setError("Upload failed. Try again.");
     } finally {
       setIsUploading(false);
     }

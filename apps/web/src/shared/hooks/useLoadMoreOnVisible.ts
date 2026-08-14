@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 const ROOT_MARGIN = "400px";
 
-export function useLoadMoreOnVisible(onVisible: () => void, enabled: boolean) {
+export const useLoadMoreOnVisible = (onVisible: () => void, enabled: boolean) => {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -25,4 +25,4 @@ export function useLoadMoreOnVisible(onVisible: () => void, enabled: boolean) {
   }, [onVisible, enabled]);
 
   return sentinelRef;
-}
+};

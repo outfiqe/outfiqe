@@ -2,7 +2,7 @@ import { getFeaturedCreatorLooksServer } from "@/features/products/api/getProduc
 
 import { ProductRail } from "../ProductRail";
 
-export async function CreatorLooks() {
+export const CreatorLooks = async () => {
   const products = await getFeaturedCreatorLooksServer();
 
   return (
@@ -12,4 +12,4 @@ export async function CreatorLooks() {
       products={products}
     />
   );
-}
+};

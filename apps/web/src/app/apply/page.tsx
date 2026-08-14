@@ -7,7 +7,7 @@ import { ApplyExpiredBanner } from "./ApplyExpiredBanner";
 
 export const metadata: Metadata = { title: "List your brand" };
 
-export default function ApplyPage() {
+const ApplyPage = () => {
   return (
     <main className="mx-auto max-w-5xl px-4 py-16 sm:py-24">
       <span className="text-xs font-bold uppercase tracking-widest text-primary-strong">
@@ -59,4 +59,6 @@ export default function ApplyPage() {
       </div>
     </main>
   );
-}
+};
+
+export default ApplyPage;

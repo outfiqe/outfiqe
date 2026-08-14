@@ -21,7 +21,7 @@ const slugify = (value: string): string =>
 
 export const CategoriesPage = () => {
   const queryClient = useQueryClient();
-  const { data, isLoading } = useQuery({
+  const { data: categories, isLoading } = useQuery({
     queryKey: ["admin-categories"],
     queryFn: categoriesApi.list,
   });
@@ -116,41 +116,45 @@ export const CategoriesPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-        {data?.length === 0 && <p className="text-sm text-muted-foreground">No categories yet.</p>}
+        {categories?.length === 0 && (
+          <p className="text-sm text-muted-foreground">No categories yet.</p>
+        )}
 
-        {data?.map((category) => (
-          <div
-            key={category.id}
-            className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4"
-          >
-            <ImageUpload
-              value={category.imageUrl}
-              onChange={(url) => setCategoryImage.mutate({ id: category.id, imageUrl: url })}
-            />
+        {categories?.map((category) => {
+          const { id, imageUrl, name, status, slug, productCount } = category;
 
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h2 className="font-display text-base font-bold text-foreground">
-                  {category.name}
-                </h2>
-                <Badge tone={STATUS_TONE[category.status]} showDot={false}>
-                  {category.status}
-                </Badge>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                /{category.slug} · {category.productCount} products
-              </p>
-            </div>
-
-            <Button
-              variant={category.status === "PUBLISHED" ? "ghost" : "default"}
-              onClick={() => toggleStatus.mutate(category)}
-              disabled={toggleStatus.isPending}
+          return (
+            <div
+              key={id}
+              className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4"
             >
-              {category.status === "PUBLISHED" ? "Unpublish" : "Publish"}
-            </Button>
-          </div>
-        ))}
+              <ImageUpload
+                value={imageUrl}
+                onChange={(url) => setCategoryImage.mutate({ id, imageUrl: url })}
+              />
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-display text-base font-bold text-foreground">{name}</h2>
+                  <Badge tone={STATUS_TONE[status]} showDot={false}>
+                    {status}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  /{slug} · {productCount} products
+                </p>
+              </div>
+
+              <Button
+                variant={status === "PUBLISHED" ? "ghost" : "default"}
+                onClick={() => toggleStatus.mutate(category)}
+                disabled={toggleStatus.isPending}
+              >
+                {status === "PUBLISHED" ? "Unpublish" : "Publish"}
+              </Button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

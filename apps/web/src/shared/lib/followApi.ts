@@ -9,12 +9,14 @@ export type FollowResult = z.infer<typeof followResultSchema>;
 
 export const followApi = {
   async follow(targetType: FollowTargetType, targetId: string): Promise<FollowResult> {
-    const res = await apiClient.post<FollowResult>(`/follows/${targetType}/${targetId}`);
-    return followResultSchema.parse(res.data);
+    const followResponse = await apiClient.post<FollowResult>(`/follows/${targetType}/${targetId}`);
+    return followResultSchema.parse(followResponse.data);
   },
 
   async unfollow(targetType: FollowTargetType, targetId: string): Promise<FollowResult> {
-    const res = await apiClient.del<FollowResult>(`/follows/${targetType}/${targetId}`);
-    return followResultSchema.parse(res.data);
+    const unfollowResponse = await apiClient.del<FollowResult>(
+      `/follows/${targetType}/${targetId}`,
+    );
+    return followResultSchema.parse(unfollowResponse.data);
   },
 };

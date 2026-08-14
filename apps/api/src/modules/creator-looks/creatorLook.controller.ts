@@ -58,32 +58,32 @@ export const creatorLookController = {
     const { userId } = requireAuthPrincipal(res);
     const { lookId } = validated.params<LookIdParams>(res);
 
-    const result = await creatorLookService.like(lookId, userId);
-    sendSuccess(res, result, "Liked.");
+    const { likeCount } = await creatorLookService.like(lookId, userId);
+    sendSuccess(res, { likeCount }, "Liked.");
   },
 
   async unlike(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const { lookId } = validated.params<LookIdParams>(res);
 
-    const result = await creatorLookService.unlike(lookId, userId);
-    sendSuccess(res, result, "Unliked.");
+    const { likeCount } = await creatorLookService.unlike(lookId, userId);
+    sendSuccess(res, { likeCount }, "Unliked.");
   },
 
   async save(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const { lookId } = validated.params<LookIdParams>(res);
 
-    const result = await creatorLookService.save(lookId, userId);
-    sendSuccess(res, result, "Saved.");
+    const { saveCount } = await creatorLookService.save(lookId, userId);
+    sendSuccess(res, { saveCount }, "Saved.");
   },
 
   async unsave(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const { lookId } = validated.params<LookIdParams>(res);
 
-    const result = await creatorLookService.unsave(lookId, userId);
-    sendSuccess(res, result, "Unsaved.");
+    const { saveCount } = await creatorLookService.unsave(lookId, userId);
+    sendSuccess(res, { saveCount }, "Unsaved.");
   },
 
   async listComments(_req: Request, res: Response) {

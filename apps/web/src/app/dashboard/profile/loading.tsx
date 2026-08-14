@@ -1,6 +1,6 @@
 import { Skeleton } from "@outfiqe/design-system";
 
-export default function ProfileLoading() {
+const ProfileLoading = () => {
   return (
     <div
       role="status"
@@ -17,4 +17,6 @@ export default function ProfileLoading() {
       <Skeleton className="mt-5 h-6 w-36 rounded-full" />
     </div>
   );
-}
+};
+
+export default ProfileLoading;

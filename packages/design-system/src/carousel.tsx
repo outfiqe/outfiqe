@@ -30,13 +30,13 @@ interface CarouselContextProps extends CarouselProps {
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null);
 
-function useCarousel() {
+const useCarousel = () => {
   const context = React.useContext(CarouselContext);
   if (!context) throw new Error("useCarousel must be used within a <Carousel />");
   return context;
-}
+};
 
-function Carousel({
+const Carousel = ({
   orientation = "horizontal",
   opts,
   setApi,
@@ -44,7 +44,7 @@ function Carousel({
   className,
   children,
   ...props
-}: React.ComponentPropsWithoutRef<"div"> & CarouselProps) {
+}: React.ComponentPropsWithoutRef<"div"> & CarouselProps) => {
   const [carouselRef, api] = useEmblaCarousel(
     { ...opts, axis: orientation === "horizontal" ? "x" : "y" },
     plugins,
@@ -113,9 +113,9 @@ function Carousel({
       </div>
     </CarouselContext.Provider>
   );
-}
+};
 
-function CarouselContent({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
+const CarouselContent = ({ className, ...props }: React.ComponentPropsWithoutRef<"div">) => {
   const { carouselRef, orientation } = useCarousel();
 
   return (
@@ -123,9 +123,9 @@ function CarouselContent({ className, ...props }: React.ComponentPropsWithoutRef
       <div className={cn("flex", orientation === "vertical" && "flex-col", className)} {...props} />
     </div>
   );
-}
+};
 
-function CarouselItem({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
+const CarouselItem = ({ className, ...props }: React.ComponentPropsWithoutRef<"div">) => {
   const { orientation } = useCarousel();
 
   return (
@@ -140,7 +140,7 @@ function CarouselItem({ className, ...props }: React.ComponentPropsWithoutRef<"d
       {...props}
     />
   );
-}
+};
 
 const CarouselPrevious = React.forwardRef<
   HTMLButtonElement,

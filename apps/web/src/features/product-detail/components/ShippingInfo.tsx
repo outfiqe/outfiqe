@@ -2,7 +2,7 @@ import { RotateCcw, Truck } from "lucide-react";
 
 const FLAT_SHIPPING_FEE = 150;
 
-export function ShippingInfo() {
+export const ShippingInfo = () => {
   return (
     <div className="mt-4 space-y-2.5 rounded-xl border border-border bg-muted/40 p-3.5 text-xs text-muted-foreground">
       <div className="flex items-center gap-2.5">
@@ -18,4 +18,4 @@ export function ShippingInfo() {
       </div>
     </div>
   );
-}
+};

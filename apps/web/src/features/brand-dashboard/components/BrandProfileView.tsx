@@ -16,6 +16,7 @@ import { useAuth } from "@/features/auth";
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
+import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { BrandProfile } from "../api/brandDashboardSchemas";
 import { useBrandProducts } from "../hooks/useBrandProducts";
@@ -65,7 +66,7 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
         toast.success("Profile updated");
       },
       onError: (error) => {
-        toast.error(error.message);
+        toast.error(getErrorMessage(error));
       },
     });
   };
@@ -80,13 +81,15 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
     </span>
   );
 
+  const { bannerUrl, avatarUrl, contactName, phone, instagram } = fields;
+
   return (
     <div className="space-y-6">
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        {fields.bannerUrl && (
+        {bannerUrl && (
           <div
             className="h-28 w-full bg-cover bg-center sm:h-36"
-            style={{ backgroundImage: `url(${fields.bannerUrl})` }}
+            style={{ backgroundImage: `url(${bannerUrl})` }}
           />
         )}
         <div className="p-6">
@@ -95,13 +98,11 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
               <div
                 className={cn(
                   "size-14 shrink-0 overflow-hidden rounded-full bg-cover bg-center",
-                  fields.bannerUrl && "-mt-10 ring-4 ring-card",
+                  bannerUrl && "-mt-10 ring-4 ring-card",
                 )}
-                style={
-                  fields.avatarUrl ? { backgroundImage: `url(${fields.avatarUrl})` } : undefined
-                }
+                style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
               >
-                {!fields.avatarUrl && initialsBadge}
+                {!avatarUrl && initialsBadge}
               </div>
               <div>
                 <h1 className="font-display text-2xl font-bold text-foreground">{brand.name}</h1>
@@ -120,7 +121,7 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
               <User className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <div>
                 <dt className="text-muted-foreground">Contact</dt>
-                <dd className="mt-0.5 text-foreground">{fields.contactName}</dd>
+                <dd className="mt-0.5 text-foreground">{contactName}</dd>
               </div>
             </div>
             <div className="flex items-start gap-2.5">
@@ -134,14 +135,14 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
               <Phone className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <div>
                 <dt className="text-muted-foreground">Phone</dt>
-                <dd className="mt-0.5 text-foreground">{fields.phone}</dd>
+                <dd className="mt-0.5 text-foreground">{phone}</dd>
               </div>
             </div>
             <div className="flex items-start gap-2.5">
               <AtSign className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <div>
                 <dt className="text-muted-foreground">Instagram</dt>
-                <dd className="mt-0.5 text-foreground">{fields.instagram}</dd>
+                <dd className="mt-0.5 text-foreground">{instagram}</dd>
               </div>
             </div>
           </dl>
