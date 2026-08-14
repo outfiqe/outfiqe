@@ -16,16 +16,16 @@ interface SidebarProps {
   onTagClick: (tag: string) => void;
 }
 
-export function Sidebar({ onTagClick }: SidebarProps) {
+export const Sidebar = ({ onTagClick }: SidebarProps) => {
   return (
     <aside className="sticky top-[76px] hidden h-fit flex-col gap-4 lg:flex">
       <SuggestedCreators />
       <TrendingTags onTagClick={onTagClick} />
     </aside>
   );
-}
+};
 
-function SuggestedCreators() {
+const SuggestedCreators = () => {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { data: creators, isLoading } = useSuggestedCreators();
@@ -69,29 +69,29 @@ function SuggestedCreators() {
             </div>
           ))}
 
-        {creators?.map((creator) => (
+        {creators?.map(({ id, handle, name, followerCount }) => (
           <div
-            key={creator.id}
+            key={id}
             className="flex items-center gap-2.5 border-b border-border py-2.5 last:border-b-0"
           >
-            <Link href={`/creator/${creator.handle}`} className="shrink-0">
+            <Link href={`/creator/${handle}`} className="shrink-0">
               <span
                 aria-hidden
                 className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-white"
-                style={{ backgroundColor: getAvatarColor(creator.id) }}
+                style={{ backgroundColor: getAvatarColor(id) }}
               >
-                {initialsFor(creator.name)}
+                {initialsFor(name)}
               </span>
             </Link>
-            <Link href={`/creator/${creator.handle}`} className="min-w-0 leading-tight">
-              <p className="truncate text-[13px] font-medium text-foreground">{creator.name}</p>
+            <Link href={`/creator/${handle}`} className="min-w-0 leading-tight">
+              <p className="truncate text-[13px] font-medium text-foreground">{name}</p>
               <p className="text-[11.5px] text-muted-foreground">
-                {creator.followerCount.toLocaleString()} followers
+                {followerCount.toLocaleString()} followers
               </p>
             </Link>
             <button
               type="button"
-              onClick={() => followMutation.mutate({ creatorId: creator.id, following: false })}
+              onClick={() => followMutation.mutate({ creatorId: id, following: false })}
               className="ml-auto shrink-0 rounded-full border border-foreground px-3 py-1 text-xs font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background"
             >
               Follow
@@ -101,9 +101,9 @@ function SuggestedCreators() {
       </div>
     </div>
   );
-}
+};
 
-function TrendingTags({ onTagClick }: { onTagClick: (tag: string) => void }) {
+const TrendingTags = ({ onTagClick }: { onTagClick: (tag: string) => void }) => {
   const { data: tags, isLoading } = useTrendingTags();
   if (!isLoading && (!tags || tags.length === 0)) return null;
 
@@ -118,19 +118,19 @@ function TrendingTags({ onTagClick }: { onTagClick: (tag: string) => void }) {
             <Skeleton key={index} className="h-7 w-16 rounded-full" />
           ))}
 
-        {tags?.map((entry) => (
+        {tags?.map(({ tag }) => (
           <button
-            key={entry.tag}
+            key={tag}
             type="button"
-            onClick={() => onTagClick(entry.tag)}
+            onClick={() => onTagClick(tag)}
             className={cn(
               "rounded-full bg-muted px-3 py-1.5 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground",
             )}
           >
-            #{entry.tag}
+            #{tag}
           </button>
         ))}
       </div>
     </div>
   );
-}
+};

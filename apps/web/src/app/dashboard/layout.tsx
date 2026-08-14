@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { SiteHeader } from "@/components/SiteHeader";
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+const DashboardLayout = ({ children }: { children: ReactNode }) => {
   return (
     <div>
       <SiteHeader />
@@ -13,4 +13,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </div>
     </div>
   );
-}
+};
+
+export default DashboardLayout;

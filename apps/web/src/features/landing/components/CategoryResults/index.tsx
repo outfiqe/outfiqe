@@ -22,10 +22,13 @@ export const CategoryResults = () => {
   const categories = useCategories();
   const category = categories.data?.find((c) => c.slug === categorySlug) ?? categories.data?.[0];
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteProducts(
-    category?.slug ?? "",
-    activeType === "all" ? undefined : activeType,
-  );
+  const {
+    data: productsPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteProducts(category?.slug ?? "", activeType === "all" ? undefined : activeType);
 
   const sentinelRef = useLoadMoreOnVisible(
     () => fetchNextPage(),
@@ -36,15 +39,17 @@ export const CategoryResults = () => {
     return <ProductGridSkeleton className="mt-8 px-6 lg:px-10" />;
   }
 
-  const products = data?.pages.flatMap((page) => page.products) ?? [];
-  const firstPage = data?.pages[0];
+  const { name, slug } = category;
+
+  const products = productsPages?.pages.flatMap((page) => page.products) ?? [];
+  const firstPage = productsPages?.pages[0];
 
   return (
     <section className="px-6 pb-10 pt-2 sm:pb-14 sm:pt-3 lg:px-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="font-display text-3xl font-bold uppercase text-foreground sm:text-4xl">
-            In {category.name}
+            In {name}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {firstPage
@@ -55,7 +60,7 @@ export const CategoryResults = () => {
 
         <Button
           variant="link"
-          onClick={() => router.replace(`/?category=${category.slug}`, { scroll: false })}
+          onClick={() => router.replace(`/?category=${slug}`, { scroll: false })}
           className="h-auto gap-1 p-0"
         >
           View all
@@ -64,7 +69,7 @@ export const CategoryResults = () => {
       </div>
 
       <div className="mt-6">
-        <CategoryFilters categorySlug={category.slug} activeType={activeType} />
+        <CategoryFilters categorySlug={slug} activeType={activeType} />
       </div>
 
       {isLoading ? (

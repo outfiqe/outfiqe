@@ -1,28 +1,28 @@
 import type { ExtendedError } from "socket.io";
 
 import { isJWTPayload, verifyToken } from "#lib/verify-token.utils.js";
+import type { AuthPrincipal } from "#types/token.types.js";
 
 import type { AppSocket } from "./socket.types.js";
 
-const UNAUTHORIZED_MESSAGE = "Authentication required.";
-
 export const socketAuth = (socket: AppSocket, next: (err?: ExtendedError) => void) => {
   const { token } = socket.handshake.auth;
+  const { data } = socket;
 
   if (typeof token !== "string" || !token) {
-    return next(new Error(UNAUTHORIZED_MESSAGE));
+    data.auth = null;
+    return next();
   }
 
   try {
     const decoded = verifyToken(token);
-
-    if (!isJWTPayload(decoded) || !decoded.role) {
-      return next(new Error(UNAUTHORIZED_MESSAGE));
-    }
-
-    socket.data.auth = { userId: decoded.sub, role: decoded.role };
-    next();
+    data.auth =
+      isJWTPayload(decoded) && decoded.role
+        ? ({ userId: decoded.sub, role: decoded.role } satisfies AuthPrincipal)
+        : null;
   } catch {
-    next(new Error(UNAUTHORIZED_MESSAGE));
+    data.auth = null;
   }
+
+  next();
 };

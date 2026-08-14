@@ -15,7 +15,7 @@ type LogoProps = {
   className?: string;
 };
 
-export function Logo({ size = "md", className }: LogoProps) {
+export const Logo = ({ size = "md", className }: LogoProps) => {
   const styles = SIZES[size];
 
   return (
@@ -34,4 +34,4 @@ export function Logo({ size = "md", className }: LogoProps) {
       </span>
     </Link>
   );
-}
+};

@@ -12,6 +12,6 @@ const adapter = new PrismaPg({
 
 export const prisma = new PrismaClient({ adapter });
 
-export async function disconnectDb() {
+export const disconnectDb = async () => {
   await prisma.$disconnect();
-}
+};

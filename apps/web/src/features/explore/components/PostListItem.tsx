@@ -15,7 +15,20 @@ interface PostListItemProps {
   post: FeedPost;
 }
 
-export function PostListItem({ post }: PostListItemProps) {
+export const PostListItem = ({ post }: PostListItemProps) => {
+  const {
+    id,
+    creator,
+    imageUrl,
+    isFollowingCreator,
+    caption,
+    isLiked,
+    likeCount,
+    commentCount,
+    isSaved,
+  } = post;
+  const { id: creatorId, handle: creatorHandle, name: creatorName } = creator;
+
   const {
     isAuthenticated,
     isOwnPost,
@@ -31,6 +44,7 @@ export function PostListItem({ post }: PostListItemProps) {
     comments,
     submitComment,
   } = usePostCardState(post);
+  const { isLoading: commentsLoading, data: commentsData } = comments;
 
   return (
     <article className="py-4">
@@ -38,27 +52,25 @@ export function PostListItem({ post }: PostListItemProps) {
         <div
           className="size-28 shrink-0 rounded-xl bg-cover bg-center sm:size-32"
           style={{
-            backgroundColor: post.imageUrl ? undefined : getAvatarColor(post.id),
-            backgroundImage: post.imageUrl ? `url(${post.imageUrl})` : undefined,
+            backgroundColor: imageUrl ? undefined : getAvatarColor(id),
+            backgroundImage: imageUrl ? `url(${imageUrl})` : undefined,
           }}
         />
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <Link href={`/creator/${post.creator.handle}`} className="shrink-0">
+            <Link href={`/creator/${creatorHandle}`} className="shrink-0">
               <span
                 aria-hidden
                 className="flex size-7 items-center justify-center rounded-full text-[11px] font-bold text-white"
-                style={{ backgroundColor: getAvatarColor(post.creator.id) }}
+                style={{ backgroundColor: getAvatarColor(creatorId) }}
               >
-                {initialsFor(post.creator.name)}
+                {initialsFor(creatorName)}
               </span>
             </Link>
-            <Link href={`/creator/${post.creator.handle}`} className="min-w-0 leading-tight">
-              <p className="truncate text-[13px] font-semibold text-foreground">
-                {post.creator.name}
-              </p>
-              <p className="truncate text-[11px] text-muted-foreground">@{post.creator.handle}</p>
+            <Link href={`/creator/${creatorHandle}`} className="min-w-0 leading-tight">
+              <p className="truncate text-[13px] font-semibold text-foreground">{creatorName}</p>
+              <p className="truncate text-[11px] text-muted-foreground">@{creatorHandle}</p>
             </Link>
 
             {!isOwnPost && (
@@ -67,34 +79,34 @@ export function PostListItem({ post }: PostListItemProps) {
                 onClick={() =>
                   gated(() =>
                     followMutation.mutate({
-                      creatorId: post.creator.id,
-                      following: post.isFollowingCreator,
+                      creatorId,
+                      following: isFollowingCreator,
                     }),
                   )
                 }
-                aria-pressed={post.isFollowingCreator}
+                aria-pressed={isFollowingCreator}
                 className={cn(
                   "ml-auto shrink-0 rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
-                  post.isFollowingCreator
+                  isFollowingCreator
                     ? "border-foreground bg-foreground text-background"
                     : "border-foreground text-foreground hover:bg-foreground hover:text-background",
                 )}
               >
-                {post.isFollowingCreator ? "Following" : "Follow"}
+                {isFollowingCreator ? "Following" : "Follow"}
               </button>
             )}
           </div>
 
-          {post.caption && (
+          {caption && (
             <p className="mt-1.5 line-clamp-2 text-[13.5px] leading-relaxed text-muted-foreground">
-              {post.caption}
+              {caption}
             </p>
           )}
 
           {primaryTag && (
             <Link
               href={`/product/${primaryTag.id}`}
-              onClick={() => void exploreFeedApi.recordTagClick(post.id, primaryTag.id, "FEED")}
+              onClick={() => void exploreFeedApi.recordTagClick(id, primaryTag.id, "FEED")}
               className="mt-2 inline-flex max-w-full items-center gap-2 rounded-full border border-border py-1 pl-2 pr-3 text-[12px] font-medium text-foreground transition-colors hover:border-foreground"
             >
               <span className="size-1.5 shrink-0 rounded-full bg-primary" />
@@ -105,19 +117,15 @@ export function PostListItem({ post }: PostListItemProps) {
           <div className="mt-2.5 flex items-center gap-4">
             <button
               type="button"
-              onClick={() =>
-                gated(() => likeMutation.mutate({ lookId: post.id, liked: post.isLiked }))
-              }
-              aria-pressed={post.isLiked}
+              onClick={() => gated(() => likeMutation.mutate({ lookId: id, liked: isLiked }))}
+              aria-pressed={isLiked}
               className={cn(
                 "flex items-center gap-1.5 text-[12.5px] transition-colors",
-                post.isLiked
-                  ? "text-primary-strong"
-                  : "text-muted-foreground hover:text-foreground",
+                isLiked ? "text-primary-strong" : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <Heart className={cn("size-4", post.isLiked && "fill-primary stroke-primary")} />
-              {post.likeCount}
+              <Heart className={cn("size-4", isLiked && "fill-primary stroke-primary")} />
+              {likeCount}
             </button>
 
             <button
@@ -127,22 +135,20 @@ export function PostListItem({ post }: PostListItemProps) {
               className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
             >
               <MessageCircle className="size-4" />
-              {post.commentCount}
+              {commentCount}
             </button>
 
             <button
               type="button"
-              onClick={() =>
-                gated(() => saveMutation.mutate({ lookId: post.id, saved: post.isSaved }))
-              }
-              aria-pressed={post.isSaved}
+              onClick={() => gated(() => saveMutation.mutate({ lookId: id, saved: isSaved }))}
+              aria-pressed={isSaved}
               className={cn(
                 "flex items-center gap-1.5 text-[12.5px] transition-colors",
-                post.isSaved ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                isSaved ? "text-foreground" : "text-muted-foreground hover:text-foreground",
               )}
               aria-label="Save post"
             >
-              <Bookmark className={cn("size-4", post.isSaved && "fill-foreground")} />
+              <Bookmark className={cn("size-4", isSaved && "fill-foreground")} />
             </button>
           </div>
         </div>
@@ -150,17 +156,17 @@ export function PostListItem({ post }: PostListItemProps) {
 
       {commentsOpen && (
         <div className="mt-3 border-t border-border pt-3">
-          {comments.isLoading && (
+          {commentsLoading && (
             <div className="space-y-1.5" role="status" aria-label="Loading comments">
               <Skeleton className="h-3 w-4/5" />
               <Skeleton className="h-3 w-3/5" />
             </div>
           )}
-          {comments.data?.comments.length === 0 && (
+          {commentsData?.comments.length === 0 && (
             <p className="text-[12px] text-muted-foreground">No comments yet.</p>
           )}
           <ul className="flex flex-col gap-1.5">
-            {comments.data?.comments.map((comment) => (
+            {commentsData?.comments.map((comment) => (
               <li key={comment.id} className="text-[12.5px] leading-snug">
                 <span className="font-semibold text-foreground">@{comment.userHandle}</span>{" "}
                 <span className="text-muted-foreground">{comment.body}</span>
@@ -194,4 +200,4 @@ export function PostListItem({ post }: PostListItemProps) {
       )}
     </article>
   );
-}
+};

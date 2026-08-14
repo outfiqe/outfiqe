@@ -9,7 +9,7 @@ interface ProductGridSkeletonProps {
   className?: string;
 }
 
-export function ProductGridSkeleton({ count = 10, className }: ProductGridSkeletonProps) {
+export const ProductGridSkeleton = ({ count = 10, className }: ProductGridSkeletonProps) => {
   return (
     <div role="status" aria-label="Loading products" className={cn(DEFAULT_GRID_CLASS, className)}>
       {Array.from({ length: count }).map((_, index) => (
@@ -17,9 +17,9 @@ export function ProductGridSkeleton({ count = 10, className }: ProductGridSkelet
       ))}
     </div>
   );
-}
+};
 
-function ProductCardSkeleton() {
+const ProductCardSkeleton = () => {
   return (
     <div>
       <Skeleton className="aspect-4/5 rounded-2xl" />
@@ -28,4 +28,4 @@ function ProductCardSkeleton() {
       <Skeleton className="mt-1.5 h-4 w-1/3" />
     </div>
   );
-}
+};

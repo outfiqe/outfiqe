@@ -35,7 +35,7 @@ const NAV_SECTIONS: SidebarNavSection[] = [
   },
 ];
 
-export function AdminSidebar() {
+export const AdminSidebar = () => {
   const { state } = useAuth();
   const navigation = useTanStackSidebarNavigation();
   const { collapsed, toggle } = useSidebarCollapse("outfiqe:admin-sidebar-collapsed");
@@ -82,4 +82,4 @@ export function AdminSidebar() {
       className={`shrink-0 ${sidebarWidthClass(collapsed)}`}
     />
   );
-}
+};

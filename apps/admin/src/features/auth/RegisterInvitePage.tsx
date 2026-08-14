@@ -15,7 +15,7 @@ type InviteLoadState =
   | { status: "invalid"; message: string }
   | { status: "valid"; invite: AdminInviteInfo };
 
-export function RegisterInvitePage() {
+export const RegisterInvitePage = () => {
   const { token } = routeApi.useSearch();
   const navigate = useNavigate();
   const { state: authState } = useAuth();
@@ -152,4 +152,4 @@ export function RegisterInvitePage() {
       </div>
     </div>
   );
-}
+};

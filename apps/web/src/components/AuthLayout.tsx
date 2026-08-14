@@ -6,7 +6,7 @@ type AuthLayoutProps = {
   children: ReactNode;
 };
 
-export function AuthLayout({ children }: AuthLayoutProps) {
+export const AuthLayout = ({ children }: AuthLayoutProps) => {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-8 px-4 py-10 sm:py-16">
       <Logo size="lg" />
@@ -15,4 +15,4 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       </div>
     </div>
   );
-}
+};

@@ -56,8 +56,8 @@ export const ImageCropModal = ({
     try {
       const file = await getCroppedImageFile(imageSrc, croppedAreaPixels, fileName, mimeType);
       onConfirm(file);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't process that image. Try again.");
+    } catch {
+      setError("Couldn't process that image. Try again.");
     } finally {
       setIsSaving(false);
     }

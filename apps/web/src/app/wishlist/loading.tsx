@@ -3,7 +3,7 @@ import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 
-export default function WishlistLoading() {
+const WishlistLoading = () => {
   return (
     <div role="status" aria-label="Loading" className="pb-20 lg:pb-0">
       <SiteHeader />
@@ -18,4 +18,6 @@ export default function WishlistLoading() {
       <MobileTabBar />
     </div>
   );
-}
+};
+
+export default WishlistLoading;

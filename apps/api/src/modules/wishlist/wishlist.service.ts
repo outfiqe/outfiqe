@@ -33,10 +33,14 @@ export const wishlistService = {
       wishlistRepository.listSaved(userId, query),
       wishlistRepository.count(userId),
     ]);
-    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.productId);
+    const { items: pagedProducts, nextCursor } = buildCursorPage(
+      rows,
+      query.limit,
+      (row) => row.productId,
+    );
 
     return {
-      products: items.map((row) => toPublicProduct(row.product)),
+      products: pagedProducts.map((row) => toPublicProduct(row.product)),
       nextCursor,
       total,
       brandCount: 0,

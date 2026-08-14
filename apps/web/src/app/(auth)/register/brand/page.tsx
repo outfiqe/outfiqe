@@ -10,7 +10,7 @@ interface BrandRegisterPageProps {
   searchParams: Promise<{ token?: string }>;
 }
 
-export default async function BrandRegisterPage({ searchParams }: BrandRegisterPageProps) {
+const BrandRegisterPage = async ({ searchParams }: BrandRegisterPageProps) => {
   const { token } = await searchParams;
   if (!token) redirect("/apply");
 
@@ -20,4 +20,6 @@ export default async function BrandRegisterPage({ searchParams }: BrandRegisterP
   return (
     <BrandRegisterForm inviteToken={token} email={invite.email} brandName={invite.brandName} />
   );
-}
+};
+
+export default BrandRegisterPage;

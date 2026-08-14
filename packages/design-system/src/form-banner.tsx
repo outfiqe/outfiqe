@@ -2,7 +2,13 @@ import type { ReactNode } from "react";
 
 import { cn } from "./cn";
 
-export function FormBanner({ children, className }: { children: ReactNode; className?: string }) {
+export const FormBanner = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => {
   return (
     <div
       role="alert"
@@ -15,4 +21,4 @@ export function FormBanner({ children, className }: { children: ReactNode; class
       {children}
     </div>
   );
-}
+};

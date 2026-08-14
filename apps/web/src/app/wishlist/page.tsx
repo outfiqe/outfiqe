@@ -8,7 +8,7 @@ import { WishlistPageBody } from "./WishlistPageBody";
 
 export const metadata: Metadata = { title: "Saved" };
 
-export default function WishlistPage() {
+const WishlistPage = () => {
   return (
     <div className="pb-20 lg:pb-0">
       <SiteHeader />
@@ -23,4 +23,6 @@ export default function WishlistPage() {
       <MobileTabBar />
     </div>
   );
-}
+};
+
+export default WishlistPage;

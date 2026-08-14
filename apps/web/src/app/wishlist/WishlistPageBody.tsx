@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { WishlistGrid } from "@/features/wishlist";
 
-export function WishlistPageBody() {
+export const WishlistPageBody = () => {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
 
@@ -28,4 +28,4 @@ export function WishlistPageBody() {
   }
 
   return <WishlistGrid />;
-}
+};

@@ -11,7 +11,7 @@ type Schemas = {
 
 export const validate = <S extends Schemas>(schemas: S) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const data: Record<string, unknown> = {};
+    const validatedFields: Record<string, unknown> = {};
     const issues: z.core.$ZodIssue[] = [];
 
     for (const key of ["body", "params", "query"] as const) {
@@ -21,7 +21,7 @@ export const validate = <S extends Schemas>(schemas: S) => {
       const result = schema.safeParse(req[key]);
 
       if (result.success) {
-        data[key] = result.data;
+        validatedFields[key] = result.data;
       } else {
         issues.push(...result.error.issues);
       }
@@ -31,7 +31,7 @@ export const validate = <S extends Schemas>(schemas: S) => {
 
     if (isNotEmpty) return next(new AppError("VALIDATION_ERROR", "Invalid request", 422, issues));
 
-    res.locals.validated = data;
+    res.locals.validated = validatedFields;
     next();
   };
 };

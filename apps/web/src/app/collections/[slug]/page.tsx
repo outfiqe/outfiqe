@@ -10,13 +10,13 @@ interface CollectionPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateMetadata({ params }: CollectionPageProps): Promise<Metadata> {
+export const generateMetadata = async ({ params }: CollectionPageProps): Promise<Metadata> => {
   const { slug } = await params;
   const collection = await getCollectionDetailServer(slug);
   return { title: collection ? collection.name : "Collection" };
-}
+};
 
-export default async function CollectionPage({ params }: CollectionPageProps) {
+const CollectionPage = async ({ params }: CollectionPageProps) => {
   const { slug } = await params;
   const collection = await getCollectionDetailServer(slug);
   if (!collection) notFound();
@@ -31,4 +31,6 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
       <MobileTabBar />
     </div>
   );
-}
+};
+
+export default CollectionPage;

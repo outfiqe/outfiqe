@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ExploreFeedSkeleton } from "@/features/explore";
 
-export default function ExploreLoading() {
+const ExploreLoading = () => {
   return (
     <div role="status" aria-label="Loading" className="pb-20 lg:pb-0">
       <SiteHeader />
@@ -45,4 +45,6 @@ export default function ExploreLoading() {
       <MobileTabBar />
     </div>
   );
-}
+};
+
+export default ExploreLoading;

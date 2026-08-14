@@ -14,7 +14,7 @@ const STATUS_TONE: Record<HeroSlideStatusValue, "neutral" | "positive"> = {
 
 export const HeroSlidesPage = () => {
   const queryClient = useQueryClient();
-  const { data, isLoading } = useQuery({
+  const { data: heroSlides, isLoading } = useQuery({
     queryKey: ["admin-hero-slides"],
     queryFn: heroSlidesApi.list,
   });
@@ -154,39 +154,45 @@ export const HeroSlidesPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-        {data?.length === 0 && <p className="text-sm text-muted-foreground">No hero slides yet.</p>}
+        {heroSlides?.length === 0 && (
+          <p className="text-sm text-muted-foreground">No hero slides yet.</p>
+        )}
 
-        {data?.map((slide) => (
-          <div
-            key={slide.id}
-            className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4"
-          >
-            <ImageUpload
-              value={slide.imageUrl}
-              onChange={(url) => setSlideImage.mutate({ id: slide.id, imageUrl: url })}
-            />
+        {heroSlides?.map((slide) => {
+          const { id, imageUrl, title, status, tag, ctaLabel, ctaHref } = slide;
 
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h2 className="font-display text-base font-bold text-foreground">{slide.title}</h2>
-                <Badge tone={STATUS_TONE[slide.status]} showDot={false}>
-                  {slide.status}
-                </Badge>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {slide.tag} · {slide.ctaLabel} → {slide.ctaHref}
-              </p>
-            </div>
-
-            <Button
-              variant={slide.status === "PUBLISHED" ? "ghost" : "default"}
-              onClick={() => toggleStatus.mutate(slide)}
-              disabled={toggleStatus.isPending}
+          return (
+            <div
+              key={id}
+              className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4"
             >
-              {slide.status === "PUBLISHED" ? "Unpublish" : "Publish"}
-            </Button>
-          </div>
-        ))}
+              <ImageUpload
+                value={imageUrl}
+                onChange={(url) => setSlideImage.mutate({ id, imageUrl: url })}
+              />
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-display text-base font-bold text-foreground">{title}</h2>
+                  <Badge tone={STATUS_TONE[status]} showDot={false}>
+                    {status}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {tag} · {ctaLabel} → {ctaHref}
+                </p>
+              </div>
+
+              <Button
+                variant={status === "PUBLISHED" ? "ghost" : "default"}
+                onClick={() => toggleStatus.mutate(slide)}
+                disabled={toggleStatus.isPending}
+              >
+                {status === "PUBLISHED" ? "Unpublish" : "Publish"}
+              </Button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

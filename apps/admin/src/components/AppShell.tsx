@@ -5,7 +5,7 @@ import { AccountMenu } from "./AccountMenu";
 import { AdminSidebar } from "./AdminSidebar";
 import { Logo } from "./Logo";
 
-export function AppShell({ children }: { children: ReactNode }) {
+export const AppShell = ({ children }: { children: ReactNode }) => {
   return (
     <div className="min-h-dvh">
       <HeaderBar>
@@ -25,4 +25,4 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
     </div>
   );
-}
+};

@@ -4,7 +4,7 @@ import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 
-export default function ProductLoading() {
+const ProductLoading = () => {
   return (
     <div role="status" aria-label="Loading" className="pb-20 lg:pb-0">
       <SiteHeader />
@@ -52,4 +52,6 @@ export default function ProductLoading() {
       <MobileTabBar />
     </div>
   );
-}
+};
+
+export default ProductLoading;

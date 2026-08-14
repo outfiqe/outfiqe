@@ -23,49 +23,42 @@ const SIZE_STYLES = {
   icon: { container: "p-1", button: "px-3 py-1.5", icon: "size-4", showLabel: false },
 } as const;
 
-interface ShopExploreToggleProps {
+type ShopExploreToggleProps = {
   size?: keyof typeof SIZE_STYLES;
   className?: string;
-}
+};
 
-export function ShopExploreToggle({ size = "sm", className }: ShopExploreToggleProps) {
+export const ShopExploreToggle = ({ size = "sm", className }: ShopExploreToggleProps) => {
   const pathname = usePathname();
-  const styles = SIZE_STYLES[size];
-  // "Explore" only owns its own subtree; every other route (shop, product,
-  // brand/creator profiles, wishlist, dashboard) reads as "Shop" so the
-  // toggle always has exactly one side lit up instead of going dark on
-  // pages that aren't the literal "/" or "/explore" href.
+  const { container, button, icon, showLabel } = SIZE_STYLES[size];
+
   const isExploreRoute = pathname?.startsWith("/explore") ?? false;
 
   return (
     <div
-      className={cn(
-        "flex items-center rounded-full bg-muted font-semibold",
-        styles.container,
-        className,
-      )}
+      className={cn("flex items-center rounded-full bg-muted font-semibold", container, className)}
     >
-      {MODES.map((m) => {
-        const active = m.href === "/explore" ? isExploreRoute : !isExploreRoute;
+      {MODES.map(({ href, label, icon: Icon }) => {
+        const active = href === "/explore" ? isExploreRoute : !isExploreRoute;
         return (
           <Link
-            key={m.href}
-            href={m.href}
+            key={href}
+            href={href}
             aria-current={active ? "page" : undefined}
-            aria-label={m.label}
+            aria-label={label}
             className={cn(
               "flex items-center rounded-full transition-colors",
-              styles.button,
+              button,
               active
                 ? "bg-foreground text-background"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <m.icon className={cn(styles.icon, "shrink-0")} />
-            {styles.showLabel && m.label}
+            <Icon className={cn(icon, "shrink-0")} />
+            {showLabel && label}
           </Link>
         );
       })}
     </div>
   );
-}
+};

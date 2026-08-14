@@ -1,6 +1,6 @@
 import { Skeleton } from "@outfiqe/design-system";
 
-export default function PostsLoading() {
+const PostsLoading = () => {
   return (
     <div role="status" aria-label="Loading">
       <div className="flex items-center justify-between">
@@ -17,4 +17,6 @@ export default function PostsLoading() {
       </div>
     </div>
   );
-}
+};
+
+export default PostsLoading;

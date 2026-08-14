@@ -8,12 +8,12 @@ export const useDelayedPending = (
   isPending: boolean,
   delay: number = DEFAULT_DELAY_MS,
 ): boolean => {
-  const [show, setShow] = useState(false);
+  const [isPendingVisible, setIsPendingVisible] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShow(isPending), isPending ? delay : 0);
+    const timer = setTimeout(() => setIsPendingVisible(isPending), isPending ? delay : 0);
     return () => clearTimeout(timer);
   }, [isPending, delay]);
 
-  return show;
+  return isPendingVisible;
 };

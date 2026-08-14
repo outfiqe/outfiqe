@@ -10,8 +10,8 @@ const PASSWORD_MAX = 128;
 
 const passwordField = z.string().min(PASSWORD_MIN).max(PASSWORD_MAX);
 
-const passwordsMatch = (data: { password: string; confirmPassword: string }) =>
-  data.password === data.confirmPassword;
+const passwordsMatch = (passwordFields: { password: string; confirmPassword: string }) =>
+  passwordFields.password === passwordFields.confirmPassword;
 
 const CONFIRM_PASSWORD_ISSUE = {
   message: "Passwords do not match",

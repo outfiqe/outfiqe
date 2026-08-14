@@ -26,15 +26,14 @@ export type SidebarNavItemViewProps = {
 };
 
 export const SidebarNavItemView = ({
-  item,
+  item: { href, items, icon: Icon, label, id },
   depth,
   navigation,
   expandedGroups,
   collapsed,
 }: SidebarNavItemViewProps): ReactElement => {
-  const active = isNavItemActive(item.href, navigation.pathname, navigation.isActive);
-  const hasChildren = !collapsed && (item.items?.length ?? 0) > 0;
-  const Icon = item.icon;
+  const active = isNavItemActive(href, navigation.pathname, navigation.isActive);
+  const hasChildren = !collapsed && (items?.length ?? 0) > 0;
   const extraIndentRem = depth * 0.875;
   const indent =
     collapsed || extraIndentRem === 0
@@ -44,15 +43,15 @@ export const SidebarNavItemView = ({
   const handleLinkClick = (event: MouseEvent<HTMLAnchorElement>): void => {
     if (!isPlainLeftClick(event)) return;
     event.preventDefault();
-    navigation.navigate(item.href);
+    navigation.navigate(href);
   };
 
   const link = (
     <a
-      href={item.href}
+      href={href}
       onClick={handleLinkClick}
       aria-current={active ? "page" : undefined}
-      title={collapsed ? item.label : undefined}
+      title={collapsed ? label : undefined}
       style={indent}
       className={cx(
         navLinkBaseClass,
@@ -61,7 +60,7 @@ export const SidebarNavItemView = ({
       )}
     >
       {Icon && <Icon className="size-[18px] shrink-0" />}
-      <span className={cx("truncate", collapsed && "sr-only")}>{item.label}</span>
+      <span className={cx("truncate", collapsed && "sr-only")}>{label}</span>
     </a>
   );
 
@@ -69,8 +68,8 @@ export const SidebarNavItemView = ({
     return <li>{link}</li>;
   }
 
-  const expanded = expandedGroups.isExpanded(item.id);
-  const submenuId = `${item.id}-submenu`;
+  const expanded = expandedGroups.isExpanded(id);
+  const submenuId = `${id}-submenu`;
 
   return (
     <li>
@@ -80,17 +79,15 @@ export const SidebarNavItemView = ({
           type="button"
           aria-expanded={expanded}
           aria-controls={submenuId}
-          onClick={() => expandedGroups.toggle(item.id)}
+          onClick={() => expandedGroups.toggle(id)}
           className={toggleButtonClass}
         >
           <ChevronIcon expanded={expanded} />
-          <span className="sr-only">
-            {expanded ? `Collapse ${item.label}` : `Expand ${item.label}`}
-          </span>
+          <span className="sr-only">{expanded ? `Collapse ${label}` : `Expand ${label}`}</span>
         </button>
       </div>
       <ul id={submenuId} hidden={!expanded} className="mt-1 space-y-1">
-        {item.items?.map((child) => (
+        {items?.map((child) => (
           <SidebarNavItemView
             key={child.id}
             item={child}

@@ -31,11 +31,11 @@ const QUERY_PURPOSE_TO_TOKEN_PURPOSE: Record<ValidateTokenQuery["purpose"], Toke
 export const authController = {
   async register(_req: Request, res: Response) {
     const { name, email, phone, password } = validated.body<RegisterBody>(res);
-    const result = await authService.register({ name, email, phone, password });
+    const { userId } = await authService.register({ name, email, phone, password });
 
     sendSuccess(
       res,
-      result,
+      { userId },
       "Account created. Please check your email to verify your address.",
       CREATED_STATUS,
     );

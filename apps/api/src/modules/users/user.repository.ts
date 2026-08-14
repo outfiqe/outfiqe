@@ -9,7 +9,7 @@ const MAX_HANDLE_ATTEMPTS = 5;
 // Handles aren't user-chosen yet, so collisions are rare, but retry a few times under the
 // unique constraint rather than trusting a single findUnique + create isn't racy.
 const createWithUniqueHandle = async (
-  data: Omit<Parameters<typeof prisma.user.create>[0]["data"], "handle">,
+  userData: Omit<Parameters<typeof prisma.user.create>[0]["data"], "handle">,
   name: string,
 ): Promise<UserRecord> => {
   const base = slugifyHandle(name);
@@ -17,7 +17,7 @@ const createWithUniqueHandle = async (
   for (let attempt = 0; attempt < MAX_HANDLE_ATTEMPTS; attempt++) {
     const handle = attempt === 0 ? base : withHandleSuffix(base);
     try {
-      return await prisma.user.create({ data: { ...data, handle } });
+      return await prisma.user.create({ data: { ...userData, handle } });
     } catch (error) {
       const isHandleCollision = error instanceof Error && "code" in error && error.code === "P2002";
       if (!isHandleCollision || attempt === MAX_HANDLE_ATTEMPTS - 1) throw error;
@@ -70,26 +70,26 @@ export const userRepository = {
     await prisma.user.update({ where: { id }, data: { passwordHash } });
   },
 
-  async updateProfile(id: string, data: UpdateUserProfileInput): Promise<UserRecord> {
-    return prisma.user.update({ where: { id }, data });
+  async updateProfile(id: string, profileInput: UpdateUserProfileInput): Promise<UserRecord> {
+    return prisma.user.update({ where: { id }, data: profileInput });
   },
 
   async updateCreatorStatus(
     id: string,
-    data: { creatorStatus: CreatorStatus; isCreator?: boolean },
+    creatorStatusUpdate: { creatorStatus: CreatorStatus; isCreator?: boolean },
   ): Promise<UserRecord> {
-    return prisma.user.update({ where: { id }, data });
+    return prisma.user.update({ where: { id }, data: creatorStatusUpdate });
   },
 
   async listByCreatorStatus(
     status: CreatorStatus | undefined,
-    params: { cursor?: string; limit: number },
+    { cursor, limit }: { cursor?: string; limit: number },
   ): Promise<UserRecord[]> {
     return prisma.user.findMany({
       where: status ? { creatorStatus: status } : undefined,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      take: params.limit + 1,
-      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
   },
 };

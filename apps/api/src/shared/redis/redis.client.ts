@@ -31,6 +31,6 @@ redis.defineCommand("incrWithExpiry", {
 redis.on("connect", () => logger.info("Redis connected"));
 redis.on("error", (error) => logger.error(`Redis connection error: ${error.message}`));
 
-export async function disconnectRedis() {
+export const disconnectRedis = async () => {
   await redis.quit();
-}
+};

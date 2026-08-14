@@ -17,7 +17,7 @@ type LogoProps = {
 
 // Mirrors apps/web/src/components/Logo.tsx — admin is a separate origin, so the
 // mark links out to the marketing site's home page instead of an in-app route.
-export function Logo({ size = "md", className }: LogoProps) {
+export const Logo = ({ size = "md", className }: LogoProps) => {
   const styles = SIZES[size];
 
   return (
@@ -36,4 +36,4 @@ export function Logo({ size = "md", className }: LogoProps) {
       </span>
     </a>
   );
-}
+};

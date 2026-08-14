@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 
+import { useExploreFeedSocket } from "../hooks/useExploreFeedSocket";
 import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";
 import { FeedFilterTabs, type FeedLayout } from "./FeedFilterTabs";
 import { PostCard } from "./PostCard";
@@ -11,19 +12,33 @@ import { ExploreFeedSkeleton } from "./PostCardSkeleton";
 import { PostListItem } from "./PostListItem";
 import { Sidebar } from "./Sidebar";
 
-export function ExploreFeed() {
+export const ExploreFeed = () => {
   const [tab, setTab] = useState("for_you");
   const [layout, setLayout] = useState<FeedLayout>("grid");
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteExploreFeed(tab);
+  const {
+    data: exploreFeedPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    refetch,
+  } = useInfiniteExploreFeed(tab);
+
+  const { newLookCount, dismiss } = useExploreFeedSocket();
 
   const sentinelRef = useLoadMoreOnVisible(
     () => fetchNextPage(),
     Boolean(hasNextPage) && !isFetchingNextPage,
   );
 
-  const posts = data?.pages.flatMap((page) => page.posts) ?? [];
+  const posts = exploreFeedPages?.pages.flatMap((page) => page.posts) ?? [];
+
+  const showNewLooks = () => {
+    dismiss();
+    void refetch();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <>
@@ -31,6 +46,16 @@ export function ExploreFeed() {
 
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-9 px-4 pb-16 pt-6 lg:grid-cols-[1fr_296px]">
         <div>
+          {newLookCount > 0 && (
+            <button
+              type="button"
+              onClick={showNewLooks}
+              className="mb-4 flex w-full items-center justify-center gap-1.5 rounded-full bg-foreground py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+            >
+              {newLookCount === 1 ? "1 new look" : `${newLookCount} new looks`} — click to view
+            </button>
+          )}
+
           {isLoading ? (
             <ExploreFeedSkeleton layout={layout} />
           ) : posts.length === 0 ? (
@@ -64,4 +89,4 @@ export function ExploreFeed() {
       </div>
     </>
   );
-}
+};

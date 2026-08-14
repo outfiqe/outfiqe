@@ -27,7 +27,7 @@ export interface BadgeProps
   showDot?: boolean;
 }
 
-export function Badge({
+export const Badge = ({
   className,
   variant,
   tone,
@@ -35,7 +35,7 @@ export function Badge({
   showDot = true,
   children,
   ...props
-}: BadgeProps) {
+}: BadgeProps) => {
   return (
     <span className={cn(badgeVariants({ variant, tone, className }))} {...props}>
       {showDot && (
@@ -47,6 +47,6 @@ export function Badge({
       {children}
     </span>
   );
-}
+};
 
 export { badgeVariants };

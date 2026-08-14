@@ -19,8 +19,8 @@ export const brandRepository = {
     return prisma.brand.findUnique({ where: { id } });
   },
 
-  async update(id: string, data: UpdateBrandInput): Promise<BrandRecord> {
-    return prisma.brand.update({ where: { id }, data });
+  async update(id: string, updates: UpdateBrandInput): Promise<BrandRecord> {
+    return prisma.brand.update({ where: { id }, data: updates });
   },
 
   async countApprovedProducts(brandId: string): Promise<number> {

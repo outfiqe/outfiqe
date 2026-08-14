@@ -25,29 +25,29 @@ type ServerRequestOptions = {
 
 export const serverApiRequest = async <T>(
   path: string,
-  options: ServerRequestOptions = {},
+  { method, body, cookie, accessToken }: ServerRequestOptions = {},
 ): Promise<T> => {
-  const res = await fetch(`${API_URL}/api${path}`, {
-    method: options.method ?? "GET",
+  const response = await fetch(`${API_URL}/api${path}`, {
+    method: method ?? "GET",
     headers: {
       "Content-Type": "application/json",
-      ...(options.cookie ? { Cookie: options.cookie } : {}),
-      ...(options.accessToken ? { Authorization: `Bearer ${options.accessToken}` } : {}),
+      ...(cookie ? { Cookie: cookie } : {}),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    body: body ? JSON.stringify(body) : undefined,
     cache: "no-store",
   });
 
-  const json = await res.json().catch(() => null);
+  const json = await response.json().catch(() => null);
 
-  const isFailure = !res.ok || !json || !json.success;
+  const isFailure = !response.ok || !json || !json.success;
 
   if (isFailure) {
-    const err: Partial<ApiErrorEnvelope> | null = json;
+    const errorEnvelope: Partial<ApiErrorEnvelope> | null = json;
     throw new ServerApiError(
-      err?.message ?? `Request failed with ${res.status}`,
-      err?.code ?? "UNKNOWN_ERROR",
-      err?.details,
+      errorEnvelope?.message ?? `Request failed with ${response.status}`,
+      errorEnvelope?.code ?? "UNKNOWN_ERROR",
+      errorEnvelope?.details,
     );
   }
 

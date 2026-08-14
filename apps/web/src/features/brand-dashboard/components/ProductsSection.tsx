@@ -20,10 +20,11 @@ const STATUS_CLASS: Record<BrandProduct["status"], string> = {
   REJECTED: "bg-destructive/10 text-destructive",
 };
 
-export function ProductsSection() {
+export const ProductsSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const products = useBrandProducts();
-  const items = products.data?.pages.flatMap((page) => page.products) ?? [];
+  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = products;
+  const brandProducts = data?.pages.flatMap((page) => page.products) ?? [];
 
   return (
     <div>
@@ -31,7 +32,7 @@ export function ProductsSection() {
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Your products</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {items.length} product{items.length === 1 ? "" : "s"} listed
+            {brandProducts.length} product{brandProducts.length === 1 ? "" : "s"} listed
           </p>
         </div>
         <Button onClick={() => setModalOpen(true)}>
@@ -40,7 +41,7 @@ export function ProductsSection() {
         </Button>
       </div>
 
-      {products.isLoading && (
+      {isLoading && (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <Skeleton key={index} className="aspect-square rounded-2xl" />
@@ -48,7 +49,7 @@ export function ProductsSection() {
         </div>
       )}
 
-      {!products.isLoading && items.length === 0 && (
+      {!isLoading && brandProducts.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">
             Nothing listed yet — add your first piece.
@@ -59,28 +60,24 @@ export function ProductsSection() {
         </div>
       )}
 
-      {items.length > 0 && (
+      {brandProducts.length > 0 && (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {items.map((product) => (
+          {brandProducts.map(({ id, imageUrl, name, price, status }) => (
             <div
-              key={product.id}
+              key={id}
               className="overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30"
             >
               <div
                 className="aspect-square w-full bg-muted bg-cover bg-center"
-                style={
-                  product.imageUrl ? { backgroundImage: `url(${product.imageUrl})` } : undefined
-                }
+                style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
               />
               <div className="p-3">
-                <p className="truncate text-sm font-semibold text-foreground">{product.name}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Rs. {product.price.toLocaleString()}
-                </p>
+                <p className="truncate text-sm font-semibold text-foreground">{name}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">Rs. {price.toLocaleString()}</p>
                 <span
-                  className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_CLASS[product.status]}`}
+                  className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_CLASS[status]}`}
                 >
-                  {STATUS_LABEL[product.status]}
+                  {STATUS_LABEL[status]}
                 </span>
               </div>
             </div>
@@ -88,14 +85,14 @@ export function ProductsSection() {
         </div>
       )}
 
-      {products.hasNextPage && (
+      {hasNextPage && (
         <div className="mt-6 flex justify-center">
           <Button
             variant="outline"
-            onClick={() => void products.fetchNextPage()}
-            disabled={products.isFetchingNextPage}
+            onClick={() => void fetchNextPage()}
+            disabled={isFetchingNextPage}
           >
-            {products.isFetchingNextPage ? "Loading…" : "Load more"}
+            {isFetchingNextPage ? "Loading…" : "Load more"}
           </Button>
         </div>
       )}
@@ -103,4 +100,4 @@ export function ProductsSection() {
       <ProductModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
   );
-}
+};

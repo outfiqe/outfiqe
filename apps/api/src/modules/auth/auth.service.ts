@@ -51,9 +51,9 @@ const USER_NOT_FOUND_MESSAGE = "User not found.";
 const verifyPurposeTokenOrThrow = (token: string, purpose: TokenPurpose): PurposeTokenPayload => {
   const copy = PURPOSE_ERROR_COPY[purpose];
 
-  let payload: PurposeTokenPayload;
+  let tokenPayload: PurposeTokenPayload;
   try {
-    payload = verifyPurposeToken(token);
+    tokenPayload = verifyPurposeToken(token);
   } catch (err) {
     if (err instanceof jwt.TokenExpiredError) {
       throw new AppError("TOKEN_EXPIRED", copy.expired, BAD_REQUEST_STATUS);
@@ -61,21 +61,22 @@ const verifyPurposeTokenOrThrow = (token: string, purpose: TokenPurpose): Purpos
     throw new AppError("INVALID_TOKEN", copy.invalid, BAD_REQUEST_STATUS);
   }
 
-  if (payload.purpose !== purpose) {
+  if (tokenPayload.purpose !== purpose) {
     throw new AppError("INVALID_TOKEN", copy.invalid, BAD_REQUEST_STATUS);
   }
 
-  return payload;
+  return tokenPayload;
 };
 
 const issueTokens = async (user: Pick<UserRecord, "id" | "role">): Promise<IssuedTokens> => {
-  const accessToken = generateToken({ sub: user.id, role: user.role }, TokenTypeEnum.ACCESS);
+  const { id, role } = user;
+  const accessToken = generateToken({ sub: id, role }, TokenTypeEnum.ACCESS);
 
   const rawRefreshToken = generateOpaqueToken();
   const refreshTokenTtlMs = parseDurationMs(env.JWT_REFRESH_TTL);
 
   await authRepository.createRefreshToken({
-    userId: user.id,
+    userId: id,
     tokenHash: hashToken(rawRefreshToken),
     expiresAt: new Date(Date.now() + refreshTokenTtlMs),
   });
@@ -132,34 +133,38 @@ export const authService = {
 
     await sendVerificationEmail(user);
 
+    const { id, email: userEmail, role } = user;
+
     eventBus.emit(DomainEvents.USER_CREATED, {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
+      userId: id,
+      email: userEmail,
+      role,
     });
 
-    logger.info(`User registered: ${user.id}`);
+    logger.info(`User registered: ${id}`);
 
-    return { userId: user.id };
+    return { userId: id };
   },
 
   async verifyEmail(token: string): Promise<void> {
-    const payload = verifyPurposeTokenOrThrow(token, TokenPurpose.EMAIL_VERIFICATION);
+    const tokenPayload = verifyPurposeTokenOrThrow(token, TokenPurpose.EMAIL_VERIFICATION);
 
-    const user = await userRepository.findById(payload.sub);
+    const user = await userRepository.findById(tokenPayload.sub);
     if (!user) {
       throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
     }
 
-    if (user.emailVerified) {
-      logger.info(`Email already verified for user ${user.id}`);
+    const { id, email, emailVerified } = user;
+
+    if (emailVerified) {
+      logger.info(`Email already verified for user ${id}`);
       return;
     }
 
-    await userRepository.markEmailVerified(user.id);
-    eventBus.emit(DomainEvents.USER_EMAIL_VERIFIED, { userId: user.id, email: user.email });
+    await userRepository.markEmailVerified(id);
+    eventBus.emit(DomainEvents.USER_EMAIL_VERIFIED, { userId: id, email });
 
-    logger.info(`Email verified for user ${user.id}`);
+    logger.info(`Email verified for user ${id}`);
   },
 
   async resendVerification(email: string): Promise<void> {
@@ -186,8 +191,10 @@ export const authService = {
       throw new AppError("INVALID_CREDENTIALS", INVALID_CREDENTIALS_MESSAGE, UNAUTHORIZED_STATUS);
     }
 
+    const { id, name, avatarUrl, role, isCreator, creatorStatus } = user;
+
     if (!user.emailVerified) {
-      logger.warn(`Login blocked: email not verified for user ${user.id}`);
+      logger.warn(`Login blocked: email not verified for user ${id}`);
       throw new AppError(
         "EMAIL_NOT_VERIFIED",
         "Please verify your email before signing in.",
@@ -197,18 +204,18 @@ export const authService = {
 
     const tokens = await issueTokens(user);
 
-    logger.info(`Login succeeded for user ${user.id}`);
+    logger.info(`Login succeeded for user ${id}`);
 
     return {
       ...tokens,
       user: {
-        id: user.id,
-        name: user.name,
+        id,
+        name,
         email: user.email,
-        avatarUrl: user.avatarUrl,
-        role: user.role,
-        isCreator: user.isCreator,
-        creatorStatus: user.creatorStatus,
+        avatarUrl,
+        role,
+        isCreator,
+        creatorStatus,
       },
     };
   },
@@ -223,8 +230,10 @@ export const authService = {
       throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
     }
 
-    if (stored.expiresAt.getTime() <= Date.now()) {
-      await authRepository.deleteRefreshTokenById(stored.id);
+    const { expiresAt, id: storedId, userId } = stored;
+
+    if (expiresAt.getTime() <= Date.now()) {
+      await authRepository.deleteRefreshTokenById(storedId);
       throw new AppError(
         "TOKEN_EXPIRED",
         "Refresh token has expired. Please sign in again.",
@@ -232,10 +241,10 @@ export const authService = {
       );
     }
 
-    const user = await userRepository.findById(stored.userId);
+    const user = await userRepository.findById(userId);
 
     // Rotation: the presented token is single-use regardless of outcome below.
-    await authRepository.deleteRefreshTokenById(stored.id);
+    await authRepository.deleteRefreshTokenById(storedId);
 
     if (!user) {
       throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
@@ -294,27 +303,29 @@ export const authService = {
       return;
     }
 
+    const { id, email: userEmail } = user;
+
     const resetToken = signPurposeToken(
-      { sub: user.id, purpose: TokenPurpose.PASSWORD_RESET },
+      { sub: id, purpose: TokenPurpose.PASSWORD_RESET },
       PASSWORD_RESET_TTL,
     );
     const url = `${PASSWORD_RESET_URL}?token=${resetToken}`;
     const { subject, html } = passwordResetTemplate(url);
 
     await sendEmail({
-      to: user.email,
+      to: userEmail,
       subject,
       body: `Reset your password: ${url}`,
       html,
     });
 
-    logger.info(`Password reset email sent to user ${user.id}`);
+    logger.info(`Password reset email sent to user ${id}`);
   },
 
   async resetPassword(token: string, password: string): Promise<void> {
-    const payload = verifyPurposeTokenOrThrow(token, TokenPurpose.PASSWORD_RESET);
+    const tokenPayload = verifyPurposeTokenOrThrow(token, TokenPurpose.PASSWORD_RESET);
 
-    const user = await userRepository.findById(payload.sub);
+    const user = await userRepository.findById(tokenPayload.sub);
     if (!user) {
       throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
     }
@@ -359,28 +370,30 @@ export const authService = {
       throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
     }
 
-    if (user.role === UserRole.BRAND_OWNER) {
-      const membership = await authRepository.findBrandMembershipByUserId(user.id);
+    const { id, name, email, role, avatarUrl, isCreator, creatorStatus } = user;
+
+    if (role === UserRole.BRAND_OWNER) {
+      const membership = await authRepository.findBrandMembershipByUserId(id);
       if (membership) {
         return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
+          id,
+          name,
+          email,
           avatarUrl: membership.brandAvatarUrl,
-          role: user.role,
+          role,
           brandId: membership.brandId,
         };
       }
     }
 
     return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      avatarUrl: user.avatarUrl,
-      role: user.role,
-      isCreator: user.isCreator,
-      creatorStatus: user.creatorStatus,
+      id,
+      name,
+      email,
+      avatarUrl,
+      role,
+      isCreator,
+      creatorStatus,
     };
   },
 
@@ -396,7 +409,9 @@ export const authService = {
       );
     }
 
-    if (invite.expiresAt.getTime() <= Date.now()) {
+    const { expiresAt, acceptedAt, email: inviteEmail, brandId, id: inviteId, brand } = invite;
+
+    if (expiresAt.getTime() <= Date.now()) {
       throw new AppError(
         "INVITE_EXPIRED",
         "This invite link has expired. Please contact us for a new one.",
@@ -404,7 +419,7 @@ export const authService = {
       );
     }
 
-    if (invite.acceptedAt) {
+    if (acceptedAt) {
       throw new AppError(
         "INVITE_USED",
         "This invite link has already been used.",
@@ -412,7 +427,7 @@ export const authService = {
       );
     }
 
-    const existingByEmail = await userRepository.findByEmail(invite.email);
+    const existingByEmail = await userRepository.findByEmail(inviteEmail);
     if (existingByEmail) {
       throw new AppError(
         "USER_EXISTS",
@@ -433,7 +448,7 @@ export const authService = {
     const passwordHash = await hashPassword(password);
     const user = await userRepository.create({
       name,
-      email: invite.email,
+      email: inviteEmail,
       phone,
       password,
       passwordHash,
@@ -443,20 +458,20 @@ export const authService = {
 
     await authRepository.createBrandMembership({
       userId: user.id,
-      brandId: invite.brandId,
+      brandId,
       role: BrandRole.OWNER,
     });
-    await authRepository.markBrandInviteAccepted(invite.id);
+    await authRepository.markBrandInviteAccepted(inviteId);
 
     eventBus.emit(DomainEvents.BRAND_OWNER_REGISTERED, {
       userId: user.id,
-      brandId: invite.brandId,
+      brandId,
       email: user.email,
     });
 
     const tokens = await issueTokens(user);
 
-    logger.info(`Brand owner registered: ${user.id} for brand ${invite.brandId}`);
+    logger.info(`Brand owner registered: ${user.id} for brand ${brandId}`);
 
     return {
       ...tokens,
@@ -464,9 +479,9 @@ export const authService = {
         id: user.id,
         name: user.name,
         email: user.email,
-        avatarUrl: invite.brand.avatarUrl,
+        avatarUrl: brand.avatarUrl,
         role: user.role,
-        brandId: invite.brandId,
+        brandId,
       },
     };
   },
@@ -508,7 +523,9 @@ export const authService = {
       );
     }
 
-    if (invite.expiresAt.getTime() <= Date.now()) {
+    const { expiresAt, acceptedAt, email: inviteEmail, name: inviteName, id: inviteId } = invite;
+
+    if (expiresAt.getTime() <= Date.now()) {
       throw new AppError(
         "INVITE_EXPIRED",
         "This invite link has expired. Please contact us for a new one.",
@@ -516,7 +533,7 @@ export const authService = {
       );
     }
 
-    if (invite.acceptedAt) {
+    if (acceptedAt) {
       throw new AppError(
         "INVITE_USED",
         "This invite link has already been used.",
@@ -524,7 +541,7 @@ export const authService = {
       );
     }
 
-    const existingByEmail = await userRepository.findByEmail(invite.email);
+    const existingByEmail = await userRepository.findByEmail(inviteEmail);
     if (existingByEmail) {
       throw new AppError(
         "USER_EXISTS",
@@ -544,8 +561,8 @@ export const authService = {
 
     const passwordHash = await hashPassword(password);
     const user = await userRepository.create({
-      name: invite.name,
-      email: invite.email,
+      name: inviteName,
+      email: inviteEmail,
       phone,
       password,
       passwordHash,
@@ -553,7 +570,7 @@ export const authService = {
       emailVerified: true,
     });
 
-    await adminInviteRepository.markAccepted(invite.id);
+    await adminInviteRepository.markAccepted(inviteId);
 
     eventBus.emit(DomainEvents.ADMIN_REGISTERED, { userId: user.id, email: user.email });
 

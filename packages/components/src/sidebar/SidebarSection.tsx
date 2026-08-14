@@ -14,25 +14,25 @@ export type SidebarSectionProps = {
 };
 
 export const SidebarSection = ({
-  section,
+  section: { label, id, items },
   navigation,
   expandedGroups,
   collapsed,
 }: SidebarSectionProps): ReactElement => {
-  const headingId = section.label ? `${section.id}-heading` : undefined;
+  const headingId = label ? `${id}-heading` : undefined;
 
   return (
     <div className={cx(cardClass, "shrink-0 space-y-1")}>
-      {section.label && !collapsed && (
+      {label && !collapsed && (
         <h3 id={headingId} className={sectionHeadingClass}>
-          {section.label}
+          {label}
         </h3>
       )}
       <ul aria-labelledby={headingId} className={navListClass}>
-        {section.items.map((item) => (
+        {items.map((navItem) => (
           <SidebarNavItemView
-            key={item.id}
-            item={item}
+            key={navItem.id}
+            item={navItem}
             depth={0}
             navigation={navigation}
             expandedGroups={expandedGroups}

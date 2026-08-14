@@ -11,7 +11,7 @@ import { cn } from "@/shared/lib/cn";
 
 import { LEADERBOARD_LINKS, NAV_LINKS } from "./siteNav.constants";
 
-export function MobileNav() {
+export const MobileNav = () => {
   const [open, setOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const { state, isAuthenticated } = useAuth();
@@ -42,19 +42,19 @@ export function MobileNav() {
           </div>
 
           <nav className="mt-6 flex flex-col gap-1 text-sm">
-            {NAV_LINKS.map((link) => (
+            {NAV_LINKS.map(({ href, label }) => (
               <Link
-                key={link.label}
-                href={link.href}
+                key={label}
+                href={href}
                 onClick={() => setOpen(false)}
                 className={cn(
                   "rounded-lg px-2 py-2.5",
-                  link.href === "/"
+                  href === "/"
                     ? "font-semibold text-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
               >
-                {link.label}
+                {label}
               </Link>
             ))}
 
@@ -71,14 +71,14 @@ export function MobileNav() {
             </Button>
             {leaderboardOpen && (
               <div className="ml-2 flex flex-col gap-1 border-l border-border pl-4">
-                {LEADERBOARD_LINKS.map((link) => (
+                {LEADERBOARD_LINKS.map(({ href, label }) => (
                   <Link
-                    key={link.label}
-                    href={link.href}
+                    key={label}
+                    href={href}
                     onClick={() => setOpen(false)}
                     className="rounded-lg px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
                   >
-                    {link.label}
+                    {label}
                   </Link>
                 ))}
               </div>
@@ -127,4 +127,4 @@ export function MobileNav() {
       )}
     </div>
   );
-}
+};

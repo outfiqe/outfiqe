@@ -26,9 +26,10 @@ import {
 import { getAuthErrorMessage } from "../../utils/authErrors";
 import { ForgotPasswordSuccess } from "./ForgotPasswordSuccess";
 
-export function ForgotPasswordForm() {
+export const ForgotPasswordForm = () => {
   const forgotPassword = useForgotPassword();
-  const showPending = useDelayedPending(forgotPassword.isPending);
+  const { isPending, isSuccess, isError, error, mutateAsync } = forgotPassword;
+  const showPending = useDelayedPending(isPending);
   const searchParams = useSearchParams();
 
   const linkExpired = searchParams.get("expired") === "1";
@@ -41,13 +42,13 @@ export function ForgotPasswordForm() {
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
-      await forgotPassword.mutateAsync(values);
+      await mutateAsync(values);
     } catch {
       // Surfaced below via forgotPassword.error.
     }
   });
 
-  if (forgotPassword.isSuccess) return <ForgotPasswordSuccess />;
+  if (isSuccess) return <ForgotPasswordSuccess />;
 
   return (
     <div>
@@ -62,9 +63,7 @@ export function ForgotPasswordForm() {
         </FormBanner>
       )}
 
-      {forgotPassword.isError && (
-        <FormBanner>{getAuthErrorMessage(forgotPassword.error.code)}</FormBanner>
-      )}
+      {isError && <FormBanner>{getAuthErrorMessage(error.code)}</FormBanner>}
 
       <Form {...form}>
         <form onSubmit={onSubmit} noValidate className="mt-6">
@@ -82,7 +81,7 @@ export function ForgotPasswordForm() {
             )}
           />
 
-          <Button type="submit" className="mt-6 w-full" disabled={forgotPassword.isPending}>
+          <Button type="submit" className="mt-6 w-full" disabled={isPending}>
             {showPending ? "Sending…" : "Send reset link"}
           </Button>
         </form>
@@ -96,4 +95,4 @@ export function ForgotPasswordForm() {
       </p>
     </div>
   );
-}
+};

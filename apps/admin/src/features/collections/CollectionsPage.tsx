@@ -22,7 +22,7 @@ const slugify = (value: string): string =>
 
 export const CollectionsPage = () => {
   const queryClient = useQueryClient();
-  const { data, isLoading } = useQuery({
+  const { data: collections, isLoading } = useQuery({
     queryKey: ["admin-collections"],
     queryFn: collectionsApi.list,
   });
@@ -141,50 +141,54 @@ export const CollectionsPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-        {data?.length === 0 && <p className="text-sm text-muted-foreground">No collections yet.</p>}
+        {collections?.length === 0 && (
+          <p className="text-sm text-muted-foreground">No collections yet.</p>
+        )}
 
-        {data?.map((collection) => (
-          <div key={collection.id} className="rounded-xl border border-border bg-card p-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <ImageUpload
-                value={collection.imageUrl}
-                onChange={(url) => setCollectionImage.mutate({ id: collection.id, imageUrl: url })}
-              />
+        {collections?.map((collection) => {
+          const { id, imageUrl, name, status, slug, productCount } = collection;
 
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h2 className="font-display text-base font-bold text-foreground">
-                    {collection.name}
-                  </h2>
-                  <Badge tone={STATUS_TONE[collection.status]} showDot={false}>
-                    {collection.status}
-                  </Badge>
+          return (
+            <div key={id} className="rounded-xl border border-border bg-card p-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <ImageUpload
+                  value={imageUrl}
+                  onChange={(url) => setCollectionImage.mutate({ id, imageUrl: url })}
+                />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-base font-bold text-foreground">{name}</h2>
+                    <Badge tone={STATUS_TONE[status]} showDot={false}>
+                      {status}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    /{slug} · {productCount} products
+                  </p>
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  /{collection.slug} · {collection.productCount} products
-                </p>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setManagingId((currentId) => (currentId === id ? null : id))}
+                >
+                  {managingId === id ? "Close" : "Manage products"}
+                </Button>
+                <Button
+                  variant={status === "PUBLISHED" ? "ghost" : "default"}
+                  onClick={() => toggleStatus.mutate(collection)}
+                  disabled={toggleStatus.isPending}
+                >
+                  {status === "PUBLISHED" ? "Unpublish" : "Publish"}
+                </Button>
               </div>
 
-              <Button
-                variant="outline"
-                onClick={() => setManagingId((id) => (id === collection.id ? null : collection.id))}
-              >
-                {managingId === collection.id ? "Close" : "Manage products"}
-              </Button>
-              <Button
-                variant={collection.status === "PUBLISHED" ? "ghost" : "default"}
-                onClick={() => toggleStatus.mutate(collection)}
-                disabled={toggleStatus.isPending}
-              >
-                {collection.status === "PUBLISHED" ? "Unpublish" : "Publish"}
-              </Button>
+              {managingId === id && (
+                <ProductPicker collection={collection} onClose={() => setManagingId(null)} />
+              )}
             </div>
-
-            {managingId === collection.id && (
-              <ProductPicker collection={collection} onClose={() => setManagingId(null)} />
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

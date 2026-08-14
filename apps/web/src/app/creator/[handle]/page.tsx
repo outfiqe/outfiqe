@@ -10,13 +10,13 @@ interface CreatorPageProps {
   params: Promise<{ handle: string }>;
 }
 
-export async function generateMetadata({ params }: CreatorPageProps): Promise<Metadata> {
+export const generateMetadata = async ({ params }: CreatorPageProps): Promise<Metadata> => {
   const { handle } = await params;
   const creator = await getCreatorProfileServerPublic(handle);
   return { title: creator ? creator.name : "Creator" };
-}
+};
 
-export default async function CreatorPage({ params }: CreatorPageProps) {
+const CreatorPage = async ({ params }: CreatorPageProps) => {
   const { handle } = await params;
   const creator = await getCreatorProfileServerPublic(handle);
   if (!creator) notFound();
@@ -31,4 +31,6 @@ export default async function CreatorPage({ params }: CreatorPageProps) {
       <MobileTabBar />
     </div>
   );
-}
+};
+
+export default CreatorPage;

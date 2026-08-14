@@ -5,10 +5,12 @@ import { ForgotPasswordForm } from "@/features/auth";
 
 export const metadata: Metadata = { title: "Reset your password" };
 
-export default function ForgotPasswordPage() {
+const ForgotPasswordPage = () => {
   return (
     <Suspense fallback={null}>
       <ForgotPasswordForm />
     </Suspense>
   );
-}
+};
+
+export default ForgotPasswordPage;
