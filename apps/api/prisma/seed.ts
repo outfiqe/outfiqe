@@ -52,6 +52,80 @@ const MAX_TAGGED_PRODUCTS = 3;
 const MIN_FOLLOWS_PER_USER = 2;
 const MAX_FOLLOWS_PER_USER = 4;
 
+// Real outfit photography from Unsplash, grouped by the style each LOOK_CAPTIONS entry
+// describes, so seeded creator looks show an actual fit instead of a random placeholder image.
+const unsplashUrl = (id: string) =>
+  `https://images.unsplash.com/photo-${id}?w=800&q=80&auto=format&fit=crop`;
+
+const STREETWEAR_PHOTOS = [
+  "1578102718171-ec1f91680562",
+  "1624353656309-8be1a6c457be",
+  "1534404483017-8743b4e935cd",
+  "1529399447871-731cff7f696b",
+  "1708242355178-d8c929b01a9d",
+];
+const FORMAL_PHOTOS = [
+  "1632255658477-9ac8f313ea41",
+  "1629272039203-7d76fdaf1324",
+  "1763739528420-bdc297ff4ec7",
+  "1772301685774-a4f0e81e032e",
+  "1763550662603-78aa2f2033bf",
+];
+const TRADITIONAL_PHOTOS = [
+  "1622598661631-3a46559a4817",
+  "1763733595166-41745662d1a7",
+  "1766763846257-bcff4f97f79b",
+  "1766763846459-67b2fe6b661c",
+  "1766763846239-bfea22785d03",
+];
+const CASUAL_PHOTOS = [
+  "1525507119028-ed4c629a60a3",
+  "1516762689617-e1cffcef479d",
+  "1544441893-675973e31985",
+  "1467043237213-65f2da53396f",
+  "1479064555552-3ef4979f8908",
+];
+const MINIMAL_PHOTOS = [
+  "1551232864-3f0890e580d9",
+  "1621341103818-01dada8c6ef8",
+  "1653875842174-429c1b467548",
+  "1556905055-8f358a7a47b2",
+  "1627130697816-4d71dbfe6a5b",
+];
+const Y2K_PHOTOS = [
+  "1515886657613-9f3515b0c78f",
+  "1626781309887-cdfb9f258c64",
+  "1576188973526-0e5d7047b0cf",
+  "1590159983013-d4ff5fc71c1d",
+  "1730328300200-8ef19dc04ce1",
+];
+const OLD_MONEY_PHOTOS = [
+  "1633769573304-90d2d44eef0c",
+  "1624983757883-6d3a17e8b964",
+  "1762148039826-06811e4d4d99",
+  "1629337888154-c535ef8cad9d",
+  "1668086682634-726157bfdece",
+];
+
+// Indexed to match LOOK_CAPTIONS above, one photo pool per caption's style/hashtag.
+const LOOK_CAPTION_PHOTO_POOLS = [
+  CASUAL_PHOTOS, // winter layering
+  STREETWEAR_PHOTOS, // Thamel street style
+  OLD_MONEY_PHOTOS, // old-money brunch fit
+  STREETWEAR_PHOTOS, // streetwear pulled together
+  TRADITIONAL_PHOTOS, // dhaka / traditional
+  MINIMAL_PHOTOS, // minimal fit
+  Y2K_PHOTOS, // y2k revival
+  FORMAL_PHOTOS, // office / dashain formal
+];
+
+const lookPhotoUrl = (lookIndex: number): string => {
+  const captionIndex = lookIndex % LOOK_CAPTIONS.length;
+  const pool = LOOK_CAPTION_PHOTO_POOLS[captionIndex];
+  const cycle = Math.floor(lookIndex / LOOK_CAPTIONS.length);
+  return unsplashUrl(pool[cycle % pool.length]);
+};
+
 const shuffledSample = <T>(items: T[], count: number): T[] =>
   [...items].sort(() => Math.random() - 0.5).slice(0, count);
 
@@ -143,7 +217,7 @@ async function seedCreatorLooks(creators: { id: string }[]) {
     await prisma.creatorLook.create({
       data: {
         creatorId: creator.id,
-        imageUrl: `https://picsum.photos/seed/outfiqe-look-${i}/600/750`,
+        imageUrl: lookPhotoUrl(i),
         caption: LOOK_CAPTIONS[i % LOOK_CAPTIONS.length],
         taggedProducts: { create: productIds.map((productId) => ({ productId, sizeWorn })) },
       },
@@ -151,6 +225,33 @@ async function seedCreatorLooks(creators: { id: string }[]) {
   }
 
   console.log(`Seeded ${LOOK_COUNT} creator looks across ${creators.length} creators`);
+}
+
+// Strips the trailing "#tag #tag" tokens LOOK_CAPTIONS carries, since older seeded rows were
+// written before hashtags were appended to these captions and only have the base text.
+const captionBase = (caption: string): string => caption.replace(/\s*#\w+/g, "").trim();
+
+const LOOK_CAPTION_BASES = LOOK_CAPTIONS.map(captionBase);
+
+// Backfills imageUrl on already-seeded creator looks (e.g. rows created before real photo pools
+// existed here) so re-running the seed script upgrades placeholder images without touching
+// captions, tags, or engagement counts. Matches by caption so the pool stays consistent with
+// LOOK_CAPTION_PHOTO_POOLS above; rows with an unrecognized caption (ad hoc QA test data) fall
+// back to CASUAL_PHOTOS so every look still gets a real photo instead of a placeholder.
+async function seedCreatorLookImages() {
+  const looks = await prisma.creatorLook.findMany({ select: { id: true, caption: true } });
+  let updated = 0;
+
+  for (const look of looks) {
+    const captionIndex = LOOK_CAPTION_BASES.indexOf(captionBase(look.caption ?? ""));
+    const pool = captionIndex === -1 ? CASUAL_PHOTOS : LOOK_CAPTION_PHOTO_POOLS[captionIndex];
+    const imageUrl = unsplashUrl(pool[updated % pool.length]);
+
+    await prisma.creatorLook.update({ where: { id: look.id }, data: { imageUrl } });
+    updated++;
+  }
+
+  console.log(`Refreshed ${updated} creator look images`);
 }
 
 // Extracts the "#tag" tokens already baked into LOOK_CAPTIONS above and stores them as
@@ -324,6 +425,78 @@ async function seedProductSizes() {
   }
 
   console.log(`Seeded ${created} product sizes across ${products.length} products`);
+}
+
+// Product photography from Unsplash, one pool per seeded product name. Matched loosely by
+// garment type since these are demo listings, not brand-submitted photos.
+const TROUSERS_PHOTOS = [
+  "1767631338127-8cd80ee2f9df",
+  "1778865576128-77027a3cb354",
+  "1769467304164-deadf943e1eb",
+  "1769467304184-07ba20979243",
+];
+const TSHIRT_PHOTOS = [
+  "1775979654476-89575df179bd",
+  "1655141559812-42f8c1e8942d",
+  "1775817104298-522393e1d72b",
+  "1763403063428-10184adc7be3",
+];
+const CARGO_PHOTOS = [
+  "1594633312681-425c7b97ccd1",
+  "1548883354-7622d03aca27",
+  "1584302052177-2e90841dad6a",
+  "1649850874075-49e014357b9d",
+];
+const BUCKET_HAT_PHOTOS = [
+  "1648422204972-4278784a9863",
+  "1679324351719-f23312611c50",
+  "1593460832239-072261224f29",
+  "1624518681328-bc59eefa1ce4",
+];
+const BOMBER_PHOTOS = [
+  "1591047139829-d91aecb6caea",
+  "1624548140129-74786c5f1279",
+  "1602525582399-7ef5f604ff7e",
+  "1530862994178-a0cec9eb5388",
+];
+
+const PRODUCT_IMAGE_POOLS: Record<string, string[]> = {
+  "Pleated Trousers": TROUSERS_PHOTOS,
+  "Linen Kurta": TRADITIONAL_PHOTOS,
+  "Oversized Graphic Tee": TSHIRT_PHOTOS,
+  "Cargo Pants": CARGO_PHOTOS,
+  "Bucket Hat": BUCKET_HAT_PHOTOS,
+  "Wool Bomber Jacket": BOMBER_PHOTOS,
+  "Formal Pants": FORMAL_PHOTOS,
+};
+
+const IMAGES_PER_PRODUCT = 2;
+
+// Re-derives each product's images from PRODUCT_IMAGE_POOLS on every run (delete + recreate),
+// so this stays safe to re-run without accumulating duplicates or leaving stale/broken URLs
+// (e.g. local upload paths from earlier manual testing) in place.
+async function seedProductImages() {
+  const products = await prisma.product.findMany({ select: { id: true, name: true } });
+  let created = 0;
+
+  for (const product of products) {
+    const pool = PRODUCT_IMAGE_POOLS[product.name];
+    if (!pool) continue;
+
+    await prisma.productImage.deleteMany({ where: { productId: product.id } });
+    const photos = shuffledSample(pool, Math.min(IMAGES_PER_PRODUCT, pool.length));
+
+    await prisma.productImage.createMany({
+      data: photos.map((id, index) => ({
+        productId: product.id,
+        url: unsplashUrl(id),
+        sortOrder: index,
+      })),
+    });
+    created += photos.length;
+  }
+
+  console.log(`Seeded ${created} product images across ${products.length} products`);
 }
 
 async function seedBrandRatings() {
@@ -569,8 +742,10 @@ async function main() {
   const shoppers = await seedShoppers();
 
   await seedCreatorLooks(creators);
+  await seedCreatorLookImages();
   await seedHashtags();
   await seedProductSizes();
+  await seedProductImages();
   await seedBrandRatings();
 
   const actors = [...creators, ...shoppers];
