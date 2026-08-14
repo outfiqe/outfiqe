@@ -1,8 +1,14 @@
 import type { NextFunction, Request, Response } from "express";
 
+import logger from "#lib/winston.utils.js";
+import { redis } from "#redis/redis.client.js";
+import { redisKeys } from "#redis/redis.keys.js";
+import { describeError } from "#redis/redis.utils.js";
+
 import { AppError } from "./error-handler.js";
 
 type RateLimitOptions = {
+  namespace: string;
   windowMs: number;
   max: number;
   keyGenerator: (req: Request, res: Response) => string | undefined;
@@ -11,35 +17,37 @@ type RateLimitOptions = {
 
 const DEFAULT_MESSAGE = "Too many requests. Please try again later.";
 const TOO_MANY_REQUESTS_STATUS = 429;
+const MS_PER_SECOND = 1000;
 
-/* 
-TODO: Redis Later
-Fixed-window, in-memory, single-process. Once the API runs more than one
-instance this Map needs to move behind a shared store (Redis INCR/EXPIRE)
-so counts are consistent across processes.
-*/
-const hits = new Map<string, { count: number; resetAt: number }>();
+export const rateLimit = ({
+  namespace,
+  windowMs,
+  max,
+  keyGenerator,
+  message,
+}: RateLimitOptions) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const identifier = keyGenerator(req, res);
+    if (!identifier) return next();
 
-export const rateLimit = ({ windowMs, max, keyGenerator, message }: RateLimitOptions) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const key = keyGenerator(req, res);
-    if (!key) return next();
+    const key = redisKeys.rateLimit(namespace, identifier);
 
-    const now = Date.now();
-    const entry = hits.get(key);
+    try {
+      const count = await redis.incrWithExpiry(key, windowMs);
 
-    if (!entry || entry.resetAt <= now) {
-      hits.set(key, { count: 1, resetAt: now + windowMs });
-      return next();
+      if (count > max) {
+        const ttlMs = await redis.pttl(key);
+        res.setHeader("Retry-After", Math.ceil((ttlMs > 0 ? ttlMs : windowMs) / MS_PER_SECOND));
+
+        return next(
+          new AppError("RATE_LIMITED", message ?? DEFAULT_MESSAGE, TOO_MANY_REQUESTS_STATUS),
+        );
+      }
+
+      next();
+    } catch (error) {
+      logger.error(`Rate limit check failed for "${key}": ${describeError(error)}`);
+      next();
     }
-
-    if (entry.count >= max) {
-      return next(
-        new AppError("RATE_LIMITED", message ?? DEFAULT_MESSAGE, TOO_MANY_REQUESTS_STATUS),
-      );
-    }
-
-    entry.count += 1;
-    next();
   };
 };

@@ -24,6 +24,7 @@ const FORGOT_PASSWORD_WINDOW_MS = 15 * 60 * 1000;
 const FORGOT_PASSWORD_MAX_REQUESTS = 3;
 
 const forgotPasswordRateLimit = rateLimit({
+  namespace: "forgot-password",
   windowMs: FORGOT_PASSWORD_WINDOW_MS,
   max: FORGOT_PASSWORD_MAX_REQUESTS,
   keyGenerator: (_req, res) => validated.body<ForgotPasswordBody>(res).email.toLowerCase(),
@@ -31,6 +32,7 @@ const forgotPasswordRateLimit = rateLimit({
 });
 
 const resendVerificationRateLimit = rateLimit({
+  namespace: "resend-verification",
   windowMs: FORGOT_PASSWORD_WINDOW_MS,
   max: FORGOT_PASSWORD_MAX_REQUESTS,
   keyGenerator: (_req, res) => validated.body<ResendVerificationBody>(res).email.toLowerCase(),
