@@ -1,6 +1,5 @@
-import { z } from "zod";
-
 import { NEPAL_PHONE_REGEX } from "@outfiqe/utils";
+import { z } from "zod";
 
 export const phoneSchema = z
   .string()

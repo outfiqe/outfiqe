@@ -1,4 +1,4 @@
-import type { HeroSlideStatus } from "../../generated/prisma/enums.js";
+import type { HeroSlideStatus } from "#generated/prisma/enums.js";
 
 export type HeroSlideRecord = {
   id: string;

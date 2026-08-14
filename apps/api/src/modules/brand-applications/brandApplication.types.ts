@@ -1,4 +1,4 @@
-import type { BrandApplicationStatus, MakesOwnPieces } from "../../generated/prisma/enums.js";
+import type { BrandApplicationStatus, MakesOwnPieces } from "#generated/prisma/enums.js";
 
 export type CreateBrandApplicationInput = {
   brandName: string;

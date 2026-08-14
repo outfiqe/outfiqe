@@ -2,24 +2,25 @@
 
 import {
   createContext,
+  type Dispatch,
+  type ReactNode,
   useContext,
   useEffect,
   useReducer,
-  type Dispatch,
-  type ReactNode,
 } from "react";
 
 import { setAccessToken, setUnauthorizedHandler } from "@/shared/lib/apiClient";
+
 import { authApi } from "../api/authApi";
-import { authReducer, initialAuthState } from "./authReducer";
 import {
+  type AuthAction,
   AuthActionType,
+  type AuthState,
   AuthStatus,
   UserRole,
-  type AuthAction,
-  type AuthState,
   type UserSession,
 } from "../types";
+import { authReducer, initialAuthState } from "./authReducer";
 
 // Mirrors the non-httpOnly companion cookie the API sets/clears alongside
 // refresh_token (see apps/api/src/shared/utils/cookie.utils.ts).

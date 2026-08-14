@@ -1,5 +1,6 @@
 import { apiClient } from "@/shared/lib/apiClient";
-import { productPageSchema, type ProductPage } from "./productSchemas";
+
+import { type ProductPage, productPageSchema } from "./productSchemas";
 
 type ListProductsInput = {
   category: string;

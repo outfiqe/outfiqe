@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { ChevronDown, Heart, Search, ShoppingBag } from "lucide-react";
 import { HeaderBar, useHeaderCondense } from "@outfiqe/components";
+import { ChevronDown, Heart, Search, ShoppingBag } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
 import { cn } from "@/shared/lib/cn";
+
 import { AccountMenu } from "./AccountMenu";
 import { Logo } from "./Logo";
 import { MobileNav } from "./MobileNav";

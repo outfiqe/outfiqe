@@ -1,4 +1,12 @@
 import {
+  Sidebar,
+  type SidebarNavSection,
+  sidebarWidthClass,
+  useSidebarCollapse,
+} from "@outfiqe/components";
+import { cn } from "@outfiqe/design-system";
+import { getAvatarColor, initialsFor } from "@outfiqe/utils";
+import {
   ClipboardList,
   GalleryHorizontal,
   Layers,
@@ -7,16 +15,9 @@ import {
   UserCog,
   Users,
 } from "lucide-react";
-import {
-  Sidebar,
-  sidebarWidthClass,
-  useSidebarCollapse,
-  type SidebarNavSection,
-} from "@outfiqe/components";
-import { cn } from "@outfiqe/design-system";
-import { getAvatarColor, initialsFor } from "@outfiqe/utils";
 
 import { useAuth } from "@/features/auth/AuthContext";
+
 import { useTanStackSidebarNavigation } from "./useTanStackSidebarNavigation";
 
 const NAV_SECTIONS: SidebarNavSection[] = [

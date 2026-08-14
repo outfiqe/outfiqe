@@ -1,10 +1,10 @@
-import { collectionRepository } from "./collection.repository.js";
-
-import { AppError } from "../../shared/middlewares/error-handler.js";
-import { Prisma } from "../../generated/prisma/client.js";
+import { Prisma } from "#generated/prisma/client.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
-import { toPublicProduct } from "../products/product.service.js";
+import { AppError } from "#middlewares/error-handler.js";
+import { toPublicProduct } from "#modules/products/product.service.js";
+import type { PublicProduct } from "#modules/products/product.types.js";
 
+import { collectionRepository } from "./collection.repository.js";
 import type {
   CreateCollectionBody,
   ListCollectionProductsQuery,
@@ -19,7 +19,6 @@ import type {
   PublicCollectionPage,
   PublicCollectionProductPage,
 } from "./collection.types.js";
-import type { PublicProduct } from "../products/product.types.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;

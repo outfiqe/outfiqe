@@ -1,13 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-
 import {
   Button,
-  Input,
   Form,
   FormBanner,
   FormControl,
@@ -15,13 +10,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  Input,
 } from "@outfiqe/design-system";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
-import {
-  forgotPasswordSchema,
-  type ForgotPasswordInput,
-} from "../../schemas/forgotPassword.schema";
+
 import { useForgotPassword } from "../../hooks/useForgotPassword";
+import {
+  type ForgotPasswordInput,
+  forgotPasswordSchema,
+} from "../../schemas/forgotPassword.schema";
 import { getAuthErrorMessage } from "../../utils/authErrors";
 import { ForgotPasswordSuccess } from "./ForgotPasswordSuccess";
 

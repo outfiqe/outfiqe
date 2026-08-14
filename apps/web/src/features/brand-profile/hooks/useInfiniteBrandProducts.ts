@@ -1,6 +1,7 @@
 "use client";
 
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
+
 import { brandProfileApi } from "../api/brandProfileApi";
 
 export const useInfiniteBrandProducts = (brandId: string, type?: string) => {

@@ -1,6 +1,6 @@
+import { Button } from "@outfiqe/design-system";
 import { useRef, useState } from "react";
 
-import { Button } from "@outfiqe/design-system";
 import { uploadsApi } from "@/lib/uploadsApi";
 
 type ImageUploadProps = {

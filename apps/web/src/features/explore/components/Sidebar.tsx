@@ -1,15 +1,16 @@
 "use client";
 
+import { Skeleton } from "@outfiqe/design-system";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { cn } from "@/shared/lib/cn";
-import { Skeleton } from "@outfiqe/design-system";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+import { cn } from "@/shared/lib/cn";
+
 import { useFollowCreator } from "../hooks/useFollowCreator";
 import { useSuggestedCreators } from "../hooks/useSuggestedCreators";
 import { useTrendingTags } from "../hooks/useTrendingTags";
-import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 
 interface SidebarProps {
   onTagClick: (tag: string) => void;

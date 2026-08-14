@@ -1,24 +1,19 @@
-import { productRepository } from "./product.repository.js";
-import { brandRepository } from "../brands/brand.repository.js";
-import { wishlistRepository } from "../wishlist/wishlist.repository.js";
-import { categoryService } from "../categories/category.service.js";
-
+import { productApprovedTemplate, productRejectedTemplate } from "#email-templates/templates.js";
+import { ProductStatus } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
+import { AppError } from "#middlewares/error-handler.js";
+import { brandRepository } from "#modules/brands/brand.repository.js";
+import { categoryService } from "#modules/categories/category.service.js";
+import { wishlistRepository } from "#modules/wishlist/wishlist.repository.js";
 
-import { AppError } from "../../shared/middlewares/error-handler.js";
-import { ProductStatus } from "../../generated/prisma/enums.js";
 import {
   PRODUCT_TYPE_SLUGS,
   PRODUCT_TYPE_TO_SLUG,
   SLUG_TO_PRODUCT_TYPE,
 } from "./product.constants.js";
-import {
-  productApprovedTemplate,
-  productRejectedTemplate,
-} from "../../shared/email-templates/templates.js";
-
+import { productRepository } from "./product.repository.js";
 import type {
   CreateProductBody,
   ListBrandProductsQuery,

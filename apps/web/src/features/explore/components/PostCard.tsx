@@ -1,14 +1,15 @@
 "use client";
 
-import Link from "next/link";
-import { Bookmark, Heart, MessageCircle } from "lucide-react";
-
-import { cn } from "@/shared/lib/cn";
 import { Skeleton } from "@outfiqe/design-system";
-import { exploreFeedApi } from "../api/exploreFeedApi";
-import { usePostCardState } from "../hooks/usePostCardState";
+import { Bookmark, Heart, MessageCircle } from "lucide-react";
+import Link from "next/link";
+
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+import { cn } from "@/shared/lib/cn";
+
+import { exploreFeedApi } from "../api/exploreFeedApi";
 import type { FeedPost } from "../api/exploreFeedSchemas";
+import { usePostCardState } from "../hooks/usePostCardState";
 
 interface PostCardProps {
   post: FeedPost;

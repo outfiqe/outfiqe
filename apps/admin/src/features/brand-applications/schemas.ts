@@ -1,5 +1,5 @@
-import { z } from "zod";
 import type { BrandApplicationStatus, MakesOwnPieces } from "@outfiqe/types";
+import { z } from "zod";
 
 const statusValues = ["PENDING", "APPROVED", "REJECTED"] satisfies BrandApplicationStatus[];
 export const brandApplicationStatusSchema = z.enum(statusValues);

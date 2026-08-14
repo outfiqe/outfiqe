@@ -1,13 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-
 import {
   Button,
-  Input,
   Form,
   FormBanner,
   FormControl,
@@ -15,13 +10,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  Input,
 } from "@outfiqe/design-system";
-import { PasswordInput } from "@/components/PasswordInput";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+
 import { FormFieldError } from "@/components/FormFieldError";
+import { PasswordInput } from "@/components/PasswordInput";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
-import { loginSchema, type LoginInput } from "../schemas/login.schema";
+
 import { useLogin } from "../hooks/useLogin";
 import { useResendVerification } from "../hooks/useResendVerification";
+import { type LoginInput, loginSchema } from "../schemas/login.schema";
 import { AuthErrorCode, getAuthErrorMessage } from "../utils/authErrors";
 
 export const LoginForm = () => {

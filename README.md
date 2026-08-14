@@ -137,6 +137,18 @@ gh variable set CI_JWT_SECRET --body "ci-placeholder-secret-not-used-for-anythin
 
 - `pnpm lint` / `pnpm format` — ESLint (flat config, shared across all packages) and Prettier.
 - **Pre-commit:** staged files are auto-linted and formatted (Husky + lint-staged).
+- **Branch names:**
+
+  ```
+  <type>/<short-kebab-case-description>
+
+  feat/creator-onboarding
+  fix/dashboard-role-redirect-flash
+  refactor/brand-application-status
+  ```
+  - **Type** must be one of the same values as commit types below (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `style`, `revert`) — no personal/username branches.
+  - No spaces or uppercase; keep the description short.
+
 - **Commit messages** follow [Conventional Commits](https://www.conventionalcommits.org), enforced by a commit-msg hook (commitlint, config in `commitlint.config.js`):
 
   ```

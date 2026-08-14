@@ -1,7 +1,8 @@
 import "server-only";
 
 import { serverApiRequest } from "@/shared/lib/serverApiClient";
-import { brandProfileSchema, type BrandProfile } from "./brandProfileSchemas";
+
+import { type BrandProfile, brandProfileSchema } from "./brandProfileSchemas";
 
 export const getBrandProfileServerPublic = async (id: string): Promise<BrandProfile | null> => {
   try {

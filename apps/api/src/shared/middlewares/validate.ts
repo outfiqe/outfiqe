@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import type { z, ZodType } from "zod";
+
 import { AppError } from "./error-handler.js";
 
 type Schemas = {

@@ -1,10 +1,10 @@
 import { Router } from "express";
 
+import { requireAuth } from "#middlewares/require-auth.js";
+import { validate } from "#middlewares/validate.js";
+
 import { followController } from "./follow.controller.js";
 import { followParamsSchema } from "./follow.schemas.js";
-
-import { requireAuth } from "../../shared/middlewares/require-auth.js";
-import { validate } from "../../shared/middlewares/validate.js";
 
 export const followRoutes = Router();
 

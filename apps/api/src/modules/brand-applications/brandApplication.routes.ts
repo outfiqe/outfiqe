@@ -1,20 +1,19 @@
 import { Router } from "express";
 
+import { UserRole } from "#generated/prisma/enums.js";
+import { rateLimit } from "#middlewares/rate-limit.js";
+import { requireAuth } from "#middlewares/require-auth.js";
+import { requireRole } from "#middlewares/require-role.js";
+import { validate, validated } from "#middlewares/validate.js";
+
 import { brandApplicationController } from "./brandApplication.controller.js";
+import type { CreateBrandApplicationBody } from "./brandApplication.schemas.js";
 import {
   brandApplicationIdParamSchema,
   createBrandApplicationSchema,
   listBrandApplicationsQuerySchema,
   rejectBrandApplicationSchema,
 } from "./brandApplication.schemas.js";
-
-import { rateLimit } from "../../shared/middlewares/rate-limit.js";
-import { requireAuth } from "../../shared/middlewares/require-auth.js";
-import { requireRole } from "../../shared/middlewares/require-role.js";
-import { validate, validated } from "../../shared/middlewares/validate.js";
-
-import { UserRole } from "../../generated/prisma/enums.js";
-import type { CreateBrandApplicationBody } from "./brandApplication.schemas.js";
 
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_REQUESTS = 3;

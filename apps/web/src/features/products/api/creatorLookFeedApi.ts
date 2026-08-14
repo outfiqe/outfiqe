@@ -1,5 +1,6 @@
 import { apiClient } from "@/shared/lib/apiClient";
-import { creatorLookProductPageSchema, type CreatorLookProductPage } from "./productSchemas";
+
+import { type CreatorLookProductPage, creatorLookProductPageSchema } from "./productSchemas";
 
 type ListCreatorLooksInput = {
   cursor?: string;

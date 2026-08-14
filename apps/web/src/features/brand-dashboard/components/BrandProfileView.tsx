@@ -1,8 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { AtSign, Mail, Phone, User } from "lucide-react";
-
 import {
   AvatarUploader,
   Badge,
@@ -12,13 +9,17 @@ import {
   Modal,
   toast,
 } from "@outfiqe/design-system";
-import { uploadsApi } from "@/shared/api/uploadsApi";
-import { cn } from "@/shared/lib/cn";
-import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+import { AtSign, Mail, Phone, User } from "lucide-react";
+import { useState } from "react";
+
 import { useAuth } from "@/features/auth";
+import { uploadsApi } from "@/shared/api/uploadsApi";
+import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+import { cn } from "@/shared/lib/cn";
+
+import type { BrandProfile } from "../api/brandDashboardSchemas";
 import { useBrandProducts } from "../hooks/useBrandProducts";
 import { useUpdateBrandProfile } from "../hooks/useUpdateBrandProfile";
-import type { BrandProfile } from "../api/brandDashboardSchemas";
 
 type EditableFields = {
   contactName: string;

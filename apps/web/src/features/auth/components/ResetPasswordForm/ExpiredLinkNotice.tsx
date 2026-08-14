@@ -1,6 +1,7 @@
 import { Button } from "@outfiqe/design-system";
-import { useFocusOnMount } from "@/shared/hooks/useFocusOnMount";
 import Link from "next/link";
+
+import { useFocusOnMount } from "@/shared/hooks/useFocusOnMount";
 
 export const ExpiredLinkNotice = () => {
   const headingRef = useFocusOnMount<HTMLHeadingElement>();

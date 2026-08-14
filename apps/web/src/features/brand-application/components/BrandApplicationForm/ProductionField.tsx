@@ -1,8 +1,8 @@
-import { Controller, type Control } from "react-hook-form";
+import { type Control, Controller } from "react-hook-form";
 
 import type { BrandApplicationInput } from "../../schemas/brandApplication.schema";
-import { ChipGroup } from "./ChildGroup";
 import { PRODUCTION_OPTIONS } from "./brandApplicationForm.constants";
+import { ChipGroup } from "./ChildGroup";
 
 type ProductionFieldProps = {
   control: Control<BrandApplicationInput>;

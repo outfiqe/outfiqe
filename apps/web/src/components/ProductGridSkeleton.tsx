@@ -1,4 +1,5 @@
 import { Skeleton } from "@outfiqe/design-system";
+
 import { cn } from "@/shared/lib/cn";
 
 const DEFAULT_GRID_CLASS = "grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-5";

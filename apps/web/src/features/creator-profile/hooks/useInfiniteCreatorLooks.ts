@@ -1,6 +1,7 @@
 "use client";
 
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
+
 import { creatorProfileApi } from "../api/creatorProfileApi";
 
 export const useInfiniteCreatorLooks = (handle: string) => {

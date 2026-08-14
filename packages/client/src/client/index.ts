@@ -1,5 +1,6 @@
-import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from "axios";
 import type { ApiErrorEnvelope, ApiSuccessEnvelope } from "@outfiqe/types";
+import type { AxiosError } from "axios";
+import axios, { type AxiosRequestConfig, type InternalAxiosRequestConfig } from "axios";
 
 import { ApiClientError } from "../errors";
 

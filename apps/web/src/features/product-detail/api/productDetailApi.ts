@@ -1,6 +1,7 @@
 import { apiClient } from "@/shared/lib/apiClient";
 import { getSessionId } from "@/shared/lib/sessionId";
-import { productDetailSchema, type ProductDetail } from "./productDetailSchemas";
+
+import { type ProductDetail, productDetailSchema } from "./productDetailSchemas";
 
 export const productDetailApi = {
   async get(id: string): Promise<ProductDetail> {

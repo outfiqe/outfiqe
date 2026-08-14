@@ -45,6 +45,7 @@ model User {
   following            Follow[]              @relation("FollowerEdges")
   savedProducts        SavedProduct[]
 
+  @@index([isCreator, creatorStatus, followerCount])
   @@map("users")
 }
 

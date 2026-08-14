@@ -2,18 +2,19 @@ import type { z } from "zod";
 
 import { apiClient } from "@/shared/lib/apiClient";
 import { getSessionId } from "@/shared/lib/sessionId";
+
 import {
+  type CommentPage,
   commentPageSchema,
   commentSchema,
+  type FeedComment,
+  type FeedPage,
   feedPageSchema,
   followResultSchema,
   likeResultSchema,
   saveResultSchema,
   suggestedCreatorsResponseSchema,
   trendingTagsResponseSchema,
-  type CommentPage,
-  type FeedComment,
-  type FeedPage,
 } from "./exploreFeedSchemas";
 
 type ListFeedInput = {

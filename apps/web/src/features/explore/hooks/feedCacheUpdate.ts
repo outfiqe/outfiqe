@@ -1,4 +1,5 @@
 import type { InfiniteData, QueryClient } from "@tanstack/react-query";
+
 import type { FeedPage, FeedPost } from "../api/exploreFeedSchemas";
 
 // A post can be cached under several tabs at once (for_you and trending currently return the

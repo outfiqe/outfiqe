@@ -1,4 +1,4 @@
-import type { CreatorStatus } from "../../generated/prisma/enums.js";
+import type { CreatorStatus } from "#generated/prisma/enums.js";
 
 export type CreatorProfile = {
   userId: string;

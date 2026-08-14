@@ -1,4 +1,5 @@
 import { getTrendingProductsServer } from "@/features/products/api/getProductsServer";
+
 import { ProductRail } from "../ProductRail";
 
 export async function TrendingNow() {

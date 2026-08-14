@@ -1,7 +1,7 @@
-import { useState, type FormEvent } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
 import { Badge, Button, FormBanner, Input } from "@outfiqe/design-system";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type FormEvent, useState } from "react";
+
 import { teamApi } from "./api";
 import type { AdminInviteSummary } from "./schemas";
 

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { SiteHeader } from "@/components/SiteHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { MobileTabBar } from "@/components/MobileTabBar";
-import { getCreatorProfileServerPublic, CreatorProfile } from "@/features/creator-profile";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
+import { CreatorProfile, getCreatorProfileServerPublic } from "@/features/creator-profile";
 
 interface CreatorPageProps {
   params: Promise<{ handle: string }>;

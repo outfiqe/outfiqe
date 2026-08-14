@@ -1,10 +1,11 @@
 import type { Request, Response } from "express";
-import { getAuthPrincipal } from "../../shared/middlewares/require-auth.js";
-import { validated } from "../../shared/middlewares/validate.js";
-import type { CreateUserBody, UpdateOwnProfileBody, UserIdParam } from "./user.schemas.js";
-import { userService } from "./user.service.js";
 
 import { sendSuccess } from "#lib/api-response.utils.js";
+import { getAuthPrincipal } from "#middlewares/require-auth.js";
+import { validated } from "#middlewares/validate.js";
+
+import type { CreateUserBody, UpdateOwnProfileBody, UserIdParam } from "./user.schemas.js";
+import { userService } from "./user.service.js";
 
 const CREATED_STATUS = 201;
 

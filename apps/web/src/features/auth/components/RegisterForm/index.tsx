@@ -1,12 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-
 import {
   Button,
-  Input,
   Form,
   FormBanner,
   FormControl,
@@ -15,12 +11,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  Input,
 } from "@outfiqe/design-system";
-import { PasswordInput } from "@/components/PasswordInput";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+
 import { FormFieldError } from "@/components/FormFieldError";
+import { PasswordInput } from "@/components/PasswordInput";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
-import { registerSchema, type RegisterInput } from "../../schemas/register.schema";
+
 import { useRegister } from "../../hooks/useRegister";
+import { type RegisterInput, registerSchema } from "../../schemas/register.schema";
 import { AuthErrorCode, getAuthErrorMessage } from "../../utils/authErrors";
 import { RegisterSuccess } from "./RegisterSuccess";
 

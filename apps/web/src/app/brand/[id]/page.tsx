@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { SiteHeader } from "@/components/SiteHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { MobileTabBar } from "@/components/MobileTabBar";
-import { getBrandProfileServerPublic, BrandProfile } from "@/features/brand-profile";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
+import { BrandProfile, getBrandProfileServerPublic } from "@/features/brand-profile";
 
 interface BrandPageProps {
   params: Promise<{ id: string }>;

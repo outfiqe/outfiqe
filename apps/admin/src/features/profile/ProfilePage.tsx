@@ -1,7 +1,7 @@
-import { useState, type FormEvent } from "react";
-import { useMutation } from "@tanstack/react-query";
-
 import { Button, FormBanner, Input } from "@outfiqe/design-system";
+import { useMutation } from "@tanstack/react-query";
+import { type FormEvent, useState } from "react";
+
 import { ImageUpload } from "@/components/ImageUpload";
 import { authApi } from "@/features/auth/api";
 import { useAuth } from "@/features/auth/AuthContext";

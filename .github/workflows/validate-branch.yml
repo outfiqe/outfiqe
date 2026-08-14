@@ -1,0 +1,27 @@
+name: Validate Branch Name
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-branch:
+    name: Branch Naming
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          echo "Checking branch: $BRANCH"
+          if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
+            echo "::error::Direct commits to '$BRANCH' are not allowed."
+            exit 1
+          fi
+          if ! [[ "$BRANCH" =~ ^(feat|fix|docs|refactor|test|chore|build|ci|perf|style|revert)/[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            echo "::error::Branch name '$BRANCH' doesn't match '<type>/<short-kebab-case-description>' (see README: Code Quality & Commits)."
+            exit 1
+          fi

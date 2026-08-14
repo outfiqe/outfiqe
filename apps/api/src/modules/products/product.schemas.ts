@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import { ProductStatus } from "../../generated/prisma/enums.js";
+import { ProductStatus } from "#generated/prisma/enums.js";
+
 import { PRODUCT_TYPE_SLUGS } from "./product.constants.js";
 
 const NAME_MIN = 2;

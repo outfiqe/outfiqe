@@ -1,5 +1,5 @@
-import { z } from "zod";
 import type { CollectionStatus } from "@outfiqe/types";
+import { z } from "zod";
 
 const NAME_MIN = 2;
 const NAME_MAX = 80;

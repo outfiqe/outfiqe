@@ -1,9 +1,9 @@
 import type { ReactElement } from "react";
 
-import { SidebarNavItemView } from "./SidebarNavItemView";
 import { cx } from "./cx";
+import { SidebarNavItemView } from "./SidebarNavItemView";
 import { cardClass, navListClass, sectionHeadingClass } from "./styles";
-import type { SidebarNavSection, SidebarNavigationAdapter } from "./types";
+import type { SidebarNavigationAdapter, SidebarNavSection } from "./types";
 import type { ExpandedGroups } from "./useExpandedGroups";
 
 export type SidebarSectionProps = {

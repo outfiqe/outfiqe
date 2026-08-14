@@ -1,7 +1,6 @@
-import { prisma } from "../src/shared/db/prisma.js";
-
-import { hashPassword } from "#lib/password.utils.js";
 import { slugifyHandle } from "#lib/handle.utils.js";
+import { hashPassword } from "#lib/password.utils.js";
+
 import {
   CategoryStatus,
   CollectionStatus,
@@ -10,6 +9,7 @@ import {
   HeroSlideStatus,
   ProductStatus,
 } from "../src/generated/prisma/enums.js";
+import { prisma } from "../src/shared/db/prisma.js";
 
 const CREATOR_NAMES = [
   "Sabin Shrestha",

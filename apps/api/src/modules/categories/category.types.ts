@@ -1,4 +1,4 @@
-import type { CategoryStatus } from "../../generated/prisma/enums.js";
+import type { CategoryStatus } from "#generated/prisma/enums.js";
 
 export type CategoryRecord = {
   id: string;

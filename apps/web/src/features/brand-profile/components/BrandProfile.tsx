@@ -1,19 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Badge, Button } from "@outfiqe/design-system";
 import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 
-import { cn } from "@/shared/lib/cn";
-import { getAvatarColor } from "@/shared/lib/avatarColor";
-import { useAuth } from "@/features/auth/context/AuthContext";
-import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
-import { Button, Badge } from "@outfiqe/design-system";
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
-import { useInfiniteBrandProducts } from "../hooks/useInfiniteBrandProducts";
+import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
+import { getAvatarColor } from "@/shared/lib/avatarColor";
+import { cn } from "@/shared/lib/cn";
+
 import type { BrandProfile as BrandProfileType } from "../api/brandProfileSchemas";
+import { useInfiniteBrandProducts } from "../hooks/useInfiniteBrandProducts";
 
 const PRODUCT_GRID_CLASS = "grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-5";
 const ALL_PRODUCT_TYPE = "all";

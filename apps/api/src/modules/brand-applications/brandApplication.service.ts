@@ -1,19 +1,17 @@
-import { brandApplicationRepository } from "./brandApplication.repository.js";
-
 import { env } from "#config/env.config.js";
-import { sendEmail } from "#lib/email.utils.js";
-import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
-import { buildCursorPage } from "#lib/pagination.utils.js";
-import logger from "#lib/winston.utils.js";
-
-import { AppError } from "../../shared/middlewares/error-handler.js";
-import { BrandApplicationStatus } from "../../generated/prisma/enums.js";
 import {
   brandApplicationReceivedInternalTemplate,
   brandApprovedTemplate,
   brandRejectedTemplate,
-} from "../../shared/email-templates/templates.js";
+} from "#email-templates/templates.js";
+import { BrandApplicationStatus } from "#generated/prisma/enums.js";
+import { sendEmail } from "#lib/email.utils.js";
+import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
+import { buildCursorPage } from "#lib/pagination.utils.js";
+import logger from "#lib/winston.utils.js";
+import { AppError } from "#middlewares/error-handler.js";
 
+import { brandApplicationRepository } from "./brandApplication.repository.js";
 import type { ListBrandApplicationsQuery } from "./brandApplication.schemas.js";
 import type {
   BrandApplicationPage,

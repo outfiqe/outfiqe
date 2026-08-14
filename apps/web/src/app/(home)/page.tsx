@@ -1,5 +1,9 @@
 import { Suspense } from "react";
 
+import { MobileTabBar } from "@/components/MobileTabBar";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
+import { CollectionsSection } from "@/features/collections";
 import {
   BrandCallout,
   CategoryResults,
@@ -9,10 +13,6 @@ import {
   TasteCategories,
   TrendingNow,
 } from "@/features/landing";
-import { CollectionsSection } from "@/features/collections";
-import { MobileTabBar } from "@/components/MobileTabBar";
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
 
 export default function HomePage() {
   return (

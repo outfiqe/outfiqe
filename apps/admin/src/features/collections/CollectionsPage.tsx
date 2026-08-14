@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
 import { Badge, Button, FormBanner, Input } from "@outfiqe/design-system";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type FormEvent, useState } from "react";
+
 import { ImageUpload } from "@/components/ImageUpload";
+
 import { collectionsApi } from "./api";
 import { ProductPicker } from "./ProductPicker";
 import type { Collection, CollectionStatusValue } from "./schemas";

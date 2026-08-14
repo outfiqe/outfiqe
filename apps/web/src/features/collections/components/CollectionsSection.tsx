@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 import { getHomepageCollectionsServer } from "../api/getCollectionsServer";
 import { CollectionCard } from "./CollectionCard";

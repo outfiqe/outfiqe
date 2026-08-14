@@ -1,4 +1,4 @@
-import type { BrandRole } from "../../generated/prisma/enums.js";
+import type { BrandRole } from "#generated/prisma/enums.js";
 
 export type BrandRecord = {
   id: string;

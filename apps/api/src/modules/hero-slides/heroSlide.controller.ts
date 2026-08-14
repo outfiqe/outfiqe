@@ -1,16 +1,14 @@
 import type { Request, Response } from "express";
 
-import { heroSlideService } from "./heroSlide.service.js";
-
 import { sendSuccess } from "#lib/api-response.utils.js";
-
-import { validated } from "../../shared/middlewares/validate.js";
+import { validated } from "#middlewares/validate.js";
 
 import type {
   CreateHeroSlideBody,
   HeroSlideIdParam,
   UpdateHeroSlideBody,
 } from "./heroSlide.schemas.js";
+import { heroSlideService } from "./heroSlide.service.js";
 
 const CREATED_STATUS = 201;
 

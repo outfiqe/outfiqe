@@ -1,3 +1,5 @@
+import "winston-daily-rotate-file";
+
 import winston from "winston";
 
 import {
@@ -8,7 +10,6 @@ import {
   WINSTON_MAX_ERROR_LOG_FILES,
   WINSTON_MAX_LOG_FILE_SIZE,
 } from "#config/winston.config.js";
-import "winston-daily-rotate-file";
 
 const maskSensitiveData = winston.format((info) => {
   if (info.message && typeof info.message === "string" && info.message.includes("password")) {

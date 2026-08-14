@@ -1,7 +1,8 @@
 "use client";
 
-import { exploreFeedApi } from "../api/exploreFeedApi";
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
+
+import { exploreFeedApi } from "../api/exploreFeedApi";
 
 export const useInfiniteExploreFeed = (tab: string) => {
   return useInfiniteCursorPage(["explore-feed", tab], (cursor) =>

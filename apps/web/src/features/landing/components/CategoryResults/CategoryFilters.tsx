@@ -1,10 +1,10 @@
 "use client";
 
+import { Button } from "@outfiqe/design-system";
 import { useRouter } from "next/navigation";
 
-import { Button } from "@outfiqe/design-system";
-import { cn } from "@/shared/lib/cn";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
+import { cn } from "@/shared/lib/cn";
 
 type CategoryFiltersProps = {
   categorySlug: string;

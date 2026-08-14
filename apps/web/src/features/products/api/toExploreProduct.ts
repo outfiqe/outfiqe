@@ -1,4 +1,5 @@
 import type { ExploreProduct } from "@/features/landing/components/ProductCard";
+
 import type { PublicProduct } from "./productSchemas";
 
 const getMockWornByCount = (productId: string): number => {

@@ -1,14 +1,15 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight } from "lucide-react";
-
 import { Button } from "@outfiqe/design-system";
+import { ArrowRight } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
+import { useCategories } from "@/features/categories/hooks/useCategories";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
-import { useCategories } from "@/features/categories/hooks/useCategories";
+
 import { ProductCard } from "../ProductCard";
 import { CategoryFilters } from "./CategoryFilters";
 

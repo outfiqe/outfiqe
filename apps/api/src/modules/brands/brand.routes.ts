@@ -1,15 +1,14 @@
 import { Router } from "express";
 
+import { UserRole } from "#generated/prisma/enums.js";
+import { optionalAuth } from "#middlewares/optional-auth.js";
+import { requireAuth } from "#middlewares/require-auth.js";
+import { requireRole } from "#middlewares/require-role.js";
+import { validate } from "#middlewares/validate.js";
+import { listBrandProductsQuerySchema } from "#modules/products/product.schemas.js";
+
 import { brandController } from "./brand.controller.js";
 import { brandIdParamSchema, updateBrandProfileSchema } from "./brand.schemas.js";
-import { listBrandProductsQuerySchema } from "../products/product.schemas.js";
-
-import { optionalAuth } from "../../shared/middlewares/optional-auth.js";
-import { requireAuth } from "../../shared/middlewares/require-auth.js";
-import { requireRole } from "../../shared/middlewares/require-role.js";
-import { validate } from "../../shared/middlewares/validate.js";
-
-import { UserRole } from "../../generated/prisma/enums.js";
 
 export const brandRoutes = Router();
 

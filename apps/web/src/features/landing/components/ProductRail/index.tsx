@@ -1,8 +1,9 @@
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 import { cn } from "@/shared/lib/cn";
-import { ProductCard, type ExploreProduct } from "../ProductCard";
+
+import { type ExploreProduct, ProductCard } from "../ProductCard";
 
 type ProductRailProps = {
   eyebrow?: string;

@@ -2,11 +2,11 @@
 
 import type { ReactElement, ReactNode } from "react";
 
+import { cx } from "./cx";
 import { PanelToggleIcon } from "./PanelToggleIcon";
 import { SidebarSection } from "./SidebarSection";
-import { cx } from "./cx";
 import { cardClass, footerListClass, railClass, toggleButtonClass } from "./styles";
-import type { SidebarNavSection, SidebarNavigationAdapter } from "./types";
+import type { SidebarNavigationAdapter, SidebarNavSection } from "./types";
 import { useExpandedGroups } from "./useExpandedGroups";
 
 export type SidebarProps = {

@@ -1,16 +1,14 @@
 import type { Request, Response } from "express";
 
-import { categoryService } from "./category.service.js";
-
 import { sendSuccess } from "#lib/api-response.utils.js";
-
-import { validated } from "../../shared/middlewares/validate.js";
+import { validated } from "#middlewares/validate.js";
 
 import type {
   CategoryIdParam,
   CreateCategoryBody,
   UpdateCategoryBody,
 } from "./category.schemas.js";
+import { categoryService } from "./category.service.js";
 
 const CREATED_STATUS = 201;
 

@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
 import { Button } from "@outfiqe/design-system";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 interface CreatorModeModalProps {
   open: boolean;

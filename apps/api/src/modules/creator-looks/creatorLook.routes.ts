@@ -1,5 +1,9 @@
 import { Router } from "express";
 
+import { optionalAuth } from "#middlewares/optional-auth.js";
+import { requireAuth } from "#middlewares/require-auth.js";
+import { validate } from "#middlewares/validate.js";
+
 import { creatorLookController } from "./creatorLook.controller.js";
 import {
   commentsQuerySchema,
@@ -11,10 +15,6 @@ import {
   tagClickParamsSchema,
   tagClickSchema,
 } from "./creatorLook.schemas.js";
-
-import { optionalAuth } from "../../shared/middlewares/optional-auth.js";
-import { requireAuth } from "../../shared/middlewares/require-auth.js";
-import { validate } from "../../shared/middlewares/validate.js";
 
 export const creatorLookRoutes = Router();
 

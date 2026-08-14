@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
 import { Toaster } from "@outfiqe/design-system";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { type ReactNode, useState } from "react";
+
 import { AuthProvider } from "@/features/auth";
 
 export function Providers({ children }: { children: ReactNode }) {

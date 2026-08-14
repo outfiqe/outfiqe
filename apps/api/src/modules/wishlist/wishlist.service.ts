@@ -1,13 +1,12 @@
-import { wishlistRepository } from "./wishlist.repository.js";
-import { productRepository } from "../products/product.repository.js";
-import { toPublicProduct } from "../products/product.service.js";
-
-import { AppError } from "../../shared/middlewares/error-handler.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
+import { AppError } from "#middlewares/error-handler.js";
+import { productRepository } from "#modules/products/product.repository.js";
+import { toPublicProduct } from "#modules/products/product.service.js";
+import type { PublicProductPage } from "#modules/products/product.types.js";
 
+import { wishlistRepository } from "./wishlist.repository.js";
 import type { ListWishlistQuery } from "./wishlist.schemas.js";
 import type { WishlistResult } from "./wishlist.types.js";
-import type { PublicProductPage } from "../products/product.types.js";
 
 const NOT_FOUND_STATUS = 404;
 

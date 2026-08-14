@@ -1,6 +1,5 @@
-import { z } from "zod";
-
 import type { CreatorStatus as CreatorStatusType, UserRole as UserRoleType } from "@outfiqe/types";
+import { z } from "zod";
 
 export const UserRole = {
   CUSTOMER: "CUSTOMER",

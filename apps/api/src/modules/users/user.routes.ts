@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { validate } from "../../shared/middlewares/validate.js";
-import { createUserSchema, updateOwnProfileSchema, userIdParamSchema } from "./user.schemas.js";
+
+import { UserRole } from "#generated/prisma/enums.js";
+import { requireAuth } from "#middlewares/require-auth.js";
+import { requireRole } from "#middlewares/require-role.js";
+import { validate } from "#middlewares/validate.js";
+
 import { userController } from "./user.controller.js";
-
-import { requireAuth } from "../../shared/middlewares/require-auth.js";
-import { requireRole } from "../../shared/middlewares/require-role.js";
-
-import { UserRole } from "../../generated/prisma/enums.js";
+import { createUserSchema, updateOwnProfileSchema, userIdParamSchema } from "./user.schemas.js";
 
 const requireAdmin = [requireAuth, requireRole(UserRole.ADMIN)];
 

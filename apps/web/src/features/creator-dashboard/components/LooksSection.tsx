@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Plus } from "lucide-react";
-
 import { Button, Skeleton } from "@outfiqe/design-system";
+import { Plus } from "lucide-react";
+import { useState } from "react";
+
 import { CreatorStatus } from "@/features/auth/types";
+
+import { useMyLooks } from "../hooks/useMyLooks";
 import { ApplyAsCreatorButton } from "./ApplyAsCreatorButton";
 import { PostModal } from "./PostModal";
-import { useMyLooks } from "../hooks/useMyLooks";
 
 type LooksSectionProps = {
   creatorStatus: CreatorStatus;

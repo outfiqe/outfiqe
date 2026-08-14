@@ -1,11 +1,11 @@
 "use client";
 
+import { Button, Skeleton } from "@outfiqe/design-system";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { Button, Skeleton } from "@outfiqe/design-system";
-import { cn } from "@/shared/lib/cn";
-import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { useCategories } from "@/features/categories/hooks/useCategories";
+import { getAvatarColor } from "@/shared/lib/avatarColor";
+import { cn } from "@/shared/lib/cn";
 
 export const TasteCategories = () => {
   const router = useRouter();

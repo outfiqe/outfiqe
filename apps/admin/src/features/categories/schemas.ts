@@ -1,5 +1,5 @@
-import { z } from "zod";
 import type { CategoryStatus } from "@outfiqe/types";
+import { z } from "zod";
 
 const statusValues = ["DRAFT", "PUBLISHED"] satisfies CategoryStatus[];
 export const categoryStatusSchema = z.enum(statusValues);

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { UserRole } from "@/features/auth/types";
 import { ProductsSection } from "@/features/brand-dashboard";
+
 import { requireDashboardSession } from "../requireDashboardSession";
 
 export const metadata: Metadata = { title: "Products" };

@@ -1,10 +1,10 @@
 "use client";
 
-import * as React from "react";
+import { Input } from "@outfiqe/design-system";
 import { Eye, EyeOff } from "lucide-react";
+import * as React from "react";
 
 import { cn } from "@/shared/lib/cn";
-import { Input } from "@outfiqe/design-system";
 
 export type PasswordInputProps = React.ComponentPropsWithoutRef<"input">;
 

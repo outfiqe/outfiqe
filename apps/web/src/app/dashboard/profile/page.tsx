@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { UserRole } from "@/features/auth/types";
 import { BrandProfileView, getBrandProfileServer } from "@/features/brand-dashboard";
 import { CreatorProfileView, getCreatorProfileServer } from "@/features/creator-dashboard";
+
 import { requireDashboardSession } from "../requireDashboardSession";
 
 export const metadata: Metadata = { title: "Profile" };

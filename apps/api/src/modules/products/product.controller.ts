@@ -1,13 +1,10 @@
 import type { Request, Response } from "express";
 
-import { productService } from "./product.service.js";
-
 import { sendSuccess } from "#lib/api-response.utils.js";
-
-import { getAuthPrincipal } from "../../shared/middlewares/require-auth.js";
-import { validated } from "../../shared/middlewares/validate.js";
-
+import { getAuthPrincipal } from "#middlewares/require-auth.js";
+import { validated } from "#middlewares/validate.js";
 import type { AuthPrincipal } from "#types/token.types.js";
+
 import type {
   CreateProductBody,
   ListMineProductsQuery,
@@ -16,6 +13,7 @@ import type {
   ProductIdParam,
   UpdateProductBody,
 } from "./product.schemas.js";
+import { productService } from "./product.service.js";
 
 const CREATED_STATUS = 201;
 

@@ -1,7 +1,6 @@
+import { AppError } from "#middlewares/error-handler.js";
+
 import { heroSlideRepository } from "./heroSlide.repository.js";
-
-import { AppError } from "../../shared/middlewares/error-handler.js";
-
 import type { CreateHeroSlideBody, UpdateHeroSlideBody } from "./heroSlide.schemas.js";
 import type { HeroSlideRecord, PublicHeroSlide } from "./heroSlide.types.js";
 

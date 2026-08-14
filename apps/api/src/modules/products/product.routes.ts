@@ -1,5 +1,11 @@
 import { Router } from "express";
 
+import { UserRole } from "#generated/prisma/enums.js";
+import { optionalAuth } from "#middlewares/optional-auth.js";
+import { requireAuth } from "#middlewares/require-auth.js";
+import { requireRole } from "#middlewares/require-role.js";
+import { validate } from "#middlewares/validate.js";
+
 import { productController } from "./product.controller.js";
 import {
   createProductSchema,
@@ -9,13 +15,6 @@ import {
   productIdParamSchema,
   updateProductSchema,
 } from "./product.schemas.js";
-
-import { optionalAuth } from "../../shared/middlewares/optional-auth.js";
-import { requireAuth } from "../../shared/middlewares/require-auth.js";
-import { requireRole } from "../../shared/middlewares/require-role.js";
-import { validate } from "../../shared/middlewares/validate.js";
-
-import { UserRole } from "../../generated/prisma/enums.js";
 
 const requireBrandOwner = [requireAuth, requireRole(UserRole.BRAND_OWNER)];
 const requireAdmin = [requireAuth, requireRole(UserRole.ADMIN)];

@@ -1,13 +1,13 @@
-import { prisma } from "../../shared/db/prisma.js";
+import { prisma } from "#db/prisma.js";
+import { CollectionStatus, ProductStatus } from "#generated/prisma/enums.js";
+import type { ProductWithBrand } from "#modules/products/product.types.js";
 
-import { CollectionStatus, ProductStatus } from "../../generated/prisma/enums.js";
 import type {
   CollectionRecord,
   CollectionWithProductCount,
   CreateCollectionInput,
   UpdateCollectionInput,
 } from "./collection.types.js";
-import type { ProductWithBrand } from "../products/product.types.js";
 
 const withProductCount = {
   _count: { select: { products: { where: { product: { status: ProductStatus.APPROVED } } } } },

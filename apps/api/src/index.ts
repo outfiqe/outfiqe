@@ -1,9 +1,9 @@
+import logger from "#lib/winston.utils.js";
+
 import { createApp } from "./app.js";
 import { env } from "./config/env.config.js";
-import { disconnectDb } from "./shared/db/prisma.js";
 import { bootstrapAdminIfNeeded } from "./shared/bootstrap/bootstrap-admin.js";
-
-import logger from "#lib/winston.utils.js";
+import { disconnectDb } from "./shared/db/prisma.js";
 
 await bootstrapAdminIfNeeded();
 

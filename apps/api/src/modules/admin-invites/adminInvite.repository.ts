@@ -1,4 +1,4 @@
-import { prisma } from "../../shared/db/prisma.js";
+import { prisma } from "#db/prisma.js";
 
 import type { AdminInviteRecord, CreateAdminInviteInput } from "./adminInvite.types.js";
 

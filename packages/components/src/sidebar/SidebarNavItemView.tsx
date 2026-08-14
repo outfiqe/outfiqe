@@ -11,7 +11,7 @@ import {
   navLinkInactiveClass,
   toggleButtonClass,
 } from "./styles";
-import type { SidebarNavItem, SidebarNavigationAdapter } from "./types";
+import type { SidebarNavigationAdapter, SidebarNavItem } from "./types";
 import type { ExpandedGroups } from "./useExpandedGroups";
 
 const isPlainLeftClick = (event: MouseEvent): boolean =>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { BrandApplicationForm } from "@/features/brand-application";
+
 import { ApplyExpiredBanner } from "./ApplyExpiredBanner";
 
 export const metadata: Metadata = { title: "List your brand" };

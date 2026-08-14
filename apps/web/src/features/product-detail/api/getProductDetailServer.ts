@@ -1,7 +1,8 @@
 import "server-only";
 
 import { serverApiRequest } from "@/shared/lib/serverApiClient";
-import { productDetailSchema, type ProductDetail } from "./productDetailSchemas";
+
+import { type ProductDetail, productDetailSchema } from "./productDetailSchemas";
 
 export const getProductDetailServer = async (id: string): Promise<ProductDetail | null> => {
   try {

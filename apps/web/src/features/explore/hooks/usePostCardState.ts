@@ -1,18 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-
 import { toast } from "@outfiqe/design-system";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
+
 import { exploreFeedApi } from "../api/exploreFeedApi";
+import type { FeedPost } from "../api/exploreFeedSchemas";
+import { patchPostInFeedCaches } from "./feedCacheUpdate";
 import { useFollowCreator } from "./useFollowCreator";
 import { useLikeLook } from "./useLikeLook";
 import { useSaveLook } from "./useSaveLook";
-import { patchPostInFeedCaches } from "./feedCacheUpdate";
-import type { FeedPost } from "../api/exploreFeedSchemas";
 
 // Shared behavior behind every post presentation (grid card, list row, …): auth-gating,
 // like/save/follow mutations, and the inline comment thread. Keeping this in one place means

@@ -2,11 +2,13 @@
 // Every package resolves this same file — `eslint .` run from apps/api or
 // apps/web walks up and finds it automatically, no per-package config needed.
 import js from "@eslint/js";
-import tseslint from "typescript-eslint";
 import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import nextTypescript from "eslint-config-next/typescript";
 import eslintConfigPrettier from "eslint-config-prettier";
+import reactRefresh from "eslint-plugin-react-refresh";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
 import globals from "globals";
+import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
@@ -25,6 +27,9 @@ export default tseslint.config(
 
   // Defaults for everything (API, types, config files).
   {
+    plugins: {
+      "simple-import-sort": simpleImportSort,
+    },
     languageOptions: {
       globals: globals.node,
     },
@@ -34,6 +39,25 @@ export default tseslint.config(
         "warn",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        { fixStyle: "separate-type-imports" },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "TSAsExpression > TSAsExpression[typeAnnotation.type='TSUnknownKeyword']",
+          message:
+            "Don't use `as unknown as`. Fix the underlying type or narrow the value instead.",
+        },
+      ],
+      eqeqeq: ["error", "always"],
+      "no-var": "error",
+      "prefer-const": "error",
+      "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },
 
@@ -47,12 +71,14 @@ export default tseslint.config(
     },
   },
 
-  // Web app + shared React components: Next.js's own rule set (Core Web
-  // Vitals + its TS rules), which also brings React/React Hooks/jsx-a11y/
-  // import resolution — no need to configure those separately for this package.
+  // Web + admin apps + shared React components: Next.js's own rule set
+  // (Core Web Vitals + its TS rules), which also brings React/React Hooks/
+  // jsx-a11y/import resolution — no need to configure those separately for
+  // these packages.
   {
     files: [
       "apps/web/**/*.{ts,tsx}",
+      "apps/admin/**/*.{ts,tsx}",
       "packages/components/**/*.{ts,tsx}",
       "packages/design-system/**/*.{ts,tsx}",
     ],
@@ -66,6 +92,16 @@ export default tseslint.config(
       // an API ESLint 10 removed, which crashes the linter outright.
       // Pinning the version explicitly skips that code path entirely.
       react: { version: "19.2.8" },
+    },
+  },
+
+  {
+    files: ["apps/admin/**/*.{ts,tsx}"],
+    plugins: {
+      "react-refresh": reactRefresh,
+    },
+    rules: {
+      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
     },
   },
 

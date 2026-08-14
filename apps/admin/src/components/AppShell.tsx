@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import { HeaderBar } from "@outfiqe/components";
+import type { ReactNode } from "react";
 
 import { AccountMenu } from "./AccountMenu";
 import { AdminSidebar } from "./AdminSidebar";

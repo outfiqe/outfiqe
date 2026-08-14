@@ -1,7 +1,8 @@
 import "server-only";
 
 import { serverApiRequest } from "@/shared/lib/serverApiClient";
-import { publicCollectionSchema, type PublicCollection } from "./collectionSchemas";
+
+import { type PublicCollection, publicCollectionSchema } from "./collectionSchemas";
 
 export const getCollectionDetailServer = async (slug: string): Promise<PublicCollection | null> => {
   try {

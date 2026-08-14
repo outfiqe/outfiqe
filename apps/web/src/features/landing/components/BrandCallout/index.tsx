@@ -1,6 +1,5 @@
-import Link from "next/link";
-
 import { Button } from "@outfiqe/design-system";
+import Link from "next/link";
 
 export const BrandCallout = () => {
   return (

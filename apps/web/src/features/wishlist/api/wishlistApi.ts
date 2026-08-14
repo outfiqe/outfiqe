@@ -1,6 +1,7 @@
+import { type ProductPage, productPageSchema } from "@/features/products/api/productSchemas";
 import { apiClient } from "@/shared/lib/apiClient";
-import { productPageSchema, type ProductPage } from "@/features/products/api/productSchemas";
-import { wishlistResultSchema, type WishlistResult } from "./wishlistSchemas";
+
+import { type WishlistResult, wishlistResultSchema } from "./wishlistSchemas";
 
 export const wishlistApi = {
   async save(productId: string): Promise<WishlistResult> {

@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
-import { heroSlideSchema, type HeroSlide, type HeroSlideStatusValue } from "./schemas";
+
+import { type HeroSlide, heroSlideSchema, type HeroSlideStatusValue } from "./schemas";
 
 const listSchema = z.array(heroSlideSchema);
 

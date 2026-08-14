@@ -1,7 +1,6 @@
-import { prisma } from "../../shared/db/prisma.js";
-
-import { ProductStatus } from "../../generated/prisma/enums.js";
-import type { ProductWithBrand } from "../products/product.types.js";
+import { prisma } from "#db/prisma.js";
+import { ProductStatus } from "#generated/prisma/enums.js";
+import type { ProductWithBrand } from "#modules/products/product.types.js";
 
 export const wishlistRepository = {
   async save(userId: string, productId: string): Promise<boolean> {

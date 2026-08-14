@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import { phoneSchema } from "#lib/phone.utils.js";
 import { TokenPurpose } from "#constants/enums/auth.enum.js";
+import { phoneSchema } from "#lib/phone.utils.js";
 
 const NAME_MIN = 2;
 const NAME_MAX = 100;

@@ -1,5 +1,5 @@
-import { useNavigate } from "@tanstack/react-router";
 import { getAvatarColor, initialsFor } from "@outfiqe/utils";
+import { useNavigate } from "@tanstack/react-router";
 
 import { useAuth } from "@/features/auth/AuthContext";
 

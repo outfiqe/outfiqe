@@ -1,12 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-
 import {
   Button,
-  Input,
-  Label,
   Form,
   FormBanner,
   FormControl,
@@ -15,11 +11,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  Input,
+  Label,
 } from "@outfiqe/design-system";
+import { useForm } from "react-hook-form";
+
 import { PasswordInput } from "@/components/PasswordInput";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
-import { brandRegisterSchema, type BrandRegisterInput } from "../schemas/brandRegister.schema";
+
 import { useBrandRegister } from "../hooks/useBrandRegister";
+import { type BrandRegisterInput, brandRegisterSchema } from "../schemas/brandRegister.schema";
 import { getAuthErrorMessage } from "../utils/authErrors";
 
 type BrandRegisterFormProps = {

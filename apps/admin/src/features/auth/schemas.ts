@@ -1,5 +1,5 @@
-import { z } from "zod";
 import type { UserRole } from "@outfiqe/types";
+import { z } from "zod";
 
 const userRoleValues = ["CUSTOMER", "BRAND_OWNER", "ADMIN"] satisfies UserRole[];
 export const userRoleSchema = z.enum(userRoleValues);

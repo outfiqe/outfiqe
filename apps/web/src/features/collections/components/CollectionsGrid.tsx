@@ -1,7 +1,8 @@
 "use client";
 
-import { useInfiniteCollections } from "../hooks/useInfiniteCollections";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
+
+import { useInfiniteCollections } from "../hooks/useInfiniteCollections";
 import { CollectionCard } from "./CollectionCard";
 import { CollectionGridSkeleton } from "./CollectionGridSkeleton";
 

@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
-import { categorySchema, type Category, type CategoryStatusValue } from "./schemas";
+
+import { type Category, categorySchema, type CategoryStatusValue } from "./schemas";
 
 const listSchema = z.array(categorySchema);
 

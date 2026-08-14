@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import type { StorageProvider, UploadableFile, UploadedFile } from "../storage.types.js";
+import type { StorageProvider, UploadableFile, UploadedFile } from "#storage/storage.types.js";
 
 const safeExtension = (originalName: string): string => {
   const ext = path.extname(originalName).toLowerCase();

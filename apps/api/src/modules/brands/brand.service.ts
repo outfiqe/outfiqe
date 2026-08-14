@@ -1,10 +1,10 @@
-import { brandRepository } from "./brand.repository.js";
-import { followRepository } from "../follows/follow.repository.js";
+import { FollowTargetType } from "#generated/prisma/enums.js";
+import { AppError } from "#middlewares/error-handler.js";
+import { followRepository } from "#modules/follows/follow.repository.js";
 
-import { AppError } from "../../shared/middlewares/error-handler.js";
-import { FollowTargetType } from "../../generated/prisma/enums.js";
-import type { BrandProfile, PublicBrandProfile } from "./brand.types.js";
+import { brandRepository } from "./brand.repository.js";
 import type { UpdateBrandProfileBody } from "./brand.schemas.js";
+import type { BrandProfile, PublicBrandProfile } from "./brand.types.js";
 
 const NOT_FOUND_STATUS = 404;
 

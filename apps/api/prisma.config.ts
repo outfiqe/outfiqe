@@ -1,4 +1,5 @@
 import "dotenv/config";
+
 import { defineConfig, env } from "prisma/config";
 
 // Prisma 7 moved CLI configuration out of schema.prisma into this file.

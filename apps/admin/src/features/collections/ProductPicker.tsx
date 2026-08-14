@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
 import { Button, Input } from "@outfiqe/design-system";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+
 import { collectionsApi } from "./api";
 import type { Collection, ProductSearchResult } from "./schemas";
 
@@ -15,6 +15,8 @@ export const ProductPicker = ({ collection, onClose }: ProductPickerProps) => {
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[] | null>(null);
   const [known, setKnown] = useState<Map<string, ProductSearchResult>>(new Map());
+  const [processedCurrentData, setProcessedCurrentData] = useState<ProductSearchResult[]>();
+  const [processedSearchData, setProcessedSearchData] = useState<ProductSearchResult[]>();
 
   const current = useQuery({
     queryKey: ["collection-products", collection.id],
@@ -27,16 +29,16 @@ export const ProductPicker = ({ collection, onClose }: ProductPickerProps) => {
     enabled: query.trim().length > 0,
   });
 
-  useEffect(() => {
-    if (!current.data) return;
+  if (current.data && current.data !== processedCurrentData) {
+    setProcessedCurrentData(current.data);
     setKnown((prev) => new Map([...prev, ...current.data.map((p) => [p.id, p] as const)]));
     setSelectedIds((ids) => ids ?? current.data.map((product) => product.id));
-  }, [current.data]);
+  }
 
-  useEffect(() => {
-    if (!search.data) return;
+  if (search.data && search.data !== processedSearchData) {
+    setProcessedSearchData(search.data);
     setKnown((prev) => new Map([...prev, ...search.data.map((p) => [p.id, p] as const)]));
-  }, [search.data]);
+  }
 
   const save = useMutation({
     mutationFn: (productIds: string[]) => collectionsApi.setProducts(collection.id, productIds),

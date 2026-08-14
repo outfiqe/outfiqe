@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
+
 import { creatorProfileSchema, type CreatorStatusValue } from "./schemas";
 
 const creatorPageSchema = z.object({

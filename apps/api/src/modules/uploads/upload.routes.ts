@@ -1,11 +1,11 @@
+import type { NextFunction, Request, Response } from "express";
 import { Router } from "express";
 import multer from "multer";
-import type { NextFunction, Request, Response } from "express";
+
+import { AppError } from "#middlewares/error-handler.js";
+import { requireAuth } from "#middlewares/require-auth.js";
 
 import { uploadController } from "./upload.controller.js";
-
-import { requireAuth } from "../../shared/middlewares/require-auth.js";
-import { AppError } from "../../shared/middlewares/error-handler.js";
 
 const MAX_FILES = 6;
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;

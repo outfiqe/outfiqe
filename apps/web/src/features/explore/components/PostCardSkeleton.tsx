@@ -1,4 +1,5 @@
 import { Skeleton } from "@outfiqe/design-system";
+
 import type { FeedLayout } from "./FeedFilterTabs";
 
 export function PostCardSkeleton() {
