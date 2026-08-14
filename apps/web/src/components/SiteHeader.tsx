@@ -15,7 +15,7 @@ import { LEADERBOARD_LINKS } from "./siteNav.constants";
 
 const SHOP_LINKS = [{ label: "Brands", href: "#" }];
 
-export function SiteHeader() {
+export const SiteHeader = () => {
   const isCondensed = useHeaderCondense();
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
 
@@ -47,13 +47,13 @@ export function SiteHeader() {
       {!isCondensed && (
         <nav className="hidden min-w-0 shrink items-center gap-x-4 lg:flex">
           <div className="flex min-w-0 shrink items-center gap-x-4 overflow-x-auto [scrollbar-width:none]">
-            {SHOP_LINKS.map((link) => (
+            {SHOP_LINKS.map(({ href, label }) => (
               <Link
-                key={link.label}
-                href={link.href}
+                key={label}
+                href={href}
                 className="shrink-0 whitespace-nowrap text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
-                {link.label}
+                {label}
               </Link>
             ))}
           </div>
@@ -85,13 +85,13 @@ export function SiteHeader() {
               )}
             >
               <div className="rounded-xl border border-border bg-card p-2 shadow-lg">
-                {LEADERBOARD_LINKS.map((sub) => (
+                {LEADERBOARD_LINKS.map(({ href, label }) => (
                   <Link
-                    key={sub.label}
-                    href={sub.href}
+                    key={label}
+                    href={href}
                     className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
                   >
-                    {sub.label}
+                    {label}
                   </Link>
                 ))}
               </div>
@@ -133,4 +133,4 @@ export function SiteHeader() {
       </div>
     </HeaderBar>
   );
-}
+};

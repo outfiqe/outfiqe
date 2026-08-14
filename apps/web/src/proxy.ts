@@ -19,7 +19,7 @@ const REFRESH_COOKIE_NAME = "refresh_token";
 
 type ProxyUser = { role: UserRole };
 
-async function fetchSessionUser(refreshToken: string): Promise<ProxyUser | null> {
+const fetchSessionUser = async (refreshToken: string): Promise<ProxyUser | null> => {
   try {
     const sessionRes = await fetch(`${API_URL}/api/auth/session`, {
       method: "POST",
@@ -40,7 +40,7 @@ async function fetchSessionUser(refreshToken: string): Promise<ProxyUser | null>
   } catch {
     return null;
   }
-}
+};
 
 // role gate per dashboard segment: who may render it, and where non-holders bounce
 const DASHBOARD_ROLE_RULES: Record<
@@ -57,7 +57,7 @@ const DASHBOARD_ROLE_RULES: Record<
   },
 };
 
-export async function proxy(request: NextRequest) {
+export const proxy = async (request: NextRequest) => {
   const { pathname } = request.nextUrl;
   const refreshToken = request.cookies.get(REFRESH_COOKIE_NAME)?.value;
 
@@ -94,7 +94,7 @@ export async function proxy(request: NextRequest) {
   }
 
   return NextResponse.next();
-}
+};
 
 export const config = {
   matcher: ["/dashboard/:path*", "/login"],

@@ -17,7 +17,8 @@ type LooksSectionProps = {
 export const LooksSection = ({ creatorStatus }: LooksSectionProps) => {
   const [postModalOpen, setPostModalOpen] = useState(false);
   const looks = useMyLooks();
-  const items = looks.data?.pages.flatMap((page) => page.looks) ?? [];
+  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = looks;
+  const postedLooks = data?.pages.flatMap((page) => page.looks) ?? [];
 
   if (creatorStatus === CreatorStatus.PENDING) {
     return (
@@ -57,7 +58,7 @@ export const LooksSection = ({ creatorStatus }: LooksSectionProps) => {
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Your posts</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {items.length} look{items.length === 1 ? "" : "s"} posted
+            {postedLooks.length} look{postedLooks.length === 1 ? "" : "s"} posted
           </p>
         </div>
         <Button onClick={() => setPostModalOpen(true)}>
@@ -66,7 +67,7 @@ export const LooksSection = ({ creatorStatus }: LooksSectionProps) => {
         </Button>
       </div>
 
-      {looks.isLoading && (
+      {isLoading && (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <Skeleton key={index} className="aspect-[4/5] rounded-2xl" />
@@ -74,7 +75,7 @@ export const LooksSection = ({ creatorStatus }: LooksSectionProps) => {
         </div>
       )}
 
-      {!looks.isLoading && items.length === 0 && (
+      {!isLoading && postedLooks.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">
             Nothing posted yet — share your first fit.
@@ -85,24 +86,22 @@ export const LooksSection = ({ creatorStatus }: LooksSectionProps) => {
         </div>
       )}
 
-      {items.length > 0 && (
+      {postedLooks.length > 0 && (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {items.map((look) => (
+          {postedLooks.map(({ id, imageUrl, caption, taggedProducts }) => (
             <div
-              key={look.id}
+              key={id}
               className="overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30"
             >
               <div
                 className="aspect-[4/5] w-full bg-muted bg-cover bg-center"
-                style={look.imageUrl ? { backgroundImage: `url(${look.imageUrl})` } : undefined}
+                style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
               />
               <div className="p-3">
-                {look.caption && (
-                  <p className="truncate text-[13px] text-foreground">{look.caption}</p>
-                )}
+                {caption && <p className="truncate text-[13px] text-foreground">{caption}</p>}
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  {look.taggedProducts.length} tagged product
-                  {look.taggedProducts.length === 1 ? "" : "s"}
+                  {taggedProducts.length} tagged product
+                  {taggedProducts.length === 1 ? "" : "s"}
                 </p>
               </div>
             </div>
@@ -110,14 +109,14 @@ export const LooksSection = ({ creatorStatus }: LooksSectionProps) => {
         </div>
       )}
 
-      {looks.hasNextPage && (
+      {hasNextPage && (
         <div className="mt-6 flex justify-center">
           <Button
             variant="outline"
-            onClick={() => void looks.fetchNextPage()}
-            disabled={looks.isFetchingNextPage}
+            onClick={() => void fetchNextPage()}
+            disabled={isFetchingNextPage}
           >
-            {looks.isFetchingNextPage ? "Loading…" : "Load more"}
+            {isFetchingNextPage ? "Loading…" : "Load more"}
           </Button>
         </div>
       )}

@@ -15,7 +15,20 @@ interface PostCardProps {
   post: FeedPost;
 }
 
-export function PostCard({ post }: PostCardProps) {
+export const PostCard = ({ post }: PostCardProps) => {
+  const {
+    id,
+    creator,
+    imageUrl,
+    isFollowingCreator,
+    caption,
+    isLiked,
+    likeCount,
+    commentCount,
+    isSaved,
+  } = post;
+  const { id: creatorId, handle: creatorHandle, name: creatorName } = creator;
+
   const {
     isAuthenticated,
     isOwnPost,
@@ -31,22 +44,23 @@ export function PostCard({ post }: PostCardProps) {
     comments,
     submitComment,
   } = usePostCardState(post);
+  const { isLoading: commentsLoading, data: commentsData } = comments;
 
   return (
     <article className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30">
       <div className="flex items-center gap-2 px-3 py-2.5">
-        <Link href={`/creator/${post.creator.handle}`} className="shrink-0">
+        <Link href={`/creator/${creatorHandle}`} className="shrink-0">
           <span
             aria-hidden
             className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-white"
-            style={{ backgroundColor: getAvatarColor(post.creator.id) }}
+            style={{ backgroundColor: getAvatarColor(creatorId) }}
           >
-            {initialsFor(post.creator.name)}
+            {initialsFor(creatorName)}
           </span>
         </Link>
-        <Link href={`/creator/${post.creator.handle}`} className="min-w-0 leading-tight">
-          <p className="truncate text-[13px] font-semibold text-foreground">{post.creator.name}</p>
-          <p className="truncate text-[11px] text-muted-foreground">@{post.creator.handle}</p>
+        <Link href={`/creator/${creatorHandle}`} className="min-w-0 leading-tight">
+          <p className="truncate text-[13px] font-semibold text-foreground">{creatorName}</p>
+          <p className="truncate text-[11px] text-muted-foreground">@{creatorHandle}</p>
         </Link>
 
         {!isOwnPost && (
@@ -55,20 +69,20 @@ export function PostCard({ post }: PostCardProps) {
             onClick={() =>
               gated(() =>
                 followMutation.mutate({
-                  creatorId: post.creator.id,
-                  following: post.isFollowingCreator,
+                  creatorId,
+                  following: isFollowingCreator,
                 }),
               )
             }
-            aria-pressed={post.isFollowingCreator}
+            aria-pressed={isFollowingCreator}
             className={cn(
               "ml-auto shrink-0 rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
-              post.isFollowingCreator
+              isFollowingCreator
                 ? "border-foreground bg-foreground text-background"
                 : "border-foreground text-foreground hover:bg-foreground hover:text-background",
             )}
           >
-            {post.isFollowingCreator ? "Following" : "Follow"}
+            {isFollowingCreator ? "Following" : "Follow"}
           </button>
         )}
       </div>
@@ -78,15 +92,15 @@ export function PostCard({ post }: PostCardProps) {
           className="w-full bg-cover bg-center"
           style={{
             aspectRatio: "4 / 5",
-            backgroundColor: post.imageUrl ? undefined : getAvatarColor(post.id),
-            backgroundImage: post.imageUrl ? `url(${post.imageUrl})` : undefined,
+            backgroundColor: imageUrl ? undefined : getAvatarColor(id),
+            backgroundImage: imageUrl ? `url(${imageUrl})` : undefined,
           }}
         />
 
         {primaryTag && (
           <Link
             href={`/product/${primaryTag.id}`}
-            onClick={() => void exploreFeedApi.recordTagClick(post.id, primaryTag.id, "FEED")}
+            onClick={() => void exploreFeedApi.recordTagClick(id, primaryTag.id, "FEED")}
             className="absolute bottom-2.5 left-2.5 flex max-w-[calc(100%-20px)] items-center gap-2 rounded-full bg-white/96 py-1.5 pl-2 pr-3.5 text-[12.5px] font-medium text-foreground shadow-sm transition-transform hover:-translate-y-0.5"
           >
             <span className="size-1.5 shrink-0 rounded-full bg-primary" />
@@ -96,24 +110,22 @@ export function PostCard({ post }: PostCardProps) {
       </div>
 
       <div className="px-3 py-2.5">
-        {post.caption && (
-          <p className="text-[13.5px] leading-relaxed text-muted-foreground">{post.caption}</p>
+        {caption && (
+          <p className="text-[13.5px] leading-relaxed text-muted-foreground">{caption}</p>
         )}
 
         <div className="mt-2.5 flex items-center gap-4 border-t border-border pt-2.5">
           <button
             type="button"
-            onClick={() =>
-              gated(() => likeMutation.mutate({ lookId: post.id, liked: post.isLiked }))
-            }
-            aria-pressed={post.isLiked}
+            onClick={() => gated(() => likeMutation.mutate({ lookId: id, liked: isLiked }))}
+            aria-pressed={isLiked}
             className={cn(
               "flex items-center gap-1.5 text-[12.5px] transition-colors",
-              post.isLiked ? "text-primary-strong" : "text-muted-foreground hover:text-foreground",
+              isLiked ? "text-primary-strong" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <Heart className={cn("size-4", post.isLiked && "fill-primary stroke-primary")} />
-            {post.likeCount}
+            <Heart className={cn("size-4", isLiked && "fill-primary stroke-primary")} />
+            {likeCount}
           </button>
 
           <button
@@ -123,38 +135,36 @@ export function PostCard({ post }: PostCardProps) {
             className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
           >
             <MessageCircle className="size-4" />
-            {post.commentCount}
+            {commentCount}
           </button>
 
           <button
             type="button"
-            onClick={() =>
-              gated(() => saveMutation.mutate({ lookId: post.id, saved: post.isSaved }))
-            }
-            aria-pressed={post.isSaved}
+            onClick={() => gated(() => saveMutation.mutate({ lookId: id, saved: isSaved }))}
+            aria-pressed={isSaved}
             className={cn(
               "ml-auto flex items-center gap-1.5 text-[12.5px] transition-colors",
-              post.isSaved ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              isSaved ? "text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
             aria-label="Save post"
           >
-            <Bookmark className={cn("size-4", post.isSaved && "fill-foreground")} />
+            <Bookmark className={cn("size-4", isSaved && "fill-foreground")} />
           </button>
         </div>
 
         {commentsOpen && (
           <div className="mt-2.5 border-t border-border pt-2.5">
-            {comments.isLoading && (
+            {commentsLoading && (
               <div className="space-y-1.5" role="status" aria-label="Loading comments">
                 <Skeleton className="h-3 w-4/5" />
                 <Skeleton className="h-3 w-3/5" />
               </div>
             )}
-            {comments.data?.comments.length === 0 && (
+            {commentsData?.comments.length === 0 && (
               <p className="text-[12px] text-muted-foreground">No comments yet.</p>
             )}
             <ul className="flex flex-col gap-1.5">
-              {comments.data?.comments.map((comment) => (
+              {commentsData?.comments.map((comment) => (
                 <li key={comment.id} className="text-[12.5px] leading-snug">
                   <span className="font-semibold text-foreground">@{comment.userHandle}</span>{" "}
                   <span className="text-muted-foreground">{comment.body}</span>
@@ -189,4 +199,4 @@ export function PostCard({ post }: PostCardProps) {
       </div>
     </article>
   );
-}
+};

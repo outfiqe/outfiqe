@@ -1,4 +1,4 @@
-export default function BrandRegisterLoading() {
+const BrandRegisterLoading = () => {
   return (
     <div className="animate-pulse" role="status" aria-label="Loading">
       <div className="h-7 w-2/3 rounded bg-muted" />
@@ -13,4 +13,6 @@ export default function BrandRegisterLoading() {
       <div className="mt-6 h-11 rounded-full bg-muted" />
     </div>
   );
-}
+};
+
+export default BrandRegisterLoading;

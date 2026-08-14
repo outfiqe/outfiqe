@@ -14,13 +14,19 @@ const STATUS_TONE: Record<ProductStatusValue, "neutral" | "positive" | "negative
   REJECTED: "negative",
 };
 
-export function ProductsPage() {
+export const ProductsPage = () => {
   const [tab, setTab] = useState<ProductStatusValue>("PENDING");
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
-    useInfiniteProducts(tab);
-  const products = data?.pages.flatMap((page) => page.products) ?? [];
+  const {
+    data: productsQuery,
+    isLoading,
+    error,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteProducts(tab);
+  const products = productsQuery?.pages.flatMap((page) => page.products) ?? [];
 
   const approve = useMutation({
     mutationFn: (id: string) => productsApi.approve(id),
@@ -60,60 +66,60 @@ export function ProductsPage() {
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
         )}
 
-        {products.map((product) => (
-          <div
-            key={product.id}
-            className="flex flex-wrap items-start gap-4 rounded-xl border border-border bg-card p-4"
-          >
-            {product.imageUrl ? (
-              <img
-                src={product.imageUrl}
-                alt=""
-                className="size-16 shrink-0 rounded-lg object-cover"
-              />
-            ) : (
-              <div className="size-16 shrink-0 rounded-lg bg-muted" />
-            )}
+        {products.map((product) => {
+          const { id, imageUrl, name, status, lowStock, brand, price, type, categories } = product;
 
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h2 className="font-display text-base font-bold text-foreground">{product.name}</h2>
-                <Badge tone={STATUS_TONE[product.status]} showDot={false}>
-                  {product.status}
-                </Badge>
-                {product.lowStock && (
-                  <Badge tone="negative" showDot={false}>
-                    Low stock
+          return (
+            <div
+              key={id}
+              className="flex flex-wrap items-start gap-4 rounded-xl border border-border bg-card p-4"
+            >
+              {imageUrl ? (
+                <img src={imageUrl} alt="" className="size-16 shrink-0 rounded-lg object-cover" />
+              ) : (
+                <div className="size-16 shrink-0 rounded-lg bg-muted" />
+              )}
+
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-display text-base font-bold text-foreground">{name}</h2>
+                  <Badge tone={STATUS_TONE[status]} showDot={false}>
+                    {status}
                   </Badge>
-                )}
+                  {lowStock && (
+                    <Badge tone="negative" showDot={false}>
+                      Low stock
+                    </Badge>
+                  )}
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {brand.name} &middot; Rs. {price.toLocaleString()}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {type} &middot; {categories.join(", ")}
+                </p>
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {product.brand.name} &middot; Rs. {product.price.toLocaleString()}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {product.type} &middot; {product.categories.join(", ")}
-              </p>
-            </div>
 
-            {product.status === "PENDING" && (
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => approve.mutate(product.id)}
-                  disabled={approve.isPending || reject.isPending}
-                >
-                  Approve
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => reject.mutate(product.id)}
-                  disabled={approve.isPending || reject.isPending}
-                >
-                  Reject
-                </Button>
-              </div>
-            )}
-          </div>
-        ))}
+              {status === "PENDING" && (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => approve.mutate(id)}
+                    disabled={approve.isPending || reject.isPending}
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => reject.mutate(id)}
+                    disabled={approve.isPending || reject.isPending}
+                  >
+                    Reject
+                  </Button>
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {hasNextPage && (
           <Button
@@ -128,4 +134,4 @@ export function ProductsPage() {
       </div>
     </div>
   );
-}
+};

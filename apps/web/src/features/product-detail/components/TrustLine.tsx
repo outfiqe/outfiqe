@@ -10,7 +10,7 @@ interface TrustLineProps {
   onClick: () => void;
 }
 
-export function TrustLine({ wornByCount, creators, onClick }: TrustLineProps) {
+export const TrustLine = ({ wornByCount, creators, onClick }: TrustLineProps) => {
   if (wornByCount === 0) return null;
 
   const faces = creators.slice(0, 3);
@@ -18,13 +18,13 @@ export function TrustLine({ wornByCount, creators, onClick }: TrustLineProps) {
   return (
     <button type="button" onClick={onClick} className="flex items-center gap-2.5 py-3 text-left">
       <div className="flex -space-x-2">
-        {faces.map((creator) => (
+        {faces.map(({ creatorId, name }) => (
           <span
-            key={creator.creatorId}
+            key={creatorId}
             className="flex size-7 items-center justify-center rounded-full border-2 border-background text-[10px] font-bold text-white"
-            style={{ backgroundColor: getAvatarColor(creator.creatorId) }}
+            style={{ backgroundColor: getAvatarColor(creatorId) }}
           >
-            {initialsFor(creator.name)}
+            {initialsFor(name)}
           </span>
         ))}
       </div>
@@ -34,4 +34,4 @@ export function TrustLine({ wornByCount, creators, onClick }: TrustLineProps) {
       </span>
     </button>
   );
-}
+};

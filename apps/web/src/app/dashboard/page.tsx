@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 
-export default function DashboardPage() {
+const DashboardPage = () => {
   redirect("/dashboard/profile");
-}
+};
+
+export default DashboardPage;

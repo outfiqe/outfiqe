@@ -9,7 +9,7 @@ interface CreatorModeModalProps {
   onClose: () => void;
 }
 
-export function CreatorModeModal({ open, onClose }: CreatorModeModalProps) {
+export const CreatorModeModal = ({ open, onClose }: CreatorModeModalProps) => {
   const router = useRouter();
 
   useEffect(() => {
@@ -58,4 +58,4 @@ export function CreatorModeModal({ open, onClose }: CreatorModeModalProps) {
       </div>
     </div>
   );
-}
+};

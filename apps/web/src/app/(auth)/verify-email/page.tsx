@@ -5,10 +5,12 @@ import { VerifyEmailScreen } from "@/features/auth";
 
 export const metadata: Metadata = { title: "Verify your email" };
 
-export default function VerifyEmailPage() {
+const VerifyEmailPage = () => {
   return (
     <Suspense fallback={null}>
       <VerifyEmailScreen />
     </Suspense>
   );
-}
+};
+
+export default VerifyEmailPage;

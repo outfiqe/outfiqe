@@ -11,9 +11,12 @@ const STATUS_TONE: Record<AdminInviteSummary["status"], "neutral" | "positive" |
   EXPIRED: "negative",
 };
 
-export function TeamPage() {
+export const TeamPage = () => {
   const queryClient = useQueryClient();
-  const { data, isLoading } = useQuery({ queryKey: ["admin-invites"], queryFn: teamApi.list });
+  const { data: invites, isLoading } = useQuery({
+    queryKey: ["admin-invites"],
+    queryFn: teamApi.list,
+  });
 
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -77,9 +80,9 @@ export function TeamPage() {
 
       <div className="mt-6 space-y-3">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-        {data?.length === 0 && <p className="text-sm text-muted-foreground">No invites yet.</p>}
+        {invites?.length === 0 && <p className="text-sm text-muted-foreground">No invites yet.</p>}
 
-        {data?.map((invite) => (
+        {invites?.map((invite) => (
           <div
             key={invite.id}
             className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
@@ -96,4 +99,4 @@ export function TeamPage() {
       </div>
     </div>
   );
-}
+};

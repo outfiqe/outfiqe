@@ -4,7 +4,7 @@ interface LogoMarkProps {
 
 // Cropped inline copy of /public/logo.svg — raw paths, not <img>, so the viewBox can crop it.
 // Kept in sync with apps/web/src/components/LogoMark.tsx.
-export function LogoMark({ className }: LogoMarkProps) {
+export const LogoMark = ({ className }: LogoMarkProps) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -23,4 +23,4 @@ export function LogoMark({ className }: LogoMarkProps) {
       <circle cx="300" cy="256" r="28" fill="#F85606" />
     </svg>
   );
-}
+};

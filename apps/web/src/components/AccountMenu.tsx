@@ -10,7 +10,7 @@ import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 
 import { CreatorModeModal } from "./CreatorModeModal";
 
-export function AccountMenu() {
+export const AccountMenu = () => {
   const { state, isAuthenticated, isBrandOwner, isAdmin, isCreator } = useAuth();
   const logout = useLogout();
   const [creatorModalOpen, setCreatorModalOpen] = useState(false);
@@ -33,6 +33,7 @@ export function AccountMenu() {
   }
 
   const user = state.user;
+  const { avatarUrl, id, name } = user ?? {};
 
   return (
     <div className="group relative hidden lg:block">
@@ -43,15 +44,15 @@ export function AccountMenu() {
       >
         <div
           className="flex size-full items-center justify-center bg-cover bg-center"
-          style={user?.avatarUrl ? { backgroundImage: `url(${user.avatarUrl})` } : undefined}
+          style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
         >
-          {!user?.avatarUrl && (
+          {!avatarUrl && (
             <span
               aria-hidden
               className="flex size-full items-center justify-center text-xs font-bold text-white"
-              style={{ backgroundColor: getAvatarColor(user?.id ?? "") }}
+              style={{ backgroundColor: getAvatarColor(id ?? "") }}
             >
-              {initialsFor(user?.name ?? "")}
+              {initialsFor(name ?? "")}
             </span>
           )}
         </div>
@@ -59,7 +60,7 @@ export function AccountMenu() {
 
       <div className="invisible absolute right-0 top-full z-20 w-56 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
         <div className="mt-2 rounded-xl border border-border bg-card p-2 shadow-lg">
-          <p className="truncate px-3 py-2 text-sm font-semibold text-foreground">{user?.name}</p>
+          <p className="truncate px-3 py-2 text-sm font-semibold text-foreground">{name}</p>
 
           <Link
             href="/dashboard"
@@ -117,4 +118,4 @@ export function AccountMenu() {
       <CreatorModeModal open={creatorModalOpen} onClose={() => setCreatorModalOpen(false)} />
     </div>
   );
-}
+};

@@ -26,8 +26,10 @@ export const passwordField = z
   .min(PASSWORD_MIN, "Password must be at least 8 characters")
   .max(PASSWORD_MAX);
 
-export const passwordsMatch = (data: { password: string; confirmPassword: string }): boolean =>
-  data.password === data.confirmPassword;
+export const passwordsMatch = (passwordFields: {
+  password: string;
+  confirmPassword: string;
+}): boolean => passwordFields.password === passwordFields.confirmPassword;
 
 export const CONFIRM_PASSWORD_ISSUE = {
   message: "Passwords do not match",

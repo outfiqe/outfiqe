@@ -10,13 +10,13 @@ interface ProductPageProps {
   params: Promise<{ id: string }>;
 }
 
-export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+export const generateMetadata = async ({ params }: ProductPageProps): Promise<Metadata> => {
   const { id } = await params;
   const product = await getProductDetailServer(id);
   return { title: product ? `${product.name} — ${product.brand.name}` : "Product" };
-}
+};
 
-export default async function ProductPage({ params }: ProductPageProps) {
+const ProductPage = async ({ params }: ProductPageProps) => {
   const { id } = await params;
   const product = await getProductDetailServer(id);
   if (!product) notFound();
@@ -31,4 +31,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <MobileTabBar />
     </div>
   );
-}
+};
+
+export default ProductPage;

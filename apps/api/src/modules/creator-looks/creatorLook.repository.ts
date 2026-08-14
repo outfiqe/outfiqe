@@ -46,33 +46,45 @@ const feedRelationsInclude = {
 type LookWithFeedRelations = Prisma.CreatorLookGetPayload<{ include: typeof feedRelationsInclude }>;
 
 const toFeedPost = (
-  look: LookWithFeedRelations,
+  {
+    id,
+    creator,
+    imageUrl,
+    caption,
+    likeCount,
+    commentCount,
+    saveCount,
+    creatorId,
+    taggedProducts,
+    hashtags,
+    createdAt,
+  }: LookWithFeedRelations,
   viewer: { likedIds: Set<string>; savedIds: Set<string>; followingIds: Set<string> },
 ): CreatorLookFeedPost => ({
-  id: look.id,
+  id,
   creator: {
-    id: look.creator.id,
-    name: look.creator.name,
-    handle: look.creator.handle,
-    isApproved: look.creator.creatorStatus === CreatorStatus.APPROVED,
+    id: creator.id,
+    name: creator.name,
+    handle: creator.handle,
+    isApproved: creator.creatorStatus === CreatorStatus.APPROVED,
   },
-  imageUrl: look.imageUrl,
-  caption: look.caption,
-  likeCount: look.likeCount,
-  commentCount: look.commentCount,
-  saveCount: look.saveCount,
-  isLiked: viewer.likedIds.has(look.id),
-  isSaved: viewer.savedIds.has(look.id),
-  isFollowingCreator: viewer.followingIds.has(look.creatorId),
-  taggedProducts: look.taggedProducts.map((tagged) => ({
-    id: tagged.product.id,
-    name: tagged.product.name,
-    brand: tagged.product.brand.name,
-    price: tagged.product.price,
-    imageUrl: tagged.product.imageUrl,
+  imageUrl,
+  caption,
+  likeCount,
+  commentCount,
+  saveCount,
+  isLiked: viewer.likedIds.has(id),
+  isSaved: viewer.savedIds.has(id),
+  isFollowingCreator: viewer.followingIds.has(creatorId),
+  taggedProducts: taggedProducts.map(({ product }) => ({
+    id: product.id,
+    name: product.name,
+    brand: product.brand.name,
+    price: product.price,
+    imageUrl: product.imageUrl,
   })),
-  hashtags: look.hashtags.map((hashtag) => hashtag.tag),
-  createdAt: look.createdAt,
+  hashtags: hashtags.map((hashtag) => hashtag.tag),
+  createdAt,
 });
 
 const hydrateFeedPosts = async (
@@ -124,11 +136,14 @@ const hydrateFeedPosts = async (
 
 const TRENDING_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
-const listTrendingIds = async (params: {
+const listTrendingIds = async ({
+  cursor,
+  limit,
+}: {
   cursor?: string;
   limit: number;
 }): Promise<{ ids: string[]; nextCursor: string | null }> => {
-  const decoded = decodeCursor<ScoredCursor>(params.cursor);
+  const decoded = decodeCursor<ScoredCursor>(cursor);
   const since = new Date(Date.now() - TRENDING_WINDOW_MS);
   const cursorClause = decoded
     ? Prisma.sql`AND (score, created_at, id) < (${decoded.s}, ${new Date(decoded.c)}, ${decoded.i}::uuid)`
@@ -147,21 +162,21 @@ const listTrendingIds = async (params: {
     FROM scored
     WHERE TRUE ${cursorClause}
     ORDER BY score DESC, created_at DESC, id DESC
-    LIMIT ${params.limit + 1}
+    LIMIT ${limit + 1}
   `);
 
-  const { items, nextCursor } = buildCursorPage(rows, params.limit, (row) =>
+  const { items: pageRows, nextCursor } = buildCursorPage(rows, limit, (row) =>
     encodeCursor<ScoredCursor>({ s: row.score, c: row.created_at.toISOString(), i: row.id }),
   );
 
-  return { ids: items.map((row) => row.id), nextCursor };
+  return { ids: pageRows.map((row) => row.id), nextCursor };
 };
 
 const listIdsByFilter = async (
   where: Prisma.CreatorLookWhereInput,
-  params: { cursor?: string; limit: number },
+  { cursor, limit }: { cursor?: string; limit: number },
 ): Promise<{ ids: string[]; nextCursor: string | null }> => {
-  const decoded = decodeCursor<SimpleCursor>(params.cursor);
+  const decoded = decodeCursor<SimpleCursor>(cursor);
   const cursorWhere: Prisma.CreatorLookWhereInput = decoded
     ? {
         OR: [
@@ -174,15 +189,15 @@ const listIdsByFilter = async (
   const rows = await prisma.creatorLook.findMany({
     where: { ...where, deletedAt: null, ...cursorWhere },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    take: params.limit + 1,
+    take: limit + 1,
     select: { id: true, createdAt: true },
   });
 
-  const { items, nextCursor } = buildCursorPage(rows, params.limit, (row) =>
+  const { items: pageRows, nextCursor } = buildCursorPage(rows, limit, (row) =>
     encodeCursor<SimpleCursor>({ c: row.createdAt.toISOString(), i: row.id }),
   );
 
-  return { ids: items.map((row) => row.id), nextCursor };
+  return { ids: pageRows.map((row) => row.id), nextCursor };
 };
 
 const TRENDING_TAGS_LIMIT = 15;
@@ -213,30 +228,36 @@ const fetchTrendingTags = async (): Promise<TrendingTag[]> => {
     LIMIT ${TRENDING_TAGS_LIMIT}
   `);
 
-  const data = rows.map((row) => ({ tag: row.tag, postCount: Number(row.post_count) }));
+  const trendingTags = rows.map((row) => ({ tag: row.tag, postCount: Number(row.post_count) }));
 
   try {
-    await cacheService.set(TRENDING_TAGS_CACHE_KEY, data, CACHE_TTL.TRENDING_TAGS);
+    await cacheService.set(TRENDING_TAGS_CACHE_KEY, trendingTags, CACHE_TTL.TRENDING_TAGS);
   } catch (error) {
     logger.warn(`Cache write failed for "${TRENDING_TAGS_CACHE_KEY}": ${describeError(error)}`);
   }
 
-  return data;
+  return trendingTags;
 };
 
 export const creatorLookRepository = {
-  async create(input: CreateCreatorLookInput): Promise<CreatorLookSummary> {
+  async create({
+    creatorId,
+    imageUrls,
+    caption,
+    taggedProducts,
+    hashtags,
+  }: CreateCreatorLookInput): Promise<CreatorLookSummary> {
     const look = await prisma.$transaction(async (tx) => {
       const created = await tx.creatorLook.create({
         data: {
-          creatorId: input.creatorId,
-          imageUrl: input.imageUrls[0],
-          caption: input.caption,
+          creatorId,
+          imageUrl: imageUrls[0],
+          caption,
           images: {
-            create: input.imageUrls.map((url, sortOrder) => ({ url, sortOrder })),
+            create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })),
           },
           taggedProducts: {
-            create: input.taggedProducts.map(({ productId, sizeWorn }) => ({
+            create: taggedProducts.map(({ productId, sizeWorn }) => ({
               productId,
               sizeWorn,
             })),
@@ -245,9 +266,9 @@ export const creatorLookRepository = {
         include: taggedProductsInclude,
       });
 
-      if (input.hashtags.length > 0) {
+      if (hashtags.length > 0) {
         await tx.creatorLookHashtag.createMany({
-          data: input.hashtags.map((tag) => ({ creatorLookId: created.id, tag })),
+          data: hashtags.map((tag) => ({ creatorLookId: created.id, tag })),
         });
       }
 
@@ -269,8 +290,8 @@ export const creatorLookRepository = {
       include: taggedProductsInclude,
     });
 
-    const { items, nextCursor } = buildCursorPage(looks, params.limit, (row) => row.id);
-    return { looks: items.map(toSummary), nextCursor };
+    const { items: pageLooks, nextCursor } = buildCursorPage(looks, params.limit, (row) => row.id);
+    return { looks: pageLooks.map(toSummary), nextCursor };
   },
 
   async listPublicTaggedProducts(params: {
@@ -293,9 +314,9 @@ export const creatorLookRepository = {
       },
     });
 
-    const { items, nextCursor } = buildCursorPage(rows, params.limit, (row) => row.id);
+    const { items: pageRows, nextCursor } = buildCursorPage(rows, params.limit, (row) => row.id);
 
-    return { products: items.map((row) => row.product), nextCursor };
+    return { products: pageRows.map((row) => row.product), nextCursor };
   },
 
   async countByCreatorId(creatorId: string): Promise<number> {
@@ -325,9 +346,9 @@ export const creatorLookRepository = {
       },
     });
 
-    const { items, nextCursor } = buildCursorPage(rows, params.limit, (row) => row.id);
+    const { items: pageRows, nextCursor } = buildCursorPage(rows, params.limit, (row) => row.id);
 
-    return { products: items.map((row) => row.product), nextCursor };
+    return { products: pageRows.map((row) => row.product), nextCursor };
   },
 
   async findActiveById(id: string): Promise<{ id: string; likeCount: number } | null> {
@@ -337,7 +358,13 @@ export const creatorLookRepository = {
     });
   },
 
-  async feed(params: {
+  async feed({
+    tab,
+    cursor,
+    limit,
+    viewerId,
+    followingCreatorIds,
+  }: {
     tab: string;
     cursor?: string;
     limit: number;
@@ -346,36 +373,32 @@ export const creatorLookRepository = {
   }): Promise<FeedPage> {
     let listed: { ids: string[]; nextCursor: string | null };
 
-    if (params.tab === "following") {
-      listed = await listIdsByFilter(
-        { creatorId: { in: params.followingCreatorIds } },
-        { cursor: params.cursor, limit: params.limit },
-      );
-    } else if (params.tab === "trending" || params.tab === "for_you") {
-      listed = await listTrendingIds({ cursor: params.cursor, limit: params.limit });
+    if (tab === "following") {
+      listed = await listIdsByFilter({ creatorId: { in: followingCreatorIds } }, { cursor, limit });
+    } else if (tab === "trending" || tab === "for_you") {
+      listed = await listTrendingIds({ cursor, limit });
     } else {
-      const tag = params.tab.replace(/^#/, "").toLowerCase();
-      listed = await listIdsByFilter(
-        { hashtags: { some: { tag } } },
-        { cursor: params.cursor, limit: params.limit },
-      );
+      const tag = tab.replace(/^#/, "").toLowerCase();
+      listed = await listIdsByFilter({ hashtags: { some: { tag } } }, { cursor, limit });
     }
 
-    const posts = await hydrateFeedPosts(listed.ids, params.viewerId);
+    const posts = await hydrateFeedPosts(listed.ids, viewerId);
     return { posts, nextCursor: listed.nextCursor };
   },
 
-  async feedByCreatorId(params: {
+  async feedByCreatorId({
+    creatorId,
+    cursor,
+    limit,
+    viewerId,
+  }: {
     creatorId: string;
     cursor?: string;
     limit: number;
     viewerId?: string;
   }): Promise<FeedPage> {
-    const listed = await listIdsByFilter(
-      { creatorId: params.creatorId },
-      { cursor: params.cursor, limit: params.limit },
-    );
-    const posts = await hydrateFeedPosts(listed.ids, params.viewerId);
+    const listed = await listIdsByFilter({ creatorId }, { cursor, limit });
+    const posts = await hydrateFeedPosts(listed.ids, viewerId);
     return { posts, nextCursor: listed.nextCursor };
   },
 
@@ -472,12 +495,12 @@ export const creatorLookRepository = {
       include: { user: { select: { id: true, name: true, handle: true } } },
     });
 
-    const { items, nextCursor } = buildCursorPage(rows, params.limit, (row) =>
+    const { items: pageRows, nextCursor } = buildCursorPage(rows, params.limit, (row) =>
       encodeCursor<SimpleCursor>({ c: row.createdAt.toISOString(), i: row.id }),
     );
 
     return {
-      comments: items.map((row): CommentRecord => ({
+      comments: pageRows.map((row): CommentRecord => ({
         id: row.id,
         userId: row.userId,
         userName: row.user.name,

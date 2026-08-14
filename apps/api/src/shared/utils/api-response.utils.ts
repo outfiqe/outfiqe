@@ -6,9 +6,9 @@ const DEFAULT_SUCCESS_MESSAGE = "Request successful";
 
 export const sendSuccess = <T>(
   res: Response,
-  data: T,
+  responseData: T,
   message: string = DEFAULT_SUCCESS_MESSAGE,
   status: number = DEFAULT_SUCCESS_STATUS,
 ): Response<ApiSuccessEnvelope<T>> => {
-  return res.status(status).json({ success: true, message, data });
+  return res.status(status).json({ success: true, message, data: responseData });
 };

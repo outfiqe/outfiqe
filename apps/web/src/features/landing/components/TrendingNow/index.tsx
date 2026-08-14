@@ -2,7 +2,7 @@ import { getTrendingProductsServer } from "@/features/products/api/getProductsSe
 
 import { ProductRail } from "../ProductRail";
 
-export async function TrendingNow() {
+export const TrendingNow = async () => {
   const products = await getTrendingProductsServer();
 
   return (
@@ -14,4 +14,4 @@ export async function TrendingNow() {
       products={products}
     />
   );
-}
+};

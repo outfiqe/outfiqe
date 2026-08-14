@@ -76,10 +76,14 @@ export const collectionService = {
       collectionRepository.countPublic(),
     ]);
 
-    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
+    const { items: collectionRows, nextCursor } = buildCursorPage(
+      rows,
+      query.limit,
+      (row) => row.id,
+    );
 
     return {
-      collections: items.map(toPublicCollection),
+      collections: collectionRows.map(toPublicCollection),
       nextCursor,
       total,
     };
@@ -107,10 +111,10 @@ export const collectionService = {
       collectionRepository.countPublicProducts(collection.id),
     ]);
 
-    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
+    const { items: productRows, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
 
     return {
-      products: items.map(toPublicProduct),
+      products: productRows.map(toPublicProduct),
       nextCursor,
       total,
     };

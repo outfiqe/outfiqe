@@ -2,7 +2,7 @@ import { getNewArrivalsServer } from "@/features/products/api/getProductsServer"
 
 import { ProductRail } from "../ProductRail";
 
-export async function NewArrivals() {
+export const NewArrivals = async () => {
   const products = await getNewArrivalsServer();
 
   return (
@@ -12,4 +12,4 @@ export async function NewArrivals() {
       products={products}
     />
   );
-}
+};

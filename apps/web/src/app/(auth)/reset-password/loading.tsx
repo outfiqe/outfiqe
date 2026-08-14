@@ -1,4 +1,4 @@
-export default function ResetPasswordLoading() {
+const ResetPasswordLoading = () => {
   return (
     <div className="animate-pulse" role="status" aria-label="Loading">
       <div className="h-7 w-2/3 rounded bg-muted" />
@@ -10,4 +10,6 @@ export default function ResetPasswordLoading() {
       <div className="mt-6 h-11 rounded-full bg-muted" />
     </div>
   );
-}
+};
+
+export default ResetPasswordLoading;

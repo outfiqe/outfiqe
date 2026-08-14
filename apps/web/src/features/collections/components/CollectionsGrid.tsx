@@ -7,15 +7,21 @@ import { CollectionCard } from "./CollectionCard";
 import { CollectionGridSkeleton } from "./CollectionGridSkeleton";
 
 export const CollectionsGrid = () => {
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError } =
-    useInfiniteCollections();
+  const {
+    data: collectionPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+  } = useInfiniteCollections();
 
   const sentinelRef = useLoadMoreOnVisible(
     () => fetchNextPage(),
     Boolean(hasNextPage) && !isFetchingNextPage,
   );
 
-  const collections = data?.pages.flatMap((page) => page.collections) ?? [];
+  const collections = collectionPages?.pages.flatMap((page) => page.collections) ?? [];
 
   if (isLoading) return <CollectionGridSkeleton />;
 

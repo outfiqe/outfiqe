@@ -6,9 +6,11 @@ import { getDefaultRouteForUser, getServerSession } from "@/features/auth/api/se
 
 export const metadata: Metadata = { title: "Create your account" };
 
-export default async function RegisterPage() {
+const RegisterPage = async () => {
   const user = await getServerSession();
   if (user) redirect(getDefaultRouteForUser(user));
 
   return <RegisterForm />;
-}
+};
+
+export default RegisterPage;

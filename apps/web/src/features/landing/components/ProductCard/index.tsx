@@ -60,15 +60,16 @@ type ProductCardProps = {
   onToggleSaved?: (productId: string, saved: boolean) => void;
 };
 
-export function ProductCard({ product, onToggleSaved }: ProductCardProps) {
+export const ProductCard = ({ product, onToggleSaved }: ProductCardProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
   const wishlistMutation = useToggleWishlist();
-  const [saved, setSaved] = useState(product.isSaved ?? false);
+  const { id, brand, name, price, wornByCount, lowStock, isNew, image, isSaved } = product;
+  const [saved, setSaved] = useState(isSaved ?? false);
 
-  const avatarCount = Math.min(product.wornByCount, 3);
-  const badgeLabel = product.isNew ? "New" : product.lowStock ? "Low stock" : null;
+  const avatarCount = Math.min(wornByCount, 3);
+  const badgeLabel = isNew ? "New" : lowStock ? "Low stock" : null;
 
   const toggleSaved = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -83,19 +84,19 @@ export function ProductCard({ product, onToggleSaved }: ProductCardProps) {
     const next = !wasSaved;
     setSaved(next);
     wishlistMutation.mutate(
-      { productId: product.id, saved: wasSaved },
+      { productId: id, saved: wasSaved },
       { onError: () => setSaved(wasSaved) },
     );
-    onToggleSaved?.(product.id, next);
+    onToggleSaved?.(id, next);
   };
 
   return (
-    <Link href={`/product/${product.id}`} className="group block">
+    <Link href={`/product/${id}`} className="group block">
       <div
         className="relative flex aspect-4/5 items-center justify-center rounded-2xl bg-cover bg-center"
         style={{
-          backgroundColor: product.image ? undefined : getSwatchColor(product.id),
-          backgroundImage: product.image ? `url(${product.image})` : undefined,
+          backgroundColor: image ? undefined : getSwatchColor(id),
+          backgroundImage: image ? `url(${image})` : undefined,
         }}
       >
         {badgeLabel && (
@@ -118,16 +119,16 @@ export function ProductCard({ product, onToggleSaved }: ProductCardProps) {
           <Heart className={cn("size-4", saved && "fill-primary")} />
         </Button>
 
-        {!product.image && <Shirt className="size-16 text-foreground/25" strokeWidth={1} />}
+        {!image && <Shirt className="size-16 text-foreground/25" strokeWidth={1} />}
       </div>
 
       <p className="mt-3 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-        {product.brand}
+        {brand}
       </p>
-      <p className="mt-0.5 text-sm text-foreground">{product.name}</p>
-      <p className="mt-1 text-sm font-bold text-foreground">Rs. {product.price.toLocaleString()}</p>
+      <p className="mt-0.5 text-sm text-foreground">{name}</p>
+      <p className="mt-1 text-sm font-bold text-foreground">Rs. {price.toLocaleString()}</p>
 
-      {product.wornByCount > 0 && (
+      {wornByCount > 0 && (
         <div className="mt-1.5 flex items-center gap-1.5">
           <div className="flex -space-x-1.5">
             {Array.from({ length: avatarCount }).map((_, i) => (
@@ -139,12 +140,12 @@ export function ProductCard({ product, onToggleSaved }: ProductCardProps) {
             ))}
           </div>
           <span className="text-xs text-muted-foreground">
-            Worn by {product.wornByCount} {product.wornByCount === 1 ? "creator" : "creators"}
+            Worn by {wornByCount} {wornByCount === 1 ? "creator" : "creators"}
             <span aria-hidden> · </span>
-            {getMockBoughtLabel(product.id)} bought
+            {getMockBoughtLabel(id)} bought
           </span>
         </div>
       )}
     </Link>
   );
-}
+};

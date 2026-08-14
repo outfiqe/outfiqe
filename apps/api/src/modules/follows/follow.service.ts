@@ -36,8 +36,12 @@ export const followService = {
 
     await requireTarget(targetType, targetId);
 
-    const result = await followRepository.follow(followerId, targetType, targetId);
-    if (result.created) {
+    const { created, followerCount } = await followRepository.follow(
+      followerId,
+      targetType,
+      targetId,
+    );
+    if (created) {
       const event =
         targetType === FollowTargetType.USER
           ? DomainEvents.USER_FOLLOWED
@@ -45,7 +49,7 @@ export const followService = {
       eventBus.emit(event, { followerId, followingId: targetId });
     }
 
-    return { following: true, followerCount: result.followerCount };
+    return { following: true, followerCount };
   },
 
   async unfollow(
@@ -56,8 +60,12 @@ export const followService = {
     const targetType = toPrismaTargetType(targetTypeParam);
     await requireTarget(targetType, targetId);
 
-    const result = await followRepository.unfollow(followerId, targetType, targetId);
-    if (result.deleted) {
+    const { deleted, followerCount } = await followRepository.unfollow(
+      followerId,
+      targetType,
+      targetId,
+    );
+    if (deleted) {
       const event =
         targetType === FollowTargetType.USER
           ? DomainEvents.USER_UNFOLLOWED
@@ -65,7 +73,7 @@ export const followService = {
       eventBus.emit(event, { followerId, followingId: targetId });
     }
 
-    return { following: false, followerCount: result.followerCount };
+    return { following: false, followerCount };
   },
 
   async isFollowing(

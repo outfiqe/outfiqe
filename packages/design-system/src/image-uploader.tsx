@@ -37,8 +37,8 @@ export const ImageUploader = ({
     try {
       const urls = await onUpload(files);
       if (urls.length > 0) onChange([...value, ...urls]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed. Try again.");
+    } catch {
+      setError("Upload failed. Try again.");
     } finally {
       setIsUploading(false);
       if (inputRef.current) inputRef.current.value = "";

@@ -8,13 +8,19 @@ import type { CreatorStatusValue } from "./schemas";
 
 const TABS: CreatorStatusValue[] = ["PENDING", "APPROVED", "REJECTED"];
 
-export function CreatorsPage() {
+export const CreatorsPage = () => {
   const [tab, setTab] = useState<CreatorStatusValue>("PENDING");
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
-    useInfiniteCreators(tab);
-  const creators = data?.pages.flatMap((page) => page.creators) ?? [];
+  const {
+    data: creatorsQuery,
+    isLoading,
+    error,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteCreators(tab);
+  const creators = creatorsQuery?.pages.flatMap((page) => page.creators) ?? [];
 
   const approve = useMutation({
     mutationFn: (userId: string) => creatorsApi.approve(userId),
@@ -54,35 +60,39 @@ export function CreatorsPage() {
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
         )}
 
-        {creators.map((creator) => (
-          <div
-            key={creator.userId}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
-          >
-            <div>
-              <h2 className="font-display text-base font-bold text-foreground">{creator.name}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{creator.email}</p>
-            </div>
+        {creators.map((creator) => {
+          const { userId, name, email, creatorStatus } = creator;
 
-            {creator.creatorStatus === "PENDING" && (
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => approve.mutate(creator.userId)}
-                  disabled={approve.isPending || reject.isPending}
-                >
-                  Approve
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => reject.mutate(creator.userId)}
-                  disabled={approve.isPending || reject.isPending}
-                >
-                  Reject
-                </Button>
+          return (
+            <div
+              key={userId}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
+            >
+              <div>
+                <h2 className="font-display text-base font-bold text-foreground">{name}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">{email}</p>
               </div>
-            )}
-          </div>
-        ))}
+
+              {creatorStatus === "PENDING" && (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => approve.mutate(userId)}
+                    disabled={approve.isPending || reject.isPending}
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => reject.mutate(userId)}
+                    disabled={approve.isPending || reject.isPending}
+                  >
+                    Reject
+                  </Button>
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {hasNextPage && (
           <Button
@@ -97,4 +107,4 @@ export function CreatorsPage() {
       </div>
     </div>
   );
-}
+};

@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 
 import logger from "#lib/winston.utils.js";
 import { disconnectRedis } from "#redis/redis.client.js";
+import { registerSocketListeners } from "#socket/socket.listeners.js";
 import { closeSocket, initSocket } from "#socket/socket.server.js";
 
 import { createApp } from "./app.js";
@@ -14,6 +15,7 @@ await bootstrapAdminIfNeeded();
 const app = createApp();
 const httpServer = createServer(app);
 initSocket(httpServer);
+registerSocketListeners();
 
 const server = httpServer.listen(env.PORT, () => {
   logger.info(`API listening on http://localhost:${env.PORT}`);

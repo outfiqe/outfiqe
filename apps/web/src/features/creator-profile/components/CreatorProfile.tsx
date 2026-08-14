@@ -17,26 +17,28 @@ interface CreatorProfileProps {
   creator: CreatorProfileType;
 }
 
-export function CreatorProfile({ creator }: CreatorProfileProps) {
+export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const router = useRouter();
   const { isAuthenticated, state } = useAuth();
   const followMutation = useToggleFollow("user");
-  const looks = useInfiniteCreatorLooks(creator.handle);
+  const { handle, userId, name, heightCm, creatorStatus, postsCount, taggedPiecesCount } = creator;
+  const looks = useInfiniteCreatorLooks(handle);
+  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = looks;
 
   const [isFollowing, setIsFollowing] = useState(creator.isFollowing);
   const [followerCount, setFollowerCount] = useState(creator.followerCount);
-  const isOwnProfile = state.user?.id === creator.userId;
+  const isOwnProfile = state.user?.id === userId;
 
   const toggleFollow = () => {
     if (!isAuthenticated) {
-      router.push(`/login?redirect=/creator/${creator.handle}`);
+      router.push(`/login?redirect=/creator/${handle}`);
       return;
     }
     const wasFollowing = isFollowing;
     setIsFollowing(!wasFollowing);
     setFollowerCount((count) => count + (wasFollowing ? -1 : 1));
     followMutation.mutate(
-      { targetId: creator.userId, following: wasFollowing },
+      { targetId: userId, following: wasFollowing },
       {
         onError: () => {
           setIsFollowing(wasFollowing);
@@ -46,7 +48,7 @@ export function CreatorProfile({ creator }: CreatorProfileProps) {
     );
   };
 
-  const posts = looks.data?.pages.flatMap((page) => page.posts) ?? [];
+  const posts = data?.pages.flatMap((page) => page.posts) ?? [];
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
@@ -54,26 +56,24 @@ export function CreatorProfile({ creator }: CreatorProfileProps) {
         <span
           aria-hidden
           className="flex size-20 shrink-0 items-center justify-center rounded-full text-2xl font-bold text-white"
-          style={{ backgroundColor: getAvatarColor(creator.userId) }}
+          style={{ backgroundColor: getAvatarColor(userId) }}
         >
-          {initialsFor(creator.name)}
+          {initialsFor(name)}
         </span>
 
         <div className="min-w-0 flex-1">
           <h1 className="font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl">
-            {creator.name}
+            {name}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            @{creator.handle}
-            {creator.heightCm ? ` · ${formatHeight(creator.heightCm)}` : ""}
+            @{handle}
+            {heightCm ? ` · ${formatHeight(heightCm)}` : ""}
           </p>
-          {creator.creatorStatus === "APPROVED" && <Badge className="mt-2">Approved creator</Badge>}
+          {creatorStatus === "APPROVED" && <Badge className="mt-2">Approved creator</Badge>}
 
           <div className="mt-4 flex gap-6">
             <div>
-              <p className="font-display text-lg font-extrabold text-foreground">
-                {creator.postsCount}
-              </p>
+              <p className="font-display text-lg font-extrabold text-foreground">{postsCount}</p>
               <p className="text-[11.5px] text-muted-foreground">Posts</p>
             </div>
             <div>
@@ -84,7 +84,7 @@ export function CreatorProfile({ creator }: CreatorProfileProps) {
             </div>
             <div>
               <p className="font-display text-lg font-extrabold text-foreground">
-                {creator.taggedPiecesCount}
+                {taggedPiecesCount}
               </p>
               <p className="text-[11.5px] text-muted-foreground">Tagged pieces</p>
             </div>
@@ -103,7 +103,7 @@ export function CreatorProfile({ creator }: CreatorProfileProps) {
         )}
       </div>
 
-      {looks.isLoading ? (
+      {isLoading ? (
         <ExploreFeedSkeleton />
       ) : posts.length === 0 ? (
         <p className="py-10 text-sm text-muted-foreground">No posts yet.</p>
@@ -115,18 +115,18 @@ export function CreatorProfile({ creator }: CreatorProfileProps) {
         </div>
       )}
 
-      {looks.hasNextPage && (
+      {hasNextPage && (
         <div className="mt-8 flex justify-center">
           <button
             type="button"
-            onClick={() => void looks.fetchNextPage()}
-            disabled={looks.isFetchingNextPage}
+            onClick={() => void fetchNextPage()}
+            disabled={isFetchingNextPage}
             className="rounded-full border border-foreground px-6 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-50"
           >
-            {looks.isFetchingNextPage ? "Loading…" : "Load more"}
+            {isFetchingNextPage ? "Loading…" : "Load more"}
           </button>
         </div>
       )}
     </div>
   );
-}
+};

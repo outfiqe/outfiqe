@@ -2,19 +2,19 @@ import { isNavItemActive } from "./isNavItemActive";
 import type { SidebarNavItem, SidebarNavSection } from "./types";
 
 const collectTrail = (
-  items: readonly SidebarNavItem[],
+  navItems: readonly SidebarNavItem[],
   pathname: string,
   isActive: ((href: string, pathname: string) => boolean) | undefined,
   trail: Set<string>,
 ): boolean => {
   let containsActive = false;
 
-  for (const item of items) {
-    const ownActive = isNavItemActive(item.href, pathname, isActive);
-    const childActive = item.items ? collectTrail(item.items, pathname, isActive, trail) : false;
+  for (const { href, items, id } of navItems) {
+    const ownActive = isNavItemActive(href, pathname, isActive);
+    const childActive = items ? collectTrail(items, pathname, isActive, trail) : false;
 
     if (ownActive || childActive) {
-      trail.add(item.id);
+      trail.add(id);
       containsActive = true;
     }
   }

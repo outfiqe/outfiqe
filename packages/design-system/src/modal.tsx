@@ -14,7 +14,7 @@ interface ModalProps {
   className?: string;
 }
 
-export function Modal({
+export const Modal = ({
   open,
   onClose,
   title,
@@ -22,7 +22,7 @@ export function Modal({
   children,
   footer,
   className,
-}: ModalProps) {
+}: ModalProps) => {
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -73,4 +73,4 @@ export function Modal({
       </div>
     </div>
   );
-}
+};

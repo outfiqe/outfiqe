@@ -12,10 +12,10 @@ export type CreateApiClientOptions = {
   refreshPath?: string;
 };
 
-export function createApiClient({
+export const createApiClient = ({
   baseURL,
   refreshPath = "/auth/refresh",
-}: CreateApiClientOptions) {
+}: CreateApiClientOptions) => {
   let accessToken: string | null = null;
   let unauthorizedHandler: (() => void) | null = null;
   let refreshPromise: Promise<string> | null = null;
@@ -75,11 +75,11 @@ export function createApiClient({
         }
       }
 
-      const body = error.response?.data;
+      const { message, code, details } = error.response?.data ?? {};
       throw new ApiClientError(
-        body?.message ?? error.message ?? "Request failed",
-        body?.code ?? "UNKNOWN_ERROR",
-        body?.details,
+        message ?? error.message ?? "Request failed",
+        code ?? "UNKNOWN_ERROR",
+        details,
       );
     },
   );
@@ -122,6 +122,6 @@ export function createApiClient({
     setUnauthorizedHandler,
     refresh: refreshAccessToken,
   };
-}
+};
 
 export type ApiClient = ReturnType<typeof createApiClient>;

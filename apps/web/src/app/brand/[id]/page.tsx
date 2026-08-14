@@ -10,13 +10,13 @@ interface BrandPageProps {
   params: Promise<{ id: string }>;
 }
 
-export async function generateMetadata({ params }: BrandPageProps): Promise<Metadata> {
+export const generateMetadata = async ({ params }: BrandPageProps): Promise<Metadata> => {
   const { id } = await params;
   const brand = await getBrandProfileServerPublic(id);
   return { title: brand ? brand.name : "Brand" };
-}
+};
 
-export default async function BrandPage({ params }: BrandPageProps) {
+const BrandPage = async ({ params }: BrandPageProps) => {
   const { id } = await params;
   const brand = await getBrandProfileServerPublic(id);
   if (!brand) notFound();
@@ -31,4 +31,6 @@ export default async function BrandPage({ params }: BrandPageProps) {
       <MobileTabBar />
     </div>
   );
-}
+};
+
+export default BrandPage;

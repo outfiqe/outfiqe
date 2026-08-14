@@ -12,7 +12,7 @@ type LoginPageProps = {
   searchParams: Promise<{ redirect?: string }>;
 };
 
-export default async function LoginPage({ searchParams }: LoginPageProps) {
+const LoginPage = async ({ searchParams }: LoginPageProps) => {
   const user = await getServerSession();
   if (user) {
     const { redirect: requested } = await searchParams;
@@ -24,4 +24,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <LoginForm />
     </Suspense>
   );
-}
+};
+
+export default LoginPage;

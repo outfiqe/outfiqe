@@ -68,8 +68,8 @@ export const brandApplicationService = {
       limit: query.limit,
     });
 
-    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
-    return { applications: items, nextCursor };
+    const { items: applications, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
+    return { applications, nextCursor };
   },
 
   async approve(applicationId: string, adminUserId: string): Promise<void> {
@@ -82,13 +82,15 @@ export const brandApplicationService = {
       expiresAt: new Date(Date.now() + INVITE_TTL_MS),
     });
 
+    const { brandName, email } = application;
+
     const inviteUrl = `${env.FRONTEND_URL}/register/brand?token=${inviteToken}`;
-    const { subject, html } = brandApprovedTemplate(application.brandName, inviteUrl);
+    const { subject, html } = brandApprovedTemplate(brandName, inviteUrl);
 
     await sendEmail({
-      to: application.email,
+      to: email,
       subject,
-      body: `${application.brandName} is approved. Set up your account: ${inviteUrl}`,
+      body: `${brandName} is approved. Set up your account: ${inviteUrl}`,
       html,
     });
 
@@ -100,11 +102,13 @@ export const brandApplicationService = {
 
     await brandApplicationRepository.reject(applicationId, adminUserId);
 
-    const { subject, html } = brandRejectedTemplate(application.brandName, reason);
+    const { brandName, email } = application;
+
+    const { subject, html } = brandRejectedTemplate(brandName, reason);
     await sendEmail({
-      to: application.email,
+      to: email,
       subject,
-      body: `An update on your Outfiqe application for ${application.brandName}.`,
+      body: `An update on your Outfiqe application for ${brandName}.`,
       html,
     });
 

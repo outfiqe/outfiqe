@@ -21,9 +21,10 @@ import { type ResetPasswordInput, resetPasswordSchema } from "../../schemas/rese
 import { AuthErrorCode, getAuthErrorMessage } from "../../utils/authErrors";
 import { ExpiredLinkNotice } from "./ExpiredLinkNotice";
 
-export function ResetPasswordForm({ token }: { token: string }) {
+export const ResetPasswordForm = ({ token }: { token: string }) => {
   const resetPassword = useResetPassword();
-  const showPending = useDelayedPending(resetPassword.isPending);
+  const { isPending, error, isError, mutateAsync } = resetPassword;
+  const showPending = useDelayedPending(isPending);
 
   const form = useForm<ResetPasswordInput>({
     resolver: zodResolver(resetPasswordSchema),
@@ -33,15 +34,14 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
-      await resetPassword.mutateAsync(values);
+      await mutateAsync(values);
     } catch {
       // Surfaced below via resetPassword.error.
     }
   });
 
   const isTokenDead =
-    resetPassword.error?.code === AuthErrorCode.INVALID_TOKEN ||
-    resetPassword.error?.code === AuthErrorCode.TOKEN_EXPIRED;
+    error?.code === AuthErrorCode.INVALID_TOKEN || error?.code === AuthErrorCode.TOKEN_EXPIRED;
 
   if (isTokenDead) return <ExpiredLinkNotice />;
 
@@ -52,9 +52,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
         Pick something you haven&apos;t used before.
       </p>
 
-      {resetPassword.isError && (
-        <FormBanner>{getAuthErrorMessage(resetPassword.error.code)}</FormBanner>
-      )}
+      {isError && <FormBanner>{getAuthErrorMessage(error.code)}</FormBanner>}
 
       <Form {...form}>
         <form onSubmit={onSubmit} noValidate className="mt-6">
@@ -86,11 +84,11 @@ export function ResetPasswordForm({ token }: { token: string }) {
             )}
           />
 
-          <Button type="submit" className="mt-6 w-full" disabled={resetPassword.isPending}>
+          <Button type="submit" className="mt-6 w-full" disabled={isPending}>
             {showPending ? "Updating…" : "Update password"}
           </Button>
         </form>
       </Form>
     </div>
   );
-}
+};

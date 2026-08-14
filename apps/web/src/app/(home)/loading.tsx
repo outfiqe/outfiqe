@@ -5,7 +5,7 @@ import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 
-function RailSkeleton() {
+const RailSkeleton = () => {
   return (
     <section className="px-6 py-10 sm:py-14 lg:px-10">
       <Skeleton className="h-3 w-32" />
@@ -13,9 +13,9 @@ function RailSkeleton() {
       <ProductGridSkeleton className="mt-8" />
     </section>
   );
-}
+};
 
-export default function HomeLoading() {
+const HomeLoading = () => {
   return (
     <div role="status" aria-label="Loading" className="pb-20 lg:pb-0">
       <SiteHeader />
@@ -52,4 +52,6 @@ export default function HomeLoading() {
       <MobileTabBar />
     </div>
   );
-}
+};
+
+export default HomeLoading;

@@ -12,16 +12,16 @@ export const wishlistController = {
     const { userId } = requireAuthPrincipal(res);
     const { productId } = validated.params<WishlistProductIdParam>(res);
 
-    const result = await wishlistService.save(userId, productId);
-    sendSuccess(res, result, "Saved.");
+    const saveResult = await wishlistService.save(userId, productId);
+    sendSuccess(res, saveResult, "Saved.");
   },
 
   async unsave(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const { productId } = validated.params<WishlistProductIdParam>(res);
 
-    const result = await wishlistService.unsave(userId, productId);
-    sendSuccess(res, result, "Removed.");
+    const unsaveResult = await wishlistService.unsave(userId, productId);
+    sendSuccess(res, unsaveResult, "Removed.");
   },
 
   async list(_req: Request, res: Response) {

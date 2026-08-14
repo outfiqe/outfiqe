@@ -6,7 +6,7 @@ import { type ReactNode, useState } from "react";
 
 import { AuthProvider } from "@/features/auth";
 
-export function Providers({ children }: { children: ReactNode }) {
+export const Providers = ({ children }: { children: ReactNode }) => {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
@@ -17,4 +17,4 @@ export function Providers({ children }: { children: ReactNode }) {
       </AuthProvider>
     </QueryClientProvider>
   );
-}
+};
