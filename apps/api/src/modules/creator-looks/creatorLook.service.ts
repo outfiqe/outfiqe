@@ -4,8 +4,9 @@ import { extractHashtags } from "#lib/hashtags.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
 import { productRepository } from "#modules/products/product.repository.js";
-import { productService, toPublicProduct } from "#modules/products/product.service.js";
+import { productService } from "#modules/products/product.service.js";
 import type { PublicProduct } from "#modules/products/product.types.js";
+import { toPublicProduct } from "#modules/products/product.utils.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { creatorLookRepository } from "./creatorLook.repository.js";

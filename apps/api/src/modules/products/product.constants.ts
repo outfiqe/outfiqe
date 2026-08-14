@@ -22,4 +22,6 @@ export const SLUG_TO_PRODUCT_TYPE: Record<ProductTypeSlug, ProductType> = {
 
 export const PRODUCT_TYPE_SLUGS = Object.values(PRODUCT_TYPE_TO_SLUG);
 
+export const NEW_ARRIVAL_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
 export type { ProductTypeSlug };

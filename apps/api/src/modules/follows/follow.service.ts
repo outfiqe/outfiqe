@@ -3,27 +3,14 @@ import { FollowTargetType } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
-import type { UserRecord } from "#modules/users/user.types.js";
 
 import { followRepository } from "./follow.repository.js";
 import type { FollowTargetTypeParam } from "./follow.schemas.js";
 import type { FollowResult, FollowTarget } from "./follow.types.js";
+import { toFollowTarget, toPrismaTargetType } from "./follow.utils.js";
 
 const BAD_REQUEST_STATUS = 400;
 const NOT_FOUND_STATUS = 404;
-
-const toPrismaTargetType = (param: FollowTargetTypeParam): FollowTargetType =>
-  param === "user" ? FollowTargetType.USER : FollowTargetType.BRAND;
-
-const toFollowTarget = (user: UserRecord): FollowTarget => ({
-  kind: "user",
-  id: user.id,
-  name: user.name,
-  handle: user.handle,
-  isCreator: user.isCreator,
-  creatorStatus: user.creatorStatus,
-  followerCount: user.followerCount,
-});
 
 const requireTarget = async (targetType: FollowTargetType, targetId: string): Promise<void> => {
   const exists =

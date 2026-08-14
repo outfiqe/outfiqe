@@ -1,9 +1,8 @@
 import type { Request, Response } from "express";
 
 import { sendSuccess } from "#lib/api-response.utils.js";
-import { getAuthPrincipal } from "#middlewares/require-auth.js";
+import { getAuthPrincipal, requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
-import type { AuthPrincipal } from "#types/token.types.js";
 
 import type {
   CreateProductBody,
@@ -17,15 +16,9 @@ import { productService } from "./product.service.js";
 
 const CREATED_STATUS = 201;
 
-const requirePrincipal = (res: Response): AuthPrincipal => {
-  const principal = getAuthPrincipal(res);
-  if (!principal) throw new Error("reached without an auth principal");
-  return principal;
-};
-
 export const productController = {
   async create(_req: Request, res: Response) {
-    const { userId } = requirePrincipal(res);
+    const { userId } = requireAuthPrincipal(res);
     const body = validated.body<CreateProductBody>(res);
 
     const product = await productService.create(userId, body);
@@ -33,7 +26,7 @@ export const productController = {
   },
 
   async update(_req: Request, res: Response) {
-    const { userId } = requirePrincipal(res);
+    const { userId } = requireAuthPrincipal(res);
     const { id } = validated.params<ProductIdParam>(res);
     const body = validated.body<UpdateProductBody>(res);
 
@@ -42,7 +35,7 @@ export const productController = {
   },
 
   async listMine(_req: Request, res: Response) {
-    const { userId } = requirePrincipal(res);
+    const { userId } = requireAuthPrincipal(res);
     const query = validated.query<ListMineProductsQuery>(res);
     const page = await productService.listMine(userId, query);
     sendSuccess(res, page, "Your products.");
@@ -83,7 +76,7 @@ export const productController = {
   },
 
   async approve(_req: Request, res: Response) {
-    const { userId } = requirePrincipal(res);
+    const { userId } = requireAuthPrincipal(res);
     const { id } = validated.params<ProductIdParam>(res);
 
     await productService.approve(id, userId);
@@ -91,7 +84,7 @@ export const productController = {
   },
 
   async reject(_req: Request, res: Response) {
-    const { userId } = requirePrincipal(res);
+    const { userId } = requireAuthPrincipal(res);
     const { id } = validated.params<ProductIdParam>(res);
 
     await productService.reject(id, userId);

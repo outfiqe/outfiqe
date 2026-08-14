@@ -7,27 +7,11 @@ import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { adminInviteRepository } from "./adminInvite.repository.js";
-import type { AdminInviteRecord, AdminInviteSummary } from "./adminInvite.types.js";
+import type { AdminInviteSummary } from "./adminInvite.types.js";
+import { toSummary } from "./adminInvite.utils.js";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const CONFLICT_STATUS = 409;
-
-const toSummary = (invite: AdminInviteRecord): AdminInviteSummary => {
-  const status = invite.acceptedAt
-    ? "ACCEPTED"
-    : invite.expiresAt.getTime() <= Date.now()
-      ? "EXPIRED"
-      : "PENDING";
-
-  return {
-    id: invite.id,
-    email: invite.email,
-    name: invite.name,
-    status,
-    createdAt: invite.createdAt,
-    expiresAt: invite.expiresAt,
-  };
-};
 
 export const adminInviteService = {
   async invite(email: string, name: string, invitedById: string): Promise<void> {

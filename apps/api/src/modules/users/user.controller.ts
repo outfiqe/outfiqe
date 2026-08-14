@@ -1,19 +1,13 @@
 import type { Request, Response } from "express";
 
 import { sendSuccess } from "#lib/api-response.utils.js";
-import { getAuthPrincipal } from "#middlewares/require-auth.js";
+import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 
 import type { CreateUserBody, UpdateOwnProfileBody, UserIdParam } from "./user.schemas.js";
 import { userService } from "./user.service.js";
 
 const CREATED_STATUS = 201;
-
-const requirePrincipal = (res: Response) => {
-  const principal = getAuthPrincipal(res);
-  if (!principal) throw new Error("reached without an auth principal");
-  return principal;
-};
 
 export const userController = {
   async create(_req: Request, res: Response) {
@@ -34,7 +28,7 @@ export const userController = {
   },
 
   async updateMe(_req: Request, res: Response) {
-    const { userId } = requirePrincipal(res);
+    const { userId } = requireAuthPrincipal(res);
     const body = validated.body<UpdateOwnProfileBody>(res);
 
     const user = await userService.updateMe(userId, body);

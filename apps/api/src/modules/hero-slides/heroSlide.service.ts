@@ -3,18 +3,9 @@ import { AppError } from "#middlewares/error-handler.js";
 import { heroSlideRepository } from "./heroSlide.repository.js";
 import type { CreateHeroSlideBody, UpdateHeroSlideBody } from "./heroSlide.schemas.js";
 import type { HeroSlideRecord, PublicHeroSlide } from "./heroSlide.types.js";
+import { toPublicHeroSlide } from "./heroSlide.utils.js";
 
 const NOT_FOUND_STATUS = 404;
-
-const toPublicHeroSlide = (slide: HeroSlideRecord): PublicHeroSlide => ({
-  id: slide.id,
-  tag: slide.tag,
-  title: slide.title,
-  description: slide.description,
-  imageUrl: slide.imageUrl,
-  ctaLabel: slide.ctaLabel,
-  ctaHref: slide.ctaHref,
-});
 
 const requireHeroSlide = async (id: string): Promise<HeroSlideRecord> => {
   const slide = await heroSlideRepository.findById(id);

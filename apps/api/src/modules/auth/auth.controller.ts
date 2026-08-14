@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import { TokenPurpose } from "#constants/enums/auth.enum.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { clearRefreshCookie, getRefreshTokenCookie, setRefreshCookie } from "#lib/cookie.utils.js";
-import { getAuthPrincipal } from "#middlewares/require-auth.js";
+import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 
 import type {
@@ -143,8 +143,7 @@ export const authController = {
   },
 
   async me(_req: Request, res: Response) {
-    const principal = getAuthPrincipal(res);
-    if (!principal) throw new Error("me() reached without an auth principal");
+    const principal = requireAuthPrincipal(res);
 
     const user = await authService.getCurrentUser(principal.userId);
     sendSuccess(res, user, "Current user.");

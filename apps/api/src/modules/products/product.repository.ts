@@ -3,6 +3,7 @@ import type { Prisma } from "#generated/prisma/client.js";
 import type { ProductType } from "#generated/prisma/enums.js";
 import { CreatorStatus, ProductStatus } from "#generated/prisma/enums.js";
 
+import { NEW_ARRIVAL_WINDOW_MS } from "./product.constants.js";
 import type {
   CreateProductInput,
   ProductRecord,
@@ -14,7 +15,6 @@ import type {
 
 const TRENDING_LIMIT = 5;
 const NEW_ARRIVALS_LIMIT = 10;
-const NEW_ARRIVAL_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const SEEN_ON_CREATORS_LIMIT = 5;
 
 const withBrandAndCategories = {

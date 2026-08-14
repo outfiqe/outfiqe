@@ -8,11 +8,7 @@ import { brandRepository } from "#modules/brands/brand.repository.js";
 import { categoryService } from "#modules/categories/category.service.js";
 import { wishlistRepository } from "#modules/wishlist/wishlist.repository.js";
 
-import {
-  PRODUCT_TYPE_SLUGS,
-  PRODUCT_TYPE_TO_SLUG,
-  SLUG_TO_PRODUCT_TYPE,
-} from "./product.constants.js";
+import { PRODUCT_TYPE_SLUGS, SLUG_TO_PRODUCT_TYPE } from "./product.constants.js";
 import { productRepository } from "./product.repository.js";
 import type {
   CreateProductBody,
@@ -27,37 +23,15 @@ import type {
   ProductBrandSummaryPage,
   ProductRecord,
   ProductReviewPage,
-  ProductWithBrand,
   PublicProduct,
   PublicProductDetail,
   PublicProductPage,
   PublicProductType,
 } from "./product.types.js";
+import { humanizeSlug, toBrandSummary, toPublicProduct } from "./product.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
-const NEW_ARRIVAL_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-
-const isNew = (createdAt: Date): boolean =>
-  Date.now() - createdAt.getTime() <= NEW_ARRIVAL_WINDOW_MS;
-
-const humanizeSlug = (slug: string): string =>
-  slug
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-
-export const toPublicProduct = (product: ProductWithBrand): PublicProduct => ({
-  id: product.id,
-  brand: product.brand.name,
-  name: product.name,
-  price: product.price,
-  type: PRODUCT_TYPE_TO_SLUG[product.type],
-  categorySlugs: product.categories.map((category) => category.slug),
-  imageUrl: product.imageUrl,
-  lowStock: product.lowStock,
-  isNew: isNew(product.createdAt),
-});
 
 const requireBrandId = async (userId: string): Promise<string> => {
   const profile = await brandRepository.findByMemberUserId(userId);
@@ -99,17 +73,6 @@ const notifyBrand = async (
   const { subject, html } = template(product.name);
   await sendEmail({ to: brand.email, subject, body: fallbackBody, html });
 };
-
-const toBrandSummary = ({
-  categories,
-  brand: _brand,
-  type,
-  ...rest
-}: ProductWithBrand): ProductBrandSummary => ({
-  ...rest,
-  type: PRODUCT_TYPE_TO_SLUG[type],
-  categories: categories.map((category) => category.name),
-});
 
 export const productService = {
   async create(userId: string, input: CreateProductBody): Promise<ProductBrandSummary> {

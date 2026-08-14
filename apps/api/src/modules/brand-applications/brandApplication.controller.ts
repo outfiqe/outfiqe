@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 
 import { sendSuccess } from "#lib/api-response.utils.js";
-import { getAuthPrincipal } from "#middlewares/require-auth.js";
+import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 
 import type {
@@ -36,8 +36,7 @@ export const brandApplicationController = {
 
   async approve(_req: Request, res: Response) {
     const { id } = validated.params<BrandApplicationIdParam>(res);
-    const principal = getAuthPrincipal(res);
-    if (!principal) throw new Error("approve() reached without an auth principal");
+    const principal = requireAuthPrincipal(res);
 
     await brandApplicationService.approve(id, principal.userId);
 
@@ -47,8 +46,7 @@ export const brandApplicationController = {
   async reject(_req: Request, res: Response) {
     const { id } = validated.params<BrandApplicationIdParam>(res);
     const { reason } = validated.body<RejectBrandApplicationBody>(res);
-    const principal = getAuthPrincipal(res);
-    if (!principal) throw new Error("reject() reached without an auth principal");
+    const principal = requireAuthPrincipal(res);
 
     await brandApplicationService.reject(id, principal.userId, reason);
 

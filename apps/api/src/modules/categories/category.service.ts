@@ -1,15 +1,13 @@
-import { Prisma } from "#generated/prisma/client.js";
+import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { categoryRepository } from "./category.repository.js";
 import type { CreateCategoryBody, UpdateCategoryBody } from "./category.schemas.js";
 import type { CategoryRecord, CategoryWithProductCount, PublicCategory } from "./category.types.js";
+import { toPublicCategory } from "./category.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
-
-const isUniqueConstraintError = (error: unknown): boolean =>
-  error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 
 const withSlugConflictHandling = async <T>(run: () => Promise<T>): Promise<T> => {
   try {
@@ -25,14 +23,6 @@ const withSlugConflictHandling = async <T>(run: () => Promise<T>): Promise<T> =>
     throw error;
   }
 };
-
-const toPublicCategory = (category: CategoryWithProductCount): PublicCategory => ({
-  id: category.id,
-  slug: category.slug,
-  name: category.name,
-  imageUrl: category.imageUrl,
-  productCount: category.productCount,
-});
 
 const requireCategory = async (id: string): Promise<CategoryRecord> => {
   const category = await categoryRepository.findById(id);

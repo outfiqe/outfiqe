@@ -1,8 +1,8 @@
-import { Prisma } from "#generated/prisma/client.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
+import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
-import { toPublicProduct } from "#modules/products/product.service.js";
 import type { PublicProduct } from "#modules/products/product.types.js";
+import { toPublicProduct } from "#modules/products/product.utils.js";
 
 import { collectionRepository } from "./collection.repository.js";
 import type {
@@ -19,12 +19,10 @@ import type {
   PublicCollectionPage,
   PublicCollectionProductPage,
 } from "./collection.types.js";
+import { toPublicCollection } from "./collection.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
-
-const isUniqueConstraintError = (error: unknown): boolean =>
-  error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 
 const withSlugConflictHandling = async <T>(run: () => Promise<T>): Promise<T> => {
   try {
@@ -40,15 +38,6 @@ const withSlugConflictHandling = async <T>(run: () => Promise<T>): Promise<T> =>
     throw error;
   }
 };
-
-const toPublicCollection = (collection: CollectionWithProductCount): PublicCollection => ({
-  id: collection.id,
-  name: collection.name,
-  slug: collection.slug,
-  description: collection.description,
-  imageUrl: collection.imageUrl,
-  productCount: collection.productCount,
-});
 
 const requireCollection = async (id: string): Promise<CollectionRecord> => {
   const collection = await collectionRepository.findById(id);
