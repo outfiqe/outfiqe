@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { cn } from "@/shared/lib/cn";
+
 import { LogoMark } from "./LogoMark";
 
 const SIZES = {

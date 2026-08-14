@@ -1,6 +1,6 @@
-import { prisma } from "../../shared/db/prisma.js";
+import { prisma } from "#db/prisma.js";
+import { CategoryStatus, ProductStatus } from "#generated/prisma/enums.js";
 
-import { CategoryStatus, ProductStatus } from "../../generated/prisma/enums.js";
 import type {
   CategoryRecord,
   CategoryWithProductCount,

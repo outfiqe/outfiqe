@@ -3,6 +3,7 @@
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
 
 import { useAuth } from "@/features/auth";
+
 import { creatorLooksApi } from "../api/creatorLooksApi";
 
 export const useMyLooks = () => {

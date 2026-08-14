@@ -1,5 +1,5 @@
-import { storage } from "../../shared/storage/storage.js";
-import type { UploadedFile } from "../../shared/storage/storage.types.js";
+import { storage } from "#storage/storage.js";
+import type { UploadedFile } from "#storage/storage.types.js";
 
 export const uploadService = {
   async uploadFiles(files: Express.Multer.File[]): Promise<UploadedFile[]> {

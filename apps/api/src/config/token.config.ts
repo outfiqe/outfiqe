@@ -1,4 +1,5 @@
 import type { Algorithm } from "jsonwebtoken";
+
 import { env } from "./env.config.js";
 
 export const TOKEN = {

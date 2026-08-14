@@ -1,14 +1,13 @@
+import { DomainEvents, eventBus } from "#events/event-bus.js";
+import { FollowTargetType } from "#generated/prisma/enums.js";
+import { AppError } from "#middlewares/error-handler.js";
+import { brandRepository } from "#modules/brands/brand.repository.js";
+import { userRepository } from "#modules/users/user.repository.js";
+import type { UserRecord } from "#modules/users/user.types.js";
+
 import { followRepository } from "./follow.repository.js";
-import { userRepository } from "../users/user.repository.js";
-import { brandRepository } from "../brands/brand.repository.js";
-
-import { AppError } from "../../shared/middlewares/error-handler.js";
-import { DomainEvents, eventBus } from "../../shared/events/event-bus.js";
-import { FollowTargetType } from "../../generated/prisma/enums.js";
-
 import type { FollowTargetTypeParam } from "./follow.schemas.js";
 import type { FollowResult, FollowTarget } from "./follow.types.js";
-import type { UserRecord } from "../users/user.types.js";
 
 const BAD_REQUEST_STATUS = 400;
 const NOT_FOUND_STATUS = 404;

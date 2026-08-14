@@ -1,14 +1,12 @@
 import type { Request, Response } from "express";
 
-import { followService } from "./follow.service.js";
-
 import { sendSuccess } from "#lib/api-response.utils.js";
-
-import { getAuthPrincipal } from "../../shared/middlewares/require-auth.js";
-import { validated } from "../../shared/middlewares/validate.js";
-
+import { getAuthPrincipal } from "#middlewares/require-auth.js";
+import { validated } from "#middlewares/validate.js";
 import type { AuthPrincipal } from "#types/token.types.js";
+
 import type { FollowParams } from "./follow.schemas.js";
+import { followService } from "./follow.service.js";
 
 const requirePrincipal = (res: Response): AuthPrincipal => {
   const principal = getAuthPrincipal(res);

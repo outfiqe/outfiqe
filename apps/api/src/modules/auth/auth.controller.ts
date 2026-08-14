@@ -1,5 +1,11 @@
 import type { Request, Response } from "express";
-import { validated } from "../../shared/middlewares/validate.js";
+
+import { TokenPurpose } from "#constants/enums/auth.enum.js";
+import { sendSuccess } from "#lib/api-response.utils.js";
+import { clearRefreshCookie, getRefreshTokenCookie, setRefreshCookie } from "#lib/cookie.utils.js";
+import { getAuthPrincipal } from "#middlewares/require-auth.js";
+import { validated } from "#middlewares/validate.js";
+
 import type {
   AdminInviteQuery,
   BrandInviteQuery,
@@ -14,12 +20,6 @@ import type {
   VerifyEmailBody,
 } from "./auth.schemas.js";
 import { authService } from "./auth.service.js";
-
-import { sendSuccess } from "#lib/api-response.utils.js";
-import { clearRefreshCookie, getRefreshTokenCookie, setRefreshCookie } from "#lib/cookie.utils.js";
-import { getAuthPrincipal } from "../../shared/middlewares/require-auth.js";
-
-import { TokenPurpose } from "#constants/enums/auth.enum.js";
 
 const CREATED_STATUS = 201;
 

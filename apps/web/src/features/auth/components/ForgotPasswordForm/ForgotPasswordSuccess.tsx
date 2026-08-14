@@ -1,5 +1,6 @@
-import { useFocusOnMount } from "@/shared/hooks/useFocusOnMount";
 import Link from "next/link";
+
+import { useFocusOnMount } from "@/shared/hooks/useFocusOnMount";
 
 export const ForgotPasswordSuccess = () => {
   const headingRef = useFocusOnMount<HTMLHeadingElement>();

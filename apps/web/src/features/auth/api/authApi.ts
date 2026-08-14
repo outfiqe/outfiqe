@@ -1,7 +1,14 @@
 import { z } from "zod";
 
 import { apiClient } from "@/shared/lib/apiClient";
+
+import type { BrandRegisterInput } from "../schemas/brandRegister.schema";
+import type { ForgotPasswordInput } from "../schemas/forgotPassword.schema";
+import type { LoginInput } from "../schemas/login.schema";
+import type { RegisterInput } from "../schemas/register.schema";
+import type { ResetPasswordInput } from "../schemas/resetPassword.schema";
 import type { TokenPurpose, UserSession } from "../types";
+import type { BrandInviteInfo } from "./userSchemas";
 import {
   brandInviteInfoSchema,
   brandUserSchema,
@@ -10,12 +17,6 @@ import {
   toUserSession,
   validateTokenResponseSchema,
 } from "./userSchemas";
-import type { BrandInviteInfo } from "./userSchemas";
-import type { BrandRegisterInput } from "../schemas/brandRegister.schema";
-import type { ForgotPasswordInput } from "../schemas/forgotPassword.schema";
-import type { LoginInput } from "../schemas/login.schema";
-import type { RegisterInput } from "../schemas/register.schema";
-import type { ResetPasswordInput } from "../schemas/resetPassword.schema";
 
 const registerResponseSchema = z.object({ userId: z.string() });
 const loginResponseSchema = z.object({ accessToken: z.string(), user: customerUserSchema });

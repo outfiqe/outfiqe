@@ -1,6 +1,6 @@
-import { prisma } from "../../shared/db/prisma.js";
+import { prisma } from "#db/prisma.js";
+import type { BrandRole } from "#generated/prisma/enums.js";
 
-import type { BrandRole } from "../../generated/prisma/enums.js";
 import type { BrandInviteRecord, RefreshTokenRecord } from "./auth.types.js";
 
 export const authRepository = {

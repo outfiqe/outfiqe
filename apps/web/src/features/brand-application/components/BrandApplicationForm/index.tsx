@@ -1,11 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-
 import {
   Button,
-  Input,
   Form,
   FormBanner,
   FormControl,
@@ -13,13 +10,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  Input,
 } from "@outfiqe/design-system";
+import { useForm } from "react-hook-form";
+
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
-import {
-  brandApplicationSchema,
-  type BrandApplicationInput,
-} from "../../schemas/brandApplication.schema";
+
 import { useSubmitBrandApplication } from "../../hooks/useSubmitBrandApplication";
+import {
+  type BrandApplicationInput,
+  brandApplicationSchema,
+} from "../../schemas/brandApplication.schema";
 import { getBrandApplicationErrorMessage } from "../../utils/errors";
 import { BrandApplicationSuccess } from "./BrandApplicationSuccess";
 import { ProductionField } from "./ProductionField";

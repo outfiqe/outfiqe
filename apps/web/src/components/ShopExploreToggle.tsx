@@ -1,8 +1,8 @@
 "use client";
 
+import { Compass, Store } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Store } from "lucide-react";
 
 import { cn } from "@/shared/lib/cn";
 

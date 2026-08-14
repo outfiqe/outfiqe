@@ -1,25 +1,26 @@
 "use client";
 
-import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-
 import {
   Button,
+  FormBanner,
+  ImageUploader,
   Input,
   Modal,
   Skeleton,
-  ImageUploader,
   toast,
-  FormBanner,
 } from "@outfiqe/design-system";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+
 import { uploadsApi } from "@/shared/api/uploadsApi";
+import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { cn } from "@/shared/lib/cn";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
-import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
+
 import { useCreateLook } from "../hooks/useCreateLook";
 import { useTaggableProducts } from "../hooks/useTaggableProducts";
-import { lookFormSchema, type LookFormInput } from "../schemas/lookForm.schema";
+import { type LookFormInput, lookFormSchema } from "../schemas/lookForm.schema";
 
 const textareaClass =
   "w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-foreground";

@@ -1,1 +1,13 @@
+branch=$(git symbolic-ref --short HEAD)
+
+if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+  echo "❌ Direct commits to '$branch' are not allowed. Create a branch first (see README: Code Quality & Commits)." >&2
+  exit 1
+fi
+
+if ! echo "$branch" | grep -Eq '^(feat|fix|docs|refactor|test|chore|build|ci|perf|style|revert)/[a-z0-9]+(-[a-z0-9]+)*$'; then
+  echo "❌ Branch name '$branch' doesn't match '<type>/<short-kebab-case-description>' (see README: Code Quality & Commits)." >&2
+  exit 1
+fi
+
 pnpm exec lint-staged

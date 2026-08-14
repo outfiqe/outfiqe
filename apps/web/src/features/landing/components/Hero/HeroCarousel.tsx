@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import Autoplay from "embla-carousel-autoplay";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-
 import {
   Button,
   Carousel,
+  type CarouselApi,
   CarouselContent,
   CarouselItem,
-  type CarouselApi,
 } from "@outfiqe/design-system";
+import Autoplay from "embla-carousel-autoplay";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
 import { cn } from "@/shared/lib/cn";
+
 import type { PublicHeroSlide } from "./heroSlideSchemas";
 
 type HeroCarouselProps = {

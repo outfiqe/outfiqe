@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { ChevronDown, Menu, Search, User, X } from "lucide-react";
-
 import { Button } from "@outfiqe/design-system";
+import { ChevronDown, Menu, Search, User, X } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
 import { cn } from "@/shared/lib/cn";
+
 import { LEADERBOARD_LINKS, NAV_LINKS } from "./siteNav.constants";
 
 export function MobileNav() {

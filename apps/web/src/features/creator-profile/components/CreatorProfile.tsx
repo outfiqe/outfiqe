@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { Badge, Button } from "@outfiqe/design-system";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { ExploreFeedSkeleton, PostCard } from "@/features/explore";
+import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { formatHeight } from "@/shared/lib/formatHeight";
-import { useAuth } from "@/features/auth/context/AuthContext";
-import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
-import { Button, Badge } from "@outfiqe/design-system";
-import { ExploreFeedSkeleton, PostCard } from "@/features/explore";
-import { useInfiniteCreatorLooks } from "../hooks/useInfiniteCreatorLooks";
+
 import type { CreatorProfile as CreatorProfileType } from "../api/creatorProfileSchemas";
+import { useInfiniteCreatorLooks } from "../hooks/useInfiniteCreatorLooks";
 
 interface CreatorProfileProps {
   creator: CreatorProfileType;

@@ -1,7 +1,8 @@
-import { prisma } from "../../shared/db/prisma.js";
+import { prisma } from "#db/prisma.js";
+import type { Prisma } from "#generated/prisma/client.js";
+import type { ProductType } from "#generated/prisma/enums.js";
+import { CreatorStatus, ProductStatus } from "#generated/prisma/enums.js";
 
-import { CreatorStatus, ProductStatus } from "../../generated/prisma/enums.js";
-import type { ProductType } from "../../generated/prisma/enums.js";
 import type {
   CreateProductInput,
   ProductRecord,
@@ -128,22 +129,20 @@ export const productRepository = {
   },
 
   async countPublic(filter: PublicFilter): Promise<{ total: number; brandCount: number }> {
-    const grouped = await prisma.product.groupBy({
-      by: ["brandId"],
-      where: {
-        status: ProductStatus.APPROVED,
-        categories: filter.categoryId ? { some: { id: filter.categoryId } } : undefined,
-        type: filter.type,
-        brandId: filter.brandId,
-        name: filter.q ? { contains: filter.q, mode: "insensitive" } : undefined,
-      },
-      _count: { _all: true },
-    });
-
-    return {
-      total: grouped.reduce((sum, group) => sum + group._count._all, 0),
-      brandCount: grouped.length,
+    const where: Prisma.ProductWhereInput = {
+      status: ProductStatus.APPROVED,
+      categories: filter.categoryId ? { some: { id: filter.categoryId } } : undefined,
+      type: filter.type,
+      brandId: filter.brandId,
+      name: filter.q ? { contains: filter.q, mode: "insensitive" } : undefined,
     };
+
+    const [total, grouped] = await Promise.all([
+      prisma.product.count({ where }),
+      prisma.product.groupBy({ by: ["brandId"], where }),
+    ]);
+
+    return { total, brandCount: grouped.length };
   },
 
   async listTrending(): Promise<ProductWithBrand[]> {

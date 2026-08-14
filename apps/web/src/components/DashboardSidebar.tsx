@@ -1,18 +1,19 @@
 "use client";
 
-import { GalleryVerticalEnd, LogOut, Package, Store, User } from "lucide-react";
 import {
   Sidebar,
-  sidebarWidthClass,
-  useSidebarCollapse,
   type SidebarNavItem,
   type SidebarNavSection,
+  sidebarWidthClass,
+  useSidebarCollapse,
 } from "@outfiqe/components";
+import { GalleryVerticalEnd, LogOut, Package, Store, User } from "lucide-react";
 
-import { cn } from "@/shared/lib/cn";
-import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus, UserRole } from "@/features/auth/types";
+import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+import { cn } from "@/shared/lib/cn";
+
 import { useNextSidebarNavigation } from "./useNextSidebarNavigation";
 
 const CREATOR_NAV: SidebarNavItem[] = [

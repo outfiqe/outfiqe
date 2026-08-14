@@ -1,7 +1,8 @@
 import { apiClient } from "@/shared/lib/apiClient";
+
 import {
-  brandProfileSchema,
   type BrandProfile,
+  brandProfileSchema,
   type UpdateBrandProfileInput,
 } from "./brandDashboardSchemas";
 

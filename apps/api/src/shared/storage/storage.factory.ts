@@ -1,9 +1,9 @@
 import path from "node:path";
 
+import { env } from "#config/env.config.js";
+
 import { createLocalDiskStorageProvider } from "./providers/local-disk.provider.js";
 import type { StorageProvider } from "./storage.types.js";
-
-import { env } from "#config/env.config.js";
 
 export const resolvedUploadsDir = path.resolve(process.cwd(), env.UPLOADS_DIR);
 

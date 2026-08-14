@@ -1,6 +1,7 @@
 "use client";
 
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+
 import type { SeenOnCreator } from "../api/productDetailSchemas";
 
 interface TrustLineProps {

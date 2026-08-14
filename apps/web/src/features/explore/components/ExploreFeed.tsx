@@ -3,12 +3,13 @@
 import { useState } from "react";
 
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
+
+import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";
 import { FeedFilterTabs, type FeedLayout } from "./FeedFilterTabs";
 import { PostCard } from "./PostCard";
-import { PostListItem } from "./PostListItem";
 import { ExploreFeedSkeleton } from "./PostCardSkeleton";
+import { PostListItem } from "./PostListItem";
 import { Sidebar } from "./Sidebar";
-import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";
 
 export function ExploreFeed() {
   const [tab, setTab] = useState("for_you");

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { getAvatarColor } from "@/shared/lib/avatarColor";
+
 import type { PublicCollection } from "../api/collectionSchemas";
 
 type CollectionCardProps = {

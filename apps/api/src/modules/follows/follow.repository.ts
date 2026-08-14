@@ -1,7 +1,7 @@
-import { prisma } from "../../shared/db/prisma.js";
-
-import { CreatorStatus, FollowTargetType } from "../../generated/prisma/enums.js";
-import type { UserRecord } from "../users/user.types.js";
+import { prisma } from "#db/prisma.js";
+import { Prisma } from "#generated/prisma/client.js";
+import { FollowTargetType } from "#generated/prisma/enums.js";
+import type { UserRecord } from "#modules/users/user.types.js";
 
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -120,22 +120,21 @@ export const followRepository = {
       userId,
     ];
 
-    const approved = await prisma.user.findMany({
-      where: { id: { notIn: excludeIds }, isCreator: true, creatorStatus: CreatorStatus.APPROVED },
-      orderBy: { followerCount: "desc" },
-      take: SUGGESTED_LIMIT,
-    });
-    if (approved.length >= SUGGESTED_LIMIT) return approved;
+    const ranked = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+      SELECT id
+      FROM users
+      WHERE id NOT IN (${Prisma.join(excludeIds)})
+        AND is_creator = true
+      ORDER BY (creator_status = 'APPROVED') DESC, follower_count DESC
+      LIMIT ${SUGGESTED_LIMIT}
+    `);
 
-    const rest = await prisma.user.findMany({
-      where: {
-        id: { notIn: [...excludeIds, ...approved.map((user) => user.id)] },
-        isCreator: true,
-      },
-      orderBy: { followerCount: "desc" },
-      take: SUGGESTED_LIMIT - approved.length,
+    const users = await prisma.user.findMany({
+      where: { id: { in: ranked.map((row) => row.id) } },
     });
-
-    return [...approved, ...rest];
+    const byId = new Map(users.map((user) => [user.id, user]));
+    return ranked
+      .map((row) => byId.get(row.id))
+      .filter((user): user is UserRecord => Boolean(user));
   },
 };

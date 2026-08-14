@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { UserRole } from "@/features/auth/types";
 import { LooksSection } from "@/features/creator-dashboard";
+
 import { requireDashboardSession } from "../requireDashboardSession";
 
 export const metadata: Metadata = { title: "Posts" };

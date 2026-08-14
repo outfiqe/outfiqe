@@ -1,7 +1,8 @@
+import { Skeleton } from "@outfiqe/design-system";
+
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { Skeleton } from "@outfiqe/design-system";
 import { ExploreFeedSkeleton } from "@/features/explore";
 
 export default function ExploreLoading() {

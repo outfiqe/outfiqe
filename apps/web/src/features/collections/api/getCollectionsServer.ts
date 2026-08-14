@@ -1,9 +1,10 @@
 import "server-only";
 
 import { serverApiRequest } from "@/shared/lib/serverApiClient";
+
 import {
-  collectionPageSchema,
   type CollectionPage,
+  collectionPageSchema,
   type PublicCollection,
 } from "./collectionSchemas";
 

@@ -1,11 +1,12 @@
 "use client";
 
-import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
-import { useInfiniteCollectionProducts } from "../hooks/useInfiniteCollectionProducts";
+import { getAvatarColor } from "@/shared/lib/avatarColor";
+
 import type { PublicCollection } from "../api/collectionSchemas";
+import { useInfiniteCollectionProducts } from "../hooks/useInfiniteCollectionProducts";
 
 type CollectionDetailProps = {
   collection: PublicCollection;

@@ -1,10 +1,10 @@
 import { Router } from "express";
 
+import { requireAuth } from "#middlewares/require-auth.js";
+import { validate } from "#middlewares/validate.js";
+
 import { wishlistController } from "./wishlist.controller.js";
 import { listWishlistQuerySchema, wishlistProductIdParamSchema } from "./wishlist.schemas.js";
-
-import { requireAuth } from "../../shared/middlewares/require-auth.js";
-import { validate } from "../../shared/middlewares/validate.js";
 
 export const wishlistRoutes = Router();
 

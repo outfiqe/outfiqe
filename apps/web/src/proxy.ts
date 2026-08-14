@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 import { UserRole } from "@/features/auth/types";
 import { getDefaultRouteForUser } from "@/features/auth/utils/getDefaultRoute";

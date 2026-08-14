@@ -1,14 +1,14 @@
-import { creatorLookRepository } from "./creatorLook.repository.js";
-import { followRepository } from "../follows/follow.repository.js";
-import { productRepository } from "../products/product.repository.js";
-import { productService, toPublicProduct } from "../products/product.service.js";
-import { userRepository } from "../users/user.repository.js";
-
-import { AppError } from "../../shared/middlewares/error-handler.js";
-import { DomainEvents, eventBus } from "../../shared/events/event-bus.js";
-import { CreatorStatus, FollowTargetType } from "../../generated/prisma/enums.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
+import { CreatorStatus, FollowTargetType } from "#generated/prisma/enums.js";
 import { extractHashtags } from "#lib/hashtags.utils.js";
+import { AppError } from "#middlewares/error-handler.js";
+import { followRepository } from "#modules/follows/follow.repository.js";
+import { productRepository } from "#modules/products/product.repository.js";
+import { productService, toPublicProduct } from "#modules/products/product.service.js";
+import type { PublicProduct } from "#modules/products/product.types.js";
+import { userRepository } from "#modules/users/user.repository.js";
 
+import { creatorLookRepository } from "./creatorLook.repository.js";
 import type {
   CreateCreatorLookBody,
   ListCreatorLooksQuery,
@@ -22,7 +22,6 @@ import type {
   TaggedProductPage,
   TrendingTag,
 } from "./creatorLook.types.js";
-import type { PublicProduct } from "../products/product.types.js";
 
 const NOT_FOUND_STATUS = 404;
 const FORBIDDEN_STATUS = 403;

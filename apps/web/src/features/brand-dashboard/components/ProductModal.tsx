@@ -1,23 +1,24 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-
 import {
   Button,
+  FormBanner,
+  ImageUploader,
   Input,
   Modal,
-  ImageUploader,
   MultiSelect,
   toast,
-  FormBanner,
 } from "@outfiqe/design-system";
-import { uploadsApi } from "@/shared/api/uploadsApi";
-import { getErrorMessage } from "@/shared/lib/errorMessages";
+import { useForm } from "react-hook-form";
+
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
+import { uploadsApi } from "@/shared/api/uploadsApi";
+import { getErrorMessage } from "@/shared/lib/errorMessages";
+
 import { useCreateProduct } from "../hooks/useCreateProduct";
-import { productFormSchema, type ProductFormInput } from "../schemas/productForm.schema";
+import { type ProductFormInput, productFormSchema } from "../schemas/productForm.schema";
 
 const selectClass =
   "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-foreground";

@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { Mail } from "lucide-react";
-
 import { AvatarUploader, Badge, Button, Input, Modal, toast } from "@outfiqe/design-system";
-import { uploadsApi } from "@/shared/api/uploadsApi";
-import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+import { Mail } from "lucide-react";
+import { useState } from "react";
+
 import { useAuth } from "@/features/auth";
 import { CreatorStatus } from "@/features/auth/types";
+import { uploadsApi } from "@/shared/api/uploadsApi";
+import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+
+import type { CreatorProfile } from "../api/creatorDashboardSchemas";
 import { useMyLooks } from "../hooks/useMyLooks";
 import { useUpdateCreatorProfile } from "../hooks/useUpdateCreatorProfile";
-import type { CreatorProfile } from "../api/creatorDashboardSchemas";
 
 const STATUS_LABEL: Record<CreatorStatus, string> = {
   [CreatorStatus.APPROVED]: "Approved creator",

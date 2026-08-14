@@ -1,9 +1,10 @@
 import { z } from "zod";
 
+import { type ProductPage, productPageSchema } from "@/features/products/api/productSchemas";
 import { apiClient } from "@/shared/lib/apiClient";
-import { productPageSchema, type ProductPage } from "@/features/products/api/productSchemas";
-import { creatorLookSchema, type CreatorLook } from "./creatorLooksSchemas";
+
 import type { LookFormInput } from "../schemas/lookForm.schema";
+import { type CreatorLook, creatorLookSchema } from "./creatorLooksSchemas";
 
 const creatorLookPageSchema = z.object({
   looks: z.array(creatorLookSchema),

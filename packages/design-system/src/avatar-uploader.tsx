@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { Camera, Loader2, X } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { cn } from "./cn";
 import { HiddenFileInput } from "./hidden-file-input";

@@ -1,11 +1,12 @@
 import { apiClient } from "@/shared/lib/apiClient";
+
 import {
-  collectionPageSchema,
-  collectionProductPageSchema,
-  publicCollectionSchema,
   type CollectionPage,
+  collectionPageSchema,
   type CollectionProductPage,
+  collectionProductPageSchema,
   type PublicCollection,
+  publicCollectionSchema,
 } from "./collectionSchemas";
 
 export const collectionsApi = {

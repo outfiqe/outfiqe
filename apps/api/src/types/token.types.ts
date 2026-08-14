@@ -1,8 +1,8 @@
 import type { Request } from "express";
 import type { JwtPayload } from "jsonwebtoken";
-import type { TokenPurpose, TokenTypeEnum } from "#constants/enums/auth.enum.js";
 
-import type { UserRole } from "../generated/prisma/enums.js";
+import type { TokenPurpose, TokenTypeEnum } from "#constants/enums/auth.enum.js";
+import type { UserRole } from "#generated/prisma/enums.js";
 
 export type TokenType = TokenTypeEnum;
 

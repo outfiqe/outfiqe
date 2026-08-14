@@ -1,10 +1,10 @@
-import { prisma } from "../../shared/db/prisma.js";
-
-import { CreatorStatus, ProductStatus } from "../../generated/prisma/enums.js";
-import { Prisma } from "../../generated/prisma/client.js";
+import { prisma } from "#db/prisma.js";
+import { Prisma } from "#generated/prisma/client.js";
+import type { CreatorLookTagClickSource } from "#generated/prisma/enums.js";
+import { CreatorStatus, ProductStatus } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
-import type { CreatorLookTagClickSource } from "../../generated/prisma/enums.js";
-import type { ProductWithBrand } from "../products/product.types.js";
+import type { ProductWithBrand } from "#modules/products/product.types.js";
+
 import type {
   CommentPage,
   CommentRecord,

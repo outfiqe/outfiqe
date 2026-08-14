@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+
 import { exploreFeedApi } from "../api/exploreFeedApi";
 
 export const useTrendingTags = () => {

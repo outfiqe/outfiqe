@@ -1,16 +1,18 @@
 import "server-only";
+
 import { cookies } from "next/headers";
 import type { z } from "zod";
 
 import { serverApiRequest } from "@/shared/lib/serverApiClient";
+
+import type { TokenPurpose, UserSession } from "../types";
 import {
+  type BrandInviteInfo,
   brandInviteInfoSchema,
   currentUserSchema,
   toUserSession,
   validateTokenResponseSchema,
-  type BrandInviteInfo,
 } from "./userSchemas";
-import type { TokenPurpose, UserSession } from "../types";
 
 type CurrentUser = z.infer<typeof currentUserSchema>;
 type ValidateTokenResponse = z.infer<typeof validateTokenResponseSchema>;

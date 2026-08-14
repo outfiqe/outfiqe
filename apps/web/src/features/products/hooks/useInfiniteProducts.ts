@@ -1,7 +1,8 @@
 "use client";
 
-import { productsApi } from "../api/productsApi";
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
+
+import { productsApi } from "../api/productsApi";
 
 export const useInfiniteProducts = (category: string, type?: string) => {
   return useInfiniteCursorPage(

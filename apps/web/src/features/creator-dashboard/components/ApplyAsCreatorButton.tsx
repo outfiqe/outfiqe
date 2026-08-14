@@ -1,7 +1,9 @@
 "use client";
 
 import { Button } from "@outfiqe/design-system";
+
 import { getErrorMessage } from "@/shared/lib/errorMessages";
+
 import { useApplyAsCreator } from "../hooks/useApplyAsCreator";
 
 export const ApplyAsCreatorButton = () => {

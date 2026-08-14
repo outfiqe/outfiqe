@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/shared/lib/cn";
+
 import type { ProductSize } from "../api/productDetailSchemas";
 
 type SizeSelectorProps = {

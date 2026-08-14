@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
+
 import { useInfiniteWishlist } from "../hooks/useInfiniteWishlist";
 
 export const WishlistGrid = () => {

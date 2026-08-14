@@ -1,8 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-
 import {
   Button,
   Form,
@@ -13,10 +11,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@outfiqe/design-system";
+import { useForm } from "react-hook-form";
+
 import { PasswordInput } from "@/components/PasswordInput";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
-import { resetPasswordSchema, type ResetPasswordInput } from "../../schemas/resetPassword.schema";
+
 import { useResetPassword } from "../../hooks/useResetPassword";
+import { type ResetPasswordInput, resetPasswordSchema } from "../../schemas/resetPassword.schema";
 import { AuthErrorCode, getAuthErrorMessage } from "../../utils/authErrors";
 import { ExpiredLinkNotice } from "./ExpiredLinkNotice";
 

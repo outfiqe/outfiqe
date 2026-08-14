@@ -1,8 +1,7 @@
+import { Prisma } from "#generated/prisma/client.js";
+import { AppError } from "#middlewares/error-handler.js";
+
 import { categoryRepository } from "./category.repository.js";
-
-import { AppError } from "../../shared/middlewares/error-handler.js";
-import { Prisma } from "../../generated/prisma/client.js";
-
 import type { CreateCategoryBody, UpdateCategoryBody } from "./category.schemas.js";
 import type { CategoryRecord, CategoryWithProductCount, PublicCategory } from "./category.types.js";
 

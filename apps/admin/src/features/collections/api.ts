@@ -1,12 +1,13 @@
 import { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
+
 import {
-  collectionSchema,
-  productSearchResultSchema,
   type Collection,
+  collectionSchema,
   type CollectionStatusValue,
   type ProductSearchResult,
+  productSearchResultSchema,
 } from "./schemas";
 
 const listSchema = z.array(collectionSchema);

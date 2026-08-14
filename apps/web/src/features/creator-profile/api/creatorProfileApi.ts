@@ -1,6 +1,7 @@
+import { type FeedPage, feedPageSchema } from "@/features/explore/api/exploreFeedSchemas";
 import { apiClient } from "@/shared/lib/apiClient";
-import { feedPageSchema, type FeedPage } from "@/features/explore/api/exploreFeedSchemas";
-import { creatorProfileSchema, type CreatorProfile } from "./creatorProfileSchemas";
+
+import { type CreatorProfile, creatorProfileSchema } from "./creatorProfileSchemas";
 
 export const creatorProfileApi = {
   async get(handle: string): Promise<CreatorProfile> {

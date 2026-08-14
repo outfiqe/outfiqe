@@ -1,8 +1,7 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-
 import { FormBanner } from "@outfiqe/design-system";
+import { useSearchParams } from "next/navigation";
 
 export function ApplyExpiredBanner() {
   const searchParams = useSearchParams();

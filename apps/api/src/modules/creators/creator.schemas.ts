@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CreatorStatus } from "../../generated/prisma/enums.js";
+import { CreatorStatus } from "#generated/prisma/enums.js";
 
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 50;

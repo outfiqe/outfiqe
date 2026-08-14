@@ -1,11 +1,13 @@
 "use client";
 
-import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
-
 import { Button, Input, Label } from "@outfiqe/design-system";
-import { ApiClientError } from "@/shared/lib/apiClient";
+import { useSearchParams } from "next/navigation";
+import type { ChangeEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+
 import { useFocusOnMount } from "@/shared/hooks/useFocusOnMount";
+import { ApiClientError } from "@/shared/lib/apiClient";
+
 import { authApi } from "../../api/authApi";
 import { useResendVerification } from "../../hooks/useResendVerification";
 import { emailField } from "../../schemas/shared.schema";

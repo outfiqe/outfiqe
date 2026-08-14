@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 
-import { formatHeight } from "@/shared/lib/formatHeight";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
-import { useRecordSeenOnClick } from "../hooks/useRecordSeenOnClick";
+import { formatHeight } from "@/shared/lib/formatHeight";
+
 import type { SeenOnCreator } from "../api/productDetailSchemas";
+import { useRecordSeenOnClick } from "../hooks/useRecordSeenOnClick";
 
 type SeenOnCreatorsProps = {
   productId: string;

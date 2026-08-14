@@ -1,7 +1,8 @@
 import "server-only";
 
 import { serverApiRequest } from "@/shared/lib/serverApiClient";
-import { creatorProfileSchema, type CreatorProfile } from "./creatorProfileSchemas";
+
+import { type CreatorProfile, creatorProfileSchema } from "./creatorProfileSchemas";
 
 export const getCreatorProfileServerPublic = async (
   handle: string,

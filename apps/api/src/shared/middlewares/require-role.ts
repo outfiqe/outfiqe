@@ -1,9 +1,9 @@
 import type { NextFunction, Request, Response } from "express";
 
+import type { UserRole } from "#generated/prisma/enums.js";
+
 import { AppError } from "./error-handler.js";
 import { getAuthPrincipal } from "./require-auth.js";
-
-import type { UserRole } from "../../generated/prisma/enums.js";
 
 const FORBIDDEN_STATUS = 403;
 

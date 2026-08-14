@@ -3,6 +3,7 @@
 import { LayoutGrid, Rows3 } from "lucide-react";
 
 import { cn } from "@/shared/lib/cn";
+
 import { useTrendingTags } from "../hooks/useTrendingTags";
 
 export type FeedLayout = "grid" | "list";

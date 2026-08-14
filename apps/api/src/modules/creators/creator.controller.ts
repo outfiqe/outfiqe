@@ -1,14 +1,11 @@
 import type { Request, Response } from "express";
 
-import { creatorService } from "./creator.service.js";
-import { creatorLookService } from "../creator-looks/creatorLook.service.js";
-
 import { sendSuccess } from "#lib/api-response.utils.js";
-
-import { getAuthPrincipal } from "../../shared/middlewares/require-auth.js";
-import { validated } from "../../shared/middlewares/validate.js";
-
+import { getAuthPrincipal } from "#middlewares/require-auth.js";
+import { validated } from "#middlewares/validate.js";
+import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
 import type { AuthPrincipal } from "#types/token.types.js";
+
 import type {
   CreatorHandleParam,
   CreatorUserIdParam,
@@ -16,6 +13,7 @@ import type {
   ListCreatorsQuery,
   UpdateCreatorProfileBody,
 } from "./creator.schemas.js";
+import { creatorService } from "./creator.service.js";
 
 const requirePrincipal = (res: Response): AuthPrincipal => {
   const principal = getAuthPrincipal(res);

@@ -1,10 +1,10 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
-import { AppError } from "./error-handler.js";
-
 import { isJWTPayload, verifyToken } from "#lib/verify-token.utils.js";
 import type { AuthPrincipal } from "#types/token.types.js";
+
+import { AppError } from "./error-handler.js";
 
 const BEARER_PREFIX = "Bearer ";
 const UNAUTHORIZED_STATUS = 401;

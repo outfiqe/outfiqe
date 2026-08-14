@@ -1,10 +1,9 @@
 import type { Request, Response } from "express";
 
-import { uploadService } from "./upload.service.js";
-
 import { sendSuccess } from "#lib/api-response.utils.js";
+import { AppError } from "#middlewares/error-handler.js";
 
-import { AppError } from "../../shared/middlewares/error-handler.js";
+import { uploadService } from "./upload.service.js";
 
 const NO_FILES_STATUS = 422;
 

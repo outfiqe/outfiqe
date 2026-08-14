@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { PRODUCT_TYPE_SLUGS } from "@outfiqe/utils";
+import { z } from "zod";
 
 const NAME_MIN = 2;
 const NAME_MAX = 150;

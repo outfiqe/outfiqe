@@ -1,4 +1,4 @@
-import type { CreatorStatus, FollowTargetType } from "../../generated/prisma/enums.js";
+import type { CreatorStatus, FollowTargetType } from "#generated/prisma/enums.js";
 
 export type UserFollowTarget = {
   kind: "user";

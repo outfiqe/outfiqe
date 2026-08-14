@@ -1,4 +1,5 @@
 import { getFeaturedCreatorLooksServer } from "@/features/products/api/getProductsServer";
+
 import { ProductRail } from "../ProductRail";
 
 export async function CreatorLooks() {

@@ -1,13 +1,15 @@
 import "server-only";
+
 import { z } from "zod";
 
-import { serverApiRequest } from "@/shared/lib/serverApiClient";
 import type { ExploreProduct } from "@/features/landing/components/ProductCard";
+import { serverApiRequest } from "@/shared/lib/serverApiClient";
+
 import {
-  creatorLookProductPageSchema,
-  publicProductSchema,
   type CreatorLookProductPage,
+  creatorLookProductPageSchema,
   type PublicProduct,
+  publicProductSchema,
 } from "./productSchemas";
 import { toExploreProduct } from "./toExploreProduct";
 

@@ -1,8 +1,9 @@
 import { z } from "zod";
 
 import { apiClient } from "@/shared/lib/apiClient";
-import { brandProductSchema, type BrandProduct } from "./brandProductsSchemas";
+
 import type { ProductFormInput } from "../schemas/productForm.schema";
+import { type BrandProduct, brandProductSchema } from "./brandProductsSchemas";
 
 const brandProductPageSchema = z.object({
   products: z.array(brandProductSchema),

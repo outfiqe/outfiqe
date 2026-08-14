@@ -1,8 +1,8 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { getRouteApi, Navigate, useNavigate } from "@tanstack/react-router";
-import { NEPAL_PHONE_REGEX } from "@outfiqe/utils";
-
 import { Button, FormBanner, Input } from "@outfiqe/design-system";
+import { NEPAL_PHONE_REGEX } from "@outfiqe/utils";
+import { getRouteApi, Navigate, useNavigate } from "@tanstack/react-router";
+import { type FormEvent, useEffect, useState } from "react";
+
 import { authApi } from "./api";
 import { useAuth } from "./AuthContext";
 import type { AdminInviteInfo } from "./schemas";
@@ -20,7 +20,11 @@ export function RegisterInvitePage() {
   const navigate = useNavigate();
   const { state: authState } = useAuth();
 
-  const [inviteState, setInviteState] = useState<InviteLoadState>({ status: "loading" });
+  const [inviteState, setInviteState] = useState<InviteLoadState>(() =>
+    token
+      ? { status: "loading" }
+      : { status: "invalid", message: "This invite link is missing a token." },
+  );
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -28,10 +32,7 @@ export function RegisterInvitePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      setInviteState({ status: "invalid", message: "This invite link is missing a token." });
-      return;
-    }
+    if (!token) return;
 
     authApi
       .getAdminInvite(token)

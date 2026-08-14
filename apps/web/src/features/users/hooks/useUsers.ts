@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+
 import { usersApi } from "../api/usersApi";
 
 export function useUsers() {

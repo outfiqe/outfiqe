@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
 import { Button } from "@outfiqe/design-system";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+
 import { creatorsApi } from "./api";
 import { useInfiniteCreators } from "./hooks/useInfiniteCreators";
 import type { CreatorStatusValue } from "./schemas";

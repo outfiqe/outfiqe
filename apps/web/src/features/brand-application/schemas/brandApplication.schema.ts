@@ -1,6 +1,5 @@
-import { z } from "zod";
-
 import { NEPAL_PHONE_REGEX } from "@outfiqe/utils";
+import { z } from "zod";
 
 export const makesOwnPiecesSchema = z.enum(["MAKES", "RESELLS", "BOTH"]);
 export type MakesOwnPieces = z.infer<typeof makesOwnPiecesSchema>;

@@ -1,14 +1,12 @@
-import { adminInviteRepository } from "./adminInvite.repository.js";
-import { userRepository } from "../users/user.repository.js";
-
 import { env } from "#config/env.config.js";
+import { adminInviteTemplate } from "#email-templates/templates.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import logger from "#lib/winston.utils.js";
+import { AppError } from "#middlewares/error-handler.js";
+import { userRepository } from "#modules/users/user.repository.js";
 
-import { AppError } from "../../shared/middlewares/error-handler.js";
-import { adminInviteTemplate } from "../../shared/email-templates/templates.js";
-
+import { adminInviteRepository } from "./adminInvite.repository.js";
 import type { AdminInviteRecord, AdminInviteSummary } from "./adminInvite.types.js";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { serverApiRequest } from "@/shared/lib/serverApiClient";
+
 import { categoryListSchema, type PublicCategory } from "./categorySchemas";
 
 export const getCategoriesServer = async (): Promise<PublicCategory[]> => {

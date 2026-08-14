@@ -1,4 +1,5 @@
 import { apiClient } from "@/shared/lib/apiClient";
+
 import { categoryListSchema, type PublicCategory } from "./categorySchemas";
 
 export const categoriesApi = {

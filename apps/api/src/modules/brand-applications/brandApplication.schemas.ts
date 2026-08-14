@@ -1,8 +1,7 @@
 import { z } from "zod";
 
+import { BrandApplicationStatus, MakesOwnPieces } from "#generated/prisma/enums.js";
 import { phoneSchema } from "#lib/phone.utils.js";
-
-import { BrandApplicationStatus, MakesOwnPieces } from "../../generated/prisma/enums.js";
 
 export const makesOwnPiecesSchema = z.enum(MakesOwnPieces);
 

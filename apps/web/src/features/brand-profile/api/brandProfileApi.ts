@@ -1,6 +1,7 @@
+import { type ProductPage, productPageSchema } from "@/features/products/api/productSchemas";
 import { apiClient } from "@/shared/lib/apiClient";
-import { productPageSchema, type ProductPage } from "@/features/products/api/productSchemas";
-import { brandProfileSchema, type BrandProfile } from "./brandProfileSchemas";
+
+import { type BrandProfile, brandProfileSchema } from "./brandProfileSchemas";
 
 export const brandProfileApi = {
   async get(id: string): Promise<BrandProfile> {

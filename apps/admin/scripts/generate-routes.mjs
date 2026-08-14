@@ -5,7 +5,7 @@
 // first half of build) runs standalone and needs the file to already exist,
 // so CI fails on a fresh checkout. Run this first via the pretypecheck/prebuild
 // hooks below to produce it ahead of time. Options must match vite.config.ts.
-import { getConfig, Generator } from "@tanstack/router-generator";
+import { Generator, getConfig } from "@tanstack/router-generator";
 
 const root = process.cwd();
 const config = getConfig({ target: "react", autoCodeSplitting: true }, root);

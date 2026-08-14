@@ -1,8 +1,9 @@
+import { Skeleton } from "@outfiqe/design-system";
+
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { Skeleton } from "@outfiqe/design-system";
 
 export default function BrandLoading() {
   return (

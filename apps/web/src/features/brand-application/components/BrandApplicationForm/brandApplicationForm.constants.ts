@@ -1,4 +1,4 @@
-import { MakesOwnPieces } from "../../schemas/brandApplication.schema";
+import type { MakesOwnPieces } from "../../schemas/brandApplication.schema";
 
 export const PRODUCTION_OPTIONS: { value: MakesOwnPieces; label: string }[] = [
   { value: "MAKES", label: "Yes, we make them" },

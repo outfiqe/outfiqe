@@ -1,20 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { Button, toast } from "@outfiqe/design-system";
+import { ChevronLeft, Heart, Shirt, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Heart, Shirt, Zap } from "lucide-react";
+import { useState } from "react";
 
-import { cn } from "@/shared/lib/cn";
-import { Button, toast } from "@outfiqe/design-system";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useToggleWishlist } from "@/features/wishlist";
-import { TrustLine } from "./TrustLine";
-import { SizeSelector } from "./SizeSelector";
-import { QuantitySelector } from "./QuantitySelector";
-import { ShippingInfo } from "./ShippingInfo";
-import { SeenOnCreators } from "./SeenOnCreators";
+import { cn } from "@/shared/lib/cn";
+
 import type { ProductDetail as ProductDetailType } from "../api/productDetailSchemas";
+import { QuantitySelector } from "./QuantitySelector";
+import { SeenOnCreators } from "./SeenOnCreators";
+import { ShippingInfo } from "./ShippingInfo";
+import { SizeSelector } from "./SizeSelector";
+import { TrustLine } from "./TrustLine";
 
 type ProductDetailProps = {
   product: ProductDetailType;

@@ -1,6 +1,7 @@
-import { AppError } from "../../shared/middlewares/error-handler.js";
-import { DomainEvents, eventBus } from "../../shared/events/event-bus.js";
-import { hashPassword } from "../../shared/utils/password.utils.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
+import { hashPassword } from "#lib/password.utils.js";
+import { AppError } from "#middlewares/error-handler.js";
+
 import { userRepository } from "./user.repository.js";
 import type {
   CreateUserInput,

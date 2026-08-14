@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { Button } from "@outfiqe/design-system";
+import type { ProductTypeSlug } from "@outfiqe/utils";
+import { Heart, Shirt } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Heart, Shirt } from "lucide-react";
+import { useState } from "react";
 
-import { Button } from "@outfiqe/design-system";
-import { cn } from "@/shared/lib/cn";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useToggleWishlist } from "@/features/wishlist";
-
-import type { ProductTypeSlug } from "@outfiqe/utils";
+import { cn } from "@/shared/lib/cn";
 
 export type ProductType = ProductTypeSlug;
 

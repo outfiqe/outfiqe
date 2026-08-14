@@ -1,22 +1,17 @@
-import { userRepository } from "../users/user.repository.js";
-import { productRepository } from "../products/product.repository.js";
-import { productService } from "../products/product.service.js";
-import { creatorLookRepository } from "../creator-looks/creatorLook.repository.js";
-import { followRepository } from "../follows/follow.repository.js";
-
+import { creatorApprovedTemplate, creatorRejectedTemplate } from "#email-templates/templates.js";
+import { CreatorStatus, FollowTargetType } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
-import logger from "#lib/winston.utils.js";
-
-import { AppError } from "../../shared/middlewares/error-handler.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
-import { CreatorStatus, FollowTargetType } from "../../generated/prisma/enums.js";
-import {
-  creatorApprovedTemplate,
-  creatorRejectedTemplate,
-} from "../../shared/email-templates/templates.js";
+import logger from "#lib/winston.utils.js";
+import { AppError } from "#middlewares/error-handler.js";
+import { creatorLookRepository } from "#modules/creator-looks/creatorLook.repository.js";
+import { followRepository } from "#modules/follows/follow.repository.js";
+import { productRepository } from "#modules/products/product.repository.js";
+import { productService } from "#modules/products/product.service.js";
+import { userRepository } from "#modules/users/user.repository.js";
+import type { UserRecord } from "#modules/users/user.types.js";
 
 import type { ListCreatorsQuery, UpdateCreatorProfileBody } from "./creator.schemas.js";
-import type { UserRecord } from "../users/user.types.js";
 import type { CreatorProfile, CreatorProfilePage, PublicCreatorProfile } from "./creator.types.js";
 
 const NOT_FOUND_STATUS = 404;

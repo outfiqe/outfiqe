@@ -1,6 +1,6 @@
-import { prisma } from "../../shared/db/prisma.js";
+import { prisma } from "#db/prisma.js";
+import { ProductStatus } from "#generated/prisma/enums.js";
 
-import { ProductStatus } from "../../generated/prisma/enums.js";
 import type { BrandProfile, BrandRecord, UpdateBrandInput } from "./brand.types.js";
 
 export const brandRepository = {

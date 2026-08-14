@@ -1,6 +1,5 @@
-import { z } from "zod";
-
 import { NEPAL_PHONE_REGEX } from "@outfiqe/utils";
+import { z } from "zod";
 
 const NAME_MIN = 2;
 const NAME_MAX = 100;

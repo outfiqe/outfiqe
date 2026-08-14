@@ -1,4 +1,4 @@
-import type { CreatorStatus, UserRole } from "../../generated/prisma/enums.js";
+import type { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 
 export interface RefreshTokenRecord {
   id: string;

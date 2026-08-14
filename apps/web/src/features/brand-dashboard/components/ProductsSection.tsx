@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Plus } from "lucide-react";
-
 import { Button, Skeleton } from "@outfiqe/design-system";
+import { Plus } from "lucide-react";
+import { useState } from "react";
+
 import type { BrandProduct } from "../api/brandProductsSchemas";
 import { useBrandProducts } from "../hooks/useBrandProducts";
 import { ProductModal } from "./ProductModal";

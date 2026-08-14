@@ -1,8 +1,8 @@
 "use client";
 
+import { toast } from "@outfiqe/design-system";
 import { useMutation } from "@tanstack/react-query";
 
-import { toast } from "@outfiqe/design-system";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { followApi, type FollowTargetType } from "@/shared/lib/followApi";
 

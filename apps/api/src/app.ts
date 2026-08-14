@@ -2,25 +2,26 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
-import { errorHandler } from "./shared/middlewares/error-handler.js";
-import { httpLogger } from "./shared/middlewares/http-logger.js";
-import { userRoutes } from "./modules/users/user.routes.js";
+
+import { env } from "#config/env.config.js";
+import { sendSuccess } from "#lib/api-response.utils.js";
+
+import { adminInviteRoutes } from "./modules/admin-invites/adminInvite.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { brandApplicationRoutes } from "./modules/brand-applications/brandApplication.routes.js";
 import { brandRoutes } from "./modules/brands/brand.routes.js";
-import { creatorRoutes } from "./modules/creators/creator.routes.js";
-import { adminInviteRoutes } from "./modules/admin-invites/adminInvite.routes.js";
-import { productRoutes } from "./modules/products/product.routes.js";
+import { categoryRoutes } from "./modules/categories/category.routes.js";
 import { collectionRoutes } from "./modules/collections/collection.routes.js";
 import { creatorLookRoutes } from "./modules/creator-looks/creatorLook.routes.js";
+import { creatorRoutes } from "./modules/creators/creator.routes.js";
 import { followRoutes } from "./modules/follows/follow.routes.js";
-import { wishlistRoutes } from "./modules/wishlist/wishlist.routes.js";
-import { uploadRoutes } from "./modules/uploads/upload.routes.js";
-import { categoryRoutes } from "./modules/categories/category.routes.js";
 import { heroSlideRoutes } from "./modules/hero-slides/heroSlide.routes.js";
-
-import { sendSuccess } from "#lib/api-response.utils.js";
-import { env } from "#config/env.config.js";
+import { productRoutes } from "./modules/products/product.routes.js";
+import { uploadRoutes } from "./modules/uploads/upload.routes.js";
+import { userRoutes } from "./modules/users/user.routes.js";
+import { wishlistRoutes } from "./modules/wishlist/wishlist.routes.js";
+import { errorHandler } from "./shared/middlewares/error-handler.js";
+import { httpLogger } from "./shared/middlewares/http-logger.js";
 import { resolvedUploadsDir } from "./shared/storage/storage.factory.js";
 
 export const createApp = () => {

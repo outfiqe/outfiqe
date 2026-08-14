@@ -1,4 +1,5 @@
-import type { ProductStatus, ProductType } from "../../generated/prisma/enums.js";
+import type { ProductStatus, ProductType } from "#generated/prisma/enums.js";
+
 import type { ProductTypeSlug } from "./product.constants.js";
 
 export type ProductRecord = {

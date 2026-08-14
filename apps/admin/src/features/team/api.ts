@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
-import { adminInviteSummarySchema, type AdminInviteSummary } from "./schemas";
+
+import { type AdminInviteSummary, adminInviteSummarySchema } from "./schemas";
 
 const listSchema = z.array(adminInviteSummarySchema);
 

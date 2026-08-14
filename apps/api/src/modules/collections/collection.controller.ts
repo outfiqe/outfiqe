@@ -1,10 +1,7 @@
 import type { Request, Response } from "express";
 
-import { collectionService } from "./collection.service.js";
-
 import { sendSuccess } from "#lib/api-response.utils.js";
-
-import { validated } from "../../shared/middlewares/validate.js";
+import { validated } from "#middlewares/validate.js";
 
 import type {
   CollectionIdParam,
@@ -15,6 +12,7 @@ import type {
   SetCollectionProductsBody,
   UpdateCollectionBody,
 } from "./collection.schemas.js";
+import { collectionService } from "./collection.service.js";
 
 const CREATED_STATUS = 201;
 

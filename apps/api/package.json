@@ -7,7 +7,14 @@
     "#config/*": "./src/config/*",
     "#constants/*": "./src/constants/*",
     "#types/*": "./src/types/*",
-    "#lib/*": "./src/shared/utils/*"
+    "#lib/*": "./src/shared/utils/*",
+    "#generated/*": "./src/generated/*",
+    "#db/*": "./src/shared/db/*",
+    "#middlewares/*": "./src/shared/middlewares/*",
+    "#events/*": "./src/shared/events/*",
+    "#storage/*": "./src/shared/storage/*",
+    "#email-templates/*": "./src/shared/email-templates/*",
+    "#modules/*": "./src/modules/*"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",

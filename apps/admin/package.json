@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "pretypecheck": "node scripts/generate-routes.mjs",
     "typecheck": "tsc -b",
-    "lint": "oxlint",
+    "lint": "eslint .",
     "preview": "vite preview",
     "db:generate": "echo 'no database in admin app'"
   },
@@ -35,7 +35,6 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
-    "oxlint": "^1.75.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.2.0"

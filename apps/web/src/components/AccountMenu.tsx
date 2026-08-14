@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-
 import { Button } from "@outfiqe/design-system";
-import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+import Link from "next/link";
+import { useState } from "react";
+
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
+import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+
 import { CreatorModeModal } from "./CreatorModeModal";
 
 export function AccountMenu() {

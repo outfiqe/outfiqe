@@ -1,12 +1,10 @@
-import { prisma } from "../db/prisma.js";
-import { userRepository } from "../../modules/users/user.repository.js";
-
 import { env } from "#config/env.config.js";
+import { prisma } from "#db/prisma.js";
+import { UserRole } from "#generated/prisma/enums.js";
 import { hashPassword } from "#lib/password.utils.js";
 import { phoneSchema } from "#lib/phone.utils.js";
 import logger from "#lib/winston.utils.js";
-
-import { UserRole } from "../../generated/prisma/enums.js";
+import { userRepository } from "#modules/users/user.repository.js";
 
 export const bootstrapAdminIfNeeded = async (): Promise<void> => {
   const { ADMIN_BOOTSTRAP_EMAIL, ADMIN_BOOTSTRAP_PASSWORD, ADMIN_BOOTSTRAP_PHONE } = env;

@@ -1,27 +1,24 @@
 import jwt from "jsonwebtoken";
 
-import { AppError } from "../../shared/middlewares/error-handler.js";
-import { DomainEvents, eventBus } from "../../shared/events/event-bus.js";
-import { userRepository } from "../users/user.repository.js";
-import { adminInviteRepository } from "../admin-invites/adminInvite.repository.js";
-import { authRepository } from "./auth.repository.js";
-
-import { TokenPurpose, TokenTypeEnum } from "#constants/enums/auth.enum.js";
 import { env } from "#config/env.config.js";
+import { TokenPurpose, TokenTypeEnum } from "#constants/enums/auth.enum.js";
+import { passwordResetTemplate, verifyEmailTemplate } from "#email-templates/templates.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
+import { BrandRole, UserRole } from "#generated/prisma/enums.js";
 import { parseDurationMs } from "#lib/duration.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
-import {
-  passwordResetTemplate,
-  verifyEmailTemplate,
-} from "../../shared/email-templates/templates.js";
 import { generateToken } from "#lib/generate-token.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { hashPassword, verifyPassword } from "#lib/password.utils.js";
 import { signPurposeToken, verifyPurposeToken } from "#lib/purpose-token.utils.js";
 import logger from "#lib/winston.utils.js";
+import { AppError } from "#middlewares/error-handler.js";
+import { adminInviteRepository } from "#modules/admin-invites/adminInvite.repository.js";
+import { userRepository } from "#modules/users/user.repository.js";
+import type { UserRecord } from "#modules/users/user.types.js";
+import type { PurposeTokenPayload } from "#types/token.types.js";
 
-import { BrandRole, UserRole } from "../../generated/prisma/enums.js";
-import type { UserRecord } from "../users/user.types.js";
+import { authRepository } from "./auth.repository.js";
 import type {
   AdminInviteInfo,
   AuthSession,
@@ -34,7 +31,6 @@ import type {
   RegisterBrandInput,
   RegisterInput,
 } from "./auth.types.js";
-import type { PurposeTokenPayload } from "#types/token.types.js";
 
 const CONFLICT_STATUS = 409;
 const BAD_REQUEST_STATUS = 400;

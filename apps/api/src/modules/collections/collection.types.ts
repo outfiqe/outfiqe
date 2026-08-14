@@ -1,5 +1,5 @@
-import type { CollectionStatus } from "../../generated/prisma/enums.js";
-import type { PublicProduct } from "../products/product.types.js";
+import type { CollectionStatus } from "#generated/prisma/enums.js";
+import type { PublicProduct } from "#modules/products/product.types.js";
 
 export type CollectionRecord = {
   id: string;

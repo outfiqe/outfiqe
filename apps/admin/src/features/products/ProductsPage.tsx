@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
 import { Badge, Button } from "@outfiqe/design-system";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+
 import { productsApi } from "./api";
 import { useInfiniteProducts } from "./hooks/useInfiniteProducts";
 import type { ProductStatusValue } from "./schemas";

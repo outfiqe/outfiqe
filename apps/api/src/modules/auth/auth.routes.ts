@@ -1,7 +1,11 @@
 import { Router } from "express";
-import { validate, validated } from "../../shared/middlewares/validate.js";
-import { rateLimit } from "../../shared/middlewares/rate-limit.js";
-import { requireAuth } from "../../shared/middlewares/require-auth.js";
+
+import { rateLimit } from "#middlewares/rate-limit.js";
+import { requireAuth } from "#middlewares/require-auth.js";
+import { validate, validated } from "#middlewares/validate.js";
+
+import { authController } from "./auth.controller.js";
+import type { ForgotPasswordBody, ResendVerificationBody } from "./auth.schemas.js";
 import {
   adminInviteQuerySchema,
   brandInviteQuerySchema,
@@ -15,8 +19,6 @@ import {
   validateTokenQuerySchema,
   verifyEmailSchema,
 } from "./auth.schemas.js";
-import { authController } from "./auth.controller.js";
-import type { ForgotPasswordBody, ResendVerificationBody } from "./auth.schemas.js";
 
 const FORGOT_PASSWORD_WINDOW_MS = 15 * 60 * 1000;
 const FORGOT_PASSWORD_MAX_REQUESTS = 3;

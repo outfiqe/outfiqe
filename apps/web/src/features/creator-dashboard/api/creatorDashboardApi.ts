@@ -1,7 +1,8 @@
 import { apiClient } from "@/shared/lib/apiClient";
+
 import {
-  creatorProfileSchema,
   type CreatorProfile,
+  creatorProfileSchema,
   type UpdateCreatorProfileInput,
 } from "./creatorDashboardSchemas";
 

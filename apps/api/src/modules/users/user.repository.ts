@@ -1,8 +1,8 @@
-import { prisma } from "../../shared/db/prisma.js";
-import type { CreatorStatus } from "../../generated/prisma/enums.js";
-import type { CreateUserInput, UpdateUserProfileInput, UserRecord } from "./user.types.js";
-
+import { prisma } from "#db/prisma.js";
+import type { CreatorStatus } from "#generated/prisma/enums.js";
 import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
+
+import type { CreateUserInput, UpdateUserProfileInput, UserRecord } from "./user.types.js";
 
 const MAX_HANDLE_ATTEMPTS = 5;
 

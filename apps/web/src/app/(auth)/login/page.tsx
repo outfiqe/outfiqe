@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 import { LoginForm } from "@/features/auth";
 import { getDefaultRouteForUser, getServerSession } from "@/features/auth/api/serverAuth";
