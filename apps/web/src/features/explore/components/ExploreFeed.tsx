@@ -6,6 +6,7 @@ import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 
 import { useExploreFeedSocket } from "../hooks/useExploreFeedSocket";
 import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";
+import { AddPostButton } from "./AddPostButton";
 import { FeedFilterTabs, type FeedLayout } from "./FeedFilterTabs";
 import { PostCard } from "./PostCard";
 import { ExploreFeedSkeleton } from "./PostCardSkeleton";
@@ -43,6 +44,7 @@ export const ExploreFeed = () => {
   return (
     <>
       <FeedFilterTabs tab={tab} onChange={setTab} layout={layout} onLayoutChange={setLayout} />
+      <AddPostButton />
 
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-9 px-4 pb-16 pt-6 lg:grid-cols-[1fr_296px]">
         <div>

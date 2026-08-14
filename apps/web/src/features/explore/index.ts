@@ -1,4 +1,5 @@
 export type { FeedPost } from "./api/exploreFeedSchemas";
+export { AddPostButton } from "./components/AddPostButton";
 export { ExploreFeed } from "./components/ExploreFeed";
 export { FeedFilterTabs, type FeedLayout } from "./components/FeedFilterTabs";
 export { PostCard } from "./components/PostCard";
