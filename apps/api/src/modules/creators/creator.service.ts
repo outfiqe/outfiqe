@@ -13,18 +13,10 @@ import type { UserRecord } from "#modules/users/user.types.js";
 
 import type { ListCreatorsQuery, UpdateCreatorProfileBody } from "./creator.schemas.js";
 import type { CreatorProfile, CreatorProfilePage, PublicCreatorProfile } from "./creator.types.js";
+import { toProfile } from "./creator.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
-
-const toProfile = (user: UserRecord): CreatorProfile => ({
-  userId: user.id,
-  name: user.name,
-  email: user.email,
-  avatarUrl: user.avatarUrl,
-  isCreator: user.isCreator,
-  creatorStatus: user.creatorStatus,
-});
 
 const requireUser = async (userId: string): Promise<UserRecord> => {
   const user = await userRepository.findById(userId);

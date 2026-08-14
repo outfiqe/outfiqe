@@ -1,0 +1,10 @@
+export const redisKeys = {
+  rateLimit: (namespace: string, identifier: string) => `ratelimit:${namespace}:${identifier}`,
+  cache: (namespace: string, identifier = "all") => `cache:${namespace}:${identifier}`,
+};
+
+export const CACHE_TTL = {
+  CATEGORIES_PUBLIC: 300,
+  HERO_SLIDES_PUBLIC: 300,
+  TRENDING_TAGS: 600,
+} as const;

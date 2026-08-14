@@ -30,6 +30,7 @@ const envSchema = z.object({
   STORAGE_DRIVER: z.enum(["local"]).default("local"),
   UPLOADS_DIR: z.string().default("uploads"),
   API_PUBLIC_URL: z.url().default("http://localhost:4000"),
+  REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
 });
 
 const parsed = envSchema.safeParse(process.env);

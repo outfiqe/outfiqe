@@ -46,3 +46,9 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
 };
 
 export const getAuthPrincipal = (res: Response): AuthPrincipal | undefined => res.locals.auth;
+
+export const requireAuthPrincipal = (res: Response): AuthPrincipal => {
+  const principal = getAuthPrincipal(res);
+  if (!principal) throw new Error("reached without an auth principal");
+  return principal;
+};

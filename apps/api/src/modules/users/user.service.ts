@@ -3,12 +3,8 @@ import { hashPassword } from "#lib/password.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { userRepository } from "./user.repository.js";
-import type {
-  CreateUserInput,
-  PublicUser,
-  UpdateUserProfileInput,
-  UserRecord,
-} from "./user.types.js";
+import type { CreateUserInput, PublicUser, UpdateUserProfileInput } from "./user.types.js";
+import { toPublicUser } from "./user.utils.js";
 
 export const userService = {
   async createUser(input: CreateUserInput): Promise<PublicUser> {
@@ -41,17 +37,3 @@ export const userService = {
     return toPublicUser(updated);
   },
 };
-
-function toPublicUser(user: UserRecord): PublicUser {
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    avatarUrl: user.avatarUrl,
-    role: user.role,
-    isCreator: user.isCreator,
-    creatorStatus: user.creatorStatus,
-    emailVerified: user.emailVerified,
-    createdAt: user.createdAt.toISOString(),
-  };
-}

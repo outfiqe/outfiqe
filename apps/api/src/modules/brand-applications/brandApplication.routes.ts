@@ -19,6 +19,7 @@ const WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_REQUESTS = 3;
 
 const brandApplicationRateLimit = rateLimit({
+  namespace: "brand-application",
   windowMs: WINDOW_MS,
   max: MAX_REQUESTS,
   keyGenerator: (_req, res) => validated.body<CreateBrandApplicationBody>(res).phone,

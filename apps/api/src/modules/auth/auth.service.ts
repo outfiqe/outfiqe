@@ -18,6 +18,7 @@ import { userRepository } from "#modules/users/user.repository.js";
 import type { UserRecord } from "#modules/users/user.types.js";
 import type { PurposeTokenPayload } from "#types/token.types.js";
 
+import { PURPOSE_ERROR_COPY } from "./auth.constants.js";
 import { authRepository } from "./auth.repository.js";
 import type {
   AdminInviteInfo,
@@ -46,17 +47,6 @@ const PASSWORD_RESET_URL = `${env.FRONTEND_URL}/reset-password`;
 
 const INVALID_CREDENTIALS_MESSAGE = "Incorrect email or password.";
 const USER_NOT_FOUND_MESSAGE = "User not found.";
-
-const PURPOSE_ERROR_COPY: Record<TokenPurpose, { invalid: string; expired: string }> = {
-  [TokenPurpose.EMAIL_VERIFICATION]: {
-    invalid: "This verification link is invalid or has expired.",
-    expired: "This verification link has expired. Please request a new one.",
-  },
-  [TokenPurpose.PASSWORD_RESET]: {
-    invalid: "This reset link is invalid or has expired.",
-    expired: "This reset link has expired. Please request a new one.",
-  },
-};
 
 const verifyPurposeTokenOrThrow = (token: string, purpose: TokenPurpose): PurposeTokenPayload => {
   const copy = PURPOSE_ERROR_COPY[purpose];

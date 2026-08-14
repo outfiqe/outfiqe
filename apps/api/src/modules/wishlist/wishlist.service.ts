@@ -1,8 +1,8 @@
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { productRepository } from "#modules/products/product.repository.js";
-import { toPublicProduct } from "#modules/products/product.service.js";
 import type { PublicProductPage } from "#modules/products/product.types.js";
+import { toPublicProduct } from "#modules/products/product.utils.js";
 
 import { wishlistRepository } from "./wishlist.repository.js";
 import type { ListWishlistQuery } from "./wishlist.schemas.js";

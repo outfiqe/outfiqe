@@ -1,9 +1,8 @@
 import type { Request, Response } from "express";
 
 import { sendSuccess } from "#lib/api-response.utils.js";
-import { getAuthPrincipal } from "#middlewares/require-auth.js";
+import { getAuthPrincipal, requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
-import type { AuthPrincipal } from "#types/token.types.js";
 
 import type {
   CommentsQuery,
@@ -19,15 +18,9 @@ import { creatorLookService } from "./creatorLook.service.js";
 
 const CREATED_STATUS = 201;
 
-const requirePrincipal = (res: Response): AuthPrincipal => {
-  const principal = getAuthPrincipal(res);
-  if (!principal) throw new Error("reached without an auth principal");
-  return principal;
-};
-
 export const creatorLookController = {
   async create(_req: Request, res: Response) {
-    const { userId } = requirePrincipal(res);
+    const { userId } = requireAuthPrincipal(res);
     const body = validated.body<CreateCreatorLookBody>(res);
 
     const look = await creatorLookService.create(userId, body);
@@ -35,7 +28,7 @@ export const creatorLookController = {
   },
 
   async listMine(_req: Request, res: Response) {
-    const { userId } = requirePrincipal(res);
+    const { userId } = requireAuthPrincipal(res);
     const query = validated.query<ListCreatorLooksQuery>(res);
     const page = await creatorLookService.listMine(userId, query);
 
@@ -62,7 +55,7 @@ export const creatorLookController = {
   },
 
   async like(_req: Request, res: Response) {
-    const { userId } = requirePrincipal(res);
+    const { userId } = requireAuthPrincipal(res);
     const { lookId } = validated.params<LookIdParams>(res);
 
     const result = await creatorLookService.like(lookId, userId);
@@ -70,7 +63,7 @@ export const creatorLookController = {
   },
 
   async unlike(_req: Request, res: Response) {
-    const { userId } = requirePrincipal(res);
+    const { userId } = requireAuthPrincipal(res);
     const { lookId } = validated.params<LookIdParams>(res);
 
     const result = await creatorLookService.unlike(lookId, userId);
@@ -78,7 +71,7 @@ export const creatorLookController = {
   },
 
   async save(_req: Request, res: Response) {
-    const { userId } = requirePrincipal(res);
+    const { userId } = requireAuthPrincipal(res);
     const { lookId } = validated.params<LookIdParams>(res);
 
     const result = await creatorLookService.save(lookId, userId);
@@ -86,7 +79,7 @@ export const creatorLookController = {
   },
 
   async unsave(_req: Request, res: Response) {
-    const { userId } = requirePrincipal(res);
+    const { userId } = requireAuthPrincipal(res);
     const { lookId } = validated.params<LookIdParams>(res);
 
     const result = await creatorLookService.unsave(lookId, userId);
@@ -102,7 +95,7 @@ export const creatorLookController = {
   },
 
   async addComment(_req: Request, res: Response) {
-    const { userId } = requirePrincipal(res);
+    const { userId } = requireAuthPrincipal(res);
     const { lookId } = validated.params<LookIdParams>(res);
     const { body } = validated.body<CreateCommentBody>(res);
 

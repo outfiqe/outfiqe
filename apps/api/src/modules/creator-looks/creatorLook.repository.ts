@@ -3,7 +3,12 @@ import { Prisma } from "#generated/prisma/client.js";
 import type { CreatorLookTagClickSource } from "#generated/prisma/enums.js";
 import { CreatorStatus, ProductStatus } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
+import { isUniqueConstraintError } from "#lib/prisma.utils.js";
+import logger from "#lib/winston.utils.js";
 import type { ProductWithBrand } from "#modules/products/product.types.js";
+import { cacheService } from "#redis/cache.service.js";
+import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
+import { describeError } from "#redis/redis.utils.js";
 
 import type {
   CommentPage,
@@ -16,47 +21,12 @@ import type {
   TaggedProductPage,
   TrendingTag,
 } from "./creatorLook.types.js";
+import type { ScoredCursor, SimpleCursor } from "./creatorLook.utils.js";
+import { decodeCursor, encodeCursor, toSummary } from "./creatorLook.utils.js";
 
 const taggedProductsInclude = {
   taggedProducts: { include: { product: { select: { id: true, name: true, imageUrl: true } } } },
 } as const;
-
-const toSummary = (
-  look: {
-    id: string;
-    creatorId: string;
-    imageUrl: string;
-    caption: string | null;
-    createdAt: Date;
-  } & {
-    taggedProducts: { product: { id: string; name: string; imageUrl: string | null } }[];
-  },
-): CreatorLookSummary => ({
-  id: look.id,
-  creatorId: look.creatorId,
-  imageUrl: look.imageUrl,
-  caption: look.caption,
-  createdAt: look.createdAt,
-  taggedProducts: look.taggedProducts.map((tagged) => tagged.product),
-});
-
-type SimpleCursor = { c: string; i: string };
-type ScoredCursor = SimpleCursor & { s: number };
-
-const encodeCursor = <T extends SimpleCursor>(obj: T): string =>
-  Buffer.from(JSON.stringify(obj)).toString("base64url");
-
-const decodeCursor = <T extends SimpleCursor>(cursor?: string): T | undefined => {
-  if (!cursor) return undefined;
-  try {
-    return JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as T;
-  } catch {
-    return undefined;
-  }
-};
-
-const isUniqueConstraintError = (error: unknown): boolean =>
-  error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 
 const feedRelationsInclude = {
   creator: { select: { id: true, name: true, handle: true, creatorStatus: true } },
@@ -217,16 +187,20 @@ const listIdsByFilter = async (
 
 const TRENDING_TAGS_LIMIT = 15;
 const TRENDING_TAGS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-const TRENDING_TAGS_TTL_MS = 10 * 60 * 1000;
+const TRENDING_TAGS_CACHE_KEY = redisKeys.cache("creator-looks", "trending-tags");
 
-/* 
-A Map + timestamp is enough at this scale. Swap this for a Redis GET/SETEX
-(same 10-minute TTL) here once this needs to be shared across instances.
+/*
+Cache-aside: trending tags are a rolling 7-day aggregate recomputed on read,
+not tied to any single write, so a lazy GET/SETEX fits better than
+write-through here. Redis failures fall open to a live recompute.
 */
-let trendingTagsCache: { data: TrendingTag[]; expiresAt: number } | null = null;
-
 const fetchTrendingTags = async (): Promise<TrendingTag[]> => {
-  if (trendingTagsCache && trendingTagsCache.expiresAt > Date.now()) return trendingTagsCache.data;
+  try {
+    const cached = await cacheService.get<TrendingTag[]>(TRENDING_TAGS_CACHE_KEY);
+    if (cached) return cached;
+  } catch (error) {
+    logger.warn(`Cache read failed for "${TRENDING_TAGS_CACHE_KEY}": ${describeError(error)}`);
+  }
 
   const since = new Date(Date.now() - TRENDING_TAGS_WINDOW_MS);
   const rows = await prisma.$queryRaw<{ tag: string; post_count: bigint }[]>(Prisma.sql`
@@ -240,7 +214,13 @@ const fetchTrendingTags = async (): Promise<TrendingTag[]> => {
   `);
 
   const data = rows.map((row) => ({ tag: row.tag, postCount: Number(row.post_count) }));
-  trendingTagsCache = { data, expiresAt: Date.now() + TRENDING_TAGS_TTL_MS };
+
+  try {
+    await cacheService.set(TRENDING_TAGS_CACHE_KEY, data, CACHE_TTL.TRENDING_TAGS);
+  } catch (error) {
+    logger.warn(`Cache write failed for "${TRENDING_TAGS_CACHE_KEY}": ${describeError(error)}`);
+  }
+
   return data;
 };
 
