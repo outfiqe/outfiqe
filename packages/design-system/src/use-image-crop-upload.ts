@@ -4,12 +4,21 @@ import { useRef, useState } from "react";
 
 type PendingCrop = { file: File; objectUrl: string };
 
-type UseImageCropUploadOptions = {
-  onChange: (url: string | null) => void;
+type ApplyUrl<T> = (url: string, current: T) => T;
+
+type UseImageCropUploadOptions<T> = {
+  value: T;
+  onChange: (next: T) => void;
   onUpload: (files: File[]) => Promise<string[]>;
+  applyUrl: ApplyUrl<T>;
 };
 
-export const useImageCropUpload = ({ onChange, onUpload }: UseImageCropUploadOptions) => {
+export const useImageCropUpload = <T>({
+  value,
+  onChange,
+  onUpload,
+  applyUrl,
+}: UseImageCropUploadOptions<T>) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +29,7 @@ export const useImageCropUpload = ({ onChange, onUpload }: UseImageCropUploadOpt
     setError(null);
     try {
       const [url] = await onUpload([file]);
-      if (url) onChange(url);
+      if (url) onChange(applyUrl(url, value));
     } catch {
       setError("Upload failed. Try again.");
     } finally {

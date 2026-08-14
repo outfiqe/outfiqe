@@ -2,7 +2,6 @@
 
 import { toast } from "@outfiqe/design-system";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -11,17 +10,15 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { exploreFeedApi } from "../api/exploreFeedApi";
 import type { FeedPost } from "../api/exploreFeedSchemas";
 import { patchPostInFeedCaches } from "./feedCacheUpdate";
+import { useExploreAuthGate } from "./useExploreAuthGate";
 import { useFollowCreator } from "./useFollowCreator";
 import { useLikeLook } from "./useLikeLook";
 import { useSaveLook } from "./useSaveLook";
 
-// Shared behavior behind every post presentation (grid card, list row, …): auth-gating,
-// like/save/follow mutations, and the inline comment thread. Keeping this in one place means
-// the different layouts can't drift out of sync on how an action behaves.
 export const usePostCardState = ({ id, creator, taggedProducts }: FeedPost) => {
-  const router = useRouter();
   const queryClient = useQueryClient();
-  const { isAuthenticated, state } = useAuth();
+  const { state } = useAuth();
+  const { isAuthenticated, gated } = useExploreAuthGate();
   const likeMutation = useLikeLook();
   const saveMutation = useSaveLook();
   const followMutation = useFollowCreator();
@@ -30,9 +27,6 @@ export const usePostCardState = ({ id, creator, taggedProducts }: FeedPost) => {
 
   const isOwnPost = state.user?.id === creator.id;
   const primaryTag = taggedProducts[0];
-
-  const goToSignIn = () => router.push("/login?redirect=/explore");
-  const gated = (action: () => void) => (isAuthenticated ? action() : goToSignIn());
 
   const comments = useQuery({
     queryKey: ["look-comments", id],

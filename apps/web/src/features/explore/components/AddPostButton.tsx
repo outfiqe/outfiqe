@@ -2,26 +2,20 @@
 
 import { Modal } from "@outfiqe/design-system";
 import { Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { CreatorStatus } from "@/features/auth/types";
-// Deep-imported rather than via the creator-dashboard barrel: that barrel also re-exports a
-// "server-only" server-fetch helper (getCreatorProfileServer), which this "use client" component
-// can't pull in without breaking the client bundle.
 import { ApplyAsCreatorButton } from "@/features/creator-dashboard/components/ApplyAsCreatorButton";
 import { PostModal } from "@/features/creator-dashboard/components/PostModal";
 
+import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
+
 type ComposeTarget = "look" | "become_creator" | null;
 
-// Persistent compose entry point for the explore feed (a floating action button rather than a
-// header composer): a FAB stays reachable while the feed scrolls, where a top-of-feed composer
-// would not. Clicking it opens the same PostModal the creator dashboard uses, so posting a look
-// doesn't require leaving the feed.
 export const AddPostButton = () => {
-  const router = useRouter();
-  const { isAuthenticated, state } = useAuth();
+  const { state } = useAuth();
+  const { isAuthenticated, goToSignIn } = useExploreAuthGate();
   const [target, setTarget] = useState<ComposeTarget>(null);
 
   const creatorStatus = state.user?.creatorStatus ?? CreatorStatus.NONE;
@@ -30,7 +24,7 @@ export const AddPostButton = () => {
 
   const handleClick = () => {
     if (!isAuthenticated) {
-      router.push("/login?redirect=/explore");
+      goToSignIn();
       return;
     }
     setTarget(isApprovedCreator ? "look" : "become_creator");
@@ -42,9 +36,10 @@ export const AddPostButton = () => {
         type="button"
         onClick={handleClick}
         aria-label="Add a post"
-        className="fixed bottom-20 right-4 z-40 flex size-14 items-center justify-center rounded-full bg-foreground text-background shadow-lg transition-transform hover:scale-105 active:scale-95 lg:bottom-8 lg:right-8"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground shadow-xl transition-transform hover:scale-105 hover:bg-[#ff6a1f] active:scale-95 sm:w-auto sm:px-6 lg:bottom-8 lg:right-8"
       >
-        <Plus className="size-6" />
+        <Plus className="size-6 shrink-0" />
+        <span className="hidden text-[15px] font-semibold sm:inline">Post</span>
       </button>
 
       {isApprovedCreator && <PostModal open={target === "look"} onClose={close} />}

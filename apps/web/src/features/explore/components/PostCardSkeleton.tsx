@@ -1,6 +1,6 @@
 import { Skeleton } from "@outfiqe/design-system";
 
-import type { FeedLayout } from "./FeedFilterTabs";
+import { FEED_LAYOUT, type FeedLayout } from "../explore.constants";
 
 export const PostCardSkeleton = () => {
   return (
@@ -23,31 +23,12 @@ export const PostCardSkeleton = () => {
   );
 };
 
-const PostListItemSkeleton = () => {
-  return (
-    <div className="flex gap-4 border-b border-border py-4 first:pt-0">
-      <Skeleton className="size-28 shrink-0 rounded-xl sm:size-32" />
-      <div className="min-w-0 flex-1 space-y-2.5">
-        <div className="flex items-center gap-2">
-          <Skeleton className="size-7 shrink-0 rounded-full" />
-          <div className="space-y-1.5">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-2.5 w-16" />
-          </div>
-        </div>
-        <Skeleton className="h-3 w-full" />
-        <Skeleton className="h-3 w-2/3" />
-      </div>
-    </div>
-  );
-};
-
-export const ExploreFeedSkeleton = ({ layout = "grid" }: { layout?: FeedLayout }) => {
-  if (layout === "list") {
+export const ExploreFeedSkeleton = ({ layout = FEED_LAYOUT.GRID }: { layout?: FeedLayout }) => {
+  if (layout === FEED_LAYOUT.LIST) {
     return (
-      <div role="status" aria-label="Loading feed">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <PostListItemSkeleton key={index} />
+      <div role="status" aria-label="Loading feed" className="mx-auto flex max-w-xl flex-col">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <PostCardSkeleton key={index} />
         ))}
       </div>
     );

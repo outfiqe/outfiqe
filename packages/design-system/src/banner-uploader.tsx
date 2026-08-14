@@ -3,8 +3,9 @@
 import { ImagePlus, Loader2, X } from "lucide-react";
 
 import { cn } from "./cn";
+import { IMAGE_CROP_SHAPE } from "./crop-surface";
 import { HiddenFileInput } from "./hidden-file-input";
-import { IMAGE_CROP_SHAPE, ImageCropModal } from "./image-crop-modal";
+import { ImageCropModal } from "./image-crop-modal";
 import { useImageCropUpload } from "./use-image-crop-upload";
 
 const BANNER_ASPECT = 3.5;
@@ -25,7 +26,7 @@ export const BannerUploader = ({ value, onChange, onUpload, className }: BannerU
     handleFileSelect,
     closeCropModal,
     handleCropConfirm,
-  } = useImageCropUpload({ onChange, onUpload });
+  } = useImageCropUpload({ value, onChange, onUpload, applyUrl: (url) => url });
 
   return (
     <div className={cn("space-y-2", className)}>

@@ -2,12 +2,11 @@
 
 import { Skeleton } from "@outfiqe/design-system";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
-import { useAuth } from "@/features/auth/context/AuthContext";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
+import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 import { useFollowCreator } from "../hooks/useFollowCreator";
 import { useSuggestedCreators } from "../hooks/useSuggestedCreators";
 import { useTrendingTags } from "../hooks/useTrendingTags";
@@ -26,8 +25,7 @@ export const Sidebar = ({ onTagClick }: SidebarProps) => {
 };
 
 const SuggestedCreators = () => {
-  const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, goToSignIn } = useExploreAuthGate();
   const { data: creators, isLoading } = useSuggestedCreators();
   const followMutation = useFollowCreator();
 
@@ -39,11 +37,7 @@ const SuggestedCreators = () => {
 
       {!isAuthenticated && (
         <p className="mt-3 text-[12.5px] text-muted-foreground">
-          <button
-            type="button"
-            onClick={() => router.push("/login?redirect=/explore")}
-            className="font-semibold text-primary-strong"
-          >
+          <button type="button" onClick={goToSignIn} className="font-semibold text-primary-strong">
             Sign in
           </button>{" "}
           to see who to follow.
