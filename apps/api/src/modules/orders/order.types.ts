@@ -34,6 +34,15 @@ export type CreateOrderInput = {
   items: CreateOrderItemInput[];
 };
 
+export type PaymentTransactionView = {
+  id: string;
+  provider: PaymentMethod;
+  type: "PAYMENT" | "REFUND";
+  status: "INITIATED" | "SUCCEEDED" | "FAILED" | "CANCELLED";
+  transactionRef: string | null;
+  createdAt: string;
+};
+
 export type OrderItemView = {
   id: string;
   productId: string;
@@ -62,11 +71,12 @@ export type OrderView = {
   codFee: number;
   total: number;
   items: OrderItemView[];
+  transactions: PaymentTransactionView[];
 };
 
 export type OrderSummaryView = Omit<
   OrderView,
-  "items" | "phone" | "address" | "city" | "landmark"
+  "items" | "transactions" | "phone" | "address" | "city" | "landmark"
 > & {
   itemCount: number;
   firstItemImageUrl: string | null;

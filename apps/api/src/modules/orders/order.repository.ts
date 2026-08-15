@@ -35,7 +35,10 @@ export const orderRepository = {
   async findByIdForUser(userId: string, orderId: string) {
     return prisma.order.findFirst({
       where: { id: orderId, userId },
-      include: { items: { include: withOrderItemDetails } },
+      include: {
+        items: { include: withOrderItemDetails },
+        transactions: { orderBy: { createdAt: "asc" } },
+      },
     });
   },
 

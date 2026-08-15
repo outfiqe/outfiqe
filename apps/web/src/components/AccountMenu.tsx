@@ -80,6 +80,12 @@ export const AccountMenu = () => {
           >
             Your bag
           </Link>
+          <Link
+            href="/orders"
+            className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
+          >
+            Your orders
+          </Link>
 
           {!isBrandOwner && !isAdmin && (
             <>

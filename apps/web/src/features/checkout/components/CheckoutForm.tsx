@@ -18,7 +18,8 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import type { Cart } from "@/features/cart";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
-import { type CheckoutInput, checkoutInputSchema } from "../api/checkoutSchemas";
+import { type CheckoutInput, checkoutInputSchema, PaymentMethod } from "../api/checkoutSchemas";
+import { COD_HANDLING_FEE } from "../checkout.constants";
 import { useCheckout } from "../hooks/useCheckout";
 import { CheckoutSummary } from "./CheckoutSummary";
 import { PaymentMethodField } from "./PaymentMethodField";
@@ -40,7 +41,7 @@ export const CheckoutForm = ({ cart }: CheckoutFormProps) => {
       address: "",
       city: "Kathmandu",
       landmark: "",
-      paymentMethod: "COD",
+      paymentMethod: PaymentMethod.COD,
     },
     mode: "onBlur",
   });
@@ -152,9 +153,9 @@ export const CheckoutForm = ({ cart }: CheckoutFormProps) => {
               value={paymentMethod}
               onChange={(value) => form.setValue("paymentMethod", value)}
             />
-            {paymentMethod === "COD" && (
+            {paymentMethod === PaymentMethod.COD && (
               <p className="mt-3 text-xs text-muted-foreground">
-                A Rs. 50 handling fee applies to cash on delivery.
+                A Rs. {COD_HANDLING_FEE} handling fee applies to cash on delivery.
               </p>
             )}
           </div>

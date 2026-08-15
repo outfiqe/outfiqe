@@ -4,7 +4,7 @@ import { Button } from "@outfiqe/design-system";
 
 import type { Cart } from "@/features/cart";
 
-import type { PaymentMethodValue } from "../api/checkoutSchemas";
+import { PaymentMethod, type PaymentMethodValue } from "../api/checkoutSchemas";
 import { COD_HANDLING_FEE } from "../checkout.constants";
 
 type CheckoutSummaryProps = {
@@ -15,7 +15,7 @@ type CheckoutSummaryProps = {
 
 export const CheckoutSummary = ({ cart, paymentMethod, isSubmitting }: CheckoutSummaryProps) => {
   const { subtotal, deliveryFee } = cart;
-  const codFee = paymentMethod === "COD" ? COD_HANDLING_FEE : 0;
+  const codFee = paymentMethod === PaymentMethod.COD ? COD_HANDLING_FEE : 0;
   const total = subtotal + deliveryFee + codFee;
 
   return (
@@ -46,7 +46,7 @@ export const CheckoutSummary = ({ cart, paymentMethod, isSubmitting }: CheckoutS
       <Button type="submit" className="mt-4 w-full" disabled={isSubmitting}>
         {isSubmitting
           ? "Placing order…"
-          : paymentMethod === "COD"
+          : paymentMethod === PaymentMethod.COD
             ? "Place order"
             : `Pay Rs. ${total.toLocaleString()}`}
       </Button>

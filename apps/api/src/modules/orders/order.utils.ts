@@ -1,4 +1,9 @@
-import type { OrderItemView, OrderSummaryView, OrderView } from "./order.types.js";
+import type {
+  OrderItemView,
+  OrderSummaryView,
+  OrderView,
+  PaymentTransactionView,
+} from "./order.types.js";
 
 type OrderItemRow = {
   id: string;
@@ -26,6 +31,16 @@ type OrderRow = {
   codFee: number;
   total: number;
   items: OrderItemRow[];
+  transactions?: PaymentTransactionRow[];
+};
+
+type PaymentTransactionRow = {
+  id: string;
+  provider: PaymentTransactionView["provider"];
+  type: PaymentTransactionView["type"];
+  status: PaymentTransactionView["status"];
+  transactionRef: string | null;
+  createdAt: Date;
 };
 
 const toOrderItemView = (row: OrderItemRow): OrderItemView => {
@@ -45,6 +60,11 @@ const toOrderItemView = (row: OrderItemRow): OrderItemView => {
   };
 };
 
+const toPaymentTransactionView = (row: PaymentTransactionRow): PaymentTransactionView => {
+  const { id, provider, type, status, transactionRef, createdAt } = row;
+  return { id, provider, type, status, transactionRef, createdAt: createdAt.toISOString() };
+};
+
 export const toOrderView = (order: OrderRow): OrderView => {
   const {
     id,
@@ -62,6 +82,7 @@ export const toOrderView = (order: OrderRow): OrderView => {
     codFee,
     total,
     items,
+    transactions,
   } = order;
 
   return {
@@ -80,6 +101,7 @@ export const toOrderView = (order: OrderRow): OrderView => {
     codFee,
     total,
     items: items.map(toOrderItemView),
+    transactions: (transactions ?? []).map(toPaymentTransactionView),
   };
 };
 
