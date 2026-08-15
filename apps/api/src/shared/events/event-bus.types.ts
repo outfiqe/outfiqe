@@ -1,0 +1,28 @@
+import type { UserRole } from "#generated/prisma/enums.js";
+
+import type { DomainEvents } from "./event-bus.js";
+
+export type DomainEvent = (typeof DomainEvents)[keyof typeof DomainEvents];
+
+type FollowPayload = { followerId: string; followingId: string };
+
+export type DomainEventPayloads = {
+  [DomainEvents.USER_CREATED]: { userId: string; email: string; role?: UserRole };
+  [DomainEvents.USER_DELETED]: { userId: string };
+  [DomainEvents.USER_EMAIL_VERIFIED]: { userId: string; email: string };
+  [DomainEvents.USER_PASSWORD_RESET]: { userId: string };
+  [DomainEvents.BRAND_OWNER_REGISTERED]: { userId: string; brandId: string; email: string };
+  [DomainEvents.ADMIN_REGISTERED]: { userId: string; email: string };
+  [DomainEvents.LOOK_CREATED]: { lookId: string; creatorId: string; createdAt: string };
+  [DomainEvents.LOOK_LIKED]: { lookId: string; userId: string };
+  [DomainEvents.LOOK_SAVED]: { lookId: string; userId: string };
+  [DomainEvents.LOOK_COMMENTED]: { lookId: string; commentId: string; userId: string };
+  [DomainEvents.USER_FOLLOWED]: FollowPayload;
+  [DomainEvents.USER_UNFOLLOWED]: FollowPayload;
+  [DomainEvents.BRAND_FOLLOWED]: FollowPayload;
+  [DomainEvents.BRAND_UNFOLLOWED]: FollowPayload;
+};
+
+export type DomainEventHandler<E extends DomainEvent> = (
+  payload: DomainEventPayloads[E],
+) => Promise<void>;

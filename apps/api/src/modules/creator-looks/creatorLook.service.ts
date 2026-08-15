@@ -82,10 +82,10 @@ export const creatorLookService = {
 
     await Promise.all(productIds.map((productId) => productService.recountWornBy(productId)));
 
-    eventBus.emit(DomainEvents.LOOK_CREATED, {
+    await eventBus.publish(DomainEvents.LOOK_CREATED, {
       lookId: look.id,
       creatorId: userId,
-      createdAt: look.createdAt,
+      createdAt: look.createdAt.toISOString(),
     });
 
     return look;
@@ -202,7 +202,7 @@ export const creatorLookService = {
   async like(lookId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
     await requireActiveLook(lookId);
     const { likeCount } = await creatorLookRepository.like(lookId, userId);
-    eventBus.emit(DomainEvents.LOOK_LIKED, { lookId, userId });
+    await eventBus.publish(DomainEvents.LOOK_LIKED, { lookId, userId });
     return { liked: true, likeCount };
   },
 
@@ -215,7 +215,7 @@ export const creatorLookService = {
   async save(lookId: string, userId: string): Promise<{ saved: boolean; saveCount: number }> {
     await requireActiveLook(lookId);
     const { saveCount } = await creatorLookRepository.save(lookId, userId);
-    eventBus.emit(DomainEvents.LOOK_SAVED, { lookId, userId });
+    await eventBus.publish(DomainEvents.LOOK_SAVED, { lookId, userId });
     return { saved: true, saveCount };
   },
 
@@ -236,7 +236,7 @@ export const creatorLookService = {
   async addComment(lookId: string, userId: string, body: string) {
     await requireActiveLook(lookId);
     const comment = await creatorLookRepository.createComment(lookId, userId, body);
-    eventBus.emit(DomainEvents.LOOK_COMMENTED, { lookId, commentId: comment.id, userId });
+    await eventBus.publish(DomainEvents.LOOK_COMMENTED, { lookId, commentId: comment.id, userId });
     return comment;
   },
 

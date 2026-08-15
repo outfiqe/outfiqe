@@ -135,7 +135,7 @@ export const authService = {
 
     const { id, email: userEmail, role } = user;
 
-    eventBus.emit(DomainEvents.USER_CREATED, {
+    await eventBus.publish(DomainEvents.USER_CREATED, {
       userId: id,
       email: userEmail,
       role,
@@ -162,7 +162,7 @@ export const authService = {
     }
 
     await userRepository.markEmailVerified(id);
-    eventBus.emit(DomainEvents.USER_EMAIL_VERIFIED, { userId: id, email });
+    await eventBus.publish(DomainEvents.USER_EMAIL_VERIFIED, { userId: id, email });
 
     logger.info(`Email verified for user ${id}`);
   },
@@ -334,7 +334,7 @@ export const authService = {
     await userRepository.updatePasswordHash(user.id, passwordHash);
     await authRepository.deleteAllRefreshTokensForUser(user.id);
 
-    eventBus.emit(DomainEvents.USER_PASSWORD_RESET, { userId: user.id });
+    await eventBus.publish(DomainEvents.USER_PASSWORD_RESET, { userId: user.id });
 
     logger.info(`Password reset for user ${user.id}`);
   },
@@ -463,7 +463,7 @@ export const authService = {
     });
     await authRepository.markBrandInviteAccepted(inviteId);
 
-    eventBus.emit(DomainEvents.BRAND_OWNER_REGISTERED, {
+    await eventBus.publish(DomainEvents.BRAND_OWNER_REGISTERED, {
       userId: user.id,
       brandId,
       email: user.email,
@@ -572,7 +572,7 @@ export const authService = {
 
     await adminInviteRepository.markAccepted(inviteId);
 
-    eventBus.emit(DomainEvents.ADMIN_REGISTERED, { userId: user.id, email: user.email });
+    await eventBus.publish(DomainEvents.ADMIN_REGISTERED, { userId: user.id, email: user.email });
 
     const tokens = await issueTokens(user);
 
