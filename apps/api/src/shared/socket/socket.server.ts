@@ -6,6 +6,7 @@ import { Server as SocketIOServer } from "socket.io";
 import { env } from "#config/env.config.js";
 import logger from "#lib/winston.utils.js";
 import { redis } from "#redis/redis.client.js";
+import { attachRedisLifecycleLogging } from "#redis/redis.utils.js";
 
 import { socketAuth } from "./socket.auth.js";
 import { EXPLORE_ROOM, userRoom } from "./socket.keys.js";
@@ -25,6 +26,9 @@ export const initSocket = (httpServer: HttpServer): AppSocketServer => {
 
   const pubClient = redis.duplicate();
   const subClient = redis.duplicate();
+
+  attachRedisLifecycleLogging(pubClient, "socket-pub");
+  attachRedisLifecycleLogging(subClient, "socket-sub");
 
   const io: AppSocketServer = new SocketIOServer(httpServer, {
     cors: { origin: env.ALLOWED_ORIGINS, credentials: true },

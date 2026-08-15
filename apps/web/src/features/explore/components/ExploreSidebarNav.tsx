@@ -1,5 +1,9 @@
 "use client";
 
+import { Bookmark } from "lucide-react";
+import Link from "next/link";
+
+import { SAVED_QUERY_PARAM, SAVED_TAB } from "@/features/wishlist";
 import { cn } from "@/shared/lib/cn";
 
 import { EXPLORE_FIXED_TABS, FEED_LAYOUT_OPTIONS, type FeedLayout } from "../explore.constants";
@@ -36,6 +40,20 @@ export const ExploreSidebarNav = ({
           {label}
         </button>
       ))}
+
+      <div className="my-2 border-t border-border" />
+
+      <h4 className="px-3 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+        Library
+      </h4>
+
+      <Link
+        href={`/wishlist?${SAVED_QUERY_PARAM.TAB}=${SAVED_TAB.POSTS}`}
+        className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <Bookmark className="size-4 shrink-0" />
+        Saved
+      </Link>
 
       <div className="my-2 border-t border-border" />
 

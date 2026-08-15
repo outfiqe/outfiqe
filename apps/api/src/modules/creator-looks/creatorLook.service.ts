@@ -13,6 +13,7 @@ import { creatorLookRepository } from "./creatorLook.repository.js";
 import type {
   CreateCreatorLookBody,
   ListCreatorLooksQuery,
+  ListSavedQuery,
   TagClickBody,
 } from "./creatorLook.schemas.js";
 import type {
@@ -97,6 +98,13 @@ export const creatorLookService = {
     });
   },
 
+  async listMySaved(userId: string, query: ListSavedQuery): Promise<FeedPage> {
+    return creatorLookRepository.listSaved(userId, {
+      cursor: query.cursor,
+      limit: query.limit,
+    });
+  },
+
   async listPublic(query: ListCreatorLooksQuery): Promise<TaggedProductPage<PublicProduct>> {
     const page = await creatorLookRepository.listPublicTaggedProducts(query);
     return { products: page.products.map(toPublicProduct), nextCursor: page.nextCursor };
@@ -161,6 +169,30 @@ export const creatorLookService = {
       viewerId,
       followingCreatorIds: [],
     });
+  },
+
+  async countNewSince(
+    viewerId: string | undefined,
+    { tab, since }: { tab: string; since: Date },
+  ): Promise<number> {
+    if (tab === FOLLOWING_TAB) {
+      if (!viewerId) return 0;
+
+      const followingCreatorIds = await followRepository.listFollowingIds(
+        viewerId,
+        FollowTargetType.USER,
+      );
+      if (followingCreatorIds.length === 0) return 0;
+
+      return creatorLookRepository.countNewSince({
+        tab: FOLLOWING_TAB,
+        since,
+        followingCreatorIds,
+      });
+    }
+
+    const tabToUse = tab === FOR_YOU_TAB ? TRENDING_TAB : tab;
+    return creatorLookRepository.countNewSince({ tab: tabToUse, since, followingCreatorIds: [] });
   },
 
   async trendingTags(): Promise<TrendingTag[]> {

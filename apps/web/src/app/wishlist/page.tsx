@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -16,8 +17,10 @@ const WishlistPage = () => {
         <h1 className="font-display text-2xl font-extrabold uppercase tracking-tight text-foreground">
           Saved
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">Pieces you&apos;ve kept for later.</p>
-        <WishlistPageBody />
+        <p className="mt-2 text-sm text-muted-foreground">Everything you&apos;ve kept for later.</p>
+        <Suspense fallback={null}>
+          <WishlistPageBody />
+        </Suspense>
       </main>
       <SiteFooter />
       <MobileTabBar />

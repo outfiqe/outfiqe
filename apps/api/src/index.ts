@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 
 import logger from "#lib/winston.utils.js";
+import { registerCreatorLookSocketHandlers } from "#modules/creator-looks/creatorLook.socket.js";
 import { disconnectRedis } from "#redis/redis.client.js";
 import { registerSocketListeners } from "#socket/socket.listeners.js";
 import { closeSocket, initSocket } from "#socket/socket.server.js";
@@ -16,6 +17,7 @@ const app = createApp();
 const httpServer = createServer(app);
 initSocket(httpServer);
 registerSocketListeners();
+registerCreatorLookSocketHandlers();
 
 const server = httpServer.listen(env.PORT, () => {
   logger.info(`API listening on http://localhost:${env.PORT}`);

@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { exploreFeedApi } from "../api/exploreFeedApi";
-import { patchPostInFeedCaches } from "./feedCacheUpdate";
+import { patchPostInFeedCaches } from "../utils/feedCacheUpdate";
 
 export const useSaveLook = () => {
   const queryClient = useQueryClient();
@@ -15,7 +15,9 @@ export const useSaveLook = () => {
     mutationFn: ({ lookId, saved }: { lookId: string; saved: boolean }) =>
       saved ? exploreFeedApi.unsave(lookId) : exploreFeedApi.save(lookId),
 
-    onMutate: ({ lookId, saved }) => {
+    onMutate: async ({ lookId, saved }) => {
+      await queryClient.cancelQueries({ queryKey: ["explore-feed"] });
+
       patchPostInFeedCaches(queryClient, lookId, (post) => ({
         ...post,
         isSaved: !saved,
@@ -30,6 +32,14 @@ export const useSaveLook = () => {
         saveCount: post.saveCount + (saved ? 1 : -1),
       }));
       toast.error(getErrorMessage(error));
+    },
+
+    onSuccess: ({ saved, saveCount }, { lookId }) => {
+      patchPostInFeedCaches(queryClient, lookId, (post) => ({
+        ...post,
+        isSaved: saved,
+        saveCount,
+      }));
     },
   });
 };

@@ -165,4 +165,10 @@ gh variable set CI_JWT_SECRET --body "ci-placeholder-secret-not-used-for-anythin
 
 ## Status
 
-MVP — auth is functional (signup/login, hashed passwords, JWT) but has no refresh-token store or `requireAuth` middleware yet, and there's no test suite wired up. Not production-ready.
+This ships to real, public users — "MVP" here means a scoped feature set, not a lower engineering
+bar. Auth is production-grade: hashed passwords, short-lived JWT access tokens, and a DB-backed,
+hashed, TTL'd, rotating refresh-token store (`apps/api/src/modules/auth`), enforced server-side via
+`requireAuth`/`requireRole` middleware across every protected route. The real-time layer
+(Socket.IO + Redis pub/sub adapter, `apps/api/src/shared/socket`, `apps/api/src/shared/redis`) uses
+exponential backoff with jitter on reconnect and reconciles missed events after a drop instead of
+losing them. The one real gap: no automated test suite yet.

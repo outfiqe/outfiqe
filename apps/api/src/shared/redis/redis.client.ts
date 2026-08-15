@@ -2,9 +2,20 @@ import type { ClientContext } from "ioredis";
 import { Redis } from "ioredis";
 
 import { env } from "#config/env.config.js";
-import logger from "#lib/winston.utils.js";
+
+import { attachRedisLifecycleLogging } from "./redis.utils.js";
 
 const MAX_RETRIES_PER_REQUEST = 3;
+
+const RETRY_BASE_DELAY_MS = 200;
+const RETRY_MAX_DELAY_MS = 10_000;
+const RETRY_JITTER_RATIO = 0.2;
+
+const retryStrategy = (attempt: number): number => {
+  const exponentialDelayMs = Math.min(RETRY_BASE_DELAY_MS * 2 ** attempt, RETRY_MAX_DELAY_MS);
+  const jitterMs = Math.random() * exponentialDelayMs * RETRY_JITTER_RATIO;
+  return exponentialDelayMs + jitterMs;
+};
 
 declare module "ioredis" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- must match ioredis's own declaration to merge
@@ -15,6 +26,7 @@ declare module "ioredis" {
 
 export const redis = new Redis(env.REDIS_URL, {
   maxRetriesPerRequest: MAX_RETRIES_PER_REQUEST,
+  retryStrategy,
 });
 
 redis.defineCommand("incrWithExpiry", {
@@ -28,8 +40,7 @@ redis.defineCommand("incrWithExpiry", {
   `,
 });
 
-redis.on("connect", () => logger.info("Redis connected"));
-redis.on("error", (error) => logger.error(`Redis connection error: ${error.message}`));
+attachRedisLifecycleLogging(redis, "redis");
 
 export const disconnectRedis = async () => {
   await redis.quit();

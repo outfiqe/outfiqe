@@ -47,6 +47,8 @@ export const PostDetailModal = ({ post, onClose }: PostDetailModalProps) => {
     submitComment,
   } = usePostCardState(post);
   const { isLoading: commentsLoading, data: commentsData } = comments;
+  const { mutate: toggleLike, isPending: isLiking } = likeMutation;
+  const { mutate: toggleSave, isPending: isSaving } = saveMutation;
 
   useEffect(() => {
     setCommentsOpen(true);
@@ -79,10 +81,12 @@ export const PostDetailModal = ({ post, onClose }: PostDetailModalProps) => {
           <PostActionsRow
             isLiked={isLiked}
             likeCount={likeCount}
-            onLike={() => gated(() => likeMutation.mutate({ lookId: id, liked: isLiked }))}
+            onLike={() => gated(() => toggleLike({ lookId: id, liked: isLiked }))}
+            isLiking={isLiking}
             commentCount={commentCount}
             isSaved={isSaved}
-            onSave={() => gated(() => saveMutation.mutate({ lookId: id, saved: isSaved }))}
+            onSave={() => gated(() => toggleSave({ lookId: id, saved: isSaved }))}
+            isSaving={isSaving}
             className="mt-2.5 border-t border-border pt-2.5"
           />
 

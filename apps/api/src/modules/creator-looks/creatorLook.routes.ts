@@ -11,6 +11,7 @@ import {
   createCreatorLookSchema,
   feedQuerySchema,
   listCreatorLooksQuerySchema,
+  listSavedQuerySchema,
   lookIdParamsSchema,
   tagClickParamsSchema,
   tagClickSchema,
@@ -34,6 +35,12 @@ creatorLookRoutes.get(
   requireAuth,
   validate({ query: listCreatorLooksQuerySchema }),
   creatorLookController.listMine,
+);
+creatorLookRoutes.get(
+  "/saved",
+  requireAuth,
+  validate({ query: listSavedQuerySchema }),
+  creatorLookController.listSaved,
 );
 
 creatorLookRoutes.get(

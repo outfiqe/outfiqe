@@ -8,11 +8,13 @@ type PostActionsRowProps = {
   isLiked: boolean;
   likeCount: number;
   onLike: () => void;
+  isLiking?: boolean;
   commentCount: number;
   onCommentClick?: () => void;
   commentsOpen?: boolean;
   isSaved: boolean;
   onSave: () => void;
+  isSaving?: boolean;
   className?: string;
 };
 
@@ -20,11 +22,13 @@ export const PostActionsRow = ({
   isLiked,
   likeCount,
   onLike,
+  isLiking,
   commentCount,
   onCommentClick,
   commentsOpen,
   isSaved,
   onSave,
+  isSaving,
   className,
 }: PostActionsRowProps) => {
   return (
@@ -32,9 +36,10 @@ export const PostActionsRow = ({
       <button
         type="button"
         onClick={onLike}
+        disabled={isLiking}
         aria-pressed={isLiked}
         className={cn(
-          "flex items-center gap-1.5 text-[12.5px] transition-colors",
+          "flex items-center gap-1.5 text-[12.5px] transition-colors disabled:opacity-60",
           isLiked ? "text-primary-strong" : "text-muted-foreground hover:text-foreground",
         )}
       >
@@ -62,10 +67,11 @@ export const PostActionsRow = ({
       <button
         type="button"
         onClick={onSave}
+        disabled={isSaving}
         aria-pressed={isSaved}
         aria-label="Save post"
         className={cn(
-          "ml-auto flex items-center gap-1.5 text-[12.5px] transition-colors",
+          "ml-auto flex items-center gap-1.5 text-[12.5px] transition-colors disabled:opacity-60",
           isSaved ? "text-foreground" : "text-muted-foreground hover:text-foreground",
         )}
       >

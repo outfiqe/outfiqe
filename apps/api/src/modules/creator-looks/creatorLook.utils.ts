@@ -25,12 +25,12 @@ export const toSummary = ({
 });
 
 export type SimpleCursor = { c: string; i: string };
-export type ScoredCursor = SimpleCursor & { s: number };
+export type TrendingSnapshotCursor = { sessionId: string; offset: number };
 
-export const encodeCursor = <T extends SimpleCursor>(cursorPayload: T): string =>
+export const encodeCursor = <T>(cursorPayload: T): string =>
   Buffer.from(JSON.stringify(cursorPayload)).toString("base64url");
 
-export const decodeCursor = <T extends SimpleCursor>(cursor?: string): T | undefined => {
+export const decodeCursor = <T>(cursor?: string): T | undefined => {
   if (!cursor) return undefined;
   try {
     return JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as T;

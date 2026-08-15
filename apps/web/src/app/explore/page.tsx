@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -12,7 +13,9 @@ const ExplorePage = () => {
     <div className="pb-20 lg:pb-0">
       <SiteHeader />
       <main>
-        <ExploreFeed />
+        <Suspense fallback={null}>
+          <ExploreFeed />
+        </Suspense>
       </main>
       <SiteFooter />
       <MobileTabBar />

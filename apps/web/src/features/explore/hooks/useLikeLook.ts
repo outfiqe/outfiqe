@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { exploreFeedApi } from "../api/exploreFeedApi";
-import { patchPostInFeedCaches } from "./feedCacheUpdate";
+import { patchPostInFeedCaches } from "../utils/feedCacheUpdate";
 
 export const useLikeLook = () => {
   const queryClient = useQueryClient();
@@ -15,7 +15,9 @@ export const useLikeLook = () => {
     mutationFn: ({ lookId, liked }: { lookId: string; liked: boolean }) =>
       liked ? exploreFeedApi.unlike(lookId) : exploreFeedApi.like(lookId),
 
-    onMutate: ({ lookId, liked }) => {
+    onMutate: async ({ lookId, liked }) => {
+      await queryClient.cancelQueries({ queryKey: ["explore-feed"] });
+
       patchPostInFeedCaches(queryClient, lookId, (post) => ({
         ...post,
         isLiked: !liked,
@@ -31,6 +33,14 @@ export const useLikeLook = () => {
         likeCount: post.likeCount + (liked ? 1 : -1),
       }));
       toast.error(getErrorMessage(error));
+    },
+
+    onSuccess: ({ liked, likeCount }, { lookId }) => {
+      patchPostInFeedCaches(queryClient, lookId, (post) => ({
+        ...post,
+        isLiked: liked,
+        likeCount,
+      }));
     },
   });
 };
