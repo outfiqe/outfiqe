@@ -238,8 +238,6 @@ async function seedCreatorLookImages() {
     await prisma.creatorLook.update({ where: { id: look.id }, data: { imageUrl } });
     updated++;
   }
-
-  console.log(`Refreshed ${updated} creator look images`);
 }
 
 async function seedHashtags() {
@@ -452,7 +450,6 @@ const IMAGES_PER_PRODUCT = 2;
 
 async function seedProductImages() {
   const products = await prisma.product.findMany({ select: { id: true, name: true } });
-  let created = 0;
 
   for (const product of products) {
     const pool = PRODUCT_IMAGE_POOLS[product.name];
@@ -468,10 +465,7 @@ async function seedProductImages() {
         sortOrder: index,
       })),
     });
-    created += photos.length;
   }
-
-  console.log(`Seeded ${created} product images across ${products.length} products`);
 }
 
 async function seedBrandRatings() {
