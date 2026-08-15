@@ -58,6 +58,7 @@ export type CreatorLookFeedPost = {
   id: string;
   creator: FeedCreator;
   imageUrl: string;
+  images: string[];
   caption: string | null;
   likeCount: number;
   commentCount: number;

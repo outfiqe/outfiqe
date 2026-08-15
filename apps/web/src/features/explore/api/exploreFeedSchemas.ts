@@ -21,6 +21,7 @@ export const feedPostSchema = z.object({
   id: z.string(),
   creator: feedCreatorSchema,
   imageUrl: z.string(),
+  images: z.array(z.string()),
   caption: z.string().nullable(),
   likeCount: z.number(),
   commentCount: z.number(),

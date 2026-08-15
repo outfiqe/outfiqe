@@ -30,6 +30,7 @@ const taggedProductsInclude = {
 
 const feedRelationsInclude = {
   creator: { select: { id: true, name: true, handle: true, creatorStatus: true } },
+  images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
   taggedProducts: {
     include: {
       product: {
@@ -50,6 +51,7 @@ const toFeedPost = (
     id,
     creator,
     imageUrl,
+    images,
     caption,
     likeCount,
     commentCount,
@@ -69,6 +71,7 @@ const toFeedPost = (
     isApproved: creator.creatorStatus === CreatorStatus.APPROVED,
   },
   imageUrl,
+  images: images.length > 0 ? images.map((image) => image.url) : [imageUrl],
   caption,
   likeCount,
   commentCount,

@@ -1,18 +1,12 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import Cropper, { type Area } from "react-easy-crop";
+import { useState } from "react";
 
 import { Button } from "./button";
-import { getCroppedImageFile } from "./crop-image";
+import { cn } from "./cn";
+import { getCroppedImageFile, type PixelCrop } from "./crop-image";
+import { CropSurface, IMAGE_CROP_SHAPE, type ImageCropShape } from "./crop-surface";
 import { Modal } from "./modal";
-
-export const IMAGE_CROP_SHAPE = {
-  ROUND: "round",
-  RECT: "rect",
-} as const;
-
-type ImageCropShape = (typeof IMAGE_CROP_SHAPE)[keyof typeof IMAGE_CROP_SHAPE];
 
 type ImageCropModalProps = {
   imageSrc: string;
@@ -41,13 +35,9 @@ export const ImageCropModal = ({
 }: ImageCropModalProps) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<PixelCrop | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const handleCropComplete = useCallback((_area: Area, areaPixels: Area) => {
-    setCroppedAreaPixels(areaPixels);
-  }, []);
 
   const handleConfirm = async () => {
     if (!croppedAreaPixels) return;
@@ -80,32 +70,17 @@ export const ImageCropModal = ({
         </div>
       }
     >
-      <div className={`relative w-full overflow-hidden rounded-xl bg-muted ${cropAreaClassName}`}>
-        <Cropper
-          image={imageSrc}
-          crop={crop}
-          zoom={zoom}
-          aspect={aspect}
-          cropShape={cropShape}
-          showGrid={false}
-          onCropChange={setCrop}
-          onZoomChange={setZoom}
-          onCropComplete={handleCropComplete}
-        />
-      </div>
-      <div className="mt-4 flex items-center gap-3">
-        <span className="text-xs font-medium text-muted-foreground">Zoom</span>
-        <input
-          type="range"
-          min={1}
-          max={3}
-          step={0.01}
-          value={zoom}
-          onChange={(event) => setZoom(Number(event.target.value))}
-          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary"
-          aria-label="Zoom"
-        />
-      </div>
+      <CropSurface
+        imageSrc={imageSrc}
+        aspect={aspect}
+        cropShape={cropShape}
+        crop={crop}
+        onCropChange={setCrop}
+        zoom={zoom}
+        onZoomChange={setZoom}
+        onCropComplete={setCroppedAreaPixels}
+        cropAreaClassName={cn(cropAreaClassName, "rounded-xl")}
+      />
 
       {error && <p className="mt-3 text-xs text-destructive">{error}</p>}
     </Modal>

@@ -4,8 +4,9 @@ import { Camera, Loader2, X } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { cn } from "./cn";
+import { IMAGE_CROP_SHAPE } from "./crop-surface";
 import { HiddenFileInput } from "./hidden-file-input";
-import { IMAGE_CROP_SHAPE, ImageCropModal } from "./image-crop-modal";
+import { ImageCropModal } from "./image-crop-modal";
 import { useImageCropUpload } from "./use-image-crop-upload";
 
 type AvatarUploaderProps = {
@@ -31,7 +32,7 @@ export const AvatarUploader = ({
     handleFileSelect,
     closeCropModal,
     handleCropConfirm,
-  } = useImageCropUpload({ onChange, onUpload });
+  } = useImageCropUpload({ value, onChange, onUpload, applyUrl: (url) => url });
 
   return (
     <div className={cn("space-y-2", className)}>
