@@ -6,6 +6,7 @@ import { cn } from "@/shared/lib/cn";
 import type { FeedPost } from "../api/exploreFeedSchemas";
 import { usePostCardState } from "../hooks/usePostCardState";
 import { PostActionsRow } from "./PostActionsRow";
+import { PostCaption } from "./PostCaption";
 import { PostCardHeader } from "./PostCardHeader";
 import { PostCarousel } from "./PostCarousel";
 import { PostCommentsSection } from "./PostCommentsSection";
@@ -71,7 +72,10 @@ export const PostCard = ({ post, onImageClick }: PostCardProps) => {
         {primaryTag && <PostTagPill lookId={id} tag={primaryTag} className="mb-2" />}
 
         {caption && (
-          <p className="text-[13.5px] leading-relaxed text-muted-foreground">{caption}</p>
+          <PostCaption
+            text={caption}
+            className="text-[13.5px] leading-relaxed text-muted-foreground"
+          />
         )}
 
         <PostActionsRow
