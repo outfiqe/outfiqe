@@ -1,0 +1,4 @@
+export const FREE_DELIVERY_THRESHOLD = 5000;
+export const STANDARD_DELIVERY_FEE = 150;
+export const COD_HANDLING_FEE = 50;
+export const ATTRIBUTION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;

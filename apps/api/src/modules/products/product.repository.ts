@@ -2,6 +2,7 @@ import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
 import type { ProductType } from "#generated/prisma/enums.js";
 import { CreatorStatus, ProductStatus } from "#generated/prisma/enums.js";
+import type { DbClient } from "#types/db.types.js";
 
 import { NEW_ARRIVAL_WINDOW_MS } from "./product.constants.js";
 import type {
@@ -14,6 +15,8 @@ import type {
 } from "./product.types.js";
 import { sumStock } from "./product.utils.js";
 
+export type { DbClient } from "#types/db.types.js";
+
 const TRENDING_LIMIT = 5;
 const NEW_ARRIVALS_LIMIT = 10;
 const SEEN_ON_CREATORS_LIMIT = 5;
@@ -23,8 +26,6 @@ const withBrandAndCategories = {
   categories: { select: { slug: true, name: true } },
   sizes: { select: { stock: true } },
 };
-
-export type DbClient = typeof prisma | Prisma.TransactionClient;
 
 type PublicFilter = { categoryId?: string; type?: ProductType; brandId?: string; q?: string };
 

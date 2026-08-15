@@ -1,4 +1,2 @@
-export const FREE_DELIVERY_THRESHOLD = 5000;
-export const STANDARD_DELIVERY_FEE = 150;
 export const CART_LOW_STOCK_THRESHOLD = 3;
 export const MAX_CART_ITEM_QTY = 20;

@@ -1,11 +1,8 @@
+import { FREE_DELIVERY_THRESHOLD, STANDARD_DELIVERY_FEE } from "#constants/commerce.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { productRepository } from "#modules/products/product.repository.js";
 
-import {
-  CART_LOW_STOCK_THRESHOLD,
-  FREE_DELIVERY_THRESHOLD,
-  STANDARD_DELIVERY_FEE,
-} from "./cart.constants.js";
+import { CART_LOW_STOCK_THRESHOLD } from "./cart.constants.js";
 import { cartRepository } from "./cart.repository.js";
 import type { CartItemView, CartView } from "./cart.types.js";
 

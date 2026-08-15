@@ -40,6 +40,10 @@ export const cartRepository = {
     return result.count > 0;
   },
 
+  async clearCart(cartId: string): Promise<void> {
+    await prisma.cartItem.deleteMany({ where: { cartId } });
+  },
+
   async listItems(cartId: string) {
     return prisma.cartItem.findMany({
       where: { cartId },

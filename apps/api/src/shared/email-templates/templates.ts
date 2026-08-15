@@ -132,6 +132,43 @@ export const productRejectedTemplate = (
   }),
 });
 
+type OrderConfirmationInput = {
+  orderId: string;
+  total: number;
+  paymentMethod: string;
+};
+
+export const orderConfirmationTemplate = (
+  input: OrderConfirmationInput,
+): { subject: string; html: string } => ({
+  subject: `Order placed — ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: `Your Outfiqe order ${input.orderId} has been placed.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Order placed</h1>
+      <p style="color:${SUB};margin:0;">Order ${input.orderId} — Rs. ${input.total.toLocaleString()} via ${input.paymentMethod}.</p>
+    `,
+  }),
+});
+
+type NewOrderNotificationInput = {
+  orderId: string;
+  total: number;
+};
+
+export const newOrderNotificationTemplate = (
+  input: NewOrderNotificationInput,
+): { subject: string; html: string } => ({
+  subject: `New order: ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: `A new order came in.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">New order</h1>
+      <p style="color:${SUB};margin:0;">Order ${input.orderId} — Rs. ${input.total.toLocaleString()}.</p>
+    `,
+  }),
+});
+
 export const adminInviteTemplate = (
   name: string,
   inviteUrl: string,
