@@ -26,16 +26,16 @@ import { usePendingPhotos } from "../hooks/usePendingPhotos";
 import { useTaggableProducts } from "../hooks/useTaggableProducts";
 import { type LookFormInput, lookFormSchema } from "../schemas/lookForm.schema";
 import { PendingPhotoThumbnailRail } from "./PendingPhotoThumbnailRail";
+import {
+  CROP_BOX_STYLE,
+  DEFAULT_IMAGE_MIME_TYPE,
+  MAX_PHOTOS,
+  MAX_TAGGED_PRODUCTS,
+  MODAL_ROW_HEIGHT_PX,
+  PHOTO_ASPECT,
+  SEARCH_DEBOUNCE_MS,
+} from "./PostModal.constants";
 import { ProductTagPicker } from "./ProductTagPicker";
-
-const SEARCH_DEBOUNCE_MS = 300;
-const MAX_TAGGED_PRODUCTS = 6;
-const MAX_PHOTOS = 6;
-const PHOTO_ASPECT = 4 / 5;
-const DEFAULT_IMAGE_MIME_TYPE = "image/jpeg";
-const LEFT_PANE_WIDTH_PX = 380;
-const MODAL_ROW_HEIGHT_PX = LEFT_PANE_WIDTH_PX / PHOTO_ASPECT;
-const CROP_BOX_STYLE = { width: "100%", height: "100%", aspectRatio: "4 / 5" };
 
 type PostModalProps = {
   open: boolean;

@@ -11,7 +11,12 @@ import { PostModal } from "@/features/creator-dashboard/components/PostModal";
 
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 
-type ComposeTarget = "look" | "become_creator" | null;
+const COMPOSE_TARGET = {
+  LOOK: "look",
+  BECOME_CREATOR: "become_creator",
+} as const;
+
+type ComposeTarget = (typeof COMPOSE_TARGET)[keyof typeof COMPOSE_TARGET] | null;
 
 export const AddPostButton = () => {
   const { state } = useAuth();
@@ -27,7 +32,7 @@ export const AddPostButton = () => {
       goToSignIn();
       return;
     }
-    setTarget(isApprovedCreator ? "look" : "become_creator");
+    setTarget(isApprovedCreator ? COMPOSE_TARGET.LOOK : COMPOSE_TARGET.BECOME_CREATOR);
   };
 
   return (
@@ -36,15 +41,15 @@ export const AddPostButton = () => {
         type="button"
         onClick={handleClick}
         aria-label="Add a post"
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground shadow-xl transition-transform hover:scale-105 hover:bg-[#ff6a1f] active:scale-95 sm:w-auto sm:px-6 lg:bottom-8 lg:right-8"
+        className="fixed bottom-6 right-4 z-40 flex h-14 w-14 items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground shadow-xl transition-transform hover:scale-105 hover:bg-[#ff6a1f] active:scale-95 sm:w-auto sm:px-6 lg:bottom-8 lg:right-8"
       >
         <Plus className="size-6 shrink-0" />
         <span className="hidden text-[15px] font-semibold sm:inline">Post</span>
       </button>
 
-      {isApprovedCreator && <PostModal open={target === "look"} onClose={close} />}
+      {isApprovedCreator && <PostModal open={target === COMPOSE_TARGET.LOOK} onClose={close} />}
 
-      {target === "become_creator" && (
+      {target === COMPOSE_TARGET.BECOME_CREATOR && (
         <Modal
           open
           onClose={close}
