@@ -163,6 +163,30 @@ export const creatorLookService = {
     });
   },
 
+  async countNewSince(
+    viewerId: string | undefined,
+    { tab, since }: { tab: string; since: Date },
+  ): Promise<number> {
+    if (tab === FOLLOWING_TAB) {
+      if (!viewerId) return 0;
+
+      const followingCreatorIds = await followRepository.listFollowingIds(
+        viewerId,
+        FollowTargetType.USER,
+      );
+      if (followingCreatorIds.length === 0) return 0;
+
+      return creatorLookRepository.countNewSince({
+        tab: FOLLOWING_TAB,
+        since,
+        followingCreatorIds,
+      });
+    }
+
+    const tabToUse = tab === FOR_YOU_TAB ? TRENDING_TAB : tab;
+    return creatorLookRepository.countNewSince({ tab: tabToUse, since, followingCreatorIds: [] });
+  },
+
   async trendingTags(): Promise<TrendingTag[]> {
     return creatorLookRepository.trendingTags();
   },

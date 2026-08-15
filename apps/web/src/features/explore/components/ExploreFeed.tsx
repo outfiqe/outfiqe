@@ -35,7 +35,7 @@ export const ExploreFeed = () => {
     refetch,
   } = useInfiniteExploreFeed(tab, !followingGated);
 
-  const { newLookCount, dismiss } = useExploreFeedSocket();
+  const { newLookCount, dismiss } = useExploreFeedSocket(tab);
 
   const sentinelRef = useLoadMoreOnVisible(
     () => fetchNextPage(),

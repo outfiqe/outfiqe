@@ -12,12 +12,24 @@ export type LookCreatedPayload = {
   createdAt: string;
 };
 
-// Key literal must match SOCKET_EVENTS.LOOK_CREATED in socket.keys.ts.
-export type ServerToClientEvents = {
-  "look:created": (payload: LookCreatedPayload) => void;
+export type FeedSyncRequestPayload = {
+  tab: string;
+  since: string;
 };
 
-export type ClientToServerEvents = Record<string, never>;
+export type FeedSyncResultPayload = {
+  count: number;
+};
+
+// Key literals must match SOCKET_EVENTS in socket.keys.ts.
+export type ServerToClientEvents = {
+  "look:created": (payload: LookCreatedPayload) => void;
+  "feed:sync:result": (payload: FeedSyncResultPayload) => void;
+};
+
+export type ClientToServerEvents = {
+  "feed:sync:request": (payload: FeedSyncRequestPayload) => void;
+};
 
 export type AppSocketServer = Server<
   ClientToServerEvents,

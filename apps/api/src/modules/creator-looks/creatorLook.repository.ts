@@ -389,6 +389,27 @@ export const creatorLookRepository = {
     return { posts, nextCursor: listed.nextCursor };
   },
 
+  async countNewSince({
+    tab,
+    since,
+    followingCreatorIds,
+  }: {
+    tab: string;
+    since: Date;
+    followingCreatorIds: string[];
+  }): Promise<number> {
+    const tabFilter: Prisma.CreatorLookWhereInput =
+      tab === "following"
+        ? { creatorId: { in: followingCreatorIds } }
+        : tab === "trending" || tab === "for_you"
+          ? { creator: { creatorStatus: CreatorStatus.APPROVED } }
+          : { hashtags: { some: { tag: tab.replace(/^#/, "").toLowerCase() } } };
+
+    return prisma.creatorLook.count({
+      where: { ...tabFilter, deletedAt: null, createdAt: { gt: since } },
+    });
+  },
+
   async feedByCreatorId({
     creatorId,
     cursor,
