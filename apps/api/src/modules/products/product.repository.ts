@@ -8,10 +8,11 @@ import type {
   CreateProductInput,
   ProductRecord,
   ProductSizeRecord,
-  ProductWithBrand,
+  ProductWithStock,
   SeenOnCreator,
   UpdateProductInput,
 } from "./product.types.js";
+import { sumStock } from "./product.utils.js";
 
 const TRENDING_LIMIT = 5;
 const NEW_ARRIVALS_LIMIT = 10;
@@ -20,14 +21,22 @@ const SEEN_ON_CREATORS_LIMIT = 5;
 const withBrandAndCategories = {
   brand: { select: { name: true } },
   categories: { select: { slug: true, name: true } },
+  sizes: { select: { stock: true } },
 };
+
+export type DbClient = typeof prisma | Prisma.TransactionClient;
 
 type PublicFilter = { categoryId?: string; type?: ProductType; brandId?: string; q?: string };
 
+const withTotalStock = <T extends { sizes: { stock: number }[] }>(
+  rows: T[],
+): (Omit<T, "sizes"> & { totalStock: number })[] =>
+  rows.map(({ sizes, ...rest }) => ({ ...rest, totalStock: sumStock(sizes) }));
+
 export const productRepository = {
-  async create(input: CreateProductInput): Promise<ProductWithBrand> {
+  async create(input: CreateProductInput): Promise<ProductWithStock> {
     const { imageUrls, categoryIds, ...rest } = input;
-    return prisma.product.create({
+    const { sizes, ...product } = await prisma.product.create({
       data: {
         ...rest,
         categories: { connect: categoryIds.map((id) => ({ id })) },
@@ -38,6 +47,7 @@ export const productRepository = {
       },
       include: withBrandAndCategories,
     });
+    return { ...product, totalStock: sumStock(sizes) };
   },
 
   async update(id: string, input: UpdateProductInput): Promise<ProductRecord> {
@@ -87,33 +97,35 @@ export const productRepository = {
   async listByBrandId(
     brandId: string,
     params: { cursor?: string; limit: number },
-  ): Promise<ProductWithBrand[]> {
-    return prisma.product.findMany({
+  ): Promise<ProductWithStock[]> {
+    const rows = await prisma.product.findMany({
       where: { brandId },
       include: withBrandAndCategories,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
     });
+    return withTotalStock(rows);
   },
 
   async listForReview(
     status: ProductStatus,
     params: { cursor?: string; limit: number },
-  ): Promise<ProductWithBrand[]> {
-    return prisma.product.findMany({
+  ): Promise<ProductWithStock[]> {
+    const rows = await prisma.product.findMany({
       where: { status },
       include: withBrandAndCategories,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
     });
+    return withTotalStock(rows);
   },
 
   async listPublic(
     filter: PublicFilter & { cursor?: string; limit: number },
-  ): Promise<ProductWithBrand[]> {
-    return prisma.product.findMany({
+  ): Promise<ProductWithStock[]> {
+    const rows = await prisma.product.findMany({
       where: {
         status: ProductStatus.APPROVED,
         categories: filter.categoryId ? { some: { id: filter.categoryId } } : undefined,
@@ -126,6 +138,7 @@ export const productRepository = {
       take: filter.limit + 1,
       ...(filter.cursor ? { cursor: { id: filter.cursor }, skip: 1 } : {}),
     });
+    return withTotalStock(rows);
   },
 
   async countPublic(filter: PublicFilter): Promise<{ total: number; brandCount: number }> {
@@ -145,17 +158,18 @@ export const productRepository = {
     return { total, brandCount: grouped.length };
   },
 
-  async listTrending(): Promise<ProductWithBrand[]> {
-    return prisma.product.findMany({
+  async listTrending(): Promise<ProductWithStock[]> {
+    const rows = await prisma.product.findMany({
       where: { status: ProductStatus.APPROVED },
       include: withBrandAndCategories,
       orderBy: { reviewedAt: "desc" },
       take: TRENDING_LIMIT,
     });
+    return withTotalStock(rows);
   },
 
-  async listNewArrivals(): Promise<ProductWithBrand[]> {
-    return prisma.product.findMany({
+  async listNewArrivals(): Promise<ProductWithStock[]> {
+    const rows = await prisma.product.findMany({
       where: {
         status: ProductStatus.APPROVED,
         createdAt: { gte: new Date(Date.now() - NEW_ARRIVAL_WINDOW_MS) },
@@ -164,25 +178,56 @@ export const productRepository = {
       orderBy: { createdAt: "desc" },
       take: NEW_ARRIVALS_LIMIT,
     });
+    return withTotalStock(rows);
   },
 
   async findPublicById(id: string): Promise<
-    | (ProductWithBrand & {
+    | (ProductWithStock & {
         brandId: string;
         sizes: ProductSizeRecord[];
         images: { url: string }[];
       })
     | null
   > {
-    return prisma.product.findFirst({
+    const product = await prisma.product.findFirst({
       where: { id, status: ProductStatus.APPROVED },
       include: {
         brand: { select: { name: true } },
         categories: { select: { slug: true, name: true } },
-        sizes: { orderBy: { sortOrder: "asc" }, select: { label: true, inStock: true } },
+        sizes: { orderBy: { sortOrder: "asc" }, select: { label: true, stock: true } },
         images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
       },
     });
+    if (!product) return null;
+
+    return {
+      ...product,
+      totalStock: sumStock(product.sizes),
+      sizes: product.sizes.map((size) => ({ label: size.label, inStock: size.stock > 0 })),
+    };
+  },
+
+  async decrementStock(client: DbClient, sizeId: string, qty: number): Promise<boolean> {
+    const result = await client.productSize.updateMany({
+      where: { id: sizeId, stock: { gte: qty } },
+      data: { stock: { decrement: qty } },
+    });
+    return result.count > 0;
+  },
+
+  async restoreStock(client: DbClient, sizeId: string, qty: number): Promise<void> {
+    await client.productSize.update({
+      where: { id: sizeId },
+      data: { stock: { increment: qty } },
+    });
+  },
+
+  async getStockBySizeIds(sizeIds: string[]): Promise<Map<string, number>> {
+    const sizes = await prisma.productSize.findMany({
+      where: { id: { in: sizeIds } },
+      select: { id: true, stock: true },
+    });
+    return new Map(sizes.map((size) => [size.id, size.stock]));
   },
 
   async countDistinctApprovedCreators(productId: string): Promise<number> {

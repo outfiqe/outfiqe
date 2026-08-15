@@ -38,6 +38,10 @@ export type ProductWithBrand = ProductRecord & {
   categories: { slug: string; name: string }[];
 };
 
+export type ProductWithStock = ProductWithBrand & { totalStock: number };
+
+export type ProductWithOptionalStock = ProductWithBrand & { totalStock?: number };
+
 export type ProductReviewSummary = Omit<ProductWithBrand, "categories"> & { categories: string[] };
 
 export type ProductReviewPage = {
