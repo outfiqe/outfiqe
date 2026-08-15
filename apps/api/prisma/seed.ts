@@ -138,8 +138,6 @@ async function seedDemoUser() {
       passwordHash: await hashPassword("demo-password-123"),
     },
   });
-
-  console.log(`Seeded user: ${email}`);
 }
 
 async function seedShoppers() {
@@ -191,16 +189,10 @@ async function seedCreatorLooks(creators: { id: string }[]) {
     select: { id: true },
   });
 
-  if (approvedProducts.length === 0) {
-    console.log("No approved products yet — skipping creator look seed.");
-    return;
-  }
+  if (approvedProducts.length === 0) return;
 
   const existingLooks = await prisma.creatorLook.count();
-  if (existingLooks > 0) {
-    console.log(`Creator looks already seeded (${existingLooks}) — skipping.`);
-    return;
-  }
+  if (existingLooks > 0) return;
 
   for (let i = 0; i < LOOK_COUNT; i++) {
     const creatorIndex = i % creators.length;
@@ -218,8 +210,6 @@ async function seedCreatorLooks(creators: { id: string }[]) {
       },
     });
   }
-
-  console.log(`Seeded ${LOOK_COUNT} creator looks across ${creators.length} creators`);
 }
 
 const captionBase = (caption: string): string => caption.replace(/\s*#\w+/g, "").trim();
@@ -242,13 +232,9 @@ async function seedCreatorLookImages() {
 
 async function seedHashtags() {
   const existing = await prisma.creatorLookHashtag.count();
-  if (existing > 0) {
-    console.log(`Look hashtags already seeded (${existing}) — skipping.`);
-    return;
-  }
+  if (existing > 0) return;
 
   const looks = await prisma.creatorLook.findMany({ select: { id: true, caption: true } });
-  let created = 0;
 
   for (const look of looks) {
     const tags = [...new Set((look.caption?.match(/#\w+/g) ?? []).map((tag) => tag.slice(1)))];
@@ -257,20 +243,13 @@ async function seedHashtags() {
     await prisma.creatorLookHashtag.createMany({
       data: tags.map((tag) => ({ creatorLookId: look.id, tag })),
     });
-    created += tags.length;
   }
-
-  console.log(`Seeded ${created} look hashtags`);
 }
 
 async function seedFollows(actors: { id: string }[]) {
   const existing = await prisma.follow.count({ where: { followingType: FollowTargetType.USER } });
-  if (existing > 0) {
-    console.log(`User follows already seeded (${existing}) — skipping.`);
-    return;
-  }
+  if (existing > 0) return;
 
-  let created = 0;
   for (const actor of actors) {
     const others = actors.filter((user) => user.id !== actor.id);
     const followCount = MIN_FOLLOWS_PER_USER + Math.floor(Math.random() * MAX_FOLLOWS_PER_USER);
@@ -292,11 +271,8 @@ async function seedFollows(actors: { id: string }[]) {
         where: { id: actor.id },
         data: { followingCount: { increment: 1 } },
       });
-      created++;
     }
   }
-
-  console.log(`Seeded ${created} follows across ${actors.length} users`);
 }
 
 async function seedEngagement(actors: { id: string }[]) {
@@ -305,7 +281,6 @@ async function seedEngagement(actors: { id: string }[]) {
 
   const existingLikes = await prisma.creatorLookLike.count();
   if (existingLikes === 0) {
-    let likeCount = 0;
     for (const look of looks) {
       const likers = shuffledSample(
         actors,
@@ -313,21 +288,16 @@ async function seedEngagement(actors: { id: string }[]) {
       );
       for (const liker of likers) {
         await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: liker.id } });
-        likeCount++;
       }
       await prisma.creatorLook.update({
         where: { id: look.id },
         data: { likeCount: likers.length },
       });
     }
-    console.log(`Seeded ${likeCount} look likes`);
-  } else {
-    console.log(`Look likes already seeded (${existingLikes}) — skipping.`);
   }
 
   const existingSaves = await prisma.creatorLookSave.count();
   if (existingSaves === 0) {
-    let saveCount = 0;
     for (const look of looks) {
       const savers = shuffledSample(
         actors,
@@ -335,21 +305,16 @@ async function seedEngagement(actors: { id: string }[]) {
       );
       for (const saver of savers) {
         await prisma.creatorLookSave.create({ data: { creatorLookId: look.id, userId: saver.id } });
-        saveCount++;
       }
       await prisma.creatorLook.update({
         where: { id: look.id },
         data: { saveCount: savers.length },
       });
     }
-    console.log(`Seeded ${saveCount} look saves`);
-  } else {
-    console.log(`Look saves already seeded (${existingSaves}) — skipping.`);
   }
 
   const existingComments = await prisma.creatorLookComment.count();
   if (existingComments === 0) {
-    let commentCount = 0;
     for (const look of looks) {
       const commenters = shuffledSample(
         actors,
@@ -363,16 +328,12 @@ async function seedEngagement(actors: { id: string }[]) {
             body: COMMENT_BODIES[Math.floor(Math.random() * COMMENT_BODIES.length)],
           },
         });
-        commentCount++;
       }
       await prisma.creatorLook.update({
         where: { id: look.id },
         data: { commentCount: commenters.length },
       });
     }
-    console.log(`Seeded ${commentCount} look comments`);
-  } else {
-    console.log(`Look comments already seeded (${existingComments}) — skipping.`);
   }
 }
 
@@ -380,15 +341,11 @@ const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL"];
 
 async function seedProductSizes() {
   const existing = await prisma.productSize.count();
-  if (existing > 0) {
-    console.log(`Product sizes already seeded (${existing}) — skipping.`);
-    return;
-  }
+  if (existing > 0) return;
 
   const products = await prisma.product.findMany({ select: { id: true } });
   if (products.length === 0) return;
 
-  let created = 0;
   for (const [index, product] of products.entries()) {
     const soldOutIndex = index % DEFAULT_SIZES.length;
     await prisma.productSize.createMany({
@@ -399,10 +356,7 @@ async function seedProductSizes() {
         sortOrder: i,
       })),
     });
-    created += DEFAULT_SIZES.length;
   }
-
-  console.log(`Seeded ${created} product sizes across ${products.length} products`);
 }
 
 const TROUSERS_PHOTOS = [
@@ -470,17 +424,12 @@ async function seedProductImages() {
 
 async function seedBrandRatings() {
   const brands = await prisma.brand.findMany({ where: { rating: null }, select: { id: true } });
-  if (brands.length === 0) {
-    console.log("Brand ratings already seeded — skipping.");
-    return;
-  }
+  if (brands.length === 0) return;
 
   for (const brand of brands) {
     const rating = Math.round((3.8 + Math.random() * 1.2) * 10) / 10;
     await prisma.brand.update({ where: { id: brand.id }, data: { rating } });
   }
-
-  console.log(`Seeded ratings for ${brands.length} brands`);
 }
 
 async function seedBrandFollows(actors: { id: string }[]) {
@@ -488,12 +437,8 @@ async function seedBrandFollows(actors: { id: string }[]) {
   if (brands.length === 0) return;
 
   const existing = await prisma.follow.count({ where: { followingType: FollowTargetType.BRAND } });
-  if (existing > 0) {
-    console.log(`Brand follows already seeded (${existing}) — skipping.`);
-    return;
-  }
+  if (existing > 0) return;
 
-  let created = 0;
   for (const brand of brands) {
     const followers = shuffledSample(
       actors,
@@ -518,11 +463,8 @@ async function seedBrandFollows(actors: { id: string }[]) {
         where: { id: follower.id },
         data: { followingCount: { increment: 1 } },
       });
-      created++;
     }
   }
-
-  console.log(`Seeded ${created} brand follows across ${brands.length} brands`);
 }
 
 async function seedWornByCounts() {
@@ -546,8 +488,6 @@ async function seedWornByCounts() {
       data: { wornByCount: distinctCreators.size },
     });
   }
-
-  console.log(`Recomputed wornByCount for ${approvedProducts.length} products`);
 }
 
 const DEFAULT_CATEGORIES = [
@@ -562,18 +502,13 @@ const DEFAULT_CATEGORIES = [
 
 const seedCategories = async () => {
   const existing = await prisma.category.count();
-  if (existing > 0) {
-    console.log(`Categories already seeded (${existing}) — skipping.`);
-    return;
-  }
+  if (existing > 0) return;
 
   for (const [index, category] of DEFAULT_CATEGORIES.entries()) {
     await prisma.category.create({
       data: { ...category, status: CategoryStatus.PUBLISHED, sortOrder: index },
     });
   }
-
-  console.log(`Seeded ${DEFAULT_CATEGORIES.length} categories`);
 };
 
 type SeedCollection = {
@@ -617,20 +552,14 @@ const COLLECTION_PRODUCT_LIMIT = 8;
 
 const seedCollections = async () => {
   const existing = await prisma.collection.count();
-  if (existing > 0) {
-    console.log(`Collections already seeded (${existing}) — skipping.`);
-    return;
-  }
+  if (existing > 0) return;
 
   const approvedProducts = await prisma.product.findMany({
     where: { status: ProductStatus.APPROVED },
     select: { id: true, categories: { select: { slug: true } }, price: true },
   });
 
-  if (approvedProducts.length === 0) {
-    console.log("No approved products yet — skipping collection seed.");
-    return;
-  }
+  if (approvedProducts.length === 0) return;
 
   for (const [index, collection] of SEED_COLLECTIONS.entries()) {
     const matches = approvedProducts.filter(collection.pick);
@@ -655,8 +584,6 @@ const seedCollections = async () => {
       },
     });
   }
-
-  console.log(`Seeded ${SEED_COLLECTIONS.length} collections`);
 };
 
 const SEED_HERO_SLIDES = [
@@ -687,18 +614,13 @@ const SEED_HERO_SLIDES = [
 
 const seedHeroSlides = async () => {
   const existing = await prisma.heroSlide.count();
-  if (existing > 0) {
-    console.log(`Hero slides already seeded (${existing}) — skipping.`);
-    return;
-  }
+  if (existing > 0) return;
 
   for (const [index, slide] of SEED_HERO_SLIDES.entries()) {
     await prisma.heroSlide.create({
       data: { ...slide, status: HeroSlideStatus.PUBLISHED, sortOrder: index },
     });
   }
-
-  console.log(`Seeded ${SEED_HERO_SLIDES.length} hero slides`);
 };
 
 async function main() {
