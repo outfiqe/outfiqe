@@ -7,6 +7,7 @@ export { PostCard } from "./components/PostCard";
 export { ExploreFeedSkeleton, PostCardSkeleton } from "./components/PostCardSkeleton";
 export { PostCarousel } from "./components/PostCarousel";
 export { PostDetailModal } from "./components/PostDetailModal";
+export { SavedPostsGrid } from "./components/SavedPostsGrid";
 export { Sidebar } from "./components/Sidebar";
 export {
   EXPLORE_FIXED_TABS,
@@ -17,3 +18,4 @@ export {
   type FeedLayout,
 } from "./explore.constants";
 export { useInfiniteExploreFeed } from "./hooks/useInfiniteExploreFeed";
+export { useInfiniteSavedPosts } from "./hooks/useInfiniteSavedPosts";

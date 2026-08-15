@@ -1,9 +1,10 @@
+import { randomUUID } from "node:crypto";
+
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import type { CreatorLookTagClickSource } from "#generated/prisma/enums.js";
 import { CreatorStatus, ProductStatus } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
-import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import type { ProductWithBrand } from "#modules/products/product.types.js";
 import { cacheService } from "#redis/cache.service.js";
@@ -21,7 +22,7 @@ import type {
   TaggedProductPage,
   TrendingTag,
 } from "./creatorLook.types.js";
-import type { ScoredCursor, SimpleCursor } from "./creatorLook.utils.js";
+import type { SimpleCursor, TrendingSnapshotCursor } from "./creatorLook.utils.js";
 import { decodeCursor, encodeCursor, toSummary } from "./creatorLook.utils.js";
 
 const taggedProductsInclude = {
@@ -139,6 +140,72 @@ const hydrateFeedPosts = async (
 
 const TRENDING_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
+const trendingSnapshotKey = (sessionId: string) =>
+  redisKeys.cache("explore-trending-snapshot", sessionId);
+
+const refreshTrendingSnapshotTtl = async (key: string): Promise<void> => {
+  try {
+    await cacheService.touch(key, CACHE_TTL.EXPLORE_TRENDING_SNAPSHOT);
+  } catch (error) {
+    logger.warn(`Cache TTL refresh failed for "${key}": ${describeError(error)}`);
+  }
+};
+
+const getTrendingSnapshot = async (sessionId: string): Promise<string[] | null> => {
+  const key = trendingSnapshotKey(sessionId);
+
+  try {
+    const cached = await cacheService.get<string[]>(key);
+    if (cached) await refreshTrendingSnapshotTtl(key);
+    return cached;
+  } catch (error) {
+    logger.warn(`Cache read failed for "${key}": ${describeError(error)}`);
+    return null;
+  }
+};
+
+const cacheTrendingSnapshot = async (sessionId: string, ids: string[]): Promise<void> => {
+  try {
+    await cacheService.set(
+      trendingSnapshotKey(sessionId),
+      ids,
+      CACHE_TTL.EXPLORE_TRENDING_SNAPSHOT,
+    );
+  } catch (error) {
+    logger.warn(
+      `Cache write failed for "${trendingSnapshotKey(sessionId)}": ${describeError(error)}`,
+    );
+  }
+};
+
+const buildTrendingSnapshot = async (): Promise<string[]> => {
+  const since = new Date(Date.now() - TRENDING_WINDOW_MS);
+  const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+    SELECT cl.id
+    FROM creator_looks cl
+    JOIN users u ON u.id = cl.creator_id
+    WHERE cl.deleted_at IS NULL
+      AND u.creator_status = 'APPROVED'
+      AND cl.created_at >= ${since}
+    ORDER BY (cl.like_count * 2 + cl.comment_count + cl.save_count) DESC, cl.created_at DESC, cl.id DESC
+  `);
+  return rows.map((row) => row.id);
+};
+
+const resolveTrendingSnapshotSource = async (
+  decoded: TrendingSnapshotCursor | undefined,
+): Promise<{ sessionId: string; offset: number; ids: string[] }> => {
+  const cachedIds = decoded ? await getTrendingSnapshot(decoded.sessionId) : null;
+  if (decoded && cachedIds) {
+    return { sessionId: decoded.sessionId, offset: decoded.offset, ids: cachedIds };
+  }
+
+  const sessionId = randomUUID();
+  const ids = await buildTrendingSnapshot();
+  await cacheTrendingSnapshot(sessionId, ids);
+  return { sessionId, offset: 0, ids };
+};
+
 const listTrendingIds = async ({
   cursor,
   limit,
@@ -146,33 +213,17 @@ const listTrendingIds = async ({
   cursor?: string;
   limit: number;
 }): Promise<{ ids: string[]; nextCursor: string | null }> => {
-  const decoded = decodeCursor<ScoredCursor>(cursor);
-  const since = new Date(Date.now() - TRENDING_WINDOW_MS);
-  const cursorClause = decoded
-    ? Prisma.sql`AND (score, created_at, id) < (${decoded.s}, ${new Date(decoded.c)}, ${decoded.i}::uuid)`
-    : Prisma.empty;
+  const decoded = decodeCursor<TrendingSnapshotCursor>(cursor);
+  const { sessionId, offset, ids } = await resolveTrendingSnapshotSource(decoded);
 
-  const rows = await prisma.$queryRaw<{ id: string; score: number; created_at: Date }[]>(Prisma.sql`
-    WITH scored AS (
-      SELECT cl.id, (cl.like_count * 2 + cl.comment_count + cl.save_count) AS score, cl.created_at
-      FROM creator_looks cl
-      JOIN users u ON u.id = cl.creator_id
-      WHERE cl.deleted_at IS NULL
-        AND u.creator_status = 'APPROVED'
-        AND cl.created_at >= ${since}
-    )
-    SELECT id, score, created_at
-    FROM scored
-    WHERE TRUE ${cursorClause}
-    ORDER BY score DESC, created_at DESC, id DESC
-    LIMIT ${limit + 1}
-  `);
+  const pageIds = ids.slice(offset, offset + limit);
+  const nextOffset = offset + pageIds.length;
+  const nextCursor =
+    nextOffset < ids.length
+      ? encodeCursor<TrendingSnapshotCursor>({ sessionId, offset: nextOffset })
+      : null;
 
-  const { items: pageRows, nextCursor } = buildCursorPage(rows, limit, (row) =>
-    encodeCursor<ScoredCursor>({ s: row.score, c: row.created_at.toISOString(), i: row.id }),
-  );
-
-  return { ids: pageRows.map((row) => row.id), nextCursor };
+  return { ids: pageIds, nextCursor };
 };
 
 const listIdsByFilter = async (
@@ -201,6 +252,34 @@ const listIdsByFilter = async (
   );
 
   return { ids: pageRows.map((row) => row.id), nextCursor };
+};
+
+const listSavedIds = async (
+  userId: string,
+  { cursor, limit }: { cursor?: string; limit: number },
+): Promise<{ ids: string[]; nextCursor: string | null }> => {
+  const decoded = decodeCursor<SimpleCursor>(cursor);
+  const cursorWhere: Prisma.CreatorLookSaveWhereInput = decoded
+    ? {
+        OR: [
+          { createdAt: { lt: new Date(decoded.c) } },
+          { AND: [{ createdAt: new Date(decoded.c) }, { creatorLookId: { lt: decoded.i } }] },
+        ],
+      }
+    : {};
+
+  const rows = await prisma.creatorLookSave.findMany({
+    where: { userId, creatorLook: { deletedAt: null }, ...cursorWhere },
+    orderBy: [{ createdAt: "desc" }, { creatorLookId: "desc" }],
+    take: limit + 1,
+    select: { createdAt: true, creatorLookId: true },
+  });
+
+  const { items: pageRows, nextCursor } = buildCursorPage(rows, limit, (row) =>
+    encodeCursor<SimpleCursor>({ c: row.createdAt.toISOString(), i: row.creatorLookId }),
+  );
+
+  return { ids: pageRows.map((row) => row.creatorLookId), nextCursor };
 };
 
 const TRENDING_TAGS_LIMIT = 15;
@@ -426,23 +505,34 @@ export const creatorLookRepository = {
     return { posts, nextCursor: listed.nextCursor };
   },
 
+  async listSaved(
+    userId: string,
+    { cursor, limit }: { cursor?: string; limit: number },
+  ): Promise<FeedPage> {
+    const listed = await listSavedIds(userId, { cursor, limit });
+    const posts = await hydrateFeedPosts(listed.ids, userId);
+    return { posts, nextCursor: listed.nextCursor };
+  },
+
   async trendingTags(): Promise<TrendingTag[]> {
     return fetchTrendingTags();
   },
 
   async like(lookId: string, userId: string): Promise<{ likeCount: number }> {
     return prisma.$transaction(async (tx) => {
-      try {
-        await tx.creatorLookLike.create({ data: { creatorLookId: lookId, userId } });
-      } catch (error) {
-        if (!isUniqueConstraintError(error)) throw error;
-        const look = await tx.creatorLook.findUniqueOrThrow({ where: { id: lookId } });
-        return { likeCount: look.likeCount };
-      }
-      const look = await tx.creatorLook.update({
-        where: { id: lookId },
-        data: { likeCount: { increment: 1 } },
+      const { count } = await tx.creatorLookLike.createMany({
+        data: [{ creatorLookId: lookId, userId }],
+        skipDuplicates: true,
       });
+
+      const look =
+        count > 0
+          ? await tx.creatorLook.update({
+              where: { id: lookId },
+              data: { likeCount: { increment: 1 } },
+            })
+          : await tx.creatorLook.findUniqueOrThrow({ where: { id: lookId } });
+
       return { likeCount: look.likeCount };
     });
   },
@@ -466,17 +556,19 @@ export const creatorLookRepository = {
 
   async save(lookId: string, userId: string): Promise<{ saveCount: number }> {
     return prisma.$transaction(async (tx) => {
-      try {
-        await tx.creatorLookSave.create({ data: { creatorLookId: lookId, userId } });
-      } catch (error) {
-        if (!isUniqueConstraintError(error)) throw error;
-        const look = await tx.creatorLook.findUniqueOrThrow({ where: { id: lookId } });
-        return { saveCount: look.saveCount };
-      }
-      const look = await tx.creatorLook.update({
-        where: { id: lookId },
-        data: { saveCount: { increment: 1 } },
+      const { count } = await tx.creatorLookSave.createMany({
+        data: [{ creatorLookId: lookId, userId }],
+        skipDuplicates: true,
       });
+
+      const look =
+        count > 0
+          ? await tx.creatorLook.update({
+              where: { id: lookId },
+              data: { saveCount: { increment: 1 } },
+            })
+          : await tx.creatorLook.findUniqueOrThrow({ where: { id: lookId } });
+
       return { saveCount: look.saveCount };
     });
   },

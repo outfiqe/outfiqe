@@ -9,7 +9,7 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { exploreFeedApi } from "../api/exploreFeedApi";
 import type { FeedPost } from "../api/exploreFeedSchemas";
-import { patchPostInFeedCaches } from "./feedCacheUpdate";
+import { patchPostInFeedCaches } from "../utils/feedCacheUpdate";
 import { useExploreAuthGate } from "./useExploreAuthGate";
 import { useFollowCreator } from "./useFollowCreator";
 import { useLikeLook } from "./useLikeLook";

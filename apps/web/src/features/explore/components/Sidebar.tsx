@@ -25,7 +25,7 @@ export const Sidebar = ({ onTagClick }: SidebarProps) => {
 };
 
 const SuggestedCreators = () => {
-  const { isAuthenticated, goToSignIn } = useExploreAuthGate();
+  const { isAuthenticated, isAuthResolved, goToSignIn } = useExploreAuthGate();
   const { data: creators, isLoading } = useSuggestedCreators();
   const followMutation = useFollowCreator();
 
@@ -35,7 +35,7 @@ const SuggestedCreators = () => {
         Creators to follow
       </h4>
 
-      {!isAuthenticated && (
+      {isAuthResolved && !isAuthenticated && (
         <p className="mt-3 text-[12.5px] text-muted-foreground">
           <button type="button" onClick={goToSignIn} className="font-semibold text-primary-strong">
             Sign in
@@ -49,7 +49,7 @@ const SuggestedCreators = () => {
       )}
 
       <div className="mt-3 flex flex-col">
-        {isLoading &&
+        {(!isAuthResolved || isLoading) &&
           Array.from({ length: 3 }).map((_, index) => (
             <div
               key={index}

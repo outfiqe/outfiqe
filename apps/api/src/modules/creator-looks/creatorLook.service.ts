@@ -13,6 +13,7 @@ import { creatorLookRepository } from "./creatorLook.repository.js";
 import type {
   CreateCreatorLookBody,
   ListCreatorLooksQuery,
+  ListSavedQuery,
   TagClickBody,
 } from "./creatorLook.schemas.js";
 import type {
@@ -92,6 +93,13 @@ export const creatorLookService = {
 
   async listMine(userId: string, query: ListCreatorLooksQuery): Promise<CreatorLookSummaryPage> {
     return creatorLookRepository.listByCreatorId(userId, {
+      cursor: query.cursor,
+      limit: query.limit,
+    });
+  },
+
+  async listMySaved(userId: string, query: ListSavedQuery): Promise<FeedPage> {
+    return creatorLookRepository.listSaved(userId, {
       cursor: query.cursor,
       limit: query.limit,
     });

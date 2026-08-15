@@ -9,20 +9,33 @@ const RECONNECTION_DELAY_MAX_MS = 10_000;
 const RECONNECTION_JITTER_RATIO = 0.5;
 
 let socket: Socket | null = null;
+let connectionCount = 0;
 
 export const getSocket = (): Socket => {
-  if (!socket) {
-    socket = io(SOCKET_URL, {
-      autoConnect: false,
-      withCredentials: true,
-      auth: (cb) => cb({ token: getAccessToken() }),
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: RECONNECTION_DELAY_MS,
-      reconnectionDelayMax: RECONNECTION_DELAY_MAX_MS,
-      randomizationFactor: RECONNECTION_JITTER_RATIO,
-    });
-  }
+  socket ??= io(SOCKET_URL, {
+    autoConnect: false,
+    withCredentials: true,
+    auth: (cb) => cb({ token: getAccessToken() }),
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: RECONNECTION_DELAY_MS,
+    reconnectionDelayMax: RECONNECTION_DELAY_MAX_MS,
+    randomizationFactor: RECONNECTION_JITTER_RATIO,
+  });
 
   return socket;
+};
+
+export const acquireSocketConnection = (): Socket => {
+  const activeSocket = getSocket();
+  connectionCount += 1;
+  activeSocket.connect();
+  return activeSocket;
+};
+
+export const releaseSocketConnection = (): void => {
+  if (connectionCount === 0) return;
+
+  connectionCount -= 1;
+  if (connectionCount === 0) socket?.disconnect();
 };

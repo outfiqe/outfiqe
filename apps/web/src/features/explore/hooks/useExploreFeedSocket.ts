@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { getOrSeedLastSeenAt, markSeenNow } from "@/shared/lib/lastSeenAt";
-import { getSocket } from "@/shared/lib/socketClient";
+import { acquireSocketConnection, releaseSocketConnection } from "@/shared/lib/socketClient";
 
 import {
   EXPLORE_SOCKET_EVENTS,
@@ -23,8 +23,7 @@ export const useExploreFeedSocket = (tab: string) => {
   }, [tab]);
 
   useEffect(() => {
-    const socket = getSocket();
-    socket.connect();
+    const socket = acquireSocketConnection();
 
     const requestFeedSync = () => {
       socket.emit(EXPLORE_SOCKET_EVENTS.FEED_SYNC_REQUEST, {
@@ -51,7 +50,7 @@ export const useExploreFeedSocket = (tab: string) => {
       socket.off("connect", requestFeedSync);
       socket.off(EXPLORE_SOCKET_EVENTS.FEED_SYNC_RESULT, handleFeedSyncResult);
       socket.off(EXPLORE_SOCKET_EVENTS.LOOK_CREATED, handleLookCreated);
-      socket.disconnect();
+      releaseSocketConnection();
     };
   }, []);
 

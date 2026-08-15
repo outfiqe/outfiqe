@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { exploreFeedApi } from "../api/exploreFeedApi";
-import { patchCreatorInFeedCaches } from "./feedCacheUpdate";
+import { patchCreatorInFeedCaches } from "../utils/feedCacheUpdate";
 
 export const useFollowCreator = () => {
   const queryClient = useQueryClient();
@@ -15,7 +15,8 @@ export const useFollowCreator = () => {
     mutationFn: ({ creatorId, following }: { creatorId: string; following: boolean }) =>
       following ? exploreFeedApi.unfollow(creatorId) : exploreFeedApi.follow(creatorId),
 
-    onMutate: ({ creatorId, following }) => {
+    onMutate: async ({ creatorId, following }) => {
+      await queryClient.cancelQueries({ queryKey: ["explore-feed"] });
       patchCreatorInFeedCaches(queryClient, creatorId, !following);
     },
 

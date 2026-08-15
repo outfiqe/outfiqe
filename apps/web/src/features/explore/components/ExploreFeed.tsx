@@ -1,11 +1,19 @@
 "use client";
 
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import Masonry from "react-masonry-css";
 
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 
-import type { FeedPost } from "../api/exploreFeedSchemas";
-import { EXPLORE_TAB, FEED_LAYOUT, type FeedLayout } from "../explore.constants";
+import {
+  EXPLORE_QUERY_PARAM,
+  EXPLORE_TAB,
+  type ExploreQueryParamKey,
+  FEED_LAYOUT,
+  type FeedLayout,
+  MASONRY_BREAKPOINT_COLUMNS,
+} from "../explore.constants";
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 import { useExploreFeedSocket } from "../hooks/useExploreFeedSocket";
 import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";
@@ -19,12 +27,30 @@ import { PostDetailModal } from "./PostDetailModal";
 import { Sidebar } from "./Sidebar";
 
 export const ExploreFeed = () => {
-  const { isAuthenticated, goToSignIn } = useExploreAuthGate();
-  const [tab, setTab] = useState<string>(EXPLORE_TAB.FOR_YOU);
-  const [layout, setLayout] = useState<FeedLayout>(FEED_LAYOUT.GRID);
-  const [detailPost, setDetailPost] = useState<FeedPost | null>(null);
+  const { isAuthenticated, isAuthResolved, goToSignIn } = useExploreAuthGate();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [detailPostId, setDetailPostId] = useState<string | null>(null);
 
-  const followingGated = tab === EXPLORE_TAB.FOLLOWING && !isAuthenticated;
+  const tab = searchParams.get(EXPLORE_QUERY_PARAM.TAB) ?? EXPLORE_TAB.FOR_YOU;
+  const layout: FeedLayout =
+    searchParams.get(EXPLORE_QUERY_PARAM.LAYOUT) === FEED_LAYOUT.LIST
+      ? FEED_LAYOUT.LIST
+      : FEED_LAYOUT.GRID;
+
+  const updateExploreParams = (updates: Partial<Record<ExploreQueryParamKey, string>>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
+    router.replace(`/explore?${params.toString()}`, { scroll: false });
+  };
+
+  const setTab = (value: string) => updateExploreParams({ [EXPLORE_QUERY_PARAM.TAB]: value });
+  const setLayout = (value: FeedLayout) =>
+    updateExploreParams({ [EXPLORE_QUERY_PARAM.LAYOUT]: value });
+
+  const followingGated = isAuthResolved && tab === EXPLORE_TAB.FOLLOWING && !isAuthenticated;
 
   const {
     data: exploreFeedPages,
@@ -33,7 +59,7 @@ export const ExploreFeed = () => {
     isFetchingNextPage,
     isLoading,
     refetch,
-  } = useInfiniteExploreFeed(tab, !followingGated);
+  } = useInfiniteExploreFeed(tab, isAuthResolved && !followingGated);
 
   const { newLookCount, dismiss } = useExploreFeedSocket(tab);
 
@@ -42,7 +68,10 @@ export const ExploreFeed = () => {
     Boolean(hasNextPage) && !isFetchingNextPage,
   );
 
-  const posts = exploreFeedPages?.pages.flatMap((page) => page.posts) ?? [];
+  const rawPosts = exploreFeedPages?.pages.flatMap((page) => page.posts) ?? [];
+  const postsById = new Map(rawPosts.map((post) => [post.id, post]));
+  const posts = [...postsById.values()];
+  const detailPost = detailPostId ? (postsById.get(detailPostId) ?? null) : null;
 
   const showNewLooks = () => {
     dismiss();
@@ -86,18 +115,23 @@ export const ExploreFeed = () => {
                 Log in or sign up
               </button>
             </div>
-          ) : isLoading ? (
+          ) : !isAuthResolved || isLoading ? (
             <ExploreFeedSkeleton layout={layout} />
           ) : posts.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
               Nothing here yet — try a different tab.
             </p>
           ) : layout === FEED_LAYOUT.GRID ? (
-            <div className="columns-1 gap-4 sm:columns-2 xl:columns-3">
-              {posts.map((post) => (
-                <PostCard key={post.id} post={post} onImageClick={() => setDetailPost(post)} />
-              ))}
-            </div>
+            <Masonry
+              breakpointCols={MASONRY_BREAKPOINT_COLUMNS}
+              className="-ml-4 flex w-auto"
+              columnClassName="pl-4"
+            >
+              {posts.map((post) => {
+                const { id } = post;
+                return <PostCard key={id} post={post} onImageClick={() => setDetailPostId(id)} />;
+              })}
+            </Masonry>
           ) : (
             <div className="mx-auto flex max-w-xl flex-col">
               {posts.map((post) => (
@@ -118,7 +152,7 @@ export const ExploreFeed = () => {
         <Sidebar onTagClick={setTab} />
       </div>
 
-      {detailPost && <PostDetailModal post={detailPost} onClose={() => setDetailPost(null)} />}
+      {detailPost && <PostDetailModal post={detailPost} onClose={() => setDetailPostId(null)} />}
     </>
   );
 };

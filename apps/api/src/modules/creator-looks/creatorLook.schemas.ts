@@ -51,6 +51,11 @@ export const feedQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_FEED_PAGE_SIZE).default(DEFAULT_FEED_PAGE_SIZE),
 });
 
+export const listSavedQuerySchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_FEED_PAGE_SIZE).default(DEFAULT_FEED_PAGE_SIZE),
+});
+
 const TAB_MAX = 60;
 
 export const feedSyncRequestSchema = z.object({
@@ -82,6 +87,7 @@ export type ListCreatorLooksQuery = z.infer<typeof listCreatorLooksQuerySchema>;
 export type LookIdParams = z.infer<typeof lookIdParamsSchema>;
 export type TagClickParams = z.infer<typeof tagClickParamsSchema>;
 export type FeedQuery = z.infer<typeof feedQuerySchema>;
+export type ListSavedQuery = z.infer<typeof listSavedQuerySchema>;
 export type FeedSyncRequest = z.infer<typeof feedSyncRequestSchema>;
 export type CommentsQuery = z.infer<typeof commentsQuerySchema>;
 export type CreateCommentBody = z.infer<typeof createCommentSchema>;

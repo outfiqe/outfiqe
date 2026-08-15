@@ -30,6 +30,7 @@ type AuthContextValue = {
   state: AuthState;
   dispatch: Dispatch<AuthAction>;
   isAuthenticated: boolean;
+  isAuthResolved: boolean;
   isBrandOwner: boolean;
   isAdmin: boolean;
   isCreator: boolean;
@@ -94,6 +95,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     state,
     dispatch,
     isAuthenticated: state.status === AuthStatus.AUTHENTICATED,
+    isAuthResolved:
+      state.status === AuthStatus.AUTHENTICATED || state.status === AuthStatus.UNAUTHENTICATED,
     isBrandOwner: state.user?.role === UserRole.BRAND_OWNER,
     isAdmin: state.user?.role === UserRole.ADMIN,
     isCreator: state.user?.isCreator === true,

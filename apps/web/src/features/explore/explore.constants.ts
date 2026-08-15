@@ -1,6 +1,13 @@
 import { Home, LayoutGrid, Rows3, TrendingUp, Users } from "lucide-react";
 import type { ComponentType } from "react";
 
+export const EXPLORE_QUERY_PARAM = {
+  TAB: "tab",
+  LAYOUT: "layout",
+} as const;
+
+export type ExploreQueryParamKey = (typeof EXPLORE_QUERY_PARAM)[keyof typeof EXPLORE_QUERY_PARAM];
+
 export const EXPLORE_TAB = {
   FOR_YOU: "for_you",
   FOLLOWING: "following",
@@ -40,3 +47,5 @@ export const FEED_LAYOUT_OPTIONS: FeedLayoutOption[] = [
   { value: FEED_LAYOUT.GRID, label: "Grid", icon: LayoutGrid },
   { value: FEED_LAYOUT.LIST, label: "List", icon: Rows3 },
 ];
+
+export const MASONRY_BREAKPOINT_COLUMNS = { default: 3, 1279: 2, 639: 1 };

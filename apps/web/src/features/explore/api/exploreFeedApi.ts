@@ -37,6 +37,14 @@ export const exploreFeedApi = {
     return feedPageSchema.parse(res.data);
   },
 
+  async listSaved(cursor?: string): Promise<FeedPage> {
+    const params = new URLSearchParams();
+    if (cursor) params.set("cursor", cursor);
+
+    const res = await apiClient.get<FeedPage>(`/creator-looks/saved?${params.toString()}`);
+    return feedPageSchema.parse(res.data);
+  },
+
   async like(lookId: string): Promise<LikeResult> {
     const res = await apiClient.post<LikeResult>(`/creator-looks/${lookId}/like`);
     return likeResultSchema.parse(res.data);

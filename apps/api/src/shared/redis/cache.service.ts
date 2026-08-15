@@ -10,6 +10,10 @@ export const cacheService = {
     await redis.set(key, JSON.stringify(value), "EX", ttlSeconds);
   },
 
+  async touch(key: string, ttlSeconds: number): Promise<void> {
+    await redis.expire(key, ttlSeconds);
+  },
+
   async invalidate(...keys: string[]): Promise<void> {
     if (keys.length === 0) return;
     await redis.del(...keys);
