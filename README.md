@@ -50,8 +50,13 @@ apps/
   admin/          Vite + React admin panel — brand application/product review, creator
                    approval, admin team management. No login form — reuses web's session.
 packages/
-  shared-types/   Types shared across api/web/admin (enums, API response envelope)
-  shared-utils/   Small runtime helpers shared across api/web/admin (e.g. phone regex)
+  client/         Typed HTTP client (axios) shared by web + admin
+  components/     Shared layout shells — HeaderBar, Sidebar — apps plug in their own router
+  design-system/  Design tokens + UI primitives (Button, Input, Modal, Form, ...), the single
+                  source of truth for web + admin styling
+  hooks/          Shared React hooks (e.g. useInfiniteCursorPage)
+  types/          Types shared across api/web/admin (enums, API response envelope)
+  utils/          Small runtime helpers shared across api/web/admin (e.g. phone regex)
 docker-compose.yml  Local Postgres
 ```
 
@@ -159,7 +164,7 @@ gh variable set CI_JWT_SECRET --body "ci-placeholder-secret-not-used-for-anythin
   docs: update setup instructions
   ```
   - **Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `style`, `revert`.
-  - **Scope** is optional, but if given must be one of `api`, `web`, `shared-types`, `deps`, `config`, `ci`, `release` — the package scopes are derived automatically from `apps/*` and `packages/*` in `commitlint.scopes.cjs`, so a new package becomes a valid scope with no config change.
+  - **Scope** is optional, but if given must match a real workspace folder or one of the cross-cutting scopes — currently `admin`, `api`, `web`, `client`, `components`, `design-system`, `hooks`, `types`, `utils`, `deps`, `config`, `ci`, `release`. These come from `apps/*` and `packages/*` in `commitlint.scopes.cjs`, so a new package becomes a valid scope with no config change.
 
   Hooks run automatically via `pnpm install` (the `prepare` script sets them up) — no manual step needed.
 
@@ -168,7 +173,10 @@ gh variable set CI_JWT_SECRET --body "ci-placeholder-secret-not-used-for-anythin
 This ships to real, public users — "MVP" here means a scoped feature set, not a lower engineering
 bar. Auth is production-grade: hashed passwords, short-lived JWT access tokens, and a DB-backed,
 hashed, TTL'd, rotating refresh-token store (`apps/api/src/modules/auth`), enforced server-side via
-`requireAuth`/`requireRole` middleware across every protected route. The real-time layer
-(Socket.IO + Redis pub/sub adapter, `apps/api/src/shared/socket`, `apps/api/src/shared/redis`) uses
-exponential backoff with jitter on reconnect and reconciles missed events after a drop instead of
-losing them. The one real gap: no automated test suite yet.
+`requireAuth`/`requireRole` middleware across every protected route. The real-time layer (Socket.IO,
+`apps/api/src/shared/socket`) uses exponential backoff with jitter on reconnect. Domain events
+(likes, follows, new looks, signups) travel over Redis Streams rather than an in-process event
+emitter (`apps/api/src/shared/redis`) — consumer groups ack on success, reclaim anything stuck via
+`XAUTOCLAIM`, and after 5 failed attempts a message falls into a dead-letter stream instead of
+retrying forever. So a crashed handler or a mid-delivery restart doesn't mean a silently dropped
+event. The one real gap: no automated test suite yet.
