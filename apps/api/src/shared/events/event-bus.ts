@@ -1,6 +1,11 @@
-import { EventEmitter } from "node:events";
+import logger from "#lib/winston.utils.js";
+import { redis } from "#redis/redis.client.js";
+import { redisKeys } from "#redis/redis.keys.js";
+import { describeError } from "#redis/redis.utils.js";
 
-export const eventBus = new EventEmitter();
+import { STREAM_MAX_LEN } from "./event-bus.constants.js";
+import type { DomainEvent, DomainEventPayloads } from "./event-bus.types.js";
+import { serializeEventPayload } from "./event-bus.utils.js";
 
 export const DomainEvents = {
   USER_CREATED: "user.created",
@@ -18,3 +23,28 @@ export const DomainEvents = {
   BRAND_FOLLOWED: "brand.followed",
   BRAND_UNFOLLOWED: "brand.unfollowed",
 } as const;
+
+// A Redis hiccup must never fail the caller's request (like/comment/follow/etc.) — log and move on,
+// the same best-effort treatment the rest of the codebase already gives Redis (cache, rate limit).
+const publishDomainEvent = async <E extends DomainEvent>(
+  event: E,
+  payload: DomainEventPayloads[E],
+): Promise<void> => {
+  try {
+    await redis.xadd(
+      redisKeys.stream(event),
+      "MAXLEN",
+      "~",
+      STREAM_MAX_LEN,
+      "*",
+      "payload",
+      serializeEventPayload(payload),
+    );
+  } catch (error) {
+    logger.error(`Failed to publish domain event ${event}: ${describeError(error)}`);
+  }
+};
+
+export const eventBus = {
+  publish: publishDomainEvent,
+};

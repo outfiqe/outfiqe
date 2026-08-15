@@ -46,7 +46,7 @@ export const followService = {
         targetType === FollowTargetType.USER
           ? DomainEvents.USER_FOLLOWED
           : DomainEvents.BRAND_FOLLOWED;
-      eventBus.emit(event, { followerId, followingId: targetId });
+      await eventBus.publish(event, { followerId, followingId: targetId });
     }
 
     return { following: true, followerCount };
@@ -70,7 +70,7 @@ export const followService = {
         targetType === FollowTargetType.USER
           ? DomainEvents.USER_UNFOLLOWED
           : DomainEvents.BRAND_UNFOLLOWED;
-      eventBus.emit(event, { followerId, followingId: targetId });
+      await eventBus.publish(event, { followerId, followingId: targetId });
     }
 
     return { following: false, followerCount };

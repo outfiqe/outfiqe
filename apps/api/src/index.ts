@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 
+import { stopDomainEventConsumers } from "#events/event-bus.consumer.js";
 import logger from "#lib/winston.utils.js";
 import { registerCreatorLookSocketHandlers } from "#modules/creator-looks/creatorLook.socket.js";
 import { disconnectRedis } from "#redis/redis.client.js";
@@ -28,6 +29,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
     logger.info(`${signal} received, shutting down gracefully`);
     server.close(async () => {
       await closeSocket();
+      await stopDomainEventConsumers();
       await disconnectDb();
       await disconnectRedis();
       process.exit(0);
