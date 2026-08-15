@@ -5,6 +5,7 @@ import { ChevronDown, Heart, Search, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { useCart } from "@/features/cart";
 import { cn } from "@/shared/lib/cn";
 
 import { AccountMenu } from "./AccountMenu";
@@ -18,6 +19,8 @@ const SHOP_LINKS = [{ label: "Brands", href: "#" }];
 export const SiteHeader = () => {
   const isCondensed = useHeaderCondense();
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const { data: cart } = useCart();
+  const cartCount = cart?.itemCount ?? 0;
 
   return (
     <HeaderBar condensed={isCondensed}>
@@ -123,9 +126,11 @@ export const SiteHeader = () => {
           className="relative flex size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted"
         >
           <ShoppingBag className="size-[18px]" />
-          <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-            2
-          </span>
+          {cartCount > 0 && (
+            <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+              {cartCount}
+            </span>
+          )}
         </Link>
 
         <AccountMenu />

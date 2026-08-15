@@ -19,6 +19,7 @@ export type ProductRecord = {
 };
 
 export type ProductSizeRecord = {
+  id: string;
   label: string;
   inStock: boolean;
 };

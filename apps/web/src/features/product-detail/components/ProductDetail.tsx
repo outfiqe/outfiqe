@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useAddToCart } from "@/features/cart";
 import { useToggleWishlist } from "@/features/wishlist";
 import { cn } from "@/shared/lib/cn";
 
@@ -25,20 +26,20 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const wishlistMutation = useToggleWishlist();
+  const addToCartMutation = useAddToCart();
 
   const [isSaved, setIsSaved] = useState(product.isSaved);
-  const [selectedSize, setSelectedSize] = useState<string | null>(
-    product.sizes.find((size) => size.inStock)?.label ?? null,
+  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(
+    product.sizes.find((size) => size.inStock)?.id ?? null,
   );
   const [quantity, setQuantity] = useState(1);
-  const [added, setAdded] = useState(false);
 
   const galleryImages =
     product.images.length > 0 ? product.images : product.imageUrl ? [product.imageUrl] : [];
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const activeImage = galleryImages[selectedImageIndex] ?? galleryImages[0];
 
-  const needsSize = product.sizes.length > 0 && !selectedSize;
+  const needsSize = product.sizes.length > 0 && !selectedSizeId;
 
   const goToSignIn = () => router.push(`/login?redirect=/product/${product.id}`);
   const gated = (action: () => void) => (isAuthenticated ? action() : goToSignIn());
@@ -53,13 +54,18 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
   };
 
   const addToCart = () => {
-    setAdded(true);
-    window.setTimeout(() => setAdded(false), 2000);
+    if (!selectedSizeId) return;
+    addToCartMutation.mutate(
+      { productId: product.id, sizeId: selectedSizeId, qty: quantity },
+      { onSuccess: () => toast.success("Added to your bag.") },
+    );
   };
 
   const buyNow = () => {
-    const sizeLabel = selectedSize ? ` (Size ${selectedSize})` : "";
-    toast.success(`Redirecting to checkout for ${quantity} × ${product.name}${sizeLabel}…`);
+    const sizeLabel = product.sizes.find((size) => size.id === selectedSizeId)?.label;
+    toast.success(
+      `Redirecting to checkout for ${quantity} × ${product.name}${sizeLabel ? ` (Size ${sizeLabel})` : ""}…`,
+    );
   };
 
   const scrollToSeenOn = () => {
@@ -127,7 +133,11 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
             onClick={scrollToSeenOn}
           />
 
-          <SizeSelector sizes={product.sizes} selected={selectedSize} onSelect={setSelectedSize} />
+          <SizeSelector
+            sizes={product.sizes}
+            selected={selectedSizeId}
+            onSelect={setSelectedSizeId}
+          />
 
           <QuantitySelector quantity={quantity} onChange={setQuantity} />
 
@@ -135,10 +145,10 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
             <Button
               variant="outline"
               className="flex-1"
-              disabled={needsSize}
+              disabled={needsSize || addToCartMutation.isPending}
               onClick={() => gated(addToCart)}
             >
-              {added ? "Added ✓" : "Add to cart"}
+              {addToCartMutation.isPending ? "Adding…" : "Add to cart"}
             </Button>
             <Button className="flex-1" disabled={needsSize} onClick={() => gated(buyNow)}>
               <Zap className="size-4" />

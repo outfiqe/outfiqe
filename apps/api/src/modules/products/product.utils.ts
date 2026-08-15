@@ -25,17 +25,21 @@ export const sumStock = (sizes: { stock: number }[]): number =>
 export const isLowStock = (totalStock: number): boolean =>
   totalStock > 0 && totalStock <= LOW_STOCK_THRESHOLD;
 
-export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduct => ({
-  id: product.id,
-  brand: product.brand.name,
-  name: product.name,
-  price: product.price,
-  type: PRODUCT_TYPE_TO_SLUG[product.type],
-  categorySlugs: product.categories.map((category) => category.slug),
-  imageUrl: product.imageUrl,
-  lowStock: product.totalStock === undefined ? product.lowStock : isLowStock(product.totalStock),
-  isNew: isNew(product.createdAt),
-});
+export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduct => {
+  const { id, brand, name, price, type, categories, imageUrl, totalStock, lowStock, createdAt } =
+    product;
+  return {
+    id,
+    brand: brand.name,
+    name,
+    price,
+    type: PRODUCT_TYPE_TO_SLUG[type],
+    categorySlugs: categories.map((category) => category.slug),
+    imageUrl,
+    lowStock: totalStock === undefined ? lowStock : isLowStock(totalStock),
+    isNew: isNew(createdAt),
+  };
+};
 
 export const toBrandSummary = ({
   categories,

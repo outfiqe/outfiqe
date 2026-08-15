@@ -16,17 +16,20 @@ const buildCartView = async (cartId: string): Promise<CartView> => {
   const stockBySizeId = await productRepository.getStockBySizeIds(rows.map((row) => row.sizeId));
 
   const items: CartItemView[] = rows.map((row) => {
-    const availableStock = stockBySizeId.get(row.sizeId) ?? 0;
+    const { id, productId, sizeId, qty, product, size } = row;
+    const { name: productName, price: unitPrice, imageUrl, brand } = product;
+    const availableStock = stockBySizeId.get(sizeId) ?? 0;
+
     return {
-      id: row.id,
-      productId: row.productId,
-      sizeId: row.sizeId,
-      productName: row.product.name,
-      brandName: row.product.brand.name,
-      imageUrl: row.product.imageUrl,
-      sizeLabel: row.size.label,
-      unitPrice: row.product.price,
-      qty: row.qty,
+      id,
+      productId,
+      sizeId,
+      productName,
+      brandName: brand.name,
+      imageUrl,
+      sizeLabel: size.label,
+      unitPrice,
+      qty,
       availableStock,
       soldOut: availableStock === 0,
       lowStock: availableStock > 0 && availableStock <= CART_LOW_STOCK_THRESHOLD,

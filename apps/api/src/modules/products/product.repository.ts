@@ -194,16 +194,17 @@ export const productRepository = {
       include: {
         brand: { select: { name: true } },
         categories: { select: { slug: true, name: true } },
-        sizes: { orderBy: { sortOrder: "asc" }, select: { label: true, stock: true } },
+        sizes: { orderBy: { sortOrder: "asc" }, select: { id: true, label: true, stock: true } },
         images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
       },
     });
     if (!product) return null;
 
+    const { sizes, ...rest } = product;
     return {
-      ...product,
-      totalStock: sumStock(product.sizes),
-      sizes: product.sizes.map((size) => ({ label: size.label, inStock: size.stock > 0 })),
+      ...rest,
+      totalStock: sumStock(sizes),
+      sizes: sizes.map(({ id, label, stock }) => ({ id, label, inStock: stock > 0 })),
     };
   },
 
