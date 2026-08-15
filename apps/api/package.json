@@ -16,6 +16,7 @@
     "#redis/*": "./src/shared/redis/*",
     "#socket/*": "./src/shared/socket/*",
     "#email-templates/*": "./src/shared/email-templates/*",
+    "#scheduling/*": "./src/shared/scheduling/*",
     "#modules/*": "./src/modules/*"
   },
   "scripts": {

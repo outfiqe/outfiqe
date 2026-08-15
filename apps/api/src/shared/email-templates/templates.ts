@@ -169,6 +169,45 @@ export const newOrderNotificationTemplate = (
   }),
 });
 
+type PaymentSettledInput = {
+  orderId: string;
+  total: number;
+};
+
+export const paymentSettledTemplate = (
+  input: PaymentSettledInput,
+): { subject: string; html: string } => ({
+  subject: `Payment received — ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: `Payment received for order ${input.orderId}.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Payment received</h1>
+      <p style="color:${SUB};margin:0;">Rs. ${input.total.toLocaleString()} received for order ${input.orderId}.</p>
+    `,
+  }),
+});
+
+type ManualRefundNeededInput = {
+  orderId: string;
+  total: number;
+};
+
+export const manualRefundNeededTemplate = (
+  input: ManualRefundNeededInput,
+): { subject: string; html: string } => ({
+  subject: `Action needed — refund order ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: `Order ${input.orderId} needs a manual refund.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Manual refund needed</h1>
+      <p style="color:${SUB};margin:0;">
+        Order ${input.orderId} was paid (Rs. ${input.total.toLocaleString()}) but the item sold out before
+        we could confirm it. Refund this order by hand through the gateway dashboard.
+      </p>
+    `,
+  }),
+});
+
 export const adminInviteTemplate = (
   name: string,
   inviteUrl: string,

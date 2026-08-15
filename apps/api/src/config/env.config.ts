@@ -31,6 +31,10 @@ const envSchema = z.object({
   UPLOADS_DIR: z.string().default("uploads"),
   API_PUBLIC_URL: z.url().default("http://localhost:4000"),
   REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
+  ESEWA_PRODUCT_CODE: z.string().min(1).default("EPAYTEST"),
+  ESEWA_SECRET_KEY: z.string().min(1).default("8gBm/:&EnhH.1/q"),
+  ESEWA_BASE_URL: z.url().default("https://rc-epay.esewa.com.np/api/epay/main/v2/form"),
+  ESEWA_STATUS_URL: z.url().default("https://rc.esewa.com.np/api/epay/transaction/status/"),
 });
 
 const parsed = envSchema.safeParse(process.env);

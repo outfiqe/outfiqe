@@ -131,19 +131,21 @@ const checkoutOnce = async (
       : PaymentTransactionStatus.INITIATED;
 
   const order = await prisma.$transaction(async (tx) => {
-    const insufficientSizeIds = await productService.decrementStockForItems(
-      tx,
-      lines.map(({ sizeId, qty }) => ({ sizeId, qty })),
-    );
-    if (insufficientSizeIds.length > 0) {
-      throw new AppError(
-        "ITEMS_UNAVAILABLE",
-        "Some items sold out just now.",
-        ITEMS_UNAVAILABLE_STATUS,
-        {
-          sizeIds: insufficientSizeIds,
-        },
+    if (paymentMethod === PaymentMethod.COD) {
+      const insufficientSizeIds = await productService.decrementStockForItems(
+        tx,
+        lines.map(({ sizeId, qty }) => ({ sizeId, qty })),
       );
+      if (insufficientSizeIds.length > 0) {
+        throw new AppError(
+          "ITEMS_UNAVAILABLE",
+          "Some items sold out just now.",
+          ITEMS_UNAVAILABLE_STATUS,
+          {
+            sizeIds: insufficientSizeIds,
+          },
+        );
+      }
     }
 
     const createdOrder = await orderRepository.create(tx, {

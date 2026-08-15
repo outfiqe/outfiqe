@@ -2,6 +2,7 @@ export const redisKeys = {
   rateLimit: (namespace: string, identifier: string) => `ratelimit:${namespace}:${identifier}`,
   cache: (namespace: string, identifier = "all") => `cache:${namespace}:${identifier}`,
   stream: (event: string) => `stream:${event}`,
+  lock: (name: string) => `lock:${name}`,
 };
 
 export const CACHE_TTL = {
