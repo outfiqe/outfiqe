@@ -10,6 +10,7 @@ import { adminInviteRoutes } from "./modules/admin-invites/adminInvite.routes.js
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { brandApplicationRoutes } from "./modules/brand-applications/brandApplication.routes.js";
 import { brandRoutes } from "./modules/brands/brand.routes.js";
+import { cartRoutes } from "./modules/cart/cart.routes.js";
 import { categoryRoutes } from "./modules/categories/category.routes.js";
 import { collectionRoutes } from "./modules/collections/collection.routes.js";
 import { creatorLookRoutes } from "./modules/creator-looks/creatorLook.routes.js";
@@ -53,6 +54,7 @@ export const createApp = () => {
   app.use("/api/creators", creatorRoutes);
   app.use("/api/admin/invites", adminInviteRoutes);
   app.use("/api/products", productRoutes);
+  app.use("/api/cart", cartRoutes);
   app.use("/api/collections", collectionRoutes);
   app.use("/api/creator-looks", creatorLookRoutes);
   app.use("/api/follows", followRoutes);
