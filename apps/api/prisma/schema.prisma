@@ -44,6 +44,13 @@ model User {
   tagClicks            CreatorLookTagClick[]
   following            Follow[]              @relation("FollowerEdges")
   savedProducts        SavedProduct[]
+  cart                 Cart?
+  orders               Order[]
+  idempotencyRequests  RequestIdempotency[]
+  attributedOrderItems OrderItem[]           @relation("AttributedOrderItems")
+  creatorCommissions   CreatorCommission[]   @relation("CreatorCommissions")
+  creatorLinks         CreatorLink[]         @relation("CreatorLinks")
+  creatorLinkClicks    CreatorLinkClick[]
 
   @@index([isCreator, creatorStatus, followerCount])
   @@map("users")
@@ -171,6 +178,9 @@ model Product {
   savedBy       SavedProduct[]
   collections   CollectionProduct[]
   images        ProductImage[]
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  creatorLinks  CreatorLink[]
 
   @@map("products")
 }
@@ -269,8 +279,12 @@ model ProductSize {
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   label     String
   inStock   Boolean  @default(true) @map("in_stock")
+  stock     Int      @default(0)
   sortOrder Int      @default(0) @map("sort_order")
   createdAt DateTime @default(now()) @map("created_at")
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
 
   @@unique([productId, label])
   @@map("product_sizes")
@@ -288,13 +302,14 @@ model CreatorLook {
   deletedAt    DateTime? @map("deleted_at")
   createdAt    DateTime  @default(now()) @map("created_at")
 
-  taggedProducts CreatorLookProduct[]
-  likes          CreatorLookLike[]
-  saves          CreatorLookSave[]
-  comments       CreatorLookComment[]
-  hashtags       CreatorLookHashtag[]
-  tagClicks      CreatorLookTagClick[]
-  images         CreatorLookImage[]
+  taggedProducts       CreatorLookProduct[]
+  likes                CreatorLookLike[]
+  saves                CreatorLookSave[]
+  comments             CreatorLookComment[]
+  hashtags             CreatorLookHashtag[]
+  tagClicks            CreatorLookTagClick[]
+  images               CreatorLookImage[]
+  attributedOrderItems OrderItem[]
 
   @@index([deletedAt])
   @@index([createdAt])
@@ -382,6 +397,7 @@ model CreatorLookTagClick {
   creatorLook   CreatorLook               @relation(fields: [creatorLookId], references: [id], onDelete: Cascade)
   product       Product                   @relation(fields: [productId], references: [id], onDelete: Cascade)
   user          User?                     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  commissions   CreatorCommission[]
 
   @@map("creator_look_tag_clicks")
 }
@@ -462,4 +478,316 @@ model AdminInvite {
   invitedBy   User      @relation("AdminInviteSender", fields: [invitedById], references: [id])
 
   @@map("admin_invites")
+}
+
+// ---------------------------------------------------------------------------
+// Cart
+// ---------------------------------------------------------------------------
+
+model Cart {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String      @id @default(uuid()) @db.Uuid
+  cartId    String      @map("cart_id") @db.Uuid
+  cart      Cart        @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String      @map("product_id") @db.Uuid
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sizeId    String      @map("size_id") @db.Uuid
+  size      ProductSize @relation(fields: [sizeId], references: [id], onDelete: Cascade)
+  qty       Int         @default(1)
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  @@unique([cartId, sizeId])
+  @@map("cart_items")
+}
+
+// ---------------------------------------------------------------------------
+// Orders & payments
+// ---------------------------------------------------------------------------
+
+enum PaymentMethod {
+  COD
+  ESEWA
+  KHALTI
+}
+
+// Order-level summary status. DUE is a normal, healthy state for an
+// unsettled COD order, not an error — see PRD "Orders and inventory".
+enum PaymentStatus {
+  INITIATED
+  PAID
+  DUE
+  FAILED
+  REFUNDED
+}
+
+enum FulfilmentStatus {
+  PLACED
+  PACKED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model Order {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fullName String  @map("full_name")
+  phone    String
+  address  String
+  city     String
+  landmark String?
+
+  paymentMethod    PaymentMethod    @map("payment_method")
+  paymentStatus    PaymentStatus    @default(INITIATED) @map("payment_status")
+  fulfilmentStatus FulfilmentStatus @default(PLACED) @map("fulfilment_status")
+
+  subtotal    Int
+  deliveryFee Int @map("delivery_fee")
+  codFee      Int @default(0) @map("cod_fee")
+  total       Int
+
+  // Set when a gateway payment settles as PAID but the atomic stock
+  // decrement then fails (sold out in the gap) — the payment can't be
+  // undone from our side, so this flags the order for a manual refund
+  // instead of silently failing. See PRD "Payment" / refund rules.
+  needsManualRefund Boolean   @default(false) @map("needs_manual_refund")
+  deliveredAt       DateTime? @map("delivered_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  items        OrderItem[]
+  transactions PaymentTransaction[]
+
+  @@index([userId, createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String      @id @default(uuid()) @db.Uuid
+  orderId   String      @map("order_id") @db.Uuid
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String      @map("product_id") @db.Uuid
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  sizeId    String      @map("size_id") @db.Uuid
+  size      ProductSize @relation(fields: [sizeId], references: [id], onDelete: Restrict)
+  qty       Int
+  unitPrice Int         @map("unit_price")
+
+  // Attribution — resolved once, at order-creation time, across all three
+  // click sources (tag clicks + internal/external link clicks). Exactly one
+  // of attributedCreatorLookId / attributedLinkId is set, matching
+  // attributionSource; attributedCreatorId is always set when there's an
+  // attributed sale, regardless of which channel sourced it.
+  attributedCreatorId     String?           @map("attributed_creator_id") @db.Uuid
+  attributedCreator       User?             @relation("AttributedOrderItems", fields: [attributedCreatorId], references: [id], onDelete: SetNull)
+  attributedCreatorLookId String?           @map("attributed_creator_look_id") @db.Uuid
+  attributedCreatorLook   CreatorLook?      @relation(fields: [attributedCreatorLookId], references: [id], onDelete: SetNull)
+  attributedLinkId        String?           @map("attributed_link_id") @db.Uuid
+  attributedLink          CreatorLink?      @relation(fields: [attributedLinkId], references: [id], onDelete: SetNull)
+  attributionSource       CommissionSource? @map("attribution_source")
+
+  commission CreatorCommission?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("order_items")
+}
+
+enum PaymentTransactionType {
+  PAYMENT
+  REFUND
+}
+
+// Attempt-level status — distinct from Order.paymentStatus, which is an
+// order-level summary (and includes DUE, which doesn't apply to a single
+// gateway attempt).
+enum PaymentTransactionStatus {
+  INITIATED
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+model PaymentTransaction {
+  id      String @id @default(uuid()) @db.Uuid
+  orderId String @map("order_id") @db.Uuid
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  provider PaymentMethod
+  type     PaymentTransactionType   @default(PAYMENT)
+  status   PaymentTransactionStatus @default(INITIATED)
+
+  // Nullable: not every attempt gets a gateway reference immediately (COD
+  // never does; a wallet attempt gets one only once initiated).
+  transactionRef String? @unique @map("transaction_ref")
+  rawResponse    Json?   @map("raw_response")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([orderId, status])
+  @@map("payment_transactions")
+}
+
+// One row per (userId, endpoint, key) — lets checkout submission and
+// payment-initiate replay the original response on a retried request
+// instead of double-creating an order or a payment attempt.
+model RequestIdempotency {
+  id           String   @id @default(uuid()) @db.Uuid
+  key          String   @map("idempotency_key")
+  userId       String   @map("user_id") @db.Uuid
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint     String
+  statusCode   Int      @map("status_code")
+  responseBody Json     @map("response_body")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, endpoint, key])
+  @@map("request_idempotency")
+}
+
+// ---------------------------------------------------------------------------
+// Creator commission
+// ---------------------------------------------------------------------------
+
+enum CommissionStatus {
+  PENDING
+  APPROVED
+  AVAILABLE
+  PAID
+  VOIDED
+}
+
+enum CommissionSource {
+  TAG_CLICK
+  INTERNAL_LINK
+  EXTERNAL_LINK
+}
+
+// Fixed, price-tiered commission amounts — a sold item's price is looked up
+// against these bands, never a percentage. Admin-editable; amounts are
+// snapshotted onto CreatorCommission at creation time, so editing a tier
+// here never retroactively changes an already-created commission.
+model CommissionTier {
+  id        String   @id @default(uuid()) @db.Uuid
+  minPrice  Int      @map("min_price")
+  maxPrice  Int?     @map("max_price")
+  amount    Int
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  commissions CreatorCommission[]
+
+  @@map("commission_tiers")
+}
+
+model CreatorCommission {
+  id          String    @id @default(uuid()) @db.Uuid
+  creatorId   String    @map("creator_id") @db.Uuid
+  creator     User      @relation("CreatorCommissions", fields: [creatorId], references: [id], onDelete: Cascade)
+  orderItemId String    @unique @map("order_item_id") @db.Uuid
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  // Source is snapshotted explicitly (not inferred from which of
+  // tagClickId/linkClickId is non-null) so the earnings ledger can render a
+  // per-row badge with no extra joins.
+  source      CommissionSource
+  tagClickId  String?              @map("tag_click_id") @db.Uuid
+  tagClick    CreatorLookTagClick? @relation(fields: [tagClickId], references: [id], onDelete: SetNull)
+  linkClickId String?              @map("link_click_id") @db.Uuid
+  linkClick   CreatorLinkClick?    @relation(fields: [linkClickId], references: [id], onDelete: SetNull)
+
+  tierId String         @map("tier_id") @db.Uuid
+  tier   CommissionTier @relation(fields: [tierId], references: [id])
+  amount Int
+
+  status CommissionStatus @default(PENDING)
+
+  approvedAt   DateTime? @map("approved_at")
+  availableAt  DateTime? @map("available_at")
+  paidAt       DateTime? @map("paid_at")
+  // Cancelled/refunded/fraud-flagged orders are voided in place, not
+  // deleted, so a creator's dashboard can explain a missing earning instead
+  // of it silently vanishing.
+  voidedReason String?   @map("voided_reason")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([creatorId, status])
+  @@map("creator_commissions")
+}
+
+// ---------------------------------------------------------------------------
+// Creator referral links
+// ---------------------------------------------------------------------------
+
+enum CreatorLinkType {
+  // Consumed (dead) after its first click — enforced with the same atomic
+  // conditional-update pattern used for stock decrement, not a soft rule.
+  INTERNAL_SINGLE_USE
+  // Persistent, reusable — intended for sharing outside Outfiqe entirely
+  // (Instagram/TikTok/WhatsApp bio links), where most clicks come from a
+  // not-yet-logged-in visitor.
+  EXTERNAL_REUSABLE
+}
+
+enum CreatorLinkStatus {
+  ACTIVE
+  CONSUMED
+  REVOKED
+}
+
+model CreatorLink {
+  id        String   @id @default(uuid()) @db.Uuid
+  creatorId String   @map("creator_id") @db.Uuid
+  creator   User     @relation("CreatorLinks", fields: [creatorId], references: [id], onDelete: Cascade)
+  productId String?  @map("product_id") @db.Uuid
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  // Cryptographically random, not sequential/enumerable.
+  token      String            @unique
+  type       CreatorLinkType
+  status     CreatorLinkStatus @default(ACTIVE)
+  consumedAt DateTime?         @map("consumed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  clicks     CreatorLinkClick[]
+  orderItems OrderItem[]
+
+  @@index([creatorId])
+  @@map("creator_links")
+}
+
+model CreatorLinkClick {
+  id     String      @id @default(uuid()) @db.Uuid
+  linkId String      @map("link_id") @db.Uuid
+  link   CreatorLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  // Nullable: external-link clicks routinely come from a not-yet-logged-in
+  // visitor. sessionId bridges to userId once they sign in / check out.
+  userId    String? @map("user_id") @db.Uuid
+  user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionId String  @map("session_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  commissions CreatorCommission[]
+
+  @@index([linkId])
+  @@map("creator_link_clicks")
 }
