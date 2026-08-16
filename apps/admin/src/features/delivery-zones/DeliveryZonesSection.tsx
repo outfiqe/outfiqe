@@ -1,4 +1,4 @@
-import { Badge, Button, FormBanner, Input, Modal, toast } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Input, Modal, Skeleton, toast } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
@@ -6,9 +6,14 @@ import { getErrorMessage } from "@/lib/errorMessages";
 
 import { type DeliveryZoneInput, deliveryZonesApi, type UpdateDeliveryZoneInput } from "./api";
 import { CityListInput } from "./CityListInput";
+import {
+  applyDefaultZoneInCache,
+  removeZoneFromCache,
+  upsertZoneInCache,
+  ZONES_QUERY_KEY,
+} from "./deliveryZonesCacheUpdate";
+import { DELIVERY_ZONE_HISTORY_QUERY_KEY } from "./hooks/useDeliveryZoneHistory";
 import type { DeliveryZone } from "./schemas";
-
-const ZONES_QUERY_KEY = ["admin-delivery-zones"];
 
 type ZoneFormState = {
   name: string;
@@ -108,8 +113,9 @@ const EditZoneModal = ({ zone, onClose }: { zone: DeliveryZone; onClose: () => v
 
   const update = useMutation({
     mutationFn: (input: UpdateDeliveryZoneInput) => deliveryZonesApi.update(zone.id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ZONES_QUERY_KEY });
+    onSuccess: (updatedZone) => {
+      upsertZoneInCache(queryClient, updatedZone);
+      queryClient.invalidateQueries({ queryKey: DELIVERY_ZONE_HISTORY_QUERY_KEY });
       onClose();
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
@@ -135,7 +141,12 @@ const EditZoneModal = ({ zone, onClose }: { zone: DeliveryZone; onClose: () => v
 
 export const DeliveryZonesSection = () => {
   const queryClient = useQueryClient();
-  const { data: zones, isLoading } = useQuery({
+  const {
+    data: zones,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ZONES_QUERY_KEY,
     queryFn: deliveryZonesApi.list,
   });
@@ -146,23 +157,26 @@ export const DeliveryZonesSection = () => {
 
   const create = useMutation({
     mutationFn: () => deliveryZonesApi.create(toZoneInput(form)),
-    onSuccess: () => {
+    onSuccess: (createdZone) => {
       setForm(EMPTY_FORM);
       setError(null);
-      queryClient.invalidateQueries({ queryKey: ZONES_QUERY_KEY });
+      upsertZoneInCache(queryClient, createdZone);
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
   const setDefault = useMutation({
     mutationFn: (id: string) => deliveryZonesApi.setDefault(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ZONES_QUERY_KEY }),
+    onSuccess: (updatedZone) => {
+      applyDefaultZoneInCache(queryClient, updatedZone);
+      queryClient.invalidateQueries({ queryKey: DELIVERY_ZONE_HISTORY_QUERY_KEY });
+    },
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => deliveryZonesApi.remove(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ZONES_QUERY_KEY }),
+    onSuccess: (_data, zoneId) => removeZoneFromCache(queryClient, zoneId),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -193,8 +207,23 @@ export const DeliveryZonesSection = () => {
       {error && <FormBanner className="mt-3">{error}</FormBanner>}
 
       <div className="mt-4 space-y-2">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-        {zones?.length === 0 && <p className="text-sm text-muted-foreground">No zones yet.</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          ))}
+
+        {isError && (
+          <FormBanner className="flex items-center justify-between gap-3">
+            <span>Couldn&apos;t load delivery zones.</span>
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+              Retry
+            </Button>
+          </FormBanner>
+        )}
+
+        {!isLoading && !isError && zones?.length === 0 && (
+          <p className="text-sm text-muted-foreground">No zones yet.</p>
+        )}
 
         {zones?.map((zone) => (
           <div key={zone.id} className="rounded-xl border border-border bg-card p-4">

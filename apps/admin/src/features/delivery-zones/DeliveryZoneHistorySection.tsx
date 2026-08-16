@@ -1,4 +1,4 @@
-import { Button } from "@outfiqe/design-system";
+import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 
 import { useDeliveryZoneHistory } from "./hooks/useDeliveryZoneHistory";
 
@@ -9,6 +9,8 @@ export const DeliveryZoneHistorySection = () => {
   const {
     data: historyQuery,
     isLoading,
+    isError,
+    refetch,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
@@ -19,8 +21,21 @@ export const DeliveryZoneHistorySection = () => {
     <div>
       <h2 className="font-display text-lg font-bold text-foreground">Change history</h2>
       <div className="mt-4 space-y-2">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-        {!isLoading && historyEntries.length === 0 && (
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-16 w-full rounded-xl" />
+          ))}
+
+        {isError && (
+          <FormBanner className="flex items-center justify-between gap-3">
+            <span>Couldn&apos;t load change history.</span>
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+              Retry
+            </Button>
+          </FormBanner>
+        )}
+
+        {!isLoading && !isError && historyEntries.length === 0 && (
           <p className="text-sm text-muted-foreground">No changes yet.</p>
         )}
 

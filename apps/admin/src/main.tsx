@@ -9,7 +9,18 @@ import { createRoot } from "react-dom/client";
 import { AuthProvider } from "./features/auth/AuthContext.tsx";
 import { routeTree } from "./routeTree.gen";
 
-const queryClient = new QueryClient();
+// Without a staleTime, every route remount and window refocus refetches — the default
+// QueryClient() has staleTime 0, which was causing the delivery-zones page (and others) to
+// hit the API repeatedly on normal navigation.
+const ADMIN_QUERY_STALE_TIME_MS = 30 * 1000;
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: ADMIN_QUERY_STALE_TIME_MS,
+    },
+  },
+});
 const router = createRouter({ routeTree, basepath: "/admin" });
 
 declare module "@tanstack/react-router" {
