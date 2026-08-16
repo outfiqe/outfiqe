@@ -13,6 +13,7 @@ import { brandRoutes } from "./modules/brands/brand.routes.js";
 import { cartRoutes } from "./modules/cart/cart.routes.js";
 import { categoryRoutes } from "./modules/categories/category.routes.js";
 import { collectionRoutes } from "./modules/collections/collection.routes.js";
+import { commissionRoutes } from "./modules/commissions/commission.routes.js";
 import { creatorLookRoutes } from "./modules/creator-looks/creatorLook.routes.js";
 import { creatorRoutes } from "./modules/creators/creator.routes.js";
 import { followRoutes } from "./modules/follows/follow.routes.js";
@@ -59,6 +60,7 @@ export const createApp = () => {
   app.use("/api/cart", cartRoutes);
   app.use("/api/orders", orderRoutes);
   app.use("/api/payments", paymentRoutes);
+  app.use("/api/commissions", commissionRoutes);
   app.use("/api/collections", collectionRoutes);
   app.use("/api/creator-looks", creatorLookRoutes);
   app.use("/api/follows", followRoutes);

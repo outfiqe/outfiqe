@@ -1,4 +1,4 @@
-import type { CommissionSource } from "#generated/prisma/enums.js";
+import type { CommissionSource, CommissionStatus } from "#generated/prisma/enums.js";
 
 export type CommissionTierRecord = {
   id: string;
@@ -15,4 +15,22 @@ export type CreatePendingCommissionInput = {
   linkClickId?: string;
   tierId: string;
   amount: number;
+};
+
+export type CreatorCommissionView = {
+  id: string;
+  productName: string;
+  brandName: string;
+  imageUrl: string | null;
+  source: CommissionSource;
+  status: CommissionStatus;
+  amount: number;
+  createdAt: string;
+};
+
+export type CreatorEarningsSummary = {
+  totalEarnings: number;
+  pending: number;
+  available: number;
+  paid: number;
 };

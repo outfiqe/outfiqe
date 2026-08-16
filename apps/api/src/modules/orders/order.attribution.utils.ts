@@ -1,6 +1,6 @@
 import { ATTRIBUTION_WINDOW_MS } from "#constants/commerce.constants.js";
 import { prisma } from "#db/prisma.js";
-import { CommissionSource, CreatorLinkType } from "#generated/prisma/enums.js";
+import { CommissionSource, CreatorLinkType, CreatorStatus } from "#generated/prisma/enums.js";
 
 export type AttributionCandidate = {
   source: CommissionSource;
@@ -30,7 +30,10 @@ const fetchTagClickCandidates = async (
       userId: buyerId,
       productId,
       createdAt: { gte: since },
-      creatorLook: { creatorId: { not: buyerId } },
+      creatorLook: {
+        creatorId: { not: buyerId },
+        creator: { creatorStatus: CreatorStatus.APPROVED },
+      },
     },
     select: {
       id: true,
@@ -58,7 +61,11 @@ const fetchLinkClickCandidates = async (
     where: {
       userId: buyerId,
       createdAt: { gte: since },
-      link: { creatorId: { not: buyerId }, OR: [{ productId }, { productId: null }] },
+      link: {
+        creatorId: { not: buyerId },
+        creator: { creatorStatus: CreatorStatus.APPROVED },
+        OR: [{ productId }, { productId: null }],
+      },
     },
     select: {
       id: true,

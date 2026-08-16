@@ -75,4 +75,38 @@ export const commissionRepository = {
     });
     return result.count > 0;
   },
+
+  async listForCreator(creatorId: string, params: { cursor?: string; limit: number }) {
+    return prisma.creatorCommission.findMany({
+      where: { creatorId },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: params.limit + 1,
+      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
+      include: {
+        orderItem: {
+          select: {
+            product: {
+              select: { name: true, imageUrl: true, brand: { select: { name: true } } },
+            },
+          },
+        },
+      },
+    });
+  },
+
+  async sumByStatusForCreator(
+    creatorId: string,
+  ): Promise<Partial<Record<CommissionStatus, number>>> {
+    const grouped = await prisma.creatorCommission.groupBy({
+      by: ["status"],
+      where: { creatorId },
+      _sum: { amount: true },
+    });
+
+    const sums: Partial<Record<CommissionStatus, number>> = {};
+    for (const { status, _sum } of grouped) {
+      sums[status] = _sum.amount ?? 0;
+    }
+    return sums;
+  },
 };
