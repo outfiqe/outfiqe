@@ -1,4 +1,5 @@
 import type {
+  BrandOrderItemView,
   OrderAdminSummaryView,
   OrderAdminView,
   OrderItemView,
@@ -143,5 +144,38 @@ export const toOrderAdminSummaryView = (order: OrderAdminRow): OrderAdminSummary
     itemCount: order.items.length,
     firstItemImageUrl: firstItem?.imageUrl ?? null,
     firstItemProductName: firstItem?.productName ?? "",
+  };
+};
+
+type BrandOrderItemRow = {
+  id: string;
+  productId: string;
+  qty: number;
+  unitPrice: number;
+  product: { name: string; imageUrl: string | null };
+  size: { label: string };
+  order: {
+    id: string;
+    createdAt: Date;
+    paymentStatus: OrderView["paymentStatus"];
+    fulfilmentStatus: OrderView["fulfilmentStatus"];
+  };
+};
+
+export const toBrandOrderItemView = (row: BrandOrderItemRow): BrandOrderItemView => {
+  const { id, productId, qty, unitPrice, product, size, order } = row;
+
+  return {
+    id,
+    productId,
+    productName: product.name,
+    imageUrl: product.imageUrl,
+    sizeLabel: size.label,
+    qty,
+    unitPrice,
+    orderId: order.id,
+    orderCreatedAt: order.createdAt.toISOString(),
+    paymentStatus: order.paymentStatus,
+    fulfilmentStatus: order.fulfilmentStatus,
   };
 };

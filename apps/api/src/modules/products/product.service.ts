@@ -1,5 +1,6 @@
 import { productApprovedTemplate, productRejectedTemplate } from "#email-templates/templates.js";
 import { ProductStatus } from "#generated/prisma/enums.js";
+import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
@@ -33,14 +34,6 @@ import { humanizeSlug, toBrandSummary, toPublicProduct } from "./product.utils.j
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
-
-const requireBrandId = async (userId: string): Promise<string> => {
-  const profile = await brandRepository.findByMemberUserId(userId);
-  if (!profile) {
-    throw new AppError("BRAND_NOT_FOUND", "No brand is linked to this account.", NOT_FOUND_STATUS);
-  }
-  return profile.brand.id;
-};
 
 const requireOwnedProduct = async (productId: string, brandId: string): Promise<ProductRecord> => {
   const product = await productRepository.findById(productId);

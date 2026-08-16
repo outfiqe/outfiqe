@@ -134,4 +134,20 @@ export const orderRepository = {
       data: { needsManualRefund: true },
     });
   },
+
+  async listItemsForBrand(brandId: string, params: { cursor?: string; limit: number }) {
+    return prisma.orderItem.findMany({
+      where: { product: { brandId } },
+      orderBy: [{ order: { createdAt: "desc" } }, { id: "desc" }],
+      take: params.limit + 1,
+      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
+      include: {
+        product: { select: { name: true, imageUrl: true } },
+        size: { select: { label: true } },
+        order: {
+          select: { id: true, createdAt: true, paymentStatus: true, fulfilmentStatus: true },
+        },
+      },
+    });
+  },
 };

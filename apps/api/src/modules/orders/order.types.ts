@@ -94,3 +94,17 @@ export type OrderAdminSummaryView = Omit<OrderAdminView, "items" | "transactions
   firstItemImageUrl: string | null;
   firstItemProductName: string;
 };
+
+export type BrandOrderItemView = {
+  id: string;
+  orderId: string;
+  orderCreatedAt: string;
+  productId: string;
+  productName: string;
+  imageUrl: string | null;
+  sizeLabel: string;
+  qty: number;
+  unitPrice: number;
+  paymentStatus: PaymentStatus;
+  fulfilmentStatus: FulfilmentStatus;
+};

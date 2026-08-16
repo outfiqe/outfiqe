@@ -9,6 +9,7 @@ import type {
   CancelOrderBody,
   CheckoutBody,
   ListAdminOrdersQuery,
+  ListBrandOrdersQuery,
   ListOrdersQuery,
   OrderIdParam,
 } from "./order.schemas.js";
@@ -69,5 +70,13 @@ export const orderController = {
 
     await orderService.cancel(orderId, userId, reason);
     sendSuccess(res, null, "Order cancelled.");
+  },
+
+  async listMineAsBrand(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const query = validated.query<ListBrandOrdersQuery>(res);
+
+    const page = await orderService.listMineAsBrand(userId, query);
+    sendSuccess(res, page, "Your brand's orders.");
   },
 };

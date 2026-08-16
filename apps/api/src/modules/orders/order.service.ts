@@ -18,6 +18,7 @@ import {
   PaymentStatus,
   PaymentTransactionStatus,
 } from "#generated/prisma/enums.js";
+import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { withIdempotency } from "#lib/idempotency.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
@@ -38,11 +39,18 @@ import type {
   AdvanceFulfilmentBody,
   CheckoutBody,
   ListAdminOrdersQuery,
+  ListBrandOrdersQuery,
   ListOrdersQuery,
 } from "./order.schemas.js";
-import type { CreateOrderItemInput, OrderAdminSummaryView, OrderAdminView } from "./order.types.js";
+import type {
+  BrandOrderItemView,
+  CreateOrderItemInput,
+  OrderAdminSummaryView,
+  OrderAdminView,
+} from "./order.types.js";
 import { type OrderSummaryView, type OrderView } from "./order.types.js";
 import {
+  toBrandOrderItemView,
   toOrderAdminSummaryView,
   toOrderAdminView,
   toOrderSummaryView,
@@ -362,5 +370,16 @@ export const orderService = {
     }
 
     logger.info(`Order ${orderId} cancelled by admin ${adminUserId}: ${reason}`);
+  },
+
+  async listMineAsBrand(
+    userId: string,
+    { cursor, limit }: ListBrandOrdersQuery,
+  ): Promise<{ items: BrandOrderItemView[]; nextCursor: string | null }> {
+    const brandId = await requireBrandId(userId);
+    const rows = await orderRepository.listItemsForBrand(brandId, { cursor, limit });
+
+    const { items: pagedRows, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
+    return { items: pagedRows.map(toBrandOrderItemView), nextCursor };
   },
 };

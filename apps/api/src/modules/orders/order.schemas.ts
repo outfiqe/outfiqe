@@ -5,8 +5,8 @@ import { FulfilmentStatus, PaymentMethod } from "#generated/prisma/enums.js";
 
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 30;
-const DEFAULT_ADMIN_PAGE_SIZE = 20;
-const MAX_ADMIN_PAGE_SIZE = 50;
+const DEFAULT_LIST_PAGE_SIZE = 20;
+const MAX_LIST_PAGE_SIZE = 50;
 const REASON_MAX = 500;
 
 export const checkoutBodySchema = z.object({
@@ -31,7 +31,12 @@ export const listOrdersQuerySchema = z.object({
 export const listAdminOrdersQuerySchema = z.object({
   status: z.enum(FulfilmentStatus).optional(),
   cursor: z.uuid().optional(),
-  limit: z.coerce.number().int().min(1).max(MAX_ADMIN_PAGE_SIZE).default(DEFAULT_ADMIN_PAGE_SIZE),
+  limit: z.coerce.number().int().min(1).max(MAX_LIST_PAGE_SIZE).default(DEFAULT_LIST_PAGE_SIZE),
+});
+
+export const listBrandOrdersQuerySchema = z.object({
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_LIST_PAGE_SIZE).default(DEFAULT_LIST_PAGE_SIZE),
 });
 
 const advanceableFulfilmentStatuses = [
@@ -52,5 +57,6 @@ export type CheckoutBody = z.infer<typeof checkoutBodySchema>;
 export type OrderIdParam = z.infer<typeof orderIdParamSchema>;
 export type ListOrdersQuery = z.infer<typeof listOrdersQuerySchema>;
 export type ListAdminOrdersQuery = z.infer<typeof listAdminOrdersQuerySchema>;
+export type ListBrandOrdersQuery = z.infer<typeof listBrandOrdersQuerySchema>;
 export type AdvanceFulfilmentBody = z.infer<typeof advanceFulfilmentSchema>;
 export type CancelOrderBody = z.infer<typeof cancelOrderSchema>;

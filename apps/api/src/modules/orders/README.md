@@ -55,3 +55,21 @@ could partially apply.
 chunk as "manual refund/cancel recording" as one combined feature, and a standalone return flow
 would need its own decision about whether stock goes back to sellable inventory, which is a
 different question than "we never shipped it." Easy to add later as a separate action if needed.
+
+## Brand visibility (chunk 16)
+
+`GET /orders/brand` — `requireAuth`+`BRAND_OWNER`, resolves the caller's brand via the shared
+`requireBrandId` (extracted from `products` in this same chunk, now used by both modules instead
+of two copies of the identical membership lookup). Paginates over `OrderItem` rows filtered by
+`product: { brandId }`, **not** whole orders — a single order can contain items from multiple
+brands (one shopper checking out products from two different brands in the same cart), so an
+order-level list would either leak another brand's line items or need per-brand filtering
+downstream. Item-level pagination sidesteps that entirely: each brand only ever sees its own rows,
+proven directly against the DB with a real two-brand order (brand A's list contained exactly its
+own item, not the other brand's).
+
+Deliberately visibility-only, no actions — fulfilment updates and cancellation stay admin-only
+(chunk 15), since `fulfilmentStatus` lives on `Order`, not per-item, so there's nothing a single
+brand could independently mark "shipped" in a multi-brand order without stepping on another
+brand's item. Buyer PII (name/phone/address) is also deliberately left out of the response shape —
+a brand doesn't ship directly, so it has no legitimate need for it.

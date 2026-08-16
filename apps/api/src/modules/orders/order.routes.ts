@@ -12,6 +12,7 @@ import {
   cancelOrderSchema,
   checkoutBodySchema,
   listAdminOrdersQuerySchema,
+  listBrandOrdersQuerySchema,
   listOrdersQuerySchema,
   orderIdParamSchema,
 } from "./order.schemas.js";
@@ -28,6 +29,7 @@ const checkoutRateLimit = rateLimit({
 });
 
 const requireAdmin = [requireAuth, requireRole(UserRole.ADMIN)];
+const requireBrandOwner = [requireAuth, requireRole(UserRole.BRAND_OWNER)];
 
 export const orderRoutes = Router();
 
@@ -61,6 +63,13 @@ orderRoutes.post(
   ...requireAdmin,
   validate({ params: orderIdParamSchema, body: cancelOrderSchema }),
   orderController.cancel,
+);
+
+orderRoutes.get(
+  "/brand",
+  ...requireBrandOwner,
+  validate({ query: listBrandOrdersQuerySchema }),
+  orderController.listMineAsBrand,
 );
 
 orderRoutes.post(
