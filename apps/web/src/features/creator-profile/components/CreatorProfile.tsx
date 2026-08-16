@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { ExploreFeedSkeleton, PostCard } from "@/features/explore";
+import { ExploreFeedSkeleton, PostDetailModal } from "@/features/explore";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { formatHeight } from "@/shared/lib/formatHeight";
 
 import type { CreatorProfile as CreatorProfileType } from "../api/creatorProfileSchemas";
 import { useInfiniteCreatorLooks } from "../hooks/useInfiniteCreatorLooks";
+import { CreatorPostThumbnail } from "./CreatorPostThumbnail";
 
 interface CreatorProfileProps {
   creator: CreatorProfileType;
@@ -27,6 +28,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
 
   const [isFollowing, setIsFollowing] = useState(creator.isFollowing);
   const [followerCount, setFollowerCount] = useState(creator.followerCount);
+  const [detailPostId, setDetailPostId] = useState<string | null>(null);
   const isOwnProfile = state.user?.id === userId;
 
   const toggleFollow = () => {
@@ -49,6 +51,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   };
 
   const posts = data?.pages.flatMap((page) => page.posts) ?? [];
+  const detailPost = posts.find((post) => post.id === detailPostId) ?? null;
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
@@ -108,11 +111,23 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
       ) : posts.length === 0 ? (
         <p className="py-10 text-sm text-muted-foreground">No posts yet.</p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
+            <CreatorPostThumbnail
+              key={post.id}
+              post={post}
+              onClick={() => setDetailPostId(post.id)}
+            />
           ))}
         </div>
+      )}
+
+      {detailPost && (
+        <PostDetailModal
+          post={detailPost}
+          onClose={() => setDetailPostId(null)}
+          showCreatorHeader={false}
+        />
       )}
 
       {hasNextPage && (
