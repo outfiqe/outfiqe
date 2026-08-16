@@ -7,7 +7,7 @@ import { useState } from "react";
 import { FollowersModal } from "@/components/FollowersModal";
 import { FollowingModal } from "@/components/FollowingModal";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { useUpdateCreatorProfile } from "@/features/creator-dashboard";
+import { useUpdateCreatorProfile } from "@/features/creator-dashboard/hooks/useUpdateCreatorProfile";
 import { ExploreFeedSkeleton, PostDetailModal } from "@/features/explore";
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
