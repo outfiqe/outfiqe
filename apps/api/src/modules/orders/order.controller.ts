@@ -4,7 +4,14 @@ import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 
-import type { CheckoutBody, ListOrdersQuery, OrderIdParam } from "./order.schemas.js";
+import type {
+  AdvanceFulfilmentBody,
+  CancelOrderBody,
+  CheckoutBody,
+  ListAdminOrdersQuery,
+  ListOrdersQuery,
+  OrderIdParam,
+} from "./order.schemas.js";
 import { orderService } from "./order.service.js";
 
 const IDEMPOTENCY_HEADER = "Idempotency-Key";
@@ -34,5 +41,33 @@ export const orderController = {
 
     const page = await orderService.listOrders(userId, query);
     sendSuccess(res, page, "Your orders.");
+  },
+
+  async listAllAdmin(_req: Request, res: Response) {
+    const query = validated.query<ListAdminOrdersQuery>(res);
+    const page = await orderService.listAllAdmin(query);
+    sendSuccess(res, page, "Orders.");
+  },
+
+  async getAdmin(_req: Request, res: Response) {
+    const { orderId } = validated.params<OrderIdParam>(res);
+    const order = await orderService.getOrderAdmin(orderId);
+    sendSuccess(res, order, "Order.");
+  },
+
+  async advanceFulfilment(_req: Request, res: Response) {
+    const { orderId } = validated.params<OrderIdParam>(res);
+    const body = validated.body<AdvanceFulfilmentBody>(res);
+    await orderService.advanceFulfilment(orderId, body);
+    sendSuccess(res, null, "Order updated.");
+  },
+
+  async cancel(_req: Request, res: Response) {
+    const { orderId } = validated.params<OrderIdParam>(res);
+    const { reason } = validated.body<CancelOrderBody>(res);
+    const { userId } = requireAuthPrincipal(res);
+
+    await orderService.cancel(orderId, userId, reason);
+    sendSuccess(res, null, "Order cancelled.");
   },
 };

@@ -82,6 +82,19 @@ export const commissionRepository = {
     return result.count > 0;
   },
 
+  async voidForOrder(client: DbClient, orderId: string, voidedReason: string): Promise<number> {
+    const result = await client.creatorCommission.updateMany({
+      where: {
+        orderItem: { orderId },
+        status: {
+          in: [CommissionStatus.PENDING, CommissionStatus.APPROVED, CommissionStatus.AVAILABLE],
+        },
+      },
+      data: { status: CommissionStatus.VOIDED, voidedReason },
+    });
+    return result.count;
+  },
+
   async listForCreator(creatorId: string, params: { cursor?: string; limit: number }) {
     return prisma.creatorCommission.findMany({
       where: { creatorId },

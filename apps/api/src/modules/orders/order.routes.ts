@@ -1,11 +1,20 @@
 import { Router } from "express";
 
+import { UserRole } from "#generated/prisma/enums.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
+import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
 
 import { orderController } from "./order.controller.js";
-import { checkoutBodySchema, listOrdersQuerySchema, orderIdParamSchema } from "./order.schemas.js";
+import {
+  advanceFulfilmentSchema,
+  cancelOrderSchema,
+  checkoutBodySchema,
+  listAdminOrdersQuerySchema,
+  listOrdersQuerySchema,
+  orderIdParamSchema,
+} from "./order.schemas.js";
 
 const CHECKOUT_WINDOW_MS = 5 * 60 * 1000;
 const CHECKOUT_MAX_REQUESTS = 10;
@@ -18,7 +27,41 @@ const checkoutRateLimit = rateLimit({
   message: "Too many checkout attempts. Please wait a moment and try again.",
 });
 
+const requireAdmin = [requireAuth, requireRole(UserRole.ADMIN)];
+
 export const orderRoutes = Router();
+
+/*
+  Static/prefixed paths first — Express would otherwise never reach them once the
+  "/:orderId"-shaped route below matched the same segment.
+ */
+orderRoutes.get(
+  "/admin",
+  ...requireAdmin,
+  validate({ query: listAdminOrdersQuerySchema }),
+  orderController.listAllAdmin,
+);
+
+orderRoutes.get(
+  "/admin/:orderId",
+  ...requireAdmin,
+  validate({ params: orderIdParamSchema }),
+  orderController.getAdmin,
+);
+
+orderRoutes.patch(
+  "/admin/:orderId/fulfilment",
+  ...requireAdmin,
+  validate({ params: orderIdParamSchema, body: advanceFulfilmentSchema }),
+  orderController.advanceFulfilment,
+);
+
+orderRoutes.post(
+  "/admin/:orderId/cancel",
+  ...requireAdmin,
+  validate({ params: orderIdParamSchema, body: cancelOrderSchema }),
+  orderController.cancel,
+);
 
 orderRoutes.post(
   "/checkout",

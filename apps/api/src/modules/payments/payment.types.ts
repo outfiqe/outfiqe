@@ -46,6 +46,10 @@ export type PaymentRefundResult = {
   rawResponse: unknown;
 };
 
+export type PaymentRefundOutcome = PaymentRefundResult & {
+  automated: boolean;
+};
+
 export interface PaymentProvider {
   initiate(input: PaymentInitiateInput): Promise<PaymentInitiateResult>;
   verify(input: PaymentVerifyInput): Promise<PaymentVerifyResult>;

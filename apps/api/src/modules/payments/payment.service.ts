@@ -11,11 +11,12 @@ import { paymentRepository } from "./payment.repository.js";
 import type {
   PaymentInitiateResult,
   PaymentProvider,
+  PaymentRefundOutcome,
   PaymentVerifyStatusValue,
 } from "./payment.types.js";
 import { PaymentVerifyStatus } from "./payment.types.js";
 import { esewaProvider } from "./providers/esewa.provider.js";
-import { khaltiProvider } from "./providers/khalti.provider.js";
+import { extractKhaltiTransactionId, khaltiProvider } from "./providers/khalti.provider.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
@@ -170,6 +171,36 @@ export const paymentService = {
 
     const status = await runVerify(order);
     return { status };
+  },
+
+  async refund(
+    orderId: string,
+    paymentMethod: PaymentMethod,
+    payerPhone: string,
+  ): Promise<PaymentRefundOutcome> {
+    const provider = providers[paymentMethod];
+    if (!provider?.refund) {
+      return {
+        succeeded: true,
+        automated: false,
+        rawResponse: { note: `${paymentMethod} refunds are handled manually outside Outfiqe.` },
+      };
+    }
+
+    const transaction = await paymentRepository.findSucceededTransaction(orderId);
+    const gatewayTransactionId = transaction
+      ? extractKhaltiTransactionId(transaction.rawResponse)
+      : null;
+    if (!gatewayTransactionId) {
+      return {
+        succeeded: false,
+        automated: true,
+        rawResponse: { reason: "missing gateway transaction id" },
+      };
+    }
+
+    const result = await provider.refund({ gatewayTransactionId, payerPhone });
+    return { ...result, automated: true };
   },
 };
 

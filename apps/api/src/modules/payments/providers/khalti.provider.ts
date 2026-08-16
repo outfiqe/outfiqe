@@ -36,7 +36,13 @@ const khaltiHeaders = {
 };
 
 type KhaltiInitiateResponse = { pidx: string; payment_url: string };
-type KhaltiLookupResponse = { status?: string };
+type KhaltiLookupResponse = { status?: string; transaction_id?: string };
+
+export const extractKhaltiTransactionId = (rawResponse: unknown): string | null => {
+  if (typeof rawResponse !== "object" || rawResponse === null) return null;
+  const value = (rawResponse as Record<string, unknown>).transaction_id;
+  return typeof value === "string" ? value : null;
+};
 
 export const khaltiProvider: PaymentProvider = {
   async initiate({

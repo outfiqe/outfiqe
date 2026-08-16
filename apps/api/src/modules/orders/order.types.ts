@@ -82,3 +82,15 @@ export type OrderSummaryView = Omit<
   firstItemImageUrl: string | null;
   firstItemProductName: string;
 };
+
+export type OrderAdminView = OrderView & {
+  buyerName: string;
+  buyerEmail: string;
+  needsManualRefund: boolean;
+};
+
+export type OrderAdminSummaryView = Omit<OrderAdminView, "items" | "transactions"> & {
+  itemCount: number;
+  firstItemImageUrl: string | null;
+  firstItemProductName: string;
+};

@@ -208,6 +208,48 @@ export const manualRefundNeededTemplate = (
   }),
 });
 
+type OrderCancelledInput = {
+  orderId: string;
+  total: number;
+  refunded: boolean;
+};
+
+export const orderCancelledTemplate = (
+  input: OrderCancelledInput,
+): { subject: string; html: string } => ({
+  subject: `Order cancelled — ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: `Order ${input.orderId} has been cancelled.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Order cancelled</h1>
+      <p style="color:${SUB};margin:0;">
+        Order ${input.orderId} has been cancelled.${input.refunded ? ` Rs. ${input.total.toLocaleString()} has been refunded to you.` : ""}
+      </p>
+    `,
+  }),
+});
+
+type RefundFailedInput = {
+  orderId: string;
+  total: number;
+};
+
+export const refundFailedTemplate = (
+  input: RefundFailedInput,
+): { subject: string; html: string } => ({
+  subject: `Action needed — refund order ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: `The automatic refund for order ${input.orderId} failed.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Automatic refund failed</h1>
+      <p style="color:${SUB};margin:0;">
+        Order ${input.orderId} was cancelled, but the automatic gateway refund of
+        Rs. ${input.total.toLocaleString()} failed. Refund this order by hand.
+      </p>
+    `,
+  }),
+});
+
 export const adminInviteTemplate = (
   name: string,
   inviteUrl: string,

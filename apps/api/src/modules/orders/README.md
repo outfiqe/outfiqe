@@ -17,3 +17,41 @@ Everything read-only (cart contents, stock levels, attribution resolution, commi
 `AttributionCandidate.clickId` is the click/tap event (`CreatorLookTagClick.id` or `CreatorLinkClick.id`) and feeds `CreatorCommission.tagClickId`/`linkClickId`. `AttributionCandidate.referenceId` is what the click points to (`CreatorLook.id` or `CreatorLink.id`) and feeds `OrderItem.attributedCreatorLookId`/`attributedLinkId`. These are different rows with different foreign keys — conflating them was an actual bug caught by the verification script (foreign key violation), not a hypothetical one.
 
 A `CreatorLink` with `productId: null` is a general/profile link — it's treated as a candidate for whatever product was actually bought, not just one specific product. A product-scoped `CreatorLink` only counts for that product.
+
+## Admin — fulfilment + cancel/refund (chunk 15)
+
+`GET /orders/admin`, `GET /orders/admin/:orderId`, `PATCH /orders/admin/:orderId/fulfilment`,
+`POST /orders/admin/:orderId/cancel` — all `requireAuth`+`ADMIN`, registered **before** the
+buyer-facing `/:orderId` route (same "static paths first" ordering `creator-looks` already needed —
+Express would otherwise match `/admin` against `/:orderId` and treat "admin" as an order id).
+
+**Fulfilment only moves forward, one step at a time**: `PLACED→PACKED→SHIPPED→DELIVERED`, each
+transition an atomic conditional `updateMany` guarded by the specific status it must be leaving
+(no skipping straight to `DELIVERED`, no re-doing a step). Moving to `DELIVERED` stamps
+`deliveredAt` — this is the field chunk 10's commission-approval sweep has been waiting on since
+nothing set it before this chunk.
+
+**Cancel is cancel-and-refund-if-paid as one action**, not two separate admin clicks — matches how
+an ops person actually thinks about it. Only orders that haven't shipped yet (`PLACED`/`PACKED`)
+can be cancelled. If the order was already `PAID`, the refund happens _before_ the DB transaction
+opens (external HTTP call to the gateway, same "never span a transaction across a network call"
+rule as everywhere else in this codebase) via `paymentService.refund()`:
+
+- **Khalti**: a real automated refund call. On success, the transaction records a `REFUND`
+  `PaymentTransaction` row and sets `paymentStatus: REFUNDED`. On failure, it still cancels the
+  order (stock and commissions don't wait on the refund succeeding) but sets `needsManualRefund`
+  instead and emails ops — same accepted-limitation pattern as the sold-out-after-payment case in
+  `payments/README.md`.
+- **eSewa/COD**: no automated API exists, so this is pure record-keeping — the admin action itself
+  _is_ the confirmation that a human already refunded the buyer outside Outfiqe. Always "succeeds."
+
+Restoring stock and voiding commissions happen inside the same DB transaction as the cancellation
+itself (`productService.restoreStockForItems` + `commissionRepository.voidForOrder`, both already
+proven atomic patterns from earlier chunks) — one atomic unit, not three separate writes that
+could partially apply.
+
+**Scope cut, not a gap**: only pre-shipment cancellation is handled. A post-delivery return/refund
+(order stays `DELIVERED`, only the payment side changes) isn't covered — the plan described this
+chunk as "manual refund/cancel recording" as one combined feature, and a standalone return flow
+would need its own decision about whether stock goes back to sellable inventory, which is a
+different question than "we never shipped it." Easy to add later as a separate action if needed.

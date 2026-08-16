@@ -144,4 +144,32 @@ export const paymentRepository = {
       select: { id: true },
     });
   },
+
+  async findSucceededTransaction(orderId: string) {
+    return prisma.paymentTransaction.findFirst({
+      where: {
+        orderId,
+        type: PaymentTransactionType.PAYMENT,
+        status: PaymentTransactionStatus.SUCCEEDED,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  },
+
+  async recordRefund(
+    client: DbClient,
+    orderId: string,
+    provider: PaymentMethod,
+    rawResponse: unknown,
+  ): Promise<void> {
+    await client.paymentTransaction.create({
+      data: {
+        orderId,
+        provider,
+        type: PaymentTransactionType.REFUND,
+        status: PaymentTransactionStatus.SUCCEEDED,
+        rawResponse: rawResponse as Prisma.InputJsonValue,
+      },
+    });
+  },
 };

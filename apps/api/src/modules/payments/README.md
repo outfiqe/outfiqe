@@ -57,6 +57,13 @@ Concretely:
 off the lookup-returned `transaction_id`). `payerPhone` is `Order.phone` (already collected at
 checkout — no new data to gather).
 
+**Built in chunk 15**: `paymentService.refund(orderId, paymentMethod, payerPhone)` does exactly
+this extraction (via the new exported `extractKhaltiTransactionId`) and resolves the right
+provider, so callers (`orders`' admin cancel action) never need to know which providers support
+automated refunds at all — a provider with no `refund` method just gets treated as "record it
+manually," and a missing/malformed `gatewayTransactionId` fails safely (`succeeded: false`) instead
+of throwing.
+
 ### Unverified assumptions (no real Khalti sandbox account exists yet)
 
 Khalti's sandbox requires signing up at `test-admin.khalti.com` (OTP-gated) for a real secret key —
