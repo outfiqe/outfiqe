@@ -124,7 +124,7 @@ export const CheckoutForm = ({ cart }: CheckoutFormProps) => {
               )}
             />
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <FormField
                 control={form.control}
                 name="city"
