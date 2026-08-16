@@ -6,6 +6,7 @@ import type { UserRecord } from "#modules/users/user.types.js";
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 const SUGGESTED_LIMIT = 10;
+const FOLLOWING_SCAN_CAP = 500;
 
 const getFollowerCount = async (
   tx: Tx,
@@ -126,6 +127,68 @@ export const followRepository = {
       select: { followingId: true },
     });
     return rows.map((row) => row.followingId);
+  },
+
+  async listFollowers(
+    followingType: FollowTargetType,
+    followingId: string,
+    params: { cursor?: string; limit: number; q?: string },
+  ): Promise<{ followerId: string; follower: UserRecord }[]> {
+    return prisma.follow.findMany({
+      where: {
+        followingType,
+        followingId,
+        ...(params.q
+          ? {
+              follower: {
+                OR: [
+                  { name: { contains: params.q, mode: "insensitive" } },
+                  { handle: { contains: params.q, mode: "insensitive" } },
+                ],
+              },
+            }
+          : {}),
+      },
+      orderBy: [{ createdAt: "desc" }, { followerId: "desc" }],
+      take: params.limit + 1,
+      ...(params.cursor
+        ? {
+            cursor: {
+              followerId_followingType_followingId: {
+                followerId: params.cursor,
+                followingType,
+                followingId,
+              },
+            },
+            skip: 1,
+          }
+        : {}),
+      include: { follower: true },
+    });
+  },
+
+  async findFollowedAmong(
+    followerId: string,
+    followingType: FollowTargetType,
+    followingIds: string[],
+  ): Promise<Set<string>> {
+    if (followingIds.length === 0) return new Set();
+    const rows = await prisma.follow.findMany({
+      where: { followerId, followingType, followingId: { in: followingIds } },
+      select: { followingId: true },
+    });
+    return new Set(rows.map((row) => row.followingId));
+  },
+
+  async listFollowingRows(
+    followerId: string,
+  ): Promise<{ followingType: FollowTargetType; followingId: string }[]> {
+    return prisma.follow.findMany({
+      where: { followerId },
+      orderBy: [{ createdAt: "desc" }, { followingId: "desc" }],
+      take: FOLLOWING_SCAN_CAP,
+      select: { followingType: true, followingId: true },
+    });
   },
 
   async suggestedCreators(userId: string): Promise<UserRecord[]> {

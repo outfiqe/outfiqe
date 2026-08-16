@@ -24,4 +24,22 @@ export type FollowResult = {
   followerCount: number;
 };
 
+export type FollowerView = {
+  id: string;
+  name: string;
+  handle: string;
+  isCreator: boolean;
+  isFollowedByViewer: boolean;
+};
+
+export type FollowersPage = {
+  items: FollowerView[];
+  nextCursor: string | null;
+};
+
+export type FollowingPage = {
+  items: FollowTarget[];
+  nextCursor: string | null;
+};
+
 export type { FollowTargetType };

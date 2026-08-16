@@ -28,6 +28,13 @@ export const brandRepository = {
     return prisma.brand.findUnique({ where: { id } });
   },
 
+  async findManyByIds(ids: string[], q?: string): Promise<BrandRecord[]> {
+    if (ids.length === 0) return [];
+    return prisma.brand.findMany({
+      where: { id: { in: ids }, ...(q ? { name: { contains: q, mode: "insensitive" } } : {}) },
+    });
+  },
+
   async update(id: string, updates: UpdateBrandInput): Promise<BrandRecord> {
     return prisma.brand.update({ where: { id }, data: updates });
   },

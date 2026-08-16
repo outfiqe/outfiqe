@@ -16,9 +16,14 @@ import { PostTagPill } from "./PostTagPill";
 type PostDetailModalProps = {
   post: FeedPost;
   onClose: () => void;
+  showCreatorHeader?: boolean;
 };
 
-export const PostDetailModal = ({ post, onClose }: PostDetailModalProps) => {
+export const PostDetailModal = ({
+  post,
+  onClose,
+  showCreatorHeader = true,
+}: PostDetailModalProps) => {
   const {
     id,
     creator,
@@ -57,17 +62,19 @@ export const PostDetailModal = ({ post, onClose }: PostDetailModalProps) => {
   return (
     <Modal open onClose={onClose} ariaLabel={`Post by ${creatorName}`} className="sm:max-w-xl">
       <div className="-mx-6 -my-5 max-h-[85vh] overflow-y-auto">
-        <PostCardHeader
-          creatorId={creatorId}
-          creatorHandle={creatorHandle}
-          creatorName={creatorName}
-          isOwnPost={isOwnPost}
-          isFollowingCreator={isFollowingCreator}
-          onFollowToggle={() =>
-            gated(() => followMutation.mutate({ creatorId, following: isFollowingCreator }))
-          }
-          className="border-b border-border px-4 py-3"
-        />
+        {showCreatorHeader && (
+          <PostCardHeader
+            creatorId={creatorId}
+            creatorHandle={creatorHandle}
+            creatorName={creatorName}
+            isOwnPost={isOwnPost}
+            isFollowingCreator={isFollowingCreator}
+            onFollowToggle={() =>
+              gated(() => followMutation.mutate({ creatorId, following: isFollowingCreator }))
+            }
+            className="border-b border-border px-4 py-3"
+          />
+        )}
 
         <PostCarousel images={images} fallbackColor={getAvatarColor(id)} aspectRatio="4 / 5" />
 

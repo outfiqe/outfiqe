@@ -23,7 +23,7 @@ const STATUS_CLASS: Record<BrandProduct["status"], string> = {
 export const ProductsSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const products = useBrandProducts();
-  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = products;
+  const { data, isPending, hasNextPage, fetchNextPage, isFetchingNextPage } = products;
   const brandProducts = data?.pages.flatMap((page) => page.products) ?? [];
 
   return (
@@ -41,7 +41,7 @@ export const ProductsSection = () => {
         </Button>
       </div>
 
-      {isLoading && (
+      {isPending && (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <Skeleton key={index} className="aspect-square rounded-2xl" />
@@ -49,7 +49,7 @@ export const ProductsSection = () => {
         </div>
       )}
 
-      {!isLoading && brandProducts.length === 0 && (
+      {!isPending && brandProducts.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">
             Nothing listed yet — add your first piece.

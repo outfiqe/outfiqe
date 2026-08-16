@@ -1,3 +1,4 @@
+export * from "./autocomplete";
 export * from "./avatar-uploader";
 export * from "./badge";
 export * from "./banner-uploader";

@@ -75,7 +75,16 @@ export const creatorService = {
       throw new AppError("NOT_FOUND", "Creator not found.", NOT_FOUND_STATUS);
     }
 
-    const { id, name, handle: userHandle, heightCm, creatorStatus, followerCount } = user;
+    const {
+      id,
+      name,
+      handle: userHandle,
+      avatarUrl,
+      heightCm,
+      creatorStatus,
+      followerCount,
+      followingCount,
+    } = user;
 
     const [postsCount, taggedProductIds, isFollowing] = await Promise.all([
       creatorLookRepository.countByCreatorId(id),
@@ -87,10 +96,12 @@ export const creatorService = {
       userId: id,
       name,
       handle: userHandle,
+      avatarUrl,
       heightCm,
       creatorStatus,
       postsCount,
       followerCount,
+      followingCount,
       taggedPiecesCount: taggedProductIds.length,
       isFollowing,
     };

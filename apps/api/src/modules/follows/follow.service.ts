@@ -1,13 +1,19 @@
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { FollowTargetType } from "#generated/prisma/enums.js";
+import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { followRepository } from "./follow.repository.js";
-import type { FollowTargetTypeParam } from "./follow.schemas.js";
-import type { FollowResult, FollowTarget } from "./follow.types.js";
-import { toFollowTarget, toPrismaTargetType } from "./follow.utils.js";
+import type { FollowTargetTypeParam, ListFollowersQuery } from "./follow.schemas.js";
+import type { FollowersPage, FollowingPage, FollowResult, FollowTarget } from "./follow.types.js";
+import {
+  toBrandFollowTarget,
+  toFollowerView,
+  toFollowTarget,
+  toPrismaTargetType,
+} from "./follow.utils.js";
 
 const BAD_REQUEST_STATUS = 400;
 const NOT_FOUND_STATUS = 404;
@@ -87,5 +93,71 @@ export const followService = {
   async suggestedCreators(userId: string): Promise<FollowTarget[]> {
     const users = await followRepository.suggestedCreators(userId);
     return users.map(toFollowTarget);
+  },
+
+  async listFollowers(
+    targetTypeParam: FollowTargetTypeParam,
+    targetId: string,
+    viewerId: string | undefined,
+    query: ListFollowersQuery,
+  ): Promise<FollowersPage> {
+    const targetType = toPrismaTargetType(targetTypeParam);
+    await requireTarget(targetType, targetId);
+
+    const rows = await followRepository.listFollowers(targetType, targetId, query);
+    const { items: pagedRows, nextCursor } = buildCursorPage(
+      rows,
+      query.limit,
+      (row) => row.followerId,
+    );
+
+    const followedIds = viewerId
+      ? await followRepository.findFollowedAmong(
+          viewerId,
+          FollowTargetType.USER,
+          pagedRows.map((row) => row.follower.id),
+        )
+      : new Set<string>();
+
+    return {
+      items: pagedRows.map((row) => toFollowerView(row.follower, followedIds.has(row.follower.id))),
+      nextCursor,
+    };
+  },
+
+  async listFollowing(userId: string, query: ListFollowersQuery): Promise<FollowingPage> {
+    const rows = await followRepository.listFollowingRows(userId);
+    const userIds = rows
+      .filter((row) => row.followingType === FollowTargetType.USER)
+      .map((row) => row.followingId);
+    const brandIds = rows
+      .filter((row) => row.followingType === FollowTargetType.BRAND)
+      .map((row) => row.followingId);
+
+    const [followedUsers, followedBrands] = await Promise.all([
+      userRepository.findManyByIds(userIds, query.q),
+      brandRepository.findManyByIds(brandIds, query.q),
+    ]);
+    const usersById = new Map(followedUsers.map((user) => [user.id, user]));
+    const brandsById = new Map(followedBrands.map((brand) => [brand.id, brand]));
+
+    const targets: FollowTarget[] = [];
+    for (const row of rows) {
+      if (row.followingType === FollowTargetType.USER) {
+        const user = usersById.get(row.followingId);
+        if (user) targets.push(toFollowTarget(user));
+      } else {
+        const brand = brandsById.get(row.followingId);
+        if (brand) targets.push(toBrandFollowTarget(brand));
+      }
+    }
+
+    const startIndex = query.cursor
+      ? targets.findIndex((target) => target.id === query.cursor) + 1
+      : 0;
+    const page = targets.slice(startIndex, startIndex + query.limit);
+    const hasMore = startIndex + query.limit < targets.length;
+
+    return { items: page, nextCursor: hasMore ? (page.at(-1)?.id ?? null) : null };
   },
 };

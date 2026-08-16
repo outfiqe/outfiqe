@@ -7,7 +7,7 @@ import type { ProductSize } from "../api/productDetailSchemas";
 type SizeSelectorProps = {
   sizes: ProductSize[];
   selected: string | null;
-  onSelect: (label: string) => void;
+  onSelect: (sizeId: string) => void;
 };
 
 export const SizeSelector = ({ sizes, selected, onSelect }: SizeSelectorProps) => {
@@ -19,20 +19,20 @@ export const SizeSelector = ({ sizes, selected, onSelect }: SizeSelectorProps) =
       <div className="flex flex-wrap gap-2">
         {sizes.map((size) => (
           <button
-            key={size.label}
+            key={size.id}
             type="button"
             disabled={!size.inStock}
-            aria-pressed={selected === size.label}
-            onClick={() => onSelect(size.label)}
+            aria-pressed={selected === size.id}
+            onClick={() => onSelect(size.id)}
             className={cn(
               "rounded-lg border px-4 py-2 text-[13.5px] transition-colors",
               !size.inStock &&
                 "cursor-not-allowed border-border text-muted-foreground/50 line-through",
               size.inStock &&
-                selected === size.label &&
+                selected === size.id &&
                 "border-2 border-foreground px-[15px] py-[7px] font-semibold text-foreground",
               size.inStock &&
-                selected !== size.label &&
+                selected !== size.id &&
                 "border-border text-muted-foreground hover:border-foreground hover:text-foreground",
             )}
           >

@@ -8,6 +8,7 @@ import {
   FollowTargetType,
   HeroSlideStatus,
   ProductStatus,
+  ProductType,
 } from "../src/generated/prisma/enums.js";
 import { prisma } from "../src/shared/db/prisma.js";
 
@@ -338,6 +339,7 @@ async function seedEngagement(actors: { id: string }[]) {
 }
 
 const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL"];
+const DEFAULT_SIZE_STOCK = 12;
 
 async function seedProductSizes() {
   const existing = await prisma.productSize.count();
@@ -353,10 +355,32 @@ async function seedProductSizes() {
         productId: product.id,
         label,
         inStock: i !== soldOutIndex,
+        stock: i === soldOutIndex ? 0 : DEFAULT_SIZE_STOCK,
         sortOrder: i,
       })),
     });
   }
+}
+
+// Illustrative starting tiers — admin-editable afterwards, not hardcoded
+// logic. A sold item's price is looked up against these bands to find the
+// creator's fixed commission for that sale (see CommissionTier).
+const DEFAULT_COMMISSION_TIERS = [
+  { minPrice: 0, maxPrice: 1499, amount: 10 },
+  { minPrice: 1500, maxPrice: 1999, amount: 20 },
+  { minPrice: 2000, maxPrice: 2999, amount: 30 },
+  { minPrice: 3000, maxPrice: 3999, amount: 40 },
+  { minPrice: 4000, maxPrice: 4999, amount: 50 },
+  { minPrice: 5000, maxPrice: null, amount: 60 },
+];
+
+async function seedCommissionTiers() {
+  const existing = await prisma.commissionTier.count();
+  if (existing > 0) return;
+
+  await prisma.commissionTier.createMany({
+    data: DEFAULT_COMMISSION_TIERS.map((tier, index) => ({ ...tier, sortOrder: index })),
+  });
 }
 
 const TROUSERS_PHOTOS = [
@@ -511,6 +535,123 @@ const seedCategories = async () => {
   }
 };
 
+const SEED_BRANDS = [
+  {
+    name: "Kastha Studio",
+    contactName: "Aasha Maharjan",
+    email: "hello@kastha.example.com",
+    phone: "+9779800000101",
+    instagram: "@kasthastudio",
+  },
+  {
+    name: "Nepa Threads",
+    contactName: "Bikash Shakya",
+    email: "hello@nepathreads.example.com",
+    phone: "+9779800000102",
+    instagram: "@nepathreads",
+  },
+  {
+    name: "Lalitpur Loom",
+    contactName: "Sarita Manandhar",
+    email: "hello@lalitpurloom.example.com",
+    phone: "+9779800000103",
+    instagram: "@lalitpurloom",
+  },
+  {
+    name: "Aamo",
+    contactName: "Kiran Tuladhar",
+    email: "hello@aamo.example.com",
+    phone: "+9779800000104",
+    instagram: "@aamo",
+  },
+];
+
+const seedBrands = async () => {
+  const existing = await prisma.brand.findMany();
+  if (existing.length > 0) return existing;
+
+  return Promise.all(SEED_BRANDS.map((brand) => prisma.brand.create({ data: brand })));
+};
+
+// Names match PRODUCT_IMAGE_POOLS below, which keys product photos by name.
+const SEED_PRODUCTS = [
+  {
+    name: "Oversized Graphic Tee",
+    price: 1450,
+    type: ProductType.TOPS,
+    categorySlugs: ["streetwear", "casual"],
+    brandIndex: 0,
+  },
+  {
+    name: "Cargo Pants",
+    price: 2600,
+    type: ProductType.PANTS,
+    categorySlugs: ["streetwear", "casual"],
+    brandIndex: 0,
+  },
+  {
+    name: "Wool Bomber Jacket",
+    price: 5400,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["streetwear", "casual"],
+    brandIndex: 0,
+  },
+  {
+    name: "Formal Pants",
+    price: 3400,
+    type: ProductType.PANTS,
+    categorySlugs: ["formal"],
+    brandIndex: 1,
+  },
+  {
+    name: "Pleated Trousers",
+    price: 3200,
+    type: ProductType.PANTS,
+    categorySlugs: ["formal"],
+    brandIndex: 1,
+  },
+  {
+    name: "Linen Kurta",
+    price: 2800,
+    type: ProductType.TOPS,
+    categorySlugs: ["traditional"],
+    brandIndex: 2,
+  },
+  {
+    name: "Bucket Hat",
+    price: 950,
+    type: ProductType.HEADWEAR,
+    categorySlugs: ["streetwear"],
+    brandIndex: 3,
+  },
+];
+
+const seedProducts = async (brands: { id: string }[]) => {
+  const existing = await prisma.product.count();
+  if (existing > 0) return;
+
+  const categories = await prisma.category.findMany({ select: { id: true, slug: true } });
+  const categoryIdBySlug = new Map(categories.map((category) => [category.slug, category.id]));
+
+  for (const seedProduct of SEED_PRODUCTS) {
+    await prisma.product.create({
+      data: {
+        brandId: brands[seedProduct.brandIndex].id,
+        name: seedProduct.name,
+        price: seedProduct.price,
+        type: seedProduct.type,
+        status: ProductStatus.APPROVED,
+        categories: {
+          connect: seedProduct.categorySlugs
+            .map((slug) => categoryIdBySlug.get(slug))
+            .filter((id): id is string => Boolean(id))
+            .map((id) => ({ id })),
+        },
+      },
+    });
+  }
+};
+
 type SeedCollection = {
   name: string;
   slug: string;
@@ -625,6 +766,8 @@ const seedHeroSlides = async () => {
 
 async function main() {
   await seedCategories();
+  const brands = await seedBrands();
+  await seedProducts(brands);
   await seedDemoUser();
   const creators = await seedCreators();
   const shoppers = await seedShoppers();
@@ -643,6 +786,7 @@ async function main() {
   await seedWornByCounts();
   await seedCollections();
   await seedHeroSlides();
+  await seedCommissionTiers();
 }
 
 main()

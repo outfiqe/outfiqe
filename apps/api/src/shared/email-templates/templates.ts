@@ -132,6 +132,124 @@ export const productRejectedTemplate = (
   }),
 });
 
+type OrderConfirmationInput = {
+  orderId: string;
+  total: number;
+  paymentMethod: string;
+};
+
+export const orderConfirmationTemplate = (
+  input: OrderConfirmationInput,
+): { subject: string; html: string } => ({
+  subject: `Order placed — ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: `Your Outfiqe order ${input.orderId} has been placed.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Order placed</h1>
+      <p style="color:${SUB};margin:0;">Order ${input.orderId} — Rs. ${input.total.toLocaleString()} via ${input.paymentMethod}.</p>
+    `,
+  }),
+});
+
+type NewOrderNotificationInput = {
+  orderId: string;
+  total: number;
+};
+
+export const newOrderNotificationTemplate = (
+  input: NewOrderNotificationInput,
+): { subject: string; html: string } => ({
+  subject: `New order: ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: `A new order came in.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">New order</h1>
+      <p style="color:${SUB};margin:0;">Order ${input.orderId} — Rs. ${input.total.toLocaleString()}.</p>
+    `,
+  }),
+});
+
+type PaymentSettledInput = {
+  orderId: string;
+  total: number;
+};
+
+export const paymentSettledTemplate = (
+  input: PaymentSettledInput,
+): { subject: string; html: string } => ({
+  subject: `Payment received — ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: `Payment received for order ${input.orderId}.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Payment received</h1>
+      <p style="color:${SUB};margin:0;">Rs. ${input.total.toLocaleString()} received for order ${input.orderId}.</p>
+    `,
+  }),
+});
+
+type ManualRefundNeededInput = {
+  orderId: string;
+  total: number;
+};
+
+export const manualRefundNeededTemplate = (
+  input: ManualRefundNeededInput,
+): { subject: string; html: string } => ({
+  subject: `Action needed — refund order ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: `Order ${input.orderId} needs a manual refund.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Manual refund needed</h1>
+      <p style="color:${SUB};margin:0;">
+        Order ${input.orderId} was paid (Rs. ${input.total.toLocaleString()}) but the item sold out before
+        we could confirm it. Refund this order by hand through the gateway dashboard.
+      </p>
+    `,
+  }),
+});
+
+type OrderCancelledInput = {
+  orderId: string;
+  total: number;
+  refunded: boolean;
+};
+
+export const orderCancelledTemplate = (
+  input: OrderCancelledInput,
+): { subject: string; html: string } => ({
+  subject: `Order cancelled — ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: `Order ${input.orderId} has been cancelled.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Order cancelled</h1>
+      <p style="color:${SUB};margin:0;">
+        Order ${input.orderId} has been cancelled.${input.refunded ? ` Rs. ${input.total.toLocaleString()} has been refunded to you.` : ""}
+      </p>
+    `,
+  }),
+});
+
+type RefundFailedInput = {
+  orderId: string;
+  total: number;
+};
+
+export const refundFailedTemplate = (
+  input: RefundFailedInput,
+): { subject: string; html: string } => ({
+  subject: `Action needed — refund order ${input.orderId}`,
+  html: renderEmailLayout({
+    preheader: `The automatic refund for order ${input.orderId} failed.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Automatic refund failed</h1>
+      <p style="color:${SUB};margin:0;">
+        Order ${input.orderId} was cancelled, but the automatic gateway refund of
+        Rs. ${input.total.toLocaleString()} failed. Refund this order by hand.
+      </p>
+    `,
+  }),
+});
+
 export const adminInviteTemplate = (
   name: string,
   inviteUrl: string,

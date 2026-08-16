@@ -1,5 +1,6 @@
 import { DomainEvents, eventBus } from "#events/event-bus.js";
-import { CreatorStatus, FollowTargetType } from "#generated/prisma/enums.js";
+import { FollowTargetType } from "#generated/prisma/enums.js";
+import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
 import { extractHashtags } from "#lib/hashtags.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
@@ -7,7 +8,6 @@ import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 import type { PublicProduct } from "#modules/products/product.types.js";
 import { toPublicProduct } from "#modules/products/product.utils.js";
-import { userRepository } from "#modules/users/user.repository.js";
 
 import { creatorLookRepository } from "./creatorLook.repository.js";
 import type {
@@ -26,7 +26,6 @@ import type {
 } from "./creatorLook.types.js";
 
 const NOT_FOUND_STATUS = 404;
-const FORBIDDEN_STATUS = 403;
 const UNAUTHORIZED_STATUS = 401;
 const VALIDATION_STATUS = 422;
 
@@ -38,13 +37,6 @@ const requireActiveLook = async (lookId: string): Promise<{ id: string }> => {
   const look = await creatorLookRepository.findActiveById(lookId);
   if (!look) throw new AppError("LOOK_NOT_FOUND", "This look no longer exists.", NOT_FOUND_STATUS);
   return look;
-};
-
-const requireApprovedCreator = async (userId: string): Promise<void> => {
-  const user = await userRepository.findById(userId);
-  if (!user || !user.isCreator || user.creatorStatus !== CreatorStatus.APPROVED) {
-    throw new AppError("NOT_A_CREATOR", "Only approved creators can post looks.", FORBIDDEN_STATUS);
-  }
 };
 
 const requireApprovedProducts = async (productIds: string[]): Promise<void> => {
@@ -63,7 +55,7 @@ export const creatorLookService = {
     userId: string,
     { taggedProducts, imageUrls, caption }: CreateCreatorLookBody,
   ): Promise<CreatorLookSummary> {
-    await requireApprovedCreator(userId);
+    await requireApprovedCreator(userId, "Only approved creators can post looks.");
     const productIds = taggedProducts.map((tag) => tag.productId);
     await requireApprovedProducts(productIds);
 

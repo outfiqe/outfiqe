@@ -3,6 +3,7 @@ import { z } from "zod";
 import { productTypeSchema } from "@/features/products/api/productSchemas";
 
 export const productSizeSchema = z.object({
+  id: z.string(),
   label: z.string(),
   inStock: z.boolean(),
 });
