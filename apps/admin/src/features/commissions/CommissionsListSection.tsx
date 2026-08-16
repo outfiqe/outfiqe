@@ -1,6 +1,8 @@
-import { Badge, Button } from "@outfiqe/design-system";
+import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { commissionsApi } from "./api";
 import { useInfiniteCommissions } from "./hooks/useInfiniteCommissions";
@@ -41,16 +43,19 @@ export const CommissionsListSection = () => {
   const approve = useMutation({
     mutationFn: (id: string) => commissionsApi.approve(id),
     onSuccess: invalidate,
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const voidCommission = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) => commissionsApi.void(id, reason),
     onSuccess: invalidate,
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const markPaid = useMutation({
     mutationFn: (id: string) => commissionsApi.markPaid(id),
     onSuccess: invalidate,
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const isActing = approve.isPending || voidCommission.isPending || markPaid.isPending;

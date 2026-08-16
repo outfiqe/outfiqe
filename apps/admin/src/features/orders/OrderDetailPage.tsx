@@ -1,7 +1,9 @@
-import { Badge, Button } from "@outfiqe/design-system";
+import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { ordersApi } from "./api";
 import { useOrder } from "./hooks/useOrder";
@@ -31,11 +33,13 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
   const advance = useMutation({
     mutationFn: (status: FulfilmentStatusValue) => ordersApi.advanceFulfilment(orderId, status),
     onSuccess: invalidate,
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const cancel = useMutation({
     mutationFn: (reason: string) => ordersApi.cancel(orderId, reason),
     onSuccess: invalidate,
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const handleCancel = () => {

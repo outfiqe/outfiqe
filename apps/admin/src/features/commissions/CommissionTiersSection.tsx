@@ -1,6 +1,8 @@
-import { Button, FormBanner, Input, Modal } from "@outfiqe/design-system";
+import { Button, FormBanner, Input, Modal, toast } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
+
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { commissionsApi, type CreateTierInput, type UpdateTierInput } from "./api";
 import type { CommissionTier } from "./schemas";
@@ -139,6 +141,7 @@ export const CommissionTiersSection = () => {
   const remove = useMutation({
     mutationFn: (id: string) => commissionsApi.deleteTier(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: TIERS_QUERY_KEY }),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const handleSubmit = (e: FormEvent) => {
