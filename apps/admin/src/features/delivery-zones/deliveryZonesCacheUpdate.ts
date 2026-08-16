@@ -10,7 +10,7 @@ export const upsertZoneInCache = (queryClient: QueryClient, zone: DeliveryZone):
     const exists = zones.some((existing) => existing.id === zone.id);
     return exists
       ? zones.map((existing) => (existing.id === zone.id ? zone : existing))
-      : [...zones, zone];
+      : [zone, ...zones];
   });
 };
 
@@ -25,7 +25,7 @@ export const applyDefaultZoneInCache = (queryClient: QueryClient, zone: Delivery
     const exists = withoutPreviousDefault.some((existing) => existing.id === zone.id);
     return exists
       ? withoutPreviousDefault.map((existing) => (existing.id === zone.id ? zone : existing))
-      : [...withoutPreviousDefault, zone];
+      : [zone, ...withoutPreviousDefault];
   });
 };
 
