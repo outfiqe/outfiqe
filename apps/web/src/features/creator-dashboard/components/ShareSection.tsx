@@ -7,6 +7,7 @@ import { CreatorStatus } from "@/features/auth/types";
 import type { PublicProduct } from "@/features/products/api/productSchemas";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
+import type { CreatorLink } from "../api/creatorLinksSchemas";
 import { useCreateInternalLink, useGetOrCreateExternalLink } from "../hooks/useCreateCreatorLink";
 import { useMyCreatorLinks } from "../hooks/useMyCreatorLinks";
 import { ApplyAsCreatorButton } from "./ApplyAsCreatorButton";
@@ -24,6 +25,12 @@ type ShareSectionProps = {
 
 export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
   const [selectedProduct, setSelectedProduct] = useState<PublicProduct | null>(null);
+  const [newLink, setNewLink] = useState<CreatorLink | null>(null);
+
+  const selectProduct = (product: PublicProduct | null) => {
+    setSelectedProduct(product);
+    setNewLink(null);
+  };
 
   const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useMyCreatorLinks();
   const links = data?.pages.flatMap((page) => page.items) ?? [];
@@ -104,7 +111,7 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
         </p>
 
         <div className="mt-3">
-          <ShareProductPicker selectedProduct={selectedProduct} onSelect={setSelectedProduct} />
+          <ShareProductPicker selectedProduct={selectedProduct} onSelect={selectProduct} />
         </div>
 
         {selectedProduct && (
@@ -113,6 +120,10 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
               size="sm"
               onClick={() =>
                 createInternal.mutate(selectedProduct.id, {
+                  onSuccess: (link) => {
+                    setNewLink(link);
+                    toast.success("One-time link created");
+                  },
                   onError: (error) => toast.error(getErrorMessage(error)),
                 })
               }
@@ -125,6 +136,10 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
               variant="outline"
               onClick={() =>
                 getOrCreateExternal.mutate(selectedProduct.id, {
+                  onSuccess: (link) => {
+                    setNewLink(link);
+                    toast.success("Reusable link ready");
+                  },
                   onError: (error) => toast.error(getErrorMessage(error)),
                 })
               }
@@ -135,12 +150,9 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
           </div>
         )}
 
-        {(createInternal.data ?? getOrCreateExternal.data) && (
+        {newLink && (
           <div className="mt-3">
-            <ShareLinkRow
-              label="New link"
-              url={(createInternal.data ?? getOrCreateExternal.data)!.shareUrl}
-            />
+            <ShareLinkRow label="New link" url={newLink.shareUrl} />
           </div>
         )}
       </div>
