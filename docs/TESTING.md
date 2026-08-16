@@ -40,9 +40,9 @@ The baseline path — no gateway involved, so a good first smoke test before tou
 - [ ] Open `/cart`: quantities, sizes, images, and per-item prices match what was added.
 - [ ] Increase/decrease quantity with the +/− controls; confirm it clamps at the size's real available stock (can't go above what's in stock) and won't go below 1 without removing the line.
 - [ ] Remove one item; confirm the bag total recalculates immediately.
-- [ ] Note the subtotal, then check the delivery fee: **free above Rs. 5,000, Rs. 150 otherwise.** Test both sides of that threshold if you can.
+- [ ] Note the subtotal, then check the delivery fee: **free above the free-delivery threshold, the standard fee otherwise** (Rs. 5,000 / Rs. 150 by default — admin-configurable, see funnel 16). Test both sides of that threshold if you can.
 - [ ] Go to `/checkout`. Fill address fields; leave one required field empty and confirm inline validation blocks submit.
-- [ ] Select **Cash on delivery** — confirm the summary shows a **Rs. 50 COD handling fee** added to the total.
+- [ ] Select **Cash on delivery** — confirm the summary shows the **COD handling fee** (Rs. 50 by default) added to the total.
 - [ ] Submit. You should land on `/orders/[orderId]` immediately (no gateway redirect for COD).
 - [ ] Re-check the product's stock (admin Products page, or the product page itself) — it should have **decremented immediately**, since COD claims stock at checkout.
 - [ ] Refresh the order page — the 4-step tracker (Placed → Packed → Shipped → Delivered) should show **Placed** as the current step, and the current step should be screen-reader-announced (`aria-current="step"` on that dot if you inspect the DOM).
@@ -190,7 +190,20 @@ business the whole system exists to run:
 6. Admin marks the commission **Paid**.
 7. Creator's Earnings page reflects the full lifecycle: Pending → Available → Paid.
 
-## 14. Known accepted limitations — please don't file these as bugs
+## 14. Funnel: Admin — order fee settings and audit trail
+
+- [ ] As admin, go to **Order fees**. Confirm the three fields (standard delivery fee, free delivery threshold, COD handling fee) are pre-filled with the current values (Rs. 150 / Rs. 5,000 / Rs. 50 if nobody has changed them yet).
+- [ ] Change the standard delivery fee to a different value and save. Confirm the form shows the new value after saving, and a new row appears at the top of the change history below the form showing your account name, the old value, and the new value.
+- [ ] As a shopper, open `/cart` (or reload it if already open) with a subtotal below the free-delivery threshold. Confirm the delivery fee shown matches the **new** value you just set, not the old default.
+- [ ] Go to `/checkout`, select Cash on delivery. Confirm the COD handling fee note and the order total both reflect the **new** value.
+- [ ] Place that order and confirm the amount actually charged (order total, and the COD fee line in the transaction ledger) matches the new fee — not the old default.
+- [ ] Change the free delivery threshold to just above your cart's subtotal and confirm the delivery fee flips to Free on next reload; change it back down and confirm it flips back.
+- [ ] Try saving the form with a field cleared/invalid (e.g. a negative number) — confirm it's rejected client-side or by the API, not silently accepted.
+- [ ] Log in as a non-admin (or hit `PATCH /api/order-fee-settings` directly without an admin session) and confirm the update is rejected — this must not be editable by anyone but admin.
+- [ ] Scroll the change history — if you've made more than a page's worth of changes, confirm **Load more** paginates correctly instead of loading everything at once.
+- [ ] Set all three values back to the defaults (150 / 5000 / 50) when you're done, so the rest of this doc's dollar amounts stay accurate for the next person testing.
+
+## 15. Known accepted limitations — please don't file these as bugs
 
 These were deliberate scope decisions, documented in the relevant module READMEs:
 
@@ -200,7 +213,7 @@ These were deliberate scope decisions, documented in the relevant module READMEs
 - **No rate limit on generating share links** — a creator could technically spam one-time link creation; low risk since each is single-use and scoped to their own account.
 - **Cross-selling brand visibility**: a brand only ever sees its own line items, never the rest of a mixed-cart order — this is intentional, not a display bug.
 
-## 15. Bugs already found and fixed this session — quick regression check
+## 16. Bugs already found and fixed this session — quick regression check
 
 If you hit any of these again, it's a regression, not a new discovery:
 
@@ -209,3 +222,6 @@ If you hit any of these again, it's a regression, not a new discovery:
 - [ ] Admin actions (approve/void/mark-paid/cancel/advance) show a toast on failure instead of doing nothing.
 - [ ] Share-link buttons show a persistent success toast, not just a flash back to their idle label.
 - [ ] Generating a link updates the "Your links" list without a double-flicker.
+- [ ] `/checkout` no longer flashes an empty-cart state right before redirecting to eSewa/Khalti.
+- [ ] Checkout's Phone and Landmark fields stay aligned with Full name/City in their grid rows.
+- [ ] The COD handling fee shown at checkout always matches what admin has configured in Order fees, never a stale hardcoded Rs. 50.
