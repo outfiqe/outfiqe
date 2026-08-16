@@ -379,21 +379,35 @@ doesn't match a zone.
 3. **Resolution**: given a city, the system normalizes it and looks it up against every
    zone's city list; a match uses that zone's fees, no match falls back to the default
    zone's fees. This never fails checkout — an unrecognized, misspelled, or brand-new
-   city always resolves to _some_ zone's rates rather than erroring.
+   city always resolves to _some_ zone's rates rather than erroring. The web app's cart
+   and checkout city fields only ever submit a city drawn from this same zone list (a
+   dropdown, not free text — see points 5–6), so on the web funnel the no-match path is
+   now mostly a backend safety net — still reachable via a stale saved city from before
+   a zone was edited/deleted, or a direct API call — rather than the everyday path a
+   mistyped city used to take.
 4. The public `GET /api/delivery-zones` (used by cart, checkout, and the admin page) is
    Redis-cached like categories/hero-slides and eagerly refreshed on every successful
    admin write, so readers never see a stale zone list after a save.
-5. **Web (cart)**: the cart page now has its own **city field** — a shopper can enter
-   their delivery city before ever reaching checkout, so the cart's delivery-fee
-   estimate is zone-accurate from the start of the funnel, not a flat guess. The city is
-   saved to the shopper's `Cart` row (debounced as they type), with an instant
-   client-side preview of the matched zone's rates drawn from the same cached zone list
-   as they type, and the authoritative fee coming back from the server once the save
-   lands.
-6. **Web (checkout)**: the checkout form's city field now **pre-fills from the cart's
-   saved city** instead of a hardcoded "Kathmandu" default. The COD-handling-fee note
-   and the order total shown to the buyer are resolved from whichever zone matches the
-   cart's city, live — never a hardcoded constant.
+5. **Web (cart)**: the cart page has its own **city field** — a shopper picks their
+   delivery city from a dropdown (grouped by zone, built from the same cached zone list)
+   before ever reaching checkout, so the cart's delivery-fee estimate is zone-accurate
+   from the start of the funnel and can't be thrown off by a typo. Selecting a city saves
+   it to the shopper's `Cart` row immediately (no debounce — a selection can't be
+   mistyped), with an instant client-side preview of the matched zone's rates and the
+   authoritative fee coming back from the server once the save lands. If the cart already
+   has a city that no longer matches any zone (e.g. an old free-text value, or a city an
+   admin has since removed), it's still shown as the selected option rather than silently
+   reverting to blank, so the shopper can see and change it.
+6. **Web (checkout)**: the checkout form's city field is the same zone-sourced dropdown,
+   pre-filled from the cart's saved city instead of a hardcoded "Kathmandu" default.
+   This field matters more than the cart's — `order.service.checkoutOnce` re-resolves the
+   delivery zone from whatever city is submitted **here**, at order-placement time, not
+   from the cart's city — so constraining it to real zone cities (rather than free text)
+   is what guarantees the buyer is actually charged the fee they were shown; previously a
+   typo in this field could have silently priced the order off the default zone instead
+   of the zone the buyer meant. The COD-handling-fee note and the order total shown to
+   the buyer are resolved from whichever zone matches the submitted city, live — never a
+   hardcoded constant.
 7. **Effective immediately, not locked in earlier**: `cart.service` and
    `order.service.checkoutOnce` both resolve the zone for the order's city on every
    call, not a value captured when the cart page first opened. Whatever zone is live at
@@ -452,4 +466,8 @@ here.
 Post-launch (same session, after live sandbox testing surfaced the question): order fees
 made admin-configurable with an audit trail, then further reworked into zone-based
 delivery pricing matched by city with a default-zone fallback and a cart-page city field
-(§5.17) — previously a single flat rate for every order regardless of destination.
+(§5.17) — previously a single flat rate for every order regardless of destination. That
+cart/checkout city field was itself later changed from a free-text input to a dropdown
+constrained to the admin-defined zone cities, closing the gap where a shopper's typo or
+non-matching city text would silently price against the default zone instead of the zone
+they meant (§5.17 point 6).

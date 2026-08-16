@@ -1,38 +1,29 @@
 "use client";
 
-import { Input } from "@outfiqe/design-system";
-import { useRef, useState } from "react";
-
-import { resolveZonePreview, useDeliveryZones } from "@/features/delivery-zones";
+import { CityZoneOptions, resolveZonePreview, useDeliveryZones } from "@/features/delivery-zones";
 
 import { useUpdateCartCity } from "../hooks/useUpdateCartCity";
 
-const CITY_SAVE_DEBOUNCE_MS = 600;
+const selectClass =
+  "flex h-11 w-full rounded-lg border border-border bg-background px-3.5 text-sm text-foreground " +
+  "outline-none transition-colors focus-visible:border-foreground " +
+  "disabled:cursor-not-allowed disabled:opacity-50";
 
 type CartCityFieldProps = {
   city: string | null;
 };
 
 export const CartCityField = ({ city }: CartCityFieldProps) => {
-  const [cityInput, setCityInput] = useState(city ?? "");
   const deliveryZonesQuery = useDeliveryZones();
   const updateCity = useUpdateCartCity();
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const changeCityInput = (value: string) => {
-    setCityInput(value);
-
-    clearTimeout(saveTimeoutRef.current);
-    const trimmedValue = value.trim();
-    if (!trimmedValue || trimmedValue === city) return;
-    saveTimeoutRef.current = setTimeout(
-      () => updateCity.mutate(trimmedValue),
-      CITY_SAVE_DEBOUNCE_MS,
-    );
+  const changeCity = (value: string) => {
+    if (!value || value === city) return;
+    updateCity.mutate(value);
   };
 
   const previewZone = deliveryZonesQuery.data
-    ? resolveZonePreview(deliveryZonesQuery.data, cityInput)
+    ? resolveZonePreview(deliveryZonesQuery.data, city ?? "")
     : undefined;
 
   return (
@@ -40,13 +31,16 @@ export const CartCityField = ({ city }: CartCityFieldProps) => {
       <label htmlFor="cart-city" className="block text-xs font-medium text-muted-foreground">
         Delivering to
       </label>
-      <Input
+      <select
         id="cart-city"
-        placeholder="Enter your city"
-        value={cityInput}
-        onChange={(e) => changeCityInput(e.target.value)}
-      />
-      {previewZone && cityInput.trim() && (
+        value={city ?? ""}
+        onChange={(e) => changeCity(e.target.value)}
+        disabled={updateCity.isPending}
+        className={selectClass}
+      >
+        <CityZoneOptions currentCity={city} />
+      </select>
+      {previewZone && city && (
         <p className="text-xs text-muted-foreground">
           {previewZone.standardDeliveryFee === 0
             ? "Free delivery"

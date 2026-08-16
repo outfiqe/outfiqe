@@ -1,3 +1,4 @@
 export type { DeliveryZone } from "./api/deliveryZoneSchemas";
+export { CityZoneOptions } from "./components/CityZoneOptions";
 export { useDeliveryZones } from "./hooks/useDeliveryZones";
-export { resolveZonePreview } from "./lib/resolveZonePreview";
+export { normalizeCityName, resolveZonePreview } from "./lib/resolveZonePreview";

@@ -1,6 +1,6 @@
 import type { DeliveryZone } from "../api/deliveryZoneSchemas";
 
-const normalizeCityName = (city: string) => city.trim().toLowerCase();
+export const normalizeCityName = (city: string) => city.trim().toLowerCase();
 
 export const resolveZonePreview = (
   zones: DeliveryZone[],
