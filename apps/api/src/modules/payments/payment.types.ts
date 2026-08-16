@@ -7,13 +7,19 @@ export type PaymentInitiateInput = {
   failureUrl: string;
 };
 
-export type PaymentInitiateResult = {
-  formUrl: string;
-  fields: Record<string, string>;
+type PaymentInitiateResultBase = {
+  providerRef?: string;
 };
+
+export type PaymentInitiateResult = PaymentInitiateResultBase &
+  (
+    | { mode: "FORM_POST"; formUrl: string; fields: Record<string, string> }
+    | { mode: "REDIRECT"; redirectUrl: string }
+  );
 
 export type PaymentVerifyInput = {
   transactionUuid: string;
+  providerRef: string | null;
   totalAmount: number;
 };
 
@@ -30,7 +36,18 @@ export type PaymentVerifyResult = {
   rawResponse: unknown;
 };
 
+export type PaymentRefundInput = {
+  gatewayTransactionId: string;
+  payerPhone: string;
+};
+
+export type PaymentRefundResult = {
+  succeeded: boolean;
+  rawResponse: unknown;
+};
+
 export interface PaymentProvider {
-  initiate(input: PaymentInitiateInput): PaymentInitiateResult;
+  initiate(input: PaymentInitiateInput): Promise<PaymentInitiateResult>;
   verify(input: PaymentVerifyInput): Promise<PaymentVerifyResult>;
+  refund?(input: PaymentRefundInput): Promise<PaymentRefundResult>;
 }

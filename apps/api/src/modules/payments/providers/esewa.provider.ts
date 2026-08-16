@@ -18,19 +18,32 @@ const buildSignature = (totalAmount: number, transactionUuid: string): string =>
   return crypto.createHmac("sha256", env.ESEWA_SECRET_KEY).update(message).digest("base64");
 };
 
-const FAILED_STATUSES = new Set(["CANCELED", "NOT_FOUND", "AMBIGUOUS"]);
+const EsewaStatusLookup = {
+  COMPLETE: "COMPLETE",
+  CANCELED: "CANCELED",
+  NOT_FOUND: "NOT_FOUND",
+  AMBIGUOUS: "AMBIGUOUS",
+} as const;
+
+const FAILED_STATUSES = new Set<string>([
+  EsewaStatusLookup.CANCELED,
+  EsewaStatusLookup.NOT_FOUND,
+  EsewaStatusLookup.AMBIGUOUS,
+]);
 
 export const esewaProvider: PaymentProvider = {
-  initiate({
+  async initiate({
     transactionUuid,
     subtotal,
     deliveryFee,
     totalAmount,
     successUrl,
     failureUrl,
-  }: PaymentInitiateInput): PaymentInitiateResult {
+  }: PaymentInitiateInput): Promise<PaymentInitiateResult> {
     return {
+      mode: "FORM_POST",
       formUrl: env.ESEWA_BASE_URL,
+      providerRef: transactionUuid,
       fields: {
         amount: String(subtotal),
         tax_amount: "0",
@@ -62,7 +75,9 @@ export const esewaProvider: PaymentProvider = {
     const status =
       typeof body === "object" && body !== null && "status" in body ? body.status : null;
 
-    if (status === "COMPLETE") return { status: PaymentVerifyStatus.COMPLETE, rawResponse: body };
+    if (status === EsewaStatusLookup.COMPLETE) {
+      return { status: PaymentVerifyStatus.COMPLETE, rawResponse: body };
+    }
     if (typeof status === "string" && FAILED_STATUSES.has(status)) {
       return { status: PaymentVerifyStatus.FAILED, rawResponse: body };
     }

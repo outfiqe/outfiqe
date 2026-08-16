@@ -58,6 +58,13 @@ export const paymentRepository = {
     });
   },
 
+  async setTransactionRef(transactionId: string, transactionRef: string): Promise<void> {
+    await prisma.paymentTransaction.updateMany({
+      where: { id: transactionId, status: PaymentTransactionStatus.INITIATED },
+      data: { transactionRef },
+    });
+  },
+
   async settleTransaction(
     client: DbClient,
     transactionId: string,
@@ -67,7 +74,6 @@ export const paymentRepository = {
       where: { id: transactionId, status: PaymentTransactionStatus.INITIATED },
       data: {
         status: PaymentTransactionStatus.SUCCEEDED,
-        transactionRef: transactionId,
         rawResponse: rawResponse as Prisma.InputJsonValue,
       },
     });

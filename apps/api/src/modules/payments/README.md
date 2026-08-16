@@ -1,4 +1,4 @@
-# Payments — eSewa
+# Payments — eSewa & Khalti
 
 ## Stock decrement happens at verify, not at checkout
 
@@ -21,3 +21,70 @@ The sweep does two things on a schedule: re-verifies orders that have been `INIT
 ## Not yet verified
 
 The "payment actually completes" path (`status: COMPLETE` from eSewa → `settleVerified` → stock decrement → `paymentStatus: PAID`) is proven at the unit/transaction level (same settlement pattern already verified for COD/idempotency in `orders`) and the live sandbox connectivity is proven, but going through an actual browser payment on eSewa's sandbox UI hasn't been done — that requires manual interaction, not something a script can do.
+
+## Khalti (chunk 14)
+
+`providers/khalti.provider.ts` implements the same `PaymentProvider` interface against Khalti's
+ePayment v2 API (`dev.khalti.com/api/v2/` in sandbox — production later needs its own
+`KHALTI_SECRET_KEY`/`KHALTI_BASE_URL`, same pattern as eSewa). Registered in `payment.service.ts`'s
+`providers` map alongside eSewa — `initiate`/`verify` work identically for either method from the
+caller's side.
+
+### Three different identifiers, one field
+
+Unlike eSewa (whose `transaction_uuid` is entirely our own value, used for both initiate and
+status lookup), Khalti generates its own `pidx` at initiate time that we don't control, and
+returns a _third_, separate `transaction_id` once the payment settles (from the lookup response).
+Concretely:
+
+- `PaymentTransaction.id` — our own id, always.
+- `PaymentTransaction.transactionRef` — the provider's own reference, captured once at initiate
+  (`PaymentInitiateResult.providerRef`) via the new `setTransactionRef`. For eSewa this is just
+  its own `transaction_uuid` (= our id) again; for Khalti it's the real `pidx`. **This field used to
+  get overwritten with our own id again at settlement** (`settleTransaction` used to set
+  `transactionRef: transactionId`) — harmless no-op for eSewa, but would have silently destroyed
+  Khalti's real `pidx` the moment a payment settled. Fixed: `settleTransaction` no longer touches
+  `transactionRef` at all.
+- Khalti's settlement-time `transaction_id` (from the lookup response body) is **not** given its
+  own column — it's already captured for free inside `rawResponse` (stored on settle, same as every
+  other provider), since nothing needs it until a refund is triggered.
+
+### What chunk 15 needs to call `khaltiProvider.refund()`
+
+`refund({ gatewayTransactionId, payerPhone })` — `gatewayTransactionId` is Khalti's own
+`transaction_id`, pulled from the settled `PaymentTransaction.rawResponse.transaction_id`, **not**
+`transactionRef` (that's the `pidx`, a different id, per Khalti's refund docs which explicitly key
+off the lookup-returned `transaction_id`). `payerPhone` is `Order.phone` (already collected at
+checkout — no new data to gather).
+
+### Unverified assumptions (no real Khalti sandbox account exists yet)
+
+Khalti's sandbox requires signing up at `test-admin.khalti.com` (OTP-gated) for a real secret key —
+there's no universal public test credential like eSewa's `EPAYTEST`. Without one, live verification
+stopped at "the request reaches the right host/path and gets rejected for auth" (a real `401
+Invalid token` from all three endpoints — `epayment/initiate/`, `epayment/lookup/`, and
+`merchant-transaction/:id/refund/` — confirms the URLs/methods are correct, not just that the host
+resolves). Two things remain unverified against a real transaction:
+
+1. The actual "browser completes a Khalti payment → lookup returns `Completed`" path — same category
+   of gap as eSewa's own browser-payment leg.
+2. **`refund`'s request body.** Khalti's docs describe different required fields for wallet vs. bank
+   transactions (`mobile` required for bank, not required for wallet), and there's no way for us to
+   know which one a given transaction used. This implementation always sends `mobile` on a full
+   refund, on the assumption that Khalti's API ignores extra unrecognized fields on a wallet refund
+   rather than rejecting them — reasonable but genuinely untested. Verify with a real refund before
+   trusting this in production.
+
+### Also fixed while here
+
+`payment.service.ts`'s callback URL was hardcoded to `/payments/esewa/callback` regardless of which
+provider actually initiated — harmless while eSewa was the only registered provider, wrong the
+moment Khalti became a second one. Now built from `paymentMethod.toLowerCase()`.
+
+### Known gap, not in this chunk's scope
+
+Neither eSewa nor Khalti is actually reachable from the checkout UI yet — `PAYMENT_METHODS` in
+`apps/web/src/features/checkout/checkout.constants.ts` still has both `enabled: false`, and no
+`/payments/:provider/callback` page exists in `apps/web` to land on after a redirect. This was true
+before this chunk too (eSewa's own chunk 8 was backend-only); flagging it explicitly now that a
+second provider is fully built server-side with nothing in the UI able to reach either of them.

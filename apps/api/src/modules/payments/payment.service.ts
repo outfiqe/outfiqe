@@ -15,6 +15,7 @@ import type {
 } from "./payment.types.js";
 import { PaymentVerifyStatus } from "./payment.types.js";
 import { esewaProvider } from "./providers/esewa.provider.js";
+import { khaltiProvider } from "./providers/khalti.provider.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
@@ -22,6 +23,7 @@ const BAD_REQUEST_STATUS = 400;
 
 const providers: Partial<Record<PaymentMethod, PaymentProvider>> = {
   [PaymentMethod.ESEWA]: esewaProvider,
+  [PaymentMethod.KHALTI]: khaltiProvider,
 };
 
 const requireProvider = (method: PaymentMethod): PaymentProvider => {
@@ -100,6 +102,7 @@ const runVerify = async (
   const provider = requireProvider(order.paymentMethod);
   const { status, rawResponse } = await provider.verify({
     transactionUuid: transaction.id,
+    providerRef: transaction.transactionRef,
     totalAmount: order.total,
   });
 
@@ -133,9 +136,10 @@ export const paymentService = {
       order.paymentMethod,
     );
 
-    const callbackUrl = `${env.FRONTEND_URL}/payments/esewa/callback?orderId=${order.id}`;
+    const providerSlug = order.paymentMethod.toLowerCase();
+    const callbackUrl = `${env.FRONTEND_URL}/payments/${providerSlug}/callback?orderId=${order.id}`;
 
-    return provider.initiate({
+    const result = await provider.initiate({
       transactionUuid: transaction.id,
       subtotal: order.subtotal,
       deliveryFee: order.deliveryFee,
@@ -143,6 +147,12 @@ export const paymentService = {
       successUrl: callbackUrl,
       failureUrl: callbackUrl,
     });
+
+    if (result.providerRef) {
+      await paymentRepository.setTransactionRef(transaction.id, result.providerRef);
+    }
+
+    return result;
   },
 
   async verify(userId: string, orderId: string): Promise<{ status: PaymentVerifyStatusValue }> {
