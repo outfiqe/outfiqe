@@ -1,16 +1,20 @@
 "use client";
 
-import { Input, Skeleton } from "@outfiqe/design-system";
+import {
+  Autocomplete,
+  AutocompleteContent,
+  AutocompleteInput,
+  AutocompleteItem,
+  Skeleton,
+} from "@outfiqe/design-system";
+import { useDebouncedValue } from "@outfiqe/hooks";
 import { ImageOff, Search, X } from "lucide-react";
 import { useState } from "react";
 
 import type { PublicProduct } from "@/features/products/api/productSchemas";
-import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
-import { cn } from "@/shared/lib/cn";
 
 import { useTaggableProducts } from "../hooks/useTaggableProducts";
-
-const SEARCH_DEBOUNCE_MS = 300;
+import { SEARCH_DEBOUNCE_MS } from "./PostModal.constants";
 
 const ProductThumb = ({ url }: { url: string | null }) => (
   <div
@@ -53,10 +57,10 @@ export const ShareProductPicker = ({ selectedProduct, onSelect }: ShareProductPi
   }
 
   return (
-    <div>
+    <Autocomplete>
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
+        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
+        <AutocompleteInput
           placeholder="Search a product to share…"
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
@@ -65,7 +69,7 @@ export const ShareProductPicker = ({ selectedProduct, onSelect }: ShareProductPi
       </div>
 
       {isSearching && (
-        <div className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-lg border border-border p-1.5">
+        <AutocompleteContent className="mt-2">
           {isLoading &&
             Array.from({ length: 4 }).map((_, index) => (
               <div key={index} className="flex items-center gap-2.5 px-1.5 py-1.5">
@@ -84,13 +88,10 @@ export const ShareProductPicker = ({ selectedProduct, onSelect }: ShareProductPi
           )}
 
           {results.map((product) => (
-            <button
+            <AutocompleteItem
               key={product.id}
-              type="button"
-              onClick={() => onSelect(product)}
-              className={cn(
-                "flex w-full items-center gap-2.5 rounded-lg px-1.5 py-1.5 text-left transition-colors hover:bg-muted",
-              )}
+              value={product.id}
+              onSelect={() => onSelect(product)}
             >
               <ProductThumb url={product.imageUrl} />
               <span className="min-w-0 flex-1">
@@ -102,10 +103,10 @@ export const ShareProductPicker = ({ selectedProduct, onSelect }: ShareProductPi
               <span className="shrink-0 text-[12.5px] font-semibold text-primary-strong">
                 Rs. {product.price.toLocaleString()}
               </span>
-            </button>
+            </AutocompleteItem>
           ))}
-        </div>
+        </AutocompleteContent>
       )}
-    </div>
+    </Autocomplete>
   );
 };

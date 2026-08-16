@@ -17,7 +17,7 @@ import { useForm } from "react-hook-form";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { type Cart, CART_QUERY_KEY } from "@/features/cart";
-import { CityZoneOptions } from "@/features/delivery-zones";
+import { CityAutocomplete } from "@/features/delivery-zones";
 import { redirectToPaymentGateway, useInitiatePayment } from "@/features/payments";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
@@ -25,11 +25,6 @@ import { type CheckoutInput, checkoutInputSchema, PaymentMethod } from "../api/c
 import { useCheckout } from "../hooks/useCheckout";
 import { CheckoutSummary } from "./CheckoutSummary";
 import { PaymentMethodField } from "./PaymentMethodField";
-
-const selectClass =
-  "flex h-11 w-full rounded-lg border border-border bg-background px-3.5 text-sm text-foreground " +
-  "outline-none transition-colors focus-visible:border-foreground aria-invalid:border-destructive " +
-  "disabled:cursor-not-allowed disabled:opacity-50";
 
 type CheckoutFormProps = {
   cart: Cart;
@@ -134,13 +129,17 @@ export const CheckoutForm = ({ cart, codHandlingFee }: CheckoutFormProps) => {
               <FormField
                 control={form.control}
                 name="city"
-                render={({ field }) => (
+                render={({ field: { ref, name, value, onChange, onBlur } }) => (
                   <FormItem>
                     <FormLabel>City</FormLabel>
                     <FormControl>
-                      <select {...field} className={selectClass}>
-                        <CityZoneOptions currentCity={field.value} />
-                      </select>
+                      <CityAutocomplete
+                        ref={ref}
+                        name={name}
+                        value={value}
+                        onChange={onChange}
+                        onBlur={onBlur}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
