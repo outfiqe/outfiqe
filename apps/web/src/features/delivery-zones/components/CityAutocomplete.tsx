@@ -9,7 +9,7 @@ import {
   Skeleton,
 } from "@outfiqe/design-system";
 import { useDebouncedValue } from "@outfiqe/hooks";
-import { forwardRef, useEffect, useState } from "react";
+import { forwardRef, useState } from "react";
 
 import { useCitySearch } from "../hooks/useCitySearch";
 import { groupCitiesByZone } from "../lib/groupCitiesByZone";
@@ -27,14 +27,17 @@ type CityAutocompleteProps = Omit<
 export const CityAutocomplete = forwardRef<HTMLInputElement, CityAutocompleteProps>(
   ({ value, onChange, onBlur, ...inputProps }, ref) => {
     const [query, setQuery] = useState(value);
+
+    const [syncedValue, setSyncedValue] = useState(value);
+    if (value !== syncedValue) {
+      setSyncedValue(value);
+      setQuery(value);
+    }
+
     const debouncedQuery = useDebouncedValue(query, CITY_SEARCH_DEBOUNCE_MS);
     const isSearching = debouncedQuery.trim().length > 0;
     const { data: results, isLoading } = useCitySearch(debouncedQuery, isSearching);
     const cities = results ?? [];
-
-    useEffect(() => {
-      setQuery(value);
-    }, [value]);
 
     const zoneGroups = groupCitiesByZone(cities);
 
