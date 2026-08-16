@@ -21,6 +21,7 @@ import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { cartRepository } from "#modules/cart/cart.repository.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
+import { creatorLinkRepository } from "#modules/creator-links/creatorLink.repository.js";
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
@@ -64,7 +65,9 @@ const checkoutOnce = async (
   userEmail: string,
   body: CheckoutBody,
 ): Promise<OrderView> => {
-  const { fullName, phone, address, city, landmark, paymentMethod } = body;
+  const { fullName, phone, address, city, landmark, paymentMethod, sessionId } = body;
+
+  if (sessionId) await creatorLinkRepository.bridgeSessionClicks(sessionId, userId);
 
   const cartId = await cartRepository.getOrCreateCartId(userId);
   const cartRows = await cartRepository.listItems(cartId);

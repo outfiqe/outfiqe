@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { SESSION_ID_MAX } from "#constants/commerce.constants.js";
 import { PaymentMethod } from "#generated/prisma/enums.js";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -12,6 +13,7 @@ export const checkoutBodySchema = z.object({
   city: z.string().trim().min(1).max(120),
   landmark: z.string().trim().max(200).optional(),
   paymentMethod: z.enum(PaymentMethod),
+  sessionId: z.string().trim().min(1).max(SESSION_ID_MAX).optional(),
 });
 
 export const orderIdParamSchema = z.object({
