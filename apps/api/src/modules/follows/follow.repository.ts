@@ -114,6 +114,59 @@ export const followRepository = {
     return rows.map((row) => row.followingId);
   },
 
+  async listFollowers(
+    followingType: FollowTargetType,
+    followingId: string,
+    params: { cursor?: string; limit: number; q?: string },
+  ): Promise<{ followerId: string; follower: UserRecord }[]> {
+    return prisma.follow.findMany({
+      where: {
+        followingType,
+        followingId,
+        ...(params.q
+          ? {
+              follower: {
+                OR: [
+                  { name: { contains: params.q, mode: "insensitive" } },
+                  { handle: { contains: params.q, mode: "insensitive" } },
+                ],
+              },
+            }
+          : {}),
+      },
+      orderBy: [{ createdAt: "desc" }, { followerId: "desc" }],
+      take: params.limit + 1,
+      ...(params.cursor
+        ? {
+            cursor: {
+              followerId_followingType_followingId: {
+                followerId: params.cursor,
+                followingType,
+                followingId,
+              },
+            },
+            skip: 1,
+          }
+        : {}),
+      include: { follower: true },
+    });
+  },
+
+  // Scoped to the given ids (a single result page) rather than loading everyone the
+  // viewer follows, which could be unbounded.
+  async findFollowedAmong(followerId: string, followingIds: string[]): Promise<Set<string>> {
+    if (followingIds.length === 0) return new Set();
+    const rows = await prisma.follow.findMany({
+      where: {
+        followerId,
+        followingType: FollowTargetType.USER,
+        followingId: { in: followingIds },
+      },
+      select: { followingId: true },
+    });
+    return new Set(rows.map((row) => row.followingId));
+  },
+
   async suggestedCreators(userId: string): Promise<UserRecord[]> {
     const excludeIds = [
       ...(await followRepository.listFollowingIds(userId, FollowTargetType.USER)),

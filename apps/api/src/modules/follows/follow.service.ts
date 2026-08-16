@@ -1,13 +1,14 @@
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { FollowTargetType } from "#generated/prisma/enums.js";
+import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { followRepository } from "./follow.repository.js";
-import type { FollowTargetTypeParam } from "./follow.schemas.js";
-import type { FollowResult, FollowTarget } from "./follow.types.js";
-import { toFollowTarget, toPrismaTargetType } from "./follow.utils.js";
+import type { FollowTargetTypeParam, ListFollowersQuery } from "./follow.schemas.js";
+import type { FollowersPage, FollowResult, FollowTarget } from "./follow.types.js";
+import { toFollowerView, toFollowTarget, toPrismaTargetType } from "./follow.utils.js";
 
 const BAD_REQUEST_STATUS = 400;
 const NOT_FOUND_STATUS = 404;
@@ -87,5 +88,34 @@ export const followService = {
   async suggestedCreators(userId: string): Promise<FollowTarget[]> {
     const users = await followRepository.suggestedCreators(userId);
     return users.map(toFollowTarget);
+  },
+
+  async listFollowers(
+    targetTypeParam: FollowTargetTypeParam,
+    targetId: string,
+    viewerId: string | undefined,
+    query: ListFollowersQuery,
+  ): Promise<FollowersPage> {
+    const targetType = toPrismaTargetType(targetTypeParam);
+    await requireTarget(targetType, targetId);
+
+    const rows = await followRepository.listFollowers(targetType, targetId, query);
+    const { items: pagedRows, nextCursor } = buildCursorPage(
+      rows,
+      query.limit,
+      (row) => row.followerId,
+    );
+
+    const followedIds = viewerId
+      ? await followRepository.findFollowedAmong(
+          viewerId,
+          pagedRows.map((row) => row.follower.id),
+        )
+      : new Set<string>();
+
+    return {
+      items: pagedRows.map((row) => toFollowerView(row.follower, followedIds.has(row.follower.id))),
+      nextCursor,
+    };
   },
 };

@@ -4,6 +4,7 @@ import { Badge, Button } from "@outfiqe/design-system";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { FollowersModal } from "@/components/FollowersModal";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { ExploreFeedSkeleton, PostDetailModal } from "@/features/explore";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
@@ -29,6 +30,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const [isFollowing, setIsFollowing] = useState(creator.isFollowing);
   const [followerCount, setFollowerCount] = useState(creator.followerCount);
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
+  const [followersModalOpen, setFollowersModalOpen] = useState(false);
   const isOwnProfile = state.user?.id === userId;
 
   const toggleFollow = () => {
@@ -79,12 +81,17 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
               <p className="font-display text-lg font-extrabold text-foreground">{postsCount}</p>
               <p className="text-[11.5px] text-muted-foreground">Posts</p>
             </div>
-            <div>
+            <button
+              type="button"
+              onClick={() => setFollowersModalOpen(true)}
+              disabled={followerCount === 0}
+              className="cursor-pointer text-left disabled:cursor-not-allowed"
+            >
               <p className="font-display text-lg font-extrabold text-foreground">
                 {followerCount.toLocaleString()}
               </p>
               <p className="text-[11.5px] text-muted-foreground">Followers</p>
-            </div>
+            </button>
             <div>
               <p className="font-display text-lg font-extrabold text-foreground">
                 {taggedPiecesCount}
@@ -127,6 +134,14 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
           post={detailPost}
           onClose={() => setDetailPostId(null)}
           showCreatorHeader={false}
+        />
+      )}
+
+      {followersModalOpen && (
+        <FollowersModal
+          targetType="user"
+          targetId={userId}
+          onClose={() => setFollowersModalOpen(false)}
         />
       )}
 

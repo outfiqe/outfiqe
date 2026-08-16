@@ -1,10 +1,10 @@
 import type { Request, Response } from "express";
 
 import { sendSuccess } from "#lib/api-response.utils.js";
-import { requireAuthPrincipal } from "#middlewares/require-auth.js";
+import { getAuthPrincipal, requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 
-import type { FollowParams } from "./follow.schemas.js";
+import type { FollowParams, ListFollowersQuery } from "./follow.schemas.js";
 import { followService } from "./follow.service.js";
 
 export const followController = {
@@ -28,5 +28,14 @@ export const followController = {
     const { userId } = requireAuthPrincipal(res);
     const creators = await followService.suggestedCreators(userId);
     sendSuccess(res, { creators }, "Suggested creators.");
+  },
+
+  async listFollowers(_req: Request, res: Response) {
+    const { targetType, targetId } = validated.params<FollowParams>(res);
+    const query = validated.query<ListFollowersQuery>(res);
+    const principal = getAuthPrincipal(res);
+
+    const page = await followService.listFollowers(targetType, targetId, principal?.userId, query);
+    sendSuccess(res, page, "Followers.");
   },
 };
