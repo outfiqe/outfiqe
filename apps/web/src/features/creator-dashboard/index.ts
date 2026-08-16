@@ -5,3 +5,4 @@ export { CreatorProfileView } from "./components/CreatorProfileView";
 export { EarningsSection } from "./components/EarningsSection";
 export { LooksSection } from "./components/LooksSection";
 export { PostModal } from "./components/PostModal";
+export { ShareSection } from "./components/ShareSection";

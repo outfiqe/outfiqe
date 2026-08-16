@@ -11,6 +11,7 @@ import {
   GalleryVerticalEnd,
   LogOut,
   Package,
+  Share2,
   ShoppingBag,
   Store,
   User,
@@ -27,6 +28,7 @@ import { useNextSidebarNavigation } from "./useNextSidebarNavigation";
 const CREATOR_NAV: SidebarNavItem[] = [
   { id: "profile", href: "/dashboard/profile", label: "Profile", icon: User },
   { id: "posts", href: "/dashboard/posts", label: "Posts", icon: GalleryVerticalEnd },
+  { id: "share", href: "/dashboard/share", label: "Share", icon: Share2 },
   { id: "earnings", href: "/dashboard/earnings", label: "Earnings", icon: Wallet },
 ];
 
