@@ -7,7 +7,7 @@ import {
   sidebarWidthClass,
   useSidebarCollapse,
 } from "@outfiqe/components";
-import { GalleryVerticalEnd, LogOut, Package, Store, User } from "lucide-react";
+import { GalleryVerticalEnd, LogOut, Package, Store, User, Wallet } from "lucide-react";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus, UserRole } from "@/features/auth/types";
@@ -19,6 +19,7 @@ import { useNextSidebarNavigation } from "./useNextSidebarNavigation";
 const CREATOR_NAV: SidebarNavItem[] = [
   { id: "profile", href: "/dashboard/profile", label: "Profile", icon: User },
   { id: "posts", href: "/dashboard/posts", label: "Posts", icon: GalleryVerticalEnd },
+  { id: "earnings", href: "/dashboard/earnings", label: "Earnings", icon: Wallet },
 ];
 
 const BRAND_NAV: SidebarNavItem[] = [

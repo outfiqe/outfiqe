@@ -3,6 +3,7 @@ export * from "./api";
 export * from "./brand";
 export * from "./category";
 export * from "./collection";
+export * from "./commission";
 export * from "./hero-slide";
 export * from "./order";
 export * from "./product";
