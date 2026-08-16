@@ -10,6 +10,7 @@ import {
   Modal,
   toast,
 } from "@outfiqe/design-system";
+import { useDebouncedValue } from "@outfiqe/hooks";
 import { ImagePlus, Plus, X } from "lucide-react";
 import { type CSSProperties, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -17,7 +18,6 @@ import { useForm } from "react-hook-form";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import type { PublicProduct } from "@/features/products/api/productSchemas";
 import { uploadsApi } from "@/shared/api/uploadsApi";
-import { useDebouncedValue } from "@/shared/hooks/useDebouncedValue";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 

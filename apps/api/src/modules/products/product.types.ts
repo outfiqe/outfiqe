@@ -19,6 +19,7 @@ export type ProductRecord = {
 };
 
 export type ProductSizeRecord = {
+  id: string;
   label: string;
   inStock: boolean;
 };
@@ -37,6 +38,10 @@ export type ProductWithBrand = ProductRecord & {
   brand: { name: string };
   categories: { slug: string; name: string }[];
 };
+
+export type ProductWithStock = ProductWithBrand & { totalStock: number };
+
+export type ProductWithOptionalStock = ProductWithBrand & { totalStock?: number };
 
 export type ProductReviewSummary = Omit<ProductWithBrand, "categories"> & { categories: string[] };
 

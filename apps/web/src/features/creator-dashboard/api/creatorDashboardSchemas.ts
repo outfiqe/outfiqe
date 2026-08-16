@@ -6,6 +6,7 @@ export const creatorProfileSchema = z.object({
   userId: z.string(),
   name: z.string(),
   email: z.email(),
+  handle: z.string(),
   avatarUrl: z.url().nullable(),
   isCreator: z.boolean(),
   creatorStatus: creatorStatusSchema,

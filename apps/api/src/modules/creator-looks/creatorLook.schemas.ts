@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { SESSION_ID_MAX } from "#constants/commerce.constants.js";
+
 const CAPTION_MAX = 280;
 const MIN_TAGGED_PRODUCTS = 0;
 const MAX_TAGGED_PRODUCTS = 6;
@@ -34,7 +36,6 @@ const DEFAULT_FEED_PAGE_SIZE = 12;
 const MAX_FEED_PAGE_SIZE = 30;
 const DEFAULT_COMMENT_PAGE_SIZE = 20;
 const MAX_COMMENT_PAGE_SIZE = 50;
-const SESSION_ID_MAX = 128;
 
 export const lookIdParamsSchema = z.object({
   lookId: z.uuid(),

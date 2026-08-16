@@ -1,6 +1,13 @@
 "use client";
 
-import { Input, Skeleton } from "@outfiqe/design-system";
+import {
+  Autocomplete,
+  AutocompleteContent,
+  AutocompleteInput,
+  AutocompleteItem,
+  Input,
+  Skeleton,
+} from "@outfiqe/design-system";
 import { Check, ImageOff, Search, Tags, X } from "lucide-react";
 import { useState } from "react";
 
@@ -106,68 +113,66 @@ export const ProductTagPicker = ({
             </div>
           )}
 
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search products to tag…"
-              value={productFilter}
-              onChange={(event) => onFilterChange(event.target.value)}
-              className="pl-9"
-              autoFocus
-            />
-          </div>
-
-          {isSearching && (
-            <div className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-lg border border-border p-1.5">
-              {isSearchLoading &&
-                Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="flex items-center gap-2.5 px-1.5 py-1.5">
-                    <Skeleton className="size-9 shrink-0 rounded-md" />
-                    <div className="flex-1 space-y-1.5">
-                      <Skeleton className="h-3 w-2/3 rounded" />
-                      <Skeleton className="h-2.5 w-1/3 rounded" />
-                    </div>
-                  </div>
-                ))}
-
-              {!isSearchLoading && searchResults.length === 0 && (
-                <p className="px-2 py-4 text-center text-xs text-muted-foreground">
-                  No products found for &ldquo;{debouncedFilter}&rdquo;
-                </p>
-              )}
-
-              {searchResults.map((product) => {
-                const isTagged = taggedProducts.some((tag) => tag.productId === product.id);
-                return (
-                  <button
-                    key={product.id}
-                    type="button"
-                    onClick={() => onToggleProduct(product)}
-                    className={cn(
-                      "flex w-full items-center gap-2.5 rounded-lg px-1.5 py-1.5 text-left transition-colors",
-                      isTagged ? "bg-muted" : "hover:bg-muted",
-                    )}
-                  >
-                    <ProductThumb url={product.imageUrl} className="size-9" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] text-foreground">
-                        {product.name}
-                      </span>
-                      <span className="block truncate text-[11.5px] text-muted-foreground">
-                        {product.brand}
-                      </span>
-                    </span>
-                    <span className="shrink-0 text-[12.5px] font-semibold text-primary-strong">
-                      Rs. {product.price.toLocaleString()}
-                    </span>
-                    {isTagged && (
-                      <Check className="size-4 shrink-0 text-foreground" aria-label="Tagged" />
-                    )}
-                  </button>
-                );
-              })}
+          <Autocomplete>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
+              <AutocompleteInput
+                placeholder="Search products to tag…"
+                value={productFilter}
+                onChange={(event) => onFilterChange(event.target.value)}
+                className="pl-9"
+                autoFocus
+              />
             </div>
-          )}
+
+            {isSearching && (
+              <AutocompleteContent className="mt-2">
+                {isSearchLoading &&
+                  Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index} className="flex items-center gap-2.5 px-1.5 py-1.5">
+                      <Skeleton className="size-9 shrink-0 rounded-md" />
+                      <div className="flex-1 space-y-1.5">
+                        <Skeleton className="h-3 w-2/3 rounded" />
+                        <Skeleton className="h-2.5 w-1/3 rounded" />
+                      </div>
+                    </div>
+                  ))}
+
+                {!isSearchLoading && searchResults.length === 0 && (
+                  <p className="px-2 py-4 text-center text-xs text-muted-foreground">
+                    No products found for &ldquo;{debouncedFilter}&rdquo;
+                  </p>
+                )}
+
+                {searchResults.map((product) => {
+                  const isTagged = taggedProducts.some((tag) => tag.productId === product.id);
+                  return (
+                    <AutocompleteItem
+                      key={product.id}
+                      value={product.id}
+                      onSelect={() => onToggleProduct(product)}
+                    >
+                      <ProductThumb url={product.imageUrl} className="size-9" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] text-foreground">
+                          {product.name}
+                        </span>
+                        <span className="block truncate text-[11.5px] text-muted-foreground">
+                          {product.brand}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-[12.5px] font-semibold text-primary-strong">
+                        Rs. {product.price.toLocaleString()}
+                      </span>
+                      {isTagged && (
+                        <Check className="size-4 shrink-0 text-foreground" aria-label="Tagged" />
+                      )}
+                    </AutocompleteItem>
+                  );
+                })}
+              </AutocompleteContent>
+            )}
+          </Autocomplete>
         </div>
       )}
 

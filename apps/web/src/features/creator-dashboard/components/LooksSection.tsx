@@ -17,7 +17,7 @@ type LooksSectionProps = {
 export const LooksSection = ({ creatorStatus }: LooksSectionProps) => {
   const [postModalOpen, setPostModalOpen] = useState(false);
   const looks = useMyLooks();
-  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = looks;
+  const { data, isPending, hasNextPage, fetchNextPage, isFetchingNextPage } = looks;
   const postedLooks = data?.pages.flatMap((page) => page.looks) ?? [];
 
   if (creatorStatus === CreatorStatus.PENDING) {
@@ -67,7 +67,7 @@ export const LooksSection = ({ creatorStatus }: LooksSectionProps) => {
         </Button>
       </div>
 
-      {isLoading && (
+      {isPending && (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <Skeleton key={index} className="aspect-[4/5] rounded-2xl" />
@@ -75,7 +75,7 @@ export const LooksSection = ({ creatorStatus }: LooksSectionProps) => {
         </div>
       )}
 
-      {!isLoading && postedLooks.length === 0 && (
+      {!isPending && postedLooks.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">
             Nothing posted yet — share your first fit.

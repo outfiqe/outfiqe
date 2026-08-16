@@ -1,5 +1,6 @@
 import { productApprovedTemplate, productRejectedTemplate } from "#email-templates/templates.js";
 import { ProductStatus } from "#generated/prisma/enums.js";
+import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
@@ -9,6 +10,7 @@ import { categoryService } from "#modules/categories/category.service.js";
 import { wishlistRepository } from "#modules/wishlist/wishlist.repository.js";
 
 import { PRODUCT_TYPE_SLUGS, SLUG_TO_PRODUCT_TYPE } from "./product.constants.js";
+import type { DbClient } from "./product.repository.js";
 import { productRepository } from "./product.repository.js";
 import type {
   CreateProductBody,
@@ -32,14 +34,6 @@ import { humanizeSlug, toBrandSummary, toPublicProduct } from "./product.utils.j
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
-
-const requireBrandId = async (userId: string): Promise<string> => {
-  const profile = await brandRepository.findByMemberUserId(userId);
-  if (!profile) {
-    throw new AppError("BRAND_NOT_FOUND", "No brand is linked to this account.", NOT_FOUND_STATUS);
-  }
-  return profile.brand.id;
-};
 
 const requireOwnedProduct = async (productId: string, brandId: string): Promise<ProductRecord> => {
   const product = await productRepository.findById(productId);
@@ -242,6 +236,29 @@ export const productService = {
 
   async listNewArrivals(): Promise<PublicProduct[]> {
     return (await productRepository.listNewArrivals()).map(toPublicProduct);
+  },
+
+  async decrementStockForItems(
+    client: DbClient,
+    lines: { sizeId: string; qty: number }[],
+  ): Promise<string[]> {
+    const sorted = [...lines].sort((a, b) => a.sizeId.localeCompare(b.sizeId));
+    const insufficientSizeIds: string[] = [];
+    for (const line of sorted) {
+      const ok = await productRepository.decrementStock(client, line.sizeId, line.qty);
+      if (!ok) insufficientSizeIds.push(line.sizeId);
+    }
+    return insufficientSizeIds;
+  },
+
+  async restoreStockForItems(
+    client: DbClient,
+    lines: { sizeId: string; qty: number }[],
+  ): Promise<void> {
+    const sorted = [...lines].sort((a, b) => a.sizeId.localeCompare(b.sizeId));
+    for (const line of sorted) {
+      await productRepository.restoreStock(client, line.sizeId, line.qty);
+    }
   },
 
   async approve(productId: string, adminUserId: string): Promise<void> {

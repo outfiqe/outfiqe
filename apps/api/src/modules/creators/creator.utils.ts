@@ -6,6 +6,7 @@ export const toProfile = (user: UserRecord): CreatorProfile => ({
   userId: user.id,
   name: user.name,
   email: user.email,
+  handle: user.handle,
   avatarUrl: user.avatarUrl,
   isCreator: user.isCreator,
   creatorStatus: user.creatorStatus,

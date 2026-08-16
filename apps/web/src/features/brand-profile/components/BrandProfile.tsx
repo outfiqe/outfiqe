@@ -4,6 +4,7 @@ import { Badge, Button } from "@outfiqe/design-system";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { FollowersModal } from "@/components/FollowersModal";
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { ProductCard } from "@/features/landing/components/ProductCard";
@@ -34,6 +35,7 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
   const [isFollowing, setIsFollowing] = useState(brand.isFollowing);
   const [followerCount, setFollowerCount] = useState(brand.followerCount);
   const [activeType, setActiveType] = useState(ALL_PRODUCT_TYPE);
+  const [followersModalOpen, setFollowersModalOpen] = useState(false);
 
   const products = useInfiniteBrandProducts(
     id,
@@ -121,12 +123,17 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
               <p className="font-display text-lg font-extrabold text-foreground">{productCount}</p>
               <p className="text-[11.5px] text-muted-foreground">Products</p>
             </div>
-            <div>
+            <button
+              type="button"
+              onClick={() => setFollowersModalOpen(true)}
+              disabled={followerCount === 0}
+              className="cursor-pointer disabled:cursor-not-allowed"
+            >
               <p className="font-display text-lg font-extrabold text-foreground">
                 {followerCount.toLocaleString()}
               </p>
               <p className="text-[11.5px] text-muted-foreground">Followers</p>
-            </div>
+            </button>
             {rating !== null && (
               <div>
                 <p className="font-display text-lg font-extrabold text-foreground">
@@ -208,6 +215,14 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
             {isFetchingNextPage ? "Loading…" : "Load more"}
           </button>
         </div>
+      )}
+
+      {followersModalOpen && (
+        <FollowersModal
+          targetType="brand"
+          targetId={id}
+          onClose={() => setFollowersModalOpen(false)}
+        />
       )}
     </div>
   );
