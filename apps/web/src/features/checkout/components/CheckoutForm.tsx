@@ -21,16 +21,16 @@ import { redirectToPaymentGateway, useInitiatePayment } from "@/features/payment
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { type CheckoutInput, checkoutInputSchema, PaymentMethod } from "../api/checkoutSchemas";
-import { COD_HANDLING_FEE } from "../checkout.constants";
 import { useCheckout } from "../hooks/useCheckout";
 import { CheckoutSummary } from "./CheckoutSummary";
 import { PaymentMethodField } from "./PaymentMethodField";
 
 type CheckoutFormProps = {
   cart: Cart;
+  codHandlingFee: number;
 };
 
-export const CheckoutForm = ({ cart }: CheckoutFormProps) => {
+export const CheckoutForm = ({ cart, codHandlingFee }: CheckoutFormProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { state } = useAuth();
@@ -167,7 +167,7 @@ export const CheckoutForm = ({ cart }: CheckoutFormProps) => {
             />
             {paymentMethod === PaymentMethod.COD && (
               <p className="mt-3 text-xs text-muted-foreground">
-                A Rs. {COD_HANDLING_FEE} handling fee applies to cash on delivery.
+                A Rs. {codHandlingFee} handling fee applies to cash on delivery.
               </p>
             )}
           </div>
@@ -177,6 +177,7 @@ export const CheckoutForm = ({ cart }: CheckoutFormProps) => {
           <CheckoutSummary
             cart={cart}
             paymentMethod={paymentMethod}
+            codHandlingFee={codHandlingFee}
             isSubmitting={checkout.isPending || initiatePayment.isPending}
           />
         </div>

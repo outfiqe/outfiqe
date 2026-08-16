@@ -1,7 +1,5 @@
 import { PaymentMethod } from "./api/checkoutSchemas";
 
-export const COD_HANDLING_FEE = 50;
-
 export const PAYMENT_METHODS = [
   {
     value: PaymentMethod.COD,

@@ -5,17 +5,22 @@ import { Button } from "@outfiqe/design-system";
 import type { Cart } from "@/features/cart";
 
 import { PaymentMethod, type PaymentMethodValue } from "../api/checkoutSchemas";
-import { COD_HANDLING_FEE } from "../checkout.constants";
 
 type CheckoutSummaryProps = {
   cart: Cart;
   paymentMethod: PaymentMethodValue;
+  codHandlingFee: number;
   isSubmitting: boolean;
 };
 
-export const CheckoutSummary = ({ cart, paymentMethod, isSubmitting }: CheckoutSummaryProps) => {
+export const CheckoutSummary = ({
+  cart,
+  paymentMethod,
+  codHandlingFee,
+  isSubmitting,
+}: CheckoutSummaryProps) => {
   const { subtotal, deliveryFee } = cart;
-  const codFee = paymentMethod === PaymentMethod.COD ? COD_HANDLING_FEE : 0;
+  const codFee = paymentMethod === PaymentMethod.COD ? codHandlingFee : 0;
   const total = subtotal + deliveryFee + codFee;
 
   return (

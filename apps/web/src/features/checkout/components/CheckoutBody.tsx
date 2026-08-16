@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCart } from "@/features/cart";
+import { useOrderFeeSettings } from "@/features/order-fee-settings";
 
 import { CheckoutForm } from "./CheckoutForm";
 
@@ -13,6 +14,7 @@ export const CheckoutBody = () => {
   const router = useRouter();
   const { isAuthenticated, isAuthResolved } = useAuth();
   const cartQuery = useCart();
+  const orderFeeSettingsQuery = useOrderFeeSettings();
 
   if (!isAuthResolved) return null;
 
@@ -33,7 +35,7 @@ export const CheckoutBody = () => {
     );
   }
 
-  if (cartQuery.isLoading) {
+  if (cartQuery.isLoading || orderFeeSettingsQuery.isLoading) {
     return (
       <div className="grid gap-8 py-6 lg:grid-cols-[1fr_320px]">
         <Skeleton className="h-96 w-full rounded-2xl" />
@@ -55,9 +57,11 @@ export const CheckoutBody = () => {
     );
   }
 
+  const codHandlingFee = orderFeeSettingsQuery.data?.codHandlingFee ?? 0;
+
   return (
     <div className="py-6">
-      <CheckoutForm cart={cart} />
+      <CheckoutForm cart={cart} codHandlingFee={codHandlingFee} />
     </div>
   );
 };
