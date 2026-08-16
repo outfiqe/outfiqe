@@ -16,6 +16,7 @@ import { useForm } from "react-hook-form";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import type { Cart } from "@/features/cart";
+import { redirectToPaymentGateway, useInitiatePayment } from "@/features/payments";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { type CheckoutInput, checkoutInputSchema, PaymentMethod } from "../api/checkoutSchemas";
@@ -32,6 +33,7 @@ export const CheckoutForm = ({ cart }: CheckoutFormProps) => {
   const router = useRouter();
   const { state } = useAuth();
   const checkout = useCheckout();
+  const initiatePayment = useInitiatePayment();
 
   const form = useForm<CheckoutInput>({
     resolver: zodResolver(checkoutInputSchema),
@@ -54,7 +56,14 @@ export const CheckoutForm = ({ cart }: CheckoutFormProps) => {
         input: values,
         idempotencyKey: crypto.randomUUID(),
       });
-      router.push(`/orders/${order.id}`);
+
+      if (order.paymentMethod === PaymentMethod.COD) {
+        router.push(`/orders/${order.id}`);
+        return;
+      }
+
+      const result = await initiatePayment.mutateAsync(order.id);
+      redirectToPaymentGateway(result);
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
@@ -165,7 +174,7 @@ export const CheckoutForm = ({ cart }: CheckoutFormProps) => {
           <CheckoutSummary
             cart={cart}
             paymentMethod={paymentMethod}
-            isSubmitting={checkout.isPending}
+            isSubmitting={checkout.isPending || initiatePayment.isPending}
           />
         </div>
       </form>

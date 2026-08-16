@@ -13,12 +13,12 @@ export const PAYMENT_METHODS = [
     value: PaymentMethod.ESEWA,
     label: "eSewa",
     description: "Pay now from your eSewa wallet.",
-    enabled: false,
+    enabled: true,
   },
   {
     value: PaymentMethod.KHALTI,
     label: "Khalti",
     description: "Pay now from your Khalti wallet.",
-    enabled: false,
+    enabled: true,
   },
 ] as const;

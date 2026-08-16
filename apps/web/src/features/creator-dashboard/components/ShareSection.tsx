@@ -1,10 +1,11 @@
 "use client";
 
-import { Button, Skeleton } from "@outfiqe/design-system";
+import { Button, Skeleton, toast } from "@outfiqe/design-system";
 import { useState } from "react";
 
 import { CreatorStatus } from "@/features/auth/types";
 import type { PublicProduct } from "@/features/products/api/productSchemas";
+import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { useCreateInternalLink, useGetOrCreateExternalLink } from "../hooks/useCreateCreatorLink";
 import { useMyCreatorLinks } from "../hooks/useMyCreatorLinks";
@@ -82,7 +83,11 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => profileLink.mutate(undefined)}
+              onClick={() =>
+                profileLink.mutate(undefined, {
+                  onError: (error) => toast.error(getErrorMessage(error)),
+                })
+              }
               disabled={profileLink.isPending}
             >
               {profileLink.isPending ? "Getting your link…" : "Get my profile link"}
@@ -106,7 +111,11 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
           <div className="mt-3 flex flex-wrap gap-2">
             <Button
               size="sm"
-              onClick={() => createInternal.mutate(selectedProduct.id)}
+              onClick={() =>
+                createInternal.mutate(selectedProduct.id, {
+                  onError: (error) => toast.error(getErrorMessage(error)),
+                })
+              }
               disabled={createInternal.isPending || getOrCreateExternal.isPending}
             >
               {createInternal.isPending ? "Generating…" : "Generate one-time link"}
@@ -114,7 +123,11 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => getOrCreateExternal.mutate(selectedProduct.id)}
+              onClick={() =>
+                getOrCreateExternal.mutate(selectedProduct.id, {
+                  onError: (error) => toast.error(getErrorMessage(error)),
+                })
+              }
               disabled={createInternal.isPending || getOrCreateExternal.isPending}
             >
               {getOrCreateExternal.isPending ? "Getting link…" : "Get reusable link"}

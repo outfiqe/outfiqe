@@ -31,7 +31,11 @@ export const OrderTracker = ({ fulfilmentStatus }: OrderTrackerProps) => {
     <div className="relative flex justify-between">
       <div className="absolute left-[5%] right-[5%] top-[11px] h-px bg-border" />
       {FLOW.map((step, index) => (
-        <div key={step} className="relative z-10 flex-1 text-center">
+        <div
+          key={step}
+          className="relative z-10 flex-1 text-center"
+          aria-current={step === fulfilmentStatus ? "step" : undefined}
+        >
           <div
             className={cn(
               "mx-auto mb-2 flex size-[22px] items-center justify-center rounded-full border-2 bg-background",
