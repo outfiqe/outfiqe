@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { FollowersModal } from "@/components/FollowersModal";
+import { FollowingModal } from "@/components/FollowingModal";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { ExploreFeedSkeleton, PostDetailModal } from "@/features/explore";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
@@ -23,7 +24,16 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const router = useRouter();
   const { isAuthenticated, state } = useAuth();
   const followMutation = useToggleFollow("user");
-  const { handle, userId, name, heightCm, creatorStatus, postsCount, taggedPiecesCount } = creator;
+  const {
+    handle,
+    userId,
+    name,
+    heightCm,
+    creatorStatus,
+    postsCount,
+    taggedPiecesCount,
+    followingCount,
+  } = creator;
   const looks = useInfiniteCreatorLooks(handle);
   const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = looks;
 
@@ -31,6 +41,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const [followerCount, setFollowerCount] = useState(creator.followerCount);
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
   const [followersModalOpen, setFollowersModalOpen] = useState(false);
+  const [followingModalOpen, setFollowingModalOpen] = useState(false);
   const isOwnProfile = state.user?.id === userId;
 
   const toggleFollow = () => {
@@ -92,6 +103,17 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
               </p>
               <p className="text-[11.5px] text-muted-foreground">Followers</p>
             </button>
+            <button
+              type="button"
+              onClick={() => setFollowingModalOpen(true)}
+              disabled={followingCount === 0}
+              className="cursor-pointer text-left disabled:cursor-not-allowed"
+            >
+              <p className="font-display text-lg font-extrabold text-foreground">
+                {followingCount.toLocaleString()}
+              </p>
+              <p className="text-[11.5px] text-muted-foreground">Following</p>
+            </button>
             <div>
               <p className="font-display text-lg font-extrabold text-foreground">
                 {taggedPiecesCount}
@@ -143,6 +165,10 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
           targetId={userId}
           onClose={() => setFollowersModalOpen(false)}
         />
+      )}
+
+      {followingModalOpen && (
+        <FollowingModal userId={userId} onClose={() => setFollowingModalOpen(false)} />
       )}
 
       {hasNextPage && (

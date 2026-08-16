@@ -58,6 +58,23 @@ export const userRepository = {
     return prisma.user.findUnique({ where: { handle } });
   },
 
+  async findManyByIds(ids: string[], q?: string): Promise<UserRecord[]> {
+    if (ids.length === 0) return [];
+    return prisma.user.findMany({
+      where: {
+        id: { in: ids },
+        ...(q
+          ? {
+              OR: [
+                { name: { contains: q, mode: "insensitive" } },
+                { handle: { contains: q, mode: "insensitive" } },
+              ],
+            }
+          : {}),
+      },
+    });
+  },
+
   async list(): Promise<UserRecord[]> {
     return prisma.user.findMany({ orderBy: { createdAt: "desc" } });
   },

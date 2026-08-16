@@ -6,6 +6,7 @@ import type { UserRecord } from "#modules/users/user.types.js";
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 const SUGGESTED_LIMIT = 10;
+const FOLLOWING_SCAN_CAP = 500;
 
 const getFollowerCount = async (
   tx: Tx,
@@ -154,17 +155,32 @@ export const followRepository = {
 
   // Scoped to the given ids (a single result page) rather than loading everyone the
   // viewer follows, which could be unbounded.
-  async findFollowedAmong(followerId: string, followingIds: string[]): Promise<Set<string>> {
+  async findFollowedAmong(
+    followerId: string,
+    followingType: FollowTargetType,
+    followingIds: string[],
+  ): Promise<Set<string>> {
     if (followingIds.length === 0) return new Set();
     const rows = await prisma.follow.findMany({
-      where: {
-        followerId,
-        followingType: FollowTargetType.USER,
-        followingId: { in: followingIds },
-      },
+      where: { followerId, followingType, followingId: { in: followingIds } },
       select: { followingId: true },
     });
     return new Set(rows.map((row) => row.followingId));
+  },
+
+  // The Follow row has no relation for the polymorphic "following" side (it can be a
+  // User or a Brand), so listing what someone follows can't be a single query the way
+  // listFollowers can. Capped rather than truly unbounded, per an individual's following
+  // list realistically staying well under this.
+  async listFollowingRows(
+    followerId: string,
+  ): Promise<{ followingType: FollowTargetType; followingId: string }[]> {
+    return prisma.follow.findMany({
+      where: { followerId },
+      orderBy: [{ createdAt: "desc" }, { followingId: "desc" }],
+      take: FOLLOWING_SCAN_CAP,
+      select: { followingType: true, followingId: true },
+    });
   },
 
   async suggestedCreators(userId: string): Promise<UserRecord[]> {

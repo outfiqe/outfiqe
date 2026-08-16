@@ -1,4 +1,5 @@
 import { FollowTargetType } from "#generated/prisma/enums.js";
+import type { BrandRecord } from "#modules/brands/brand.types.js";
 import type { UserRecord } from "#modules/users/user.types.js";
 
 import type { FollowTargetTypeParam } from "./follow.schemas.js";
@@ -23,4 +24,11 @@ export const toFollowerView = (user: UserRecord, isFollowedByViewer: boolean): F
   handle: user.handle,
   isCreator: user.isCreator,
   isFollowedByViewer,
+});
+
+export const toBrandFollowTarget = (brand: BrandRecord): FollowTarget => ({
+  kind: "brand",
+  id: brand.id,
+  name: brand.name,
+  followerCount: brand.followerCount,
 });

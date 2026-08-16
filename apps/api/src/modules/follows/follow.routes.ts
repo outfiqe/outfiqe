@@ -5,7 +5,11 @@ import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 
 import { followController } from "./follow.controller.js";
-import { followParamsSchema, listFollowersQuerySchema } from "./follow.schemas.js";
+import {
+  followingUserIdParamSchema,
+  followParamsSchema,
+  listFollowersQuerySchema,
+} from "./follow.schemas.js";
 
 export const followRoutes = Router();
 
@@ -17,6 +21,12 @@ followRoutes.get(
   optionalAuth,
   validate({ params: followParamsSchema, query: listFollowersQuerySchema }),
   followController.listFollowers,
+);
+
+followRoutes.get(
+  "/user/:userId/following",
+  validate({ params: followingUserIdParamSchema, query: listFollowersQuerySchema }),
+  followController.listFollowing,
 );
 
 followRoutes.post(

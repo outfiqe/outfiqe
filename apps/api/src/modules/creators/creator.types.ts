@@ -22,6 +22,7 @@ export type PublicCreatorProfile = {
   creatorStatus: CreatorStatus;
   postsCount: number;
   followerCount: number;
+  followingCount: number;
   taggedPiecesCount: number;
   isFollowing: boolean;
 };

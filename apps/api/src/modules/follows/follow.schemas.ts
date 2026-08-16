@@ -20,3 +20,6 @@ export const listFollowersQuerySchema = z.object({
 });
 
 export type ListFollowersQuery = z.infer<typeof listFollowersQuerySchema>;
+
+export const followingUserIdParamSchema = z.object({ userId: z.uuid() });
+export type FollowingUserIdParam = z.infer<typeof followingUserIdParamSchema>;

@@ -37,4 +37,9 @@ export type FollowersPage = {
   nextCursor: string | null;
 };
 
+export type FollowingPage = {
+  items: FollowTarget[];
+  nextCursor: string | null;
+};
+
 export type { FollowTargetType };

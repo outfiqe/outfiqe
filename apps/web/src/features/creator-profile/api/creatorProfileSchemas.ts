@@ -8,6 +8,7 @@ export const creatorProfileSchema = z.object({
   creatorStatus: z.string(),
   postsCount: z.number(),
   followerCount: z.number(),
+  followingCount: z.number(),
   taggedPiecesCount: z.number(),
   isFollowing: z.boolean(),
 });
