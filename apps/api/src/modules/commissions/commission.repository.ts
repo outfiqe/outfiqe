@@ -2,7 +2,13 @@ import { prisma } from "#db/prisma.js";
 import { CommissionStatus, FulfilmentStatus, PaymentStatus } from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
-import type { CommissionTierRecord, CreatePendingCommissionInput } from "./commission.types.js";
+import type {
+  CommissionTierAdminView,
+  CommissionTierRecord,
+  CreateCommissionTierInput,
+  CreatePendingCommissionInput,
+  UpdateCommissionTierInput,
+} from "./commission.types.js";
 
 export const commissionRepository = {
   async findTierForPrice(price: number): Promise<CommissionTierRecord | null> {
@@ -108,5 +114,61 @@ export const commissionRepository = {
       sums[status] = _sum.amount ?? 0;
     }
     return sums;
+  },
+
+  async listTiers(): Promise<CommissionTierAdminView[]> {
+    return prisma.commissionTier.findMany({ orderBy: [{ sortOrder: "asc" }, { minPrice: "asc" }] });
+  },
+
+  async findTierById(id: string): Promise<CommissionTierAdminView | null> {
+    return prisma.commissionTier.findUnique({ where: { id } });
+  },
+
+  async createTier(input: CreateCommissionTierInput): Promise<CommissionTierAdminView> {
+    return prisma.commissionTier.create({ data: input });
+  },
+
+  async updateTier(id: string, input: UpdateCommissionTierInput): Promise<CommissionTierAdminView> {
+    return prisma.commissionTier.update({ where: { id }, data: input });
+  },
+
+  async deleteTier(id: string): Promise<void> {
+    await prisma.commissionTier.delete({ where: { id } });
+  },
+
+  async listAllAdmin(params: { status?: CommissionStatus; cursor?: string; limit: number }) {
+    return prisma.creatorCommission.findMany({
+      where: params.status ? { status: params.status } : undefined,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: params.limit + 1,
+      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
+      include: {
+        creator: { select: { name: true } },
+        orderItem: {
+          select: { product: { select: { name: true, brand: { select: { name: true } } } } },
+        },
+      },
+    });
+  },
+
+  async adminVoid(id: string, voidedReason: string): Promise<boolean> {
+    const result = await prisma.creatorCommission.updateMany({
+      where: {
+        id,
+        status: {
+          in: [CommissionStatus.PENDING, CommissionStatus.APPROVED, CommissionStatus.AVAILABLE],
+        },
+      },
+      data: { status: CommissionStatus.VOIDED, voidedReason },
+    });
+    return result.count > 0;
+  },
+
+  async markPaid(id: string): Promise<boolean> {
+    const result = await prisma.creatorCommission.updateMany({
+      where: { id, status: CommissionStatus.AVAILABLE },
+      data: { status: CommissionStatus.PAID, paidAt: new Date() },
+    });
+    return result.count > 0;
   },
 };

@@ -34,3 +34,31 @@ export type CreatorEarningsSummary = {
   available: number;
   paid: number;
 };
+
+export type CommissionTierAdminView = {
+  id: string;
+  minPrice: number;
+  maxPrice: number | null;
+  amount: number;
+  sortOrder: number;
+};
+
+export type CreateCommissionTierInput = {
+  minPrice: number;
+  maxPrice?: number;
+  amount: number;
+  sortOrder?: number;
+};
+
+export type UpdateCommissionTierInput = Partial<CreateCommissionTierInput>;
+
+export type AdminCommissionView = {
+  id: string;
+  creatorName: string;
+  productName: string;
+  brandName: string;
+  source: CommissionSource;
+  status: CommissionStatus;
+  amount: number;
+  createdAt: string;
+};
