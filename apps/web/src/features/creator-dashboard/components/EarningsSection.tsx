@@ -15,8 +15,8 @@ type EarningsSectionProps = {
 };
 
 export const EarningsSection = ({ creatorStatus }: EarningsSectionProps) => {
-  const { data: summary, isLoading: isSummaryLoading } = useEarningsSummary();
-  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useMyEarnings();
+  const { data: summary, isPending: isSummaryPending } = useEarningsSummary();
+  const { data, isPending, hasNextPage, fetchNextPage, isFetchingNextPage } = useMyEarnings();
   const earnings = data?.pages.flatMap((page) => page.items) ?? [];
 
   if (creatorStatus === CreatorStatus.PENDING) {
@@ -61,10 +61,10 @@ export const EarningsSection = ({ creatorStatus }: EarningsSectionProps) => {
       </div>
 
       <div className="mt-6">
-        <EarningsSummaryTiles summary={summary} isLoading={isSummaryLoading} />
+        <EarningsSummaryTiles summary={summary} isLoading={isSummaryPending} />
       </div>
 
-      {isLoading && (
+      {isPending && (
         <div className="mt-6 space-y-3">
           {Array.from({ length: 3 }).map((_, index) => (
             <Skeleton key={index} className="h-20 w-full rounded-2xl" />
@@ -72,7 +72,7 @@ export const EarningsSection = ({ creatorStatus }: EarningsSectionProps) => {
         </div>
       )}
 
-      {!isLoading && earnings.length === 0 && (
+      {!isPending && earnings.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">
             No earnings yet — tag products in your posts to start earning.

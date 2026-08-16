@@ -141,10 +141,6 @@ export const followService = {
     const usersById = new Map(followedUsers.map((user) => [user.id, user]));
     const brandsById = new Map(followedBrands.map((brand) => [brand.id, brand]));
 
-    // Reassembled in application code rather than one query: Follow has no relation for
-    // the polymorphic "following" side (User or Brand), so there's no single join to
-    // express this in Prisma/SQL. The search filter itself still runs at the DB level,
-    // in the two findManyByIds calls above.
     const targets: FollowTarget[] = [];
     for (const row of rows) {
       if (row.followingType === FollowTargetType.USER) {

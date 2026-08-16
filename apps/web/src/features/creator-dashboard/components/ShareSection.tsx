@@ -32,7 +32,7 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
     setNewLink(null);
   };
 
-  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useMyCreatorLinks();
+  const { data, isPending, hasNextPage, fetchNextPage, isFetchingNextPage } = useMyCreatorLinks();
   const links = data?.pages.flatMap((page) => page.items) ?? [];
 
   const createInternal = useCreateInternalLink();
@@ -160,7 +160,7 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
       <div className="mt-6">
         <h2 className="font-display text-lg font-bold text-foreground">Your links</h2>
 
-        {isLoading && (
+        {isPending && (
           <div className="mt-3 space-y-2">
             {Array.from({ length: 3 }).map((_, index) => (
               <Skeleton key={index} className="h-16 w-full rounded-lg" />
@@ -168,7 +168,7 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
           </div>
         )}
 
-        {!isLoading && links.length === 0 && (
+        {!isPending && links.length === 0 && (
           <p className="mt-3 text-sm text-muted-foreground">
             No links generated yet — share a product above to get started.
           </p>

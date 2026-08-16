@@ -31,7 +31,7 @@ const FULFILMENT_STATUS_CLASS: Record<BrandOrderItem["fulfilmentStatus"], string
 };
 
 export const OrdersSection = () => {
-  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useBrandOrders();
+  const { data, isPending, hasNextPage, fetchNextPage, isFetchingNextPage } = useBrandOrders();
   const items = data?.pages.flatMap((page) => page.items) ?? [];
 
   return (
@@ -43,7 +43,7 @@ export const OrdersSection = () => {
         </p>
       </div>
 
-      {isLoading && (
+      {isPending && (
         <div className="mt-6 space-y-3">
           {Array.from({ length: 4 }).map((_, index) => (
             <Skeleton key={index} className="h-20 w-full rounded-2xl" />
@@ -51,7 +51,7 @@ export const OrdersSection = () => {
         </div>
       )}
 
-      {!isLoading && items.length === 0 && (
+      {!isPending && items.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">
             No sales yet — they&apos;ll show up here once your products start selling.

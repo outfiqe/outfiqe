@@ -8,7 +8,7 @@ import { FollowersModal } from "@/components/FollowersModal";
 import { FollowingModal } from "@/components/FollowingModal";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useUpdateCreatorProfile } from "@/features/creator-dashboard/hooks/useUpdateCreatorProfile";
-import { ExploreFeedSkeleton, PostDetailModal } from "@/features/explore";
+import { PostDetailModal } from "@/features/explore";
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
@@ -17,6 +17,7 @@ import { formatHeight } from "@/shared/lib/formatHeight";
 
 import type { CreatorProfile as CreatorProfileType } from "../api/creatorProfileSchemas";
 import { useInfiniteCreatorLooks } from "../hooks/useInfiniteCreatorLooks";
+import { CreatorPostGridSkeleton } from "./CreatorPostGridSkeleton";
 import { CreatorPostThumbnail } from "./CreatorPostThumbnail";
 
 interface CreatorProfileProps {
@@ -175,7 +176,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
       </div>
 
       {isLoading ? (
-        <ExploreFeedSkeleton />
+        <CreatorPostGridSkeleton />
       ) : posts.length === 0 ? (
         <p className="py-10 text-sm text-muted-foreground">No posts yet.</p>
       ) : (

@@ -13,7 +13,6 @@ import {
 
 export const followRoutes = Router();
 
-// Must come before "/:targetType/:targetId" or Express would match "suggested-creators" as a type.
 followRoutes.get("/suggested-creators", requireAuth, followController.suggestedCreators);
 
 followRoutes.get(

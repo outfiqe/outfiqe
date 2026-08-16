@@ -153,8 +153,6 @@ export const followRepository = {
     });
   },
 
-  // Scoped to the given ids (a single result page) rather than loading everyone the
-  // viewer follows, which could be unbounded.
   async findFollowedAmong(
     followerId: string,
     followingType: FollowTargetType,
@@ -168,10 +166,6 @@ export const followRepository = {
     return new Set(rows.map((row) => row.followingId));
   },
 
-  // The Follow row has no relation for the polymorphic "following" side (it can be a
-  // User or a Brand), so listing what someone follows can't be a single query the way
-  // listFollowers can. Capped rather than truly unbounded, per an individual's following
-  // list realistically staying well under this.
   async listFollowingRows(
     followerId: string,
   ): Promise<{ followingType: FollowTargetType; followingId: string }[]> {
