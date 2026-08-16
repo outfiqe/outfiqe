@@ -31,7 +31,7 @@ after the fact, because this ships to real public users with no soft-launch peri
   anonymous-visitor session bridging so a not-yet-logged-in click still earns commission
   once that visitor eventually buys.
 - Admin tooling: order visibility/fulfilment/cancel-refund, commission tier management,
-  manual commission overrides, order fee configuration with an audit trail.
+  manual commission overrides, zone-based delivery fee configuration with an audit trail.
 - Brand dashboard order visibility, scoped correctly even inside mixed-brand orders.
 
 ### 2.2 Explicitly out of scope (non-goals, not oversights)
@@ -355,42 +355,65 @@ introduced later.
    silent no-op, and (since this session's polish pass) always surfaces a toast either
    way instead of giving no feedback at all.
 
-### 5.17 Admin edits the delivery/COD fees
+### 5.17 Admin manages delivery zones
 
-The standard delivery fee, free-delivery threshold, and COD handling fee were static
-constants at launch. They're now a single admin-editable row, changed here.
+The standard delivery fee, free-delivery threshold, and COD handling fee are no longer
+one flat rate for every order — they're set per **delivery zone**, matched by the
+shopper's city, with one zone always marked as the default/catch-all for any city that
+doesn't match a zone.
 
-1. Admin opens **Order fees** in `apps/admin`, sees the current three values pre-filled,
-   edits one or more, saves.
-2. **API** (`PATCH /api/order-fee-settings`, admin-only): in one transaction, updates the
-   singleton `OrderFeeSettings` row and writes an `OrderFeeSettingsHistory` row capturing
-   the full before/after snapshot, which admin changed it, and when — nothing about a fee
-   change is ever silent or unattributed.
-3. The public `GET /api/order-fee-settings` (used by both the cart and checkout) is
+1. Admin opens **Delivery zones** in `apps/admin`: a list of zones, each showing its
+   name, matched cities, the three fee values, and a "Default" badge on the catch-all
+   zone. Admin can **add** a zone (name, a free-text list of cities, the three fees),
+   **edit** any zone's fields including its city list, **set another zone as default**
+   (atomically unsets the previous default — the system always has exactly one), or
+   **delete** a non-default zone (the default zone can't be deleted until another zone
+   is promoted first, so there's never a moment with zero defaults).
+2. **API** (`POST`/`PATCH`/`DELETE /api/delivery-zones[...]`, admin-only): zone
+   create/update runs inside a transaction alongside a `DeliveryZoneHistory` row
+   capturing the full before/after snapshot (name, cities, all three fees, default
+   flag), who changed it, and when. City matching is case/whitespace-insensitive and
+   enforced unique across all zones at the database level — a city can only ever belong
+   to one zone, so a duplicate assignment is rejected outright rather than silently
+   overwriting the other zone's claim.
+3. **Resolution**: given a city, the system normalizes it and looks it up against every
+   zone's city list; a match uses that zone's fees, no match falls back to the default
+   zone's fees. This never fails checkout — an unrecognized, misspelled, or brand-new
+   city always resolves to _some_ zone's rates rather than erroring.
+4. The public `GET /api/delivery-zones` (used by cart, checkout, and the admin page) is
    Redis-cached like categories/hero-slides and eagerly refreshed on every successful
-   write, so readers never see a stale value after a save.
-4. **Effective immediately, not locked in earlier**: `cart.service` and
-   `order.service.checkoutOnce` both read the live settings row on every call, not a
-   value captured when the cart page first opened. A shopper sitting on an already-open
-   cart or checkout page sees the new fee on their next reload; whatever is live at the
-   moment checkout is actually submitted is what gets charged — there's no snapshot of
-   the "old" fee for a cart that was opened before the change.
-5. **Web (checkout)**: the Rs. 50 COD-handling-fee note and the total shown to the buyer
-   both come from this same live endpoint now, not a hardcoded constant — they can never
-   drift from what's actually charged server-side.
-6. **Admin**: the same page lists the full change history underneath the form (paginated,
-   newest first) — old values, new values, who, when — as the accountability trail for a
-   change that affects every order's total.
+   admin write, so readers never see a stale zone list after a save.
+5. **Web (cart)**: the cart page now has its own **city field** — a shopper can enter
+   their delivery city before ever reaching checkout, so the cart's delivery-fee
+   estimate is zone-accurate from the start of the funnel, not a flat guess. The city is
+   saved to the shopper's `Cart` row (debounced as they type), with an instant
+   client-side preview of the matched zone's rates drawn from the same cached zone list
+   as they type, and the authoritative fee coming back from the server once the save
+   lands.
+6. **Web (checkout)**: the checkout form's city field now **pre-fills from the cart's
+   saved city** instead of a hardcoded "Kathmandu" default. The COD-handling-fee note
+   and the order total shown to the buyer are resolved from whichever zone matches the
+   cart's city, live — never a hardcoded constant.
+7. **Effective immediately, not locked in earlier**: `cart.service` and
+   `order.service.checkoutOnce` both resolve the zone for the order's city on every
+   call, not a value captured when the cart page first opened. Whatever zone is live at
+   the moment checkout is actually submitted is what gets charged — there's no snapshot
+   of "old" rates for a cart opened before a fee change.
+8. **Admin**: the same page lists the full change history underneath the zone list
+   (paginated, newest first) — which zone, old values, new values, who, when — as the
+   accountability trail for a change that affects every order shipped to that zone's
+   cities.
 
 ---
 
 ## 6. Data model (new this session)
 
-`Cart` / `CartItem` · `Order` / `OrderItem` (with inline attribution fields) ·
-`PaymentTransaction` (one row per gateway attempt, payment or refund) ·
-`RequestIdempotency` · `CommissionTier` · `CreatorCommission` · `CreatorLink` /
-`CreatorLinkClick` · extended `ProductSize.stock` · `OrderFeeSettings` (singleton row) /
-`OrderFeeSettingsHistory` (append-only audit trail, added post-launch — see §5.17).
+`Cart` / `CartItem` (now with a shopper-set `city`) · `Order` / `OrderItem` (with inline
+attribution fields) · `PaymentTransaction` (one row per gateway attempt, payment or
+refund) · `RequestIdempotency` · `CommissionTier` · `CreatorCommission` · `CreatorLink` /
+`CreatorLinkClick` · extended `ProductSize.stock` · `DeliveryZone` / `DeliveryZoneCity` /
+`DeliveryZoneHistory` (append-only audit trail, replacing the earlier flat
+`OrderFeeSettings` singleton — see §5.17).
 
 ## 7. Cross-cutting guarantees
 
@@ -427,4 +450,6 @@ found, and verification notes live in the session's persistent memory, not dupli
 here.
 
 Post-launch (same session, after live sandbox testing surfaced the question): order fees
-made admin-configurable with an audit trail (§5.17) — previously static constants.
+made admin-configurable with an audit trail, then further reworked into zone-based
+delivery pricing matched by city with a default-zone fallback and a cart-page city field
+(§5.17) — previously a single flat rate for every order regardless of destination.

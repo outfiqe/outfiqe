@@ -43,7 +43,7 @@ export const CheckoutForm = ({ cart, codHandlingFee }: CheckoutFormProps) => {
       fullName: state.user?.name ?? "",
       phone: "",
       address: "",
-      city: "Kathmandu",
+      city: cart.city ?? "",
       landmark: "",
       paymentMethod: PaymentMethod.COD,
     },
@@ -152,9 +152,6 @@ export const CheckoutForm = ({ cart, codHandlingFee }: CheckoutFormProps) => {
                 )}
               />
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">
-              We deliver inside the Kathmandu valley in 2–3 days. Outside it, 4–7 days.
-            </p>
           </div>
 
           <div className="rounded-2xl border border-border p-5">

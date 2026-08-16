@@ -22,7 +22,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { cartRepository } from "#modules/cart/cart.repository.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
 import { creatorLinkRepository } from "#modules/creator-links/creatorLink.repository.js";
-import { orderFeeSettingsService } from "#modules/order-fee-settings/orderFeeSettings.service.js";
+import { deliveryZoneService } from "#modules/delivery-zones/deliveryZone.service.js";
 import { paymentRepository } from "#modules/payments/payment.repository.js";
 import { paymentService } from "#modules/payments/payment.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
@@ -101,7 +101,7 @@ const checkoutOnce = async (
 
   if (sessionId) await creatorLinkRepository.bridgeSessionClicks(sessionId, userId);
 
-  const cartId = await cartRepository.getOrCreateCartId(userId);
+  const { id: cartId } = await cartRepository.getOrCreateCart(userId);
   const cartRows = await cartRepository.listItems(cartId);
   if (cartRows.length === 0) {
     throw new AppError("CART_EMPTY", "Your bag is empty.", CART_EMPTY_STATUS);
@@ -127,7 +127,7 @@ const checkoutOnce = async (
     unitPrice: product.price,
   }));
   const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0);
-  const feeValues = await orderFeeSettingsService.getFeeValues();
+  const feeValues = await deliveryZoneService.resolveFeeValuesForCity(city);
   const deliveryFee =
     subtotal >= feeValues.freeDeliveryThreshold ? 0 : feeValues.standardDeliveryFee;
   const codFee = paymentMethod === PaymentMethod.COD ? feeValues.codHandlingFee : 0;

@@ -1,14 +1,17 @@
 import { prisma } from "#db/prisma.js";
 
 export const cartRepository = {
-  async getOrCreateCartId(userId: string): Promise<string> {
-    const cart = await prisma.cart.upsert({
+  async getOrCreateCart(userId: string): Promise<{ id: string; city: string | null }> {
+    return prisma.cart.upsert({
       where: { userId },
       update: {},
       create: { userId },
-      select: { id: true },
+      select: { id: true, city: true },
     });
-    return cart.id;
+  },
+
+  async updateCity(cartId: string, city: string | null): Promise<void> {
+    await prisma.cart.update({ where: { id: cartId }, data: { city } });
   },
 
   async findItemById(cartId: string, cartItemId: string) {

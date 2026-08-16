@@ -4,7 +4,12 @@ import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 
-import type { AddCartItemBody, CartItemIdParam, UpdateCartItemBody } from "./cart.schemas.js";
+import type {
+  AddCartItemBody,
+  CartItemIdParam,
+  UpdateCartCityBody,
+  UpdateCartItemBody,
+} from "./cart.schemas.js";
 import { cartService } from "./cart.service.js";
 
 export const cartController = {
@@ -37,5 +42,13 @@ export const cartController = {
 
     const cart = await cartService.removeItem(userId, cartItemId);
     sendSuccess(res, cart, "Removed from bag.");
+  },
+
+  async updateCity(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { city } = validated.body<UpdateCartCityBody>(res);
+
+    const cart = await cartService.setCity(userId, city);
+    sendSuccess(res, cart, "Delivery city updated.");
   },
 };

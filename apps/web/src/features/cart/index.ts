@@ -5,4 +5,5 @@ export { CartBody } from "./components/CartBody";
 export { useAddToCart } from "./hooks/useAddToCart";
 export { useCart } from "./hooks/useCart";
 export { useRemoveCartItem } from "./hooks/useRemoveCartItem";
+export { useUpdateCartCity } from "./hooks/useUpdateCartCity";
 export { useUpdateCartItem } from "./hooks/useUpdateCartItem";

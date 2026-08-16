@@ -10,7 +10,7 @@ type CartSummaryProps = {
 };
 
 export const CartSummary = ({ cart }: CartSummaryProps) => {
-  const { subtotal, deliveryFee, total } = cart;
+  const { subtotal, deliveryFee, total, city } = cart;
 
   return (
     <div className="rounded-2xl border border-border p-5">
@@ -23,7 +23,7 @@ export const CartSummary = ({ cart }: CartSummaryProps) => {
         <span>Rs. {subtotal.toLocaleString()}</span>
       </div>
       <div className="flex justify-between py-2 text-sm text-muted-foreground">
-        <span>Delivery</span>
+        <span>{city ? `Delivery to ${city}` : "Delivery"}</span>
         <span>{deliveryFee === 0 ? "Free" : `Rs. ${deliveryFee.toLocaleString()}`}</span>
       </div>
       <div className="mt-2 flex justify-between border-t border-border pt-3 font-display text-lg font-extrabold text-foreground">

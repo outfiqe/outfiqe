@@ -19,4 +19,5 @@ export type CartView = {
   subtotal: number;
   deliveryFee: number;
   total: number;
+  city: string | null;
 };

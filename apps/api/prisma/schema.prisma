@@ -51,7 +51,7 @@ model User {
   creatorCommissions      CreatorCommission[]       @relation("CreatorCommissions")
   creatorLinks            CreatorLink[]             @relation("CreatorLinks")
   creatorLinkClicks       CreatorLinkClick[]
-  orderFeeSettingsChanges OrderFeeSettingsHistory[] @relation("OrderFeeSettingsChanges")
+  deliveryZoneChanges     DeliveryZoneHistory[]     @relation("DeliveryZoneChanges")
 
   @@index([isCreator, creatorStatus, followerCount])
   @@map("users")
@@ -489,6 +489,7 @@ model Cart {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @unique @map("user_id") @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city      String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -793,31 +794,47 @@ model CreatorLinkClick {
   @@map("creator_link_clicks")
 }
 
-model OrderFeeSettings {
+model DeliveryZone {
   id                    String   @id @default(uuid()) @db.Uuid
+  name                  String
+  isDefault             Boolean  @default(false) @map("is_default")
   standardDeliveryFee   Int      @map("standard_delivery_fee")
   freeDeliveryThreshold Int      @map("free_delivery_threshold")
   codHandlingFee        Int      @map("cod_handling_fee")
+  createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
-  history OrderFeeSettingsHistory[]
+  cities  DeliveryZoneCity[]
+  history DeliveryZoneHistory[]
 
-  @@map("order_fee_settings")
+  @@map("delivery_zones")
 }
 
-model OrderFeeSettingsHistory {
-  id         String           @id @default(uuid()) @db.Uuid
-  settingsId String           @map("settings_id") @db.Uuid
-  settings   OrderFeeSettings @relation(fields: [settingsId], references: [id], onDelete: Cascade)
+model DeliveryZoneCity {
+  id             String       @id @default(uuid()) @db.Uuid
+  zoneId         String       @map("zone_id") @db.Uuid
+  zone           DeliveryZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  city           String
+  cityNormalized String       @map("city_normalized")
+
+  @@unique([cityNormalized])
+  @@index([zoneId])
+  @@map("delivery_zone_cities")
+}
+
+model DeliveryZoneHistory {
+  id     String       @id @default(uuid()) @db.Uuid
+  zoneId String       @map("zone_id") @db.Uuid
+  zone   DeliveryZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
 
   changedById String @map("changed_by_id") @db.Uuid
-  changedBy   User   @relation("OrderFeeSettingsChanges", fields: [changedById], references: [id])
+  changedBy   User   @relation("DeliveryZoneChanges", fields: [changedById], references: [id])
 
   oldValues Json @map("old_values")
   newValues Json @map("new_values")
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  @@index([settingsId, createdAt])
-  @@map("order_fee_settings_history")
+  @@index([zoneId, createdAt])
+  @@map("delivery_zone_history")
 }

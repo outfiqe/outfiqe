@@ -40,9 +40,9 @@ The baseline path — no gateway involved, so a good first smoke test before tou
 - [ ] Open `/cart`: quantities, sizes, images, and per-item prices match what was added.
 - [ ] Increase/decrease quantity with the +/− controls; confirm it clamps at the size's real available stock (can't go above what's in stock) and won't go below 1 without removing the line.
 - [ ] Remove one item; confirm the bag total recalculates immediately.
-- [ ] Note the subtotal, then check the delivery fee: **free above the free-delivery threshold, the standard fee otherwise** (Rs. 5,000 / Rs. 150 by default — admin-configurable, see funnel 16). Test both sides of that threshold if you can.
+- [ ] Note the subtotal, then check the delivery fee: **free above the free-delivery threshold, the standard fee otherwise** (Rs. 5,000 / Rs. 150 by default for the Default zone — admin-configurable per delivery zone, see funnel 14). Test both sides of that threshold if you can.
 - [ ] Go to `/checkout`. Fill address fields; leave one required field empty and confirm inline validation blocks submit.
-- [ ] Select **Cash on delivery** — confirm the summary shows the **COD handling fee** (Rs. 50 by default) added to the total.
+- [ ] Select **Cash on delivery** — confirm the summary shows the **COD handling fee** (Rs. 50 by default for the Default zone) added to the total.
 - [ ] Submit. You should land on `/orders/[orderId]` immediately (no gateway redirect for COD).
 - [ ] Re-check the product's stock (admin Products page, or the product page itself) — it should have **decremented immediately**, since COD claims stock at checkout.
 - [ ] Refresh the order page — the 4-step tracker (Placed → Packed → Shipped → Delivered) should show **Placed** as the current step, and the current step should be screen-reader-announced (`aria-current="step"` on that dot if you inspect the DOM).
@@ -190,18 +190,23 @@ business the whole system exists to run:
 6. Admin marks the commission **Paid**.
 7. Creator's Earnings page reflects the full lifecycle: Pending → Available → Paid.
 
-## 14. Funnel: Admin — order fee settings and audit trail
+## 14. Funnel: Admin — delivery zones and audit trail
 
-- [ ] As admin, go to **Order fees**. Confirm the three fields (standard delivery fee, free delivery threshold, COD handling fee) are pre-filled with the current values (Rs. 150 / Rs. 5,000 / Rs. 50 if nobody has changed them yet).
-- [ ] Change the standard delivery fee to a different value and save. Confirm the form shows the new value after saving, and a new row appears at the top of the change history below the form showing your account name, the old value, and the new value.
-- [ ] As a shopper, open `/cart` (or reload it if already open) with a subtotal below the free-delivery threshold. Confirm the delivery fee shown matches the **new** value you just set, not the old default.
-- [ ] Go to `/checkout`, select Cash on delivery. Confirm the COD handling fee note and the order total both reflect the **new** value.
-- [ ] Place that order and confirm the amount actually charged (order total, and the COD fee line in the transaction ledger) matches the new fee — not the old default.
-- [ ] Change the free delivery threshold to just above your cart's subtotal and confirm the delivery fee flips to Free on next reload; change it back down and confirm it flips back.
-- [ ] Try saving the form with a field cleared/invalid (e.g. a negative number) — confirm it's rejected client-side or by the API, not silently accepted.
-- [ ] Log in as a non-admin (or hit `PATCH /api/order-fee-settings` directly without an admin session) and confirm the update is rejected — this must not be editable by anyone but admin.
+- [ ] As admin, go to **Delivery zones**. Confirm exactly one zone exists initially ("Default zone"), marked with a **Default** badge, pre-filled with the current values (Rs. 150 / Rs. 5,000 / Rs. 50 if nobody has changed them yet).
+- [ ] Create a new zone (e.g. "Pokhara") with a couple of cities (e.g. "Pokhara", "Lakeside") and its own fee values. Confirm it appears in the list with its cities shown as chips and is **not** marked Default.
+- [ ] Try creating a second zone that lists a city already claimed by the first zone (e.g. "pokhara" in different casing/whitespace) — confirm it's **rejected** with a clear message, not silently accepted or silently reassigning the city.
+- [ ] Edit the new zone: add another city, change one of its fee values, save. Confirm the card updates and a new row appears at the top of the change history below the list, showing your account name, the zone name, old values, and new values.
+- [ ] Click **Set as default** on the new zone. Confirm the Default badge moves to it and disappears from the original zone, and that two history entries are recorded (one for each zone losing/gaining the flag).
+- [ ] Try to delete the zone that is now Default — confirm it's **rejected** with a clear message. Set the original zone back to Default, then delete the zone you created — confirm this succeeds now that it isn't the default.
+- [ ] As a shopper, open `/cart`. Enter a city that matches a real zone (e.g. one of the Pokhara cities if that zone still exists, or any city listed on a non-default zone) — confirm the delivery-fee estimate updates to that zone's rate (a short live preview as you type, then the persisted server value once your typing settles).
+- [ ] Enter a city that matches **no** zone — confirm the estimate falls back to the default zone's rate rather than erroring or showing nothing.
+- [ ] Go to `/checkout` — confirm the city field is pre-filled from whatever city you set on the cart page, and the COD handling fee note / order total reflect the zone matching that city.
+- [ ] Place an order from a matched-zone city with Cash on delivery. Confirm the amount actually charged (order total, and the COD fee line in the transaction ledger) matches that zone's fees, not the default zone's.
+- [ ] Change a zone's free delivery threshold to just above your cart's subtotal and confirm the delivery fee for a matching city flips to Free on next reload; change it back down and confirm it flips back.
+- [ ] Try saving a zone form with a field cleared/invalid (e.g. a negative fee, or a duplicate city within the same submission) — confirm it's rejected client-side or by the API, not silently accepted.
+- [ ] Log in as a non-admin (or hit `POST`/`PATCH`/`DELETE /api/delivery-zones/...` directly without an admin session) and confirm every mutating action is rejected — only `GET /api/delivery-zones` should be reachable without admin auth.
 - [ ] Scroll the change history — if you've made more than a page's worth of changes, confirm **Load more** paginates correctly instead of loading everything at once.
-- [ ] Set all three values back to the defaults (150 / 5000 / 50) when you're done, so the rest of this doc's dollar amounts stay accurate for the next person testing.
+- [ ] Set the default zone's three values back to the defaults (150 / 5000 / 50), and remove any extra test zones you created, so the rest of this doc's dollar amounts stay accurate for the next person testing.
 
 ## 15. Known accepted limitations — please don't file these as bugs
 
@@ -224,4 +229,4 @@ If you hit any of these again, it's a regression, not a new discovery:
 - [ ] Generating a link updates the "Your links" list without a double-flicker.
 - [ ] `/checkout` no longer flashes an empty-cart state right before redirecting to eSewa/Khalti.
 - [ ] Checkout's Phone and Landmark fields stay aligned with Full name/City in their grid rows.
-- [ ] The COD handling fee shown at checkout always matches what admin has configured in Order fees, never a stale hardcoded Rs. 50.
+- [ ] The COD handling fee shown at checkout always matches what admin has configured for the resolved delivery zone, never a stale hardcoded Rs. 50.

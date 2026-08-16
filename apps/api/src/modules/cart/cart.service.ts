@@ -1,5 +1,5 @@
 import { AppError } from "#middlewares/error-handler.js";
-import { orderFeeSettingsService } from "#modules/order-fee-settings/orderFeeSettings.service.js";
+import { deliveryZoneService } from "#modules/delivery-zones/deliveryZone.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
 
 import { CART_LOW_STOCK_THRESHOLD } from "./cart.constants.js";
@@ -8,7 +8,7 @@ import type { CartItemView, CartView } from "./cart.types.js";
 
 const NOT_FOUND_STATUS = 404;
 
-const buildCartView = async (cartId: string): Promise<CartView> => {
+const buildCartView = async (cartId: string, city: string | null): Promise<CartView> => {
   const rows = await cartRepository.listItems(cartId);
   const stockBySizeId = await productRepository.getStockBySizeIds(rows.map((row) => row.sizeId));
 
@@ -37,7 +37,7 @@ const buildCartView = async (cartId: string): Promise<CartView> => {
     (sum, item) => (item.soldOut ? sum : sum + item.unitPrice * item.qty),
     0,
   );
-  const feeValues = await orderFeeSettingsService.getFeeValues();
+  const feeValues = await deliveryZoneService.resolveFeeValuesForCity(city);
   const deliveryFee =
     subtotal === 0 || subtotal >= feeValues.freeDeliveryThreshold
       ? 0
@@ -49,17 +49,18 @@ const buildCartView = async (cartId: string): Promise<CartView> => {
     subtotal,
     deliveryFee,
     total: subtotal + deliveryFee,
+    city,
   };
 };
 
 export const cartService = {
   async getCart(userId: string): Promise<CartView> {
-    const cartId = await cartRepository.getOrCreateCartId(userId);
-    return buildCartView(cartId);
+    const { id: cartId, city } = await cartRepository.getOrCreateCart(userId);
+    return buildCartView(cartId, city);
   },
 
   async addItem(userId: string, productId: string, sizeId: string, qty: number): Promise<CartView> {
-    const cartId = await cartRepository.getOrCreateCartId(userId);
+    const { id: cartId, city } = await cartRepository.getOrCreateCart(userId);
     const [existing, stockBySizeId] = await Promise.all([
       cartRepository.findItemBySizeId(cartId, sizeId),
       productRepository.getStockBySizeIds([sizeId]),
@@ -74,15 +75,15 @@ export const cartService = {
       await cartRepository.upsertItem(cartId, productId, sizeId, clampedQty);
     }
 
-    return buildCartView(cartId);
+    return buildCartView(cartId, city);
   },
 
   async updateItemQty(userId: string, cartItemId: string, qty: number): Promise<CartView> {
-    const cartId = await cartRepository.getOrCreateCartId(userId);
+    const { id: cartId, city } = await cartRepository.getOrCreateCart(userId);
 
     if (qty <= 0) {
       await cartRepository.removeItem(cartId, cartItemId);
-      return buildCartView(cartId);
+      return buildCartView(cartId, city);
     }
 
     const item = await cartRepository.findItemById(cartId, cartItemId);
@@ -98,12 +99,18 @@ export const cartService = {
       await cartRepository.updateItemQty(cartId, cartItemId, clampedQty);
     }
 
-    return buildCartView(cartId);
+    return buildCartView(cartId, city);
   },
 
   async removeItem(userId: string, cartItemId: string): Promise<CartView> {
-    const cartId = await cartRepository.getOrCreateCartId(userId);
+    const { id: cartId, city } = await cartRepository.getOrCreateCart(userId);
     await cartRepository.removeItem(cartId, cartItemId);
-    return buildCartView(cartId);
+    return buildCartView(cartId, city);
+  },
+
+  async setCity(userId: string, city: string): Promise<CartView> {
+    const { id: cartId } = await cartRepository.getOrCreateCart(userId);
+    await cartRepository.updateCity(cartId, city);
+    return buildCartView(cartId, city);
   },
 };

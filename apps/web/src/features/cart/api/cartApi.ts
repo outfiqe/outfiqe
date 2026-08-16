@@ -22,4 +22,9 @@ export const cartApi = {
     const res = await apiClient.del<Cart>(`/cart/items/${cartItemId}`);
     return cartSchema.parse(res.data);
   },
+
+  async updateCity(city: string): Promise<Cart> {
+    const res = await apiClient.patch<Cart>("/cart/city", { city });
+    return cartSchema.parse(res.data);
+  },
 };

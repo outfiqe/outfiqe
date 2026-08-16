@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/context/AuthContext";
 
 import { useCart } from "../hooks/useCart";
+import { CartCityField } from "./CartCityField";
 import { CartItemRow } from "./CartItemRow";
 import { CartSummary } from "./CartSummary";
 
@@ -73,6 +74,7 @@ export const CartBody = () => {
         ))}
       </div>
       <div className="lg:sticky lg:top-24 lg:self-start">
+        <CartCityField city={cart.city} />
         <CartSummary cart={cart} />
       </div>
     </div>

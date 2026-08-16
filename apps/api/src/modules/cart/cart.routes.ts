@@ -7,6 +7,7 @@ import { cartController } from "./cart.controller.js";
 import {
   addCartItemBodySchema,
   cartItemIdParamSchema,
+  updateCartCityBodySchema,
   updateCartItemBodySchema,
 } from "./cart.schemas.js";
 
@@ -33,4 +34,11 @@ cartRoutes.delete(
   requireAuth,
   validate({ params: cartItemIdParamSchema }),
   cartController.removeItem,
+);
+
+cartRoutes.patch(
+  "/city",
+  requireAuth,
+  validate({ body: updateCartCityBodySchema }),
+  cartController.updateCity,
 );

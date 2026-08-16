@@ -22,5 +22,6 @@ export const cartSchema = z.object({
   subtotal: z.number(),
   deliveryFee: z.number(),
   total: z.number(),
+  city: z.string().nullable(),
 });
 export type Cart = z.infer<typeof cartSchema>;
