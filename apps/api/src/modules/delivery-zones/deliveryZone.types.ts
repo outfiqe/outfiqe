@@ -40,3 +40,10 @@ export type DeliveryZoneHistoryView = {
   newValues: DeliveryZoneSnapshot;
   createdAt: string;
 };
+
+export type DeliveryZoneCityMatch = DeliveryZoneFeeValues & {
+  city: string;
+  zoneId: string;
+  zoneName: string;
+  isDefault: boolean;
+};

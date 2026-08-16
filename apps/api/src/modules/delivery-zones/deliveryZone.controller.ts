@@ -8,6 +8,7 @@ import type {
   CreateDeliveryZoneBody,
   DeliveryZoneIdParam,
   ListDeliveryZoneHistoryQuery,
+  SearchDeliveryZoneCitiesQuery,
   UpdateDeliveryZoneBody,
 } from "./deliveryZone.schemas.js";
 import { deliveryZoneService } from "./deliveryZone.service.js";
@@ -24,6 +25,12 @@ export const deliveryZoneController = {
     const query = validated.query<ListDeliveryZoneHistoryQuery>(res);
     const page = await deliveryZoneService.listHistory(query);
     sendSuccess(res, page, "Delivery zone change history.");
+  },
+
+  async searchCities(_req: Request, res: Response) {
+    const { q, limit } = validated.query<SearchDeliveryZoneCitiesQuery>(res);
+    const cities = await deliveryZoneService.searchCities(q, limit);
+    sendSuccess(res, { cities }, "Delivery zone cities.");
   },
 
   async create(_req: Request, res: Response) {

@@ -8,10 +8,13 @@ import {
   AutocompleteItem,
   Skeleton,
 } from "@outfiqe/design-system";
+import { useDebouncedValue } from "@outfiqe/hooks";
 import { forwardRef, useEffect, useState } from "react";
 
-import { useDeliveryZones } from "../hooks/useDeliveryZones";
-import { normalizeCityName } from "../lib/resolveZonePreview";
+import { useCitySearch } from "../hooks/useCitySearch";
+import { groupCitiesByZone } from "../lib/groupCitiesByZone";
+
+const CITY_SEARCH_DEBOUNCE_MS = 300;
 
 type CityAutocompleteProps = Omit<
   React.ComponentPropsWithoutRef<typeof AutocompleteInput>,
@@ -24,26 +27,16 @@ type CityAutocompleteProps = Omit<
 export const CityAutocomplete = forwardRef<HTMLInputElement, CityAutocompleteProps>(
   ({ value, onChange, onBlur, ...inputProps }, ref) => {
     const [query, setQuery] = useState(value);
-    const deliveryZonesQuery = useDeliveryZones();
-    const zones = deliveryZonesQuery.data ?? [];
+    const debouncedQuery = useDebouncedValue(query, CITY_SEARCH_DEBOUNCE_MS);
+    const isSearching = debouncedQuery.trim().length > 0;
+    const { data: results, isLoading } = useCitySearch(debouncedQuery, isSearching);
+    const cities = results ?? [];
 
     useEffect(() => {
       setQuery(value);
     }, [value]);
 
-    const normalizedQuery = normalizeCityName(query);
-    const visibleZones = zones
-      .map((zone) => ({
-        ...zone,
-        cities: zone.cities.filter((city) => normalizeCityName(city).includes(normalizedQuery)),
-      }))
-      .filter((zone) => zone.cities.length > 0);
-
-    const isCurrentCityKnown = zones.some((zone) =>
-      zone.cities.some((city) => normalizeCityName(city) === normalizeCityName(value)),
-    );
-    const showUnknownCurrentCity =
-      value.length > 0 && !isCurrentCityKnown && normalizeCityName(value).includes(normalizedQuery);
+    const zoneGroups = groupCitiesByZone(cities);
 
     const selectCity = (city: string) => {
       setQuery(city);
@@ -55,7 +48,7 @@ export const CityAutocomplete = forwardRef<HTMLInputElement, CityAutocompletePro
         <AutocompleteInput
           {...inputProps}
           ref={ref}
-          placeholder={deliveryZonesQuery.isLoading ? "Loading cities…" : "Select your city"}
+          placeholder="Select your city"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onBlur={(event) => {
@@ -64,36 +57,34 @@ export const CityAutocomplete = forwardRef<HTMLInputElement, CityAutocompletePro
           }}
         />
 
-        <AutocompleteContent className="mt-2">
-          {deliveryZonesQuery.isLoading &&
-            Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton key={index} className="mx-1.5 my-1 h-7 rounded-md" />
-            ))}
+        {isSearching && (
+          <AutocompleteContent className="mt-2">
+            {isLoading &&
+              Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={index} className="mx-1.5 my-1 h-7 rounded-md" />
+              ))}
 
-          {!deliveryZonesQuery.isLoading &&
-            visibleZones.length === 0 &&
-            !showUnknownCurrentCity && (
+            {!isLoading && cities.length === 0 && (
               <p className="px-2 py-4 text-center text-xs text-muted-foreground">
-                No cities found for &ldquo;{query}&rdquo;
+                No cities found for &ldquo;{debouncedQuery}&rdquo;
               </p>
             )}
 
-          {showUnknownCurrentCity && (
-            <AutocompleteItem value={value} onSelect={() => selectCity(value)}>
-              <span className="truncate text-[13px] text-foreground">{value}</span>
-            </AutocompleteItem>
-          )}
-
-          {visibleZones.map((zone) => (
-            <AutocompleteGroup key={zone.id} label={zone.name}>
-              {zone.cities.map((city) => (
-                <AutocompleteItem key={city} value={city} onSelect={() => selectCity(city)}>
-                  <span className="truncate text-[13px] text-foreground">{city}</span>
-                </AutocompleteItem>
-              ))}
-            </AutocompleteGroup>
-          ))}
-        </AutocompleteContent>
+            {zoneGroups.map((group) => (
+              <AutocompleteGroup key={group.zoneId} label={group.zoneName}>
+                {group.cities.map((match) => (
+                  <AutocompleteItem
+                    key={match.city}
+                    value={match.city}
+                    onSelect={() => selectCity(match.city)}
+                  >
+                    <span className="truncate text-[13px] text-foreground">{match.city}</span>
+                  </AutocompleteItem>
+                ))}
+              </AutocompleteGroup>
+            ))}
+          </AutocompleteContent>
+        )}
       </Autocomplete>
     );
   },

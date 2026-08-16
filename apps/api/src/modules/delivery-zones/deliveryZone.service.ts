@@ -10,6 +10,7 @@ import type {
   UpdateDeliveryZoneBody,
 } from "./deliveryZone.schemas.js";
 import type {
+  DeliveryZoneCityMatch,
   DeliveryZoneFeeValues,
   DeliveryZoneHistoryView,
   DeliveryZoneRecord,
@@ -59,6 +60,17 @@ export const deliveryZoneService = {
   async listPublic(): Promise<DeliveryZoneView[]> {
     const zones = await deliveryZoneRepository.listAll();
     return zones.map(toView);
+  },
+
+  async searchCities(query: string, limit: number): Promise<DeliveryZoneCityMatch[]> {
+    const matches = await deliveryZoneRepository.searchCities(query, limit);
+    return matches.map((match) => ({
+      city: match.city,
+      zoneId: match.zone.id,
+      zoneName: match.zone.name,
+      isDefault: match.zone.isDefault,
+      ...toFeeValues(match.zone),
+    }));
   },
 
   async resolveFeeValuesForCity(city: string | null): Promise<DeliveryZoneFeeValues> {

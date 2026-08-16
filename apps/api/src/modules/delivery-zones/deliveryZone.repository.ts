@@ -26,6 +26,15 @@ export const deliveryZoneRepository = {
     return client.deliveryZone.findUnique({ where: { id }, include: zoneWithCities });
   },
 
+  async searchCities(query: string, limit: number) {
+    return prisma.deliveryZoneCity.findMany({
+      where: { city: { contains: query, mode: "insensitive" } },
+      orderBy: { city: "asc" },
+      take: limit,
+      include: { zone: true },
+    });
+  },
+
   async findByCityNormalized(
     cityNormalized: string,
     client: DbClient = prisma,

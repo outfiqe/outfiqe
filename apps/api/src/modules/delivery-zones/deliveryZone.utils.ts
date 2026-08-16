@@ -7,7 +7,7 @@ import type {
 
 export const normalizeCityName = (city: string): string => city.trim().toLowerCase();
 
-export const toFeeValues = (record: DeliveryZoneRecord): DeliveryZoneFeeValues => ({
+export const toFeeValues = (record: DeliveryZoneFeeValues): DeliveryZoneFeeValues => ({
   standardDeliveryFee: record.standardDeliveryFee,
   freeDeliveryThreshold: record.freeDeliveryThreshold,
   codHandlingFee: record.codHandlingFee,

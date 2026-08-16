@@ -43,7 +43,21 @@ export const listDeliveryZoneHistoryQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
 
+const CITY_SEARCH_DEFAULT_LIMIT = 20;
+const CITY_SEARCH_MAX_LIMIT = 50;
+
+export const searchDeliveryZoneCitiesQuerySchema = z.object({
+  q: citySchema,
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(CITY_SEARCH_MAX_LIMIT)
+    .default(CITY_SEARCH_DEFAULT_LIMIT),
+});
+
 export type CreateDeliveryZoneBody = z.infer<typeof createDeliveryZoneSchema>;
 export type UpdateDeliveryZoneBody = z.infer<typeof updateDeliveryZoneSchema>;
 export type DeliveryZoneIdParam = z.infer<typeof deliveryZoneIdParamSchema>;
 export type ListDeliveryZoneHistoryQuery = z.infer<typeof listDeliveryZoneHistoryQuerySchema>;
+export type SearchDeliveryZoneCitiesQuery = z.infer<typeof searchDeliveryZoneCitiesQuerySchema>;

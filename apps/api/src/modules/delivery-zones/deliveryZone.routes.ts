@@ -12,6 +12,7 @@ import {
   createDeliveryZoneSchema,
   deliveryZoneIdParamSchema,
   listDeliveryZoneHistoryQuerySchema,
+  searchDeliveryZoneCitiesQuerySchema,
   updateDeliveryZoneSchema,
 } from "./deliveryZone.schemas.js";
 import { deliveryZoneService } from "./deliveryZone.service.js";
@@ -34,6 +35,12 @@ const refreshDeliveryZonesPublicCache = refreshCacheOnWrite({
 export const deliveryZoneRoutes = Router();
 
 deliveryZoneRoutes.get("/", deliveryZonesPublicCache, deliveryZoneController.list);
+
+deliveryZoneRoutes.get(
+  "/cities",
+  validate({ query: searchDeliveryZoneCitiesQuerySchema }),
+  deliveryZoneController.searchCities,
+);
 
 deliveryZoneRoutes.get(
   "/history",
