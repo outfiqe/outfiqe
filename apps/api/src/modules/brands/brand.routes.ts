@@ -8,9 +8,20 @@ import { validate } from "#middlewares/validate.js";
 import { listBrandProductsQuerySchema } from "#modules/products/product.schemas.js";
 
 import { brandController } from "./brand.controller.js";
-import { brandIdParamSchema, updateBrandProfileSchema } from "./brand.schemas.js";
+import {
+  brandIdParamSchema,
+  listBrandsQuerySchema,
+  updateBrandProfileSchema,
+} from "./brand.schemas.js";
 
 export const brandRoutes = Router();
+
+brandRoutes.get(
+  "/",
+  optionalAuth,
+  validate({ query: listBrandsQuerySchema }),
+  brandController.listPublic,
+);
 
 brandRoutes.get("/me", requireAuth, requireRole(UserRole.BRAND_OWNER), brandController.me);
 brandRoutes.patch(

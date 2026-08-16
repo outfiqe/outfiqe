@@ -14,7 +14,7 @@ import { MobileNav } from "./MobileNav";
 import { ShopExploreToggle } from "./ShopExploreToggle";
 import { LEADERBOARD_LINKS } from "./siteNav.constants";
 
-const SHOP_LINKS = [{ label: "Brands", href: "#" }];
+const SHOP_LINKS = [{ label: "Brands", href: "/brands" }];
 
 export const SiteHeader = () => {
   const isCondensed = useHeaderCondense();

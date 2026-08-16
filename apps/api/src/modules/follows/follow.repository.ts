@@ -115,6 +115,20 @@ export const followRepository = {
     return rows.map((row) => row.followingId);
   },
 
+  async listFollowingIdsAmong(
+    followerId: string,
+    followingType: FollowTargetType,
+    followingIds: string[],
+  ): Promise<string[]> {
+    if (followingIds.length === 0) return [];
+
+    const rows = await prisma.follow.findMany({
+      where: { followerId, followingType, followingId: { in: followingIds } },
+      select: { followingId: true },
+    });
+    return rows.map((row) => row.followingId);
+  },
+
   async listFollowers(
     followingType: FollowTargetType,
     followingId: string,
