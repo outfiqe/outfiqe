@@ -11,11 +11,12 @@ import {
   Input,
 } from "@outfiqe/design-system";
 import { toast } from "@outfiqe/design-system";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
-import type { Cart } from "@/features/cart";
+import { type Cart, CART_QUERY_KEY } from "@/features/cart";
 import { redirectToPaymentGateway, useInitiatePayment } from "@/features/payments";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
@@ -31,6 +32,7 @@ type CheckoutFormProps = {
 
 export const CheckoutForm = ({ cart }: CheckoutFormProps) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { state } = useAuth();
   const checkout = useCheckout();
   const initiatePayment = useInitiatePayment();
@@ -58,6 +60,7 @@ export const CheckoutForm = ({ cart }: CheckoutFormProps) => {
       });
 
       if (order.paymentMethod === PaymentMethod.COD) {
+        void queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });
         router.push(`/orders/${order.id}`);
         return;
       }
