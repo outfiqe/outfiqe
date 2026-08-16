@@ -1,5 +1,5 @@
-import { FREE_DELIVERY_THRESHOLD, STANDARD_DELIVERY_FEE } from "#constants/commerce.constants.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { orderFeeSettingsService } from "#modules/order-fee-settings/orderFeeSettings.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
 
 import { CART_LOW_STOCK_THRESHOLD } from "./cart.constants.js";
@@ -37,8 +37,11 @@ const buildCartView = async (cartId: string): Promise<CartView> => {
     (sum, item) => (item.soldOut ? sum : sum + item.unitPrice * item.qty),
     0,
   );
+  const feeValues = await orderFeeSettingsService.getFeeValues();
   const deliveryFee =
-    subtotal === 0 || subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : STANDARD_DELIVERY_FEE;
+    subtotal === 0 || subtotal >= feeValues.freeDeliveryThreshold
+      ? 0
+      : feeValues.standardDeliveryFee;
 
   return {
     items,

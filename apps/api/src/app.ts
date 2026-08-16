@@ -19,6 +19,7 @@ import { creatorLookRoutes } from "./modules/creator-looks/creatorLook.routes.js
 import { creatorRoutes } from "./modules/creators/creator.routes.js";
 import { followRoutes } from "./modules/follows/follow.routes.js";
 import { heroSlideRoutes } from "./modules/hero-slides/heroSlide.routes.js";
+import { orderFeeSettingsRoutes } from "./modules/order-fee-settings/orderFeeSettings.routes.js";
 import { orderRoutes } from "./modules/orders/order.routes.js";
 import { paymentRoutes } from "./modules/payments/payment.routes.js";
 import { productRoutes } from "./modules/products/product.routes.js";
@@ -60,6 +61,7 @@ export const createApp = () => {
   app.use("/api/products", productRoutes);
   app.use("/api/cart", cartRoutes);
   app.use("/api/orders", orderRoutes);
+  app.use("/api/order-fee-settings", orderFeeSettingsRoutes);
   app.use("/api/payments", paymentRoutes);
   app.use("/api/commissions", commissionRoutes);
   app.use("/api/collections", collectionRoutes);

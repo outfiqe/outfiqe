@@ -1,9 +1,4 @@
 import { env } from "#config/env.config.js";
-import {
-  COD_HANDLING_FEE,
-  FREE_DELIVERY_THRESHOLD,
-  STANDARD_DELIVERY_FEE,
-} from "#constants/commerce.constants.js";
 import { prisma } from "#db/prisma.js";
 import {
   newOrderNotificationTemplate,
@@ -27,6 +22,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { cartRepository } from "#modules/cart/cart.repository.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
 import { creatorLinkRepository } from "#modules/creator-links/creatorLink.repository.js";
+import { orderFeeSettingsService } from "#modules/order-fee-settings/orderFeeSettings.service.js";
 import { paymentRepository } from "#modules/payments/payment.repository.js";
 import { paymentService } from "#modules/payments/payment.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
@@ -131,8 +127,10 @@ const checkoutOnce = async (
     unitPrice: product.price,
   }));
   const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0);
-  const deliveryFee = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : STANDARD_DELIVERY_FEE;
-  const codFee = paymentMethod === PaymentMethod.COD ? COD_HANDLING_FEE : 0;
+  const feeValues = await orderFeeSettingsService.getFeeValues();
+  const deliveryFee =
+    subtotal >= feeValues.freeDeliveryThreshold ? 0 : feeValues.standardDeliveryFee;
+  const codFee = paymentMethod === PaymentMethod.COD ? feeValues.codHandlingFee : 0;
   const total = subtotal + deliveryFee + codFee;
 
   const orderPlacedAt = new Date();

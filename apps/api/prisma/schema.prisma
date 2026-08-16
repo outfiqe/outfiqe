@@ -31,26 +31,27 @@ model User {
   createdAt      DateTime      @default(now()) @map("created_at")
   updatedAt      DateTime      @updatedAt @map("updated_at")
 
-  memberships          BrandMembership[]
-  refreshTokens        RefreshToken[]
-  reviewedApplications BrandApplication[]    @relation("BrandApplicationReviewer")
-  approvedInvites      BrandInvite[]         @relation("BrandInviteApprover")
-  sentAdminInvites     AdminInvite[]         @relation("AdminInviteSender")
-  reviewedProducts     Product[]             @relation("ProductReviewer")
-  creatorLooks         CreatorLook[]         @relation("CreatorLooks")
-  lookLikes            CreatorLookLike[]
-  lookSaves            CreatorLookSave[]
-  lookComments         CreatorLookComment[]
-  tagClicks            CreatorLookTagClick[]
-  following            Follow[]              @relation("FollowerEdges")
-  savedProducts        SavedProduct[]
-  cart                 Cart?
-  orders               Order[]
-  idempotencyRequests  RequestIdempotency[]
-  attributedOrderItems OrderItem[]           @relation("AttributedOrderItems")
-  creatorCommissions   CreatorCommission[]   @relation("CreatorCommissions")
-  creatorLinks         CreatorLink[]         @relation("CreatorLinks")
-  creatorLinkClicks    CreatorLinkClick[]
+  memberships             BrandMembership[]
+  refreshTokens           RefreshToken[]
+  reviewedApplications    BrandApplication[]        @relation("BrandApplicationReviewer")
+  approvedInvites         BrandInvite[]             @relation("BrandInviteApprover")
+  sentAdminInvites        AdminInvite[]             @relation("AdminInviteSender")
+  reviewedProducts        Product[]                 @relation("ProductReviewer")
+  creatorLooks            CreatorLook[]             @relation("CreatorLooks")
+  lookLikes               CreatorLookLike[]
+  lookSaves               CreatorLookSave[]
+  lookComments            CreatorLookComment[]
+  tagClicks               CreatorLookTagClick[]
+  following               Follow[]                  @relation("FollowerEdges")
+  savedProducts           SavedProduct[]
+  cart                    Cart?
+  orders                  Order[]
+  idempotencyRequests     RequestIdempotency[]
+  attributedOrderItems    OrderItem[]               @relation("AttributedOrderItems")
+  creatorCommissions      CreatorCommission[]       @relation("CreatorCommissions")
+  creatorLinks            CreatorLink[]             @relation("CreatorLinks")
+  creatorLinkClicks       CreatorLinkClick[]
+  orderFeeSettingsChanges OrderFeeSettingsHistory[] @relation("OrderFeeSettingsChanges")
 
   @@index([isCreator, creatorStatus, followerCount])
   @@map("users")
@@ -790,4 +791,33 @@ model CreatorLinkClick {
 
   @@index([linkId])
   @@map("creator_link_clicks")
+}
+
+model OrderFeeSettings {
+  id                    String   @id @default(uuid()) @db.Uuid
+  standardDeliveryFee   Int      @map("standard_delivery_fee")
+  freeDeliveryThreshold Int      @map("free_delivery_threshold")
+  codHandlingFee        Int      @map("cod_handling_fee")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  history OrderFeeSettingsHistory[]
+
+  @@map("order_fee_settings")
+}
+
+model OrderFeeSettingsHistory {
+  id         String           @id @default(uuid()) @db.Uuid
+  settingsId String           @map("settings_id") @db.Uuid
+  settings   OrderFeeSettings @relation(fields: [settingsId], references: [id], onDelete: Cascade)
+
+  changedById String @map("changed_by_id") @db.Uuid
+  changedBy   User   @relation("OrderFeeSettingsChanges", fields: [changedById], references: [id])
+
+  oldValues Json @map("old_values")
+  newValues Json @map("new_values")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([settingsId, createdAt])
+  @@map("order_fee_settings_history")
 }
