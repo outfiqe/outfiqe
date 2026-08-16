@@ -6,8 +6,15 @@ const CONTACT_NAME_MIN = 2;
 const CONTACT_NAME_MAX = 100;
 const INSTAGRAM_MIN = 1;
 const INSTAGRAM_MAX = 100;
+const DEFAULT_PAGE_SIZE = 12;
+const MAX_PAGE_SIZE = 50;
 
 export const brandIdParamSchema = z.object({ id: z.uuid() });
+
+export const listBrandsQuerySchema = z.object({
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
+});
 
 export const updateBrandProfileSchema = z
   .object({
@@ -21,3 +28,4 @@ export const updateBrandProfileSchema = z
 
 export type BrandIdParam = z.infer<typeof brandIdParamSchema>;
 export type UpdateBrandProfileBody = z.infer<typeof updateBrandProfileSchema>;
+export type ListBrandsQuery = z.infer<typeof listBrandsQuerySchema>;

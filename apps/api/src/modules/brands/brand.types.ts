@@ -26,6 +26,8 @@ export type UpdateBrandInput = Partial<
   Pick<BrandRecord, "contactName" | "phone" | "instagram" | "avatarUrl" | "bannerUrl">
 >;
 
+export type BrandWithProductCount = BrandRecord & { productCount: number };
+
 export type PublicBrandProfile = {
   id: string;
   name: string;
@@ -36,4 +38,10 @@ export type PublicBrandProfile = {
   productCount: number;
   followerCount: number;
   isFollowing: boolean;
+};
+
+export type PublicBrandPage = {
+  brands: PublicBrandProfile[];
+  nextCursor: string | null;
+  total: number;
 };
