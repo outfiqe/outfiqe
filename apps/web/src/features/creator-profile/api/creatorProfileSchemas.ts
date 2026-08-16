@@ -4,6 +4,7 @@ export const creatorProfileSchema = z.object({
   userId: z.string(),
   name: z.string(),
   handle: z.string(),
+  avatarUrl: z.url().nullable(),
   heightCm: z.number().nullable(),
   creatorStatus: z.string(),
   postsCount: z.number(),
