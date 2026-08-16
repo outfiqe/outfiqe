@@ -99,7 +99,7 @@ export const CheckoutForm = ({ cart }: CheckoutFormProps) => {
                 control={form.control}
                 name="phone"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="mt-0">
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
                       <Input type="tel" autoComplete="tel" {...field} />
@@ -142,7 +142,7 @@ export const CheckoutForm = ({ cart }: CheckoutFormProps) => {
                 control={form.control}
                 name="landmark"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="mt-0">
                     <FormLabel>Landmark (optional)</FormLabel>
                     <FormControl>
                       <Input placeholder="Near Shankhamul bridge" {...field} />
