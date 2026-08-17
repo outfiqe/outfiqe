@@ -1,3 +1,4 @@
+import { PRODUCT_SORT, PRODUCT_SORT_VALUES } from "@outfiqe/utils";
 import { z } from "zod";
 
 import { ProductStatus } from "#generated/prisma/enums.js";
@@ -64,6 +65,7 @@ export const listPublicProductsQuerySchema = z.object({
   category: categorySlugFieldSchema.optional(),
   type: productTypeSlugSchema.optional(),
   q: z.string().trim().min(1).max(100).optional(),
+  sort: z.enum(PRODUCT_SORT_VALUES).default(PRODUCT_SORT.NEWEST),
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });

@@ -6,8 +6,6 @@ import { AppError } from "#middlewares/error-handler.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
-import type { PublicProduct } from "#modules/products/product.types.js";
-import { toPublicProduct } from "#modules/products/product.utils.js";
 
 import { creatorLookRepository } from "./creatorLook.repository.js";
 import type {
@@ -21,7 +19,6 @@ import type {
   CreatorLookEditDetail,
   CreatorLookSummary,
   FeedPage,
-  TaggedProductPage,
   TrendingTag,
 } from "./creatorLook.types.js";
 
@@ -139,9 +136,8 @@ export const creatorLookService = {
     });
   },
 
-  async listPublic(query: ListCreatorLooksQuery): Promise<TaggedProductPage<PublicProduct>> {
-    const page = await creatorLookRepository.listPublicTaggedProducts(query);
-    return { products: page.products.map(toPublicProduct), nextCursor: page.nextCursor };
+  async listPublic(query: ListCreatorLooksQuery): Promise<FeedPage> {
+    return creatorLookRepository.listFeaturedLooks(query);
   },
 
   async listPublicByCreator(

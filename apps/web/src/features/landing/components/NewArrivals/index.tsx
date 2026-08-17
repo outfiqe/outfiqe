@@ -9,6 +9,7 @@ export const NewArrivals = async () => {
     <ProductRail
       title="New arrivals"
       description="Added in the last seven days"
+      viewAllHref="/shop?sort=new-arrivals"
       products={products}
     />
   );

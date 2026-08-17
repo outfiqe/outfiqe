@@ -217,6 +217,7 @@ export const productService = {
     type: typeSlug,
     category,
     q,
+    sort,
     cursor,
     limit,
   }: ListPublicProductsQuery): Promise<PublicProductPage> {
@@ -224,8 +225,8 @@ export const productService = {
     const categoryId = category ? (await categoryService.getBySlug(category)).id : undefined;
 
     const [rows, counts] = await Promise.all([
-      productRepository.listPublic({ categoryId, type, q, cursor, limit }),
-      productRepository.countPublic({ categoryId, type, q }),
+      productRepository.listPublic({ categoryId, type, q, sort, cursor, limit }),
+      productRepository.countPublic({ categoryId, type, q, sort }),
     ]);
 
     const { items: pagedProducts, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);

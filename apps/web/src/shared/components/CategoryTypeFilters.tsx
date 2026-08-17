@@ -6,24 +6,31 @@ import { useRouter } from "next/navigation";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 import { cn } from "@/shared/lib/cn";
 
-type CategoryFiltersProps = {
+export const ALL_TYPE_ID = "all";
+
+type CategoryTypeFiltersProps = {
+  basePath: string;
   categorySlug: string;
   activeType: string;
 };
 
-export const CategoryFilters = ({ categorySlug, activeType }: CategoryFiltersProps) => {
+export const CategoryTypeFilters = ({
+  basePath,
+  categorySlug,
+  activeType,
+}: CategoryTypeFiltersProps) => {
   const router = useRouter();
   const productTypes = useProductTypes();
 
   const filters = [
-    { id: "all", label: "All" },
+    { id: ALL_TYPE_ID, label: "All" },
     ...(productTypes.data ?? []).map((type) => ({ id: type.slug, label: type.label })),
   ];
 
   const selectType = (typeId: string) => {
-    const url =
-      typeId === "all" ? `/?category=${categorySlug}` : `/?category=${categorySlug}&type=${typeId}`;
-    router.replace(url, { scroll: false });
+    const params = new URLSearchParams({ category: categorySlug });
+    if (typeId !== ALL_TYPE_ID) params.set("type", typeId);
+    router.replace(`${basePath}?${params.toString()}`, { scroll: false });
   };
 
   return (

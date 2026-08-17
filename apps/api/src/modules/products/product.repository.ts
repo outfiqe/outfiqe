@@ -1,3 +1,5 @@
+import { PRODUCT_SORT, type ProductSort } from "@outfiqe/utils";
+
 import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
 import type { ProductType } from "#generated/prisma/enums.js";
@@ -33,7 +35,26 @@ const withImages = {
   images: { orderBy: { sortOrder: "asc" as const }, select: { url: true } },
 };
 
-type PublicFilter = { categoryId?: string; type?: ProductType; brandId?: string; q?: string };
+type PublicFilter = {
+  categoryId?: string;
+  type?: ProductType;
+  brandId?: string;
+  q?: string;
+  sort?: ProductSort;
+};
+
+const buildPublicWhere = (filter: PublicFilter): Prisma.ProductWhereInput => ({
+  status: ProductStatus.APPROVED,
+  deletedAt: null,
+  categories: filter.categoryId ? { some: { id: filter.categoryId } } : undefined,
+  type: filter.type,
+  brandId: filter.brandId,
+  name: filter.q ? { contains: filter.q, mode: "insensitive" } : undefined,
+  createdAt:
+    filter.sort === PRODUCT_SORT.NEW_ARRIVALS
+      ? { gte: new Date(Date.now() - NEW_ARRIVAL_WINDOW_MS) }
+      : undefined,
+});
 
 const withTotalStock = <T extends { sizes: { stock: number }[] }>(
   rows: T[],
@@ -173,17 +194,15 @@ export const productRepository = {
   async listPublic(
     filter: PublicFilter & { cursor?: string; limit: number },
   ): Promise<ProductWithStock[]> {
+    const orderBy: Prisma.ProductOrderByWithRelationInput[] =
+      filter.sort === PRODUCT_SORT.TRENDING
+        ? [{ reviewedAt: "desc" }, { id: "desc" }]
+        : [{ createdAt: "desc" }, { id: "desc" }];
+
     const rows = await prisma.product.findMany({
-      where: {
-        status: ProductStatus.APPROVED,
-        deletedAt: null,
-        categories: filter.categoryId ? { some: { id: filter.categoryId } } : undefined,
-        type: filter.type,
-        brandId: filter.brandId,
-        name: filter.q ? { contains: filter.q, mode: "insensitive" } : undefined,
-      },
+      where: buildPublicWhere(filter),
       include: withBrandAndCategories,
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      orderBy,
       take: filter.limit + 1,
       ...(filter.cursor ? { cursor: { id: filter.cursor }, skip: 1 } : {}),
     });
@@ -191,14 +210,7 @@ export const productRepository = {
   },
 
   async countPublic(filter: PublicFilter): Promise<{ total: number; brandCount: number }> {
-    const where: Prisma.ProductWhereInput = {
-      status: ProductStatus.APPROVED,
-      deletedAt: null,
-      categories: filter.categoryId ? { some: { id: filter.categoryId } } : undefined,
-      type: filter.type,
-      brandId: filter.brandId,
-      name: filter.q ? { contains: filter.q, mode: "insensitive" } : undefined,
-    };
+    const where = buildPublicWhere(filter);
 
     const [total, grouped] = await Promise.all([
       prisma.product.count({ where }),

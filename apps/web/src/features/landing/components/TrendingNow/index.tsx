@@ -9,7 +9,7 @@ export const TrendingNow = async () => {
     <ProductRail
       eyebrow="Moving fast this week"
       title="Trending now"
-      viewAllHref="#"
+      viewAllHref="/shop?sort=trending"
       viewAllLabel="See More"
       products={products}
     />
