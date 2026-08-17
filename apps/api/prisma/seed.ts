@@ -414,16 +414,6 @@ const BOMBER_PHOTOS = [
   "1530862994178-a0cec9eb5388",
 ];
 
-const PRODUCT_IMAGE_POOLS: Record<string, string[]> = {
-  "Pleated Trousers": TROUSERS_PHOTOS,
-  "Linen Kurta": TRADITIONAL_PHOTOS,
-  "Oversized Graphic Tee": TSHIRT_PHOTOS,
-  "Cargo Pants": CARGO_PHOTOS,
-  "Bucket Hat": BUCKET_HAT_PHOTOS,
-  "Wool Bomber Jacket": BOMBER_PHOTOS,
-  "Formal Pants": FORMAL_PHOTOS,
-};
-
 const IMAGES_PER_PRODUCT = 2;
 
 async function seedProductImages() {
@@ -442,6 +432,11 @@ async function seedProductImages() {
         url: unsplashUrl(id),
         sortOrder: index,
       })),
+    });
+
+    await prisma.product.update({
+      where: { id: product.id },
+      data: { imageUrl: unsplashUrl(photos[0]) },
     });
   }
 }
@@ -515,13 +510,21 @@ async function seedWornByCounts() {
 }
 
 const DEFAULT_CATEGORIES = [
-  { slug: "formal", name: "Formal" },
-  { slug: "traditional", name: "Traditional" },
-  { slug: "streetwear", name: "Streetwear" },
-  { slug: "casual", name: "Casual" },
-  { slug: "minimal", name: "Minimal" },
-  { slug: "y2k", name: "Y2K" },
-  { slug: "old-money", name: "Old Money" },
+  { slug: "formal", name: "Formal", imageUrl: unsplashUrl(FORMAL_PHOTOS[0]) },
+  { slug: "traditional", name: "Traditional", imageUrl: unsplashUrl(TRADITIONAL_PHOTOS[0]) },
+  { slug: "streetwear", name: "Streetwear", imageUrl: unsplashUrl(STREETWEAR_PHOTOS[0]) },
+  { slug: "casual", name: "Casual", imageUrl: unsplashUrl(CASUAL_PHOTOS[0]) },
+  { slug: "minimal", name: "Minimal", imageUrl: unsplashUrl(MINIMAL_PHOTOS[0]) },
+  { slug: "y2k", name: "Y2K", imageUrl: unsplashUrl(Y2K_PHOTOS[0]) },
+  { slug: "old-money", name: "Old Money", imageUrl: unsplashUrl(OLD_MONEY_PHOTOS[0]) },
+  { slug: "athleisure", name: "Athleisure", imageUrl: unsplashUrl(CASUAL_PHOTOS[1]) },
+  {
+    slug: "business-casual",
+    name: "Business Casual",
+    imageUrl: unsplashUrl(FORMAL_PHOTOS[1]),
+  },
+  { slug: "preppy", name: "Preppy", imageUrl: unsplashUrl(OLD_MONEY_PHOTOS[1]) },
+  { slug: "loungewear", name: "Loungewear", imageUrl: unsplashUrl(MINIMAL_PHOTOS[1]) },
 ];
 
 const seedCategories = async () => {
@@ -564,6 +567,48 @@ const SEED_BRANDS = [
     phone: "+9779800000104",
     instagram: "@aamo",
   },
+  {
+    name: "Newa Atelier",
+    contactName: "Sunita Rajbhandari",
+    email: "hello@newaatelier.example.com",
+    phone: "+9779800000105",
+    instagram: "@newaatelier",
+  },
+  {
+    name: "Thamel Thrift Co.",
+    contactName: "Rabin Khadka",
+    email: "hello@thamelthrift.example.com",
+    phone: "+9779800000106",
+    instagram: "@thamelthrift",
+  },
+  {
+    name: "Boudha Basics",
+    contactName: "Anmol Shrestha",
+    email: "hello@boudhabasics.example.com",
+    phone: "+9779800000107",
+    instagram: "@boudhabasics",
+  },
+  {
+    name: "Patan Polo Club",
+    contactName: "Ujwala Joshi",
+    email: "hello@patanpoloclub.example.com",
+    phone: "+9779800000108",
+    instagram: "@patanpoloclub",
+  },
+  {
+    name: "Yeti Yard",
+    contactName: "Dipesh Gurung",
+    email: "hello@yetiyard.example.com",
+    phone: "+9779800000109",
+    instagram: "@yetiyard",
+  },
+  {
+    name: "Ranipokhari Row",
+    contactName: "Smriti Basnet",
+    email: "hello@ranipokharirow.example.com",
+    phone: "+9779800000110",
+    instagram: "@ranipokharirow",
+  },
 ];
 
 const seedBrands = async () => {
@@ -573,7 +618,6 @@ const seedBrands = async () => {
   return Promise.all(SEED_BRANDS.map((brand) => prisma.brand.create({ data: brand })));
 };
 
-// Names match PRODUCT_IMAGE_POOLS below, which keys product photos by name.
 const SEED_PRODUCTS = [
   {
     name: "Oversized Graphic Tee",
@@ -581,6 +625,7 @@ const SEED_PRODUCTS = [
     type: ProductType.TOPS,
     categorySlugs: ["streetwear", "casual"],
     brandIndex: 0,
+    photoPool: TSHIRT_PHOTOS,
   },
   {
     name: "Cargo Pants",
@@ -588,6 +633,7 @@ const SEED_PRODUCTS = [
     type: ProductType.PANTS,
     categorySlugs: ["streetwear", "casual"],
     brandIndex: 0,
+    photoPool: CARGO_PHOTOS,
   },
   {
     name: "Wool Bomber Jacket",
@@ -595,27 +641,7 @@ const SEED_PRODUCTS = [
     type: ProductType.OUTERWEAR,
     categorySlugs: ["streetwear", "casual"],
     brandIndex: 0,
-  },
-  {
-    name: "Formal Pants",
-    price: 3400,
-    type: ProductType.PANTS,
-    categorySlugs: ["formal"],
-    brandIndex: 1,
-  },
-  {
-    name: "Pleated Trousers",
-    price: 3200,
-    type: ProductType.PANTS,
-    categorySlugs: ["formal"],
-    brandIndex: 1,
-  },
-  {
-    name: "Linen Kurta",
-    price: 2800,
-    type: ProductType.TOPS,
-    categorySlugs: ["traditional"],
-    brandIndex: 2,
+    photoPool: BOMBER_PHOTOS,
   },
   {
     name: "Bucket Hat",
@@ -623,8 +649,501 @@ const SEED_PRODUCTS = [
     type: ProductType.HEADWEAR,
     categorySlugs: ["streetwear"],
     brandIndex: 3,
+    photoPool: BUCKET_HAT_PHOTOS,
+  },
+  {
+    name: "Boxy Varsity Jacket",
+    price: 4800,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["streetwear", "y2k"],
+    brandIndex: 5,
+    photoPool: BOMBER_PHOTOS,
+  },
+  {
+    name: "Baggy Denim Jeans",
+    price: 3100,
+    type: ProductType.PANTS,
+    categorySlugs: ["streetwear"],
+    brandIndex: 5,
+    photoPool: CARGO_PHOTOS,
+  },
+  {
+    name: "Logo Print Hoodie",
+    price: 2900,
+    type: ProductType.TOPS,
+    categorySlugs: ["streetwear", "casual"],
+    brandIndex: 0,
+    photoPool: STREETWEAR_PHOTOS,
+  },
+  {
+    name: "Formal Pants",
+    price: 3400,
+    type: ProductType.PANTS,
+    categorySlugs: ["formal", "business-casual"],
+    brandIndex: 1,
+    photoPool: FORMAL_PHOTOS,
+  },
+  {
+    name: "Pleated Trousers",
+    price: 3200,
+    type: ProductType.PANTS,
+    categorySlugs: ["formal"],
+    brandIndex: 1,
+    photoPool: TROUSERS_PHOTOS,
+  },
+  {
+    name: "Slim Fit Dress Shirt",
+    price: 2200,
+    type: ProductType.TOPS,
+    categorySlugs: ["formal", "business-casual"],
+    brandIndex: 1,
+    photoPool: FORMAL_PHOTOS,
+  },
+  {
+    name: "Tailored Blazer",
+    price: 6200,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["formal", "business-casual"],
+    brandIndex: 9,
+    photoPool: FORMAL_PHOTOS,
+  },
+  {
+    name: "Charcoal Waistcoat",
+    price: 2800,
+    type: ProductType.TOPS,
+    categorySlugs: ["formal"],
+    brandIndex: 9,
+    photoPool: FORMAL_PHOTOS,
+  },
+  {
+    name: "Double-Breasted Overcoat",
+    price: 7800,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["formal", "old-money"],
+    brandIndex: 4,
+    photoPool: FORMAL_PHOTOS,
+  },
+  {
+    name: "Linen Kurta",
+    price: 2800,
+    type: ProductType.TOPS,
+    categorySlugs: ["traditional"],
+    brandIndex: 2,
+    photoPool: TRADITIONAL_PHOTOS,
+  },
+  {
+    name: "Daura Suruwal Set",
+    price: 6500,
+    type: ProductType.DRESSES,
+    categorySlugs: ["traditional", "formal"],
+    brandIndex: 2,
+    photoPool: TRADITIONAL_PHOTOS,
+  },
+  {
+    name: "Dhaka Print Vest",
+    price: 1800,
+    type: ProductType.TOPS,
+    categorySlugs: ["traditional"],
+    brandIndex: 4,
+    photoPool: TRADITIONAL_PHOTOS,
+  },
+  {
+    name: "Hand-Woven Shawl Wrap",
+    price: 3600,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["traditional", "old-money"],
+    brandIndex: 4,
+    photoPool: TRADITIONAL_PHOTOS,
+  },
+  {
+    name: "Embroidered Silk Kurta",
+    price: 4200,
+    type: ProductType.TOPS,
+    categorySlugs: ["traditional", "formal"],
+    brandIndex: 2,
+    photoPool: TRADITIONAL_PHOTOS,
+  },
+  {
+    name: "Nepali Topi",
+    price: 650,
+    type: ProductType.HEADWEAR,
+    categorySlugs: ["traditional"],
+    brandIndex: 2,
+    photoPool: BUCKET_HAT_PHOTOS,
+  },
+  {
+    name: "Handloom Cotton Dress",
+    price: 3100,
+    type: ProductType.DRESSES,
+    categorySlugs: ["traditional", "minimal"],
+    brandIndex: 2,
+    photoPool: TRADITIONAL_PHOTOS,
+  },
+  {
+    name: "Relaxed Fit Chinos",
+    price: 2400,
+    type: ProductType.PANTS,
+    categorySlugs: ["casual", "business-casual"],
+    brandIndex: 6,
+    photoPool: CASUAL_PHOTOS,
+  },
+  {
+    name: "Everyday Crewneck Sweater",
+    price: 2100,
+    type: ProductType.TOPS,
+    categorySlugs: ["casual", "minimal"],
+    brandIndex: 6,
+    photoPool: CASUAL_PHOTOS,
+  },
+  {
+    name: "Denim Overshirt",
+    price: 2700,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["casual", "streetwear"],
+    brandIndex: 0,
+    photoPool: CASUAL_PHOTOS,
+  },
+  {
+    name: "Cotton Poplin Shirt",
+    price: 1900,
+    type: ProductType.TOPS,
+    categorySlugs: ["casual", "business-casual"],
+    brandIndex: 6,
+    photoPool: CASUAL_PHOTOS,
+  },
+  {
+    name: "Weekend Jogger Pants",
+    price: 1750,
+    type: ProductType.PANTS,
+    categorySlugs: ["casual", "athleisure"],
+    brandIndex: 6,
+    photoPool: CASUAL_PHOTOS,
+  },
+  {
+    name: "Corduroy Trucker Jacket",
+    price: 3900,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["casual", "streetwear"],
+    brandIndex: 0,
+    photoPool: CASUAL_PHOTOS,
+  },
+  {
+    name: "Floral Wrap Dress",
+    price: 2950,
+    type: ProductType.DRESSES,
+    categorySlugs: ["casual", "minimal"],
+    brandIndex: 6,
+    photoPool: CASUAL_PHOTOS,
+  },
+  {
+    name: "Boxy Cotton Tee",
+    price: 1200,
+    type: ProductType.TOPS,
+    categorySlugs: ["minimal", "casual"],
+    brandIndex: 6,
+    photoPool: MINIMAL_PHOTOS,
+  },
+  {
+    name: "Straight Leg Trousers",
+    price: 2900,
+    type: ProductType.PANTS,
+    categorySlugs: ["minimal", "business-casual"],
+    brandIndex: 6,
+    photoPool: MINIMAL_PHOTOS,
+  },
+  {
+    name: "Structured Midi Dress",
+    price: 3400,
+    type: ProductType.DRESSES,
+    categorySlugs: ["minimal"],
+    brandIndex: 6,
+    photoPool: MINIMAL_PHOTOS,
+  },
+  {
+    name: "Seamless Rib Tank",
+    price: 950,
+    type: ProductType.TOPS,
+    categorySlugs: ["minimal", "loungewear"],
+    brandIndex: 6,
+    photoPool: MINIMAL_PHOTOS,
+  },
+  {
+    name: "Wide Leg Linen Pants",
+    price: 2600,
+    type: ProductType.PANTS,
+    categorySlugs: ["minimal", "loungewear"],
+    brandIndex: 6,
+    photoPool: MINIMAL_PHOTOS,
+  },
+  {
+    name: "Chunky Knit Beanie",
+    price: 750,
+    type: ProductType.HEADWEAR,
+    categorySlugs: ["minimal", "casual"],
+    brandIndex: 6,
+    photoPool: MINIMAL_PHOTOS,
+  },
+  {
+    name: "Low-Rise Cargo Skirt",
+    price: 2300,
+    type: ProductType.BOTTOMS,
+    categorySlugs: ["y2k", "streetwear"],
+    brandIndex: 5,
+    photoPool: Y2K_PHOTOS,
+  },
+  {
+    name: "Cropped Baby Tee",
+    price: 1100,
+    type: ProductType.TOPS,
+    categorySlugs: ["y2k"],
+    brandIndex: 5,
+    photoPool: Y2K_PHOTOS,
+  },
+  {
+    name: "Butterfly Print Top",
+    price: 1350,
+    type: ProductType.TOPS,
+    categorySlugs: ["y2k"],
+    brandIndex: 5,
+    photoPool: Y2K_PHOTOS,
+  },
+  {
+    name: "Denim Mini Skirt",
+    price: 1950,
+    type: ProductType.BOTTOMS,
+    categorySlugs: ["y2k", "streetwear"],
+    brandIndex: 5,
+    photoPool: Y2K_PHOTOS,
+  },
+  {
+    name: "Rhinestone Trucker Cap",
+    price: 850,
+    type: ProductType.HEADWEAR,
+    categorySlugs: ["y2k", "streetwear"],
+    brandIndex: 5,
+    photoPool: Y2K_PHOTOS,
+  },
+  {
+    name: "Cable Knit Sweater",
+    price: 3800,
+    type: ProductType.TOPS,
+    categorySlugs: ["old-money", "preppy"],
+    brandIndex: 7,
+    photoPool: OLD_MONEY_PHOTOS,
+  },
+  {
+    name: "Camel Wool Coat",
+    price: 8500,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["old-money", "formal"],
+    brandIndex: 4,
+    photoPool: OLD_MONEY_PHOTOS,
+  },
+  {
+    name: "Pleated Wool Skirt",
+    price: 3200,
+    type: ProductType.BOTTOMS,
+    categorySlugs: ["old-money", "preppy"],
+    brandIndex: 7,
+    photoPool: OLD_MONEY_PHOTOS,
+  },
+  {
+    name: "Quilted Vest",
+    price: 3600,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["old-money", "preppy"],
+    brandIndex: 7,
+    photoPool: OLD_MONEY_PHOTOS,
+  },
+  {
+    name: "Oxford Button-Down Shirt",
+    price: 2600,
+    type: ProductType.TOPS,
+    categorySlugs: ["old-money", "preppy", "business-casual"],
+    brandIndex: 7,
+    photoPool: OLD_MONEY_PHOTOS,
+  },
+  {
+    name: "Herringbone Blazer",
+    price: 6800,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["old-money", "formal"],
+    brandIndex: 4,
+    photoPool: OLD_MONEY_PHOTOS,
+  },
+  {
+    name: "Silk Slip Dress",
+    price: 3800,
+    type: ProductType.DRESSES,
+    categorySlugs: ["old-money", "minimal"],
+    brandIndex: 4,
+    photoPool: OLD_MONEY_PHOTOS,
+  },
+  {
+    name: "Pinstripe Trousers",
+    price: 3500,
+    type: ProductType.PANTS,
+    categorySlugs: ["formal", "old-money"],
+    brandIndex: 4,
+    photoPool: TROUSERS_PHOTOS,
+  },
+  {
+    name: "Performance Track Jacket",
+    price: 3300,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["athleisure", "streetwear"],
+    brandIndex: 8,
+    photoPool: CASUAL_PHOTOS,
+  },
+  {
+    name: "High-Waist Training Leggings",
+    price: 1800,
+    type: ProductType.BOTTOMS,
+    categorySlugs: ["athleisure"],
+    brandIndex: 8,
+    photoPool: MINIMAL_PHOTOS,
+  },
+  {
+    name: "Ribbed Sports Bra Top",
+    price: 1200,
+    type: ProductType.TOPS,
+    categorySlugs: ["athleisure"],
+    brandIndex: 8,
+    photoPool: MINIMAL_PHOTOS,
+  },
+  {
+    name: "Fleece Zip Hoodie",
+    price: 2600,
+    type: ProductType.TOPS,
+    categorySlugs: ["athleisure", "casual"],
+    brandIndex: 8,
+    photoPool: CASUAL_PHOTOS,
+  },
+  {
+    name: "Tapered Joggers",
+    price: 2000,
+    type: ProductType.PANTS,
+    categorySlugs: ["athleisure", "casual"],
+    brandIndex: 8,
+    photoPool: CASUAL_PHOTOS,
+  },
+  {
+    name: "Puffer Vest",
+    price: 2450,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["athleisure", "streetwear"],
+    brandIndex: 8,
+    photoPool: BOMBER_PHOTOS,
+  },
+  {
+    name: "Merino Half-Zip Sweater",
+    price: 3100,
+    type: ProductType.TOPS,
+    categorySlugs: ["business-casual", "formal"],
+    brandIndex: 9,
+    photoPool: FORMAL_PHOTOS,
+  },
+  {
+    name: "Stretch Wool Trousers",
+    price: 3300,
+    type: ProductType.PANTS,
+    categorySlugs: ["business-casual", "formal"],
+    brandIndex: 9,
+    photoPool: TROUSERS_PHOTOS,
+  },
+  {
+    name: "Structured Shirt Dress",
+    price: 3500,
+    type: ProductType.DRESSES,
+    categorySlugs: ["business-casual", "minimal"],
+    brandIndex: 1,
+    photoPool: MINIMAL_PHOTOS,
+  },
+  {
+    name: "Soft Blazer Jacket",
+    price: 5200,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["business-casual", "formal"],
+    brandIndex: 1,
+    photoPool: FORMAL_PHOTOS,
+  },
+  {
+    name: "Argyle Knit Vest",
+    price: 2600,
+    type: ProductType.TOPS,
+    categorySlugs: ["preppy", "old-money"],
+    brandIndex: 7,
+    photoPool: OLD_MONEY_PHOTOS,
+  },
+  {
+    name: "Pleated Tennis Skirt",
+    price: 2100,
+    type: ProductType.BOTTOMS,
+    categorySlugs: ["preppy"],
+    brandIndex: 7,
+    photoPool: OLD_MONEY_PHOTOS,
+  },
+  {
+    name: "Collared Polo Shirt",
+    price: 1850,
+    type: ProductType.TOPS,
+    categorySlugs: ["preppy", "casual"],
+    brandIndex: 7,
+    photoPool: CASUAL_PHOTOS,
+  },
+  {
+    name: "Varsity Letterman Jacket",
+    price: 4600,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["preppy", "streetwear"],
+    brandIndex: 7,
+    photoPool: BOMBER_PHOTOS,
+  },
+  {
+    name: "Waffle Knit Lounge Set",
+    price: 2400,
+    type: ProductType.DRESSES,
+    categorySlugs: ["loungewear", "minimal"],
+    brandIndex: 6,
+    photoPool: MINIMAL_PHOTOS,
+  },
+  {
+    name: "Brushed Cotton Joggers",
+    price: 1650,
+    type: ProductType.PANTS,
+    categorySlugs: ["loungewear", "casual"],
+    brandIndex: 6,
+    photoPool: CASUAL_PHOTOS,
+  },
+  {
+    name: "Oversized Sleep Shirt",
+    price: 1400,
+    type: ProductType.TOPS,
+    categorySlugs: ["loungewear"],
+    brandIndex: 6,
+    photoPool: MINIMAL_PHOTOS,
+  },
+  {
+    name: "Terry Cloth Robe Jacket",
+    price: 2900,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["loungewear"],
+    brandIndex: 6,
+    photoPool: MINIMAL_PHOTOS,
+  },
+  {
+    name: "Denim Trucker Jacket",
+    price: 2750,
+    type: ProductType.OUTERWEAR,
+    categorySlugs: ["streetwear", "casual"],
+    brandIndex: 5,
+    photoPool: CASUAL_PHOTOS,
   },
 ];
+
+const PRODUCT_IMAGE_POOLS: Record<string, string[]> = Object.fromEntries(
+  SEED_PRODUCTS.map((product) => [product.name, product.photoPool]),
+);
 
 const seedProducts = async (brands: { id: string }[]) => {
   const existing = await prisma.product.count();
@@ -656,7 +1175,13 @@ type SeedCollection = {
   name: string;
   slug: string;
   description: string;
-  pick: (product: { id: string; categories: { slug: string }[]; price: number }) => boolean;
+  imageUrl: string;
+  pick: (product: {
+    id: string;
+    categories: { slug: string }[];
+    price: number;
+    type: ProductType;
+  }) => boolean;
 };
 
 const hasCategory = (product: { categories: { slug: string }[] }, slug: string): boolean =>
@@ -667,29 +1192,61 @@ const SEED_COLLECTIONS: SeedCollection[] = [
     name: "Dashain Edit '26",
     slug: "dashain-edit-26",
     description: "Daura suruwal, kurta sets and modern cuts styled as full looks for Dashain.",
+    imageUrl: unsplashUrl(TRADITIONAL_PHOTOS[0]),
     pick: (product) => hasCategory(product, "traditional") || hasCategory(product, "formal"),
   },
   {
     name: "Under Rs. 3,000",
     slug: "under-3000",
     description: "Real pieces from Nepali brands, all under three thousand rupees.",
+    imageUrl: unsplashUrl(CASUAL_PHOTOS[0]),
     pick: (product) => product.price < 3000,
   },
   {
     name: "Office Ready",
     slug: "office-ready",
     description: "Structured, put-together pieces that work from desk to dinner.",
-    pick: (product) => hasCategory(product, "formal"),
+    imageUrl: unsplashUrl(FORMAL_PHOTOS[0]),
+    pick: (product) => hasCategory(product, "formal") || hasCategory(product, "business-casual"),
   },
   {
     name: "Weekend Fits",
     slug: "weekend-fits",
     description: "Easy, off-duty pieces for days with nowhere to be.",
+    imageUrl: unsplashUrl(CASUAL_PHOTOS[1]),
     pick: (product) => hasCategory(product, "casual") || hasCategory(product, "streetwear"),
+  },
+  {
+    name: "The Old Money Archive",
+    slug: "old-money-archive",
+    description: "Cable knits, camel coats and quiet-luxury tailoring for a heritage wardrobe.",
+    imageUrl: unsplashUrl(OLD_MONEY_PHOTOS[0]),
+    pick: (product) => hasCategory(product, "old-money") || hasCategory(product, "preppy"),
+  },
+  {
+    name: "Y2K Revival",
+    slug: "y2k-revival",
+    description: "Low-rise cuts, butterfly prints and rhinestone trims straight off the 2000s.",
+    imageUrl: unsplashUrl(Y2K_PHOTOS[0]),
+    pick: (product) => hasCategory(product, "y2k"),
+  },
+  {
+    name: "Monsoon Layers",
+    slug: "monsoon-layers",
+    description: "Jackets, coats and overshirts built for Kathmandu's unpredictable monsoon.",
+    imageUrl: unsplashUrl(BOMBER_PHOTOS[0]),
+    pick: (product) => product.type === ProductType.OUTERWEAR,
+  },
+  {
+    name: "Athleisure & Lounge",
+    slug: "athleisure-and-lounge",
+    description: "Soft, stretch-first pieces for training days and slow mornings alike.",
+    imageUrl: unsplashUrl(MINIMAL_PHOTOS[0]),
+    pick: (product) => hasCategory(product, "athleisure") || hasCategory(product, "loungewear"),
   },
 ];
 
-const COLLECTION_PRODUCT_LIMIT = 8;
+const COLLECTION_PRODUCT_LIMIT = 10;
 
 const seedCollections = async () => {
   const existing = await prisma.collection.count();
@@ -697,7 +1254,7 @@ const seedCollections = async () => {
 
   const approvedProducts = await prisma.product.findMany({
     where: { status: ProductStatus.APPROVED },
-    select: { id: true, categories: { select: { slug: true } }, price: true },
+    select: { id: true, categories: { select: { slug: true } }, price: true, type: true },
   });
 
   if (approvedProducts.length === 0) return;
@@ -714,6 +1271,7 @@ const seedCollections = async () => {
         name: collection.name,
         slug: collection.slug,
         description: collection.description,
+        imageUrl: collection.imageUrl,
         status: CollectionStatus.PUBLISHED,
         sortOrder: index,
         products: {
@@ -735,6 +1293,7 @@ const SEED_HERO_SLIDES = [
       "Daura suruwal, kurta sets and modern cuts from eleven Kathmandu labels. Styled as full looks, not loose items.",
     ctaLabel: "Explore collection",
     ctaHref: "/collections/dashain-edit-26",
+    imageUrl: unsplashUrl(TRADITIONAL_PHOTOS[1]),
   },
   {
     tag: "Collection 02: Creators",
@@ -743,6 +1302,7 @@ const SEED_HERO_SLIDES = [
       "Every outfit tagged by the Nepali creators who styled it. Tap a look, get the full fit.",
     ctaLabel: "See creator looks",
     ctaHref: "/explore",
+    imageUrl: unsplashUrl(STREETWEAR_PHOTOS[1]),
   },
   {
     tag: "Collection 03: Just In",
@@ -750,6 +1310,7 @@ const SEED_HERO_SLIDES = [
     description: "Five new Kathmandu labels just went live, all vetted and set up by our team.",
     ctaLabel: "Browse new brands",
     ctaHref: "/collections",
+    imageUrl: unsplashUrl(CASUAL_PHOTOS[2]),
   },
 ];
 
