@@ -433,6 +433,11 @@ async function seedProductImages() {
         sortOrder: index,
       })),
     });
+
+    await prisma.product.update({
+      where: { id: product.id },
+      data: { imageUrl: unsplashUrl(photos[0]) },
+    });
   }
 }
 
@@ -505,17 +510,21 @@ async function seedWornByCounts() {
 }
 
 const DEFAULT_CATEGORIES = [
-  { slug: "formal", name: "Formal" },
-  { slug: "traditional", name: "Traditional" },
-  { slug: "streetwear", name: "Streetwear" },
-  { slug: "casual", name: "Casual" },
-  { slug: "minimal", name: "Minimal" },
-  { slug: "y2k", name: "Y2K" },
-  { slug: "old-money", name: "Old Money" },
-  { slug: "athleisure", name: "Athleisure" },
-  { slug: "business-casual", name: "Business Casual" },
-  { slug: "preppy", name: "Preppy" },
-  { slug: "loungewear", name: "Loungewear" },
+  { slug: "formal", name: "Formal", imageUrl: unsplashUrl(FORMAL_PHOTOS[0]) },
+  { slug: "traditional", name: "Traditional", imageUrl: unsplashUrl(TRADITIONAL_PHOTOS[0]) },
+  { slug: "streetwear", name: "Streetwear", imageUrl: unsplashUrl(STREETWEAR_PHOTOS[0]) },
+  { slug: "casual", name: "Casual", imageUrl: unsplashUrl(CASUAL_PHOTOS[0]) },
+  { slug: "minimal", name: "Minimal", imageUrl: unsplashUrl(MINIMAL_PHOTOS[0]) },
+  { slug: "y2k", name: "Y2K", imageUrl: unsplashUrl(Y2K_PHOTOS[0]) },
+  { slug: "old-money", name: "Old Money", imageUrl: unsplashUrl(OLD_MONEY_PHOTOS[0]) },
+  { slug: "athleisure", name: "Athleisure", imageUrl: unsplashUrl(CASUAL_PHOTOS[1]) },
+  {
+    slug: "business-casual",
+    name: "Business Casual",
+    imageUrl: unsplashUrl(FORMAL_PHOTOS[1]),
+  },
+  { slug: "preppy", name: "Preppy", imageUrl: unsplashUrl(OLD_MONEY_PHOTOS[1]) },
+  { slug: "loungewear", name: "Loungewear", imageUrl: unsplashUrl(MINIMAL_PHOTOS[1]) },
 ];
 
 const seedCategories = async () => {
@@ -1284,6 +1293,7 @@ const SEED_HERO_SLIDES = [
       "Daura suruwal, kurta sets and modern cuts from eleven Kathmandu labels. Styled as full looks, not loose items.",
     ctaLabel: "Explore collection",
     ctaHref: "/collections/dashain-edit-26",
+    imageUrl: unsplashUrl(TRADITIONAL_PHOTOS[1]),
   },
   {
     tag: "Collection 02: Creators",
@@ -1292,6 +1302,7 @@ const SEED_HERO_SLIDES = [
       "Every outfit tagged by the Nepali creators who styled it. Tap a look, get the full fit.",
     ctaLabel: "See creator looks",
     ctaHref: "/explore",
+    imageUrl: unsplashUrl(STREETWEAR_PHOTOS[1]),
   },
   {
     tag: "Collection 03: Just In",
@@ -1299,6 +1310,7 @@ const SEED_HERO_SLIDES = [
     description: "Five new Kathmandu labels just went live, all vetted and set up by our team.",
     ctaLabel: "Browse new brands",
     ctaHref: "/collections",
+    imageUrl: unsplashUrl(CASUAL_PHOTOS[2]),
   },
 ];
 
