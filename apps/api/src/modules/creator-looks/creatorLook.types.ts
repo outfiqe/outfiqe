@@ -107,6 +107,7 @@ export type CommentRecord = {
   userId: string;
   userName: string;
   userHandle: string;
+  userAvatarUrl: string | null;
   body: string;
   createdAt: Date;
 };

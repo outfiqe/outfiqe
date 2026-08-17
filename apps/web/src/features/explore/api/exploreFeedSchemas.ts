@@ -68,6 +68,7 @@ export const commentSchema = z.object({
   userId: z.string(),
   userName: z.string(),
   userHandle: z.string(),
+  userAvatarUrl: z.string().nullable(),
   body: z.string(),
   createdAt: z.string(),
 });
