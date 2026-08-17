@@ -1,14 +1,14 @@
 import { prisma } from "#db/prisma.js";
 import type { CreatorStatus } from "#generated/prisma/enums.js";
 import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
+import type { DbClient } from "#types/db.types.js";
 
 import type { CreateUserInput, UpdateUserProfileInput, UserRecord } from "./user.types.js";
 
 const MAX_HANDLE_ATTEMPTS = 5;
 
-// Handles aren't user-chosen yet, so collisions are rare, but retry a few times under the
-// unique constraint rather than trusting a single findUnique + create isn't racy.
 const createWithUniqueHandle = async (
+  client: DbClient,
   userData: Omit<Parameters<typeof prisma.user.create>[0]["data"], "handle">,
   name: string,
 ): Promise<UserRecord> => {
@@ -17,7 +17,7 @@ const createWithUniqueHandle = async (
   for (let attempt = 0; attempt < MAX_HANDLE_ATTEMPTS; attempt++) {
     const handle = attempt === 0 ? base : withHandleSuffix(base);
     try {
-      return await prisma.user.create({ data: { ...userData, handle } });
+      return await client.user.create({ data: { ...userData, handle } });
     } catch (error) {
       const isHandleCollision = error instanceof Error && "code" in error && error.code === "P2002";
       if (!isHandleCollision || attempt === MAX_HANDLE_ATTEMPTS - 1) throw error;
@@ -28,8 +28,12 @@ const createWithUniqueHandle = async (
 };
 
 export const userRepository = {
-  async create(input: CreateUserInput & { passwordHash: string }): Promise<UserRecord> {
+  async create(
+    input: CreateUserInput & { passwordHash: string },
+    client: DbClient = prisma,
+  ): Promise<UserRecord> {
     return createWithUniqueHandle(
+      client,
       {
         email: input.email,
         name: input.name,

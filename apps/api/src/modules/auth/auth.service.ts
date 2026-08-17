@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 
 import { env } from "#config/env.config.js";
 import { TokenPurpose, TokenTypeEnum } from "#constants/enums/auth.enum.js";
+import { prisma } from "#db/prisma.js";
 import { passwordResetTemplate, verifyEmailTemplate } from "#email-templates/templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { BrandRole, UserRole } from "#generated/prisma/enums.js";
@@ -384,6 +385,8 @@ export const authService = {
           brandId: membership.brandId,
         };
       }
+
+      logger.warn(`Brand owner ${id} has no brand membership — returning degraded profile.`);
     }
 
     return {
@@ -446,22 +449,32 @@ export const authService = {
     }
 
     const passwordHash = await hashPassword(password);
-    const user = await userRepository.create({
-      name,
-      email: inviteEmail,
-      phone,
-      password,
-      passwordHash,
-      role: UserRole.BRAND_OWNER,
-      emailVerified: true,
-    });
+    const user = await prisma.$transaction(async (tx) => {
+      const createdUser = await userRepository.create(
+        {
+          name,
+          email: inviteEmail,
+          phone,
+          password,
+          passwordHash,
+          role: UserRole.BRAND_OWNER,
+          emailVerified: true,
+        },
+        tx,
+      );
 
-    await authRepository.createBrandMembership({
-      userId: user.id,
-      brandId,
-      role: BrandRole.OWNER,
+      await authRepository.createBrandMembership(
+        {
+          userId: createdUser.id,
+          brandId,
+          role: BrandRole.OWNER,
+        },
+        tx,
+      );
+      await authRepository.markBrandInviteAccepted(inviteId, tx);
+
+      return createdUser;
     });
-    await authRepository.markBrandInviteAccepted(inviteId);
 
     await eventBus.publish(DomainEvents.BRAND_OWNER_REGISTERED, {
       userId: user.id,
