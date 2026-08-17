@@ -12,7 +12,19 @@
 
 `Product.lowStock` and `ProductSize.inStock` are still columns in the schema and `create` still writes a best-effort `inStock` at creation time, but the `products` module no longer reads either column for anything customer-facing. Instead, `totalStock` is summed live from `ProductSize.stock` at query time, and `lowStock`/`inStock` are derived from that (`isLowStock`, `stock > 0`). A stored flag can drift from the real stock count; a live sum can't.
 
-`toPublicProduct` still accepts a plain `ProductWithBrand` without `totalStock` — three other modules (`collections`, `creator-looks`, `wishlist`) construct their own product data and call this mapper without fetching stock. Rather than force that fetch onto unrelated modules, `toPublicProduct` falls back to the legacy `product.lowStock` column when `totalStock` isn't supplied. Those call sites will show live-computed low stock once they're migrated to select it too — not yet done.
+`toPublicProduct` still accepts a plain `ProductWithBrand` without `totalStock` — two other modules (`collections`, `wishlist`) construct their own product data and call this mapper without fetching stock. Rather than force that fetch onto unrelated modules, `toPublicProduct` falls back to the legacy `product.lowStock` column when `totalStock` isn't supplied. Those call sites will show live-computed low stock once they're migrated to select it too — not yet done. (`creator-looks` used to be a third caller here, but no longer calls `toPublicProduct` at all — `GET /creator-looks` now returns full look posts instead of bare products; see that module's README.)
+
+## Card social proof is real, computed per page — not stored, not stubbed
+
+`PublicProduct.creatorBuyerCount` / `.unitsSold` back the "Worn by N creators · X bought" line on the product card. Both used to be client-side fakes — a deterministic hash of the product's `id` fed into a lookup table, changing every time the ID changed but never reflecting anything real. They're computed from actual `OrderItem`/`Order` rows now:
+
+- `creatorBuyerCount` — distinct creators (`User.isCreator` + `creatorStatus: APPROVED`) who have an order containing this product. Deliberately **not** the same signal as `Product.wornByCount` (which counts creators who _tagged_ the product in a look — see `creator-looks/README.md`). A card showing "worn by" should mean the creator actually bought and owns the piece, not just referenced it in a post; the product detail page's own `wornByCount`/`seenOnCreators` (tag-based) is untouched and still correct for its purpose there.
+- `unitsSold` — total `qty` across all matching order items, not a distinct-order count.
+- Both exclude cancelled orders and unsettled/failed/refunded payment states (`fulfilmentStatus != CANCELLED`, `paymentStatus IN (PAID, DUE)`) — an order that never actually completed doesn't count as a sale.
+
+`getSalesStatsByProductIds` computes this with one raw SQL query per page (`listPublic`, `listTrending`, `listNewArrivals` each call it once via `withSalesStats`, batched over that page's product IDs), not a stored column and not a per-card `WHERE productId = ?` — the same "batch the whole page, one round trip" shape `withTotalStock` already uses for stock, just needing raw SQL here because `creatorBuyerCount` is `COUNT(DISTINCT order.userId)` filtered on a condition from a second joined table (`User`), which Prisma's `groupBy` can't express since it only aggregates fields native to the model being grouped (`OrderItem`). `listPublicByBrand` and `getPublicDetail` weren't touched: the former reuses `listPublic` and inherits this for free, the latter already has its own correct, tag-based `wornByCount` and doesn't need the purchase-based version.
+
+Like the `totalStock` gap above, `collections` and `wishlist` don't call `withSalesStats` yet, so their cards currently show 0 (the whole social-proof line hides, per `ProductCard`'s `creatorBuyerCount > 0 || unitsSold > 0` guard) rather than stale or fake numbers — same "known, not yet migrated" state, not a regression.
 
 ## Sizes come from the admin-owned catalog, not free text
 

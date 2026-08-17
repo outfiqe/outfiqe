@@ -50,7 +50,10 @@ export type ProductWithStockSizesAndImages = ProductWithStockAndSizes & {
   images: { url: string }[];
 };
 
-export type ProductWithOptionalStock = ProductWithBrand & { totalStock?: number };
+export type ProductSalesStats = { creatorBuyerCount: number; unitsSold: number };
+
+export type ProductWithOptionalStock = ProductWithBrand &
+  Partial<ProductSalesStats> & { totalStock?: number };
 
 export type ProductReviewSummary = Omit<ProductWithBrand, "categories"> & { categories: string[] };
 
@@ -108,6 +111,8 @@ export type PublicProduct = {
   imageUrl: string | null;
   lowStock: boolean;
   isNew: boolean;
+  creatorBuyerCount: number;
+  unitsSold: number;
 };
 
 export type PublicProductPage = {

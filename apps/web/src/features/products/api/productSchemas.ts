@@ -13,6 +13,8 @@ export const publicProductSchema = z.object({
   imageUrl: z.string().nullable(),
   lowStock: z.boolean(),
   isNew: z.boolean(),
+  creatorBuyerCount: z.number(),
+  unitsSold: z.number(),
 });
 export type PublicProduct = z.infer<typeof publicProductSchema>;
 
