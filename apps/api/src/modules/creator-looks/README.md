@@ -12,7 +12,7 @@ Creator-posted "looks" (outfit photos with tagged products): posting, editing, d
 - `creatorLook.repository.ts` — Prisma queries, cursor pagination, the Redis-cached trending snapshot/tags.
 - `creatorLook.schemas.ts` — Zod request validation.
 - `creatorLook.types.ts` — response/DTO shapes.
-- `creatorLook.utils.ts` — cursor encode/decode and the `toSummary`/`toEditDetail` mappers.
+- `creatorLook.utils.ts` — this module's cursor payload shapes (`SimpleCursor`, `TrendingSnapshotCursor`, `FeaturedLookCursor`) and the `toSummary`/`toEditDetail` mappers. The `encodeCursor`/`decodeCursor` codec itself lives in `#lib/pagination.utils.js` — shared with `trending`'s own snapshot-cursor pagination (see `../trending/README.md`), since it's a generic base64url JSON codec with nothing creator-look-specific about it.
 - `creatorLook.socket.ts` — the `FEED_SYNC_REQUEST` socket handler (new-post count for the open feed tab).
 
 ## Funnel

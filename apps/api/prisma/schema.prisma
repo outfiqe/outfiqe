@@ -31,27 +31,27 @@ model User {
   createdAt      DateTime      @default(now()) @map("created_at")
   updatedAt      DateTime      @updatedAt @map("updated_at")
 
-  memberships             BrandMembership[]
-  refreshTokens           RefreshToken[]
-  reviewedApplications    BrandApplication[]        @relation("BrandApplicationReviewer")
-  approvedInvites         BrandInvite[]             @relation("BrandInviteApprover")
-  sentAdminInvites        AdminInvite[]             @relation("AdminInviteSender")
-  reviewedProducts        Product[]                 @relation("ProductReviewer")
-  creatorLooks            CreatorLook[]             @relation("CreatorLooks")
-  lookLikes               CreatorLookLike[]
-  lookSaves               CreatorLookSave[]
-  lookComments            CreatorLookComment[]
-  tagClicks               CreatorLookTagClick[]
-  following               Follow[]                  @relation("FollowerEdges")
-  savedProducts           SavedProduct[]
-  cart                    Cart?
-  orders                  Order[]
-  idempotencyRequests     RequestIdempotency[]
-  attributedOrderItems    OrderItem[]               @relation("AttributedOrderItems")
-  creatorCommissions      CreatorCommission[]       @relation("CreatorCommissions")
-  creatorLinks            CreatorLink[]             @relation("CreatorLinks")
-  creatorLinkClicks       CreatorLinkClick[]
-  deliveryZoneChanges     DeliveryZoneHistory[]     @relation("DeliveryZoneChanges")
+  memberships          BrandMembership[]
+  refreshTokens        RefreshToken[]
+  reviewedApplications BrandApplication[]    @relation("BrandApplicationReviewer")
+  approvedInvites      BrandInvite[]         @relation("BrandInviteApprover")
+  sentAdminInvites     AdminInvite[]         @relation("AdminInviteSender")
+  reviewedProducts     Product[]             @relation("ProductReviewer")
+  creatorLooks         CreatorLook[]         @relation("CreatorLooks")
+  lookLikes            CreatorLookLike[]
+  lookSaves            CreatorLookSave[]
+  lookComments         CreatorLookComment[]
+  tagClicks            CreatorLookTagClick[]
+  following            Follow[]              @relation("FollowerEdges")
+  savedProducts        SavedProduct[]
+  cart                 Cart?
+  orders               Order[]
+  idempotencyRequests  RequestIdempotency[]
+  attributedOrderItems OrderItem[]           @relation("AttributedOrderItems")
+  creatorCommissions   CreatorCommission[]   @relation("CreatorCommissions")
+  creatorLinks         CreatorLink[]         @relation("CreatorLinks")
+  creatorLinkClicks    CreatorLinkClick[]
+  deliveryZoneChanges  DeliveryZoneHistory[] @relation("DeliveryZoneChanges")
 
   @@index([isCreator, creatorStatus, followerCount])
   @@map("users")
@@ -183,6 +183,7 @@ model Product {
   cartItems     CartItem[]
   orderItems    OrderItem[]
   creatorLinks  CreatorLink[]
+  trendMetrics  ProductTrendMetric[]
 
   @@index([deletedAt])
   @@map("products")
@@ -197,6 +198,26 @@ model ProductImage {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("product_images")
+}
+
+model ProductTrendMetric {
+  id          String   @id @default(uuid()) @db.Uuid
+  productId   String   @map("product_id") @db.Uuid
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  bucketStart DateTime @map("bucket_start")
+
+  purchaseUnits Int @default(0) @map("purchase_units")
+  cartAdds      Int @default(0) @map("cart_adds")
+  saves         Int @default(0)
+  creatorTags   Int @default(0) @map("creator_tags")
+  tagClicks     Int @default(0) @map("tag_clicks")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([productId, bucketStart])
+  @@index([bucketStart])
+  @@map("product_trend_metrics")
 }
 
 model Collection {
@@ -413,6 +434,7 @@ model CreatorLookTagClick {
   user          User?                     @relation(fields: [userId], references: [id], onDelete: SetNull)
   commissions   CreatorCommission[]
 
+  @@index([createdAt])
   @@map("creator_look_tag_clicks")
 }
 
@@ -446,6 +468,7 @@ model SavedProduct {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@id([userId, productId])
+  @@index([createdAt])
   @@map("saved_products")
 }
 
@@ -523,6 +546,7 @@ model CartItem {
   createdAt DateTime    @default(now()) @map("created_at")
 
   @@unique([cartId, sizeId])
+  @@index([createdAt])
   @@map("cart_items")
 }
 

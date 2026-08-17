@@ -7,6 +7,11 @@ import { runCommissionLifecycleSweep } from "#modules/commissions/commission.lif
 import { registerCreatorLookSocketHandlers } from "#modules/creator-looks/creatorLook.socket.js";
 import { RECONCILE_CHECK_INTERVAL_MS } from "#modules/payments/payment.constants.js";
 import { runPaymentReconciliationSweep } from "#modules/payments/payment.reconciliation.js";
+import {
+  AGGREGATION_INTERVAL_MS,
+  SCORING_INTERVAL_MS,
+} from "#modules/trending/trending.constants.js";
+import { trendingService } from "#modules/trending/trending.service.js";
 import { disconnectRedis } from "#redis/redis.client.js";
 import { startIntervalScheduler } from "#scheduling/interval.scheduler.js";
 import { registerSocketListeners } from "#socket/socket.listeners.js";
@@ -35,6 +40,16 @@ startIntervalScheduler([
     name: "commission-lifecycle",
     run: runCommissionLifecycleSweep,
     intervalMs: COMMISSION_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "trending-aggregation",
+    run: trendingService.runAggregation,
+    intervalMs: AGGREGATION_INTERVAL_MS,
+  },
+  {
+    name: "trending-scoring",
+    run: trendingService.runScoring,
+    intervalMs: SCORING_INTERVAL_MS,
   },
 ]);
 

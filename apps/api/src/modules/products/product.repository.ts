@@ -6,7 +6,7 @@ import type { ProductType } from "#generated/prisma/enums.js";
 import { CreatorStatus, ProductStatus } from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
-import { NEW_ARRIVAL_WINDOW_MS } from "./product.constants.js";
+import { NEW_ARRIVAL_WINDOW_MS, TRENDING_LIMIT } from "./product.constants.js";
 import type {
   BrandProductSize,
   CreateProductInput,
@@ -22,7 +22,6 @@ import { sumStock } from "./product.utils.js";
 
 export type { DbClient } from "#types/db.types.js";
 
-const TRENDING_LIMIT = 5;
 const NEW_ARRIVALS_LIMIT = 10;
 const SEEN_ON_CREATORS_LIMIT = 5;
 
@@ -268,6 +267,21 @@ export const productRepository = {
       take: TRENDING_LIMIT,
     });
     return withSalesStats(withTotalStock(rows));
+  },
+
+  async listApprovedByIds(ids: string[]): Promise<(ProductWithStock & ProductSalesStats)[]> {
+    if (ids.length === 0) return [];
+
+    const rows = await prisma.product.findMany({
+      where: { id: { in: ids }, status: ProductStatus.APPROVED, deletedAt: null },
+      include: withBrandAndCategories,
+    });
+    const withStats = await withSalesStats(withTotalStock(rows));
+
+    const byId = new Map(withStats.map((row) => [row.id, row]));
+    return ids
+      .map((id) => byId.get(id))
+      .filter((row): row is (typeof withStats)[number] => row !== undefined);
   },
 
   async listNewArrivals(): Promise<(ProductWithStock & ProductSalesStats)[]> {

@@ -4,7 +4,7 @@ import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import type { CreatorLookTagClickSource } from "#generated/prisma/enums.js";
 import { CreatorStatus, ProductStatus } from "#generated/prisma/enums.js";
-import { buildCursorPage } from "#lib/pagination.utils.js";
+import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
 import type { ProductWithBrand } from "#modules/products/product.types.js";
 import { cacheService } from "#redis/cache.service.js";
@@ -28,7 +28,7 @@ import type {
   SimpleCursor,
   TrendingSnapshotCursor,
 } from "./creatorLook.utils.js";
-import { decodeCursor, encodeCursor, toEditDetail, toSummary } from "./creatorLook.utils.js";
+import { toEditDetail, toSummary } from "./creatorLook.utils.js";
 
 const taggedProductsInclude = {
   taggedProducts: { include: { product: { select: { id: true, name: true, imageUrl: true } } } },

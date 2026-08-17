@@ -24,6 +24,7 @@ import { orderRoutes } from "./modules/orders/order.routes.js";
 import { paymentRoutes } from "./modules/payments/payment.routes.js";
 import { productRoutes } from "./modules/products/product.routes.js";
 import { sizeOptionRoutes } from "./modules/size-options/size-option.routes.js";
+import { trendingRoutes } from "./modules/trending/trending.routes.js";
 import { uploadRoutes } from "./modules/uploads/upload.routes.js";
 import { userRoutes } from "./modules/users/user.routes.js";
 import { wishlistRoutes } from "./modules/wishlist/wishlist.routes.js";
@@ -74,6 +75,7 @@ export const createApp = () => {
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/categories", categoryRoutes);
   app.use("/api/hero-slides", heroSlideRoutes);
+  app.use("/api/admin/trending", trendingRoutes);
 
   app.use(errorHandler);
 
