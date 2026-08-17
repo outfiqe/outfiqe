@@ -23,9 +23,3 @@ export const productPageSchema = z.object({
   brandCount: z.number(),
 });
 export type ProductPage = z.infer<typeof productPageSchema>;
-
-export const creatorLookProductPageSchema = z.object({
-  products: z.array(publicProductSchema),
-  nextCursor: z.string().nullable(),
-});
-export type CreatorLookProductPage = z.infer<typeof creatorLookProductPageSchema>;

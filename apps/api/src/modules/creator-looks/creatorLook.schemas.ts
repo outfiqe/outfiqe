@@ -27,7 +27,7 @@ export const createCreatorLookSchema = z.object({
 });
 
 export const listCreatorLooksQuerySchema = z.object({
-  cursor: z.uuid().optional(),
+  cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
 

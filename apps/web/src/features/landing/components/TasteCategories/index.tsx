@@ -29,9 +29,14 @@ export const TasteCategories = () => {
         Pick a look you like. We&apos;ll show you what fits it, across every brand we carry.
       </p>
 
-      <div className="-mx-2 mt-5 flex gap-3 overflow-x-auto p-2">
+      <div
+        className={cn(
+          "-mx-2 mt-5 flex gap-3 p-2",
+          categories.isLoading ? "overflow-x-hidden" : "overflow-x-auto",
+        )}
+      >
         {categories.isLoading &&
-          Array.from({ length: 7 }).map((_, index) => (
+          Array.from({ length: 20 }).map((_, index) => (
             <Skeleton key={index} className="size-28 shrink-0 rounded-2xl sm:size-32" />
           ))}
 

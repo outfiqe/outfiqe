@@ -23,7 +23,11 @@ import type {
   TrendingTag,
   UpdateCreatorLookInput,
 } from "./creatorLook.types.js";
-import type { SimpleCursor, TrendingSnapshotCursor } from "./creatorLook.utils.js";
+import type {
+  FeaturedLookCursor,
+  SimpleCursor,
+  TrendingSnapshotCursor,
+} from "./creatorLook.utils.js";
 import { decodeCursor, encodeCursor, toEditDetail, toSummary } from "./creatorLook.utils.js";
 
 const taggedProductsInclude = {
@@ -300,6 +304,50 @@ const listSavedIds = async (
   return { ids: pageRows.map((row) => row.creatorLookId), nextCursor };
 };
 
+const listFeaturedLookIds = async ({
+  cursor,
+  limit,
+}: {
+  cursor?: string;
+  limit: number;
+}): Promise<{ ids: string[]; nextCursor: string | null }> => {
+  const decoded = decodeCursor<FeaturedLookCursor>(cursor);
+  const cursorFilter = decoded
+    ? Prisma.sql`AND (
+        featured.engagement < ${decoded.e}
+        OR (featured.engagement = ${decoded.e} AND featured.look_id < ${decoded.i})
+      )`
+    : Prisma.empty;
+
+  const rows = await prisma.$queryRaw<{ look_id: string; engagement: number }[]>(Prisma.sql`
+    SELECT featured.look_id, featured.engagement
+    FROM (
+      SELECT DISTINCT ON (clp.product_id)
+        cl.id AS look_id,
+        (cl.like_count * 2 + cl.comment_count + cl.save_count) AS engagement
+      FROM creator_look_products clp
+      JOIN creator_looks cl ON cl.id = clp.creator_look_id
+      JOIN products p ON p.id = clp.product_id
+      JOIN users u ON u.id = cl.creator_id
+      WHERE cl.deleted_at IS NULL
+        AND p.status = 'APPROVED'
+        AND p.deleted_at IS NULL
+        AND u.creator_status = 'APPROVED'
+      ORDER BY clp.product_id, engagement DESC, cl.id DESC
+    ) featured
+    WHERE TRUE ${cursorFilter}
+    GROUP BY featured.look_id, featured.engagement
+    ORDER BY featured.engagement DESC, featured.look_id DESC
+    LIMIT ${limit + 1}
+  `);
+
+  const { items: pageRows, nextCursor } = buildCursorPage(rows, limit, (row) =>
+    encodeCursor<FeaturedLookCursor>({ e: row.engagement, i: row.look_id }),
+  );
+
+  return { ids: pageRows.map((row) => row.look_id), nextCursor };
+};
+
 const TRENDING_TAGS_LIMIT = 15;
 const TRENDING_TAGS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const TRENDING_TAGS_CACHE_KEY = redisKeys.cache("creator-looks", "trending-tags");
@@ -426,29 +474,10 @@ export const creatorLookRepository = {
     await prisma.creatorLook.update({ where: { id: lookId }, data: { deletedAt: new Date() } });
   },
 
-  async listPublicTaggedProducts(params: {
-    cursor?: string;
-    limit: number;
-  }): Promise<TaggedProductPage<ProductWithBrand>> {
-    const rows = await prisma.creatorLookProduct.findMany({
-      where: { product: { status: ProductStatus.APPROVED } },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      distinct: ["productId"],
-      take: params.limit + 1,
-      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
-      include: {
-        product: {
-          include: {
-            brand: { select: { name: true } },
-            categories: { select: { slug: true, name: true } },
-          },
-        },
-      },
-    });
-
-    const { items: pageRows, nextCursor } = buildCursorPage(rows, params.limit, (row) => row.id);
-
-    return { products: pageRows.map((row) => row.product), nextCursor };
+  async listFeaturedLooks(params: { cursor?: string; limit: number }): Promise<FeedPage> {
+    const listed = await listFeaturedLookIds(params);
+    const posts = await hydrateFeedPosts(listed.ids, undefined);
+    return { posts, nextCursor: listed.nextCursor };
   },
 
   async countByCreatorId(creatorId: string): Promise<number> {

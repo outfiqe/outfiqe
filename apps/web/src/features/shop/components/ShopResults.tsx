@@ -1,26 +1,38 @@
 "use client";
 
-import { Button } from "@outfiqe/design-system";
-import { ArrowRight } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { PRODUCT_SORT, PRODUCT_SORT_VALUES, type ProductSort } from "@outfiqe/utils";
+import { useSearchParams } from "next/navigation";
 
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { useCategories } from "@/features/categories/hooks/useCategories";
+import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
 import { ALL_TYPE_ID, CategoryTypeFilters } from "@/shared/components/CategoryTypeFilters";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 
-import { ProductCard } from "../ProductCard";
+const SHOP_BASE_PATH = "/shop";
 
-export const CategoryResults = () => {
-  const router = useRouter();
+const SORT_HEADING: Record<ProductSort, string> = {
+  [PRODUCT_SORT.NEWEST]: "Shop everything",
+  [PRODUCT_SORT.TRENDING]: "Trending now",
+  [PRODUCT_SORT.NEW_ARRIVALS]: "New arrivals",
+};
+
+const parseSort = (value: string | null): ProductSort | undefined =>
+  PRODUCT_SORT_VALUES.find((candidate) => candidate === value);
+
+export const ShopResults = () => {
   const searchParams = useSearchParams();
   const categorySlug = searchParams.get("category");
   const activeType = searchParams.get("type") ?? ALL_TYPE_ID;
+  const sort = parseSort(searchParams.get("sort"));
 
   const categories = useCategories();
-  const category = categories.data?.find((c) => c.slug === categorySlug) ?? categories.data?.[0];
+  const category = categorySlug
+    ? categories.data?.find((candidate) => candidate.slug === categorySlug)
+    : undefined;
+  const isResolvingCategory = Boolean(categorySlug) && categories.isLoading;
 
   const {
     data: productsPages,
@@ -31,7 +43,8 @@ export const CategoryResults = () => {
   } = useInfiniteProducts({
     category: category?.slug,
     type: activeType === ALL_TYPE_ID ? undefined : activeType,
-    enabled: Boolean(category),
+    sort,
+    enabled: !isResolvingCategory,
   });
 
   const sentinelRef = useLoadMoreOnVisible(
@@ -39,51 +52,38 @@ export const CategoryResults = () => {
     Boolean(hasNextPage) && !isFetchingNextPage,
   );
 
-  if (!category) {
-    return <ProductGridSkeleton className="mt-8 px-6 lg:px-10" />;
+  if (isResolvingCategory) {
+    return <ProductGridSkeleton className="mt-8" />;
   }
-
-  const { name, slug } = category;
 
   const products = productsPages?.pages.flatMap((page) => page.products) ?? [];
   const firstPage = productsPages?.pages[0];
 
+  const heading = category ? `In ${category.name}` : SORT_HEADING[sort ?? PRODUCT_SORT.NEWEST];
+
   return (
-    <section className="px-6 pb-10 pt-2 sm:pb-14 sm:pt-3 lg:px-10">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 className="font-display text-3xl font-bold uppercase text-foreground sm:text-4xl">
-            In {name}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {firstPage
-              ? `${firstPage.total} pieces from ${firstPage.brandCount} brands`
-              : "Loading…"}
-          </p>
+    <div>
+      <h1 className="font-display text-3xl font-extrabold uppercase tracking-tight text-foreground sm:text-4xl">
+        {heading}
+      </h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {firstPage ? `${firstPage.total} pieces from ${firstPage.brandCount} brands` : "Loading…"}
+      </p>
+
+      {category && (
+        <div className="mt-6">
+          <CategoryTypeFilters
+            basePath={SHOP_BASE_PATH}
+            categorySlug={category.slug}
+            activeType={activeType}
+          />
         </div>
-
-        <Button
-          variant="link"
-          onClick={() => {
-            const params = new URLSearchParams({ category: slug });
-            if (activeType !== ALL_TYPE_ID) params.set("type", activeType);
-            router.push(`/shop?${params.toString()}`);
-          }}
-          className="h-auto gap-1 p-0"
-        >
-          View all
-          <ArrowRight className="size-4" />
-        </Button>
-      </div>
-
-      <div className="mt-6">
-        <CategoryTypeFilters basePath="/" categorySlug={slug} activeType={activeType} />
-      </div>
+      )}
 
       {isLoading ? (
         <ProductGridSkeleton className="mt-8" />
       ) : products.length === 0 ? (
-        <p className="mt-12 text-sm text-muted-foreground">No pieces in this filter yet.</p>
+        <p className="mt-12 text-sm text-muted-foreground">Nothing here yet.</p>
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
           {products.map((product) => (
@@ -99,6 +99,6 @@ export const CategoryResults = () => {
           </span>
         </div>
       )}
-    </section>
+    </div>
   );
 };

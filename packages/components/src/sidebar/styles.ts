@@ -7,6 +7,9 @@ export const cardClass = "rounded-[28px] border border-border bg-card p-3 shadow
 
 export const navListClass = "flex flex-col gap-1.5";
 
+export const scrollHiddenClass =
+  "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
+
 export const navLinkBaseClass = `relative flex items-center rounded-2xl text-sm transition-colors ${focusRingClass}`;
 
 export const navLinkCollapsedClass = "size-11 shrink-0 justify-center";

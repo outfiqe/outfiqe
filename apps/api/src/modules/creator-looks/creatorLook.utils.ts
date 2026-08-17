@@ -65,6 +65,7 @@ export const toEditDetail = ({
 
 export type SimpleCursor = { c: string; i: string };
 export type TrendingSnapshotCursor = { sessionId: string; offset: number };
+export type FeaturedLookCursor = { e: number; i: string };
 
 export const encodeCursor = <T>(cursorPayload: T): string =>
   Buffer.from(JSON.stringify(cursorPayload)).toString("base64url");

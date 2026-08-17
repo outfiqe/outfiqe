@@ -1,13 +1,26 @@
 "use client";
 
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
+import type { ProductSort } from "@outfiqe/utils";
 
 import { productsApi } from "../api/productsApi";
 
-export const useInfiniteProducts = (category: string, type?: string) => {
+type UseInfiniteProductsParams = {
+  category?: string;
+  type?: string;
+  sort?: ProductSort;
+  enabled?: boolean;
+};
+
+export const useInfiniteProducts = ({
+  category,
+  type,
+  sort,
+  enabled = true,
+}: UseInfiniteProductsParams) => {
   return useInfiniteCursorPage(
-    ["products", category, type],
-    (cursor) => productsApi.list({ category, type, cursor }),
-    Boolean(category),
+    ["products", category, type, sort],
+    (cursor) => productsApi.list({ category, type, sort, cursor }),
+    enabled,
   );
 };

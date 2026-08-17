@@ -2,15 +2,15 @@ import "server-only";
 
 import { z } from "zod";
 
+import {
+  type FeedPage,
+  feedPageSchema,
+  type FeedPost,
+} from "@/features/explore/api/exploreFeedSchemas";
 import type { ExploreProduct } from "@/features/landing/components/ProductCard";
 import { serverApiRequest } from "@/shared/lib/serverApiClient";
 
-import {
-  type CreatorLookProductPage,
-  creatorLookProductPageSchema,
-  type PublicProduct,
-  publicProductSchema,
-} from "./productSchemas";
+import { type PublicProduct, publicProductSchema } from "./productSchemas";
 import { toExploreProduct } from "./toExploreProduct";
 
 const productListSchema = z.array(publicProductSchema);
@@ -33,10 +33,10 @@ export const getNewArrivalsServer = async (): Promise<ExploreProduct[]> => {
   }
 };
 
-export const getFeaturedCreatorLooksServer = async (): Promise<ExploreProduct[]> => {
+export const getFeaturedCreatorLooksServer = async (): Promise<FeedPost[]> => {
   try {
-    const raw = await serverApiRequest<CreatorLookProductPage>("/creator-looks");
-    return creatorLookProductPageSchema.parse(raw).products.map(toExploreProduct);
+    const raw = await serverApiRequest<FeedPage>("/creator-looks");
+    return feedPageSchema.parse(raw).posts;
   } catch {
     return [];
   }

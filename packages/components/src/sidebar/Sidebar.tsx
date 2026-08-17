@@ -59,7 +59,7 @@ export const Sidebar = ({
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-col gap-4">
         {sections.map((section) => (
           <SidebarSection
             key={section.id}
