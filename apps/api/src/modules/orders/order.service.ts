@@ -12,6 +12,7 @@ import {
   PaymentMethod,
   PaymentStatus,
   PaymentTransactionStatus,
+  ProductStatus,
 } from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
@@ -97,35 +98,59 @@ const checkoutOnce = async (
   userEmail: string,
   body: CheckoutBody,
 ): Promise<OrderView> => {
-  const { fullName, phone, address, city, landmark, paymentMethod, sessionId } = body;
+  const { fullName, phone, address, city, landmark, paymentMethod, sessionId, buyNow } = body;
 
   if (sessionId) await creatorLinkRepository.bridgeSessionClicks(sessionId, userId);
 
   const { id: cartId } = await cartRepository.getOrCreateCart(userId);
-  const cartRows = await cartRepository.listItems(cartId);
-  if (cartRows.length === 0) {
-    throw new AppError("CART_EMPTY", "Your bag is empty.", CART_EMPTY_STATUS);
+
+  let lines: { productId: string; sizeId: string; qty: number; unitPrice: number }[];
+
+  if (buyNow) {
+    const product = await productRepository.findById(buyNow.productId);
+    if (!product || product.status !== ProductStatus.APPROVED || product.deletedAt) {
+      throw new AppError("NOT_FOUND", "This product is no longer available.", NOT_FOUND_STATUS);
+    }
+    const ownedSizeIds = await productRepository.findSizeIdsForProduct(buyNow.productId, [
+      buyNow.sizeId,
+    ]);
+    if (ownedSizeIds.length === 0) {
+      throw new AppError("NOT_FOUND", "This size is no longer available.", NOT_FOUND_STATUS);
+    }
+    lines = [
+      {
+        productId: buyNow.productId,
+        sizeId: buyNow.sizeId,
+        qty: buyNow.qty,
+        unitPrice: product.price,
+      },
+    ];
+  } else {
+    const cartRows = await cartRepository.listItems(cartId);
+    if (cartRows.length === 0) {
+      throw new AppError("CART_EMPTY", "Your bag is empty.", CART_EMPTY_STATUS);
+    }
+    lines = cartRows.map(({ productId, sizeId, qty, product }) => ({
+      productId,
+      sizeId,
+      qty,
+      unitPrice: product.price,
+    }));
   }
 
-  const stockBySizeId = await productRepository.getStockBySizeIds(
-    cartRows.map((row) => row.sizeId),
-  );
-  const unavailable = cartRows.filter(({ sizeId, qty }) => (stockBySizeId.get(sizeId) ?? 0) < qty);
+  const stockBySizeId = await productRepository.getStockBySizeIds(lines.map((line) => line.sizeId));
+  const unavailable = lines.filter((line) => (stockBySizeId.get(line.sizeId) ?? 0) < line.qty);
   if (unavailable.length > 0) {
     throw new AppError(
       "ITEMS_UNAVAILABLE",
-      "Some items in your bag are no longer available.",
+      buyNow
+        ? "This item is no longer available."
+        : "Some items in your bag are no longer available.",
       ITEMS_UNAVAILABLE_STATUS,
-      { sizeIds: unavailable.map((row) => row.sizeId) },
+      { sizeIds: unavailable.map((line) => line.sizeId) },
     );
   }
 
-  const lines = cartRows.map(({ productId, sizeId, qty, product }) => ({
-    productId,
-    sizeId,
-    qty,
-    unitPrice: product.price,
-  }));
   const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0);
   const feeValues = await deliveryZoneService.resolveFeeValuesForCity(city);
   const deliveryFee =
@@ -225,7 +250,7 @@ const checkoutOnce = async (
     return createdOrder;
   });
 
-  await cartRepository.clearCart(cartId);
+  if (!buyNow) await cartRepository.clearCart(cartId);
 
   const orderView = toOrderView(order);
   buildOrderConfirmationEmail(userEmail, orderView);

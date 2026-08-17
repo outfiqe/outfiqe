@@ -46,12 +46,7 @@ const fetchSessionUser = async (refreshToken: string): Promise<ProxyUser | null>
 const DASHBOARD_ROLE_RULES: Record<
   string,
   { allow: (role: UserRole) => boolean; fallback: string }
-> = {
-  "/dashboard/products": {
-    allow: (role) => role === UserRole.BRAND_OWNER,
-    fallback: "/dashboard/profile",
-  },
-};
+> = {};
 
 export const proxy = async (request: NextRequest) => {
   const { pathname } = request.nextUrl;

@@ -11,10 +11,17 @@ const PRICE_MAX = 10_000_000;
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 50;
 const MAX_IMAGES = 6;
+const STOCK_MIN = 0;
+const STOCK_MAX = 100_000;
 
 export const productTypeSlugSchema = z.enum(PRODUCT_TYPE_SLUGS);
 export const categorySlugFieldSchema = z.string().trim().min(1).max(60);
 export const productStatusSchema = z.enum(ProductStatus);
+
+export const productSizeInputSchema = z.object({
+  sizeOptionId: z.uuid(),
+  stock: z.number().int().min(STOCK_MIN).max(STOCK_MAX),
+});
 
 export const createProductSchema = z.object({
   name: z.string().min(NAME_MIN).max(NAME_MAX),
@@ -23,11 +30,29 @@ export const createProductSchema = z.object({
   categories: z.array(categorySlugFieldSchema).min(1),
   imageUrls: z.array(z.url()).max(MAX_IMAGES).optional(),
   lowStock: z.boolean().optional(),
+  sizes: z.array(productSizeInputSchema).min(1, "Add at least one size"),
 });
 
 export const updateProductSchema = createProductSchema.partial();
 
 export const productIdParamSchema = z.object({ id: z.uuid() });
+
+export const adjustStockSchema = z.object({
+  adjustments: z
+    .array(
+      z.object({
+        sizeId: z.uuid(),
+        delta: z
+          .number()
+          .int()
+          .refine((value) => value !== 0, "Adjustment can't be zero"),
+      }),
+    )
+    .min(1),
+});
+
+export type ProductSizeInput = z.infer<typeof productSizeInputSchema>;
+export type AdjustStockBody = z.infer<typeof adjustStockSchema>;
 
 export const listReviewProductsQuerySchema = z.object({
   status: productStatusSchema.optional(),

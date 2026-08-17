@@ -8,6 +8,7 @@ import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useAddToCart } from "@/features/cart";
+import { saveBuyNowPayload } from "@/features/checkout";
 import { useToggleWishlist } from "@/features/wishlist";
 import { cn } from "@/shared/lib/cn";
 
@@ -62,10 +63,20 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
   };
 
   const buyNow = () => {
-    const sizeLabel = product.sizes.find((size) => size.id === selectedSizeId)?.label;
-    toast.success(
-      `Redirecting to checkout for ${quantity} × ${product.name}${sizeLabel ? ` (Size ${sizeLabel})` : ""}…`,
-    );
+    const selectedSize = product.sizes.find((size) => size.id === selectedSizeId);
+    if (!selectedSize) return;
+
+    saveBuyNowPayload({
+      productId: product.id,
+      sizeId: selectedSize.id,
+      qty: quantity,
+      productName: product.name,
+      brandName: product.brand.name,
+      imageUrl: activeImage ?? product.imageUrl,
+      sizeLabel: selectedSize.label,
+      unitPrice: product.price,
+    });
+    router.push("/checkout?buyNow=1");
   };
 
   const scrollToSeenOn = () => {

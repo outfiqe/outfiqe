@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Share" };
 
 const DashboardSharePage = async () => {
   const { user } = await requireDashboardSession("/dashboard/share");
-  if (user.role === UserRole.BRAND_OWNER) redirect("/dashboard/products");
+  if (user.role === UserRole.BRAND_OWNER) redirect("/dashboard/profile");
 
   return <ShareSection creatorStatus={user.creatorStatus} />;
 };

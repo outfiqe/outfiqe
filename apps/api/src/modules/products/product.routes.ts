@@ -8,6 +8,7 @@ import { validate } from "#middlewares/validate.js";
 
 import { productController } from "./product.controller.js";
 import {
+  adjustStockSchema,
   createProductSchema,
   listMineProductsQuerySchema,
   listPublicProductsQuerySchema,
@@ -60,6 +61,18 @@ productRoutes.patch(
   ...requireBrandOwner,
   validate({ params: productIdParamSchema, body: updateProductSchema }),
   productController.update,
+);
+productRoutes.patch(
+  "/:id/stock",
+  ...requireBrandOwner,
+  validate({ params: productIdParamSchema, body: adjustStockSchema }),
+  productController.adjustStock,
+);
+productRoutes.delete(
+  "/:id",
+  ...requireBrandOwner,
+  validate({ params: productIdParamSchema }),
+  productController.delete,
 );
 productRoutes.post(
   "/:id/approve",

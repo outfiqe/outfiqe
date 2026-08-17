@@ -13,3 +13,9 @@ export const checkoutInputSchema = z.object({
   paymentMethod: paymentMethodSchema,
 });
 export type CheckoutInput = z.infer<typeof checkoutInputSchema>;
+
+export type BuyNowLine = {
+  productId: string;
+  sizeId: string;
+  qty: number;
+};

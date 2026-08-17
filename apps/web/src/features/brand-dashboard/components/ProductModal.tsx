@@ -14,11 +14,13 @@ import { useForm } from "react-hook-form";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
+import { useSizeOptions } from "@/features/products/hooks/useSizeOptions";
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { useCreateProduct } from "../hooks/useCreateProduct";
 import { type ProductFormInput, productFormSchema } from "../schemas/productForm.schema";
+import { SizeStockFields } from "./SizeStockFields";
 
 const selectClass =
   "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-foreground";
@@ -42,10 +44,15 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
       categories: [],
       imageUrls: [],
       lowStock: false,
+      sizes: [],
     },
   });
 
   const imageUrls = form.watch("imageUrls") ?? [];
+  const type = form.watch("type");
+  const sizes = form.watch("sizes") ?? [];
+  const sizeOptions = useSizeOptions(type);
+  const typeField = form.register("type");
 
   const close = () => {
     form.reset();
@@ -126,13 +133,34 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-foreground">Type</label>
-          <select className={selectClass} {...form.register("type")}>
+          <select
+            className={selectClass}
+            {...typeField}
+            onChange={(event) => {
+              typeField.onChange(event);
+              form.setValue("sizes", []);
+            }}
+          >
             {productTypes.data?.map((productType) => (
               <option key={productType.slug} value={productType.slug}>
                 {productType.label}
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-foreground">
+            Sizes and stock
+          </label>
+          <SizeStockFields
+            sizeOptions={sizeOptions.data ?? []}
+            value={sizes}
+            onChange={(next) => form.setValue("sizes", next, { shouldValidate: true })}
+          />
+          {form.formState.errors.sizes && (
+            <p className="mt-1.5 text-xs text-destructive">{form.formState.errors.sizes.message}</p>
+          )}
         </div>
 
         <div>

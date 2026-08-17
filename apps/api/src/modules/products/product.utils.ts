@@ -6,7 +6,7 @@ import {
 import type {
   ProductBrandSummary,
   ProductWithOptionalStock,
-  ProductWithStock,
+  ProductWithStockSizesAndImages,
   PublicProduct,
 } from "./product.types.js";
 
@@ -43,14 +43,17 @@ export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduc
 
 export const toBrandSummary = ({
   categories,
+  images,
   brand: _brand,
   type,
   totalStock,
   lowStock: _lowStock,
   ...rest
-}: ProductWithStock): ProductBrandSummary => ({
+}: ProductWithStockSizesAndImages): ProductBrandSummary => ({
   ...rest,
   type: PRODUCT_TYPE_TO_SLUG[type],
   categories: categories.map((category) => category.name),
+  categorySlugs: categories.map((category) => category.slug),
+  imageUrls: images.map((image) => image.url),
   lowStock: isLowStock(totalStock),
 });

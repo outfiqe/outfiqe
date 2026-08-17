@@ -1,12 +1,18 @@
 "use client";
 
-import { Button, Skeleton } from "@outfiqe/design-system";
+import { Button, Modal, Skeleton, toast } from "@outfiqe/design-system";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
+import { getErrorMessage } from "@/shared/lib/errorMessages";
+
 import type { BrandProduct } from "../api/brandProductsSchemas";
 import { useBrandProducts } from "../hooks/useBrandProducts";
+import { useDeleteProduct } from "../hooks/useDeleteProduct";
+import { EditProductModal } from "./EditProductModal";
+import { ProductActionsMenu } from "./ProductActionsMenu";
 import { ProductModal } from "./ProductModal";
+import { StockModal } from "./StockModal";
 
 const STATUS_LABEL: Record<BrandProduct["status"], string> = {
   PENDING: "In review",
@@ -22,9 +28,25 @@ const STATUS_CLASS: Record<BrandProduct["status"], string> = {
 
 export const ProductsSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<BrandProduct | null>(null);
+  const [stockProduct, setStockProduct] = useState<BrandProduct | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<BrandProduct | null>(null);
   const products = useBrandProducts();
+  const deleteProduct = useDeleteProduct();
   const { data, isPending, hasNextPage, fetchNextPage, isFetchingNextPage } = products;
   const brandProducts = data?.pages.flatMap((page) => page.products) ?? [];
+
+  const confirmDelete = () => {
+    if (!deletingProduct) return;
+
+    deleteProduct.mutate(deletingProduct.id, {
+      onSuccess: () => {
+        setDeletingProduct(null);
+        toast.success("Product deleted");
+      },
+      onError: (error) => toast.error(getErrorMessage(error)),
+    });
+  };
 
   return (
     <div>
@@ -62,26 +84,39 @@ export const ProductsSection = () => {
 
       {brandProducts.length > 0 && (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {brandProducts.map(({ id, imageUrl, name, price, status }) => (
-            <div
-              key={id}
-              className="overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30"
-            >
+          {brandProducts.map((product) => {
+            const { id, imageUrl, name, price, status } = product;
+
+            return (
               <div
-                className="aspect-square w-full bg-muted bg-cover bg-center"
-                style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
-              />
-              <div className="p-3">
-                <p className="truncate text-sm font-semibold text-foreground">{name}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">Rs. {price.toLocaleString()}</p>
-                <span
-                  className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_CLASS[status]}`}
+                key={id}
+                className="overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30"
+              >
+                <div
+                  className="relative aspect-square w-full bg-muted bg-cover bg-center"
+                  style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
                 >
-                  {STATUS_LABEL[status]}
-                </span>
+                  <ProductActionsMenu
+                    onEdit={() => setEditingProduct(product)}
+                    onManageStock={() => setStockProduct(product)}
+                    onDelete={() => setDeletingProduct(product)}
+                    className="absolute right-2 top-2"
+                  />
+                </div>
+                <div className="p-3">
+                  <p className="truncate text-sm font-semibold text-foreground">{name}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Rs. {price.toLocaleString()}
+                  </p>
+                  <span
+                    className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_CLASS[status]}`}
+                  >
+                    {STATUS_LABEL[status]}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -98,6 +133,35 @@ export const ProductsSection = () => {
       )}
 
       <ProductModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      <EditProductModal product={editingProduct} onClose={() => setEditingProduct(null)} />
+      <StockModal product={stockProduct} onClose={() => setStockProduct(null)} />
+
+      <Modal
+        open={deletingProduct !== null}
+        onClose={() => setDeletingProduct(null)}
+        title="Delete this product?"
+        description="This can't be undone."
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setDeletingProduct(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              disabled={deleteProduct.isPending}
+              className="border border-destructive bg-transparent text-destructive hover:bg-destructive hover:text-white"
+            >
+              {deleteProduct.isPending ? "Deleting…" : "Delete"}
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-sm text-muted-foreground">
+          {deletingProduct?.status === "APPROVED"
+            ? "This product is live — it will disappear from the store immediately."
+            : "It will be removed from your product list."}
+        </p>
+      </Modal>
     </div>
   );
 };

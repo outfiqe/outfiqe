@@ -2,4 +2,3 @@ export type { BrandProfile, UpdateBrandProfileInput } from "./api/brandDashboard
 export { getBrandProfileServer } from "./api/getBrandProfileServer";
 export { BrandProfileView } from "./components/BrandProfileView";
 export { OrdersSection } from "./components/OrdersSection";
-export { ProductsSection } from "./components/ProductsSection";

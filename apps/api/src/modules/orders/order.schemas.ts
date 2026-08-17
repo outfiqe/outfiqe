@@ -10,6 +10,12 @@ const DEFAULT_LIST_PAGE_SIZE = 20;
 const MAX_LIST_PAGE_SIZE = 50;
 const REASON_MAX = 500;
 
+export const buyNowLineSchema = z.object({
+  productId: z.uuid(),
+  sizeId: z.uuid(),
+  qty: z.number().int().min(1),
+});
+
 export const checkoutBodySchema = z.object({
   fullName: z.string().trim().min(1).max(120),
   phone: z.string().trim().min(6).max(20),
@@ -18,6 +24,7 @@ export const checkoutBodySchema = z.object({
   landmark: z.string().trim().max(200).optional(),
   paymentMethod: z.enum(PaymentMethod),
   sessionId: z.string().trim().min(1).max(SESSION_ID_MAX).optional(),
+  buyNow: buyNowLineSchema.optional(),
 });
 
 export const orderIdParamSchema = z.object({

@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Earnings" };
 
 const DashboardEarningsPage = async () => {
   const { user } = await requireDashboardSession("/dashboard/earnings");
-  if (user.role === UserRole.BRAND_OWNER) redirect("/dashboard/products");
+  if (user.role === UserRole.BRAND_OWNER) redirect("/dashboard/profile");
 
   return <EarningsSection creatorStatus={user.creatorStatus} />;
 };
