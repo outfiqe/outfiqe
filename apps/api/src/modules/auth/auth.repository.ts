@@ -1,5 +1,6 @@
 import { prisma } from "#db/prisma.js";
 import type { BrandRole } from "#generated/prisma/enums.js";
+import type { DbClient } from "#types/db.types.js";
 
 import type { BrandInviteRecord, RefreshTokenRecord } from "./auth.types.js";
 
@@ -35,16 +36,19 @@ export const authRepository = {
     });
   },
 
-  async markBrandInviteAccepted(id: string): Promise<void> {
-    await prisma.brandInvite.update({ where: { id }, data: { acceptedAt: new Date() } });
+  async markBrandInviteAccepted(id: string, client: DbClient = prisma): Promise<void> {
+    await client.brandInvite.update({ where: { id }, data: { acceptedAt: new Date() } });
   },
 
-  async createBrandMembership(input: {
-    userId: string;
-    brandId: string;
-    role: BrandRole;
-  }): Promise<void> {
-    await prisma.brandMembership.create({ data: input });
+  async createBrandMembership(
+    input: {
+      userId: string;
+      brandId: string;
+      role: BrandRole;
+    },
+    client: DbClient = prisma,
+  ): Promise<void> {
+    await client.brandMembership.create({ data: input });
   },
 
   async findBrandMembershipByUserId(
