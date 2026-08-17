@@ -63,26 +63,26 @@ export const PostCommentsSection = ({
         <p className="text-[12px] text-muted-foreground">No comments yet.</p>
       )}
       <ul className="flex flex-col gap-5">
-        {comments?.map((comment) => (
-          <li key={comment.id} className="flex items-start gap-3">
-            <CommentAvatar
-              userId={comment.userId}
-              name={comment.userName}
-              avatarUrl={comment.userAvatarUrl}
-            />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="truncate text-[13px] font-semibold text-foreground">
-                  @{comment.userHandle}
-                </span>
-                <span className="shrink-0 text-[11px] text-muted-foreground">
-                  {formatRelativeTime(comment.createdAt)}
-                </span>
+        {comments?.map((comment) => {
+          const { id, userId, userName, userHandle, userAvatarUrl, body, createdAt } = comment;
+
+          return (
+            <li key={id} className="flex items-start gap-3">
+              <CommentAvatar userId={userId} name={userName} avatarUrl={userAvatarUrl} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="truncate text-[13px] font-semibold text-foreground">
+                    @{userHandle}
+                  </span>
+                  <span className="shrink-0 text-[11px] text-muted-foreground">
+                    {formatRelativeTime(createdAt)}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-[13px] leading-relaxed text-foreground">{body}</p>
               </div>
-              <p className="mt-0.5 text-[13px] leading-relaxed text-foreground">{comment.body}</p>
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
 
       <form
