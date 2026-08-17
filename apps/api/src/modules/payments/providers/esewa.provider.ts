@@ -25,11 +25,7 @@ const EsewaStatusLookup = {
   AMBIGUOUS: "AMBIGUOUS",
 } as const;
 
-const FAILED_STATUSES = new Set<string>([
-  EsewaStatusLookup.CANCELED,
-  EsewaStatusLookup.NOT_FOUND,
-  EsewaStatusLookup.AMBIGUOUS,
-]);
+const FAILED_STATUSES = new Set<string>([EsewaStatusLookup.CANCELED, EsewaStatusLookup.AMBIGUOUS]);
 
 export const esewaProvider: PaymentProvider = {
   async initiate({
@@ -66,12 +62,30 @@ export const esewaProvider: PaymentProvider = {
     url.searchParams.set("total_amount", String(totalAmount));
     url.searchParams.set("transaction_uuid", transactionUuid);
 
-    const res = await fetch(url);
+    let res: Response;
+    try {
+      res = await fetch(url);
+    } catch (error) {
+      return {
+        status: PaymentVerifyStatus.PENDING,
+        rawResponse: { unreachable: error instanceof Error ? error.message : String(error) },
+      };
+    }
+
     if (!res.ok) {
       return { status: PaymentVerifyStatus.PENDING, rawResponse: { httpStatus: res.status } };
     }
 
-    const body: unknown = await res.json();
+    let body: unknown;
+    try {
+      body = await res.json();
+    } catch (error) {
+      return {
+        status: PaymentVerifyStatus.PENDING,
+        rawResponse: { parseError: error instanceof Error ? error.message : String(error) },
+      };
+    }
+
     const status =
       typeof body === "object" && body !== null && "status" in body ? body.status : null;
 
