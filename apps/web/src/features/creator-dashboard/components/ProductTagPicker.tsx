@@ -28,10 +28,12 @@ const ProductThumb = ({ url, className }: { url: string | null; className?: stri
   </div>
 );
 
+type CachedTagProduct = { name: string; imageUrl: string | null };
+
 type ProductTagPickerProps = {
   taggedProducts: LookFormInput["taggedProducts"];
   maxTaggedProducts: number;
-  productCache: Record<string, PublicProduct>;
+  productCache: Record<string, CachedTagProduct>;
   onToggleProduct: (product: PublicProduct) => void;
   onRemoveTag: (productId: string) => void;
   onSizeChange: (productId: string, sizeWorn: string) => void;

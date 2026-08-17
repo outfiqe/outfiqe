@@ -2,6 +2,6 @@ export type { CreatorProfile, UpdateCreatorProfileInput } from "./api/creatorDas
 export { getCreatorProfileServer } from "./api/getCreatorProfileServer";
 export { ApplyAsCreatorButton } from "./components/ApplyAsCreatorButton";
 export { EarningsSection } from "./components/EarningsSection";
-export { LooksSection } from "./components/LooksSection";
+export { EditPostModal } from "./components/EditPostModal";
 export { PostModal } from "./components/PostModal";
 export { ShareSection } from "./components/ShareSection";

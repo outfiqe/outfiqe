@@ -31,12 +31,6 @@ creatorLookRoutes.get(
 );
 creatorLookRoutes.get("/tags/trending", creatorLookController.trendingTags);
 creatorLookRoutes.get(
-  "/mine",
-  requireAuth,
-  validate({ query: listCreatorLooksQuerySchema }),
-  creatorLookController.listMine,
-);
-creatorLookRoutes.get(
   "/saved",
   requireAuth,
   validate({ query: listSavedQuerySchema }),
@@ -53,6 +47,25 @@ creatorLookRoutes.post(
   requireAuth,
   validate({ body: createCreatorLookSchema }),
   creatorLookController.create,
+);
+
+creatorLookRoutes.get(
+  "/:lookId",
+  requireAuth,
+  validate({ params: lookIdParamsSchema }),
+  creatorLookController.getOwn,
+);
+creatorLookRoutes.patch(
+  "/:lookId",
+  requireAuth,
+  validate({ params: lookIdParamsSchema, body: createCreatorLookSchema }),
+  creatorLookController.update,
+);
+creatorLookRoutes.delete(
+  "/:lookId",
+  requireAuth,
+  validate({ params: lookIdParamsSchema }),
+  creatorLookController.remove,
 );
 
 creatorLookRoutes.post(

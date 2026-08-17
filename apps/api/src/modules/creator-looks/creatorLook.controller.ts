@@ -28,12 +28,29 @@ export const creatorLookController = {
     sendSuccess(res, look, "Look posted.", CREATED_STATUS);
   },
 
-  async listMine(_req: Request, res: Response) {
+  async getOwn(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
-    const query = validated.query<ListCreatorLooksQuery>(res);
-    const page = await creatorLookService.listMine(userId, query);
+    const { lookId } = validated.params<LookIdParams>(res);
 
-    sendSuccess(res, page, "Your looks.");
+    const look = await creatorLookService.getOwn(lookId, userId);
+    sendSuccess(res, look, "Post detail.");
+  },
+
+  async update(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { lookId } = validated.params<LookIdParams>(res);
+    const body = validated.body<CreateCreatorLookBody>(res);
+
+    const look = await creatorLookService.update(lookId, userId, body);
+    sendSuccess(res, look, "Post updated.");
+  },
+
+  async remove(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { lookId } = validated.params<LookIdParams>(res);
+
+    await creatorLookService.remove(lookId, userId);
+    sendSuccess(res, { deleted: true }, "Post deleted.");
   },
 
   async listSaved(_req: Request, res: Response) {

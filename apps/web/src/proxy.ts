@@ -51,10 +51,6 @@ const DASHBOARD_ROLE_RULES: Record<
     allow: (role) => role === UserRole.BRAND_OWNER,
     fallback: "/dashboard/profile",
   },
-  "/dashboard/posts": {
-    allow: (role) => role !== UserRole.BRAND_OWNER,
-    fallback: "/dashboard/products",
-  },
 };
 
 export const proxy = async (request: NextRequest) => {

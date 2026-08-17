@@ -1,29 +1,34 @@
-import { z } from "zod";
-
 import { type ProductPage, productPageSchema } from "@/features/products/api/productSchemas";
 import { apiClient } from "@/shared/lib/apiClient";
 
 import type { LookFormInput } from "../schemas/lookForm.schema";
-import { type CreatorLook, creatorLookSchema } from "./creatorLooksSchemas";
-
-const creatorLookPageSchema = z.object({
-  looks: z.array(creatorLookSchema),
-  nextCursor: z.string().nullable(),
-});
-export type CreatorLookPage = z.infer<typeof creatorLookPageSchema>;
+import {
+  type CreatorLook,
+  type CreatorLookEditDetail,
+  creatorLookEditDetailSchema,
+  creatorLookSchema,
+} from "./creatorLooksSchemas";
 
 const TAGGABLE_PRODUCTS_LIMIT = 20;
 
 export const creatorLooksApi = {
-  async listMine(cursor?: string): Promise<CreatorLookPage> {
-    const params = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
-    const res = await apiClient.get<CreatorLookPage>(`/creator-looks/mine${params}`);
-    return creatorLookPageSchema.parse(res.data);
-  },
-
   async create(input: LookFormInput): Promise<CreatorLook> {
     const res = await apiClient.post<CreatorLook>("/creator-looks", input);
     return creatorLookSchema.parse(res.data);
+  },
+
+  async getOwn(lookId: string): Promise<CreatorLookEditDetail> {
+    const res = await apiClient.get<CreatorLookEditDetail>(`/creator-looks/${lookId}`);
+    return creatorLookEditDetailSchema.parse(res.data);
+  },
+
+  async update(lookId: string, input: LookFormInput): Promise<CreatorLook> {
+    const res = await apiClient.patch<CreatorLook>(`/creator-looks/${lookId}`, input);
+    return creatorLookSchema.parse(res.data);
+  },
+
+  async remove(lookId: string): Promise<void> {
+    await apiClient.del(`/creator-looks/${lookId}`);
   },
 
   async listTaggableProducts(q?: string): Promise<ProductPage> {

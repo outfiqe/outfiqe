@@ -40,7 +40,7 @@ export const PostDetailModal = ({
   const {
     isAuthenticated,
     isOwnPost,
-    primaryTag,
+    taggedProducts,
     gated,
     likeMutation,
     saveMutation,
@@ -79,7 +79,13 @@ export const PostDetailModal = ({
         <PostCarousel images={images} fallbackColor={getAvatarColor(id)} aspectRatio="4 / 5" />
 
         <div className="px-4 py-3">
-          {primaryTag && <PostTagPill lookId={id} tag={primaryTag} className="mb-2" />}
+          {taggedProducts.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {taggedProducts.map((tag) => (
+                <PostTagPill key={tag.id} lookId={id} tag={tag} />
+              ))}
+            </div>
+          )}
 
           {caption && (
             <p className="text-[13.5px] leading-relaxed text-muted-foreground">{caption}</p>

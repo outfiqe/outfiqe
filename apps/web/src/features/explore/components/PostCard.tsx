@@ -34,7 +34,7 @@ export const PostCard = ({ post, onImageClick }: PostCardProps) => {
   const {
     isAuthenticated,
     isOwnPost,
-    primaryTag,
+    taggedProducts,
     gated,
     likeMutation,
     saveMutation,
@@ -69,7 +69,13 @@ export const PostCard = ({ post, onImageClick }: PostCardProps) => {
       </div>
 
       <div className="px-3 py-2.5">
-        {primaryTag && <PostTagPill lookId={id} tag={primaryTag} className="mb-2" />}
+        {taggedProducts.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {taggedProducts.map((tag) => (
+              <PostTagPill key={tag.id} lookId={id} tag={tag} />
+            ))}
+          </div>
+        )}
 
         {caption && (
           <PostCaption
