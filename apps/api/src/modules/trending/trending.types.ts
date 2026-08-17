@@ -49,3 +49,12 @@ export type TrendingEntry = { productId: string; score: number };
 export type TrendingSnapshotCursor = { sessionId: string; offset: number };
 
 export type TrendingProductPage = { ids: string[]; nextCursor: string | null };
+
+export type TrendingProductSummary = {
+  productId: string;
+  name: string;
+  brand: string;
+  imageUrl: string | null;
+  score: number;
+  rank: number;
+};

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { ProductType } from "#generated/prisma/enums.js";
 import { decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
+import { productRepository } from "#modules/products/product.repository.js";
 import { cacheService } from "#redis/cache.service.js";
 import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
 import { describeError } from "#redis/redis.utils.js";
@@ -24,6 +25,7 @@ import type {
   TrendDebugSnapshot,
   TrendingEntry,
   TrendingProductPage,
+  TrendingProductSummary,
   TrendingSnapshotCursor,
 } from "./trending.types.js";
 import {
@@ -182,6 +184,29 @@ export const trendingService = {
         : null;
 
     return { ids: pageIds, nextCursor };
+  },
+
+  async listTopTrendingProducts(limit: number): Promise<TrendingProductSummary[]> {
+    const { candidates } = await computeAllScoreBreakdowns(new Date());
+    const top = candidates.slice(0, limit);
+
+    const products = await productRepository.listApprovedByIds(top.map((c) => c.productId));
+    const productById = new Map(products.map((product) => [product.id, product]));
+
+    const summaries: TrendingProductSummary[] = [];
+    top.forEach((candidate, index) => {
+      const product = productById.get(candidate.productId);
+      if (!product) return;
+      summaries.push({
+        productId: candidate.productId,
+        name: product.name,
+        brand: product.brand.name,
+        imageUrl: product.imageUrl,
+        score: candidate.score,
+        rank: index + 1,
+      });
+    });
+    return summaries;
   },
 
   async getDebugSnapshot(productId: string): Promise<TrendDebugSnapshot | null> {
