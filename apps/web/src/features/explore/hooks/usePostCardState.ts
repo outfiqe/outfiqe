@@ -26,7 +26,6 @@ export const usePostCardState = ({ id, creator, taggedProducts }: FeedPost) => {
   const [draft, setDraft] = useState("");
 
   const isOwnPost = state.user?.id === creator.id;
-  const primaryTag = taggedProducts[0];
 
   const comments = useQuery({
     queryKey: ["look-comments", id],
@@ -55,7 +54,7 @@ export const usePostCardState = ({ id, creator, taggedProducts }: FeedPost) => {
   return {
     isAuthenticated,
     isOwnPost,
-    primaryTag,
+    taggedProducts,
     gated,
     likeMutation,
     saveMutation,
