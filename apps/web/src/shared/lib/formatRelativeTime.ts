@@ -1,17 +1,32 @@
-const MINUTE_MS = 60_000;
-const HOUR_MS = 60 * MINUTE_MS;
-const DAY_MS = 24 * HOUR_MS;
-const WEEK_MS = 7 * DAY_MS;
-const MONTH_MS = 30 * DAY_MS;
-const YEAR_MS = 365 * DAY_MS;
+import { differenceInDays } from "date-fns/differenceInDays";
+import { differenceInHours } from "date-fns/differenceInHours";
+import { differenceInMinutes } from "date-fns/differenceInMinutes";
+import { differenceInMonths } from "date-fns/differenceInMonths";
+import { differenceInWeeks } from "date-fns/differenceInWeeks";
+import { differenceInYears } from "date-fns/differenceInYears";
+
+const WEEKS_PER_MONTH = 4;
+const MONTHS_PER_YEAR = 12;
 
 export const formatRelativeTime = (isoDate: string): string => {
-  const elapsedMs = Date.now() - new Date(isoDate).getTime();
-  if (elapsedMs < MINUTE_MS) return "now";
-  if (elapsedMs < HOUR_MS) return `${Math.floor(elapsedMs / MINUTE_MS)}m`;
-  if (elapsedMs < DAY_MS) return `${Math.floor(elapsedMs / HOUR_MS)}h`;
-  if (elapsedMs < WEEK_MS) return `${Math.floor(elapsedMs / DAY_MS)}d`;
-  if (elapsedMs < MONTH_MS) return `${Math.floor(elapsedMs / WEEK_MS)}w`;
-  if (elapsedMs < YEAR_MS) return `${Math.floor(elapsedMs / MONTH_MS)}mo`;
-  return `${Math.floor(elapsedMs / YEAR_MS)}y`;
+  const date = new Date(isoDate);
+  const now = new Date();
+
+  const minutes = differenceInMinutes(now, date);
+  if (minutes < 1) return "now";
+  if (minutes < 60) return `${minutes}m`;
+
+  const hours = differenceInHours(now, date);
+  if (hours < 24) return `${hours}h`;
+
+  const days = differenceInDays(now, date);
+  if (days < 7) return `${days}d`;
+
+  const weeks = differenceInWeeks(now, date);
+  if (weeks < WEEKS_PER_MONTH) return `${weeks}w`;
+
+  const months = differenceInMonths(now, date);
+  if (months < MONTHS_PER_YEAR) return `${months}mo`;
+
+  return `${differenceInYears(now, date)}y`;
 };
