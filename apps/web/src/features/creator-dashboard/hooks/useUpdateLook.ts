@@ -8,13 +8,17 @@ import { creatorLooksApi } from "../api/creatorLooksApi";
 import type { CreatorLook } from "../api/creatorLooksSchemas";
 import type { LookFormInput } from "../schemas/lookForm.schema";
 
-export const useCreateLook = () => {
+type UpdateLookVariables = { lookId: string; input: LookFormInput };
+
+export const useUpdateLook = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<CreatorLook, ApiClientError, LookFormInput>({
-    mutationFn: creatorLooksApi.create,
+  return useMutation<CreatorLook, ApiClientError, UpdateLookVariables>({
+    mutationFn: ({ lookId, input }) => creatorLooksApi.update(lookId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["creator-looks"] });
+      queryClient.invalidateQueries({ queryKey: ["explore-feed"] });
+      queryClient.invalidateQueries({ queryKey: ["saved-posts"] });
     },
   });
 };

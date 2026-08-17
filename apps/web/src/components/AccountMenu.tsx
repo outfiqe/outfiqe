@@ -100,7 +100,7 @@ export const AccountMenu = () => {
                 </button>
               ) : (
                 <Link
-                  href="/dashboard/posts"
+                  href="/dashboard/profile"
                   className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
                 >
                   Become a creator

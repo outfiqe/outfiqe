@@ -20,3 +20,12 @@ export const lookFormSchema = z.object({
     .max(MAX_TAGGED_PRODUCTS),
 });
 export type LookFormInput = z.infer<typeof lookFormSchema>;
+
+export const editLookFormSchema = z.object({
+  caption: z.string().max(CAPTION_MAX).optional(),
+  taggedProducts: z
+    .array(taggedProductInputSchema)
+    .min(MIN_TAGGED_PRODUCTS)
+    .max(MAX_TAGGED_PRODUCTS),
+});
+export type EditLookFormInput = z.infer<typeof editLookFormSchema>;

@@ -7,8 +7,10 @@ import { useState } from "react";
 import { FollowersModal } from "@/components/FollowersModal";
 import { FollowingModal } from "@/components/FollowingModal";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { EditPostModal } from "@/features/creator-dashboard/components/EditPostModal";
+import { useDeleteLook } from "@/features/creator-dashboard/hooks/useDeleteLook";
 import { useUpdateCreatorProfile } from "@/features/creator-dashboard/hooks/useUpdateCreatorProfile";
-import { PostDetailModal } from "@/features/explore";
+import { AddPostButton, PostDetailModal } from "@/features/explore";
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
@@ -29,8 +31,8 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const { isAuthenticated, state, updateUser } = useAuth();
   const followMutation = useToggleFollow("user");
   const updateProfile = useUpdateCreatorProfile();
-  const { handle, userId, heightCm, creatorStatus, postsCount, taggedPiecesCount, followingCount } =
-    creator;
+  const deleteLook = useDeleteLook();
+  const { handle, userId, heightCm, creatorStatus, taggedPiecesCount, followingCount } = creator;
   const looks = useInfiniteCreatorLooks(handle);
   const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = looks;
 
@@ -38,12 +40,15 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const [avatarUrl, setAvatarUrl] = useState(creator.avatarUrl);
   const [isFollowing, setIsFollowing] = useState(creator.isFollowing);
   const [followerCount, setFollowerCount] = useState(creator.followerCount);
+  const [postsCount, setPostsCount] = useState(creator.postsCount);
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
   const [followersModalOpen, setFollowersModalOpen] = useState(false);
   const [followingModalOpen, setFollowingModalOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [draftName, setDraftName] = useState(name);
   const [draftAvatarUrl, setDraftAvatarUrl] = useState(avatarUrl);
+  const [editingLookId, setEditingLookId] = useState<string | null>(null);
+  const [deletingLookId, setDeletingLookId] = useState<string | null>(null);
   const isOwnProfile = state.user?.id === userId;
 
   const toggleFollow = () => {
@@ -92,6 +97,19 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
 
   const posts = data?.pages.flatMap((page) => page.posts) ?? [];
   const detailPost = posts.find((post) => post.id === detailPostId) ?? null;
+
+  const confirmDeletePost = () => {
+    if (!deletingLookId) return;
+
+    deleteLook.mutate(deletingLookId, {
+      onSuccess: () => {
+        setPostsCount((count) => Math.max(0, count - 1));
+        setDeletingLookId(null);
+        toast.success("Post deleted");
+      },
+      onError: (error) => toast.error(getErrorMessage(error)),
+    });
+  };
 
   const avatarFallback = (
     <span
@@ -186,6 +204,9 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
               key={post.id}
               post={post}
               onClick={() => setDetailPostId(post.id)}
+              isOwnProfile={isOwnProfile}
+              onEdit={() => setEditingLookId(post.id)}
+              onDelete={() => setDeletingLookId(post.id)}
             />
           ))}
         </div>
@@ -245,6 +266,37 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
             </div>
           </div>
         </Modal>
+      )}
+
+      {isOwnProfile && (
+        <>
+          <AddPostButton />
+          <EditPostModal lookId={editingLookId} onClose={() => setEditingLookId(null)} />
+          <Modal
+            open={deletingLookId !== null}
+            onClose={() => setDeletingLookId(null)}
+            title="Delete post?"
+            description="This can't be undone."
+            footer={
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setDeletingLookId(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmDeletePost}
+                  disabled={deleteLook.isPending}
+                  className="border border-destructive bg-transparent text-destructive hover:bg-destructive hover:text-white"
+                >
+                  {deleteLook.isPending ? "Deleting…" : "Delete"}
+                </Button>
+              </div>
+            }
+          >
+            <p className="text-sm text-muted-foreground">
+              Likes, comments, and tags on this post will be removed too.
+            </p>
+          </Modal>
+        </>
       )}
 
       {hasNextPage && (

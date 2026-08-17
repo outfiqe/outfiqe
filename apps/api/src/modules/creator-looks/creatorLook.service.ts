@@ -18,8 +18,8 @@ import type {
 } from "./creatorLook.schemas.js";
 import type {
   CommentPage,
+  CreatorLookEditDetail,
   CreatorLookSummary,
-  CreatorLookSummaryPage,
   FeedPage,
   TaggedProductPage,
   TrendingTag,
@@ -36,6 +36,12 @@ const FOR_YOU_TAB = "for_you";
 const requireActiveLook = async (lookId: string): Promise<{ id: string }> => {
   const look = await creatorLookRepository.findActiveById(lookId);
   if (!look) throw new AppError("LOOK_NOT_FOUND", "This look no longer exists.", NOT_FOUND_STATUS);
+  return look;
+};
+
+const requireOwnedLook = async (lookId: string, userId: string): Promise<CreatorLookEditDetail> => {
+  const look = await creatorLookRepository.findOwnedById(lookId, userId);
+  if (!look) throw new AppError("LOOK_NOT_FOUND", "This post no longer exists.", NOT_FOUND_STATUS);
   return look;
 };
 
@@ -83,11 +89,47 @@ export const creatorLookService = {
     return look;
   },
 
-  async listMine(userId: string, query: ListCreatorLooksQuery): Promise<CreatorLookSummaryPage> {
-    return creatorLookRepository.listByCreatorId(userId, {
-      cursor: query.cursor,
-      limit: query.limit,
+  async getOwn(lookId: string, userId: string): Promise<CreatorLookEditDetail> {
+    return requireOwnedLook(lookId, userId);
+  },
+
+  async update(
+    lookId: string,
+    userId: string,
+    body: CreateCreatorLookBody,
+  ): Promise<CreatorLookSummary> {
+    const existing = await requireOwnedLook(lookId, userId);
+    const newProductIds = body.taggedProducts.map((tag) => tag.productId);
+    await requireApprovedProducts(newProductIds);
+
+    const [coverImageUrl, ...restImageUrls] = body.imageUrls;
+    if (!coverImageUrl) {
+      throw new AppError("VALIDATION_ERROR", "At least one image is required.", VALIDATION_STATUS);
+    }
+
+    const updated = await creatorLookRepository.update(lookId, {
+      imageUrls: [coverImageUrl, ...restImageUrls],
+      caption: body.caption,
+      taggedProducts: body.taggedProducts,
+      hashtags: extractHashtags(body.caption ?? ""),
     });
+
+    const oldProductIds = existing.taggedProducts.map((tag) => tag.productId);
+    const affectedProductIds = [...new Set([...oldProductIds, ...newProductIds])];
+    await Promise.all(
+      affectedProductIds.map((productId) => productService.recountWornBy(productId)),
+    );
+
+    return updated;
+  },
+
+  async remove(lookId: string, userId: string): Promise<void> {
+    const existing = await requireOwnedLook(lookId, userId);
+    await creatorLookRepository.softDelete(lookId);
+
+    await Promise.all(
+      existing.taggedProducts.map((tag) => productService.recountWornBy(tag.productId)),
+    );
   },
 
   async listMySaved(userId: string, query: ListSavedQuery): Promise<FeedPage> {

@@ -15,18 +15,36 @@ import type {
   CommentPage,
   CommentRecord,
   CreateCreatorLookInput,
+  CreatorLookEditDetail,
   CreatorLookFeedPost,
   CreatorLookSummary,
-  CreatorLookSummaryPage,
   FeedPage,
   TaggedProductPage,
   TrendingTag,
+  UpdateCreatorLookInput,
 } from "./creatorLook.types.js";
 import type { SimpleCursor, TrendingSnapshotCursor } from "./creatorLook.utils.js";
-import { decodeCursor, encodeCursor, toSummary } from "./creatorLook.utils.js";
+import { decodeCursor, encodeCursor, toEditDetail, toSummary } from "./creatorLook.utils.js";
 
 const taggedProductsInclude = {
   taggedProducts: { include: { product: { select: { id: true, name: true, imageUrl: true } } } },
+} as const;
+
+const editDetailInclude = {
+  images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
+  taggedProducts: {
+    include: {
+      product: {
+        select: {
+          id: true,
+          name: true,
+          price: true,
+          imageUrl: true,
+          brand: { select: { name: true } },
+        },
+      },
+    },
+  },
 } as const;
 
 const feedRelationsInclude = {
@@ -360,20 +378,52 @@ export const creatorLookRepository = {
     return toSummary(look);
   },
 
-  async listByCreatorId(
-    creatorId: string,
-    params: { cursor?: string; limit: number },
-  ): Promise<CreatorLookSummaryPage> {
-    const looks = await prisma.creatorLook.findMany({
-      where: { creatorId, deletedAt: null },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      take: params.limit + 1,
-      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
-      include: taggedProductsInclude,
+  async findOwnedById(lookId: string, creatorId: string): Promise<CreatorLookEditDetail | null> {
+    const look = await prisma.creatorLook.findFirst({
+      where: { id: lookId, creatorId, deletedAt: null },
+      include: editDetailInclude,
+    });
+    return look ? toEditDetail(look) : null;
+  },
+
+  async update(
+    lookId: string,
+    { imageUrls, caption, taggedProducts, hashtags }: UpdateCreatorLookInput,
+  ): Promise<CreatorLookSummary> {
+    const look = await prisma.$transaction(async (tx) => {
+      await tx.creatorLookProduct.deleteMany({ where: { creatorLookId: lookId } });
+      await tx.creatorLookHashtag.deleteMany({ where: { creatorLookId: lookId } });
+      await tx.creatorLookImage.deleteMany({ where: { creatorLookId: lookId } });
+
+      const updated = await tx.creatorLook.update({
+        where: { id: lookId },
+        data: {
+          imageUrl: imageUrls[0],
+          caption,
+          images: {
+            create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })),
+          },
+          taggedProducts: {
+            create: taggedProducts.map(({ productId, sizeWorn }) => ({ productId, sizeWorn })),
+          },
+        },
+        include: taggedProductsInclude,
+      });
+
+      if (hashtags.length > 0) {
+        await tx.creatorLookHashtag.createMany({
+          data: hashtags.map((tag) => ({ creatorLookId: lookId, tag })),
+        });
+      }
+
+      return updated;
     });
 
-    const { items: pageLooks, nextCursor } = buildCursorPage(looks, params.limit, (row) => row.id);
-    return { looks: pageLooks.map(toSummary), nextCursor };
+    return toSummary(look);
+  },
+
+  async softDelete(lookId: string): Promise<void> {
+    await prisma.creatorLook.update({ where: { id: lookId }, data: { deletedAt: new Date() } });
   },
 
   async listPublicTaggedProducts(params: {

@@ -16,11 +16,6 @@ export type CreatorLookSummary = CreatorLookRecord & {
   taggedProducts: TaggedProduct[];
 };
 
-export type CreatorLookSummaryPage = {
-  looks: CreatorLookSummary[];
-  nextCursor: string | null;
-};
-
 export type TaggedProductInput = {
   productId: string;
   sizeWorn: string;
@@ -32,6 +27,30 @@ export type CreateCreatorLookInput = {
   caption?: string;
   taggedProducts: TaggedProductInput[];
   hashtags: string[];
+};
+
+export type UpdateCreatorLookInput = {
+  imageUrls: [string, ...string[]];
+  caption?: string;
+  taggedProducts: TaggedProductInput[];
+  hashtags: string[];
+};
+
+export type CreatorLookEditTaggedProduct = TaggedProductInput & {
+  product: {
+    id: string;
+    name: string;
+    brand: string;
+    price: number;
+    imageUrl: string | null;
+  };
+};
+
+export type CreatorLookEditDetail = {
+  id: string;
+  imageUrls: string[];
+  caption: string | null;
+  taggedProducts: CreatorLookEditTaggedProduct[];
 };
 
 export type TaggedProductPage<T> = {
