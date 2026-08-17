@@ -23,12 +23,40 @@ export const PostCardSkeleton = () => {
   );
 };
 
-export const ExploreFeedSkeleton = ({ layout = FEED_LAYOUT.GRID }: { layout?: FeedLayout }) => {
+const PostGridCardSkeleton = () => {
+  return (
+    <div className="mb-4 break-inside-avoid space-y-2">
+      <Skeleton className="aspect-4/5 w-full rounded-2xl" />
+      <Skeleton className="h-3 w-full" />
+      <Skeleton className="h-3 w-2/3" />
+    </div>
+  );
+};
+
+type ExploreFeedSkeletonProps = {
+  layout?: FeedLayout;
+  compactGrid?: boolean;
+};
+
+export const ExploreFeedSkeleton = ({
+  layout = FEED_LAYOUT.GRID,
+  compactGrid = false,
+}: ExploreFeedSkeletonProps) => {
   if (layout === FEED_LAYOUT.LIST) {
     return (
       <div role="status" aria-label="Loading feed" className="mx-auto flex max-w-xl flex-col">
         {Array.from({ length: 4 }).map((_, index) => (
           <PostCardSkeleton key={index} />
+        ))}
+      </div>
+    );
+  }
+
+  if (compactGrid) {
+    return (
+      <div role="status" aria-label="Loading feed" className="columns-2 gap-4 xl:columns-3">
+        {Array.from({ length: 9 }).map((_, index) => (
+          <PostGridCardSkeleton key={index} />
         ))}
       </div>
     );

@@ -1,0 +1,30 @@
+# explore
+
+## Purpose
+
+The public social feed: browsing posts (looks), liking/saving/commenting, following creators, and viewing a single post in detail. Owns the post-card/post-detail UI that other features (`creator-profile`, `saved posts`) reuse rather than rebuild.
+
+## Structure
+
+- `components/ExploreFeed.tsx` — the `/explore` page: filter tabs (For You / Following / a trending tag), infinite-scroll feed, sidebar, and live updates via socket. Supports two layouts — List renders `PostCard`; Grid renders the lighter `PostGridCard` in a Pinterest-style masonry.
+- `components/PostCard.tsx` — one feed card (List layout): header, photo carousel, tagged-product pills, caption, like/comment/save row, and an inline expandable comments section.
+- `components/PostGridCard.tsx` — one grid tile (Grid layout): just the image (with a stack icon if the post has multiple photos) and a truncated caption below it via `PostCaption` — no header/actions/comments, since tapping it opens the full `PostDetailModal`. Deliberately lighter than `PostCard` so two columns fit comfortably on a phone screen; `EXPLORE_GRID_BREAKPOINT_COLUMNS` (`explore.constants.ts`) never drops below 2 columns, unlike the richer-card masonry `MASONRY_BREAKPOINT_COLUMNS` used by `SavedPostsGrid`, which still collapses to 1 column on mobile because it renders full `PostCard`s.
+- `components/PostDetailModal.tsx` — the modal opened when a post's image is clicked (from the feed, saved posts, or a creator's profile grid). Two-pane layout: a fixed photo pane on the left, and a scrollable pane on the right (creator header, tags, caption, actions, comments) — same shape as `PostCard`'s content, just side-by-side with the image instead of stacked below it.
+- `components/PostCardHeader.tsx`, `PostCarousel.tsx`, `PostCarouselControls.tsx`, `PostCaption.tsx`, `PostActionsRow.tsx`, `PostTagPill.tsx`, `PostCommentsSection.tsx` — the building blocks shared by `PostCard` and `PostDetailModal`.
+- `components/SavedPostsGrid.tsx` — the saved-posts view: a masonry grid of `PostCard`s that also opens `PostDetailModal` on click.
+- `components/AddPostButton.tsx` — floating action button that opens `creator-dashboard`'s `PostModal` (cross-feature import — this feature displays posts, `creator-dashboard` owns creating/editing them).
+- `components/Sidebar.tsx`, `ExploreSidebarNav.tsx`, `HeaderBackdrop.tsx`, `FeedFilterTabs.tsx`, `PostCardSkeleton.tsx` — the rest of the feed page's chrome and loading states.
+- `api/exploreFeedApi.ts`, `exploreFeedSchemas.ts` — feed/comment fetches and the `FeedPost`/`FeedComment` shapes everything above is built on.
+- `hooks/usePostCardState.ts` — the mutation/state bundle (`gated`, like/save/follow mutations, comments query + draft + submit) shared by `PostCard` and `PostDetailModal` so both stay in sync with the same query cache.
+- `hooks/useInfiniteExploreFeed.ts`, `useInfiniteSavedPosts.ts`, `useLikeLook.ts`, `useSaveLook.ts`, `useFollowCreator.ts`, `useTrendingTags.ts`, `useSuggestedCreators.ts`, `useExploreAuthGate.ts`, `useExploreFeedSocket.ts` — one hook per query/mutation/concern; `useExploreAuthGate`'s `gated()` redirects an unauthenticated visitor to sign-in instead of letting them like/save/comment/follow.
+- `utils/feedCacheUpdate.ts` — `patchPostInFeedCaches`, applying an optimistic/server patch to a post across every query cache it might currently be sitting in (feed, saved grid, single-post views).
+
+## Funnel
+
+**User-facing:** anyone can browse `/explore`, switch tabs, and scroll the feed. Clicking a post's photo opens `PostDetailModal` with the same content as the card, laid out beside the image instead of below it. Liking/saving/following/commenting all prompt a sign-in redirect if the visitor isn't authenticated (`useExploreAuthGate`). Signed-in creators post via the floating `AddPostButton`.
+
+**Technical:** `ExploreFeed`/`SavedPostsGrid` fetch pages via `useInfiniteExploreFeed`/`useInfiniteSavedPosts` → `exploreFeedApi` → `GET /explore/feed` / `GET /explore/saved`. `PostCard` and `PostDetailModal` both read their interactive state from `usePostCardState`, so liking/saving/commenting from either place updates the same React Query cache entries (`patchPostInFeedCaches`) and stays consistent across the feed, saved grid, and any open detail modal. `useExploreFeedSocket` listens for server-pushed feed events to keep counts live without a refetch.
+
+## Non-obvious rationale
+
+**`PostDetailModal` intentionally does not reuse `PostCard` directly.** Both are built from the same sub-components (`PostCardHeader`, `PostCarousel`, `PostActionsRow`, `PostTagPill`, `PostCommentsSection`) and the same `usePostCardState`, but `PostCard` is a page-flow block (header on top, image, then content stacked below) while `PostDetailModal` is a two-pane focused view (fixed image pane beside a scrollable content pane, sized like `creator-dashboard`'s `PostModal`/`MediaFormShell`). The detail modal was reshaped this way specifically so the caption and like/comment/save row are visible immediately next to the image — the previous single-column, page-scrolling layout let a tall image push that content below the fold with no visual hint that there was more to scroll to.

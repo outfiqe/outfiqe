@@ -1,37 +1,28 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Button,
-  CropSurface,
-  FormBanner,
-  getCroppedImageFile,
-  HiddenFileInput,
-  Modal,
-  toast,
-} from "@outfiqe/design-system";
+import { Button, FormBanner, Modal, toast } from "@outfiqe/design-system";
 import { useDebouncedValue } from "@outfiqe/hooks";
-import { ImagePlus, Plus, X } from "lucide-react";
-import { type CSSProperties, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import type { PublicProduct } from "@/features/products/api/productSchemas";
-import { uploadsApi } from "@/shared/api/uploadsApi";
+import { MediaFormShell } from "@/shared/components/MediaFormShell";
+import { PendingPhotoThumbnailRail } from "@/shared/components/PendingPhotoThumbnailRail";
+import { PhotoCropPane } from "@/shared/components/PhotoCropPane";
+import { resolvePendingPhotoUrls, usePendingPhotos } from "@/shared/hooks/usePendingPhotos";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { useCreateLook } from "../hooks/useCreateLook";
-import { usePendingPhotos } from "../hooks/usePendingPhotos";
 import { useTaggableProducts } from "../hooks/useTaggableProducts";
 import { type LookFormInput, lookFormSchema } from "../schemas/lookForm.schema";
-import { PendingPhotoThumbnailRail } from "./PendingPhotoThumbnailRail";
 import {
   CROP_BOX_STYLE,
   DEFAULT_IMAGE_MIME_TYPE,
   MAX_PHOTOS,
   MAX_TAGGED_PRODUCTS,
-  MODAL_ROW_HEIGHT_PX,
   PHOTO_ASPECT,
   SEARCH_DEBOUNCE_MS,
 } from "./PostModal.constants";
@@ -86,19 +77,7 @@ export const PostModal = ({ open, onClose }: PostModalProps) => {
     setIsProcessingPhotos(true);
     setPhotoError(null);
     try {
-      const files = await Promise.all(
-        pending.photos.map((photo) =>
-          photo.croppedAreaPixels
-            ? getCroppedImageFile(
-                photo.objectUrl,
-                photo.croppedAreaPixels,
-                photo.file.name,
-                photo.file.type || DEFAULT_IMAGE_MIME_TYPE,
-              )
-            : photo.file,
-        ),
-      );
-      const urls = await uploadsApi.upload(files);
+      const urls = await resolvePendingPhotoUrls(pending.photos, DEFAULT_IMAGE_MIME_TYPE);
       form.setValue("imageUrls", urls, { shouldValidate: true });
       await submitLook();
     } catch {
@@ -145,7 +124,6 @@ export const PostModal = ({ open, onClose }: PostModalProps) => {
   };
 
   const searchResults = taggableProducts.data?.products ?? [];
-  const activePhoto = pending.activePhoto;
 
   return (
     <Modal
@@ -157,121 +135,19 @@ export const PostModal = ({ open, onClose }: PostModalProps) => {
     >
       {create.isError && <FormBanner>{getErrorMessage(create.error)}</FormBanner>}
 
-      <div
-        className="-mx-6 -my-5 flex flex-col sm:h-[var(--modal-row-height)] sm:flex-row"
-        style={{ "--modal-row-height": `${MODAL_ROW_HEIGHT_PX}px` } as CSSProperties}
-      >
-        <div className="flex shrink-0 flex-col border-b border-border sm:w-95 sm:border-b-0 sm:border-r">
-          {activePhoto ? (
-            <CropSurface
-              imageSrc={activePhoto.objectUrl}
-              aspect={PHOTO_ASPECT}
-              crop={activePhoto.crop}
-              onCropChange={(crop) => pending.updateActivePhoto({ crop })}
-              zoom={activePhoto.zoom}
-              onZoomChange={(zoom) => pending.updateActivePhoto({ zoom })}
-              onCropComplete={(croppedAreaPixels) =>
-                pending.updateActivePhoto({ croppedAreaPixels })
-              }
-              className="min-h-0 flex-1"
-              cropAreaStyle={CROP_BOX_STYLE}
-              showGrid
-              showZoomSlider={false}
-              overlay={
-                <>
-                  <button
-                    type="button"
-                    onClick={() => pending.removePhoto(activePhoto.id)}
-                    aria-label="Remove photo"
-                    className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-black/55 text-white transition-colors hover:bg-black/70"
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                  <span className="absolute bottom-2.5 left-1/2 -translate-x-1/2 rounded-full bg-black/55 px-2.5 py-1 text-xs font-medium text-white">
-                    {pending.photos.length}/{MAX_PHOTOS} photos
-                  </span>
-                  {pending.photos.length < MAX_PHOTOS && (
-                    <button
-                      type="button"
-                      onClick={() => pending.inputRef.current?.click()}
-                      aria-label="Add another photo"
-                      className="absolute bottom-2.5 right-2.5 flex size-9 items-center justify-center rounded-full bg-foreground text-background shadow-md transition-transform hover:scale-105"
-                    >
-                      <Plus className="size-4.5" />
-                    </button>
-                  )}
-                </>
-              }
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => pending.inputRef.current?.click()}
-              style={{ aspectRatio: CROP_BOX_STYLE.aspectRatio }}
-              className="relative flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-2 bg-muted text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ImagePlus className="size-7" />
-              <span className="text-sm font-medium">Add a photo</span>
-              <span className="absolute bottom-2.5 left-1/2 -translate-x-1/2 rounded-full bg-black/55 px-2.5 py-1 text-xs font-medium text-white">
-                {pending.photos.length}/{MAX_PHOTOS} photos
-              </span>
-            </button>
-          )}
-
-          <HiddenFileInput inputRef={pending.inputRef} onFilesSelected={pending.handleFileSelect} />
-
-          {(photoError || form.formState.errors.imageUrls) && (
-            <p className="px-3 py-2 text-center text-xs text-destructive">
-              {photoError ?? form.formState.errors.imageUrls?.message}
-            </p>
-          )}
-        </div>
-
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
-            <PendingPhotoThumbnailRail
-              photos={pending.photos}
-              activePhotoId={activePhoto?.id}
-              onSelect={pending.setActiveId}
-              onRemove={pending.removePhoto}
-            />
-
-            <div className="flex items-center gap-2.5">
-              <span
-                aria-hidden
-                className="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                style={{ backgroundColor: getAvatarColor(state.user?.id ?? "") }}
-              >
-                {initialsFor(state.user?.name ?? "")}
-              </span>
-              <span className="text-sm font-semibold text-foreground">{state.user?.name}</span>
-            </div>
-
-            <textarea
-              rows={4}
-              placeholder="Write your caption here…."
-              className="w-full resize-none bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground"
-              {...form.register("caption")}
-            />
-
-            <ProductTagPicker
-              taggedProducts={taggedProducts}
-              maxTaggedProducts={MAX_TAGGED_PRODUCTS}
-              productCache={productCache}
-              onToggleProduct={toggleProduct}
-              onRemoveTag={removeTag}
-              onSizeChange={setSizeWorn}
-              productFilter={productFilter}
-              onFilterChange={setProductFilter}
-              debouncedFilter={debouncedFilter}
-              isSearching={isSearching}
-              isSearchLoading={taggableProducts.isLoading}
-              searchResults={searchResults}
-              error={form.formState.errors.taggedProducts?.message}
-            />
-          </div>
-
-          <div className="flex shrink-0 justify-end gap-2 border-t border-border px-5 py-4">
+      <MediaFormShell
+        photoAspect={PHOTO_ASPECT}
+        photos={
+          <PhotoCropPane
+            pending={pending}
+            maxPhotos={MAX_PHOTOS}
+            aspect={PHOTO_ASPECT}
+            cropAreaStyle={CROP_BOX_STYLE}
+            error={photoError ?? form.formState.errors.imageUrls?.message}
+          />
+        }
+        footer={
+          <>
             <Button variant="outline" onClick={close}>
               Cancel
             </Button>
@@ -281,9 +157,50 @@ export const PostModal = ({ open, onClose }: PostModalProps) => {
             >
               {isProcessingPhotos ? "Processing…" : create.isPending ? "Posting…" : "Post look"}
             </Button>
-          </div>
+          </>
+        }
+      >
+        <PendingPhotoThumbnailRail
+          photos={pending.photos}
+          activePhotoId={pending.activePhoto?.id}
+          onSelect={pending.setActiveId}
+          onRemove={pending.removePhoto}
+        />
+
+        <div className="flex items-center gap-2.5">
+          <span
+            aria-hidden
+            className="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+            style={{ backgroundColor: getAvatarColor(state.user?.id ?? "") }}
+          >
+            {initialsFor(state.user?.name ?? "")}
+          </span>
+          <span className="text-sm font-semibold text-foreground">{state.user?.name}</span>
         </div>
-      </div>
+
+        <textarea
+          rows={4}
+          placeholder="Write your caption here…."
+          className="w-full resize-none bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground"
+          {...form.register("caption")}
+        />
+
+        <ProductTagPicker
+          taggedProducts={taggedProducts}
+          maxTaggedProducts={MAX_TAGGED_PRODUCTS}
+          productCache={productCache}
+          onToggleProduct={toggleProduct}
+          onRemoveTag={removeTag}
+          onSizeChange={setSizeWorn}
+          productFilter={productFilter}
+          onFilterChange={setProductFilter}
+          debouncedFilter={debouncedFilter}
+          isSearching={isSearching}
+          isSearchLoading={taggableProducts.isLoading}
+          searchResults={searchResults}
+          error={form.formState.errors.taggedProducts?.message}
+        />
+      </MediaFormShell>
     </Modal>
   );
 };

@@ -4,7 +4,7 @@ import { z } from "zod";
 
 const NAME_MIN = 2;
 const NAME_MAX = 150;
-const MAX_IMAGES = 6;
+export const MAX_IMAGES = 6;
 const STOCK_MIN = 0;
 
 export const productSizeFormSchema = z.object({

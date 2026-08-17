@@ -108,7 +108,7 @@ export const ProductPicker = ({ collection, onClose }: ProductPickerProps) => {
         <label htmlFor="product-search" className="text-xs text-muted-foreground">
           Search products to add
         </label>
-        <Autocomplete>
+        <Autocomplete closeOnSelect={false}>
           <AutocompleteInput
             id="product-search"
             value={query}

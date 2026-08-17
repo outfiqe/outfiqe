@@ -34,7 +34,7 @@ export const PendingPhotoThumbnailRail = ({
               "size-full overflow-hidden rounded-lg bg-cover bg-center ring-2 ring-offset-2 ring-offset-background transition-shadow",
               photo.id === activePhotoId ? "ring-foreground" : "ring-transparent hover:ring-border",
             )}
-            style={{ backgroundImage: `url(${photo.objectUrl})` }}
+            style={{ backgroundImage: `url(${photo.url})` }}
           />
           <button
             type="button"

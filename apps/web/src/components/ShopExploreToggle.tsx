@@ -33,13 +33,14 @@ export const ShopExploreToggle = ({ size = "sm", className }: ShopExploreToggleP
   const { container, button, icon, showLabel } = SIZE_STYLES[size];
 
   const isExploreRoute = pathname?.startsWith("/explore") ?? false;
+  const isShopRoute = pathname === "/";
 
   return (
     <div
       className={cn("flex items-center rounded-full bg-muted font-semibold", container, className)}
     >
       {MODES.map(({ href, label, icon: Icon }) => {
-        const active = href === "/explore" ? isExploreRoute : !isExploreRoute;
+        const active = href === "/explore" ? isExploreRoute : isShopRoute;
         return (
           <Link
             key={href}

@@ -38,30 +38,40 @@ export const SizeStockFields = ({ sizeOptions, value, onChange }: SizeStockField
 
   return (
     <div className="space-y-2">
-      {sizeOptions.map((sizeOption) => (
-        <div key={sizeOption.id} className="flex items-center gap-3">
-          <label className="flex w-24 shrink-0 items-center gap-2 text-sm text-foreground">
-            <input
-              type="checkbox"
-              className="size-4 rounded border-border"
-              checked={isChecked(sizeOption.id)}
-              onChange={() => toggleSize(sizeOption.id)}
-            />
-            {sizeOption.label}
-          </label>
-          {isChecked(sizeOption.id) && (
-            <input
-              type="number"
-              min={0}
-              aria-label={`Stock for size ${sizeOption.label}`}
-              placeholder="Stock"
-              className="h-9 w-28 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-foreground"
-              value={stockFor(sizeOption.id)}
-              onChange={(event) => setStock(sizeOption.id, Number(event.target.value))}
-            />
-          )}
-        </div>
-      ))}
+      {sizeOptions.map((sizeOption) => {
+        const checked = isChecked(sizeOption.id);
+        const stock = stockFor(sizeOption.id);
+
+        return (
+          <div key={sizeOption.id} className="flex items-center gap-3">
+            <label className="flex w-24 shrink-0 items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                className="size-4 rounded border-border"
+                checked={checked}
+                onChange={() => toggleSize(sizeOption.id)}
+              />
+              {sizeOption.label}
+            </label>
+            {checked && (
+              <input
+                type="number"
+                min={0}
+                aria-label={`Stock for size ${sizeOption.label}`}
+                placeholder="Stock"
+                className="h-9 w-28 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-foreground"
+                value={stock === 0 ? "" : stock}
+                onChange={(event) =>
+                  setStock(
+                    sizeOption.id,
+                    event.target.value === "" ? 0 : Number(event.target.value),
+                  )
+                }
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
