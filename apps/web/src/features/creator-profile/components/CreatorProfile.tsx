@@ -198,7 +198,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
       ) : posts.length === 0 ? (
         <p className="py-10 text-sm text-muted-foreground">No posts yet.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-2 items-start gap-x-4 gap-y-5 sm:grid-cols-3">
           {posts.map((post) => (
             <CreatorPostThumbnail
               key={post.id}

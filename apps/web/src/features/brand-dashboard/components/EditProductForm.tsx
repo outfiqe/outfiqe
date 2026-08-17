@@ -1,21 +1,18 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Button,
-  FormBanner,
-  ImageUploader,
-  Input,
-  MultiSelect,
-  toast,
-} from "@outfiqe/design-system";
+import { Button, FormBanner, Input, MultiSelect, toast } from "@outfiqe/design-system";
 import type { ProductTypeSlug } from "@outfiqe/utils";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 import { useSizeOptions } from "@/features/products/hooks/useSizeOptions";
-import { uploadsApi } from "@/shared/api/uploadsApi";
+import { MediaFormShell } from "@/shared/components/MediaFormShell";
+import { PendingPhotoThumbnailRail } from "@/shared/components/PendingPhotoThumbnailRail";
+import { PhotoCropPane } from "@/shared/components/PhotoCropPane";
+import { resolvePendingPhotoUrls, usePendingPhotos } from "@/shared/hooks/usePendingPhotos";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { BrandProduct } from "../api/brandProductsSchemas";
@@ -23,7 +20,13 @@ import { useUpdateProduct } from "../hooks/useUpdateProduct";
 import {
   buildEditProductFormSchema,
   type EditProductFormInput,
+  MAX_IMAGES,
 } from "../schemas/productForm.schema";
+import {
+  DEFAULT_IMAGE_MIME_TYPE,
+  PRODUCT_CROP_BOX_STYLE,
+  PRODUCT_PHOTO_ASPECT,
+} from "./ProductModal.constants";
 import { SizeStockFields } from "./SizeStockFields";
 
 const selectClass =
@@ -39,6 +42,9 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
   const update = useUpdateProduct();
   const productTypes = useProductTypes();
   const categories = useCategories();
+  const pending = usePendingPhotos(MAX_IMAGES, product.imageUrls);
+  const [isProcessingPhotos, setIsProcessingPhotos] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
   const form = useForm<EditProductFormInput>({
     resolver: zodResolver(buildEditProductFormSchema(originalType)),
@@ -53,14 +59,13 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
     },
   });
 
-  const imageUrls = form.watch("imageUrls") ?? [];
   const type = form.watch("type");
   const sizes = form.watch("sizes") ?? [];
   const typeChanged = type !== originalType;
   const sizeOptions = useSizeOptions(type);
   const typeField = form.register("type");
 
-  const onSubmit = form.handleSubmit(async (values) => {
+  const submitEdit = form.handleSubmit(async (values) => {
     try {
       await update.mutateAsync({
         productId: product.id,
@@ -73,21 +78,55 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
     }
   });
 
+  const handleSaveChanges = async () => {
+    setIsProcessingPhotos(true);
+    setPhotoError(null);
+    try {
+      const imageUrls = await resolvePendingPhotoUrls(pending.photos, DEFAULT_IMAGE_MIME_TYPE);
+      form.setValue("imageUrls", imageUrls, { shouldValidate: true });
+      await submitEdit();
+    } catch {
+      setPhotoError("Couldn't process those photos. Try again.");
+    } finally {
+      setIsProcessingPhotos(false);
+    }
+  };
+
+  const isSaving = isProcessingPhotos || update.isPending;
+
   return (
     <>
       {update.isError && <FormBanner>{getErrorMessage(update.error)}</FormBanner>}
 
-      <form onSubmit={onSubmit} noValidate className="space-y-5">
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
-            Photos (optional)
-          </label>
-          <ImageUploader
-            value={imageUrls}
-            onChange={(urls) => form.setValue("imageUrls", urls, { shouldValidate: true })}
-            onUpload={uploadsApi.upload}
+      <MediaFormShell
+        photoAspect={PRODUCT_PHOTO_ASPECT}
+        photos={
+          <PhotoCropPane
+            pending={pending}
+            maxPhotos={MAX_IMAGES}
+            aspect={PRODUCT_PHOTO_ASPECT}
+            cropAreaStyle={PRODUCT_CROP_BOX_STYLE}
+            error={photoError}
+            emptyLabel="Add a photo (optional)"
           />
-        </div>
+        }
+        footer={
+          <>
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={() => void handleSaveChanges()} disabled={isSaving}>
+              {isSaving ? "Saving…" : "Save changes"}
+            </Button>
+          </>
+        }
+      >
+        <PendingPhotoThumbnailRail
+          photos={pending.photos}
+          activePhotoId={pending.activePhoto?.id}
+          onSelect={pending.setActiveId}
+          onRemove={pending.removePhoto}
+        />
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-foreground">Product name</label>
@@ -175,16 +214,7 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
             </p>
           )}
         </div>
-
-        <div className="flex justify-end gap-2 border-t border-border pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={update.isPending}>
-            {update.isPending ? "Saving…" : "Save changes"}
-          </Button>
-        </div>
-      </form>
+      </MediaFormShell>
     </>
   );
 };

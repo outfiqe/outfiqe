@@ -2,6 +2,8 @@
 
 import { Skeleton } from "@outfiqe/design-system";
 
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
 import type { FeedComment } from "../api/exploreFeedSchemas";
@@ -25,6 +27,9 @@ export const PostCommentsSection = ({
   onSubmit,
   className,
 }: PostCommentsSectionProps) => {
+  const { state } = useAuth();
+  const currentUser = state.user;
+
   return (
     <div className={className}>
       {isLoading && (
@@ -50,8 +55,21 @@ export const PostCommentsSection = ({
           event.preventDefault();
           onSubmit();
         }}
-        className="mt-2 flex gap-2"
+        className="mt-2 flex items-center gap-2"
       >
+        {currentUser && (
+          <span
+            aria-hidden
+            className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cover bg-center text-[10px] font-bold text-white"
+            style={
+              currentUser.avatarUrl
+                ? { backgroundImage: `url(${currentUser.avatarUrl})` }
+                : { backgroundColor: getAvatarColor(currentUser.id) }
+            }
+          >
+            {!currentUser.avatarUrl && initialsFor(currentUser.name)}
+          </span>
+        )}
         <input
           value={draft}
           onChange={(event) => onDraftChange(event.target.value)}

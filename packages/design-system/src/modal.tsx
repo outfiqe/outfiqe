@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { type ReactNode, useEffect, useRef } from "react";
 
 import { cn } from "./cn";
@@ -58,13 +59,22 @@ export const Modal = ({
         aria-labelledby={title ? "modal-title" : undefined}
         aria-label={title ? undefined : ariaLabel}
         className={cn(
-          "flex max-h-[90vh] w-full flex-col overflow-hidden rounded-t-2xl bg-card shadow-xl sm:max-w-lg sm:rounded-2xl",
+          "relative flex max-h-[90vh] w-full flex-col overflow-hidden rounded-t-2xl bg-card shadow-xl sm:max-w-lg sm:rounded-2xl",
           className,
         )}
         onClick={(event) => event.stopPropagation()}
       >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full border border-border/70 bg-background/85 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-muted"
+        >
+          <X className="size-4" />
+        </button>
+
         {title && (
-          <div className="shrink-0 border-b border-border px-4 py-3 sm:px-6 sm:py-5">
+          <div className="shrink-0 border-b border-border px-4 py-3 pr-12 sm:px-6 sm:py-5 sm:pr-14">
             <h2 id="modal-title" className="font-display text-lg font-bold text-foreground">
               {title}
             </h2>

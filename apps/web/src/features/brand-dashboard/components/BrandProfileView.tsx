@@ -20,7 +20,6 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { BrandProfile } from "../api/brandDashboardSchemas";
 import { useUpdateBrandProfile } from "../hooks/useUpdateBrandProfile";
-import { ProductsSection } from "./ProductsSection";
 
 type EditableFields = {
   contactName: string;
@@ -147,8 +146,6 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
           </dl>
         </div>
       </div>
-
-      <ProductsSection />
 
       <Modal
         open={editOpen}

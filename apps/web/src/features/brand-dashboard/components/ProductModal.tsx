@@ -1,25 +1,31 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Button,
-  FormBanner,
-  ImageUploader,
-  Input,
-  Modal,
-  MultiSelect,
-  toast,
-} from "@outfiqe/design-system";
+import { Button, FormBanner, Input, Modal, MultiSelect, toast } from "@outfiqe/design-system";
+import { PRODUCT_TYPE_SLUGS } from "@outfiqe/utils";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 import { useSizeOptions } from "@/features/products/hooks/useSizeOptions";
-import { uploadsApi } from "@/shared/api/uploadsApi";
+import { MediaFormShell } from "@/shared/components/MediaFormShell";
+import { PendingPhotoThumbnailRail } from "@/shared/components/PendingPhotoThumbnailRail";
+import { PhotoCropPane } from "@/shared/components/PhotoCropPane";
+import { resolvePendingPhotoUrls, usePendingPhotos } from "@/shared/hooks/usePendingPhotos";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { useCreateProduct } from "../hooks/useCreateProduct";
-import { type ProductFormInput, productFormSchema } from "../schemas/productForm.schema";
+import {
+  MAX_IMAGES,
+  type ProductFormInput,
+  productFormSchema,
+} from "../schemas/productForm.schema";
+import {
+  DEFAULT_IMAGE_MIME_TYPE,
+  PRODUCT_CROP_BOX_STYLE,
+  PRODUCT_PHOTO_ASPECT,
+} from "./ProductModal.constants";
 import { SizeStockFields } from "./SizeStockFields";
 
 const selectClass =
@@ -34,13 +40,16 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
   const create = useCreateProduct();
   const productTypes = useProductTypes();
   const categories = useCategories();
+  const pending = usePendingPhotos(MAX_IMAGES);
+  const [isProcessingPhotos, setIsProcessingPhotos] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
   const form = useForm<ProductFormInput>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       name: "",
       price: 0,
-      type: "tops",
+      type: PRODUCT_TYPE_SLUGS[0],
       categories: [],
       imageUrls: [],
       lowStock: false,
@@ -48,7 +57,6 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
     },
   });
 
-  const imageUrls = form.watch("imageUrls") ?? [];
   const type = form.watch("type");
   const sizes = form.watch("sizes") ?? [];
   const sizeOptions = useSizeOptions(type);
@@ -56,10 +64,12 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
 
   const close = () => {
     form.reset();
+    setPhotoError(null);
+    pending.reset();
     onClose();
   };
 
-  const onSubmit = form.handleSubmit(async (values) => {
+  const submitProduct = form.handleSubmit(async (values) => {
     try {
       await create.mutateAsync(values);
       toast.success("Product added");
@@ -69,36 +79,66 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
     }
   });
 
+  const handleSubmitProduct = async () => {
+    setIsProcessingPhotos(true);
+    setPhotoError(null);
+    try {
+      const urls = await resolvePendingPhotoUrls(pending.photos, DEFAULT_IMAGE_MIME_TYPE);
+      form.setValue("imageUrls", urls, { shouldValidate: true });
+      await submitProduct();
+    } catch {
+      setPhotoError("Couldn't process those photos. Try again.");
+    } finally {
+      setIsProcessingPhotos(false);
+    }
+  };
+
   return (
     <Modal
       open={open}
       onClose={close}
       title="Add a product"
       description="New products go live after a quick review."
-      footer={
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={close}>
-            Cancel
-          </Button>
-          <Button onClick={onSubmit} disabled={create.isPending}>
-            {create.isPending ? "Submitting…" : "Submit for review"}
-          </Button>
-        </div>
-      }
+      className="h-dvh max-h-dvh rounded-none sm:h-auto sm:max-h-[90vh] sm:max-w-4xl sm:rounded-2xl"
     >
       {create.isError && <FormBanner>{getErrorMessage(create.error)}</FormBanner>}
 
-      <form onSubmit={onSubmit} noValidate className="space-y-5">
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
-            Photos (optional)
-          </label>
-          <ImageUploader
-            value={imageUrls}
-            onChange={(urls) => form.setValue("imageUrls", urls, { shouldValidate: true })}
-            onUpload={uploadsApi.upload}
+      <MediaFormShell
+        photoAspect={PRODUCT_PHOTO_ASPECT}
+        photos={
+          <PhotoCropPane
+            pending={pending}
+            maxPhotos={MAX_IMAGES}
+            aspect={PRODUCT_PHOTO_ASPECT}
+            cropAreaStyle={PRODUCT_CROP_BOX_STYLE}
+            error={photoError}
+            emptyLabel="Add a photo (optional)"
           />
-        </div>
+        }
+        footer={
+          <>
+            <Button variant="outline" onClick={close}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void handleSubmitProduct()}
+              disabled={isProcessingPhotos || create.isPending}
+            >
+              {isProcessingPhotos
+                ? "Processing…"
+                : create.isPending
+                  ? "Submitting…"
+                  : "Submit for review"}
+            </Button>
+          </>
+        }
+      >
+        <PendingPhotoThumbnailRail
+          photos={pending.photos}
+          activePhotoId={pending.activePhoto?.id}
+          onSelect={pending.setActiveId}
+          onRemove={pending.removePhoto}
+        />
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-foreground">Product name</label>
@@ -182,7 +222,7 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
             </p>
           )}
         </div>
-      </form>
+      </MediaFormShell>
     </Modal>
   );
 };

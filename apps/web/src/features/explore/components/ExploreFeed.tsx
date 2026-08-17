@@ -7,12 +7,12 @@ import Masonry from "react-masonry-css";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 
 import {
+  EXPLORE_GRID_BREAKPOINT_COLUMNS,
   EXPLORE_QUERY_PARAM,
   EXPLORE_TAB,
   type ExploreQueryParamKey,
   FEED_LAYOUT,
   type FeedLayout,
-  MASONRY_BREAKPOINT_COLUMNS,
 } from "../explore.constants";
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 import { useExploreFeedSocket } from "../hooks/useExploreFeedSocket";
@@ -24,6 +24,7 @@ import { HeaderBackdrop } from "./HeaderBackdrop";
 import { PostCard } from "./PostCard";
 import { ExploreFeedSkeleton } from "./PostCardSkeleton";
 import { PostDetailModal } from "./PostDetailModal";
+import { PostGridCard } from "./PostGridCard";
 import { Sidebar } from "./Sidebar";
 
 export const ExploreFeed = () => {
@@ -116,20 +117,20 @@ export const ExploreFeed = () => {
               </button>
             </div>
           ) : !isAuthResolved || isLoading ? (
-            <ExploreFeedSkeleton layout={layout} />
+            <ExploreFeedSkeleton layout={layout} compactGrid />
           ) : posts.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
               Nothing here yet — try a different tab.
             </p>
           ) : layout === FEED_LAYOUT.GRID ? (
             <Masonry
-              breakpointCols={MASONRY_BREAKPOINT_COLUMNS}
+              breakpointCols={EXPLORE_GRID_BREAKPOINT_COLUMNS}
               className="-ml-4 flex w-auto"
               columnClassName="pl-4"
             >
               {posts.map((post) => {
                 const { id } = post;
-                return <PostCard key={id} post={post} onImageClick={() => setDetailPostId(id)} />;
+                return <PostGridCard key={id} post={post} onClick={() => setDetailPostId(id)} />;
               })}
             </Masonry>
           ) : (

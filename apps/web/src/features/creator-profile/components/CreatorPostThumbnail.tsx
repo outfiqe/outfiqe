@@ -1,6 +1,7 @@
 "use client";
 
 import type { FeedPost } from "@/features/explore";
+import { PostCaption } from "@/features/explore";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 
 import { PostActionsMenu } from "./PostActionsMenu";
@@ -20,9 +21,9 @@ export const CreatorPostThumbnail = ({
   onEdit,
   onDelete,
 }: CreatorPostThumbnailProps) => (
-  <div className="group relative aspect-[4/5]">
+  <div className="group relative">
     <div
-      className="absolute inset-0 overflow-hidden rounded-2xl border border-border bg-cover bg-center transition-colors group-hover:border-foreground/30"
+      className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-border bg-cover bg-center transition-colors group-hover:border-foreground/30"
       style={
         post.imageUrl
           ? { backgroundImage: `url(${post.imageUrl})` }
@@ -39,6 +40,13 @@ export const CreatorPostThumbnail = ({
 
     {isOwnProfile && onEdit && onDelete && (
       <PostActionsMenu onEdit={onEdit} onDelete={onDelete} className="absolute right-2 top-2" />
+    )}
+
+    {post.caption && (
+      <PostCaption
+        text={post.caption}
+        className="mt-2 text-[12.5px] leading-snug text-muted-foreground"
+      />
     )}
   </div>
 );

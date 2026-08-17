@@ -7,7 +7,7 @@ Renders a creator's public profile — avatar, stats, follow/edit-profile, and t
 ## Structure
 
 - `components/CreatorProfile.tsx` — the page: header/stats, follow or edit-profile action, post grid, and (when `isOwnProfile`) the add/edit/delete post affordances.
-- `components/CreatorPostThumbnail.tsx` — one grid tile; renders `PostActionsMenu` on top when viewing your own profile.
+- `components/CreatorPostThumbnail.tsx` — one grid tile; shows a bottom gradient + truncated caption over the image when the post has one, and renders `PostActionsMenu` on top when viewing your own profile. Clicking anywhere on the tile opens `explore`'s `PostDetailModal` for the full post.
 - `components/PostActionsMenu.tsx` — the 3-dot menu (Edit / Delete) overlaid on a post thumbnail.
 - `components/CreatorPostGridSkeleton.tsx`, `CreatorProfilePageSkeleton.tsx` — loading states.
 - `api/creatorProfileApi.ts`, `creatorProfileSchemas.ts` — profile + paginated posts fetch.

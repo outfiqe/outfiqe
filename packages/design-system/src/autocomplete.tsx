@@ -47,9 +47,10 @@ const getOptionElements = (content: HTMLDivElement | null) =>
 
 type AutocompleteProps = {
   children: ReactNode;
+  closeOnSelect?: boolean;
 };
 
-export const Autocomplete = ({ children }: AutocompleteProps) => {
+export const Autocomplete = ({ children, closeOnSelect = true }: AutocompleteProps) => {
   const [open, setOpen] = useState(false);
   const [activeValue, setActiveValue] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -75,7 +76,10 @@ export const Autocomplete = ({ children }: AutocompleteProps) => {
           listboxId,
           getItemId: (value) => `${listboxId}-${value}`,
           registerSelectHandler,
-          runSelectHandler: (value) => selectHandlersRef.current.get(value)?.(),
+          runSelectHandler: (value) => {
+            selectHandlersRef.current.get(value)?.();
+            if (closeOnSelect) setOpen(false);
+          },
         }}
       >
         {children}
@@ -252,7 +256,7 @@ export const AutocompleteItem = ({
   className,
   children,
 }: AutocompleteItemProps) => {
-  const { activeValue, setActiveValue, getItemId, registerSelectHandler } =
+  const { activeValue, setActiveValue, getItemId, registerSelectHandler, runSelectHandler } =
     useAutocompleteContext("AutocompleteItem");
 
   useEffect(() => {
@@ -270,7 +274,7 @@ export const AutocompleteItem = ({
       data-value={value}
       data-disabled={disabled ? "true" : undefined}
       onMouseEnter={() => !disabled && setActiveValue(value)}
-      onClick={() => !disabled && onSelect()}
+      onClick={() => !disabled && runSelectHandler(value)}
       className={cn(
         "flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1.5 text-left transition-colors",
         isActive && "bg-muted",
