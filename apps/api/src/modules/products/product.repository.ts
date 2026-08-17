@@ -6,10 +6,12 @@ import type { DbClient } from "#types/db.types.js";
 
 import { NEW_ARRIVAL_WINDOW_MS } from "./product.constants.js";
 import type {
+  BrandProductSize,
   CreateProductInput,
   ProductRecord,
   ProductSizeRecord,
   ProductWithStock,
+  ProductWithStockSizesAndImages,
   SeenOnCreator,
   UpdateProductInput,
 } from "./product.types.js";
@@ -24,7 +26,11 @@ const SEEN_ON_CREATORS_LIMIT = 5;
 const withBrandAndCategories = {
   brand: { select: { name: true } },
   categories: { select: { slug: true, name: true } },
-  sizes: { select: { stock: true } },
+  sizes: { select: { id: true, label: true, stock: true }, orderBy: { sortOrder: "asc" as const } },
+};
+
+const withImages = {
+  images: { orderBy: { sortOrder: "asc" as const }, select: { url: true } },
 };
 
 type PublicFilter = { categoryId?: string; type?: ProductType; brandId?: string; q?: string };
@@ -34,10 +40,24 @@ const withTotalStock = <T extends { sizes: { stock: number }[] }>(
 ): (Omit<T, "sizes"> & { totalStock: number })[] =>
   rows.map(({ sizes, ...rest }) => ({ ...rest, totalStock: sumStock(sizes) }));
 
+const toWithTotalStockAndSizes = <T extends { sizes: BrandProductSize[] }>({
+  sizes,
+  ...rest
+}: T): Omit<T, "sizes"> & { totalStock: number; sizes: BrandProductSize[] } => ({
+  ...rest,
+  totalStock: sumStock(sizes),
+  sizes: sizes.map(({ id, label, stock }) => ({ id, label, stock })),
+});
+
+const withTotalStockAndSizes = <T extends { sizes: BrandProductSize[] }>(
+  rows: T[],
+): (Omit<T, "sizes"> & { totalStock: number; sizes: BrandProductSize[] })[] =>
+  rows.map(toWithTotalStockAndSizes);
+
 export const productRepository = {
-  async create(input: CreateProductInput): Promise<ProductWithStock> {
-    const { imageUrls, categoryIds, ...rest } = input;
-    const { sizes, ...product } = await prisma.product.create({
+  async create(input: CreateProductInput): Promise<ProductWithStockSizesAndImages> {
+    const { imageUrls, categoryIds, sizes: sizeInputs, ...rest } = input;
+    const product = await prisma.product.create({
       data: {
         ...rest,
         categories: { connect: categoryIds.map((id) => ({ id })) },
@@ -45,15 +65,23 @@ export const productRepository = {
         images: imageUrls?.length
           ? { create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })) }
           : undefined,
+        sizes: {
+          create: sizeInputs.map(({ label, stock, sortOrder }) => ({
+            label,
+            stock,
+            inStock: stock > 0,
+            sortOrder,
+          })),
+        },
       },
-      include: withBrandAndCategories,
+      include: { ...withBrandAndCategories, ...withImages },
     });
-    return { ...product, totalStock: sumStock(sizes) };
+    return toWithTotalStockAndSizes(product);
   },
 
-  async update(id: string, input: UpdateProductInput): Promise<ProductRecord> {
-    const { imageUrls, categoryIds, ...rest } = input;
-    return prisma.product.update({
+  async update(id: string, input: UpdateProductInput): Promise<ProductWithStockSizesAndImages> {
+    const { imageUrls, categoryIds, sizes, ...rest } = input;
+    const product = await prisma.product.update({
       where: { id },
       data: {
         ...rest,
@@ -67,8 +95,23 @@ export const productRepository = {
               },
             }
           : {}),
+        ...(sizes
+          ? {
+              sizes: {
+                deleteMany: {},
+                create: sizes.map(({ label, stock, sortOrder }) => ({
+                  label,
+                  stock,
+                  inStock: stock > 0,
+                  sortOrder,
+                })),
+              },
+            }
+          : {}),
       },
+      include: { ...withBrandAndCategories, ...withImages },
     });
+    return toWithTotalStockAndSizes(product);
   },
 
   async approve(id: string, reviewedById: string): Promise<ProductRecord> {
@@ -89,24 +132,28 @@ export const productRepository = {
     return prisma.product.findUnique({ where: { id } });
   },
 
+  async softDelete(id: string): Promise<void> {
+    await prisma.product.update({ where: { id }, data: { deletedAt: new Date() } });
+  },
+
   async findApprovedByIds(ids: string[]): Promise<ProductRecord[]> {
     return prisma.product.findMany({
-      where: { id: { in: ids }, status: ProductStatus.APPROVED },
+      where: { id: { in: ids }, status: ProductStatus.APPROVED, deletedAt: null },
     });
   },
 
   async listByBrandId(
     brandId: string,
     params: { cursor?: string; limit: number },
-  ): Promise<ProductWithStock[]> {
+  ): Promise<ProductWithStockSizesAndImages[]> {
     const rows = await prisma.product.findMany({
-      where: { brandId },
-      include: withBrandAndCategories,
+      where: { brandId, deletedAt: null },
+      include: { ...withBrandAndCategories, ...withImages },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
     });
-    return withTotalStock(rows);
+    return withTotalStockAndSizes(rows);
   },
 
   async listForReview(
@@ -114,7 +161,7 @@ export const productRepository = {
     params: { cursor?: string; limit: number },
   ): Promise<ProductWithStock[]> {
     const rows = await prisma.product.findMany({
-      where: { status },
+      where: { status, deletedAt: null },
       include: withBrandAndCategories,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
@@ -129,6 +176,7 @@ export const productRepository = {
     const rows = await prisma.product.findMany({
       where: {
         status: ProductStatus.APPROVED,
+        deletedAt: null,
         categories: filter.categoryId ? { some: { id: filter.categoryId } } : undefined,
         type: filter.type,
         brandId: filter.brandId,
@@ -145,6 +193,7 @@ export const productRepository = {
   async countPublic(filter: PublicFilter): Promise<{ total: number; brandCount: number }> {
     const where: Prisma.ProductWhereInput = {
       status: ProductStatus.APPROVED,
+      deletedAt: null,
       categories: filter.categoryId ? { some: { id: filter.categoryId } } : undefined,
       type: filter.type,
       brandId: filter.brandId,
@@ -161,7 +210,7 @@ export const productRepository = {
 
   async listTrending(): Promise<ProductWithStock[]> {
     const rows = await prisma.product.findMany({
-      where: { status: ProductStatus.APPROVED },
+      where: { status: ProductStatus.APPROVED, deletedAt: null },
       include: withBrandAndCategories,
       orderBy: { reviewedAt: "desc" },
       take: TRENDING_LIMIT,
@@ -173,6 +222,7 @@ export const productRepository = {
     const rows = await prisma.product.findMany({
       where: {
         status: ProductStatus.APPROVED,
+        deletedAt: null,
         createdAt: { gte: new Date(Date.now() - NEW_ARRIVAL_WINDOW_MS) },
       },
       include: withBrandAndCategories,
@@ -191,7 +241,7 @@ export const productRepository = {
     | null
   > {
     const product = await prisma.product.findFirst({
-      where: { id, status: ProductStatus.APPROVED },
+      where: { id, status: ProductStatus.APPROVED, deletedAt: null },
       include: {
         brand: { select: { name: true } },
         categories: { select: { slug: true, name: true } },
@@ -221,6 +271,22 @@ export const productRepository = {
     await client.productSize.update({
       where: { id: sizeId },
       data: { stock: { increment: qty } },
+    });
+  },
+
+  async findSizeIdsForProduct(productId: string, sizeIds: string[]): Promise<string[]> {
+    const sizes = await prisma.productSize.findMany({
+      where: { productId, id: { in: sizeIds } },
+      select: { id: true },
+    });
+    return sizes.map((size) => size.id);
+  },
+
+  async listSizesForProduct(productId: string): Promise<BrandProductSize[]> {
+    return prisma.productSize.findMany({
+      where: { productId },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, label: true, stock: true },
     });
   },
 

@@ -23,15 +23,18 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { type CheckoutInput, checkoutInputSchema, PaymentMethod } from "../api/checkoutSchemas";
 import { useCheckout } from "../hooks/useCheckout";
+import type { BuyNowPayload } from "../lib/buyNowStorage";
+import { clearBuyNowPayload } from "../lib/buyNowStorage";
 import { CheckoutSummary } from "./CheckoutSummary";
 import { PaymentMethodField } from "./PaymentMethodField";
 
 type CheckoutFormProps = {
   cart: Cart;
   codHandlingFee: number;
+  buyNow?: BuyNowPayload;
 };
 
-export const CheckoutForm = ({ cart, codHandlingFee }: CheckoutFormProps) => {
+export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { state } = useAuth();
@@ -58,7 +61,12 @@ export const CheckoutForm = ({ cart, codHandlingFee }: CheckoutFormProps) => {
       const order = await checkout.mutateAsync({
         input: values,
         idempotencyKey: crypto.randomUUID(),
+        buyNow: buyNow
+          ? { productId: buyNow.productId, sizeId: buyNow.sizeId, qty: buyNow.qty }
+          : undefined,
       });
+
+      if (buyNow) clearBuyNowPayload();
 
       if (order.paymentMethod === PaymentMethod.COD) {
         void queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });

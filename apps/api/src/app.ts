@@ -23,6 +23,7 @@ import { heroSlideRoutes } from "./modules/hero-slides/heroSlide.routes.js";
 import { orderRoutes } from "./modules/orders/order.routes.js";
 import { paymentRoutes } from "./modules/payments/payment.routes.js";
 import { productRoutes } from "./modules/products/product.routes.js";
+import { sizeOptionRoutes } from "./modules/size-options/size-option.routes.js";
 import { uploadRoutes } from "./modules/uploads/upload.routes.js";
 import { userRoutes } from "./modules/users/user.routes.js";
 import { wishlistRoutes } from "./modules/wishlist/wishlist.routes.js";
@@ -59,6 +60,7 @@ export const createApp = () => {
   app.use("/api/creators", creatorRoutes);
   app.use("/api/admin/invites", adminInviteRoutes);
   app.use("/api/products", productRoutes);
+  app.use("/api/size-options", sizeOptionRoutes);
   app.use("/api/cart", cartRoutes);
   app.use("/api/orders", orderRoutes);
   app.use("/api/delivery-zones", deliveryZoneRoutes);

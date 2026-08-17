@@ -1,18 +1,22 @@
+import { prisma } from "#db/prisma.js";
 import { productApprovedTemplate, productRejectedTemplate } from "#email-templates/templates.js";
 import { ProductStatus } from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
+import { isForeignKeyConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
 import { categoryService } from "#modules/categories/category.service.js";
+import { sizeOptionService } from "#modules/size-options/size-option.service.js";
 import { wishlistRepository } from "#modules/wishlist/wishlist.repository.js";
 
 import { PRODUCT_TYPE_SLUGS, SLUG_TO_PRODUCT_TYPE } from "./product.constants.js";
 import type { DbClient } from "./product.repository.js";
 import { productRepository } from "./product.repository.js";
 import type {
+  AdjustStockBody,
   CreateProductBody,
   ListBrandProductsQuery,
   ListMineProductsQuery,
@@ -21,6 +25,8 @@ import type {
   UpdateProductBody,
 } from "./product.schemas.js";
 import type {
+  BrandProductSize,
+  CreateProductSizeInput,
   ProductBrandSummary,
   ProductBrandSummaryPage,
   ProductRecord,
@@ -34,10 +40,11 @@ import { humanizeSlug, toBrandSummary, toPublicProduct } from "./product.utils.j
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
+const BAD_REQUEST_STATUS = 400;
 
 const requireOwnedProduct = async (productId: string, brandId: string): Promise<ProductRecord> => {
   const product = await productRepository.findById(productId);
-  if (!product || product.brandId !== brandId) {
+  if (!product || product.brandId !== brandId || product.deletedAt) {
     throw new AppError("NOT_FOUND", "Product not found.", NOT_FOUND_STATUS);
   }
   return product;
@@ -45,7 +52,9 @@ const requireOwnedProduct = async (productId: string, brandId: string): Promise<
 
 const requirePendingProduct = async (productId: string): Promise<ProductRecord> => {
   const product = await productRepository.findById(productId);
-  if (!product) throw new AppError("NOT_FOUND", "Product not found.", NOT_FOUND_STATUS);
+  if (!product || product.deletedAt) {
+    throw new AppError("NOT_FOUND", "Product not found.", NOT_FOUND_STATUS);
+  }
   if (product.status !== ProductStatus.PENDING) {
     throw new AppError(
       "ALREADY_REVIEWED",
@@ -71,10 +80,15 @@ const notifyBrand = async (
 export const productService = {
   async create(
     userId: string,
-    { categories: categorySlugs, name, price, type, imageUrls, lowStock }: CreateProductBody,
+    { categories: categorySlugs, name, price, type, imageUrls, lowStock, sizes }: CreateProductBody,
   ): Promise<ProductBrandSummary> {
     const brandId = await requireBrandId(userId);
     const categories = await categoryService.getManyBySlugs(categorySlugs);
+    const sizeOptions = await sizeOptionService.getManyByIds(
+      sizes.map((size) => size.sizeOptionId),
+      type,
+    );
+    const sizeOptionById = new Map(sizeOptions.map((sizeOption) => [sizeOption.id, sizeOption]));
 
     const product = await productRepository.create({
       brandId,
@@ -84,6 +98,17 @@ export const productService = {
       categoryIds: categories.map((category) => category.id),
       imageUrls,
       lowStock,
+      sizes: sizes.map(({ sizeOptionId, stock }, sortOrder) => {
+        const sizeOption = sizeOptionById.get(sizeOptionId);
+        if (!sizeOption) {
+          throw new AppError(
+            "SIZE_OPTION_NOT_FOUND",
+            "One or more selected sizes weren't found.",
+            NOT_FOUND_STATUS,
+          );
+        }
+        return { label: sizeOption.label, stock, sortOrder };
+      }),
     });
 
     return toBrandSummary(product);
@@ -92,31 +117,71 @@ export const productService = {
   async update(
     userId: string,
     productId: string,
-    { categories, name, price, type, imageUrls, lowStock }: UpdateProductBody,
-  ): Promise<ProductRecord> {
+    { categories, name, price, type, imageUrls, lowStock, sizes }: UpdateProductBody,
+  ): Promise<ProductBrandSummary> {
     const brandId = await requireBrandId(userId);
     const product = await requireOwnedProduct(productId, brandId);
-
-    if (product.status === ProductStatus.APPROVED) {
-      throw new AppError(
-        "ALREADY_APPROVED",
-        "This product is already live and can't be edited. Contact support to make changes.",
-        CONFLICT_STATUS,
-      );
-    }
 
     const categoryIds = categories
       ? (await categoryService.getManyBySlugs(categories)).map((category) => category.id)
       : undefined;
 
-    return productRepository.update(productId, {
-      name,
-      price,
-      type: type ? SLUG_TO_PRODUCT_TYPE[type] : undefined,
-      categoryIds,
-      imageUrls,
-      lowStock,
-    });
+    let sizeChanges: CreateProductSizeInput[] | undefined;
+    if (type !== undefined && SLUG_TO_PRODUCT_TYPE[type] !== product.type) {
+      if (!sizes || sizes.length === 0) {
+        throw new AppError(
+          "SIZES_REQUIRED",
+          "Add at least one size for the new product type.",
+          BAD_REQUEST_STATUS,
+        );
+      }
+
+      const sizeOptions = await sizeOptionService.getManyByIds(
+        sizes.map((size) => size.sizeOptionId),
+        type,
+      );
+      const sizeOptionById = new Map(sizeOptions.map((sizeOption) => [sizeOption.id, sizeOption]));
+
+      sizeChanges = sizes.map(({ sizeOptionId, stock }, sortOrder) => {
+        const sizeOption = sizeOptionById.get(sizeOptionId);
+        if (!sizeOption) {
+          throw new AppError(
+            "SIZE_OPTION_NOT_FOUND",
+            "One or more selected sizes weren't found.",
+            NOT_FOUND_STATUS,
+          );
+        }
+        return { label: sizeOption.label, stock, sortOrder };
+      });
+    }
+
+    try {
+      const product = await productRepository.update(productId, {
+        name,
+        price,
+        type: type ? SLUG_TO_PRODUCT_TYPE[type] : undefined,
+        categoryIds,
+        imageUrls,
+        lowStock,
+        sizes: sizeChanges,
+      });
+      return toBrandSummary(product);
+    } catch (error) {
+      if (isForeignKeyConstraintError(error)) {
+        throw new AppError(
+          "SIZES_IN_USE",
+          "Can't change product type — some of its current sizes already have orders and can't be removed.",
+          CONFLICT_STATUS,
+        );
+      }
+      throw error;
+    }
+  },
+
+  async delete(userId: string, productId: string): Promise<void> {
+    const brandId = await requireBrandId(userId);
+    await requireOwnedProduct(productId, brandId);
+    await productRepository.softDelete(productId);
   },
 
   async listMine(
@@ -259,6 +324,49 @@ export const productService = {
     for (const line of sorted) {
       await productRepository.restoreStock(client, line.sizeId, line.qty);
     }
+  },
+
+  async adjustStock(
+    userId: string,
+    productId: string,
+    { adjustments }: AdjustStockBody,
+  ): Promise<BrandProductSize[]> {
+    const brandId = await requireBrandId(userId);
+    await requireOwnedProduct(productId, brandId);
+
+    const sizeIds = adjustments.map((adjustment) => adjustment.sizeId);
+    const ownedSizeIds = new Set(await productRepository.findSizeIdsForProduct(productId, sizeIds));
+    const unknownSizeId = sizeIds.find((sizeId) => !ownedSizeIds.has(sizeId));
+    if (unknownSizeId) {
+      throw new AppError(
+        "SIZE_NOT_FOUND",
+        "One or more sizes weren't found on this product.",
+        NOT_FOUND_STATUS,
+      );
+    }
+
+    const sorted = [...adjustments].sort((a, b) => a.sizeId.localeCompare(b.sizeId));
+
+    await prisma.$transaction(async (tx) => {
+      for (const { sizeId, delta } of sorted) {
+        if (delta > 0) {
+          await productRepository.restoreStock(tx, sizeId, delta);
+          continue;
+        }
+
+        const ok = await productRepository.decrementStock(tx, sizeId, -delta);
+        if (!ok) {
+          throw new AppError(
+            "INSUFFICIENT_STOCK",
+            "Can't reduce stock below what's available.",
+            BAD_REQUEST_STATUS,
+            { sizeId },
+          );
+        }
+      }
+    });
+
+    return productRepository.listSizesForProduct(productId);
   },
 
   async approve(productId: string, adminUserId: string): Promise<void> {

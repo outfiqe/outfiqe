@@ -19,8 +19,8 @@ import { cn } from "@/shared/lib/cn";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { BrandProfile } from "../api/brandDashboardSchemas";
-import { useBrandProducts } from "../hooks/useBrandProducts";
 import { useUpdateBrandProfile } from "../hooks/useUpdateBrandProfile";
+import { ProductsSection } from "./ProductsSection";
 
 type EditableFields = {
   contactName: string;
@@ -31,7 +31,6 @@ type EditableFields = {
 };
 
 export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
-  const products = useBrandProducts();
   const updateProfile = useUpdateBrandProfile();
   const { updateUser } = useAuth();
   const { brand } = profile;
@@ -146,12 +145,10 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
               </div>
             </div>
           </dl>
-
-          <p className="mt-6 text-sm text-muted-foreground">
-            {products.data?.pages.flatMap((page) => page.products).length ?? 0} products listed
-          </p>
         </div>
       </div>
+
+      <ProductsSection />
 
       <Modal
         open={editOpen}

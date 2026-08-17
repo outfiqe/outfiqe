@@ -16,6 +16,7 @@ export type ProductRecord = {
   wornByCount: number;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 };
 
 export type ProductSizeRecord = {
@@ -41,6 +42,14 @@ export type ProductWithBrand = ProductRecord & {
 
 export type ProductWithStock = ProductWithBrand & { totalStock: number };
 
+export type BrandProductSize = { id: string; label: string; stock: number };
+
+export type ProductWithStockAndSizes = ProductWithStock & { sizes: BrandProductSize[] };
+
+export type ProductWithStockSizesAndImages = ProductWithStockAndSizes & {
+  images: { url: string }[];
+};
+
 export type ProductWithOptionalStock = ProductWithBrand & { totalStock?: number };
 
 export type ProductReviewSummary = Omit<ProductWithBrand, "categories"> & { categories: string[] };
@@ -56,15 +65,24 @@ export type ProductBrandSummary = {
   price: number;
   type: ProductTypeSlug;
   categories: string[];
+  categorySlugs: string[];
   imageUrl: string | null;
+  imageUrls: string[];
   lowStock: boolean;
   status: ProductStatus;
   createdAt: Date;
+  sizes: BrandProductSize[];
 };
 
 export type ProductBrandSummaryPage = {
   products: ProductBrandSummary[];
   nextCursor: string | null;
+};
+
+export type CreateProductSizeInput = {
+  label: string;
+  stock: number;
+  sortOrder: number;
 };
 
 export type CreateProductInput = {
@@ -75,6 +93,7 @@ export type CreateProductInput = {
   categoryIds: string[];
   imageUrls?: string[];
   lowStock?: boolean;
+  sizes: CreateProductSizeInput[];
 };
 
 export type UpdateProductInput = Partial<Omit<CreateProductInput, "brandId">>;

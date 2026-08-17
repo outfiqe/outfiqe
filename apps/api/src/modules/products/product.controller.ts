@@ -5,6 +5,7 @@ import { getAuthPrincipal, requireAuthPrincipal } from "#middlewares/require-aut
 import { validated } from "#middlewares/validate.js";
 
 import type {
+  AdjustStockBody,
   CreateProductBody,
   ListMineProductsQuery,
   ListPublicProductsQuery,
@@ -32,6 +33,23 @@ export const productController = {
 
     const product = await productService.update(userId, id, body);
     sendSuccess(res, product, "Product updated.");
+  },
+
+  async adjustStock(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { id } = validated.params<ProductIdParam>(res);
+    const body = validated.body<AdjustStockBody>(res);
+
+    const sizes = await productService.adjustStock(userId, id, body);
+    sendSuccess(res, sizes, "Stock updated.");
+  },
+
+  async delete(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { id } = validated.params<ProductIdParam>(res);
+
+    await productService.delete(userId, id);
+    sendSuccess(res, null, "Product deleted.");
   },
 
   async listMine(_req: Request, res: Response) {

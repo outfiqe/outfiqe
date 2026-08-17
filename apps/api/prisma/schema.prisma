@@ -172,6 +172,7 @@ model Product {
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
   wornByCount  Int           @default(0) @map("worn_by_count")
+  deletedAt    DateTime?     @map("deleted_at")
 
   sizes         ProductSize[]
   taggedInLooks CreatorLookProduct[]
@@ -183,6 +184,7 @@ model Product {
   orderItems    OrderItem[]
   creatorLinks  CreatorLink[]
 
+  @@index([deletedAt])
   @@map("products")
 }
 
@@ -289,6 +291,17 @@ model ProductSize {
 
   @@unique([productId, label])
   @@map("product_sizes")
+}
+
+model SizeOption {
+  id        String      @id @default(uuid()) @db.Uuid
+  type      ProductType
+  label     String
+  sortOrder Int         @default(0) @map("sort_order")
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  @@unique([type, label])
+  @@map("size_options")
 }
 
 model CreatorLook {
