@@ -5,6 +5,7 @@ import { Skeleton } from "@outfiqe/design-system";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
+import { formatRelativeTime } from "@/shared/lib/formatRelativeTime";
 
 import type { FeedComment } from "../api/exploreFeedSchemas";
 
@@ -17,6 +18,26 @@ type PostCommentsSectionProps = {
   onSubmit: () => void;
   className?: string;
 };
+
+type CommentAvatarProps = {
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+};
+
+const CommentAvatar = ({ userId, name, avatarUrl }: CommentAvatarProps) => (
+  <span
+    aria-hidden
+    className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cover bg-center text-[11px] font-bold text-white"
+    style={
+      avatarUrl
+        ? { backgroundImage: `url(${avatarUrl})` }
+        : { backgroundColor: getAvatarColor(userId) }
+    }
+  >
+    {!avatarUrl && initialsFor(name)}
+  </span>
+);
 
 export const PostCommentsSection = ({
   isLoading,
@@ -33,7 +54,7 @@ export const PostCommentsSection = ({
   return (
     <div className={className}>
       {isLoading && (
-        <div className="space-y-1.5" role="status" aria-label="Loading comments">
+        <div className="space-y-2" role="status" aria-label="Loading comments">
           <Skeleton className="h-3 w-4/5" />
           <Skeleton className="h-3 w-3/5" />
         </div>
@@ -41,11 +62,25 @@ export const PostCommentsSection = ({
       {comments?.length === 0 && (
         <p className="text-[12px] text-muted-foreground">No comments yet.</p>
       )}
-      <ul className="flex flex-col gap-1.5">
+      <ul className="flex flex-col gap-5">
         {comments?.map((comment) => (
-          <li key={comment.id} className="text-[12.5px] leading-snug">
-            <span className="font-semibold text-foreground">@{comment.userHandle}</span>{" "}
-            <span className="text-muted-foreground">{comment.body}</span>
+          <li key={comment.id} className="flex items-start gap-3">
+            <CommentAvatar
+              userId={comment.userId}
+              name={comment.userName}
+              avatarUrl={comment.userAvatarUrl}
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="truncate text-[13px] font-semibold text-foreground">
+                  @{comment.userHandle}
+                </span>
+                <span className="shrink-0 text-[11px] text-muted-foreground">
+                  {formatRelativeTime(comment.createdAt)}
+                </span>
+              </div>
+              <p className="mt-0.5 text-[13px] leading-relaxed text-foreground">{comment.body}</p>
+            </div>
           </li>
         ))}
       </ul>
@@ -55,20 +90,14 @@ export const PostCommentsSection = ({
           event.preventDefault();
           onSubmit();
         }}
-        className="mt-2 flex items-center gap-2"
+        className="mt-5 flex items-center gap-3"
       >
         {currentUser && (
-          <span
-            aria-hidden
-            className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cover bg-center text-[10px] font-bold text-white"
-            style={
-              currentUser.avatarUrl
-                ? { backgroundImage: `url(${currentUser.avatarUrl})` }
-                : { backgroundColor: getAvatarColor(currentUser.id) }
-            }
-          >
-            {!currentUser.avatarUrl && initialsFor(currentUser.name)}
-          </span>
+          <CommentAvatar
+            userId={currentUser.id}
+            name={currentUser.name}
+            avatarUrl={currentUser.avatarUrl}
+          />
         )}
         <input
           value={draft}
@@ -76,14 +105,14 @@ export const PostCommentsSection = ({
           placeholder={isAuthenticated ? "Add a comment…" : "Sign in to comment"}
           disabled={!isAuthenticated}
           className={cn(
-            "min-w-0 flex-1 rounded-full border border-border bg-transparent px-3 py-1.5 text-[12.5px] outline-none focus:border-foreground",
+            "min-w-0 flex-1 rounded-full border border-transparent bg-muted px-3.5 py-2 text-[13px] outline-none focus:border-foreground",
             "disabled:opacity-60",
           )}
         />
         <button
           type="submit"
           disabled={!isAuthenticated || !draft.trim()}
-          className="rounded-full bg-foreground px-3 py-1.5 text-[12px] font-semibold text-background disabled:opacity-40"
+          className="shrink-0 rounded-full bg-foreground px-3.5 py-2 text-[12.5px] font-semibold text-background disabled:opacity-40"
         >
           Post
         </button>

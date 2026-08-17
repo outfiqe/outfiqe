@@ -658,7 +658,7 @@ export const creatorLookRepository = {
       where: { creatorLookId: lookId, deletedAt: null, ...cursorWhere },
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       take: params.limit + 1,
-      include: { user: { select: { id: true, name: true, handle: true } } },
+      include: { user: { select: { id: true, name: true, handle: true, avatarUrl: true } } },
     });
 
     const { items: pageRows, nextCursor } = buildCursorPage(rows, params.limit, (row) =>
@@ -671,6 +671,7 @@ export const creatorLookRepository = {
         userId: row.userId,
         userName: row.user.name,
         userHandle: row.user.handle,
+        userAvatarUrl: row.user.avatarUrl,
         body: row.body,
         createdAt: row.createdAt,
       })),
@@ -682,7 +683,7 @@ export const creatorLookRepository = {
     return prisma.$transaction(async (tx) => {
       const comment = await tx.creatorLookComment.create({
         data: { creatorLookId: lookId, userId, body },
-        include: { user: { select: { id: true, name: true, handle: true } } },
+        include: { user: { select: { id: true, name: true, handle: true, avatarUrl: true } } },
       });
       await tx.creatorLook.update({
         where: { id: lookId },
@@ -694,6 +695,7 @@ export const creatorLookRepository = {
         userId: comment.userId,
         userName: comment.user.name,
         userHandle: comment.user.handle,
+        userAvatarUrl: comment.user.avatarUrl,
         body: comment.body,
         createdAt: comment.createdAt,
       };
