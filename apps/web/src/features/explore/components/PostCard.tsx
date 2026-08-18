@@ -1,5 +1,6 @@
 "use client";
 
+import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
@@ -11,7 +12,6 @@ import { PostCardHeader } from "./PostCardHeader";
 import { PostCarousel } from "./PostCarousel";
 import { PostCommentsSection } from "./PostCommentsSection";
 import { PostTagPill } from "./PostTagPill";
-import { type TrendingRank, TrendingRankBadge } from "./TrendingRankBadge";
 
 interface PostCardProps {
   post: FeedPost;

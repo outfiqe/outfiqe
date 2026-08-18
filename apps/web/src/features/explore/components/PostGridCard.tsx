@@ -2,11 +2,11 @@
 
 import { Layers } from "lucide-react";
 
+import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 
 import type { FeedPost } from "../api/exploreFeedSchemas";
 import { PostCaption } from "./PostCaption";
-import { type TrendingRank, TrendingRankBadge } from "./TrendingRankBadge";
 
 type PostGridCardProps = {
   post: FeedPost;

@@ -5,7 +5,7 @@ import { cn } from "@/shared/lib/cn";
 export const TRENDING_RANKS = [1, 2, 3] as const;
 export type TrendingRank = (typeof TRENDING_RANKS)[number];
 
-const TOP_TRENDING_RANK: TrendingRank = TRENDING_RANKS[0];
+export const TOP_TRENDING_RANK: TrendingRank = TRENDING_RANKS[0];
 
 type TrendingRankBadgeProps = {
   rank: TrendingRank;

@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Masonry from "react-masonry-css";
 
+import { TRENDING_RANKS, type TrendingRank } from "@/shared/components/TrendingRankBadge";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 
 import {
@@ -26,7 +27,6 @@ import { ExploreFeedSkeleton } from "./PostCardSkeleton";
 import { PostDetailModal } from "./PostDetailModal";
 import { PostGridCard } from "./PostGridCard";
 import { Sidebar } from "./Sidebar";
-import { TRENDING_RANKS, type TrendingRank } from "./TrendingRankBadge";
 
 export const ExploreFeed = () => {
   const { isAuthenticated, isAuthResolved, goToSignIn } = useExploreAuthGate();

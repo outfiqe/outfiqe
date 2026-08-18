@@ -10,6 +10,7 @@ import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
 import { ALL_TYPE_ID, CategoryTypeFilters } from "@/shared/components/CategoryTypeFilters";
+import { TRENDING_RANKS } from "@/shared/components/TrendingRankBadge";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 
 const SHOP_BASE_PATH = "/shop";
@@ -61,6 +62,7 @@ export const ShopResults = () => {
   const firstPage = productsPages?.pages[0];
 
   const heading = category ? `In ${category.name}` : SORT_HEADING[sort ?? PRODUCT_SORT.NEWEST];
+  const showTrendingRanks = sort === PRODUCT_SORT.TRENDING;
 
   return (
     <div>
@@ -91,8 +93,12 @@ export const ShopResults = () => {
         <p className="mt-12 text-sm text-muted-foreground">Nothing here yet.</p>
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={toExploreProduct(product)} />
+          {products.map((product, index) => (
+            <ProductCard
+              key={product.id}
+              product={toExploreProduct(product)}
+              trendingRank={showTrendingRanks ? TRENDING_RANKS[index] : undefined}
+            />
           ))}
         </div>
       )}
