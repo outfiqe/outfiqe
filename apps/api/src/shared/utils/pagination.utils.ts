@@ -27,3 +27,15 @@ export const buildCursorPage = <T>(
   const last = items[items.length - 1];
   return { items, nextCursor: hasMore && last ? getCursor(last) : null };
 };
+
+export const encodeCursor = <T>(cursorPayload: T): string =>
+  Buffer.from(JSON.stringify(cursorPayload)).toString("base64url");
+
+export const decodeCursor = <T>(cursor?: string): T | undefined => {
+  if (!cursor) return undefined;
+  try {
+    return JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as T;
+  } catch {
+    return undefined;
+  }
+};

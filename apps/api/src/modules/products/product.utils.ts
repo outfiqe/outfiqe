@@ -26,8 +26,20 @@ export const isLowStock = (totalStock: number): boolean =>
   totalStock > 0 && totalStock <= LOW_STOCK_THRESHOLD;
 
 export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduct => {
-  const { id, brand, name, price, type, categories, imageUrl, totalStock, lowStock, createdAt } =
-    product;
+  const {
+    id,
+    brand,
+    name,
+    price,
+    type,
+    categories,
+    imageUrl,
+    totalStock,
+    lowStock,
+    createdAt,
+    creatorBuyerCount,
+    unitsSold,
+  } = product;
   return {
     id,
     brand: brand.name,
@@ -38,6 +50,8 @@ export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduc
     imageUrl,
     lowStock: totalStock === undefined ? lowStock : isLowStock(totalStock),
     isNew: isNew(createdAt),
+    creatorBuyerCount: creatorBuyerCount ?? 0,
+    unitsSold: unitsSold ?? 0,
   };
 };
 

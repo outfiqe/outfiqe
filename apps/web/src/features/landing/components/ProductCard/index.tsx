@@ -18,7 +18,8 @@ export interface ExploreProduct {
   brand: string;
   name: string;
   price: number;
-  wornByCount: number;
+  creatorBuyerCount: number;
+  unitsSold: number;
   categorySlugs?: string[];
   type?: ProductType;
   lowStock?: boolean;
@@ -40,19 +41,9 @@ const SWATCH_PALETTE = [
 
 const AVATAR_COLORS = ["#c9a27a", "#7d8fa3", "#a3785a"];
 
-const MOCK_BOUGHT_LABELS = ["300+", "800+", "1.2k+", "2.4k+", "5k+", "8k+", "12k+"];
-
 const getSwatchColor = (productId: string) => {
   const charCodeSum = [...productId].reduce((sum, char) => sum + char.charCodeAt(0), 0);
   return SWATCH_PALETTE[charCodeSum % SWATCH_PALETTE.length];
-};
-
-const getMockBoughtLabel = (productId: string) => {
-  const weightedSum = [...productId].reduce(
-    (sum, char, index) => sum + char.charCodeAt(0) * (index + 1),
-    0,
-  );
-  return MOCK_BOUGHT_LABELS[weightedSum % MOCK_BOUGHT_LABELS.length];
 };
 
 type ProductCardProps = {
@@ -65,10 +56,11 @@ export const ProductCard = ({ product, onToggleSaved }: ProductCardProps) => {
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
   const wishlistMutation = useToggleWishlist();
-  const { id, brand, name, price, wornByCount, lowStock, isNew, image, isSaved } = product;
+  const { id, brand, name, price, creatorBuyerCount, unitsSold, lowStock, isNew, image, isSaved } =
+    product;
   const [saved, setSaved] = useState(isSaved ?? false);
 
-  const avatarCount = Math.min(wornByCount, 3);
+  const avatarCount = Math.min(creatorBuyerCount, 3);
   const badgeLabel = isNew ? "New" : lowStock ? "Low stock" : null;
 
   const toggleSaved = (event: React.MouseEvent) => {
@@ -128,21 +120,24 @@ export const ProductCard = ({ product, onToggleSaved }: ProductCardProps) => {
       <p className="mt-0.5 text-sm text-foreground">{name}</p>
       <p className="mt-1 text-sm font-bold text-foreground">Rs. {price.toLocaleString()}</p>
 
-      {wornByCount > 0 && (
+      {(creatorBuyerCount > 0 || unitsSold > 0) && (
         <div className="mt-1.5 flex items-center gap-1.5">
-          <div className="flex -space-x-1.5">
-            {Array.from({ length: avatarCount }).map((_, i) => (
-              <span
-                key={i}
-                className="size-4 rounded-full border border-background"
-                style={{ backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
-              />
-            ))}
-          </div>
+          {creatorBuyerCount > 0 && (
+            <div className="flex -space-x-1.5">
+              {Array.from({ length: avatarCount }).map((_, i) => (
+                <span
+                  key={i}
+                  className="size-4 rounded-full border border-background"
+                  style={{ backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
+                />
+              ))}
+            </div>
+          )}
           <span className="text-xs text-muted-foreground">
-            Worn by {wornByCount} {wornByCount === 1 ? "creator" : "creators"}
-            <span aria-hidden> · </span>
-            {getMockBoughtLabel(id)} bought
+            {creatorBuyerCount > 0 &&
+              `Worn by ${creatorBuyerCount} ${creatorBuyerCount === 1 ? "creator" : "creators"}`}
+            {creatorBuyerCount > 0 && unitsSold > 0 && <span aria-hidden> · </span>}
+            {unitsSold > 0 && `${unitsSold.toLocaleString()} bought`}
           </span>
         </div>
       )}

@@ -1,3 +1,5 @@
+import { PRODUCT_SORT } from "@outfiqe/utils";
+
 import { prisma } from "#db/prisma.js";
 import { productApprovedTemplate, productRejectedTemplate } from "#email-templates/templates.js";
 import { ProductStatus } from "#generated/prisma/enums.js";
@@ -10,9 +12,10 @@ import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
 import { categoryService } from "#modules/categories/category.service.js";
 import { sizeOptionService } from "#modules/size-options/size-option.service.js";
+import { trendingService } from "#modules/trending/trending.service.js";
 import { wishlistRepository } from "#modules/wishlist/wishlist.repository.js";
 
-import { PRODUCT_TYPE_SLUGS, SLUG_TO_PRODUCT_TYPE } from "./product.constants.js";
+import { PRODUCT_TYPE_SLUGS, SLUG_TO_PRODUCT_TYPE, TRENDING_LIMIT } from "./product.constants.js";
 import type { DbClient } from "./product.repository.js";
 import { productRepository } from "./product.repository.js";
 import type {
@@ -223,6 +226,26 @@ export const productService = {
   }: ListPublicProductsQuery): Promise<PublicProductPage> {
     const type = typeSlug ? SLUG_TO_PRODUCT_TYPE[typeSlug] : undefined;
     const categoryId = category ? (await categoryService.getBySlug(category)).id : undefined;
+    const isUnfilteredTrendingBrowse = sort === PRODUCT_SORT.TRENDING && !categoryId && !type && !q;
+
+    if (isUnfilteredTrendingBrowse) {
+      const { ids, nextCursor } = await trendingService.listTrendingProductIds({ cursor, limit });
+      const isColdStart = ids.length === 0 && !cursor;
+
+      if (!isColdStart) {
+        const [rows, counts] = await Promise.all([
+          productRepository.listApprovedByIds(ids),
+          productRepository.countPublic({}),
+        ]);
+
+        return {
+          products: rows.map(toPublicProduct),
+          nextCursor,
+          total: counts.total,
+          brandCount: counts.brandCount,
+        };
+      }
+    }
 
     const [rows, counts] = await Promise.all([
       productRepository.listPublic({ categoryId, type, q, sort, cursor, limit }),
@@ -297,7 +320,12 @@ export const productService = {
   },
 
   async listTrending(): Promise<PublicProduct[]> {
-    return (await productRepository.listTrending()).map(toPublicProduct);
+    const rankedIds = await trendingService.getTrendingProductIds(TRENDING_LIMIT);
+    const rows =
+      rankedIds.length > 0
+        ? await productRepository.listApprovedByIds(rankedIds)
+        : await productRepository.listTrending();
+    return rows.map(toPublicProduct);
   },
 
   async listNewArrivals(): Promise<PublicProduct[]> {
