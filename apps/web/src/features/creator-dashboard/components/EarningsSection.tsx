@@ -6,7 +6,7 @@ import { CreatorStatus } from "@/features/auth/types";
 
 import { useEarningsSummary } from "../hooks/useEarningsSummary";
 import { useMyEarnings } from "../hooks/useMyEarnings";
-import { ApplyAsCreatorButton } from "./ApplyAsCreatorButton";
+import { CreatorStatusGate } from "./CreatorStatusGate";
 import { EarningsLedgerRow } from "./EarningsLedgerRow";
 import { EarningsSummaryTiles } from "./EarningsSummaryTiles";
 
@@ -19,35 +19,12 @@ export const EarningsSection = ({ creatorStatus }: EarningsSectionProps) => {
   const { data, isPending, hasNextPage, fetchNextPage, isFetchingNextPage } = useMyEarnings();
   const earnings = data?.pages.flatMap((page) => page.items) ?? [];
 
-  if (creatorStatus === CreatorStatus.PENDING) {
-    return (
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h1 className="font-display text-xl font-bold text-foreground">Application under review</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          We&apos;re looking at your creator application. We&apos;ll email you once it&apos;s
-          reviewed.
-        </p>
-      </div>
-    );
-  }
-
   if (creatorStatus !== CreatorStatus.APPROVED) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h1 className="font-display text-xl font-bold text-foreground">Become a creator</h1>
-        <p className="mt-2 max-w-md text-sm text-muted-foreground">
-          Post your fits, tag the pieces you&apos;re wearing, and earn commission when someone buys
-          through your post or link.
-        </p>
-        {creatorStatus === CreatorStatus.REJECTED && (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Your last application wasn&apos;t a fit. You&apos;re welcome to apply again.
-          </p>
-        )}
-        <div className="mt-4">
-          <ApplyAsCreatorButton />
-        </div>
-      </div>
+      <CreatorStatusGate
+        creatorStatus={creatorStatus}
+        pitch="Post your fits, tag the pieces you're wearing, and earn commission when someone buys through your post or link."
+      />
     );
   }
 
