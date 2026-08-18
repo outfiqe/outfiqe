@@ -1,3 +1,5 @@
+import { TrendingUp } from "lucide-react";
+
 import { cn } from "@/shared/lib/cn";
 
 export const TRENDING_RANKS = [1, 2, 3] as const;
@@ -14,10 +16,11 @@ export const TrendingRankBadge = ({ rank, className }: TrendingRankBadgeProps) =
   <span
     aria-label={`Trending, rank ${rank}`}
     className={cn(
-      "absolute left-2 top-2 flex size-6 items-center justify-center rounded bg-black/75 font-display text-xs font-bold text-white backdrop-blur-sm",
+      "absolute left-3 top-3 flex items-center gap-1 rounded bg-primary px-2 py-1 text-[10px] font-bold text-primary-foreground",
       className,
     )}
   >
+    <TrendingUp className="size-3" aria-hidden />
     {rank}
   </span>
 );
@@ -31,10 +34,11 @@ export const TrendingRankChip = ({ rank, className }: TrendingRankChipProps) => 
   <span
     aria-hidden
     className={cn(
-      "flex size-4 shrink-0 items-center justify-center rounded-full bg-foreground font-display text-[9px] font-bold text-background",
+      "flex items-center gap-0.5 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground",
       className,
     )}
   >
+    <TrendingUp className="size-2.5" aria-hidden />
     {rank}
   </span>
 );
