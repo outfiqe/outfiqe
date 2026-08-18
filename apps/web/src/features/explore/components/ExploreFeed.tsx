@@ -26,6 +26,7 @@ import { ExploreFeedSkeleton } from "./PostCardSkeleton";
 import { PostDetailModal } from "./PostDetailModal";
 import { PostGridCard } from "./PostGridCard";
 import { Sidebar } from "./Sidebar";
+import { TRENDING_RANKS, type TrendingRank } from "./TrendingRankBadge";
 
 export const ExploreFeed = () => {
   const { isAuthenticated, isAuthResolved, goToSignIn } = useExploreAuthGate();
@@ -73,6 +74,10 @@ export const ExploreFeed = () => {
   const postsById = new Map(rawPosts.map((post) => [post.id, post]));
   const posts = [...postsById.values()];
   const detailPost = detailPostId ? (postsById.get(detailPostId) ?? null) : null;
+
+  const isRankedTab = tab === EXPLORE_TAB.TRENDING || tab === EXPLORE_TAB.FOR_YOU;
+  const trendingRankOf = (index: number): TrendingRank | undefined =>
+    isRankedTab ? TRENDING_RANKS[index] : undefined;
 
   const showNewLooks = () => {
     dismiss();
@@ -128,15 +133,22 @@ export const ExploreFeed = () => {
               className="-ml-4 flex w-auto"
               columnClassName="pl-4"
             >
-              {posts.map((post) => {
+              {posts.map((post, index) => {
                 const { id } = post;
-                return <PostGridCard key={id} post={post} onClick={() => setDetailPostId(id)} />;
+                return (
+                  <PostGridCard
+                    key={id}
+                    post={post}
+                    onClick={() => setDetailPostId(id)}
+                    trendingRank={trendingRankOf(index)}
+                  />
+                );
               })}
             </Masonry>
           ) : (
             <div className="mx-auto flex max-w-xl flex-col">
-              {posts.map((post) => (
-                <PostCard key={post.id} post={post} />
+              {posts.map((post, index) => (
+                <PostCard key={post.id} post={post} trendingRank={trendingRankOf(index)} />
               ))}
             </div>
           )}

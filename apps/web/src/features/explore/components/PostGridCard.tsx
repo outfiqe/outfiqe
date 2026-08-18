@@ -6,13 +6,15 @@ import { getAvatarColor } from "@/shared/lib/avatarColor";
 
 import type { FeedPost } from "../api/exploreFeedSchemas";
 import { PostCaption } from "./PostCaption";
+import { type TrendingRank, TrendingRankBadge } from "./TrendingRankBadge";
 
 type PostGridCardProps = {
   post: FeedPost;
   onClick: () => void;
+  trendingRank?: TrendingRank;
 };
 
-export const PostGridCard = ({ post, onClick }: PostGridCardProps) => {
+export const PostGridCard = ({ post, onClick, trendingRank }: PostGridCardProps) => {
   const { id, imageUrl, images, caption } = post;
 
   return (
@@ -28,6 +30,8 @@ export const PostGridCard = ({ post, onClick }: PostGridCardProps) => {
             : { backgroundColor: getAvatarColor(id) }
         }
       >
+        {trendingRank && <TrendingRankBadge rank={trendingRank} />}
+
         {images.length > 1 && (
           <span
             aria-hidden
