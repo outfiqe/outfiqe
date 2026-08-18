@@ -11,6 +11,7 @@ export const NewArrivals = async () => {
       description="Added in the last seven days"
       viewAllHref="/shop?sort=new-arrivals"
       products={products}
+      emptyMessage="No new arrivals this week — check back soon."
     />
   );
 };
