@@ -1,11 +1,24 @@
 "use client";
 
 import { Compass, Store } from "lucide-react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { cn } from "@/shared/lib/cn";
+
+const NavPendingHint = () => {
+  const { pending } = useLinkStatus();
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "size-1.5 rounded-full bg-current transition-opacity duration-150",
+        pending ? "opacity-70 motion-safe:animate-pulse" : "opacity-0",
+      )}
+    />
+  );
+};
 
 const MODES = [
   { href: "/", label: "Shop", icon: Store },
@@ -64,7 +77,12 @@ export const ShopExploreToggle = ({ size = "sm", className }: ShopExploreToggleP
             )}
           >
             <Icon className={cn(icon, "shrink-0")} />
-            {showLabel && label}
+            {showLabel && (
+              <>
+                {label}
+                <NavPendingHint />
+              </>
+            )}
           </Link>
         );
       })}
