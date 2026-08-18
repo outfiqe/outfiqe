@@ -10,10 +10,14 @@ import {
   releaseSocketConnection,
 } from "@/shared/lib/socketClient";
 
+import { EXPLORE_TAB } from "../explore.constants";
 import { EXPLORE_SOCKET_EVENTS, type FeedSyncResultPayload } from "../socketEvents";
 
 const LAST_SEEN_LOOK_AT_STORAGE_KEY = "outfiqe:explore:last-seen-look-at";
 const LOOK_CREATED_RESYNC_DEBOUNCE_MS = 1500;
+
+const isLiveSyncTab = (tab: string): boolean =>
+  tab !== EXPLORE_TAB.FOR_YOU && tab !== EXPLORE_TAB.TRENDING;
 
 const emitFeedSyncRequest = (socket: Socket, tab: string): void => {
   socket.emit(EXPLORE_SOCKET_EVENTS.FEED_SYNC_REQUEST, {
@@ -40,9 +44,13 @@ export const useExploreFeedSocket = (tab: string) => {
   useEffect(() => {
     const socket = acquireSocketConnection();
 
-    const requestFeedSync = () => emitFeedSyncRequest(socket, tabRef.current);
+    const requestFeedSync = () => {
+      if (!isLiveSyncTab(tabRef.current)) return;
+      emitFeedSyncRequest(socket, tabRef.current);
+    };
 
     const scheduleFeedResync = () => {
+      if (!isLiveSyncTab(tabRef.current)) return;
       clearTimeout(resyncTimeoutRef.current);
       resyncTimeoutRef.current = setTimeout(requestFeedSync, LOOK_CREATED_RESYNC_DEBOUNCE_MS);
     };
@@ -65,6 +73,8 @@ export const useExploreFeedSocket = (tab: string) => {
   }, []);
 
   useEffect(() => {
+    if (!isLiveSyncTab(tab)) return;
+
     const socket = getSocket();
     if (!socket.connected) return;
 
