@@ -2,7 +2,7 @@
 
 import { Button } from "@outfiqe/design-system";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 import { cn } from "@/shared/lib/cn";
@@ -15,6 +15,8 @@ type CategoryTypeFiltersProps = {
   activeType: string;
 };
 
+type PendingType = { typeId: string; fromActiveType: string };
+
 export const CategoryTypeFilters = ({
   basePath,
   categorySlug,
@@ -22,24 +24,23 @@ export const CategoryTypeFilters = ({
 }: CategoryTypeFiltersProps) => {
   const router = useRouter();
   const productTypes = useProductTypes();
-  const [isNavigating, startNavigation] = useTransition();
-  const [pendingTypeId, setPendingTypeId] = useState<string | null>(null);
+  const [pendingType, setPendingType] = useState<PendingType | null>(null);
 
   const filters = [
     { id: ALL_TYPE_ID, label: "All" },
     ...(productTypes.data ?? []).map((type) => ({ id: type.slug, label: type.label })),
   ];
 
+  const isNavigating = pendingType?.fromActiveType === activeType;
+
   const selectType = (typeId: string) => {
-    setPendingTypeId(typeId);
-    startNavigation(() => {
-      const params = new URLSearchParams({ category: categorySlug });
-      if (typeId !== ALL_TYPE_ID) params.set("type", typeId);
-      router.replace(`${basePath}?${params.toString()}`, { scroll: false });
-    });
+    setPendingType({ typeId, fromActiveType: activeType });
+    const params = new URLSearchParams({ category: categorySlug });
+    if (typeId !== ALL_TYPE_ID) params.set("type", typeId);
+    router.replace(`${basePath}?${params.toString()}`, { scroll: false });
   };
 
-  const effectiveActiveType = isNavigating && pendingTypeId ? pendingTypeId : activeType;
+  const effectiveActiveType = isNavigating && pendingType ? pendingType.typeId : activeType;
 
   return (
     <div className="flex flex-wrap gap-2" aria-busy={isNavigating}>
