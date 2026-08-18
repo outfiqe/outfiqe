@@ -20,6 +20,9 @@ import {
   FOR_YOU_HASHTAG_BOOST_PER_MATCH,
   FOR_YOU_HASHTAG_MATCH_WEIGHT_CAP,
   FOR_YOU_MAX_PER_CREATOR,
+  TAG_TREND_BASELINE_WINDOW_DAYS,
+  TAG_TREND_RECENT_METRICS_WINDOW_HOURS,
+  TAG_TRENDING_LIMIT,
   TREND_BASELINE_WINDOW_DAYS,
   TREND_RECENT_METRICS_WINDOW_HOURS,
 } from "./creatorLook.constants.js";
@@ -37,6 +40,8 @@ import type {
   PostTrendingEntry,
   PostTrendMeta,
   TaggedProductPage,
+  TagMetricBucket,
+  TagScoreBreakdown,
   TrendingTag,
   UpdateCreatorLookInput,
   ViewerAffinity,
@@ -48,8 +53,11 @@ import type {
 } from "./creatorLook.utils.js";
 import {
   computeGlobalPostBaseline,
+  computeGlobalTagBaseline,
   groupPostBucketsByLook,
+  groupTagBucketsByTag,
   scorePost,
+  scoreTag,
   toEditDetail,
   toSummary,
 } from "./creatorLook.utils.js";
@@ -693,7 +701,7 @@ Cache-aside: trending tags are a rolling 7-day aggregate recomputed on read,
 not tied to any single write, so a lazy GET/SETEX fits better than
 write-through here. Redis failures fall open to a live recompute.
 */
-const fetchTrendingTags = async (): Promise<TrendingTag[]> => {
+const fetchLegacyTrendingTags = async (): Promise<TrendingTag[]> => {
   try {
     const cached = await cacheService.get<TrendingTag[]>(TRENDING_TAGS_CACHE_KEY);
     if (cached) return cached;
@@ -721,6 +729,68 @@ const fetchTrendingTags = async (): Promise<TrendingTag[]> => {
   }
 
   return trendingTags;
+};
+
+const upsertHashtagBucket = (bucketStart: Date) => prisma.$executeRaw`
+  INSERT INTO hashtag_trend_metrics (id, tag, bucket_start, post_count, updated_at)
+  SELECT gen_random_uuid(), h.tag, ${bucketStart}, COUNT(*), now()
+  FROM creator_look_hashtags h
+  JOIN creator_looks cl ON cl.id = h.creator_look_id
+  WHERE cl.created_at >= ${bucketStart} AND cl.deleted_at IS NULL
+  GROUP BY h.tag
+  ON CONFLICT (tag, bucket_start)
+  DO UPDATE SET post_count = excluded.post_count, updated_at = now();
+`;
+
+const listRecentTagMetricBuckets = async (sinceDays: number): Promise<TagMetricBucket[]> => {
+  const since = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000);
+  return prisma.hashtagTrendMetric.findMany({
+    where: { bucketStart: { gte: since } },
+    select: { tag: true, bucketStart: true, postCount: true },
+  });
+};
+
+const computeRankedTagScores = async (): Promise<TagScoreBreakdown[]> => {
+  const now = new Date();
+  const buckets = await listRecentTagMetricBuckets(TAG_TREND_BASELINE_WINDOW_DAYS);
+  const bucketsByTag = groupTagBucketsByTag(buckets);
+  const globalBaseline = computeGlobalTagBaseline(
+    bucketsByTag,
+    now,
+    TAG_TREND_BASELINE_WINDOW_DAYS,
+  );
+
+  const candidates: TagScoreBreakdown[] = [];
+  for (const [tag, tagBuckets] of bucketsByTag) {
+    const hasRecentBucket = tagBuckets.some(
+      (bucket) => ageHoursOf(bucket, now) < TAG_TREND_RECENT_METRICS_WINDOW_HOURS,
+    );
+    if (!hasRecentBucket) continue;
+
+    const breakdown = scoreTag({ tag, buckets: tagBuckets, globalBaseline, now });
+    if (breakdown.score > 0) candidates.push(breakdown);
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates;
+};
+
+const TAG_TREND_SCORE_CACHE_KEY = redisKeys.cache("explore-tag-trend-score", "global");
+
+const fetchTrendingTags = async (): Promise<TrendingTag[]> => {
+  let scored: TagScoreBreakdown[] | null = null;
+  try {
+    scored = await cacheService.get<TagScoreBreakdown[]>(TAG_TREND_SCORE_CACHE_KEY);
+  } catch (error) {
+    logger.warn(`Cache read failed for "${TAG_TREND_SCORE_CACHE_KEY}": ${describeError(error)}`);
+  }
+
+  if (scored === null) scored = await computeRankedTagScores();
+  if (scored.length === 0) return fetchLegacyTrendingTags();
+
+  return scored
+    .slice(0, TAG_TRENDING_LIMIT)
+    .map((entry) => ({ tag: entry.tag, postCount: entry.recentActivity.postCount }));
 };
 
 export const creatorLookRepository = {
@@ -971,6 +1041,29 @@ export const creatorLookRepository = {
       logger.warn(
         `Cache write failed for "${EXPLORE_TRENDING_SCORE_CACHE_KEY}": ${describeError(error)}`,
       );
+    }
+  },
+
+  async upsertHourlyTagMetrics(bucketStart: Date): Promise<void> {
+    await upsertHashtagBucket(bucketStart);
+  },
+
+  async deleteTagTrendMetricsOlderThan(cutoff: Date): Promise<number> {
+    const { count } = await prisma.hashtagTrendMetric.deleteMany({
+      where: { bucketStart: { lt: cutoff } },
+    });
+    return count;
+  },
+
+  async computeRankedTrendingTags(): Promise<TagScoreBreakdown[]> {
+    return computeRankedTagScores();
+  },
+
+  async cacheRankedTrendingTags(ranked: TagScoreBreakdown[]): Promise<void> {
+    try {
+      await cacheService.set(TAG_TREND_SCORE_CACHE_KEY, ranked, CACHE_TTL.EXPLORE_TRENDING_SCORE);
+    } catch (error) {
+      logger.warn(`Cache write failed for "${TAG_TREND_SCORE_CACHE_KEY}": ${describeError(error)}`);
     }
   },
 

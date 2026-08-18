@@ -441,6 +441,20 @@ model CreatorLookHashtag {
   @@map("creator_look_hashtags")
 }
 
+model HashtagTrendMetric {
+  id          String   @id @default(uuid()) @db.Uuid
+  tag         String
+  bucketStart DateTime @map("bucket_start")
+  postCount   Int      @default(0) @map("post_count")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([tag, bucketStart])
+  @@index([bucketStart])
+  @@map("hashtag_trend_metrics")
+}
+
 model CreatorLookTagClick {
   id            String                    @id @default(uuid()) @db.Uuid
   creatorLookId String                    @map("creator_look_id") @db.Uuid

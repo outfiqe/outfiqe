@@ -5,6 +5,8 @@ import logger from "#lib/winston.utils.js";
 import { COMMISSION_SWEEP_INTERVAL_MS } from "#modules/commissions/commission.constants.js";
 import { runCommissionLifecycleSweep } from "#modules/commissions/commission.lifecycle.js";
 import {
+  TAG_TREND_AGGREGATION_INTERVAL_MS,
+  TAG_TREND_SCORING_INTERVAL_MS,
   TRENDING_AGGREGATION_INTERVAL_MS,
   TRENDING_SCORING_INTERVAL_MS,
 } from "#modules/creator-looks/creatorLook.constants.js";
@@ -65,6 +67,16 @@ startIntervalScheduler([
     name: "explore-trending-scoring",
     run: creatorLookService.runTrendingScoring,
     intervalMs: TRENDING_SCORING_INTERVAL_MS,
+  },
+  {
+    name: "explore-tag-trending-aggregation",
+    run: creatorLookService.runTagTrendingAggregation,
+    intervalMs: TAG_TREND_AGGREGATION_INTERVAL_MS,
+  },
+  {
+    name: "explore-tag-trending-scoring",
+    run: creatorLookService.runTagTrendingScoring,
+    intervalMs: TAG_TREND_SCORING_INTERVAL_MS,
   },
 ]);
 

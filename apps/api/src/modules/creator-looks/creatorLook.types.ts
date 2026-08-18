@@ -171,3 +171,23 @@ export type ViewerAffinity = {
   engagedCreatorIds: Set<string>;
   hashtagWeights: Map<string, number>;
 };
+
+export type TagMetricBucket = {
+  tag: string;
+  bucketStart: Date;
+  postCount: number;
+};
+
+export type TagBaselineSource = "tag" | "global";
+
+export type TagScoreBreakdown = {
+  tag: string;
+  recentActivity: { postCount: number };
+  decayedActivity: number;
+  previousWindowActivity: number;
+  velocity: number;
+  baseline: { source: TagBaselineSource; value: number };
+  baselineLift: number;
+  momentum: number;
+  score: number;
+};

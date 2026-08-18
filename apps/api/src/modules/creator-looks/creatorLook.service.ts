@@ -8,7 +8,10 @@ import { followRepository } from "#modules/follows/follow.repository.js";
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 
-import { TREND_METRIC_RETENTION_DAYS } from "./creatorLook.constants.js";
+import {
+  TAG_TREND_METRIC_RETENTION_DAYS,
+  TREND_METRIC_RETENTION_DAYS,
+} from "./creatorLook.constants.js";
 import { creatorLookRepository } from "./creatorLook.repository.js";
 import type {
   CreateCreatorLookBody,
@@ -22,6 +25,7 @@ import type {
   CreatorLookSummary,
   FeedPage,
   PostTrendingEntry,
+  TagScoreBreakdown,
   TrendingTag,
 } from "./creatorLook.types.js";
 
@@ -259,6 +263,25 @@ export const creatorLookService = {
   async runTrendingScoring(): Promise<{ ranked: PostTrendingEntry[] }> {
     const ranked = await creatorLookRepository.computeRankedTrendingLookIds();
     await creatorLookRepository.cacheRankedTrendingScore(ranked);
+    return { ranked };
+  },
+
+  async runTagTrendingAggregation(): Promise<{ bucketStart: Date; deletedBuckets: number }> {
+    const bucketStart = truncateToHour(new Date());
+    await creatorLookRepository.upsertHourlyTagMetrics(bucketStart);
+
+    const retentionCutoff = new Date(
+      Date.now() - TAG_TREND_METRIC_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+    );
+    const deletedBuckets =
+      await creatorLookRepository.deleteTagTrendMetricsOlderThan(retentionCutoff);
+
+    return { bucketStart, deletedBuckets };
+  },
+
+  async runTagTrendingScoring(): Promise<{ ranked: TagScoreBreakdown[] }> {
+    const ranked = await creatorLookRepository.computeRankedTrendingTags();
+    await creatorLookRepository.cacheRankedTrendingTags(ranked);
     return { ranked };
   },
 
