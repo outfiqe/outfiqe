@@ -12,6 +12,52 @@ export const ageHoursOf = (bucket: { bucketStart: Date }, now: Date): number =>
 export const decayWeight = (ageHours: number, halfLifeHours: number): number =>
   Math.exp(-ageHours / halfLifeHours);
 
+export const sumDecayedActivityInWindow = <TBucket extends { bucketStart: Date }>(
+  buckets: TBucket[],
+  now: Date,
+  windowStartHoursAgo: number,
+  windowEndHoursAgo: number,
+  halfLifeHours: number,
+  activityOf: (bucket: TBucket) => number,
+): number => {
+  let total = 0;
+  for (const bucket of buckets) {
+    const ageHours = ageHoursOf(bucket, now);
+    if (ageHours < windowStartHoursAgo || ageHours >= windowEndHoursAgo) continue;
+    total += activityOf(bucket) * decayWeight(ageHours, halfLifeHours);
+  }
+  return total;
+};
+
+export const computeOwnBaseline = <TBucket extends { bucketStart: Date }>(
+  buckets: TBucket[],
+  now: Date,
+  windowDays: number,
+  baselineWindowHours: number,
+  activityOf: (bucket: TBucket) => number,
+): { average: number; nonEmptyWindows: number } => {
+  const totalHours = windowDays * 24;
+  const windowSums = new Map<number, number>();
+
+  for (const bucket of buckets) {
+    const ageHours = ageHoursOf(bucket, now);
+    if (ageHours < 0 || ageHours >= totalHours) continue;
+    const activity = activityOf(bucket);
+    if (activity <= 0) continue;
+    const windowIndex = Math.floor(ageHours / baselineWindowHours);
+    windowSums.set(windowIndex, (windowSums.get(windowIndex) ?? 0) + activity);
+  }
+
+  const nonEmptyWindows = windowSums.size;
+  if (nonEmptyWindows === 0) return { average: 0, nonEmptyWindows };
+
+  const total = [...windowSums.values()].reduce((sum, value) => sum + value, 0);
+  return { average: total / nonEmptyWindows, nonEmptyWindows };
+};
+
+export const meanOf = (values: number[]): number =>
+  values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length;
+
 export const applyDiversity = <T>(
   candidates: T[],
   limit: number,

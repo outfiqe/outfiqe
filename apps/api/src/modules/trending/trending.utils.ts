@@ -3,7 +3,9 @@ import {
   ageHoursOf,
   applyDiversity as applyGroupDiversity,
   applyWeightedRotation,
-  decayWeight,
+  computeOwnBaseline as computeOwnBaselineGeneric,
+  meanOf,
+  sumDecayedActivityInWindow as sumDecayedActivityInWindowGeneric,
   truncateToHour,
 } from "#lib/trend-scoring.utils.js";
 
@@ -65,15 +67,15 @@ export const sumDecayedActivityInWindow = (
   now: Date,
   windowStartHoursAgo: number,
   windowEndHoursAgo: number,
-): number => {
-  let total = 0;
-  for (const bucket of buckets) {
-    const ageHours = ageHoursOf(bucket, now);
-    if (ageHours < windowStartHoursAgo || ageHours >= windowEndHoursAgo) continue;
-    total += bucketActivity(bucket) * decayWeight(ageHours, DECAY_HALF_LIFE_HOURS);
-  }
-  return total;
-};
+): number =>
+  sumDecayedActivityInWindowGeneric(
+    buckets,
+    now,
+    windowStartHoursAgo,
+    windowEndHoursAgo,
+    DECAY_HALF_LIFE_HOURS,
+    bucketActivity,
+  );
 
 export const sumRawActivityInWindow = (
   buckets: MetricBucket[],
@@ -98,25 +100,8 @@ export const computeOwnBaseline = (
   buckets: MetricBucket[],
   now: Date,
   windowDays: number,
-): { average: number; nonEmptyWindows: number } => {
-  const totalHours = windowDays * 24;
-  const windowSums = new Map<number, number>();
-
-  for (const bucket of buckets) {
-    const ageHours = ageHoursOf(bucket, now);
-    if (ageHours < 0 || ageHours >= totalHours) continue;
-    const activity = bucketActivity(bucket);
-    if (activity <= 0) continue;
-    const windowIndex = Math.floor(ageHours / BASELINE_WINDOW_HOURS);
-    windowSums.set(windowIndex, (windowSums.get(windowIndex) ?? 0) + activity);
-  }
-
-  const nonEmptyWindows = windowSums.size;
-  if (nonEmptyWindows === 0) return { average: 0, nonEmptyWindows };
-
-  const total = [...windowSums.values()].reduce((sum, value) => sum + value, 0);
-  return { average: total / nonEmptyWindows, nonEmptyWindows };
-};
+): { average: number; nonEmptyWindows: number } =>
+  computeOwnBaselineGeneric(buckets, now, windowDays, BASELINE_WINDOW_HOURS, bucketActivity);
 
 export const computeGroupBaselines = (
   bucketsByProduct: Map<string, MetricBucket[]>,
@@ -140,12 +125,10 @@ export const computeGroupBaselines = (
     else averagesByType.set(meta.type, [average]);
   }
 
-  const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
-
   const byType = new Map<ProductType, number>();
-  for (const [type, averages] of averagesByType) byType.set(type, mean(averages));
+  for (const [type, averages] of averagesByType) byType.set(type, meanOf(averages));
 
-  return { byType, global: allAverages.length > 0 ? mean(allAverages) : 0 };
+  return { byType, global: meanOf(allAverages) };
 };
 
 export const isWithinFreshnessWindow = (createdAt: Date, now: Date): boolean =>
