@@ -60,7 +60,7 @@ export const ProductSearchBox = ({
   };
 
   return (
-    <Autocomplete>
+    <Autocomplete autoHighlightFirst={false}>
       <form onSubmit={submitSearch} className={formClassName}>
         <Search className="size-4 shrink-0 text-muted-foreground" />
         <AutocompleteInput

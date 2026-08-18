@@ -24,6 +24,7 @@ type AutocompleteContextValue = {
   contentRef: React.RefObject<HTMLDivElement | null>;
   activeValue: string | null;
   setActiveValue: (value: string | null) => void;
+  autoHighlightFirst: boolean;
   listboxId: string;
   getItemId: (value: string) => string;
   registerSelectHandler: (value: string, handler: SelectHandler) => () => void;
@@ -48,9 +49,14 @@ const getOptionElements = (content: HTMLDivElement | null) =>
 type AutocompleteProps = {
   children: ReactNode;
   closeOnSelect?: boolean;
+  autoHighlightFirst?: boolean;
 };
 
-export const Autocomplete = ({ children, closeOnSelect = true }: AutocompleteProps) => {
+export const Autocomplete = ({
+  children,
+  closeOnSelect = true,
+  autoHighlightFirst = true,
+}: AutocompleteProps) => {
   const [open, setOpen] = useState(false);
   const [activeValue, setActiveValue] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -73,6 +79,7 @@ export const Autocomplete = ({ children, closeOnSelect = true }: AutocompletePro
           contentRef,
           activeValue,
           setActiveValue,
+          autoHighlightFirst,
           listboxId,
           getItemId: (value) => `${listboxId}-${value}`,
           registerSelectHandler,
@@ -204,7 +211,7 @@ export const AutocompleteContent = ({
   children,
   ...props
 }: AutocompleteContentProps) => {
-  const { contentRef, listboxId, activeValue, setActiveValue } =
+  const { contentRef, listboxId, activeValue, setActiveValue, autoHighlightFirst } =
     useAutocompleteContext("AutocompleteContent");
 
   // Keeps the highlighted option in sync as results load or the filter narrows the list —
@@ -215,9 +222,8 @@ export const AutocompleteContent = ({
       if (activeValue !== null) setActiveValue(null);
       return;
     }
-    if (!options.some((option) => option.dataset.value === activeValue)) {
-      setActiveValue(options.at(0)?.dataset.value ?? null);
-    }
+    if (options.some((option) => option.dataset.value === activeValue)) return;
+    setActiveValue(autoHighlightFirst ? (options.at(0)?.dataset.value ?? null) : null);
   });
 
   return (
