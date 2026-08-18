@@ -161,16 +161,20 @@ export const subscribeToDomainEvent = <E extends DomainEvent>({
         await claimStuckEntries();
         await readNewEntries();
       } catch (error) {
+        if (stopped) break;
         logger.error(`Domain event consumer loop error: ${event}: ${describeError(error)}`);
       }
     }
 
-    await streamClient.quit();
+    if (streamClient.status !== "end") await streamClient.quit();
   };
 
   activeConsumers.push({
     stop: () => {
       stopped = true;
+      // readNewEntries() blocks inside XREADGROUP for up to CONSUMER_BLOCK_MS; disconnecting
+      // rejects that in-flight call immediately instead of leaving shutdown waiting on it.
+      streamClient.disconnect();
     },
     loopDone: runLoop(),
   });

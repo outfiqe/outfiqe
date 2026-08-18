@@ -1,5 +1,3 @@
-import "./instrument.js";
-
 import { createServer } from "node:http";
 
 import * as Sentry from "@sentry/node";
