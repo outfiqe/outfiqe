@@ -345,10 +345,30 @@ model CreatorLook {
   tagClicks            CreatorLookTagClick[]
   images               CreatorLookImage[]
   attributedOrderItems OrderItem[]
+  trendMetrics         CreatorLookTrendMetric[]
 
   @@index([deletedAt])
   @@index([createdAt])
   @@map("creator_looks")
+}
+
+model CreatorLookTrendMetric {
+  id            String      @id @default(uuid()) @db.Uuid
+  creatorLookId String      @map("creator_look_id") @db.Uuid
+  creatorLook   CreatorLook @relation(fields: [creatorLookId], references: [id], onDelete: Cascade)
+  bucketStart   DateTime    @map("bucket_start")
+
+  likes     Int @default(0)
+  comments  Int @default(0)
+  saves     Int @default(0)
+  tagClicks Int @default(0) @map("tag_clicks")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([creatorLookId, bucketStart])
+  @@index([bucketStart])
+  @@map("creator_look_trend_metrics")
 }
 
 model CreatorLookImage {

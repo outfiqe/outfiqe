@@ -2,11 +2,13 @@ import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { FollowTargetType } from "#generated/prisma/enums.js";
 import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
 import { extractHashtags } from "#lib/hashtags.utils.js";
+import { truncateToHour } from "#lib/trend-scoring.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 
+import { TREND_METRIC_RETENTION_DAYS } from "./creatorLook.constants.js";
 import { creatorLookRepository } from "./creatorLook.repository.js";
 import type {
   CreateCreatorLookBody,
@@ -19,6 +21,7 @@ import type {
   CreatorLookEditDetail,
   CreatorLookSummary,
   FeedPage,
+  PostTrendingEntry,
   TrendingTag,
 } from "./creatorLook.types.js";
 
@@ -190,10 +193,22 @@ export const creatorLookService = {
       });
     }
 
-    const tabToUse = tab === FOR_YOU_TAB ? TRENDING_TAB : tab;
+    if (tab === FOR_YOU_TAB) {
+      const followedCreatorIds = viewerId
+        ? await followRepository.listFollowingIds(viewerId, FollowTargetType.USER)
+        : [];
+
+      return creatorLookRepository.feed({
+        tab: FOR_YOU_TAB,
+        cursor,
+        limit,
+        viewerId,
+        followingCreatorIds: followedCreatorIds,
+      });
+    }
 
     return creatorLookRepository.feed({
-      tab: tabToUse,
+      tab,
       cursor,
       limit,
       viewerId,
@@ -227,6 +242,24 @@ export const creatorLookService = {
 
   async trendingTags(): Promise<TrendingTag[]> {
     return creatorLookRepository.trendingTags();
+  },
+
+  async runTrendingAggregation(): Promise<{ bucketStart: Date; deletedBuckets: number }> {
+    const bucketStart = truncateToHour(new Date());
+    await creatorLookRepository.upsertHourlyPostMetrics(bucketStart);
+
+    const retentionCutoff = new Date(
+      Date.now() - TREND_METRIC_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+    );
+    const deletedBuckets = await creatorLookRepository.deleteTrendMetricsOlderThan(retentionCutoff);
+
+    return { bucketStart, deletedBuckets };
+  },
+
+  async runTrendingScoring(): Promise<{ ranked: PostTrendingEntry[] }> {
+    const ranked = await creatorLookRepository.computeRankedTrendingLookIds();
+    await creatorLookRepository.cacheRankedTrendingScore(ranked);
+    return { ranked };
   },
 
   async like(lookId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
