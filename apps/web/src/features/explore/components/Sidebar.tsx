@@ -1,10 +1,13 @@
 "use client";
 
 import { Skeleton } from "@outfiqe/design-system";
-import { Flame } from "lucide-react";
 import Link from "next/link";
 
-import { TOP_TRENDING_RANK, TRENDING_RANKS } from "@/shared/components/TrendingRankBadge";
+import {
+  TRENDING_RANKS,
+  TrendingRankChip,
+  trendingRankTintClassName,
+} from "@/shared/components/TrendingRankBadge";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
@@ -115,9 +118,7 @@ const TrendingTags = ({ onTagClick }: { onTagClick: (tag: string) => void }) => 
           ))}
 
         {tags?.map(({ tag }, index) => {
-          const rank = index + 1;
-          const isTopTag = rank === TOP_TRENDING_RANK;
-          const isRisingTag = !isTopTag && rank <= TRENDING_RANKS.length;
+          const rank = TRENDING_RANKS[index];
 
           return (
             <button
@@ -125,15 +126,13 @@ const TrendingTags = ({ onTagClick }: { onTagClick: (tag: string) => void }) => 
               type="button"
               onClick={() => onTagClick(tag)}
               className={cn(
-                "flex items-center gap-1 rounded-full px-3 py-1.5 text-[12.5px] transition-colors",
-                isTopTag
-                  ? "bg-primary font-semibold text-primary-foreground hover:opacity-90"
-                  : isRisingTag
-                    ? "bg-primary/10 font-medium text-primary-strong hover:bg-primary/15"
-                    : "bg-muted text-muted-foreground hover:text-foreground",
+                "flex items-center gap-1.5 rounded-full border border-transparent px-3 py-1.5 text-[12.5px] font-medium transition-colors",
+                rank
+                  ? trendingRankTintClassName(rank)
+                  : "bg-muted text-muted-foreground hover:text-foreground",
               )}
             >
-              {isTopTag && <Flame className="size-3" aria-hidden />}#{tag}
+              {rank && <TrendingRankChip rank={rank} />}#{tag}
             </button>
           );
         })}
