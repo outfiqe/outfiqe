@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@outfiqe/design-system": "workspace:*",
+    "lucide-react": "^1.29.0",
     "react-error-boundary": "^6.1.3"
   },
   "peerDependencies": {
