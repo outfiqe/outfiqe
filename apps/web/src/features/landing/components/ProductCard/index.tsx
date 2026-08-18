@@ -9,6 +9,7 @@ import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useToggleWishlist } from "@/features/wishlist";
+import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { cn } from "@/shared/lib/cn";
 
 export type ProductType = ProductTypeSlug;
@@ -49,9 +50,10 @@ const getSwatchColor = (productId: string) => {
 type ProductCardProps = {
   product: ExploreProduct;
   onToggleSaved?: (productId: string, saved: boolean) => void;
+  trendingRank?: TrendingRank;
 };
 
-export const ProductCard = ({ product, onToggleSaved }: ProductCardProps) => {
+export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCardProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
@@ -91,10 +93,14 @@ export const ProductCard = ({ product, onToggleSaved }: ProductCardProps) => {
           backgroundImage: image ? `url(${image})` : undefined,
         }}
       >
-        {badgeLabel && (
-          <span className="absolute left-3 top-3 rounded bg-primary px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
-            {badgeLabel}
-          </span>
+        {trendingRank ? (
+          <TrendingRankBadge rank={trendingRank} />
+        ) : (
+          badgeLabel && (
+            <span className="absolute left-3 top-3 rounded bg-primary px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
+              {badgeLabel}
+            </span>
+          )
         )}
 
         <Button

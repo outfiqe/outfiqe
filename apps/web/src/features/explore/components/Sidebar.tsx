@@ -3,8 +3,8 @@
 import { Skeleton } from "@outfiqe/design-system";
 import Link from "next/link";
 
+import { TRENDING_RANKS, TrendingRankChip } from "@/shared/components/TrendingRankBadge";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
-import { cn } from "@/shared/lib/cn";
 
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 import { useFollowCreator } from "../hooks/useFollowCreator";
@@ -112,18 +112,20 @@ const TrendingTags = ({ onTagClick }: { onTagClick: (tag: string) => void }) => 
             <Skeleton key={index} className="h-7 w-16 rounded-full" />
           ))}
 
-        {tags?.map(({ tag }) => (
-          <button
-            key={tag}
-            type="button"
-            onClick={() => onTagClick(tag)}
-            className={cn(
-              "rounded-full bg-muted px-3 py-1.5 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground",
-            )}
-          >
-            #{tag}
-          </button>
-        ))}
+        {tags?.map(({ tag }, index) => {
+          const rank = TRENDING_RANKS[index];
+
+          return (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => onTagClick(tag)}
+              className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {rank && <TrendingRankChip rank={rank} />}#{tag}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

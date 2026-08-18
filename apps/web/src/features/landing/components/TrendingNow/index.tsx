@@ -13,6 +13,7 @@ export const TrendingNow = async () => {
       viewAllLabel="See More"
       products={products}
       emptyMessage="Nothing trending yet — check back soon."
+      showTrendingRanks
     />
   );
 };

@@ -2,6 +2,7 @@
 
 import { Layers } from "lucide-react";
 
+import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 
 import type { FeedPost } from "../api/exploreFeedSchemas";
@@ -10,9 +11,10 @@ import { PostCaption } from "./PostCaption";
 type PostGridCardProps = {
   post: FeedPost;
   onClick: () => void;
+  trendingRank?: TrendingRank;
 };
 
-export const PostGridCard = ({ post, onClick }: PostGridCardProps) => {
+export const PostGridCard = ({ post, onClick, trendingRank }: PostGridCardProps) => {
   const { id, imageUrl, images, caption } = post;
 
   return (
@@ -28,6 +30,8 @@ export const PostGridCard = ({ post, onClick }: PostGridCardProps) => {
             : { backgroundColor: getAvatarColor(id) }
         }
       >
+        {trendingRank && <TrendingRankBadge rank={trendingRank} />}
+
         {images.length > 1 && (
           <span
             aria-hidden

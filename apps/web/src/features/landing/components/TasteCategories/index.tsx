@@ -3,7 +3,7 @@
 import { Button, Skeleton } from "@outfiqe/design-system";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
@@ -12,14 +12,17 @@ import { cn } from "@/shared/lib/cn";
 const SCROLL_STEP_PX = 320;
 const SCROLL_END_TOLERANCE_PX = 1;
 
+type PendingCategory = { slug: string; fromSearchParams: string };
+
 export const TasteCategories = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const categories = useCategories();
-  const [isNavigating, startNavigation] = useTransition();
-  const [pendingSlug, setPendingSlug] = useState<string | null>(null);
+  const [pendingCategory, setPendingCategory] = useState<PendingCategory | null>(null);
+  const searchParamsString = searchParams.toString();
   const resolvedSlug = searchParams.get("category") ?? categories.data?.[0]?.slug;
-  const activeSlug = isNavigating && pendingSlug ? pendingSlug : resolvedSlug;
+  const isNavigating = pendingCategory?.fromSearchParams === searchParamsString;
+  const activeSlug = isNavigating && pendingCategory ? pendingCategory.slug : resolvedSlug;
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -46,10 +49,8 @@ export const TasteCategories = () => {
   };
 
   const selectCategory = (slug: string) => {
-    setPendingSlug(slug);
-    startNavigation(() => {
-      router.replace(`/?category=${slug}`, { scroll: false });
-    });
+    setPendingCategory({ slug, fromSearchParams: searchParamsString });
+    router.replace(`/?category=${slug}`, { scroll: false });
   };
 
   return (
