@@ -1,8 +1,12 @@
+import type { LeaderboardCategory } from "#constants/leaderboard.constants.js";
+
 export const redisKeys = {
   rateLimit: (namespace: string, identifier: string) => `ratelimit:${namespace}:${identifier}`,
   cache: (namespace: string, identifier = "all") => `cache:${namespace}:${identifier}`,
   stream: (event: string) => `stream:${event}`,
   lock: (name: string) => `lock:${name}`,
+  leaderboard: (category: LeaderboardCategory, week: string) =>
+    `leaderboard:brand:${category}:${week}`,
 };
 
 export const CACHE_TTL = {

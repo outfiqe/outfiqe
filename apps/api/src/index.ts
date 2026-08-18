@@ -14,6 +14,16 @@ import {
 } from "#modules/creator-looks/creatorLook.constants.js";
 import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
 import { registerCreatorLookSocketHandlers } from "#modules/creator-looks/creatorLook.socket.js";
+import {
+  FASTEST_GROWING_RECOMPUTE_INTERVAL_MS,
+  MOST_PURCHASED_RECOMPUTE_INTERVAL_MS,
+  TRENDING_RECOMPUTE_INTERVAL_MS,
+} from "#modules/leaderboard/leaderboard.constants.js";
+import { leaderboardService } from "#modules/leaderboard/leaderboard.service.js";
+import {
+  registerLeaderboardEventConsumer,
+  registerLeaderboardSocketHandlers,
+} from "#modules/leaderboard/leaderboard.socket.js";
 import { RECONCILE_CHECK_INTERVAL_MS } from "#modules/payments/payment.constants.js";
 import { runPaymentReconciliationSweep } from "#modules/payments/payment.reconciliation.js";
 import {
@@ -38,6 +48,8 @@ const httpServer = createServer(app);
 initSocket(httpServer);
 registerSocketListeners();
 registerCreatorLookSocketHandlers();
+registerLeaderboardSocketHandlers();
+registerLeaderboardEventConsumer();
 
 startIntervalScheduler([
   {
@@ -79,6 +91,21 @@ startIntervalScheduler([
     name: "explore-tag-trending-scoring",
     run: creatorLookService.runTagTrendingScoring,
     intervalMs: TAG_TREND_SCORING_INTERVAL_MS,
+  },
+  {
+    name: "leaderboard-most-purchased",
+    run: leaderboardService.runMostPurchasedRecompute,
+    intervalMs: MOST_PURCHASED_RECOMPUTE_INTERVAL_MS,
+  },
+  {
+    name: "leaderboard-trending",
+    run: leaderboardService.runTrendingRecompute,
+    intervalMs: TRENDING_RECOMPUTE_INTERVAL_MS,
+  },
+  {
+    name: "leaderboard-fastest-growing",
+    run: leaderboardService.runFastestGrowingRecompute,
+    intervalMs: FASTEST_GROWING_RECOMPUTE_INTERVAL_MS,
   },
 ]);
 

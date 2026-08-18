@@ -22,6 +22,7 @@ export const DomainEvents = {
   USER_UNFOLLOWED: "user.unfollowed",
   BRAND_FOLLOWED: "brand.followed",
   BRAND_UNFOLLOWED: "brand.unfollowed",
+  LEADERBOARD_BRAND_UPDATED: "leaderboard.brand.updated",
 } as const;
 
 // A Redis hiccup must never fail the caller's request (like/comment/follow/etc.) — log and move on,
