@@ -95,6 +95,8 @@ export type FeedPage = {
   nextCursor: string | null;
 };
 
+export type LookSearchPage = FeedPage & { total: number };
+
 export type ListFeedInput = {
   tab: string;
   cursor?: string;

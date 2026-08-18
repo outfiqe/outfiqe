@@ -1,4 +1,5 @@
 import { prisma } from "#db/prisma.js";
+import { Prisma } from "#generated/prisma/client.js";
 import type { CreatorStatus } from "#generated/prisma/enums.js";
 import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
 import type { DbClient } from "#types/db.types.js";
@@ -100,6 +101,18 @@ export const userRepository = {
     creatorStatusUpdate: { creatorStatus: CreatorStatus; isCreator?: boolean },
   ): Promise<UserRecord> {
     return prisma.user.update({ where: { id }, data: creatorStatusUpdate });
+  },
+
+  async searchCreatorIds(
+    query: string,
+    { limit, offset }: { limit: number; offset: number },
+  ): Promise<{ ids: string[]; total: number }> {
+    const rows = await prisma.$queryRaw<{ id: string; total_count: bigint }[]>(Prisma.sql`
+      SELECT id, total_count FROM search_creators(${query}, ${limit}, ${offset})
+    `);
+
+    const [first] = rows;
+    return { ids: rows.map((row) => row.id), total: first ? Number(first.total_count) : 0 };
   },
 
   async listByCreatorStatus(

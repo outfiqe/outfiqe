@@ -108,6 +108,7 @@ export const toEditDetail = ({
 export type SimpleCursor = { c: string; i: string };
 export type TrendingSnapshotCursor = { sessionId: string; offset: number };
 export type FeaturedLookCursor = { e: number; i: string };
+export type SearchLooksCursor = { offset: number };
 
 export const postBucketActivity = (bucket: {
   likes: number;

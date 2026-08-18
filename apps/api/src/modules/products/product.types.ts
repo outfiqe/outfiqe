@@ -145,6 +145,13 @@ export type ProductSearchResult = {
 
 export type ProductSearchCursor = { offset: number };
 
+export type ProductSuggestion = {
+  id: string;
+  name: string;
+  brand: string;
+  imageUrl: string | null;
+};
+
 export type PublicProductDetail = Omit<PublicProduct, "brand"> & {
   brand: { id: string; name: string };
   sizes: ProductSizeRecord[];

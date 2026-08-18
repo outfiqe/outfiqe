@@ -13,6 +13,7 @@ import {
   listCreatorLooksQuerySchema,
   listSavedQuerySchema,
   lookIdParamsSchema,
+  searchCreatorLooksQuerySchema,
   tagClickParamsSchema,
   tagClickSchema,
 } from "./creatorLook.schemas.js";
@@ -30,6 +31,12 @@ creatorLookRoutes.get(
   creatorLookController.feed,
 );
 creatorLookRoutes.get("/tags/trending", creatorLookController.trendingTags);
+creatorLookRoutes.get(
+  "/search",
+  optionalAuth,
+  validate({ query: searchCreatorLooksQuerySchema }),
+  creatorLookController.search,
+);
 creatorLookRoutes.get(
   "/saved",
   requireAuth,

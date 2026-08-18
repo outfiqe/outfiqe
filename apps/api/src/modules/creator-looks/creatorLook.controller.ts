@@ -12,6 +12,7 @@ import type {
   ListCreatorLooksQuery,
   ListSavedQuery,
   LookIdParams,
+  SearchCreatorLooksQuery,
   TagClickBody,
   TagClickParams,
 } from "./creatorLook.schemas.js";
@@ -73,6 +74,14 @@ export const creatorLookController = {
 
     const page = await creatorLookService.feed(viewerId, query);
     sendSuccess(res, page, "Explore feed.");
+  },
+
+  async search(_req: Request, res: Response) {
+    const viewerId = getAuthPrincipal(res)?.userId;
+    const query = validated.query<SearchCreatorLooksQuery>(res);
+
+    const page = await creatorLookService.search(viewerId, query);
+    sendSuccess(res, page, "Posts.");
   },
 
   async trendingTags(_req: Request, res: Response) {

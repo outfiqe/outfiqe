@@ -9,6 +9,7 @@ import { validate } from "#middlewares/validate.js";
 import { productController } from "./product.controller.js";
 import {
   adjustStockSchema,
+  autocompleteQuerySchema,
   createProductSchema,
   listMineProductsQuerySchema,
   listPublicProductsQuerySchema,
@@ -37,6 +38,11 @@ productRoutes.get(
 productRoutes.get("/trending", productController.listTrending);
 productRoutes.get("/new-arrivals", productController.listNewArrivals);
 productRoutes.get("/types", productController.listTypes);
+productRoutes.get(
+  "/autocomplete",
+  validate({ query: autocompleteQuerySchema }),
+  productController.autocomplete,
+);
 
 productRoutes.get(
   "/",

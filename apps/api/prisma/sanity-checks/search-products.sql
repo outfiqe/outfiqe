@@ -8,7 +8,7 @@ SELECT * FROM search_products('jack', 20, 0);
 
 EXPLAIN ANALYZE SELECT * FROM search_products('jacket', 20, 0);
 
-SET pg_trgm.word_similarity_threshold = 0.3;
+SET pg_trgm.word_similarity_threshold = 0.4;
 
 EXPLAIN ANALYZE
 WITH query AS (

@@ -17,6 +17,7 @@ import type {
   CreateCreatorLookBody,
   ListCreatorLooksQuery,
   ListSavedQuery,
+  SearchCreatorLooksQuery,
   TagClickBody,
 } from "./creatorLook.schemas.js";
 import type {
@@ -24,6 +25,7 @@ import type {
   CreatorLookEditDetail,
   CreatorLookSummary,
   FeedPage,
+  LookSearchPage,
   PostTrendingEntry,
   TagScoreBreakdown,
   TrendingTag,
@@ -218,6 +220,13 @@ export const creatorLookService = {
       viewerId,
       followingCreatorIds: [],
     });
+  },
+
+  async search(
+    viewerId: string | undefined,
+    { q, cursor, limit }: SearchCreatorLooksQuery,
+  ): Promise<LookSearchPage> {
+    return creatorLookRepository.searchLooks(q, { cursor, limit }, viewerId);
   },
 
   async countNewSince(
