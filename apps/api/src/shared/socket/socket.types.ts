@@ -27,6 +27,7 @@ export type LeaderboardEntry = {
   brandId: string;
   brandName: string;
   avatarUrl: string | null;
+  bannerUrl: string | null;
   score: number;
   scoreLabel: string;
   movement: number | null;

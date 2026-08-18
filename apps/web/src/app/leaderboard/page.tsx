@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { LeaderboardView } from "@/features/leaderboard";
+import { LeaderboardInfoSection, LeaderboardView } from "@/features/leaderboard";
 
 export const metadata: Metadata = { title: "Brand leaderboard" };
 
@@ -23,8 +23,12 @@ const LeaderboardPage = () => {
             Who&apos;s leading this week, by category. Resets every Monday.
           </p>
 
-          <div className="mt-8 max-w-2xl">
+          <div className="mt-8">
             <LeaderboardView />
+          </div>
+
+          <div className="mt-16">
+            <LeaderboardInfoSection />
           </div>
         </div>
       </main>

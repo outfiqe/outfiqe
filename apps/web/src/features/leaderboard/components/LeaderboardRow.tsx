@@ -6,27 +6,19 @@ import { cn } from "@/shared/lib/cn";
 
 import type { LeaderboardEntry } from "../api/leaderboardSchemas";
 
-const TOP_RANK_THRESHOLD = 3;
-
 type LeaderboardRowProps = {
   entry: LeaderboardEntry;
 };
 
 export const LeaderboardRow = ({ entry }: LeaderboardRowProps) => {
   const { rank, brandId, brandName, avatarUrl, scoreLabel, movement } = entry;
-  const isTopRank = rank <= TOP_RANK_THRESHOLD;
 
   return (
     <Link
       href={`/brand/${brandId}`}
       className="flex items-center gap-4 border-b border-border px-4 py-4 transition-colors last:border-b-0 hover:bg-muted"
     >
-      <span
-        className={cn(
-          "w-8 shrink-0 font-display text-lg font-extrabold",
-          isTopRank ? "text-primary" : "text-muted-foreground",
-        )}
-      >
+      <span className="w-8 shrink-0 text-center font-display text-lg font-extrabold text-muted-foreground">
         {String(rank).padStart(2, "0")}
       </span>
 

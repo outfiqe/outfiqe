@@ -7,6 +7,7 @@ export const leaderboardEntrySchema = z.object({
   brandId: z.string(),
   brandName: z.string(),
   avatarUrl: z.string().nullable(),
+  bannerUrl: z.string().nullable(),
   score: z.number(),
   scoreLabel: z.string(),
   movement: z.number().nullable(),

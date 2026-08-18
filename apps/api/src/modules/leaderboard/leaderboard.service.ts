@@ -119,6 +119,7 @@ const getTop = async (category: LeaderboardCategory): Promise<LeaderboardSnapsho
       brandId: brand.id,
       brandName: brand.name,
       avatarUrl: brand.avatarUrl,
+      bannerUrl: brand.bannerUrl,
       score,
       scoreLabel: formatScoreLabel(category, score),
       movement: previousRank === null ? null : previousRank - index,

@@ -1,4 +1,5 @@
 export type { LeaderboardEntry, LeaderboardSnapshot } from "./api/leaderboardSchemas";
+export { LeaderboardInfoSection } from "./components/LeaderboardInfoSection";
 export { LeaderboardView } from "./components/LeaderboardView";
 export {
   LEADERBOARD_CATEGORY,
