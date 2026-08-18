@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { MobileTabBar } from "@/components/MobileTabBar";
+import { RailSkeleton } from "@/components/RailSkeleton";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { CollectionsSection } from "@/features/collections";
@@ -27,9 +28,15 @@ const HomePage = () => {
         <Suspense fallback={null}>
           <CollectionsSection />
         </Suspense>
-        <TrendingNow />
-        <CreatorLooks />
-        <NewArrivals />
+        <Suspense fallback={<RailSkeleton />}>
+          <TrendingNow />
+        </Suspense>
+        <Suspense fallback={<RailSkeleton />}>
+          <CreatorLooks />
+        </Suspense>
+        <Suspense fallback={<RailSkeleton />}>
+          <NewArrivals />
+        </Suspense>
         <BrandCallout />
       </main>
       <SiteFooter />
