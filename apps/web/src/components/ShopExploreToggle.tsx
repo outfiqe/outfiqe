@@ -3,6 +3,7 @@
 import { Compass, Store } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 import { cn } from "@/shared/lib/cn";
 
@@ -28,25 +29,32 @@ type ShopExploreToggleProps = {
   className?: string;
 };
 
+type PendingNav = { href: string; fromPathname: string | null };
+
 export const ShopExploreToggle = ({ size = "sm", className }: ShopExploreToggleProps) => {
   const pathname = usePathname();
   const { container, button, icon, showLabel } = SIZE_STYLES[size];
+  const [pendingNav, setPendingNav] = useState<PendingNav | null>(null);
 
   const isExploreRoute = pathname?.startsWith("/explore") ?? false;
-  const isShopRoute = pathname === "/";
+  const resolvedHref = isExploreRoute ? "/explore" : "/";
+
+  const activeHref =
+    pendingNav && pendingNav.fromPathname === pathname ? pendingNav.href : resolvedHref;
 
   return (
     <div
       className={cn("flex items-center rounded-full bg-muted font-semibold", container, className)}
     >
       {MODES.map(({ href, label, icon: Icon }) => {
-        const active = href === "/explore" ? isExploreRoute : isShopRoute;
+        const active = href === activeHref;
         return (
           <Link
             key={href}
             href={href}
             aria-current={active ? "page" : undefined}
             aria-label={label}
+            onClick={() => setPendingNav({ href, fromPathname: pathname })}
             className={cn(
               "flex items-center rounded-full transition-colors",
               button,
