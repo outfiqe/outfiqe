@@ -7,6 +7,10 @@ const parsedTestEnv =
   loadEnvFile({ path: path.resolve(import.meta.dirname, ".env.test") }).parsed ?? {};
 const testDatabaseUrl = parsedTestEnv.TEST_DATABASE_URL ?? process.env.TEST_DATABASE_URL;
 
+const definedProcessEnv = Object.fromEntries(
+  Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined),
+);
+
 export default defineConfig({
   test: {
     coverage: {
@@ -39,16 +43,13 @@ export default defineConfig({
           include: ["test/integration/**/*.test.ts"],
           environment: "node",
           env: {
+            ...definedProcessEnv,
             ...parsedTestEnv,
             ...(testDatabaseUrl ? { DATABASE_URL: testDatabaseUrl } : {}),
           },
           setupFiles: ["./test/integration/setup.ts"],
           testTimeout: 15000,
           hookTimeout: 30000,
-          // All integration test files share one real Postgres database and
-          // reset it (TRUNCATE) between tests — running files in parallel
-          // would let one file's reset wipe another's in-flight fixtures.
-          // Capping this project to a single worker keeps files sequential.
           pool: "forks",
           maxWorkers: 1,
         },

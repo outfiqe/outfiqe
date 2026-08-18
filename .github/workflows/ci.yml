@@ -94,8 +94,6 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
-      # apps/api's integration test project reads this to point Prisma at the
-      # service container above instead of the placeholder DATABASE_URL.
       TEST_DATABASE_URL: postgresql://outfiqe:outfiqe@localhost:5432/outfiqe_test_db
       REDIS_URL: redis://localhost:6379
     steps:

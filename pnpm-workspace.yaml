@@ -12,9 +12,6 @@ allowBuilds:
   # eslint-config-next). No install-time side effects beyond compiling
   # its own native binding.
   unrs-resolver: true
-  # postinstall is a no-op unless the consuming package.json declares an
-  # `msw.workerDirectory` (browser Service Worker setup) — we only use
-  # msw/node in tests, so this never does anything here.
   msw: true
 
 # pnpm 11 also quarantines packages published within the last ~24h, so a
