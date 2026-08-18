@@ -12,6 +12,8 @@ import type {
   CreateProductInput,
   ProductRecord,
   ProductSalesStats,
+  ProductSearchParams,
+  ProductSearchResult,
   ProductSizeRecord,
   ProductWithStock,
   ProductWithStockSizesAndImages,
@@ -39,7 +41,9 @@ type PublicFilter = {
   categoryId?: string;
   type?: ProductType;
   brandId?: string;
-  q?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStockOnly?: boolean;
   sort?: ProductSort;
 };
 
@@ -49,7 +53,11 @@ const buildPublicWhere = (filter: PublicFilter): Prisma.ProductWhereInput => ({
   categories: filter.categoryId ? { some: { id: filter.categoryId } } : undefined,
   type: filter.type,
   brandId: filter.brandId,
-  name: filter.q ? { contains: filter.q, mode: "insensitive" } : undefined,
+  price:
+    filter.minPrice !== undefined || filter.maxPrice !== undefined
+      ? { gte: filter.minPrice, lte: filter.maxPrice }
+      : undefined,
+  sizes: filter.inStockOnly ? { some: { stock: { gt: 0 } } } : undefined,
   createdAt:
     filter.sort === PRODUCT_SORT.NEW_ARRIVALS
       ? { gte: new Date(Date.now() - NEW_ARRIVAL_WINDOW_MS) }
@@ -246,6 +254,31 @@ export const productRepository = {
       ...(filter.cursor ? { cursor: { id: filter.cursor }, skip: 1 } : {}),
     });
     return withSalesStats(withTotalStock(rows));
+  },
+
+  async searchProductIds(params: ProductSearchParams): Promise<ProductSearchResult> {
+    const rows = await prisma.$queryRaw<
+      { id: string; total_count: bigint; brand_count: bigint }[]
+    >(Prisma.sql`
+      SELECT id, total_count, brand_count FROM search_products(
+        ${params.query},
+        ${params.limit},
+        ${params.offset},
+        ${params.categoryId ?? null}::uuid,
+        ${params.type ?? null}::"ProductType",
+        ${params.brandId ?? null}::uuid,
+        ${params.minPrice ?? null}::int,
+        ${params.maxPrice ?? null}::int,
+        ${params.inStockOnly ?? false}
+      )
+    `);
+
+    const [first] = rows;
+    return {
+      ids: rows.map((row) => row.id),
+      total: first ? Number(first.total_count) : 0,
+      brandCount: first ? Number(first.brand_count) : 0,
+    };
   },
 
   async countPublic(filter: PublicFilter): Promise<{ total: number; brandCount: number }> {

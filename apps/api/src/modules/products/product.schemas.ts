@@ -9,6 +9,7 @@ const NAME_MIN = 2;
 const NAME_MAX = 150;
 const PRICE_MIN = 1;
 const PRICE_MAX = 10_000_000;
+const FILTER_PRICE_MIN = 0;
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 50;
 const MAX_IMAGES = 6;
@@ -66,7 +67,13 @@ export const listPublicProductsQuerySchema = z.object({
   type: productTypeSlugSchema.optional(),
   q: z.string().trim().min(1).max(100).optional(),
   sort: z.enum(PRODUCT_SORT_VALUES).default(PRODUCT_SORT.NEWEST),
-  cursor: z.uuid().optional(),
+  minPrice: z.coerce.number().int().min(FILTER_PRICE_MIN).max(PRICE_MAX).optional(),
+  maxPrice: z.coerce.number().int().min(FILTER_PRICE_MIN).max(PRICE_MAX).optional(),
+  inStock: z
+    .enum(["true", "false"])
+    .transform((value) => value === "true")
+    .optional(),
+  cursor: z.string().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
 

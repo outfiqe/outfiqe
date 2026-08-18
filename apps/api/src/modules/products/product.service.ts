@@ -5,7 +5,7 @@ import { productApprovedTemplate, productRejectedTemplate } from "#email-templat
 import { ProductStatus } from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
-import { buildCursorPage } from "#lib/pagination.utils.js";
+import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 import { isForeignKeyConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -34,12 +34,13 @@ import type {
   ProductBrandSummaryPage,
   ProductRecord,
   ProductReviewPage,
+  ProductSearchCursor,
   PublicProduct,
   PublicProductDetail,
   PublicProductPage,
   PublicProductType,
 } from "./product.types.js";
-import { humanizeSlug, toBrandSummary, toPublicProduct } from "./product.utils.js";
+import { humanizeSlug, isUuid, toBrandSummary, toPublicProduct } from "./product.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
@@ -221,12 +222,37 @@ export const productService = {
     category,
     q,
     sort,
+    minPrice,
+    maxPrice,
+    inStock,
     cursor,
     limit,
   }: ListPublicProductsQuery): Promise<PublicProductPage> {
     const type = typeSlug ? SLUG_TO_PRODUCT_TYPE[typeSlug] : undefined;
     const categoryId = category ? (await categoryService.getBySlug(category)).id : undefined;
-    const isUnfilteredTrendingBrowse = sort === PRODUCT_SORT.TRENDING && !categoryId && !type && !q;
+
+    if (q) {
+      const offset = decodeCursor<ProductSearchCursor>(cursor)?.offset ?? 0;
+      const { ids, total, brandCount } = await productRepository.searchProductIds({
+        query: q,
+        limit,
+        offset,
+        categoryId,
+        type,
+        minPrice,
+        maxPrice,
+        inStockOnly: inStock,
+      });
+      const rows = await productRepository.listApprovedByIds(ids);
+      const nextOffset = offset + ids.length;
+      const nextCursor =
+        nextOffset < total ? encodeCursor<ProductSearchCursor>({ offset: nextOffset }) : null;
+
+      return { products: rows.map(toPublicProduct), nextCursor, total, brandCount };
+    }
+
+    const isUnfilteredTrendingBrowse =
+      sort === PRODUCT_SORT.TRENDING && !categoryId && !type && !minPrice && !maxPrice && !inStock;
 
     if (isUnfilteredTrendingBrowse) {
       const { ids, nextCursor } = await trendingService.listTrendingProductIds({ cursor, limit });
@@ -247,9 +273,11 @@ export const productService = {
       }
     }
 
+    const keysetCursor = cursor && isUuid(cursor) ? cursor : undefined;
+    const filter = { categoryId, type, minPrice, maxPrice, inStockOnly: inStock, sort };
     const [rows, counts] = await Promise.all([
-      productRepository.listPublic({ categoryId, type, q, sort, cursor, limit }),
-      productRepository.countPublic({ categoryId, type, q, sort }),
+      productRepository.listPublic({ ...filter, cursor: keysetCursor, limit }),
+      productRepository.countPublic(filter),
     ]);
 
     const { items: pagedProducts, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);

@@ -122,6 +122,29 @@ export type PublicProductPage = {
   brandCount: number;
 };
 
+export type ProductSearchFilter = {
+  categoryId?: string;
+  type?: ProductType;
+  brandId?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStockOnly?: boolean;
+};
+
+export type ProductSearchParams = ProductSearchFilter & {
+  query: string;
+  limit: number;
+  offset: number;
+};
+
+export type ProductSearchResult = {
+  ids: string[];
+  total: number;
+  brandCount: number;
+};
+
+export type ProductSearchCursor = { offset: number };
+
 export type PublicProductDetail = Omit<PublicProduct, "brand"> & {
   brand: { id: string; name: string };
   sizes: ProductSizeRecord[];
