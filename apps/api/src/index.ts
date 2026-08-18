@@ -1,4 +1,8 @@
+import "./instrument.js";
+
 import { createServer } from "node:http";
+
+import * as Sentry from "@sentry/node";
 
 import { stopDomainEventConsumers } from "#events/event-bus.consumer.js";
 import logger from "#lib/winston.utils.js";
@@ -84,6 +88,8 @@ const server = httpServer.listen(env.PORT, () => {
   logger.info(`API listening on http://localhost:${env.PORT}`);
 });
 
+const SENTRY_SHUTDOWN_FLUSH_TIMEOUT_MS = 2000;
+
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => {
     logger.info(`${signal} received, shutting down gracefully`);
@@ -92,6 +98,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
       await stopDomainEventConsumers();
       await disconnectDb();
       await disconnectRedis();
+      await Sentry.close(SENTRY_SHUTDOWN_FLUSH_TIMEOUT_MS);
       process.exit(0);
     });
   });

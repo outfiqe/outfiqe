@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/node";
+
 import logger from "#lib/winston.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
@@ -15,6 +17,7 @@ const runJob = async (job: RecurringJob): Promise<void> => {
     await job.run();
   } catch (error) {
     logger.error(`Scheduled job "${job.name}" failed: ${String(error)}`);
+    Sentry.captureException(error);
   } finally {
     await redis.del(lockKey);
   }
