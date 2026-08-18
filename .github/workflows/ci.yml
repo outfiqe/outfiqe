@@ -67,6 +67,45 @@ jobs:
       - name: Build all packages
         run: pnpm build
 
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: outfiqe
+          POSTGRES_PASSWORD: outfiqe
+          POSTGRES_DB: outfiqe_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U outfiqe -d outfiqe_test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # apps/api's integration test project reads this to point Prisma at the
+      # service container above instead of the placeholder DATABASE_URL.
+      TEST_DATABASE_URL: postgresql://outfiqe:outfiqe@localhost:5432/outfiqe_test_db
+      REDIS_URL: redis://localhost:6379
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run unit + integration tests with coverage
+        run: pnpm test
+
   commitlint:
     name: Commit Messages
     if: github.event_name == 'pull_request'

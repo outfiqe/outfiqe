@@ -30,6 +30,22 @@
     "typecheck": {
       "dependsOn": ["db:generate"]
     },
-    "lint": {}
+    "lint": {},
+    "test": {
+      "dependsOn": ["^build", "db:generate"],
+      "outputs": ["coverage/**"],
+      "cache": true
+    },
+    "test:unit": {
+      "dependsOn": ["db:generate"],
+      "outputs": ["coverage/**"],
+      "cache": true
+    },
+    "test:integration": {
+      "dependsOn": ["db:generate"],
+      "outputs": ["coverage/**"],
+      "cache": false,
+      "env": ["DATABASE_URL", "TEST_DATABASE_URL", "REDIS_URL", "JWT_SECRET"]
+    }
   }
 }

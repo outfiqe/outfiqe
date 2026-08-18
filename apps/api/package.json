@@ -23,8 +23,12 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -b tsconfig.json",
     "start": "node dist/index.js",
-    "typecheck": "tsc -b tsconfig.json",
+    "typecheck": "tsc -b tsconfig.json tsconfig.test.json",
     "lint": "eslint .",
+    "test": "vitest run --coverage",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:watch": "vitest",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
@@ -63,8 +67,13 @@
     "@types/node": "^26.1.2",
     "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.20.4",
+    "@types/supertest": "^6.0.3",
+    "@vitest/coverage-v8": "^4.1.10",
+    "dotenv": "^17.4.2",
     "prisma": "^7.9.1",
+    "supertest": "^7.1.4",
     "tsx": "^4.23.10",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   }
 }
