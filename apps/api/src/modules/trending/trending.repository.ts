@@ -4,8 +4,8 @@ import { ProductStatus } from "#generated/prisma/enums.js";
 import type { MetricBucket, ProductTrendMeta } from "./trending.types.js";
 
 const upsertPurchaseUnitsBucket = (bucketStart: Date) => prisma.$executeRaw`
-  INSERT INTO product_trend_metrics (id, product_id, bucket_start, purchase_units)
-  SELECT gen_random_uuid(), oi.product_id, ${bucketStart}, SUM(oi.qty)
+  INSERT INTO product_trend_metrics (id, product_id, bucket_start, purchase_units, updated_at)
+  SELECT gen_random_uuid(), oi.product_id, ${bucketStart}, SUM(oi.qty), now()
   FROM order_items oi
   JOIN orders o ON o.id = oi.order_id
   WHERE oi.created_at >= ${bucketStart}
@@ -17,8 +17,8 @@ const upsertPurchaseUnitsBucket = (bucketStart: Date) => prisma.$executeRaw`
 `;
 
 const upsertCartAddsBucket = (bucketStart: Date) => prisma.$executeRaw`
-  INSERT INTO product_trend_metrics (id, product_id, bucket_start, cart_adds)
-  SELECT gen_random_uuid(), product_id, ${bucketStart}, COUNT(*)
+  INSERT INTO product_trend_metrics (id, product_id, bucket_start, cart_adds, updated_at)
+  SELECT gen_random_uuid(), product_id, ${bucketStart}, COUNT(*), now()
   FROM cart_items
   WHERE created_at >= ${bucketStart}
   GROUP BY product_id
@@ -27,8 +27,8 @@ const upsertCartAddsBucket = (bucketStart: Date) => prisma.$executeRaw`
 `;
 
 const upsertSavesBucket = (bucketStart: Date) => prisma.$executeRaw`
-  INSERT INTO product_trend_metrics (id, product_id, bucket_start, saves)
-  SELECT gen_random_uuid(), product_id, ${bucketStart}, COUNT(*)
+  INSERT INTO product_trend_metrics (id, product_id, bucket_start, saves, updated_at)
+  SELECT gen_random_uuid(), product_id, ${bucketStart}, COUNT(*), now()
   FROM saved_products
   WHERE created_at >= ${bucketStart}
   GROUP BY product_id
@@ -37,8 +37,8 @@ const upsertSavesBucket = (bucketStart: Date) => prisma.$executeRaw`
 `;
 
 const upsertCreatorTagsBucket = (bucketStart: Date) => prisma.$executeRaw`
-  INSERT INTO product_trend_metrics (id, product_id, bucket_start, creator_tags)
-  SELECT gen_random_uuid(), product_id, ${bucketStart}, COUNT(*)
+  INSERT INTO product_trend_metrics (id, product_id, bucket_start, creator_tags, updated_at)
+  SELECT gen_random_uuid(), product_id, ${bucketStart}, COUNT(*), now()
   FROM creator_look_products
   WHERE created_at >= ${bucketStart}
   GROUP BY product_id
@@ -47,8 +47,8 @@ const upsertCreatorTagsBucket = (bucketStart: Date) => prisma.$executeRaw`
 `;
 
 const upsertTagClicksBucket = (bucketStart: Date) => prisma.$executeRaw`
-  INSERT INTO product_trend_metrics (id, product_id, bucket_start, tag_clicks)
-  SELECT gen_random_uuid(), product_id, ${bucketStart}, COUNT(DISTINCT session_id)
+  INSERT INTO product_trend_metrics (id, product_id, bucket_start, tag_clicks, updated_at)
+  SELECT gen_random_uuid(), product_id, ${bucketStart}, COUNT(DISTINCT session_id), now()
   FROM creator_look_tag_clicks
   WHERE created_at >= ${bucketStart}
   GROUP BY product_id

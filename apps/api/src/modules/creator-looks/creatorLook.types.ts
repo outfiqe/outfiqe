@@ -121,3 +121,53 @@ export type TrendingTag = {
   tag: string;
   postCount: number;
 };
+
+export type PostMetricBucket = {
+  lookId: string;
+  bucketStart: Date;
+  likes: number;
+  comments: number;
+  saves: number;
+  tagClicks: number;
+};
+
+export type PostTrendMeta = {
+  id: string;
+  creatorId: string;
+  createdAt: Date;
+};
+
+export type PostBaselineSource = "post" | "global";
+
+export type PostScoreBreakdown = {
+  lookId: string;
+  creatorId: string;
+  recentActivity: {
+    likes: number;
+    comments: number;
+    saves: number;
+    tagClicks: number;
+  };
+  decayedActivity: number;
+  previousWindowActivity: number;
+  velocity: number;
+  baseline: { source: PostBaselineSource; value: number };
+  baselineLift: number;
+  momentum: number;
+  freshnessMultiplier: number;
+  score: number;
+};
+
+export type PostTrendingEntry = { lookId: string; score: number };
+
+export type CandidateAffinityMeta = {
+  id: string;
+  creatorId: string;
+  hashtags: string[];
+};
+
+export type ViewerAffinity = {
+  followedCreatorIds: Set<string>;
+  engagedCreatorIds: Set<string>;
+  hashtagWeights: Map<string, number>;
+};

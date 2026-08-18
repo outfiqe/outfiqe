@@ -1,4 +1,11 @@
 import type { ProductType } from "#generated/prisma/enums.js";
+import {
+  ageHoursOf,
+  applyDiversity as applyGroupDiversity,
+  applyWeightedRotation,
+  decayWeight,
+  truncateToHour,
+} from "#lib/trend-scoring.utils.js";
 
 import {
   BASELINE_WINDOW_DAYS,
@@ -22,19 +29,13 @@ import type {
   ProductTrendMeta,
 } from "./trending.types.js";
 
-const HOUR_MS = 60 * 60 * 1000;
+export { ageHoursOf, applyWeightedRotation, truncateToHour };
 
-export const truncateToHour = (date: Date): Date => {
-  const truncated = new Date(date);
-  truncated.setMinutes(0, 0, 0);
-  return truncated;
-};
-
-export const ageHoursOf = (bucket: { bucketStart: Date }, now: Date): number =>
-  (now.getTime() - bucket.bucketStart.getTime()) / HOUR_MS;
-
-export const decayWeight = (ageHours: number): number =>
-  Math.exp(-ageHours / DECAY_HALF_LIFE_HOURS);
+export const applyDiversity = <T extends { brandId: string }>(
+  candidates: T[],
+  limit: number,
+  maxPerBrand: number,
+): T[] => applyGroupDiversity(candidates, limit, maxPerBrand, (candidate) => candidate.brandId);
 
 export const bucketActivity = (bucket: {
   purchaseUnits: number;
@@ -69,7 +70,7 @@ export const sumDecayedActivityInWindow = (
   for (const bucket of buckets) {
     const ageHours = ageHoursOf(bucket, now);
     if (ageHours < windowStartHoursAgo || ageHours >= windowEndHoursAgo) continue;
-    total += bucketActivity(bucket) * decayWeight(ageHours);
+    total += bucketActivity(bucket) * decayWeight(ageHours, DECAY_HALF_LIFE_HOURS);
   }
   return total;
 };
@@ -230,74 +231,4 @@ export const scoreProduct = (params: {
     freshnessMultiplier,
     score,
   };
-};
-
-export const applyDiversity = <T extends { brandId: string }>(
-  candidates: T[],
-  limit: number,
-  maxPerBrand: number,
-): T[] => {
-  const brandCounts = new Map<string, number>();
-  const picked: T[] = [];
-  for (const candidate of candidates) {
-    if (picked.length >= limit) break;
-    const used = brandCounts.get(candidate.brandId) ?? 0;
-    if (used >= maxPerBrand) continue;
-    picked.push(candidate);
-    brandCounts.set(candidate.brandId, used + 1);
-  }
-  return picked;
-};
-
-const mulberry32 = (seed: number): (() => number) => {
-  let state = seed;
-  return () => {
-    state |= 0;
-    state = (state + 0x6d2b79f5) | 0;
-    let t = Math.imul(state ^ (state >>> 15), 1 | state);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-};
-
-const weightedShuffle = <T extends { score: number }>(items: T[], rng: () => number): T[] => {
-  const pool = [...items];
-  const picked: T[] = [];
-  while (pool.length > 0) {
-    const totalWeight = pool.reduce((sum, item) => sum + item.score, 0);
-    let remaining = rng() * totalWeight;
-    let pickedIndex = pool.length - 1;
-    for (const [index, item] of pool.entries()) {
-      remaining -= item.score;
-      if (remaining <= 0) {
-        pickedIndex = index;
-        break;
-      }
-    }
-    const [chosen] = pool.splice(pickedIndex, 1);
-    if (chosen) picked.push(chosen);
-  }
-  return picked;
-};
-
-export const applyWeightedRotation = <T extends { score: number }>(
-  candidates: T[],
-  tieBandRatio: number,
-  seed: number,
-): T[] => {
-  const rng = mulberry32(seed);
-  const result: T[] = [];
-  let index = 0;
-  while (index < candidates.length) {
-    const bandLeader = candidates[index];
-    if (!bandLeader) break;
-    const bandThreshold = bandLeader.score * (1 - tieBandRatio);
-    let end = index;
-    while (end < candidates.length && (candidates[end]?.score ?? -Infinity) >= bandThreshold) {
-      end += 1;
-    }
-    result.push(...weightedShuffle(candidates.slice(index, end), rng));
-    index = end;
-  }
-  return result;
 };

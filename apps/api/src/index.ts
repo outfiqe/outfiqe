@@ -4,6 +4,11 @@ import { stopDomainEventConsumers } from "#events/event-bus.consumer.js";
 import logger from "#lib/winston.utils.js";
 import { COMMISSION_SWEEP_INTERVAL_MS } from "#modules/commissions/commission.constants.js";
 import { runCommissionLifecycleSweep } from "#modules/commissions/commission.lifecycle.js";
+import {
+  TRENDING_AGGREGATION_INTERVAL_MS,
+  TRENDING_SCORING_INTERVAL_MS,
+} from "#modules/creator-looks/creatorLook.constants.js";
+import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
 import { registerCreatorLookSocketHandlers } from "#modules/creator-looks/creatorLook.socket.js";
 import { RECONCILE_CHECK_INTERVAL_MS } from "#modules/payments/payment.constants.js";
 import { runPaymentReconciliationSweep } from "#modules/payments/payment.reconciliation.js";
@@ -50,6 +55,16 @@ startIntervalScheduler([
     name: "trending-scoring",
     run: trendingService.runScoring,
     intervalMs: SCORING_INTERVAL_MS,
+  },
+  {
+    name: "explore-trending-aggregation",
+    run: creatorLookService.runTrendingAggregation,
+    intervalMs: TRENDING_AGGREGATION_INTERVAL_MS,
+  },
+  {
+    name: "explore-trending-scoring",
+    run: creatorLookService.runTrendingScoring,
+    intervalMs: TRENDING_SCORING_INTERVAL_MS,
   },
 ]);
 

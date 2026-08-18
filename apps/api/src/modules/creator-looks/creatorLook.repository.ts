@@ -5,13 +5,26 @@ import { Prisma } from "#generated/prisma/client.js";
 import type { CreatorLookTagClickSource } from "#generated/prisma/enums.js";
 import { CreatorStatus, ProductStatus } from "#generated/prisma/enums.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
+import { ageHoursOf, applyDiversity } from "#lib/trend-scoring.utils.js";
 import logger from "#lib/winston.utils.js";
 import type { ProductWithBrand } from "#modules/products/product.types.js";
 import { cacheService } from "#redis/cache.service.js";
 import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
 import { describeError } from "#redis/redis.utils.js";
 
+import {
+  FOR_YOU_ENGAGED_CREATOR_BOOST,
+  FOR_YOU_ENGAGEMENT_LOOKBACK_DAYS,
+  FOR_YOU_FOLLOW_BOOST,
+  FOR_YOU_HASHTAG_BOOST_CAP,
+  FOR_YOU_HASHTAG_BOOST_PER_MATCH,
+  FOR_YOU_HASHTAG_MATCH_WEIGHT_CAP,
+  FOR_YOU_MAX_PER_CREATOR,
+  TREND_BASELINE_WINDOW_DAYS,
+  TREND_RECENT_METRICS_WINDOW_HOURS,
+} from "./creatorLook.constants.js";
 import type {
+  CandidateAffinityMeta,
   CommentPage,
   CommentRecord,
   CreateCreatorLookInput,
@@ -19,16 +32,27 @@ import type {
   CreatorLookFeedPost,
   CreatorLookSummary,
   FeedPage,
+  PostMetricBucket,
+  PostScoreBreakdown,
+  PostTrendingEntry,
+  PostTrendMeta,
   TaggedProductPage,
   TrendingTag,
   UpdateCreatorLookInput,
+  ViewerAffinity,
 } from "./creatorLook.types.js";
 import type {
   FeaturedLookCursor,
   SimpleCursor,
   TrendingSnapshotCursor,
 } from "./creatorLook.utils.js";
-import { toEditDetail, toSummary } from "./creatorLook.utils.js";
+import {
+  computeGlobalPostBaseline,
+  groupPostBucketsByLook,
+  scorePost,
+  toEditDetail,
+  toSummary,
+} from "./creatorLook.utils.js";
 
 const taggedProductsInclude = {
   taggedProducts: { include: { product: { select: { id: true, name: true, imageUrl: true } } } },
@@ -162,6 +186,46 @@ const hydrateFeedPosts = async (
 
 const TRENDING_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
+const upsertPostLikesBucket = (bucketStart: Date) => prisma.$executeRaw`
+  INSERT INTO creator_look_trend_metrics (id, creator_look_id, bucket_start, likes, updated_at)
+  SELECT gen_random_uuid(), creator_look_id, ${bucketStart}, COUNT(*), now()
+  FROM creator_look_likes
+  WHERE created_at >= ${bucketStart}
+  GROUP BY creator_look_id
+  ON CONFLICT (creator_look_id, bucket_start)
+  DO UPDATE SET likes = excluded.likes, updated_at = now();
+`;
+
+const upsertPostCommentsBucket = (bucketStart: Date) => prisma.$executeRaw`
+  INSERT INTO creator_look_trend_metrics (id, creator_look_id, bucket_start, comments, updated_at)
+  SELECT gen_random_uuid(), creator_look_id, ${bucketStart}, COUNT(*), now()
+  FROM creator_look_comments
+  WHERE created_at >= ${bucketStart} AND deleted_at IS NULL
+  GROUP BY creator_look_id
+  ON CONFLICT (creator_look_id, bucket_start)
+  DO UPDATE SET comments = excluded.comments, updated_at = now();
+`;
+
+const upsertPostSavesBucket = (bucketStart: Date) => prisma.$executeRaw`
+  INSERT INTO creator_look_trend_metrics (id, creator_look_id, bucket_start, saves, updated_at)
+  SELECT gen_random_uuid(), creator_look_id, ${bucketStart}, COUNT(*), now()
+  FROM creator_look_saves
+  WHERE created_at >= ${bucketStart}
+  GROUP BY creator_look_id
+  ON CONFLICT (creator_look_id, bucket_start)
+  DO UPDATE SET saves = excluded.saves, updated_at = now();
+`;
+
+const upsertPostTagClicksBucket = (bucketStart: Date) => prisma.$executeRaw`
+  INSERT INTO creator_look_trend_metrics (id, creator_look_id, bucket_start, tag_clicks, updated_at)
+  SELECT gen_random_uuid(), creator_look_id, ${bucketStart}, COUNT(DISTINCT session_id), now()
+  FROM creator_look_tag_clicks
+  WHERE created_at >= ${bucketStart}
+  GROUP BY creator_look_id
+  ON CONFLICT (creator_look_id, bucket_start)
+  DO UPDATE SET tag_clicks = excluded.tag_clicks, updated_at = now();
+`;
+
 const trendingSnapshotKey = (sessionId: string) =>
   redisKeys.cache("explore-trending-snapshot", sessionId);
 
@@ -200,7 +264,9 @@ const cacheTrendingSnapshot = async (sessionId: string, ids: string[]): Promise<
   }
 };
 
-const buildTrendingSnapshot = async (): Promise<string[]> => {
+const EXPLORE_TRENDING_SCORE_CACHE_KEY = redisKeys.cache("explore-trending-score", "global");
+
+const buildLegacyTrendingSnapshot = async (): Promise<string[]> => {
   const since = new Date(Date.now() - TRENDING_WINDOW_MS);
   const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
     SELECT cl.id
@@ -212,6 +278,92 @@ const buildTrendingSnapshot = async (): Promise<string[]> => {
     ORDER BY (cl.like_count * 2 + cl.comment_count + cl.save_count) DESC, cl.created_at DESC, cl.id DESC
   `);
   return rows.map((row) => row.id);
+};
+
+const listRecentPostMetricBuckets = async (sinceDays: number): Promise<PostMetricBucket[]> => {
+  const since = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000);
+  const rows = await prisma.creatorLookTrendMetric.findMany({
+    where: { bucketStart: { gte: since } },
+    select: {
+      creatorLookId: true,
+      bucketStart: true,
+      likes: true,
+      comments: true,
+      saves: true,
+      tagClicks: true,
+    },
+  });
+  return rows.map((row) => ({
+    lookId: row.creatorLookId,
+    bucketStart: row.bucketStart,
+    likes: row.likes,
+    comments: row.comments,
+    saves: row.saves,
+    tagClicks: row.tagClicks,
+  }));
+};
+
+const listActivePostMeta = (lookIds: string[]): Promise<PostTrendMeta[]> =>
+  lookIds.length === 0
+    ? Promise.resolve([])
+    : prisma.creatorLook.findMany({
+        where: {
+          id: { in: lookIds },
+          deletedAt: null,
+          creator: { creatorStatus: CreatorStatus.APPROVED },
+        },
+        select: { id: true, creatorId: true, createdAt: true },
+      });
+
+const computeRankedLookScores = async (): Promise<PostTrendingEntry[]> => {
+  const now = new Date();
+  const buckets = await listRecentPostMetricBuckets(TREND_BASELINE_WINDOW_DAYS);
+  const bucketsByLook = groupPostBucketsByLook(buckets);
+
+  const meta = await listActivePostMeta([...bucketsByLook.keys()]);
+  const metaById = new Map(meta.map((row) => [row.id, row]));
+
+  const globalBaseline = computeGlobalPostBaseline(bucketsByLook, now, TREND_BASELINE_WINDOW_DAYS);
+
+  const candidates: PostScoreBreakdown[] = [];
+  for (const [lookId, lookBuckets] of bucketsByLook) {
+    const lookMeta = metaById.get(lookId);
+    if (!lookMeta) continue;
+
+    const hasRecentBucket = lookBuckets.some(
+      (bucket) => ageHoursOf(bucket, now) < TREND_RECENT_METRICS_WINDOW_HOURS,
+    );
+    if (!hasRecentBucket) continue;
+
+    const breakdown = scorePost({
+      lookId,
+      creatorId: lookMeta.creatorId,
+      buckets: lookBuckets,
+      lookCreatedAt: lookMeta.createdAt,
+      globalBaseline,
+      now,
+    });
+    if (breakdown.score > 0) candidates.push(breakdown);
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates.map(({ lookId, score }) => ({ lookId, score }));
+};
+
+const buildTrendingSnapshot = async (): Promise<string[]> => {
+  let scored: PostTrendingEntry[] | null = null;
+  try {
+    scored = await cacheService.get<PostTrendingEntry[]>(EXPLORE_TRENDING_SCORE_CACHE_KEY);
+  } catch (error) {
+    logger.warn(
+      `Cache read failed for "${EXPLORE_TRENDING_SCORE_CACHE_KEY}": ${describeError(error)}`,
+    );
+  }
+
+  if (scored === null) scored = await computeRankedLookScores();
+  if (scored.length > 0) return scored.map((entry) => entry.lookId);
+
+  return buildLegacyTrendingSnapshot();
 };
 
 const resolveTrendingSnapshotSource = async (
@@ -237,6 +389,190 @@ const listTrendingIds = async ({
 }): Promise<{ ids: string[]; nextCursor: string | null }> => {
   const decoded = decodeCursor<TrendingSnapshotCursor>(cursor);
   const { sessionId, offset, ids } = await resolveTrendingSnapshotSource(decoded);
+
+  const pageIds = ids.slice(offset, offset + limit);
+  const nextOffset = offset + pageIds.length;
+  const nextCursor =
+    nextOffset < ids.length
+      ? encodeCursor<TrendingSnapshotCursor>({ sessionId, offset: nextOffset })
+      : null;
+
+  return { ids: pageIds, nextCursor };
+};
+
+const listCandidateAffinityMeta = async (lookIds: string[]): Promise<CandidateAffinityMeta[]> => {
+  if (lookIds.length === 0) return [];
+  const rows = await prisma.creatorLook.findMany({
+    where: { id: { in: lookIds } },
+    select: { id: true, creatorId: true, hashtags: { select: { tag: true } } },
+  });
+  return rows.map((row) => ({
+    id: row.id,
+    creatorId: row.creatorId,
+    hashtags: row.hashtags.map((hashtag) => hashtag.tag),
+  }));
+};
+
+const fetchEngagementAffinity = async (
+  viewerId: string,
+  lookbackDays: number,
+): Promise<{ engagedCreatorIds: Set<string>; hashtagWeights: Map<string, number> }> => {
+  const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000);
+
+  const rows = await prisma.$queryRaw<{ creator_id: string; tag: string | null }[]>(Prisma.sql`
+    SELECT cl.creator_id, h.tag
+    FROM (
+      SELECT creator_look_id FROM creator_look_likes
+      WHERE user_id = ${viewerId} AND created_at >= ${since}
+      UNION ALL
+      SELECT creator_look_id FROM creator_look_saves
+      WHERE user_id = ${viewerId} AND created_at >= ${since}
+      UNION ALL
+      SELECT creator_look_id FROM creator_look_comments
+      WHERE user_id = ${viewerId} AND created_at >= ${since} AND deleted_at IS NULL
+    ) engaged
+    JOIN creator_looks cl ON cl.id = engaged.creator_look_id
+    LEFT JOIN creator_look_hashtags h ON h.creator_look_id = engaged.creator_look_id
+  `);
+
+  const engagedCreatorIds = new Set<string>();
+  const hashtagWeights = new Map<string, number>();
+  for (const row of rows) {
+    engagedCreatorIds.add(row.creator_id);
+    if (row.tag) hashtagWeights.set(row.tag, (hashtagWeights.get(row.tag) ?? 0) + 1);
+  }
+  return { engagedCreatorIds, hashtagWeights };
+};
+
+const scorePersonalized = (
+  candidate: PostTrendingEntry,
+  meta: CandidateAffinityMeta,
+  affinity: ViewerAffinity,
+): number => {
+  let multiplier = 1;
+
+  if (affinity.followedCreatorIds.has(meta.creatorId)) {
+    multiplier += FOR_YOU_FOLLOW_BOOST;
+  } else if (affinity.engagedCreatorIds.has(meta.creatorId)) {
+    multiplier += FOR_YOU_ENGAGED_CREATOR_BOOST;
+  }
+
+  const hashtagBoost = meta.hashtags.reduce((sum, tag) => {
+    const weight = affinity.hashtagWeights.get(tag);
+    if (!weight) return sum;
+    return (
+      sum + FOR_YOU_HASHTAG_BOOST_PER_MATCH * Math.min(weight, FOR_YOU_HASHTAG_MATCH_WEIGHT_CAP)
+    );
+  }, 0);
+  multiplier += Math.min(hashtagBoost, FOR_YOU_HASHTAG_BOOST_CAP);
+
+  return candidate.score * multiplier;
+};
+
+const buildPersonalizedSnapshot = async (
+  viewerId: string,
+  followedCreatorIds: string[],
+): Promise<string[]> => {
+  let scored: PostTrendingEntry[] | null = null;
+  try {
+    scored = await cacheService.get<PostTrendingEntry[]>(EXPLORE_TRENDING_SCORE_CACHE_KEY);
+  } catch (error) {
+    logger.warn(
+      `Cache read failed for "${EXPLORE_TRENDING_SCORE_CACHE_KEY}": ${describeError(error)}`,
+    );
+  }
+  if (scored === null) scored = await computeRankedLookScores();
+  if (scored.length === 0) return buildLegacyTrendingSnapshot();
+
+  const [candidateMeta, engagement] = await Promise.all([
+    listCandidateAffinityMeta(scored.map((candidate) => candidate.lookId)),
+    fetchEngagementAffinity(viewerId, FOR_YOU_ENGAGEMENT_LOOKBACK_DAYS),
+  ]);
+  const metaById = new Map(candidateMeta.map((row) => [row.id, row]));
+  const affinity: ViewerAffinity = {
+    followedCreatorIds: new Set(followedCreatorIds),
+    engagedCreatorIds: engagement.engagedCreatorIds,
+    hashtagWeights: engagement.hashtagWeights,
+  };
+
+  const personalized = scored
+    .map((candidate) => {
+      const meta = metaById.get(candidate.lookId);
+      if (!meta) return null;
+      return {
+        lookId: candidate.lookId,
+        creatorId: meta.creatorId,
+        score: scorePersonalized(candidate, meta, affinity),
+      };
+    })
+    .filter(
+      (entry): entry is { lookId: string; creatorId: string; score: number } => entry !== null,
+    )
+    .sort((a, b) => b.score - a.score);
+
+  const diversified = applyDiversity(
+    personalized,
+    personalized.length,
+    FOR_YOU_MAX_PER_CREATOR,
+    (entry) => entry.creatorId,
+  );
+  return diversified.map((entry) => entry.lookId);
+};
+
+const forYouSnapshotKey = (sessionId: string) =>
+  redisKeys.cache("explore-for-you-snapshot", sessionId);
+
+const getForYouSnapshot = async (sessionId: string): Promise<string[] | null> => {
+  const key = forYouSnapshotKey(sessionId);
+  try {
+    const cached = await cacheService.get<string[]>(key);
+    if (cached) await cacheService.touch(key, CACHE_TTL.EXPLORE_TRENDING_SNAPSHOT);
+    return cached;
+  } catch (error) {
+    logger.warn(`Cache read failed for "${key}": ${describeError(error)}`);
+    return null;
+  }
+};
+
+const cacheForYouSnapshot = async (sessionId: string, ids: string[]): Promise<void> => {
+  try {
+    await cacheService.set(forYouSnapshotKey(sessionId), ids, CACHE_TTL.EXPLORE_TRENDING_SNAPSHOT);
+  } catch (error) {
+    logger.warn(
+      `Cache write failed for "${forYouSnapshotKey(sessionId)}": ${describeError(error)}`,
+    );
+  }
+};
+
+const listForYouIds = async ({
+  cursor,
+  limit,
+  viewerId,
+  followedCreatorIds,
+}: {
+  cursor?: string;
+  limit: number;
+  viewerId?: string;
+  followedCreatorIds: string[];
+}): Promise<{ ids: string[]; nextCursor: string | null }> => {
+  const decoded = decodeCursor<TrendingSnapshotCursor>(cursor);
+  const cachedIds = decoded ? await getForYouSnapshot(decoded.sessionId) : null;
+
+  let sessionId: string;
+  let offset: number;
+  let ids: string[];
+
+  if (decoded && cachedIds) {
+    ({ sessionId, offset } = decoded);
+    ids = cachedIds;
+  } else {
+    sessionId = randomUUID();
+    offset = 0;
+    ids = viewerId
+      ? await buildPersonalizedSnapshot(viewerId, followedCreatorIds)
+      : await buildTrendingSnapshot();
+    await cacheForYouSnapshot(sessionId, ids);
+  }
 
   const pageIds = ids.slice(offset, offset + limit);
   const nextOffset = offset + pageIds.length;
@@ -536,8 +872,15 @@ export const creatorLookRepository = {
 
     if (tab === "following") {
       listed = await listIdsByFilter({ creatorId: { in: followingCreatorIds } }, { cursor, limit });
-    } else if (tab === "trending" || tab === "for_you") {
+    } else if (tab === "trending") {
       listed = await listTrendingIds({ cursor, limit });
+    } else if (tab === "for_you") {
+      listed = await listForYouIds({
+        cursor,
+        limit,
+        viewerId,
+        followedCreatorIds: followingCreatorIds,
+      });
     } else {
       const tag = tab.replace(/^#/, "").toLowerCase();
       listed = await listIdsByFilter({ hashtags: { some: { tag } } }, { cursor, limit });
@@ -595,6 +938,40 @@ export const creatorLookRepository = {
 
   async trendingTags(): Promise<TrendingTag[]> {
     return fetchTrendingTags();
+  },
+
+  async upsertHourlyPostMetrics(bucketStart: Date): Promise<void> {
+    await Promise.all([
+      upsertPostLikesBucket(bucketStart),
+      upsertPostCommentsBucket(bucketStart),
+      upsertPostSavesBucket(bucketStart),
+      upsertPostTagClicksBucket(bucketStart),
+    ]);
+  },
+
+  async deleteTrendMetricsOlderThan(cutoff: Date): Promise<number> {
+    const { count } = await prisma.creatorLookTrendMetric.deleteMany({
+      where: { bucketStart: { lt: cutoff } },
+    });
+    return count;
+  },
+
+  async computeRankedTrendingLookIds(): Promise<PostTrendingEntry[]> {
+    return computeRankedLookScores();
+  },
+
+  async cacheRankedTrendingScore(ranked: PostTrendingEntry[]): Promise<void> {
+    try {
+      await cacheService.set(
+        EXPLORE_TRENDING_SCORE_CACHE_KEY,
+        ranked,
+        CACHE_TTL.EXPLORE_TRENDING_SCORE,
+      );
+    } catch (error) {
+      logger.warn(
+        `Cache write failed for "${EXPLORE_TRENDING_SCORE_CACHE_KEY}": ${describeError(error)}`,
+      );
+    }
   },
 
   async like(lookId: string, userId: string): Promise<{ likeCount: number }> {
