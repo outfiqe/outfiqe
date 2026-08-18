@@ -3,7 +3,7 @@
 import { Button, Skeleton } from "@outfiqe/design-system";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
@@ -16,7 +16,10 @@ export const TasteCategories = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const categories = useCategories();
-  const activeSlug = searchParams.get("category") ?? categories.data?.[0]?.slug;
+  const [isNavigating, startNavigation] = useTransition();
+  const [pendingSlug, setPendingSlug] = useState<string | null>(null);
+  const resolvedSlug = searchParams.get("category") ?? categories.data?.[0]?.slug;
+  const activeSlug = isNavigating && pendingSlug ? pendingSlug : resolvedSlug;
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -43,7 +46,10 @@ export const TasteCategories = () => {
   };
 
   const selectCategory = (slug: string) => {
-    router.replace(`/?category=${slug}`, { scroll: false });
+    setPendingSlug(slug);
+    startNavigation(() => {
+      router.replace(`/?category=${slug}`, { scroll: false });
+    });
   };
 
   return (
@@ -62,6 +68,7 @@ export const TasteCategories = () => {
         <div
           ref={scrollerRef}
           onScroll={updateScrollability}
+          aria-busy={isNavigating}
           className={cn(
             "-mx-2 flex gap-3 p-2",
             "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
