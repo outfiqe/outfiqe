@@ -185,6 +185,16 @@ model Product {
   creatorLinks  CreatorLink[]
   trendMetrics  ProductTrendMetric[]
 
+  // Weighted tsvector (name > brand > category > type) kept in sync by
+  // Postgres triggers, not by Prisma — a GENERATED column can't reach across
+  // the brand_id FK or the _CategoryToProduct join table, so it's plain
+  // trigger-maintained SQL instead. Deliberately left unindexed here (no
+  // `@@index`): the GIN + trigram indexes are hand-written in
+  // prisma/migrations/20260818120000_add_product_search, and never touching
+  // this field's Prisma attributes again keeps `migrate dev` from ever
+  // trying to diff/drop those trigger-owned objects. See products/README.md.
+  searchVector Unsupported("tsvector")? @map("search_vector")
+
   @@index([deletedAt])
   @@map("products")
 }

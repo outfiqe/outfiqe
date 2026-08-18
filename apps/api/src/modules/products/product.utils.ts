@@ -5,10 +5,28 @@ import {
 } from "./product.constants.js";
 import type {
   ProductBrandSummary,
+  ProductSuggestion,
+  ProductWithBrand,
   ProductWithOptionalStock,
   ProductWithStockSizesAndImages,
   PublicProduct,
 } from "./product.types.js";
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const isUuid = (value: string): boolean => UUID_PATTERN.test(value);
+
+export const toSuggestion = ({
+  id,
+  name,
+  brand,
+  imageUrl,
+}: ProductWithBrand): ProductSuggestion => ({
+  id,
+  name,
+  brand: brand.name,
+  imageUrl,
+});
 
 export const isNew = (createdAt: Date): boolean =>
   Date.now() - createdAt.getTime() <= NEW_ARRIVAL_WINDOW_MS;

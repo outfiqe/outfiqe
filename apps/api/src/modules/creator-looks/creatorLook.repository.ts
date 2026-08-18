@@ -35,6 +35,7 @@ import type {
   CreatorLookFeedPost,
   CreatorLookSummary,
   FeedPage,
+  LookSearchPage,
   PostMetricBucket,
   PostScoreBreakdown,
   PostTrendingEntry,
@@ -48,6 +49,7 @@ import type {
 } from "./creatorLook.types.js";
 import type {
   FeaturedLookCursor,
+  SearchLooksCursor,
   SimpleCursor,
   TrendingSnapshotCursor,
 } from "./creatorLook.utils.js";
@@ -884,6 +886,28 @@ export const creatorLookRepository = {
     const listed = await listFeaturedLookIds(params);
     const posts = await hydrateFeedPosts(listed.ids, undefined);
     return { posts, nextCursor: listed.nextCursor };
+  },
+
+  async searchLooks(
+    query: string,
+    { cursor, limit }: { cursor?: string; limit: number },
+    viewerId: string | undefined,
+  ): Promise<LookSearchPage> {
+    const offset = decodeCursor<SearchLooksCursor>(cursor)?.offset ?? 0;
+    const rows = await prisma.$queryRaw<{ id: string; total_count: bigint }[]>(Prisma.sql`
+      SELECT id, total_count FROM search_creator_looks(${query}, ${limit}, ${offset})
+    `);
+
+    const [first] = rows;
+    const total = first ? Number(first.total_count) : 0;
+    const ids = rows.map((row) => row.id);
+
+    const posts = await hydrateFeedPosts(ids, viewerId);
+    const nextOffset = offset + ids.length;
+    const nextCursor =
+      nextOffset < total ? encodeCursor<SearchLooksCursor>({ offset: nextOffset }) : null;
+
+    return { posts, nextCursor, total };
   },
 
   async countByCreatorId(creatorId: string): Promise<number> {

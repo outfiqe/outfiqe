@@ -10,6 +10,7 @@ import type {
   CreatorUserIdParam,
   ListCreatorLooksQuery,
   ListCreatorsQuery,
+  SearchCreatorsQuery,
   UpdateCreatorProfileBody,
 } from "./creator.schemas.js";
 import { creatorService } from "./creator.service.js";
@@ -35,6 +36,13 @@ export const creatorController = {
 
     const profile = await creatorService.updateMe(userId, body);
     sendSuccess(res, profile, "Profile updated.");
+  },
+
+  async search(_req: Request, res: Response) {
+    const query = validated.query<SearchCreatorsQuery>(res);
+    const page = await creatorService.search(query);
+
+    sendSuccess(res, page, "Creators.");
   },
 
   async list(_req: Request, res: Response) {

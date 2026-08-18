@@ -1,6 +1,7 @@
 import "./index.css";
 
 import { Toaster } from "@outfiqe/design-system";
+import * as Sentry from "@sentry/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
@@ -13,6 +14,7 @@ import { routeTree } from "./routeTree.gen";
 // QueryClient() has staleTime 0, which was causing the delivery-zones page (and others) to
 // hit the API repeatedly on normal navigation.
 const ADMIN_QUERY_STALE_TIME_MS = 30 * 1000;
+const SENTRY_TRACES_SAMPLE_RATE = 0.2;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,6 +24,15 @@ const queryClient = new QueryClient({
   },
 });
 const router = createRouter({ routeTree, basepath: "/admin" });
+
+if (import.meta.env.VITE_SENTRY_DSN) {
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN,
+    environment: import.meta.env.MODE,
+    integrations: [Sentry.tanstackRouterBrowserTracingIntegration(router)],
+    tracesSampleRate: SENTRY_TRACES_SAMPLE_RATE,
+  });
+}
 
 declare module "@tanstack/react-router" {
   interface Register {

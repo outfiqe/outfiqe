@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { SEARCH_QUERY_MAX_LENGTH } from "#constants/search.constants.js";
 import { CreatorStatus } from "#generated/prisma/enums.js";
 
 const DEFAULT_PAGE_SIZE = 12;
@@ -28,12 +29,19 @@ export const updateCreatorProfileSchema = z
   })
   .partial();
 
+export const searchCreatorsQuerySchema = z.object({
+  q: z.string().trim().min(1).max(SEARCH_QUERY_MAX_LENGTH),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
+});
+
 export const listCreatorLooksQuerySchema = z.object({
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
 
 export type ListCreatorsQuery = z.infer<typeof listCreatorsQuerySchema>;
+export type SearchCreatorsQuery = z.infer<typeof searchCreatorsQuerySchema>;
 export type CreatorUserIdParam = z.infer<typeof creatorUserIdParamSchema>;
 export type CreatorHandleParam = z.infer<typeof creatorHandleParamSchema>;
 export type ListCreatorLooksQuery = z.infer<typeof listCreatorLooksQuerySchema>;

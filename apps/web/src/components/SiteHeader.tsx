@@ -3,10 +3,14 @@
 import { HeaderBar, useHeaderCondense } from "@outfiqe/components";
 import { ChevronDown, Heart, Search, ShoppingBag } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import type { FormEvent } from "react";
+import { useRef, useState } from "react";
 
 import { useCart } from "@/features/cart";
+import { ProductSearchBox } from "@/features/search";
 import { cn } from "@/shared/lib/cn";
+import { isExploreRoute, searchPathFor } from "@/shared/lib/exploreMode";
 
 import { AccountMenu } from "./AccountMenu";
 import { Logo } from "./Logo";
@@ -17,10 +21,19 @@ import { LEADERBOARD_LINKS } from "./siteNav.constants";
 const SHOP_LINKS = [{ label: "Brands", href: "/brands" }];
 
 export const SiteHeader = () => {
+  const router = useRouter();
+  const pathname = usePathname();
   const isCondensed = useHeaderCondense();
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const { data: cart } = useCart();
   const cartCount = cart?.itemCount ?? 0;
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const submitSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = searchInputRef.current?.value.trim();
+    if (query) router.push(`${searchPathFor(pathname)}?q=${encodeURIComponent(query)}`);
+  };
 
   return (
     <HeaderBar condensed={isCondensed}>
@@ -33,19 +46,31 @@ export const SiteHeader = () => {
 
       <ShopExploreToggle size="header" className="hidden shrink-0 lg:flex" />
 
-      <div
-        className={cn(
-          "hidden min-w-0 flex-1 items-center gap-2 rounded-full bg-muted px-4 text-muted-foreground transition-all duration-300 lg:flex",
-          isCondensed ? "max-w-sm py-2" : "max-w-md py-2.5",
-        )}
-      >
-        <Search className="size-4 shrink-0" />
-        <input
-          type="search"
-          placeholder="Search fashion, brands & creators"
-          className="w-full min-w-0 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+      {isExploreRoute(pathname) ? (
+        <form
+          onSubmit={submitSearch}
+          className={cn(
+            "hidden min-w-0 flex-1 items-center gap-2 rounded-full bg-muted px-4 text-muted-foreground transition-all duration-300 lg:flex",
+            isCondensed ? "max-w-sm py-2" : "max-w-md py-2.5",
+          )}
+        >
+          <Search className="size-4 shrink-0" />
+          <input
+            ref={searchInputRef}
+            type="search"
+            placeholder="Search creators & posts"
+            className="w-full min-w-0 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+          />
+        </form>
+      ) : (
+        <ProductSearchBox
+          placeholder="Search fashion, brands & categories"
+          formClassName={cn(
+            "hidden min-w-0 flex-1 items-center gap-2 rounded-full bg-muted px-4 text-muted-foreground transition-all duration-300 lg:flex",
+            isCondensed ? "max-w-sm py-2" : "max-w-md py-2.5",
+          )}
         />
-      </div>
+      )}
 
       {!isCondensed && (
         <nav className="hidden min-w-0 shrink items-center gap-x-4 lg:flex">
@@ -105,7 +130,7 @@ export const SiteHeader = () => {
 
       <div className="ml-auto flex shrink-0 items-center gap-1">
         <Link
-          href="/search"
+          href={searchPathFor(pathname)}
           aria-label="Search"
           className="flex size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted lg:hidden"
         >

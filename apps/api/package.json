@@ -20,9 +20,9 @@
     "#modules/*": "./src/modules/*"
   },
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch --import ./src/instrument.ts src/index.ts",
     "build": "tsc -b tsconfig.json",
-    "start": "node dist/index.js",
+    "start": "node --import ./dist/instrument.js dist/index.js",
     "typecheck": "tsc -b tsconfig.json tsconfig.test.json",
     "lint": "eslint .",
     "test": "vitest run --coverage",
@@ -42,6 +42,7 @@
     "@outfiqe/utils": "workspace:*",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
+    "@sentry/node": "^10.70.0",
     "@socket.io/redis-adapter": "^8.3.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -50,6 +51,7 @@
     "helmet": "^8.3.0",
     "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
+    "lru-cache": "^11.5.2",
     "multer": "^2.2.0",
     "nodemailer": "^9.0.4",
     "pg": "^8.22.0",

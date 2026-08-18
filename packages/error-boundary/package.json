@@ -1,0 +1,22 @@
+{
+  "name": "@outfiqe/error-boundary",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@outfiqe/design-system": "workspace:*",
+    "lucide-react": "^1.29.0",
+    "react-error-boundary": "^6.1.3"
+  },
+  "peerDependencies": {
+    "react": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18"
+  }
+}

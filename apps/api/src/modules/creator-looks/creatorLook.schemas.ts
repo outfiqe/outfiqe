@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { SESSION_ID_MAX } from "#constants/commerce.constants.js";
+import { SEARCH_QUERY_MAX_LENGTH } from "#constants/search.constants.js";
 
 const CAPTION_MAX = 280;
 const MIN_TAGGED_PRODUCTS = 0;
@@ -46,6 +47,12 @@ export const tagClickParamsSchema = z.object({
   productId: z.uuid(),
 });
 
+export const searchCreatorLooksQuerySchema = z.object({
+  q: z.string().trim().min(1).max(SEARCH_QUERY_MAX_LENGTH),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_FEED_PAGE_SIZE).default(DEFAULT_FEED_PAGE_SIZE),
+});
+
 export const feedQuerySchema = z.object({
   tab: z.string().default("for_you"),
   cursor: z.string().optional(),
@@ -88,6 +95,7 @@ export type ListCreatorLooksQuery = z.infer<typeof listCreatorLooksQuerySchema>;
 export type LookIdParams = z.infer<typeof lookIdParamsSchema>;
 export type TagClickParams = z.infer<typeof tagClickParamsSchema>;
 export type FeedQuery = z.infer<typeof feedQuerySchema>;
+export type SearchCreatorLooksQuery = z.infer<typeof searchCreatorLooksQuerySchema>;
 export type ListSavedQuery = z.infer<typeof listSavedQuerySchema>;
 export type FeedSyncRequest = z.infer<typeof feedSyncRequestSchema>;
 export type CommentsQuery = z.infer<typeof commentsQuerySchema>;

@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
@@ -77,6 +78,7 @@ export const createApp = () => {
   app.use("/api/hero-slides", heroSlideRoutes);
   app.use("/api/admin/trending", trendingRoutes);
 
+  Sentry.setupExpressErrorHandler(app);
   app.use(errorHandler);
 
   return app;

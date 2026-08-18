@@ -6,6 +6,7 @@ import { validated } from "#middlewares/validate.js";
 
 import type {
   AdjustStockBody,
+  AutocompleteQuery,
   CreateProductBody,
   ListMineProductsQuery,
   ListPublicProductsQuery,
@@ -63,6 +64,12 @@ export const productController = {
     const query = validated.query<ListReviewProductsQuery>(res);
     const page = await productService.listForReview(query);
     sendSuccess(res, page, "Products awaiting review.");
+  },
+
+  async autocomplete(_req: Request, res: Response) {
+    const query = validated.query<AutocompleteQuery>(res);
+    const suggestions = await productService.autocomplete(query);
+    sendSuccess(res, suggestions, "Suggestions.");
   },
 
   async listPublic(_req: Request, res: Response) {

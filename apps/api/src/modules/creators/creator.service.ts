@@ -1,7 +1,7 @@
 import { creatorApprovedTemplate, creatorRejectedTemplate } from "#email-templates/templates.js";
 import { CreatorStatus, FollowTargetType } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
-import { buildCursorPage } from "#lib/pagination.utils.js";
+import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { creatorLookRepository } from "#modules/creator-looks/creatorLook.repository.js";
@@ -11,9 +11,19 @@ import { productService } from "#modules/products/product.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 import type { UserRecord } from "#modules/users/user.types.js";
 
-import type { ListCreatorsQuery, UpdateCreatorProfileBody } from "./creator.schemas.js";
-import type { CreatorProfile, CreatorProfilePage, PublicCreatorProfile } from "./creator.types.js";
-import { toProfile } from "./creator.utils.js";
+import type {
+  ListCreatorsQuery,
+  SearchCreatorsQuery,
+  UpdateCreatorProfileBody,
+} from "./creator.schemas.js";
+import type {
+  CreatorProfile,
+  CreatorProfilePage,
+  CreatorSearchCursor,
+  CreatorSearchPage,
+  PublicCreatorProfile,
+} from "./creator.types.js";
+import { toProfile, toSearchResult } from "./creator.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
@@ -119,6 +129,23 @@ export const creatorService = {
       (row) => row.id,
     );
     return { creators: pagedCreators.map(toProfile), nextCursor };
+  },
+
+  async search({ q, cursor, limit }: SearchCreatorsQuery): Promise<CreatorSearchPage> {
+    const offset = decodeCursor<CreatorSearchCursor>(cursor)?.offset ?? 0;
+    const { ids, total } = await userRepository.searchCreatorIds(q, { limit, offset });
+    const users = await userRepository.findManyByIds(ids);
+
+    const byId = new Map(users.map((user) => [user.id, user]));
+    const orderedUsers = ids
+      .map((id) => byId.get(id))
+      .filter((user): user is UserRecord => user !== undefined);
+
+    const nextOffset = offset + ids.length;
+    const nextCursor =
+      nextOffset < total ? encodeCursor<CreatorSearchCursor>({ offset: nextOffset }) : null;
+
+    return { creators: orderedUsers.map(toSearchResult), nextCursor, total };
   },
 
   async approve(userId: string, adminUserId: string): Promise<void> {

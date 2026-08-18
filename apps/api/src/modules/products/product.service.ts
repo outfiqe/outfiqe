@@ -1,11 +1,12 @@
 import { PRODUCT_SORT } from "@outfiqe/utils";
+import { LRUCache } from "lru-cache";
 
 import { prisma } from "#db/prisma.js";
 import { productApprovedTemplate, productRejectedTemplate } from "#email-templates/templates.js";
 import { ProductStatus } from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
-import { buildCursorPage } from "#lib/pagination.utils.js";
+import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 import { isForeignKeyConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -14,12 +15,21 @@ import { categoryService } from "#modules/categories/category.service.js";
 import { sizeOptionService } from "#modules/size-options/size-option.service.js";
 import { trendingService } from "#modules/trending/trending.service.js";
 import { wishlistRepository } from "#modules/wishlist/wishlist.repository.js";
+import { cacheService } from "#redis/cache.service.js";
+import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
+import { describeError } from "#redis/redis.utils.js";
 
-import { PRODUCT_TYPE_SLUGS, SLUG_TO_PRODUCT_TYPE, TRENDING_LIMIT } from "./product.constants.js";
+import {
+  AUTOCOMPLETE_LIMIT,
+  PRODUCT_TYPE_SLUGS,
+  SLUG_TO_PRODUCT_TYPE,
+  TRENDING_LIMIT,
+} from "./product.constants.js";
 import type { DbClient } from "./product.repository.js";
 import { productRepository } from "./product.repository.js";
 import type {
   AdjustStockBody,
+  AutocompleteQuery,
   CreateProductBody,
   ListBrandProductsQuery,
   ListMineProductsQuery,
@@ -34,16 +44,33 @@ import type {
   ProductBrandSummaryPage,
   ProductRecord,
   ProductReviewPage,
+  ProductSearchCursor,
+  ProductSuggestion,
   PublicProduct,
   PublicProductDetail,
   PublicProductPage,
   PublicProductType,
 } from "./product.types.js";
-import { humanizeSlug, toBrandSummary, toPublicProduct } from "./product.utils.js";
+import {
+  humanizeSlug,
+  isUuid,
+  toBrandSummary,
+  toPublicProduct,
+  toSuggestion,
+} from "./product.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
 const BAD_REQUEST_STATUS = 400;
+
+const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
+const AUTOCOMPLETE_CACHE_NAMESPACE = "product-autocomplete";
+const MS_PER_SECOND = 1000;
+
+const autocompleteMemoryCache = new LRUCache<string, ProductSuggestion[]>({
+  max: AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES,
+  ttl: CACHE_TTL.PRODUCT_AUTOCOMPLETE * MS_PER_SECOND,
+});
 
 const requireOwnedProduct = async (productId: string, brandId: string): Promise<ProductRecord> => {
   const product = await productRepository.findById(productId);
@@ -216,17 +243,77 @@ export const productService = {
     };
   },
 
+  async autocomplete({ q }: AutocompleteQuery): Promise<ProductSuggestion[]> {
+    const normalizedQuery = q.trim().toLowerCase();
+
+    const memoryHit = autocompleteMemoryCache.get(normalizedQuery);
+    if (memoryHit) return memoryHit;
+
+    const cacheKey = redisKeys.cache(AUTOCOMPLETE_CACHE_NAMESPACE, normalizedQuery);
+    try {
+      const cached = await cacheService.get<ProductSuggestion[]>(cacheKey);
+      if (cached) {
+        autocompleteMemoryCache.set(normalizedQuery, cached);
+        return cached;
+      }
+    } catch (error) {
+      logger.warn(`Cache read failed for "${cacheKey}": ${describeError(error)}`);
+    }
+
+    const { ids } = await productRepository.searchProductIds({
+      query: q,
+      limit: AUTOCOMPLETE_LIMIT,
+      offset: 0,
+    });
+    const rows = await productRepository.listApprovedByIds(ids);
+    const suggestions = rows.map(toSuggestion);
+
+    autocompleteMemoryCache.set(normalizedQuery, suggestions);
+    try {
+      await cacheService.set(cacheKey, suggestions, CACHE_TTL.PRODUCT_AUTOCOMPLETE);
+    } catch (error) {
+      logger.warn(`Cache write failed for "${cacheKey}": ${describeError(error)}`);
+    }
+
+    return suggestions;
+  },
+
   async listPublic({
     type: typeSlug,
     category,
     q,
     sort,
+    minPrice,
+    maxPrice,
+    inStock,
     cursor,
     limit,
   }: ListPublicProductsQuery): Promise<PublicProductPage> {
     const type = typeSlug ? SLUG_TO_PRODUCT_TYPE[typeSlug] : undefined;
     const categoryId = category ? (await categoryService.getBySlug(category)).id : undefined;
-    const isUnfilteredTrendingBrowse = sort === PRODUCT_SORT.TRENDING && !categoryId && !type && !q;
+
+    if (q) {
+      const offset = decodeCursor<ProductSearchCursor>(cursor)?.offset ?? 0;
+      const { ids, total, brandCount } = await productRepository.searchProductIds({
+        query: q,
+        limit,
+        offset,
+        categoryId,
+        type,
+        minPrice,
+        maxPrice,
+        inStockOnly: inStock,
+      });
+      const rows = await productRepository.listApprovedByIds(ids);
+      const nextOffset = offset + ids.length;
+      const nextCursor =
+        nextOffset < total ? encodeCursor<ProductSearchCursor>({ offset: nextOffset }) : null;
+
+      return { products: rows.map(toPublicProduct), nextCursor, total, brandCount };
+    }
+
+    const isUnfilteredTrendingBrowse =
+      sort === PRODUCT_SORT.TRENDING && !categoryId && !type && !minPrice && !maxPrice && !inStock;
 
     if (isUnfilteredTrendingBrowse) {
       const { ids, nextCursor } = await trendingService.listTrendingProductIds({ cursor, limit });
@@ -247,9 +334,11 @@ export const productService = {
       }
     }
 
+    const keysetCursor = cursor && isUuid(cursor) ? cursor : undefined;
+    const filter = { categoryId, type, minPrice, maxPrice, inStockOnly: inStock, sort };
     const [rows, counts] = await Promise.all([
-      productRepository.listPublic({ categoryId, type, q, sort, cursor, limit }),
-      productRepository.countPublic({ categoryId, type, q, sort }),
+      productRepository.listPublic({ ...filter, cursor: keysetCursor, limit }),
+      productRepository.countPublic(filter),
     ]);
 
     const { items: pagedProducts, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);

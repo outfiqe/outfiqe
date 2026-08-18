@@ -28,3 +28,19 @@ export type PublicCreatorProfile = {
   taggedPiecesCount: number;
   isFollowing: boolean;
 };
+
+export type CreatorSearchResult = {
+  userId: string;
+  name: string;
+  handle: string;
+  avatarUrl: string | null;
+  followerCount: number;
+};
+
+export type CreatorSearchPage = {
+  creators: CreatorSearchResult[];
+  nextCursor: string | null;
+  total: number;
+};
+
+export type CreatorSearchCursor = { offset: number };

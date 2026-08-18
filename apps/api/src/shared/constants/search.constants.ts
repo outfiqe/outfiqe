@@ -1,0 +1,1 @@
+export const SEARCH_QUERY_MAX_LENGTH = 100;

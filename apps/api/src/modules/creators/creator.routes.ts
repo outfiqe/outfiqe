@@ -12,6 +12,7 @@ import {
   creatorUserIdParamSchema,
   listCreatorLooksQuerySchema,
   listCreatorsQuerySchema,
+  searchCreatorsQuerySchema,
   updateCreatorProfileSchema,
 } from "./creator.schemas.js";
 
@@ -38,6 +39,11 @@ creatorRoutes.get(
   optionalAuth,
   validate({ params: creatorHandleParamSchema, query: listCreatorLooksQuerySchema }),
   creatorController.listLooksByHandle,
+);
+creatorRoutes.get(
+  "/search",
+  validate({ query: searchCreatorsQuerySchema }),
+  creatorController.search,
 );
 creatorRoutes.get(
   "/",

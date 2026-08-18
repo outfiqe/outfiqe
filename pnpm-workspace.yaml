@@ -13,6 +13,9 @@ allowBuilds:
   # its own native binding.
   unrs-resolver: true
   msw: true
+  # CLI binary used for build-time sourcemap upload, which isn't wired up
+  # here (no Sentry auth token configured) — not needed at runtime.
+  "@sentry/cli": false
 
 # pnpm 11 also quarantines packages published within the last ~24h, so a
 # compromised fresh release can't slip straight into your install.
