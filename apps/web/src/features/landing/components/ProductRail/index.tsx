@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
+import { TRENDING_RANKS } from "@/shared/components/TrendingRankBadge";
 import { cn } from "@/shared/lib/cn";
 
 import { type ExploreProduct, ProductCard } from "../ProductCard";
@@ -13,6 +14,7 @@ type ProductRailProps = {
   viewAllLabel?: string;
   products: ExploreProduct[];
   emptyMessage?: string;
+  showTrendingRanks?: boolean;
 };
 
 export const ProductRail = ({
@@ -23,6 +25,7 @@ export const ProductRail = ({
   viewAllLabel = "View all",
   products,
   emptyMessage = "Nothing to show here yet.",
+  showTrendingRanks = false,
 }: ProductRailProps) => {
   return (
     <section className="px-6 py-10 sm:py-14 lg:px-10">
@@ -61,8 +64,12 @@ export const ProductRail = ({
         <p className="mt-8 text-sm text-muted-foreground">{emptyMessage}</p>
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
-          {products.slice(0, 10).map((product) => (
-            <ProductCard key={product.id} product={product} />
+          {products.slice(0, 10).map((product, index) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              trendingRank={showTrendingRanks ? TRENDING_RANKS[index] : undefined}
+            />
           ))}
         </div>
       )}

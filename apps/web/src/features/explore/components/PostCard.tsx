@@ -1,5 +1,6 @@
 "use client";
 
+import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
@@ -15,9 +16,10 @@ import { PostTagPill } from "./PostTagPill";
 interface PostCardProps {
   post: FeedPost;
   onImageClick?: () => void;
+  trendingRank?: TrendingRank;
 }
 
-export const PostCard = ({ post, onImageClick }: PostCardProps) => {
+export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) => {
   const {
     id,
     creator,
@@ -64,7 +66,8 @@ export const PostCard = ({ post, onImageClick }: PostCardProps) => {
         className="px-3 py-2.5"
       />
 
-      <div onClick={onImageClick} className={cn(onImageClick && "cursor-pointer")}>
+      <div onClick={onImageClick} className={cn("relative", onImageClick && "cursor-pointer")}>
+        {trendingRank && <TrendingRankBadge rank={trendingRank} />}
         <PostCarousel images={images} fallbackColor={getAvatarColor(id)} aspectRatio="4 / 5" />
       </div>
 
