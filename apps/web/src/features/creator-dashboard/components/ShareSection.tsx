@@ -10,7 +10,7 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 import type { CreatorLink } from "../api/creatorLinksSchemas";
 import { useCreateInternalLink, useGetOrCreateExternalLink } from "../hooks/useCreateCreatorLink";
 import { useMyCreatorLinks } from "../hooks/useMyCreatorLinks";
-import { ApplyAsCreatorButton } from "./ApplyAsCreatorButton";
+import { CreatorStatusGate } from "./CreatorStatusGate";
 import { ShareLinkRow } from "./ShareLinkRow";
 import { ShareProductPicker } from "./ShareProductPicker";
 
@@ -39,35 +39,12 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
   const getOrCreateExternal = useGetOrCreateExternalLink();
   const profileLink = useGetOrCreateExternalLink();
 
-  if (creatorStatus === CreatorStatus.PENDING) {
-    return (
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h1 className="font-display text-xl font-bold text-foreground">Application under review</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          We&apos;re looking at your creator application. We&apos;ll email you once it&apos;s
-          reviewed.
-        </p>
-      </div>
-    );
-  }
-
   if (creatorStatus !== CreatorStatus.APPROVED) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <h1 className="font-display text-xl font-bold text-foreground">Become a creator</h1>
-        <p className="mt-2 max-w-md text-sm text-muted-foreground">
-          Approved creators get their own share links and earn commission when someone buys through
-          them.
-        </p>
-        {creatorStatus === CreatorStatus.REJECTED && (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Your last application wasn&apos;t a fit. You&apos;re welcome to apply again.
-          </p>
-        )}
-        <div className="mt-4">
-          <ApplyAsCreatorButton />
-        </div>
-      </div>
+      <CreatorStatusGate
+        creatorStatus={creatorStatus}
+        pitch="Approved creators get their own share links and earn commission when someone buys through them."
+      />
     );
   }
 

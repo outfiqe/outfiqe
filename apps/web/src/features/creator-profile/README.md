@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Renders a creator's public profile — avatar, stats, follow/edit-profile, and their post grid. Used both for the public `/creator/[handle]` page and the dashboard's `/dashboard/profile/[handle]` route (same `CreatorProfile` component, gated by `isOwnProfile`).
+Renders a creator's public profile — avatar, stats, follow/edit-profile, and their post grid. Used both for the public `/creator/[handle]` page and the dashboard's static `/dashboard/profile` route (same `CreatorProfile` component, gated by `isOwnProfile`).
 
 ## Structure
 
