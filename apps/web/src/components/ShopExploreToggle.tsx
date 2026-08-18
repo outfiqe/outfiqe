@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { cn } from "@/shared/lib/cn";
+import { isExploreRoute } from "@/shared/lib/exploreMode";
 
 const NavPendingHint = () => {
   const { pending } = useLinkStatus();
@@ -49,8 +50,7 @@ export const ShopExploreToggle = ({ size = "sm", className }: ShopExploreToggleP
   const { container, button, icon, showLabel } = SIZE_STYLES[size];
   const [pendingNav, setPendingNav] = useState<PendingNav | null>(null);
 
-  const isExploreRoute = pathname?.startsWith("/explore") ?? false;
-  const resolvedHref = isExploreRoute ? "/explore" : "/";
+  const resolvedHref = isExploreRoute(pathname) ? "/explore" : "/";
 
   const activeHref =
     pendingNav && pendingNav.fromPathname === pathname ? pendingNav.href : resolvedHref;

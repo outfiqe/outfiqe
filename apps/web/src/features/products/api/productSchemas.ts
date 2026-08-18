@@ -18,6 +18,14 @@ export const publicProductSchema = z.object({
 });
 export type PublicProduct = z.infer<typeof publicProductSchema>;
 
+export const productSuggestionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  brand: z.string(),
+  imageUrl: z.string().nullable(),
+});
+export type ProductSuggestion = z.infer<typeof productSuggestionSchema>;
+
 export const productPageSchema = z.object({
   products: z.array(publicProductSchema),
   nextCursor: z.string().nullable(),
