@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { LeaderboardInfoSection, LeaderboardView } from "@/features/leaderboard";
+import {
+  LeaderboardInfoSection,
+  LeaderboardListSkeleton,
+  LeaderboardView,
+} from "@/features/leaderboard";
 
 export const metadata: Metadata = { title: "Brand leaderboard" };
 
@@ -24,7 +29,9 @@ const LeaderboardPage = () => {
           </p>
 
           <div className="mt-8">
-            <LeaderboardView />
+            <Suspense fallback={<LeaderboardListSkeleton />}>
+              <LeaderboardView />
+            </Suspense>
           </div>
 
           <div className="mt-16">

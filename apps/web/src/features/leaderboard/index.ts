@@ -1,5 +1,6 @@
 export type { LeaderboardEntry, LeaderboardSnapshot } from "./api/leaderboardSchemas";
 export { LeaderboardInfoSection } from "./components/LeaderboardInfoSection";
+export { LeaderboardListSkeleton } from "./components/LeaderboardListSkeleton";
 export { LeaderboardView } from "./components/LeaderboardView";
 export {
   LEADERBOARD_CATEGORY,
