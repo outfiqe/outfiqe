@@ -12,6 +12,7 @@ type ProductRailProps = {
   viewAllHref?: string;
   viewAllLabel?: string;
   products: ExploreProduct[];
+  emptyMessage?: string;
 };
 
 export const ProductRail = ({
@@ -21,6 +22,7 @@ export const ProductRail = ({
   viewAllHref,
   viewAllLabel = "View all",
   products,
+  emptyMessage = "Nothing to show here yet.",
 }: ProductRailProps) => {
   return (
     <section className="px-6 py-10 sm:py-14 lg:px-10">
@@ -55,11 +57,15 @@ export const ProductRail = ({
         )}
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
-        {products.slice(0, 10).map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
+      {products.length === 0 ? (
+        <p className="mt-8 text-sm text-muted-foreground">{emptyMessage}</p>
+      ) : (
+        <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
+          {products.slice(0, 10).map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
     </section>
   );
 };

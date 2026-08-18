@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@outfiqe/design-system";
+import { Button, Skeleton } from "@outfiqe/design-system";
 import { ArrowRight } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -55,11 +55,13 @@ export const CategoryResults = () => {
           <h2 className="font-display text-3xl font-bold uppercase text-foreground sm:text-4xl">
             In {name}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {firstPage
-              ? `${firstPage.total} pieces from ${firstPage.brandCount} brands`
-              : "Loading…"}
-          </p>
+          {firstPage ? (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {firstPage.total} pieces from {firstPage.brandCount} brands
+            </p>
+          ) : (
+            <Skeleton className="mt-2 h-4 w-40" />
+          )}
         </div>
 
         <Button

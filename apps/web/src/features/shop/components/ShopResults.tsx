@@ -1,5 +1,6 @@
 "use client";
 
+import { Skeleton } from "@outfiqe/design-system";
 import { PRODUCT_SORT, PRODUCT_SORT_VALUES, type ProductSort } from "@outfiqe/utils";
 import { useSearchParams } from "next/navigation";
 
@@ -66,9 +67,13 @@ export const ShopResults = () => {
       <h1 className="font-display text-3xl font-extrabold uppercase tracking-tight text-foreground sm:text-4xl">
         {heading}
       </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {firstPage ? `${firstPage.total} pieces from ${firstPage.brandCount} brands` : "Loading…"}
-      </p>
+      {firstPage ? (
+        <p className="mt-2 text-sm text-muted-foreground">
+          {firstPage.total} pieces from {firstPage.brandCount} brands
+        </p>
+      ) : (
+        <Skeleton className="mt-2.5 h-4 w-40" />
+      )}
 
       {category && (
         <div className="mt-6">

@@ -12,6 +12,7 @@ export const TrendingNow = async () => {
       viewAllHref="/shop?sort=trending"
       viewAllLabel="See More"
       products={products}
+      emptyMessage="Nothing trending yet — check back soon."
     />
   );
 };
