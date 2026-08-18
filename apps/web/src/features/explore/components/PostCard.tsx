@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  type TrendingRank,
-  TrendingRankBadge,
-  trendingRankRingClassName,
-} from "@/shared/components/TrendingRankBadge";
+import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
@@ -57,12 +53,7 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
   const { mutate: toggleSave, isPending: isSaving } = saveMutation;
 
   return (
-    <article
-      className={cn(
-        "mb-4 overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30",
-        trendingRank && trendingRankRingClassName(trendingRank),
-      )}
-    >
+    <article className="mb-4 overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30">
       <PostCardHeader
         creatorId={creatorId}
         creatorHandle={creatorHandle}

@@ -9,11 +9,7 @@ import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useToggleWishlist } from "@/features/wishlist";
-import {
-  type TrendingRank,
-  TrendingRankBadge,
-  trendingRankRingClassName,
-} from "@/shared/components/TrendingRankBadge";
+import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { cn } from "@/shared/lib/cn";
 
 export type ProductType = ProductTypeSlug;
@@ -91,10 +87,7 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
   return (
     <Link href={`/product/${id}`} className="group block">
       <div
-        className={cn(
-          "relative flex aspect-4/5 items-center justify-center rounded-2xl bg-cover bg-center",
-          trendingRank && trendingRankRingClassName(trendingRank),
-        )}
+        className="relative flex aspect-4/5 items-center justify-center rounded-2xl bg-cover bg-center"
         style={{
           backgroundColor: image ? undefined : getSwatchColor(id),
           backgroundImage: image ? `url(${image})` : undefined,

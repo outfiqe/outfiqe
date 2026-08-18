@@ -2,13 +2,8 @@
 
 import { Layers } from "lucide-react";
 
-import {
-  type TrendingRank,
-  TrendingRankBadge,
-  trendingRankRingClassName,
-} from "@/shared/components/TrendingRankBadge";
+import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
-import { cn } from "@/shared/lib/cn";
 
 import type { FeedPost } from "../api/exploreFeedSchemas";
 import { PostCaption } from "./PostCaption";
@@ -28,10 +23,7 @@ export const PostGridCard = ({ post, onClick, trendingRank }: PostGridCardProps)
         type="button"
         onClick={onClick}
         aria-label={caption ?? "View post"}
-        className={cn(
-          "relative block aspect-[4/5] w-full overflow-hidden rounded-2xl border border-border bg-cover bg-center transition-colors hover:border-foreground/30",
-          trendingRank && trendingRankRingClassName(trendingRank),
-        )}
+        className="relative block aspect-[4/5] w-full overflow-hidden rounded-2xl border border-border bg-cover bg-center transition-colors hover:border-foreground/30"
         style={
           imageUrl
             ? { backgroundImage: `url(${imageUrl})` }

@@ -3,13 +3,8 @@
 import { Skeleton } from "@outfiqe/design-system";
 import Link from "next/link";
 
-import {
-  TRENDING_RANKS,
-  TrendingRankChip,
-  trendingRankTintClassName,
-} from "@/shared/components/TrendingRankBadge";
+import { TRENDING_RANKS, TrendingRankChip } from "@/shared/components/TrendingRankBadge";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
-import { cn } from "@/shared/lib/cn";
 
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 import { useFollowCreator } from "../hooks/useFollowCreator";
@@ -125,12 +120,7 @@ const TrendingTags = ({ onTagClick }: { onTagClick: (tag: string) => void }) => 
               key={tag}
               type="button"
               onClick={() => onTagClick(tag)}
-              className={cn(
-                "flex items-center gap-1.5 rounded-full border border-transparent px-3 py-1.5 text-[12.5px] font-medium transition-colors",
-                rank
-                  ? trendingRankTintClassName(rank)
-                  : "bg-muted text-muted-foreground hover:text-foreground",
-              )}
+              className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
             >
               {rank && <TrendingRankChip rank={rank} />}#{tag}
             </button>
