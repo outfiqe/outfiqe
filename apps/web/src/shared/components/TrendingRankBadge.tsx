@@ -1,4 +1,4 @@
-import { Flame } from "lucide-react";
+import { Gem } from "lucide-react";
 
 import { cn } from "@/shared/lib/cn";
 
@@ -10,7 +10,7 @@ export const TOP_TRENDING_RANK: TrendingRank = TRENDING_RANKS[0];
 type RankTier = {
   ordinal: string;
   medallionClassName: string;
-  flameClassName: string;
+  iconClassName: string;
   numeralClassName: string;
   ringClassName: string;
   tintClassName: string;
@@ -21,7 +21,7 @@ const RANK_TIERS: Record<TrendingRank, RankTier> = {
   1: {
     ordinal: "1st",
     medallionClassName: "bg-gradient-to-br from-[#ffe9a8] via-[#f0be4d] to-[#c98a1f]",
-    flameClassName: "fill-[#8a4f06] text-[#8a4f06]",
+    iconClassName: "fill-[#8a4f06] text-[#8a4f06]",
     numeralClassName: "bg-[#4a2e05] text-[#ffe9a8]",
     ringClassName: "ring-[#e3a93b]",
     tintClassName: "border-[#e3a93b]/50 bg-[#e3a93b]/12 text-[#8a5c10]",
@@ -30,7 +30,7 @@ const RANK_TIERS: Record<TrendingRank, RankTier> = {
   2: {
     ordinal: "2nd",
     medallionClassName: "bg-gradient-to-br from-[#f5f7f8] via-[#d3d9de] to-[#9aa5b1]",
-    flameClassName: "fill-[#525a62] text-[#525a62]",
+    iconClassName: "fill-[#525a62] text-[#525a62]",
     numeralClassName: "bg-[#2a2e33] text-[#f5f7f8]",
     ringClassName: "ring-[#b7c0c9]",
     tintClassName: "border-[#9aa5b1]/50 bg-[#9aa5b1]/12 text-[#5a636c]",
@@ -39,7 +39,7 @@ const RANK_TIERS: Record<TrendingRank, RankTier> = {
   3: {
     ordinal: "3rd",
     medallionClassName: "bg-gradient-to-br from-[#eec49a] via-[#cf8d54] to-[#96501f]",
-    flameClassName: "fill-[#5c2f0d] text-[#5c2f0d]",
+    iconClassName: "fill-[#5c2f0d] text-[#5c2f0d]",
     numeralClassName: "bg-[#3a1e0a] text-[#eec49a]",
     ringClassName: "ring-[#b06b34]",
     tintClassName: "border-[#b06b34]/50 bg-[#b06b34]/12 text-[#7a4a24]",
@@ -78,7 +78,7 @@ export const TrendingRankBadge = ({ rank, className }: TrendingRankBadgeProps) =
         )}
         style={{ boxShadow: tier.glowShadow }}
       >
-        <Flame className={cn("size-4.5", tier.flameClassName)} />
+        <Gem className={cn("size-4.5", tier.iconClassName)} />
         <span
           className={cn(
             "absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full font-display text-[9px] font-bold ring-2 ring-background",
@@ -109,7 +109,7 @@ export const TrendingRankChip = ({ rank, className }: TrendingRankChipProps) => 
         className,
       )}
     >
-      <Flame className={cn("size-2.5", tier.flameClassName)} />
+      <Gem className={cn("size-2.5", tier.iconClassName)} />
     </span>
   );
 };
