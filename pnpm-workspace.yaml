@@ -12,6 +12,7 @@ allowBuilds:
   # eslint-config-next). No install-time side effects beyond compiling
   # its own native binding.
   unrs-resolver: true
+  msw: true
 
 # pnpm 11 also quarantines packages published within the last ~24h, so a
 # compromised fresh release can't slip straight into your install.

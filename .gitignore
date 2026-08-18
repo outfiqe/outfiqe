@@ -2,14 +2,16 @@ node_modules
 dist
 .next
 .turbo
+coverage
 *.log
 *.tsbuildinfo
 .DS_Store
 
-# Env files - only .env.example is committed
+# Env files - only .env.example / .env.test.example are committed
 .env
 .env.*
 !.env.example
+!.env.test.example
 
 # Prisma 7 generates the client into src/, not node_modules
 apps/api/src/generated
