@@ -1,5 +1,6 @@
 export * from "./admin";
 export * from "./api";
+export * from "./badges";
 export * from "./brand";
 export * from "./category";
 export * from "./collection";

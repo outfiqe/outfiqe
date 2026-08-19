@@ -1,6 +1,7 @@
 export type { CreatorProfile, UpdateCreatorProfileInput } from "./api/creatorDashboardSchemas";
 export { getCreatorProfileServer } from "./api/getCreatorProfileServer";
 export { ApplyAsCreatorButton } from "./components/ApplyAsCreatorButton";
+export { BadgeCollectionSection } from "./components/BadgeCollectionSection";
 export { CreatorStatusGate } from "./components/CreatorStatusGate";
 export { EarningsSection } from "./components/EarningsSection";
 export { EditPostModal } from "./components/EditPostModal";

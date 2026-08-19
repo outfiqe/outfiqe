@@ -1,0 +1,133 @@
+"use client";
+
+import { Badge, Button, ProgressBar, toast } from "@outfiqe/design-system";
+
+import { getErrorMessage } from "@/shared/lib/errorMessages";
+
+import { type BadgeCollectionEntry, BadgeRarity } from "../api/badgeSchemas";
+import { useUpdateBadgeDisplay } from "../hooks/useUpdateBadgeDisplay";
+import { AchievementBadgeIcon } from "./AchievementBadgeIcon";
+
+const RARITY_LABEL: Record<string, string> = {
+  [BadgeRarity.COMMON]: "Common",
+  [BadgeRarity.UNCOMMON]: "Uncommon",
+  [BadgeRarity.RARE]: "Rare",
+  [BadgeRarity.EPIC]: "Epic",
+  [BadgeRarity.LEGENDARY]: "Legendary",
+  [BadgeRarity.EXCLUSIVE]: "Exclusive",
+};
+
+const METRIC_LABEL: Record<string, string> = {
+  level: "Level",
+  posts_created: "Posts created",
+  total_likes: "Total likes",
+  comments_made: "Comments made",
+  purchases_count: "Purchases",
+  sales_count: "Sales generated",
+};
+
+type AchievementBadgeCardProps = {
+  entry: BadgeCollectionEntry;
+  isFeaturable: boolean;
+  onToggleFeatured: (badgeId: string) => void;
+};
+
+export const AchievementBadgeCard = ({
+  entry,
+  isFeaturable,
+  onToggleFeatured,
+}: AchievementBadgeCardProps) => {
+  const updateDisplay = useUpdateBadgeDisplay();
+  const {
+    id,
+    name,
+    description,
+    rarity,
+    icon,
+    designConfig,
+    isCollected,
+    unlockedAt,
+    isDisplayed,
+    isFeatured,
+    progress,
+  } = entry;
+
+  return (
+    <div className="flex gap-3 rounded-2xl border border-border p-4">
+      <AchievementBadgeIcon
+        icon={icon}
+        designConfig={designConfig}
+        rarity={rarity}
+        isLocked={!isCollected}
+      />
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm font-semibold text-foreground">{name}</p>
+          <Badge showDot={false} tone={isCollected ? "positive" : "neutral"}>
+            {RARITY_LABEL[rarity]}
+          </Badge>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+
+        {isCollected && unlockedAt && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Unlocked {new Date(unlockedAt).toLocaleDateString()}
+          </p>
+        )}
+
+        {!isCollected && progress && progress.length > 0 && (
+          <div className="mt-2 space-y-1.5">
+            {progress.map((condition) => (
+              <div key={condition.metric}>
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span>{METRIC_LABEL[condition.metric] ?? condition.metric}</span>
+                  <span>
+                    {Math.min(condition.currentValue, condition.value).toLocaleString()} /{" "}
+                    {condition.value.toLocaleString()}
+                  </span>
+                </div>
+                <ProgressBar
+                  label={`${METRIC_LABEL[condition.metric] ?? condition.metric} progress`}
+                  value={condition.currentValue}
+                  max={condition.value}
+                  className="mt-1"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!isCollected && !progress && (
+          <p className="mt-2 text-xs text-muted-foreground">Awarded by the Outfiqe team.</p>
+        )}
+
+        {isCollected && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              className="h-7 px-2.5 text-xs"
+              disabled={updateDisplay.isPending}
+              onClick={() =>
+                updateDisplay.mutate(
+                  { badgeId: id, isDisplayed: !isDisplayed },
+                  { onError: (error) => toast.error(getErrorMessage(error)) },
+                )
+              }
+            >
+              {isDisplayed ? "Hide from profile" : "Show on profile"}
+            </Button>
+            <Button
+              variant="outline"
+              className="h-7 px-2.5 text-xs"
+              disabled={!isFeaturable && !isFeatured}
+              onClick={() => onToggleFeatured(id)}
+            >
+              {isFeatured ? "Unfeature" : "Feature"}
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
