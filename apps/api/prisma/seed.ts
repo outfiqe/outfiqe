@@ -2,6 +2,9 @@ import { slugifyHandle } from "#lib/handle.utils.js";
 import { hashPassword } from "#lib/password.utils.js";
 
 import {
+  AchievementRequirementType,
+  BadgeCategory,
+  BadgeRarity,
   CategoryStatus,
   CollectionStatus,
   CreatorStatus,
@@ -9,6 +12,7 @@ import {
   HeroSlideStatus,
   ProductStatus,
   ProductType,
+  XpActivityType,
 } from "../src/generated/prisma/enums.js";
 import { prisma } from "../src/shared/db/prisma.js";
 
@@ -1325,6 +1329,273 @@ const seedHeroSlides = async () => {
   }
 };
 
+const LEVEL_LADDER = [
+  { level: 1, name: "Newcomer", requiredXp: 0 },
+  { level: 2, name: "Fashion Explorer", requiredXp: 100 },
+  { level: 3, name: "Style Seeker", requiredXp: 300 },
+  { level: 4, name: "Trend Chaser", requiredXp: 750 },
+  { level: 5, name: "Style Creator", requiredXp: 1500 },
+  { level: 6, name: "Fashion Star", requiredXp: 3000 },
+  { level: 7, name: "Fashion Icon", requiredXp: 6000 },
+  { level: 8, name: "Fashion Legend", requiredXp: 10000 },
+];
+
+const seedLevels = async () => {
+  for (const rung of LEVEL_LADDER) {
+    await prisma.level.upsert({
+      where: { level: rung.level },
+      update: { name: rung.name, requiredXp: rung.requiredXp },
+      create: rung,
+    });
+  }
+};
+
+// Illustrative starting XP economy (PRD spec 04) — admin-editable afterwards
+// via ActivityXpConfig, not hardcoded logic. "Views"/"profile completion"
+// have no defined tracking yet (see gamification plan gaps #2/#3) and are
+// deliberately not seeded. ADMIN_ADJUSTMENT/FOLLOWER_MILESTONE have no fixed
+// per-occurrence amount (manual entry / achievement-awarded respectively),
+// so they carry no config row either.
+const ACTIVITY_XP_CONFIG = [
+  { activityType: XpActivityType.LOOK_CREATED, xpAmount: 10 },
+  { activityType: XpActivityType.LOOK_LIKE_RECEIVED, xpAmount: 2, dailyLimit: 200 },
+  { activityType: XpActivityType.LOOK_COMMENT_RECEIVED, xpAmount: 5, dailyLimit: 100 },
+  { activityType: XpActivityType.LOOK_COMMENTED, xpAmount: 3, dailyLimit: 60 },
+  { activityType: XpActivityType.LOOK_SAVED, xpAmount: 3, dailyLimit: 60 },
+  { activityType: XpActivityType.USER_FOLLOWED, xpAmount: 2, maxPerEntity: 1 },
+  { activityType: XpActivityType.PRODUCT_PURCHASED, xpAmount: 20 },
+  { activityType: XpActivityType.SALE_GENERATED, xpAmount: 50 },
+  { activityType: XpActivityType.PRODUCT_TAGGED, xpAmount: 10, dailyLimit: 100 },
+];
+
+const seedActivityXpConfig = async () => {
+  for (const config of ACTIVITY_XP_CONFIG) {
+    await prisma.activityXpConfig.upsert({
+      where: { activityType: config.activityType },
+      update: config,
+      create: config,
+    });
+  }
+};
+
+type BadgeSeed = {
+  name: string;
+  description: string;
+  category: BadgeCategory;
+  rarity: BadgeRarity;
+  icon: string;
+  shape: "circle" | "shield" | "star" | "diamond" | "hexagon";
+  primaryColor: string;
+  xpReward: number;
+  requirementType: AchievementRequirementType;
+  conditions: { metric: string; operator: "gte"; value: number }[];
+};
+
+// First slice of the spec 12 catalog (not all 40) — enough to exercise every
+// rarity and category the badge system defines. requirementConfig metrics
+// are read from the per-user stat snapshot the achievements engine builds
+// (see achievements module, chunk 6) — not evaluated by this seed script.
+const BADGE_SEED: BadgeSeed[] = [
+  {
+    name: "Fashion Newbie",
+    description: "Welcome to Outfiqe — your journey starts here.",
+    category: BadgeCategory.BEGINNER,
+    rarity: BadgeRarity.COMMON,
+    icon: "🌱",
+    shape: "circle",
+    primaryColor: "#94a3b8",
+    xpReward: 0,
+    requirementType: AchievementRequirementType.MILESTONE,
+    conditions: [{ metric: "level", operator: "gte", value: 1 }],
+  },
+  {
+    name: "First Post",
+    description: "Publish your first look.",
+    category: BadgeCategory.BEGINNER,
+    rarity: BadgeRarity.COMMON,
+    icon: "📸",
+    shape: "circle",
+    primaryColor: "#94a3b8",
+    xpReward: 10,
+    requirementType: AchievementRequirementType.ACTIVITY,
+    conditions: [{ metric: "posts_created", operator: "gte", value: 1 }],
+  },
+  {
+    name: "First Purchase",
+    description: "Complete your first order on Outfiqe.",
+    category: BadgeCategory.BEGINNER,
+    rarity: BadgeRarity.COMMON,
+    icon: "🛍️",
+    shape: "circle",
+    primaryColor: "#94a3b8",
+    xpReward: 20,
+    requirementType: AchievementRequirementType.COMMERCE,
+    conditions: [{ metric: "purchases_count", operator: "gte", value: 1 }],
+  },
+  {
+    name: "Rising Creator",
+    description: "Publish 10 looks.",
+    category: BadgeCategory.CREATOR,
+    rarity: BadgeRarity.UNCOMMON,
+    icon: "🌿",
+    shape: "shield",
+    primaryColor: "#22c55e",
+    xpReward: 50,
+    requirementType: AchievementRequirementType.ACTIVITY,
+    conditions: [{ metric: "posts_created", operator: "gte", value: 10 }],
+  },
+  {
+    name: "Fashion Star",
+    description: "Receive 10,000 total likes across your looks.",
+    category: BadgeCategory.CREATOR,
+    rarity: BadgeRarity.RARE,
+    icon: "⭐",
+    shape: "star",
+    primaryColor: "#f97316",
+    xpReward: 100,
+    requirementType: AchievementRequirementType.ENGAGEMENT,
+    conditions: [{ metric: "total_likes", operator: "gte", value: 10000 }],
+  },
+  {
+    name: "Trendsetter",
+    description: "Receive 25,000 total likes across your looks.",
+    category: BadgeCategory.CREATOR,
+    rarity: BadgeRarity.EPIC,
+    icon: "🔥",
+    shape: "star",
+    primaryColor: "#a855f7",
+    xpReward: 250,
+    requirementType: AchievementRequirementType.ENGAGEMENT,
+    conditions: [{ metric: "total_likes", operator: "gte", value: 25000 }],
+  },
+  {
+    name: "Fashion Icon",
+    description: "Receive 50,000 total likes across your looks.",
+    category: BadgeCategory.CREATOR,
+    rarity: BadgeRarity.LEGENDARY,
+    icon: "👑",
+    shape: "diamond",
+    primaryColor: "#eab308",
+    xpReward: 500,
+    requirementType: AchievementRequirementType.ENGAGEMENT,
+    conditions: [{ metric: "total_likes", operator: "gte", value: 50000 }],
+  },
+  {
+    name: "Community Friend",
+    description: "Leave 10 comments on other creators' looks.",
+    category: BadgeCategory.COMMUNITY,
+    rarity: BadgeRarity.COMMON,
+    icon: "💬",
+    shape: "circle",
+    primaryColor: "#94a3b8",
+    xpReward: 15,
+    requirementType: AchievementRequirementType.COMMUNITY,
+    conditions: [{ metric: "comments_made", operator: "gte", value: 10 }],
+  },
+  {
+    name: "Fashion Mentor",
+    description: "Leave 100 comments and reach Level 5.",
+    category: BadgeCategory.COMMUNITY,
+    rarity: BadgeRarity.RARE,
+    icon: "🤝",
+    shape: "shield",
+    primaryColor: "#f97316",
+    xpReward: 150,
+    requirementType: AchievementRequirementType.COMMUNITY,
+    conditions: [
+      { metric: "comments_made", operator: "gte", value: 100 },
+      { metric: "level", operator: "gte", value: 5 },
+    ],
+  },
+  {
+    name: "100 Likes",
+    description: "Receive 100 total likes across your looks.",
+    category: BadgeCategory.ENGAGEMENT,
+    rarity: BadgeRarity.COMMON,
+    icon: "❤️",
+    shape: "circle",
+    primaryColor: "#94a3b8",
+    xpReward: 10,
+    requirementType: AchievementRequirementType.ENGAGEMENT,
+    conditions: [{ metric: "total_likes", operator: "gte", value: 100 }],
+  },
+  {
+    name: "1K Likes",
+    description: "Receive 1,000 total likes across your looks.",
+    category: BadgeCategory.ENGAGEMENT,
+    rarity: BadgeRarity.UNCOMMON,
+    icon: "❤️",
+    shape: "shield",
+    primaryColor: "#22c55e",
+    xpReward: 50,
+    requirementType: AchievementRequirementType.ENGAGEMENT,
+    conditions: [{ metric: "total_likes", operator: "gte", value: 1000 }],
+  },
+  {
+    name: "First Sale",
+    description: "Earn your first creator commission.",
+    category: BadgeCategory.COMMERCE,
+    rarity: BadgeRarity.COMMON,
+    icon: "💰",
+    shape: "circle",
+    primaryColor: "#94a3b8",
+    xpReward: 25,
+    requirementType: AchievementRequirementType.COMMERCE,
+    conditions: [{ metric: "sales_count", operator: "gte", value: 1 }],
+  },
+  {
+    name: "Top Seller",
+    description: "Earn 100 creator commissions.",
+    category: BadgeCategory.COMMERCE,
+    rarity: BadgeRarity.EPIC,
+    icon: "🏆",
+    shape: "diamond",
+    primaryColor: "#a855f7",
+    xpReward: 300,
+    requirementType: AchievementRequirementType.COMMERCE,
+    conditions: [{ metric: "sales_count", operator: "gte", value: 100 }],
+  },
+  {
+    name: "Outfiqe OG",
+    description: "Recognized by Outfiqe as a founding member of the community.",
+    category: BadgeCategory.SPECIAL,
+    rarity: BadgeRarity.EXCLUSIVE,
+    icon: "🎖️",
+    shape: "hexagon",
+    primaryColor: "#0ea5e9",
+    xpReward: 0,
+    requirementType: AchievementRequirementType.ADMIN_AWARD,
+    conditions: [],
+  },
+];
+
+const seedGamificationBadges = async () => {
+  for (const seedBadge of BADGE_SEED) {
+    const existing = await prisma.badge.findFirst({ where: { name: seedBadge.name } });
+    if (existing) continue;
+
+    await prisma.badge.create({
+      data: {
+        name: seedBadge.name,
+        description: seedBadge.description,
+        category: seedBadge.category,
+        rarity: seedBadge.rarity,
+        icon: seedBadge.icon,
+        designConfig: { shape: seedBadge.shape, primaryColor: seedBadge.primaryColor },
+        xpReward: seedBadge.xpReward,
+        achievement: {
+          create: {
+            name: seedBadge.name,
+            description: seedBadge.description,
+            requirementType: seedBadge.requirementType,
+            requirementConfig: { conditions: seedBadge.conditions },
+          },
+        },
+      },
+    });
+  }
+};
+
 async function main() {
   await seedCategories();
   const brands = await seedBrands();
@@ -1348,6 +1619,9 @@ async function main() {
   await seedCollections();
   await seedHeroSlides();
   await seedCommissionTiers();
+  await seedLevels();
+  await seedActivityXpConfig();
+  await seedGamificationBadges();
 }
 
 main()
