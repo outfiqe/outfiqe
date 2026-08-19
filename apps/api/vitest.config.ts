@@ -19,6 +19,7 @@ export default defineConfig({
         "src/shared/utils/pagination.utils.ts",
         "src/shared/utils/opaque-token.utils.ts",
         "src/modules/brand-applications/**",
+        "src/modules/xp/xp.utils.ts",
       ],
       thresholds: {
         lines: 80,
