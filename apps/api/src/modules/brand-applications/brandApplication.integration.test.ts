@@ -5,9 +5,8 @@ import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { BrandApplicationStatus, MakesOwnPieces } from "#generated/prisma/enums.js";
-
-import { createAdminSession } from "./authHelpers.js";
-import { testApp } from "./testApp.js";
+import { createAdminSession } from "#test/integration/authHelpers.js";
+import { testApp } from "#test/integration/testApp.js";
 
 const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 

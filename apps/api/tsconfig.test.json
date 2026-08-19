@@ -5,6 +5,11 @@
     "moduleResolution": "NodeNext",
     "noEmit": true
   },
-  "include": ["test", "vitest.config.ts"],
+  "include": [
+    "vitest.config.ts",
+    "src/**/*.test.ts",
+    "src/**/*.integration.test.ts",
+    "src/testing/**/*.ts"
+  ],
   "references": [{ "path": "../../packages/utils" }]
 }

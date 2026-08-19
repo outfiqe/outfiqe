@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),
+      "@test": path.resolve(import.meta.dirname, "./src/testing"),
     },
   },
   test: {
@@ -31,18 +32,19 @@ export default defineConfig({
         extends: true,
         test: {
           name: "unit",
-          include: ["test/unit/**/*.test.{ts,tsx}"],
+          include: ["src/**/*.test.{ts,tsx}"],
+          exclude: ["src/**/*.integration.test.{ts,tsx}"],
           environment: "jsdom",
-          setupFiles: ["./test/setup.ts"],
+          setupFiles: ["./src/testing/setup.ts"],
         },
       },
       {
         extends: true,
         test: {
           name: "integration",
-          include: ["test/integration/**/*.test.{ts,tsx}"],
+          include: ["src/**/*.integration.test.{ts,tsx}"],
           environment: "jsdom",
-          setupFiles: ["./test/setup.ts", "./test/integration/setup.ts"],
+          setupFiles: ["./src/testing/setup.ts", "./src/testing/integration/setup.ts"],
         },
       },
     ],
