@@ -102,4 +102,33 @@ describe("useLogin", () => {
     expect(result.current.auth.isAuthenticated).toBe(false);
     expect(replace).not.toHaveBeenCalled();
   });
+
+  it("hard-navigates admins to their app instead of updating auth state", async () => {
+    const originalLocation = window.location;
+    const locationReplace = vi.fn();
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, replace: locationReplace },
+    });
+
+    mswServer.use(
+      http.post(LOGIN_URL, () =>
+        HttpResponse.json({
+          success: true,
+          message: "Login successful",
+          data: { accessToken: "access-token", user: { ...customerUser, role: "ADMIN" } },
+        }),
+      ),
+    );
+
+    const { result } = renderUseLogin();
+    result.current.login.mutate({ email: customerUser.email, password: "correct-horse-battery" });
+
+    await waitFor(() => expect(result.current.login.isSuccess).toBe(true));
+    expect(locationReplace).toHaveBeenCalledWith("/admin");
+    expect(replace).not.toHaveBeenCalled();
+    expect(result.current.auth.isAuthenticated).toBe(false);
+
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+  });
 });

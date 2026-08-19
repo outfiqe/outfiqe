@@ -1,12 +1,12 @@
 import { mockNextRouter } from "@test/integration/mockRouter";
 import { mswServer } from "@test/integration/msw/server";
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "../context/AuthContext";
-import { createAuthQueryClientWrapper } from "../context/authTestWrapper";
-import { AuthActionType, AuthStatus, type UserSession } from "../types";
+import { createAuthQueryClientWrapper, dispatchAuthSuccess } from "../context/authTestWrapper";
+import { AuthStatus } from "../types";
 import { useLogout } from "./useLogout";
 
 const LOGOUT_URL = "/api/auth/logout";
@@ -21,27 +21,12 @@ beforeEach(() => {
   ({ replace } = mockNextRouter());
 });
 
-const authenticatedUser: UserSession = {
-  id: "user-1",
-  name: "Ava Martinez",
-  email: "ava@outfiqe.test",
-  avatarUrl: null,
-  role: "CUSTOMER",
-  isCreator: false,
-  creatorStatus: "NONE",
-};
-
 const renderUseLogout = () => {
   const rendered = renderHook(() => ({ logout: useLogout(), auth: useAuth() }), {
     wrapper: createAuthQueryClientWrapper(),
   });
 
-  act(() => {
-    rendered.result.current.auth.dispatch({
-      type: AuthActionType.AUTH_SUCCESS,
-      payload: { user: authenticatedUser, accessToken: "access-token" },
-    });
-  });
+  dispatchAuthSuccess(rendered.result.current.auth.dispatch);
 
   return rendered;
 };
