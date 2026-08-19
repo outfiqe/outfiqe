@@ -1,6 +1,7 @@
 import { env } from "#config/env.config.js";
 import { prisma } from "#db/prisma.js";
 import { manualRefundNeededTemplate, paymentSettledTemplate } from "#email-templates/templates.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { PaymentMethod, PaymentStatus } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -90,6 +91,11 @@ const settleVerified = async (
 
   if (needsManualRefund) {
     alertOpsForManualRefund(order.id, order.total);
+  } else {
+    await eventBus.publish(DomainEvents.PRODUCT_PURCHASED, {
+      orderId: order.id,
+      userId: order.userId,
+    });
   }
   await notifyBuyerPaymentSettled(order.id, order.total);
 };

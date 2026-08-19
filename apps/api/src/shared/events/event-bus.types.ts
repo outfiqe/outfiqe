@@ -28,6 +28,13 @@ export type DomainEventPayloads = {
   [DomainEvents.BRAND_FOLLOWED]: FollowPayload;
   [DomainEvents.BRAND_UNFOLLOWED]: FollowPayload;
   [DomainEvents.LEADERBOARD_BRAND_UPDATED]: { category: LeaderboardCategory; week: string };
+  [DomainEvents.PRODUCT_PURCHASED]: { orderId: string; userId: string };
+  [DomainEvents.PRODUCT_TAGGED]: { lookId: string; creatorId: string; productId: string };
+  [DomainEvents.SALE_GENERATED]: {
+    orderItemId: string;
+    creatorId: string;
+    commissionAmount: number;
+  };
 };
 
 export type DomainEventHandler<E extends DomainEvent> = (

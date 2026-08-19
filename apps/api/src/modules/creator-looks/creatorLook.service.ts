@@ -110,6 +110,13 @@ export const creatorLookService = {
       creatorId: userId,
       createdAt: look.createdAt.toISOString(),
     });
+    for (const productId of productIds) {
+      await eventBus.publish(DomainEvents.PRODUCT_TAGGED, {
+        lookId: look.id,
+        creatorId: userId,
+        productId,
+      });
+    }
 
     return look;
   },
@@ -144,6 +151,11 @@ export const creatorLookService = {
     await Promise.all(
       affectedProductIds.map((productId) => productService.recountWornBy(productId)),
     );
+
+    const addedProductIds = newProductIds.filter((productId) => !oldProductIds.includes(productId));
+    for (const productId of addedProductIds) {
+      await eventBus.publish(DomainEvents.PRODUCT_TAGGED, { lookId, creatorId: userId, productId });
+    }
 
     return updated;
   },

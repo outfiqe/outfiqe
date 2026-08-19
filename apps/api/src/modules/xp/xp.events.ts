@@ -93,4 +93,45 @@ export const registerXpEventConsumers = (): void => {
       });
     },
   });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.PRODUCT_PURCHASED,
+    groupName: XP_CONSUMER_GROUP,
+    handler: async ({ orderId, userId: buyerId }): Promise<void> => {
+      await xpService.awardXp({
+        userId: buyerId,
+        activityType: XpActivityType.PRODUCT_PURCHASED,
+        relatedEntityId: orderId,
+        source: XP_SOURCE.PAYMENTS,
+      });
+    },
+  });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.SALE_GENERATED,
+    groupName: XP_CONSUMER_GROUP,
+    handler: async ({ orderItemId, creatorId, commissionAmount }): Promise<void> => {
+      await xpService.awardXp({
+        userId: creatorId,
+        activityType: XpActivityType.SALE_GENERATED,
+        relatedEntityId: orderItemId,
+        source: XP_SOURCE.COMMISSIONS,
+        metadata: { commissionAmount },
+      });
+    },
+  });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.PRODUCT_TAGGED,
+    groupName: XP_CONSUMER_GROUP,
+    handler: async ({ lookId, creatorId, productId }): Promise<void> => {
+      await xpService.awardXp({
+        userId: creatorId,
+        activityType: XpActivityType.PRODUCT_TAGGED,
+        relatedEntityId: productId,
+        source: XP_SOURCE.CREATOR_LOOKS,
+        metadata: { lookId },
+      });
+    },
+  });
 };

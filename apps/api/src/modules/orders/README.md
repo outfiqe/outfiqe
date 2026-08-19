@@ -4,6 +4,10 @@
 
 COD orders decrement stock immediately, inside the checkout transaction — there's no gateway step, so the order is as good as committed the moment it's placed. eSewa/Khalti orders do **not** decrement stock at checkout — only at payment verification (see the `payments` module). This matches "nothing is reserved while a payment is in progress": an abandoned eSewa session shouldn't hold the last unit of something hostage for up to an hour while the reconciliation sweep waits it out.
 
+## Gamification events (`PRODUCT_PURCHASED`, `SALE_GENERATED`)
+
+`checkoutOnce` publishes both, always **after** `prisma.$transaction` resolves, never inside it (same "no side effect inside the DB transaction" rule email-sending already follows here). `PRODUCT_PURCHASED` only fires for COD — eSewa/Khalti orders aren't genuinely purchased yet at checkout (`paymentStatus: INITIATED`, no money moved), so that half is `payments`' responsibility once a wallet payment actually settles (see `payments/README.md`). `SALE_GENERATED` fires once per `CreatorCommission` created here, for **every** payment method — commission creation already happens speculatively at order-placement time regardless of payment method (see `commissions/README.md`), so the XP event follows the same timing. See `xp/README.md` for what each event triggers.
+
 ## Transaction boundary
 
 Everything read-only (cart contents, stock levels, attribution resolution, commission tier lookup) happens _before_ `prisma.$transaction` opens. Only the stock decrement, the order+items insert, and the commission inserts happen inside it — kept short deliberately, no gateway or email call is ever inside a transaction. Verified against the real DB: two concurrent checkouts for a size with exactly 1 unit left resolve to one success and one clean `ITEMS_UNAVAILABLE`, with final stock at 0.

@@ -6,6 +6,7 @@ import {
   orderConfirmationTemplate,
   refundFailedTemplate,
 } from "#email-templates/templates.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
 import {
   CommissionSource,
   FulfilmentStatus,
@@ -192,6 +193,8 @@ const checkoutOnce = async (
       ? PaymentTransactionStatus.SUCCEEDED
       : PaymentTransactionStatus.INITIATED;
 
+  const createdCommissions: { creatorId: string; orderItemId: string; amount: number }[] = [];
+
   const order = await prisma.$transaction(async (tx) => {
     if (paymentMethod === PaymentMethod.COD) {
       const insufficientSizeIds = await productService.decrementStockForItems(
@@ -245,12 +248,24 @@ const checkoutOnce = async (
         tierId,
         amount,
       });
+      createdCommissions.push({ creatorId, orderItemId: orderItem.id, amount });
     }
 
     return createdOrder;
   });
 
   if (!buyNow) await cartRepository.clearCart(cartId);
+
+  if (paymentMethod === PaymentMethod.COD) {
+    await eventBus.publish(DomainEvents.PRODUCT_PURCHASED, { orderId: order.id, userId });
+  }
+  for (const commission of createdCommissions) {
+    await eventBus.publish(DomainEvents.SALE_GENERATED, {
+      orderItemId: commission.orderItemId,
+      creatorId: commission.creatorId,
+      commissionAmount: commission.amount,
+    });
+  }
 
   const orderView = toOrderView(order);
   buildOrderConfirmationEmail(userEmail, orderView);

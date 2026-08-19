@@ -15,6 +15,7 @@ export const paymentRepository = {
       where: { id: orderId, userId },
       select: {
         id: true,
+        userId: true,
         paymentMethod: true,
         paymentStatus: true,
         subtotal: true,
@@ -124,6 +125,7 @@ export const paymentRepository = {
       },
       select: {
         id: true,
+        userId: true,
         paymentStatus: true,
         subtotal: true,
         deliveryFee: true,
