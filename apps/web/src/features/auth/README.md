@@ -20,7 +20,10 @@ client-side session/user context the rest of the app reads.
   auth status) and its reducer, exposed via `useAuth()`.
 - `hooks/` — one hook per auth action (`useLogin`, `useRegister`, `useBrandRegister`, `useLogout`,
   `useForgotPassword`, `useResetPassword`, `useResendVerification`, `useCurrentUser`), each wrapping
-  the matching `authApi` call in a React Query mutation/query.
+  the matching `authApi` call in a React Query mutation/query. `useLogin`/`useForgotPassword`/
+  `useRegister`/`useResendVerification`/`useResetPassword`/`useLogout` have colocated
+  `*.integration.test.tsx` files (MSW-mocked `authApi` requests, matching the pattern in
+  `apps/web/src/testing/README.md`).
 - `schemas/` — Zod validation schemas for each auth form.
 - `types/index.ts` — shared auth types (`UserSession`, `UserRole`, `CreatorStatus`, etc.).
 - `utils/authErrors.ts` — maps API auth error codes to user-facing messages.
@@ -45,3 +48,12 @@ of the app (nav, protected routes, `useAuth()`) reflects the new session immedia
   same-app, single-leading-slash path (rejecting protocol-relative URLs like `//evil.com` and
   backslash tricks like `/\evil.com`) and refuses to redirect back into an auth screen, which would
   otherwise create a login/redirect loop.
+
+## Follow-ups
+
+- Hook test coverage currently stops at the plain-session mutations. Not yet covered:
+  `useBrandRegister`/`useCurrentUser`, the invite-gated flows (`getBrandInvite`/`getAdminInvite`/
+  `validateToken` in `authApi.ts`), and every form/screen component under `components/` — mirrors
+  the same scope decision made in `apps/api/src/modules/auth/README.md` (brand/admin invite
+  registration deferred to a later pass). `vitest.config.ts`'s `coverage.include` isn't updated for
+  this feature yet for the same reason as the API side: partial coverage would fail the 80% gate.
