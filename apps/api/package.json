@@ -17,7 +17,8 @@
     "#socket/*": "./src/shared/socket/*",
     "#email-templates/*": "./src/shared/email-templates/*",
     "#scheduling/*": "./src/shared/scheduling/*",
-    "#modules/*": "./src/modules/*"
+    "#modules/*": "./src/modules/*",
+    "#test/*": "./src/testing/*"
   },
   "scripts": {
     "dev": "tsx watch --import ./src/instrument.ts src/index.ts",

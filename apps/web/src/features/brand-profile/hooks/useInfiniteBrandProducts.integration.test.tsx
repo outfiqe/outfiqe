@@ -1,12 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { mswServer } from "@test/integration/msw/server";
 import { renderHook, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
 import { useInfiniteBrandProducts } from "@/features/brand-profile/hooks/useInfiniteBrandProducts";
-
-import { mswServer } from "../../msw/server";
 
 const BRAND_ID = "brand-123";
 

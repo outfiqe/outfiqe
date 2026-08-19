@@ -32,7 +32,8 @@ export default defineConfig({
         extends: true,
         test: {
           name: "unit",
-          include: ["test/unit/**/*.test.ts"],
+          include: ["src/**/*.test.ts"],
+          exclude: ["src/**/*.integration.test.ts"],
           environment: "node",
         },
       },
@@ -40,14 +41,14 @@ export default defineConfig({
         extends: true,
         test: {
           name: "integration",
-          include: ["test/integration/**/*.test.ts"],
+          include: ["src/**/*.integration.test.ts"],
           environment: "node",
           env: {
             ...definedProcessEnv,
             ...parsedTestEnv,
             ...(testDatabaseUrl ? { DATABASE_URL: testDatabaseUrl } : {}),
           },
-          setupFiles: ["./test/integration/setup.ts"],
+          setupFiles: ["./src/testing/integration/setup.ts"],
           testTimeout: 15000,
           hookTimeout: 30000,
           pool: "forks",

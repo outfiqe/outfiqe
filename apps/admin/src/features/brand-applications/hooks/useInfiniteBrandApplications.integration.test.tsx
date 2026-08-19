@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { mswServer } from "@test/integration/msw/server";
 import { renderHook, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
@@ -6,8 +7,6 @@ import { describe, expect, it } from "vitest";
 
 import { brandApplicationsApi } from "@/features/brand-applications/api";
 import { useInfiniteBrandApplications } from "@/features/brand-applications/hooks/useInfiniteBrandApplications";
-
-import { mswServer } from "../../msw/server";
 
 const API_BASE = "http://localhost:4000/api";
 
