@@ -26,3 +26,10 @@ minimumReleaseAgeExclude:
   - "@tanstack/router-core@1.171.20"
   - "@tanstack/router-generator@1.167.26"
   - "@tanstack/router-plugin@1.168.28"
+  - "@turbo/darwin-64@2.10.11"
+  - "@turbo/darwin-arm64@2.10.11"
+  - "@turbo/linux-64@2.10.11"
+  - "@turbo/linux-arm64@2.10.11"
+  - "@turbo/windows-64@2.10.11"
+  - "@turbo/windows-arm64@2.10.11"
+  - turbo@2.10.11
