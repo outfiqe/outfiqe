@@ -1,36 +1,25 @@
 "use client";
 
 import { Button } from "@outfiqe/design-system";
-import { ChevronDown, Menu, Search, User, X } from "lucide-react";
+import { ChevronDown, Menu, User, X } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import type { FormEvent } from "react";
-import { useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
-import { ProductSearchBox } from "@/features/search";
+import { ExploreSearchBox, ProductSearchBox } from "@/features/search";
 import { cn } from "@/shared/lib/cn";
-import { isExploreRoute, searchPathFor } from "@/shared/lib/exploreMode";
+import { isExploreRoute } from "@/shared/lib/exploreMode";
 
 import { LEADERBOARD_LINKS, NAV_LINKS } from "./siteNav.constants";
 
 export const MobileNav = () => {
-  const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const { state, isAuthenticated } = useAuth();
   const logout = useLogout();
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  const submitSearch = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const query = searchInputRef.current?.value.trim();
-    if (!query) return;
-    setOpen(false);
-    router.push(`${searchPathFor(pathname)}?q=${encodeURIComponent(query)}`);
-  };
 
   return (
     <div className="lg:hidden">
@@ -48,18 +37,11 @@ export const MobileNav = () => {
       {open && (
         <div className="absolute inset-x-0 top-full z-30 max-h-[calc(100vh-72px)] overflow-y-auto border-t border-border bg-background px-6 py-6 shadow-lg">
           {isExploreRoute(pathname) ? (
-            <form
-              onSubmit={submitSearch}
-              className="flex items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-muted-foreground"
-            >
-              <Search className="size-4 shrink-0" />
-              <input
-                ref={searchInputRef}
-                type="search"
-                placeholder="Search creators & posts"
-                className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-              />
-            </form>
+            <ExploreSearchBox
+              placeholder="Search creators & posts"
+              formClassName="flex items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-muted-foreground"
+              onNavigate={() => setOpen(false)}
+            />
           ) : (
             <ProductSearchBox
               placeholder="Search kurta, kastha, jackets"

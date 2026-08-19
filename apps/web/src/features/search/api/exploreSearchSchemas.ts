@@ -24,3 +24,17 @@ export const lookSearchPageSchema = z.object({
   total: z.number(),
 });
 export type LookSearchPage = z.infer<typeof lookSearchPageSchema>;
+
+export const creatorSuggestionSchema = creatorSearchResultSchema;
+export type CreatorSuggestion = z.infer<typeof creatorSuggestionSchema>;
+
+export const postSuggestionSchema = z.object({
+  id: z.string(),
+  imageUrl: z.string(),
+  caption: z.string().nullable(),
+  creator: z.object({
+    name: z.string(),
+    handle: z.string(),
+  }),
+});
+export type PostSuggestion = z.infer<typeof postSuggestionSchema>;

@@ -33,14 +33,28 @@ import {
 } from "./creatorLook.constants.js";
 import type {
   CreatorLookEditDetail,
+  CreatorLookFeedPost,
   CreatorLookSummary,
   PostBaselineSource,
   PostMetricBucket,
   PostScoreBreakdown,
+  PostSuggestion,
   TagBaselineSource,
   TagMetricBucket,
   TagScoreBreakdown,
 } from "./creatorLook.types.js";
+
+export const toSuggestion = ({
+  id,
+  imageUrl,
+  caption,
+  creator,
+}: CreatorLookFeedPost): PostSuggestion => ({
+  id,
+  imageUrl,
+  caption,
+  creator: { name: creator.name, handle: creator.handle },
+});
 
 export const toSummary = ({
   id,

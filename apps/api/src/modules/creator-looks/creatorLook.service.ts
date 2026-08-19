@@ -1,19 +1,27 @@
+import { LRUCache } from "lru-cache";
+
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { FollowTargetType } from "#generated/prisma/enums.js";
 import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
 import { extractHashtags } from "#lib/hashtags.utils.js";
 import { truncateToHour } from "#lib/trend-scoring.utils.js";
+import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
+import { cacheService } from "#redis/cache.service.js";
+import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
+import { describeError } from "#redis/redis.utils.js";
 
 import {
+  AUTOCOMPLETE_LIMIT,
   TAG_TREND_METRIC_RETENTION_DAYS,
   TREND_METRIC_RETENTION_DAYS,
 } from "./creatorLook.constants.js";
 import { creatorLookRepository } from "./creatorLook.repository.js";
 import type {
+  AutocompleteQuery,
   CreateCreatorLookBody,
   ListCreatorLooksQuery,
   ListSavedQuery,
@@ -26,13 +34,24 @@ import type {
   CreatorLookSummary,
   FeedPage,
   LookSearchPage,
+  PostSuggestion,
   PostTrendingEntry,
   TagScoreBreakdown,
   TrendingTag,
 } from "./creatorLook.types.js";
+import { toSuggestion } from "./creatorLook.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const UNAUTHORIZED_STATUS = 401;
+
+const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
+const AUTOCOMPLETE_CACHE_NAMESPACE = "look-autocomplete";
+const MS_PER_SECOND = 1000;
+
+const autocompleteMemoryCache = new LRUCache<string, PostSuggestion[]>({
+  max: AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES,
+  ttl: CACHE_TTL.LOOK_AUTOCOMPLETE * MS_PER_SECOND,
+});
 const VALIDATION_STATUS = 422;
 
 const FOLLOWING_TAB = "following";
@@ -227,6 +246,36 @@ export const creatorLookService = {
     { q, cursor, limit }: SearchCreatorLooksQuery,
   ): Promise<LookSearchPage> {
     return creatorLookRepository.searchLooks(q, { cursor, limit }, viewerId);
+  },
+
+  async autocomplete({ q }: AutocompleteQuery): Promise<PostSuggestion[]> {
+    const normalizedQuery = q.trim().toLowerCase();
+
+    const memoryHit = autocompleteMemoryCache.get(normalizedQuery);
+    if (memoryHit) return memoryHit;
+
+    const cacheKey = redisKeys.cache(AUTOCOMPLETE_CACHE_NAMESPACE, normalizedQuery);
+    try {
+      const cached = await cacheService.get<PostSuggestion[]>(cacheKey);
+      if (cached) {
+        autocompleteMemoryCache.set(normalizedQuery, cached);
+        return cached;
+      }
+    } catch (error) {
+      logger.warn(`Cache read failed for "${cacheKey}": ${describeError(error)}`);
+    }
+
+    const posts = await creatorLookRepository.searchLookSuggestions(q, AUTOCOMPLETE_LIMIT);
+    const suggestions = posts.map(toSuggestion);
+
+    autocompleteMemoryCache.set(normalizedQuery, suggestions);
+    try {
+      await cacheService.set(cacheKey, suggestions, CACHE_TTL.LOOK_AUTOCOMPLETE);
+    } catch (error) {
+      logger.warn(`Cache write failed for "${cacheKey}": ${describeError(error)}`);
+    }
+
+    return suggestions;
   },
 
   async countNewSince(

@@ -5,6 +5,7 @@ import { getAuthPrincipal, requireAuthPrincipal } from "#middlewares/require-aut
 import { validated } from "#middlewares/validate.js";
 
 import type {
+  AutocompleteQuery,
   CommentsQuery,
   CreateCommentBody,
   CreateCreatorLookBody,
@@ -82,6 +83,13 @@ export const creatorLookController = {
 
     const page = await creatorLookService.search(viewerId, query);
     sendSuccess(res, page, "Posts.");
+  },
+
+  async autocomplete(_req: Request, res: Response) {
+    const query = validated.query<AutocompleteQuery>(res);
+    const suggestions = await creatorLookService.autocomplete(query);
+
+    sendSuccess(res, suggestions, "Suggestions.");
   },
 
   async trendingTags(_req: Request, res: Response) {
