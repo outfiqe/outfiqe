@@ -18,9 +18,18 @@ client-side session/user context the rest of the app reads.
   expired sub-states.
 - `context/AuthContext.tsx` + `context/authReducer.ts` — the client-side auth state (current user,
   auth status) and its reducer, exposed via `useAuth()`.
+- `context/authTestWrapper.tsx` — test-only support for hooks that read/write `AuthContext`:
+  `createAuthQueryClientWrapper()` (a `renderHook`/`render` wrapper combining `AuthProvider` with
+  the shared `createTestQueryClient()` from `apps/web/src/testing/integration/queryClientWrapper.tsx`),
+  plus `testUserSession`/`dispatchAuthSuccess` for tests that need to seed an already-authenticated
+  state without going through a real login round trip (e.g. `useLogout`, `useCurrentUser`).
+  Colocated here rather than in the app-wide `src/testing/` infra since it's specific to this
+  feature's own context, not something other features need.
 - `hooks/` — one hook per auth action (`useLogin`, `useRegister`, `useBrandRegister`, `useLogout`,
   `useForgotPassword`, `useResetPassword`, `useResendVerification`, `useCurrentUser`), each wrapping
-  the matching `authApi` call in a React Query mutation/query.
+  the matching `authApi` call in a React Query mutation/query. Every hook has a colocated
+  `*.integration.test.tsx` (MSW-mocked `authApi` requests, matching the pattern in
+  `apps/web/src/testing/README.md`); `hooks/**` is in `vitest.config.ts`'s `coverage.include`.
 - `schemas/` — Zod validation schemas for each auth form.
 - `types/index.ts` — shared auth types (`UserSession`, `UserRole`, `CreatorStatus`, etc.).
 - `utils/authErrors.ts` — maps API auth error codes to user-facing messages.
@@ -45,3 +54,11 @@ of the app (nav, protected routes, `useAuth()`) reflects the new session immedia
   same-app, single-leading-slash path (rejecting protocol-relative URLs like `//evil.com` and
   backslash tricks like `/\evil.com`) and refuses to redirect back into an auth screen, which would
   otherwise create a login/redirect loop.
+
+## Follow-ups
+
+- All of `hooks/` is now tested and gated at 80% coverage. Still not covered: the invite-gated
+  read flows (`getBrandInvite`/`getAdminInvite`/`validateToken` in `authApi.ts` — these back
+  `BrandRegisterForm`'s invite-validation step, not a hook of their own) and every form/screen
+  component under `components/` — mirrors the same scope decision made in
+  `apps/api/src/modules/auth/README.md` (brand/admin invite registration deferred to a later pass).
