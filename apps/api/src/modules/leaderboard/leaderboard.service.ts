@@ -8,7 +8,11 @@ import { brandRepository } from "#modules/brands/brand.repository.js";
 import { trendingService } from "#modules/trending/trending.service.js";
 import { describeError } from "#redis/redis.utils.js";
 
-import { FASTEST_GROWING_SURGE_SCORE, LEADERBOARD_TOP_N } from "./leaderboard.constants.js";
+import {
+  FASTEST_GROWING_SURGE_SCORE,
+  LEADERBOARD_TOP_N,
+  RECOMPUTE_BASED_CATEGORIES,
+} from "./leaderboard.constants.js";
 import { leaderboardRepository } from "./leaderboard.repository.js";
 import type { LeaderboardEntry, LeaderboardSnapshot } from "./leaderboard.types.js";
 import {
@@ -99,12 +103,20 @@ const getTop = async (category: LeaderboardCategory): Promise<LeaderboardSnapsho
   const week = currentIsoWeekKey(now);
   const previousWeek = previousIsoWeekKey(now);
 
-  const top = await leaderboardRepository.topN(category, week, LEADERBOARD_TOP_N);
+  const currentTop = await leaderboardRepository.topN(category, week, LEADERBOARD_TOP_N);
+  const isAwaitingFirstRecompute =
+    currentTop.length === 0 && RECOMPUTE_BASED_CATEGORIES.has(category);
+  const top = isAwaitingFirstRecompute
+    ? await leaderboardRepository.topN(category, previousWeek, LEADERBOARD_TOP_N)
+    : currentTop;
+
   const [brands, previousRanks] = await Promise.all([
     brandRepository.findManyByIds(top.map(({ member }) => member)),
-    Promise.all(
-      top.map(({ member }) => leaderboardRepository.rankOf(category, previousWeek, member)),
-    ),
+    isAwaitingFirstRecompute
+      ? Promise.resolve(top.map(() => null))
+      : Promise.all(
+          top.map(({ member }) => leaderboardRepository.rankOf(category, previousWeek, member)),
+        ),
   ]);
   const brandsById = new Map(brands.map((brand) => [brand.id, brand]));
 

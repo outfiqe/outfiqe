@@ -24,6 +24,7 @@ import {
   registerLeaderboardEventConsumer,
   registerLeaderboardSocketHandlers,
 } from "#modules/leaderboard/leaderboard.socket.js";
+import { nextIsoWeekStart } from "#modules/leaderboard/leaderboard.utils.js";
 import { RECONCILE_CHECK_INTERVAL_MS } from "#modules/payments/payment.constants.js";
 import { runPaymentReconciliationSweep } from "#modules/payments/payment.reconciliation.js";
 import {
@@ -32,7 +33,7 @@ import {
 } from "#modules/trending/trending.constants.js";
 import { trendingService } from "#modules/trending/trending.service.js";
 import { disconnectRedis } from "#redis/redis.client.js";
-import { startIntervalScheduler } from "#scheduling/interval.scheduler.js";
+import { startBoundaryScheduler, startIntervalScheduler } from "#scheduling/interval.scheduler.js";
 import { registerSocketListeners } from "#socket/socket.listeners.js";
 import { closeSocket, initSocket } from "#socket/socket.server.js";
 
@@ -106,6 +107,24 @@ startIntervalScheduler([
     name: "leaderboard-fastest-growing",
     run: leaderboardService.runFastestGrowingRecompute,
     intervalMs: FASTEST_GROWING_RECOMPUTE_INTERVAL_MS,
+  },
+]);
+
+startBoundaryScheduler([
+  {
+    name: "leaderboard-boundary-most-purchased",
+    run: leaderboardService.runMostPurchasedRecompute,
+    nextRunAt: nextIsoWeekStart,
+  },
+  {
+    name: "leaderboard-boundary-trending",
+    run: leaderboardService.runTrendingRecompute,
+    nextRunAt: nextIsoWeekStart,
+  },
+  {
+    name: "leaderboard-boundary-fastest-growing",
+    run: leaderboardService.runFastestGrowingRecompute,
+    nextRunAt: nextIsoWeekStart,
   },
 ]);
 
