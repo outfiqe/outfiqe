@@ -17,5 +17,7 @@ export * from "./label";
 export * from "./modal";
 export * from "./multi-select";
 export * from "./skeleton";
+export * from "./theme";
+export * from "./theme-toggle";
 export * from "./toast";
 export * from "./use-image-crop-upload";
