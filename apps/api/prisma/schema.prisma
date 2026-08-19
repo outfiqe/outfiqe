@@ -1,16 +1,18 @@
-// Prisma 7: the Rust query engine is gone. The client is TypeScript + WASM
-// and a driver adapter is mandatory (see src/shared/db/prisma.ts).
+/* Prisma 7: the Rust query engine is gone. The client is TypeScript + WASM
+ and a driver adapter is mandatory (see src/shared/db/prisma.ts).
+ */
 generator client {
   provider = "prisma-client"
-  // Prisma 7 REQUIRES an explicit output. The client is no longer emitted
-  // into node_modules, so it is imported from this path, not "@prisma/client".
+  /* Prisma 7 REQUIRES an explicit output. The client is no longer emitted
+   into node_modules, so it is imported from this path, not "@prisma/client".
+   */
   output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  // No `url` here on purpose. In Prisma 7 the connection string for the CLI
-  // lives in prisma.config.ts; the runtime one is passed to the adapter.
+  /*  No `url` here on purpose. In Prisma 7 the connection string for the CLI
+   lives in prisma.config.ts; the runtime one is passed to the adapter. */
 }
 
 model User {
@@ -54,6 +56,8 @@ model User {
   deliveryZoneChanges  DeliveryZoneHistory[] @relation("DeliveryZoneChanges")
 
   @@index([isCreator, creatorStatus, followerCount])
+  @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_name_trgm_idx")
   @@map("users")
 }
 
@@ -70,10 +74,11 @@ enum CreatorStatus {
   REJECTED
 }
 
-// One row per issued refresh token. Only the sha256 hash is stored — see
-// src/shared/utils/opaque-token.utils.ts — so a DB read alone can't be
-// replayed as a valid cookie value. Rotated (deleted + reissued) on every
-// use, so a row's presence also means "not yet redeemed".
+/* One row per issued refresh token. Only the sha256 hash is stored — see
+ src/shared/utils/opaque-token.utils.ts — so a DB read alone can't be
+ replayed as a valid cookie value. Rotated (deleted + reissued) on every
+ use, so a row's presence also means "not yet redeemed".
+ */
 model RefreshToken {
   id        String   @id @default(uuid()) @db.Uuid
   tokenHash String   @unique @map("token_hash")
@@ -185,17 +190,11 @@ model Product {
   creatorLinks  CreatorLink[]
   trendMetrics  ProductTrendMetric[]
 
-  // Weighted tsvector (name > brand > category > type) kept in sync by
-  // Postgres triggers, not by Prisma — a GENERATED column can't reach across
-  // the brand_id FK or the _CategoryToProduct join table, so it's plain
-  // trigger-maintained SQL instead. Deliberately left unindexed here (no
-  // `@@index`): the GIN + trigram indexes are hand-written in
-  // prisma/migrations/20260818120000_add_product_search, and never touching
-  // this field's Prisma attributes again keeps `migrate dev` from ever
-  // trying to diff/drop those trigger-owned objects. See products/README.md.
   searchVector Unsupported("tsvector")? @map("search_vector")
 
   @@index([deletedAt])
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "products_name_trgm_idx")
+  @@index([searchVector], type: Gin, map: "products_search_vector_idx")
   @@map("products")
 }
 
@@ -359,6 +358,7 @@ model CreatorLook {
 
   @@index([deletedAt])
   @@index([createdAt])
+  @@index([caption(ops: raw("gin_trgm_ops"))], type: Gin, map: "creator_looks_caption_trgm_idx")
   @@map("creator_looks")
 }
 
@@ -594,18 +594,12 @@ model CartItem {
   @@map("cart_items")
 }
 
-// ---------------------------------------------------------------------------
-// Orders & payments
-// ---------------------------------------------------------------------------
-
 enum PaymentMethod {
   COD
   ESEWA
   KHALTI
 }
 
-// Order-level summary status. DUE is a normal, healthy state for an
-// unsettled COD order, not an error — see PRD "Orders and inventory".
 enum PaymentStatus {
   INITIATED
   PAID
@@ -642,10 +636,11 @@ model Order {
   codFee      Int @default(0) @map("cod_fee")
   total       Int
 
-  // Set when a gateway payment settles as PAID but the atomic stock
-  // decrement then fails (sold out in the gap) — the payment can't be
-  // undone from our side, so this flags the order for a manual refund
-  // instead of silently failing. See PRD "Payment" / refund rules.
+  /* Set when a gateway payment settles as PAID but the atomic stock
+   decrement then fails (sold out in the gap) — the payment can't be
+   undone from our side, so this flags the order for a manual refund
+   instead of silently failing. See PRD "Payment" / refund rules.
+   */
   needsManualRefund Boolean   @default(false) @map("needs_manual_refund")
   deliveredAt       DateTime? @map("delivered_at")
 
@@ -670,11 +665,12 @@ model OrderItem {
   qty       Int
   unitPrice Int         @map("unit_price")
 
-  // Attribution — resolved once, at order-creation time, across all three
-  // click sources (tag clicks + internal/external link clicks). Exactly one
-  // of attributedCreatorLookId / attributedLinkId is set, matching
-  // attributionSource; attributedCreatorId is always set when there's an
-  // attributed sale, regardless of which channel sourced it.
+  /* Attribution — resolved once, at order-creation time, across all three
+   click sources (tag clicks + internal/external link clicks). Exactly one
+   of attributedCreatorLookId / attributedLinkId is set, matching
+   attributionSource; attributedCreatorId is always set when there's an
+   attributed sale, regardless of which channel sourced it.
+   */
   attributedCreatorId     String?           @map("attributed_creator_id") @db.Uuid
   attributedCreator       User?             @relation("AttributedOrderItems", fields: [attributedCreatorId], references: [id], onDelete: SetNull)
   attributedCreatorLookId String?           @map("attributed_creator_look_id") @db.Uuid
@@ -695,9 +691,6 @@ enum PaymentTransactionType {
   REFUND
 }
 
-// Attempt-level status — distinct from Order.paymentStatus, which is an
-// order-level summary (and includes DUE, which doesn't apply to a single
-// gateway attempt).
 enum PaymentTransactionStatus {
   INITIATED
   SUCCEEDED
@@ -742,10 +735,6 @@ model RequestIdempotency {
   @@map("request_idempotency")
 }
 
-// ---------------------------------------------------------------------------
-// Creator commission
-// ---------------------------------------------------------------------------
-
 enum CommissionStatus {
   PENDING
   APPROVED
@@ -760,10 +749,11 @@ enum CommissionSource {
   EXTERNAL_LINK
 }
 
-// Fixed, price-tiered commission amounts — a sold item's price is looked up
-// against these bands, never a percentage. Admin-editable; amounts are
-// snapshotted onto CreatorCommission at creation time, so editing a tier
-// here never retroactively changes an already-created commission.
+/* Fixed, price-tiered commission amounts — a sold item's price is looked up
+ against these bands, never a percentage. Admin-editable; amounts are
+ snapshotted onto CreatorCommission at creation time, so editing a tier
+ here never retroactively changes an already-created commission.
+ */
 model CommissionTier {
   id        String   @id @default(uuid()) @db.Uuid
   minPrice  Int      @map("min_price")
@@ -785,9 +775,10 @@ model CreatorCommission {
   orderItemId String    @unique @map("order_item_id") @db.Uuid
   orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 
-  // Source is snapshotted explicitly (not inferred from which of
-  // tagClickId/linkClickId is non-null) so the earnings ledger can render a
-  // per-row badge with no extra joins.
+  /* Source is snapshotted explicitly (not inferred from which of
+   tagClickId/linkClickId is non-null) so the earnings ledger can render a
+   per-row badge with no extra joins.
+   */
   source      CommissionSource
   tagClickId  String?              @map("tag_click_id") @db.Uuid
   tagClick    CreatorLookTagClick? @relation(fields: [tagClickId], references: [id], onDelete: SetNull)
@@ -814,17 +805,10 @@ model CreatorCommission {
   @@map("creator_commissions")
 }
 
-// ---------------------------------------------------------------------------
-// Creator referral links
-// ---------------------------------------------------------------------------
+
 
 enum CreatorLinkType {
-  // Consumed (dead) after its first click — enforced with the same atomic
-  // conditional-update pattern used for stock decrement, not a soft rule.
   INTERNAL_SINGLE_USE
-  // Persistent, reusable — intended for sharing outside Outfiqe entirely
-  // (Instagram/TikTok/WhatsApp bio links), where most clicks come from a
-  // not-yet-logged-in visitor.
   EXTERNAL_REUSABLE
 }
 
@@ -840,8 +824,6 @@ model CreatorLink {
   creator   User     @relation("CreatorLinks", fields: [creatorId], references: [id], onDelete: Cascade)
   productId String?  @map("product_id") @db.Uuid
   product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
-
-  // Cryptographically random, not sequential/enumerable.
   token      String            @unique
   type       CreatorLinkType
   status     CreatorLinkStatus @default(ACTIVE)
@@ -860,9 +842,6 @@ model CreatorLinkClick {
   id     String      @id @default(uuid()) @db.Uuid
   linkId String      @map("link_id") @db.Uuid
   link   CreatorLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
-
-  // Nullable: external-link clicks routinely come from a not-yet-logged-in
-  // visitor. sessionId bridges to userId once they sign in / check out.
   userId    String? @map("user_id") @db.Uuid
   user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   sessionId String  @map("session_id")
