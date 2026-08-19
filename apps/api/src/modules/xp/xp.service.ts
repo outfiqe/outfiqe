@@ -22,6 +22,46 @@ import {
 const NO_ACTIVE_LEVELS_RESULT: AwardXpResult = { awarded: false, reason: "ACTIVITY_DISABLED" };
 const MIN_TOTAL_XP = 0;
 
+const applyXpTransaction = async (input: AwardXpInput, amount: number): Promise<AwardXpResult> => {
+  const { userId } = input;
+
+  const activeLevelsDesc = await xpRepository.findActiveLevelsDesc();
+  if (activeLevelsDesc.length === 0) {
+    logger.error("XP award skipped: no active levels configured.");
+    return NO_ACTIVE_LEVELS_RESULT;
+  }
+
+  return await prisma.$transaction(async (tx) => {
+    await xpRepository.createTransaction(tx, { ...input, amount });
+
+    const fallbackLevelId = computeLevelProgress(amount, activeLevelsDesc).level.id;
+    const updatedProgress = await xpRepository.incrementProgress(
+      tx,
+      userId,
+      amount,
+      fallbackLevelId,
+    );
+    const { totalXp: updatedTotalXp, currentLevelId: previousCurrentLevelId } = updatedProgress;
+
+    const previousTotalXp = Math.max(updatedTotalXp - amount, MIN_TOTAL_XP);
+    const { level: previousLevel } = computeLevelProgress(previousTotalXp, activeLevelsDesc);
+    const { level: currentLevel } = computeLevelProgress(updatedTotalXp, activeLevelsDesc);
+
+    if (currentLevel.id !== previousCurrentLevelId) {
+      await xpRepository.setCurrentLevel(tx, userId, currentLevel.id);
+    }
+
+    return {
+      awarded: true,
+      amount,
+      totalXp: updatedTotalXp,
+      previousLevel,
+      currentLevel,
+      leveledUp: currentLevel.id !== previousLevel.id,
+    };
+  });
+};
+
 const awardXp = async (input: AwardXpInput): Promise<AwardXpResult> => {
   const { userId, activityType, relatedEntityId } = input;
 
@@ -63,43 +103,20 @@ const awardXp = async (input: AwardXpInput): Promise<AwardXpResult> => {
       }
     }
 
-    const activeLevelsDesc = await xpRepository.findActiveLevelsDesc();
-    if (activeLevelsDesc.length === 0) {
-      logger.error("XP award skipped: no active levels configured.");
-      return NO_ACTIVE_LEVELS_RESULT;
-    }
-
-    return await prisma.$transaction(async (tx) => {
-      await xpRepository.createTransaction(tx, { ...input, amount: xpAmount });
-
-      const fallbackLevelId = computeLevelProgress(xpAmount, activeLevelsDesc).level.id;
-      const updatedProgress = await xpRepository.incrementProgress(
-        tx,
-        userId,
-        xpAmount,
-        fallbackLevelId,
-      );
-      const { totalXp: updatedTotalXp, currentLevelId: previousCurrentLevelId } = updatedProgress;
-
-      const previousTotalXp = Math.max(updatedTotalXp - xpAmount, MIN_TOTAL_XP);
-      const { level: previousLevel } = computeLevelProgress(previousTotalXp, activeLevelsDesc);
-      const { level: currentLevel } = computeLevelProgress(updatedTotalXp, activeLevelsDesc);
-
-      if (currentLevel.id !== previousCurrentLevelId) {
-        await xpRepository.setCurrentLevel(tx, userId, currentLevel.id);
-      }
-
-      return {
-        awarded: true,
-        amount: xpAmount,
-        totalXp: updatedTotalXp,
-        previousLevel,
-        currentLevel,
-        leveledUp: currentLevel.id !== previousLevel.id,
-      };
-    });
+    return await applyXpTransaction(input, xpAmount);
   } catch (error) {
     logger.error(`Failed to award XP for activity ${activityType}: ${describeError(error)}`);
+    return { awarded: false, reason: "ACTIVITY_DISABLED" };
+  }
+};
+
+const grantFixedXp = async (input: AwardXpInput, amount: number): Promise<AwardXpResult> => {
+  try {
+    return await applyXpTransaction(input, amount);
+  } catch (error) {
+    logger.error(
+      `Failed to grant fixed XP for activity ${input.activityType}: ${describeError(error)}`,
+    );
     return { awarded: false, reason: "ACTIVITY_DISABLED" };
   }
 };
@@ -136,4 +153,9 @@ const listTransactionsForUser = async (
   };
 };
 
-export const xpService = { awardXp, getProgressForUser, listTransactionsForUser };
+export const xpService = {
+  awardXp,
+  grantFixedXp,
+  getProgressForUser,
+  listTransactionsForUser,
+};

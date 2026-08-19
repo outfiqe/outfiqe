@@ -7,6 +7,7 @@ import helmet from "helmet";
 import { env } from "#config/env.config.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 
+import { achievementRoutes } from "./modules/achievements/achievement.routes.js";
 import { adminInviteRoutes } from "./modules/admin-invites/adminInvite.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { brandApplicationRoutes } from "./modules/brand-applications/brandApplication.routes.js";
@@ -81,6 +82,7 @@ export const createApp = () => {
   app.use("/api/admin/trending", trendingRoutes);
   app.use("/api/leaderboard", leaderboardRoutes);
   app.use("/api/xp", xpRoutes);
+  app.use("/api/achievements", achievementRoutes);
 
   Sentry.setupExpressErrorHandler(app);
   app.use(errorHandler);

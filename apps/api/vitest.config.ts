@@ -20,6 +20,7 @@ export default defineConfig({
         "src/shared/utils/opaque-token.utils.ts",
         "src/modules/brand-applications/**",
         "src/modules/xp/xp.utils.ts",
+        "src/modules/achievements/achievement.utils.ts",
       ],
       thresholds: {
         lines: 80,
