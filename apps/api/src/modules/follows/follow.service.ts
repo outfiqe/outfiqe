@@ -3,6 +3,7 @@ import { FollowTargetType } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
+import { leaderboardService } from "#modules/leaderboard/leaderboard.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { followRepository } from "./follow.repository.js";
@@ -53,6 +54,9 @@ export const followService = {
           ? DomainEvents.USER_FOLLOWED
           : DomainEvents.BRAND_FOLLOWED;
       await eventBus.publish(event, { followerId, followingId: targetId });
+      if (targetType === FollowTargetType.BRAND) {
+        await leaderboardService.recordBrandFollowDelta(targetId, 1);
+      }
     }
 
     return { following: true, followerCount };
@@ -77,6 +81,9 @@ export const followService = {
           ? DomainEvents.USER_UNFOLLOWED
           : DomainEvents.BRAND_UNFOLLOWED;
       await eventBus.publish(event, { followerId, followingId: targetId });
+      if (targetType === FollowTargetType.BRAND) {
+        await leaderboardService.recordBrandFollowDelta(targetId, -1);
+      }
     }
 
     return { following: false, followerCount };

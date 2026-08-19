@@ -209,6 +209,19 @@ export const trendingService = {
     return summaries;
   },
 
+  async getBrandTrendScores(): Promise<Map<string, number>> {
+    const { candidates } = await computeAllScoreBreakdowns(new Date());
+
+    const scoresByBrand = new Map<string, number>();
+    for (const candidate of candidates) {
+      scoresByBrand.set(
+        candidate.brandId,
+        (scoresByBrand.get(candidate.brandId) ?? 0) + candidate.score,
+      );
+    }
+    return scoresByBrand;
+  },
+
   async getDebugSnapshot(productId: string): Promise<TrendDebugSnapshot | null> {
     const now = new Date();
     const [product] = await trendingRepository.listActiveProductMeta([productId]);

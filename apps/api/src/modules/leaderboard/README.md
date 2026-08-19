@@ -1,0 +1,39 @@
+# Leaderboard — weekly brand rankings
+
+## Purpose
+
+Public, real-time weekly rankings of brands across four categories — Trending, Most purchased, Most loved, Fastest growing. Backs the navbar's "Leaderboard" dropdown and the `/leaderboard` page.
+
+## Structure
+
+- `leaderboard.types.ts` — `LeaderboardSnapshot`, `ZsetMember`, `BrandPurchaseTotal`. Re-exports `LeaderboardCategory` (`#constants/leaderboard.constants.ts`) and `LeaderboardEntry` (`#socket/socket.types.ts`, the canonical shape shared by the REST response and the socket broadcast payload).
+- `#constants/leaderboard.constants.ts` (`apps/api/src/shared/constants/`, not module-local) — the runtime `LEADERBOARD_CATEGORY` object, `satisfies`-checked against `LeaderboardCategory` from `@outfiqe/types` (the single source of truth for the four category strings, shared with `apps/web`'s own copy of this same object — same split as `PaymentMethod` elsewhere in this codebase: the literal union lives once in `packages/types`, each app derives its own local runtime object from it). It's shared, not module-local, because `event-bus.types.ts` and `socket.types.ts` also need the type.
+- `leaderboard.constants.ts` — module-local only: job intervals, `LEADERBOARD_TOP_N`, ZSET key retention, the "surge" score used when a brand has no purchases to compare against last week.
+- `leaderboard.utils.ts` — pure functions only: ISO-week key/window math (`date-fns`), score-label formatting per category. No DB/Redis access, mirrors `trending.utils.ts`.
+- `leaderboard.repository.ts` — thin Redis ZSET wrappers (`ZADD`/`ZINCRBY`/`ZREVRANGE ... WITHSCORES`/`ZRANGE ... WITHSCORES`/`ZREVRANK`) keyed via `redisKeys.leaderboard(category, week)`, plus the one raw-SQL read (`order_items` summed by brand for the current ISO week) that "most purchased" needs.
+- `leaderboard.service.ts` — orchestration: the three scheduled recompute jobs, the follow-driven increment, `getTop()` (hydrates a ZSET's top N with brand display data + week-over-week rank movement).
+- `leaderboard.schemas.ts` / `leaderboard.controller.ts` / `leaderboard.routes.ts` — `GET /api/leaderboard/brands?category=...`, public, no auth.
+- `leaderboard.socket.ts` — two independent halves: `registerLeaderboardSocketHandlers()` (connection-scoped `leaderboard:subscribe`/`leaderboard:unsubscribe` — a client only receives updates for the category room it's currently viewing) and `registerLeaderboardEventConsumer()` (the domain-event → Socket.IO relay).
+
+## Funnel
+
+**User-facing:** the navbar's "Leaderboard" dropdown and `/leaderboard` page show four tabs. Switching tabs re-subscribes the socket to that category's room. Rows update live — a brand gained a follower, sold something, or the scheduled recompute landed — without a page refresh. The header reads "Week of ... — resets every Monday."
+
+**Technical:**
+
+1. Score mutation happens one of two ways, depending on whether there's a single reliable event choke point:
+   - **Most loved** — `follow.service.ts` already publishes `BRAND_FOLLOWED`/`BRAND_UNFOLLOWED` for its own purposes; right after each publish it also calls `leaderboardService.recordBrandFollowDelta(brandId, ±1)`, a true `ZINCRBY` on `leaderboard:brand:most-loved:<week>`.
+   - **Most purchased**, **Trending**, **Fastest growing** — scheduled jobs (`startIntervalScheduler` in `index.ts`, same mechanism as `trending`'s own jobs) recompute and `ZADD`-overwrite the whole week's ZSET, rather than incrementing per checkout/scoring event. See rationale below.
+2. Every mutation — increment or recompute — publishes `DomainEvents.LEADERBOARD_BRAND_UPDATED` (`{ category, week }`) onto the existing Redis Streams event bus. Nothing ever writes to Socket.IO directly from a ZADD/ZINCRBY call site.
+3. `registerLeaderboardEventConsumer()` subscribes to that event (same `subscribeToDomainEvent` used by `shared/socket/socket.listeners.ts` for `look.created`), re-reads the fresh top N for that category, and emits it to that category's room (`leaderboard:<category>`) only — clients viewing a different tab aren't woken up for it.
+4. `GET /api/leaderboard/brands?category=...` serves the same `getTop()` for first paint/SEO; the web page then joins the matching socket room for live updates.
+
+## Non-obvious rationale
+
+**Weekly ZSETs, not one all-time ZSET.** The key is `leaderboard:brand:<category>:<isoWeek>` (e.g. `2026-W34`), not a single cumulative key. This is what "resets every Monday" means concretely: there's nothing to reset — a new ISO week is simply a new key, and the previous week's key is kept (with a 14-day `EXPIRE` set on every write) purely so `getTop()` can diff `ZREVRANK` against last week's key to show rank movement (`+3`/`−2`/`0`/`null` for "wasn't ranked last week").
+
+**Most purchased is a scheduled recompute, not a `ZINCRBY` on checkout.** There's no single "payment confirmed" call site in this codebase the way there's a single `follow()`/`unfollow()` for follows — payment confirmation is spread across a webhook/reconciliation path. `trending` already solved the identical problem for product-level purchase signals by recomputing from `order_items` on an interval instead of hooking every write path (see `trending/README.md`, "Recompute-and-overwrite, not increment"); this module reuses that precedent rather than adding a new, more fragile hook into the payments flow. **Trending** and **fastest growing** are recomputes for a different reason: trending's score is itself the output of a whole other scheduled scoring pass (`trendingService.getBrandTrendScores()`, a brand-grouped sum over `trendingService`'s existing per-product candidates — no new scoring logic), and fastest growing is _defined_ as a diff between two already-recomputed most-purchased snapshots, so it has to run after those exist.
+
+**Fastest growing's "surge" score.** A brand with purchases this week but none last week has an undefined percentage growth (division by zero). Rather than exclude it or show `Infinity`, it's given a fixed `FASTEST_GROWING_SURGE_SCORE` (999) — high enough to rank above any realistic organic percentage growth, so a brand's first sales week reliably surfaces at the top of "fastest growing" instead of silently disappearing.
+
+**Job ordering isn't enforced.** `most-purchased`, `trending`, and `fastest-growing` recomputes are three independent interval jobs (like `trending`'s own aggregation/scoring split). On a cold start, `fastest-growing`'s first tick may run before `most-purchased` has ever written a score — it just computes off an empty ZSET and produces an empty ranking, then self-corrects on the next tick once `most-purchased` has data. No coordination primitive was added for this, matching how `trending`'s own aggregation/scoring jobs relate.
