@@ -32,6 +32,7 @@ import {
   SCORING_INTERVAL_MS,
 } from "#modules/trending/trending.constants.js";
 import { trendingService } from "#modules/trending/trending.service.js";
+import { registerXpEventConsumers } from "#modules/xp/xp.events.js";
 import { disconnectRedis } from "#redis/redis.client.js";
 import { startBoundaryScheduler, startIntervalScheduler } from "#scheduling/interval.scheduler.js";
 import { registerSocketListeners } from "#socket/socket.listeners.js";
@@ -51,6 +52,7 @@ registerSocketListeners();
 registerCreatorLookSocketHandlers();
 registerLeaderboardSocketHandlers();
 registerLeaderboardEventConsumer();
+registerXpEventConsumers();
 
 startIntervalScheduler([
   {

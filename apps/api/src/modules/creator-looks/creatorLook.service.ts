@@ -58,7 +58,7 @@ const FOLLOWING_TAB = "following";
 const TRENDING_TAB = "trending";
 const FOR_YOU_TAB = "for_you";
 
-const requireActiveLook = async (lookId: string): Promise<{ id: string }> => {
+const requireActiveLook = async (lookId: string): Promise<{ id: string; creatorId: string }> => {
   const look = await creatorLookRepository.findActiveById(lookId);
   if (!look) throw new AppError("LOOK_NOT_FOUND", "This look no longer exists.", NOT_FOUND_STATUS);
   return look;
@@ -344,9 +344,9 @@ export const creatorLookService = {
   },
 
   async like(lookId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
-    await requireActiveLook(lookId);
+    const look = await requireActiveLook(lookId);
     const { likeCount } = await creatorLookRepository.like(lookId, userId);
-    await eventBus.publish(DomainEvents.LOOK_LIKED, { lookId, userId });
+    await eventBus.publish(DomainEvents.LOOK_LIKED, { lookId, creatorId: look.creatorId, userId });
     return { liked: true, likeCount };
   },
 
@@ -357,9 +357,9 @@ export const creatorLookService = {
   },
 
   async save(lookId: string, userId: string): Promise<{ saved: boolean; saveCount: number }> {
-    await requireActiveLook(lookId);
+    const look = await requireActiveLook(lookId);
     const { saveCount } = await creatorLookRepository.save(lookId, userId);
-    await eventBus.publish(DomainEvents.LOOK_SAVED, { lookId, userId });
+    await eventBus.publish(DomainEvents.LOOK_SAVED, { lookId, creatorId: look.creatorId, userId });
     return { saved: true, saveCount };
   },
 
@@ -378,9 +378,14 @@ export const creatorLookService = {
   },
 
   async addComment(lookId: string, userId: string, body: string) {
-    await requireActiveLook(lookId);
+    const look = await requireActiveLook(lookId);
     const comment = await creatorLookRepository.createComment(lookId, userId, body);
-    await eventBus.publish(DomainEvents.LOOK_COMMENTED, { lookId, commentId: comment.id, userId });
+    await eventBus.publish(DomainEvents.LOOK_COMMENTED, {
+      lookId,
+      creatorId: look.creatorId,
+      commentId: comment.id,
+      userId,
+    });
     return comment;
   },
 

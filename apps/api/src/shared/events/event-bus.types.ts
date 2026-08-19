@@ -15,9 +15,14 @@ export type DomainEventPayloads = {
   [DomainEvents.BRAND_OWNER_REGISTERED]: { userId: string; brandId: string; email: string };
   [DomainEvents.ADMIN_REGISTERED]: { userId: string; email: string };
   [DomainEvents.LOOK_CREATED]: { lookId: string; creatorId: string; createdAt: string };
-  [DomainEvents.LOOK_LIKED]: { lookId: string; userId: string };
-  [DomainEvents.LOOK_SAVED]: { lookId: string; userId: string };
-  [DomainEvents.LOOK_COMMENTED]: { lookId: string; commentId: string; userId: string };
+  [DomainEvents.LOOK_LIKED]: { lookId: string; creatorId: string; userId: string };
+  [DomainEvents.LOOK_SAVED]: { lookId: string; creatorId: string; userId: string };
+  [DomainEvents.LOOK_COMMENTED]: {
+    lookId: string;
+    creatorId: string;
+    commentId: string;
+    userId: string;
+  };
   [DomainEvents.USER_FOLLOWED]: FollowPayload;
   [DomainEvents.USER_UNFOLLOWED]: FollowPayload;
   [DomainEvents.BRAND_FOLLOWED]: FollowPayload;

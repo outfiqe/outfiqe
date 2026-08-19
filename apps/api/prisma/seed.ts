@@ -1357,7 +1357,7 @@ const seedLevels = async () => {
 // per-occurrence amount (manual entry / achievement-awarded respectively),
 // so they carry no config row either.
 const ACTIVITY_XP_CONFIG = [
-  { activityType: XpActivityType.LOOK_CREATED, xpAmount: 10 },
+  { activityType: XpActivityType.LOOK_CREATED, xpAmount: 10, dailyLimit: 100 },
   { activityType: XpActivityType.LOOK_LIKE_RECEIVED, xpAmount: 2, dailyLimit: 200 },
   { activityType: XpActivityType.LOOK_COMMENT_RECEIVED, xpAmount: 5, dailyLimit: 100 },
   { activityType: XpActivityType.LOOK_COMMENTED, xpAmount: 3, dailyLimit: 60 },

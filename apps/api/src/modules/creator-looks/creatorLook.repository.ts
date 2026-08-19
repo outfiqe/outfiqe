@@ -952,10 +952,12 @@ export const creatorLookRepository = {
     return { products: pageRows.map((row) => row.product), nextCursor };
   },
 
-  async findActiveById(id: string): Promise<{ id: string; likeCount: number } | null> {
+  async findActiveById(
+    id: string,
+  ): Promise<{ id: string; creatorId: string; likeCount: number } | null> {
     return prisma.creatorLook.findFirst({
       where: { id, deletedAt: null },
-      select: { id: true, likeCount: true },
+      select: { id: true, creatorId: true, likeCount: true },
     });
   },
 
