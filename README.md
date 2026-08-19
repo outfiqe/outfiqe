@@ -179,4 +179,9 @@ hashed, TTL'd, rotating refresh-token store (`apps/api/src/modules/auth`), enfor
 emitter (`apps/api/src/shared/redis`) — consumer groups ack on success, reclaim anything stuck via
 `XAUTOCLAIM`, and after 5 failed attempts a message falls into a dead-letter stream instead of
 retrying forever. So a crashed handler or a mid-delivery restart doesn't mean a silently dropped
-event. The one real gap: no automated test suite yet.
+event. Test infra is in place — vitest `unit`/`integration` projects per app, 80% coverage
+thresholds, a handful of seeded example tests (`apps/api/src/shared/utils/*.test.ts`,
+`apps/web/src/components/ProductGridSkeleton.test.tsx`, `apps/admin/src/components/Logo.test.tsx`,
+among others) — but actual coverage is still thin across the codebase; new/changed code is expected
+to bring its own unit, integration, and (for web/admin) component tests as it lands, not as a
+follow-up (see `CLAUDE.md`'s Testing section).
