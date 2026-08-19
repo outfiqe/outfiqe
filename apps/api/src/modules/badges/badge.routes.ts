@@ -21,7 +21,7 @@ badgeRoutes.patch(
   badgeController.updateDisplay,
 );
 
-badgeRoutes.put(
+badgeRoutes.patch(
   "/featured",
   requireAuth,
   validate({ body: updateFeaturedBadgesSchema }),
