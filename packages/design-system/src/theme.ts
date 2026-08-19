@@ -52,4 +52,4 @@ export const useTheme = () => {
   return { theme, toggleTheme };
 };
 
-export const THEME_INIT_SCRIPT = `(function(){try{var s=localStorage.getItem("${THEME_STORAGE_KEY}");var d=s?s==="dark":matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("${DARK_CLASS}",d);}catch(e){}})();`;
+export const THEME_INIT_SCRIPT = `(()=>{try{var s=localStorage.getItem("${THEME_STORAGE_KEY}");var d=s?s==="${DARK_CLASS}":matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("${DARK_CLASS}",d);}catch(e){}})();`;

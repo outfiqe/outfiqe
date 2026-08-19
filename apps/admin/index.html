@@ -6,13 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Outfiqe Admin</title>
     <script>
-      (function () {
+      (() => {
+        var STORAGE_KEY = "outfiqe-theme";
+        var DARK_CLASS = "dark";
         try {
-          var stored = localStorage.getItem("outfiqe-theme");
+          var stored = localStorage.getItem(STORAGE_KEY);
           var isDark = stored
-            ? stored === "dark"
+            ? stored === DARK_CLASS
             : matchMedia("(prefers-color-scheme: dark)").matches;
-          document.documentElement.classList.toggle("dark", isDark);
+          document.documentElement.classList.toggle(DARK_CLASS, isDark);
         } catch (e) {}
       })();
     </script>
