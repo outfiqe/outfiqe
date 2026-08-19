@@ -10,6 +10,7 @@ import { sendSuccess } from "#lib/api-response.utils.js";
 import { achievementRoutes } from "./modules/achievements/achievement.routes.js";
 import { adminInviteRoutes } from "./modules/admin-invites/adminInvite.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
+import { badgeRoutes } from "./modules/badges/badge.routes.js";
 import { brandApplicationRoutes } from "./modules/brand-applications/brandApplication.routes.js";
 import { brandRoutes } from "./modules/brands/brand.routes.js";
 import { cartRoutes } from "./modules/cart/cart.routes.js";
@@ -83,6 +84,7 @@ export const createApp = () => {
   app.use("/api/leaderboard", leaderboardRoutes);
   app.use("/api/xp", xpRoutes);
   app.use("/api/achievements", achievementRoutes);
+  app.use("/api/badges", badgeRoutes);
 
   Sentry.setupExpressErrorHandler(app);
   app.use(errorHandler);

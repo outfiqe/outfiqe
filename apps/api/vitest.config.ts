@@ -21,6 +21,7 @@ export default defineConfig({
         "src/modules/brand-applications/**",
         "src/modules/xp/xp.utils.ts",
         "src/modules/achievements/achievement.utils.ts",
+        "src/modules/badges/badge.utils.ts",
       ],
       thresholds: {
         lines: 80,

@@ -6,6 +6,7 @@ import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { badgeService } from "#modules/badges/badge.service.js";
 import { creatorLookRepository } from "#modules/creator-looks/creatorLook.repository.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
 import { productRepository } from "#modules/products/product.repository.js";
@@ -113,10 +114,11 @@ export const creatorService = {
       followingCount,
     } = user;
 
-    const [postsCount, taggedProductIds, isFollowing] = await Promise.all([
+    const [postsCount, taggedProductIds, isFollowing, featuredBadges] = await Promise.all([
       creatorLookRepository.countByCreatorId(id),
       productRepository.listProductIdsTaggedByCreator(id),
       viewerId ? followRepository.isFollowing(viewerId, FollowTargetType.USER, id) : false,
+      badgeService.listFeaturedForUser(id),
     ]);
 
     return {
@@ -131,6 +133,7 @@ export const creatorService = {
       followingCount,
       taggedPiecesCount: taggedProductIds.length,
       isFollowing,
+      featuredBadges,
     };
   },
 

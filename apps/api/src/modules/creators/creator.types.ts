@@ -1,4 +1,5 @@
 import type { CreatorStatus } from "#generated/prisma/enums.js";
+import type { FeaturedBadgeView } from "#modules/badges/badge.types.js";
 
 export type CreatorProfile = {
   userId: string;
@@ -27,6 +28,7 @@ export type PublicCreatorProfile = {
   followingCount: number;
   taggedPiecesCount: number;
   isFollowing: boolean;
+  featuredBadges: FeaturedBadgeView[];
 };
 
 export type CreatorSearchResult = {
