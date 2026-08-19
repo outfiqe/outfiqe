@@ -7,7 +7,7 @@ import {
   sidebarWidthClass,
   useSidebarCollapse,
 } from "@outfiqe/components";
-import { LogOut, Package, Share2, ShoppingBag, Store, User, Wallet } from "lucide-react";
+import { LogOut, Package, Share2, ShoppingBag, Sparkles, Store, User, Wallet } from "lucide-react";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus, UserRole } from "@/features/auth/types";
@@ -20,6 +20,7 @@ const CREATOR_NAV: SidebarNavItem[] = [
   { id: "profile", href: "/dashboard/profile", label: "Profile", icon: User },
   { id: "share", href: "/dashboard/share", label: "Share", icon: Share2 },
   { id: "earnings", href: "/dashboard/earnings", label: "Earnings", icon: Wallet },
+  { id: "progress", href: "/dashboard/progress", label: "Progress", icon: Sparkles },
 ];
 
 const BRAND_NAV: SidebarNavItem[] = [

@@ -11,6 +11,7 @@ Everything a creator manages about their own account from `/dashboard/*`: profil
 - `components/EditPostForm.tsx` — the actual edit form (photos, caption, tags). Mounted fresh (`key={lookId}`) per post being edited so its local photo/form state always seeds correctly from real data — no effect-driven resync needed.
 - `components/ProductTagPicker.tsx` — shared tag-picker UI used by both `PostModal` and `EditPostForm`.
 - `components/ApplyAsCreatorButton.tsx`, `EarningsSection.tsx`, `ShareSection.tsx` — the other dashboard sections.
+- `components/ProgressSection.tsx`, `LevelProgressCard.tsx`, `XpTransactionRow.tsx` — the gamification level/XP-bar card + recent-activity list (`/dashboard/progress`). Unlike `EarningsSection`/`ShareSection`, this one is **not** gated by `CreatorStatusGate` — every user earns and can view their own XP, not just approved creators, so it renders unconditionally for any non-brand account. `api/xpApi.ts`/`xpSchemas.ts`, `hooks/useXpProgress.ts`/`useMyXpTransactions.ts` follow the exact same shape as the earnings equivalents.
 - `components/CreatorStatusGate.tsx` — the shared "not an approved creator yet" state (application under review / become-a-creator pitch + `ApplyAsCreatorButton`), rendered by `EarningsSection`, `ShareSection`, and `app/dashboard/profile/page.tsx` whenever `creatorStatus !== APPROVED`.
 - `api/creatorLooksApi.ts`, `creatorLooksSchemas.ts` — look create/edit/delete requests + response validation.
 - `api/creatorDashboardApi.ts`, `creatorDashboardSchemas.ts` — profile read/update.

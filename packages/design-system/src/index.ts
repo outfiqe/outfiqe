@@ -16,6 +16,7 @@ export * from "./input";
 export * from "./label";
 export * from "./modal";
 export * from "./multi-select";
+export * from "./progress-bar";
 export * from "./skeleton";
 export * from "./toast";
 export * from "./use-image-crop-upload";
