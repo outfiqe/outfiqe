@@ -1,12 +1,12 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { mockNextRouter } from "@test/integration/mockRouter";
 import { mswServer } from "@test/integration/msw/server";
 import { renderHook, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { useRouter, useSearchParams } from "next/navigation";
-import type { ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AuthProvider, useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
+import { createAuthQueryClientWrapper } from "../context/authTestWrapper";
 import { useLogin } from "./useLogin";
 
 const LOGIN_URL = "/api/auth/login";
@@ -16,7 +16,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: vi.fn(),
 }));
 
-const replace = vi.fn();
+let replace: ReturnType<typeof vi.fn>;
 
 const mockRedirectParam = (redirect: string | null) => {
   vi.mocked(useSearchParams).mockReturnValue(
@@ -25,27 +25,9 @@ const mockRedirectParam = (redirect: string | null) => {
 };
 
 beforeEach(() => {
-  vi.mocked(useRouter).mockReturnValue({
-    push: vi.fn(),
-    replace,
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-    prefetch: vi.fn(),
-    bfcacheId: "test-bfcache-id",
-  });
-  replace.mockClear();
+  ({ replace } = mockNextRouter());
   mockRedirectParam(null);
 });
-
-const wrapper = ({ children }: { children: ReactNode }) => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>{children}</AuthProvider>
-    </QueryClientProvider>
-  );
-};
 
 const customerUser = {
   id: "user-1",
@@ -58,7 +40,9 @@ const customerUser = {
 };
 
 const renderUseLogin = () =>
-  renderHook(() => ({ login: useLogin(), auth: useAuth() }), { wrapper });
+  renderHook(() => ({ login: useLogin(), auth: useAuth() }), {
+    wrapper: createAuthQueryClientWrapper(),
+  });
 
 describe("useLogin", () => {
   it("signs the user in, updates auth state, and redirects to their default route", async () => {

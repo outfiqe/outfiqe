@@ -1,18 +1,12 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
+import { createQueryClientWrapper } from "@test/integration/queryClientWrapper";
 import { renderHook, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
 import { useResendVerification } from "./useResendVerification";
 
 const RESEND_VERIFICATION_URL = "/api/auth/resend-verification";
-
-const wrapper = ({ children }: { children: ReactNode }) => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
-};
 
 describe("useResendVerification", () => {
   it("re-sends the verification email for the given address", async () => {
@@ -29,7 +23,9 @@ describe("useResendVerification", () => {
       }),
     );
 
-    const { result } = renderHook(() => useResendVerification(), { wrapper });
+    const { result } = renderHook(() => useResendVerification(), {
+      wrapper: createQueryClientWrapper(),
+    });
     result.current.mutate("ava@outfiqe.test");
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));

@@ -18,6 +18,11 @@ client-side session/user context the rest of the app reads.
   expired sub-states.
 - `context/AuthContext.tsx` + `context/authReducer.ts` — the client-side auth state (current user,
   auth status) and its reducer, exposed via `useAuth()`.
+- `context/authTestWrapper.tsx` — `createAuthQueryClientWrapper()`, a test-only `renderHook`/`render`
+  wrapper combining `AuthProvider` with the shared `createTestQueryClient()` from
+  `apps/web/src/testing/integration/queryClientWrapper.tsx`. Colocated here rather than in the
+  app-wide `src/testing/` infra since it's specific to this feature's own context, not something
+  other features need.
 - `hooks/` — one hook per auth action (`useLogin`, `useRegister`, `useBrandRegister`, `useLogout`,
   `useForgotPassword`, `useResetPassword`, `useResendVerification`, `useCurrentUser`), each wrapping
   the matching `authApi` call in a React Query mutation/query. `useLogin`/`useForgotPassword`/

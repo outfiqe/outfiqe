@@ -1,9 +1,8 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { mockNextRouter } from "@test/integration/mockRouter";
 import { mswServer } from "@test/integration/msw/server";
+import { createQueryClientWrapper } from "@test/integration/queryClientWrapper";
 import { renderHook, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { useRouter } from "next/navigation";
-import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useResetPassword } from "./useResetPassword";
@@ -14,25 +13,11 @@ vi.mock("next/navigation", () => ({
   useRouter: vi.fn(),
 }));
 
-const replace = vi.fn();
+let replace: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
-  vi.mocked(useRouter).mockReturnValue({
-    push: vi.fn(),
-    replace,
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-    prefetch: vi.fn(),
-    bfcacheId: "test-bfcache-id",
-  });
-  replace.mockClear();
+  ({ replace } = mockNextRouter());
 });
-
-const wrapper = ({ children }: { children: ReactNode }) => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
-};
 
 const resetInput = {
   token: "valid-token",
@@ -52,7 +37,9 @@ describe("useResetPassword", () => {
       ),
     );
 
-    const { result } = renderHook(() => useResetPassword(), { wrapper });
+    const { result } = renderHook(() => useResetPassword(), {
+      wrapper: createQueryClientWrapper(),
+    });
     result.current.mutate(resetInput);
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -73,7 +60,9 @@ describe("useResetPassword", () => {
       ),
     );
 
-    const { result } = renderHook(() => useResetPassword(), { wrapper });
+    const { result } = renderHook(() => useResetPassword(), {
+      wrapper: createQueryClientWrapper(),
+    });
     result.current.mutate(resetInput);
 
     await waitFor(() => expect(result.current.isError).toBe(true));

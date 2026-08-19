@@ -1,8 +1,7 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
+import { createQueryClientWrapper } from "@test/integration/queryClientWrapper";
 import { renderHook, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
 import type { RegisterInput } from "../schemas/register.schema";
@@ -16,11 +15,6 @@ const registerInput: RegisterInput = {
   phone: "9812345678",
   password: "correct-horse-battery",
   confirmPassword: "correct-horse-battery",
-};
-
-const wrapper = ({ children }: { children: ReactNode }) => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 };
 
 describe("useRegister", () => {
@@ -37,7 +31,7 @@ describe("useRegister", () => {
       }),
     );
 
-    const { result } = renderHook(() => useRegister(), { wrapper });
+    const { result } = renderHook(() => useRegister(), { wrapper: createQueryClientWrapper() });
     result.current.mutate(registerInput);
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -58,7 +52,7 @@ describe("useRegister", () => {
       ),
     );
 
-    const { result } = renderHook(() => useRegister(), { wrapper });
+    const { result } = renderHook(() => useRegister(), { wrapper: createQueryClientWrapper() });
     result.current.mutate(registerInput);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
