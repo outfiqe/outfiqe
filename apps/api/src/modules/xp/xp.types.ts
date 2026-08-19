@@ -51,3 +51,16 @@ export type UserProgressView = {
   nextLevel: LevelRecord | null;
   xpToNextLevel: number | null;
 };
+
+export type XpTransactionView = {
+  id: string;
+  activityType: XpActivityType;
+  amount: number;
+  source: string;
+  createdAt: string;
+};
+
+export type XpTransactionPage = {
+  items: XpTransactionView[];
+  nextCursor: string | null;
+};

@@ -89,4 +89,13 @@ export const xpRepository = {
     if (!progress) return null;
     return { totalXp: progress.totalXp, level: progress.currentLevel };
   },
+
+  async listTransactionsForUser(userId: string, params: { cursor?: string; limit: number }) {
+    return prisma.xpTransaction.findMany({
+      where: { userId },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: params.limit + 1,
+      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
+    });
+  },
 };

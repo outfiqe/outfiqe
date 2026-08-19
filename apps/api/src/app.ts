@@ -30,6 +30,7 @@ import { trendingRoutes } from "./modules/trending/trending.routes.js";
 import { uploadRoutes } from "./modules/uploads/upload.routes.js";
 import { userRoutes } from "./modules/users/user.routes.js";
 import { wishlistRoutes } from "./modules/wishlist/wishlist.routes.js";
+import { xpRoutes } from "./modules/xp/xp.routes.js";
 import { errorHandler } from "./shared/middlewares/error-handler.js";
 import { httpLogger } from "./shared/middlewares/http-logger.js";
 import { resolvedUploadsDir } from "./shared/storage/storage.factory.js";
@@ -79,6 +80,7 @@ export const createApp = () => {
   app.use("/api/hero-slides", heroSlideRoutes);
   app.use("/api/admin/trending", trendingRoutes);
   app.use("/api/leaderboard", leaderboardRoutes);
+  app.use("/api/xp", xpRoutes);
 
   Sentry.setupExpressErrorHandler(app);
   app.use(errorHandler);

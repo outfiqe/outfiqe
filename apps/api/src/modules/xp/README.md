@@ -12,14 +12,13 @@ The XP engine: awards XP for qualifying platform activity, enforces the anti-abu
 - `xp.repository.ts` — Prisma queries only. Functions that participate in the award transaction (`createTransaction`, `incrementProgress`, `setCurrentLevel`) take a `DbClient` parameter so `xp.service.ts` can compose them inside one `prisma.$transaction`, same pattern as `commissions`' `createPending(client, input)`.
 - `xp.service.ts` — `awardXp` (the engine entry point) and `getProgressForUser`.
 - `xp.events.ts` — `registerXpEventConsumers()`: subscribes to the platform domain events (`LOOK_CREATED`, `LOOK_LIKED`, `LOOK_SAVED`, `LOOK_COMMENTED`, `USER_FOLLOWED`, `PRODUCT_PURCHASED`, `SALE_GENERATED`, `PRODUCT_TAGGED`) via `subscribeToDomainEvent` and calls `awardXp` with the right activity type per event. Registered once at boot in `index.ts`, same as `registerLeaderboardEventConsumer`.
-
-No `routes.ts`/`controller.ts` yet — this chunk is the engine only. `GET /api/xp/me` and the transaction-history endpoint land in a later chunk once there's a UI to serve.
+- `xp.schemas.ts` / `xp.controller.ts` / `xp.routes.ts` — `GET /api/xp/me` (progress, spec 09) and `GET /api/xp/me/transactions` (paginated ledger, spec 07), both `requireAuth`-only — no creator-status gate, since every user (not just creators) earns and can view their own XP.
 
 ## Funnel
 
-**Technical:** a producing module (`creator-looks`, `follows`, `payments`, `commissions`, ...) either calls `xpService.awardXp(...)` directly, or — for the five activities already wired — simply publishes its existing domain event and `xp.events.ts` picks it up asynchronously. Either way, XP is a side effect of an activity that already succeeded, never a precondition for it: nothing in this module can block or fail the triggering request, per the fail-open convention below. `awardXp` reads `ActivityXpConfig` for that activity, runs the configured anti-abuse checks, and — if none reject it — writes an `XpTransaction` row and atomically increments `UserProgress.totalXp` in one transaction, recomputing `currentLevelId` only if it actually changed.
+**Technical:** a producing module (`creator-looks`, `follows`, `payments`, `commissions`, ...) either calls `xpService.awardXp(...)` directly, or — for the activities already wired — simply publishes its existing domain event and `xp.events.ts` picks it up asynchronously. Either way, XP is a side effect of an activity that already succeeded, never a precondition for it: nothing in this module can block or fail the triggering request, per the fail-open convention below. `awardXp` reads `ActivityXpConfig` for that activity, runs the configured anti-abuse checks, and — if none reject it — writes an `XpTransaction` row and atomically increments `UserProgress.totalXp` in one transaction, recomputing `currentLevelId` only if it actually changed.
 
-**User-facing:** nothing yet — this chunk has no read surface. A user's XP/level becomes visible once the progress UI chunk adds `GET /api/xp/me` on top of `getProgressForUser`.
+**User-facing:** `apps/web`'s `/dashboard/progress` (creator-dashboard feature, `ProgressSection`) shows a level/XP-bar card (`LevelProgressCard`, using the new shared `@outfiqe/design-system` `ProgressBar` primitive) plus a paginated recent-activity list (`XpTransactionRow`) — reachable from a new "Progress" item in `DashboardSidebar`'s creator nav (not shown for brand accounts, which don't participate in gamification).
 
 ## Non-obvious rationale
 

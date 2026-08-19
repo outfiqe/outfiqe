@@ -1,10 +1,16 @@
 import { prisma } from "#db/prisma.js";
+import { buildCursorPage } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
 import { describeError } from "#redis/redis.utils.js";
 
 import { ONE_DAY_MS } from "./xp.constants.js";
 import { xpRepository } from "./xp.repository.js";
-import type { AwardXpInput, AwardXpResult, UserProgressView } from "./xp.types.js";
+import type {
+  AwardXpInput,
+  AwardXpResult,
+  UserProgressView,
+  XpTransactionPage,
+} from "./xp.types.js";
 import {
   computeLevelProgress,
   hasReachedDailyLimit,
@@ -111,4 +117,23 @@ const getProgressForUser = async (userId: string): Promise<UserProgressView | nu
   return { totalXp, level, nextLevel, xpToNextLevel: xpToNextLevel(totalXp, nextLevel) };
 };
 
-export const xpService = { awardXp, getProgressForUser };
+const listTransactionsForUser = async (
+  userId: string,
+  params: { cursor?: string; limit: number },
+): Promise<XpTransactionPage> => {
+  const rows = await xpRepository.listTransactionsForUser(userId, params);
+  const { items, nextCursor } = buildCursorPage(rows, params.limit, (row) => row.id);
+
+  return {
+    items: items.map((row) => ({
+      id: row.id,
+      activityType: row.activityType,
+      amount: row.amount,
+      source: row.source,
+      createdAt: row.createdAt.toISOString(),
+    })),
+    nextCursor,
+  };
+};
+
+export const xpService = { awardXp, getProgressForUser, listTransactionsForUser };
