@@ -6,6 +6,7 @@ import { validated } from "#middlewares/validate.js";
 import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
 
 import type {
+  AutocompleteQuery,
   CreatorHandleParam,
   CreatorUserIdParam,
   ListCreatorLooksQuery,
@@ -50,6 +51,13 @@ export const creatorController = {
     const page = await creatorService.list(query);
 
     sendSuccess(res, page, "Creators.");
+  },
+
+  async autocomplete(_req: Request, res: Response) {
+    const query = validated.query<AutocompleteQuery>(res);
+    const suggestions = await creatorService.autocomplete(query);
+
+    sendSuccess(res, suggestions, "Suggestions.");
   },
 
   async approve(_req: Request, res: Response) {

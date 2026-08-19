@@ -910,6 +910,16 @@ export const creatorLookRepository = {
     return { posts, nextCursor, total };
   },
 
+  async searchLookSuggestions(query: string, limit: number): Promise<CreatorLookFeedPost[]> {
+    const rows = await prisma.$queryRaw<{ id: string; total_count: bigint }[]>(Prisma.sql`
+      SELECT id, total_count FROM search_creator_looks(${query}, ${limit}, 0)
+    `);
+    return hydrateFeedPosts(
+      rows.map((row) => row.id),
+      undefined,
+    );
+  },
+
   async countByCreatorId(creatorId: string): Promise<number> {
     return prisma.creatorLook.count({ where: { creatorId, deletedAt: null } });
   },

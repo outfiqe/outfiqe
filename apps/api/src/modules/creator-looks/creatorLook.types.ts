@@ -97,6 +97,13 @@ export type FeedPage = {
 
 export type LookSearchPage = FeedPage & { total: number };
 
+export type PostSuggestion = {
+  id: string;
+  imageUrl: string;
+  caption: string | null;
+  creator: { name: string; handle: string };
+};
+
 export type ListFeedInput = {
   tab: string;
   cursor?: string;

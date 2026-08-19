@@ -56,3 +56,5 @@ export const TAG_TREND_SMOOTHING = 2;
 export const TAG_TREND_MOMENTUM_CAP = 8;
 
 export const TAG_TRENDING_LIMIT = 15;
+
+export const AUTOCOMPLETE_LIMIT = 4;

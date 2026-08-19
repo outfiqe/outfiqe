@@ -35,6 +35,10 @@ export const searchCreatorsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
 
+export const autocompleteQuerySchema = z.object({
+  q: z.string().trim().min(1).max(SEARCH_QUERY_MAX_LENGTH),
+});
+
 export const listCreatorLooksQuerySchema = z.object({
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
@@ -42,6 +46,7 @@ export const listCreatorLooksQuerySchema = z.object({
 
 export type ListCreatorsQuery = z.infer<typeof listCreatorsQuerySchema>;
 export type SearchCreatorsQuery = z.infer<typeof searchCreatorsQuerySchema>;
+export type AutocompleteQuery = z.infer<typeof autocompleteQuerySchema>;
 export type CreatorUserIdParam = z.infer<typeof creatorUserIdParamSchema>;
 export type CreatorHandleParam = z.infer<typeof creatorHandleParamSchema>;
 export type ListCreatorLooksQuery = z.infer<typeof listCreatorLooksQuerySchema>;

@@ -1,3 +1,5 @@
+import { LRUCache } from "lru-cache";
+
 import { creatorApprovedTemplate, creatorRejectedTemplate } from "#email-templates/templates.js";
 import { CreatorStatus, FollowTargetType } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
@@ -10,8 +12,13 @@ import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 import type { UserRecord } from "#modules/users/user.types.js";
+import { cacheService } from "#redis/cache.service.js";
+import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
+import { describeError } from "#redis/redis.utils.js";
 
+import { AUTOCOMPLETE_LIMIT } from "./creator.constants.js";
 import type {
+  AutocompleteQuery,
   ListCreatorsQuery,
   SearchCreatorsQuery,
   UpdateCreatorProfileBody,
@@ -21,12 +28,22 @@ import type {
   CreatorProfilePage,
   CreatorSearchCursor,
   CreatorSearchPage,
+  CreatorSearchResult,
   PublicCreatorProfile,
 } from "./creator.types.js";
 import { toProfile, toSearchResult } from "./creator.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
+
+const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
+const AUTOCOMPLETE_CACHE_NAMESPACE = "creator-autocomplete";
+const MS_PER_SECOND = 1000;
+
+const autocompleteMemoryCache = new LRUCache<string, CreatorSearchResult[]>({
+  max: AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES,
+  ttl: CACHE_TTL.CREATOR_AUTOCOMPLETE * MS_PER_SECOND,
+});
 
 const requireUser = async (userId: string): Promise<UserRecord> => {
   const user = await userRepository.findById(userId);
@@ -146,6 +163,45 @@ export const creatorService = {
       nextOffset < total ? encodeCursor<CreatorSearchCursor>({ offset: nextOffset }) : null;
 
     return { creators: orderedUsers.map(toSearchResult), nextCursor, total };
+  },
+
+  async autocomplete({ q }: AutocompleteQuery): Promise<CreatorSearchResult[]> {
+    const normalizedQuery = q.trim().toLowerCase();
+
+    const memoryHit = autocompleteMemoryCache.get(normalizedQuery);
+    if (memoryHit) return memoryHit;
+
+    const cacheKey = redisKeys.cache(AUTOCOMPLETE_CACHE_NAMESPACE, normalizedQuery);
+    try {
+      const cached = await cacheService.get<CreatorSearchResult[]>(cacheKey);
+      if (cached) {
+        autocompleteMemoryCache.set(normalizedQuery, cached);
+        return cached;
+      }
+    } catch (error) {
+      logger.warn(`Cache read failed for "${cacheKey}": ${describeError(error)}`);
+    }
+
+    const { ids } = await userRepository.searchCreatorIds(q, {
+      limit: AUTOCOMPLETE_LIMIT,
+      offset: 0,
+    });
+    const users = await userRepository.findManyByIds(ids);
+    const byId = new Map(users.map((user) => [user.id, user]));
+    const orderedUsers = ids
+      .map((id) => byId.get(id))
+      .filter((user): user is UserRecord => user !== undefined);
+
+    const suggestions = orderedUsers.map(toSearchResult);
+
+    autocompleteMemoryCache.set(normalizedQuery, suggestions);
+    try {
+      await cacheService.set(cacheKey, suggestions, CACHE_TTL.CREATOR_AUTOCOMPLETE);
+    } catch (error) {
+      logger.warn(`Cache write failed for "${cacheKey}": ${describeError(error)}`);
+    }
+
+    return suggestions;
   },
 
   async approve(userId: string, adminUserId: string): Promise<void> {

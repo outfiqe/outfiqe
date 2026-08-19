@@ -19,6 +19,8 @@ export default defineConfig({
         "src/components/ProductGridSkeleton.tsx",
         "src/features/brand-profile/hooks/useInfiniteBrandProducts.ts",
         "src/features/brand-profile/api/brandProfileApi.ts",
+        "src/features/search/components/ExploreSearchBox.tsx",
+        "src/features/search/hooks/useExploreAutocomplete.ts",
       ],
       thresholds: {
         lines: 80,

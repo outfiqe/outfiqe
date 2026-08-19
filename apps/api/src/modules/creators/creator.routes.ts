@@ -8,6 +8,7 @@ import { validate } from "#middlewares/validate.js";
 
 import { creatorController } from "./creator.controller.js";
 import {
+  autocompleteQuerySchema,
   creatorHandleParamSchema,
   creatorUserIdParamSchema,
   listCreatorLooksQuerySchema,
@@ -39,6 +40,11 @@ creatorRoutes.get(
   optionalAuth,
   validate({ params: creatorHandleParamSchema, query: listCreatorLooksQuerySchema }),
   creatorController.listLooksByHandle,
+);
+creatorRoutes.get(
+  "/autocomplete",
+  validate({ query: autocompleteQuerySchema }),
+  creatorController.autocomplete,
 );
 creatorRoutes.get(
   "/search",

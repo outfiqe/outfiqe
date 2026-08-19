@@ -50,7 +50,7 @@ export const ShopExploreToggle = ({ size = "sm", className }: ShopExploreToggleP
   const { container, button, icon, showLabel } = SIZE_STYLES[size];
   const [pendingNav, setPendingNav] = useState<PendingNav | null>(null);
 
-  const resolvedHref = isExploreRoute(pathname) ? "/explore" : "/";
+  const resolvedHref = pathname === "/" ? "/" : isExploreRoute(pathname) ? "/explore" : null;
 
   const activeHref =
     pendingNav && pendingNav.fromPathname === pathname ? pendingNav.href : resolvedHref;

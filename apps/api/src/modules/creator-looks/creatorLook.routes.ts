@@ -6,6 +6,7 @@ import { validate } from "#middlewares/validate.js";
 
 import { creatorLookController } from "./creatorLook.controller.js";
 import {
+  autocompleteQuerySchema,
   commentsQuerySchema,
   createCommentSchema,
   createCreatorLookSchema,
@@ -31,6 +32,11 @@ creatorLookRoutes.get(
   creatorLookController.feed,
 );
 creatorLookRoutes.get("/tags/trending", creatorLookController.trendingTags);
+creatorLookRoutes.get(
+  "/autocomplete",
+  validate({ query: autocompleteQuerySchema }),
+  creatorLookController.autocomplete,
+);
 creatorLookRoutes.get(
   "/search",
   optionalAuth,
