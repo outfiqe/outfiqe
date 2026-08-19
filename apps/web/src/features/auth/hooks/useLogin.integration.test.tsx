@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "../context/AuthContext";
 import { createAuthQueryClientWrapper } from "../context/authTestWrapper";
+import { ADMIN_URL } from "../utils/getDefaultRoute";
 import { useLogin } from "./useLogin";
 
 const LOGIN_URL = "/api/auth/login";
@@ -125,7 +126,7 @@ describe("useLogin", () => {
     result.current.login.mutate({ email: customerUser.email, password: "correct-horse-battery" });
 
     await waitFor(() => expect(result.current.login.isSuccess).toBe(true));
-    expect(locationReplace).toHaveBeenCalledWith("/admin");
+    expect(locationReplace).toHaveBeenCalledWith(ADMIN_URL);
     expect(replace).not.toHaveBeenCalled();
     expect(result.current.auth.isAuthenticated).toBe(false);
 
