@@ -1,5 +1,6 @@
 import "./globals.css";
 
+import { THEME_INIT_SCRIPT } from "@outfiqe/design-system";
 import type { Metadata } from "next";
 
 import { Providers } from "./providers";
@@ -21,7 +22,10 @@ export const metadata: Metadata = {
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body>
         <Providers>{children}</Providers>
       </body>

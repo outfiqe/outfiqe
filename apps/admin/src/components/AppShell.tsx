@@ -1,4 +1,5 @@
 import { HeaderBar } from "@outfiqe/components";
+import { ThemeToggle } from "@outfiqe/design-system";
 import type { ReactNode } from "react";
 
 import { AccountMenu } from "./AccountMenu";
@@ -15,6 +16,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
         </span>
 
         <div className="ml-auto flex items-center gap-3">
+          <ThemeToggle />
           <AccountMenu />
         </div>
       </HeaderBar>

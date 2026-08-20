@@ -59,13 +59,13 @@ export const HeroCarousel = ({ slides }: HeroCarouselProps) => {
                     : undefined
                 }
               >
-                <span className="text-[10px] font-bold uppercase tracking-widest text-background/70 sm:text-xs">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/70 sm:text-xs">
                   {slide.tag}
                 </span>
-                <h1 className="mt-1.5 max-w-xl whitespace-pre-line font-display text-xl font-extrabold uppercase leading-[0.95] text-background sm:mt-3 sm:text-5xl lg:text-6xl">
+                <h1 className="mt-1.5 max-w-xl whitespace-pre-line font-display text-xl font-extrabold uppercase leading-[0.95] text-white sm:mt-3 sm:text-5xl lg:text-6xl">
                   {slide.title}
                 </h1>
-                <p className="mt-2 max-w-md text-xs text-background/80 sm:mt-4 sm:text-base">
+                <p className="mt-2 max-w-md text-xs text-white/80 sm:mt-4 sm:text-base">
                   {slide.description}
                 </p>
 
@@ -93,7 +93,7 @@ export const HeroCarousel = ({ slides }: HeroCarouselProps) => {
               size="icon"
               onClick={() => api?.scrollPrev()}
               aria-label="Previous slide"
-              className="absolute left-4 top-1/2 hidden -translate-y-1/2 bg-background/15 text-background hover:bg-background/25 sm:flex"
+              className="absolute left-4 top-1/2 hidden -translate-y-1/2 bg-white/15 text-white hover:bg-white/25 sm:flex"
             >
               <ChevronLeft className="size-5" />
             </Button>
@@ -102,7 +102,7 @@ export const HeroCarousel = ({ slides }: HeroCarouselProps) => {
               size="icon"
               onClick={() => api?.scrollNext()}
               aria-label="Next slide"
-              className="absolute right-4 top-1/2 hidden -translate-y-1/2 bg-background/15 text-background hover:bg-background/25 sm:flex"
+              className="absolute right-4 top-1/2 hidden -translate-y-1/2 bg-white/15 text-white hover:bg-white/25 sm:flex"
             >
               <ChevronRight className="size-5" />
             </Button>
@@ -120,13 +120,13 @@ export const HeroCarousel = ({ slides }: HeroCarouselProps) => {
                   <span
                     className={cn(
                       "h-px transition-all",
-                      i === selectedIndex ? "w-8 bg-background" : "w-4 bg-background/40",
+                      i === selectedIndex ? "w-8 bg-white" : "w-4 bg-white/40",
                     )}
                   />
                   <span
                     className={cn(
                       "text-xs font-bold",
-                      i === selectedIndex ? "text-background" : "text-background/40",
+                      i === selectedIndex ? "text-white" : "text-white/40",
                     )}
                   >
                     {String(i + 1).padStart(2, "0")}

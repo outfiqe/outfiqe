@@ -1,6 +1,7 @@
 "use client";
 
 import { HeaderBar, useHeaderCondense } from "@outfiqe/components";
+import { ThemeToggle } from "@outfiqe/design-system";
 import { ChevronDown, Heart, Search, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -141,6 +142,7 @@ export const SiteHeader = () => {
           )}
         </Link>
 
+        <ThemeToggle />
         <AccountMenu />
         <MobileNav />
       </div>
