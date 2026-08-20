@@ -24,6 +24,7 @@ const CACHE_NAMESPACE = "delivery-zones";
 const deliveryZonesPublicCache = cache({
   namespace: CACHE_NAMESPACE,
   ttlSeconds: CACHE_TTL.DELIVERY_ZONES_PUBLIC,
+  successMessage: "Delivery zones.",
 });
 
 const refreshDeliveryZonesPublicCache = refreshCacheOnWrite({
