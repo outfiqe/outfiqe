@@ -5,6 +5,19 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Outfiqe Admin</title>
+    <script>
+      (() => {
+        var STORAGE_KEY = "outfiqe-theme";
+        var DARK_CLASS = "dark";
+        try {
+          var stored = localStorage.getItem(STORAGE_KEY);
+          var isDark = stored
+            ? stored === DARK_CLASS
+            : matchMedia("(prefers-color-scheme: dark)").matches;
+          document.documentElement.classList.toggle(DARK_CLASS, isDark);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

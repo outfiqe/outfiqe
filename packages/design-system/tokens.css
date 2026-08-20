@@ -28,3 +28,30 @@
 
   --radius: 0.5rem;
 }
+
+.dark {
+  --background: 20 14% 8%;
+  --foreground: 30 20% 96%;
+
+  --card: 20 13% 11%;
+  --card-foreground: 30 20% 96%;
+
+  --muted: 20 10% 16%;
+  --muted-foreground: 24 8% 64%;
+
+  --border: 20 10% 20%;
+  --input: 20 10% 20%;
+
+  --primary: 20 95% 55%;
+  --primary-foreground: 20 14% 8%;
+
+  --primary-strong: 20 96% 62%;
+
+  --secondary: 30 14% 92%;
+  --secondary-foreground: 20 14% 8%;
+
+  --destructive: 6 72% 56%;
+  --destructive-foreground: 20 14% 8%;
+
+  --ring: 20 95% 55%;
+}
