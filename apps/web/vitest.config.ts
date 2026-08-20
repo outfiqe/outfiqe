@@ -22,6 +22,7 @@ export default defineConfig({
         "src/features/brand-profile/api/brandProfileApi.ts",
         "src/features/search/components/ExploreSearchBox.tsx",
         "src/features/search/hooks/useExploreAutocomplete.ts",
+        "src/features/brands/**",
       ],
       thresholds: {
         lines: 80,
