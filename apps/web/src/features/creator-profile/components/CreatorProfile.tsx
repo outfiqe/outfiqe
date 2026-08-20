@@ -286,16 +286,27 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="creator-profile-edit-name"
+                className="mb-1.5 block text-sm font-medium text-foreground"
+              >
                 Display name
               </label>
-              <Input value={draftName} onChange={(event) => setDraftName(event.target.value)} />
+              <Input
+                id="creator-profile-edit-name"
+                value={draftName}
+                onChange={(event) => setDraftName(event.target.value)}
+              />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="creator-profile-edit-height"
+                className="mb-1.5 block text-sm font-medium text-foreground"
+              >
                 Height (cm)
               </label>
               <Input
+                id="creator-profile-edit-height"
                 type="number"
                 min={MIN_HEIGHT_CM}
                 max={MAX_HEIGHT_CM}
