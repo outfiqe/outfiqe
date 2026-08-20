@@ -22,6 +22,7 @@ export default defineConfig({
         "src/modules/creators/**",
         "src/modules/creator-looks/**",
         "src/modules/brands/**",
+        "src/modules/categories/**",
       ],
       thresholds: {
         lines: 80,
