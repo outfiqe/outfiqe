@@ -8,6 +8,8 @@ export const creatorProfileSchema = z.object({
   email: z.email(),
   handle: z.string(),
   avatarUrl: z.url().nullable(),
+  heightCm: z.number().nullable(),
+  showHeight: z.boolean(),
   isCreator: z.boolean(),
   creatorStatus: creatorStatusSchema,
 });
@@ -18,6 +20,8 @@ export const updateCreatorProfileInputSchema = z
   .object({
     name: z.string().trim().min(1).max(100),
     avatarUrl: z.url().nullable(),
+    heightCm: z.number().nullable(),
+    showHeight: z.boolean(),
   })
   .partial();
 

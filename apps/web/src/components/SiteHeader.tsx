@@ -41,18 +41,12 @@ export const SiteHeader = () => {
       {isExploreRoute(pathname) ? (
         <ExploreSearchBox
           placeholder="Search creators & posts"
-          formClassName={cn(
-            "hidden min-w-0 flex-1 items-center gap-2 rounded-full bg-muted px-4 text-muted-foreground transition-all duration-300 lg:flex",
-            isCondensed ? "max-w-sm py-2" : "max-w-md py-2.5",
-          )}
+          formClassName="hidden min-w-0 max-w-md flex-1 items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-muted-foreground transition-all duration-300 lg:flex"
         />
       ) : (
         <ProductSearchBox
           placeholder="Search fashion, brands & categories"
-          formClassName={cn(
-            "hidden min-w-0 flex-1 items-center gap-2 rounded-full bg-muted px-4 text-muted-foreground transition-all duration-300 lg:flex",
-            isCondensed ? "max-w-sm py-2" : "max-w-md py-2.5",
-          )}
+          formClassName="hidden min-w-0 max-w-md flex-1 items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-muted-foreground transition-all duration-300 lg:flex"
         />
       )}
 

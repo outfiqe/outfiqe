@@ -8,6 +8,8 @@ export const toProfile = (user: UserRecord): CreatorProfile => ({
   email: user.email,
   handle: user.handle,
   avatarUrl: user.avatarUrl,
+  heightCm: user.heightCm,
+  showHeight: user.showHeight,
   isCreator: user.isCreator,
   creatorStatus: user.creatorStatus,
 });

@@ -12,6 +12,7 @@ export interface UserRecord {
   isCreator: boolean;
   creatorStatus: CreatorStatus;
   heightCm: number | null;
+  showHeight: boolean;
   emailVerified: boolean;
   followerCount: number;
   followingCount: number;
@@ -28,7 +29,9 @@ export interface CreateUserInput {
   emailVerified?: boolean;
 }
 
-export type UpdateUserProfileInput = Partial<Pick<UserRecord, "name" | "avatarUrl">>;
+export type UpdateUserProfileInput = Partial<
+  Pick<UserRecord, "name" | "avatarUrl" | "heightCm" | "showHeight">
+>;
 
 export interface PublicUser {
   id: string;

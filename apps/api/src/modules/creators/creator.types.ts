@@ -7,6 +7,8 @@ export type CreatorProfile = {
   email: string;
   handle: string;
   avatarUrl: string | null;
+  heightCm: number | null;
+  showHeight: boolean;
   isCreator: boolean;
   creatorStatus: CreatorStatus;
 };
@@ -22,6 +24,7 @@ export type PublicCreatorProfile = {
   handle: string;
   avatarUrl: string | null;
   heightCm: number | null;
+  showHeight: boolean;
   creatorStatus: CreatorStatus;
   postsCount: number;
   followerCount: number;

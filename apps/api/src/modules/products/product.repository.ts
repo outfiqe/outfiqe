@@ -422,7 +422,9 @@ export const productRepository = {
           select: {
             id: true,
             imageUrl: true,
-            creator: { select: { id: true, name: true, handle: true, heightCm: true } },
+            creator: {
+              select: { id: true, name: true, handle: true, heightCm: true, showHeight: true },
+            },
           },
         },
       },
@@ -437,7 +439,7 @@ export const productRepository = {
         creatorId: creator.id,
         name: creator.name,
         handle: creator.handle,
-        heightCm: creator.heightCm,
+        heightCm: creator.showHeight ? creator.heightCm : null,
         sizeWorn: row.sizeWorn,
         lookId: row.creatorLook.id,
         lookImageUrl: row.creatorLook.imageUrl,

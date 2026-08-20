@@ -3,6 +3,8 @@ import { z } from "zod";
 import { SEARCH_QUERY_MAX_LENGTH } from "#constants/search.constants.js";
 import { CreatorStatus } from "#generated/prisma/enums.js";
 
+import { MAX_HEIGHT_CM, MIN_HEIGHT_CM } from "./creator.constants.js";
+
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 50;
 
@@ -26,6 +28,8 @@ export const updateCreatorProfileSchema = z
   .object({
     name: z.string().trim().min(1).max(100),
     avatarUrl: z.url().nullable(),
+    heightCm: z.number().int().min(MIN_HEIGHT_CM).max(MAX_HEIGHT_CM).nullable(),
+    showHeight: z.boolean(),
   })
   .partial();
 

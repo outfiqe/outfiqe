@@ -6,6 +6,7 @@ export const creatorProfileSchema = z.object({
   handle: z.string(),
   avatarUrl: z.url().nullable(),
   heightCm: z.number().nullable(),
+  showHeight: z.boolean(),
   creatorStatus: z.string(),
   postsCount: z.number(),
   followerCount: z.number(),
