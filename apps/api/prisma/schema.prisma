@@ -27,6 +27,7 @@ model User {
   isCreator      Boolean       @default(false) @map("is_creator")
   creatorStatus  CreatorStatus @default(NONE) @map("creator_status")
   heightCm       Int?          @map("height_cm")
+  showHeight     Boolean       @default(false) @map("show_height")
   emailVerified  Boolean       @default(false) @map("email_verified")
   followerCount  Int           @default(0) @map("follower_count")
   followingCount Int           @default(0) @map("following_count")

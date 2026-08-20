@@ -13,5 +13,8 @@
   },
   "devDependencies": {
     "@types/react": "^19.2.18"
+  },
+  "dependencies": {
+    "framer-motion": "^13.1.0"
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { AvatarUploader, Badge, Button, Input, Modal, toast } from "@outfiqe/design-system";
+import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -26,18 +27,23 @@ interface CreatorProfileProps {
   creator: CreatorProfileType;
 }
 
+const MIN_HEIGHT_CM = 90;
+const MAX_HEIGHT_CM = 251;
+
 export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const router = useRouter();
   const { isAuthenticated, state, updateUser } = useAuth();
   const followMutation = useToggleFollow("user");
   const updateProfile = useUpdateCreatorProfile();
   const deleteLook = useDeleteLook();
-  const { handle, userId, heightCm, creatorStatus, taggedPiecesCount, followingCount } = creator;
+  const { handle, userId, creatorStatus, taggedPiecesCount, followingCount } = creator;
   const looks = useInfiniteCreatorLooks(handle);
   const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = looks;
 
   const [name, setName] = useState(creator.name);
   const [avatarUrl, setAvatarUrl] = useState(creator.avatarUrl);
+  const [heightCm, setHeightCm] = useState(creator.heightCm);
+  const [showHeight, setShowHeight] = useState(creator.showHeight);
   const [isFollowing, setIsFollowing] = useState(creator.isFollowing);
   const [followerCount, setFollowerCount] = useState(creator.followerCount);
   const [postsCount, setPostsCount] = useState(creator.postsCount);
@@ -47,6 +53,8 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const [editOpen, setEditOpen] = useState(false);
   const [draftName, setDraftName] = useState(name);
   const [draftAvatarUrl, setDraftAvatarUrl] = useState(avatarUrl);
+  const [draftHeightCm, setDraftHeightCm] = useState(heightCm);
+  const [draftShowHeight, setDraftShowHeight] = useState(showHeight);
   const [editingLookId, setEditingLookId] = useState<string | null>(null);
   const [deletingLookId, setDeletingLookId] = useState<string | null>(null);
   const isOwnProfile = state.user?.id === userId;
@@ -73,6 +81,8 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const openEdit = () => {
     setDraftName(name);
     setDraftAvatarUrl(avatarUrl);
+    setDraftHeightCm(heightCm);
+    setDraftShowHeight(showHeight);
     setEditOpen(true);
   };
 
@@ -81,11 +91,18 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
     if (!trimmed) return;
 
     updateProfile.mutate(
-      { name: trimmed, avatarUrl: draftAvatarUrl },
+      {
+        name: trimmed,
+        avatarUrl: draftAvatarUrl,
+        heightCm: draftHeightCm,
+        showHeight: draftShowHeight,
+      },
       {
         onSuccess: (updated) => {
           setName(updated.name);
           setAvatarUrl(updated.avatarUrl);
+          setHeightCm(updated.heightCm);
+          setShowHeight(updated.showHeight);
           updateUser({ name: updated.name, avatarUrl: updated.avatarUrl });
           setEditOpen(false);
           toast.success("Profile updated");
@@ -132,14 +149,24 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
         </div>
 
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl">
+          <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl">
             {name}
+            {creatorStatus === "APPROVED" && (
+              <span
+                role="img"
+                aria-label="Approved creator"
+                className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground sm:size-6"
+              >
+                <Check className="size-3 sm:size-3.5" strokeWidth={3} />
+              </span>
+            )}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            @{handle}
-            {heightCm ? ` · ${formatHeight(heightCm)}` : ""}
-          </p>
-          {creatorStatus === "APPROVED" && <Badge className="mt-2">Approved creator</Badge>}
+          <p className="mt-1 text-sm text-muted-foreground">@{handle}</p>
+          {heightCm && (
+            <Badge className="mt-2" variant="outline" showDot={false}>
+              {formatHeight(heightCm)}
+            </Badge>
+          )}
 
           <div className="mt-4 flex gap-6">
             <div>
@@ -264,6 +291,29 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
               </label>
               <Input value={draftName} onChange={(event) => setDraftName(event.target.value)} />
             </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">
+                Height (cm)
+              </label>
+              <Input
+                type="number"
+                min={MIN_HEIGHT_CM}
+                max={MAX_HEIGHT_CM}
+                value={draftHeightCm ?? ""}
+                onChange={(event) =>
+                  setDraftHeightCm(event.target.value ? Number(event.target.value) : null)
+                }
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                className="size-4 rounded border-border"
+                checked={draftShowHeight}
+                onChange={(event) => setDraftShowHeight(event.target.checked)}
+              />
+              Show height on my profile
+            </label>
           </div>
         </Modal>
       )}

@@ -13,7 +13,7 @@ Everything a creator manages about their own account from `/dashboard/*`: profil
 - `components/ApplyAsCreatorButton.tsx`, `EarningsSection.tsx`, `ShareSection.tsx` — the other dashboard sections.
 - `components/CreatorStatusGate.tsx` — the shared "not an approved creator yet" state (application under review / become-a-creator pitch + `ApplyAsCreatorButton`), rendered by `EarningsSection`, `ShareSection`, and `app/dashboard/profile/page.tsx` whenever `creatorStatus !== APPROVED`.
 - `api/creatorLooksApi.ts`, `creatorLooksSchemas.ts` — look create/edit/delete requests + response validation.
-- `api/creatorDashboardApi.ts`, `creatorDashboardSchemas.ts` — profile read/update.
+- `api/creatorDashboardApi.ts`, `creatorDashboardSchemas.ts` — profile read/update, including `heightCm`/`showHeight` (edited from `creator-profile`'s edit-profile modal, not from this feature).
 - `hooks/useCreateLook.ts`, `useUpdateLook.ts`, `useDeleteLook.ts`, `useLookDetail.ts` — look mutations and the on-demand single-look fetch used to prefill the edit modal.
 - `hooks/useUpdateCreatorProfile.ts`, `useTaggableProducts.ts` — profile update and product search for tagging. `PostModal`'s local photo/crop state (`usePendingPhotos`) lives in `@/shared/hooks` — see below (`EditPostForm` manages its own photo state separately, unaffected).
 - `schemas/lookForm.schema.ts` — `lookFormSchema` (the wire shape: `imageUrls`/`caption`/`taggedProducts`, used by both create and update requests) and `editLookFormSchema` (the `EditPostForm` RHF form itself, which only tracks caption/tags — photos are separate component state, merged in at submit time).
