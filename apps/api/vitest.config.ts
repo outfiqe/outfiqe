@@ -21,6 +21,7 @@ export default defineConfig({
         "src/modules/brand-applications/**",
         "src/modules/creators/**",
         "src/modules/creator-looks/**",
+        "src/modules/brands/**",
       ],
       thresholds: {
         lines: 80,
