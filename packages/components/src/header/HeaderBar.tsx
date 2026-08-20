@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { type ReactElement, type ReactNode, useEffect, useRef } from "react";
 
 import { cx } from "./cx";
@@ -20,6 +21,8 @@ export type HeaderBarProps = {
 
 const HEADER_HEIGHT_VAR = "--site-header-height";
 
+const LAYOUT_TRANSITION = { type: "spring", stiffness: 420, damping: 42, mass: 0.6 } as const;
+
 export const HeaderBar = ({
   children,
   condensed = false,
@@ -31,24 +34,40 @@ export const HeaderBar = ({
     const header = headerRef.current;
     if (!header) return;
 
+    let pendingFrameId: number | null = null;
+    let lastHeightPx = -1;
+
     const observer = new ResizeObserver(() => {
-      document.documentElement.style.setProperty(
-        HEADER_HEIGHT_VAR,
-        `${header.getBoundingClientRect().height}px`,
-      );
+      if (pendingFrameId !== null) return;
+      pendingFrameId = requestAnimationFrame(() => {
+        pendingFrameId = null;
+        const heightPx = header.getBoundingClientRect().height;
+        if (heightPx === lastHeightPx) return;
+        lastHeightPx = heightPx;
+        document.documentElement.style.setProperty(HEADER_HEIGHT_VAR, `${heightPx}px`);
+      });
     });
     observer.observe(header);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (pendingFrameId !== null) cancelAnimationFrame(pendingFrameId);
+    };
   }, []);
 
   return (
-    <header
+    <motion.header
       ref={headerRef}
+      layout
+      transition={LAYOUT_TRANSITION}
       className={cx(wrapClass, condensed ? wrapCondensedClass : wrapExpandedClass)}
     >
-      <div className={cx(barClass, condensed ? barCondensedClass : barExpandedClass, className)}>
+      <motion.div
+        layout
+        transition={LAYOUT_TRANSITION}
+        className={cx(barClass, condensed ? barCondensedClass : barExpandedClass, className)}
+      >
         {children}
-      </div>
-    </header>
+      </motion.div>
+    </motion.header>
   );
 };
