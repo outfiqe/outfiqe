@@ -168,6 +168,7 @@ async function seedCreators() {
           isCreator: true,
           creatorStatus: CreatorStatus.APPROVED,
           heightCm: CREATOR_HEIGHTS_CM[index],
+          showHeight: true,
         },
         create: {
           email: `creator${index + 1}@example.com`,
@@ -178,6 +179,7 @@ async function seedCreators() {
           isCreator: true,
           creatorStatus: CreatorStatus.APPROVED,
           heightCm: CREATOR_HEIGHTS_CM[index],
+          showHeight: true,
         },
       }),
     ),

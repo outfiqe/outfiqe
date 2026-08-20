@@ -108,6 +108,7 @@ export const creatorService = {
       handle: userHandle,
       avatarUrl,
       heightCm,
+      showHeight,
       creatorStatus,
       followerCount,
       followingCount,
@@ -119,12 +120,15 @@ export const creatorService = {
       viewerId ? followRepository.isFollowing(viewerId, FollowTargetType.USER, id) : false,
     ]);
 
+    const isOwnProfile = viewerId === id;
+
     return {
       userId: id,
       name,
       handle: userHandle,
       avatarUrl,
-      heightCm,
+      heightCm: showHeight || isOwnProfile ? heightCm : null,
+      showHeight,
       creatorStatus,
       postsCount,
       followerCount,
