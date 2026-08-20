@@ -69,7 +69,7 @@ describe("ApplyAsCreatorButton", () => {
   it("shows the pending label while the request is in flight", async () => {
     mswServer.use(
       http.post("/api/creators/apply", async () => {
-        await delay(50);
+        await delay(200);
         return HttpResponse.json({
           success: true,
           message: "Creator application submitted.",
