@@ -13,6 +13,8 @@ export const SOCKET_EVENTS = {
   LEADERBOARD_UPDATED: "leaderboard:updated",
   LEADERBOARD_SUBSCRIBE: "leaderboard:subscribe",
   LEADERBOARD_UNSUBSCRIBE: "leaderboard:unsubscribe",
+  ACHIEVEMENT_UNLOCKED: "achievement:unlocked",
+  LEVEL_UP: "level:up",
 } as const;
 
 export const SOCKET_RATE_LIMIT = {

@@ -27,6 +27,8 @@ export const DomainEvents = {
   PRODUCT_PURCHASED: "product.purchased",
   PRODUCT_TAGGED: "product.tagged",
   SALE_GENERATED: "sale.generated",
+  ACHIEVEMENT_UNLOCKED: "achievement.unlocked",
+  LEVEL_UP: "user.leveled_up",
 } as const;
 
 // A Redis hiccup must never fail the caller's request (like/comment/follow/etc.) — log and move on,

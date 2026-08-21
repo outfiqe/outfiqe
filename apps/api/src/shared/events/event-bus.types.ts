@@ -36,6 +36,18 @@ export type DomainEventPayloads = {
     creatorId: string;
     commissionAmount: number;
   };
+  [DomainEvents.ACHIEVEMENT_UNLOCKED]: {
+    userId: string;
+    badgeId: string;
+    badgeName: string;
+    badgeIcon: string;
+    xpReward: number;
+  };
+  [DomainEvents.LEVEL_UP]: {
+    userId: string;
+    previousLevel: { level: number; name: string };
+    currentLevel: { level: number; name: string; icon: string | null };
+  };
 };
 
 export type DomainEventHandler<E extends DomainEvent> = (

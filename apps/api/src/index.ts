@@ -5,12 +5,14 @@ import * as Sentry from "@sentry/node";
 import { stopDomainEventConsumers } from "#events/event-bus.consumer.js";
 import logger from "#lib/winston.utils.js";
 import { registerAchievementEventConsumers } from "#modules/achievements/achievement.events.js";
+import { registerAchievementSocketEventConsumer } from "#modules/achievements/achievement.socket.js";
 import { registerCreatorLookSocketHandlers } from "#modules/creator-looks/creatorLook.socket.js";
 import {
   registerLeaderboardEventConsumer,
   registerLeaderboardSocketHandlers,
 } from "#modules/leaderboard/leaderboard.socket.js";
 import { registerXpEventConsumers } from "#modules/xp/xp.events.js";
+import { registerXpSocketEventConsumer } from "#modules/xp/xp.socket.js";
 import { disconnectRedis } from "#redis/redis.client.js";
 import { startBoundaryScheduler, startIntervalScheduler } from "#scheduling/interval.scheduler.js";
 import { registerSocketListeners } from "#socket/socket.listeners.js";
@@ -33,6 +35,8 @@ registerLeaderboardSocketHandlers();
 registerLeaderboardEventConsumer();
 registerXpEventConsumers();
 registerAchievementEventConsumers();
+registerXpSocketEventConsumer();
+registerAchievementSocketEventConsumer();
 
 startIntervalScheduler(INTERVAL_JOBS);
 startBoundaryScheduler(BOUNDARY_JOBS);

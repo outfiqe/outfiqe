@@ -43,11 +43,25 @@ export type LeaderboardSubscriptionPayload = {
   category: LeaderboardCategory;
 };
 
+export type AchievementUnlockedPayload = {
+  badgeId: string;
+  badgeName: string;
+  badgeIcon: string;
+  xpReward: number;
+};
+
+export type LevelUpPayload = {
+  previousLevel: { level: number; name: string };
+  currentLevel: { level: number; name: string; icon: string | null };
+};
+
 // Key literals must match SOCKET_EVENTS in socket.keys.ts.
 export type ServerToClientEvents = {
   "look:created": (payload: LookCreatedPayload) => void;
   "feed:sync:result": (payload: FeedSyncResultPayload) => void;
   "leaderboard:updated": (payload: LeaderboardUpdatedPayload) => void;
+  "achievement:unlocked": (payload: AchievementUnlockedPayload) => void;
+  "level:up": (payload: LevelUpPayload) => void;
 };
 
 export type ClientToServerEvents = {

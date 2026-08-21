@@ -1,4 +1,5 @@
 import { prisma } from "#db/prisma.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
 import { describeError } from "#redis/redis.utils.js";
@@ -31,7 +32,7 @@ const applyXpTransaction = async (input: AwardXpInput, amount: number): Promise<
     return NO_ACTIVE_LEVELS_RESULT;
   }
 
-  return await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     await xpRepository.createTransaction(tx, { ...input, amount });
 
     const fallbackLevelId = computeLevelProgress(amount, activeLevelsDesc).level.id;
@@ -58,8 +59,22 @@ const applyXpTransaction = async (input: AwardXpInput, amount: number): Promise<
       previousLevel,
       currentLevel,
       leveledUp: currentLevel.id !== previousLevel.id,
-    };
+    } satisfies AwardXpResult;
   });
+
+  if (result.awarded && result.leveledUp) {
+    await eventBus.publish(DomainEvents.LEVEL_UP, {
+      userId,
+      previousLevel: { level: result.previousLevel.level, name: result.previousLevel.name },
+      currentLevel: {
+        level: result.currentLevel.level,
+        name: result.currentLevel.name,
+        icon: result.currentLevel.icon,
+      },
+    });
+  }
+
+  return result;
 };
 
 const awardXp = async (input: AwardXpInput): Promise<AwardXpResult> => {

@@ -1,3 +1,4 @@
+import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { XpActivityType } from "#generated/prisma/enums.js";
 import logger from "#lib/winston.utils.js";
 import { badgeRepository } from "#modules/badges/badge.repository.js";
@@ -85,6 +86,14 @@ const unlockAchievement = async (
     );
     return;
   }
+
+  await eventBus.publish(DomainEvents.ACHIEVEMENT_UNLOCKED, {
+    userId,
+    badgeId: achievement.badgeId,
+    badgeName: achievement.badgeName,
+    badgeIcon: achievement.badgeIcon,
+    xpReward: result.xpReward,
+  });
 
   if (result.xpReward > 0) {
     await xpService.grantFixedXp(
