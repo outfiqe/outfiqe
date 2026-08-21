@@ -1,4 +1,6 @@
 import { nextIsoWeekStart } from "#lib/iso-week.utils.js";
+import { DYNAMIC_BADGE_RECHECK_INTERVAL_MS } from "#modules/achievements/achievement.constants.js";
+import { achievementService } from "#modules/achievements/achievement.service.js";
 import { COMMISSION_SWEEP_INTERVAL_MS } from "#modules/commissions/commission.constants.js";
 import { runCommissionLifecycleSweep } from "#modules/commissions/commission.lifecycle.js";
 import { CREATOR_LEADERBOARD_RECOMPUTE_INTERVAL_MS } from "#modules/creator-leaderboard/creatorLeaderboard.constants.js";
@@ -85,6 +87,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "creator-leaderboard-recompute",
     run: creatorLeaderboardService.runRecompute,
     intervalMs: CREATOR_LEADERBOARD_RECOMPUTE_INTERVAL_MS,
+  },
+  {
+    name: "dynamic-badge-recheck",
+    run: achievementService.recheckDynamicBadges,
+    intervalMs: DYNAMIC_BADGE_RECHECK_INTERVAL_MS,
   },
 ];
 

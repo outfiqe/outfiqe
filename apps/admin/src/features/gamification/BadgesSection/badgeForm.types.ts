@@ -12,6 +12,7 @@ export type BadgeFormState = {
   primaryColor: string;
   xpReward: string;
   isPermanent: boolean;
+  isDynamic: boolean;
   isPublic: boolean;
   isTitleEligible: boolean;
   isAdminAward: boolean;

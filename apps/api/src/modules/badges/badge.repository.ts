@@ -9,6 +9,7 @@ import type {
   AwardBadgeResult,
   BadgeAdminRecord,
   BadgeCatalogRecord,
+  BadgeOwnerRecord,
   FeaturedBadgeRecord,
   ManualAwardRecord,
   MostAwardedBadgeRecord,
@@ -45,6 +46,7 @@ export const badgeRepository = {
         isFeatured: true,
         displayOrder: true,
         unlockedAt: true,
+        isDynamicallyEligible: true,
       },
     });
   },
@@ -86,7 +88,13 @@ export const badgeRepository = {
 
   async listFeaturedForUser(userId: string): Promise<FeaturedBadgeRecord[]> {
     const rows = await prisma.userBadge.findMany({
-      where: { userId, removedAt: null, isFeatured: true, isDisplayed: true },
+      where: {
+        userId,
+        removedAt: null,
+        isFeatured: true,
+        isDisplayed: true,
+        OR: [{ isDynamicallyEligible: true }, { badge: { isDynamic: false } }],
+      },
       orderBy: { displayOrder: "asc" },
       include: { badge: true },
     });
@@ -101,7 +109,13 @@ export const badgeRepository = {
 
   async findTitleForUser(userId: string): Promise<FeaturedBadgeRecord | null> {
     const row = await prisma.userBadge.findFirst({
-      where: { userId, removedAt: null, isTitle: true, isDisplayed: true },
+      where: {
+        userId,
+        removedAt: null,
+        isTitle: true,
+        isDisplayed: true,
+        OR: [{ isDynamicallyEligible: true }, { badge: { isDynamic: false } }],
+      },
       include: { badge: true },
     });
     if (!row) return null;
@@ -178,6 +192,24 @@ export const badgeRepository = {
     });
   },
 
+  async listOwnersOfBadge(badgeId: string): Promise<BadgeOwnerRecord[]> {
+    return prisma.userBadge.findMany({
+      where: { badgeId, removedAt: null },
+      select: { userId: true, isDynamicallyEligible: true },
+    });
+  },
+
+  async setDynamicEligibility(
+    userId: string,
+    badgeId: string,
+    isDynamicallyEligible: boolean,
+  ): Promise<void> {
+    await prisma.userBadge.updateMany({
+      where: { userId, badgeId, removedAt: null },
+      data: { isDynamicallyEligible },
+    });
+  },
+
   async listAllBadgesAdmin(): Promise<BadgeAdminRecord[]> {
     return prisma.badge.findMany({
       include: { achievement: true },
@@ -200,6 +232,7 @@ export const badgeRepository = {
         designConfig: input.designConfig,
         xpReward: input.xpReward,
         isPermanent: input.isPermanent,
+        isDynamic: input.isDynamic,
         isPublic: input.isPublic,
         isTitleEligible: input.isTitleEligible,
         assignmentLimit: input.assignmentLimit,
@@ -233,6 +266,7 @@ export const badgeRepository = {
           designConfig: input.designConfig,
           xpReward: input.xpReward,
           isPermanent: input.isPermanent,
+          isDynamic: input.isDynamic,
           isPublic: input.isPublic,
           isTitleEligible: input.isTitleEligible,
           assignmentLimit: input.assignmentLimit,

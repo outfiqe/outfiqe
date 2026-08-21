@@ -63,6 +63,7 @@ const listCollectionForUser = async (userId: string): Promise<BadgeCollectionEnt
       isDisplayed: state?.isDisplayed ?? null,
       isFeatured: state?.isFeatured ?? null,
       displayOrder: state?.displayOrder ?? null,
+      isDynamicallyActive: state && badge.isDynamic ? state.isDynamicallyEligible : null,
       progress: state ? null : (progressByBadgeId.get(badge.id) ?? null),
     });
   }

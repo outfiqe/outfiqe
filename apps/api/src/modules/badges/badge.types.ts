@@ -26,6 +26,12 @@ export type UserBadgeStateRecord = {
   isFeatured: boolean;
   displayOrder: number;
   unlockedAt: Date;
+  isDynamicallyEligible: boolean;
+};
+
+export type BadgeOwnerRecord = {
+  userId: string;
+  isDynamicallyEligible: boolean;
 };
 
 export type FeaturedBadgeRecord = {
@@ -50,6 +56,7 @@ export type BadgeCollectionEntry = {
   isDisplayed: boolean | null;
   isFeatured: boolean | null;
   displayOrder: number | null;
+  isDynamicallyActive: boolean | null;
   progress: AchievementConditionProgress[] | null;
 };
 

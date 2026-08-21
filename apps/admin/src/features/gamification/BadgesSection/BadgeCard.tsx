@@ -29,6 +29,7 @@ export const BadgeCard = ({
         " · achievement paused"}
       {badge.achievement?.activeFrom || badge.achievement?.activeUntil ? " · seasonal" : ""}
       {badge.isTitleEligible && " · title-eligible"}
+      {badge.isDynamic && " · dynamic"}
     </p>
   </div>
 );

@@ -15,7 +15,11 @@ const challengeCopyFields = {
   bannerImageUrl: z.url().nullable(),
 };
 
-const { assignmentLimit: _assignmentLimit, ...challengeBadgeFields } = badgeCoreFields;
+const {
+  assignmentLimit: _assignmentLimit,
+  isDynamic: _isDynamic,
+  ...challengeBadgeFields
+} = badgeCoreFields;
 
 export const createChallengeSchema = z
   .object({

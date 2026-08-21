@@ -1143,22 +1143,23 @@ model CreatorLeaderboardCategoryConfig {
  * "void, don't delete" convention as CreatorCommission/CommissionTier.
  */
 model UserBadge {
-  id            String    @id @default(uuid()) @db.Uuid
-  userId        String    @map("user_id") @db.Uuid
-  user          User      @relation("UserBadges", fields: [userId], references: [id], onDelete: Cascade)
-  badgeId       String    @map("badge_id") @db.Uuid
-  badge         Badge     @relation(fields: [badgeId], references: [id], onDelete: Cascade)
-  awardedById   String?   @map("awarded_by_id") @db.Uuid
-  awardedBy     User?     @relation("UserBadgeAwardedBy", fields: [awardedById], references: [id], onDelete: SetNull)
-  awardReason   String?   @map("award_reason")
-  isDisplayed   Boolean   @default(true) @map("is_displayed")
-  isFeatured    Boolean   @default(false) @map("is_featured")
-  isTitle       Boolean   @default(false) @map("is_title")
-  displayOrder  Int       @default(0) @map("display_order")
-  removedAt     DateTime? @map("removed_at")
-  removedReason String?   @map("removed_reason")
-  unlockedAt    DateTime  @default(now()) @map("unlocked_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
+  id                    String    @id @default(uuid()) @db.Uuid
+  userId                String    @map("user_id") @db.Uuid
+  user                  User      @relation("UserBadges", fields: [userId], references: [id], onDelete: Cascade)
+  badgeId               String    @map("badge_id") @db.Uuid
+  badge                 Badge     @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  awardedById           String?   @map("awarded_by_id") @db.Uuid
+  awardedBy             User?     @relation("UserBadgeAwardedBy", fields: [awardedById], references: [id], onDelete: SetNull)
+  awardReason           String?   @map("award_reason")
+  isDisplayed           Boolean   @default(true) @map("is_displayed")
+  isFeatured            Boolean   @default(false) @map("is_featured")
+  isTitle               Boolean   @default(false) @map("is_title")
+  isDynamicallyEligible Boolean   @default(true) @map("is_dynamically_eligible")
+  displayOrder          Int       @default(0) @map("display_order")
+  removedAt             DateTime? @map("removed_at")
+  removedReason         String?   @map("removed_reason")
+  unlockedAt            DateTime  @default(now()) @map("unlocked_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
 
   @@unique([userId, badgeId])
   @@index([userId, isDisplayed])

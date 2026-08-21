@@ -50,6 +50,13 @@ export const achievementMetricSchema = z.enum([
   "comments_made",
   "sales_count",
   "total_views",
+  "top_xp_rank",
+  "top_creator_rank",
+  "most_likes_rank",
+  "most_engaged_rank",
+  "top_seller_rank",
+  "rising_creator_rank",
+  "most_achievements_rank",
 ]);
 export type AchievementMetricValue = z.infer<typeof achievementMetricSchema>;
 

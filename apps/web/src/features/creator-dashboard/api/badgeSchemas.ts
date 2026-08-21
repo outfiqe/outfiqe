@@ -62,6 +62,7 @@ export const badgeCollectionEntrySchema = z.object({
   isDisplayed: z.boolean().nullable(),
   isFeatured: z.boolean().nullable(),
   displayOrder: z.number().nullable(),
+  isDynamicallyActive: z.boolean().nullable(),
   progress: z.array(badgeConditionProgressSchema).nullable(),
 });
 export type BadgeCollectionEntry = z.infer<typeof badgeCollectionEntrySchema>;

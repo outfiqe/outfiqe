@@ -52,6 +52,7 @@ export const badgeCoreFields = {
   designConfig: badgeDesignConfigSchema,
   xpReward: z.number().int().nonnegative(),
   isPermanent: z.boolean(),
+  isDynamic: z.boolean(),
   isPublic: z.boolean(),
   isTitleEligible: z.boolean(),
   assignmentLimit: z.number().int().positive().nullable(),

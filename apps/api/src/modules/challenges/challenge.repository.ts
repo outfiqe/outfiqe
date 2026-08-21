@@ -85,6 +85,7 @@ export const challengeRepository = {
                 designConfig: input.designConfig,
                 xpReward: input.xpReward,
                 isPermanent: input.isPermanent,
+                isDynamic: false,
                 isPublic: input.isPublic,
                 isTitleEligible: input.isTitleEligible,
                 assignmentLimit: null,

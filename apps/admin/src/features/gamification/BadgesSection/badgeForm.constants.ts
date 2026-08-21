@@ -13,6 +13,7 @@ export const EMPTY_FORM: BadgeFormState = {
   primaryColor: "#94a3b8",
   xpReward: "0",
   isPermanent: true,
+  isDynamic: false,
   isPublic: true,
   isTitleEligible: false,
   isAdminAward: false,

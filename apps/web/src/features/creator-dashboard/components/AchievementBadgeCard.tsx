@@ -6,7 +6,7 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { BadgeCollectionEntry } from "../api/badgeSchemas";
 import { useUpdateBadgeDisplay } from "../hooks/useUpdateBadgeDisplay";
-import { METRIC_LABEL, RARITY_LABEL } from "../utils/badgeLabels";
+import { isRankMetric, METRIC_LABEL, RARITY_LABEL } from "../utils/badgeLabels";
 import { AchievementBadgeIcon } from "./AchievementBadgeIcon";
 
 type AchievementBadgeCardProps = {
@@ -32,6 +32,7 @@ export const AchievementBadgeCard = ({
     unlockedAt,
     isDisplayed,
     isFeatured,
+    isDynamicallyActive,
     progress,
   } = entry;
 
@@ -59,25 +60,39 @@ export const AchievementBadgeCard = ({
           </p>
         )}
 
+        {isCollected && isDynamicallyActive === false && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Not currently active — hidden from your profile until you requalify.
+          </p>
+        )}
+
         {!isCollected && progress && progress.length > 0 && (
           <div className="mt-2 space-y-1.5">
-            {progress.map((condition) => (
-              <div key={condition.metric}>
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>{METRIC_LABEL[condition.metric] ?? condition.metric}</span>
-                  <span>
-                    {Math.min(condition.currentValue, condition.value).toLocaleString()} /{" "}
-                    {condition.value.toLocaleString()}
-                  </span>
+            {progress.map((condition) =>
+              isRankMetric(condition.metric) ? (
+                <p key={condition.metric} className="text-[11px] text-muted-foreground">
+                  {METRIC_LABEL[condition.metric] ?? condition.metric}: currently #
+                  {condition.currentValue.toLocaleString()} · need top{" "}
+                  {condition.value.toLocaleString()}
+                </p>
+              ) : (
+                <div key={condition.metric}>
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>{METRIC_LABEL[condition.metric] ?? condition.metric}</span>
+                    <span>
+                      {Math.min(condition.currentValue, condition.value).toLocaleString()} /{" "}
+                      {condition.value.toLocaleString()}
+                    </span>
+                  </div>
+                  <ProgressBar
+                    label={`${METRIC_LABEL[condition.metric] ?? condition.metric} progress`}
+                    value={condition.currentValue}
+                    max={condition.value}
+                    className="mt-1"
+                  />
                 </div>
-                <ProgressBar
-                  label={`${METRIC_LABEL[condition.metric] ?? condition.metric} progress`}
-                  value={condition.currentValue}
-                  max={condition.value}
-                  className="mt-1"
-                />
-              </div>
-            ))}
+              ),
+            )}
           </div>
         )}
 

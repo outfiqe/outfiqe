@@ -57,6 +57,7 @@ export type BadgeFormInput = {
   designConfig: { shape: string; primaryColor: string };
   xpReward: number;
   isPermanent: boolean;
+  isDynamic: boolean;
   isPublic: boolean;
   isTitleEligible: boolean;
   assignmentLimit: number | null;

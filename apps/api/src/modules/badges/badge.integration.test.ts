@@ -43,6 +43,7 @@ const validBadgePayload = (overrides: Record<string, unknown> = {}) => ({
   designConfig: { shape: "circle", primaryColor: "#123456" },
   xpReward: 10,
   isPermanent: true,
+  isDynamic: false,
   isPublic: true,
   isTitleEligible: false,
   assignmentLimit: null,

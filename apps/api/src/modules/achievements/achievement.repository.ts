@@ -22,6 +22,22 @@ export const achievementRepository = {
     });
   },
 
+  async findActiveDynamicAchievements() {
+    const now = new Date();
+    return prisma.achievement.findMany({
+      where: {
+        isActive: true,
+        requirementType: { not: AchievementRequirementType.ADMIN_AWARD },
+        badge: { isActive: true, isDynamic: true },
+        AND: [
+          { OR: [{ activeFrom: null }, { activeFrom: { lte: now } }] },
+          { OR: [{ activeUntil: null }, { activeUntil: { gte: now } }] },
+        ],
+      },
+      include: { badge: true },
+    });
+  },
+
   async countActiveLooks(userId: string): Promise<number> {
     return prisma.creatorLook.count({ where: { creatorId: userId, deletedAt: null } });
   },
