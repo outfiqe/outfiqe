@@ -11,6 +11,7 @@ const ACTIVITY_LABEL: Record<XpTransaction["activityType"], string> = {
   [XpActivityType.SALE_GENERATED]: "Generated a sale",
   [XpActivityType.PRODUCT_TAGGED]: "Tagged a product",
   [XpActivityType.FOLLOWER_MILESTONE]: "Reached a follower milestone",
+  [XpActivityType.ACHIEVEMENT_UNLOCKED]: "Unlocked an achievement",
   [XpActivityType.ADMIN_ADJUSTMENT]: "Adjusted by an admin",
 };
 

@@ -9,4 +9,5 @@ export type XpActivityType =
   | "SALE_GENERATED"
   | "PRODUCT_TAGGED"
   | "FOLLOWER_MILESTONE"
+  | "ACHIEVEMENT_UNLOCKED"
   | "ADMIN_ADJUSTMENT";

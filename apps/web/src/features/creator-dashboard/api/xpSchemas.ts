@@ -12,6 +12,7 @@ export const XpActivityType = {
   SALE_GENERATED: "SALE_GENERATED",
   PRODUCT_TAGGED: "PRODUCT_TAGGED",
   FOLLOWER_MILESTONE: "FOLLOWER_MILESTONE",
+  ACHIEVEMENT_UNLOCKED: "ACHIEVEMENT_UNLOCKED",
   ADMIN_ADJUSTMENT: "ADMIN_ADJUSTMENT",
 } as const satisfies Record<string, XpActivityTypeType>;
 export type XpActivityTypeValue = (typeof XpActivityType)[keyof typeof XpActivityType];

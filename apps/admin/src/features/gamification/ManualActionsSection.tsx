@@ -48,7 +48,7 @@ const AwardBadgeForm = () => {
       onSubmit={handleSubmit}
       className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
     >
-      <div className="space-y-1.5">
+      <div className="w-full space-y-1.5 sm:w-56">
         <label htmlFor="award-badge-select" className="block text-xs text-muted-foreground">
           Badge
         </label>
@@ -57,7 +57,7 @@ const AwardBadgeForm = () => {
           required
           value={badgeId}
           onChange={(e) => setBadgeId(e.target.value)}
-          className="w-56"
+          className="w-full"
         >
           <option value="" disabled>
             Select a badge…
@@ -69,7 +69,7 @@ const AwardBadgeForm = () => {
           ))}
         </Select>
       </div>
-      <div className="space-y-1.5">
+      <div className="w-full space-y-1.5 sm:w-72">
         <label htmlFor="award-user-id" className="block text-xs text-muted-foreground">
           User ID
         </label>
@@ -78,11 +78,11 @@ const AwardBadgeForm = () => {
           required
           value={userId}
           onChange={(e) => setUserId(e.target.value)}
-          className="w-72"
+          className="w-full"
           placeholder="uuid"
         />
       </div>
-      <div className="min-w-56 flex-1 space-y-1.5">
+      <div className="min-w-0 flex-1 space-y-1.5">
         <label htmlFor="award-reason" className="block text-xs text-muted-foreground">
           Reason
         </label>
@@ -140,7 +140,7 @@ const AdjustXpForm = () => {
       onSubmit={handleSubmit}
       className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
     >
-      <div className="space-y-1.5">
+      <div className="w-full space-y-1.5 sm:w-72">
         <label htmlFor="adjust-xp-user-id" className="block text-xs text-muted-foreground">
           User ID
         </label>
@@ -149,11 +149,11 @@ const AdjustXpForm = () => {
           required
           value={userId}
           onChange={(e) => setUserId(e.target.value)}
-          className="w-72"
+          className="w-full"
           placeholder="uuid"
         />
       </div>
-      <div className="space-y-1.5">
+      <div className="w-full space-y-1.5 sm:w-32">
         <label htmlFor="adjust-xp-amount" className="block text-xs text-muted-foreground">
           Amount (negative to dock XP)
         </label>
@@ -163,10 +163,10 @@ const AdjustXpForm = () => {
           required
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          className="w-32"
+          className="w-full"
         />
       </div>
-      <div className="min-w-56 flex-1 space-y-1.5">
+      <div className="min-w-0 flex-1 space-y-1.5">
         <label htmlFor="adjust-xp-reason" className="block text-xs text-muted-foreground">
           Reason
         </label>
