@@ -56,3 +56,17 @@ export type FeaturedBadgeView = {
   designConfig: BadgeDesignConfig;
   rarity: BadgeRarity;
 };
+
+export type AwardBadgeInput = {
+  userId: string;
+  badgeId: string;
+  awardedById?: string;
+  awardReason?: string;
+};
+
+export type AwardBadgeFailureReason =
+  "BADGE_NOT_FOUND" | "BADGE_INACTIVE" | "ALREADY_AWARDED" | "ASSIGNMENT_LIMIT_REACHED";
+
+export type AwardBadgeResult =
+  | { awarded: true; userBadgeId: string; xpReward: number }
+  | { awarded: false; reason: AwardBadgeFailureReason };

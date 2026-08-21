@@ -32,6 +32,7 @@ export type PublicCreatorProfile = {
   taggedPiecesCount: number;
   isFollowing: boolean;
   featuredBadges: FeaturedBadgeView[];
+  titleBadge: FeaturedBadgeView | null;
 };
 
 export type CreatorSearchResult = {

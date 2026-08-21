@@ -8,7 +8,6 @@ export type EligibleAchievementRecord = {
   conditions: AchievementCondition[];
   badgeName: string;
   badgeIcon: string;
-  xpReward: number;
 };
 
 export type MetricSnapshot = Partial<Record<AchievementMetric, number>>;

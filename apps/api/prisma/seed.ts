@@ -1391,6 +1391,8 @@ type BadgeSeed = {
   xpReward: number;
   requirementType: AchievementRequirementType;
   conditions: { metric: string; operator: "gte"; value: number }[];
+  assignmentLimit?: number;
+  isTitleEligible?: boolean;
 };
 
 // First slice of the spec 12 catalog (not all 40) — enough to exercise every
@@ -1481,6 +1483,7 @@ const BADGE_SEED: BadgeSeed[] = [
     xpReward: 500,
     requirementType: AchievementRequirementType.ENGAGEMENT,
     conditions: [{ metric: "total_likes", operator: "gte", value: 50000 }],
+    isTitleEligible: true,
   },
   {
     name: "Community Friend",
@@ -1592,6 +1595,21 @@ const BADGE_SEED: BadgeSeed[] = [
     xpReward: 0,
     requirementType: AchievementRequirementType.ADMIN_AWARD,
     conditions: [],
+    isTitleEligible: true,
+  },
+  {
+    name: "Challenge Winner",
+    description: "Won a seasonal Outfiqe styling challenge.",
+    category: BadgeCategory.SPECIAL,
+    rarity: BadgeRarity.EXCLUSIVE,
+    icon: "🏅",
+    shape: "hexagon",
+    primaryColor: "#dc2626",
+    xpReward: 200,
+    requirementType: AchievementRequirementType.ADMIN_AWARD,
+    conditions: [],
+    assignmentLimit: 1,
+    isTitleEligible: true,
   },
 ];
 
@@ -1609,6 +1627,8 @@ const seedGamificationBadges = async () => {
         icon: seedBadge.icon,
         designConfig: { shape: seedBadge.shape, primaryColor: seedBadge.primaryColor },
         xpReward: seedBadge.xpReward,
+        assignmentLimit: seedBadge.assignmentLimit ?? null,
+        isTitleEligible: seedBadge.isTitleEligible ?? false,
         achievement: {
           create: {
             name: seedBadge.name,

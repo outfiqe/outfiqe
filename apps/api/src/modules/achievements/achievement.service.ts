@@ -1,5 +1,6 @@
 import { XpActivityType } from "#generated/prisma/enums.js";
 import logger from "#lib/winston.utils.js";
+import { badgeRepository } from "#modules/badges/badge.repository.js";
 import { xpService } from "#modules/xp/xp.service.js";
 import { describeError } from "#redis/redis.utils.js";
 
@@ -50,7 +51,6 @@ const loadEligibleAchievements = async (userId: string): Promise<EligibleAchieve
       conditions: parsed.data.conditions,
       badgeName: row.badge.name,
       badgeIcon: row.badge.icon,
-      xpReward: row.badge.xpReward,
     });
   }
   return eligible;
@@ -78,9 +78,15 @@ const unlockAchievement = async (
   userId: string,
   achievement: EligibleAchievementRecord,
 ): Promise<void> => {
-  await achievementRepository.createUserBadge(userId, achievement.badgeId);
+  const result = await badgeRepository.awardBadge({ userId, badgeId: achievement.badgeId });
+  if (!result.awarded) {
+    logger.warn(
+      `Achievement ${achievement.id} qualified for user ${userId} but the badge award was skipped: ${result.reason}`,
+    );
+    return;
+  }
 
-  if (achievement.xpReward > 0) {
+  if (result.xpReward > 0) {
     await xpService.grantFixedXp(
       {
         userId,
@@ -89,7 +95,7 @@ const unlockAchievement = async (
         source: ACHIEVEMENT_XP_SOURCE,
         metadata: { achievementId: achievement.id },
       },
-      achievement.xpReward,
+      result.xpReward,
     );
   }
 };

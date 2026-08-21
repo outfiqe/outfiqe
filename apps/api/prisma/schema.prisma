@@ -1045,20 +1045,23 @@ enum BadgeRarity {
  * Zod schema — see badges.schemas.ts — never trusted as `any` past that point.
  */
 model Badge {
-  id           String        @id @default(uuid()) @db.Uuid
-  name         String
-  description  String
-  category     BadgeCategory
-  rarity       BadgeRarity
-  icon         String
-  designConfig Json          @map("design_config")
-  xpReward     Int           @default(0) @map("xp_reward")
-  isPermanent  Boolean       @default(true) @map("is_permanent")
-  isDynamic    Boolean       @default(false) @map("is_dynamic")
-  isPublic     Boolean       @default(true) @map("is_public")
-  isActive     Boolean       @default(true) @map("is_active")
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
+  id              String        @id @default(uuid()) @db.Uuid
+  name            String
+  description     String
+  category        BadgeCategory
+  rarity          BadgeRarity
+  icon            String
+  designConfig    Json          @map("design_config")
+  xpReward        Int           @default(0) @map("xp_reward")
+  isPermanent     Boolean       @default(true) @map("is_permanent")
+  isDynamic       Boolean       @default(false) @map("is_dynamic")
+  isPublic        Boolean       @default(true) @map("is_public")
+  isActive        Boolean       @default(true) @map("is_active")
+  assignmentLimit Int?          @map("assignment_limit")
+  assignmentCount Int           @default(0) @map("assignment_count")
+  isTitleEligible Boolean       @default(false) @map("is_title_eligible")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
   achievement Achievement?
   userBadges  UserBadge[]
@@ -1116,6 +1119,7 @@ model UserBadge {
   awardReason   String?   @map("award_reason")
   isDisplayed   Boolean   @default(true) @map("is_displayed")
   isFeatured    Boolean   @default(false) @map("is_featured")
+  isTitle       Boolean   @default(false) @map("is_title")
   displayOrder  Int       @default(0) @map("display_order")
   removedAt     DateTime? @map("removed_at")
   removedReason String?   @map("removed_reason")

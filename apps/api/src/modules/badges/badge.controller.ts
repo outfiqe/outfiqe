@@ -8,6 +8,7 @@ import type {
   BadgeIdParam,
   UpdateBadgeDisplayBody,
   UpdateFeaturedBadgesBody,
+  UpdateTitleBadgeBody,
 } from "./badge.schemas.js";
 import { badgeService } from "./badge.service.js";
 
@@ -33,5 +34,13 @@ export const badgeController = {
 
     await badgeService.updateFeatured(userId, badgeIds);
     sendSuccess(res, null, "Featured badges updated.");
+  },
+
+  async updateTitle(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { badgeId } = validated.body<UpdateTitleBadgeBody>(res);
+
+    await badgeService.updateTitle(userId, badgeId);
+    sendSuccess(res, null, "Title badge updated.");
   },
 };

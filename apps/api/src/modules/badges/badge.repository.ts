@@ -1,7 +1,10 @@
 import { prisma } from "#db/prisma.js";
+import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
 import type {
+  AwardBadgeInput,
+  AwardBadgeResult,
   BadgeCatalogRecord,
   FeaturedBadgeRecord,
   UserBadgeStateRecord,
@@ -31,7 +34,7 @@ export const badgeRepository = {
   async updateDisplay(userId: string, badgeId: string, isDisplayed: boolean): Promise<boolean> {
     const result = await prisma.userBadge.updateMany({
       where: { userId, badgeId, removedAt: null },
-      data: { isDisplayed },
+      data: isDisplayed ? { isDisplayed } : { isDisplayed, isTitle: false },
     });
     return result.count > 0;
   },
@@ -76,5 +79,84 @@ export const badgeRepository = {
       designConfig: badge.designConfig,
       rarity: badge.rarity,
     }));
+  },
+
+  async findTitleForUser(userId: string): Promise<FeaturedBadgeRecord | null> {
+    const row = await prisma.userBadge.findFirst({
+      where: { userId, removedAt: null, isTitle: true, isDisplayed: true },
+      include: { badge: true },
+    });
+    if (!row) return null;
+
+    const { badge } = row;
+    return {
+      id: badge.id,
+      name: badge.name,
+      icon: badge.icon,
+      designConfig: badge.designConfig,
+      rarity: badge.rarity,
+    };
+  },
+
+  async findOwnedTitleEligibleBadgeId(userId: string, badgeId: string): Promise<string | null> {
+    const row = await prisma.userBadge.findFirst({
+      where: { userId, badgeId, removedAt: null, badge: { isTitleEligible: true } },
+      select: { badgeId: true },
+    });
+    return row?.badgeId ?? null;
+  },
+
+  async clearTitle(client: DbClient, userId: string): Promise<void> {
+    await client.userBadge.updateMany({
+      where: { userId, isTitle: true },
+      data: { isTitle: false },
+    });
+  },
+
+  async setTitle(client: DbClient, userId: string, badgeId: string): Promise<void> {
+    await client.userBadge.updateMany({
+      where: { userId, badgeId },
+      data: { isTitle: true },
+    });
+  },
+
+  async awardBadge(input: AwardBadgeInput): Promise<AwardBadgeResult> {
+    const badge = await prisma.badge.findUnique({
+      where: { id: input.badgeId },
+      select: { id: true, isActive: true, assignmentLimit: true, xpReward: true },
+    });
+    if (!badge) return { awarded: false, reason: "BADGE_NOT_FOUND" };
+    if (!badge.isActive) return { awarded: false, reason: "BADGE_INACTIVE" };
+
+    const alreadyOwned = await prisma.userBadge.findUnique({
+      where: { userId_badgeId: { userId: input.userId, badgeId: input.badgeId } },
+      select: { id: true },
+    });
+    if (alreadyOwned) return { awarded: false, reason: "ALREADY_AWARDED" };
+
+    return prisma.$transaction(async (tx) => {
+      if (badge.assignmentLimit !== null) {
+        const { count } = await tx.badge.updateMany({
+          where: { id: badge.id, assignmentCount: { lt: badge.assignmentLimit } },
+          data: { assignmentCount: { increment: 1 } },
+        });
+        if (count === 0) return { awarded: false, reason: "ASSIGNMENT_LIMIT_REACHED" };
+      }
+
+      try {
+        const userBadge = await tx.userBadge.create({
+          data: {
+            userId: input.userId,
+            badgeId: input.badgeId,
+            awardedById: input.awardedById,
+            awardReason: input.awardReason,
+          },
+        });
+        return { awarded: true, userBadgeId: userBadge.id, xpReward: badge.xpReward };
+      } catch (error) {
+        if (isUniqueConstraintError(error)) return { awarded: false, reason: "ALREADY_AWARDED" };
+        throw error;
+      }
+    });
   },
 };

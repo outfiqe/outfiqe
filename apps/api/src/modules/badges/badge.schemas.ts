@@ -24,7 +24,12 @@ export const updateFeaturedBadgesSchema = z.object({
     .refine(hasNoDuplicateBadgeIds, { message: "Each badge can only be featured once." }),
 });
 
+export const updateTitleBadgeSchema = z.object({
+  badgeId: z.uuid().nullable(),
+});
+
 export type BadgeDesignConfig = z.infer<typeof badgeDesignConfigSchema>;
 export type BadgeIdParam = z.infer<typeof badgeIdParamSchema>;
 export type UpdateBadgeDisplayBody = z.infer<typeof updateBadgeDisplaySchema>;
 export type UpdateFeaturedBadgesBody = z.infer<typeof updateFeaturedBadgesSchema>;
+export type UpdateTitleBadgeBody = z.infer<typeof updateTitleBadgeSchema>;

@@ -8,6 +8,7 @@ import {
   badgeIdParamSchema,
   updateBadgeDisplaySchema,
   updateFeaturedBadgesSchema,
+  updateTitleBadgeSchema,
 } from "./badge.schemas.js";
 
 export const badgeRoutes = Router();
@@ -26,4 +27,11 @@ badgeRoutes.patch(
   requireAuth,
   validate({ body: updateFeaturedBadgesSchema }),
   badgeController.updateFeatured,
+);
+
+badgeRoutes.patch(
+  "/title",
+  requireAuth,
+  validate({ body: updateTitleBadgeSchema }),
+  badgeController.updateTitle,
 );

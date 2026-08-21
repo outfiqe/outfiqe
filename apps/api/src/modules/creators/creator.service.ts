@@ -115,12 +115,14 @@ export const creatorService = {
       followingCount,
     } = user;
 
-    const [postsCount, taggedProductIds, isFollowing, featuredBadges] = await Promise.all([
-      creatorLookRepository.countByCreatorId(id),
-      productRepository.listProductIdsTaggedByCreator(id),
-      viewerId ? followRepository.isFollowing(viewerId, FollowTargetType.USER, id) : false,
-      badgeService.listFeaturedForUser(id),
-    ]);
+    const [postsCount, taggedProductIds, isFollowing, featuredBadges, titleBadge] =
+      await Promise.all([
+        creatorLookRepository.countByCreatorId(id),
+        productRepository.listProductIdsTaggedByCreator(id),
+        viewerId ? followRepository.isFollowing(viewerId, FollowTargetType.USER, id) : false,
+        badgeService.listFeaturedForUser(id),
+        badgeService.getTitleBadgeForUser(id),
+      ]);
 
     const isOwnProfile = viewerId === id;
 
@@ -138,6 +140,7 @@ export const creatorService = {
       taggedPiecesCount: taggedProductIds.length,
       isFollowing,
       featuredBadges,
+      titleBadge,
     };
   },
 

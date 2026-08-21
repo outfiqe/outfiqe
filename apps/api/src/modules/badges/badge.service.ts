@@ -1,10 +1,13 @@
 import { prisma } from "#db/prisma.js";
+import { XpActivityType } from "#generated/prisma/enums.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { achievementService } from "#modules/achievements/achievement.service.js";
+import { XP_SOURCE } from "#modules/xp/xp.constants.js";
+import { xpService } from "#modules/xp/xp.service.js";
 
 import { badgeRepository } from "./badge.repository.js";
-import type { BadgeCollectionEntry, FeaturedBadgeView } from "./badge.types.js";
+import type { AwardBadgeInput, BadgeCollectionEntry, FeaturedBadgeView } from "./badge.types.js";
 import { parseDesignConfig } from "./badge.utils.js";
 
 const NOT_FOUND_STATUS = 404;
@@ -104,9 +107,62 @@ const listFeaturedForUser = async (userId: string): Promise<FeaturedBadgeView[]>
   return featured;
 };
 
+const awardBadge = async (input: AwardBadgeInput) => {
+  const result = await badgeRepository.awardBadge(input);
+  if (!result.awarded) return result;
+
+  if (result.xpReward > 0) {
+    await xpService.grantFixedXp(
+      {
+        userId: input.userId,
+        activityType: XpActivityType.ACHIEVEMENT_UNLOCKED,
+        relatedEntityId: input.badgeId,
+        source: XP_SOURCE.ADMIN,
+        metadata: { badgeId: input.badgeId, awardedById: input.awardedById },
+      },
+      result.xpReward,
+    );
+  }
+
+  return result;
+};
+
+const getTitleBadgeForUser = async (userId: string): Promise<FeaturedBadgeView | null> => {
+  const row = await badgeRepository.findTitleForUser(userId);
+  if (!row) return null;
+
+  const designConfig = parseDesignConfig(row.designConfig);
+  if (!designConfig) {
+    logger.error(`Badge ${row.id} has an invalid designConfig — excluded from the title view.`);
+    return null;
+  }
+  return { id: row.id, name: row.name, icon: row.icon, designConfig, rarity: row.rarity };
+};
+
+const updateTitle = async (userId: string, badgeId: string | null): Promise<void> => {
+  if (badgeId !== null) {
+    const eligibleBadgeId = await badgeRepository.findOwnedTitleEligibleBadgeId(userId, badgeId);
+    if (!eligibleBadgeId) {
+      throw new AppError(
+        "BADGE_NOT_TITLE_ELIGIBLE",
+        "This badge can't be set as your title.",
+        VALIDATION_STATUS,
+      );
+    }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await badgeRepository.clearTitle(tx, userId);
+    if (badgeId !== null) await badgeRepository.setTitle(tx, userId, badgeId);
+  });
+};
+
 export const badgeService = {
   listCollectionForUser,
   updateDisplay,
   updateFeatured,
   listFeaturedForUser,
+  getTitleBadgeForUser,
+  updateTitle,
+  awardBadge,
 };

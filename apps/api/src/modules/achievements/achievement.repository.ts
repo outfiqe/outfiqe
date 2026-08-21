@@ -53,8 +53,4 @@ export const achievementRepository = {
     });
     return _sum.viewCount ?? 0;
   },
-
-  async createUserBadge(userId: string, badgeId: string): Promise<void> {
-    await prisma.userBadge.create({ data: { userId, badgeId } });
-  },
 };
