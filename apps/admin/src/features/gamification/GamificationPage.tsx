@@ -1,5 +1,6 @@
 import { ActivityConfigSection } from "./ActivityConfigSection";
 import { BadgesSection } from "./BadgesSection";
+import { ChallengesSection } from "./ChallengesSection";
 import { LevelsSection } from "./LevelsSection";
 import { ManualActionsSection } from "./ManualActionsSection";
 import { StatsSection } from "./StatsSection";
@@ -12,6 +13,7 @@ export const GamificationPage = () => {
       <LevelsSection />
       <ActivityConfigSection />
       <BadgesSection />
+      <ChallengesSection />
       <ManualActionsSection />
     </div>
   );

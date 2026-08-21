@@ -4,27 +4,10 @@ import { Badge, Button, ProgressBar, toast } from "@outfiqe/design-system";
 
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
-import { type BadgeCollectionEntry, BadgeRarity } from "../api/badgeSchemas";
+import type { BadgeCollectionEntry } from "../api/badgeSchemas";
 import { useUpdateBadgeDisplay } from "../hooks/useUpdateBadgeDisplay";
+import { METRIC_LABEL, RARITY_LABEL } from "../utils/badgeLabels";
 import { AchievementBadgeIcon } from "./AchievementBadgeIcon";
-
-const RARITY_LABEL: Record<string, string> = {
-  [BadgeRarity.COMMON]: "Common",
-  [BadgeRarity.UNCOMMON]: "Uncommon",
-  [BadgeRarity.RARE]: "Rare",
-  [BadgeRarity.EPIC]: "Epic",
-  [BadgeRarity.LEGENDARY]: "Legendary",
-  [BadgeRarity.EXCLUSIVE]: "Exclusive",
-};
-
-const METRIC_LABEL: Record<string, string> = {
-  level: "Level",
-  posts_created: "Posts created",
-  total_likes: "Total likes",
-  comments_made: "Comments made",
-  purchases_count: "Purchases",
-  sales_count: "Sales generated",
-};
 
 type AchievementBadgeCardProps = {
   entry: BadgeCollectionEntry;

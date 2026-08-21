@@ -1,8 +1,8 @@
 import { Button, Input, Select } from "@outfiqe/design-system";
 
 import type { AchievementMetricValue, ConditionOperatorValue } from "../schemas";
-import { EMPTY_CONDITION, METRIC_OPTIONS, OPERATOR_OPTIONS } from "./badgeForm.constants";
-import type { ConditionFormState } from "./badgeForm.types";
+import { EMPTY_CONDITION, METRIC_OPTIONS, OPERATOR_OPTIONS } from "./condition.constants";
+import type { ConditionFormState } from "./condition.types";
 
 export const ConditionsEditor = ({
   idPrefix,

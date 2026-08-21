@@ -15,6 +15,7 @@ import { brandApplicationRoutes } from "./modules/brand-applications/brandApplic
 import { brandRoutes } from "./modules/brands/brand.routes.js";
 import { cartRoutes } from "./modules/cart/cart.routes.js";
 import { categoryRoutes } from "./modules/categories/category.routes.js";
+import { challengeRoutes } from "./modules/challenges/challenge.routes.js";
 import { collectionRoutes } from "./modules/collections/collection.routes.js";
 import { commissionRoutes } from "./modules/commissions/commission.routes.js";
 import { creatorLinkRoutes } from "./modules/creator-links/creatorLink.routes.js";
@@ -85,6 +86,7 @@ export const createApp = () => {
   app.use("/api/xp", xpRoutes);
   app.use("/api/achievements", achievementRoutes);
   app.use("/api/badges", badgeRoutes);
+  app.use("/api/challenges", challengeRoutes);
 
   Sentry.setupExpressErrorHandler(app);
   app.use(errorHandler);

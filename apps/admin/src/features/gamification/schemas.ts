@@ -37,6 +37,11 @@ export const achievementRequirementTypeSchema = z.enum([
 ]);
 export type AchievementRequirementTypeValue = z.infer<typeof achievementRequirementTypeSchema>;
 
+export const ruleBasedRequirementTypeSchema = achievementRequirementTypeSchema.exclude([
+  ADMIN_AWARD_REQUIREMENT_TYPE,
+]);
+export type RuleBasedRequirementTypeValue = z.infer<typeof ruleBasedRequirementTypeSchema>;
+
 export const achievementMetricSchema = z.enum([
   "level",
   "posts_created",
@@ -111,6 +116,36 @@ export const badgeAdminSchema = z.object({
     .nullable(),
 });
 export type BadgeAdmin = z.infer<typeof badgeAdminSchema>;
+
+export const challengeAdminSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  bannerImageUrl: z.string().nullable(),
+  isActive: z.boolean(),
+  badge: z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string(),
+    icon: z.string(),
+    category: badgeCategorySchema,
+    rarity: badgeRaritySchema,
+    xpReward: z.number(),
+    designConfig: badgeDesignConfigSchema,
+    isPermanent: z.boolean(),
+    isPublic: z.boolean(),
+    isTitleEligible: z.boolean(),
+  }),
+  achievement: z.object({
+    id: z.string(),
+    requirementType: ruleBasedRequirementTypeSchema,
+    conditions: z.array(achievementConditionSchema),
+    isActive: z.boolean(),
+    activeFrom: z.string().nullable(),
+    activeUntil: z.string().nullable(),
+  }),
+});
+export type ChallengeAdmin = z.infer<typeof challengeAdminSchema>;
 
 export const manualAwardSchema = z.object({
   id: z.string(),

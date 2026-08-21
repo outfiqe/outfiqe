@@ -10,7 +10,7 @@ const DESCRIPTION_MAX_LENGTH = 500;
 const ICON_MAX_LENGTH = 8;
 const REASON_MAX_LENGTH = 500;
 
-const RULE_BASED_REQUIREMENT_TYPES = Object.values(AchievementRequirementType).filter(
+export const RULE_BASED_REQUIREMENT_TYPES = Object.values(AchievementRequirementType).filter(
   (
     type,
   ): type is Exclude<AchievementRequirementType, typeof AchievementRequirementType.ADMIN_AWARD> =>
@@ -43,7 +43,7 @@ export const updateTitleBadgeSchema = z.object({
   badgeId: z.uuid().nullable(),
 });
 
-const badgeCoreFields = {
+export const badgeCoreFields = {
   name: z.string().trim().min(1).max(NAME_MAX_LENGTH),
   description: z.string().trim().min(1).max(DESCRIPTION_MAX_LENGTH),
   category: z.enum(BadgeCategory),

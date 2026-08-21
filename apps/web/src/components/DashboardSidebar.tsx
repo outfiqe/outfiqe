@@ -15,6 +15,7 @@ import {
   ShoppingBag,
   Sparkles,
   Store,
+  Trophy,
   User,
   Wallet,
 } from "lucide-react";
@@ -32,6 +33,7 @@ const CREATOR_NAV: SidebarNavItem[] = [
   { id: "earnings", href: "/dashboard/earnings", label: "Earnings", icon: Wallet },
   { id: "progress", href: "/dashboard/progress", label: "Progress", icon: Sparkles },
   { id: "badges", href: "/dashboard/badges", label: "Badges", icon: Award },
+  { id: "challenges", href: "/dashboard/challenges", label: "Challenges", icon: Trophy },
 ];
 
 const BRAND_NAV: SidebarNavItem[] = [

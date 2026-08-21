@@ -1,17 +1,8 @@
 import type { BadgeFormInput } from "../api";
+import { EMPTY_CONDITION } from "../conditions/condition.constants";
+import { toDatetimeLocalValue, toIsoOrNull } from "../datetime.utils";
 import { ADMIN_AWARD_REQUIREMENT_TYPE, type BadgeAdmin } from "../schemas";
-import { EMPTY_CONDITION } from "./badgeForm.constants";
 import type { BadgeFormState } from "./badgeForm.types";
-
-export const toDatetimeLocalValue = (iso: string | null): string => {
-  if (!iso) return "";
-  const instant = new Date(iso);
-  const localOffsetMs = instant.getTimezoneOffset() * 60000;
-  return new Date(instant.getTime() - localOffsetMs).toISOString().slice(0, 16);
-};
-
-export const toIsoOrNull = (datetimeLocalValue: string): string | null =>
-  datetimeLocalValue ? new Date(datetimeLocalValue).toISOString() : null;
 
 export const formForBadge = (badge: BadgeAdmin): BadgeFormState => ({
   name: badge.name,

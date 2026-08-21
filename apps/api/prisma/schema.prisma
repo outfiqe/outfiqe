@@ -1081,11 +1081,6 @@ enum AchievementRequirementType {
   ADMIN_AWARD
 }
 
-/**
- * requirementConfig shape (MVP): { conditions: [{ metric, operator, value }],
- * all of which must hold (AND-only for MVP — see plan for the Phase 2
- * boolean-expression-tree generalization). Validated via achievements.schemas.ts.
- */
 model Achievement {
   id                String                     @id @default(uuid()) @db.Uuid
   badgeId           String                     @unique @map("badge_id") @db.Uuid
@@ -1100,8 +1095,25 @@ model Achievement {
   createdAt         DateTime                   @default(now()) @map("created_at")
   updatedAt         DateTime                   @updatedAt @map("updated_at")
 
+  challenge Challenge?
+
   @@index([isActive])
   @@map("achievements")
+}
+
+model Challenge {
+  id             String      @id @default(uuid()) @db.Uuid
+  achievementId  String      @unique @map("achievement_id") @db.Uuid
+  achievement    Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  name           String
+  description    String
+  bannerImageUrl String?     @map("banner_image_url")
+  isActive       Boolean     @default(true) @map("is_active")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("challenges")
 }
 
 /**

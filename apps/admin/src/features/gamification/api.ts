@@ -13,6 +13,8 @@ import {
   badgeAdminSchema,
   type BadgeStats,
   badgeStatsSchema,
+  type ChallengeAdmin,
+  challengeAdminSchema,
   type Level,
   levelSchema,
   type ManualAward,
@@ -25,6 +27,7 @@ const levelListSchema = z.array(levelSchema);
 const activityConfigListSchema = z.array(activityXpConfigSchema);
 const badgeListSchema = z.array(badgeAdminSchema);
 const manualAwardListSchema = z.array(manualAwardSchema);
+const challengeListSchema = z.array(challengeAdminSchema);
 
 export type CreateLevelInput = {
   level: number;
@@ -63,6 +66,31 @@ export type BadgeFormInput = {
 export type UpdateBadgeFormInput = BadgeFormInput & {
   isActive: boolean;
   achievementIsActive?: boolean;
+};
+
+export type ChallengeFormInput = {
+  name: string;
+  description: string;
+  category: string;
+  rarity: string;
+  icon: string;
+  designConfig: { shape: string; primaryColor: string };
+  xpReward: number;
+  isPermanent: boolean;
+  isPublic: boolean;
+  isTitleEligible: boolean;
+  requirementType: string;
+  conditions: { metric: string; operator: string; value: number }[];
+  activeFrom: string;
+  activeUntil: string;
+  challengeName: string;
+  challengeDescription: string;
+  bannerImageUrl: string | null;
+};
+
+export type UpdateChallengeFormInput = ChallengeFormInput & {
+  isActive: boolean;
+  achievementIsActive: boolean;
 };
 
 export const gamificationApi = {
@@ -142,5 +170,23 @@ export const gamificationApi = {
   async getBadgeStats(): Promise<BadgeStats> {
     const res = await apiClient.get<BadgeStats>("/badges/stats");
     return badgeStatsSchema.parse(res.data);
+  },
+
+  async listChallengesAdmin(): Promise<ChallengeAdmin[]> {
+    const res = await apiClient.get<ChallengeAdmin[]>("/challenges/admin");
+    return challengeListSchema.parse(res.data);
+  },
+
+  async createChallenge(input: ChallengeFormInput): Promise<ChallengeAdmin> {
+    const res = await apiClient.post<ChallengeAdmin>("/challenges", input);
+    return challengeAdminSchema.parse(res.data);
+  },
+
+  async updateChallenge(
+    challengeId: string,
+    input: UpdateChallengeFormInput,
+  ): Promise<ChallengeAdmin> {
+    const res = await apiClient.patch<ChallengeAdmin>(`/challenges/${challengeId}`, input);
+    return challengeAdminSchema.parse(res.data);
   },
 };

@@ -2,7 +2,7 @@ import type { RULE_BASED_REQUIREMENT_TYPES } from "../badgeOptions.constants";
 import type { ConditionFormState } from "../conditions/condition.types";
 import type { BadgeCategoryValue, BadgeRarityValue, BadgeShapeValue } from "../schemas";
 
-export type BadgeFormState = {
+export type ChallengeFormState = {
   name: string;
   description: string;
   category: BadgeCategoryValue;
@@ -14,10 +14,11 @@ export type BadgeFormState = {
   isPermanent: boolean;
   isPublic: boolean;
   isTitleEligible: boolean;
-  isAdminAward: boolean;
-  assignmentLimit: string;
   requirementType: (typeof RULE_BASED_REQUIREMENT_TYPES)[number];
   conditions: ConditionFormState[];
   activeFrom: string;
   activeUntil: string;
+  challengeName: string;
+  challengeDescription: string;
+  bannerImageUrl: string | null;
 };

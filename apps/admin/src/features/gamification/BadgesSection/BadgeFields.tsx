@@ -1,14 +1,14 @@
 import { Checkbox, Input, Select } from "@outfiqe/design-system";
 
-import type { BadgeCategoryValue, BadgeRarityValue, BadgeShapeValue } from "../schemas";
 import {
   CATEGORY_OPTIONS,
   RARITY_OPTIONS,
   RULE_BASED_REQUIREMENT_TYPES,
   SHAPE_OPTIONS,
-} from "./badgeForm.constants";
+} from "../badgeOptions.constants";
+import { ConditionsEditor } from "../conditions/ConditionsEditor";
+import type { BadgeCategoryValue, BadgeRarityValue, BadgeShapeValue } from "../schemas";
 import type { BadgeFormState } from "./badgeForm.types";
-import { ConditionsEditor } from "./ConditionsEditor";
 
 export const BadgeFields = ({
   idPrefix,
