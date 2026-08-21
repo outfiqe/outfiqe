@@ -17,7 +17,11 @@ import type {
   EligibleAchievementRecord,
   MetricSnapshot,
 } from "./achievement.types.js";
-import { areAllConditionsMet, currentValueForCondition } from "./achievement.utils.js";
+import {
+  areAllConditionsMet,
+  collectLeafConditions,
+  currentValueForCondition,
+} from "./achievement.utils.js";
 
 const metricFetchers: Record<AchievementMetric, (userId: string) => Promise<number>> = {
   [ACHIEVEMENT_METRIC.LEVEL]: async (userId) => {
@@ -63,7 +67,9 @@ const buildMetricSnapshot = async (
 ): Promise<MetricSnapshot> => {
   const neededMetrics = new Set<AchievementMetric>();
   for (const achievement of achievements) {
-    for (const condition of achievement.conditions) neededMetrics.add(condition.metric);
+    for (const condition of collectLeafConditions(achievement.conditions)) {
+      neededMetrics.add(condition.metric);
+    }
   }
 
   const entries = await Promise.all(
@@ -141,7 +147,7 @@ const listProgressForUser = async (userId: string): Promise<AchievementProgressV
     badgeId: achievement.badgeId,
     badgeName: achievement.badgeName,
     badgeIcon: achievement.badgeIcon,
-    conditions: achievement.conditions.map((condition) => ({
+    conditions: collectLeafConditions(achievement.conditions).map((condition) => ({
       ...condition,
       currentValue: currentValueForCondition(condition, snapshot),
     })),

@@ -20,4 +20,12 @@ export const CONDITION_OPERATOR = {
 
 export type ConditionOperator = (typeof CONDITION_OPERATOR)[keyof typeof CONDITION_OPERATOR];
 
+export const CONDITION_NODE_TYPE = {
+  AND: "AND",
+  OR: "OR",
+  NOT: "NOT",
+} as const;
+
+export type ConditionNodeType = (typeof CONDITION_NODE_TYPE)[keyof typeof CONDITION_NODE_TYPE];
+
 export const ACHIEVEMENT_XP_SOURCE = "achievements";

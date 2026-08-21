@@ -1,11 +1,11 @@
 import type { AchievementMetric } from "./achievement.constants.js";
-import type { AchievementCondition } from "./achievement.schemas.js";
+import type { AchievementCondition, AchievementConditionNode } from "./achievement.schemas.js";
 
 export type EligibleAchievementRecord = {
   id: string;
   badgeId: string;
   name: string;
-  conditions: AchievementCondition[];
+  conditions: AchievementConditionNode[];
   badgeName: string;
   badgeIcon: string;
 };
