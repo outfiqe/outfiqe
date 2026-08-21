@@ -18,11 +18,13 @@ export default defineConfig({
       include: [
         "src/shared/utils/pagination.utils.ts",
         "src/shared/utils/opaque-token.utils.ts",
+        "src/shared/utils/iso-week.utils.ts",
         "src/modules/brand-applications/**",
         "src/modules/xp/xp.utils.ts",
         "src/modules/achievements/achievement.utils.ts",
         "src/modules/badges/badge.utils.ts",
         "src/modules/challenges/challenge.utils.ts",
+        "src/modules/creator-leaderboard/creatorLeaderboard.utils.ts",
       ],
       thresholds: {
         lines: 80,

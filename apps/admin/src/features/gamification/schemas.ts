@@ -147,6 +147,23 @@ export const challengeAdminSchema = z.object({
 });
 export type ChallengeAdmin = z.infer<typeof challengeAdminSchema>;
 
+export const creatorLeaderboardCategorySchema = z.enum([
+  "TOP_XP",
+  "TOP_CREATOR",
+  "MOST_LIKES",
+  "MOST_ENGAGED",
+  "TOP_SELLER",
+  "RISING_CREATOR",
+  "MOST_ACHIEVEMENTS",
+]);
+export type CreatorLeaderboardCategoryValue = z.infer<typeof creatorLeaderboardCategorySchema>;
+
+export const creatorLeaderboardCategoryStateSchema = z.object({
+  category: creatorLeaderboardCategorySchema,
+  enabled: z.boolean(),
+});
+export type CreatorLeaderboardCategoryState = z.infer<typeof creatorLeaderboardCategoryStateSchema>;
+
 export const manualAwardSchema = z.object({
   id: z.string(),
   userId: z.string(),

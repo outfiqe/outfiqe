@@ -1,4 +1,5 @@
 import type { LeaderboardCategory } from "#constants/leaderboard.constants.js";
+import type { CreatorLeaderboardCategory } from "#generated/prisma/enums.js";
 
 export const redisKeys = {
   rateLimit: (namespace: string, identifier: string) => `ratelimit:${namespace}:${identifier}`,
@@ -7,6 +8,8 @@ export const redisKeys = {
   lock: (name: string) => `lock:${name}`,
   leaderboard: (category: LeaderboardCategory, week: string) =>
     `leaderboard:brand:${category}:${week}`,
+  creatorLeaderboard: (category: CreatorLeaderboardCategory, week: string) =>
+    `leaderboard:creator:${category}:${week}`,
 };
 
 export const CACHE_TTL = {

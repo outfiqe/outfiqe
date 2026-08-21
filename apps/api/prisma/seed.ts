@@ -7,6 +7,7 @@ import {
   BadgeRarity,
   CategoryStatus,
   CollectionStatus,
+  CreatorLeaderboardCategory,
   CreatorStatus,
   FollowTargetType,
   HeroSlideStatus,
@@ -1380,6 +1381,16 @@ const seedActivityXpConfig = async () => {
   }
 };
 
+const seedCreatorLeaderboardCategoryConfig = async () => {
+  for (const category of Object.values(CreatorLeaderboardCategory)) {
+    await prisma.creatorLeaderboardCategoryConfig.upsert({
+      where: { category },
+      update: {},
+      create: { category, enabled: true },
+    });
+  }
+};
+
 type BadgeSeed = {
   name: string;
   description: string;
@@ -1667,6 +1678,7 @@ async function main() {
   await seedCommissionTiers();
   await seedLevels();
   await seedActivityXpConfig();
+  await seedCreatorLeaderboardCategoryConfig();
   await seedGamificationBadges();
 }
 

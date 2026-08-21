@@ -6,6 +6,10 @@ import { stopDomainEventConsumers } from "#events/event-bus.consumer.js";
 import logger from "#lib/winston.utils.js";
 import { registerAchievementEventConsumers } from "#modules/achievements/achievement.events.js";
 import { registerAchievementSocketEventConsumer } from "#modules/achievements/achievement.socket.js";
+import {
+  registerCreatorLeaderboardEventConsumer,
+  registerCreatorLeaderboardSocketHandlers,
+} from "#modules/creator-leaderboard/creatorLeaderboard.socket.js";
 import { registerCreatorLookSocketHandlers } from "#modules/creator-looks/creatorLook.socket.js";
 import {
   registerLeaderboardEventConsumer,
@@ -33,6 +37,8 @@ registerSocketListeners();
 registerCreatorLookSocketHandlers();
 registerLeaderboardSocketHandlers();
 registerLeaderboardEventConsumer();
+registerCreatorLeaderboardSocketHandlers();
+registerCreatorLeaderboardEventConsumer();
 registerXpEventConsumers();
 registerAchievementEventConsumers();
 registerXpSocketEventConsumer();

@@ -1,5 +1,8 @@
+import { nextIsoWeekStart } from "#lib/iso-week.utils.js";
 import { COMMISSION_SWEEP_INTERVAL_MS } from "#modules/commissions/commission.constants.js";
 import { runCommissionLifecycleSweep } from "#modules/commissions/commission.lifecycle.js";
+import { CREATOR_LEADERBOARD_RECOMPUTE_INTERVAL_MS } from "#modules/creator-leaderboard/creatorLeaderboard.constants.js";
+import { creatorLeaderboardService } from "#modules/creator-leaderboard/creatorLeaderboard.service.js";
 import {
   TAG_TREND_AGGREGATION_INTERVAL_MS,
   TAG_TREND_SCORING_INTERVAL_MS,
@@ -13,7 +16,6 @@ import {
   TRENDING_RECOMPUTE_INTERVAL_MS,
 } from "#modules/leaderboard/leaderboard.constants.js";
 import { leaderboardService } from "#modules/leaderboard/leaderboard.service.js";
-import { nextIsoWeekStart } from "#modules/leaderboard/leaderboard.utils.js";
 import { RECONCILE_CHECK_INTERVAL_MS } from "#modules/payments/payment.constants.js";
 import { runPaymentReconciliationSweep } from "#modules/payments/payment.reconciliation.js";
 import {
@@ -79,6 +81,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     run: leaderboardService.runFastestGrowingRecompute,
     intervalMs: FASTEST_GROWING_RECOMPUTE_INTERVAL_MS,
   },
+  {
+    name: "creator-leaderboard-recompute",
+    run: creatorLeaderboardService.runRecompute,
+    intervalMs: CREATOR_LEADERBOARD_RECOMPUTE_INTERVAL_MS,
+  },
 ];
 
 export const BOUNDARY_JOBS: BoundaryJob[] = [
@@ -95,6 +102,11 @@ export const BOUNDARY_JOBS: BoundaryJob[] = [
   {
     name: "leaderboard-boundary-fastest-growing",
     run: leaderboardService.runFastestGrowingRecompute,
+    nextRunAt: nextIsoWeekStart,
+  },
+  {
+    name: "creator-leaderboard-boundary-recompute",
+    run: creatorLeaderboardService.runRecompute,
     nextRunAt: nextIsoWeekStart,
   },
 ];

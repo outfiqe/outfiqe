@@ -44,6 +44,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const [avatarUrl, setAvatarUrl] = useState(creator.avatarUrl);
   const [heightCm, setHeightCm] = useState(creator.heightCm);
   const [showHeight, setShowHeight] = useState(creator.showHeight);
+  const [hideFromLeaderboards, setHideFromLeaderboards] = useState(creator.hideFromLeaderboards);
   const [isFollowing, setIsFollowing] = useState(creator.isFollowing);
   const [followerCount, setFollowerCount] = useState(creator.followerCount);
   const [postsCount, setPostsCount] = useState(creator.postsCount);
@@ -55,6 +56,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const [draftAvatarUrl, setDraftAvatarUrl] = useState(avatarUrl);
   const [draftHeightCm, setDraftHeightCm] = useState(heightCm);
   const [draftShowHeight, setDraftShowHeight] = useState(showHeight);
+  const [draftHideFromLeaderboards, setDraftHideFromLeaderboards] = useState(hideFromLeaderboards);
   const [editingLookId, setEditingLookId] = useState<string | null>(null);
   const [deletingLookId, setDeletingLookId] = useState<string | null>(null);
   const isOwnProfile = state.user?.id === userId;
@@ -83,6 +85,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
     setDraftAvatarUrl(avatarUrl);
     setDraftHeightCm(heightCm);
     setDraftShowHeight(showHeight);
+    setDraftHideFromLeaderboards(hideFromLeaderboards);
     setEditOpen(true);
   };
 
@@ -96,6 +99,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
         avatarUrl: draftAvatarUrl,
         heightCm: draftHeightCm,
         showHeight: draftShowHeight,
+        hideFromLeaderboards: draftHideFromLeaderboards,
       },
       {
         onSuccess: (updated) => {
@@ -103,6 +107,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
           setAvatarUrl(updated.avatarUrl);
           setHeightCm(updated.heightCm);
           setShowHeight(updated.showHeight);
+          setHideFromLeaderboards(updated.hideFromLeaderboards);
           updateUser({ name: updated.name, avatarUrl: updated.avatarUrl });
           setEditOpen(false);
           toast.success("Profile updated");
@@ -313,6 +318,15 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
                 onChange={(event) => setDraftShowHeight(event.target.checked)}
               />
               Show height on my profile
+            </label>
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                className="size-4 rounded border-border"
+                checked={draftHideFromLeaderboards}
+                onChange={(event) => setDraftHideFromLeaderboards(event.target.checked)}
+              />
+              Hide me from leaderboards
             </label>
           </div>
         </Modal>

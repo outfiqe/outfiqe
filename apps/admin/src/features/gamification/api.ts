@@ -15,6 +15,8 @@ import {
   badgeStatsSchema,
   type ChallengeAdmin,
   challengeAdminSchema,
+  type CreatorLeaderboardCategoryState,
+  creatorLeaderboardCategoryStateSchema,
   type Level,
   levelSchema,
   type ManualAward,
@@ -28,6 +30,7 @@ const activityConfigListSchema = z.array(activityXpConfigSchema);
 const badgeListSchema = z.array(badgeAdminSchema);
 const manualAwardListSchema = z.array(manualAwardSchema);
 const challengeListSchema = z.array(challengeAdminSchema);
+const creatorLeaderboardCategoryListSchema = z.array(creatorLeaderboardCategoryStateSchema);
 
 export type CreateLevelInput = {
   level: number;
@@ -188,5 +191,23 @@ export const gamificationApi = {
   ): Promise<ChallengeAdmin> {
     const res = await apiClient.patch<ChallengeAdmin>(`/challenges/${challengeId}`, input);
     return challengeAdminSchema.parse(res.data);
+  },
+
+  async listCreatorLeaderboardCategories(): Promise<CreatorLeaderboardCategoryState[]> {
+    const res = await apiClient.get<CreatorLeaderboardCategoryState[]>(
+      "/creator-leaderboard/categories",
+    );
+    return creatorLeaderboardCategoryListSchema.parse(res.data);
+  },
+
+  async updateCreatorLeaderboardCategory(
+    category: string,
+    enabled: boolean,
+  ): Promise<CreatorLeaderboardCategoryState> {
+    const res = await apiClient.patch<CreatorLeaderboardCategoryState>(
+      `/creator-leaderboard/categories/${category}`,
+      { enabled },
+    );
+    return creatorLeaderboardCategoryStateSchema.parse(res.data);
   },
 };

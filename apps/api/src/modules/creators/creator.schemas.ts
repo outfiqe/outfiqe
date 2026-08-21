@@ -30,6 +30,7 @@ export const updateCreatorProfileSchema = z
     avatarUrl: z.url().nullable(),
     heightCm: z.number().int().min(MIN_HEIGHT_CM).max(MAX_HEIGHT_CM).nullable(),
     showHeight: z.boolean(),
+    hideFromLeaderboards: z.boolean(),
   })
   .partial();
 

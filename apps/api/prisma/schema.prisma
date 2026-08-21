@@ -20,23 +20,24 @@ datasource db {
 }
 
 model User {
-  id             String        @id @default(uuid()) @db.Uuid
-  email          String        @unique
-  name           String
-  handle         String        @unique
-  phone          String        @unique
-  avatarUrl      String?       @map("avatar_url")
-  passwordHash   String        @map("password_hash")
-  role           UserRole      @default(CUSTOMER)
-  isCreator      Boolean       @default(false) @map("is_creator")
-  creatorStatus  CreatorStatus @default(NONE) @map("creator_status")
-  heightCm       Int?          @map("height_cm")
-  showHeight     Boolean       @default(false) @map("show_height")
-  emailVerified  Boolean       @default(false) @map("email_verified")
-  followerCount  Int           @default(0) @map("follower_count")
-  followingCount Int           @default(0) @map("following_count")
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
+  id                   String        @id @default(uuid()) @db.Uuid
+  email                String        @unique
+  name                 String
+  handle               String        @unique
+  phone                String        @unique
+  avatarUrl            String?       @map("avatar_url")
+  passwordHash         String        @map("password_hash")
+  role                 UserRole      @default(CUSTOMER)
+  isCreator            Boolean       @default(false) @map("is_creator")
+  creatorStatus        CreatorStatus @default(NONE) @map("creator_status")
+  heightCm             Int?          @map("height_cm")
+  showHeight           Boolean       @default(false) @map("show_height")
+  emailVerified        Boolean       @default(false) @map("email_verified")
+  followerCount        Int           @default(0) @map("follower_count")
+  followingCount       Int           @default(0) @map("following_count")
+  hideFromLeaderboards Boolean       @default(false) @map("hide_from_leaderboards")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
 
   memberships          BrandMembership[]
   refreshTokens        RefreshToken[]
@@ -1114,6 +1115,25 @@ model Challenge {
 
   @@index([isActive])
   @@map("challenges")
+}
+
+enum CreatorLeaderboardCategory {
+  TOP_XP
+  TOP_CREATOR
+  MOST_LIKES
+  MOST_ENGAGED
+  TOP_SELLER
+  RISING_CREATOR
+  MOST_ACHIEVEMENTS
+}
+
+model CreatorLeaderboardCategoryConfig {
+  category  CreatorLeaderboardCategory @id
+  enabled   Boolean                    @default(true)
+  createdAt DateTime                   @default(now()) @map("created_at")
+  updatedAt DateTime                   @updatedAt @map("updated_at")
+
+  @@map("creator_leaderboard_category_configs")
 }
 
 /**

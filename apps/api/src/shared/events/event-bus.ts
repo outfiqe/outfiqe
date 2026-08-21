@@ -24,6 +24,7 @@ export const DomainEvents = {
   BRAND_FOLLOWED: "brand.followed",
   BRAND_UNFOLLOWED: "brand.unfollowed",
   LEADERBOARD_BRAND_UPDATED: "leaderboard.brand.updated",
+  LEADERBOARD_CREATOR_UPDATED: "leaderboard.creator.updated",
   PRODUCT_PURCHASED: "product.purchased",
   PRODUCT_TAGGED: "product.tagged",
   SALE_GENERATED: "sale.generated",

@@ -18,6 +18,7 @@ import { categoryRoutes } from "./modules/categories/category.routes.js";
 import { challengeRoutes } from "./modules/challenges/challenge.routes.js";
 import { collectionRoutes } from "./modules/collections/collection.routes.js";
 import { commissionRoutes } from "./modules/commissions/commission.routes.js";
+import { creatorLeaderboardRoutes } from "./modules/creator-leaderboard/creatorLeaderboard.routes.js";
 import { creatorLinkRoutes } from "./modules/creator-links/creatorLink.routes.js";
 import { creatorLookRoutes } from "./modules/creator-looks/creatorLook.routes.js";
 import { creatorRoutes } from "./modules/creators/creator.routes.js";
@@ -83,6 +84,7 @@ export const createApp = () => {
   app.use("/api/hero-slides", heroSlideRoutes);
   app.use("/api/admin/trending", trendingRoutes);
   app.use("/api/leaderboard", leaderboardRoutes);
+  app.use("/api/creator-leaderboard", creatorLeaderboardRoutes);
   app.use("/api/xp", xpRoutes);
   app.use("/api/achievements", achievementRoutes);
   app.use("/api/badges", badgeRoutes);

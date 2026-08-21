@@ -6,7 +6,7 @@ Renders a creator's public profile — avatar, stats, follow/edit-profile, and t
 
 ## Structure
 
-- `components/CreatorProfile.tsx` — the page: header/stats, follow or edit-profile action, post grid, and (when `isOwnProfile`) the add/edit/delete post affordances. The edit-profile modal also has a height (cm) field and a "Show height on my profile" checkbox, backed by `User.heightCm`/`showHeight` (see `../creator-dashboard/README.md` and `apps/api/src/modules/creators/README.md`).
+- `components/CreatorProfile.tsx` — the page: header/stats, follow or edit-profile action, post grid, and (when `isOwnProfile`) the add/edit/delete post affordances. The edit-profile modal also has a height (cm) field, a "Show height on my profile" checkbox, and a "Hide me from leaderboards" checkbox, backed by `User.heightCm`/`showHeight`/`hideFromLeaderboards` (see `../creator-dashboard/README.md` and `apps/api/src/modules/creators/README.md`).
 - `components/CreatorPostThumbnail.tsx` — one grid tile; shows a bottom gradient + truncated caption over the image when the post has one, and renders `PostActionsMenu` on top when viewing your own profile. Clicking anywhere on the tile opens `explore`'s `PostDetailModal` for the full post.
 - `components/PostActionsMenu.tsx` — the 3-dot menu (Edit / Delete) overlaid on a post thumbnail.
 - `components/CreatorPostGridSkeleton.tsx`, `CreatorProfilePageSkeleton.tsx` — loading states.
@@ -24,3 +24,5 @@ Renders a creator's public profile — avatar, stats, follow/edit-profile, and t
 Post management used to live in a separate `/dashboard/posts` page with no edit/delete. It was folded into the profile grid because the profile already displays the same posts — see `creator-dashboard`'s README for the full reasoning.
 
 `heightCm` in the fetched `CreatorProfile` is already visibility-masked server-side (`null` unless the creator turned `showHeight` on, or you're viewing your own profile) — the component never needs to hide it itself, and can seed the edit modal's draft height straight from the fetched value even when `showHeight` is currently off, since the API reveals the real number back to the owner.
+
+`hideFromLeaderboards` rides the same public `CreatorProfile` response as `showHeight`, unmasked for every viewer, not just the owner. It's a low-sensitivity preference flag, not the underlying stats the creator-leaderboard scores are built from — whether someone opted out isn't private the way an unrevealed height is, so unlike `heightCm` there's no masking to do, and the edit modal seeds `draftHideFromLeaderboards` straight from the fetched value the same way it does for `showHeight`.

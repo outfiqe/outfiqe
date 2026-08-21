@@ -9,4 +9,5 @@ export const LEADERBOARD_LINKS = [
   { label: "Most purchased", href: "/leaderboard?category=most-purchased" },
   { label: "Most loved", href: "/leaderboard?category=most-loved" },
   { label: "Fastest growing", href: "/leaderboard?category=fastest-growing" },
+  { label: "Top creators", href: "/leaderboard/creators" },
 ] as const;

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The public `/leaderboard` page and the navbar's "Leaderboard" dropdown — four tabbed weekly brand rankings (Trending, Most purchased, Most loved, Fastest growing) that update live over a socket, no page refresh.
+The public `/leaderboard` page and the navbar's "Leaderboard" dropdown — four tabbed weekly brand rankings (Trending, Most purchased, Most loved, Fastest growing) that update live over a socket, no page refresh. Ranks brands only — `../creator-leaderboard` is the sibling feature for the seven creator rankings, a separate page (`/leaderboard/creators`) rather than a tab group here, see that feature's README for why.
 
 ## Structure
 

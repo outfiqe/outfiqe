@@ -10,6 +10,7 @@ export const toProfile = (user: UserRecord): CreatorProfile => ({
   avatarUrl: user.avatarUrl,
   heightCm: user.heightCm,
   showHeight: user.showHeight,
+  hideFromLeaderboards: user.hideFromLeaderboards,
   isCreator: user.isCreator,
   creatorStatus: user.creatorStatus,
 });
