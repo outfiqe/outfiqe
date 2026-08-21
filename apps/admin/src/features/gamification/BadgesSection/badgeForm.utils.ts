@@ -1,4 +1,5 @@
 import type { BadgeFormInput } from "../api";
+import { AUTO_ANIMATION_OPTION } from "../badgeOptions.constants";
 import { EMPTY_CONDITION } from "../conditions/condition.constants";
 import { toDatetimeLocalValue, toIsoOrNull } from "../datetime.utils";
 import { ADMIN_AWARD_REQUIREMENT_TYPE, type BadgeAdmin } from "../schemas";
@@ -12,6 +13,7 @@ export const formForBadge = (badge: BadgeAdmin): BadgeFormState => ({
   icon: badge.icon,
   shape: badge.designConfig.shape,
   primaryColor: badge.designConfig.primaryColor,
+  animation: badge.designConfig.animation ?? AUTO_ANIMATION_OPTION,
   xpReward: String(badge.xpReward),
   isPermanent: badge.isPermanent,
   isDynamic: badge.isDynamic,
@@ -41,7 +43,11 @@ export const toFormInput = (form: BadgeFormState): BadgeFormInput => ({
   category: form.category,
   rarity: form.rarity,
   icon: form.icon,
-  designConfig: { shape: form.shape, primaryColor: form.primaryColor },
+  designConfig: {
+    shape: form.shape,
+    primaryColor: form.primaryColor,
+    ...(form.animation === AUTO_ANIMATION_OPTION ? {} : { animation: form.animation }),
+  },
   xpReward: Number(form.xpReward),
   isPermanent: form.isPermanent,
   isDynamic: form.isDynamic,

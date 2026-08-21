@@ -1,4 +1,5 @@
 import type { ChallengeFormInput } from "../api";
+import { AUTO_ANIMATION_OPTION } from "../badgeOptions.constants";
 import { toDatetimeLocalValue, toIsoOrNull } from "../datetime.utils";
 import type { ChallengeAdmin } from "../schemas";
 import type { ChallengeFormState } from "./challengeForm.types";
@@ -11,6 +12,7 @@ export const formForChallenge = (challenge: ChallengeAdmin): ChallengeFormState 
   icon: challenge.badge.icon,
   shape: challenge.badge.designConfig.shape,
   primaryColor: challenge.badge.designConfig.primaryColor,
+  animation: challenge.badge.designConfig.animation ?? AUTO_ANIMATION_OPTION,
   xpReward: String(challenge.badge.xpReward),
   isPermanent: challenge.badge.isPermanent,
   isPublic: challenge.badge.isPublic,
@@ -34,7 +36,11 @@ export const toChallengeFormInput = (form: ChallengeFormState): ChallengeFormInp
   category: form.category,
   rarity: form.rarity,
   icon: form.icon,
-  designConfig: { shape: form.shape, primaryColor: form.primaryColor },
+  designConfig: {
+    shape: form.shape,
+    primaryColor: form.primaryColor,
+    ...(form.animation === AUTO_ANIMATION_OPTION ? {} : { animation: form.animation }),
+  },
   xpReward: Number(form.xpReward),
   isPermanent: form.isPermanent,
   isPublic: form.isPublic,

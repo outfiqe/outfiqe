@@ -1,4 +1,5 @@
 import type {
+  BadgeAnimation as BadgeAnimationType,
   BadgeCategory as BadgeCategoryType,
   BadgeRarity as BadgeRarityType,
   BadgeShape as BadgeShapeType,
@@ -34,9 +35,19 @@ export const BadgeShape = {
 } as const satisfies Record<string, BadgeShapeType>;
 export type BadgeShapeValue = (typeof BadgeShape)[keyof typeof BadgeShape];
 
+export const BadgeAnimation = {
+  NONE: "none",
+  GLOW: "glow",
+  SHIMMER: "shimmer",
+  PULSE: "pulse",
+  RADIANT: "radiant",
+} as const satisfies Record<string, BadgeAnimationType>;
+export type BadgeAnimationValue = (typeof BadgeAnimation)[keyof typeof BadgeAnimation];
+
 export const badgeDesignConfigSchema = z.object({
   shape: z.enum(BadgeShape),
   primaryColor: z.string(),
+  animation: z.enum(BadgeAnimation).optional(),
 });
 export type BadgeDesignConfig = z.infer<typeof badgeDesignConfigSchema>;
 

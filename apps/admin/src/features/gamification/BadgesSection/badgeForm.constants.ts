@@ -1,3 +1,4 @@
+import { AUTO_ANIMATION_OPTION } from "../badgeOptions.constants";
 import { EMPTY_CONDITION } from "../conditions/condition.constants";
 import type { BadgeFormState } from "./badgeForm.types";
 
@@ -11,6 +12,7 @@ export const EMPTY_FORM: BadgeFormState = {
   icon: "",
   shape: "circle",
   primaryColor: "#94a3b8",
+  animation: AUTO_ANIMATION_OPTION,
   xpReward: "0",
   isPermanent: true,
   isDynamic: false,

@@ -23,6 +23,9 @@ export type BadgeRarityValue = z.infer<typeof badgeRaritySchema>;
 export const badgeShapeSchema = z.enum(["circle", "shield", "star", "diamond", "hexagon"]);
 export type BadgeShapeValue = z.infer<typeof badgeShapeSchema>;
 
+export const badgeAnimationSchema = z.enum(["none", "glow", "shimmer", "pulse", "radiant"]);
+export type BadgeAnimationValue = z.infer<typeof badgeAnimationSchema>;
+
 export const ADMIN_AWARD_REQUIREMENT_TYPE = "ADMIN_AWARD" as const;
 
 export const achievementRequirementTypeSchema = z.enum([
@@ -93,6 +96,7 @@ export type ActivityXpConfig = z.infer<typeof activityXpConfigSchema>;
 export const badgeDesignConfigSchema = z.object({
   shape: badgeShapeSchema,
   primaryColor: z.string(),
+  animation: badgeAnimationSchema.optional(),
 });
 
 export const badgeAdminSchema = z.object({

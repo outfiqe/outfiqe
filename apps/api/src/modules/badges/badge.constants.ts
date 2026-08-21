@@ -7,3 +7,11 @@ export const BADGE_SHAPE = {
   DIAMOND: "diamond",
   HEXAGON: "hexagon",
 } as const;
+
+export const BADGE_ANIMATION = {
+  NONE: "none",
+  GLOW: "glow",
+  SHIMMER: "shimmer",
+  PULSE: "pulse",
+  RADIANT: "radiant",
+} as const;

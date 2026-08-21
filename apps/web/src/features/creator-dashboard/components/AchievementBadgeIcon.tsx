@@ -2,7 +2,13 @@ import { Lock } from "lucide-react";
 
 import { cn } from "@/shared/lib/cn";
 
-import { type BadgeDesignConfig, type BadgeRarityValue, BadgeShape } from "../api/badgeSchemas";
+import {
+  BadgeAnimation,
+  type BadgeAnimationValue,
+  type BadgeDesignConfig,
+  type BadgeRarityValue,
+  BadgeShape,
+} from "../api/badgeSchemas";
 
 const SHAPE_CLIP_PATH: Record<BadgeDesignConfig["shape"], string | undefined> = {
   [BadgeShape.CIRCLE]: undefined,
@@ -20,6 +26,29 @@ const RARITY_RING: Record<BadgeRarityValue, string> = {
   EPIC: "ring-[3px] ring-offset-2 ring-offset-background shadow-md",
   LEGENDARY: "ring-[3px] ring-offset-2 ring-offset-background shadow-lg",
   EXCLUSIVE: "ring-[3px] ring-offset-2 ring-offset-background shadow-xl",
+};
+
+const RARITY_DEFAULT_ANIMATION: Record<BadgeRarityValue, BadgeAnimationValue> = {
+  COMMON: BadgeAnimation.NONE,
+  UNCOMMON: BadgeAnimation.NONE,
+  RARE: BadgeAnimation.GLOW,
+  EPIC: BadgeAnimation.SHIMMER,
+  LEGENDARY: BadgeAnimation.PULSE,
+  EXCLUSIVE: BadgeAnimation.RADIANT,
+};
+
+const ANIMATION_CLASS: Record<BadgeAnimationValue, string | undefined> = {
+  [BadgeAnimation.NONE]: undefined,
+  [BadgeAnimation.GLOW]: "animate-badge-glow",
+  [BadgeAnimation.SHIMMER]: "animate-badge-shimmer",
+  [BadgeAnimation.PULSE]: "animate-badge-pulse",
+  [BadgeAnimation.RADIANT]: "animate-badge-radiant",
+};
+
+const SHIMMER_OVERLAY_STYLE: React.CSSProperties = {
+  backgroundImage:
+    "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.6) 50%, transparent 70%)",
+  backgroundSize: "250% 100%",
 };
 
 const LOCKED_SIZE_CLASS = "size-14";
@@ -40,6 +69,11 @@ export const AchievementBadgeIcon = ({
   className,
 }: AchievementBadgeIconProps) => {
   const clipPath = SHAPE_CLIP_PATH[designConfig.shape];
+  const resolvedAnimation = isLocked
+    ? BadgeAnimation.NONE
+    : (designConfig.animation ?? RARITY_DEFAULT_ANIMATION[rarity]);
+  const animationClass = ANIMATION_CLASS[resolvedAnimation];
+  const isShimmering = resolvedAnimation === BadgeAnimation.SHIMMER;
 
   return (
     <div
@@ -49,12 +83,16 @@ export const AchievementBadgeIcon = ({
         "flex shrink-0 items-center justify-center text-2xl",
         isLocked ? "bg-muted grayscale" : RARITY_RING[rarity],
         !clipPath && "rounded-full",
+        animationClass,
         className,
       )}
       style={{
         clipPath,
         backgroundColor: isLocked ? undefined : designConfig.primaryColor,
+        ...(isShimmering ? SHIMMER_OVERLAY_STYLE : undefined),
         ...(!isLocked && ({ "--tw-ring-color": designConfig.primaryColor } as React.CSSProperties)),
+        ...(!isLocked &&
+          ({ "--badge-glow-color": designConfig.primaryColor } as React.CSSProperties)),
       }}
     >
       {isLocked ? <Lock className="size-5 text-muted-foreground" /> : icon}

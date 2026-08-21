@@ -1,4 +1,9 @@
-import type { BadgeCategoryValue, BadgeRarityValue, BadgeShapeValue } from "./schemas";
+import type {
+  BadgeAnimationValue,
+  BadgeCategoryValue,
+  BadgeRarityValue,
+  BadgeShapeValue,
+} from "./schemas";
 
 export const CATEGORY_OPTIONS: BadgeCategoryValue[] = [
   "BEGINNER",
@@ -19,6 +24,24 @@ export const RARITY_OPTIONS: BadgeRarityValue[] = [
 ];
 
 export const SHAPE_OPTIONS: BadgeShapeValue[] = ["circle", "shield", "star", "diamond", "hexagon"];
+
+export const AUTO_ANIMATION_OPTION = "auto" as const;
+
+export const ANIMATION_OPTIONS: BadgeAnimationValue[] = [
+  "none",
+  "glow",
+  "shimmer",
+  "pulse",
+  "radiant",
+];
+
+export const ANIMATION_OPTION_LABEL: Record<BadgeAnimationValue, string> = {
+  none: "None",
+  glow: "Glow",
+  shimmer: "Shimmer",
+  pulse: "Pulse",
+  radiant: "Radiant",
+};
 
 export const RULE_BASED_REQUIREMENT_TYPES = [
   "MILESTONE",

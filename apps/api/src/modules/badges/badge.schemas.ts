@@ -3,7 +3,7 @@ import { z } from "zod";
 import { AchievementRequirementType, BadgeCategory, BadgeRarity } from "#generated/prisma/enums.js";
 import { achievementConditionSchema } from "#modules/achievements/achievement.schemas.js";
 
-import { BADGE_SHAPE, MAX_FEATURED_BADGES } from "./badge.constants.js";
+import { BADGE_ANIMATION, BADGE_SHAPE, MAX_FEATURED_BADGES } from "./badge.constants.js";
 
 const NAME_MAX_LENGTH = 100;
 const DESCRIPTION_MAX_LENGTH = 500;
@@ -20,6 +20,7 @@ export const RULE_BASED_REQUIREMENT_TYPES = Object.values(AchievementRequirement
 export const badgeDesignConfigSchema = z.object({
   shape: z.enum(BADGE_SHAPE),
   primaryColor: z.string(),
+  animation: z.enum(BADGE_ANIMATION).optional(),
 });
 
 export const badgeIdParamSchema = z.object({

@@ -29,6 +29,63 @@
   --radius: 0.5rem;
 }
 
+@theme {
+  --animate-badge-glow: badge-glow 2.4s ease-in-out infinite;
+  --animate-badge-shimmer: badge-shimmer 2.8s linear infinite;
+  --animate-badge-pulse: badge-pulse 2s ease-in-out infinite;
+  --animate-badge-radiant: badge-radiant 2.2s ease-in-out infinite;
+}
+
+@keyframes badge-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--badge-glow-color, transparent);
+  }
+  50% {
+    box-shadow: 0 0 18px 5px var(--badge-glow-color, transparent);
+  }
+}
+
+@keyframes badge-shimmer {
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 250% 0;
+  }
+}
+
+@keyframes badge-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.07);
+  }
+}
+
+@keyframes badge-radiant {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 var(--badge-glow-color, transparent);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 20px 6px var(--badge-glow-color, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-badge-glow,
+  .animate-badge-shimmer,
+  .animate-badge-pulse,
+  .animate-badge-radiant {
+    animation: none;
+  }
+}
+
 .dark {
   --background: 20 14% 8%;
   --foreground: 30 20% 96%;

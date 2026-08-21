@@ -3,6 +3,9 @@ import { Checkbox, Input, Select } from "@outfiqe/design-system";
 import { ImageUpload } from "@/components/ImageUpload";
 
 import {
+  ANIMATION_OPTION_LABEL,
+  ANIMATION_OPTIONS,
+  AUTO_ANIMATION_OPTION,
   CATEGORY_OPTIONS,
   RARITY_OPTIONS,
   RULE_BASED_REQUIREMENT_TYPES,
@@ -206,6 +209,32 @@ export const ChallengeFields = ({
               onChange={(e) => onChange({ ...form, primaryColor: e.target.value })}
               className="h-11 w-16 p-1"
             />
+          </div>
+          <div className="space-y-1.5">
+            <label
+              htmlFor={`${idPrefix}-animation`}
+              className="block text-xs text-muted-foreground"
+            >
+              Animation
+            </label>
+            <Select
+              id={`${idPrefix}-animation`}
+              value={form.animation}
+              onChange={(e) =>
+                onChange({
+                  ...form,
+                  animation: e.target.value as ChallengeFormState["animation"],
+                })
+              }
+              className="w-36"
+            >
+              <option value={AUTO_ANIMATION_OPTION}>Auto (by rarity)</option>
+              {ANIMATION_OPTIONS.map((animation) => (
+                <option key={animation} value={animation}>
+                  {ANIMATION_OPTION_LABEL[animation]}
+                </option>
+              ))}
+            </Select>
           </div>
           <div className="space-y-1.5">
             <label

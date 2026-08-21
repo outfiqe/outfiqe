@@ -54,7 +54,7 @@ export type BadgeFormInput = {
   category: string;
   rarity: string;
   icon: string;
-  designConfig: { shape: string; primaryColor: string };
+  designConfig: { shape: string; primaryColor: string; animation?: string };
   xpReward: number;
   isPermanent: boolean;
   isDynamic: boolean;
@@ -78,7 +78,7 @@ export type ChallengeFormInput = {
   category: string;
   rarity: string;
   icon: string;
-  designConfig: { shape: string; primaryColor: string };
+  designConfig: { shape: string; primaryColor: string; animation?: string };
   xpReward: number;
   isPermanent: boolean;
   isPublic: boolean;

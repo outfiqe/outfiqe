@@ -1,3 +1,4 @@
+import { AUTO_ANIMATION_OPTION } from "../badgeOptions.constants";
 import { EMPTY_CONDITION } from "../conditions/condition.constants";
 import { toDatetimeLocalValue } from "../datetime.utils";
 import type { ChallengeFormState } from "./challengeForm.types";
@@ -14,6 +15,7 @@ export const createEmptyChallengeForm = (): ChallengeFormState => ({
   icon: "",
   shape: "star",
   primaryColor: "#f97316",
+  animation: AUTO_ANIMATION_OPTION,
   xpReward: "0",
   isPermanent: true,
   isPublic: true,
