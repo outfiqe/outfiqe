@@ -56,9 +56,14 @@ export type BadgeFormInput = {
   assignmentLimit: number | null;
   requirementType: string;
   conditions?: { metric: string; operator: string; value: number }[];
+  activeFrom?: string | null;
+  activeUntil?: string | null;
 };
 
-export type UpdateBadgeFormInput = BadgeFormInput & { isActive: boolean };
+export type UpdateBadgeFormInput = BadgeFormInput & {
+  isActive: boolean;
+  achievementIsActive?: boolean;
+};
 
 export const gamificationApi = {
   async listLevels(): Promise<Level[]> {

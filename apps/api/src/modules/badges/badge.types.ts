@@ -96,6 +96,9 @@ export type BadgeAdminRecord = {
     id: string;
     requirementType: AchievementRequirementType;
     requirementConfig: unknown;
+    isActive: boolean;
+    activeFrom: Date | null;
+    activeUntil: Date | null;
   } | null;
 };
 

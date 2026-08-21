@@ -11,7 +11,9 @@ const ICON_MAX_LENGTH = 8;
 const REASON_MAX_LENGTH = 500;
 
 const RULE_BASED_REQUIREMENT_TYPES = Object.values(AchievementRequirementType).filter(
-  (type): type is Exclude<AchievementRequirementType, "ADMIN_AWARD"> =>
+  (
+    type,
+  ): type is Exclude<AchievementRequirementType, typeof AchievementRequirementType.ADMIN_AWARD> =>
     type !== AchievementRequirementType.ADMIN_AWARD,
 );
 
@@ -55,39 +57,63 @@ const badgeCoreFields = {
   assignmentLimit: z.number().int().positive().nullable(),
 };
 
-export const createBadgeSchema = z.discriminatedUnion("requirementType", [
-  z
-    .object({
-      ...badgeCoreFields,
-      requirementType: z.literal(AchievementRequirementType.ADMIN_AWARD),
-    })
-    .strict(),
-  z
-    .object({
-      ...badgeCoreFields,
-      requirementType: z.enum(RULE_BASED_REQUIREMENT_TYPES),
-      conditions: z.array(achievementConditionSchema).min(1),
-    })
-    .strict(),
-]);
+const seasonalWindowFields = {
+  activeFrom: z.iso.datetime().nullable(),
+  activeUntil: z.iso.datetime().nullable(),
+};
 
-export const updateBadgeSchema = z.discriminatedUnion("requirementType", [
-  z
-    .object({
-      ...badgeCoreFields,
-      requirementType: z.literal(AchievementRequirementType.ADMIN_AWARD),
-      isActive: z.boolean(),
-    })
-    .strict(),
-  z
-    .object({
-      ...badgeCoreFields,
-      requirementType: z.enum(RULE_BASED_REQUIREMENT_TYPES),
-      conditions: z.array(achievementConditionSchema).min(1),
-      isActive: z.boolean(),
-    })
-    .strict(),
-]);
+const hasValidActiveWindow = (data: Record<string, unknown>) => {
+  const activeFrom = typeof data.activeFrom === "string" ? data.activeFrom : null;
+  const activeUntil = typeof data.activeUntil === "string" ? data.activeUntil : null;
+  return !activeFrom || !activeUntil || activeFrom <= activeUntil;
+};
+
+export const createBadgeSchema = z
+  .discriminatedUnion("requirementType", [
+    z
+      .object({
+        ...badgeCoreFields,
+        requirementType: z.literal(AchievementRequirementType.ADMIN_AWARD),
+      })
+      .strict(),
+    z
+      .object({
+        ...badgeCoreFields,
+        ...seasonalWindowFields,
+        requirementType: z.enum(RULE_BASED_REQUIREMENT_TYPES),
+        conditions: z.array(achievementConditionSchema).min(1),
+      })
+      .strict(),
+  ])
+  .refine(hasValidActiveWindow, {
+    message: "Active-until must be after active-from.",
+    path: ["activeUntil"],
+  });
+
+export const updateBadgeSchema = z
+  .discriminatedUnion("requirementType", [
+    z
+      .object({
+        ...badgeCoreFields,
+        requirementType: z.literal(AchievementRequirementType.ADMIN_AWARD),
+        isActive: z.boolean(),
+      })
+      .strict(),
+    z
+      .object({
+        ...badgeCoreFields,
+        ...seasonalWindowFields,
+        requirementType: z.enum(RULE_BASED_REQUIREMENT_TYPES),
+        conditions: z.array(achievementConditionSchema).min(1),
+        isActive: z.boolean(),
+        achievementIsActive: z.boolean(),
+      })
+      .strict(),
+  ])
+  .refine(hasValidActiveWindow, {
+    message: "Active-until must be after active-from.",
+    path: ["activeUntil"],
+  });
 
 export const awardBadgeSchema = z.object({
   userId: z.uuid(),

@@ -1,4 +1,5 @@
 import { prisma } from "#db/prisma.js";
+import { AchievementRequirementType } from "#generated/prisma/enums.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
@@ -15,7 +16,17 @@ import type {
 } from "./badge.types.js";
 
 const requirementConfigFor = (input: CreateBadgeBody | UpdateBadgeBody) =>
-  input.requirementType === "ADMIN_AWARD" ? { conditions: [] } : { conditions: input.conditions };
+  input.requirementType === AchievementRequirementType.ADMIN_AWARD
+    ? { conditions: [] }
+    : { conditions: input.conditions };
+
+const seasonalWindowFor = (input: CreateBadgeBody | UpdateBadgeBody) =>
+  input.requirementType === AchievementRequirementType.ADMIN_AWARD
+    ? { activeFrom: null, activeUntil: null }
+    : {
+        activeFrom: input.activeFrom ? new Date(input.activeFrom) : null,
+        activeUntil: input.activeUntil ? new Date(input.activeUntil) : null,
+      };
 
 export const badgeRepository = {
   async listActiveBadges(): Promise<BadgeCatalogRecord[]> {
@@ -198,6 +209,7 @@ export const badgeRepository = {
             description: input.description,
             requirementType: input.requirementType,
             requirementConfig: requirementConfigFor(input),
+            ...seasonalWindowFor(input),
           },
         },
       },
@@ -234,6 +246,11 @@ export const badgeRepository = {
           description: input.description,
           requirementType: input.requirementType,
           requirementConfig: requirementConfigFor(input),
+          isActive:
+            input.requirementType === AchievementRequirementType.ADMIN_AWARD
+              ? true
+              : input.achievementIsActive,
+          ...seasonalWindowFor(input),
         },
       });
       return tx.badge.findUniqueOrThrow({ where: { id: badgeId }, include: { achievement: true } });

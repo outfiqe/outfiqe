@@ -1095,6 +1095,8 @@ model Achievement {
   requirementType   AchievementRequirementType @map("requirement_type")
   requirementConfig Json                       @map("requirement_config")
   isActive          Boolean                    @default(true) @map("is_active")
+  activeFrom        DateTime?                  @map("active_from")
+  activeUntil       DateTime?                  @map("active_until")
   createdAt         DateTime                   @default(now()) @map("created_at")
   updatedAt         DateTime                   @updatedAt @map("updated_at")
 

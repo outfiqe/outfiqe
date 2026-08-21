@@ -48,8 +48,19 @@ const validBadgePayload = (overrides: Record<string, unknown> = {}) => ({
   assignmentLimit: null,
   requirementType: "ENGAGEMENT",
   conditions: [{ metric: "total_likes", operator: "gte", value: 5 }],
+  activeFrom: null,
+  activeUntil: null,
   ...overrides,
 });
+
+const adminAwardBadgePayload = (overrides: Record<string, unknown> = {}) =>
+  validBadgePayload({
+    requirementType: "ADMIN_AWARD",
+    conditions: undefined,
+    activeFrom: undefined,
+    activeUntil: undefined,
+    ...overrides,
+  });
 
 const createBadge = async (overrides: {
   isTitleEligible?: boolean;
@@ -236,13 +247,7 @@ describe("POST /api/badges (admin)", () => {
     const response = await request(testApp)
       .post("/api/badges")
       .set("Authorization", admin.header)
-      .send(
-        validBadgePayload({
-          requirementType: "ADMIN_AWARD",
-          conditions: undefined,
-          assignmentLimit: 5,
-        }),
-      );
+      .send(adminAwardBadgePayload({ assignmentLimit: 5 }));
 
     expect(response.status).toBe(201);
     expect(response.body.data.assignmentLimit).toBe(5);
@@ -256,7 +261,22 @@ describe("POST /api/badges (admin)", () => {
     const response = await request(testApp)
       .post("/api/badges")
       .set("Authorization", admin.header)
-      .send(validBadgePayload({ requirementType: "ADMIN_AWARD" }));
+      .send(
+        adminAwardBadgePayload({
+          conditions: [{ metric: "total_likes", operator: "gte", value: 5 }],
+        }),
+      );
+
+    expect(response.status).toBe(422);
+  });
+
+  it("rejects a seasonal window on an admin-award badge instead of silently dropping it", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(adminAwardBadgePayload({ activeFrom: new Date().toISOString() }));
 
     expect(response.status).toBe(422);
   });
@@ -302,6 +322,7 @@ describe("PATCH /api/badges/:badgeId (admin)", () => {
           requirementType: "COMMUNITY",
           conditions: [{ metric: "comments_made", operator: "gte", value: 20 }],
           isActive: false,
+          achievementIsActive: true,
         }),
       );
 
@@ -315,13 +336,73 @@ describe("PATCH /api/badges/:badgeId (admin)", () => {
     });
   });
 
+  it("pauses achievement evaluation without deactivating the badge", async () => {
+    const admin = await createAdmin();
+    const created = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(validBadgePayload());
+    const badgeId = created.body.data.id;
+
+    const response = await request(testApp)
+      .patch(`/api/badges/${badgeId}`)
+      .set("Authorization", admin.header)
+      .send(validBadgePayload({ isActive: true, achievementIsActive: false }));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.isActive).toBe(true);
+    expect(response.body.data.achievement.isActive).toBe(false);
+  });
+
+  it("stores a seasonal window and rejects an inverted one", async () => {
+    const admin = await createAdmin();
+    const created = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(validBadgePayload());
+    const badgeId = created.body.data.id;
+
+    const activeFrom = new Date(Date.now() - 60_000).toISOString();
+    const activeUntil = new Date(Date.now() + 60_000).toISOString();
+
+    const valid = await request(testApp)
+      .patch(`/api/badges/${badgeId}`)
+      .set("Authorization", admin.header)
+      .send(
+        validBadgePayload({
+          isActive: true,
+          achievementIsActive: true,
+          activeFrom,
+          activeUntil,
+        }),
+      );
+
+    expect(valid.status).toBe(200);
+    expect(valid.body.data.achievement.activeFrom).toBe(activeFrom);
+    expect(valid.body.data.achievement.activeUntil).toBe(activeUntil);
+
+    const inverted = await request(testApp)
+      .patch(`/api/badges/${badgeId}`)
+      .set("Authorization", admin.header)
+      .send(
+        validBadgePayload({
+          isActive: true,
+          achievementIsActive: true,
+          activeFrom: activeUntil,
+          activeUntil: activeFrom,
+        }),
+      );
+
+    expect(inverted.status).toBe(422);
+  });
+
   it("404s for a badge that doesn't exist", async () => {
     const admin = await createAdmin();
 
     const response = await request(testApp)
       .patch(`/api/badges/${randomUUID()}`)
       .set("Authorization", admin.header)
-      .send(validBadgePayload({ isActive: true }));
+      .send(validBadgePayload({ isActive: true, achievementIsActive: true }));
 
     expect(response.status).toBe(404);
   });

@@ -7,11 +7,16 @@ import {
 
 export const achievementRepository = {
   async findEligibleAchievements(userId: string) {
+    const now = new Date();
     return prisma.achievement.findMany({
       where: {
         isActive: true,
         requirementType: { not: AchievementRequirementType.ADMIN_AWARD },
         badge: { isActive: true, userBadges: { none: { userId } } },
+        AND: [
+          { OR: [{ activeFrom: null }, { activeFrom: { lte: now } }] },
+          { OR: [{ activeUntil: null }, { activeUntil: { gte: now } }] },
+        ],
       },
       include: { badge: true },
     });
