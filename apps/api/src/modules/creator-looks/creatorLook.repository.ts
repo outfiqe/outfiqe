@@ -1261,4 +1261,33 @@ export const creatorLookRepository = {
       },
     });
   },
+
+  async recordView(input: {
+    lookId: string;
+    viewerId?: string;
+    sessionId: string;
+  }): Promise<{ counted: boolean; viewCount: number }> {
+    return prisma.$transaction(async (tx) => {
+      const { count } = await tx.creatorLookView.createMany({
+        data: [
+          {
+            creatorLookId: input.lookId,
+            viewerId: input.viewerId,
+            sessionId: input.sessionId,
+          },
+        ],
+        skipDuplicates: true,
+      });
+
+      const look =
+        count > 0
+          ? await tx.creatorLook.update({
+              where: { id: input.lookId },
+              data: { viewCount: { increment: 1 } },
+            })
+          : await tx.creatorLook.findUniqueOrThrow({ where: { id: input.lookId } });
+
+      return { counted: count > 0, viewCount: look.viewCount };
+    });
+  },
 };

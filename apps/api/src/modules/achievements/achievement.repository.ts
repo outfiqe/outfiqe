@@ -46,6 +46,14 @@ export const achievementRepository = {
     return prisma.creatorCommission.count({ where: { creatorId: userId } });
   },
 
+  async sumViewsReceived(userId: string): Promise<number> {
+    const { _sum } = await prisma.creatorLook.aggregate({
+      where: { creatorId: userId, deletedAt: null },
+      _sum: { viewCount: true },
+    });
+    return _sum.viewCount ?? 0;
+  },
+
   async createUserBadge(userId: string, badgeId: string): Promise<void> {
     await prisma.userBadge.create({ data: { userId, badgeId } });
   },

@@ -25,6 +25,7 @@ import type {
   CreateCreatorLookBody,
   ListCreatorLooksQuery,
   ListSavedQuery,
+  RecordViewBody,
   SearchCreatorLooksQuery,
   TagClickBody,
 } from "./creatorLook.schemas.js";
@@ -39,7 +40,7 @@ import type {
   TagScoreBreakdown,
   TrendingTag,
 } from "./creatorLook.types.js";
-import { toSuggestion } from "./creatorLook.utils.js";
+import { isLikelyBotUserAgent, toSuggestion } from "./creatorLook.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const UNAUTHORIZED_STATUS = 401;
@@ -424,6 +425,30 @@ export const creatorLookService = {
       userId,
       sessionId: body.sessionId,
       source: body.source,
+    });
+  },
+
+  async recordView(
+    lookId: string,
+    viewerId: string | undefined,
+    userAgent: string | undefined,
+    body: RecordViewBody,
+  ): Promise<void> {
+    const look = await requireActiveLook(lookId);
+    if (viewerId === look.creatorId) return;
+    if (isLikelyBotUserAgent(userAgent)) return;
+
+    const { counted } = await creatorLookRepository.recordView({
+      lookId,
+      viewerId,
+      sessionId: body.sessionId,
+    });
+    if (!counted) return;
+
+    await eventBus.publish(DomainEvents.LOOK_VIEWED, {
+      lookId,
+      creatorId: look.creatorId,
+      viewerId,
     });
   },
 };

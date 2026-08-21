@@ -45,4 +45,12 @@ export const registerAchievementEventConsumers = (): void => {
       await achievementService.evaluateForUser(creatorId);
     },
   });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.LOOK_VIEWED,
+    groupName: ACHIEVEMENT_CONSUMER_GROUP,
+    handler: async ({ creatorId }): Promise<void> => {
+      await achievementService.evaluateForUser(creatorId);
+    },
+  });
 };

@@ -27,6 +27,7 @@ const metricFetchers: Record<AchievementMetric, (userId: string) => Promise<numb
   [ACHIEVEMENT_METRIC.TOTAL_LIKES]: (userId) => achievementRepository.sumLikesReceived(userId),
   [ACHIEVEMENT_METRIC.COMMENTS_MADE]: (userId) => achievementRepository.countCommentsMade(userId),
   [ACHIEVEMENT_METRIC.SALES_COUNT]: (userId) => achievementRepository.countSalesGenerated(userId),
+  [ACHIEVEMENT_METRIC.TOTAL_VIEWS]: (userId) => achievementRepository.sumViewsReceived(userId),
 };
 
 const loadEligibleAchievements = async (userId: string): Promise<EligibleAchievementRecord[]> => {

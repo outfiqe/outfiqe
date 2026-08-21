@@ -5,6 +5,7 @@ export const ACHIEVEMENT_METRIC = {
   TOTAL_LIKES: "total_likes",
   COMMENTS_MADE: "comments_made",
   SALES_COUNT: "sales_count",
+  TOTAL_VIEWS: "total_views",
 } as const;
 
 export type AchievementMetric = (typeof ACHIEVEMENT_METRIC)[keyof typeof ACHIEVEMENT_METRIC];

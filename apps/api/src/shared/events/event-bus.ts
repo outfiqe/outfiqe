@@ -18,6 +18,7 @@ export const DomainEvents = {
   LOOK_LIKED: "look.liked",
   LOOK_SAVED: "look.saved",
   LOOK_COMMENTED: "look.commented",
+  LOOK_VIEWED: "look.viewed",
   USER_FOLLOWED: "user.followed",
   USER_UNFOLLOWED: "user.unfollowed",
   BRAND_FOLLOWED: "brand.followed",
