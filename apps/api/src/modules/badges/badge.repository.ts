@@ -2,13 +2,20 @@ import { prisma } from "#db/prisma.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
+import type { CreateBadgeBody, RemoveUserBadgeBody, UpdateBadgeBody } from "./badge.schemas.js";
 import type {
   AwardBadgeInput,
   AwardBadgeResult,
+  BadgeAdminRecord,
   BadgeCatalogRecord,
   FeaturedBadgeRecord,
+  ManualAwardRecord,
+  MostAwardedBadgeRecord,
   UserBadgeStateRecord,
 } from "./badge.types.js";
+
+const requirementConfigFor = (input: CreateBadgeBody | UpdateBadgeBody) =>
+  input.requirementType === "ADMIN_AWARD" ? { conditions: [] } : { conditions: input.conditions };
 
 export const badgeRepository = {
   async listActiveBadges(): Promise<BadgeCatalogRecord[]> {
@@ -158,5 +165,137 @@ export const badgeRepository = {
         throw error;
       }
     });
+  },
+
+  async listAllBadgesAdmin(): Promise<BadgeAdminRecord[]> {
+    return prisma.badge.findMany({
+      include: { achievement: true },
+      orderBy: [{ category: "asc" }, { rarity: "asc" }, { name: "asc" }],
+    });
+  },
+
+  async findBadgeAdminById(badgeId: string): Promise<BadgeAdminRecord | null> {
+    return prisma.badge.findUnique({ where: { id: badgeId }, include: { achievement: true } });
+  },
+
+  async createBadgeWithAchievement(input: CreateBadgeBody): Promise<BadgeAdminRecord> {
+    return prisma.badge.create({
+      data: {
+        name: input.name,
+        description: input.description,
+        category: input.category,
+        rarity: input.rarity,
+        icon: input.icon,
+        designConfig: input.designConfig,
+        xpReward: input.xpReward,
+        isPermanent: input.isPermanent,
+        isPublic: input.isPublic,
+        isTitleEligible: input.isTitleEligible,
+        assignmentLimit: input.assignmentLimit,
+        achievement: {
+          create: {
+            name: input.name,
+            description: input.description,
+            requirementType: input.requirementType,
+            requirementConfig: requirementConfigFor(input),
+          },
+        },
+      },
+      include: { achievement: true },
+    });
+  },
+
+  async updateBadgeWithAchievement(
+    badgeId: string,
+    input: UpdateBadgeBody,
+  ): Promise<BadgeAdminRecord> {
+    return prisma.$transaction(async (tx) => {
+      await tx.badge.update({
+        where: { id: badgeId },
+        data: {
+          name: input.name,
+          description: input.description,
+          category: input.category,
+          rarity: input.rarity,
+          icon: input.icon,
+          designConfig: input.designConfig,
+          xpReward: input.xpReward,
+          isPermanent: input.isPermanent,
+          isPublic: input.isPublic,
+          isTitleEligible: input.isTitleEligible,
+          assignmentLimit: input.assignmentLimit,
+          isActive: input.isActive,
+        },
+      });
+      await tx.achievement.update({
+        where: { badgeId },
+        data: {
+          name: input.name,
+          description: input.description,
+          requirementType: input.requirementType,
+          requirementConfig: requirementConfigFor(input),
+        },
+      });
+      return tx.badge.findUniqueOrThrow({ where: { id: badgeId }, include: { achievement: true } });
+    });
+  },
+
+  async removeUserBadge(userBadgeId: string, { reason }: RemoveUserBadgeBody): Promise<boolean> {
+    const result = await prisma.userBadge.updateMany({
+      where: { id: userBadgeId, removedAt: null },
+      data: { removedAt: new Date(), removedReason: reason },
+    });
+    return result.count > 0;
+  },
+
+  async countAwardedBadges(): Promise<number> {
+    return prisma.userBadge.count({ where: { removedAt: null } });
+  },
+
+  async countManualAwardedBadges(): Promise<number> {
+    return prisma.userBadge.count({ where: { removedAt: null, awardedById: { not: null } } });
+  },
+
+  async countEngineAwardedBadges(): Promise<number> {
+    return prisma.userBadge.count({ where: { removedAt: null, awardedById: null } });
+  },
+
+  async listManualAwards(): Promise<ManualAwardRecord[]> {
+    const rows = await prisma.userBadge.findMany({
+      where: { removedAt: null, awardedById: { not: null } },
+      orderBy: { unlockedAt: "desc" },
+      include: { user: true, badge: true },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      userId: row.userId,
+      userName: row.user.name,
+      userHandle: row.user.handle,
+      badgeId: row.badgeId,
+      badgeName: row.badge.name,
+      badgeIcon: row.badge.icon,
+      awardReason: row.awardReason,
+      unlockedAt: row.unlockedAt,
+    }));
+  },
+
+  async findMostAwardedBadge(): Promise<MostAwardedBadgeRecord | null> {
+    const grouped = await prisma.userBadge.groupBy({
+      by: ["badgeId"],
+      where: { removedAt: null },
+      _count: { badgeId: true },
+      orderBy: { _count: { badgeId: "desc" } },
+      take: 1,
+    });
+    const top = grouped[0];
+    if (!top) return null;
+
+    const badge = await prisma.badge.findUnique({
+      where: { id: top.badgeId },
+      select: { name: true },
+    });
+    if (!badge) return null;
+
+    return { badgeId: top.badgeId, name: badge.name, count: top._count.badgeId };
   },
 };

@@ -1,14 +1,27 @@
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
+import { XpActivityType } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
+import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
+import { AppError } from "#middlewares/error-handler.js";
+import { userRepository } from "#modules/users/user.repository.js";
 import { describeError } from "#redis/redis.utils.js";
 
-import { ONE_DAY_MS } from "./xp.constants.js";
+import { ONE_DAY_MS, XP_SOURCE } from "./xp.constants.js";
 import { xpRepository } from "./xp.repository.js";
 import type {
+  ActivityTypeParam,
+  AdjustXpBody,
+  CreateLevelBody,
+  UpdateActivityXpConfigBody,
+  UpdateLevelBody,
+} from "./xp.schemas.js";
+import type {
+  ActivityXpConfigRecord,
   AwardXpInput,
   AwardXpResult,
+  LevelRecord,
   UserProgressView,
   XpTransactionPage,
 } from "./xp.types.js";
@@ -22,6 +35,9 @@ import {
 
 const NO_ACTIVE_LEVELS_RESULT: AwardXpResult = { awarded: false, reason: "ACTIVITY_DISABLED" };
 const MIN_TOTAL_XP = 0;
+const NOT_FOUND_STATUS = 404;
+const CONFLICT_STATUS = 409;
+const VALIDATION_STATUS = 422;
 
 const applyXpTransaction = async (input: AwardXpInput, amount: number): Promise<AwardXpResult> => {
   const { userId } = input;
@@ -168,9 +184,101 @@ const listTransactionsForUser = async (
   };
 };
 
+const listLevels = async (): Promise<LevelRecord[]> => xpRepository.listAllLevels();
+
+const createLevel = async (input: CreateLevelBody): Promise<LevelRecord> => {
+  try {
+    return await xpRepository.createLevel(input);
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      throw new AppError(
+        "LEVEL_NUMBER_TAKEN",
+        `Level ${input.level} already exists.`,
+        CONFLICT_STATUS,
+      );
+    }
+    throw error;
+  }
+};
+
+const updateLevel = async (id: string, input: UpdateLevelBody): Promise<LevelRecord> => {
+  const level = await xpRepository.findLevelById(id);
+  if (!level) throw new AppError("LEVEL_NOT_FOUND", "This level doesn't exist.", NOT_FOUND_STATUS);
+
+  return xpRepository.updateLevel(id, input);
+};
+
+const listActivityConfigs = async (): Promise<ActivityXpConfigRecord[]> =>
+  xpRepository.listActivityConfigs();
+
+const updateActivityConfig = async (
+  activityType: ActivityTypeParam["activityType"],
+  input: UpdateActivityXpConfigBody,
+): Promise<ActivityXpConfigRecord> => {
+  const updated = await xpRepository.updateActivityConfig(activityType, input);
+  if (!updated) {
+    throw new AppError(
+      "ACTIVITY_CONFIG_NOT_FOUND",
+      `No XP config exists for ${activityType}.`,
+      NOT_FOUND_STATUS,
+    );
+  }
+  return updated;
+};
+
+const adjustXp = async (
+  { userId, amount, reason }: AdjustXpBody,
+  adminUserId: string,
+): Promise<AwardXpResult> => {
+  const targetUser = await userRepository.findById(userId);
+  if (!targetUser) {
+    throw new AppError("USER_NOT_FOUND", "This user doesn't exist.", NOT_FOUND_STATUS);
+  }
+
+  const progress = await xpRepository.findProgressForUser(userId);
+  const currentTotalXp = progress?.totalXp ?? MIN_TOTAL_XP;
+  if (currentTotalXp + amount < MIN_TOTAL_XP) {
+    throw new AppError(
+      "XP_WOULD_GO_NEGATIVE",
+      `This adjustment would take the user's XP below zero (currently ${currentTotalXp}).`,
+      VALIDATION_STATUS,
+    );
+  }
+
+  const result = await grantFixedXp(
+    {
+      userId,
+      activityType: XpActivityType.ADMIN_ADJUSTMENT,
+      source: XP_SOURCE.ADMIN,
+      metadata: { reason, adminUserId },
+    },
+    amount,
+  );
+
+  logger.info(
+    `XP manually adjusted for user ${userId} by admin ${adminUserId}: ${amount} (${reason})`,
+  );
+  return result;
+};
+
+const getAdminStats = async (): Promise<{ totalXpAwarded: number; usersWithProgress: number }> => {
+  const [totalXpAwarded, usersWithProgress] = await Promise.all([
+    xpRepository.sumTotalXpAwarded(),
+    xpRepository.countUsersWithProgress(),
+  ]);
+  return { totalXpAwarded, usersWithProgress };
+};
+
 export const xpService = {
   awardXp,
   grantFixedXp,
   getProgressForUser,
   listTransactionsForUser,
+  listLevels,
+  createLevel,
+  updateLevel,
+  listActivityConfigs,
+  updateActivityConfig,
+  adjustXp,
+  getAdminStats,
 };

@@ -1,4 +1,8 @@
-import type { BadgeCategory, BadgeRarity } from "#generated/prisma/enums.js";
+import type {
+  AchievementRequirementType,
+  BadgeCategory,
+  BadgeRarity,
+} from "#generated/prisma/enums.js";
 import type { AchievementConditionProgress } from "#modules/achievements/achievement.types.js";
 
 import type { BadgeDesignConfig } from "./badge.schemas.js";
@@ -70,3 +74,52 @@ export type AwardBadgeFailureReason =
 export type AwardBadgeResult =
   | { awarded: true; userBadgeId: string; xpReward: number }
   | { awarded: false; reason: AwardBadgeFailureReason };
+
+export type BadgeAdminRecord = {
+  id: string;
+  name: string;
+  description: string;
+  category: BadgeCategory;
+  rarity: BadgeRarity;
+  icon: string;
+  designConfig: unknown;
+  xpReward: number;
+  isPermanent: boolean;
+  isDynamic: boolean;
+  isPublic: boolean;
+  isActive: boolean;
+  assignmentLimit: number | null;
+  assignmentCount: number;
+  isTitleEligible: boolean;
+  createdAt: Date;
+  achievement: {
+    id: string;
+    requirementType: AchievementRequirementType;
+    requirementConfig: unknown;
+  } | null;
+};
+
+export type MostAwardedBadgeRecord = {
+  badgeId: string;
+  name: string;
+  count: number;
+};
+
+export type BadgeAdminStats = {
+  totalBadgesAwarded: number;
+  totalAchievementsUnlocked: number;
+  totalManualAwards: number;
+  mostAwardedBadge: MostAwardedBadgeRecord | null;
+};
+
+export type ManualAwardRecord = {
+  id: string;
+  userId: string;
+  userName: string;
+  userHandle: string;
+  badgeId: string;
+  badgeName: string;
+  badgeIcon: string;
+  awardReason: string | null;
+  unlockedAt: Date;
+};

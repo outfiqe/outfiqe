@@ -2,6 +2,7 @@ import { prisma } from "#db/prisma.js";
 import { type XpActivityType, XpTransactionStatus } from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
+import type { CreateLevelBody, UpdateActivityXpConfigBody, UpdateLevelBody } from "./xp.schemas.js";
 import type { ActivityXpConfigRecord, AwardXpInput, LevelRecord } from "./xp.types.js";
 
 export const xpRepository = {
@@ -97,5 +98,48 @@ export const xpRepository = {
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
     });
+  },
+
+  async listAllLevels(): Promise<LevelRecord[]> {
+    return prisma.level.findMany({ orderBy: { level: "asc" } });
+  },
+
+  async findLevelById(id: string): Promise<LevelRecord | null> {
+    return prisma.level.findUnique({ where: { id } });
+  },
+
+  async createLevel(input: CreateLevelBody): Promise<LevelRecord> {
+    return prisma.level.create({ data: input });
+  },
+
+  async updateLevel(id: string, input: UpdateLevelBody): Promise<LevelRecord> {
+    return prisma.level.update({ where: { id }, data: input });
+  },
+
+  async listActivityConfigs(): Promise<ActivityXpConfigRecord[]> {
+    return prisma.activityXpConfig.findMany({ orderBy: { activityType: "asc" } });
+  },
+
+  async updateActivityConfig(
+    activityType: XpActivityType,
+    input: UpdateActivityXpConfigBody,
+  ): Promise<ActivityXpConfigRecord | null> {
+    try {
+      return await prisma.activityXpConfig.update({ where: { activityType }, data: input });
+    } catch {
+      return null;
+    }
+  },
+
+  async sumTotalXpAwarded(): Promise<number> {
+    const { _sum } = await prisma.xpTransaction.aggregate({
+      where: { status: XpTransactionStatus.APPLIED },
+      _sum: { amount: true },
+    });
+    return _sum.amount ?? 0;
+  },
+
+  async countUsersWithProgress(): Promise<number> {
+    return prisma.userProgress.count();
   },
 };

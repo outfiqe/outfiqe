@@ -24,10 +24,32 @@ const createUser = async (name: string) =>
     },
   });
 
-const authHeaderFor = (userId: string) => {
-  const { accessToken } = generateTokenpair({ sub: userId, role: UserRole.CUSTOMER });
+const authHeaderFor = (userId: string, role: UserRole = UserRole.CUSTOMER) => {
+  const { accessToken } = generateTokenpair({ sub: userId, role });
   return `Bearer ${accessToken}`;
 };
+
+const createAdmin = async () => {
+  const admin = await createUser("Test Admin");
+  return { ...admin, header: authHeaderFor(admin.id, UserRole.ADMIN) };
+};
+
+const validBadgePayload = (overrides: Record<string, unknown> = {}) => ({
+  name: `Admin-created badge ${randomUUID()}`,
+  description: "A badge created via the admin API integration test.",
+  category: "ENGAGEMENT",
+  rarity: "COMMON",
+  icon: "🧪",
+  designConfig: { shape: "circle", primaryColor: "#123456" },
+  xpReward: 10,
+  isPermanent: true,
+  isPublic: true,
+  isTitleEligible: false,
+  assignmentLimit: null,
+  requirementType: "ENGAGEMENT",
+  conditions: [{ metric: "total_likes", operator: "gte", value: 5 }],
+  ...overrides,
+});
 
 const createBadge = async (overrides: {
   isTitleEligible?: boolean;
@@ -191,5 +213,186 @@ describe("PATCH /api/badges/title", () => {
     const response = await request(testApp).patch("/api/badges/title").send({ badgeId: badge.id });
 
     expect(response.status).toBe(401);
+  });
+});
+
+describe("POST /api/badges (admin)", () => {
+  it("creates a rule-based badge with its achievement in one call", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(validBadgePayload());
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.achievement.requirementType).toBe("ENGAGEMENT");
+    expect(response.body.data.achievement.requirementConfig.conditions).toHaveLength(1);
+  });
+
+  it("creates an admin-award badge with an assignment limit and empty conditions", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(
+        validBadgePayload({
+          requirementType: "ADMIN_AWARD",
+          conditions: undefined,
+          assignmentLimit: 5,
+        }),
+      );
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.assignmentLimit).toBe(5);
+    expect(response.body.data.achievement.requirementType).toBe("ADMIN_AWARD");
+    expect(response.body.data.achievement.requirementConfig.conditions).toEqual([]);
+  });
+
+  it("rejects conditions on an admin-award badge instead of silently dropping them", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(validBadgePayload({ requirementType: "ADMIN_AWARD" }));
+
+    expect(response.status).toBe(422);
+  });
+
+  it("rejects a missing conditions array on a rule-based badge", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(validBadgePayload({ conditions: undefined }));
+
+    expect(response.status).toBe(422);
+  });
+
+  it("requires the ADMIN role", async () => {
+    const nonAdmin = await createUser("Non Admin");
+
+    const response = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", authHeaderFor(nonAdmin.id))
+      .send(validBadgePayload());
+
+    expect(response.status).toBe(403);
+  });
+});
+
+describe("PATCH /api/badges/:badgeId (admin)", () => {
+  it("updates the badge and its achievement together", async () => {
+    const admin = await createAdmin();
+    const created = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(validBadgePayload());
+    const badgeId = created.body.data.id;
+
+    const response = await request(testApp)
+      .patch(`/api/badges/${badgeId}`)
+      .set("Authorization", admin.header)
+      .send(
+        validBadgePayload({
+          name: "Updated name",
+          requirementType: "COMMUNITY",
+          conditions: [{ metric: "comments_made", operator: "gte", value: 20 }],
+          isActive: false,
+        }),
+      );
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.name).toBe("Updated name");
+    expect(response.body.data.isActive).toBe(false);
+    expect(response.body.data.achievement.requirementType).toBe("COMMUNITY");
+    expect(response.body.data.achievement.requirementConfig.conditions[0]).toMatchObject({
+      metric: "comments_made",
+      value: 20,
+    });
+  });
+
+  it("404s for a badge that doesn't exist", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .patch(`/api/badges/${randomUUID()}`)
+      .set("Authorization", admin.header)
+      .send(validBadgePayload({ isActive: true }));
+
+    expect(response.status).toBe(404);
+  });
+});
+
+describe("POST /api/badges/:badgeId/award (admin)", () => {
+  it("awards a badge with a reason and rejects a duplicate award", async () => {
+    const admin = await createAdmin();
+    const badge = await createBadge({});
+    const recipient = await createUser("Award Recipient");
+
+    const first = await request(testApp)
+      .post(`/api/badges/${badge.id}/award`)
+      .set("Authorization", admin.header)
+      .send({ userId: recipient.id, reason: "Integration test award" });
+
+    expect(first.status).toBe(201);
+    expect(first.body.data.awarded).toBe(true);
+
+    const stored = await prisma.userBadge.findUniqueOrThrow({
+      where: { userId_badgeId: { userId: recipient.id, badgeId: badge.id } },
+    });
+    expect(stored.awardedById).toBe(admin.id);
+    expect(stored.awardReason).toBe("Integration test award");
+
+    const second = await request(testApp)
+      .post(`/api/badges/${badge.id}/award`)
+      .set("Authorization", admin.header)
+      .send({ userId: recipient.id, reason: "Duplicate" });
+
+    expect(second.status).toBe(422);
+  });
+
+  it("requires a reason", async () => {
+    const admin = await createAdmin();
+    const badge = await createBadge({});
+    const recipient = await createUser("No Reason Recipient");
+
+    const response = await request(testApp)
+      .post(`/api/badges/${badge.id}/award`)
+      .set("Authorization", admin.header)
+      .send({ userId: recipient.id, reason: "" });
+
+    expect(response.status).toBe(422);
+  });
+});
+
+describe("POST /api/badges/user-badges/:userBadgeId/remove (admin)", () => {
+  it("removes a manually awarded badge and rejects removing it again", async () => {
+    const admin = await createAdmin();
+    const badge = await createBadge({});
+    const recipient = await createUser("Removal Recipient");
+    const userBadge = await prisma.userBadge.create({
+      data: { userId: recipient.id, badgeId: badge.id, awardedById: admin.id },
+    });
+
+    const first = await request(testApp)
+      .post(`/api/badges/user-badges/${userBadge.id}/remove`)
+      .set("Authorization", admin.header)
+      .send({ reason: "Integration test removal" });
+
+    expect(first.status).toBe(200);
+    const stored = await prisma.userBadge.findUniqueOrThrow({ where: { id: userBadge.id } });
+    expect(stored.removedAt).not.toBeNull();
+    expect(stored.removedReason).toBe("Integration test removal");
+
+    const second = await request(testApp)
+      .post(`/api/badges/user-badges/${userBadge.id}/remove`)
+      .set("Authorization", admin.header)
+      .send({ reason: "Again" });
+
+    expect(second.status).toBe(404);
   });
 });

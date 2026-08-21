@@ -7,7 +7,20 @@ import { XP_SOURCE } from "#modules/xp/xp.constants.js";
 import { xpService } from "#modules/xp/xp.service.js";
 
 import { badgeRepository } from "./badge.repository.js";
-import type { AwardBadgeInput, BadgeCollectionEntry, FeaturedBadgeView } from "./badge.types.js";
+import type {
+  AwardBadgeBody,
+  CreateBadgeBody,
+  RemoveUserBadgeBody,
+  UpdateBadgeBody,
+} from "./badge.schemas.js";
+import type {
+  AwardBadgeInput,
+  BadgeAdminRecord,
+  BadgeAdminStats,
+  BadgeCollectionEntry,
+  FeaturedBadgeView,
+  ManualAwardRecord,
+} from "./badge.types.js";
 import { parseDesignConfig } from "./badge.utils.js";
 
 const NOT_FOUND_STATUS = 404;
@@ -157,6 +170,81 @@ const updateTitle = async (userId: string, badgeId: string | null): Promise<void
   });
 };
 
+const listAllBadgesAdmin = async (): Promise<BadgeAdminRecord[]> =>
+  badgeRepository.listAllBadgesAdmin();
+
+const createBadge = async (input: CreateBadgeBody): Promise<BadgeAdminRecord> =>
+  badgeRepository.createBadgeWithAchievement(input);
+
+const updateBadge = async (badgeId: string, input: UpdateBadgeBody): Promise<BadgeAdminRecord> => {
+  const existing = await badgeRepository.findBadgeAdminById(badgeId);
+  if (!existing) {
+    throw new AppError("BADGE_NOT_FOUND", "This badge doesn't exist.", NOT_FOUND_STATUS);
+  }
+  return badgeRepository.updateBadgeWithAchievement(badgeId, input);
+};
+
+const awardBadgeManually = async (
+  badgeId: string,
+  { userId, reason }: AwardBadgeBody,
+  adminUserId: string,
+) => {
+  const result = await awardBadge({
+    userId,
+    badgeId,
+    awardedById: adminUserId,
+    awardReason: reason,
+  });
+
+  if (!result.awarded) {
+    const messageByReason: Record<string, string> = {
+      BADGE_NOT_FOUND: "This badge doesn't exist.",
+      BADGE_INACTIVE: "This badge is inactive and can't be awarded.",
+      ALREADY_AWARDED: "This user already has this badge.",
+      ASSIGNMENT_LIMIT_REACHED: "This badge has reached its assignment limit.",
+    };
+    throw new AppError(
+      result.reason,
+      messageByReason[result.reason] ?? "Couldn't award this badge.",
+      VALIDATION_STATUS,
+    );
+  }
+
+  logger.info(`Badge ${badgeId} manually awarded to user ${userId} by admin ${adminUserId}`);
+  return result;
+};
+
+const removeUserBadge = async (
+  userBadgeId: string,
+  input: RemoveUserBadgeBody,
+  adminUserId: string,
+): Promise<void> => {
+  const removed = await badgeRepository.removeUserBadge(userBadgeId, input);
+  if (!removed) {
+    throw new AppError(
+      "USER_BADGE_NOT_FOUND",
+      "This badge award doesn't exist or was already removed.",
+      NOT_FOUND_STATUS,
+    );
+  }
+  logger.info(`UserBadge ${userBadgeId} removed by admin ${adminUserId}: ${input.reason}`);
+};
+
+const listManualAwards = async (): Promise<ManualAwardRecord[]> =>
+  badgeRepository.listManualAwards();
+
+const getAdminStats = async (): Promise<BadgeAdminStats> => {
+  const [totalBadgesAwarded, totalAchievementsUnlocked, totalManualAwards, mostAwardedBadge] =
+    await Promise.all([
+      badgeRepository.countAwardedBadges(),
+      badgeRepository.countEngineAwardedBadges(),
+      badgeRepository.countManualAwardedBadges(),
+      badgeRepository.findMostAwardedBadge(),
+    ]);
+
+  return { totalBadgesAwarded, totalAchievementsUnlocked, totalManualAwards, mostAwardedBadge };
+};
+
 export const badgeService = {
   listCollectionForUser,
   updateDisplay,
@@ -165,4 +253,11 @@ export const badgeService = {
   getTitleBadgeForUser,
   updateTitle,
   awardBadge,
+  listAllBadgesAdmin,
+  createBadge,
+  updateBadge,
+  awardBadgeManually,
+  removeUserBadge,
+  listManualAwards,
+  getAdminStats,
 };
