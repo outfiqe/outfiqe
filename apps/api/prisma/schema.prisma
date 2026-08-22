@@ -40,32 +40,35 @@ model User {
   createdAt            DateTime      @default(now()) @map("created_at")
   updatedAt            DateTime      @updatedAt @map("updated_at")
 
-  memberships          BrandMembership[]
-  refreshTokens        RefreshToken[]
-  reviewedApplications BrandApplication[]    @relation("BrandApplicationReviewer")
-  approvedInvites      BrandInvite[]         @relation("BrandInviteApprover")
-  sentAdminInvites     AdminInvite[]         @relation("AdminInviteSender")
-  reviewedProducts     Product[]             @relation("ProductReviewer")
-  creatorLooks         CreatorLook[]         @relation("CreatorLooks")
-  lookLikes            CreatorLookLike[]
-  lookSaves            CreatorLookSave[]
-  lookComments         CreatorLookComment[]
-  tagClicks            CreatorLookTagClick[]
-  lookViews            CreatorLookView[]
-  following            Follow[]              @relation("FollowerEdges")
-  savedProducts        SavedProduct[]
-  cart                 Cart?
-  orders               Order[]
-  idempotencyRequests  RequestIdempotency[]
-  attributedOrderItems OrderItem[]           @relation("AttributedOrderItems")
-  creatorCommissions   CreatorCommission[]   @relation("CreatorCommissions")
-  creatorLinks         CreatorLink[]         @relation("CreatorLinks")
-  creatorLinkClicks    CreatorLinkClick[]
-  deliveryZoneChanges  DeliveryZoneHistory[] @relation("DeliveryZoneChanges")
-  xpTransactions       XpTransaction[]
-  progress             UserProgress?
-  badges               UserBadge[]           @relation("UserBadges")
-  badgesAwarded        UserBadge[]           @relation("UserBadgeAwardedBy")
+  memberships             BrandMembership[]
+  refreshTokens           RefreshToken[]
+  reviewedApplications    BrandApplication[]       @relation("BrandApplicationReviewer")
+  approvedInvites         BrandInvite[]            @relation("BrandInviteApprover")
+  sentAdminInvites        AdminInvite[]            @relation("AdminInviteSender")
+  reviewedProducts        Product[]                @relation("ProductReviewer")
+  creatorLooks            CreatorLook[]            @relation("CreatorLooks")
+  lookLikes               CreatorLookLike[]
+  lookSaves               CreatorLookSave[]
+  lookComments            CreatorLookComment[]
+  tagClicks               CreatorLookTagClick[]
+  lookViews               CreatorLookView[]
+  following               Follow[]                 @relation("FollowerEdges")
+  savedProducts           SavedProduct[]
+  cart                    Cart?
+  orders                  Order[]
+  idempotencyRequests     RequestIdempotency[]
+  attributedOrderItems    OrderItem[]              @relation("AttributedOrderItems")
+  creatorCommissions      CreatorCommission[]      @relation("CreatorCommissions")
+  creatorLinks            CreatorLink[]            @relation("CreatorLinks")
+  creatorLinkClicks       CreatorLinkClick[]
+  deliveryZoneChanges     DeliveryZoneHistory[]    @relation("DeliveryZoneChanges")
+  xpTransactions          XpTransaction[]
+  progress                UserProgress?
+  badges                  UserBadge[]              @relation("UserBadges")
+  badgesAwarded           UserBadge[]              @relation("UserBadgeAwardedBy")
+  notifications           Notification[]           @relation("NotificationRecipient")
+  notificationsCaused     Notification[]           @relation("NotificationActor")
+  notificationPreferences NotificationPreference[]
 
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
@@ -1199,4 +1202,75 @@ model UserBadge {
   @@unique([userId, badgeId])
   @@index([userId, isDisplayed])
   @@map("user_badges")
+}
+
+enum NotificationType {
+  LOOK_LIKED
+  LOOK_COMMENTED
+  NEW_FOLLOWER
+  NEW_BRAND_FOLLOWER
+  ACHIEVEMENT_UNLOCKED
+  LEVEL_UP
+  COMMISSION_EARNED
+  NEW_ORDER
+  ORDER_STATUS_CHANGED
+  BRAND_APPLICATION_SUBMITTED
+}
+
+enum NotificationEntityType {
+  LOOK
+  USER
+  ORDER
+  BRAND_APPLICATION
+  BADGE
+}
+
+/**
+ * A durable side effect of a domain event, written by notification.events.ts
+ * off the same Redis Streams bus XP/achievements already consume — never
+ * written inline by the like/follow/order handlers themselves (see
+ * notifications/README.md).
+ * Denormalized on purpose: `metadata` snapshots whatever the type needs to
+ * render (actor display name/avatar, look thumbnail, ...) at write time, so a
+ * later rename/delete of the source entity can't corrupt historical rows and
+ * the feed read never needs to join out to User/CreatorLook/Product.
+ */
+model Notification {
+  id          String                  @id @default(uuid()) @db.Uuid
+  recipientId String                  @map("recipient_id") @db.Uuid
+  recipient   User                    @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actorId     String?                 @map("actor_id") @db.Uuid
+  actor       User?                   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  type        NotificationType
+  entityType  NotificationEntityType? @map("entity_type")
+  entityId    String?                 @map("entity_id")
+  metadata    Json                    @default("{}")
+  groupKey    String?                 @map("group_key")
+  actorCount  Int                     @default(1) @map("actor_count")
+  isRead      Boolean                 @default(false) @map("is_read")
+  readAt      DateTime?               @map("read_at")
+  createdAt   DateTime                @default(now()) @map("created_at")
+  updatedAt   DateTime                @updatedAt @map("updated_at")
+
+  @@index([recipientId, updatedAt])
+  @@index([recipientId, isRead])
+  @@map("notifications")
+}
+
+/**
+ * Opt-out model: no row for (userId, type) means that type is enabled. A
+ * row only exists once a user has actually muted something, so most users
+ * never have any rows here at all.
+ */
+model NotificationPreference {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  enabled   Boolean          @default(true)
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  @@unique([userId, type])
+  @@map("notification_preferences")
 }
