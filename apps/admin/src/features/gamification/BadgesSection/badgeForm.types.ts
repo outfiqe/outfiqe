@@ -26,6 +26,8 @@ export type BadgeFormState = {
   isTitleEligible: boolean;
   isAdminAward: boolean;
   assignmentLimit: string;
+  sponsorBrandId: string | null;
+  sponsorBrandName: string;
   requirementType: (typeof RULE_BASED_REQUIREMENT_TYPES)[number];
   conditions: ConditionFormState[];
   activeFrom: string;

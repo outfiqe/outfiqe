@@ -43,8 +43,13 @@ export const brandRepository = {
     return prisma.product.count({ where: { brandId, status: ProductStatus.APPROVED } });
   },
 
-  async listPublic(params: { cursor?: string; limit: number }): Promise<BrandWithProductCount[]> {
+  async listPublic(params: {
+    cursor?: string;
+    limit: number;
+    q?: string;
+  }): Promise<BrandWithProductCount[]> {
     const rows = await prisma.brand.findMany({
+      where: params.q ? { name: { contains: params.q, mode: "insensitive" } } : undefined,
       include: withApprovedProductCount,
       orderBy: [{ followerCount: "desc" }, { createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
@@ -53,7 +58,9 @@ export const brandRepository = {
     return rows.map(({ _count, ...brand }) => ({ ...brand, productCount: _count.products }));
   },
 
-  async countAll(): Promise<number> {
-    return prisma.brand.count();
+  async countAll(q?: string): Promise<number> {
+    return prisma.brand.count({
+      where: q ? { name: { contains: q, mode: "insensitive" } } : undefined,
+    });
   },
 };

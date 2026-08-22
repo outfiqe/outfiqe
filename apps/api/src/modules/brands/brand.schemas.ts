@@ -8,12 +8,14 @@ const INSTAGRAM_MIN = 1;
 const INSTAGRAM_MAX = 100;
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 50;
+const SEARCH_QUERY_MAX_LENGTH = 100;
 
 export const brandIdParamSchema = z.object({ id: z.uuid() });
 
 export const listBrandsQuerySchema = z.object({
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
+  q: z.string().trim().min(1).max(SEARCH_QUERY_MAX_LENGTH).optional(),
 });
 
 export const updateBrandProfileSchema = z

@@ -4,6 +4,7 @@ import { XpActivityType } from "#generated/prisma/enums.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { achievementService } from "#modules/achievements/achievement.service.js";
+import { brandRepository } from "#modules/brands/brand.repository.js";
 import { XP_SOURCE } from "#modules/xp/xp.constants.js";
 import { xpService } from "#modules/xp/xp.service.js";
 
@@ -66,6 +67,7 @@ const listCollectionForUser = async (userId: string): Promise<BadgeCollectionEnt
       displayOrder: state?.displayOrder ?? null,
       isDynamicallyActive: state && badge.isDynamic ? state.isDynamicallyEligible : null,
       progress: state ? null : (progressByBadgeId.get(badge.id) ?? null),
+      sponsorBrand: badge.sponsorBrand,
     });
   }
   return collection;
@@ -132,6 +134,7 @@ const awardBadge = async (input: AwardBadgeInput, xpSource: string = XP_SOURCE.A
     badgeName: result.badgeName,
     badgeIcon: result.badgeIcon,
     xpReward: result.xpReward,
+    sponsorBrandName: result.sponsorBrandName,
   });
 
   if (result.xpReward > 0) {
@@ -183,14 +186,29 @@ const updateTitle = async (userId: string, badgeId: string | null): Promise<void
 const listAllBadgesAdmin = async (): Promise<BadgeAdminRecord[]> =>
   badgeRepository.listAllBadgesAdmin();
 
-const createBadge = async (input: CreateBadgeBody): Promise<BadgeAdminRecord> =>
-  badgeRepository.createBadgeWithAchievement(input);
+const assertSponsorBrandExists = async (sponsorBrandId: string | null): Promise<void> => {
+  if (sponsorBrandId === null) return;
+  const [sponsorBrand] = await brandRepository.findManyByIds([sponsorBrandId]);
+  if (!sponsorBrand) {
+    throw new AppError(
+      "SPONSOR_BRAND_NOT_FOUND",
+      "The selected sponsor brand doesn't exist.",
+      VALIDATION_STATUS,
+    );
+  }
+};
+
+const createBadge = async (input: CreateBadgeBody): Promise<BadgeAdminRecord> => {
+  await assertSponsorBrandExists(input.sponsorBrandId);
+  return badgeRepository.createBadgeWithAchievement(input);
+};
 
 const updateBadge = async (badgeId: string, input: UpdateBadgeBody): Promise<BadgeAdminRecord> => {
   const existing = await badgeRepository.findBadgeAdminById(badgeId);
   if (!existing) {
     throw new AppError("BADGE_NOT_FOUND", "This badge doesn't exist.", NOT_FOUND_STATUS);
   }
+  await assertSponsorBrandExists(input.sponsorBrandId);
   return badgeRepository.updateBadgeWithAchievement(badgeId, input);
 };
 

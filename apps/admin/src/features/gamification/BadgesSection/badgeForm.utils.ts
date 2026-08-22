@@ -21,6 +21,8 @@ export const formForBadge = (badge: BadgeAdmin): BadgeFormState => ({
   isTitleEligible: badge.isTitleEligible,
   isAdminAward: badge.achievement?.requirementType === ADMIN_AWARD_REQUIREMENT_TYPE,
   assignmentLimit: badge.assignmentLimit === null ? "" : String(badge.assignmentLimit),
+  sponsorBrandId: badge.sponsorBrand?.id ?? null,
+  sponsorBrandName: badge.sponsorBrand?.name ?? "",
   requirementType:
     badge.achievement && badge.achievement.requirementType !== ADMIN_AWARD_REQUIREMENT_TYPE
       ? badge.achievement.requirementType
@@ -54,6 +56,7 @@ export const toFormInput = (form: BadgeFormState): BadgeFormInput => ({
   isPublic: form.isPublic,
   isTitleEligible: form.isTitleEligible,
   assignmentLimit: form.isAdminAward && form.assignmentLimit ? Number(form.assignmentLimit) : null,
+  sponsorBrandId: form.sponsorBrandId,
   ...(form.isAdminAward
     ? { requirementType: ADMIN_AWARD_REQUIREMENT_TYPE }
     : {

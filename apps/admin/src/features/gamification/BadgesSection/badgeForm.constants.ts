@@ -20,6 +20,8 @@ export const EMPTY_FORM: BadgeFormState = {
   isTitleEligible: false,
   isAdminAward: false,
   assignmentLimit: "",
+  sponsorBrandId: null,
+  sponsorBrandName: "",
   requirementType: "ENGAGEMENT",
   conditions: [EMPTY_CONDITION],
   activeFrom: "",

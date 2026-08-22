@@ -29,10 +29,13 @@ const seasonalWindowFor = (input: CreateBadgeBody | UpdateBadgeBody) =>
         activeUntil: input.activeUntil ? new Date(input.activeUntil) : null,
       };
 
+const sponsorBrandSelect = { select: { id: true, name: true, avatarUrl: true } } as const;
+
 export const badgeRepository = {
   async listActiveBadges(): Promise<BadgeCatalogRecord[]> {
     return prisma.badge.findMany({
       where: { isActive: true },
+      include: { sponsorBrand: sponsorBrandSelect },
       orderBy: [{ category: "asc" }, { rarity: "asc" }, { name: "asc" }],
     });
   },
@@ -162,6 +165,7 @@ export const badgeRepository = {
         xpReward: true,
         name: true,
         icon: true,
+        sponsorBrand: { select: { name: true } },
       },
     });
     if (!badge) return { awarded: false, reason: "BADGE_NOT_FOUND" };
@@ -197,6 +201,7 @@ export const badgeRepository = {
           xpReward: badge.xpReward,
           badgeName: badge.name,
           badgeIcon: badge.icon,
+          sponsorBrandName: badge.sponsorBrand?.name ?? null,
         };
       } catch (error) {
         if (isUniqueConstraintError(error)) return { awarded: false, reason: "ALREADY_AWARDED" };
@@ -225,13 +230,16 @@ export const badgeRepository = {
 
   async listAllBadgesAdmin(): Promise<BadgeAdminRecord[]> {
     return prisma.badge.findMany({
-      include: { achievement: true },
+      include: { achievement: true, sponsorBrand: sponsorBrandSelect },
       orderBy: [{ category: "asc" }, { rarity: "asc" }, { name: "asc" }],
     });
   },
 
   async findBadgeAdminById(badgeId: string): Promise<BadgeAdminRecord | null> {
-    return prisma.badge.findUnique({ where: { id: badgeId }, include: { achievement: true } });
+    return prisma.badge.findUnique({
+      where: { id: badgeId },
+      include: { achievement: true, sponsorBrand: sponsorBrandSelect },
+    });
   },
 
   async createBadgeWithAchievement(input: CreateBadgeBody): Promise<BadgeAdminRecord> {
@@ -249,6 +257,7 @@ export const badgeRepository = {
         isPublic: input.isPublic,
         isTitleEligible: input.isTitleEligible,
         assignmentLimit: input.assignmentLimit,
+        sponsorBrandId: input.sponsorBrandId,
         achievement: {
           create: {
             name: input.name,
@@ -259,7 +268,7 @@ export const badgeRepository = {
           },
         },
       },
-      include: { achievement: true },
+      include: { achievement: true, sponsorBrand: sponsorBrandSelect },
     });
   },
 
@@ -284,6 +293,7 @@ export const badgeRepository = {
           isTitleEligible: input.isTitleEligible,
           assignmentLimit: input.assignmentLimit,
           isActive: input.isActive,
+          sponsorBrandId: input.sponsorBrandId,
         },
       });
       await tx.achievement.update({
@@ -300,7 +310,10 @@ export const badgeRepository = {
           ...seasonalWindowFor(input),
         },
       });
-      return tx.badge.findUniqueOrThrow({ where: { id: badgeId }, include: { achievement: true } });
+      return tx.badge.findUniqueOrThrow({
+        where: { id: badgeId },
+        include: { achievement: true, sponsorBrand: sponsorBrandSelect },
+      });
     });
   },
 

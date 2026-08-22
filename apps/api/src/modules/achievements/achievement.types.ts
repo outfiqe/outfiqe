@@ -8,6 +8,7 @@ export type EligibleAchievementRecord = {
   conditions: AchievementConditionNode[];
   badgeName: string;
   badgeIcon: string;
+  sponsorBrandName: string | null;
 };
 
 export type MetricSnapshot = Partial<Record<AchievementMetric, number>>;

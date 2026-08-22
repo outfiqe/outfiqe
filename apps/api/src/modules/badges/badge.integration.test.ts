@@ -34,6 +34,17 @@ const createAdmin = async () => {
   return { ...admin, header: authHeaderFor(admin.id, UserRole.ADMIN) };
 };
 
+const createBrand = (name: string) =>
+  prisma.brand.create({
+    data: {
+      name,
+      contactName: "Test Contact",
+      email: `${randomUUID()}@outfiqe.test`,
+      phone: uniquePhone(),
+      instagram: `@${randomUUID().slice(0, 8)}`,
+    },
+  });
+
 const validBadgePayload = (overrides: Record<string, unknown> = {}) => ({
   name: `Admin-created badge ${randomUUID()}`,
   description: "A badge created via the admin API integration test.",
@@ -47,6 +58,7 @@ const validBadgePayload = (overrides: Record<string, unknown> = {}) => ({
   isPublic: true,
   isTitleEligible: false,
   assignmentLimit: null,
+  sponsorBrandId: null,
   requirementType: "ENGAGEMENT",
   conditions: [{ metric: "total_likes", operator: "gte", value: 5 }],
   activeFrom: null,
@@ -303,6 +315,31 @@ describe("POST /api/badges (admin)", () => {
 
     expect(response.status).toBe(403);
   });
+
+  it("creates a badge sponsored by a real brand and returns its credit", async () => {
+    const admin = await createAdmin();
+    const brand = await createBrand(`Nike ${randomUUID()}`);
+
+    const response = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(validBadgePayload({ sponsorBrandId: brand.id }));
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.sponsorBrand).toMatchObject({ id: brand.id, name: brand.name });
+  });
+
+  it("rejects a sponsor brand id that doesn't exist, without leaking a raw db error", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(validBadgePayload({ sponsorBrandId: randomUUID() }));
+
+    expect(response.status).toBe(422);
+    expect(response.body.message).not.toMatch(/prisma|foreign key|constraint/i);
+  });
 });
 
 describe("PATCH /api/badges/:badgeId (admin)", () => {
@@ -335,6 +372,34 @@ describe("PATCH /api/badges/:badgeId (admin)", () => {
       metric: "comments_made",
       value: 20,
     });
+  });
+
+  it("adds and then clears a sponsor brand on an existing badge", async () => {
+    const admin = await createAdmin();
+    const brand = await createBrand(`Adidas ${randomUUID()}`);
+    const created = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(validBadgePayload());
+    const badgeId = created.body.data.id;
+
+    const sponsored = await request(testApp)
+      .patch(`/api/badges/${badgeId}`)
+      .set("Authorization", admin.header)
+      .send(
+        validBadgePayload({ sponsorBrandId: brand.id, isActive: true, achievementIsActive: true }),
+      );
+
+    expect(sponsored.status).toBe(200);
+    expect(sponsored.body.data.sponsorBrand).toMatchObject({ id: brand.id, name: brand.name });
+
+    const cleared = await request(testApp)
+      .patch(`/api/badges/${badgeId}`)
+      .set("Authorization", admin.header)
+      .send(validBadgePayload({ isActive: true, achievementIsActive: true }));
+
+    expect(cleared.status).toBe(200);
+    expect(cleared.body.data.sponsorBrand).toBeNull();
   });
 
   it("pauses achievement evaluation without deactivating the badge", async () => {

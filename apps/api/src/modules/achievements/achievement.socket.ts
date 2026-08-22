@@ -12,9 +12,22 @@ export const registerAchievementSocketEventConsumer = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.ACHIEVEMENT_UNLOCKED,
     groupName: SOCKET_BROADCAST_CONSUMER_GROUP,
-    handler: async ({ userId, badgeId, badgeName, badgeIcon, xpReward }): Promise<void> => {
+    handler: async ({
+      userId,
+      badgeId,
+      badgeName,
+      badgeIcon,
+      xpReward,
+      sponsorBrandName,
+    }): Promise<void> => {
       try {
-        const payload: AchievementUnlockedPayload = { badgeId, badgeName, badgeIcon, xpReward };
+        const payload: AchievementUnlockedPayload = {
+          badgeId,
+          badgeName,
+          badgeIcon,
+          xpReward,
+          sponsorBrandName,
+        };
         getIO().to(userRoom(userId)).emit(SOCKET_EVENTS.ACHIEVEMENT_UNLOCKED, payload);
       } catch (error) {
         logger.error(

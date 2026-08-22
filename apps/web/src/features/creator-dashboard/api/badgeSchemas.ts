@@ -59,6 +59,13 @@ export const badgeConditionProgressSchema = z.object({
 });
 export type BadgeConditionProgress = z.infer<typeof badgeConditionProgressSchema>;
 
+export const sponsorBrandSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  avatarUrl: z.string().nullable(),
+});
+export type SponsorBrand = z.infer<typeof sponsorBrandSchema>;
+
 export const badgeCollectionEntrySchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -75,6 +82,7 @@ export const badgeCollectionEntrySchema = z.object({
   displayOrder: z.number().nullable(),
   isDynamicallyActive: z.boolean().nullable(),
   progress: z.array(badgeConditionProgressSchema).nullable(),
+  sponsorBrand: sponsorBrandSchema.nullable(),
 });
 export type BadgeCollectionEntry = z.infer<typeof badgeCollectionEntrySchema>;
 

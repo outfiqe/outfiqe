@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge, Button, ProgressBar, toast } from "@outfiqe/design-system";
+import Link from "next/link";
 
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
@@ -34,6 +35,7 @@ export const AchievementBadgeCard = ({
     isFeatured,
     isDynamicallyActive,
     progress,
+    sponsorBrand,
   } = entry;
 
   return (
@@ -53,6 +55,15 @@ export const AchievementBadgeCard = ({
           </Badge>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+
+        {sponsorBrand && (
+          <Link
+            href={`/brand/${sponsorBrand.id}`}
+            className="mt-1 inline-block text-[11px] font-medium text-primary-strong hover:underline"
+          >
+            Sponsored by {sponsorBrand.name}
+          </Link>
+        )}
 
         {isCollected && unlockedAt && (
           <p className="mt-2 text-xs text-muted-foreground">

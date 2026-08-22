@@ -24,6 +24,7 @@ export default defineConfig({
         "src/features/search/hooks/useExploreAutocomplete.ts",
         "src/features/creator-dashboard/components/AchievementBadgeIcon.tsx",
         "src/features/creator-dashboard/components/XpMultiplierBanner.tsx",
+        "src/features/creator-dashboard/components/AchievementBadgeCard.tsx",
       ],
       thresholds: {
         lines: 80,

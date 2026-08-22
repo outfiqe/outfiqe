@@ -12,10 +12,18 @@ import {
   type LevelUpPayload,
 } from "../socketEvents";
 
-const formatAchievementToast = ({ badgeIcon, badgeName, xpReward }: AchievementUnlockedPayload) =>
-  xpReward > 0
-    ? `${badgeIcon} Achievement unlocked: ${badgeName}! +${xpReward} XP`
-    : `${badgeIcon} Achievement unlocked: ${badgeName}!`;
+export const formatAchievementToast = ({
+  badgeIcon,
+  badgeName,
+  xpReward,
+  sponsorBrandName,
+}: AchievementUnlockedPayload) => {
+  const base =
+    xpReward > 0
+      ? `${badgeIcon} Achievement unlocked: ${badgeName}! +${xpReward} XP`
+      : `${badgeIcon} Achievement unlocked: ${badgeName}!`;
+  return sponsorBrandName ? `${base} (sponsored by ${sponsorBrandName})` : base;
+};
 
 const formatLevelUpToast = ({ currentLevel }: LevelUpPayload) =>
   `${currentLevel.icon ?? "⭐"} Level up! You're now Level ${currentLevel.level} — ${currentLevel.name}`;

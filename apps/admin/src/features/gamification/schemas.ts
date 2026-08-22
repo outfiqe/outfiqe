@@ -109,6 +109,13 @@ export const badgeDesignConfigSchema = z.object({
   animation: badgeAnimationSchema.optional(),
 });
 
+export const sponsorBrandSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  avatarUrl: z.string().nullable(),
+});
+export type SponsorBrand = z.infer<typeof sponsorBrandSchema>;
+
 export const badgeAdminSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -125,6 +132,7 @@ export const badgeAdminSchema = z.object({
   assignmentLimit: z.number().nullable(),
   assignmentCount: z.number(),
   isTitleEligible: z.boolean(),
+  sponsorBrand: sponsorBrandSchema.nullable(),
   achievement: z
     .object({
       id: z.string(),

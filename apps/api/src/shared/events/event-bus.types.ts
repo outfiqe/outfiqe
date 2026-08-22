@@ -46,6 +46,7 @@ export type DomainEventPayloads = {
     badgeName: string;
     badgeIcon: string;
     xpReward: number;
+    sponsorBrandName: string | null;
   };
   [DomainEvents.LEVEL_UP]: {
     userId: string;

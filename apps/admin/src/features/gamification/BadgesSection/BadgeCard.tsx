@@ -30,6 +30,7 @@ export const BadgeCard = ({
       {badge.achievement?.activeFrom || badge.achievement?.activeUntil ? " · seasonal" : ""}
       {badge.isTitleEligible && " · title-eligible"}
       {badge.isDynamic && " · dynamic"}
+      {badge.sponsorBrand && ` · sponsored by ${badge.sponsorBrand.name}`}
     </p>
   </div>
 );

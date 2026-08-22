@@ -13,6 +13,7 @@ const NAME_MAX_LENGTH = 100;
 const {
   assignmentLimit: _assignmentLimit,
   isDynamic: _isDynamic,
+  sponsorBrandId: _sponsorBrandId,
   ...competitionBadgeFields
 } = badgeCoreFields;
 

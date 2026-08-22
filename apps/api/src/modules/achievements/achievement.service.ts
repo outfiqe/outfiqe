@@ -68,7 +68,7 @@ const parseAchievementRow = (row: {
   badgeId: string;
   name: string;
   requirementConfig: unknown;
-  badge: { name: string; icon: string };
+  badge: { name: string; icon: string; sponsorBrand: { name: string } | null };
 }): EligibleAchievementRecord | null => {
   const parsed = achievementRequirementConfigSchema.safeParse(row.requirementConfig);
   if (!parsed.success) {
@@ -83,6 +83,7 @@ const parseAchievementRow = (row: {
     conditions: parsed.data.conditions,
     badgeName: row.badge.name,
     badgeIcon: row.badge.icon,
+    sponsorBrandName: row.badge.sponsorBrand?.name ?? null,
   };
 };
 
@@ -138,6 +139,7 @@ const unlockAchievement = async (
     badgeName: achievement.badgeName,
     badgeIcon: achievement.badgeIcon,
     xpReward: result.xpReward,
+    sponsorBrandName: achievement.sponsorBrandName,
   });
 
   if (result.xpReward > 0) {

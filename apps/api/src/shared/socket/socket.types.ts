@@ -70,6 +70,7 @@ export type AchievementUnlockedPayload = {
   badgeName: string;
   badgeIcon: string;
   xpReward: number;
+  sponsorBrandName: string | null;
 };
 
 export type LevelUpPayload = {

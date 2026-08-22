@@ -57,6 +57,7 @@ export const badgeCoreFields = {
   isPublic: z.boolean(),
   isTitleEligible: z.boolean(),
   assignmentLimit: z.number().int().positive().nullable(),
+  sponsorBrandId: z.uuid().nullable(),
 };
 
 const seasonalWindowFields = {

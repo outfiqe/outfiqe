@@ -12,6 +12,7 @@ import {
 import { ConditionsEditor } from "../conditions/ConditionsEditor";
 import type { BadgeCategoryValue, BadgeRarityValue, BadgeShapeValue } from "../schemas";
 import type { BadgeFormState } from "./badgeForm.types";
+import { BrandSponsorField } from "./BrandSponsorField";
 
 export const BadgeFields = ({
   idPrefix,
@@ -193,6 +194,19 @@ export const BadgeFields = ({
         Dynamic (re-checked periodically; can lose eligibility)
       </label>
     </div>
+
+    <BrandSponsorField
+      idPrefix={idPrefix}
+      sponsorBrandId={form.sponsorBrandId}
+      sponsorBrandName={form.sponsorBrandName}
+      onChange={(brand) =>
+        onChange({
+          ...form,
+          sponsorBrandId: brand?.id ?? null,
+          sponsorBrandName: brand?.name ?? "",
+        })
+      }
+    />
 
     <div className="rounded-xl border border-border p-4">
       <label className="flex items-center gap-2 text-sm font-medium text-foreground">

@@ -18,7 +18,7 @@ export const achievementRepository = {
           { OR: [{ activeUntil: null }, { activeUntil: { gte: now } }] },
         ],
       },
-      include: { badge: true },
+      include: { badge: { include: { sponsorBrand: { select: { name: true } } } } },
     });
   },
 
@@ -34,7 +34,7 @@ export const achievementRepository = {
           { OR: [{ activeUntil: null }, { activeUntil: { gte: now } }] },
         ],
       },
-      include: { badge: true },
+      include: { badge: { include: { sponsorBrand: { select: { name: true } } } } },
     });
   },
 

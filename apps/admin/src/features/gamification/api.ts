@@ -23,6 +23,8 @@ import {
   levelSchema,
   type ManualAward,
   manualAwardSchema,
+  type SponsorBrand,
+  sponsorBrandSchema,
   type XpMultiplier,
   xpMultiplierSchema,
   type XpStats,
@@ -33,10 +35,13 @@ const levelListSchema = z.array(levelSchema);
 const xpMultiplierListSchema = z.array(xpMultiplierSchema);
 const activityConfigListSchema = z.array(activityXpConfigSchema);
 const badgeListSchema = z.array(badgeAdminSchema);
+const sponsorBrandListSchema = z.array(sponsorBrandSchema);
 const manualAwardListSchema = z.array(manualAwardSchema);
 const challengeListSchema = z.array(challengeAdminSchema);
 const creatorCompetitionListSchema = z.array(creatorCompetitionAdminSchema);
 const creatorLeaderboardCategoryListSchema = z.array(creatorLeaderboardCategoryStateSchema);
+
+const BRAND_SEARCH_RESULT_LIMIT = 8;
 
 export type CreateLevelInput = {
   level: number;
@@ -75,6 +80,7 @@ export type BadgeFormInput = {
   isPublic: boolean;
   isTitleEligible: boolean;
   assignmentLimit: number | null;
+  sponsorBrandId: string | null;
   requirementType: string;
   conditions?: { metric: string; operator: string; value: number }[];
   activeFrom?: string | null;
@@ -200,6 +206,13 @@ export const gamificationApi = {
   async updateBadge(badgeId: string, input: UpdateBadgeFormInput): Promise<BadgeAdmin> {
     const res = await apiClient.patch<BadgeAdmin>(`/badges/${badgeId}`, input);
     return badgeAdminSchema.parse(res.data);
+  },
+
+  async searchBrands(q: string): Promise<SponsorBrand[]> {
+    const res = await apiClient.get<{ brands: SponsorBrand[] }>("/brands", {
+      params: { q, limit: BRAND_SEARCH_RESULT_LIMIT },
+    });
+    return sponsorBrandListSchema.parse(res.data.brands);
   },
 
   async awardBadge(badgeId: string, userId: string, reason: string): Promise<AwardBadgeResult> {

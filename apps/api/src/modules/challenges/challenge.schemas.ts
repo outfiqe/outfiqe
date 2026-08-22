@@ -18,6 +18,7 @@ const challengeCopyFields = {
 const {
   assignmentLimit: _assignmentLimit,
   isDynamic: _isDynamic,
+  sponsorBrandId: _sponsorBrandId,
   ...challengeBadgeFields
 } = badgeCoreFields;
 

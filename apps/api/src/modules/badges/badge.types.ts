@@ -7,6 +7,12 @@ import type { AchievementConditionProgress } from "#modules/achievements/achieve
 
 import type { BadgeDesignConfig } from "./badge.schemas.js";
 
+export type SponsorBrandRecord = {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+};
+
 export type BadgeCatalogRecord = {
   id: string;
   name: string;
@@ -18,6 +24,7 @@ export type BadgeCatalogRecord = {
   isPermanent: boolean;
   isDynamic: boolean;
   isPublic: boolean;
+  sponsorBrand: SponsorBrandRecord | null;
 };
 
 export type UserBadgeStateRecord = {
@@ -58,6 +65,7 @@ export type BadgeCollectionEntry = {
   displayOrder: number | null;
   isDynamicallyActive: boolean | null;
   progress: AchievementConditionProgress[] | null;
+  sponsorBrand: SponsorBrandRecord | null;
 };
 
 export type FeaturedBadgeView = {
@@ -79,7 +87,14 @@ export type AwardBadgeFailureReason =
   "BADGE_NOT_FOUND" | "BADGE_INACTIVE" | "ALREADY_AWARDED" | "ASSIGNMENT_LIMIT_REACHED";
 
 export type AwardBadgeResult =
-  | { awarded: true; userBadgeId: string; xpReward: number; badgeName: string; badgeIcon: string }
+  | {
+      awarded: true;
+      userBadgeId: string;
+      xpReward: number;
+      badgeName: string;
+      badgeIcon: string;
+      sponsorBrandName: string | null;
+    }
   | { awarded: false; reason: AwardBadgeFailureReason };
 
 export type BadgeAdminRecord = {
@@ -98,6 +113,7 @@ export type BadgeAdminRecord = {
   assignmentLimit: number | null;
   assignmentCount: number;
   isTitleEligible: boolean;
+  sponsorBrand: SponsorBrandRecord | null;
   createdAt: Date;
   achievement: {
     id: string;

@@ -165,9 +165,10 @@ model Brand {
   createdAt     DateTime          @default(now()) @map("created_at")
   updatedAt     DateTime          @updatedAt @map("updated_at")
 
-  invites     BrandInvite[]
-  memberships BrandMembership[]
-  products    Product[]
+  invites         BrandInvite[]
+  memberships     BrandMembership[]
+  products        Product[]
+  sponsoredBadges Badge[]
 
   @@map("brands")
 }
@@ -1075,6 +1076,8 @@ model Badge {
   assignmentLimit Int?          @map("assignment_limit")
   assignmentCount Int           @default(0) @map("assignment_count")
   isTitleEligible Boolean       @default(false) @map("is_title_eligible")
+  sponsorBrandId  String?       @map("sponsor_brand_id") @db.Uuid
+  sponsorBrand    Brand?        @relation(fields: [sponsorBrandId], references: [id], onDelete: SetNull)
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
@@ -1083,6 +1086,7 @@ model Badge {
   creatorCompetition CreatorCompetition?
 
   @@index([category, isActive])
+  @@index([sponsorBrandId])
   @@map("badges")
 }
 
