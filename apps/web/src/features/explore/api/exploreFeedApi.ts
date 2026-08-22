@@ -13,6 +13,7 @@ import {
   followResultSchema,
   likeResultSchema,
   saveResultSchema,
+  type SuggestedCreatorsPage,
   suggestedCreatorsResponseSchema,
   trendingTagsResponseSchema,
 } from "./exploreFeedSchemas";
@@ -115,5 +116,18 @@ export const exploreFeedApi = {
   async suggestedCreators() {
     const res = await apiClient.get<SuggestedCreatorsResponse>("/follows/suggested-creators");
     return suggestedCreatorsResponseSchema.parse(res.data).creators;
+  },
+
+  async suggestedCreatorsPage(
+    cursor: string | undefined,
+    limit: number,
+  ): Promise<SuggestedCreatorsPage> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (cursor) params.set("cursor", cursor);
+
+    const res = await apiClient.get<SuggestedCreatorsResponse>(
+      `/follows/suggested-creators?${params.toString()}`,
+    );
+    return suggestedCreatorsResponseSchema.parse(res.data);
   },
 };

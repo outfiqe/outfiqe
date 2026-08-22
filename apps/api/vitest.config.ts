@@ -29,6 +29,7 @@ export default defineConfig({
         "src/shared/utils/pagination.utils.ts",
         "src/shared/utils/opaque-token.utils.ts",
         "src/shared/utils/iso-week.utils.ts",
+        "src/shared/utils/creator-engagement-affinity.utils.ts",
         "src/modules/brand-applications/**/*.ts",
         "src/modules/xp/xp.utils.ts",
         "src/modules/achievements/achievement.utils.ts",
@@ -40,6 +41,7 @@ export default defineConfig({
         "src/modules/creator-looks/**/*.ts",
         "src/modules/brands/**/*.ts",
         "src/modules/categories/**/*.ts",
+        "src/modules/follows/**/*.ts",
       ],
       thresholds: {
         lines: 80,

@@ -30,6 +30,7 @@ model User {
   role                 UserRole      @default(CUSTOMER)
   isCreator            Boolean       @default(false) @map("is_creator")
   creatorStatus        CreatorStatus @default(NONE) @map("creator_status")
+  creatorApprovedAt    DateTime?     @map("creator_approved_at")
   heightCm             Int?          @map("height_cm")
   showHeight           Boolean       @default(false) @map("show_height")
   emailVerified        Boolean       @default(false) @map("email_verified")

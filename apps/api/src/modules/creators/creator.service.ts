@@ -222,6 +222,7 @@ export const creatorService = {
     await userRepository.updateCreatorStatus(userId, {
       creatorStatus: CreatorStatus.APPROVED,
       isCreator: true,
+      creatorApprovedAt: new Date(),
     });
     await productService.recountWornByForCreator(userId);
 

@@ -24,4 +24,8 @@ export const CACHE_TTL = {
   PRODUCT_AUTOCOMPLETE: 120,
   CREATOR_AUTOCOMPLETE: 120,
   LOOK_AUTOCOMPLETE: 120,
+  CREATOR_MOMENTUM_SCORE: 2400,
+  SUGGESTED_CREATORS_SNAPSHOT: 1200,
 } as const;
+
+export const CREATOR_MOMENTUM_SCORE_CACHE_KEY = redisKeys.cache("creator-momentum-score", "global");

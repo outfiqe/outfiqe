@@ -71,6 +71,51 @@ Creator-posted "looks" (outfit photos with tagged products): posting, editing, d
 
 **Verified against real, seeded data, not just unit logic:** a guest and a signed-in viewer see the identical trend-sorted order; a second viewer who follows the creator behind the third-ranked (score ≈4.34) post sees that post jump above the second-ranked (score ≈4.72) one — `4.34 × 1.6 > 4.72` — while the dominant top-ranked post (score ≈169) stays first for every viewer regardless of who they follow, confirming the boost amplifies rather than overrides.
 
+### Creator momentum score — feeding `../follows`' suggestion ranking
+
+**Why this exists.** `../follows`' "Creators to follow" ranking (see its README) needs a
+per-_creator_ engagement-momentum signal, not just per-_post_. Rather than a new
+`CreatorTrendMetric` table duplicating data one `GROUP BY` away from what already exists,
+`computeRankedCreatorMomentumScores` (`creatorLook.repository.ts`) re-groups the same
+`CreatorLookTrendMetric` buckets `computeRankedLookScores` reads for post trend scoring — by
+`creatorId` instead of `lookId` — and scores each creator with `scoreCreatorMomentum`
+(`creatorLook.utils.ts`): the same decayed-activity/velocity/baseline-lift math as `scorePost`,
+minus the freshness-multiplier term (a creator, unlike a single post, isn't "created" at one
+point in time the way a freshness boost assumes).
+
+**The bucket/meta fetch itself is shared, not repeated per computation.** Both functions accept
+an optional pre-fetched `{ bucketsByLook, metaById }` (`fetchRecentPostBucketsWithMeta`); called
+with no argument, each still fetches its own copy (preserving `computeRankedLookScores`'s other
+two callers — the `buildTrendingSnapshot`/`buildPersonalizedSnapshot` cache-miss fallbacks, which
+only ever need post scores, not creator momentum). The job path is the one place both are needed
+together, so `computeRankedTrendingScoreAndCreatorMomentum` (the new exported repository method
+`runTrendingScoring` calls) fetches once and passes the same buckets/meta to both — one table
+scan per job cycle, not two.
+
+**Runs on the same 30-minute cycle as post scoring, not a separate job.** `runTrendingScoring`
+(the existing `explore-trending-scoring` job) computes and caches both scores together via
+`computeRankedTrendingScoreAndCreatorMomentum`, so no new scheduler entry was added to
+`index.ts`. The momentum result is cached at `cache:creator-momentum-score:global`
+(`CREATOR_MOMENTUM_SCORE` TTL) via `cacheRankedCreatorMomentumScores`.
+`creatorLookService.runCreatorMomentumScoring` still exists as a standalone, self-fetching entry
+point for callers that only need momentum scored on its own (used directly by tests and by
+`prisma/seedSuggestions.ts`).
+
+**`../follows` reads this cache directly (`cacheService`/`redisKeys`), never through this
+module's repository or service.** `../creator-looks` already imports `followRepository` (for
+`following`/`for_you`'s follow-graph lookups), so a reverse import for the momentum pool would
+create a circular module dependency. Redis is shared infrastructure, not a module export, so a
+plain cache-key read has no such problem. See `../follows/README.md`'s "Two-tier fallback, not
+three" for the corresponding tradeoff on the read side.
+
+**`fetchEngagementAffinity` was promoted to `shared/utils/creator-engagement-affinity.utils.ts`**
+once `../follows`' own creator-suggestion ranking needed the exact same "which creators has this
+viewer engaged with, and which hashtags recur" computation `for_you`'s personalization already
+had. `buildPersonalizedSnapshot` now calls the shared `computeViewerEngagementAffinity` instead of
+a module-private copy — no behavior change, same query, single implementation. See
+`../follows/README.md` for why it went to `shared/` rather than being imported directly by either
+module.
+
 ### Trending tags — hashtag trend scoring
 
 **Why this exists.** `GET /creator-looks/tags/trending` (the Explore sidebar's "Trending tags" list) used to be `COUNT(*) GROUP BY tag` over a flat rolling 7-day window — a tag used on 9 posts spread evenly across 6 days ranked identically to one used on 9 posts in the last hour, and a hashtag that just started spiking had no way to out-rank one that was merely used a lot, slowly, days ago. It now runs the same decay/velocity/momentum pipeline as `trending`/`for_you`, scored off a single signal (`postCount` — how many posts newly carried that tag in each hour bucket), via a new `HashtagTrendMetric` table and its own `explore-tag-trending-aggregation`/`explore-tag-trending-scoring` job pair, on the same 15/30-minute cadence.

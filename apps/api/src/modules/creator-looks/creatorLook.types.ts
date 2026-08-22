@@ -169,6 +169,8 @@ export type PostScoreBreakdown = {
 
 export type PostTrendingEntry = { lookId: string; score: number };
 
+export type CreatorMomentumEntry = { creatorId: string; momentum: number };
+
 export type CandidateAffinityMeta = {
   id: string;
   creatorId: string;

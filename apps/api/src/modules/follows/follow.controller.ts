@@ -4,7 +4,12 @@ import { sendSuccess } from "#lib/api-response.utils.js";
 import { getAuthPrincipal, requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 
-import type { FollowingUserIdParam, FollowParams, ListFollowersQuery } from "./follow.schemas.js";
+import type {
+  FollowingUserIdParam,
+  FollowParams,
+  ListFollowersQuery,
+  ListSuggestedCreatorsQuery,
+} from "./follow.schemas.js";
 import { followService } from "./follow.service.js";
 
 export const followController = {
@@ -26,8 +31,9 @@ export const followController = {
 
   async suggestedCreators(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
-    const creators = await followService.suggestedCreators(userId);
-    sendSuccess(res, { creators }, "Suggested creators.");
+    const query = validated.query<ListSuggestedCreatorsQuery>(res);
+    const { items, nextCursor } = await followService.suggestedCreators(userId, query);
+    sendSuccess(res, { creators: items, nextCursor }, "Suggested creators.");
   },
 
   async listFollowers(_req: Request, res: Response) {

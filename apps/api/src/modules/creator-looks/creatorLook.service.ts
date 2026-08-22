@@ -33,6 +33,7 @@ import type {
   CommentPage,
   CreatorLookEditDetail,
   CreatorLookSummary,
+  CreatorMomentumEntry,
   FeedPage,
   LookSearchPage,
   PostSuggestion,
@@ -332,8 +333,18 @@ export const creatorLookService = {
   },
 
   async runTrendingScoring(): Promise<{ ranked: PostTrendingEntry[] }> {
-    const ranked = await creatorLookRepository.computeRankedTrendingLookIds();
-    await creatorLookRepository.cacheRankedTrendingScore(ranked);
+    const { postScores, creatorMomentum } =
+      await creatorLookRepository.computeRankedTrendingScoreAndCreatorMomentum();
+    await Promise.all([
+      creatorLookRepository.cacheRankedTrendingScore(postScores),
+      creatorLookRepository.cacheRankedCreatorMomentumScores(creatorMomentum),
+    ]);
+    return { ranked: postScores };
+  },
+
+  async runCreatorMomentumScoring(): Promise<{ ranked: CreatorMomentumEntry[] }> {
+    const ranked = await creatorLookRepository.computeRankedCreatorMomentumScores();
+    await creatorLookRepository.cacheRankedCreatorMomentumScores(ranked);
     return { ranked };
   },
 

@@ -60,6 +60,8 @@ export default defineConfig({
         "src/features/creator-dashboard/schemas/lookForm.schema.ts",
         "src/features/creator-dashboard/utils/creatorLinksCacheUpdate.ts",
         "src/features/creator-dashboard/index.ts",
+        "src/features/explore/components/SuggestedCreatorRow.tsx",
+        "src/features/explore/components/SuggestedCreatorsModal.tsx",
       ],
       thresholds: {
         lines: 80,

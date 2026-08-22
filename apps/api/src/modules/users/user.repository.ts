@@ -98,7 +98,11 @@ export const userRepository = {
 
   async updateCreatorStatus(
     id: string,
-    creatorStatusUpdate: { creatorStatus: CreatorStatus; isCreator?: boolean },
+    creatorStatusUpdate: {
+      creatorStatus: CreatorStatus;
+      isCreator?: boolean;
+      creatorApprovedAt?: Date;
+    },
   ): Promise<UserRecord> {
     return prisma.user.update({ where: { id }, data: creatorStatusUpdate });
   },
