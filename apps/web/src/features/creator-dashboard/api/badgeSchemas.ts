@@ -152,3 +152,12 @@ export const badgeCollectionEntrySchema = z.object({
 export type BadgeCollectionEntry = z.infer<typeof badgeCollectionEntrySchema>;
 
 export const badgeCollectionSchema = z.array(badgeCollectionEntrySchema);
+
+export const featuredBadgeSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  icon: z.string(),
+  designConfig: badgeDesignConfigSchema,
+  rarity: z.enum(BadgeRarity),
+});
+export type FeaturedBadge = z.infer<typeof featuredBadgeSchema>;

@@ -1,6 +1,14 @@
 "use client";
 
-import { AvatarUploader, Badge, Button, Input, Modal, toast } from "@outfiqe/design-system";
+import {
+  AchievementBadgeIcon,
+  AvatarUploader,
+  Badge,
+  Button,
+  Input,
+  Modal,
+  toast,
+} from "@outfiqe/design-system";
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -8,6 +16,7 @@ import { useState } from "react";
 import { FollowersModal } from "@/components/FollowersModal";
 import { FollowingModal } from "@/components/FollowingModal";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import type { FeaturedBadge } from "@/features/creator-dashboard/api/badgeSchemas";
 import { EditPostModal } from "@/features/creator-dashboard/components/EditPostModal";
 import { useDeleteLook } from "@/features/creator-dashboard/hooks/useDeleteLook";
 import { useUpdateCreatorProfile } from "@/features/creator-dashboard/hooks/useUpdateCreatorProfile";
@@ -15,6 +24,7 @@ import { AddPostButton, PostDetailModal } from "@/features/explore";
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+import { cn } from "@/shared/lib/cn";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { formatHeight } from "@/shared/lib/formatHeight";
 
@@ -29,6 +39,11 @@ interface CreatorProfileProps {
 
 const MIN_HEIGHT_CM = 90;
 const MAX_HEIGHT_CM = 251;
+const MAX_PROFILE_FEATURED_BADGES = 3;
+const TITLE_BADGE_FALLBACK_COLOR = "#f97316";
+
+const badgeAccentColor = (designConfig: FeaturedBadge["designConfig"]): string =>
+  "primaryColor" in designConfig ? designConfig.primaryColor : TITLE_BADGE_FALLBACK_COLOR;
 
 export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const router = useRouter();
@@ -36,7 +51,16 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const followMutation = useToggleFollow("user");
   const updateProfile = useUpdateCreatorProfile();
   const deleteLook = useDeleteLook();
-  const { handle, userId, creatorStatus, taggedPiecesCount, followingCount } = creator;
+  const {
+    handle,
+    userId,
+    creatorStatus,
+    taggedPiecesCount,
+    followingCount,
+    featuredBadges,
+    titleBadge,
+  } = creator;
+  const titleBadgeAccentColor = titleBadge ? badgeAccentColor(titleBadge.designConfig) : null;
   const looks = useInfiniteCreatorLooks(handle);
   const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = looks;
 
@@ -146,11 +170,23 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
       <div className="flex flex-wrap items-center gap-5 pb-8">
-        <div
-          className="size-20 shrink-0 overflow-hidden rounded-full bg-cover bg-center"
-          style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
-        >
-          {!avatarUrl && avatarFallback}
+        <div className={cn("relative shrink-0", titleBadge && "rounded-full p-1.5")}>
+          {titleBadge && (
+            <div
+              aria-hidden
+              className="absolute inset-0 rounded-full animate-avatar-ring-spin"
+              style={{
+                background: `conic-gradient(from 0deg, ${titleBadgeAccentColor}, transparent 40%, transparent 60%, ${titleBadgeAccentColor})`,
+                boxShadow: `0 0 14px 2px ${titleBadgeAccentColor}66`,
+              }}
+            />
+          )}
+          <div
+            className="relative size-20 overflow-hidden rounded-full bg-cover bg-center"
+            style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
+          >
+            {!avatarUrl && avatarFallback}
+          </div>
         </div>
 
         <div className="min-w-0 flex-1">
@@ -167,11 +203,70 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
             )}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">@{handle}</p>
-          {heightCm && (
-            <Badge className="mt-2" variant="outline" showDot={false}>
-              {formatHeight(heightCm)}
-            </Badge>
+
+          {titleBadge && (
+            <div
+              className="mt-2 inline-flex items-center gap-2 rounded-full border py-1 pl-1 pr-3"
+              style={{
+                backgroundColor: `${titleBadgeAccentColor}1A`,
+                borderColor: `${titleBadgeAccentColor}4D`,
+              }}
+            >
+              <AchievementBadgeIcon
+                icon={titleBadge.icon}
+                designConfig={titleBadge.designConfig}
+                rarity={titleBadge.rarity}
+                isLocked={false}
+                className="size-6"
+              />
+              <span
+                className="text-xs font-bold uppercase tracking-wide"
+                style={{ color: titleBadgeAccentColor ?? undefined }}
+              >
+                {titleBadge.name}
+              </span>
+            </div>
           )}
+
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {heightCm && (
+              <Badge variant="outline" showDot={false}>
+                {formatHeight(heightCm)}
+              </Badge>
+            )}
+
+            {featuredBadges.length > 0 && (
+              <div className="flex items-center gap-2 rounded-full border border-border bg-muted/40 py-1 pl-2.5 pr-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Badges
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {featuredBadges.slice(0, MAX_PROFILE_FEATURED_BADGES).map((badge) => {
+                    const accentColor = badgeAccentColor(badge.designConfig);
+                    return (
+                      <span
+                        key={badge.id}
+                        title={badge.name}
+                        className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+                        style={{
+                          backgroundColor: `${accentColor}1A`,
+                          borderColor: `${accentColor}4D`,
+                        }}
+                      >
+                        <AchievementBadgeIcon
+                          icon={badge.icon}
+                          designConfig={badge.designConfig}
+                          rarity={badge.rarity}
+                          isLocked={false}
+                          className="size-8"
+                        />
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="mt-4 flex gap-6">
             <div>

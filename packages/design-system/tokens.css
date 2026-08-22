@@ -34,6 +34,7 @@
   --animate-badge-shimmer: badge-shimmer 2.8s linear infinite;
   --animate-badge-pulse: badge-pulse 2s ease-in-out infinite;
   --animate-badge-radiant: badge-radiant 2.2s ease-in-out infinite;
+  --animate-avatar-ring-spin: avatar-ring-spin 5s linear infinite;
 }
 
 @keyframes badge-glow {
@@ -77,11 +78,18 @@
   }
 }
 
+@keyframes avatar-ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-badge-glow,
   .animate-badge-shimmer,
   .animate-badge-pulse,
-  .animate-badge-radiant {
+  .animate-badge-radiant,
+  .animate-avatar-ring-spin {
     animation: none;
   }
 }

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { featuredBadgeSchema } from "@/features/creator-dashboard/api/badgeSchemas";
+
 export const creatorProfileSchema = z.object({
   userId: z.string(),
   name: z.string(),
@@ -14,5 +16,7 @@ export const creatorProfileSchema = z.object({
   followingCount: z.number(),
   taggedPiecesCount: z.number(),
   isFollowing: z.boolean(),
+  featuredBadges: z.array(featuredBadgeSchema),
+  titleBadge: featuredBadgeSchema.nullable(),
 });
 export type CreatorProfile = z.infer<typeof creatorProfileSchema>;
