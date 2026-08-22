@@ -61,6 +61,16 @@ describe("notificationService.notifyIndividual", () => {
     expect(rows).toHaveLength(0);
   });
 
+  it("skips a since-deleted recipient instead of throwing (e.g. a consumer replaying stream history)", async () => {
+    await expect(
+      notificationService.notifyIndividual({
+        recipientId: randomUUID(),
+        type: NotificationType.LEVEL_UP,
+        metadata: {},
+      }),
+    ).resolves.toBeUndefined();
+  });
+
   it("skips a recipient who muted this notification type", async () => {
     const recipient = await createUser();
     await prisma.notificationPreference.create({
@@ -79,6 +89,24 @@ describe("notificationService.notifyIndividual", () => {
 });
 
 describe("notificationService.notifyGroup", () => {
+  it("skips a since-deleted recipient instead of throwing", async () => {
+    const actor = await createUser();
+    const lookId = randomUUID();
+
+    await expect(
+      notificationService.notifyGroup({
+        recipientId: randomUUID(),
+        actorId: actor.id,
+        actor: actorSnapshotFor(actor),
+        type: NotificationType.LOOK_LIKED,
+        entityType: NotificationEntityType.LOOK,
+        entityId: lookId,
+        groupKey: `look-liked:${lookId}`,
+        metadata: {},
+      }),
+    ).resolves.toBeUndefined();
+  });
+
   it("collapses two concurrent actors on the same group into one row with actorCount 2", async () => {
     const recipient = await createUser();
     const [actorA, actorB] = await Promise.all([createUser(), createUser()]);

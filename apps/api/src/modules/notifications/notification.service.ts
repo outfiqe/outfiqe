@@ -43,7 +43,7 @@ export const notificationService = {
     if (mutedRecipientIds.has(input.recipientId)) return;
 
     const record = await notificationRepository.createIndividual(input);
-    await broadcastCreated(record);
+    if (record) await broadcastCreated(record);
   },
 
   /**
@@ -66,7 +66,7 @@ export const notificationService = {
       if (mutedRecipientIds.has(input.recipientId)) continue;
 
       const record = await notificationRepository.createIndividual(input);
-      await broadcastCreated(record);
+      if (record) await broadcastCreated(record);
     }
   },
 
@@ -83,8 +83,10 @@ export const notificationService = {
     );
     if (mutedRecipientIds.has(input.recipientId)) return;
 
-    const { record, wasCreated } = await notificationRepository.upsertGroup(input);
-    await (wasCreated ? broadcastCreated(record) : broadcastUpdated(record));
+    const result = await notificationRepository.upsertGroup(input);
+    if (!result) return;
+
+    await (result.wasCreated ? broadcastCreated(result.record) : broadcastUpdated(result.record));
   },
 
   /** Unlike's retraction path. Silent when the group already closed (read) or was deleted. */

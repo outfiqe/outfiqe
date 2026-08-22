@@ -2,6 +2,9 @@ import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import type { NotificationEntityType, NotificationType } from "#generated/prisma/enums.js";
 import { decodeCursor } from "#lib/pagination.utils.js";
+import { isForeignKeyConstraintError } from "#lib/prisma.utils.js";
+import logger from "#lib/winston.utils.js";
+import { describeError } from "#redis/redis.utils.js";
 
 import type {
   CreateIndividualNotificationInput,
@@ -30,6 +33,15 @@ type RawGroupRow = {
   updated_at: Date;
 };
 
+/**
+ * The raw INSERT in upsertGroup below isn't a Prisma-generated query, so a
+ * foreign key violation there surfaces as the driver's own error rather
+ * than a Prisma "P2003" code — match on the constraint text Postgres
+ * itself reports instead.
+ */
+const isRawForeignKeyViolation = (error: unknown): boolean =>
+  describeError(error).toLowerCase().includes("foreign key constraint");
+
 const toRecordFromRaw = (row: RawGroupRow): NotificationRecord => ({
   id: row.id,
   recipientId: row.recipient_id,
@@ -47,18 +59,35 @@ const toRecordFromRaw = (row: RawGroupRow): NotificationRecord => ({
 });
 
 export const notificationRepository = {
-  async createIndividual(input: CreateIndividualNotificationInput): Promise<NotificationRecord> {
-    const created = await prisma.notification.create({
-      data: {
-        recipientId: input.recipientId,
-        actorId: input.actorId ?? undefined,
-        type: input.type,
-        entityType: input.entityType ?? undefined,
-        entityId: input.entityId ?? undefined,
-        metadata: input.metadata as Prisma.InputJsonValue,
-      },
-    });
-    return toNotificationRecord(created);
+  /**
+   * Returns null (never throws) when the recipient or actor no longer
+   * exists — a domain-event consumer replaying a stream's history (a fresh
+   * consumer group starts from the beginning, not just new entries) can
+   * hand this a userId that's since been deleted, and that must never
+   * dead-letter forever or crash the consumer loop.
+   */
+  async createIndividual(
+    input: CreateIndividualNotificationInput,
+  ): Promise<NotificationRecord | null> {
+    try {
+      const created = await prisma.notification.create({
+        data: {
+          recipientId: input.recipientId,
+          actorId: input.actorId ?? undefined,
+          type: input.type,
+          entityType: input.entityType ?? undefined,
+          entityId: input.entityId ?? undefined,
+          metadata: input.metadata as Prisma.InputJsonValue,
+        },
+      });
+      return toNotificationRecord(created);
+    } catch (error) {
+      if (!isForeignKeyConstraintError(error)) throw error;
+      logger.warn(
+        `Skipped notification for a since-deleted recipient or actor: type=${input.type} recipient=${input.recipientId}`,
+      );
+      return null;
+    }
   },
 
   /**
@@ -71,65 +100,73 @@ export const notificationRepository = {
    */
   async upsertGroup(
     input: UpsertGroupInput,
-  ): Promise<{ record: NotificationRecord; wasCreated: boolean }> {
-    return prisma.$transaction(async (tx) => {
-      const metadata: NotificationMetadata = { ...input.metadata, recentActors: [input.actor] };
+  ): Promise<{ record: NotificationRecord; wasCreated: boolean } | null> {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const metadata: NotificationMetadata = { ...input.metadata, recentActors: [input.actor] };
 
-      const inserted = await tx.$queryRaw<RawGroupRow[]>(Prisma.sql`
-        INSERT INTO "notifications"
-          ("id", "recipient_id", "actor_id", "type", "entity_type", "entity_id", "metadata", "group_key", "actor_count", "updated_at")
-        VALUES
-          (gen_random_uuid(), ${input.recipientId}::uuid, ${input.actorId}::uuid, ${input.type}::"NotificationType",
-           ${input.entityType ?? null}::"NotificationEntityType", ${input.entityId ?? null},
-           ${JSON.stringify(metadata)}::jsonb, ${input.groupKey}, 1, now())
-        ON CONFLICT ("recipient_id", "group_key") WHERE "is_read" = false AND "group_key" IS NOT NULL
-        DO NOTHING
-        RETURNING *
-      `);
+        const inserted = await tx.$queryRaw<RawGroupRow[]>(Prisma.sql`
+          INSERT INTO "notifications"
+            ("id", "recipient_id", "actor_id", "type", "entity_type", "entity_id", "metadata", "group_key", "actor_count", "updated_at")
+          VALUES
+            (gen_random_uuid(), ${input.recipientId}::uuid, ${input.actorId}::uuid, ${input.type}::"NotificationType",
+             ${input.entityType ?? null}::"NotificationEntityType", ${input.entityId ?? null},
+             ${JSON.stringify(metadata)}::jsonb, ${input.groupKey}, 1, now())
+          ON CONFLICT ("recipient_id", "group_key") WHERE "is_read" = false AND "group_key" IS NOT NULL
+          DO NOTHING
+          RETURNING *
+        `);
 
-      const insertedRow = inserted[0];
-      if (insertedRow) return { record: toRecordFromRaw(insertedRow), wasCreated: true };
+        const insertedRow = inserted[0];
+        if (insertedRow) return { record: toRecordFromRaw(insertedRow), wasCreated: true };
 
-      const existingRows = await tx.$queryRaw<RawGroupRow[]>(Prisma.sql`
-        SELECT * FROM "notifications"
-        WHERE "recipient_id" = ${input.recipientId}::uuid
-          AND "group_key" = ${input.groupKey}
-          AND "is_read" = false
-        FOR UPDATE
-      `);
-      const existing = existingRows[0];
-      if (!existing) {
-        throw new Error(
-          `Notification group conflicted but no open row was found: recipient=${input.recipientId} groupKey=${input.groupKey}`,
+        const existingRows = await tx.$queryRaw<RawGroupRow[]>(Prisma.sql`
+          SELECT * FROM "notifications"
+          WHERE "recipient_id" = ${input.recipientId}::uuid
+            AND "group_key" = ${input.groupKey}
+            AND "is_read" = false
+          FOR UPDATE
+        `);
+        const existing = existingRows[0];
+        if (!existing) {
+          throw new Error(
+            `Notification group conflicted but no open row was found: recipient=${input.recipientId} groupKey=${input.groupKey}`,
+          );
+        }
+
+        const existingMetadata = (existing.metadata ?? {}) as NotificationMetadata;
+        const dedupedActors = (existingMetadata.recentActors ?? []).filter(
+          (actor) => actor.id !== input.actor.id,
         );
-      }
+        const nextRecentActors = [input.actor, ...dedupedActors].slice(0, 3);
+        const nextMetadata: NotificationMetadata = {
+          ...existingMetadata,
+          ...input.metadata,
+          recentActors: nextRecentActors,
+        };
+        const nextActorCount = existing.actor_count + 1;
 
-      const existingMetadata = (existing.metadata ?? {}) as NotificationMetadata;
-      const dedupedActors = (existingMetadata.recentActors ?? []).filter(
-        (actor) => actor.id !== input.actor.id,
+        const updatedRows = await tx.$queryRaw<RawGroupRow[]>(Prisma.sql`
+          UPDATE "notifications"
+          SET "metadata" = ${JSON.stringify(nextMetadata)}::jsonb,
+              "actor_count" = ${nextActorCount},
+              "actor_id" = ${input.actorId}::uuid,
+              "updated_at" = now()
+          WHERE "id" = ${existing.id}::uuid
+          RETURNING *
+        `);
+        const updated = updatedRows[0];
+        if (!updated) throw new Error(`Failed to update notification group: ${existing.id}`);
+
+        return { record: toRecordFromRaw(updated), wasCreated: false };
+      });
+    } catch (error) {
+      if (!isRawForeignKeyViolation(error)) throw error;
+      logger.warn(
+        `Skipped notification group for a since-deleted recipient or actor: type=${input.type} recipient=${input.recipientId}`,
       );
-      const nextRecentActors = [input.actor, ...dedupedActors].slice(0, 3);
-      const nextMetadata: NotificationMetadata = {
-        ...existingMetadata,
-        ...input.metadata,
-        recentActors: nextRecentActors,
-      };
-      const nextActorCount = existing.actor_count + 1;
-
-      const updatedRows = await tx.$queryRaw<RawGroupRow[]>(Prisma.sql`
-        UPDATE "notifications"
-        SET "metadata" = ${JSON.stringify(nextMetadata)}::jsonb,
-            "actor_count" = ${nextActorCount},
-            "actor_id" = ${input.actorId}::uuid,
-            "updated_at" = now()
-        WHERE "id" = ${existing.id}::uuid
-        RETURNING *
-      `);
-      const updated = updatedRows[0];
-      if (!updated) throw new Error(`Failed to update notification group: ${existing.id}`);
-
-      return { record: toRecordFromRaw(updated), wasCreated: false };
-    });
+      return null;
+    }
   },
 
   /**
