@@ -7,6 +7,7 @@ export * from "./collection";
 export * from "./commission";
 export * from "./hero-slide";
 export * from "./leaderboard";
+export * from "./notification";
 export * from "./order";
 export * from "./product";
 export * from "./user";
