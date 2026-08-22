@@ -25,6 +25,8 @@ describe("creatorProfileApi.get", () => {
             followingCount: 3,
             taggedPiecesCount: 2,
             isFollowing: false,
+            featuredBadges: [],
+            titleBadge: null,
           },
         }),
       ),

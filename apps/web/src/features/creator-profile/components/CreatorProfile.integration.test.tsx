@@ -114,6 +114,8 @@ const buildCreator = (overrides: Partial<CreatorProfileType> = {}): CreatorProfi
   followingCount: 3,
   taggedPiecesCount: 1,
   isFollowing: false,
+  featuredBadges: [],
+  titleBadge: null,
   ...overrides,
 });
 
