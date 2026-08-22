@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 
 import { cx } from "./cx";
 import { SidebarNavItemView } from "./SidebarNavItemView";
-import { cardClass, navListClass, scrollHiddenClass, sectionHeadingClass } from "./styles";
+import { cardClass, navListClass, sectionHeadingClass, sidebarScrollClass } from "./styles";
 import type { SidebarNavigationAdapter, SidebarNavSection } from "./types";
 import type { ExpandedGroups } from "./useExpandedGroups";
 
@@ -33,7 +33,7 @@ export const SidebarSection = ({
         className={cx(
           navListClass,
           "min-h-0 flex-1 overflow-y-auto overflow-x-hidden",
-          scrollHiddenClass,
+          sidebarScrollClass,
         )}
       >
         {items.map((navItem) => (

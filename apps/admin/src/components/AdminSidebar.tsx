@@ -7,19 +7,23 @@ import {
 import { cn } from "@outfiqe/design-system";
 import { getAvatarColor, initialsFor } from "@outfiqe/utils";
 import {
+  Award,
   ClipboardList,
+  Crown,
   GalleryHorizontal,
   Layers,
   MapPin,
   Package,
   Ruler,
   ShoppingBag,
+  SlidersHorizontal,
   Tags,
   TrendingUp,
   Trophy,
   UserCog,
   Users,
   Wallet,
+  Zap,
 } from "lucide-react";
 
 import { useAuth } from "@/features/auth/AuthContext";
@@ -40,7 +44,38 @@ const NAV_SECTIONS: SidebarNavSection[] = [
       { id: "trending", href: "/trending", label: "Trending debug", icon: TrendingUp },
       { id: "creators", href: "/creators", label: "Creators", icon: Users },
       { id: "commissions", href: "/commissions", label: "Commissions", icon: Wallet },
-      { id: "gamification", href: "/gamification", label: "Gamification", icon: Trophy },
+      {
+        id: "gamification",
+        href: "/gamification",
+        label: "Gamification",
+        icon: Trophy,
+        items: [
+          {
+            id: "gamification-xp-levels",
+            href: "/gamification/xp-levels",
+            label: "XP & Levels",
+            icon: Zap,
+          },
+          {
+            id: "gamification-badges",
+            href: "/gamification/badges",
+            label: "Badges & Challenges",
+            icon: Award,
+          },
+          {
+            id: "gamification-leaderboards",
+            href: "/gamification/leaderboards",
+            label: "Leaderboards",
+            icon: Crown,
+          },
+          {
+            id: "gamification-manual-actions",
+            href: "/gamification/manual-actions",
+            label: "Manual Actions",
+            icon: SlidersHorizontal,
+          },
+        ],
+      },
       { id: "delivery-zones", href: "/delivery-zones", label: "Delivery zones", icon: MapPin },
       { id: "team", href: "/team", label: "Team", icon: UserCog },
     ],

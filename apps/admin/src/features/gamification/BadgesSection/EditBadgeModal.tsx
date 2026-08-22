@@ -19,6 +19,8 @@ export const EditBadgeModal = ({ badge, onClose }: { badge: BadgeAdmin; onClose:
   );
   const [error, setError] = useState<string | null>(null);
 
+  const formId = `edit-badge-${badge.id}-form`;
+
   const update = useMutation({
     mutationFn: (input: UpdateBadgeFormInput) => gamificationApi.updateBadge(badge.id, input),
     onSuccess: () => {
@@ -38,8 +40,26 @@ export const EditBadgeModal = ({ badge, onClose }: { badge: BadgeAdmin; onClose:
   };
 
   return (
-    <Modal open onClose={onClose} title="Edit badge">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <Modal
+      open
+      onClose={onClose}
+      title="Edit badge"
+      className="sm:max-w-3xl"
+      footer={
+        <div className="space-y-3">
+          {error && <FormBanner>{error}</FormBanner>}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" form={formId} disabled={update.isPending}>
+              {update.isPending ? "Saving…" : "Save changes"}
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      <form id={formId} onSubmit={handleSubmit} className="space-y-4">
         <BadgeFields idPrefix={`edit-badge-${badge.id}`} form={form} onChange={setForm} />
         <label className="flex items-center gap-2 text-sm text-foreground">
           <Checkbox checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
@@ -55,10 +75,6 @@ export const EditBadgeModal = ({ badge, onClose }: { badge: BadgeAdmin; onClose:
             badge)
           </label>
         )}
-        {error && <FormBanner>{error}</FormBanner>}
-        <Button type="submit" disabled={update.isPending}>
-          {update.isPending ? "Saving…" : "Save changes"}
-        </Button>
       </form>
     </Modal>
   );

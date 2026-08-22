@@ -14,8 +14,8 @@ const CHECKERBOARD_STYLE = {
 
 const layerContentClassName = (layer: BadgeLayer): string =>
   layer.type === BADGE_LAYER_TYPE.BACKGROUND
-    ? "size-full"
-    : "flex size-full items-center justify-center overflow-hidden text-center leading-none";
+    ? "size-full cursor-move"
+    : "flex size-full cursor-move items-center justify-center overflow-hidden text-center leading-none";
 
 const LayerContent = ({ layer }: { layer: BadgeLayer }) => {
   if (layer.type === BADGE_LAYER_TYPE.BACKGROUND) {
