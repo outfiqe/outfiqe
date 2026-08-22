@@ -1,6 +1,6 @@
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
-import type { CreatorStatus } from "#generated/prisma/enums.js";
+import type { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
@@ -82,6 +82,11 @@ export const userRepository = {
 
   async list(): Promise<UserRecord[]> {
     return prisma.user.findMany({ orderBy: { createdAt: "desc" } });
+  },
+
+  async findIdsByRole(role: UserRole): Promise<string[]> {
+    const rows = await prisma.user.findMany({ where: { role }, select: { id: true } });
+    return rows.map((row) => row.id);
   },
 
   async markEmailVerified(id: string): Promise<void> {

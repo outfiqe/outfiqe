@@ -15,6 +15,7 @@ import {
   registerLeaderboardEventConsumer,
   registerLeaderboardSocketHandlers,
 } from "#modules/leaderboard/leaderboard.socket.js";
+import { registerNotificationEventConsumers } from "#modules/notifications/notification.events.js";
 import { registerXpEventConsumers } from "#modules/xp/xp.events.js";
 import { registerXpSocketEventConsumer } from "#modules/xp/xp.socket.js";
 import { disconnectRedis } from "#redis/redis.client.js";
@@ -41,6 +42,7 @@ registerCreatorLeaderboardSocketHandlers();
 registerCreatorLeaderboardEventConsumer();
 registerXpEventConsumers();
 registerAchievementEventConsumers();
+registerNotificationEventConsumers();
 registerXpSocketEventConsumer();
 registerAchievementSocketEventConsumer();
 

@@ -2,6 +2,8 @@ import type { LeaderboardCategory } from "#constants/leaderboard.constants.js";
 import type {
   CreatorLeaderboardCategory,
   FulfilmentStatus,
+  NotificationEntityType,
+  NotificationType,
   UserRole,
 } from "#generated/prisma/enums.js";
 
@@ -10,6 +12,28 @@ import type { DomainEvents } from "./event-bus.js";
 export type DomainEvent = (typeof DomainEvents)[keyof typeof DomainEvents];
 
 type FollowPayload = { followerId: string; followingId: string };
+
+/**
+ * The notifications module's own write-path handler publishes this after
+ * resolving the real post-write row (a fresh insert or a merged group) —
+ * the socket relay consumer (notification.socket.ts) subscribes to it
+ * rather than recomputing the same DB state independently. Same handoff
+ * shape xp.service.ts uses for LEVEL_UP -> xp.socket.ts.
+ */
+export type NotificationBroadcastPayload = {
+  id: string;
+  recipientId: string;
+  actorId: string | null;
+  type: NotificationType;
+  entityType: NotificationEntityType | null;
+  entityId: string | null;
+  metadata: Record<string, unknown>;
+  groupKey: string | null;
+  actorCount: number;
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export type DomainEventPayloads = {
   [DomainEvents.USER_CREATED]: { userId: string; email: string; role?: UserRole };
@@ -64,6 +88,8 @@ export type DomainEventPayloads = {
     userId: string;
     status: FulfilmentStatus;
   };
+  [DomainEvents.NOTIFICATION_CREATED]: NotificationBroadcastPayload;
+  [DomainEvents.NOTIFICATION_UPDATED]: NotificationBroadcastPayload;
 };
 
 export type DomainEventHandler<E extends DomainEvent> = (
