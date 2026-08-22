@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "XpActivityType" ADD VALUE 'ACHIEVEMENT_UNLOCKED';

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { MobileTabBar } from "@/components/MobileTabBar";
@@ -27,6 +28,12 @@ const LeaderboardPage = () => {
           <p className="mt-2 max-w-xl text-sm text-muted-foreground">
             Who&apos;s leading this week, by category. Resets every Monday.
           </p>
+          <Link
+            href="/leaderboard/creators"
+            className="mt-3 inline-block text-sm font-semibold text-primary-strong hover:underline"
+          >
+            View the creator leaderboard →
+          </Link>
 
           <div className="mt-8">
             <Suspense fallback={<LeaderboardListSkeleton />}>

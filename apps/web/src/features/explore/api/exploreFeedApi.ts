@@ -102,6 +102,12 @@ export const exploreFeedApi = {
     });
   },
 
+  async recordView(lookId: string): Promise<void> {
+    await apiClient.post(`/creator-looks/${lookId}/views`, {
+      sessionId: getSessionId(),
+    });
+  },
+
   async trendingTags() {
     const res = await apiClient.get<TrendingTagsResponse>("/creator-looks/tags/trending");
     return trendingTagsResponseSchema.parse(res.data).tags;

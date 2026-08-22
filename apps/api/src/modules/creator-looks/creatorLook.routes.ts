@@ -1,9 +1,14 @@
 import { Router } from "express";
 
 import { optionalAuth } from "#middlewares/optional-auth.js";
+import { rateLimit } from "#middlewares/rate-limit.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 
+import {
+  VIEW_RATE_LIMIT_MAX_REQUESTS,
+  VIEW_RATE_LIMIT_WINDOW_MS,
+} from "./creatorLook.constants.js";
 import { creatorLookController } from "./creatorLook.controller.js";
 import {
   autocompleteQuerySchema,
@@ -14,10 +19,18 @@ import {
   listCreatorLooksQuerySchema,
   listSavedQuerySchema,
   lookIdParamsSchema,
+  recordViewSchema,
   searchCreatorLooksQuerySchema,
   tagClickParamsSchema,
   tagClickSchema,
 } from "./creatorLook.schemas.js";
+
+const recordViewRateLimit = rateLimit({
+  namespace: "creator-look-view",
+  windowMs: VIEW_RATE_LIMIT_WINDOW_MS,
+  max: VIEW_RATE_LIMIT_MAX_REQUESTS,
+  keyGenerator: (req) => req.ip,
+});
 
 export const creatorLookRoutes = Router();
 
@@ -123,4 +136,12 @@ creatorLookRoutes.post(
   optionalAuth,
   validate({ params: tagClickParamsSchema, body: tagClickSchema }),
   creatorLookController.recordTagClick,
+);
+
+creatorLookRoutes.post(
+  "/:lookId/views",
+  optionalAuth,
+  validate({ params: lookIdParamsSchema, body: recordViewSchema }),
+  recordViewRateLimit,
+  creatorLookController.recordView,
 );

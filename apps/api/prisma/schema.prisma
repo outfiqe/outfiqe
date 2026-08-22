@@ -20,24 +20,25 @@ datasource db {
 }
 
 model User {
-  id                String        @id @default(uuid()) @db.Uuid
-  email             String        @unique
-  name              String
-  handle            String        @unique
-  phone             String        @unique
-  avatarUrl         String?       @map("avatar_url")
-  passwordHash      String        @map("password_hash")
-  role              UserRole      @default(CUSTOMER)
-  isCreator         Boolean       @default(false) @map("is_creator")
-  creatorStatus     CreatorStatus @default(NONE) @map("creator_status")
-  creatorApprovedAt DateTime?     @map("creator_approved_at")
-  heightCm          Int?          @map("height_cm")
-  showHeight        Boolean       @default(false) @map("show_height")
-  emailVerified     Boolean       @default(false) @map("email_verified")
-  followerCount     Int           @default(0) @map("follower_count")
-  followingCount    Int           @default(0) @map("following_count")
-  createdAt         DateTime      @default(now()) @map("created_at")
-  updatedAt         DateTime      @updatedAt @map("updated_at")
+  id                   String        @id @default(uuid()) @db.Uuid
+  email                String        @unique
+  name                 String
+  handle               String        @unique
+  phone                String        @unique
+  avatarUrl            String?       @map("avatar_url")
+  passwordHash         String        @map("password_hash")
+  role                 UserRole      @default(CUSTOMER)
+  isCreator            Boolean       @default(false) @map("is_creator")
+  creatorStatus        CreatorStatus @default(NONE) @map("creator_status")
+  creatorApprovedAt    DateTime?     @map("creator_approved_at")
+  heightCm             Int?          @map("height_cm")
+  showHeight           Boolean       @default(false) @map("show_height")
+  emailVerified        Boolean       @default(false) @map("email_verified")
+  followerCount        Int           @default(0) @map("follower_count")
+  followingCount       Int           @default(0) @map("following_count")
+  hideFromLeaderboards Boolean       @default(false) @map("hide_from_leaderboards")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
 
   memberships          BrandMembership[]
   refreshTokens        RefreshToken[]
@@ -50,6 +51,7 @@ model User {
   lookSaves            CreatorLookSave[]
   lookComments         CreatorLookComment[]
   tagClicks            CreatorLookTagClick[]
+  lookViews            CreatorLookView[]
   following            Follow[]              @relation("FollowerEdges")
   savedProducts        SavedProduct[]
   cart                 Cart?
@@ -60,6 +62,10 @@ model User {
   creatorLinks         CreatorLink[]         @relation("CreatorLinks")
   creatorLinkClicks    CreatorLinkClick[]
   deliveryZoneChanges  DeliveryZoneHistory[] @relation("DeliveryZoneChanges")
+  xpTransactions       XpTransaction[]
+  progress             UserProgress?
+  badges               UserBadge[]           @relation("UserBadges")
+  badgesAwarded        UserBadge[]           @relation("UserBadgeAwardedBy")
 
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
@@ -160,9 +166,10 @@ model Brand {
   createdAt     DateTime          @default(now()) @map("created_at")
   updatedAt     DateTime          @updatedAt @map("updated_at")
 
-  invites     BrandInvite[]
-  memberships BrandMembership[]
-  products    Product[]
+  invites         BrandInvite[]
+  memberships     BrandMembership[]
+  products        Product[]
+  sponsoredBadges Badge[]
 
   @@map("brands")
 }
@@ -350,6 +357,7 @@ model CreatorLook {
   likeCount    Int       @default(0) @map("like_count")
   commentCount Int       @default(0) @map("comment_count")
   saveCount    Int       @default(0) @map("save_count")
+  viewCount    Int       @default(0) @map("view_count")
   deletedAt    DateTime? @map("deleted_at")
   createdAt    DateTime  @default(now()) @map("created_at")
 
@@ -359,6 +367,7 @@ model CreatorLook {
   comments             CreatorLookComment[]
   hashtags             CreatorLookHashtag[]
   tagClicks            CreatorLookTagClick[]
+  views                CreatorLookView[]
   images               CreatorLookImage[]
   attributedOrderItems OrderItem[]
   trendMetrics         CreatorLookTrendMetric[]
@@ -492,6 +501,20 @@ model CreatorLookTagClick {
 enum CreatorLookTagClickSource {
   FEED
   PRODUCT_PAGE
+}
+
+model CreatorLookView {
+  id            String      @id @default(uuid()) @db.Uuid
+  creatorLookId String      @map("creator_look_id") @db.Uuid
+  viewerId      String?     @map("viewer_id") @db.Uuid
+  sessionId     String      @map("session_id")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  creatorLook   CreatorLook @relation(fields: [creatorLookId], references: [id], onDelete: Cascade)
+  viewer        User?       @relation(fields: [viewerId], references: [id], onDelete: SetNull)
+
+  @@unique([creatorLookId, sessionId])
+  @@index([createdAt])
+  @@map("creator_look_views")
 }
 
 enum FollowTargetType {
@@ -906,4 +929,274 @@ model DeliveryZoneHistory {
 
   @@index([zoneId, createdAt])
   @@map("delivery_zone_history")
+}
+
+// ---------------------------------------------------------------------------
+// Gamification — XP, Levels, Achievements, Badges
+// See apps/api/src/modules/{xp,achievements,badges}/README.md for the engine
+// design; this block is data model only.
+// ---------------------------------------------------------------------------
+
+model Level {
+  id         String   @id @default(uuid()) @db.Uuid
+  level      Int      @unique
+  name       String
+  requiredXp Int      @map("required_xp")
+  icon       String?
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  usersAtLevel UserProgress[]
+
+  @@index([isActive, requiredXp])
+  @@map("levels")
+}
+
+model XpMultiplier {
+  id         String   @id @default(uuid()) @db.Uuid
+  label      String
+  multiplier Float
+  startsAt   DateTime @map("starts_at")
+  endsAt     DateTime @map("ends_at")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, startsAt, endsAt])
+  @@map("xp_multipliers")
+}
+
+model UserProgress {
+  userId         String   @id @map("user_id") @db.Uuid
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalXp        Int      @default(0) @map("total_xp")
+  currentLevelId String   @map("current_level_id") @db.Uuid
+  currentLevel   Level    @relation(fields: [currentLevelId], references: [id])
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([totalXp])
+  @@map("user_progress")
+}
+
+enum XpActivityType {
+  LOOK_CREATED
+  LOOK_LIKE_RECEIVED
+  LOOK_COMMENT_RECEIVED
+  LOOK_COMMENTED
+  LOOK_SAVED
+  USER_FOLLOWED
+  PRODUCT_PURCHASED
+  SALE_GENERATED
+  PRODUCT_TAGGED
+  FOLLOWER_MILESTONE
+  ACHIEVEMENT_UNLOCKED
+  ADMIN_ADJUSTMENT
+}
+
+enum XpTransactionStatus {
+  APPLIED
+  REVERSED
+}
+
+/**
+ * Append-only audit ledger (spec 07). Every XP change — automatic or manual —
+ * gets a row here; UserProgress.totalXp is the denormalized running sum kept
+ * in sync at write time, never recomputed by summing this table on read.
+ */
+model XpTransaction {
+  id              String              @id @default(uuid()) @db.Uuid
+  userId          String              @map("user_id") @db.Uuid
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityType    XpActivityType      @map("activity_type")
+  amount          Int
+  relatedEntityId String?             @map("related_entity_id") @db.Uuid
+  source          String
+  metadata        Json?
+  status          XpTransactionStatus @default(APPLIED)
+  createdAt       DateTime            @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([userId, activityType, relatedEntityId])
+  @@map("xp_transactions")
+}
+
+/**
+ * Spec 40 — admin-tunable per-activity XP economy. The anti-abuse knobs
+ * (spec 06) live here per-activity rather than a separate table: a daily cap,
+ * a cooldown, and a max-times-per-entity are all scoped to one activity type.
+ */
+model ActivityXpConfig {
+  activityType    XpActivityType @id @map("activity_type")
+  enabled         Boolean        @default(true)
+  xpAmount        Int            @map("xp_amount")
+  dailyLimit      Int?           @map("daily_limit")
+  cooldownSeconds Int?           @map("cooldown_seconds")
+  maxPerEntity    Int?           @map("max_per_entity")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@map("activity_xp_configs")
+}
+
+enum BadgeCategory {
+  BEGINNER
+  CREATOR
+  COMMUNITY
+  ENGAGEMENT
+  COMMERCE
+  SPECIAL
+}
+
+enum BadgeRarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+  EXCLUSIVE
+}
+
+/**
+ * designConfig/requirementConfig are validated at the service boundary via a
+ * Zod schema — see badges.schemas.ts — never trusted as `any` past that point.
+ */
+model Badge {
+  id              String        @id @default(uuid()) @db.Uuid
+  name            String
+  description     String
+  category        BadgeCategory
+  rarity          BadgeRarity
+  icon            String
+  designConfig    Json          @map("design_config")
+  xpReward        Int           @default(0) @map("xp_reward")
+  isPermanent     Boolean       @default(true) @map("is_permanent")
+  isDynamic       Boolean       @default(false) @map("is_dynamic")
+  isPublic        Boolean       @default(true) @map("is_public")
+  isActive        Boolean       @default(true) @map("is_active")
+  assignmentLimit Int?          @map("assignment_limit")
+  assignmentCount Int           @default(0) @map("assignment_count")
+  isTitleEligible Boolean       @default(false) @map("is_title_eligible")
+  sponsorBrandId  String?       @map("sponsor_brand_id") @db.Uuid
+  sponsorBrand    Brand?        @relation(fields: [sponsorBrandId], references: [id], onDelete: SetNull)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  achievement        Achievement?
+  userBadges         UserBadge[]
+  creatorCompetition CreatorCompetition?
+
+  @@index([category, isActive])
+  @@index([sponsorBrandId])
+  @@map("badges")
+}
+
+enum AchievementRequirementType {
+  MILESTONE
+  ACTIVITY
+  ENGAGEMENT
+  COMMERCE
+  COMMUNITY
+  LEVEL
+  SPECIAL
+  ADMIN_AWARD
+}
+
+model Achievement {
+  id                String                     @id @default(uuid()) @db.Uuid
+  badgeId           String                     @unique @map("badge_id") @db.Uuid
+  badge             Badge                      @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  name              String
+  description       String
+  requirementType   AchievementRequirementType @map("requirement_type")
+  requirementConfig Json                       @map("requirement_config")
+  isActive          Boolean                    @default(true) @map("is_active")
+  activeFrom        DateTime?                  @map("active_from")
+  activeUntil       DateTime?                  @map("active_until")
+  createdAt         DateTime                   @default(now()) @map("created_at")
+  updatedAt         DateTime                   @updatedAt @map("updated_at")
+
+  challenge Challenge?
+
+  @@index([isActive])
+  @@map("achievements")
+}
+
+model Challenge {
+  id             String      @id @default(uuid()) @db.Uuid
+  achievementId  String      @unique @map("achievement_id") @db.Uuid
+  achievement    Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  name           String
+  description    String
+  bannerImageUrl String?     @map("banner_image_url")
+  isActive       Boolean     @default(true) @map("is_active")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("challenges")
+}
+
+enum CreatorLeaderboardCategory {
+  TOP_XP
+  TOP_CREATOR
+  MOST_LIKES
+  MOST_ENGAGED
+  TOP_SELLER
+  RISING_CREATOR
+  MOST_ACHIEVEMENTS
+}
+
+model CreatorLeaderboardCategoryConfig {
+  category  CreatorLeaderboardCategory @id
+  enabled   Boolean                    @default(true)
+  createdAt DateTime                   @default(now()) @map("created_at")
+  updatedAt DateTime                   @updatedAt @map("updated_at")
+
+  @@map("creator_leaderboard_category_configs")
+}
+
+model CreatorCompetition {
+  id        String                     @id @default(uuid()) @db.Uuid
+  name      String
+  category  CreatorLeaderboardCategory
+  topN      Int                        @map("top_n")
+  badgeId   String                     @unique @map("badge_id") @db.Uuid
+  badge     Badge                      @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  isActive  Boolean                    @default(true) @map("is_active")
+  createdAt DateTime                   @default(now()) @map("created_at")
+  updatedAt DateTime                   @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("creator_competitions")
+}
+
+/**
+ * awardedBy null = engine-awarded (achievement satisfied); set = admin
+ * manual award (spec 31). Removal (spec 33) is `isDisplayed: false` +
+ * `removedReason`/`removedAt`/`removedById` set, never a hard delete — same
+ * "void, don't delete" convention as CreatorCommission/CommissionTier.
+ */
+model UserBadge {
+  id                    String    @id @default(uuid()) @db.Uuid
+  userId                String    @map("user_id") @db.Uuid
+  user                  User      @relation("UserBadges", fields: [userId], references: [id], onDelete: Cascade)
+  badgeId               String    @map("badge_id") @db.Uuid
+  badge                 Badge     @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  awardedById           String?   @map("awarded_by_id") @db.Uuid
+  awardedBy             User?     @relation("UserBadgeAwardedBy", fields: [awardedById], references: [id], onDelete: SetNull)
+  awardReason           String?   @map("award_reason")
+  isDisplayed           Boolean   @default(true) @map("is_displayed")
+  isFeatured            Boolean   @default(false) @map("is_featured")
+  isTitle               Boolean   @default(false) @map("is_title")
+  isDynamicallyEligible Boolean   @default(true) @map("is_dynamically_eligible")
+  displayOrder          Int       @default(0) @map("display_order")
+  removedAt             DateTime? @map("removed_at")
+  removedReason         String?   @map("removed_reason")
+  unlockedAt            DateTime  @default(now()) @map("unlocked_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+
+  @@unique([userId, badgeId])
+  @@index([userId, isDisplayed])
+  @@map("user_badges")
 }

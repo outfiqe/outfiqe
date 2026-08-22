@@ -58,3 +58,26 @@ export const TAG_TREND_MOMENTUM_CAP = 8;
 export const TAG_TRENDING_LIMIT = 15;
 
 export const AUTOCOMPLETE_LIMIT = 4;
+
+export const BOT_USER_AGENT_PATTERNS = [
+  "bot",
+  "spider",
+  "crawler",
+  "crawl",
+  "slurp",
+  "curl",
+  "wget",
+  "python-requests",
+  "python-urllib",
+  "axios",
+  "node-fetch",
+  "headlesschrome",
+  "phantomjs",
+  "facebookexternalhit",
+  "whatsapp",
+  "telegrambot",
+  "discordbot",
+] as const;
+
+export const VIEW_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+export const VIEW_RATE_LIMIT_MAX_REQUESTS = 60;

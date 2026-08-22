@@ -94,6 +94,10 @@ export const tagClickSchema = z.object({
   source: z.enum(["FEED", "PRODUCT_PAGE"]).default("FEED"),
 });
 
+export const recordViewSchema = z.object({
+  sessionId: z.string().min(1).max(SESSION_ID_MAX),
+});
+
 export type CreateCreatorLookBody = z.infer<typeof createCreatorLookSchema>;
 export type ListCreatorLooksQuery = z.infer<typeof listCreatorLooksQuerySchema>;
 export type LookIdParams = z.infer<typeof lookIdParamsSchema>;
@@ -106,3 +110,4 @@ export type FeedSyncRequest = z.infer<typeof feedSyncRequestSchema>;
 export type CommentsQuery = z.infer<typeof commentsQuerySchema>;
 export type CreateCommentBody = z.infer<typeof createCommentSchema>;
 export type TagClickBody = z.infer<typeof tagClickSchema>;
+export type RecordViewBody = z.infer<typeof recordViewSchema>;

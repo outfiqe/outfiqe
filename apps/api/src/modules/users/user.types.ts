@@ -17,6 +17,7 @@ export interface UserRecord {
   emailVerified: boolean;
   followerCount: number;
   followingCount: number;
+  hideFromLeaderboards: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,7 +32,7 @@ export interface CreateUserInput {
 }
 
 export type UpdateUserProfileInput = Partial<
-  Pick<UserRecord, "name" | "avatarUrl" | "heightCm" | "showHeight">
+  Pick<UserRecord, "name" | "avatarUrl" | "heightCm" | "showHeight" | "hideFromLeaderboards">
 >;
 
 export interface PublicUser {

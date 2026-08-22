@@ -183,5 +183,4 @@ event. Test infra is in place — vitest `unit`/`integration` projects per app, 
 thresholds, a handful of seeded example tests (`apps/api/src/shared/utils/*.test.ts`,
 `apps/web/src/components/ProductGridSkeleton.test.tsx`, `apps/admin/src/components/Logo.test.tsx`,
 among others) — but actual coverage is still thin across the codebase; new/changed code is expected
-to bring its own unit, integration, and (for web/admin) component tests as it lands, not as a
-follow-up (see `CLAUDE.md`'s Testing section).
+to bring its own unit, integration, and (for web/admin) component tests as it lands.

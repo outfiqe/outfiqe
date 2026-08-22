@@ -10,6 +10,7 @@ export const creatorProfileSchema = z.object({
   avatarUrl: z.url().nullable(),
   heightCm: z.number().nullable(),
   showHeight: z.boolean(),
+  hideFromLeaderboards: z.boolean(),
   isCreator: z.boolean(),
   creatorStatus: creatorStatusSchema,
 });
@@ -22,6 +23,7 @@ export const updateCreatorProfileInputSchema = z
     avatarUrl: z.url().nullable(),
     heightCm: z.number().nullable(),
     showHeight: z.boolean(),
+    hideFromLeaderboards: z.boolean(),
   })
   .partial();
 

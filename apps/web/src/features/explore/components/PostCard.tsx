@@ -6,6 +6,7 @@ import { cn } from "@/shared/lib/cn";
 
 import type { FeedPost } from "../api/exploreFeedSchemas";
 import { usePostCardState } from "../hooks/usePostCardState";
+import { useRecordLookView } from "../hooks/useRecordLookView";
 import { PostActionsRow } from "./PostActionsRow";
 import { PostCaption } from "./PostCaption";
 import { PostCardHeader } from "./PostCardHeader";
@@ -51,9 +52,13 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
   const { isLoading: commentsLoading, data: commentsData } = comments;
   const { mutate: toggleLike, isPending: isLiking } = likeMutation;
   const { mutate: toggleSave, isPending: isSaving } = saveMutation;
+  const cardRef = useRecordLookView(id, !isOwnPost);
 
   return (
-    <article className="mb-4 overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30">
+    <article
+      ref={cardRef}
+      className="mb-4 overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30"
+    >
       <PostCardHeader
         creatorId={creatorId}
         creatorHandle={creatorHandle}

@@ -4,6 +4,10 @@
 
 Unlike COD, eSewa/Khalti orders don't touch `ProductSize.stock` when the order is created (see `orders/README.md`) — only `settleVerified` does, inside the same atomic pattern as everywhere else: guard the settlement with a conditional `updateMany WHERE status = 'INITIATED'`, then decrement stock, all in one transaction. If the decrement fails (sold out in the gap between initiate and verify), the order is marked `paymentStatus: PAID, fulfilmentStatus: CANCELLED, needsManualRefund: true` — the payment can't be undone from our side, so it's flagged for a human to refund by hand rather than silently failing.
 
+## Gamification event (`PRODUCT_PURCHASED`)
+
+`settleVerified` publishes it, but only in the successful branch (stock decremented cleanly, `markOrderPlaced` reached) — never when `needsManualRefund` gets set. Money moved either way in that failure case, but the sale is headed for a human refund decision, and this module has no XP-reversal mechanism, so it's safer to simply not award "purchase" XP there rather than award-then-need-to-claw-back. See `orders/README.md` for the COD half of this same event (COD publishes it from checkout instead, since there's no separate settlement step) and `xp/README.md` for what it triggers.
+
 ## The redirect is never trusted
 
 `success_url` and `failure_url` point at the same callback URL. Verification never reads which URL eSewa used or trusts any query param it sends back — `POST /api/payments/:orderId/verify` always makes its own server-to-server call to eSewa's status endpoint using our own stored `transaction_uuid`, amount, and product code.

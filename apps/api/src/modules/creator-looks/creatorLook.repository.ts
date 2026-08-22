@@ -981,10 +981,12 @@ export const creatorLookRepository = {
     return { products: pageRows.map((row) => row.product), nextCursor };
   },
 
-  async findActiveById(id: string): Promise<{ id: string; likeCount: number } | null> {
+  async findActiveById(
+    id: string,
+  ): Promise<{ id: string; creatorId: string; likeCount: number } | null> {
     return prisma.creatorLook.findFirst({
       where: { id, deletedAt: null },
-      select: { id: true, likeCount: true },
+      select: { id: true, creatorId: true, likeCount: true },
     });
   },
 
@@ -1316,6 +1318,35 @@ export const creatorLookRepository = {
         sessionId: input.sessionId,
         source: input.source,
       },
+    });
+  },
+
+  async recordView(input: {
+    lookId: string;
+    viewerId?: string;
+    sessionId: string;
+  }): Promise<{ counted: boolean; viewCount: number }> {
+    return prisma.$transaction(async (tx) => {
+      const { count } = await tx.creatorLookView.createMany({
+        data: [
+          {
+            creatorLookId: input.lookId,
+            viewerId: input.viewerId,
+            sessionId: input.sessionId,
+          },
+        ],
+        skipDuplicates: true,
+      });
+
+      const look =
+        count > 0
+          ? await tx.creatorLook.update({
+              where: { id: input.lookId },
+              data: { viewCount: { increment: 1 } },
+            })
+          : await tx.creatorLook.findUniqueOrThrow({ where: { id: input.lookId } });
+
+      return { counted: count > 0, viewCount: look.viewCount };
     });
   },
 };

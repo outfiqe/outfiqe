@@ -13,6 +13,7 @@ import type {
   ListCreatorLooksQuery,
   ListSavedQuery,
   LookIdParams,
+  RecordViewBody,
   SearchCreatorLooksQuery,
   TagClickBody,
   TagClickParams,
@@ -152,6 +153,15 @@ export const creatorLookController = {
     const body = validated.body<TagClickBody>(res);
 
     await creatorLookService.recordTagClick(lookId, productId, viewerId, body);
+    sendSuccess(res, { recorded: true }, "Recorded.");
+  },
+
+  async recordView(req: Request, res: Response) {
+    const viewerId = getAuthPrincipal(res)?.userId;
+    const { lookId } = validated.params<LookIdParams>(res);
+    const body = validated.body<RecordViewBody>(res);
+
+    await creatorLookService.recordView(lookId, viewerId, req.headers["user-agent"], body);
     sendSuccess(res, { recorded: true }, "Recorded.");
   },
 };

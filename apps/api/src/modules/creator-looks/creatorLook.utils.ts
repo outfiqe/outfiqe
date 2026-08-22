@@ -6,6 +6,7 @@ import {
 } from "#lib/trend-scoring.utils.js";
 
 import {
+  BOT_USER_AGENT_PATTERNS,
   TAG_TREND_BASELINE_WINDOW_DAYS,
   TAG_TREND_BASELINE_WINDOW_HOURS,
   TAG_TREND_CURRENT_WINDOW_END_HOURS,
@@ -44,6 +45,12 @@ import type {
   TagMetricBucket,
   TagScoreBreakdown,
 } from "./creatorLook.types.js";
+
+export const isLikelyBotUserAgent = (userAgent: string | undefined): boolean => {
+  if (!userAgent) return true;
+  const normalized = userAgent.toLowerCase();
+  return BOT_USER_AGENT_PATTERNS.some((pattern) => normalized.includes(pattern));
+};
 
 export const toSuggestion = ({
   id,

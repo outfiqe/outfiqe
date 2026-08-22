@@ -25,6 +25,7 @@ import type {
   CreateCreatorLookBody,
   ListCreatorLooksQuery,
   ListSavedQuery,
+  RecordViewBody,
   SearchCreatorLooksQuery,
   TagClickBody,
 } from "./creatorLook.schemas.js";
@@ -40,7 +41,7 @@ import type {
   TagScoreBreakdown,
   TrendingTag,
 } from "./creatorLook.types.js";
-import { toSuggestion } from "./creatorLook.utils.js";
+import { isLikelyBotUserAgent, toSuggestion } from "./creatorLook.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const UNAUTHORIZED_STATUS = 401;
@@ -59,7 +60,7 @@ const FOLLOWING_TAB = "following";
 const TRENDING_TAB = "trending";
 const FOR_YOU_TAB = "for_you";
 
-const requireActiveLook = async (lookId: string): Promise<{ id: string }> => {
+const requireActiveLook = async (lookId: string): Promise<{ id: string; creatorId: string }> => {
   const look = await creatorLookRepository.findActiveById(lookId);
   if (!look) throw new AppError("LOOK_NOT_FOUND", "This look no longer exists.", NOT_FOUND_STATUS);
   return look;
@@ -111,6 +112,13 @@ export const creatorLookService = {
       creatorId: userId,
       createdAt: look.createdAt.toISOString(),
     });
+    for (const productId of productIds) {
+      await eventBus.publish(DomainEvents.PRODUCT_TAGGED, {
+        lookId: look.id,
+        creatorId: userId,
+        productId,
+      });
+    }
 
     return look;
   },
@@ -145,6 +153,11 @@ export const creatorLookService = {
     await Promise.all(
       affectedProductIds.map((productId) => productService.recountWornBy(productId)),
     );
+
+    const addedProductIds = newProductIds.filter((productId) => !oldProductIds.includes(productId));
+    for (const productId of addedProductIds) {
+      await eventBus.publish(DomainEvents.PRODUCT_TAGGED, { lookId, creatorId: userId, productId });
+    }
 
     return updated;
   },
@@ -355,9 +368,9 @@ export const creatorLookService = {
   },
 
   async like(lookId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
-    await requireActiveLook(lookId);
+    const look = await requireActiveLook(lookId);
     const { likeCount } = await creatorLookRepository.like(lookId, userId);
-    await eventBus.publish(DomainEvents.LOOK_LIKED, { lookId, userId });
+    await eventBus.publish(DomainEvents.LOOK_LIKED, { lookId, creatorId: look.creatorId, userId });
     return { liked: true, likeCount };
   },
 
@@ -368,9 +381,9 @@ export const creatorLookService = {
   },
 
   async save(lookId: string, userId: string): Promise<{ saved: boolean; saveCount: number }> {
-    await requireActiveLook(lookId);
+    const look = await requireActiveLook(lookId);
     const { saveCount } = await creatorLookRepository.save(lookId, userId);
-    await eventBus.publish(DomainEvents.LOOK_SAVED, { lookId, userId });
+    await eventBus.publish(DomainEvents.LOOK_SAVED, { lookId, creatorId: look.creatorId, userId });
     return { saved: true, saveCount };
   },
 
@@ -389,9 +402,14 @@ export const creatorLookService = {
   },
 
   async addComment(lookId: string, userId: string, body: string) {
-    await requireActiveLook(lookId);
+    const look = await requireActiveLook(lookId);
     const comment = await creatorLookRepository.createComment(lookId, userId, body);
-    await eventBus.publish(DomainEvents.LOOK_COMMENTED, { lookId, commentId: comment.id, userId });
+    await eventBus.publish(DomainEvents.LOOK_COMMENTED, {
+      lookId,
+      creatorId: look.creatorId,
+      commentId: comment.id,
+      userId,
+    });
     return comment;
   },
 
@@ -418,6 +436,30 @@ export const creatorLookService = {
       userId,
       sessionId: body.sessionId,
       source: body.source,
+    });
+  },
+
+  async recordView(
+    lookId: string,
+    viewerId: string | undefined,
+    userAgent: string | undefined,
+    body: RecordViewBody,
+  ): Promise<void> {
+    const look = await requireActiveLook(lookId);
+    if (viewerId === look.creatorId) return;
+    if (isLikelyBotUserAgent(userAgent)) return;
+
+    const { counted } = await creatorLookRepository.recordView({
+      lookId,
+      viewerId,
+      sessionId: body.sessionId,
+    });
+    if (!counted) return;
+
+    await eventBus.publish(DomainEvents.LOOK_VIEWED, {
+      lookId,
+      creatorId: look.creatorId,
+      viewerId,
     });
   },
 };

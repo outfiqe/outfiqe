@@ -54,8 +54,8 @@ export const brandService = {
 
   async listPublic(query: ListBrandsQuery, viewerId?: string): Promise<PublicBrandPage> {
     const [rows, total] = await Promise.all([
-      brandRepository.listPublic({ cursor: query.cursor, limit: query.limit }),
-      brandRepository.countAll(),
+      brandRepository.listPublic({ cursor: query.cursor, limit: query.limit, q: query.q }),
+      brandRepository.countAll(query.q),
     ]);
 
     const { items: brandRows, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);

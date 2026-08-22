@@ -18,6 +18,7 @@ describe("creatorProfileApi.get", () => {
             avatarUrl: null,
             heightCm: 170,
             showHeight: true,
+            hideFromLeaderboards: false,
             creatorStatus: "APPROVED",
             postsCount: 4,
             followerCount: 12,

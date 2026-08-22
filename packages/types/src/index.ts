@@ -1,5 +1,6 @@
 export * from "./admin";
 export * from "./api";
+export * from "./badges";
 export * from "./brand";
 export * from "./category";
 export * from "./collection";
@@ -9,3 +10,4 @@ export * from "./leaderboard";
 export * from "./order";
 export * from "./product";
 export * from "./user";
+export * from "./xp";

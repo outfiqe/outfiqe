@@ -18,11 +18,18 @@ export const DomainEvents = {
   LOOK_LIKED: "look.liked",
   LOOK_SAVED: "look.saved",
   LOOK_COMMENTED: "look.commented",
+  LOOK_VIEWED: "look.viewed",
   USER_FOLLOWED: "user.followed",
   USER_UNFOLLOWED: "user.unfollowed",
   BRAND_FOLLOWED: "brand.followed",
   BRAND_UNFOLLOWED: "brand.unfollowed",
   LEADERBOARD_BRAND_UPDATED: "leaderboard.brand.updated",
+  LEADERBOARD_CREATOR_UPDATED: "leaderboard.creator.updated",
+  PRODUCT_PURCHASED: "product.purchased",
+  PRODUCT_TAGGED: "product.tagged",
+  SALE_GENERATED: "sale.generated",
+  ACHIEVEMENT_UNLOCKED: "achievement.unlocked",
+  LEVEL_UP: "user.leveled_up",
 } as const;
 
 // A Redis hiccup must never fail the caller's request (like/comment/follow/etc.) — log and move on,

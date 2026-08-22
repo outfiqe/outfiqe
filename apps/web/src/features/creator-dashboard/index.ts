@@ -1,8 +1,12 @@
 export type { CreatorProfile, UpdateCreatorProfileInput } from "./api/creatorDashboardSchemas";
 export { getCreatorProfileServer } from "./api/getCreatorProfileServer";
 export { ApplyAsCreatorButton } from "./components/ApplyAsCreatorButton";
+export { BadgeCollectionSection } from "./components/BadgeCollectionSection";
+export { ChallengesSection } from "./components/ChallengesSection";
 export { CreatorStatusGate } from "./components/CreatorStatusGate";
 export { EarningsSection } from "./components/EarningsSection";
 export { EditPostModal } from "./components/EditPostModal";
+export { GamificationSocketListener } from "./components/GamificationSocketListener";
 export { PostModal } from "./components/PostModal";
+export { ProgressSection } from "./components/ProgressSection";
 export { ShareSection } from "./components/ShareSection";
