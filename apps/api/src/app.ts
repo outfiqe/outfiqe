@@ -27,6 +27,7 @@ import { deliveryZoneRoutes } from "./modules/delivery-zones/deliveryZone.routes
 import { followRoutes } from "./modules/follows/follow.routes.js";
 import { heroSlideRoutes } from "./modules/hero-slides/heroSlide.routes.js";
 import { leaderboardRoutes } from "./modules/leaderboard/leaderboard.routes.js";
+import { notificationRoutes } from "./modules/notifications/notification.routes.js";
 import { orderRoutes } from "./modules/orders/order.routes.js";
 import { paymentRoutes } from "./modules/payments/payment.routes.js";
 import { productRoutes } from "./modules/products/product.routes.js";
@@ -91,6 +92,7 @@ export const createApp = () => {
   app.use("/api/badges", badgeRoutes);
   app.use("/api/challenges", challengeRoutes);
   app.use("/api/creator-competitions", creatorCompetitionRoutes);
+  app.use("/api/notifications", notificationRoutes);
 
   Sentry.setupExpressErrorHandler(app);
   app.use(errorHandler);

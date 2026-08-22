@@ -69,3 +69,13 @@ export type NotificationPage = {
   notifications: NotificationRecord[];
   nextCursor: string | null;
 };
+
+export type NotificationFeedCursor = {
+  updatedAt: string;
+  id: string;
+};
+
+export type NotificationPreferenceView = {
+  type: NotificationType;
+  enabled: boolean;
+};

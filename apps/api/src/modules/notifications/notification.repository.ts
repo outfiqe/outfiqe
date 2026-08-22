@@ -1,10 +1,12 @@
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import type { NotificationEntityType, NotificationType } from "#generated/prisma/enums.js";
+import { decodeCursor } from "#lib/pagination.utils.js";
 
 import type {
   CreateIndividualNotificationInput,
   NotificationActorSnapshot,
+  NotificationFeedCursor,
   NotificationMetadata,
   NotificationRecord,
   RetractGroupActorInput,
@@ -231,5 +233,75 @@ export const notificationRepository = {
 
     const brandIds = [...new Set(order.items.map((item) => item.product.brandId))];
     return { total: order.total, brandIds };
+  },
+
+  /** Cursor-based on (updatedAt, id) — never offset — most-recently-active row first. */
+  async listForRecipient(
+    recipientId: string,
+    params: { cursor?: string; limit: number },
+  ): Promise<NotificationRecord[]> {
+    const decoded = decodeCursor<NotificationFeedCursor>(params.cursor);
+
+    const rows = await prisma.notification.findMany({
+      where: {
+        recipientId,
+        ...(decoded
+          ? {
+              OR: [
+                { updatedAt: { lt: new Date(decoded.updatedAt) } },
+                { updatedAt: new Date(decoded.updatedAt), id: { lt: decoded.id } },
+              ],
+            }
+          : {}),
+      },
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+      take: params.limit + 1,
+    });
+    return rows.map(toNotificationRecord);
+  },
+
+  async countUnread(recipientId: string): Promise<number> {
+    return prisma.notification.count({ where: { recipientId, isRead: false } });
+  },
+
+  /** 404-by-null: never distinguishes "doesn't exist" from "isn't yours" to the caller. */
+  async markRead(recipientId: string, notificationId: string): Promise<NotificationRecord | null> {
+    const existing = await prisma.notification.findFirst({
+      where: { id: notificationId, recipientId },
+    });
+    if (!existing) return null;
+    if (existing.isRead) return toNotificationRecord(existing);
+
+    const updated = await prisma.notification.update({
+      where: { id: notificationId },
+      data: { isRead: true, readAt: new Date() },
+    });
+    return toNotificationRecord(updated);
+  },
+
+  /** Idempotent — a second call finds nothing left unread and no-ops. */
+  async markAllRead(recipientId: string): Promise<Date> {
+    const readAt = new Date();
+    await prisma.notification.updateMany({
+      where: { recipientId, isRead: false },
+      data: { isRead: true, readAt },
+    });
+    return readAt;
+  },
+
+  async listPreferenceOverrides(userId: string): Promise<Map<NotificationType, boolean>> {
+    const rows = await prisma.notificationPreference.findMany({
+      where: { userId },
+      select: { type: true, enabled: true },
+    });
+    return new Map(rows.map((row) => [row.type, row.enabled]));
+  },
+
+  async setPreference(userId: string, type: NotificationType, enabled: boolean): Promise<void> {
+    await prisma.notificationPreference.upsert({
+      where: { userId_type: { userId, type } },
+      create: { userId, type, enabled },
+      update: { enabled },
+    });
   },
 };

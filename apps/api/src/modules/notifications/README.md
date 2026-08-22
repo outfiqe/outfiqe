@@ -41,6 +41,14 @@ activity to an open bell/panel live.
   `metadata` snapshot, and calling into `notification.service.ts`. A second, independent consumer
   group from every other module already subscribed to the same streams (`xp.events.ts`,
   `achievement.events.ts`) — Redis Streams consumer groups don't interfere with each other.
+- `notification.socket.ts` — `registerNotificationSocketEventConsumer()`: the `socket-broadcast`
+  relay for `NOTIFICATION_CREATED`/`NOTIFICATION_UPDATED` (see Funnel below).
+- `notification.schemas.ts` / `notification.controller.ts` / `notification.routes.ts` — the REST
+  read path, all `requireAuth`-only and scoped to `req.user.id` (never a client-supplied
+  recipient): `GET /` (cursor-paginated feed), `GET /unread-count`, `PATCH /:id/read` (404s for a
+  notification that isn't the caller's, same as any other id-not-found — never a distinguishable
+  403, which would leak that the id exists), `PATCH /read-all` (idempotent), plus the mute
+  preferences pair `GET /preferences` / `PATCH /preferences/:type`.
 
 ## Funnel
 
@@ -58,7 +66,9 @@ row.
 
 **User-facing:** a bell + panel (`packages/components`, chunk 8) mounted once and reused across
 `apps/web` (creator, business, and any authenticated customer — see the `ORDER_STATUS_CHANGED`
-note below) and `apps/admin`.
+note below) and `apps/admin`. The REST surface (`notification.controller.ts`) is the reconciliation
+path — pagination, initial load, and the safety net when a socket event is missed — not the
+primary delivery mechanism.
 
 ## Non-obvious rationale
 
@@ -109,3 +119,24 @@ accepted as a narrow, self-healing gap consistent with this build's own "resilie
 **Notification preferences are opt-out, not opt-in.** No `NotificationPreference` row for a
 `(userId, type)` pair means that type is enabled — most users will never have any rows here at
 all. `findMutedRecipientIds` is the only read; a missing row is never treated as "muted."
+`GET /preferences` returns every `NotificationType` value (not filtered by the caller's role) —
+toggling a type that could never apply to that user (e.g. a plain customer muting `NEW_ORDER`) is
+harmless, and skipping per-role filtering avoids a second "which types apply to which surface"
+classification that would have to be kept in sync with the frontend's own per-app type usage.
+
+**`notification:read`/`notification:read-all` are emitted directly from `notification.service.ts`
+(`getIO().to(userRoom(...)).emit(...)`, wrapped in the same try/catch as every other socket emit
+in this codebase), not published onto the domain-event bus.** Unlike a notification's creation —
+a side effect of an unrelated request (a like, a follow) that genuinely needs Redis Streams'
+retry/dead-letter durability — marking as read is already a synchronous, first-class action inside
+its own request. Routing it through the event bus would add a redundant durability guarantee (and
+a real, if small, delivery-order/latency cost) for a signal whose only job is syncing other open
+tabs of the same user, which the REST response itself already confirms succeeded.
+
+**Coverage note:** `notification.events.ts` and `notification.socket.ts` are intentionally left
+out of `vitest.config.ts`'s `coverage.include` — matching the same convention `xp.events.ts`/
+`xp.socket.ts` and `achievement.events.ts`/`achievement.socket.ts` already follow (only the pure
+`.utils.ts` files are gated). These are thin consumer-registration wiring with no meaningful unit
+boundary short of standing up a real Redis Streams round-trip, which no consumer module in this
+codebase currently does in tests; `notification.service.integration.test.ts` exercises the same
+write logic these handlers call into directly against a real DB instead.
