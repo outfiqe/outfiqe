@@ -375,8 +375,15 @@ export const creatorLookService = {
   },
 
   async unlike(lookId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
-    await requireActiveLook(lookId);
-    const { likeCount } = await creatorLookRepository.unlike(lookId, userId);
+    const look = await requireActiveLook(lookId);
+    const { likeCount, unliked } = await creatorLookRepository.unlike(lookId, userId);
+    if (unliked) {
+      await eventBus.publish(DomainEvents.LOOK_UNLIKED, {
+        lookId,
+        creatorId: look.creatorId,
+        userId,
+      });
+    }
     return { liked: false, likeCount };
   },
 

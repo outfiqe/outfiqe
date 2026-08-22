@@ -1,5 +1,9 @@
 import type { LeaderboardCategory } from "#constants/leaderboard.constants.js";
-import type { CreatorLeaderboardCategory, UserRole } from "#generated/prisma/enums.js";
+import type {
+  CreatorLeaderboardCategory,
+  FulfilmentStatus,
+  UserRole,
+} from "#generated/prisma/enums.js";
 
 import type { DomainEvents } from "./event-bus.js";
 
@@ -16,6 +20,7 @@ export type DomainEventPayloads = {
   [DomainEvents.ADMIN_REGISTERED]: { userId: string; email: string };
   [DomainEvents.LOOK_CREATED]: { lookId: string; creatorId: string; createdAt: string };
   [DomainEvents.LOOK_LIKED]: { lookId: string; creatorId: string; userId: string };
+  [DomainEvents.LOOK_UNLIKED]: { lookId: string; creatorId: string; userId: string };
   [DomainEvents.LOOK_SAVED]: { lookId: string; creatorId: string; userId: string };
   [DomainEvents.LOOK_COMMENTED]: {
     lookId: string;
@@ -52,6 +57,12 @@ export type DomainEventPayloads = {
     userId: string;
     previousLevel: { level: number; name: string };
     currentLevel: { level: number; name: string; icon: string | null };
+  };
+  [DomainEvents.BRAND_APPLICATION_SUBMITTED]: { applicationId: string; brandName: string };
+  [DomainEvents.ORDER_STATUS_CHANGED]: {
+    orderId: string;
+    userId: string;
+    status: FulfilmentStatus;
   };
 };
 

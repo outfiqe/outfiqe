@@ -316,6 +316,9 @@ export const orderService = {
   },
 
   async advanceFulfilment(orderId: string, { status }: AdvanceFulfilmentBody): Promise<void> {
+    const order = await orderRepository.findForAdminAction(orderId);
+    if (!order) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+
     const fromStatuses = FULFILMENT_ADVANCE_FROM[status] ?? [];
     const deliveredAt = status === FulfilmentStatus.DELIVERED ? new Date() : undefined;
 
@@ -332,6 +335,12 @@ export const orderService = {
         CONFLICT_STATUS,
       );
     }
+
+    await eventBus.publish(DomainEvents.ORDER_STATUS_CHANGED, {
+      orderId,
+      userId: order.userId,
+      status,
+    });
   },
 
   async cancel(orderId: string, adminUserId: string, reason: string): Promise<void> {
