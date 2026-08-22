@@ -5,6 +5,7 @@ import { cx } from "./cx";
 import { isNavItemActive } from "./isNavItemActive";
 import {
   navLinkActiveClass,
+  navLinkAncestorActiveClass,
   navLinkBaseClass,
   navLinkCollapsedClass,
   navLinkExpandedClass,
@@ -16,6 +17,17 @@ import type { ExpandedGroups } from "./useExpandedGroups";
 
 const isPlainLeftClick = (event: MouseEvent): boolean =>
   event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+
+const hasActiveDescendant = (
+  navItems: readonly SidebarNavItem[] | undefined,
+  pathname: string,
+  isActive?: (href: string, pathname: string) => boolean,
+): boolean =>
+  (navItems ?? []).some(
+    (child) =>
+      isNavItemActive(child.href, pathname, isActive) ||
+      hasActiveDescendant(child.items, pathname, isActive),
+  );
 
 export type SidebarNavItemViewProps = {
   readonly item: SidebarNavItem;
@@ -32,7 +44,9 @@ export const SidebarNavItemView = ({
   expandedGroups,
   collapsed,
 }: SidebarNavItemViewProps): ReactElement => {
-  const active = isNavItemActive(href, navigation.pathname, navigation.isActive);
+  const ownActive = isNavItemActive(href, navigation.pathname, navigation.isActive);
+  const descendantActive = hasActiveDescendant(items, navigation.pathname, navigation.isActive);
+  const isCurrentPage = ownActive && !descendantActive;
   const hasChildren = !collapsed && (items?.length ?? 0) > 0;
   const extraIndentRem = depth * 0.875;
   const indent =
@@ -50,13 +64,17 @@ export const SidebarNavItemView = ({
     <a
       href={href}
       onClick={handleLinkClick}
-      aria-current={active ? "page" : undefined}
+      aria-current={isCurrentPage ? "page" : undefined}
       title={collapsed ? label : undefined}
       style={indent}
       className={cx(
         navLinkBaseClass,
         collapsed ? navLinkCollapsedClass : navLinkExpandedClass,
-        active ? navLinkActiveClass : navLinkInactiveClass,
+        isCurrentPage
+          ? navLinkActiveClass
+          : descendantActive
+            ? navLinkAncestorActiveClass
+            : navLinkInactiveClass,
       )}
     >
       {Icon && <Icon className="size-[18px] shrink-0" />}

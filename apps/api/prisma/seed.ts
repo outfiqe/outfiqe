@@ -1653,6 +1653,105 @@ const seedGamificationBadges = async () => {
   }
 };
 
+type SeedUserBadgeGrant = {
+  badgeName: string;
+  isFeatured?: boolean;
+  isTitle?: boolean;
+};
+
+const USER_BADGE_GRANTS_BY_CREATOR_INDEX: SeedUserBadgeGrant[][] = [
+  [{ badgeName: "Fashion Newbie", isFeatured: true }, { badgeName: "First Post" }],
+  [
+    { badgeName: "Fashion Newbie" },
+    { badgeName: "First Post" },
+    { badgeName: "First Purchase" },
+    { badgeName: "Rising Creator", isFeatured: true },
+    { badgeName: "Community Friend", isFeatured: true },
+  ],
+  [
+    { badgeName: "Fashion Newbie" },
+    { badgeName: "First Post" },
+    { badgeName: "First Purchase" },
+    { badgeName: "100 Likes" },
+    { badgeName: "First Sale", isFeatured: true },
+    { badgeName: "1K Views", isFeatured: true },
+  ],
+  [
+    { badgeName: "Fashion Newbie" },
+    { badgeName: "First Post" },
+    { badgeName: "Rising Creator" },
+    { badgeName: "Fashion Star", isFeatured: true },
+    { badgeName: "Fashion Mentor" },
+    { badgeName: "1K Likes", isFeatured: true },
+  ],
+  [
+    { badgeName: "Fashion Newbie" },
+    { badgeName: "First Post" },
+    { badgeName: "Rising Creator" },
+    { badgeName: "Fashion Star" },
+    { badgeName: "Trendsetter", isFeatured: true },
+    { badgeName: "10K Views" },
+    { badgeName: "Top Seller" },
+    { badgeName: "Outfiqe OG", isFeatured: true, isTitle: true },
+  ],
+  [
+    { badgeName: "Fashion Newbie" },
+    { badgeName: "First Post" },
+    { badgeName: "First Purchase" },
+    { badgeName: "Rising Creator" },
+    { badgeName: "Fashion Star" },
+    { badgeName: "Trendsetter", isFeatured: true },
+    { badgeName: "Fashion Icon", isFeatured: true, isTitle: true },
+    { badgeName: "Community Friend" },
+    { badgeName: "Fashion Mentor" },
+    { badgeName: "100 Likes" },
+    { badgeName: "1K Likes" },
+    { badgeName: "First Sale" },
+    { badgeName: "Top Seller" },
+    { badgeName: "1K Views" },
+    { badgeName: "10K Views" },
+    { badgeName: "Challenge Winner", isFeatured: true },
+  ],
+];
+
+async function seedUserBadges(creators: { id: string }[]) {
+  const badges = await prisma.badge.findMany({
+    select: { id: true, name: true, assignmentLimit: true },
+  });
+  const badgeByName = new Map(badges.map((badge) => [badge.name, badge]));
+
+  for (const [index, grants] of USER_BADGE_GRANTS_BY_CREATOR_INDEX.entries()) {
+    const creator = creators[index];
+    if (!creator) continue;
+
+    for (const grant of grants) {
+      const badge = badgeByName.get(grant.badgeName);
+      if (!badge) continue;
+
+      const existing = await prisma.userBadge.findUnique({
+        where: { userId_badgeId: { userId: creator.id, badgeId: badge.id } },
+      });
+      if (existing) continue;
+
+      await prisma.userBadge.create({
+        data: {
+          userId: creator.id,
+          badgeId: badge.id,
+          isFeatured: grant.isFeatured ?? false,
+          isTitle: grant.isTitle ?? false,
+        },
+      });
+
+      if (badge.assignmentLimit !== null) {
+        await prisma.badge.update({
+          where: { id: badge.id },
+          data: { assignmentCount: { increment: 1 } },
+        });
+      }
+    }
+  }
+}
+
 async function main() {
   await seedCategories();
   const brands = await seedBrands();
@@ -1680,6 +1779,7 @@ async function main() {
   await seedActivityXpConfig();
   await seedCreatorLeaderboardCategoryConfig();
   await seedGamificationBadges();
+  await seedUserBadges(creators);
 }
 
 main()

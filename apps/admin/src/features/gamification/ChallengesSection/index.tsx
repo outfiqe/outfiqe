@@ -1,43 +1,23 @@
-import { Button, FormBanner } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { Button } from "@outfiqe/design-system";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 import { gamificationApi } from "../api";
 import type { ChallengeAdmin } from "../schemas";
 import { ChallengeCard } from "./ChallengeCard";
-import { ChallengeFields } from "./ChallengeFields";
 import { CHALLENGES_QUERY_KEY, createEmptyChallengeForm } from "./challengeForm.constants";
 import type { ChallengeFormState } from "./challengeForm.types";
-import { toChallengeFormInput } from "./challengeForm.utils";
+import { CreateChallengeModal } from "./CreateChallengeModal";
 import { EditChallengeModal } from "./EditChallengeModal";
 
 export const ChallengesSection = () => {
-  const queryClient = useQueryClient();
   const { data: challenges, isLoading } = useQuery({
     queryKey: CHALLENGES_QUERY_KEY,
     queryFn: gamificationApi.listChallengesAdmin,
   });
 
-  const [form, setForm] = useState<ChallengeFormState>(createEmptyChallengeForm);
-  const [error, setError] = useState<string | null>(null);
   const [editingChallenge, setEditingChallenge] = useState<ChallengeAdmin | null>(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-
-  const create = useMutation({
-    mutationFn: () => gamificationApi.createChallenge(toChallengeFormInput(form)),
-    onSuccess: () => {
-      setForm(createEmptyChallengeForm());
-      setError(null);
-      setShowCreateForm(false);
-      queryClient.invalidateQueries({ queryKey: CHALLENGES_QUERY_KEY });
-    },
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
-  });
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    create.mutate();
-  };
+  const [createForm, setCreateForm] = useState<ChallengeFormState | null>(null);
 
   return (
     <div>
@@ -49,23 +29,14 @@ export const ChallengesSection = () => {
             catalog.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setShowCreateForm((open) => !open)}>
-          {showCreateForm ? "Cancel" : "New challenge"}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCreateForm(createEmptyChallengeForm())}
+        >
+          New challenge
         </Button>
       </div>
-
-      {showCreateForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="mt-4 space-y-4 rounded-xl border border-border bg-card p-4"
-        >
-          <ChallengeFields idPrefix="create-challenge" form={form} onChange={setForm} />
-          {error && <FormBanner>{error}</FormBanner>}
-          <Button type="submit" disabled={create.isPending}>
-            {create.isPending ? "Creating…" : "Create challenge"}
-          </Button>
-        </form>
-      )}
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
@@ -77,6 +48,10 @@ export const ChallengesSection = () => {
           <ChallengeCard key={challenge.id} challenge={challenge} onEdit={setEditingChallenge} />
         ))}
       </div>
+
+      {createForm && (
+        <CreateChallengeModal initialForm={createForm} onClose={() => setCreateForm(null)} />
+      )}
 
       {editingChallenge && (
         <EditChallengeModal

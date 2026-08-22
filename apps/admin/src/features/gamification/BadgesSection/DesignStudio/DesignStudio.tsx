@@ -1,4 +1,5 @@
 import { AchievementBadgeIcon, Button, Modal, Select } from "@outfiqe/design-system";
+import { Circle, Sparkles, Type } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -19,6 +20,7 @@ import {
   MAX_BADGE_LAYERS,
 } from "./studioLayer.constants";
 import { moveLayerDown, moveLayerUp } from "./studioLayer.utils";
+import { StudioSection } from "./StudioSection";
 
 type DesignStudioProps = {
   icon: string;
@@ -49,6 +51,7 @@ export const DesignStudio = ({
   );
 
   const selectedLayer = layers.find((layer) => layer.id === selectedLayerId) ?? null;
+  const canAddLayer = layers.length < MAX_BADGE_LAYERS;
 
   const updateLayer = (layerId: string, updates: Partial<BadgeLayer>) => {
     setLayers((current) =>
@@ -78,49 +81,81 @@ export const DesignStudio = ({
       : { shape: DEFAULT_BACKGROUND_SHAPE, primaryColor: DEFAULT_LAYER_FILL_COLOR };
 
   return (
-    <Modal open onClose={onCancel} title="Design Studio">
-      <div className="flex flex-wrap gap-6">
-        <div className="space-y-3">
-          <DesignCanvas
-            layers={layers}
-            selectedLayerId={selectedLayerId}
-            onSelectLayer={setSelectedLayerId}
-            onChangeLayer={updateLayer}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={layers.length >= MAX_BADGE_LAYERS}
-              onClick={() => addLayer(createDefaultBackgroundLayer())}
-            >
-              Add background
+    <Modal
+      open
+      onClose={onCancel}
+      title="Design Studio"
+      description="Drag a layer to move it, or use the corner handles to resize it."
+      className="sm:max-w-5xl"
+      footer={
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            {layers.length} / {MAX_BADGE_LAYERS} layers
+          </p>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
             </Button>
             <Button
               type="button"
-              variant="outline"
-              size="sm"
-              disabled={layers.length >= MAX_BADGE_LAYERS}
-              onClick={() => addLayer(createDefaultIconLayer())}
+              onClick={() => onDone(layers, animation)}
+              disabled={layers.length === 0}
             >
-              Add icon
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={layers.length >= MAX_BADGE_LAYERS}
-              onClick={() => addLayer(createDefaultTextLayer())}
-            >
-              Add text
+              Done
             </Button>
           </div>
         </div>
+      }
+    >
+      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)_240px]">
+        <StudioSection
+          title="Canvas"
+          hint="Click a layer to select it, then drag or resize it with the handles."
+        >
+          <div className="space-y-3">
+            <DesignCanvas
+              layers={layers}
+              selectedLayerId={selectedLayerId}
+              onSelectLayer={setSelectedLayerId}
+              onChangeLayer={updateLayer}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canAddLayer}
+                onClick={() => addLayer(createDefaultBackgroundLayer())}
+              >
+                <Circle className="size-3.5" />
+                Background
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canAddLayer}
+                onClick={() => addLayer(createDefaultIconLayer())}
+              >
+                <Sparkles className="size-3.5" />
+                Icon
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canAddLayer}
+                onClick={() => addLayer(createDefaultTextLayer())}
+              >
+                <Type className="size-3.5" />
+                Text
+              </Button>
+            </div>
+          </div>
+        </StudioSection>
 
-        <div className="min-w-56 flex-1 space-y-4">
-          <div>
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Layers</p>
+        <div className="space-y-4">
+          <StudioSection title="Layers">
             <LayerList
               layers={layers}
               selectedLayerId={selectedLayerId}
@@ -129,20 +164,21 @@ export const DesignStudio = ({
               onMoveDown={(layerId) => setLayers((current) => moveLayerDown(current, layerId))}
               onRemove={removeLayer}
             />
-          </div>
+          </StudioSection>
 
           {selectedLayer && (
-            <div>
-              <p className="mb-2 text-xs font-medium text-muted-foreground">Selected layer</p>
+            <StudioSection title="Layer properties">
               <LayerPropertiesPanel
                 layer={selectedLayer}
                 onChange={(updates) => updateLayer(selectedLayer.id, updates)}
               />
-            </div>
+            </StudioSection>
           )}
+        </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="studio-animation" className="block text-xs text-muted-foreground">
+        <div className="space-y-4">
+          <StudioSection title="Animation">
+            <label htmlFor="studio-animation" className="sr-only">
               Animation
             </label>
             <Select
@@ -151,7 +187,7 @@ export const DesignStudio = ({
               onChange={(e) =>
                 setAnimation(e.target.value as BadgeAnimationValue | typeof AUTO_ANIMATION_OPTION)
               }
-              className="w-36"
+              className="w-full"
             >
               <option value={AUTO_ANIMATION_OPTION}>Auto (by rarity)</option>
               {ANIMATION_OPTIONS.map((option) => (
@@ -160,30 +196,18 @@ export const DesignStudio = ({
                 </option>
               ))}
             </Select>
-          </div>
+          </StudioSection>
 
-          <div>
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Live preview</p>
-            <AchievementBadgeIcon
-              icon={icon}
-              designConfig={previewDesignConfig}
-              rarity={rarity}
-              isLocked={false}
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              onClick={() => onDone(layers, animation)}
-              disabled={layers.length === 0}
-            >
-              Done
-            </Button>
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-          </div>
+          <StudioSection title="Live preview" hint="Exactly how this badge appears on the site.">
+            <div className="flex justify-center py-2">
+              <AchievementBadgeIcon
+                icon={icon}
+                designConfig={previewDesignConfig}
+                rarity={rarity}
+                isLocked={false}
+              />
+            </div>
+          </StudioSection>
         </div>
       </div>
     </Modal>
