@@ -340,6 +340,100 @@ describe("POST /api/badges (admin)", () => {
     expect(response.status).toBe(422);
     expect(response.body.message).not.toMatch(/prisma|foreign key|constraint/i);
   });
+
+  it("creates a badge with a studio-designed, multi-layer designConfig", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(
+        validBadgePayload({
+          designConfig: {
+            version: 2,
+            layers: [
+              {
+                id: "bg",
+                type: "background",
+                shape: "circle",
+                fill: "#1d4ed8",
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100,
+              },
+              {
+                id: "icon",
+                type: "icon",
+                glyph: "⭐",
+                fontSize: 50,
+                x: 25,
+                y: 25,
+                width: 50,
+                height: 50,
+              },
+            ],
+          },
+        }),
+      );
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.designConfig.layers).toHaveLength(2);
+  });
+
+  it("rejects a studio designConfig with more layers than the allowed maximum", async () => {
+    const admin = await createAdmin();
+    const tooManyLayers = Array.from({ length: 13 }, (_, index) => ({
+      id: `layer-${index}`,
+      type: "icon",
+      glyph: "⭐",
+      fontSize: 20,
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 10,
+    }));
+
+    const response = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(validBadgePayload({ designConfig: { version: 2, layers: tooManyLayers } }));
+
+    expect(response.status).toBe(422);
+  });
+
+  it("rejects a layer with an unrecognized type", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(
+        validBadgePayload({
+          designConfig: {
+            version: 2,
+            layers: [{ id: "bad", type: "video", x: 0, y: 0, width: 10, height: 10 }],
+          },
+        }),
+      );
+
+    expect(response.status).toBe(422);
+  });
+
+  it("rejects a designConfig that mixes legacy and studio keys", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(
+        validBadgePayload({
+          designConfig: { shape: "circle", primaryColor: "#123456", version: 2, layers: [] },
+        }),
+      );
+
+    expect(response.status).toBe(422);
+  });
 });
 
 describe("PATCH /api/badges/:badgeId (admin)", () => {

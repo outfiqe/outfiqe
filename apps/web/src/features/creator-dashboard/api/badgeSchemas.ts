@@ -44,11 +44,76 @@ export const BadgeAnimation = {
 } as const satisfies Record<string, BadgeAnimationType>;
 export type BadgeAnimationValue = (typeof BadgeAnimation)[keyof typeof BadgeAnimation];
 
-export const badgeDesignConfigSchema = z.object({
-  shape: z.enum(BadgeShape),
-  primaryColor: z.string(),
-  animation: z.enum(BadgeAnimation).optional(),
-});
+const LAYER_ID_MAX_LENGTH = 64;
+const LAYER_GLYPH_MAX_LENGTH = 8;
+const LAYER_TEXT_MAX_LENGTH = 40;
+const MAX_BADGE_LAYERS = 12;
+const MIN_LAYER_PERCENT = 0;
+const MAX_LAYER_PERCENT = 100;
+const MIN_LAYER_FONT_SIZE = 5;
+const MAX_LAYER_FONT_SIZE = 100;
+const MAX_LAYER_BORDER_WIDTH = 8;
+
+const badgeLayerBaseFields = {
+  id: z.string().trim().min(1).max(LAYER_ID_MAX_LENGTH),
+  x: z.number().min(MIN_LAYER_PERCENT).max(MAX_LAYER_PERCENT),
+  y: z.number().min(MIN_LAYER_PERCENT).max(MAX_LAYER_PERCENT),
+  width: z.number().min(MIN_LAYER_PERCENT).max(MAX_LAYER_PERCENT),
+  height: z.number().min(MIN_LAYER_PERCENT).max(MAX_LAYER_PERCENT),
+};
+
+export const badgeLayerSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      ...badgeLayerBaseFields,
+      type: z.literal("background"),
+      shape: z.enum(BadgeShape),
+      fill: z.string(),
+      borderColor: z.string().optional(),
+      borderWidth: z.number().min(0).max(MAX_LAYER_BORDER_WIDTH).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      ...badgeLayerBaseFields,
+      type: z.literal("icon"),
+      glyph: z.string().trim().min(1).max(LAYER_GLYPH_MAX_LENGTH),
+      fontSize: z.number().min(MIN_LAYER_FONT_SIZE).max(MAX_LAYER_FONT_SIZE),
+    })
+    .strict(),
+  z
+    .object({
+      ...badgeLayerBaseFields,
+      type: z.literal("text"),
+      content: z.string().trim().min(1).max(LAYER_TEXT_MAX_LENGTH),
+      color: z.string(),
+      fontSize: z.number().min(MIN_LAYER_FONT_SIZE).max(MAX_LAYER_FONT_SIZE),
+      fontWeight: z.enum(["normal", "bold"]),
+    })
+    .strict(),
+]);
+export type BadgeLayer = z.infer<typeof badgeLayerSchema>;
+
+const legacyBadgeDesignConfigSchema = z
+  .object({
+    shape: z.enum(BadgeShape),
+    primaryColor: z.string(),
+    animation: z.enum(BadgeAnimation).optional(),
+  })
+  .strict();
+
+const studioBadgeDesignConfigSchema = z
+  .object({
+    version: z.literal(2),
+    animation: z.enum(BadgeAnimation).optional(),
+    layers: z.array(badgeLayerSchema).min(1).max(MAX_BADGE_LAYERS),
+  })
+  .strict();
+
+export const badgeDesignConfigSchema = z.union([
+  legacyBadgeDesignConfigSchema,
+  studioBadgeDesignConfigSchema,
+]);
 export type BadgeDesignConfig = z.infer<typeof badgeDesignConfigSchema>;
 
 export const badgeConditionProgressSchema = z.object({

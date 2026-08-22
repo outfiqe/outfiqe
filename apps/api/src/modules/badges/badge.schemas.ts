@@ -3,12 +3,27 @@ import { z } from "zod";
 import { AchievementRequirementType, BadgeCategory, BadgeRarity } from "#generated/prisma/enums.js";
 import { achievementConditionSchema } from "#modules/achievements/achievement.schemas.js";
 
-import { BADGE_ANIMATION, BADGE_SHAPE, MAX_FEATURED_BADGES } from "./badge.constants.js";
+import {
+  BADGE_ANIMATION,
+  BADGE_LAYER_TYPE,
+  BADGE_SHAPE,
+  MAX_BADGE_LAYERS,
+  MAX_FEATURED_BADGES,
+} from "./badge.constants.js";
 
 const NAME_MAX_LENGTH = 100;
 const DESCRIPTION_MAX_LENGTH = 500;
 const ICON_MAX_LENGTH = 8;
 const REASON_MAX_LENGTH = 500;
+const LAYER_ID_MAX_LENGTH = 64;
+const LAYER_GLYPH_MAX_LENGTH = 8;
+const LAYER_TEXT_MAX_LENGTH = 40;
+const MIN_LAYER_PERCENT = 0;
+const MAX_LAYER_PERCENT = 100;
+const MIN_LAYER_FONT_SIZE = 5;
+const MAX_LAYER_FONT_SIZE = 100;
+const MIN_LAYER_BORDER_WIDTH = 0;
+const MAX_LAYER_BORDER_WIDTH = 8;
 
 export const RULE_BASED_REQUIREMENT_TYPES = Object.values(AchievementRequirementType).filter(
   (
@@ -17,11 +32,66 @@ export const RULE_BASED_REQUIREMENT_TYPES = Object.values(AchievementRequirement
     type !== AchievementRequirementType.ADMIN_AWARD,
 );
 
-export const badgeDesignConfigSchema = z.object({
-  shape: z.enum(BADGE_SHAPE),
-  primaryColor: z.string(),
-  animation: z.enum(BADGE_ANIMATION).optional(),
-});
+const badgeLayerBaseFields = {
+  id: z.string().trim().min(1).max(LAYER_ID_MAX_LENGTH),
+  x: z.number().min(MIN_LAYER_PERCENT).max(MAX_LAYER_PERCENT),
+  y: z.number().min(MIN_LAYER_PERCENT).max(MAX_LAYER_PERCENT),
+  width: z.number().min(MIN_LAYER_PERCENT).max(MAX_LAYER_PERCENT),
+  height: z.number().min(MIN_LAYER_PERCENT).max(MAX_LAYER_PERCENT),
+};
+
+export const badgeLayerSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      ...badgeLayerBaseFields,
+      type: z.literal(BADGE_LAYER_TYPE.BACKGROUND),
+      shape: z.enum(BADGE_SHAPE),
+      fill: z.string(),
+      borderColor: z.string().optional(),
+      borderWidth: z.number().min(MIN_LAYER_BORDER_WIDTH).max(MAX_LAYER_BORDER_WIDTH).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      ...badgeLayerBaseFields,
+      type: z.literal(BADGE_LAYER_TYPE.ICON),
+      glyph: z.string().trim().min(1).max(LAYER_GLYPH_MAX_LENGTH),
+      fontSize: z.number().min(MIN_LAYER_FONT_SIZE).max(MAX_LAYER_FONT_SIZE),
+    })
+    .strict(),
+  z
+    .object({
+      ...badgeLayerBaseFields,
+      type: z.literal(BADGE_LAYER_TYPE.TEXT),
+      content: z.string().trim().min(1).max(LAYER_TEXT_MAX_LENGTH),
+      color: z.string(),
+      fontSize: z.number().min(MIN_LAYER_FONT_SIZE).max(MAX_LAYER_FONT_SIZE),
+      fontWeight: z.enum(["normal", "bold"]),
+    })
+    .strict(),
+]);
+export type BadgeLayer = z.infer<typeof badgeLayerSchema>;
+
+const legacyDesignConfigSchema = z
+  .object({
+    shape: z.enum(BADGE_SHAPE),
+    primaryColor: z.string(),
+    animation: z.enum(BADGE_ANIMATION).optional(),
+  })
+  .strict();
+
+const studioDesignConfigSchema = z
+  .object({
+    version: z.literal(2),
+    animation: z.enum(BADGE_ANIMATION).optional(),
+    layers: z.array(badgeLayerSchema).min(1).max(MAX_BADGE_LAYERS),
+  })
+  .strict();
+
+export const badgeDesignConfigSchema = z.union([
+  legacyDesignConfigSchema,
+  studioDesignConfigSchema,
+]);
 
 export const badgeIdParamSchema = z.object({
   badgeId: z.uuid(),

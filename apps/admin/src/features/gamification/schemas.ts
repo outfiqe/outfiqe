@@ -103,11 +103,80 @@ export const activityXpConfigSchema = z.object({
 });
 export type ActivityXpConfig = z.infer<typeof activityXpConfigSchema>;
 
-export const badgeDesignConfigSchema = z.object({
+const LAYER_ID_MAX_LENGTH = 64;
+const LAYER_GLYPH_MAX_LENGTH = 8;
+const LAYER_TEXT_MAX_LENGTH = 40;
+const MAX_BADGE_LAYERS = 12;
+const MIN_LAYER_PERCENT = 0;
+const MAX_LAYER_PERCENT = 100;
+const MIN_LAYER_FONT_SIZE = 5;
+const MAX_LAYER_FONT_SIZE = 100;
+const MIN_LAYER_BORDER_WIDTH = 0;
+const MAX_LAYER_BORDER_WIDTH = 8;
+
+export const badgeLayerTypeSchema = z.enum(["background", "icon", "text"]);
+export type BadgeLayerTypeValue = z.infer<typeof badgeLayerTypeSchema>;
+
+const badgeLayerBaseFields = {
+  id: z.string().trim().min(1).max(LAYER_ID_MAX_LENGTH),
+  x: z.number().min(MIN_LAYER_PERCENT).max(MAX_LAYER_PERCENT),
+  y: z.number().min(MIN_LAYER_PERCENT).max(MAX_LAYER_PERCENT),
+  width: z.number().min(MIN_LAYER_PERCENT).max(MAX_LAYER_PERCENT),
+  height: z.number().min(MIN_LAYER_PERCENT).max(MAX_LAYER_PERCENT),
+};
+
+export const badgeBackgroundLayerSchema = z.object({
+  ...badgeLayerBaseFields,
+  type: z.literal("background"),
+  shape: badgeShapeSchema,
+  fill: z.string(),
+  borderColor: z.string().optional(),
+  borderWidth: z.number().min(MIN_LAYER_BORDER_WIDTH).max(MAX_LAYER_BORDER_WIDTH).optional(),
+});
+export type BadgeBackgroundLayer = z.infer<typeof badgeBackgroundLayerSchema>;
+
+export const badgeIconLayerSchema = z.object({
+  ...badgeLayerBaseFields,
+  type: z.literal("icon"),
+  glyph: z.string().trim().min(1).max(LAYER_GLYPH_MAX_LENGTH),
+  fontSize: z.number().min(MIN_LAYER_FONT_SIZE).max(MAX_LAYER_FONT_SIZE),
+});
+export type BadgeIconLayer = z.infer<typeof badgeIconLayerSchema>;
+
+export const badgeTextLayerSchema = z.object({
+  ...badgeLayerBaseFields,
+  type: z.literal("text"),
+  content: z.string().trim().min(1).max(LAYER_TEXT_MAX_LENGTH),
+  color: z.string(),
+  fontSize: z.number().min(MIN_LAYER_FONT_SIZE).max(MAX_LAYER_FONT_SIZE),
+  fontWeight: z.enum(["normal", "bold"]),
+});
+export type BadgeTextLayer = z.infer<typeof badgeTextLayerSchema>;
+
+export const badgeLayerSchema = z.discriminatedUnion("type", [
+  badgeBackgroundLayerSchema,
+  badgeIconLayerSchema,
+  badgeTextLayerSchema,
+]);
+export type BadgeLayer = z.infer<typeof badgeLayerSchema>;
+
+const legacyBadgeDesignConfigSchema = z.object({
   shape: badgeShapeSchema,
   primaryColor: z.string(),
   animation: badgeAnimationSchema.optional(),
 });
+
+const studioBadgeDesignConfigSchema = z.object({
+  version: z.literal(2),
+  animation: badgeAnimationSchema.optional(),
+  layers: z.array(badgeLayerSchema).min(1).max(MAX_BADGE_LAYERS),
+});
+
+export const badgeDesignConfigSchema = z.union([
+  legacyBadgeDesignConfigSchema,
+  studioBadgeDesignConfigSchema,
+]);
+export type BadgeDesignConfig = z.infer<typeof badgeDesignConfigSchema>;
 
 export const sponsorBrandSchema = z.object({
   id: z.string(),

@@ -1,8 +1,7 @@
-import { Badge, ProgressBar } from "@outfiqe/design-system";
+import { AchievementBadgeIcon, Badge, ProgressBar } from "@outfiqe/design-system";
 
 import type { PublicChallenge } from "../api/challengeSchemas";
 import { METRIC_LABEL, RARITY_LABEL } from "../utils/badgeLabels";
-import { AchievementBadgeIcon } from "./AchievementBadgeIcon";
 
 const STATUS_LABEL: Record<PublicChallenge["status"], string> = {
   UPCOMING: "Starts soon",

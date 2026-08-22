@@ -1,6 +1,7 @@
 import type { ChallengeFormInput } from "../api";
 import { AUTO_ANIMATION_OPTION } from "../badgeOptions.constants";
 import { toDatetimeLocalValue, toIsoOrNull } from "../datetime.utils";
+import { legacyShapeAndColorOf } from "../designConfig.utils";
 import type { ChallengeAdmin } from "../schemas";
 import type { ChallengeFormState } from "./challengeForm.types";
 
@@ -10,8 +11,7 @@ export const formForChallenge = (challenge: ChallengeAdmin): ChallengeFormState 
   category: challenge.badge.category,
   rarity: challenge.badge.rarity,
   icon: challenge.badge.icon,
-  shape: challenge.badge.designConfig.shape,
-  primaryColor: challenge.badge.designConfig.primaryColor,
+  ...legacyShapeAndColorOf(challenge.badge.designConfig),
   animation: challenge.badge.designConfig.animation ?? AUTO_ANIMATION_OPTION,
   xpReward: String(challenge.badge.xpReward),
   isPermanent: challenge.badge.isPermanent,

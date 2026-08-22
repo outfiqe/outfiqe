@@ -17,6 +17,7 @@ import {
   RARITY_OPTIONS,
   SHAPE_OPTIONS,
 } from "./badgeOptions.constants";
+import { legacyShapeAndColorOf } from "./designConfig.utils";
 import type {
   BadgeAnimationValue,
   BadgeCategoryValue,
@@ -86,8 +87,7 @@ const formForCompetition = (competition: CreatorCompetitionAdmin): CompetitionFo
   category: competition.badge.category,
   rarity: competition.badge.rarity,
   icon: competition.badge.icon,
-  shape: competition.badge.designConfig.shape,
-  primaryColor: competition.badge.designConfig.primaryColor,
+  ...legacyShapeAndColorOf(competition.badge.designConfig),
   animation: competition.badge.designConfig.animation ?? AUTO_ANIMATION_OPTION,
   xpReward: String(competition.badge.xpReward),
   isPermanent: competition.badge.isPermanent,

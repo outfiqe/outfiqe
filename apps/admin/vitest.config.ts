@@ -19,6 +19,8 @@ export default defineConfig({
         "src/features/brand-applications/api.ts",
         "src/features/brand-applications/hooks/useInfiniteBrandApplications.ts",
         "src/components/Logo.tsx",
+        "src/features/gamification/designConfig.utils.ts",
+        "src/features/gamification/BadgesSection/DesignStudio/studioLayer.utils.ts",
       ],
       thresholds: {
         lines: 80,

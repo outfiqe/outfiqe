@@ -1,6 +1,6 @@
 "use client";
 
-import { AchievementBadgeIcon } from "@/features/creator-dashboard/components/AchievementBadgeIcon";
+import { AchievementBadgeIcon } from "@outfiqe/design-system";
 
 import type { CreatorLeaderboardCategory } from "../creatorLeaderboard.constants";
 import { useActiveCreatorCompetitions } from "../hooks/useActiveCreatorCompetitions";

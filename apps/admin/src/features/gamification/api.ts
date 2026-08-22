@@ -11,6 +11,7 @@ import {
   awardBadgeResultSchema,
   type BadgeAdmin,
   badgeAdminSchema,
+  type BadgeLayer,
   type BadgeStats,
   badgeStatsSchema,
   type ChallengeAdmin,
@@ -67,13 +68,17 @@ export type UpdateActivityXpConfigInput = Partial<{
   maxPerEntity: number | null;
 }>;
 
+export type BadgeDesignConfigInput =
+  | { shape: string; primaryColor: string; animation?: string }
+  | { version: 2; animation?: string; layers: BadgeLayer[] };
+
 export type BadgeFormInput = {
   name: string;
   description: string;
   category: string;
   rarity: string;
   icon: string;
-  designConfig: { shape: string; primaryColor: string; animation?: string };
+  designConfig: BadgeDesignConfigInput;
   xpReward: number;
   isPermanent: boolean;
   isDynamic: boolean;

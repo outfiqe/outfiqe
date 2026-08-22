@@ -8,8 +8,10 @@ import { BadgeCard } from "./BadgeCard";
 import { BadgeFields } from "./BadgeFields";
 import { BADGES_QUERY_KEY, EMPTY_FORM } from "./badgeForm.constants";
 import type { BadgeFormState } from "./badgeForm.types";
-import { toFormInput } from "./badgeForm.utils";
+import { formForBadge, toFormInput } from "./badgeForm.utils";
 import { EditBadgeModal } from "./EditBadgeModal";
+
+const DUPLICATE_NAME_PREFIX = "Copy of ";
 
 export const BadgesSection = () => {
   const queryClient = useQueryClient();
@@ -37,6 +39,13 @@ export const BadgesSection = () => {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     create.mutate();
+  };
+
+  const handleDuplicate = (badge: BadgeAdmin) => {
+    const duplicatedForm = formForBadge(badge);
+    setForm({ ...duplicatedForm, name: `${DUPLICATE_NAME_PREFIX}${duplicatedForm.name}` });
+    setError(null);
+    setShowCreateForm(true);
   };
 
   return (
@@ -71,7 +80,12 @@ export const BadgesSection = () => {
         {badges?.length === 0 && <p className="text-sm text-muted-foreground">No badges yet.</p>}
 
         {badges?.map((badge) => (
-          <BadgeCard key={badge.id} badge={badge} onEdit={setEditingBadge} />
+          <BadgeCard
+            key={badge.id}
+            badge={badge}
+            onEdit={setEditingBadge}
+            onDuplicate={handleDuplicate}
+          />
         ))}
       </div>
 

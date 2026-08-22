@@ -28,6 +28,11 @@ export const SHAPE_OPTIONS: BadgeShapeValue[] = ["circle", "shield", "star", "di
 
 export const AUTO_ANIMATION_OPTION = "auto" as const;
 
+export const BADGE_DESIGN_MODE = {
+  SIMPLE: "simple",
+  STUDIO: "studio",
+} as const;
+
 export const ANIMATION_OPTIONS: BadgeAnimationValue[] = [
   "none",
   "glow",

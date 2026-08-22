@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Button, ProgressBar, toast } from "@outfiqe/design-system";
+import { AchievementBadgeIcon, Badge, Button, ProgressBar, toast } from "@outfiqe/design-system";
 import Link from "next/link";
 
 import { getErrorMessage } from "@/shared/lib/errorMessages";
@@ -8,7 +8,6 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 import type { BadgeCollectionEntry } from "../api/badgeSchemas";
 import { useUpdateBadgeDisplay } from "../hooks/useUpdateBadgeDisplay";
 import { isRankMetric, METRIC_LABEL, RARITY_LABEL } from "../utils/badgeLabels";
-import { AchievementBadgeIcon } from "./AchievementBadgeIcon";
 
 type AchievementBadgeCardProps = {
   entry: BadgeCollectionEntry;
