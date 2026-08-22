@@ -76,15 +76,19 @@ export const PostModal = ({ open, onClose }: PostModalProps) => {
     if (pending.photos.length === 0) return;
     setIsProcessingPhotos(true);
     setPhotoError(null);
+
+    let urls: string[];
     try {
-      const urls = await resolvePendingPhotoUrls(pending.photos, DEFAULT_IMAGE_MIME_TYPE);
-      form.setValue("imageUrls", urls, { shouldValidate: true });
-      await submitLook();
+      urls = await resolvePendingPhotoUrls(pending.photos, DEFAULT_IMAGE_MIME_TYPE);
     } catch {
       setPhotoError("Couldn't process those photos. Try again.");
-    } finally {
       setIsProcessingPhotos(false);
+      return;
     }
+
+    setIsProcessingPhotos(false);
+    form.setValue("imageUrls", urls, { shouldValidate: true });
+    await submitLook();
   };
 
   const toggleProduct = (product: PublicProduct) => {

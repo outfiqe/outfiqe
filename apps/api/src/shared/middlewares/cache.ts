@@ -1,3 +1,4 @@
+import type { ApiSuccessEnvelope } from "@outfiqe/types";
 import type { NextFunction, Request, Response } from "express";
 
 import { redisKeys } from "#redis/redis.keys.js";
@@ -10,31 +11,39 @@ const SUCCESS_STATUS_MAX = 300;
 const isSuccessStatus = (status: number) =>
   status >= SUCCESS_STATUS_MIN && status < SUCCESS_STATUS_MAX;
 
+const isSuccessEnvelope = (body: unknown): body is ApiSuccessEnvelope<unknown> =>
+  typeof body === "object" &&
+  body !== null &&
+  "success" in body &&
+  body.success === true &&
+  "data" in body;
+
 type CacheOptions = {
   namespace: string;
   ttlSeconds: number;
   key?: string;
+  successMessage: string;
 };
 
-/*
-Read side: serves a cache hit as-is; on a miss, lets the request through and
-write-through's the response body once the handler sends it, so the next
-request is a hit. Intended for GET routes only.
-*/
-export const cache = ({ namespace, ttlSeconds, key = DEFAULT_CACHE_KEY }: CacheOptions) => {
+export const cache = ({
+  namespace,
+  ttlSeconds,
+  key = DEFAULT_CACHE_KEY,
+  successMessage,
+}: CacheOptions) => {
   const cacheKey = redisKeys.cache(namespace, key);
 
   return async (_req: Request, res: Response, next: NextFunction) => {
-    const cached = await cacheStrategy.read<unknown>(cacheKey);
-    if (cached !== null) {
-      res.json(cached);
+    const cachedData = await cacheStrategy.read<unknown>(cacheKey);
+    if (cachedData !== null) {
+      res.json({ success: true, message: successMessage, data: cachedData });
       return;
     }
 
     const originalJson = res.json.bind(res);
     res.json = (body: unknown) => {
-      if (isSuccessStatus(res.statusCode)) {
-        void cacheStrategy.refresh(cacheKey, ttlSeconds, async () => body);
+      if (isSuccessStatus(res.statusCode) && isSuccessEnvelope(body)) {
+        void cacheStrategy.refresh(cacheKey, ttlSeconds, async () => body.data);
       }
       return originalJson(body);
     };
@@ -50,11 +59,6 @@ type RefreshCacheOnWriteOptions<T> = {
   load: () => Promise<T>;
 };
 
-/*
-Write side: on a successful mutation, eagerly recomputes and re-stores the
-cache entry (write-through) instead of merely invalidating it, so readers
-never hit a cold cache right after a write. Runs after the response is sent.
-*/
 export const refreshCacheOnWrite = <T>({
   namespace,
   ttlSeconds,

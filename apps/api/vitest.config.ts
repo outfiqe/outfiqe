@@ -36,6 +36,10 @@ export default defineConfig({
         "src/modules/challenges/challenge.utils.ts",
         "src/modules/creator-leaderboard/creatorLeaderboard.utils.ts",
         "src/modules/creator-competitions/creatorCompetition.utils.ts",
+        "src/modules/creators/**/*.ts",
+        "src/modules/creator-looks/**/*.ts",
+        "src/modules/brands/**/*.ts",
+        "src/modules/categories/**/*.ts",
       ],
       thresholds: {
         lines: 80,

@@ -22,6 +22,7 @@ const CACHE_NAMESPACE = "hero-slides";
 const heroSlidesPublicCache = cache({
   namespace: CACHE_NAMESPACE,
   ttlSeconds: CACHE_TTL.HERO_SLIDES_PUBLIC,
+  successMessage: "Hero slides.",
 });
 
 const refreshHeroSlidesPublicCache = refreshCacheOnWrite({

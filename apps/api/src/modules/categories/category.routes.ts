@@ -22,6 +22,7 @@ const CACHE_NAMESPACE = "categories";
 const categoriesPublicCache = cache({
   namespace: CACHE_NAMESPACE,
   ttlSeconds: CACHE_TTL.CATEGORIES_PUBLIC,
+  successMessage: "Categories.",
 });
 
 const refreshCategoriesPublicCache = refreshCacheOnWrite({

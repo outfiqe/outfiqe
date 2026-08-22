@@ -28,10 +28,35 @@ const createApprovedCreator = async (
     },
   });
 
-const authHeaderFor = (userId: string) => {
-  const { accessToken } = generateTokenpair({ sub: userId, role: UserRole.CUSTOMER });
+const createPlainUser = async (name: string, handle: string) =>
+  prisma.user.create({
+    data: {
+      email: `${handle}-${randomUUID()}@outfiqe.test`,
+      name,
+      handle: `${handle}-${randomUUID().slice(0, 6)}`,
+      phone: uniquePhone(),
+      passwordHash: "not-used-in-tests",
+    },
+  });
+
+const createPendingCreator = async (name: string, handle: string) =>
+  prisma.user.create({
+    data: {
+      email: `${handle}-${randomUUID()}@outfiqe.test`,
+      name,
+      handle: `${handle}-${randomUUID().slice(0, 6)}`,
+      phone: uniquePhone(),
+      passwordHash: "not-used-in-tests",
+      creatorStatus: CreatorStatus.PENDING,
+    },
+  });
+
+const authHeaderFor = (userId: string, role: UserRole = UserRole.CUSTOMER) => {
+  const { accessToken } = generateTokenpair({ sub: userId, role });
   return `Bearer ${accessToken}`;
 };
+
+const adminAuthHeaderFor = (userId: string) => authHeaderFor(userId, UserRole.ADMIN);
 
 describe("GET /api/creators/autocomplete", () => {
   it("returns approved creators ranked by name/handle match", async () => {
@@ -165,5 +190,282 @@ describe("GET /api/creators/by-handle/:handle", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data.heightCm).toBe(190);
+  });
+
+  it("returns 404 for a handle that doesn't exist", async () => {
+    const response = await request(testApp).get(
+      `/api/creators/by-handle/no-such-handle-${randomUUID()}`,
+    );
+
+    expect(response.status).toBe(404);
+  });
+
+  it("returns 404 for a user who exists but isn't a creator", async () => {
+    const user = await createPlainUser("Not A Creator", "not-a-creator");
+
+    const response = await request(testApp).get(`/api/creators/by-handle/${user.handle}`);
+
+    expect(response.status).toBe(404);
+  });
+});
+
+describe("GET /api/creators/by-handle/:handle/looks", () => {
+  it("returns the creator's published looks", async () => {
+    const creator = await createApprovedCreator("Look Poster", "look-poster");
+    await prisma.creatorLook.create({
+      data: {
+        creatorId: creator.id,
+        imageUrl: `https://cdn.outfiqe.test/${randomUUID()}.jpg`,
+        caption: "A look",
+      },
+    });
+
+    const response = await request(testApp).get(`/api/creators/by-handle/${creator.handle}/looks`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.posts).toHaveLength(1);
+  });
+
+  it("returns 404 for a handle that doesn't exist", async () => {
+    const response = await request(testApp).get(
+      `/api/creators/by-handle/no-such-handle-${randomUUID()}/looks`,
+    );
+
+    expect(response.status).toBe(404);
+  });
+});
+
+describe("POST /api/creators/apply", () => {
+  it("moves a plain user into PENDING", async () => {
+    const user = await createPlainUser("Applying User", "applying-user");
+
+    const response = await request(testApp)
+      .post("/api/creators/apply")
+      .set("Authorization", authHeaderFor(user.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.creatorStatus).toBe(CreatorStatus.PENDING);
+
+    const stored = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+    expect(stored.creatorStatus).toBe(CreatorStatus.PENDING);
+  });
+
+  it("rejects applying again once already PENDING", async () => {
+    const user = await createPendingCreator("Already Pending", "already-pending");
+
+    const response = await request(testApp)
+      .post("/api/creators/apply")
+      .set("Authorization", authHeaderFor(user.id));
+
+    expect(response.status).toBe(409);
+  });
+
+  it("rejects applying again once already APPROVED", async () => {
+    const creator = await createApprovedCreator("Already Approved", "already-approved");
+
+    const response = await request(testApp)
+      .post("/api/creators/apply")
+      .set("Authorization", authHeaderFor(creator.id));
+
+    expect(response.status).toBe(409);
+  });
+
+  it("requires authentication", async () => {
+    const response = await request(testApp).post("/api/creators/apply");
+
+    expect(response.status).toBe(401);
+  });
+});
+
+describe("GET /api/creators/me", () => {
+  it("returns the caller's own profile", async () => {
+    const creator = await createApprovedCreator("Self Viewer", "self-viewer");
+
+    const response = await request(testApp)
+      .get("/api/creators/me")
+      .set("Authorization", authHeaderFor(creator.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({ userId: creator.id, name: "Self Viewer" });
+  });
+
+  it("requires authentication", async () => {
+    const response = await request(testApp).get("/api/creators/me");
+
+    expect(response.status).toBe(401);
+  });
+
+  it("returns 404 when the token's user no longer exists", async () => {
+    const response = await request(testApp)
+      .get("/api/creators/me")
+      .set("Authorization", authHeaderFor(randomUUID()));
+
+    expect(response.status).toBe(404);
+  });
+});
+
+describe("GET /api/creators/search", () => {
+  it("returns matches with a total count", async () => {
+    await createApprovedCreator("Search Target One", "search-target-one");
+
+    const response = await request(testApp)
+      .get("/api/creators/search")
+      .query({ q: "Search Target One" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.creators.length).toBeGreaterThan(0);
+    expect(response.body.data).toHaveProperty("total");
+    expect(response.body.data).toHaveProperty("nextCursor");
+  });
+
+  it("paginates using nextCursor", async () => {
+    const tag = randomUUID().slice(0, 8);
+    await createApprovedCreator(`Pager ${tag} A`, `pager-${tag}-a`);
+    await createApprovedCreator(`Pager ${tag} B`, `pager-${tag}-b`);
+
+    const first = await request(testApp)
+      .get("/api/creators/search")
+      .query({ q: `Pager ${tag}`, limit: 1 });
+
+    expect(first.status).toBe(200);
+    expect(first.body.data.creators).toHaveLength(1);
+    expect(first.body.data.nextCursor).not.toBeNull();
+
+    const second = await request(testApp)
+      .get("/api/creators/search")
+      .query({ q: `Pager ${tag}`, limit: 1, cursor: first.body.data.nextCursor });
+
+    expect(second.status).toBe(200);
+    expect(second.body.data.creators).toHaveLength(1);
+    expect(second.body.data.creators[0].userId).not.toBe(first.body.data.creators[0].userId);
+  });
+
+  it("returns an empty page for no match", async () => {
+    const response = await request(testApp)
+      .get("/api/creators/search")
+      .query({ q: "zzznonexistentsearchzzz" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.creators).toEqual([]);
+    expect(response.body.data.nextCursor).toBeNull();
+  });
+});
+
+describe("GET /api/creators (admin list)", () => {
+  it("lists creators filtered by status for an admin", async () => {
+    const admin = await createPlainUser("List Admin", "list-admin");
+    const pending = await createPendingCreator("Listed Pending", "listed-pending");
+
+    const response = await request(testApp)
+      .get("/api/creators")
+      .query({ status: CreatorStatus.PENDING })
+      .set("Authorization", adminAuthHeaderFor(admin.id));
+
+    expect(response.status).toBe(200);
+    expect(
+      response.body.data.creators.some((entry: { userId: string }) => entry.userId === pending.id),
+    ).toBe(true);
+  });
+
+  it("rejects a non-admin caller", async () => {
+    const creator = await createApprovedCreator("Not Admin", "not-admin");
+
+    const response = await request(testApp)
+      .get("/api/creators")
+      .set("Authorization", authHeaderFor(creator.id));
+
+    expect(response.status).toBe(403);
+  });
+
+  it("requires authentication", async () => {
+    const response = await request(testApp).get("/api/creators");
+
+    expect(response.status).toBe(401);
+  });
+});
+
+describe("POST /api/creators/:userId/approve", () => {
+  it("approves a pending creator", async () => {
+    const admin = await createPlainUser("Approving Admin", "approving-admin");
+    const pending = await createPendingCreator("To Be Approved", "to-be-approved");
+
+    const response = await request(testApp)
+      .post(`/api/creators/${pending.id}/approve`)
+      .set("Authorization", adminAuthHeaderFor(admin.id));
+
+    expect(response.status).toBe(200);
+
+    const stored = await prisma.user.findUniqueOrThrow({ where: { id: pending.id } });
+    expect(stored.creatorStatus).toBe(CreatorStatus.APPROVED);
+    expect(stored.isCreator).toBe(true);
+  });
+
+  it("rejects approving a creator who isn't pending", async () => {
+    const admin = await createPlainUser("Approving Admin Two", "approving-admin-two");
+    const creator = await createApprovedCreator("Already Done", "already-done");
+
+    const response = await request(testApp)
+      .post(`/api/creators/${creator.id}/approve`)
+      .set("Authorization", adminAuthHeaderFor(admin.id));
+
+    expect(response.status).toBe(409);
+  });
+
+  it("returns 404 for a user that doesn't exist", async () => {
+    const admin = await createPlainUser("Approving Admin Three", "approving-admin-three");
+
+    const response = await request(testApp)
+      .post(`/api/creators/${randomUUID()}/approve`)
+      .set("Authorization", adminAuthHeaderFor(admin.id));
+
+    expect(response.status).toBe(404);
+  });
+
+  it("rejects a non-admin caller", async () => {
+    const pending = await createPendingCreator("Blocked Approval", "blocked-approval");
+
+    const response = await request(testApp)
+      .post(`/api/creators/${pending.id}/approve`)
+      .set("Authorization", authHeaderFor(pending.id));
+
+    expect(response.status).toBe(403);
+  });
+});
+
+describe("POST /api/creators/:userId/reject", () => {
+  it("rejects a pending creator", async () => {
+    const admin = await createPlainUser("Rejecting Admin", "rejecting-admin");
+    const pending = await createPendingCreator("To Be Rejected", "to-be-rejected");
+
+    const response = await request(testApp)
+      .post(`/api/creators/${pending.id}/reject`)
+      .set("Authorization", adminAuthHeaderFor(admin.id));
+
+    expect(response.status).toBe(200);
+
+    const stored = await prisma.user.findUniqueOrThrow({ where: { id: pending.id } });
+    expect(stored.creatorStatus).toBe(CreatorStatus.REJECTED);
+    expect(stored.isCreator).toBe(false);
+  });
+
+  it("rejects rejecting a creator who isn't pending", async () => {
+    const admin = await createPlainUser("Rejecting Admin Two", "rejecting-admin-two");
+    const creator = await createApprovedCreator("Not Pending", "not-pending-reject");
+
+    const response = await request(testApp)
+      .post(`/api/creators/${creator.id}/reject`)
+      .set("Authorization", adminAuthHeaderFor(admin.id));
+
+    expect(response.status).toBe(409);
+  });
+
+  it("rejects a non-admin caller", async () => {
+    const pending = await createPendingCreator("Blocked Rejection", "blocked-rejection");
+
+    const response = await request(testApp)
+      .post(`/api/creators/${pending.id}/reject`)
+      .set("Authorization", authHeaderFor(pending.id));
+
+    expect(response.status).toBe(403);
   });
 });
