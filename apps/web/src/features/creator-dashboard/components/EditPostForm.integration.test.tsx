@@ -71,6 +71,15 @@ const buildDetail = (overrides: Partial<CreatorLookEditDetail> = {}): CreatorLoo
 const buildImageFile = (name = "photo.jpg") =>
   new File(["fake-bytes"], name, { type: "image/jpeg" });
 
+const searchAndSelectProduct = async (
+  user: ReturnType<typeof userEvent.setup>,
+  query: string,
+  optionName: RegExp,
+) => {
+  await user.type(screen.getByPlaceholderText("Search products to tag…"), query);
+  await user.click(await screen.findByRole("option", { name: optionName }));
+};
+
 const renderForm = (detail: CreatorLookEditDetail, onClose = vi.fn()) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -155,8 +164,7 @@ describe("EditPostForm", () => {
     renderForm(buildDetail());
 
     await user.click(screen.getByRole("button", { name: "1 product tagged" }));
-    await user.type(screen.getByPlaceholderText("Search products to tag…"), "scarf");
-    await user.click(await screen.findByRole("option", { name: /Wool Scarf/ }));
+    await searchAndSelectProduct(user, "scarf", /Wool Scarf/);
 
     expect(screen.getByRole("button", { name: "2 products tagged" })).toBeInTheDocument();
 
