@@ -49,6 +49,11 @@ activity to an open bell/panel live.
   notification that isn't the caller's, same as any other id-not-found — never a distinguishable
   403, which would leak that the id exists), `PATCH /read-all` (idempotent), plus the mute
   preferences pair `GET /preferences` / `PATCH /preferences/:type`.
+- `notification.retention.ts` — `runNotificationRetentionSweep()`: deletes read notifications past
+  their retention window (`STANDARD_READ_RETENTION_DAYS`/`CRITICAL_READ_RETENTION_DAYS`, plan §13's
+  answer). Composed into `apps/api/src/jobs/scheduled-jobs.ts`'s `INTERVAL_JOBS` (daily), same
+  pattern as `commissions/commission.lifecycle.ts`'s sweep — the logic lives in the owning module,
+  `src/jobs/` only lists it.
 
 ## Funnel
 
@@ -115,6 +120,12 @@ for. A currently-open panel showing a like-group that gets fully unliked will sh
 until the next REST fetch (panel reopen, pagination, or the existing reconnect-sync path) —
 accepted as a narrow, self-healing gap consistent with this build's own "resilience" bar (plan
 §10: "a missed live event self-heals within one interaction"), not a silent oversight.
+
+**Retention is two-tiered, and unread rows are exempt from both tiers.** Read notifications for
+money/business-decision types (`NEW_ORDER`, `ORDER_STATUS_CHANGED`, `COMMISSION_EARNED`,
+`BRAND_APPLICATION_SUBMITTED`) live 180 days; every other read type lives 90. An unread
+notification is never deleted regardless of age — the sweep's delete always requires `isRead:
+true`, so a user who never opens the panel doesn't silently lose activity they haven't seen yet.
 
 **Notification preferences are opt-out, not opt-in.** No `NotificationPreference` row for a
 `(userId, type)` pair means that type is enabled — most users will never have any rows here at

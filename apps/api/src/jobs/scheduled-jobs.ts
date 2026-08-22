@@ -19,6 +19,8 @@ import {
   TRENDING_RECOMPUTE_INTERVAL_MS,
 } from "#modules/leaderboard/leaderboard.constants.js";
 import { leaderboardService } from "#modules/leaderboard/leaderboard.service.js";
+import { NOTIFICATION_RETENTION_SWEEP_INTERVAL_MS } from "#modules/notifications/notification.constants.js";
+import { runNotificationRetentionSweep } from "#modules/notifications/notification.retention.js";
 import { RECONCILE_CHECK_INTERVAL_MS } from "#modules/payments/payment.constants.js";
 import { runPaymentReconciliationSweep } from "#modules/payments/payment.reconciliation.js";
 import {
@@ -93,6 +95,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "dynamic-badge-recheck",
     run: achievementService.recheckDynamicBadges,
     intervalMs: DYNAMIC_BADGE_RECHECK_INTERVAL_MS,
+  },
+  {
+    name: "notification-retention-sweep",
+    run: runNotificationRetentionSweep,
+    intervalMs: NOTIFICATION_RETENTION_SWEEP_INTERVAL_MS,
   },
 ];
 

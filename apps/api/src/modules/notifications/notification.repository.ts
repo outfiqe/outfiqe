@@ -304,4 +304,13 @@ export const notificationRepository = {
       update: { enabled },
     });
   },
+
+  /** Never touches unread rows — `isRead: true` is always part of the filter, not just the caller's intent. */
+  async deleteReadBefore(readBefore: Date, types: NotificationType[]): Promise<number> {
+    if (types.length === 0) return 0;
+    const { count } = await prisma.notification.deleteMany({
+      where: { isRead: true, readAt: { lt: readBefore }, type: { in: types } },
+    });
+    return count;
+  },
 };
