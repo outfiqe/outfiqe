@@ -14,14 +14,6 @@ const STANDARD_RETENTION_TYPES = Object.values(NotificationType).filter(
   (type) => !CRITICAL_RETENTION_NOTIFICATION_TYPES.has(type),
 );
 
-/**
- * Deletes read notifications past their retention window — never unread
- * ones, regardless of age or type (see notifications/README.md). Two
- * windows, not one: types with real business/money weight (new orders,
- * order status, commissions, brand applications) get
- * CRITICAL_READ_RETENTION_DAYS; everything else gets
- * STANDARD_READ_RETENTION_DAYS.
- */
 export const runNotificationRetentionSweep = async (): Promise<{ deleted: number }> => {
   const now = Date.now();
   const standardCutoff = new Date(now - STANDARD_READ_RETENTION_DAYS * DAY_MS);

@@ -11,12 +11,6 @@ export const MAX_RECENT_ACTORS = 3;
 export const NOTIFICATION_CONSUMER_GROUP = "notification-write";
 export const NOTIFICATION_SOCKET_CONSUMER_GROUP = "socket-broadcast";
 
-/**
- * Notifications whose read state carries real business/money weight get a
- * longer retention window once read — see notifications/README.md and
- * notification.retention.ts. Unread rows are never touched by the sweep,
- * regardless of type.
- */
 export const CRITICAL_RETENTION_NOTIFICATION_TYPES: ReadonlySet<NotificationType> = new Set([
   NotificationType.NEW_ORDER,
   NotificationType.ORDER_STATUS_CHANGED,

@@ -7,13 +7,6 @@ import { getIO } from "#socket/socket.server.js";
 
 import { NOTIFICATION_SOCKET_CONSUMER_GROUP } from "./notification.constants.js";
 
-/**
- * Relays the write path's post-write state (chunk 3) to the recipient's own
- * room, live. An independent consumer group from notification.events.ts on
- * the same two derived events — same two-step handoff xp.socket.ts already
- * uses for LEVEL_UP, so the socket payload is never recomputed (and
- * potentially raced) against a second read of the row.
- */
 export const registerNotificationSocketEventConsumer = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.NOTIFICATION_CREATED,

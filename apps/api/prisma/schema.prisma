@@ -1225,16 +1225,6 @@ enum NotificationEntityType {
   BADGE
 }
 
-/**
- * A durable side effect of a domain event, written by notification.events.ts
- * off the same Redis Streams bus XP/achievements already consume — never
- * written inline by the like/follow/order handlers themselves (see
- * notifications/README.md).
- * Denormalized on purpose: `metadata` snapshots whatever the type needs to
- * render (actor display name/avatar, look thumbnail, ...) at write time, so a
- * later rename/delete of the source entity can't corrupt historical rows and
- * the feed read never needs to join out to User/CreatorLook/Product.
- */
 model Notification {
   id          String                  @id @default(uuid()) @db.Uuid
   recipientId String                  @map("recipient_id") @db.Uuid
@@ -1257,11 +1247,6 @@ model Notification {
   @@map("notifications")
 }
 
-/**
- * Opt-out model: no row for (userId, type) means that type is enabled. A
- * row only exists once a user has actually muted something, so most users
- * never have any rows here at all.
- */
 model NotificationPreference {
   id        String           @id @default(uuid()) @db.Uuid
   userId    String           @map("user_id") @db.Uuid

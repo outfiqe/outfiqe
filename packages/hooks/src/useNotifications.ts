@@ -49,12 +49,6 @@ const markOnePageRead = (
   };
 };
 
-/**
- * Pagination (cursor-based, `useInfiniteCursorPage`) plus optimistic
- * mark-read/mark-all-read for the notification feed. Real-time updates come
- * from `useNotificationSocket`, which writes into the same query cache keys —
- * this hook owns fetching and mutating, not subscribing.
- */
 export const useNotifications = (notificationsApi: NotificationsApi, enabled = true) => {
   const queryClient = useQueryClient();
 

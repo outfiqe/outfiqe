@@ -13,10 +13,6 @@ import {
 
 export const notificationRoutes = Router();
 
-/*
-  Static/prefixed paths first — Express would otherwise never reach them once a
-  ":id"-shaped route below matched the same segment (same convention as orders).
- */
 notificationRoutes.get("/unread-count", requireAuth, notificationController.unreadCount);
 notificationRoutes.get("/preferences", requireAuth, notificationController.listPreferences);
 notificationRoutes.patch(

@@ -33,12 +33,6 @@ type RawGroupRow = {
   updated_at: Date;
 };
 
-/**
- * The raw INSERT in upsertGroup below isn't a Prisma-generated query, so a
- * foreign key violation there surfaces as the driver's own error rather
- * than a Prisma "P2003" code — match on the constraint text Postgres
- * itself reports instead.
- */
 const isRawForeignKeyViolation = (error: unknown): boolean =>
   describeError(error).toLowerCase().includes("foreign key constraint");
 
@@ -59,13 +53,6 @@ const toRecordFromRaw = (row: RawGroupRow): NotificationRecord => ({
 });
 
 export const notificationRepository = {
-  /**
-   * Returns null (never throws) when the recipient or actor no longer
-   * exists — a domain-event consumer replaying a stream's history (a fresh
-   * consumer group starts from the beginning, not just new entries) can
-   * hand this a userId that's since been deleted, and that must never
-   * dead-letter forever or crash the consumer loop.
-   */
   async createIndividual(
     input: CreateIndividualNotificationInput,
   ): Promise<NotificationRecord | null> {
@@ -90,14 +77,6 @@ export const notificationRepository = {
     }
   },
 
-  /**
-   * Race-safe grouped write (see notifications/README.md and plan §4): the
-   * INSERT targets the partial unique index directly with ON CONFLICT ...
-   * DO NOTHING, which Postgres resolves without erroring — unlike a plain
-   * create() + caught P2002, this can't leave the surrounding transaction
-   * aborted, so the fallback SELECT ... FOR UPDATE + UPDATE below can still
-   * run inside the same transaction.
-   */
   async upsertGroup(
     input: UpsertGroupInput,
   ): Promise<{ record: NotificationRecord; wasCreated: boolean } | null> {
@@ -169,13 +148,6 @@ export const notificationRepository = {
     }
   },
 
-  /**
-   * Unlike's retraction path (plan §4 "unlike must retract"). Decrements the
-   * open group's actorCount and drops the actor from recentActors; deletes
-   * the row outright once the count reaches zero. Returns null when the
-   * group was deleted or never existed (e.g. already read), so the caller
-   * knows not to broadcast a `notification:updated` for it.
-   */
   async retractGroupActor(input: RetractGroupActorInput): Promise<NotificationRecord | null> {
     return prisma.$transaction(async (tx) => {
       const existingRows = await tx.$queryRaw<RawGroupRow[]>(Prisma.sql`
@@ -272,7 +244,6 @@ export const notificationRepository = {
     return { total: order.total, brandIds };
   },
 
-  /** Cursor-based on (updatedAt, id) — never offset — most-recently-active row first. */
   async listForRecipient(
     recipientId: string,
     params: { cursor?: string; limit: number },
@@ -301,7 +272,6 @@ export const notificationRepository = {
     return prisma.notification.count({ where: { recipientId, isRead: false } });
   },
 
-  /** 404-by-null: never distinguishes "doesn't exist" from "isn't yours" to the caller. */
   async markRead(recipientId: string, notificationId: string): Promise<NotificationRecord | null> {
     const existing = await prisma.notification.findFirst({
       where: { id: notificationId, recipientId },
@@ -316,7 +286,6 @@ export const notificationRepository = {
     return toNotificationRecord(updated);
   },
 
-  /** Idempotent — a second call finds nothing left unread and no-ops. */
   async markAllRead(recipientId: string): Promise<Date> {
     const readAt = new Date();
     await prisma.notification.updateMany({
@@ -342,7 +311,6 @@ export const notificationRepository = {
     });
   },
 
-  /** Never touches unread rows — `isRead: true` is always part of the filter, not just the caller's intent. */
   async deleteReadBefore(readBefore: Date, types: NotificationType[]): Promise<number> {
     if (types.length === 0) return 0;
     const { count } = await prisma.notification.deleteMany({

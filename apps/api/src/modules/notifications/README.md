@@ -45,7 +45,9 @@ activity to an open bell/panel live.
   relay for `NOTIFICATION_CREATED`/`NOTIFICATION_UPDATED` (see Funnel below).
 - `notification.schemas.ts` / `notification.controller.ts` / `notification.routes.ts` — the REST
   read path, all `requireAuth`-only and scoped to `req.user.id` (never a client-supplied
-  recipient): `GET /` (cursor-paginated feed), `GET /unread-count`, `PATCH /:id/read` (404s for a
+  recipient). Static/prefixed paths (`/unread-count`, `/preferences`, `/read-all`) are registered
+  before the `/:id`-shaped routes, same convention as `creator-looks`/`orders`, so Express doesn't
+  swallow them: `GET /` (cursor-paginated feed), `GET /unread-count`, `PATCH /:id/read` (404s for a
   notification that isn't the caller's, same as any other id-not-found — never a distinguishable
   403, which would leak that the id exists), `PATCH /read-all` (idempotent), plus the mute
   preferences pair `GET /preferences` / `PATCH /preferences/:type`.
@@ -76,6 +78,14 @@ path — pagination, initial load, and the safety net when a socket event is mis
 primary delivery mechanism.
 
 ## Non-obvious rationale
+
+**`createIndividual`/`upsertGroup` return `null` instead of throwing on a foreign-key
+violation.** A domain-event consumer group replays its entire stream history from the
+beginning the first time it's created (`XGROUP CREATE ... "0"`), which can hand this module a
+`recipientId`/`actorId` for a user that's since been deleted. The raw-SQL path in `upsertGroup`
+doesn't get Prisma's `P2003` code (only ORM-generated queries do), so `isRawForeignKeyViolation`
+matches on the constraint text Postgres itself reports instead of a Prisma error code. Both call
+sites in `notification.service.ts` treat a `null` return as "nothing to broadcast," not an error.
 
 **`upsertGroup` hand-writes `INSERT ... ON CONFLICT (...) WHERE ... DO NOTHING` rather than a
 plain `create()` wrapped in a caught `P2002`.** A caught unique-violation from `create()` still

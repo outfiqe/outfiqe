@@ -159,8 +159,6 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
 
   const posts = data?.pages.flatMap((page) => page.posts) ?? [];
   const detailPostFromGrid = posts.find((post) => post.id === detailPostId) ?? null;
-  // Deep-linked posts (e.g. from a notification) aren't necessarily on an already-loaded
-  // grid page — fetch it directly rather than requiring the whole grid to be paged through.
   const { data: fetchedDetailPost } = usePublicLook(
     detailPostId && !detailPostFromGrid ? detailPostId : null,
   );

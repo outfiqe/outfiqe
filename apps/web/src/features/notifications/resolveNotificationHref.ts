@@ -1,17 +1,5 @@
 import type { Notification } from "@outfiqe/types";
 
-/**
- * type -> route, web surface (creator, business, and any authenticated
- * customer). Everything it needs is already denormalized onto the
- * notification itself (plan §9 — never a precomputed URL, but a resolver
- * built from entityType/entityId/metadata) — `ownHandle` is the one
- * exception, needed to link into the current user's own profile grid.
- *
- * LOOK_LIKED/LOOK_COMMENTED deep-link into the exact post via
- * /creator/{handle}?look={lookId} — CreatorProfile.tsx opens
- * PostDetailModal for that id directly, fetching it if it isn't already in
- * the loaded grid page (see creator-profile/README.md).
- */
 export const resolveNotificationHref = (
   notification: Notification,
   ownHandle: string | undefined,

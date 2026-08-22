@@ -7,15 +7,6 @@ import type { Socket } from "socket.io-client";
 
 import { NOTIFICATIONS_QUERY_KEY, NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY } from "./useNotifications";
 
-/**
- * The bell only ever registers/unregisters listeners — never emits to the
- * server, never inspects connection state — so it depends on this narrow
- * slice of socket.io-client's `Socket` rather than the full type. A test
- * double can implement this directly; a real `Socket` goes through
- * `toNotificationSocket` below, since its `on`/`off` are generic over a
- * typed event map this app never configures (`DefaultEventsMap`) and can't
- * structurally satisfy a plain non-generic method signature.
- */
 export interface NotificationSocket {
   on(event: string, handler: (...args: never[]) => void): unknown;
   off(event: string, handler: (...args: never[]) => void): unknown;
@@ -23,11 +14,6 @@ export interface NotificationSocket {
 
 const notificationSocketAdapters = new WeakMap<Socket, NotificationSocket>();
 
-/**
- * Memoized per underlying `Socket` — `useSyncExternalStore`'s `getSnapshot`
- * must return a stable reference across calls when nothing changed, and
- * `getSocket()` already returns the same singleton on every call.
- */
 export const toNotificationSocket = (socket: Socket): NotificationSocket => {
   const existing = notificationSocketAdapters.get(socket);
   if (existing) return existing;
@@ -40,7 +26,6 @@ export const toNotificationSocket = (socket: Socket): NotificationSocket => {
   return adapter;
 };
 
-// Key literals must match SOCKET_EVENTS in the API's shared/socket/socket.keys.ts.
 const NOTIFICATION_SOCKET_EVENTS = {
   CREATED: "notification:created",
   UPDATED: "notification:updated",
@@ -54,14 +39,6 @@ type InfiniteNotificationsData = {
   pageParams: (string | undefined)[];
 };
 
-/**
- * Wires a already-connected socket's notification events into the same
- * react-query cache `useNotifications` reads — `created` prepends a card,
- * `updated` replaces the matching card in place and resurfaces it (never a
- * duplicate for the same group), `read`/`read-all` mirror another tab's
- * action. `connect` reconciles the unread count via REST, so a live event
- * missed while disconnected self-heals on reconnect.
- */
 export const useNotificationSocket = (socket: NotificationSocket | null | undefined): void => {
   const queryClient = useQueryClient();
 

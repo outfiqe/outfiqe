@@ -13,13 +13,6 @@ export type DomainEvent = (typeof DomainEvents)[keyof typeof DomainEvents];
 
 type FollowPayload = { followerId: string; followingId: string };
 
-/**
- * The notifications module's own write-path handler publishes this after
- * resolving the real post-write row (a fresh insert or a merged group) —
- * the socket relay consumer (notification.socket.ts) subscribes to it
- * rather than recomputing the same DB state independently. Same handoff
- * shape xp.service.ts uses for LEVEL_UP -> xp.socket.ts.
- */
 export type NotificationBroadcastPayload = {
   id: string;
   recipientId: string;

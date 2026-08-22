@@ -1062,8 +1062,6 @@ export const creatorLookRepository = {
     return { posts, nextCursor: listed.nextCursor };
   },
 
-  /** Same viewer-aware hydration the feed uses, for exactly one look — deep-linking a
-   *  single post (e.g. from a notification) doesn't need to page through the feed to find it. */
   async findPublicById(
     lookId: string,
     viewerId: string | undefined,

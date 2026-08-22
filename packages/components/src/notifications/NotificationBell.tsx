@@ -30,8 +30,6 @@ export const NotificationBell = ({ notificationsApi, socket, onSelect }: Notific
   const [open, setOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
 
-  // Independent of the panel's own feed/unread-count queries below (same cache key, so react
-  // query dedupes the fetch), so the badge stays live even while the panel is closed/unmounted.
   const unreadCountQuery = useQuery({
     queryKey: NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY,
     queryFn: () => notificationsApi.unreadCount(),
