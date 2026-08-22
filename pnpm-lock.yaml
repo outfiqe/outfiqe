@@ -422,12 +422,36 @@ importers:
 
   packages/components:
     dependencies:
+      '@outfiqe/client':
+        specifier: workspace:*
+        version: link:../client
+      '@outfiqe/design-system':
+        specifier: workspace:*
+        version: link:../design-system
+      '@outfiqe/hooks':
+        specifier: workspace:*
+        version: link:../hooks
+      '@outfiqe/types':
+        specifier: workspace:*
+        version: link:../types
+      '@outfiqe/utils':
+        specifier: workspace:*
+        version: link:../utils
+      '@tanstack/react-query':
+        specifier: ^5.101.4
+        version: 5.101.4(react@19.2.8)
       framer-motion:
         specifier: ^13.1.0
         version: 13.1.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      lucide-react:
+        specifier: ^1.29.0
+        version: 1.29.0(react@19.2.8)
       react:
         specifier: ^19.2.8
         version: 19.2.8
+      socket.io-client:
+        specifier: ^4.8.3
+        version: 4.8.3(supports-color@8.1.1)
     devDependencies:
       '@types/react':
         specifier: ^19.2.18
