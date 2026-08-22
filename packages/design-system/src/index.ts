@@ -19,6 +19,7 @@ export * from "./input";
 export * from "./label";
 export * from "./modal";
 export * from "./multi-select";
+export * from "./popover";
 export * from "./progress-bar";
 export * from "./select";
 export * from "./skeleton";
