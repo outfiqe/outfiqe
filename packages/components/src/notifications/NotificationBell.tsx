@@ -2,12 +2,15 @@
 
 import type { NotificationsApi } from "@outfiqe/client";
 import { Button, Popover, PopoverContent, PopoverTrigger } from "@outfiqe/design-system";
-import { NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY, useNotificationSocket } from "@outfiqe/hooks";
+import {
+  NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY,
+  type NotificationSocket,
+  useNotificationSocket,
+} from "@outfiqe/hooks";
 import type { Notification } from "@outfiqe/types";
 import { useQuery } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { Socket } from "socket.io-client";
 
 import { NotificationPanel } from "./NotificationPanel";
 import { resolveNotificationMessage } from "./resolveNotificationMessage";
@@ -16,7 +19,7 @@ const MAX_DISPLAYED_UNREAD_COUNT = 9;
 
 type NotificationBellProps = {
   notificationsApi: NotificationsApi;
-  socket?: Socket | null;
+  socket?: NotificationSocket | null;
   onSelect: (notification: Notification) => void;
 };
 

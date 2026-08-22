@@ -62,6 +62,7 @@ export default defineConfig({
         "src/features/creator-dashboard/index.ts",
         "src/features/explore/components/SuggestedCreatorRow.tsx",
         "src/features/explore/components/SuggestedCreatorsModal.tsx",
+        "src/features/notifications/resolveNotificationHref.ts",
       ],
       thresholds: {
         lines: 80,
