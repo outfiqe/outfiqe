@@ -27,6 +27,7 @@ export const creatorStatusSchema = z.enum(CreatorStatus);
 export const userSessionSchema = z.object({
   id: z.string(),
   name: z.string(),
+  handle: z.string().optional(),
   email: z.email(),
   avatarUrl: z.url().nullable(),
   role: userRoleSchema,

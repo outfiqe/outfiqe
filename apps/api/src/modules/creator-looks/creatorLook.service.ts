@@ -32,6 +32,7 @@ import type {
 import type {
   CommentPage,
   CreatorLookEditDetail,
+  CreatorLookFeedPost,
   CreatorLookSummary,
   CreatorMomentumEntry,
   FeedPage,
@@ -193,6 +194,13 @@ export const creatorLookService = {
       limit: query.limit,
       viewerId,
     });
+  },
+
+  async getPublicById(lookId: string, viewerId: string | undefined): Promise<CreatorLookFeedPost> {
+    await requireActiveLook(lookId);
+    const post = await creatorLookRepository.findPublicById(lookId, viewerId);
+    if (!post) throw new AppError("NOT_FOUND", "Post not found.", NOT_FOUND_STATUS);
+    return post;
   },
 
   async feed(

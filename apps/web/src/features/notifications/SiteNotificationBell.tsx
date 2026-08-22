@@ -20,7 +20,7 @@ const getSocketSnapshot = (): NotificationSocket => toNotificationSocket(getSock
 const getServerSocketSnapshot = (): null => null;
 
 export const SiteNotificationBell = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, state } = useAuth();
   const router = useRouter();
 
   const subscribeToSocket = useCallback(
@@ -41,7 +41,7 @@ export const SiteNotificationBell = () => {
   if (!isAuthenticated) return null;
 
   const handleSelect = (notification: Notification): void => {
-    const href = resolveNotificationHref(notification);
+    const href = resolveNotificationHref(notification, state.user?.handle);
     if (href) router.push(href);
   };
 

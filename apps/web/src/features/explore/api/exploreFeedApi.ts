@@ -10,6 +10,8 @@ import {
   type FeedComment,
   type FeedPage,
   feedPageSchema,
+  type FeedPost,
+  feedPostSchema,
   followResultSchema,
   likeResultSchema,
   saveResultSchema,
@@ -36,6 +38,11 @@ export const exploreFeedApi = {
 
     const res = await apiClient.get<FeedPage>(`/creator-looks/feed?${params.toString()}`);
     return feedPageSchema.parse(res.data);
+  },
+
+  async getById(lookId: string): Promise<FeedPost> {
+    const res = await apiClient.get<FeedPost>(`/creator-looks/${lookId}/public`);
+    return feedPostSchema.parse(res.data);
   },
 
   async listSaved(cursor?: string): Promise<FeedPage> {

@@ -19,6 +19,8 @@ Renders a creator's public profile — avatar, stats, follow/edit-profile, and t
 
 **Technical:** `CreatorProfile` fetches posts via `useInfiniteCreatorLooks` → `creatorProfileApi.listLooks` → `GET /creators/by-handle/:handle/looks` (feed-shaped posts, no auth required). Posting/editing/deleting are handled by `creator-dashboard`'s `AddPostButton`/`PostModal`/`EditPostModal`/`useDeleteLook` (cross-feature import — this feature owns display, `creator-dashboard` owns mutation). A successful edit/delete invalidates the `creator-looks` query family, so the grid refetches; delete also decrements the local `postsCount` immediately since that stat isn't part of the paginated post list.
 
+**Deep-linking a specific post:** the open post is driven by the `?look={id}` URL param (`useSearchParams`), not local component state — clicking a grid tile calls `router.replace` to set it, closing calls it again to clear it, and `PostDetailModal` opens whenever it resolves to a real post. That post is looked up in the already-loaded grid pages first (`posts.find`); if it isn't there (e.g. a notification linking to a post from months ago that hasn't been paged to), `explore`'s `usePublicLook(lookId)` fetches it directly via `GET /creator-looks/:lookId/public`. Because `useSearchParams` requires a Suspense boundary, `app/creator/[handle]/page.tsx` wraps `<CreatorProfile>` in `<Suspense fallback={<CreatorProfilePageSkeleton />}>`.
+
 ## Non-obvious rationale
 
 Post management used to live in a separate `/dashboard/posts` page with no edit/delete. It was folded into the profile grid because the profile already displays the same posts — see `creator-dashboard`'s README for the full reasoning.

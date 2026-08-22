@@ -6,7 +6,7 @@ Creator-posted "looks" (outfit photos with tagged products): posting, editing, d
 
 ## Structure
 
-- `creatorLook.routes.ts` — route table. Static/prefixed paths (`/feed`, `/tags/trending`, `/autocomplete`, `/search`, `/saved`) are registered before the `/:lookId`-shaped routes so Express doesn't swallow them.
+- `creatorLook.routes.ts` — route table. Static/prefixed paths (`/feed`, `/tags/trending`, `/autocomplete`, `/search`, `/saved`) are registered before the `/:lookId`-shaped routes so Express doesn't swallow them. `GET /:lookId` (`getOwn`) is owner-only, for editing; `GET /:lookId/public` (`getPublic`, `optionalAuth`) is the general single-post fetch any viewer can call — added to deep-link a specific post (e.g. from a notification) without paging through a feed to find it, reusing the feed's own `hydrateFeedPosts` so it's the identical viewer-aware shape (`isLiked`/`isSaved`/`isFollowingCreator`) a feed row already returns.
 - `creatorLook.controller.ts` — request/response glue; no business logic.
 - `creatorLook.service.ts` — ownership checks, approval gating, worn-by recount orchestration, domain events, `autocomplete` (typeahead, two-tier cached like `../products/product.service.ts`), and the `runTrendingAggregation`/`runTrendingScoring`/`runTagTrendingAggregation`/`runTagTrendingScoring` scheduled-job entry points for post and hashtag trend scoring.
 - `creatorLook.repository.ts` — Prisma queries, cursor pagination, the Redis-cached trending snapshot/tags, `searchLookSuggestions` (the autocomplete query), and the post + hashtag trend-scoring pipelines (metric bucket upserts, candidate scoring, ranked-score caches).

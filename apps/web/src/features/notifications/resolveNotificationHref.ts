@@ -2,19 +2,26 @@ import type { Notification } from "@outfiqe/types";
 
 /**
  * type -> route, web surface (creator, business, and any authenticated
- * customer). Pure: everything it needs is already denormalized onto the
+ * customer). Everything it needs is already denormalized onto the
  * notification itself (plan §9 — never a precomputed URL, but a resolver
- * built from entityType/entityId/metadata).
+ * built from entityType/entityId/metadata) — `ownHandle` is the one
+ * exception, needed to link into the current user's own profile grid.
  *
- * LOOK_LIKED/LOOK_COMMENTED route to the creator's own dashboard profile,
- * not a per-look page — apps/web has no per-look detail route yet (looks
- * only render inline in the creator profile grid/explore feed).
+ * LOOK_LIKED/LOOK_COMMENTED deep-link into the exact post via
+ * /creator/{handle}?look={lookId} — CreatorProfile.tsx opens
+ * PostDetailModal for that id directly, fetching it if it isn't already in
+ * the loaded grid page (see creator-profile/README.md).
  */
-export const resolveNotificationHref = (notification: Notification): string | null => {
+export const resolveNotificationHref = (
+  notification: Notification,
+  ownHandle: string | undefined,
+): string | null => {
   switch (notification.type) {
     case "LOOK_LIKED":
     case "LOOK_COMMENTED":
-      return "/dashboard/profile";
+      return ownHandle && notification.entityId
+        ? `/creator/${ownHandle}?look=${notification.entityId}`
+        : "/dashboard/profile";
     case "NEW_FOLLOWER": {
       const actorHandle = notification.metadata.recentActors?.[0]?.handle;
       return actorHandle ? `/creator/${actorHandle}` : "/dashboard/profile";

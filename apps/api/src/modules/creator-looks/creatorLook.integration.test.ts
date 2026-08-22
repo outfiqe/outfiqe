@@ -354,6 +354,55 @@ describe("GET /api/creator-looks/:lookId", () => {
   });
 });
 
+describe("GET /api/creator-looks/:lookId/public", () => {
+  it("returns a post for any viewer, not just the owner", async () => {
+    const creator = await createCreator("Public Getter", "public-getter");
+    const viewer = await createCreator("Public Viewer", "public-viewer");
+    const look = await createLook(creator.id, "Anyone can see this");
+
+    const response = await request(testApp)
+      .get(`/api/creator-looks/${look.id}/public`)
+      .set("Authorization", authHeaderFor(viewer.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.id).toBe(look.id);
+    expect(response.body.data.creator.id).toBe(creator.id);
+  });
+
+  it("works for an unauthenticated viewer too", async () => {
+    const creator = await createCreator("Anon Getter", "anon-getter");
+    const look = await createLook(creator.id, "Public even signed out");
+
+    const response = await request(testApp).get(`/api/creator-looks/${look.id}/public`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.id).toBe(look.id);
+  });
+
+  it("reflects the viewer's own like state", async () => {
+    const creator = await createCreator("Liked Getter", "liked-getter");
+    const liker = await createCreator("Liker Viewer", "liker-viewer");
+    const look = await createLook(creator.id, "Liked post");
+
+    await request(testApp)
+      .post(`/api/creator-looks/${look.id}/like`)
+      .set("Authorization", authHeaderFor(liker.id));
+
+    const response = await request(testApp)
+      .get(`/api/creator-looks/${look.id}/public`)
+      .set("Authorization", authHeaderFor(liker.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.isLiked).toBe(true);
+  });
+
+  it("returns 404 for a nonexistent post", async () => {
+    const response = await request(testApp).get(`/api/creator-looks/${randomUUID()}/public`);
+
+    expect(response.status).toBe(404);
+  });
+});
+
 describe("PATCH /api/creator-looks/:lookId", () => {
   it("updates a post's images, caption, and tagged products", async () => {
     const creator = await createCreator("Update Creator", "update-creator");

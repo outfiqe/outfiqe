@@ -10,7 +10,7 @@ import {
   toast,
 } from "@outfiqe/design-system";
 import { Check } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { FollowersModal } from "@/components/FollowersModal";
@@ -20,7 +20,7 @@ import type { FeaturedBadge } from "@/features/creator-dashboard/api/badgeSchema
 import { EditPostModal } from "@/features/creator-dashboard/components/EditPostModal";
 import { useDeleteLook } from "@/features/creator-dashboard/hooks/useDeleteLook";
 import { useUpdateCreatorProfile } from "@/features/creator-dashboard/hooks/useUpdateCreatorProfile";
-import { AddPostButton, PostDetailModal } from "@/features/explore";
+import { AddPostButton, PostDetailModal, usePublicLook } from "@/features/explore";
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
@@ -41,12 +41,14 @@ const MIN_HEIGHT_CM = 90;
 const MAX_HEIGHT_CM = 251;
 const MAX_PROFILE_FEATURED_BADGES = 3;
 const TITLE_BADGE_FALLBACK_COLOR = "#f97316";
+const LOOK_QUERY_PARAM = "look";
 
 const badgeAccentColor = (designConfig: FeaturedBadge["designConfig"]): string =>
   "primaryColor" in designConfig ? designConfig.primaryColor : TITLE_BADGE_FALLBACK_COLOR;
 
 export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAuthenticated, state, updateUser } = useAuth();
   const followMutation = useToggleFollow("user");
   const updateProfile = useUpdateCreatorProfile();
@@ -72,7 +74,6 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const [isFollowing, setIsFollowing] = useState(creator.isFollowing);
   const [followerCount, setFollowerCount] = useState(creator.followerCount);
   const [postsCount, setPostsCount] = useState(creator.postsCount);
-  const [detailPostId, setDetailPostId] = useState<string | null>(null);
   const [followersModalOpen, setFollowersModalOpen] = useState(false);
   const [followingModalOpen, setFollowingModalOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -84,6 +85,21 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const [editingLookId, setEditingLookId] = useState<string | null>(null);
   const [deletingLookId, setDeletingLookId] = useState<string | null>(null);
   const isOwnProfile = state.user?.id === userId;
+
+  const detailPostId = searchParams.get(LOOK_QUERY_PARAM);
+
+  const openPost = (lookId: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set(LOOK_QUERY_PARAM, lookId);
+    router.replace(`/creator/${handle}?${params.toString()}`, { scroll: false });
+  };
+
+  const closePost = () => {
+    const params = new URLSearchParams(searchParams);
+    params.delete(LOOK_QUERY_PARAM);
+    const query = params.toString();
+    router.replace(`/creator/${handle}${query ? `?${query}` : ""}`, { scroll: false });
+  };
 
   const toggleFollow = () => {
     if (!isAuthenticated) {
@@ -142,7 +158,13 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   };
 
   const posts = data?.pages.flatMap((page) => page.posts) ?? [];
-  const detailPost = posts.find((post) => post.id === detailPostId) ?? null;
+  const detailPostFromGrid = posts.find((post) => post.id === detailPostId) ?? null;
+  // Deep-linked posts (e.g. from a notification) aren't necessarily on an already-loaded
+  // grid page — fetch it directly rather than requiring the whole grid to be paged through.
+  const { data: fetchedDetailPost } = usePublicLook(
+    detailPostId && !detailPostFromGrid ? detailPostId : null,
+  );
+  const detailPost = detailPostFromGrid ?? fetchedDetailPost ?? null;
 
   const confirmDeletePost = () => {
     if (!deletingLookId) return;
@@ -330,7 +352,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
             <CreatorPostThumbnail
               key={post.id}
               post={post}
-              onClick={() => setDetailPostId(post.id)}
+              onClick={() => openPost(post.id)}
               isOwnProfile={isOwnProfile}
               onEdit={() => setEditingLookId(post.id)}
               onDelete={() => setDeletingLookId(post.id)}
@@ -340,11 +362,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
       )}
 
       {detailPost && (
-        <PostDetailModal
-          post={detailPost}
-          onClose={() => setDetailPostId(null)}
-          showCreatorHeader={false}
-        />
+        <PostDetailModal post={detailPost} onClose={closePost} showCreatorHeader={false} />
       )}
 
       {followersModalOpen && (
