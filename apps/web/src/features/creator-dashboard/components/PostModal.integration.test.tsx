@@ -48,6 +48,15 @@ const mockPending = (photos: PendingPhoto[]) => {
 
 const onClose = vi.fn();
 
+const searchAndSelectProduct = async (
+  user: ReturnType<typeof userEvent.setup>,
+  query: string,
+  optionName: RegExp,
+) => {
+  await user.type(screen.getByPlaceholderText("Search products to tag…"), query);
+  await user.click(await screen.findByRole("option", { name: optionName }));
+};
+
 const renderModal = () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -197,8 +206,7 @@ describe("PostModal", () => {
     renderModal();
 
     await user.click(screen.getByRole("button", { name: "Tag a product" }));
-    await user.type(screen.getByPlaceholderText("Search products to tag…"), "denim");
-    await user.click(await screen.findByRole("option", { name: /Denim Jacket/ }));
+    await searchAndSelectProduct(user, "denim", /Denim Jacket/);
 
     expect(screen.getByRole("button", { name: "1 product tagged" })).toBeInTheDocument();
   });
@@ -233,8 +241,7 @@ describe("PostModal", () => {
     renderModal();
 
     await user.click(screen.getByRole("button", { name: "Tag a product" }));
-    await user.type(screen.getByPlaceholderText("Search products to tag…"), "denim");
-    await user.click(await screen.findByRole("option", { name: /Denim Jacket/ }));
+    await searchAndSelectProduct(user, "denim", /Denim Jacket/);
     await user.click(screen.getByRole("option", { name: /Denim Jacket/ }));
 
     expect(screen.getByRole("button", { name: "Tag a product" })).toBeInTheDocument();
@@ -256,8 +263,7 @@ describe("PostModal", () => {
     renderModal();
 
     await user.click(screen.getByRole("button", { name: "Tag a product" }));
-    await user.type(screen.getByPlaceholderText("Search products to tag…"), "denim");
-    await user.click(await screen.findByRole("option", { name: /Denim Jacket/ }));
+    await searchAndSelectProduct(user, "denim", /Denim Jacket/);
     await user.type(screen.getByPlaceholderText("Size (e.g. M)"), "L");
 
     expect(screen.getByPlaceholderText("Size (e.g. M)")).toHaveValue("L");
@@ -279,8 +285,7 @@ describe("PostModal", () => {
     renderModal();
 
     await user.click(screen.getByRole("button", { name: "Tag a product" }));
-    await user.type(screen.getByPlaceholderText("Search products to tag…"), "denim");
-    await user.click(await screen.findByRole("option", { name: /Denim Jacket/ }));
+    await searchAndSelectProduct(user, "denim", /Denim Jacket/);
     await user.click(screen.getByRole("button", { name: "Remove Denim Jacket tag" }));
 
     expect(screen.getByRole("button", { name: "Tag a product" })).toBeInTheDocument();

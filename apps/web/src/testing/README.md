@@ -35,6 +35,17 @@ start/reset/stop lifecycle live here, not the mocked endpoints themselves.
 
 ## Non-obvious rationale
 
+- **The `integration` project sets `testTimeout: 10000` (`vitest.config.ts`), doubling vitest's
+  5000ms default; the `unit` project keeps the default.** Integration tests do real rendering, real
+  `QueryClientProvider`/MSW request round trips, and real `act()`-flushed effect chains — meaningfully
+  more work per test than a pure unit test, and `turbo run test` runs this project's tests
+  concurrently with `@outfiqe/api#test` (a CPU/DB-heavy, single-worker-serial suite — see
+  `apps/api/src/testing/README.md`), which can starve this project's worker of CPU time on a
+  constrained machine. A handful of integration tests were intermittently hitting the 5000ms default
+  under that contention, including ones with no timer or network call in them at all — evidence the
+  issue was scheduler starvation, not any one slow operation. Matches the same reasoning
+  `apps/api/vitest.config.ts`'s integration project already applies with its own (larger, DB-bound)
+  `testTimeout: 15000`.
 - Not colocated with a single source file, unlike `<name>.test.tsx` files: `mswServer` is one
   shared instance reused by every integration test in the app, and `setup.ts` is wired in as a
   vitest config-level `setupFiles` entry, which has to be a real file path.
