@@ -63,6 +63,7 @@ export default defineConfig({
         "src/features/explore/components/SuggestedCreatorRow.tsx",
         "src/features/explore/components/SuggestedCreatorsModal.tsx",
         "src/features/notifications/resolveNotificationHref.ts",
+        "src/features/auth/api/userSchemas.ts",
       ],
       thresholds: {
         lines: 80,
