@@ -7,8 +7,18 @@ import { leaderboardService } from "#modules/leaderboard/leaderboard.service.js"
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { followRepository } from "./follow.repository.js";
-import type { FollowTargetTypeParam, ListFollowersQuery } from "./follow.schemas.js";
-import type { FollowersPage, FollowingPage, FollowResult, FollowTarget } from "./follow.types.js";
+import type {
+  FollowTargetTypeParam,
+  ListFollowersQuery,
+  ListSuggestedCreatorsQuery,
+} from "./follow.schemas.js";
+import type {
+  FollowersPage,
+  FollowingPage,
+  FollowResult,
+  FollowTarget,
+  SuggestedCreatorsPage,
+} from "./follow.types.js";
 import {
   toBrandFollowTarget,
   toFollowerView,
@@ -97,9 +107,12 @@ export const followService = {
     return followRepository.isFollowing(followerId, toPrismaTargetType(targetTypeParam), targetId);
   },
 
-  async suggestedCreators(userId: string): Promise<FollowTarget[]> {
-    const users = await followRepository.suggestedCreators(userId);
-    return users.map(toFollowTarget);
+  async suggestedCreators(
+    userId: string,
+    query: ListSuggestedCreatorsQuery,
+  ): Promise<SuggestedCreatorsPage> {
+    const { items, nextCursor } = await followRepository.suggestedCreators(userId, query);
+    return { items: items.map(toFollowTarget), nextCursor };
   },
 
   async listFollowers(

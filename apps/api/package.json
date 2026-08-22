@@ -34,6 +34,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "db:seed:suggestions": "tsx prisma/seedSuggestions.ts",
     "db:prune": "tsx prisma/prune.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset"

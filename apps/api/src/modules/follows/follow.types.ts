@@ -42,4 +42,39 @@ export type FollowingPage = {
   nextCursor: string | null;
 };
 
+export type MutualFollowCandidate = {
+  candidateId: string;
+  mutualCount: number;
+};
+
+export type CreatorMomentumCacheEntry = {
+  creatorId: string;
+  momentum: number;
+};
+
+export type CandidateSignals = {
+  mutualFollowCount: number;
+  engagedNotFollowed: boolean;
+  hashtagMatchingPosts: number;
+  momentum: number;
+  followerCount: number;
+  creatorApprovedAt: Date | null;
+};
+
+export type ScoredSuggestionCandidate = {
+  creatorId: string;
+  signals: CandidateSignals;
+  score: number;
+};
+
+export type SuggestionSnapshotCursor = {
+  sessionId: string;
+  offset: number;
+};
+
+export type SuggestedCreatorsPage = {
+  items: FollowTarget[];
+  nextCursor: string | null;
+};
+
 export type { FollowTargetType };

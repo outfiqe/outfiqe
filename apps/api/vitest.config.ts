@@ -18,11 +18,13 @@ export default defineConfig({
       include: [
         "src/shared/utils/pagination.utils.ts",
         "src/shared/utils/opaque-token.utils.ts",
+        "src/shared/utils/creator-engagement-affinity.utils.ts",
         "src/modules/brand-applications/**",
         "src/modules/creators/**",
         "src/modules/creator-looks/**",
         "src/modules/brands/**",
         "src/modules/categories/**",
+        "src/modules/follows/**",
       ],
       thresholds: {
         lines: 80,
