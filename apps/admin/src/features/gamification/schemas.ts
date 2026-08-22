@@ -83,6 +83,16 @@ export const levelSchema = z.object({
 });
 export type Level = z.infer<typeof levelSchema>;
 
+export const xpMultiplierSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  multiplier: z.number(),
+  startsAt: z.string(),
+  endsAt: z.string(),
+  isActive: z.boolean(),
+});
+export type XpMultiplier = z.infer<typeof xpMultiplierSchema>;
+
 export const activityXpConfigSchema = z.object({
   activityType: z.string(),
   enabled: z.boolean(),

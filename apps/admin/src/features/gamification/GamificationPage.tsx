@@ -4,6 +4,7 @@ import { ChallengesSection } from "./ChallengesSection";
 import { LeaderboardSection } from "./LeaderboardSection";
 import { LevelsSection } from "./LevelsSection";
 import { ManualActionsSection } from "./ManualActionsSection";
+import { MultipliersSection } from "./MultipliersSection";
 import { StatsSection } from "./StatsSection";
 
 export const GamificationPage = () => {
@@ -12,6 +13,7 @@ export const GamificationPage = () => {
       <h1 className="font-display text-2xl font-bold text-foreground">Gamification</h1>
       <StatsSection />
       <LevelsSection />
+      <MultipliersSection />
       <ActivityConfigSection />
       <BadgesSection />
       <ChallengesSection />

@@ -5,6 +5,7 @@ import { Button, Skeleton } from "@outfiqe/design-system";
 import { useMyXpTransactions } from "../hooks/useMyXpTransactions";
 import { useXpProgress } from "../hooks/useXpProgress";
 import { LevelProgressCard } from "./LevelProgressCard";
+import { XpMultiplierBanner } from "./XpMultiplierBanner";
 import { XpTransactionRow } from "./XpTransactionRow";
 
 export const ProgressSection = () => {
@@ -22,6 +23,7 @@ export const ProgressSection = () => {
       </div>
 
       <div className="mt-6">
+        <XpMultiplierBanner />
         <LevelProgressCard progress={progress} isLoading={isProgressPending} />
       </div>
 

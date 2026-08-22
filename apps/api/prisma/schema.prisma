@@ -951,6 +951,20 @@ model Level {
   @@map("levels")
 }
 
+model XpMultiplier {
+  id         String   @id @default(uuid()) @db.Uuid
+  label      String
+  multiplier Float
+  startsAt   DateTime @map("starts_at")
+  endsAt     DateTime @map("ends_at")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, startsAt, endsAt])
+  @@map("xp_multipliers")
+}
+
 model UserProgress {
   userId         String   @id @map("user_id") @db.Uuid
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)

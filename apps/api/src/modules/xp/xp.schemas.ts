@@ -2,10 +2,13 @@ import { z } from "zod";
 
 import { XpActivityType } from "#generated/prisma/enums.js";
 
+import { MAX_XP_MULTIPLIER, MIN_XP_MULTIPLIER } from "./xp.constants.js";
+
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 50;
 const REASON_MAX_LENGTH = 500;
 const ICON_MAX_LENGTH = 8;
+const LABEL_MAX_LENGTH = 100;
 
 export const listXpTransactionsQuerySchema = z.object({
   cursor: z.uuid().optional(),
@@ -48,6 +51,40 @@ export const activityTypeParamSchema = z.object({
 
 export type UpdateActivityXpConfigBody = z.infer<typeof updateActivityXpConfigSchema>;
 export type ActivityTypeParam = z.infer<typeof activityTypeParamSchema>;
+
+const hasValidMultiplierWindow = (data: { startsAt: string; endsAt: string }) =>
+  data.startsAt < data.endsAt;
+
+export const createXpMultiplierSchema = z
+  .object({
+    label: z.string().trim().min(1).max(LABEL_MAX_LENGTH),
+    multiplier: z.number().min(MIN_XP_MULTIPLIER).max(MAX_XP_MULTIPLIER),
+    startsAt: z.iso.datetime(),
+    endsAt: z.iso.datetime(),
+  })
+  .refine(hasValidMultiplierWindow, {
+    message: "The multiplier must end after it starts.",
+    path: ["endsAt"],
+  });
+
+export const updateXpMultiplierSchema = z
+  .object({
+    label: z.string().trim().min(1).max(LABEL_MAX_LENGTH).optional(),
+    multiplier: z.number().min(MIN_XP_MULTIPLIER).max(MAX_XP_MULTIPLIER).optional(),
+    startsAt: z.iso.datetime().optional(),
+    endsAt: z.iso.datetime().optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((data) => !data.startsAt || !data.endsAt || data.startsAt < data.endsAt, {
+    message: "The multiplier must end after it starts.",
+    path: ["endsAt"],
+  });
+
+export const xpMultiplierIdParamSchema = z.object({ id: z.uuid() });
+
+export type CreateXpMultiplierBody = z.infer<typeof createXpMultiplierSchema>;
+export type UpdateXpMultiplierBody = z.infer<typeof updateXpMultiplierSchema>;
+export type XpMultiplierIdParam = z.infer<typeof xpMultiplierIdParamSchema>;
 
 export const adjustXpSchema = z.object({
   userId: z.uuid(),

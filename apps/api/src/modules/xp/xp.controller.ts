@@ -8,10 +8,13 @@ import type {
   ActivityTypeParam,
   AdjustXpBody,
   CreateLevelBody,
+  CreateXpMultiplierBody,
   LevelIdParam,
   ListXpTransactionsQuery,
   UpdateActivityXpConfigBody,
   UpdateLevelBody,
+  UpdateXpMultiplierBody,
+  XpMultiplierIdParam,
 } from "./xp.schemas.js";
 import { xpService } from "./xp.service.js";
 
@@ -61,6 +64,33 @@ export const xpController = {
     const body = validated.body<UpdateActivityXpConfigBody>(res);
     const config = await xpService.updateActivityConfig(activityType, body);
     sendSuccess(res, config, "Activity XP config updated.");
+  },
+
+  async getActiveMultiplier(_req: Request, res: Response) {
+    const activeMultiplier = await xpService.getActiveMultiplier();
+    sendSuccess(
+      res,
+      activeMultiplier,
+      activeMultiplier ? "An XP multiplier is active." : "No XP multiplier is active.",
+    );
+  },
+
+  async listMultipliers(_req: Request, res: Response) {
+    const multipliers = await xpService.listMultipliers();
+    sendSuccess(res, multipliers, "XP multipliers.");
+  },
+
+  async createMultiplier(_req: Request, res: Response) {
+    const body = validated.body<CreateXpMultiplierBody>(res);
+    const multiplier = await xpService.createMultiplier(body);
+    sendSuccess(res, multiplier, "XP multiplier created.", CREATED_STATUS);
+  },
+
+  async updateMultiplier(_req: Request, res: Response) {
+    const { id } = validated.params<XpMultiplierIdParam>(res);
+    const body = validated.body<UpdateXpMultiplierBody>(res);
+    const multiplier = await xpService.updateMultiplier(id, body);
+    sendSuccess(res, multiplier, "XP multiplier updated.");
   },
 
   async adjustXp(_req: Request, res: Response) {

@@ -21,11 +21,14 @@ import {
   levelSchema,
   type ManualAward,
   manualAwardSchema,
+  type XpMultiplier,
+  xpMultiplierSchema,
   type XpStats,
   xpStatsSchema,
 } from "./schemas";
 
 const levelListSchema = z.array(levelSchema);
+const xpMultiplierListSchema = z.array(xpMultiplierSchema);
 const activityConfigListSchema = z.array(activityXpConfigSchema);
 const badgeListSchema = z.array(badgeAdminSchema);
 const manualAwardListSchema = z.array(manualAwardSchema);
@@ -39,6 +42,14 @@ export type CreateLevelInput = {
   icon?: string;
 };
 export type UpdateLevelInput = Partial<Omit<CreateLevelInput, "level">> & { isActive?: boolean };
+
+export type CreateXpMultiplierInput = {
+  label: string;
+  multiplier: number;
+  startsAt: string;
+  endsAt: string;
+};
+export type UpdateXpMultiplierInput = Partial<CreateXpMultiplierInput> & { isActive?: boolean };
 
 export type UpdateActivityXpConfigInput = Partial<{
   enabled: boolean;
@@ -132,6 +143,21 @@ export const gamificationApi = {
   async adjustXp(userId: string, amount: number, reason: string): Promise<AdjustXpResult> {
     const res = await apiClient.post<AdjustXpResult>("/xp/adjust", { userId, amount, reason });
     return adjustXpResultSchema.parse(res.data);
+  },
+
+  async listXpMultipliers(): Promise<XpMultiplier[]> {
+    const res = await apiClient.get<XpMultiplier[]>("/xp/multipliers");
+    return xpMultiplierListSchema.parse(res.data);
+  },
+
+  async createXpMultiplier(input: CreateXpMultiplierInput): Promise<XpMultiplier> {
+    const res = await apiClient.post<XpMultiplier>("/xp/multipliers", input);
+    return xpMultiplierSchema.parse(res.data);
+  },
+
+  async updateXpMultiplier(id: string, input: UpdateXpMultiplierInput): Promise<XpMultiplier> {
+    const res = await apiClient.patch<XpMultiplier>(`/xp/multipliers/${id}`, input);
+    return xpMultiplierSchema.parse(res.data);
   },
 
   async getXpStats(): Promise<XpStats> {

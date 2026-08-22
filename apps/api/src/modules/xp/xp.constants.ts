@@ -7,3 +7,6 @@ export const XP_SOURCE = {
   COMMISSIONS: "commissions",
   ADMIN: "admin",
 } as const;
+
+export const MIN_XP_MULTIPLIER = 1;
+export const MAX_XP_MULTIPLIER = 10;

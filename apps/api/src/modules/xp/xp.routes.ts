@@ -10,10 +10,13 @@ import {
   activityTypeParamSchema,
   adjustXpSchema,
   createLevelSchema,
+  createXpMultiplierSchema,
   levelIdParamSchema,
   listXpTransactionsQuerySchema,
   updateActivityXpConfigSchema,
   updateLevelSchema,
+  updateXpMultiplierSchema,
+  xpMultiplierIdParamSchema,
 } from "./xp.schemas.js";
 
 const requireAdmin = [requireAuth, requireRole(UserRole.ADMIN)];
@@ -43,6 +46,24 @@ xpRoutes.patch(
   ...requireAdmin,
   validate({ params: levelIdParamSchema, body: updateLevelSchema }),
   xpController.updateLevel,
+);
+
+xpRoutes.get("/multiplier/active", requireAuth, xpController.getActiveMultiplier);
+
+xpRoutes.get("/multipliers", ...requireAdmin, xpController.listMultipliers);
+
+xpRoutes.post(
+  "/multipliers",
+  ...requireAdmin,
+  validate({ body: createXpMultiplierSchema }),
+  xpController.createMultiplier,
+);
+
+xpRoutes.patch(
+  "/multipliers/:id",
+  ...requireAdmin,
+  validate({ params: xpMultiplierIdParamSchema, body: updateXpMultiplierSchema }),
+  xpController.updateMultiplier,
 );
 
 xpRoutes.get("/activity-config", ...requireAdmin, xpController.listActivityConfigs);

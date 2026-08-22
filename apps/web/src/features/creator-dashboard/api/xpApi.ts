@@ -1,6 +1,8 @@
 import { apiClient } from "@/shared/lib/apiClient";
 
 import {
+  type ActiveXpMultiplier,
+  activeXpMultiplierSchema,
   type XpProgress,
   xpProgressSchema,
   type XpTransactionPage,
@@ -17,5 +19,10 @@ export const xpApi = {
     const params = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
     const res = await apiClient.get<XpTransactionPage>(`/xp/me/transactions${params}`);
     return xpTransactionPageSchema.parse(res.data);
+  },
+
+  async getActiveMultiplier(): Promise<ActiveXpMultiplier> {
+    const res = await apiClient.get<ActiveXpMultiplier>("/xp/multiplier/active");
+    return activeXpMultiplierSchema.parse(res.data);
   },
 };

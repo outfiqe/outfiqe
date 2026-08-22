@@ -23,6 +23,7 @@ export default defineConfig({
         "src/features/search/components/ExploreSearchBox.tsx",
         "src/features/search/hooks/useExploreAutocomplete.ts",
         "src/features/creator-dashboard/components/AchievementBadgeIcon.tsx",
+        "src/features/creator-dashboard/components/XpMultiplierBanner.tsx",
       ],
       thresholds: {
         lines: 80,

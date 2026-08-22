@@ -18,6 +18,21 @@ export type ActivityXpConfigRecord = {
   maxPerEntity: number | null;
 };
 
+export type XpMultiplierRecord = {
+  id: string;
+  label: string;
+  multiplier: number;
+  startsAt: Date;
+  endsAt: Date;
+  isActive: boolean;
+};
+
+export type ActiveXpMultiplierView = {
+  label: string;
+  multiplier: number;
+  endsAt: Date;
+} | null;
+
 export type AwardXpInput = {
   userId: string;
   activityType: XpActivityType;

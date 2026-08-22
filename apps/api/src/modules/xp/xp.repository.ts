@@ -2,8 +2,19 @@ import { prisma } from "#db/prisma.js";
 import { type XpActivityType, XpTransactionStatus } from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
-import type { CreateLevelBody, UpdateActivityXpConfigBody, UpdateLevelBody } from "./xp.schemas.js";
-import type { ActivityXpConfigRecord, AwardXpInput, LevelRecord } from "./xp.types.js";
+import type {
+  CreateLevelBody,
+  CreateXpMultiplierBody,
+  UpdateActivityXpConfigBody,
+  UpdateLevelBody,
+  UpdateXpMultiplierBody,
+} from "./xp.schemas.js";
+import type {
+  ActivityXpConfigRecord,
+  AwardXpInput,
+  LevelRecord,
+  XpMultiplierRecord,
+} from "./xp.types.js";
 
 export const xpRepository = {
   async findActivityConfig(activityType: XpActivityType): Promise<ActivityXpConfigRecord | null> {
@@ -126,6 +137,52 @@ export const xpRepository = {
   ): Promise<ActivityXpConfigRecord | null> {
     try {
       return await prisma.activityXpConfig.update({ where: { activityType }, data: input });
+    } catch {
+      return null;
+    }
+  },
+
+  async findActiveMultiplier(now: Date): Promise<XpMultiplierRecord | null> {
+    return prisma.xpMultiplier.findFirst({
+      where: { isActive: true, startsAt: { lte: now }, endsAt: { gte: now } },
+      orderBy: { multiplier: "desc" },
+    });
+  },
+
+  async listAllMultipliers(): Promise<XpMultiplierRecord[]> {
+    return prisma.xpMultiplier.findMany({ orderBy: { startsAt: "desc" } });
+  },
+
+  async findMultiplierById(id: string): Promise<XpMultiplierRecord | null> {
+    return prisma.xpMultiplier.findUnique({ where: { id } });
+  },
+
+  async createMultiplier(input: CreateXpMultiplierBody): Promise<XpMultiplierRecord> {
+    return prisma.xpMultiplier.create({
+      data: {
+        label: input.label,
+        multiplier: input.multiplier,
+        startsAt: new Date(input.startsAt),
+        endsAt: new Date(input.endsAt),
+      },
+    });
+  },
+
+  async updateMultiplier(
+    id: string,
+    input: UpdateXpMultiplierBody,
+  ): Promise<XpMultiplierRecord | null> {
+    try {
+      return await prisma.xpMultiplier.update({
+        where: { id },
+        data: {
+          label: input.label,
+          multiplier: input.multiplier,
+          startsAt: input.startsAt ? new Date(input.startsAt) : undefined,
+          endsAt: input.endsAt ? new Date(input.endsAt) : undefined,
+          isActive: input.isActive,
+        },
+      });
     } catch {
       return null;
     }

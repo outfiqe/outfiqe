@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { LevelRecord } from "./xp.types.js";
 import {
+  applyMultiplier,
   computeLevelProgress,
   hasReachedDailyLimit,
   hasReachedMaxPerEntity,
@@ -100,5 +101,24 @@ describe("hasReachedDailyLimit", () => {
 
   it("returns true once the award would exceed the daily limit", () => {
     expect(hasReachedDailyLimit(95, 10, 100)).toBe(true);
+  });
+});
+
+describe("applyMultiplier", () => {
+  it("returns the base amount unchanged when no multiplier is active", () => {
+    expect(applyMultiplier(15, undefined)).toBe(15);
+  });
+
+  it("scales the base amount by the active multiplier", () => {
+    expect(applyMultiplier(15, 2)).toBe(30);
+  });
+
+  it("rounds a fractional result to the nearest whole XP", () => {
+    expect(applyMultiplier(15, 1.5)).toBe(23);
+    expect(applyMultiplier(10, 1.5)).toBe(15);
+  });
+
+  it("leaves the amount unchanged for a 1x multiplier", () => {
+    expect(applyMultiplier(15, 1)).toBe(15);
   });
 });

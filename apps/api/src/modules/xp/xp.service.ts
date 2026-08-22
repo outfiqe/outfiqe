@@ -1,5 +1,6 @@
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
+import type { Prisma } from "#generated/prisma/client.js";
 import { XpActivityType } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
@@ -14,18 +15,23 @@ import type {
   ActivityTypeParam,
   AdjustXpBody,
   CreateLevelBody,
+  CreateXpMultiplierBody,
   UpdateActivityXpConfigBody,
   UpdateLevelBody,
+  UpdateXpMultiplierBody,
 } from "./xp.schemas.js";
 import type {
+  ActiveXpMultiplierView,
   ActivityXpConfigRecord,
   AwardXpInput,
   AwardXpResult,
   LevelRecord,
   UserProgressView,
+  XpMultiplierRecord,
   XpTransactionPage,
 } from "./xp.types.js";
 import {
+  applyMultiplier,
   computeLevelProgress,
   hasReachedDailyLimit,
   hasReachedMaxPerEntity,
@@ -38,6 +44,15 @@ const MIN_TOTAL_XP = 0;
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
 const VALIDATION_STATUS = 422;
+
+const isPlainMetadataObject = (
+  metadata: Prisma.InputJsonValue | undefined,
+): metadata is Record<string, Prisma.InputJsonValue> =>
+  metadata !== null && typeof metadata === "object" && !Array.isArray(metadata);
+
+const baseMetadataObject = (
+  metadata: Prisma.InputJsonValue | undefined,
+): Record<string, Prisma.InputJsonValue> => (isPlainMetadataObject(metadata) ? metadata : {});
 
 const applyXpTransaction = async (input: AwardXpInput, amount: number): Promise<AwardXpResult> => {
   const { userId } = input;
@@ -134,7 +149,20 @@ const awardXp = async (input: AwardXpInput): Promise<AwardXpResult> => {
       }
     }
 
-    return await applyXpTransaction(input, xpAmount);
+    const activeMultiplier = await xpRepository.findActiveMultiplier(new Date());
+    const finalAmount = applyMultiplier(xpAmount, activeMultiplier?.multiplier);
+    const multiplierInput = activeMultiplier
+      ? {
+          ...input,
+          metadata: {
+            ...baseMetadataObject(input.metadata),
+            multiplier: activeMultiplier.multiplier,
+            baseAmount: xpAmount,
+          },
+        }
+      : input;
+
+    return await applyXpTransaction(multiplierInput, finalAmount);
   } catch (error) {
     logger.error(`Failed to award XP for activity ${activityType}: ${describeError(error)}`);
     return { awarded: false, reason: "ACTIVITY_DISABLED" };
@@ -226,6 +254,35 @@ const updateActivityConfig = async (
   return updated;
 };
 
+const getActiveMultiplier = async (): Promise<ActiveXpMultiplierView> => {
+  const activeMultiplier = await xpRepository.findActiveMultiplier(new Date());
+  if (!activeMultiplier) return null;
+
+  const { label, multiplier, endsAt } = activeMultiplier;
+  return { label, multiplier, endsAt };
+};
+
+const listMultipliers = async (): Promise<XpMultiplierRecord[]> =>
+  xpRepository.listAllMultipliers();
+
+const createMultiplier = async (input: CreateXpMultiplierBody): Promise<XpMultiplierRecord> =>
+  xpRepository.createMultiplier(input);
+
+const updateMultiplier = async (
+  id: string,
+  input: UpdateXpMultiplierBody,
+): Promise<XpMultiplierRecord> => {
+  const updated = await xpRepository.updateMultiplier(id, input);
+  if (!updated) {
+    throw new AppError(
+      "XP_MULTIPLIER_NOT_FOUND",
+      "This XP multiplier doesn't exist.",
+      NOT_FOUND_STATUS,
+    );
+  }
+  return updated;
+};
+
 const adjustXp = async (
   { userId, amount, reason }: AdjustXpBody,
   adminUserId: string,
@@ -279,6 +336,10 @@ export const xpService = {
   updateLevel,
   listActivityConfigs,
   updateActivityConfig,
+  getActiveMultiplier,
+  listMultipliers,
+  createMultiplier,
+  updateMultiplier,
   adjustXp,
   getAdminStats,
 };

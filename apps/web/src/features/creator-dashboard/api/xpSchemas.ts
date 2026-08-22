@@ -48,3 +48,12 @@ export const xpTransactionPageSchema = z.object({
   nextCursor: z.string().nullable(),
 });
 export type XpTransactionPage = z.infer<typeof xpTransactionPageSchema>;
+
+export const activeXpMultiplierSchema = z
+  .object({
+    label: z.string(),
+    multiplier: z.number(),
+    endsAt: z.string(),
+  })
+  .nullable();
+export type ActiveXpMultiplier = z.infer<typeof activeXpMultiplierSchema>;

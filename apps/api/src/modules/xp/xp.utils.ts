@@ -39,3 +39,6 @@ export const hasReachedDailyLimit = (
   incomingAmount: number,
   dailyLimit: number | null,
 ): boolean => dailyLimit !== null && sumLast24h + incomingAmount > dailyLimit;
+
+export const applyMultiplier = (baseAmount: number, multiplier: number | undefined): number =>
+  Math.round(baseAmount * (multiplier ?? 1));
