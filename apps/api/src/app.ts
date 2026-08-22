@@ -18,6 +18,7 @@ import { categoryRoutes } from "./modules/categories/category.routes.js";
 import { challengeRoutes } from "./modules/challenges/challenge.routes.js";
 import { collectionRoutes } from "./modules/collections/collection.routes.js";
 import { commissionRoutes } from "./modules/commissions/commission.routes.js";
+import { creatorCompetitionRoutes } from "./modules/creator-competitions/creatorCompetition.routes.js";
 import { creatorLeaderboardRoutes } from "./modules/creator-leaderboard/creatorLeaderboard.routes.js";
 import { creatorLinkRoutes } from "./modules/creator-links/creatorLink.routes.js";
 import { creatorLookRoutes } from "./modules/creator-looks/creatorLook.routes.js";
@@ -89,6 +90,7 @@ export const createApp = () => {
   app.use("/api/achievements", achievementRoutes);
   app.use("/api/badges", badgeRoutes);
   app.use("/api/challenges", challengeRoutes);
+  app.use("/api/creator-competitions", creatorCompetitionRoutes);
 
   Sentry.setupExpressErrorHandler(app);
   app.use(errorHandler);

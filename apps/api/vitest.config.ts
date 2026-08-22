@@ -35,6 +35,7 @@ export default defineConfig({
         "src/modules/badges/badge.utils.ts",
         "src/modules/challenges/challenge.utils.ts",
         "src/modules/creator-leaderboard/creatorLeaderboard.utils.ts",
+        "src/modules/creator-competitions/creatorCompetition.utils.ts",
       ],
       thresholds: {
         lines: 80,

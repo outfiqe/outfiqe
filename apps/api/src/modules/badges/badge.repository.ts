@@ -155,7 +155,14 @@ export const badgeRepository = {
   async awardBadge(input: AwardBadgeInput): Promise<AwardBadgeResult> {
     const badge = await prisma.badge.findUnique({
       where: { id: input.badgeId },
-      select: { id: true, isActive: true, assignmentLimit: true, xpReward: true },
+      select: {
+        id: true,
+        isActive: true,
+        assignmentLimit: true,
+        xpReward: true,
+        name: true,
+        icon: true,
+      },
     });
     if (!badge) return { awarded: false, reason: "BADGE_NOT_FOUND" };
     if (!badge.isActive) return { awarded: false, reason: "BADGE_INACTIVE" };
@@ -184,7 +191,13 @@ export const badgeRepository = {
             awardReason: input.awardReason,
           },
         });
-        return { awarded: true, userBadgeId: userBadge.id, xpReward: badge.xpReward };
+        return {
+          awarded: true,
+          userBadgeId: userBadge.id,
+          xpReward: badge.xpReward,
+          badgeName: badge.name,
+          badgeIcon: badge.icon,
+        };
       } catch (error) {
         if (isUniqueConstraintError(error)) return { awarded: false, reason: "ALREADY_AWARDED" };
         throw error;

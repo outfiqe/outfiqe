@@ -3,18 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { gamificationApi } from "./api";
+import { LEADERBOARD_CATEGORY_LABEL } from "./badgeOptions.constants";
 
 const LEADERBOARD_CATEGORIES_QUERY_KEY = ["admin-creator-leaderboard-categories"];
-
-const CATEGORY_LABEL: Record<string, string> = {
-  TOP_XP: "Top XP",
-  TOP_CREATOR: "Top Creator",
-  MOST_LIKES: "Most Likes",
-  MOST_ENGAGED: "Most Engaged",
-  TOP_SELLER: "Top Seller",
-  RISING_CREATOR: "Rising Creator",
-  MOST_ACHIEVEMENTS: "Most Achievements",
-};
 
 export const LeaderboardSection = () => {
   const queryClient = useQueryClient();
@@ -54,7 +45,7 @@ export const LeaderboardSection = () => {
             className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
           >
             <span className="text-sm font-medium text-foreground">
-              {CATEGORY_LABEL[category] ?? category}
+              {LEADERBOARD_CATEGORY_LABEL[category]}
             </span>
             <Checkbox
               checked={enabled}

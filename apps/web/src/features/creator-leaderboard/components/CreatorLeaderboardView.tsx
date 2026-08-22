@@ -7,6 +7,7 @@ import {
   CREATOR_LEADERBOARD_QUERY_PARAM,
   isCreatorLeaderboardCategory,
 } from "../creatorLeaderboard.constants";
+import { CreatorCompetitionBanner } from "./CreatorCompetitionBanner";
 import { CreatorLeaderboardList } from "./CreatorLeaderboardList";
 import { CreatorLeaderboardTabs } from "./CreatorLeaderboardTabs";
 
@@ -30,6 +31,7 @@ export const CreatorLeaderboardView = () => {
     <div>
       <CreatorLeaderboardTabs category={category} onChange={setCategory} />
       <div className="mt-6">
+        <CreatorCompetitionBanner category={category} />
         <CreatorLeaderboardList category={category} />
       </div>
     </div>

@@ -15,6 +15,8 @@ import {
   badgeStatsSchema,
   type ChallengeAdmin,
   challengeAdminSchema,
+  type CreatorCompetitionAdmin,
+  creatorCompetitionAdminSchema,
   type CreatorLeaderboardCategoryState,
   creatorLeaderboardCategoryStateSchema,
   type Level,
@@ -33,6 +35,7 @@ const activityConfigListSchema = z.array(activityXpConfigSchema);
 const badgeListSchema = z.array(badgeAdminSchema);
 const manualAwardListSchema = z.array(manualAwardSchema);
 const challengeListSchema = z.array(challengeAdminSchema);
+const creatorCompetitionListSchema = z.array(creatorCompetitionAdminSchema);
 const creatorLeaderboardCategoryListSchema = z.array(creatorLeaderboardCategoryStateSchema);
 
 export type CreateLevelInput = {
@@ -106,6 +109,25 @@ export type ChallengeFormInput = {
 export type UpdateChallengeFormInput = ChallengeFormInput & {
   isActive: boolean;
   achievementIsActive: boolean;
+};
+
+export type CreatorCompetitionFormInput = {
+  name: string;
+  description: string;
+  category: string;
+  rarity: string;
+  icon: string;
+  designConfig: { shape: string; primaryColor: string; animation?: string };
+  xpReward: number;
+  isPermanent: boolean;
+  isPublic: boolean;
+  isTitleEligible: boolean;
+  leaderboardCategory: string;
+  topN: number;
+};
+
+export type UpdateCreatorCompetitionFormInput = CreatorCompetitionFormInput & {
+  isActive: boolean;
 };
 
 export const gamificationApi = {
@@ -218,6 +240,29 @@ export const gamificationApi = {
   ): Promise<ChallengeAdmin> {
     const res = await apiClient.patch<ChallengeAdmin>(`/challenges/${challengeId}`, input);
     return challengeAdminSchema.parse(res.data);
+  },
+
+  async listCreatorCompetitionsAdmin(): Promise<CreatorCompetitionAdmin[]> {
+    const res = await apiClient.get<CreatorCompetitionAdmin[]>("/creator-competitions/admin");
+    return creatorCompetitionListSchema.parse(res.data);
+  },
+
+  async createCreatorCompetition(
+    input: CreatorCompetitionFormInput,
+  ): Promise<CreatorCompetitionAdmin> {
+    const res = await apiClient.post<CreatorCompetitionAdmin>("/creator-competitions", input);
+    return creatorCompetitionAdminSchema.parse(res.data);
+  },
+
+  async updateCreatorCompetition(
+    competitionId: string,
+    input: UpdateCreatorCompetitionFormInput,
+  ): Promise<CreatorCompetitionAdmin> {
+    const res = await apiClient.patch<CreatorCompetitionAdmin>(
+      `/creator-competitions/${competitionId}`,
+      input,
+    );
+    return creatorCompetitionAdminSchema.parse(res.data);
   },
 
   async listCreatorLeaderboardCategories(): Promise<CreatorLeaderboardCategoryState[]> {

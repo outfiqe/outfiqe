@@ -1078,8 +1078,9 @@ model Badge {
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
-  achievement Achievement?
-  userBadges  UserBadge[]
+  achievement        Achievement?
+  userBadges         UserBadge[]
+  creatorCompetition CreatorCompetition?
 
   @@index([category, isActive])
   @@map("badges")
@@ -1148,6 +1149,21 @@ model CreatorLeaderboardCategoryConfig {
   updatedAt DateTime                   @updatedAt @map("updated_at")
 
   @@map("creator_leaderboard_category_configs")
+}
+
+model CreatorCompetition {
+  id        String                     @id @default(uuid()) @db.Uuid
+  name      String
+  category  CreatorLeaderboardCategory
+  topN      Int                        @map("top_n")
+  badgeId   String                     @unique @map("badge_id") @db.Uuid
+  badge     Badge                      @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  isActive  Boolean                    @default(true) @map("is_active")
+  createdAt DateTime                   @default(now()) @map("created_at")
+  updatedAt DateTime                   @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("creator_competitions")
 }
 
 /**

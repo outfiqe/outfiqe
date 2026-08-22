@@ -3,6 +3,7 @@ import type {
   BadgeCategoryValue,
   BadgeRarityValue,
   BadgeShapeValue,
+  CreatorLeaderboardCategoryValue,
 } from "./schemas";
 
 export const CATEGORY_OPTIONS: BadgeCategoryValue[] = [
@@ -52,3 +53,23 @@ export const RULE_BASED_REQUIREMENT_TYPES = [
   "LEVEL",
   "SPECIAL",
 ] as const;
+
+export const LEADERBOARD_CATEGORY_OPTIONS: CreatorLeaderboardCategoryValue[] = [
+  "TOP_XP",
+  "TOP_CREATOR",
+  "MOST_LIKES",
+  "MOST_ENGAGED",
+  "TOP_SELLER",
+  "RISING_CREATOR",
+  "MOST_ACHIEVEMENTS",
+];
+
+export const LEADERBOARD_CATEGORY_LABEL: Record<CreatorLeaderboardCategoryValue, string> = {
+  TOP_XP: "Top XP",
+  TOP_CREATOR: "Top Creator",
+  MOST_LIKES: "Most Likes",
+  MOST_ENGAGED: "Most Engaged",
+  TOP_SELLER: "Top Seller",
+  RISING_CREATOR: "Rising Creator",
+  MOST_ACHIEVEMENTS: "Most Achievements",
+};

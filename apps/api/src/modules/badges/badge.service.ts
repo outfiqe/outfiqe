@@ -1,4 +1,5 @@
 import { prisma } from "#db/prisma.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { XpActivityType } from "#generated/prisma/enums.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -121,9 +122,17 @@ const listFeaturedForUser = async (userId: string): Promise<FeaturedBadgeView[]>
   return featured;
 };
 
-const awardBadge = async (input: AwardBadgeInput) => {
+const awardBadge = async (input: AwardBadgeInput, xpSource: string = XP_SOURCE.ADMIN) => {
   const result = await badgeRepository.awardBadge(input);
   if (!result.awarded) return result;
+
+  await eventBus.publish(DomainEvents.ACHIEVEMENT_UNLOCKED, {
+    userId: input.userId,
+    badgeId: input.badgeId,
+    badgeName: result.badgeName,
+    badgeIcon: result.badgeIcon,
+    xpReward: result.xpReward,
+  });
 
   if (result.xpReward > 0) {
     await xpService.grantFixedXp(
@@ -131,7 +140,7 @@ const awardBadge = async (input: AwardBadgeInput) => {
         userId: input.userId,
         activityType: XpActivityType.ACHIEVEMENT_UNLOCKED,
         relatedEntityId: input.badgeId,
-        source: XP_SOURCE.ADMIN,
+        source: xpSource,
         metadata: { badgeId: input.badgeId, awardedById: input.awardedById },
       },
       result.xpReward,

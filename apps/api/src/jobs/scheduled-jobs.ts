@@ -3,6 +3,7 @@ import { DYNAMIC_BADGE_RECHECK_INTERVAL_MS } from "#modules/achievements/achieve
 import { achievementService } from "#modules/achievements/achievement.service.js";
 import { COMMISSION_SWEEP_INTERVAL_MS } from "#modules/commissions/commission.constants.js";
 import { runCommissionLifecycleSweep } from "#modules/commissions/commission.lifecycle.js";
+import { creatorCompetitionService } from "#modules/creator-competitions/creatorCompetition.service.js";
 import { CREATOR_LEADERBOARD_RECOMPUTE_INTERVAL_MS } from "#modules/creator-leaderboard/creatorLeaderboard.constants.js";
 import { creatorLeaderboardService } from "#modules/creator-leaderboard/creatorLeaderboard.service.js";
 import {
@@ -114,6 +115,11 @@ export const BOUNDARY_JOBS: BoundaryJob[] = [
   {
     name: "creator-leaderboard-boundary-recompute",
     run: creatorLeaderboardService.runRecompute,
+    nextRunAt: nextIsoWeekStart,
+  },
+  {
+    name: "creator-competition-boundary-settlement",
+    run: creatorCompetitionService.runWeeklySettlement,
     nextRunAt: nextIsoWeekStart,
   },
 ];

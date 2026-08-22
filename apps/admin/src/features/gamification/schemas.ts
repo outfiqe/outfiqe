@@ -185,6 +185,28 @@ export const creatorLeaderboardCategoryStateSchema = z.object({
 });
 export type CreatorLeaderboardCategoryState = z.infer<typeof creatorLeaderboardCategoryStateSchema>;
 
+export const creatorCompetitionAdminSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: creatorLeaderboardCategorySchema,
+  topN: z.number(),
+  isActive: z.boolean(),
+  badge: z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string(),
+    icon: z.string(),
+    category: badgeCategorySchema,
+    rarity: badgeRaritySchema,
+    designConfig: badgeDesignConfigSchema,
+    xpReward: z.number(),
+    isPermanent: z.boolean(),
+    isPublic: z.boolean(),
+    isTitleEligible: z.boolean(),
+  }),
+});
+export type CreatorCompetitionAdmin = z.infer<typeof creatorCompetitionAdminSchema>;
+
 export const manualAwardSchema = z.object({
   id: z.string(),
   userId: z.string(),

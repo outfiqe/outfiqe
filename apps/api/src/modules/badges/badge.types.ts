@@ -79,7 +79,7 @@ export type AwardBadgeFailureReason =
   "BADGE_NOT_FOUND" | "BADGE_INACTIVE" | "ALREADY_AWARDED" | "ASSIGNMENT_LIMIT_REACHED";
 
 export type AwardBadgeResult =
-  | { awarded: true; userBadgeId: string; xpReward: number }
+  | { awarded: true; userBadgeId: string; xpReward: number; badgeName: string; badgeIcon: string }
   | { awarded: false; reason: AwardBadgeFailureReason };
 
 export type BadgeAdminRecord = {
