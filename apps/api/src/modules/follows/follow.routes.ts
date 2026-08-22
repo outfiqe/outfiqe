@@ -9,11 +9,17 @@ import {
   followingUserIdParamSchema,
   followParamsSchema,
   listFollowersQuerySchema,
+  listSuggestedCreatorsQuerySchema,
 } from "./follow.schemas.js";
 
 export const followRoutes = Router();
 
-followRoutes.get("/suggested-creators", requireAuth, followController.suggestedCreators);
+followRoutes.get(
+  "/suggested-creators",
+  requireAuth,
+  validate({ query: listSuggestedCreatorsQuerySchema }),
+  followController.suggestedCreators,
+);
 
 followRoutes.get(
   "/:targetType/:targetId/followers",

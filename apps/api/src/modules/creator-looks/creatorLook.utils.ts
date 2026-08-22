@@ -35,6 +35,7 @@ import type {
   CreatorLookEditDetail,
   CreatorLookFeedPost,
   CreatorLookSummary,
+  CreatorMomentumEntry,
   PostBaselineSource,
   PostMetricBucket,
   PostScoreBreakdown,
@@ -264,6 +265,37 @@ export const scorePost = (params: {
     freshnessMultiplier,
     score,
   };
+};
+
+export const scoreCreatorMomentum = (params: {
+  creatorId: string;
+  buckets: PostMetricBucket[];
+  globalBaseline: number;
+  now: Date;
+}): CreatorMomentumEntry => {
+  const { creatorId, buckets, globalBaseline, now } = params;
+
+  const decayedActivity = sumDecayedPostActivityInWindow(
+    buckets,
+    now,
+    TREND_CURRENT_WINDOW_START_HOURS,
+    TREND_CURRENT_WINDOW_END_HOURS,
+  );
+  const previousWindowActivity = sumDecayedPostActivityInWindow(
+    buckets,
+    now,
+    TREND_PREVIOUS_WINDOW_START_HOURS,
+    TREND_PREVIOUS_WINDOW_END_HOURS,
+  );
+
+  const ownBaseline = computeOwnPostBaseline(buckets, now, TREND_BASELINE_WINDOW_DAYS);
+  const baseline = pickPostBaseline(ownBaseline, globalBaseline);
+
+  const velocity = decayedActivity / (previousWindowActivity + TREND_SMOOTHING);
+  const baselineLift = decayedActivity / (baseline.value + TREND_SMOOTHING);
+  const momentumMultiplier = Math.min(Math.sqrt(velocity * baselineLift), TREND_MOMENTUM_CAP);
+
+  return { creatorId, momentum: decayedActivity * momentumMultiplier };
 };
 
 export const tagBucketActivity = (bucket: { postCount: number }): number =>

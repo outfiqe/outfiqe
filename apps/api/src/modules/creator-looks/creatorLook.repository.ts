@@ -4,12 +4,13 @@ import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import type { CreatorLookTagClickSource } from "#generated/prisma/enums.js";
 import { CreatorStatus, ProductStatus } from "#generated/prisma/enums.js";
+import { computeViewerEngagementAffinity } from "#lib/creator-engagement-affinity.utils.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 import { ageHoursOf, applyDiversity } from "#lib/trend-scoring.utils.js";
 import logger from "#lib/winston.utils.js";
 import type { ProductWithBrand } from "#modules/products/product.types.js";
 import { cacheService } from "#redis/cache.service.js";
-import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
+import { CACHE_TTL, CREATOR_MOMENTUM_SCORE_CACHE_KEY, redisKeys } from "#redis/redis.keys.js";
 import { describeError } from "#redis/redis.utils.js";
 
 import {
@@ -34,6 +35,7 @@ import type {
   CreatorLookEditDetail,
   CreatorLookFeedPost,
   CreatorLookSummary,
+  CreatorMomentumEntry,
   FeedPage,
   LookSearchPage,
   PostMetricBucket,
@@ -58,6 +60,7 @@ import {
   computeGlobalTagBaseline,
   groupPostBucketsByLook,
   groupTagBucketsByTag,
+  scoreCreatorMomentum,
   scorePost,
   scoreTag,
   toEditDetail,
@@ -325,13 +328,26 @@ const listActivePostMeta = (lookIds: string[]): Promise<PostTrendMeta[]> =>
         select: { id: true, creatorId: true, createdAt: true },
       });
 
-const computeRankedLookScores = async (): Promise<PostTrendingEntry[]> => {
-  const now = new Date();
+type RecentPostBucketsWithMeta = {
+  bucketsByLook: Map<string, PostMetricBucket[]>;
+  metaById: Map<string, PostTrendMeta>;
+};
+
+const fetchRecentPostBucketsWithMeta = async (): Promise<RecentPostBucketsWithMeta> => {
   const buckets = await listRecentPostMetricBuckets(TREND_BASELINE_WINDOW_DAYS);
   const bucketsByLook = groupPostBucketsByLook(buckets);
 
   const meta = await listActivePostMeta([...bucketsByLook.keys()]);
   const metaById = new Map(meta.map((row) => [row.id, row]));
+
+  return { bucketsByLook, metaById };
+};
+
+const computeRankedLookScores = async (
+  prefetched?: RecentPostBucketsWithMeta,
+): Promise<PostTrendingEntry[]> => {
+  const now = new Date();
+  const { bucketsByLook, metaById } = prefetched ?? (await fetchRecentPostBucketsWithMeta());
 
   const globalBaseline = computeGlobalPostBaseline(bucketsByLook, now, TREND_BASELINE_WINDOW_DAYS);
 
@@ -358,6 +374,50 @@ const computeRankedLookScores = async (): Promise<PostTrendingEntry[]> => {
 
   candidates.sort((a, b) => b.score - a.score);
   return candidates.map(({ lookId, score }) => ({ lookId, score }));
+};
+
+const groupPostBucketsByCreator = (
+  bucketsByLook: Map<string, PostMetricBucket[]>,
+  metaById: Map<string, PostTrendMeta>,
+): Map<string, PostMetricBucket[]> => {
+  const grouped = new Map<string, PostMetricBucket[]>();
+  for (const [lookId, lookBuckets] of bucketsByLook) {
+    const creatorId = metaById.get(lookId)?.creatorId;
+    if (!creatorId) continue;
+
+    const existing = grouped.get(creatorId);
+    if (existing) existing.push(...lookBuckets);
+    else grouped.set(creatorId, [...lookBuckets]);
+  }
+  return grouped;
+};
+
+const computeRankedCreatorMomentumScores = async (
+  prefetched?: RecentPostBucketsWithMeta,
+): Promise<CreatorMomentumEntry[]> => {
+  const now = new Date();
+  const { bucketsByLook, metaById } = prefetched ?? (await fetchRecentPostBucketsWithMeta());
+
+  const bucketsByCreator = groupPostBucketsByCreator(bucketsByLook, metaById);
+  const globalBaseline = computeGlobalPostBaseline(
+    bucketsByCreator,
+    now,
+    TREND_BASELINE_WINDOW_DAYS,
+  );
+
+  const candidates: CreatorMomentumEntry[] = [];
+  for (const [creatorId, creatorBuckets] of bucketsByCreator) {
+    const hasRecentBucket = creatorBuckets.some(
+      (bucket) => ageHoursOf(bucket, now) < TREND_RECENT_METRICS_WINDOW_HOURS,
+    );
+    if (!hasRecentBucket) continue;
+
+    const entry = scoreCreatorMomentum({ creatorId, buckets: creatorBuckets, globalBaseline, now });
+    if (entry.momentum > 0) candidates.push(entry);
+  }
+
+  candidates.sort((a, b) => b.momentum - a.momentum);
+  return candidates;
 };
 
 const buildTrendingSnapshot = async (): Promise<string[]> => {
@@ -423,37 +483,6 @@ const listCandidateAffinityMeta = async (lookIds: string[]): Promise<CandidateAf
   }));
 };
 
-const fetchEngagementAffinity = async (
-  viewerId: string,
-  lookbackDays: number,
-): Promise<{ engagedCreatorIds: Set<string>; hashtagWeights: Map<string, number> }> => {
-  const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000);
-
-  const rows = await prisma.$queryRaw<{ creator_id: string; tag: string | null }[]>(Prisma.sql`
-    SELECT cl.creator_id, h.tag
-    FROM (
-      SELECT creator_look_id FROM creator_look_likes
-      WHERE user_id = ${viewerId} AND created_at >= ${since}
-      UNION ALL
-      SELECT creator_look_id FROM creator_look_saves
-      WHERE user_id = ${viewerId} AND created_at >= ${since}
-      UNION ALL
-      SELECT creator_look_id FROM creator_look_comments
-      WHERE user_id = ${viewerId} AND created_at >= ${since} AND deleted_at IS NULL
-    ) engaged
-    JOIN creator_looks cl ON cl.id = engaged.creator_look_id
-    LEFT JOIN creator_look_hashtags h ON h.creator_look_id = engaged.creator_look_id
-  `);
-
-  const engagedCreatorIds = new Set<string>();
-  const hashtagWeights = new Map<string, number>();
-  for (const row of rows) {
-    engagedCreatorIds.add(row.creator_id);
-    if (row.tag) hashtagWeights.set(row.tag, (hashtagWeights.get(row.tag) ?? 0) + 1);
-  }
-  return { engagedCreatorIds, hashtagWeights };
-};
-
 const scorePersonalized = (
   candidate: PostTrendingEntry,
   meta: CandidateAffinityMeta,
@@ -496,7 +525,7 @@ const buildPersonalizedSnapshot = async (
 
   const [candidateMeta, engagement] = await Promise.all([
     listCandidateAffinityMeta(scored.map((candidate) => candidate.lookId)),
-    fetchEngagementAffinity(viewerId, FOR_YOU_ENGAGEMENT_LOOKBACK_DAYS),
+    computeViewerEngagementAffinity(viewerId, FOR_YOU_ENGAGEMENT_LOOKBACK_DAYS),
   ]);
   const metaById = new Map(candidateMeta.map((row) => [row.id, row]));
   const affinity: ViewerAffinity = {
@@ -1064,6 +1093,18 @@ export const creatorLookRepository = {
     return computeRankedLookScores();
   },
 
+  async computeRankedTrendingScoreAndCreatorMomentum(): Promise<{
+    postScores: PostTrendingEntry[];
+    creatorMomentum: CreatorMomentumEntry[];
+  }> {
+    const prefetched = await fetchRecentPostBucketsWithMeta();
+    const [postScores, creatorMomentum] = await Promise.all([
+      computeRankedLookScores(prefetched),
+      computeRankedCreatorMomentumScores(prefetched),
+    ]);
+    return { postScores, creatorMomentum };
+  },
+
   async cacheRankedTrendingScore(ranked: PostTrendingEntry[]): Promise<void> {
     try {
       await cacheService.set(
@@ -1074,6 +1115,24 @@ export const creatorLookRepository = {
     } catch (error) {
       logger.warn(
         `Cache write failed for "${EXPLORE_TRENDING_SCORE_CACHE_KEY}": ${describeError(error)}`,
+      );
+    }
+  },
+
+  async computeRankedCreatorMomentumScores(): Promise<CreatorMomentumEntry[]> {
+    return computeRankedCreatorMomentumScores();
+  },
+
+  async cacheRankedCreatorMomentumScores(ranked: CreatorMomentumEntry[]): Promise<void> {
+    try {
+      await cacheService.set(
+        CREATOR_MOMENTUM_SCORE_CACHE_KEY,
+        ranked,
+        CACHE_TTL.CREATOR_MOMENTUM_SCORE,
+      );
+    } catch (error) {
+      logger.warn(
+        `Cache write failed for "${CREATOR_MOMENTUM_SCORE_CACHE_KEY}": ${describeError(error)}`,
       );
     }
   },

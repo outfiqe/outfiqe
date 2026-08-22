@@ -11,6 +11,7 @@ export interface UserRecord {
   role: UserRole;
   isCreator: boolean;
   creatorStatus: CreatorStatus;
+  creatorApprovedAt: Date | null;
   heightCm: number | null;
   showHeight: boolean;
   emailVerified: boolean;

@@ -1,38 +1,43 @@
-/* Prisma 7: the Rust query engine is gone. The client is TypeScript + WASM
- and a driver adapter is mandatory (see src/shared/db/prisma.ts).
+/**
+ * Prisma 7: the Rust query engine is gone. The client is TypeScript + WASM
+ * and a driver adapter is mandatory (see src/shared/db/prisma.ts).
  */
 generator client {
   provider = "prisma-client"
-  /* Prisma 7 REQUIRES an explicit output. The client is no longer emitted
-   into node_modules, so it is imported from this path, not "@prisma/client".
+  /**
+   * Prisma 7 REQUIRES an explicit output. The client is no longer emitted
+   * into node_modules, so it is imported from this path, not "@prisma/client".
    */
   output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  /*  No `url` here on purpose. In Prisma 7 the connection string for the CLI
-   lives in prisma.config.ts; the runtime one is passed to the adapter. */
+  /**
+   * No `url` here on purpose. In Prisma 7 the connection string for the CLI
+   * lives in prisma.config.ts; the runtime one is passed to the adapter.
+   */
 }
 
 model User {
-  id             String        @id @default(uuid()) @db.Uuid
-  email          String        @unique
-  name           String
-  handle         String        @unique
-  phone          String        @unique
-  avatarUrl      String?       @map("avatar_url")
-  passwordHash   String        @map("password_hash")
-  role           UserRole      @default(CUSTOMER)
-  isCreator      Boolean       @default(false) @map("is_creator")
-  creatorStatus  CreatorStatus @default(NONE) @map("creator_status")
-  heightCm       Int?          @map("height_cm")
-  showHeight     Boolean       @default(false) @map("show_height")
-  emailVerified  Boolean       @default(false) @map("email_verified")
-  followerCount  Int           @default(0) @map("follower_count")
-  followingCount Int           @default(0) @map("following_count")
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
+  id                String        @id @default(uuid()) @db.Uuid
+  email             String        @unique
+  name              String
+  handle            String        @unique
+  phone             String        @unique
+  avatarUrl         String?       @map("avatar_url")
+  passwordHash      String        @map("password_hash")
+  role              UserRole      @default(CUSTOMER)
+  isCreator         Boolean       @default(false) @map("is_creator")
+  creatorStatus     CreatorStatus @default(NONE) @map("creator_status")
+  creatorApprovedAt DateTime?     @map("creator_approved_at")
+  heightCm          Int?          @map("height_cm")
+  showHeight        Boolean       @default(false) @map("show_height")
+  emailVerified     Boolean       @default(false) @map("email_verified")
+  followerCount     Int           @default(0) @map("follower_count")
+  followingCount    Int           @default(0) @map("following_count")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
 
   memberships          BrandMembership[]
   refreshTokens        RefreshToken[]
@@ -75,10 +80,11 @@ enum CreatorStatus {
   REJECTED
 }
 
-/* One row per issued refresh token. Only the sha256 hash is stored — see
- src/shared/utils/opaque-token.utils.ts — so a DB read alone can't be
- replayed as a valid cookie value. Rotated (deleted + reissued) on every
- use, so a row's presence also means "not yet redeemed".
+/**
+ * One row per issued refresh token. Only the sha256 hash is stored — see
+ * src/shared/utils/opaque-token.utils.ts — so a DB read alone can't be
+ * replayed as a valid cookie value. Rotated (deleted + reissued) on every
+ * use, so a row's presence also means "not yet redeemed".
  */
 model RefreshToken {
   id        String   @id @default(uuid()) @db.Uuid
@@ -637,10 +643,11 @@ model Order {
   codFee      Int @default(0) @map("cod_fee")
   total       Int
 
-  /* Set when a gateway payment settles as PAID but the atomic stock
-   decrement then fails (sold out in the gap) — the payment can't be
-   undone from our side, so this flags the order for a manual refund
-   instead of silently failing. See PRD "Payment" / refund rules.
+  /**
+   * Set when a gateway payment settles as PAID but the atomic stock
+   * decrement then fails (sold out in the gap) — the payment can't be
+   * undone from our side, so this flags the order for a manual refund
+   * instead of silently failing. See PRD "Payment" / refund rules.
    */
   needsManualRefund Boolean   @default(false) @map("needs_manual_refund")
   deliveredAt       DateTime? @map("delivered_at")
@@ -666,11 +673,12 @@ model OrderItem {
   qty       Int
   unitPrice Int         @map("unit_price")
 
-  /* Attribution — resolved once, at order-creation time, across all three
-   click sources (tag clicks + internal/external link clicks). Exactly one
-   of attributedCreatorLookId / attributedLinkId is set, matching
-   attributionSource; attributedCreatorId is always set when there's an
-   attributed sale, regardless of which channel sourced it.
+  /**
+   * Attribution — resolved once, at order-creation time, across all three
+   * click sources (tag clicks + internal/external link clicks). Exactly one
+   * of attributedCreatorLookId / attributedLinkId is set, matching
+   * attributionSource; attributedCreatorId is always set when there's an
+   * attributed sale, regardless of which channel sourced it.
    */
   attributedCreatorId     String?           @map("attributed_creator_id") @db.Uuid
   attributedCreator       User?             @relation("AttributedOrderItems", fields: [attributedCreatorId], references: [id], onDelete: SetNull)
@@ -750,10 +758,11 @@ enum CommissionSource {
   EXTERNAL_LINK
 }
 
-/* Fixed, price-tiered commission amounts — a sold item's price is looked up
- against these bands, never a percentage. Admin-editable; amounts are
- snapshotted onto CreatorCommission at creation time, so editing a tier
- here never retroactively changes an already-created commission.
+/**
+ * Fixed, price-tiered commission amounts — a sold item's price is looked up
+ * against these bands, never a percentage. Admin-editable; amounts are
+ * snapshotted onto CreatorCommission at creation time, so editing a tier
+ * here never retroactively changes an already-created commission.
  */
 model CommissionTier {
   id        String   @id @default(uuid()) @db.Uuid
@@ -776,9 +785,10 @@ model CreatorCommission {
   orderItemId String    @unique @map("order_item_id") @db.Uuid
   orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 
-  /* Source is snapshotted explicitly (not inferred from which of
-   tagClickId/linkClickId is non-null) so the earnings ledger can render a
-   per-row badge with no extra joins.
+  /**
+   * Source is snapshotted explicitly (not inferred from which of
+   * tagClickId/linkClickId is non-null) so the earnings ledger can render a
+   * per-row badge with no extra joins.
    */
   source      CommissionSource
   tagClickId  String?              @map("tag_click_id") @db.Uuid
@@ -806,8 +816,6 @@ model CreatorCommission {
   @@map("creator_commissions")
 }
 
-
-
 enum CreatorLinkType {
   INTERNAL_SINGLE_USE
   EXTERNAL_REUSABLE
@@ -820,11 +828,11 @@ enum CreatorLinkStatus {
 }
 
 model CreatorLink {
-  id        String   @id @default(uuid()) @db.Uuid
-  creatorId String   @map("creator_id") @db.Uuid
-  creator   User     @relation("CreatorLinks", fields: [creatorId], references: [id], onDelete: Cascade)
-  productId String?  @map("product_id") @db.Uuid
-  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  id         String            @id @default(uuid()) @db.Uuid
+  creatorId  String            @map("creator_id") @db.Uuid
+  creator    User              @relation("CreatorLinks", fields: [creatorId], references: [id], onDelete: Cascade)
+  productId  String?           @map("product_id") @db.Uuid
+  product    Product?          @relation(fields: [productId], references: [id], onDelete: SetNull)
   token      String            @unique
   type       CreatorLinkType
   status     CreatorLinkStatus @default(ACTIVE)
@@ -840,12 +848,12 @@ model CreatorLink {
 }
 
 model CreatorLinkClick {
-  id     String      @id @default(uuid()) @db.Uuid
-  linkId String      @map("link_id") @db.Uuid
-  link   CreatorLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
-  userId    String? @map("user_id") @db.Uuid
-  user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-  sessionId String  @map("session_id")
+  id        String      @id @default(uuid()) @db.Uuid
+  linkId    String      @map("link_id") @db.Uuid
+  link      CreatorLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  userId    String?     @map("user_id") @db.Uuid
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionId String      @map("session_id")
 
   createdAt DateTime @default(now()) @map("created_at")
 
