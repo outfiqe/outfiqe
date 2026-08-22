@@ -61,7 +61,9 @@ export type SuggestedCreator = z.infer<typeof suggestedCreatorSchema>;
 
 export const suggestedCreatorsResponseSchema = z.object({
   creators: z.array(suggestedCreatorSchema),
+  nextCursor: z.string().nullable(),
 });
+export type SuggestedCreatorsPage = z.infer<typeof suggestedCreatorsResponseSchema>;
 
 export const commentSchema = z.object({
   id: z.string(),
