@@ -17,10 +17,10 @@ export const SuggestedCreatorRowSkeleton = () => (
   </div>
 );
 
-interface SuggestedCreatorRowProps {
+type SuggestedCreatorRowProps = {
   creator: SuggestedCreator;
   onFollow: (creatorId: string) => void;
-}
+};
 
 export const SuggestedCreatorRow = ({ creator, onFollow }: SuggestedCreatorRowProps) => {
   const { id, handle, name, followerCount } = creator;

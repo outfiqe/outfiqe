@@ -8,9 +8,9 @@ import { useFollowCreator } from "../hooks/useFollowCreator";
 import { useInfiniteSuggestedCreators } from "../hooks/useInfiniteSuggestedCreators";
 import { SuggestedCreatorRow, SuggestedCreatorRowSkeleton } from "./SuggestedCreatorRow";
 
-interface SuggestedCreatorsModalProps {
+type SuggestedCreatorsModalProps = {
   onClose: () => void;
-}
+};
 
 export const SuggestedCreatorsModal = ({ onClose }: SuggestedCreatorsModalProps) => {
   const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } =
