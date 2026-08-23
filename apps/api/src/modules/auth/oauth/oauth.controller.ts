@@ -26,6 +26,7 @@ const OAUTH_GENERIC_FAILURE_CODE = "OAUTH_EXCHANGE_FAILED";
 const OAUTH_ERROR_QUERY_KEY = "error";
 const OAUTH_LINK_TOKEN_QUERY_KEY = "linkToken";
 const OAUTH_EMAIL_QUERY_KEY = "email";
+const OAUTH_PROVIDER_QUERY_KEY = "provider";
 const OAUTH_LINKED_PROVIDER_QUERY_KEY = "linked";
 
 const buildFrontendUrl = (path: string, searchParams: Record<string, string>): string => {
@@ -83,6 +84,7 @@ export const oauthController = {
           buildFrontendUrl(OAUTH_CALLBACK_PAGE_PATH, {
             [OAUTH_LINK_TOKEN_QUERY_KEY]: outcome.linkToken,
             [OAUTH_EMAIL_QUERY_KEY]: outcome.email,
+            [OAUTH_PROVIDER_QUERY_KEY]: provider,
           }),
         );
         return;

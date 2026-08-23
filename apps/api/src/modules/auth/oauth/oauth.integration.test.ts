@@ -239,6 +239,7 @@ describe("GET /api/auth/oauth/:provider/callback", () => {
     const location = new URL(response.headers.location);
     expect(location.pathname).toBe("/auth/oauth-callback");
     expect(location.searchParams.get("email")).toBe(existingUser.email);
+    expect(location.searchParams.get("provider")).toBe("google");
     const linkToken = location.searchParams.get("linkToken");
     expect(linkToken).toBeTruthy();
     expectNoSessionCookies(response);
