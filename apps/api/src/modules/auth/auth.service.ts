@@ -168,7 +168,11 @@ export const authService = {
 
     const user = await userRepository.findById(tokenPayload.sub);
     if (!user) {
-      throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
+      throw new AppError(
+        "INVALID_TOKEN",
+        PURPOSE_ERROR_COPY[TokenPurpose.EMAIL_VERIFICATION].invalid,
+        BAD_REQUEST_STATUS,
+      );
     }
 
     const { id, email, emailVerified } = user;
@@ -349,7 +353,11 @@ export const authService = {
 
     const user = await userRepository.findById(tokenPayload.sub);
     if (!user) {
-      throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
+      throw new AppError(
+        "INVALID_TOKEN",
+        PURPOSE_ERROR_COPY[TokenPurpose.PASSWORD_RESET].invalid,
+        BAD_REQUEST_STATUS,
+      );
     }
 
     if (await isPasswordBreached(password)) {

@@ -190,13 +190,13 @@ describe("POST /api/auth/verify-email", () => {
     expect(response.body.code).toBe("INVALID_TOKEN");
   });
 
-  it("returns 404 when the token's user no longer exists", async () => {
+  it("returns the same generic invalid-token response when the token's user no longer exists", async () => {
     const token = mintPurposeToken(randomUUID(), TokenPurpose.EMAIL_VERIFICATION);
 
     const response = await request(testApp).post("/api/auth/verify-email").send({ token });
 
-    expect(response.status).toBe(404);
-    expect(response.body.code).toBe("USER_NOT_FOUND");
+    expect(response.status).toBe(400);
+    expect(response.body.code).toBe("INVALID_TOKEN");
   });
 });
 
@@ -487,6 +487,17 @@ describe("POST /api/auth/reset-password", () => {
       .send({ token, password: "whatever123", confirmPassword: "different456" });
 
     expect(response.status).toBe(422);
+  });
+
+  it("returns the same generic invalid-token response when the token's user no longer exists", async () => {
+    const token = mintPurposeToken(randomUUID(), TokenPurpose.PASSWORD_RESET);
+
+    const response = await request(testApp)
+      .post("/api/auth/reset-password")
+      .send({ token, password: "whatever123", confirmPassword: "whatever123" });
+
+    expect(response.status).toBe(400);
+    expect(response.body.code).toBe("INVALID_TOKEN");
   });
 });
 

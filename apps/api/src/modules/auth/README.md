@@ -21,7 +21,9 @@ Identity and session management: email/password registration and email verificat
 
 ## Non-obvious rationale
 
-`forgot-password` and `resend-verification` both return the same success response whether or not the email is registered, and `resendVerification`/`forgotPassword` no-op silently for an unknown or already-verified address — this is deliberate enumeration resistance, not a missing error case.
+`forgot-password` and `resend-verification` both return the same success response whether or not the email is registered, and `resendVerification`/`forgotPassword` no-op silently for an unknown or already-verified address — this is deliberate enumeration resistance, not a missing error case. `verifyEmail`/`resetPassword` extend the same principle to their token's subject: if the token verifies but the user it names no longer exists (deleted account), the response is the identical generic `INVALID_TOKEN` shape used for a malformed/expired token, not a distinguishable `USER_NOT_FOUND` — otherwise the response itself would leak whether a given account ever existed.
+
+Passwords are hashed with argon2id (`#lib/password.utils.js`); a legacy `scrypt:`-prefixed hash (this module's original algorithm) still verifies correctly, and a successful login against one transparently re-hashes and persists it as argon2id in the background (`login` never blocks on this). `register` and `resetPassword` also reject a password found in the HaveIBeenPwned breach corpus (`#lib/password-breach.utils.js`, k-anonymity range lookup) — this check fails open (allows the password through) on any network/API error, since a third-party outage should never block someone from signing up or resetting their password.
 
 `AuthUser` (regular users, not `BrandAuthUser`) carries `handle` — added specifically so the frontend can build a `/creator/{handle}` link to the signed-in user's own profile without a second lookup (the notifications bell's click-to-navigate needs it for `LOOK_LIKED`/`LOOK_COMMENTED`, see `apps/web/src/features/notifications/README.md`). `BrandAuthUser` deliberately doesn't get one — brand owners have no public creator-profile page to link to.
 
