@@ -162,7 +162,7 @@ export const ExploreFeed = () => {
           )}
         </div>
 
-        <Sidebar onTagClick={setTab} />
+        <Sidebar activeTag={tab} onTagClick={setTab} />
       </div>
 
       {detailPost && <PostDetailModal post={detailPost} onClose={() => setDetailPostId(null)} />}

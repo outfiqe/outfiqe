@@ -33,7 +33,7 @@ export const PostCaption = ({ text, className }: PostCaptionProps) => {
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
-          className="mt-0.5 text-xs font-semibold text-foreground hover:underline"
+          className="mt-0.5 cursor-pointer text-xs font-semibold text-foreground hover:underline"
         >
           {expanded ? "See less" : "See more"}
         </button>

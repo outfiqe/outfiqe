@@ -27,7 +27,7 @@ export const PostCarouselControls = ({ imageCount, index }: PostCarouselControls
           type="button"
           onClick={stopAnd(scrollPrev)}
           aria-label="Previous photo"
-          className="absolute left-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white opacity-0 transition-opacity group-hover/carousel:opacity-100"
+          className="absolute left-2 top-1/2 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/45 text-white opacity-0 transition-opacity group-hover/carousel:opacity-100"
         >
           <ChevronLeft className="size-4" />
         </button>
@@ -37,7 +37,7 @@ export const PostCarouselControls = ({ imageCount, index }: PostCarouselControls
           type="button"
           onClick={stopAnd(scrollNext)}
           aria-label="Next photo"
-          className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white opacity-0 transition-opacity group-hover/carousel:opacity-100"
+          className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/45 text-white opacity-0 transition-opacity group-hover/carousel:opacity-100"
         >
           <ChevronRight className="size-4" />
         </button>

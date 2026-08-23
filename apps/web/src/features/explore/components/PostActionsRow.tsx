@@ -39,7 +39,7 @@ export const PostActionsRow = ({
         disabled={isLiking}
         aria-pressed={isLiked}
         className={cn(
-          "flex items-center gap-1.5 text-[12.5px] transition-colors disabled:opacity-60",
+          "flex cursor-pointer items-center gap-1.5 text-[12.5px] transition-colors disabled:cursor-default disabled:opacity-60",
           isLiked ? "text-primary-strong" : "text-muted-foreground hover:text-foreground",
         )}
       >
@@ -52,7 +52,7 @@ export const PostActionsRow = ({
           type="button"
           onClick={onCommentClick}
           aria-pressed={commentsOpen}
-          className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
+          className="flex cursor-pointer items-center gap-1.5 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
         >
           <MessageCircle className="size-5" />
           {commentCount}
@@ -71,7 +71,7 @@ export const PostActionsRow = ({
         aria-pressed={isSaved}
         aria-label="Save post"
         className={cn(
-          "ml-auto flex items-center gap-1.5 text-[12.5px] transition-colors disabled:opacity-60",
+          "ml-auto flex cursor-pointer items-center gap-1.5 text-[12.5px] transition-colors disabled:cursor-default disabled:opacity-60",
           isSaved ? "text-foreground" : "text-muted-foreground hover:text-foreground",
         )}
       >

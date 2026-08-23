@@ -54,7 +54,7 @@ export const NotificationRow = ({ notification, onSelect }: NotificationRowProps
       onClick={() => onSelect(notification)}
       aria-current={isRead ? undefined : "true"}
       className={cn(
-        "flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted",
+        "flex w-full cursor-pointer items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted",
         !isRead && "bg-primary/5",
       )}
     >

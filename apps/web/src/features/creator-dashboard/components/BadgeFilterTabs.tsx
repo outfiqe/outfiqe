@@ -51,7 +51,7 @@ export const BadgeFilterTabs = ({ value, onChange }: BadgeFilterTabsProps) => {
           onClick={() => onChange(filter)}
           aria-pressed={value === filter}
           className={cn(
-            "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors",
+            "shrink-0 cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors",
             value === filter
               ? "bg-foreground text-background"
               : "bg-muted text-muted-foreground hover:text-foreground",
