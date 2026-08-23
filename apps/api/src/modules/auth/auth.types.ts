@@ -4,8 +4,11 @@ export interface RefreshTokenRecord {
   id: string;
   tokenHash: string;
   userId: string;
+  familyId: string;
   expiresAt: Date;
   createdAt: Date;
+  revokedAt: Date | null;
+  replacedByTokenHash: string | null;
 }
 
 export interface BrandInviteRecord {

@@ -1,6 +1,8 @@
 import { nextIsoWeekStart } from "#lib/iso-week.utils.js";
 import { DYNAMIC_BADGE_RECHECK_INTERVAL_MS } from "#modules/achievements/achievement.constants.js";
 import { achievementService } from "#modules/achievements/achievement.service.js";
+import { AUTH_RETENTION_SWEEP_INTERVAL_MS } from "#modules/auth/auth.constants.js";
+import { runAuthRetentionSweep } from "#modules/auth/auth.retention.js";
 import { COMMISSION_SWEEP_INTERVAL_MS } from "#modules/commissions/commission.constants.js";
 import { runCommissionLifecycleSweep } from "#modules/commissions/commission.lifecycle.js";
 import { creatorCompetitionService } from "#modules/creator-competitions/creatorCompetition.service.js";
@@ -100,6 +102,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "notification-retention-sweep",
     run: runNotificationRetentionSweep,
     intervalMs: NOTIFICATION_RETENTION_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "auth-retention-sweep",
+    run: runAuthRetentionSweep,
+    intervalMs: AUTH_RETENTION_SWEEP_INTERVAL_MS,
   },
 ];
 

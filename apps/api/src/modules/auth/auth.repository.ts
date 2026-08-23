@@ -8,6 +8,7 @@ export const authRepository = {
   async createRefreshToken(input: {
     userId: string;
     tokenHash: string;
+    familyId: string;
     expiresAt: Date;
   }): Promise<RefreshTokenRecord> {
     return prisma.refreshToken.create({ data: input });
@@ -17,12 +18,23 @@ export const authRepository = {
     return prisma.refreshToken.findUnique({ where: { tokenHash } });
   },
 
+  async revokeRefreshTokenById(id: string, replacedByTokenHash: string): Promise<void> {
+    await prisma.refreshToken.updateMany({
+      where: { id },
+      data: { revokedAt: new Date(), replacedByTokenHash },
+    });
+  },
+
   async deleteRefreshTokenById(id: string): Promise<void> {
     await prisma.refreshToken.deleteMany({ where: { id } });
   },
 
   async deleteRefreshTokenByHash(tokenHash: string): Promise<void> {
     await prisma.refreshToken.deleteMany({ where: { tokenHash } });
+  },
+
+  async deleteRefreshTokenFamily(familyId: string): Promise<void> {
+    await prisma.refreshToken.deleteMany({ where: { familyId } });
   },
 
   async deleteAllRefreshTokensForUser(userId: string): Promise<void> {

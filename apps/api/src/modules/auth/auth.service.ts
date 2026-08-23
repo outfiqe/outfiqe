@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import jwt from "jsonwebtoken";
 
 import { env } from "#config/env.config.js";
@@ -73,7 +75,10 @@ const verifyPurposeTokenOrThrow = (token: string, purpose: TokenPurpose): Purpos
   return tokenPayload;
 };
 
-const issueTokens = async (user: Pick<UserRecord, "id" | "role">): Promise<IssuedTokens> => {
+const issueTokens = async (
+  user: Pick<UserRecord, "id" | "role">,
+  familyId: string = randomUUID(),
+): Promise<IssuedTokens> => {
   const { id, role } = user;
   const accessToken = generateToken({ sub: id, role }, TokenTypeEnum.ACCESS);
 
@@ -83,6 +88,7 @@ const issueTokens = async (user: Pick<UserRecord, "id" | "role">): Promise<Issue
   await authRepository.createRefreshToken({
     userId: id,
     tokenHash: hashToken(rawRefreshToken),
+    familyId,
     expiresAt: new Date(Date.now() + refreshTokenTtlMs),
   });
 
@@ -256,7 +262,19 @@ export const authService = {
       throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
     }
 
-    const { expiresAt, id: storedId, userId } = stored;
+    const { id: storedId, userId, familyId, expiresAt, revokedAt } = stored;
+
+    if (revokedAt) {
+      await authRepository.deleteRefreshTokenFamily(familyId);
+      logger.warn(
+        `Refresh token reuse detected for user ${userId}; revoked token family ${familyId}`,
+      );
+      throw new AppError(
+        "TOKEN_REUSE_DETECTED",
+        "This session may have been compromised. Please sign in again.",
+        UNAUTHORIZED_STATUS,
+      );
+    }
 
     if (expiresAt.getTime() <= Date.now()) {
       await authRepository.deleteRefreshTokenById(storedId);
@@ -268,32 +286,41 @@ export const authService = {
     }
 
     const user = await userRepository.findById(userId);
-
-    // Rotation: the presented token is single-use regardless of outcome below.
-    await authRepository.deleteRefreshTokenById(storedId);
-
     if (!user) {
+      await authRepository.deleteRefreshTokenById(storedId);
       throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
     }
 
-    const tokens = await issueTokens(user);
+    const rawNewRefreshToken = generateOpaqueToken();
+    const newTokenHash = hashToken(rawNewRefreshToken);
+    const refreshTokenTtlMs = parseDurationMs(env.JWT_REFRESH_TTL);
+
+    await authRepository.revokeRefreshTokenById(storedId, newTokenHash);
+    await authRepository.createRefreshToken({
+      userId,
+      tokenHash: newTokenHash,
+      familyId,
+      expiresAt: new Date(Date.now() + refreshTokenTtlMs),
+    });
+
+    const accessToken = generateToken({ sub: user.id, role: user.role }, TokenTypeEnum.ACCESS);
 
     logger.info(`Refresh succeeded for user ${user.id}`);
 
-    return tokens;
+    return {
+      accessToken,
+      refreshToken: rawNewRefreshToken,
+      refreshTokenTtlSeconds: Math.floor(refreshTokenTtlMs / MS_PER_SECOND),
+    };
   },
 
-  // Non-rotating counterpart to refresh(): used by server-side session checks
-  // (SSR pages) that call this on every render and can't propagate a Set-Cookie
-  // back to the browser. Rotating there would burn the browser's refresh token
-  // on its first server-side use, logging the user out on the very next check.
   async validateSession(rawRefreshToken: string | undefined): Promise<{ accessToken: string }> {
     if (!rawRefreshToken) {
       throw new AppError("MISSING_TOKEN", "No refresh token provided.", UNAUTHORIZED_STATUS);
     }
 
     const stored = await authRepository.findRefreshTokenByHash(hashToken(rawRefreshToken));
-    if (!stored) {
+    if (!stored || stored.revokedAt) {
       throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
     }
 

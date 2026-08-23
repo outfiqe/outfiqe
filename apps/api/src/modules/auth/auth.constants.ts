@@ -10,3 +10,6 @@ export const PURPOSE_ERROR_COPY: Record<TokenPurpose, { invalid: string; expired
     expired: "This reset link has expired. Please request a new one.",
   },
 };
+
+export const REFRESH_TOKEN_RETENTION_DAYS = 30;
+export const AUTH_RETENTION_SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000;

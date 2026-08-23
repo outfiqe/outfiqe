@@ -81,14 +81,23 @@ const extractCookieValue = (response: request.Response, cookieName: string): str
   return valueWithAttributes.split(";")[0];
 };
 
-const insertRefreshToken = async (userId: string, { expired = false } = {}) => {
+const insertRefreshToken = async (
+  userId: string,
+  {
+    expired = false,
+    revoked = false,
+    familyId = randomUUID(),
+  }: { expired?: boolean; revoked?: boolean; familyId?: string } = {},
+) => {
   const rawToken = generateOpaqueToken();
 
   await prisma.refreshToken.create({
     data: {
       userId,
       tokenHash: hashToken(rawToken),
+      familyId,
       expiresAt: new Date(Date.now() + (expired ? -ONE_HOUR_MS : ONE_HOUR_MS)),
+      revokedAt: revoked ? new Date() : null,
     },
   });
 
@@ -348,7 +357,44 @@ describe("POST /api/auth/refresh", () => {
       .set("Cookie", [`refresh_token=${rawToken}`]);
 
     expect(reuse.status).toBe(401);
-    expect(reuse.body.code).toBe("INVALID_TOKEN");
+    expect(reuse.body.code).toBe("TOKEN_REUSE_DETECTED");
+  });
+
+  it("revokes the entire token family when a rotated-out token is replayed", async () => {
+    const { user } = await createUser();
+    const rawToken = await insertRefreshToken(user.id);
+
+    const rotateResponse = await request(testApp)
+      .post("/api/auth/refresh")
+      .set("Cookie", [`refresh_token=${rawToken}`]);
+    expect(rotateResponse.status).toBe(200);
+
+    const rotatedOutRecord = await prisma.refreshToken.findUniqueOrThrow({
+      where: { tokenHash: hashToken(rawToken) },
+    });
+    expect(rotatedOutRecord.revokedAt).not.toBeNull();
+
+    const siblingToken = await insertRefreshToken(user.id, {
+      familyId: rotatedOutRecord.familyId,
+    });
+
+    const reuseResponse = await request(testApp)
+      .post("/api/auth/refresh")
+      .set("Cookie", [`refresh_token=${rawToken}`]);
+
+    expect(reuseResponse.status).toBe(401);
+    expect(reuseResponse.body.code).toBe("TOKEN_REUSE_DETECTED");
+
+    const siblingLookup = await prisma.refreshToken.findUnique({
+      where: { tokenHash: hashToken(siblingToken) },
+    });
+    expect(siblingLookup).toBeNull();
+
+    const rotatedCookieValue = extractCookieValue(rotateResponse, "refresh_token");
+    const currentTokenLookup = await prisma.refreshToken.findUnique({
+      where: { tokenHash: hashToken(rotatedCookieValue ?? "") },
+    });
+    expect(currentTokenLookup).toBeNull();
   });
 });
 
@@ -374,6 +420,18 @@ describe("POST /api/auth/session", () => {
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
     expect(first.body.data).toHaveProperty("accessToken");
+  });
+
+  it("rejects a token that has already been rotated out", async () => {
+    const { user } = await createUser();
+    const rawToken = await insertRefreshToken(user.id, { revoked: true });
+
+    const response = await request(testApp)
+      .post("/api/auth/session")
+      .set("Cookie", [`refresh_token=${rawToken}`]);
+
+    expect(response.status).toBe(401);
+    expect(response.body.code).toBe("INVALID_TOKEN");
   });
 });
 

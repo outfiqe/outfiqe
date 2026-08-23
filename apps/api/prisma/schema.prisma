@@ -89,20 +89,20 @@ enum CreatorStatus {
   REJECTED
 }
 
-/**
- * One row per issued refresh token. Only the sha256 hash is stored — see
- * src/shared/utils/opaque-token.utils.ts — so a DB read alone can't be
- * replayed as a valid cookie value. Rotated (deleted + reissued) on every
- * use, so a row's presence also means "not yet redeemed".
- */
 model RefreshToken {
-  id        String   @id @default(uuid()) @db.Uuid
-  tokenHash String   @unique @map("token_hash")
-  userId    String   @map("user_id") @db.Uuid
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(uuid()) @db.Uuid
+  tokenHash           String    @unique @map("token_hash")
+  userId              String    @map("user_id") @db.Uuid
+  familyId            String    @map("family_id") @db.Uuid
+  expiresAt           DateTime  @map("expires_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  revokedAt           DateTime? @map("revoked_at")
+  replacedByTokenHash String?   @map("replaced_by_token_hash")
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([familyId])
+  @@index([expiresAt])
+  @@index([userId, revokedAt])
   @@map("refresh_tokens")
 }
 
