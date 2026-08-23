@@ -25,6 +25,7 @@ export const registerSchema = z
     phone: phoneSchema,
     password: passwordField,
     confirmPassword: z.string(),
+    captchaToken: z.string().min(1).optional(),
   })
   .refine(passwordsMatch, CONFIRM_PASSWORD_ISSUE);
 
@@ -35,6 +36,7 @@ export const verifyEmailSchema = z.object({
 export const loginSchema = z.object({
   email: z.email(),
   password: z.string().min(1),
+  captchaToken: z.string().min(1).optional(),
 });
 
 export const forgotPasswordSchema = z.object({

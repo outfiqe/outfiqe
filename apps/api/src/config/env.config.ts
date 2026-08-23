@@ -37,7 +37,9 @@ const envSchema = z.object({
   ESEWA_STATUS_URL: z.url().default("https://rc.esewa.com.np/api/epay/transaction/status/"),
   KHALTI_BASE_URL: z.url().default("https://dev.khalti.com/api/v2/"),
   KHALTI_SECRET_KEY: z.string().min(1).default("KHALTI_TEST_SECRET_KEY_NOT_SET"),
-  PASSWORD_BREACH_CHECK_ENABLED: z.coerce.boolean().default(true),
+  PASSWORD_BREACH_CHECK_ENABLED: z.stringbool().default(true),
+  CAPTCHA_ENABLED: z.stringbool().default(true),
+  TURNSTILE_SECRET_KEY: z.string().min(1).default("1x0000000000000000000000000000000AA"),
 });
 
 const parsed = envSchema.safeParse(process.env);

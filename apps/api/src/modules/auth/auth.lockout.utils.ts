@@ -27,11 +27,16 @@ export const resetFailedLogins = async (email: string): Promise<void> => {
 };
 
 export const isLockedOut = async (email: string): Promise<boolean> => {
+  const failureCount = await getFailedLoginCount(email);
+  return failureCount >= LOGIN_LOCKOUT_THRESHOLD;
+};
+
+export const getFailedLoginCount = async (email: string): Promise<number> => {
   try {
     const rawFailureCount = await redis.get(redisKeys.loginLockout(normalizeEmail(email)));
-    return rawFailureCount !== null && Number(rawFailureCount) >= LOGIN_LOCKOUT_THRESHOLD;
+    return rawFailureCount === null ? 0 : Number(rawFailureCount);
   } catch (error) {
-    logger.error(`Failed to check login lockout status: ${describeError(error)}`);
-    return false;
+    logger.error(`Failed to read login failure count: ${describeError(error)}`);
+    return 0;
   }
 };

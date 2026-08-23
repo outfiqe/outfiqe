@@ -21,13 +21,16 @@ const getSentryConnectSrc = (): string => {
   }
 };
 
+const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
+
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self'",
+  `script-src 'self' ${TURNSTILE_ORIGIN}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  `connect-src 'self'${getSentryConnectSrc()}`,
+  `connect-src 'self' ${TURNSTILE_ORIGIN}${getSentryConnectSrc()}`,
+  `frame-src 'self' ${TURNSTILE_ORIGIN}`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

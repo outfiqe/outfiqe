@@ -28,8 +28,14 @@ import { describeError } from "#redis/redis.utils.js";
 import type { DbClient } from "#types/db.types.js";
 import type { PurposeTokenPayload } from "#types/token.types.js";
 
-import { PURPOSE_ERROR_COPY } from "./auth.constants.js";
-import { isLockedOut, recordFailedLogin, resetFailedLogins } from "./auth.lockout.utils.js";
+import { verifyCaptcha } from "./auth.captcha.utils.js";
+import { LOGIN_CAPTCHA_CHALLENGE_THRESHOLD, PURPOSE_ERROR_COPY } from "./auth.constants.js";
+import {
+  getFailedLoginCount,
+  isLockedOut,
+  recordFailedLogin,
+  resetFailedLogins,
+} from "./auth.lockout.utils.js";
 import { authRepository } from "./auth.repository.js";
 import type {
   AdminInviteInfo,
@@ -60,6 +66,7 @@ const INVALID_CREDENTIALS_MESSAGE = "Incorrect email or password.";
 const USER_NOT_FOUND_MESSAGE = "User not found.";
 const PASSWORD_BREACHED_MESSAGE =
   "This password has appeared in a data breach. Please choose another.";
+const CAPTCHA_FAILED_MESSAGE = "Please complete the challenge to continue.";
 
 const verifyPurposeTokenOrThrow = async (
   token: string,
@@ -168,7 +175,11 @@ const rehashPasswordInBackground = (userId: string, plaintextPassword: string): 
 
 export const authService = {
   async register(input: RegisterInput): Promise<{ userId: string }> {
-    const { name, email, phone, password } = input;
+    const { name, email, phone, password, captchaToken, remoteIp } = input;
+
+    if (!(await verifyCaptcha(captchaToken, remoteIp))) {
+      throw new AppError("CAPTCHA_FAILED", CAPTCHA_FAILED_MESSAGE, BAD_REQUEST_STATUS);
+    }
 
     const existingByEmail = await userRepository.findByEmail(email);
     if (existingByEmail) {
@@ -255,10 +266,23 @@ export const authService = {
     await verifyPurposeTokenOrThrow(token, purpose);
   },
 
-  async login(email: string, password: string): Promise<AuthSession> {
+  async login(
+    email: string,
+    password: string,
+    captchaToken?: string,
+    remoteIp?: string,
+  ): Promise<AuthSession> {
     if (await isLockedOut(email)) {
       logger.warn(`Login failed: account temporarily locked out for ${email}`);
       throw new AppError("INVALID_CREDENTIALS", INVALID_CREDENTIALS_MESSAGE, UNAUTHORIZED_STATUS);
+    }
+
+    const failedLoginCount = await getFailedLoginCount(email);
+    if (
+      failedLoginCount >= LOGIN_CAPTCHA_CHALLENGE_THRESHOLD &&
+      !(await verifyCaptcha(captchaToken, remoteIp))
+    ) {
+      throw new AppError("CAPTCHA_FAILED", CAPTCHA_FAILED_MESSAGE, BAD_REQUEST_STATUS);
     }
 
     const user = await userRepository.findByEmail(email);

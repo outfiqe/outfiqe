@@ -32,6 +32,8 @@ export type RegisterInput = {
   email: string;
   phone: string;
   password: string;
+  captchaToken?: string;
+  remoteIp?: string;
 };
 
 export type RegisterBrandInput = {

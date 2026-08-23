@@ -5,6 +5,7 @@ import { emailField } from "./shared.schema";
 export const loginSchema = z.object({
   email: emailField,
   password: z.string().min(1, "Password is required"),
+  captchaToken: z.string().optional(),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;

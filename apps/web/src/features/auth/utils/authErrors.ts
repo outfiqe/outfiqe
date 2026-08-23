@@ -8,6 +8,7 @@ export enum AuthErrorCode {
   INVALID_INVITE = "INVALID_INVITE",
   INVITE_EXPIRED = "INVITE_EXPIRED",
   INVITE_USED = "INVITE_USED",
+  CAPTCHA_FAILED = "CAPTCHA_FAILED",
 }
 
 const MESSAGES: Record<AuthErrorCode, string> = {
@@ -20,6 +21,7 @@ const MESSAGES: Record<AuthErrorCode, string> = {
   [AuthErrorCode.INVALID_INVITE]: "This invite link is not valid.",
   [AuthErrorCode.INVITE_EXPIRED]: "This invite link has expired.",
   [AuthErrorCode.INVITE_USED]: "This invite link has already been used.",
+  [AuthErrorCode.CAPTCHA_FAILED]: "Please complete the challenge below and try again.",
 };
 
 const isKnownAuthErrorCode = (code: string): code is AuthErrorCode => {

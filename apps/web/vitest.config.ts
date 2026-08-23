@@ -16,6 +16,7 @@ export default defineConfig({
       provider: "v8",
       include: [
         "src/features/auth/utils/safeRedirect.ts",
+        "src/features/auth/components/CaptchaChallenge.tsx",
         "src/features/auth/hooks/**",
         "src/components/ProductGridSkeleton.tsx",
         "src/features/brand-profile/hooks/useInfiniteBrandProducts.ts",

@@ -29,9 +29,16 @@ const QUERY_PURPOSE_TO_TOKEN_PURPOSE: Record<ValidateTokenQuery["purpose"], Toke
 };
 
 export const authController = {
-  async register(_req: Request, res: Response) {
-    const { name, email, phone, password } = validated.body<RegisterBody>(res);
-    const { userId } = await authService.register({ name, email, phone, password });
+  async register(req: Request, res: Response) {
+    const { name, email, phone, password, captchaToken } = validated.body<RegisterBody>(res);
+    const { userId } = await authService.register({
+      name,
+      email,
+      phone,
+      password,
+      captchaToken,
+      remoteIp: req.ip,
+    });
 
     sendSuccess(
       res,
@@ -48,11 +55,13 @@ export const authController = {
     sendSuccess(res, null, "Email verified. You can now sign in.");
   },
 
-  async login(_req: Request, res: Response) {
-    const { email, password } = validated.body<LoginBody>(res);
+  async login(req: Request, res: Response) {
+    const { email, password, captchaToken } = validated.body<LoginBody>(res);
     const { accessToken, refreshToken, refreshTokenTtlSeconds, user } = await authService.login(
       email,
       password,
+      captchaToken,
+      req.ip,
     );
 
     setRefreshCookie(res, refreshToken, refreshTokenTtlSeconds);

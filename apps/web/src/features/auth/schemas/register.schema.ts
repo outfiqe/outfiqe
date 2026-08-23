@@ -16,6 +16,7 @@ export const registerSchema = z
     phone: phoneField,
     password: passwordField,
     confirmPassword: z.string(),
+    captchaToken: z.string().optional(),
   })
   .refine(passwordsMatch, CONFIRM_PASSWORD_ISSUE);
 
