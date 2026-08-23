@@ -27,6 +27,7 @@ export interface RatingProps extends VariantProps<typeof starVariants> {
   onChange?: (value: number) => void;
   readOnly?: boolean;
   label?: string;
+  starQualityLabelByValue?: Record<number, string>;
   className?: string;
 }
 
@@ -35,11 +36,13 @@ export const Rating = ({
   onChange,
   readOnly = false,
   label,
+  starQualityLabelByValue,
   size,
   className,
 }: RatingProps) => {
   const [hoveredValue, setHoveredValue] = React.useState<number | null>(null);
   const displayValue = hoveredValue ?? value;
+  const displayLabel = displayValue > 0 ? starQualityLabelByValue?.[displayValue] : undefined;
 
   if (readOnly || !onChange) {
     return (
@@ -63,34 +66,46 @@ export const Rating = ({
   }
 
   return (
-    <div
-      role="radiogroup"
-      aria-label={label ?? "Rating"}
-      className={cn("inline-flex items-center gap-0.5", className)}
-      onMouseLeave={() => setHoveredValue(null)}
-    >
-      {RATING_VALUES.map((star) => (
-        <button
-          key={star}
-          type="button"
-          role="radio"
-          aria-checked={value === star}
-          aria-label={`Rate ${star} out of ${RATING_MAX} stars`}
-          onMouseEnter={() => setHoveredValue(star)}
-          onFocus={() => setHoveredValue(star)}
-          onBlur={() => setHoveredValue(null)}
-          onClick={() => onChange(star)}
-          className="cursor-pointer rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <Star
-            aria-hidden
-            className={cn(
-              starVariants({ size }),
-              star <= displayValue ? "fill-primary text-primary" : "fill-none text-border",
-            )}
-          />
-        </button>
-      ))}
+    <div className={cn("inline-flex items-center gap-2.5", className)}>
+      <div
+        role="radiogroup"
+        aria-label={label ?? "Rating"}
+        className="inline-flex items-center gap-0.5"
+        onMouseLeave={() => setHoveredValue(null)}
+      >
+        {RATING_VALUES.map((star) => (
+          <button
+            key={star}
+            type="button"
+            role="radio"
+            aria-checked={value === star}
+            aria-label={
+              starQualityLabelByValue
+                ? `Rate ${star} out of ${RATING_MAX} stars: ${starQualityLabelByValue[star]}`
+                : `Rate ${star} out of ${RATING_MAX} stars`
+            }
+            onMouseEnter={() => setHoveredValue(star)}
+            onFocus={() => setHoveredValue(star)}
+            onBlur={() => setHoveredValue(null)}
+            onClick={() => onChange(star)}
+            className="cursor-pointer rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Star
+              aria-hidden
+              className={cn(
+                starVariants({ size }),
+                star <= displayValue ? "fill-primary text-primary" : "fill-none text-border",
+              )}
+            />
+          </button>
+        ))}
+      </div>
+
+      {displayLabel && (
+        <span aria-hidden className="text-sm font-medium text-primary-strong">
+          {displayLabel}
+        </span>
+      )}
     </div>
   );
 };

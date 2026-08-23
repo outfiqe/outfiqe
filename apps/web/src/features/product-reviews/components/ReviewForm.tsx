@@ -7,7 +7,11 @@ import { uploadsApi } from "@/shared/api/uploadsApi";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { WriteProductReviewInput } from "../api/productReviewsApi";
-import { MAX_REVIEW_IMAGES, REVIEW_BODY_MIN_LENGTH } from "../product-reviews.constants";
+import {
+  MAX_REVIEW_IMAGES,
+  RATING_STAR_QUALITY_LABEL_BY_VALUE,
+  REVIEW_BODY_MIN_LENGTH,
+} from "../product-reviews.constants";
 
 type ReviewFormProps = {
   open: boolean;
@@ -73,7 +77,13 @@ export const ReviewForm = ({
           <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
             Your rating
           </span>
-          <Rating value={rating} onChange={setRating} size="lg" label="Your rating" />
+          <Rating
+            value={rating}
+            onChange={setRating}
+            size="lg"
+            label="Your rating"
+            starQualityLabelByValue={RATING_STAR_QUALITY_LABEL_BY_VALUE}
+          />
         </div>
 
         <div className="space-y-1.5">
@@ -89,9 +99,14 @@ export const ReviewForm = ({
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="review-body" className="text-xs font-medium text-muted-foreground">
-            Your review
-          </label>
+          <div className="flex items-baseline justify-between">
+            <label htmlFor="review-body" className="text-xs font-medium text-muted-foreground">
+              Your review
+            </label>
+            <span className="text-xs text-muted-foreground">
+              {body.trim().length}/{REVIEW_BODY_MIN_LENGTH} min characters
+            </span>
+          </div>
           <textarea
             id="review-body"
             rows={5}

@@ -82,7 +82,16 @@ export const Modal = ({
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
+        <div
+          className={cn(
+            "flex-1 overflow-y-auto px-6 py-5",
+            "[scrollbar-width:thin] [scrollbar-color:var(--color-border)_transparent]",
+            "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full",
+            "[&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent",
+          )}
+        >
+          {children}
+        </div>
 
         {footer && <div className="shrink-0 border-t border-border px-6 py-4">{footer}</div>}
       </div>
