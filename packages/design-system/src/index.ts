@@ -17,6 +17,7 @@ export * from "./image-crop-modal";
 export * from "./image-uploader";
 export * from "./input";
 export * from "./label";
+export * from "./logo-mark";
 export * from "./modal";
 export * from "./multi-select";
 export * from "./popover";

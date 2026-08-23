@@ -1,6 +1,4 @@
-import { cn } from "@outfiqe/design-system";
-
-import { LogoMark } from "./LogoMark";
+import { cn, LogoMark } from "@outfiqe/design-system";
 
 const WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
 
