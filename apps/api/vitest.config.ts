@@ -26,6 +26,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: [
+        "src/app.ts",
         "src/shared/utils/pagination.utils.ts",
         "src/shared/utils/opaque-token.utils.ts",
         "src/shared/utils/iso-week.utils.ts",

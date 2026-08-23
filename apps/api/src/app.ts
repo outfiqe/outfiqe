@@ -41,10 +41,27 @@ import { errorHandler } from "./shared/middlewares/error-handler.js";
 import { httpLogger } from "./shared/middlewares/http-logger.js";
 import { resolvedUploadsDir } from "./shared/storage/storage.factory.js";
 
+const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
+
 export const createApp = () => {
   const app = express();
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'none'"],
+          frameAncestors: ["'none'"],
+        },
+      },
+      hsts: {
+        maxAge: ONE_YEAR_IN_SECONDS,
+        includeSubDomains: true,
+        preload: true,
+      },
+      frameguard: { action: "deny" },
+    }),
+  );
   app.use(cors({ origin: env.ALLOWED_ORIGINS, credentials: true }));
   app.use(express.json());
   app.use(cookieParser());
