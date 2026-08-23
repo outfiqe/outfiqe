@@ -7,6 +7,15 @@ import { ApiClientError } from "../errors";
 type RequestOptions = AxiosRequestConfig & { skipAuthRetry?: boolean };
 type RetriableConfig = InternalAxiosRequestConfig & { skipAuthRetry?: boolean; _retried?: boolean };
 
+const CSRF_TOKEN_COOKIE_NAME = "csrf_token";
+const CSRF_TOKEN_HEADER_NAME = "X-CSRF-Token";
+
+const getCsrfTokenFromCookie = (): string | undefined => {
+  if (typeof document === "undefined") return undefined;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${CSRF_TOKEN_COOKIE_NAME}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : undefined;
+};
+
 export type CreateApiClientOptions = {
   baseURL: string;
   refreshPath?: string;
@@ -36,16 +45,24 @@ export const createApiClient = ({
     if (accessToken) {
       config.headers.set("Authorization", `Bearer ${accessToken}`);
     }
+    const csrfToken = getCsrfTokenFromCookie();
+    if (csrfToken) {
+      config.headers.set(CSRF_TOKEN_HEADER_NAME, csrfToken);
+    }
     return config;
   });
 
   const refreshAccessToken = async (): Promise<string> => {
     if (!refreshPromise) {
+      const csrfToken = getCsrfTokenFromCookie();
       refreshPromise = axios
         .post<ApiSuccessEnvelope<{ accessToken: string }>>(
           `${baseURL}${refreshPath}`,
           {},
-          { withCredentials: true },
+          {
+            withCredentials: true,
+            ...(csrfToken ? { headers: { [CSRF_TOKEN_HEADER_NAME]: csrfToken } } : {}),
+          },
         )
         .then((res) => {
           accessToken = res.data.data.accessToken;

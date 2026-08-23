@@ -165,6 +165,17 @@ const sendVerificationEmail = async (user: Pick<UserRecord, "id" | "email">): Pr
   });
 };
 
+type AuthAuditOutcome = "success" | "failure";
+
+const auditLog = (
+  outcome: AuthAuditOutcome,
+  message: string,
+  fields: { event: string; userId?: string; email?: string; ip?: string },
+): void => {
+  const level = outcome === "success" ? "info" : "warn";
+  logger[level](message, { ...fields, outcome });
+};
+
 const rehashPasswordInBackground = (userId: string, plaintextPassword: string): void => {
   hashPassword(plaintextPassword)
     .then((newPasswordHash) => userRepository.updatePasswordHash(userId, newPasswordHash))
@@ -178,12 +189,21 @@ export const authService = {
     const { name, email, phone, password, captchaToken, remoteIp } = input;
 
     if (!(await verifyCaptcha(captchaToken, remoteIp))) {
+      auditLog("failure", "Register blocked: captcha challenge failed", {
+        event: "register.captcha_failed",
+        email,
+        ip: remoteIp,
+      });
       throw new AppError("CAPTCHA_FAILED", CAPTCHA_FAILED_MESSAGE, BAD_REQUEST_STATUS);
     }
 
     const existingByEmail = await userRepository.findByEmail(email);
     if (existingByEmail) {
-      logger.warn(`Register failed: email already exists (${email})`);
+      auditLog("failure", "Register failed: email already exists", {
+        event: "register.email_exists",
+        email,
+        ip: remoteIp,
+      });
       throw new AppError(
         "USER_EXISTS",
         "An account with this email already exists.",
@@ -193,7 +213,11 @@ export const authService = {
 
     const existingByPhone = await userRepository.findByPhone(phone);
     if (existingByPhone) {
-      logger.warn(`Register failed: phone already exists (${phone})`);
+      auditLog("failure", "Register failed: phone already exists", {
+        event: "register.phone_exists",
+        email,
+        ip: remoteIp,
+      });
       throw new AppError(
         "PHONE_EXISTS",
         "An account with this phone number already exists.",
@@ -218,7 +242,12 @@ export const authService = {
       role,
     });
 
-    logger.info(`User registered: ${id}`);
+    auditLog("success", "User registered", {
+      event: "register.success",
+      userId: id,
+      email: userEmail,
+      ip: remoteIp,
+    });
 
     return { userId: id };
   },
@@ -273,7 +302,11 @@ export const authService = {
     remoteIp?: string,
   ): Promise<AuthSession> {
     if (await isLockedOut(email)) {
-      logger.warn(`Login failed: account temporarily locked out for ${email}`);
+      auditLog("failure", "Login blocked: account temporarily locked out", {
+        event: "login.locked_out",
+        email,
+        ip: remoteIp,
+      });
       throw new AppError("INVALID_CREDENTIALS", INVALID_CREDENTIALS_MESSAGE, UNAUTHORIZED_STATUS);
     }
 
@@ -282,6 +315,11 @@ export const authService = {
       failedLoginCount >= LOGIN_CAPTCHA_CHALLENGE_THRESHOLD &&
       !(await verifyCaptcha(captchaToken, remoteIp))
     ) {
+      auditLog("failure", "Login blocked: captcha challenge failed", {
+        event: "login.captcha_failed",
+        email,
+        ip: remoteIp,
+      });
       throw new AppError("CAPTCHA_FAILED", CAPTCHA_FAILED_MESSAGE, BAD_REQUEST_STATUS);
     }
 
@@ -290,7 +328,11 @@ export const authService = {
 
     if (!user || !isValid) {
       await recordFailedLogin(email);
-      logger.warn(`Login failed: invalid credentials for ${email}`);
+      auditLog("failure", "Login failed: invalid credentials", {
+        event: "login.invalid_credentials",
+        email,
+        ip: remoteIp,
+      });
       throw new AppError("INVALID_CREDENTIALS", INVALID_CREDENTIALS_MESSAGE, UNAUTHORIZED_STATUS);
     }
 
@@ -303,7 +345,12 @@ export const authService = {
     }
 
     if (!user.emailVerified) {
-      logger.warn(`Login blocked: email not verified for user ${id}`);
+      auditLog("failure", "Login blocked: email not verified", {
+        event: "login.email_not_verified",
+        userId: id,
+        email,
+        ip: remoteIp,
+      });
       throw new AppError(
         "EMAIL_NOT_VERIFIED",
         "Please verify your email before signing in.",
@@ -313,7 +360,12 @@ export const authService = {
 
     const tokens = await issueTokens(user);
 
-    logger.info(`Login succeeded for user ${id}`);
+    auditLog("success", "Login succeeded", {
+      event: "login.success",
+      userId: id,
+      email,
+      ip: remoteIp,
+    });
 
     return {
       ...tokens,
@@ -330,7 +382,7 @@ export const authService = {
     };
   },
 
-  async refresh(rawRefreshToken: string | undefined): Promise<IssuedTokens> {
+  async refresh(rawRefreshToken: string | undefined, remoteIp?: string): Promise<IssuedTokens> {
     if (!rawRefreshToken) {
       throw new AppError("MISSING_TOKEN", "No refresh token provided.", UNAUTHORIZED_STATUS);
     }
@@ -344,9 +396,11 @@ export const authService = {
 
     if (revokedAt) {
       await authRepository.deleteRefreshTokenFamily(familyId);
-      logger.warn(
-        `Refresh token reuse detected for user ${userId}; revoked token family ${familyId}`,
-      );
+      auditLog("failure", "Refresh token reuse detected; token family revoked", {
+        event: "refresh.reuse_detected",
+        userId,
+        ip: remoteIp,
+      });
       throw new AppError(
         "TOKEN_REUSE_DETECTED",
         "This session may have been compromised. Please sign in again.",
@@ -383,7 +437,11 @@ export const authService = {
 
     const accessToken = generateToken({ sub: user.id, role: user.role }, TokenTypeEnum.ACCESS);
 
-    logger.info(`Refresh succeeded for user ${user.id}`);
+    auditLog("success", "Refresh succeeded", {
+      event: "refresh.success",
+      userId: user.id,
+      ip: remoteIp,
+    });
 
     return {
       accessToken,
@@ -418,12 +476,19 @@ export const authService = {
     return { accessToken: generateToken({ sub: user.id, role: user.role }, TokenTypeEnum.ACCESS) };
   },
 
-  async logout(rawRefreshToken: string | undefined): Promise<void> {
+  async logout(rawRefreshToken: string | undefined, remoteIp?: string): Promise<void> {
     if (!rawRefreshToken) return;
 
-    await authRepository.deleteRefreshTokenByHash(hashToken(rawRefreshToken));
+    const tokenHashValue = hashToken(rawRefreshToken);
+    const stored = await authRepository.findRefreshTokenByHash(tokenHashValue);
 
-    logger.info("Logout: refresh token invalidated");
+    await authRepository.deleteRefreshTokenByHash(tokenHashValue);
+
+    auditLog("success", "Logout: refresh token invalidated", {
+      event: "logout.success",
+      userId: stored?.userId,
+      ip: remoteIp,
+    });
   },
 
   async forgotPassword(email: string): Promise<void> {
@@ -453,7 +518,7 @@ export const authService = {
     logger.info(`Password reset email sent to user ${id}`);
   },
 
-  async resetPassword(token: string, password: string): Promise<void> {
+  async resetPassword(token: string, password: string, remoteIp?: string): Promise<void> {
     const tokenPayload = await verifyPurposeTokenOrThrow(token, TokenPurpose.PASSWORD_RESET);
 
     const user = await userRepository.findById(tokenPayload.sub);
@@ -477,7 +542,11 @@ export const authService = {
 
     await eventBus.publish(DomainEvents.USER_PASSWORD_RESET, { userId: user.id });
 
-    logger.info(`Password reset for user ${user.id}`);
+    auditLog("success", "Password reset succeeded; all sessions revoked", {
+      event: "reset_password.success",
+      userId: user.id,
+      ip: remoteIp,
+    });
   },
 
   async getBrandInvite(inviteToken: string): Promise<BrandInviteInfo> {

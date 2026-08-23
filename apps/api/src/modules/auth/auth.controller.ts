@@ -70,8 +70,10 @@ export const authController = {
 
   async refresh(req: Request, res: Response) {
     const rawRefreshToken = getRefreshTokenCookie(req);
-    const { accessToken, refreshToken, refreshTokenTtlSeconds } =
-      await authService.refresh(rawRefreshToken);
+    const { accessToken, refreshToken, refreshTokenTtlSeconds } = await authService.refresh(
+      rawRefreshToken,
+      req.ip,
+    );
 
     setRefreshCookie(res, refreshToken, refreshTokenTtlSeconds);
     sendSuccess(res, { accessToken }, "Token refreshed successfully");
@@ -84,7 +86,7 @@ export const authController = {
   },
 
   async logout(req: Request, res: Response) {
-    await authService.logout(getRefreshTokenCookie(req));
+    await authService.logout(getRefreshTokenCookie(req), req.ip);
 
     clearRefreshCookie(res);
     sendSuccess(res, null, "Signed out.");
@@ -97,9 +99,9 @@ export const authController = {
     sendSuccess(res, null, "If that email is registered, you will receive a reset link shortly.");
   },
 
-  async resetPassword(_req: Request, res: Response) {
+  async resetPassword(req: Request, res: Response) {
     const { token, password } = validated.body<ResetPasswordBody>(res);
-    await authService.resetPassword(token, password);
+    await authService.resetPassword(token, password, req.ip);
 
     clearRefreshCookie(res);
     sendSuccess(res, null, "Password updated. Please sign in with your new password.");

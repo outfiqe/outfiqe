@@ -30,6 +30,9 @@ const EXPIRED_TOKEN_TTL = "-1h";
 const LEGACY_SCRYPT_KEY_LEN = 64;
 const PASSWORD_UPGRADE_POLL_INTERVAL_MS = 25;
 const PASSWORD_UPGRADE_POLL_ATTEMPTS = 40;
+const CSRF_HEADER_NAME = "X-CSRF-Token";
+const TEST_CSRF_TOKEN = "test-csrf-token";
+const csrfCookie = () => `csrf_token=${TEST_CSRF_TOKEN}`;
 
 const scryptAsync = promisify(scrypt) as (
   password: string,
@@ -454,7 +457,8 @@ describe("POST /api/auth/refresh", () => {
   it("rejects an unknown refresh token", async () => {
     const response = await request(testApp)
       .post("/api/auth/refresh")
-      .set("Cookie", [`refresh_token=${generateOpaqueToken()}`]);
+      .set("Cookie", [`refresh_token=${generateOpaqueToken()}`, csrfCookie()])
+      .set(CSRF_HEADER_NAME, TEST_CSRF_TOKEN);
 
     expect(response.status).toBe(401);
     expect(response.body.code).toBe("INVALID_TOKEN");
@@ -466,7 +470,8 @@ describe("POST /api/auth/refresh", () => {
 
     const response = await request(testApp)
       .post("/api/auth/refresh")
-      .set("Cookie", [`refresh_token=${rawToken}`]);
+      .set("Cookie", [`refresh_token=${rawToken}`, csrfCookie()])
+      .set(CSRF_HEADER_NAME, TEST_CSRF_TOKEN);
 
     expect(response.status).toBe(401);
     expect(response.body.code).toBe("TOKEN_EXPIRED");
@@ -483,7 +488,8 @@ describe("POST /api/auth/refresh", () => {
 
     const response = await request(testApp)
       .post("/api/auth/refresh")
-      .set("Cookie", [`refresh_token=${rawToken}`]);
+      .set("Cookie", [`refresh_token=${rawToken}`, csrfCookie()])
+      .set(CSRF_HEADER_NAME, TEST_CSRF_TOKEN);
 
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveProperty("accessToken");
@@ -493,7 +499,8 @@ describe("POST /api/auth/refresh", () => {
 
     const reuse = await request(testApp)
       .post("/api/auth/refresh")
-      .set("Cookie", [`refresh_token=${rawToken}`]);
+      .set("Cookie", [`refresh_token=${rawToken}`, csrfCookie()])
+      .set(CSRF_HEADER_NAME, TEST_CSRF_TOKEN);
 
     expect(reuse.status).toBe(401);
     expect(reuse.body.code).toBe("TOKEN_REUSE_DETECTED");
@@ -505,7 +512,8 @@ describe("POST /api/auth/refresh", () => {
 
     const rotateResponse = await request(testApp)
       .post("/api/auth/refresh")
-      .set("Cookie", [`refresh_token=${rawToken}`]);
+      .set("Cookie", [`refresh_token=${rawToken}`, csrfCookie()])
+      .set(CSRF_HEADER_NAME, TEST_CSRF_TOKEN);
     expect(rotateResponse.status).toBe(200);
 
     const rotatedOutRecord = await prisma.refreshToken.findUniqueOrThrow({
@@ -519,7 +527,8 @@ describe("POST /api/auth/refresh", () => {
 
     const reuseResponse = await request(testApp)
       .post("/api/auth/refresh")
-      .set("Cookie", [`refresh_token=${rawToken}`]);
+      .set("Cookie", [`refresh_token=${rawToken}`, csrfCookie()])
+      .set(CSRF_HEADER_NAME, TEST_CSRF_TOKEN);
 
     expect(reuseResponse.status).toBe(401);
     expect(reuseResponse.body.code).toBe("TOKEN_REUSE_DETECTED");
@@ -540,16 +549,43 @@ describe("POST /api/auth/refresh", () => {
     for (let attempt = 0; attempt < REFRESH_IP_RATE_LIMIT_MAX_REQUESTS; attempt += 1) {
       const response = await request(testApp)
         .post("/api/auth/refresh")
-        .set("Cookie", [`refresh_token=${generateOpaqueToken()}`]);
+        .set("Cookie", [`refresh_token=${generateOpaqueToken()}`, csrfCookie()])
+        .set(CSRF_HEADER_NAME, TEST_CSRF_TOKEN);
       expect(response.status).toBe(401);
     }
 
     const limited = await request(testApp)
       .post("/api/auth/refresh")
-      .set("Cookie", [`refresh_token=${generateOpaqueToken()}`]);
+      .set("Cookie", [`refresh_token=${generateOpaqueToken()}`, csrfCookie()])
+      .set(CSRF_HEADER_NAME, TEST_CSRF_TOKEN);
 
     expect(limited.status).toBe(429);
     expect(limited.body.code).toBe("RATE_LIMITED");
+  });
+
+  it("rejects a refresh request with a mismatched csrf header", async () => {
+    const { user } = await createUser();
+    const rawToken = await insertRefreshToken(user.id);
+
+    const response = await request(testApp)
+      .post("/api/auth/refresh")
+      .set("Cookie", [`refresh_token=${rawToken}`, csrfCookie()])
+      .set(CSRF_HEADER_NAME, "a-completely-different-token");
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("CSRF_MISMATCH");
+  });
+
+  it("rejects a refresh request with no csrf header at all", async () => {
+    const { user } = await createUser();
+    const rawToken = await insertRefreshToken(user.id);
+
+    const response = await request(testApp)
+      .post("/api/auth/refresh")
+      .set("Cookie", [`refresh_token=${rawToken}`, csrfCookie()]);
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("CSRF_MISMATCH");
   });
 });
 
@@ -603,7 +639,8 @@ describe("POST /api/auth/logout", () => {
 
     const response = await request(testApp)
       .post("/api/auth/logout")
-      .set("Cookie", [`refresh_token=${rawToken}`]);
+      .set("Cookie", [`refresh_token=${rawToken}`, csrfCookie()])
+      .set(CSRF_HEADER_NAME, TEST_CSRF_TOKEN);
 
     expect(response.status).toBe(200);
 
@@ -614,8 +651,27 @@ describe("POST /api/auth/logout", () => {
 
     const refreshAfterLogout = await request(testApp)
       .post("/api/auth/refresh")
-      .set("Cookie", [`refresh_token=${rawToken}`]);
+      .set("Cookie", [`refresh_token=${rawToken}`, csrfCookie()])
+      .set(CSRF_HEADER_NAME, TEST_CSRF_TOKEN);
     expect(refreshAfterLogout.status).toBe(401);
+  });
+
+  it("rejects a logout request with a mismatched csrf header", async () => {
+    const { user } = await createUser();
+    const rawToken = await insertRefreshToken(user.id);
+
+    const response = await request(testApp)
+      .post("/api/auth/logout")
+      .set("Cookie", [`refresh_token=${rawToken}`, csrfCookie()])
+      .set(CSRF_HEADER_NAME, "a-completely-different-token");
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("CSRF_MISMATCH");
+
+    const stillStored = await prisma.refreshToken.findUnique({
+      where: { tokenHash: hashToken(rawToken) },
+    });
+    expect(stillStored).not.toBeNull();
   });
 });
 

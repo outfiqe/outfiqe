@@ -1,5 +1,6 @@
 import { Router } from "express";
 
+import { requireCsrfHeader } from "#middlewares/csrf.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate, validated } from "#middlewares/validate.js";
@@ -108,9 +109,9 @@ authRoutes.post(
   loginEmailRateLimit,
   authController.login,
 );
-authRoutes.post("/refresh", refreshIpRateLimit, authController.refresh);
+authRoutes.post("/refresh", refreshIpRateLimit, requireCsrfHeader, authController.refresh);
 authRoutes.post("/session", authController.session);
-authRoutes.post("/logout", authController.logout);
+authRoutes.post("/logout", requireCsrfHeader, authController.logout);
 authRoutes.post(
   "/forgot-password",
   validate({ body: forgotPasswordSchema }),
