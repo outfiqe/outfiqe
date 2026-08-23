@@ -6,6 +6,7 @@ export const redisKeys = {
   cache: (namespace: string, identifier = "all") => `cache:${namespace}:${identifier}`,
   stream: (event: string) => `stream:${event}`,
   lock: (name: string) => `lock:${name}`,
+  loginLockout: (email: string) => `auth:login-lockout:${email}`,
   leaderboard: (category: LeaderboardCategory, week: string) =>
     `leaderboard:brand:${category}:${week}`,
   creatorLeaderboard: (category: CreatorLeaderboardCategory, week: string) =>

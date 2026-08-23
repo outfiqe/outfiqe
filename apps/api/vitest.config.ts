@@ -32,6 +32,7 @@ export default defineConfig({
         "src/shared/utils/password.utils.ts",
         "src/shared/utils/password-breach.utils.ts",
         "src/modules/auth/auth.retention.ts",
+        "src/modules/auth/auth.lockout.utils.ts",
         "src/shared/utils/opaque-token.utils.ts",
         "src/shared/utils/iso-week.utils.ts",
         "src/shared/utils/creator-engagement-affinity.utils.ts",

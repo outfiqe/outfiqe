@@ -5,7 +5,7 @@ import { disconnectRedis, redis } from "#redis/redis.client.js";
 
 afterEach(async () => {
   await resetDatabase();
-  await resetRateLimitCounters();
+  await resetEphemeralRedisState();
 });
 
 afterAll(async () => {
@@ -23,10 +23,13 @@ const resetDatabase = async (): Promise<void> => {
   await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${quotedTableNames} RESTART IDENTITY CASCADE;`);
 };
 
-const RATE_LIMIT_KEY_PATTERN = "ratelimit:*";
+const EPHEMERAL_REDIS_KEY_PATTERNS = ["ratelimit:*", "auth:login-lockout:*"];
 
-const resetRateLimitCounters = async (): Promise<void> => {
-  const keys = await redis.keys(RATE_LIMIT_KEY_PATTERN);
+const resetEphemeralRedisState = async (): Promise<void> => {
+  const keysPerPattern = await Promise.all(
+    EPHEMERAL_REDIS_KEY_PATTERNS.map((pattern) => redis.keys(pattern)),
+  );
+  const keys = keysPerPattern.flat();
   if (keys.length === 0) return;
 
   await redis.del(...keys);

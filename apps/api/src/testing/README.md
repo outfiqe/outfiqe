@@ -15,8 +15,8 @@ any one module, so they live here instead of being duplicated into every integra
   `TEST_DATABASE_URL` isn't set, then runs pending Prisma migrations against it. Runs exactly once
   for the whole test run, in vitest's main process — not once per test file (see rationale below).
 - `integration/setup.ts` — vitest `setupFiles` for the `integration` project: truncates every table
-  and clears any accumulated Redis rate-limit counters after each test, and disconnects Prisma/Redis
-  after the suite.
+  and clears any accumulated Redis rate-limit/lockout counters after each test, and disconnects
+  Prisma/Redis after the suite.
 
 Reached from anywhere in `src/` via the `#test/*` subpath import (see `package.json`'s `imports`),
 e.g. `import { testApp } from "#test/integration/testApp.js"`.
@@ -67,11 +67,12 @@ sends a real HTTP request through the real Express app, middleware, and a real (
   (`ESEWA_SECRET_KEY`, `KHALTI_SECRET_KEY`) so they still pass that schema's own validation, or an
   empty string (`GMAIL_APP_PASSWORD`, which is optional and falsy-checked) so `sendEmail` takes its
   existing console-stub fallback path instead of ever constructing a real transporter.
-- **`setup.ts` clears `ratelimit:*` Redis keys after every test, not just Postgres tables.** Unlike
-  the database, Redis isn't reset between tests, so an IP-keyed rate limiter's counter (unlike an
-  email-keyed one, which naturally gets a fresh key per test since each test uses a unique generated
-  email) persists across every test in a file — since `pool: "forks"` runs one process per file but
-  all its tests share that process's Redis connection. Left unhandled, an early test exhausting an
-  IP-keyed limit would make every later test in the same file that hits the same route see 429s
-  instead of the response it actually expects. Scoped to the `ratelimit:*` key pattern rather than a
-  full flush so it doesn't reach into cache/lock/stream keys other tests might exercise.
+- **`setup.ts` clears `ratelimit:*` and `auth:login-lockout:*` Redis keys after every test, not just
+  Postgres tables.** Unlike the database, Redis isn't reset between tests, so an IP-keyed rate
+  limiter's counter (unlike an email-keyed one, which naturally gets a fresh key per test since each
+  test uses a unique generated email) persists across every test in a file — since `pool: "forks"`
+  runs one process per file but all its tests share that process's Redis connection. Left unhandled,
+  an early test exhausting an IP-keyed limit would make every later test in the same file that hits
+  the same route see 429s instead of the response it actually expects. Scoped to these two key
+  patterns rather than a full flush so it doesn't reach into cache/lock/stream keys other tests might
+  exercise.

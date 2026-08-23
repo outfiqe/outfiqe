@@ -29,6 +29,7 @@ import type { DbClient } from "#types/db.types.js";
 import type { PurposeTokenPayload } from "#types/token.types.js";
 
 import { PURPOSE_ERROR_COPY } from "./auth.constants.js";
+import { isLockedOut, recordFailedLogin, resetFailedLogins } from "./auth.lockout.utils.js";
 import { authRepository } from "./auth.repository.js";
 import type {
   AdminInviteInfo,
@@ -255,13 +256,21 @@ export const authService = {
   },
 
   async login(email: string, password: string): Promise<AuthSession> {
+    if (await isLockedOut(email)) {
+      logger.warn(`Login failed: account temporarily locked out for ${email}`);
+      throw new AppError("INVALID_CREDENTIALS", INVALID_CREDENTIALS_MESSAGE, UNAUTHORIZED_STATUS);
+    }
+
     const user = await userRepository.findByEmail(email);
     const isValid = user ? await verifyPassword(password, user.passwordHash) : false;
 
     if (!user || !isValid) {
+      await recordFailedLogin(email);
       logger.warn(`Login failed: invalid credentials for ${email}`);
       throw new AppError("INVALID_CREDENTIALS", INVALID_CREDENTIALS_MESSAGE, UNAUTHORIZED_STATUS);
     }
+
+    await resetFailedLogins(email);
 
     const { id, name, handle, avatarUrl, role, isCreator, creatorStatus } = user;
 

@@ -18,6 +18,7 @@ import {
   FORGOT_PASSWORD_MAX_REQUESTS,
   LOGIN_EMAIL_RATE_LIMIT_MAX_REQUESTS,
   LOGIN_IP_RATE_LIMIT_MAX_REQUESTS,
+  LOGIN_LOCKOUT_THRESHOLD,
   REFRESH_IP_RATE_LIMIT_MAX_REQUESTS,
   REGISTER_IP_RATE_LIMIT_MAX_REQUESTS,
   RESET_PASSWORD_IP_RATE_LIMIT_MAX_REQUESTS,
@@ -374,6 +375,71 @@ describe("POST /api/auth/login", () => {
 
     expect(limited.status).toBe(429);
     expect(limited.body.code).toBe("RATE_LIMITED");
+  });
+
+  it("locks out an account after repeated failed attempts, returning the same generic error even with the correct password", async () => {
+    const { user, password } = await createUser({ emailVerified: true });
+
+    for (let attempt = 0; attempt < LOGIN_LOCKOUT_THRESHOLD; attempt += 1) {
+      const response = await request(testApp)
+        .post("/api/auth/login")
+        .send({ email: user.email, password: "wrong-password" });
+      expect(response.status).toBe(401);
+      expect(response.body.code).toBe("INVALID_CREDENTIALS");
+    }
+
+    const lockedOut = await request(testApp)
+      .post("/api/auth/login")
+      .send({ email: user.email, password });
+
+    expect(lockedOut.status).toBe(401);
+    expect(lockedOut.body.code).toBe("INVALID_CREDENTIALS");
+  });
+
+  it("resets the lockout counter after a successful login", async () => {
+    const { user, password } = await createUser({ emailVerified: true });
+    const halfThreshold = Math.floor(LOGIN_LOCKOUT_THRESHOLD / 2);
+
+    for (let attempt = 0; attempt < halfThreshold; attempt += 1) {
+      await request(testApp)
+        .post("/api/auth/login")
+        .send({ email: user.email, password: "wrong-password" });
+    }
+
+    const success = await request(testApp)
+      .post("/api/auth/login")
+      .send({ email: user.email, password });
+    expect(success.status).toBe(200);
+
+    for (let attempt = 0; attempt < halfThreshold; attempt += 1) {
+      const response = await request(testApp)
+        .post("/api/auth/login")
+        .send({ email: user.email, password: "wrong-password" });
+      expect(response.status).toBe(401);
+      expect(response.body.code).toBe("INVALID_CREDENTIALS");
+    }
+
+    const stillNotLockedOut = await request(testApp)
+      .post("/api/auth/login")
+      .send({ email: user.email, password });
+    expect(stillNotLockedOut.status).toBe(200);
+  });
+
+  it("scopes lockout to the targeted account, not every account", async () => {
+    const { user: targetUser } = await createUser({ emailVerified: true });
+    const { user: otherUser, password: otherPassword } = await createUser({ emailVerified: true });
+
+    for (let attempt = 0; attempt < LOGIN_LOCKOUT_THRESHOLD; attempt += 1) {
+      await request(testApp)
+        .post("/api/auth/login")
+        .send({ email: targetUser.email, password: "wrong-password" });
+    }
+
+    const otherLogin = await request(testApp)
+      .post("/api/auth/login")
+      .send({ email: otherUser.email, password: otherPassword });
+
+    expect(otherLogin.status).toBe(200);
   });
 });
 
