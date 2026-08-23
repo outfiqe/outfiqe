@@ -1,5 +1,9 @@
 import type { IssuedTokens } from "../auth.types.js";
-import type { OAuthCallbackStatus, OAuthProviderParam } from "./oauth.constants.js";
+import type {
+  OAuthCallbackStatus,
+  OAuthFlowIntent,
+  OAuthProviderParam,
+} from "./oauth.constants.js";
 
 export type OAuthProfile = {
   providerUserId: string;
@@ -15,11 +19,19 @@ export type OAuthCodeExchangeInput = {
   redirectUri: string;
 };
 
-export type OAuthStateRecord = {
-  provider: OAuthProviderParam;
-  codeVerifier: string;
-  redirectAfter: string;
-};
+export type OAuthStateRecord =
+  | {
+      intent: OAuthFlowIntent.SIGN_IN;
+      provider: OAuthProviderParam;
+      codeVerifier: string;
+      redirectAfter: string;
+    }
+  | {
+      intent: OAuthFlowIntent.LINK;
+      provider: OAuthProviderParam;
+      codeVerifier: string;
+      linkForUserId: string;
+    };
 
 export type OAuthLinkPendingRecord = {
   userId: string;
@@ -29,7 +41,6 @@ export type OAuthLinkPendingRecord = {
 };
 
 export type OAuthIdentityResolution =
-  | { status: OAuthCallbackStatus.SIGNED_IN; tokens: IssuedTokens }
-  | { status: OAuthCallbackStatus.LINK_REQUIRED; linkToken: string; email: string };
-
-export type OAuthCallbackResult = OAuthIdentityResolution & { redirectAfter: string };
+  | { status: OAuthCallbackStatus.SIGNED_IN; tokens: IssuedTokens; redirectAfter: string }
+  | { status: OAuthCallbackStatus.LINK_REQUIRED; linkToken: string; email: string }
+  | { status: OAuthCallbackStatus.LINK_COMPLETED; provider: OAuthProviderParam };

@@ -16,11 +16,17 @@ export const oauthCallbackQuerySchema = z.object({
   error: z.string().optional(),
 });
 
-export const oauthLinkBodySchema = z.object({
+export const oauthLinkConfirmBodySchema = z.object({
+  linkToken: z.string().min(1),
   password: z.string().min(1),
+});
+
+export const oauthUnlinkBodySchema = z.object({
+  password: z.string().min(1).optional(),
 });
 
 export type OAuthProviderParams = z.infer<typeof oauthProviderParamsSchema>;
 export type OAuthStartQuery = z.infer<typeof oauthStartQuerySchema>;
 export type OAuthCallbackQuery = z.infer<typeof oauthCallbackQuerySchema>;
-export type OAuthLinkBody = z.infer<typeof oauthLinkBodySchema>;
+export type OAuthLinkConfirmBody = z.infer<typeof oauthLinkConfirmBodySchema>;
+export type OAuthUnlinkBody = z.infer<typeof oauthUnlinkBodySchema>;

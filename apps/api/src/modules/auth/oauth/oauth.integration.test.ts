@@ -78,6 +78,51 @@ const startGoogleFlow = async (redirectAfter?: string): Promise<{ state: string 
 const callGoogleCallback = (query: Record<string, string>) =>
   request(testApp).get("/api/auth/oauth/google/callback").query(query);
 
+const createPasswordUser = async (password = "correct-horse-battery") => {
+  const user = await prisma.user.create({
+    data: {
+      email: uniqueEmail(),
+      name: "Password User",
+      handle: `password-user-${randomUUID().slice(0, 8)}`,
+      phone: uniquePhone(),
+      passwordHash: await hashPassword(password),
+      emailVerified: true,
+    },
+  });
+  return { user, password };
+};
+
+const loginAndGetAccessToken = async (email: string, password: string): Promise<string> => {
+  const response = await request(testApp).post("/api/auth/login").send({ email, password });
+  return response.body.data.accessToken as string;
+};
+
+const bootstrapAccessTokenFromRefreshCookie = async (refreshToken: string): Promise<string> => {
+  const response = await request(testApp)
+    .post("/api/auth/session")
+    .set("Cookie", [`refresh_token=${refreshToken}`]);
+  return response.body.data.accessToken as string;
+};
+
+const bearer = (accessToken: string): [string, string] => [
+  "Authorization",
+  `Bearer ${accessToken}`,
+];
+
+const startGoogleLinkFlow = async (accessToken: string): Promise<{ state: string }> => {
+  const response = await request(testApp)
+    .get("/api/auth/oauth/google/link/start")
+    .set(...bearer(accessToken));
+
+  expect(response.status).toBe(302);
+  const location = new URL(response.headers.location);
+  const state = location.searchParams.get("state");
+  if (!state)
+    throw new Error(`No state param found in redirect location: ${response.headers.location}`);
+
+  return { state };
+};
+
 describe("GET /api/auth/oauth/:provider/start", () => {
   it("redirects to Google's authorization endpoint with a PKCE challenge and state", async () => {
     const response = await request(testApp).get("/api/auth/oauth/google/start");
@@ -286,5 +331,253 @@ describe("GET /api/auth/oauth/:provider/callback", () => {
 
     expect(response.status).toBe(302);
     expect(response.headers.location).toBe(`${env.FRONTEND_URL}/`);
+  });
+});
+
+describe("GET /api/auth/oauth/:provider/link/start", () => {
+  it("requires authentication", async () => {
+    const response = await request(testApp).get("/api/auth/oauth/google/link/start");
+
+    expect(response.status).toBe(401);
+  });
+
+  it("redirects to the provider's authorization endpoint for an authenticated user", async () => {
+    const { user, password } = await createPasswordUser();
+    const accessToken = await loginAndGetAccessToken(user.email, password);
+
+    const response = await request(testApp)
+      .get("/api/auth/oauth/google/link/start")
+      .set(...bearer(accessToken));
+
+    expect(response.status).toBe(302);
+    const location = new URL(response.headers.location);
+    expect(location.origin + location.pathname).toBe(
+      "https://accounts.google.com/o/oauth2/v2/auth",
+    );
+    expect(location.searchParams.get("state")).toBeTruthy();
+  });
+});
+
+describe("GET /api/auth/oauth/:provider/callback (link intent)", () => {
+  it("connects a new provider to the already-authenticated user and redirects to security settings", async () => {
+    const { user, password } = await createPasswordUser();
+    const accessToken = await loginAndGetAccessToken(user.email, password);
+    const profile = mockGoogleProfile();
+    googleExchangeMock.mockResolvedValue(profile);
+
+    const { state } = await startGoogleLinkFlow(accessToken);
+    const response = await callGoogleCallback({ code: "test-code", state });
+
+    expect(response.status).toBe(302);
+    const location = new URL(response.headers.location);
+    expect(location.pathname).toBe("/dashboard/settings/security");
+    expect(location.searchParams.get("linked")).toBe("google");
+    expectNoSessionCookies(response);
+
+    const identity = await prisma.oAuthIdentity.findUniqueOrThrow({
+      where: {
+        provider_providerUserId: {
+          provider: OAuthProvider.GOOGLE,
+          providerUserId: profile.providerUserId,
+        },
+      },
+    });
+    expect(identity.userId).toBe(user.id);
+    expect(identity.revokedAt).toBeNull();
+  });
+
+  it("rejects connecting a provider identity that's already linked to a different account", async () => {
+    const otherOwner = await createPasswordUser();
+    const profile = mockGoogleProfile();
+    await prisma.oAuthIdentity.create({
+      data: {
+        userId: otherOwner.user.id,
+        provider: OAuthProvider.GOOGLE,
+        providerUserId: profile.providerUserId,
+        emailAtLinkTime: otherOwner.user.email,
+      },
+    });
+
+    const { user, password } = await createPasswordUser();
+    const accessToken = await loginAndGetAccessToken(user.email, password);
+    googleExchangeMock.mockResolvedValue(profile);
+
+    const { state } = await startGoogleLinkFlow(accessToken);
+    const response = await callGoogleCallback({ code: "test-code", state });
+
+    expect(response.status).toBe(302);
+    const location = new URL(response.headers.location);
+    expect(location.searchParams.get("error")).toBeTruthy();
+
+    const identity = await prisma.oAuthIdentity.findUniqueOrThrow({
+      where: {
+        provider_providerUserId: {
+          provider: OAuthProvider.GOOGLE,
+          providerUserId: profile.providerUserId,
+        },
+      },
+    });
+    expect(identity.userId).toBe(otherOwner.user.id);
+  });
+});
+
+describe("POST /api/auth/oauth/:provider/link/confirm", () => {
+  it("links the identity and signs the user in when the password is correct", async () => {
+    const { user, password } = await createPasswordUser();
+    const profile = mockGoogleProfile({ email: user.email });
+    googleExchangeMock.mockResolvedValue(profile);
+
+    const { state } = await startGoogleFlow();
+    const collisionResponse = await callGoogleCallback({ code: "test-code", state });
+    const linkToken = new URL(collisionResponse.headers.location).searchParams.get("linkToken");
+    if (!linkToken) throw new Error("Expected a linkToken from the collision redirect");
+
+    const response = await request(testApp)
+      .post("/api/auth/oauth/google/link/confirm")
+      .send({ linkToken, password });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.accessToken).toBeTruthy();
+    expect(extractCookieValue(response, "refresh_token")).toBeTruthy();
+
+    const identity = await prisma.oAuthIdentity.findUniqueOrThrow({
+      where: {
+        provider_providerUserId: {
+          provider: OAuthProvider.GOOGLE,
+          providerUserId: profile.providerUserId,
+        },
+      },
+    });
+    expect(identity.userId).toBe(user.id);
+
+    const pendingRecordRaw = await redis.get(redisKeys.oauthLinkPending(linkToken));
+    expect(pendingRecordRaw).toBeNull();
+  });
+
+  it("rejects an incorrect password without consuming the link token", async () => {
+    const { user, password } = await createPasswordUser();
+    const profile = mockGoogleProfile({ email: user.email });
+    googleExchangeMock.mockResolvedValue(profile);
+
+    const { state } = await startGoogleFlow();
+    const collisionResponse = await callGoogleCallback({ code: "test-code", state });
+    const linkToken = new URL(collisionResponse.headers.location).searchParams.get("linkToken");
+    if (!linkToken) throw new Error("Expected a linkToken from the collision redirect");
+
+    const wrongAttempt = await request(testApp)
+      .post("/api/auth/oauth/google/link/confirm")
+      .send({ linkToken, password: "not-the-right-password" });
+    expect(wrongAttempt.status).toBe(401);
+
+    const retryWithCorrectPassword = await request(testApp)
+      .post("/api/auth/oauth/google/link/confirm")
+      .send({ linkToken, password });
+    expect(retryWithCorrectPassword.status).toBe(200);
+  });
+
+  it("rejects an unknown or expired link token", async () => {
+    const response = await request(testApp)
+      .post("/api/auth/oauth/google/link/confirm")
+      .send({ linkToken: "never-issued-link-token", password: "whatever123" });
+
+    expect(response.status).toBe(400);
+  });
+});
+
+describe("DELETE /api/auth/oauth/:provider/link", () => {
+  it("requires authentication", async () => {
+    const response = await request(testApp).delete("/api/auth/oauth/google/link").send({});
+
+    expect(response.status).toBe(401);
+  });
+
+  it("unlinks a connected provider when the password is correct", async () => {
+    const { user, password } = await createPasswordUser();
+    await prisma.oAuthIdentity.create({
+      data: {
+        userId: user.id,
+        provider: OAuthProvider.GOOGLE,
+        providerUserId: `google-${randomUUID()}`,
+        emailAtLinkTime: user.email,
+      },
+    });
+    const accessToken = await loginAndGetAccessToken(user.email, password);
+
+    const response = await request(testApp)
+      .delete("/api/auth/oauth/google/link")
+      .set(...bearer(accessToken))
+      .send({ password });
+
+    expect(response.status).toBe(200);
+    const identity = await prisma.oAuthIdentity.findFirstOrThrow({ where: { userId: user.id } });
+    expect(identity.revokedAt).not.toBeNull();
+  });
+
+  it("rejects an incorrect password and leaves the identity connected", async () => {
+    const { user, password } = await createPasswordUser();
+    await prisma.oAuthIdentity.create({
+      data: {
+        userId: user.id,
+        provider: OAuthProvider.GOOGLE,
+        providerUserId: `google-${randomUUID()}`,
+        emailAtLinkTime: user.email,
+      },
+    });
+    const accessToken = await loginAndGetAccessToken(user.email, password);
+
+    const response = await request(testApp)
+      .delete("/api/auth/oauth/google/link")
+      .set(...bearer(accessToken))
+      .send({ password: "not-the-right-password" });
+
+    expect(response.status).toBe(401);
+    const identity = await prisma.oAuthIdentity.findFirstOrThrow({ where: { userId: user.id } });
+    expect(identity.revokedAt).toBeNull();
+  });
+
+  it("blocks unlinking the sole auth method for a password-less oauth-only account", async () => {
+    const profile = mockGoogleProfile();
+    googleExchangeMock.mockResolvedValue(profile);
+    const { state } = await startGoogleFlow();
+    const signInResponse = await callGoogleCallback({ code: "test-code", state });
+    const refreshToken = extractCookieValue(signInResponse, "refresh_token");
+    if (!refreshToken) throw new Error("Expected the auto-created user to be signed in");
+    const accessToken = await bootstrapAccessTokenFromRefreshCookie(refreshToken);
+
+    const response = await request(testApp)
+      .delete("/api/auth/oauth/google/link")
+      .set(...bearer(accessToken))
+      .send({});
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("ONLY_AUTH_METHOD");
+  });
+
+  it("allows unlinking a password-less account's provider once a second provider is connected", async () => {
+    const profile = mockGoogleProfile();
+    googleExchangeMock.mockResolvedValue(profile);
+    const { state } = await startGoogleFlow();
+    const signInResponse = await callGoogleCallback({ code: "test-code", state });
+    const refreshToken = extractCookieValue(signInResponse, "refresh_token");
+    if (!refreshToken) throw new Error("Expected the auto-created user to be signed in");
+    const accessToken = await bootstrapAccessTokenFromRefreshCookie(refreshToken);
+
+    const facebookProfile = { ...mockGoogleProfile(), providerUserId: `facebook-${randomUUID()}` };
+    facebookExchangeMock.mockResolvedValue(facebookProfile);
+    const linkStartResponse = await request(testApp)
+      .get("/api/auth/oauth/facebook/link/start")
+      .set(...bearer(accessToken));
+    const linkState = new URL(linkStartResponse.headers.location).searchParams.get("state");
+    if (!linkState) throw new Error("Expected a state param from the link/start redirect");
+    await request(testApp)
+      .get("/api/auth/oauth/facebook/callback")
+      .query({ code: "test-code", state: linkState });
+
+    const response = await request(testApp)
+      .delete("/api/auth/oauth/google/link")
+      .set(...bearer(accessToken))
+      .send({});
+
+    expect(response.status).toBe(200);
   });
 });

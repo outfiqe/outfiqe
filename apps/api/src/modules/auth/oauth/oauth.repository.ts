@@ -39,7 +39,25 @@ export const oauthRepository = {
     return prisma.oAuthIdentity.findMany({ where: { userId, revokedAt: null } });
   },
 
+  async findActiveIdentityForUserAndProvider(
+    userId: string,
+    provider: OAuthProvider,
+  ): Promise<OAuthIdentityRecord | null> {
+    return prisma.oAuthIdentity.findFirst({ where: { userId, provider, revokedAt: null } });
+  },
+
   async revokeOAuthIdentity(id: string): Promise<void> {
     await prisma.oAuthIdentity.update({ where: { id }, data: { revokedAt: new Date() } });
+  },
+
+  async reviveOAuthIdentity(
+    id: string,
+    emailAtLinkTime: string,
+    client: DbClient = prisma,
+  ): Promise<void> {
+    await client.oAuthIdentity.update({
+      where: { id },
+      data: { revokedAt: null, emailAtLinkTime },
+    });
   },
 };
