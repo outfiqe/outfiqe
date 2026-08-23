@@ -1,4 +1,5 @@
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID, scrypt } from "node:crypto";
+import { promisify } from "node:util";
 
 import request from "supertest";
 import { describe, expect, it } from "vitest";
@@ -16,6 +17,27 @@ const DEFAULT_TOKEN_TTL = "1h";
 const EXPIRED_TOKEN_TTL = "-1h";
 const ONE_HOUR_MS = 60 * 60 * 1000;
 const FORGOT_PASSWORD_RATE_LIMIT_MAX = 3;
+const LEGACY_SCRYPT_KEY_LEN = 64;
+const PASSWORD_UPGRADE_POLL_INTERVAL_MS = 25;
+const PASSWORD_UPGRADE_POLL_ATTEMPTS = 40;
+
+const scryptAsync = promisify(scrypt) as (
+  password: string,
+  salt: Buffer,
+  keylen: number,
+) => Promise<Buffer>;
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const waitForPasswordHashUpgrade = async (userId: string): Promise<string> => {
+  for (let attempt = 0; attempt < PASSWORD_UPGRADE_POLL_ATTEMPTS; attempt += 1) {
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    if (user.passwordHash.startsWith("$argon2id$")) return user.passwordHash;
+    await wait(PASSWORD_UPGRADE_POLL_INTERVAL_MS);
+  }
+
+  throw new Error(`Password hash for user ${userId} was not upgraded in time`);
+};
 
 const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
@@ -211,6 +233,34 @@ describe("POST /api/auth/login", () => {
     expect(response.body.data.user).toMatchObject({ id: user.id, email: user.email });
     expect(extractCookieValue(response, "refresh_token")).toBeTruthy();
     expect(extractCookieValue(response, "has_session")).toBe("1");
+  });
+
+  it("logs in a user with a legacy scrypt hash and silently upgrades it to argon2id", async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const password = DEFAULT_TEST_PASSWORD;
+    const salt = randomBytes(16);
+    const derived = await scryptAsync(password, salt, LEGACY_SCRYPT_KEY_LEN);
+    const legacyHash = `scrypt:${salt.toString("hex")}:${derived.toString("hex")}`;
+
+    const user = await prisma.user.create({
+      data: {
+        email: `legacy-${suffix}@outfiqe.test`,
+        name: "Legacy Hash User",
+        handle: `legacy-user-${suffix}`,
+        phone: uniquePhone(),
+        passwordHash: legacyHash,
+        emailVerified: true,
+      },
+    });
+
+    const response = await request(testApp)
+      .post("/api/auth/login")
+      .send({ email: user.email, password });
+
+    expect(response.status).toBe(200);
+
+    const upgradedHash = await waitForPasswordHashUpgrade(user.id);
+    expect(upgradedHash).toMatch(/^\$argon2id\$/);
   });
 
   it("rejects an unverified user", async () => {

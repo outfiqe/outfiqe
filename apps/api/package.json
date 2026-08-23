@@ -40,6 +40,7 @@
     "db:reset": "prisma migrate reset"
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.1.0",
     "@outfiqe/types": "workspace:*",
     "@outfiqe/utils": "workspace:*",
     "@prisma/adapter-pg": "^7.9.1",

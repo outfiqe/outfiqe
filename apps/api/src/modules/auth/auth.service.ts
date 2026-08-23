@@ -10,13 +10,14 @@ import { parseDurationMs } from "#lib/duration.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { generateToken } from "#lib/generate-token.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
-import { hashPassword, verifyPassword } from "#lib/password.utils.js";
+import { hashPassword, needsRehash, verifyPassword } from "#lib/password.utils.js";
 import { signPurposeToken, verifyPurposeToken } from "#lib/purpose-token.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { adminInviteRepository } from "#modules/admin-invites/adminInvite.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
 import type { UserRecord } from "#modules/users/user.types.js";
+import { describeError } from "#redis/redis.utils.js";
 import type { PurposeTokenPayload } from "#types/token.types.js";
 
 import { PURPOSE_ERROR_COPY } from "./auth.constants.js";
@@ -103,6 +104,14 @@ const sendVerificationEmail = async (user: Pick<UserRecord, "id" | "email">): Pr
     body: `Welcome to Outfiqe! Verify your email: ${url}`,
     html,
   });
+};
+
+const rehashPasswordInBackground = (userId: string, plaintextPassword: string): void => {
+  hashPassword(plaintextPassword)
+    .then((newPasswordHash) => userRepository.updatePasswordHash(userId, newPasswordHash))
+    .catch((err: unknown) => {
+      logger.error(`Password rehash failed for user ${userId}: ${describeError(err)}`);
+    });
 };
 
 export const authService = {
@@ -193,6 +202,10 @@ export const authService = {
     }
 
     const { id, name, handle, avatarUrl, role, isCreator, creatorStatus } = user;
+
+    if (needsRehash(user.passwordHash)) {
+      rehashPasswordInBackground(id, password);
+    }
 
     if (!user.emailVerified) {
       logger.warn(`Login blocked: email not verified for user ${id}`);

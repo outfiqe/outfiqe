@@ -28,6 +28,7 @@ export default defineConfig({
       include: [
         "src/app.ts",
         "src/shared/utils/pagination.utils.ts",
+        "src/shared/utils/password.utils.ts",
         "src/shared/utils/opaque-token.utils.ts",
         "src/shared/utils/iso-week.utils.ts",
         "src/shared/utils/creator-engagement-affinity.utils.ts",

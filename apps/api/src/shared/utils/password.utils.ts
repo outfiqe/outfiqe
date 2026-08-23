@@ -1,5 +1,7 @@
-import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
+import { scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
+
+import { hash as argon2Hash, verify as argon2Verify } from "@node-rs/argon2";
 
 const scryptAsync = promisify(scrypt) as (
   password: string,
@@ -8,17 +10,15 @@ const scryptAsync = promisify(scrypt) as (
 ) => Promise<Buffer>;
 
 const KEY_LEN = 64;
+const LEGACY_SCRYPT_SCHEME = "scrypt";
+const ARGON2ID_PREFIX = "$argon2id$";
 
-export const hashPassword = async (password: string): Promise<string> => {
-  const salt = randomBytes(16);
-  const derived = await scryptAsync(password, salt, KEY_LEN);
-  return `scrypt:${salt.toString("hex")}:${derived.toString("hex")}`;
-};
+export const hashPassword = async (password: string): Promise<string> => argon2Hash(password);
 
-export const verifyPassword = async (password: string, stored: string): Promise<boolean> => {
+const verifyLegacyScryptPassword = async (password: string, stored: string): Promise<boolean> => {
   const [scheme, saltHex, hashHex] = stored.split(":");
 
-  if (scheme !== "scrypt" || !saltHex || !hashHex) return false;
+  if (scheme !== LEGACY_SCRYPT_SCHEME || !saltHex || !hashHex) return false;
 
   const derived = await scryptAsync(password, Buffer.from(saltHex, "hex"), KEY_LEN);
   const expected = Buffer.from(hashHex, "hex");
@@ -26,3 +26,13 @@ export const verifyPassword = async (password: string, stored: string): Promise<
 
   return hasEqualLen && timingSafeEqual(derived, expected);
 };
+
+export const verifyPassword = async (password: string, stored: string): Promise<boolean> => {
+  if (stored.startsWith(ARGON2ID_PREFIX)) {
+    return argon2Verify(stored, password);
+  }
+
+  return verifyLegacyScryptPassword(password, stored);
+};
+
+export const needsRehash = (stored: string): boolean => !stored.startsWith(ARGON2ID_PREFIX);
