@@ -75,6 +75,8 @@ export default defineConfig({
         "src/features/auth/api/userSchemas.ts",
         "src/features/explore/utils/commentCacheUpdate.ts",
         "src/features/explore/components/CommentThread.tsx",
+        "src/shared/lib/contentSecurityPolicy.ts",
+        "src/shared/lib/apiOrigin.ts",
       ],
       thresholds: {
         lines: 80,
