@@ -25,7 +25,7 @@ const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' ${TURNSTILE_ORIGIN}`,
+  `script-src 'self' ${TURNSTILE_ORIGIN}${isProduction ? "" : " 'unsafe-inline' 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
