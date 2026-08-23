@@ -23,16 +23,22 @@ import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 import { ApiClientError } from "@/shared/lib/apiClient";
 
 import { CaptchaChallenge } from "../components/CaptchaChallenge";
+import { ContinueWithOAuthButtons } from "../components/ContinueWithOAuthButtons";
 import { useLogin } from "../hooks/useLogin";
 import { useResendVerification } from "../hooks/useResendVerification";
 import { type LoginInput, loginSchema } from "../schemas/login.schema";
 import { AuthErrorCode, getAuthErrorMessage } from "../utils/authErrors";
+import { getSafeRedirect } from "../utils/safeRedirect";
+
+const DEFAULT_OAUTH_REDIRECT = "/dashboard";
 
 export const LoginForm = () => {
   const login = useLogin();
   const resend = useResendVerification();
   const searchParams = useSearchParams();
   const justReset = searchParams.get("reset") === "1";
+  const oauthRedirectAfter =
+    getSafeRedirect(searchParams.get("redirect")) ?? DEFAULT_OAUTH_REDIRECT;
   const showPending = useDelayedPending(login.isPending);
   const [captchaToken, setCaptchaToken] = useState<string | undefined>(undefined);
   const [captchaRequired, setCaptchaRequired] = useState(false);
@@ -141,6 +147,13 @@ export const LoginForm = () => {
           </Button>
         </form>
       </Form>
+
+      <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />
+        or continue with
+        <span className="h-px flex-1 bg-border" />
+      </div>
+      <ContinueWithOAuthButtons redirectAfter={oauthRedirectAfter} />
 
       <p className="mt-5 text-center text-sm text-muted-foreground">
         New here?{" "}

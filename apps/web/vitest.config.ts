@@ -21,6 +21,8 @@ export default defineConfig({
         "src/features/auth/api/oauthApi.ts",
         "src/features/auth/components/ConnectedAccounts/**",
         "src/features/auth/components/AddPhoneNumberBanner.tsx",
+        "src/features/auth/components/ContinueWithOAuthButtons.tsx",
+        "src/features/auth/components/OAuthCallbackScreen/**",
         "src/components/ProductGridSkeleton.tsx",
         "src/features/brand-profile/hooks/useInfiniteBrandProducts.ts",
         "src/features/brand-profile/api/brandProfileApi.ts",

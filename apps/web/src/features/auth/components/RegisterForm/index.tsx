@@ -14,6 +14,7 @@ import {
   Input,
 } from "@outfiqe/design-system";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -22,15 +23,22 @@ import { PasswordInput } from "@/components/PasswordInput";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 
 import { CaptchaChallenge } from "../../components/CaptchaChallenge";
+import { ContinueWithOAuthButtons } from "../../components/ContinueWithOAuthButtons";
 import { useRegister } from "../../hooks/useRegister";
 import { type RegisterInput, registerSchema } from "../../schemas/register.schema";
 import { AuthErrorCode, getAuthErrorMessage } from "../../utils/authErrors";
+import { getSafeRedirect } from "../../utils/safeRedirect";
 import { RegisterSuccess } from "./RegisterSuccess";
+
+const DEFAULT_OAUTH_REDIRECT = "/dashboard";
 
 export const RegisterForm = () => {
   const register = useRegister();
   const showPending = useDelayedPending(register.isPending);
   const [captchaToken, setCaptchaToken] = useState<string | undefined>(undefined);
+  const searchParams = useSearchParams();
+  const oauthRedirectAfter =
+    getSafeRedirect(searchParams.get("redirect")) ?? DEFAULT_OAUTH_REDIRECT;
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
@@ -170,6 +178,13 @@ export const RegisterForm = () => {
           </Button>
         </form>
       </Form>
+
+      <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />
+        or continue with
+        <span className="h-px flex-1 bg-border" />
+      </div>
+      <ContinueWithOAuthButtons redirectAfter={oauthRedirectAfter} />
 
       <p className="mt-5 text-center text-sm text-muted-foreground">
         Already have an account?{" "}

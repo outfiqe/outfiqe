@@ -22,7 +22,11 @@ client-side session/user context the rest of the app reads.
 - `components/` — the form/screen components: `LoginForm`, `RegisterForm`, `BrandRegisterForm`,
   `ForgotPasswordForm`, `ResetPasswordForm`, `VerifyEmailScreen`, plus their success/loading/
   expired sub-states; `ConnectedAccounts/` (connect/disconnect Google/Facebook, Account Settings →
-  Security) and `AddPhoneNumberBanner` (the OAuth-only-account phone nudge, same page).
+  Security) and `AddPhoneNumberBanner` (the OAuth-only-account phone nudge, same page);
+  `ContinueWithOAuthButtons` (the "Google"/"Facebook" row on `LoginForm`/`RegisterForm`) and
+  `OAuthCallbackScreen/` (renders at `/auth/oauth-callback`, the page the API redirects a failed or
+  link-required OAuth attempt to — a successful sign-in never lands here, it's redirected straight
+  to its destination with the session cookie already set).
 - `context/AuthContext.tsx` + `context/authReducer.ts` — the client-side auth state (current user,
   auth status) and its reducer, exposed via `useAuth()`.
 - `context/authTestWrapper.tsx` — test-only support for hooks that read/write `AuthContext`:
@@ -39,7 +43,12 @@ client-side session/user context the rest of the app reads.
   `*.integration.test.tsx` (MSW-mocked requests, matching the pattern in
   `apps/web/src/testing/README.md`); `hooks/**` is in `vitest.config.ts`'s `coverage.include`.
   There's no `useLinkAccount`/`useConnectAccount` hook — connecting a provider is a full-page
-  navigation (`buildOAuthLinkStartUrl`), not a mutation.
+  navigation (`buildOAuthLinkStartUrl`), not a mutation. `useConfirmOAuthLink` (used by
+  `OAuthCallbackScreen`) is the one exception to "one hook wraps one API call" — after
+  `oauthApi.confirmLink` returns an access token, it also fetches `/auth/me` and dispatches
+  `AUTH_SUCCESS` itself, the same session-bootstrap sequence `AuthContext`'s own mount effect runs,
+  because a full-page-redirect flow has no equivalent to `useLogin`'s response body carrying the
+  user inline.
 - `schemas/` — Zod validation schemas for each auth form.
 - `types/index.ts` — shared auth types (`UserSession`, `UserRole`, `CreatorStatus`, etc.).
 - `utils/authErrors.ts` — maps API auth error codes to user-facing messages.
@@ -52,11 +61,21 @@ client-side session/user context the rest of the app reads.
 
 **User-facing:** a visitor logs in, registers, or (via a brand invite link) registers as a brand;
 a returning visitor can request a password reset or resend a verification email. On success, the
-app redirects them either to a safe `?redirect=` target or their role's default route.
+app redirects them either to a safe `?redirect=` target or their role's default route. Login and
+register both also offer "Continue with Google/Facebook" — a full-page navigation, not a form
+submission — which either signs the visitor straight in, or (if that provider's email already
+belongs to an existing password account) lands them on `/auth/oauth-callback` to confirm the link
+with that account's password before signing in.
 
 **Technical:** a form component → its dedicated hook (e.g. `useLogin`) → `authApi` → the API
 client → `apps/api`'s auth module. On success, `AuthContext`/`authReducer` is updated so the rest
-of the app (nav, protected routes, `useAuth()`) reflects the new session immediately.
+of the app (nav, protected routes, `useAuth()`) reflects the new session immediately. The OAuth
+buttons instead navigate the whole page to `buildOAuthStartUrl(provider, redirectAfter)` —
+`apps/api/src/modules/auth/oauth` owns the entire round-trip with the provider and, on success,
+redirects the browser straight to `redirectAfter` with the refresh-token cookie already set; this
+feature only picks back up if that redirect instead lands on `/auth/oauth-callback`
+(`OAuthCallbackScreen`), reading `linkToken`/`email`/`provider` (link confirmation needed) or
+`error` (something failed) from the query string the API put there.
 
 ## Non-obvious rationale
 
@@ -82,6 +101,8 @@ of the app (nav, protected routes, `useAuth()`) reflects the new session immedia
 - All of `hooks/` is now tested and gated at 80% coverage. Still not covered: the invite-gated
   read flows (`getBrandInvite`/`getAdminInvite`/`validateToken` in `authApi.ts` — these back
   `BrandRegisterForm`'s invite-validation step, not a hook of their own) and every form/screen
-  component under `components/` other than `CaptchaChallenge`, `ConnectedAccounts`, and
-  `AddPhoneNumberBanner` — mirrors the same scope decision made in
-  `apps/api/src/modules/auth/README.md` (brand/admin invite registration deferred to a later pass).
+  component under `components/` other than `CaptchaChallenge`, `ConnectedAccounts`,
+  `AddPhoneNumberBanner`, `ContinueWithOAuthButtons`, and `OAuthCallbackScreen` — mirrors the same
+  scope decision made in `apps/api/src/modules/auth/README.md` (brand/admin invite registration
+  deferred to a later pass). In particular, `LoginForm`/`RegisterForm` themselves (now including
+  the OAuth buttons row) are still untested.
