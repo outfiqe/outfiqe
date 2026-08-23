@@ -112,7 +112,7 @@ export const PostCommentsSection = ({
         <button
           type="submit"
           disabled={!isAuthenticated || !draft.trim()}
-          className="shrink-0 rounded-full bg-foreground px-3.5 py-2 text-[12.5px] font-semibold text-background disabled:opacity-40"
+          className="shrink-0 cursor-pointer rounded-full bg-foreground px-3.5 py-2 text-[12.5px] font-semibold text-background disabled:cursor-default disabled:opacity-40"
         >
           Post
         </button>

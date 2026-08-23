@@ -23,7 +23,7 @@ export const PostGridCard = ({ post, onClick, trendingRank }: PostGridCardProps)
         type="button"
         onClick={onClick}
         aria-label={caption ?? "View post"}
-        className="relative block aspect-[4/5] w-full overflow-hidden rounded-2xl border border-border bg-cover bg-center transition-colors hover:border-foreground/30"
+        className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-2xl border border-border bg-cover bg-center transition-colors hover:border-foreground/30"
         style={
           imageUrl
             ? { backgroundImage: `url(${imageUrl})` }

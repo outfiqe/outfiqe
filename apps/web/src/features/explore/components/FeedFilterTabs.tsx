@@ -26,7 +26,7 @@ export const FeedFilterTabs = ({ tab, onChange, layout, onLayoutChange }: FeedFi
               onClick={() => onChange(value)}
               aria-pressed={tab === value}
               className={cn(
-                "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                "shrink-0 cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors",
                 tab === value
                   ? "bg-foreground text-background"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -43,7 +43,7 @@ export const FeedFilterTabs = ({ tab, onChange, layout, onLayoutChange }: FeedFi
               onClick={() => onChange(tag)}
               aria-pressed={tab === tag}
               className={cn(
-                "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                "shrink-0 cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors",
                 tab === tag
                   ? "bg-foreground text-background"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -63,7 +63,7 @@ export const FeedFilterTabs = ({ tab, onChange, layout, onLayoutChange }: FeedFi
               aria-pressed={layout === value}
               aria-label={`${label} view`}
               className={cn(
-                "flex size-8 items-center justify-center rounded-lg transition-colors",
+                "flex size-8 cursor-pointer items-center justify-center rounded-lg transition-colors",
                 layout === value
                   ? "bg-foreground text-background"
                   : "bg-muted text-muted-foreground hover:text-foreground",

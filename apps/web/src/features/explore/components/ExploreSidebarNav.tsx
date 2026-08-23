@@ -30,7 +30,7 @@ export const ExploreSidebarNav = ({
           onClick={() => onChange(value)}
           aria-pressed={tab === value}
           className={cn(
-            "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+            "flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
             tab === value
               ? "bg-foreground text-background"
               : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -68,7 +68,7 @@ export const ExploreSidebarNav = ({
           onClick={() => onLayoutChange(value)}
           aria-pressed={layout === value}
           className={cn(
-            "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+            "flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
             layout === value
               ? "bg-muted text-foreground"
               : "text-muted-foreground hover:bg-muted hover:text-foreground",

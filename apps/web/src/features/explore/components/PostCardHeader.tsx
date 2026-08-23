@@ -46,7 +46,7 @@ export const PostCardHeader = ({
           onClick={onFollowToggle}
           aria-pressed={isFollowingCreator}
           className={cn(
-            "ml-auto shrink-0 rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
+            "ml-auto shrink-0 cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
             isFollowingCreator
               ? "border-foreground bg-foreground text-background"
               : "border-foreground text-foreground hover:bg-foreground hover:text-background",

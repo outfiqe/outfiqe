@@ -4,6 +4,7 @@ import { Skeleton } from "@outfiqe/design-system";
 import { useState } from "react";
 
 import { TRENDING_RANKS, TrendingRankChip } from "@/shared/components/TrendingRankBadge";
+import { cn } from "@/shared/lib/cn";
 
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 import { useFollowCreator } from "../hooks/useFollowCreator";
@@ -13,14 +14,15 @@ import { SuggestedCreatorRow, SuggestedCreatorRowSkeleton } from "./SuggestedCre
 import { SuggestedCreatorsModal } from "./SuggestedCreatorsModal";
 
 interface SidebarProps {
+  activeTag: string;
   onTagClick: (tag: string) => void;
 }
 
-export const Sidebar = ({ onTagClick }: SidebarProps) => {
+export const Sidebar = ({ activeTag, onTagClick }: SidebarProps) => {
   return (
     <aside className="sticky top-[76px] hidden h-fit flex-col gap-4 lg:flex">
       <SuggestedCreators />
-      <TrendingTags onTagClick={onTagClick} />
+      <TrendingTags activeTag={activeTag} onTagClick={onTagClick} />
     </aside>
   );
 };
@@ -41,7 +43,7 @@ const SuggestedCreators = () => {
           <button
             type="button"
             onClick={() => setIsFindMoreOpen(true)}
-            className="text-[11px] font-semibold text-primary-strong hover:underline"
+            className="cursor-pointer text-[11px] font-semibold text-primary-strong hover:underline"
           >
             Find more
           </button>
@@ -50,7 +52,11 @@ const SuggestedCreators = () => {
 
       {isAuthResolved && !isAuthenticated && (
         <p className="mt-3 text-[12.5px] text-muted-foreground">
-          <button type="button" onClick={goToSignIn} className="font-semibold text-primary-strong">
+          <button
+            type="button"
+            onClick={goToSignIn}
+            className="cursor-pointer font-semibold text-primary-strong"
+          >
             Sign in
           </button>{" "}
           to see who to follow.
@@ -79,7 +85,13 @@ const SuggestedCreators = () => {
   );
 };
 
-const TrendingTags = ({ onTagClick }: { onTagClick: (tag: string) => void }) => {
+const TrendingTags = ({
+  activeTag,
+  onTagClick,
+}: {
+  activeTag: string;
+  onTagClick: (tag: string) => void;
+}) => {
   const { data: tags, isLoading } = useTrendingTags();
   if (!isLoading && (!tags || tags.length === 0)) return null;
 
@@ -96,13 +108,20 @@ const TrendingTags = ({ onTagClick }: { onTagClick: (tag: string) => void }) => 
 
         {tags?.map(({ tag }, index) => {
           const rank = TRENDING_RANKS[index];
+          const isActive = activeTag === tag;
 
           return (
             <button
               key={tag}
               type="button"
               onClick={() => onTagClick(tag)}
-              className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
+              aria-pressed={isActive}
+              className={cn(
+                "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] transition-colors",
+                isActive
+                  ? "bg-foreground text-background"
+                  : "bg-muted text-muted-foreground hover:text-foreground",
+              )}
             >
               {rank && <TrendingRankChip rank={rank} />}#{tag}
             </button>

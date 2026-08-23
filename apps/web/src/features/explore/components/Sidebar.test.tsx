@@ -103,7 +103,7 @@ describe("Sidebar", () => {
   it("does not show a Find more trigger for an unauthenticated visitor", () => {
     mockAuthGate(false);
 
-    render(<Sidebar onTagClick={vi.fn()} />);
+    render(<Sidebar activeTag="" onTagClick={vi.fn()} />);
 
     expect(screen.queryByRole("button", { name: "Find more" })).not.toBeInTheDocument();
   });
@@ -112,7 +112,7 @@ describe("Sidebar", () => {
     const user = userEvent.setup();
     mockAuthGate(true);
 
-    render(<Sidebar onTagClick={vi.fn()} />);
+    render(<Sidebar activeTag="" onTagClick={vi.fn()} />);
     expect(screen.queryByTestId("suggested-creators-modal")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Find more" }));
@@ -124,7 +124,7 @@ describe("Sidebar", () => {
     const user = userEvent.setup();
     mockAuthGate(true);
 
-    render(<Sidebar onTagClick={vi.fn()} />);
+    render(<Sidebar activeTag="" onTagClick={vi.fn()} />);
     await user.click(screen.getByRole("button", { name: "Find more" }));
     await user.click(screen.getByText("close-modal"));
 
