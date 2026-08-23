@@ -11,6 +11,7 @@ import { sendEmail } from "#lib/email.utils.js";
 import { generateToken } from "#lib/generate-token.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { hashPassword, needsRehash, verifyPassword } from "#lib/password.utils.js";
+import { isPasswordBreached } from "#lib/password-breach.utils.js";
 import { signPurposeToken, verifyPurposeToken } from "#lib/purpose-token.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -49,6 +50,8 @@ const PASSWORD_RESET_URL = `${env.FRONTEND_URL}/reset-password`;
 
 const INVALID_CREDENTIALS_MESSAGE = "Incorrect email or password.";
 const USER_NOT_FOUND_MESSAGE = "User not found.";
+const PASSWORD_BREACHED_MESSAGE =
+  "This password has appeared in a data breach. Please choose another.";
 
 const verifyPurposeTokenOrThrow = (token: string, purpose: TokenPurpose): PurposeTokenPayload => {
   const copy = PURPOSE_ERROR_COPY[purpose];
@@ -136,6 +139,10 @@ export const authService = {
         "An account with this phone number already exists.",
         CONFLICT_STATUS,
       );
+    }
+
+    if (await isPasswordBreached(password)) {
+      throw new AppError("PASSWORD_BREACHED", PASSWORD_BREACHED_MESSAGE, BAD_REQUEST_STATUS);
     }
 
     const passwordHash = await hashPassword(password);
@@ -343,6 +350,10 @@ export const authService = {
     const user = await userRepository.findById(tokenPayload.sub);
     if (!user) {
       throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
+    }
+
+    if (await isPasswordBreached(password)) {
+      throw new AppError("PASSWORD_BREACHED", PASSWORD_BREACHED_MESSAGE, BAD_REQUEST_STATUS);
     }
 
     const passwordHash = await hashPassword(password);

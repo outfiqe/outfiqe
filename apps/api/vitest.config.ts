@@ -11,6 +11,7 @@ const SANDBOX_ENV_OVERRIDES_PREVENTING_REAL_EXTERNAL_SERVICE_CALLS_IN_TESTS = {
   GMAIL_APP_PASSWORD: "",
   ESEWA_SECRET_KEY: "8gBm/:&EnhH.1/q",
   KHALTI_SECRET_KEY: "KHALTI_TEST_SECRET_KEY_NOT_SET",
+  PASSWORD_BREACH_CHECK_ENABLED: "false",
 };
 
 const definedProcessEnv = Object.fromEntries(
@@ -29,6 +30,7 @@ export default defineConfig({
         "src/app.ts",
         "src/shared/utils/pagination.utils.ts",
         "src/shared/utils/password.utils.ts",
+        "src/shared/utils/password-breach.utils.ts",
         "src/shared/utils/opaque-token.utils.ts",
         "src/shared/utils/iso-week.utils.ts",
         "src/shared/utils/creator-engagement-affinity.utils.ts",
