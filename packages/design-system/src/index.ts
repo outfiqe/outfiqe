@@ -21,6 +21,7 @@ export * from "./modal";
 export * from "./multi-select";
 export * from "./popover";
 export * from "./progress-bar";
+export * from "./rating";
 export * from "./select";
 export * from "./skeleton";
 export * from "./theme";

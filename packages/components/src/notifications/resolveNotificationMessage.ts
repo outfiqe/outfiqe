@@ -30,6 +30,10 @@ export const resolveNotificationMessage = (notification: Notification): string =
       return `Your order was ${(metadata.status ?? "updated").toLowerCase()}`;
     case "BRAND_APPLICATION_SUBMITTED":
       return `${metadata.brandName ?? "A brand"} submitted an application`;
+    case "PRODUCT_REVIEWED":
+      return `${metadata.actor?.name ?? "Someone"} left a ${metadata.rating ?? ""}-star review on ${metadata.productName ?? "your product"}`;
+    case "REVIEW_REQUESTED":
+      return `How was ${metadata.productName ?? "your order"}? Leave a review.`;
     default:
       return "You have a new notification";
   }
