@@ -10,6 +10,7 @@ import { sendSuccess } from "#lib/api-response.utils.js";
 import { achievementRoutes } from "./modules/achievements/achievement.routes.js";
 import { adminInviteRoutes } from "./modules/admin-invites/adminInvite.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
+import { oauthRoutes } from "./modules/auth/oauth/oauth.routes.js";
 import { badgeRoutes } from "./modules/badges/badge.routes.js";
 import { brandApplicationRoutes } from "./modules/brand-applications/brandApplication.routes.js";
 import { brandRoutes } from "./modules/brands/brand.routes.js";
@@ -84,6 +85,7 @@ export const createApp = () => {
 
   app.use("/api/users", userRoutes);
   app.use("/api/auth", authRoutes);
+  app.use("/api/auth/oauth", oauthRoutes);
   app.use("/api/brand-applications", brandApplicationRoutes);
   app.use("/api/brands", brandRoutes);
   app.use("/api/creators", creatorRoutes);

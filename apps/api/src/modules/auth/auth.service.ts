@@ -49,6 +49,7 @@ import type {
   RegisterBrandInput,
   RegisterInput,
 } from "./auth.types.js";
+import { toAuthUser } from "./auth.utils.js";
 
 const CONFLICT_STATUS = 409;
 const BAD_REQUEST_STATUS = 400;
@@ -125,7 +126,7 @@ const redeemPurposeTokenOrThrow = async (
   }
 };
 
-const issueTokens = async (
+export const issueTokens = async (
   user: Pick<UserRecord, "id" | "role">,
   familyId: string = randomUUID(),
 ): Promise<IssuedTokens> => {
@@ -338,7 +339,7 @@ export const authService = {
 
     await resetFailedLogins(email);
 
-    const { id, name, handle, avatarUrl, role, isCreator, creatorStatus } = user;
+    const { id } = user;
 
     if (user.passwordHash && needsRehash(user.passwordHash)) {
       rehashPasswordInBackground(id, password);
@@ -369,16 +370,7 @@ export const authService = {
 
     return {
       ...tokens,
-      user: {
-        id,
-        name,
-        handle,
-        email: user.email,
-        avatarUrl,
-        role,
-        isCreator,
-        creatorStatus,
-      },
+      user: toAuthUser(user),
     };
   },
 

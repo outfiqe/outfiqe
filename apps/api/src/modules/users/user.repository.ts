@@ -47,6 +47,24 @@ export const userRepository = {
     );
   },
 
+  async createOAuthOnlyUser(
+    input: { name: string; email: string; avatarUrl: string | null },
+    client: DbClient = prisma,
+  ): Promise<UserRecord> {
+    return createWithUniqueHandle(
+      client,
+      {
+        email: input.email,
+        name: input.name,
+        phone: null,
+        passwordHash: null,
+        avatarUrl: input.avatarUrl,
+        emailVerified: true,
+      },
+      input.name,
+    );
+  },
+
   async findByEmail(email: string): Promise<UserRecord | null> {
     return prisma.user.findUnique({ where: { email } });
   },

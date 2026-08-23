@@ -24,7 +24,7 @@ model User {
   email                String        @unique
   name                 String
   handle               String        @unique
-  phone                String        @unique
+  phone                String?       @unique
   avatarUrl            String?       @map("avatar_url")
   passwordHash         String?       @map("password_hash")
   role                 UserRole      @default(CUSTOMER)

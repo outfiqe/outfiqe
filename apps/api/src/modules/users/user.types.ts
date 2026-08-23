@@ -5,7 +5,7 @@ export interface UserRecord {
   email: string;
   name: string;
   handle: string;
-  phone: string;
+  phone: string | null;
   avatarUrl: string | null;
   passwordHash: string | null;
   role: UserRole;
