@@ -13,7 +13,8 @@ const CSRF_TOKEN_HEADER_NAME = "X-CSRF-Token";
 const getCsrfTokenFromCookie = (): string | undefined => {
   if (typeof document === "undefined") return undefined;
   const match = document.cookie.match(new RegExp(`(?:^|; )${CSRF_TOKEN_COOKIE_NAME}=([^;]*)`));
-  return match ? decodeURIComponent(match[1]) : undefined;
+  const rawValue = match?.at(1);
+  return rawValue ? decodeURIComponent(rawValue) : undefined;
 };
 
 export type CreateApiClientOptions = {
