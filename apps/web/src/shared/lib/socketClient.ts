@@ -1,8 +1,9 @@
 import { io, type Socket } from "socket.io-client";
 
 import { getAccessToken } from "./apiClient";
+import { getPublicApiOrigin } from "./apiOrigin";
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL ?? "http://localhost:4000";
+const SOCKET_URL = getPublicApiOrigin();
 
 const RECONNECTION_DELAY_MS = 1_000;
 const RECONNECTION_DELAY_MAX_MS = 10_000;

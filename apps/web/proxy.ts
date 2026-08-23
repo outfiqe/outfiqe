@@ -1,13 +1,20 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { getPublicApiOrigin } from "@/shared/lib/apiOrigin";
 import { buildContentSecurityPolicy } from "@/shared/lib/contentSecurityPolicy";
 
 export const proxy = (request: NextRequest) => {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDev = process.env.NODE_ENV === "development";
   const isProduction = process.env.NODE_ENV === "production";
-  const contentSecurityPolicy = buildContentSecurityPolicy({ nonce, isDev, isProduction });
+  const apiOrigin = getPublicApiOrigin();
+  const contentSecurityPolicy = buildContentSecurityPolicy({
+    nonce,
+    isDev,
+    isProduction,
+    apiOrigin,
+  });
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
