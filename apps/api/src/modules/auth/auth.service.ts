@@ -324,7 +324,7 @@ export const authService = {
     }
 
     const user = await userRepository.findByEmail(email);
-    const isValid = user ? await verifyPassword(password, user.passwordHash) : false;
+    const isValid = user?.passwordHash ? await verifyPassword(password, user.passwordHash) : false;
 
     if (!user || !isValid) {
       await recordFailedLogin(email);
@@ -340,7 +340,7 @@ export const authService = {
 
     const { id, name, handle, avatarUrl, role, isCreator, creatorStatus } = user;
 
-    if (needsRehash(user.passwordHash)) {
+    if (user.passwordHash && needsRehash(user.passwordHash)) {
       rehashPasswordInBackground(id, password);
     }
 

@@ -273,6 +273,27 @@ describe("POST /api/auth/resend-verification", () => {
 });
 
 describe("POST /api/auth/login", () => {
+  it("rejects a password-login attempt for an oauth-only account with the same generic error", async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const oauthOnlyUser = await prisma.user.create({
+      data: {
+        email: `oauth-only-${suffix}@outfiqe.test`,
+        name: "OAuth Only User",
+        handle: `oauth-only-${suffix}`,
+        phone: uniquePhone(),
+        passwordHash: null,
+        emailVerified: true,
+      },
+    });
+
+    const response = await request(testApp)
+      .post("/api/auth/login")
+      .send({ email: oauthOnlyUser.email, password: "any-password-at-all" });
+
+    expect(response.status).toBe(401);
+    expect(response.body.code).toBe("INVALID_CREDENTIALS");
+  });
+
   it("logs in a verified user and issues session cookies", async () => {
     const { user, password } = await createUser({ emailVerified: true });
 

@@ -7,7 +7,7 @@ export interface UserRecord {
   handle: string;
   phone: string;
   avatarUrl: string | null;
-  passwordHash: string;
+  passwordHash: string | null;
   role: UserRole;
   isCreator: boolean;
   creatorStatus: CreatorStatus;

@@ -26,7 +26,7 @@ model User {
   handle               String        @unique
   phone                String        @unique
   avatarUrl            String?       @map("avatar_url")
-  passwordHash         String        @map("password_hash")
+  passwordHash         String?       @map("password_hash")
   role                 UserRole      @default(CUSTOMER)
   isCreator            Boolean       @default(false) @map("is_creator")
   creatorStatus        CreatorStatus @default(NONE) @map("creator_status")
@@ -69,6 +69,7 @@ model User {
   notifications           Notification[]           @relation("NotificationRecipient")
   notificationsCaused     Notification[]           @relation("NotificationActor")
   notificationPreferences NotificationPreference[]
+  oauthIdentities         OAuthIdentity[]
 
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
@@ -114,6 +115,27 @@ model UsedPurposeToken {
 
   @@index([expiresAt])
   @@map("used_purpose_tokens")
+}
+
+enum OAuthProvider {
+  GOOGLE
+  FACEBOOK
+}
+
+model OAuthIdentity {
+  id              String        @id @default(uuid()) @db.Uuid
+  userId          String        @map("user_id") @db.Uuid
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider        OAuthProvider
+  providerUserId  String        @map("provider_user_id")
+  emailAtLinkTime String        @map("email_at_link_time")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  revokedAt       DateTime?     @map("revoked_at")
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("oauth_identities")
 }
 
 model BrandInvite {
