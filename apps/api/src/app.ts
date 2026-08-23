@@ -46,6 +46,8 @@ const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
 export const createApp = () => {
   const app = express();
 
+  app.set("trust proxy", 1);
+
   app.use(
     helmet({
       contentSecurityPolicy: {

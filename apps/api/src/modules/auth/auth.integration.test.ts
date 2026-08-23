@@ -14,10 +14,18 @@ import { hashPassword } from "#lib/password.utils.js";
 import { signPurposeToken } from "#lib/purpose-token.utils.js";
 import { testApp } from "#test/integration/testApp.js";
 
+import {
+  FORGOT_PASSWORD_MAX_REQUESTS,
+  LOGIN_EMAIL_RATE_LIMIT_MAX_REQUESTS,
+  LOGIN_IP_RATE_LIMIT_MAX_REQUESTS,
+  REFRESH_IP_RATE_LIMIT_MAX_REQUESTS,
+  REGISTER_IP_RATE_LIMIT_MAX_REQUESTS,
+  RESET_PASSWORD_IP_RATE_LIMIT_MAX_REQUESTS,
+} from "./auth.constants.js";
+
 const DEFAULT_TEST_PASSWORD = "correct-horse-battery";
 const DEFAULT_TOKEN_TTL = "1h";
 const EXPIRED_TOKEN_TTL = "-1h";
-const FORGOT_PASSWORD_RATE_LIMIT_MAX = 3;
 const LEGACY_SCRYPT_KEY_LEN = 64;
 const PASSWORD_UPGRADE_POLL_INTERVAL_MS = 25;
 const PASSWORD_UPGRADE_POLL_ATTEMPTS = 40;
@@ -156,6 +164,18 @@ describe("POST /api/auth/register", () => {
       .send(registerBody({ phone: "12345" }));
 
     expect(response.status).toBe(422);
+  });
+
+  it("rate limits repeated registration attempts from the same ip", async () => {
+    for (let attempt = 0; attempt < REGISTER_IP_RATE_LIMIT_MAX_REQUESTS; attempt += 1) {
+      const response = await request(testApp).post("/api/auth/register").send(registerBody());
+      expect(response.status).toBe(201);
+    }
+
+    const limited = await request(testApp).post("/api/auth/register").send(registerBody());
+
+    expect(limited.status).toBe(429);
+    expect(limited.body.code).toBe("RATE_LIMITED");
   });
 });
 
@@ -321,6 +341,40 @@ describe("POST /api/auth/login", () => {
     expect(response.status).toBe(401);
     expect(response.body.code).toBe("INVALID_CREDENTIALS");
   });
+
+  it("rate limits repeated login attempts against the same account", async () => {
+    const { user } = await createUser({ emailVerified: true });
+
+    for (let attempt = 0; attempt < LOGIN_EMAIL_RATE_LIMIT_MAX_REQUESTS; attempt += 1) {
+      const response = await request(testApp)
+        .post("/api/auth/login")
+        .send({ email: user.email, password: "wrong-password" });
+      expect(response.status).toBe(401);
+    }
+
+    const limited = await request(testApp)
+      .post("/api/auth/login")
+      .send({ email: user.email, password: "wrong-password" });
+
+    expect(limited.status).toBe(429);
+    expect(limited.body.code).toBe("RATE_LIMITED");
+  });
+
+  it("rate limits repeated login attempts from the same ip across different accounts", async () => {
+    for (let attempt = 0; attempt < LOGIN_IP_RATE_LIMIT_MAX_REQUESTS; attempt += 1) {
+      const response = await request(testApp)
+        .post("/api/auth/login")
+        .send({ email: `nobody-${randomUUID()}@outfiqe.test`, password: "wrong-password" });
+      expect(response.status).toBe(401);
+    }
+
+    const limited = await request(testApp)
+      .post("/api/auth/login")
+      .send({ email: `nobody-${randomUUID()}@outfiqe.test`, password: "wrong-password" });
+
+    expect(limited.status).toBe(429);
+    expect(limited.body.code).toBe("RATE_LIMITED");
+  });
 });
 
 describe("POST /api/auth/refresh", () => {
@@ -415,6 +469,22 @@ describe("POST /api/auth/refresh", () => {
     });
     expect(currentTokenLookup).toBeNull();
   });
+
+  it("rate limits repeated refresh attempts from the same ip", async () => {
+    for (let attempt = 0; attempt < REFRESH_IP_RATE_LIMIT_MAX_REQUESTS; attempt += 1) {
+      const response = await request(testApp)
+        .post("/api/auth/refresh")
+        .set("Cookie", [`refresh_token=${generateOpaqueToken()}`]);
+      expect(response.status).toBe(401);
+    }
+
+    const limited = await request(testApp)
+      .post("/api/auth/refresh")
+      .set("Cookie", [`refresh_token=${generateOpaqueToken()}`]);
+
+    expect(limited.status).toBe(429);
+    expect(limited.body.code).toBe("RATE_LIMITED");
+  });
 });
 
 describe("POST /api/auth/session", () => {
@@ -505,7 +575,7 @@ describe("POST /api/auth/forgot-password", () => {
   it("rate limits repeated requests for the same email", async () => {
     const { user } = await createUser();
 
-    for (let attempt = 0; attempt < FORGOT_PASSWORD_RATE_LIMIT_MAX; attempt += 1) {
+    for (let attempt = 0; attempt < FORGOT_PASSWORD_MAX_REQUESTS; attempt += 1) {
       const response = await request(testApp)
         .post("/api/auth/forgot-password")
         .send({ email: user.email });
@@ -599,20 +669,16 @@ describe("POST /api/auth/reset-password", () => {
     const token = mintPurposeToken(user.id, TokenPurpose.PASSWORD_RESET);
 
     const [first, second] = await Promise.all([
-      request(testApp)
-        .post("/api/auth/reset-password")
-        .send({
-          token,
-          password: "concurrent-password-a",
-          confirmPassword: "concurrent-password-a",
-        }),
-      request(testApp)
-        .post("/api/auth/reset-password")
-        .send({
-          token,
-          password: "concurrent-password-b",
-          confirmPassword: "concurrent-password-b",
-        }),
+      request(testApp).post("/api/auth/reset-password").send({
+        token,
+        password: "concurrent-password-a",
+        confirmPassword: "concurrent-password-a",
+      }),
+      request(testApp).post("/api/auth/reset-password").send({
+        token,
+        password: "concurrent-password-b",
+        confirmPassword: "concurrent-password-b",
+      }),
     ]);
 
     const statuses = [first.status, second.status].sort();
@@ -623,6 +689,24 @@ describe("POST /api/auth/reset-password", () => {
 
     const usedTokenRowCount = await prisma.usedPurposeToken.count();
     expect(usedTokenRowCount).toBe(1);
+  });
+
+  it("rate limits repeated reset-password attempts from the same ip", async () => {
+    for (let attempt = 0; attempt < RESET_PASSWORD_IP_RATE_LIMIT_MAX_REQUESTS; attempt += 1) {
+      const token = mintPurposeToken(randomUUID(), TokenPurpose.PASSWORD_RESET);
+      const response = await request(testApp)
+        .post("/api/auth/reset-password")
+        .send({ token, password: "whatever123", confirmPassword: "whatever123" });
+      expect(response.status).toBe(400);
+    }
+
+    const token = mintPurposeToken(randomUUID(), TokenPurpose.PASSWORD_RESET);
+    const limited = await request(testApp)
+      .post("/api/auth/reset-password")
+      .send({ token, password: "whatever123", confirmPassword: "whatever123" });
+
+    expect(limited.status).toBe(429);
+    expect(limited.body.code).toBe("RATE_LIMITED");
   });
 });
 
