@@ -15,6 +15,7 @@ Identity and session management: email/password registration and email verificat
 - `auth.captcha.utils.ts` — `verifyCaptcha`, a server-to-server check against Cloudflare Turnstile.
 - `auth.retention.ts` — scheduled sweep that hard-deletes refresh tokens once they're past the retention window (revoked or expired), registered in `apps/api/src/jobs/scheduled-jobs.ts`. This is cleanup only, not part of the security model itself — a token stops being usable the moment it's revoked or expired, regardless of when this sweep gets to it.
 - `auth.types.ts` — `AuthSession`/`BrandAuthSession`, `AuthUser`/`BrandAuthUser`, invite/record shapes.
+- `oauth/` — Google/Facebook social login, as a sub-module. See `oauth/README.md`.
 
 ## Funnel
 
