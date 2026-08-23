@@ -34,10 +34,12 @@ const customerUser = {
   id: "user-1",
   name: "Ava Martinez",
   email: "ava@outfiqe.test",
+  phone: "9812345678",
   avatarUrl: null,
   role: "CUSTOMER",
   isCreator: false,
   creatorStatus: "NONE",
+  hasPassword: true,
 };
 
 const renderUseLogin = () =>

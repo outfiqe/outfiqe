@@ -13,9 +13,16 @@ client-side session/user context the rest of the app reads.
 - `api/serverAuth.ts` — server-only session/token helpers used by server components and route
   handlers (e.g. `apps/web/src/features/brand-profile`'s SSR fetch).
 - `api/userSchemas.ts` — Zod schemas for the session/user shape returned by the API.
+- `api/oauthApi.ts` + `api/oauthSchemas.ts` — the OAuth account-management client: URL builders for
+  the full-page-navigation `start`/`link/start` redirects (`buildOAuthStartUrl`/
+  `buildOAuthLinkStartUrl` — never `fetch` calls, since those endpoints are browser navigations),
+  plus real API calls for `confirmLink`, `unlink`, and `getLinkedAccounts`.
+- `api/profileApi.ts` — `PATCH /users/me` (currently only used to add a phone number from the
+  Security page's nudge; not a general profile-editing surface).
 - `components/` — the form/screen components: `LoginForm`, `RegisterForm`, `BrandRegisterForm`,
   `ForgotPasswordForm`, `ResetPasswordForm`, `VerifyEmailScreen`, plus their success/loading/
-  expired sub-states.
+  expired sub-states; `ConnectedAccounts/` (connect/disconnect Google/Facebook, Account Settings →
+  Security) and `AddPhoneNumberBanner` (the OAuth-only-account phone nudge, same page).
 - `context/AuthContext.tsx` + `context/authReducer.ts` — the client-side auth state (current user,
   auth status) and its reducer, exposed via `useAuth()`.
 - `context/authTestWrapper.tsx` — test-only support for hooks that read/write `AuthContext`:
@@ -26,10 +33,13 @@ client-side session/user context the rest of the app reads.
   Colocated here rather than in the app-wide `src/testing/` infra since it's specific to this
   feature's own context, not something other features need.
 - `hooks/` — one hook per auth action (`useLogin`, `useRegister`, `useBrandRegister`, `useLogout`,
-  `useForgotPassword`, `useResetPassword`, `useResendVerification`, `useCurrentUser`), each wrapping
-  the matching `authApi` call in a React Query mutation/query. Every hook has a colocated
-  `*.integration.test.tsx` (MSW-mocked `authApi` requests, matching the pattern in
+  `useForgotPassword`, `useResetPassword`, `useResendVerification`, `useCurrentUser`), plus
+  `useLinkedAccounts`, `useUnlinkAccount`, and `useAddPhoneNumber` for the Security page. Each wraps
+  the matching API call in a React Query mutation/query. Every hook has a colocated
+  `*.integration.test.tsx` (MSW-mocked requests, matching the pattern in
   `apps/web/src/testing/README.md`); `hooks/**` is in `vitest.config.ts`'s `coverage.include`.
+  There's no `useLinkAccount`/`useConnectAccount` hook — connecting a provider is a full-page
+  navigation (`buildOAuthLinkStartUrl`), not a mutation.
 - `schemas/` — Zod validation schemas for each auth form.
 - `types/index.ts` — shared auth types (`UserSession`, `UserRole`, `CreatorStatus`, etc.).
 - `utils/authErrors.ts` — maps API auth error codes to user-facing messages.
@@ -54,11 +64,24 @@ of the app (nav, protected routes, `useAuth()`) reflects the new session immedia
   same-app, single-leading-slash path (rejecting protocol-relative URLs like `//evil.com` and
   backslash tricks like `/\evil.com`) and refuses to redirect back into an auth screen, which would
   otherwise create a login/redirect loop.
+- `UserSession.phone`/`hasPassword` are optional on the shared type (unlike the API-response
+  `customerUserSchema`, where they're required) because `brandUserSchema` doesn't carry them — a
+  brand owner's session is mapped through the same `toUserSession`, which defaults `hasPassword` to
+  `true` for that branch (registering as a brand always requires a password) and `phone` to `null`.
+  Components reading these fields (`ConnectedAccounts`, the Security page) only ever render for
+  roles that actually reach `/dashboard/settings/security`.
+- A component test that hits the network through `mswServer` must be named `*.integration.test.tsx`,
+  not `*.test.tsx` — `vitest.config.ts` only loads the MSW setup file for the `integration` project;
+  a network-mocked test under the plain `unit` project's name pattern silently gets no server
+  running and every request fails. `ConnectedAccounts`/`AddPhoneNumberBanner`'s tests hit this
+  directly (`CaptchaChallenge.test.tsx`, by contrast, is correctly a plain `.test.tsx` — it mocks
+  `next/script` directly and never touches the network).
 
 ## Follow-ups
 
 - All of `hooks/` is now tested and gated at 80% coverage. Still not covered: the invite-gated
   read flows (`getBrandInvite`/`getAdminInvite`/`validateToken` in `authApi.ts` — these back
   `BrandRegisterForm`'s invite-validation step, not a hook of their own) and every form/screen
-  component under `components/` — mirrors the same scope decision made in
+  component under `components/` other than `CaptchaChallenge`, `ConnectedAccounts`, and
+  `AddPhoneNumberBanner` — mirrors the same scope decision made in
   `apps/api/src/modules/auth/README.md` (brand/admin invite registration deferred to a later pass).

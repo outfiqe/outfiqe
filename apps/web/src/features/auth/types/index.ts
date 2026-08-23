@@ -29,13 +29,26 @@ export const userSessionSchema = z.object({
   name: z.string(),
   handle: z.string().optional(),
   email: z.email(),
+  phone: z.string().nullable().optional(),
   avatarUrl: z.url().nullable(),
   role: userRoleSchema,
   isCreator: z.boolean(),
   creatorStatus: creatorStatusSchema,
   brandId: z.string().optional(),
+  hasPassword: z.boolean().optional(),
 });
 export type UserSession = z.infer<typeof userSessionSchema>;
+
+export enum OAuthProvider {
+  GOOGLE = "google",
+  FACEBOOK = "facebook",
+}
+
+export type LinkedOAuthAccount = {
+  provider: OAuthProvider;
+  emailAtLinkTime: string;
+  connectedAt: string;
+};
 
 export enum AuthStatus {
   IDLE = "idle",

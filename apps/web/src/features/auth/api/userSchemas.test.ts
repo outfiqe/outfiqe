@@ -10,10 +10,12 @@ describe("toUserSession", () => {
       name: "Sabin Shrestha",
       handle: "sabinshrestha0",
       email: "creator1@example.com",
+      phone: "9812345678",
       avatarUrl: null,
       role: UserRole.CUSTOMER,
       isCreator: true,
       creatorStatus: CreatorStatus.APPROVED,
+      hasPassword: true,
     });
 
     expect(toUserSession(user).handle).toBe("sabinshrestha0");
@@ -24,10 +26,12 @@ describe("toUserSession", () => {
       id: "user-1",
       name: "Sabin Shrestha",
       email: "creator1@example.com",
+      phone: null,
       avatarUrl: null,
       role: UserRole.CUSTOMER,
       isCreator: false,
       creatorStatus: CreatorStatus.NONE,
+      hasPassword: true,
     });
 
     expect(toUserSession(user).handle).toBeUndefined();
