@@ -12,6 +12,8 @@ export const resolveNotificationMessage = (notification: Notification): string =
       return `${actorList(notification)} liked your look`;
     case "LOOK_COMMENTED":
       return `${metadata.actor?.name ?? "Someone"} commented on your look`;
+    case "COMMENT_REPLIED":
+      return `${metadata.actor?.name ?? "Someone"} replied to your comment`;
     case "NEW_FOLLOWER":
       return `${actorList(notification)} started following you`;
     case "NEW_BRAND_FOLLOWER":

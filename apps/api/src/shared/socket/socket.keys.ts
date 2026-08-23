@@ -10,6 +10,8 @@ export const leaderboardRoom = (category: LeaderboardCategory): string => `leade
 export const creatorLeaderboardRoom = (category: CreatorLeaderboardCategory): string =>
   `leaderboard:creator:${category}`;
 
+export const commentsRoom = (lookId: string): string => `comments:${lookId}`;
+
 export const SOCKET_EVENTS = {
   LOOK_CREATED: "look:created",
   FEED_SYNC_REQUEST: "feed:sync:request",
@@ -26,6 +28,10 @@ export const SOCKET_EVENTS = {
   NOTIFICATION_UPDATED: "notification:updated",
   NOTIFICATION_READ: "notification:read",
   NOTIFICATION_READ_ALL: "notification:read-all",
+  COMMENTS_SUBSCRIBE: "comments:subscribe",
+  COMMENTS_UNSUBSCRIBE: "comments:unsubscribe",
+  COMMENT_CREATED: "comment:created",
+  COMMENT_REPLY_CREATED: "comment:reply:created",
 } as const;
 
 export const SOCKET_RATE_LIMIT = {

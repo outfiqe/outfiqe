@@ -45,6 +45,14 @@ export type DomainEventPayloads = {
     commentId: string;
     userId: string;
   };
+  [DomainEvents.LOOK_COMMENT_REPLIED]: {
+    lookId: string;
+    creatorId: string;
+    parentCommentId: string;
+    parentCommentAuthorId: string;
+    replyId: string;
+    userId: string;
+  };
   [DomainEvents.LOOK_VIEWED]: { lookId: string; creatorId: string; viewerId?: string };
   [DomainEvents.USER_FOLLOWED]: FollowPayload;
   [DomainEvents.USER_UNFOLLOWED]: FollowPayload;

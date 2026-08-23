@@ -1407,3 +1407,171 @@ describe("GET /api/creators/by-handle/:handle/looks integration with feed", () =
     expect(response.body.data.posts[0].taggedProducts).toHaveLength(1);
   });
 });
+
+describe("GET and POST /api/creator-looks/:lookId/comments/:commentId/replies", () => {
+  const postComment = async (lookId: string, userId: string, body: string) => {
+    const response = await request(testApp)
+      .post(`/api/creator-looks/${lookId}/comments`)
+      .set("Authorization", authHeaderFor(userId))
+      .send({ body });
+    return response.body.data.id as string;
+  };
+
+  it("adds a reply, increments the parent's reply count, and the look's comment count", async () => {
+    const creator = await createCreator("Reply Target Creator", "reply-target-creator");
+    const commenter = await createCreator("Reply Thread Starter", "reply-thread-starter");
+    const replier = await createCreator("Reply Author", "reply-author");
+    const look = await createLook(creator.id, "Reply target post");
+    const commentId = await postComment(look.id, commenter.id, "Great fit!");
+
+    const response = await request(testApp)
+      .post(`/api/creator-looks/${look.id}/comments/${commentId}/replies`)
+      .set("Authorization", authHeaderFor(replier.id))
+      .send({ body: "Totally agree!" });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({
+      parentCommentId: commentId,
+      body: "Totally agree!",
+      userId: replier.id,
+    });
+
+    const parentComment = await prisma.creatorLookComment.findUniqueOrThrow({
+      where: { id: commentId },
+    });
+    expect(parentComment.replyCount).toBe(1);
+
+    const stored = await prisma.creatorLook.findUniqueOrThrow({ where: { id: look.id } });
+    expect(stored.commentCount).toBe(2);
+  });
+
+  it("surfaces reply count and a preview of replies when listing top-level comments", async () => {
+    const creator = await createCreator("Preview Reply Creator", "preview-reply-creator");
+    const commenter = await createCreator("Preview Reply Commenter", "preview-reply-commenter");
+    const replier = await createCreator("Preview Reply Replier", "preview-reply-replier");
+    const look = await createLook(creator.id, "Preview reply target");
+    const commentId = await postComment(look.id, commenter.id, "Nice look");
+
+    await request(testApp)
+      .post(`/api/creator-looks/${look.id}/comments/${commentId}/replies`)
+      .set("Authorization", authHeaderFor(replier.id))
+      .send({ body: "First reply" });
+
+    const response = await request(testApp).get(`/api/creator-looks/${look.id}/comments`);
+
+    expect(response.status).toBe(200);
+    const comment = response.body.data.comments[0];
+    expect(comment.replyCount).toBe(1);
+    expect(comment.previewReplies).toHaveLength(1);
+    expect(comment.previewReplies[0]).toMatchObject({
+      body: "First reply",
+      parentCommentId: commentId,
+    });
+  });
+
+  it("lists replies oldest first with cursor pagination", async () => {
+    const creator = await createCreator("Reply List Creator", "reply-list-creator");
+    const commenter = await createCreator("Reply List Commenter", "reply-list-commenter");
+    const replier = await createCreator("Reply List Replier", "reply-list-replier");
+    const look = await createLook(creator.id, "Reply list target");
+    const commentId = await postComment(look.id, commenter.id, "Original comment");
+
+    await request(testApp)
+      .post(`/api/creator-looks/${look.id}/comments/${commentId}/replies`)
+      .set("Authorization", authHeaderFor(replier.id))
+      .send({ body: "First reply" });
+    await request(testApp)
+      .post(`/api/creator-looks/${look.id}/comments/${commentId}/replies`)
+      .set("Authorization", authHeaderFor(replier.id))
+      .send({ body: "Second reply" });
+
+    const first = await request(testApp)
+      .get(`/api/creator-looks/${look.id}/comments/${commentId}/replies`)
+      .query({ limit: 1 });
+
+    expect(first.status).toBe(200);
+    expect(first.body.data.replies[0].body).toBe("First reply");
+    expect(first.body.data.nextCursor).not.toBeNull();
+
+    const second = await request(testApp)
+      .get(`/api/creator-looks/${look.id}/comments/${commentId}/replies`)
+      .query({ limit: 1, cursor: first.body.data.nextCursor });
+
+    expect(second.status).toBe(200);
+    expect(second.body.data.replies[0].body).toBe("Second reply");
+  });
+
+  it("rejects replying to a reply, keeping threads exactly one level deep", async () => {
+    const creator = await createCreator("Nested Reply Creator", "nested-reply-creator");
+    const commenter = await createCreator("Nested Reply Commenter", "nested-reply-commenter");
+    const replier = await createCreator("Nested Reply Replier", "nested-reply-replier");
+    const nestedReplier = await createCreator("Nested Reply Second", "nested-reply-second");
+    const look = await createLook(creator.id, "Nested reply target");
+    const commentId = await postComment(look.id, commenter.id, "Top-level comment");
+
+    const replyResponse = await request(testApp)
+      .post(`/api/creator-looks/${look.id}/comments/${commentId}/replies`)
+      .set("Authorization", authHeaderFor(replier.id))
+      .send({ body: "A reply" });
+    const replyId = replyResponse.body.data.id as string;
+
+    const nestedResponse = await request(testApp)
+      .post(`/api/creator-looks/${look.id}/comments/${replyId}/replies`)
+      .set("Authorization", authHeaderFor(nestedReplier.id))
+      .send({ body: "A reply to a reply" });
+
+    expect(nestedResponse.status).toBe(422);
+  });
+
+  it("returns 404 replying to a comment that doesn't exist", async () => {
+    const creator = await createCreator("Missing Reply Creator", "missing-reply-creator");
+    const replier = await createCreator("Missing Reply Author", "missing-reply-author");
+    const look = await createLook(creator.id, "Missing reply target");
+
+    const response = await request(testApp)
+      .post(`/api/creator-looks/${look.id}/comments/${randomUUID()}/replies`)
+      .set("Authorization", authHeaderFor(replier.id))
+      .send({ body: "Ghost reply" });
+
+    expect(response.status).toBe(404);
+  });
+
+  it("returns 404 listing replies for a comment that doesn't exist", async () => {
+    const creator = await createCreator("Missing Reply List Creator", "missing-reply-list-creator");
+    const look = await createLook(creator.id, "Missing reply list target");
+
+    const response = await request(testApp).get(
+      `/api/creator-looks/${look.id}/comments/${randomUUID()}/replies`,
+    );
+
+    expect(response.status).toBe(404);
+  });
+
+  it("requires authentication to reply", async () => {
+    const creator = await createCreator("Auth Reply Creator", "auth-reply-creator");
+    const commenter = await createCreator("Auth Reply Commenter", "auth-reply-commenter");
+    const look = await createLook(creator.id, "Needs auth to reply");
+    const commentId = await postComment(look.id, commenter.id, "Needs a reply");
+
+    const response = await request(testApp)
+      .post(`/api/creator-looks/${look.id}/comments/${commentId}/replies`)
+      .send({ body: "Anonymous reply" });
+
+    expect(response.status).toBe(401);
+  });
+
+  it("rejects an empty reply body", async () => {
+    const creator = await createCreator("Empty Reply Creator", "empty-reply-creator");
+    const commenter = await createCreator("Empty Reply Commenter", "empty-reply-commenter");
+    const replier = await createCreator("Empty Reply Author", "empty-reply-author");
+    const look = await createLook(creator.id, "Empty reply target");
+    const commentId = await postComment(look.id, commenter.id, "Needs a reply");
+
+    const response = await request(testApp)
+      .post(`/api/creator-looks/${look.id}/comments/${commentId}/replies`)
+      .set("Authorization", authHeaderFor(replier.id))
+      .send({ body: "" });
+
+    expect(response.status).toBe(422);
+  });
+});

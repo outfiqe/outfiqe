@@ -82,6 +82,34 @@ export type LevelUpPayload = {
 export type NotificationReadPayload = { id: string };
 export type NotificationReadAllPayload = { readAt: string };
 
+export type CommentSubscriptionPayload = {
+  lookId: string;
+};
+
+export type CommentCreatedPayload = {
+  lookId: string;
+  id: string;
+  userId: string;
+  userName: string;
+  userHandle: string;
+  userAvatarUrl: string | null;
+  body: string;
+  createdAt: string;
+  replyCount: number;
+};
+
+export type CommentReplyCreatedPayload = {
+  lookId: string;
+  id: string;
+  parentCommentId: string;
+  userId: string;
+  userName: string;
+  userHandle: string;
+  userAvatarUrl: string | null;
+  body: string;
+  createdAt: string;
+};
+
 // Key literals must match SOCKET_EVENTS in socket.keys.ts.
 export type ServerToClientEvents = {
   "look:created": (payload: LookCreatedPayload) => void;
@@ -94,6 +122,8 @@ export type ServerToClientEvents = {
   "notification:updated": (payload: NotificationBroadcastPayload) => void;
   "notification:read": (payload: NotificationReadPayload) => void;
   "notification:read-all": (payload: NotificationReadAllPayload) => void;
+  "comment:created": (payload: CommentCreatedPayload) => void;
+  "comment:reply:created": (payload: CommentReplyCreatedPayload) => void;
 };
 
 export type ClientToServerEvents = {
@@ -102,6 +132,8 @@ export type ClientToServerEvents = {
   "leaderboard:unsubscribe": (payload: LeaderboardSubscriptionPayload) => void;
   "creator-leaderboard:subscribe": (payload: CreatorLeaderboardSubscriptionPayload) => void;
   "creator-leaderboard:unsubscribe": (payload: CreatorLeaderboardSubscriptionPayload) => void;
+  "comments:subscribe": (payload: CommentSubscriptionPayload) => void;
+  "comments:unsubscribe": (payload: CommentSubscriptionPayload) => void;
 };
 
 export type AppSocketServer = Server<

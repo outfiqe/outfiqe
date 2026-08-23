@@ -3,6 +3,7 @@ import type { NotificationType } from "@outfiqe/types";
 export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   LOOK_LIKED: "Likes on your looks",
   LOOK_COMMENTED: "Comments on your looks",
+  COMMENT_REPLIED: "Replies to your comments",
   NEW_FOLLOWER: "New followers",
   NEW_BRAND_FOLLOWER: "New brand followers",
   ACHIEVEMENT_UNLOCKED: "Badges unlocked",

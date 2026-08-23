@@ -6,6 +6,7 @@ export const resolveNotificationHref = (notification: Notification): "/" | null 
       return "/";
     case "LOOK_LIKED":
     case "LOOK_COMMENTED":
+    case "COMMENT_REPLIED":
     case "NEW_FOLLOWER":
     case "NEW_BRAND_FOLLOWER":
     case "ACHIEVEMENT_UNLOCKED":

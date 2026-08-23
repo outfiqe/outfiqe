@@ -111,8 +111,9 @@ export type ListFeedInput = {
   viewerId?: string;
 };
 
-export type CommentRecord = {
+export type CommentReplyRecord = {
   id: string;
+  parentCommentId: string;
   userId: string;
   userName: string;
   userHandle: string;
@@ -121,8 +122,25 @@ export type CommentRecord = {
   createdAt: Date;
 };
 
+export type CommentRecord = {
+  id: string;
+  userId: string;
+  userName: string;
+  userHandle: string;
+  userAvatarUrl: string | null;
+  body: string;
+  createdAt: Date;
+  replyCount: number;
+  previewReplies: CommentReplyRecord[];
+};
+
 export type CommentPage = {
   comments: CommentRecord[];
+  nextCursor: string | null;
+};
+
+export type CommentReplyPage = {
+  replies: CommentReplyRecord[];
   nextCursor: string | null;
 };
 

@@ -7,6 +7,7 @@ export const resolveNotificationHref = (
   switch (notification.type) {
     case "LOOK_LIKED":
     case "LOOK_COMMENTED":
+    case "COMMENT_REPLIED":
       return ownHandle && notification.entityId
         ? `/creator/${ownHandle}?look=${notification.entityId}`
         : "/dashboard/profile";

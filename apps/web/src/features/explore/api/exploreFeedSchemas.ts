@@ -65,6 +65,18 @@ export const suggestedCreatorsResponseSchema = z.object({
 });
 export type SuggestedCreatorsPage = z.infer<typeof suggestedCreatorsResponseSchema>;
 
+export const commentReplySchema = z.object({
+  id: z.string(),
+  parentCommentId: z.string(),
+  userId: z.string(),
+  userName: z.string(),
+  userHandle: z.string(),
+  userAvatarUrl: z.string().nullable(),
+  body: z.string(),
+  createdAt: z.string(),
+});
+export type FeedCommentReply = z.infer<typeof commentReplySchema>;
+
 export const commentSchema = z.object({
   id: z.string(),
   userId: z.string(),
@@ -73,6 +85,8 @@ export const commentSchema = z.object({
   userAvatarUrl: z.string().nullable(),
   body: z.string(),
   createdAt: z.string(),
+  replyCount: z.number(),
+  previewReplies: z.array(commentReplySchema),
 });
 export type FeedComment = z.infer<typeof commentSchema>;
 
@@ -81,6 +95,12 @@ export const commentPageSchema = z.object({
   nextCursor: z.string().nullable(),
 });
 export type CommentPage = z.infer<typeof commentPageSchema>;
+
+export const commentReplyPageSchema = z.object({
+  replies: z.array(commentReplySchema),
+  nextCursor: z.string().nullable(),
+});
+export type CommentReplyPage = z.infer<typeof commentReplyPageSchema>;
 
 export const likeResultSchema = z.object({ liked: z.boolean(), likeCount: z.number() });
 export const saveResultSchema = z.object({ saved: z.boolean(), saveCount: z.number() });

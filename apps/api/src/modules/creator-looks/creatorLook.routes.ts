@@ -2,24 +2,29 @@ import { Router } from "express";
 
 import { optionalAuth } from "#middlewares/optional-auth.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
-import { requireAuth } from "#middlewares/require-auth.js";
+import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 
 import {
+  COMMENT_RATE_LIMIT_MAX_REQUESTS,
+  COMMENT_RATE_LIMIT_WINDOW_MS,
   VIEW_RATE_LIMIT_MAX_REQUESTS,
   VIEW_RATE_LIMIT_WINDOW_MS,
 } from "./creatorLook.constants.js";
 import { creatorLookController } from "./creatorLook.controller.js";
 import {
   autocompleteQuerySchema,
+  commentIdParamsSchema,
   commentsQuerySchema,
   createCommentSchema,
   createCreatorLookSchema,
+  createReplySchema,
   feedQuerySchema,
   listCreatorLooksQuerySchema,
   listSavedQuerySchema,
   lookIdParamsSchema,
   recordViewSchema,
+  repliesQuerySchema,
   searchCreatorLooksQuerySchema,
   tagClickParamsSchema,
   tagClickSchema,
@@ -30,6 +35,13 @@ const recordViewRateLimit = rateLimit({
   windowMs: VIEW_RATE_LIMIT_WINDOW_MS,
   max: VIEW_RATE_LIMIT_MAX_REQUESTS,
   keyGenerator: (req) => req.ip,
+});
+
+const commentRateLimit = rateLimit({
+  namespace: "creator-look-comment",
+  windowMs: COMMENT_RATE_LIMIT_WINDOW_MS,
+  max: COMMENT_RATE_LIMIT_MAX_REQUESTS,
+  keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
 });
 
 export const creatorLookRoutes = Router();
@@ -133,8 +145,22 @@ creatorLookRoutes.get(
 creatorLookRoutes.post(
   "/:lookId/comments",
   requireAuth,
+  commentRateLimit,
   validate({ params: lookIdParamsSchema, body: createCommentSchema }),
   creatorLookController.addComment,
+);
+
+creatorLookRoutes.get(
+  "/:lookId/comments/:commentId/replies",
+  validate({ params: commentIdParamsSchema, query: repliesQuerySchema }),
+  creatorLookController.listReplies,
+);
+creatorLookRoutes.post(
+  "/:lookId/comments/:commentId/replies",
+  requireAuth,
+  commentRateLimit,
+  validate({ params: commentIdParamsSchema, body: createReplySchema }),
+  creatorLookController.addReply,
 );
 
 creatorLookRoutes.post(
