@@ -21,6 +21,9 @@ export type NotificationMetadata = {
   orderTotal?: number;
   brandName?: string;
   status?: string;
+  productName?: string;
+  productImageUrl?: string | null;
+  rating?: number;
 };
 
 export type NotificationRecord = {

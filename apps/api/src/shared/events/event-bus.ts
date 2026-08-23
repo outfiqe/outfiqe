@@ -34,6 +34,7 @@ export const DomainEvents = {
   LEVEL_UP: "user.leveled_up",
   BRAND_APPLICATION_SUBMITTED: "brand.application.submitted",
   ORDER_STATUS_CHANGED: "order.status.changed",
+  PRODUCT_REVIEWED: "product.reviewed",
   NOTIFICATION_CREATED: "notification.created",
   NOTIFICATION_UPDATED: "notification.updated",
 } as const;

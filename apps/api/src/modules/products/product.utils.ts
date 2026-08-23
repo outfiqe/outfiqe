@@ -57,6 +57,13 @@ export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduc
     createdAt,
     creatorBuyerCount,
     unitsSold,
+    avgRating,
+    reviewCount,
+    rating1Count,
+    rating2Count,
+    rating3Count,
+    rating4Count,
+    rating5Count,
   } = product;
   return {
     id,
@@ -70,6 +77,13 @@ export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduc
     isNew: isNew(createdAt),
     creatorBuyerCount: creatorBuyerCount ?? 0,
     unitsSold: unitsSold ?? 0,
+    avgRating,
+    reviewCount,
+    rating1Count,
+    rating2Count,
+    rating3Count,
+    rating4Count,
+    rating5Count,
   };
 };
 

@@ -228,6 +228,32 @@ export const notificationRepository = {
     return rows.map((row) => row.userId);
   },
 
+  async findProductReviewSnapshot(
+    productId: string,
+  ): Promise<{ brandId: string; name: string; imageUrl: string | null } | null> {
+    return prisma.product.findUnique({
+      where: { id: productId },
+      select: { brandId: true, name: true, imageUrl: true },
+    });
+  },
+
+  async findDeliveredOrderProducts(
+    orderId: string,
+  ): Promise<{ productId: string; productName: string; imageUrl: string | null }[]> {
+    const items = await prisma.orderItem.findMany({
+      where: { orderId },
+      select: { product: { select: { id: true, name: true, imageUrl: true } } },
+    });
+
+    const byProductId = new Map(
+      items.map(({ product: { id, name, imageUrl } }) => [
+        id,
+        { productId: id, productName: name, imageUrl },
+      ]),
+    );
+    return [...byProductId.values()];
+  },
+
   async findOrderNotificationContext(
     orderId: string,
   ): Promise<{ total: number; brandIds: string[] } | null> {

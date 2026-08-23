@@ -40,36 +40,38 @@ model User {
   createdAt            DateTime      @default(now()) @map("created_at")
   updatedAt            DateTime      @updatedAt @map("updated_at")
 
-  memberships             BrandMembership[]
-  refreshTokens           RefreshToken[]
-  reviewedApplications    BrandApplication[]       @relation("BrandApplicationReviewer")
-  approvedInvites         BrandInvite[]            @relation("BrandInviteApprover")
-  sentAdminInvites        AdminInvite[]            @relation("AdminInviteSender")
-  reviewedProducts        Product[]                @relation("ProductReviewer")
-  creatorLooks            CreatorLook[]            @relation("CreatorLooks")
-  lookLikes               CreatorLookLike[]
-  lookSaves               CreatorLookSave[]
-  lookComments            CreatorLookComment[]
-  tagClicks               CreatorLookTagClick[]
-  lookViews               CreatorLookView[]
-  following               Follow[]                 @relation("FollowerEdges")
-  savedProducts           SavedProduct[]
-  cart                    Cart?
-  orders                  Order[]
-  idempotencyRequests     RequestIdempotency[]
-  attributedOrderItems    OrderItem[]              @relation("AttributedOrderItems")
-  creatorCommissions      CreatorCommission[]      @relation("CreatorCommissions")
-  creatorLinks            CreatorLink[]            @relation("CreatorLinks")
-  creatorLinkClicks       CreatorLinkClick[]
-  deliveryZoneChanges     DeliveryZoneHistory[]    @relation("DeliveryZoneChanges")
-  xpTransactions          XpTransaction[]
-  progress                UserProgress?
-  badges                  UserBadge[]              @relation("UserBadges")
-  badgesAwarded           UserBadge[]              @relation("UserBadgeAwardedBy")
-  notifications           Notification[]           @relation("NotificationRecipient")
-  notificationsCaused     Notification[]           @relation("NotificationActor")
-  notificationPreferences NotificationPreference[]
-  oauthIdentities         OAuthIdentity[]
+  memberships               BrandMembership[]
+  refreshTokens             RefreshToken[]
+  reviewedApplications      BrandApplication[]         @relation("BrandApplicationReviewer")
+  approvedInvites           BrandInvite[]              @relation("BrandInviteApprover")
+  sentAdminInvites          AdminInvite[]              @relation("AdminInviteSender")
+  reviewedProducts          Product[]                  @relation("ProductReviewer")
+  productReviews            ProductReview[]            @relation("ProductReviewAuthor")
+  productReviewHelpfulVotes ProductReviewHelpfulVote[]
+  creatorLooks              CreatorLook[]              @relation("CreatorLooks")
+  lookLikes                 CreatorLookLike[]
+  lookSaves                 CreatorLookSave[]
+  lookComments              CreatorLookComment[]
+  tagClicks                 CreatorLookTagClick[]
+  lookViews                 CreatorLookView[]
+  following                 Follow[]                   @relation("FollowerEdges")
+  savedProducts             SavedProduct[]
+  cart                      Cart?
+  orders                    Order[]
+  idempotencyRequests       RequestIdempotency[]
+  attributedOrderItems      OrderItem[]                @relation("AttributedOrderItems")
+  creatorCommissions        CreatorCommission[]        @relation("CreatorCommissions")
+  creatorLinks              CreatorLink[]              @relation("CreatorLinks")
+  creatorLinkClicks         CreatorLinkClick[]
+  deliveryZoneChanges       DeliveryZoneHistory[]      @relation("DeliveryZoneChanges")
+  xpTransactions            XpTransaction[]
+  progress                  UserProgress?
+  badges                    UserBadge[]                @relation("UserBadges")
+  badgesAwarded             UserBadge[]                @relation("UserBadgeAwardedBy")
+  notifications             Notification[]             @relation("NotificationRecipient")
+  notificationsCaused       Notification[]             @relation("NotificationActor")
+  notificationPreferences   NotificationPreference[]
+  oauthIdentities           OAuthIdentity[]
 
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
@@ -238,8 +240,17 @@ model Product {
   orderItems    OrderItem[]
   creatorLinks  CreatorLink[]
   trendMetrics  ProductTrendMetric[]
+  reviews       ProductReview[]
 
   searchVector Unsupported("tsvector")? @map("search_vector")
+
+  avgRating    Float? @map("avg_rating")
+  reviewCount  Int    @default(0) @map("review_count")
+  rating1Count Int    @default(0) @map("rating_1_count")
+  rating2Count Int    @default(0) @map("rating_2_count")
+  rating3Count Int    @default(0) @map("rating_3_count")
+  rating4Count Int    @default(0) @map("rating_4_count")
+  rating5Count Int    @default(0) @map("rating_5_count")
 
   @@index([deletedAt])
   @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "products_name_trgm_idx")
@@ -256,6 +267,52 @@ model ProductImage {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("product_images")
+}
+
+model ProductReview {
+  id           String    @id @default(uuid()) @db.Uuid
+  productId    String    @map("product_id") @db.Uuid
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId       String    @map("user_id") @db.Uuid
+  user         User      @relation("ProductReviewAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  rating       Int
+  title        String?
+  body         String
+  helpfulCount Int       @default(0) @map("helpful_count")
+  deletedAt    DateTime? @map("deleted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  images       ProductReviewImage[]
+  helpfulVotes ProductReviewHelpfulVote[]
+
+  @@unique([productId, userId])
+  @@index([productId, deletedAt, createdAt])
+  @@index([productId, deletedAt, rating])
+  @@index([productId, deletedAt, helpfulCount])
+  @@map("product_reviews")
+}
+
+model ProductReviewImage {
+  id        String        @id @default(uuid()) @db.Uuid
+  reviewId  String        @map("review_id") @db.Uuid
+  review    ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  url       String
+  sortOrder Int           @default(0) @map("sort_order")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@map("product_review_images")
+}
+
+model ProductReviewHelpfulVote {
+  reviewId  String        @map("review_id") @db.Uuid
+  userId    String        @map("user_id") @db.Uuid
+  review    ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@id([reviewId, userId])
+  @@map("product_review_helpful_votes")
 }
 
 model ProductTrendMetric {
@@ -1253,6 +1310,8 @@ enum NotificationType {
   NEW_ORDER
   ORDER_STATUS_CHANGED
   BRAND_APPLICATION_SUBMITTED
+  PRODUCT_REVIEWED
+  REVIEW_REQUESTED
 }
 
 enum NotificationEntityType {
@@ -1261,6 +1320,7 @@ enum NotificationEntityType {
   ORDER
   BRAND_APPLICATION
   BADGE
+  PRODUCT
 }
 
 model Notification {

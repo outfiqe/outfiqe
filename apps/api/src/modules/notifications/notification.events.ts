@@ -2,6 +2,7 @@ import { subscribeToDomainEvent } from "#events/event-bus.consumer.js";
 import { DomainEvents } from "#events/event-bus.js";
 import {
   CreatorStatus,
+  FulfilmentStatus,
   NotificationEntityType,
   NotificationType,
   UserRole,
@@ -228,6 +229,44 @@ export const registerNotificationEventConsumers = (): void => {
         entityId: orderId,
         metadata: { status },
       });
+
+      if (status !== FulfilmentStatus.DELIVERED) return;
+
+      const deliveredProducts = await notificationRepository.findDeliveredOrderProducts(orderId);
+      const inputs: CreateIndividualNotificationInput[] = deliveredProducts.map(
+        ({ productId, productName, imageUrl }) => ({
+          recipientId: userId,
+          type: NotificationType.REVIEW_REQUESTED,
+          entityType: NotificationEntityType.PRODUCT,
+          entityId: productId,
+          metadata: { productName, productImageUrl: imageUrl },
+        }),
+      );
+      await notificationService.notifyManyIndividual(inputs);
+    },
+  });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.PRODUCT_REVIEWED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ productId, userId: reviewerId, rating }): Promise<void> => {
+      const [actor, product] = await Promise.all([
+        notificationRepository.findActorSnapshot(reviewerId),
+        notificationRepository.findProductReviewSnapshot(productId),
+      ]);
+      if (!actor || !product) return;
+
+      const { brandId, name: productName, imageUrl: productImageUrl } = product;
+      const memberIds = await notificationRepository.findBrandMemberIds(brandId);
+      const inputs: CreateIndividualNotificationInput[] = memberIds.map((recipientId) => ({
+        recipientId,
+        actorId: reviewerId,
+        type: NotificationType.PRODUCT_REVIEWED,
+        entityType: NotificationEntityType.PRODUCT,
+        entityId: productId,
+        metadata: { actor, productName, productImageUrl, rating },
+      }));
+      await notificationService.notifyManyIndividual(inputs);
     },
   });
 

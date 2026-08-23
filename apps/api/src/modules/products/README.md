@@ -34,6 +34,10 @@ This path only fires for an **unfiltered** trending browse (`sort=trending` with
 
 Like the `totalStock` gap above, `collections` and `wishlist` don't call `withSalesStats` yet, so their cards currently show 0 (the whole social-proof line hides, per `ProductCard`'s `creatorBuyerCount > 0 || unitsSold > 0` guard) rather than stale or fake numbers — same "known, not yet migrated" state, not a regression.
 
+## Rating summary is a write-time refresh, not an incremental counter
+
+`Product.avgRating`/`reviewCount`/`rating{1-5}Count` follow the exact same pattern as `wornByCount` above: `refreshRatingSummary` re-`groupBy`s the product's non-deleted `ProductReview` rows and overwrites all six columns in one query, rather than incrementing/decrementing them as reviews are created/updated/deleted. Triggered from the owning `product-reviews` module (`productService.recomputeRatingSummary` → this method) after every write there, the same "cross-module denormalized field refreshed by calling back into `products`' own repository/service" shape `recountWornBy` already established. See `../product-reviews/README.md` for why a running increment/decrement was rejected here specifically (an edited review's _rating_ changing can't be kept correct by a simple increment/decrement pair the way a plain count can).
+
 ## Sizes come from the admin-owned catalog, not free text
 
 `createProductSchema.sizes` is `{ sizeOptionId, stock }[]`, resolved server-side against `sizeOptionService.getManyByIds` (see `../size-options/README.md`) — a brand picks from the admin's per-product-type size list, it doesn't type a label. `ProductSize.label` is still a plain denormalized string, though: `create()` copies the `SizeOption.label` onto the new `ProductSize` row once and never links back to it. Renaming or deleting a `SizeOption` later never mutates an already-created product's sizes — matches how a product's name/price also don't retroactively change when unrelated catalog data changes.

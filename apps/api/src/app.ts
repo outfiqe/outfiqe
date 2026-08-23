@@ -32,6 +32,7 @@ import { leaderboardRoutes } from "./modules/leaderboard/leaderboard.routes.js";
 import { notificationRoutes } from "./modules/notifications/notification.routes.js";
 import { orderRoutes } from "./modules/orders/order.routes.js";
 import { paymentRoutes } from "./modules/payments/payment.routes.js";
+import { productReviewRoutes } from "./modules/product-reviews/product-review.routes.js";
 import { productRoutes } from "./modules/products/product.routes.js";
 import { sizeOptionRoutes } from "./modules/size-options/size-option.routes.js";
 import { trendingRoutes } from "./modules/trending/trending.routes.js";
@@ -93,6 +94,7 @@ export const createApp = () => {
   app.use("/api/creators", creatorRoutes);
   app.use("/api/admin/invites", adminInviteRoutes);
   app.use("/api/products", productRoutes);
+  app.use("/api/products/:productId/reviews", productReviewRoutes);
   app.use("/api/size-options", sizeOptionRoutes);
   app.use("/api/cart", cartRoutes);
   app.use("/api/orders", orderRoutes);
