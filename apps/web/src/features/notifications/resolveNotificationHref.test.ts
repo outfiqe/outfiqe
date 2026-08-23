@@ -96,4 +96,22 @@ describe("resolveNotificationHref", () => {
       ),
     ).toBeNull();
   });
+
+  it("routes a new product review to the brand's product dashboard", () => {
+    expect(
+      resolveNotificationHref(buildNotification({ type: "PRODUCT_REVIEWED" }), OWN_HANDLE),
+    ).toBe("/dashboard/products");
+  });
+
+  it("deep-links a review request straight to the product's review section", () => {
+    const notification = buildNotification({ type: "REVIEW_REQUESTED", entityId: "product-1" });
+    expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe(
+      "/product/product-1?review=write#reviews",
+    );
+  });
+
+  it("falls back to null for a review request with no entityId", () => {
+    const notification = buildNotification({ type: "REVIEW_REQUESTED", entityId: null });
+    expect(resolveNotificationHref(notification, OWN_HANDLE)).toBeNull();
+  });
 });

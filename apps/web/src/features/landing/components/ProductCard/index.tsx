@@ -2,7 +2,7 @@
 
 import { Button } from "@outfiqe/design-system";
 import type { ProductTypeSlug } from "@outfiqe/utils";
-import { Heart, Shirt } from "lucide-react";
+import { Heart, Shirt, Star } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -27,6 +27,8 @@ export interface ExploreProduct {
   isNew?: boolean;
   image?: string;
   isSaved?: boolean;
+  avgRating?: number | null;
+  reviewCount?: number;
 }
 
 const SWATCH_PALETTE = [
@@ -58,8 +60,20 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
   const wishlistMutation = useToggleWishlist();
-  const { id, brand, name, price, creatorBuyerCount, unitsSold, lowStock, isNew, image, isSaved } =
-    product;
+  const {
+    id,
+    brand,
+    name,
+    price,
+    creatorBuyerCount,
+    unitsSold,
+    lowStock,
+    isNew,
+    image,
+    isSaved,
+    avgRating,
+    reviewCount,
+  } = product;
   const [saved, setSaved] = useState(isSaved ?? false);
 
   const avatarCount = Math.min(creatorBuyerCount, 3);
@@ -123,7 +137,15 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
       <p className="mt-3 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
         {brand}
       </p>
-      <p className="mt-0.5 text-sm text-foreground">{name}</p>
+      <div className="mt-0.5 flex items-center justify-between gap-2">
+        <p className="min-w-0 truncate text-sm text-foreground">{name}</p>
+        {Boolean(reviewCount) && typeof avgRating === "number" && (
+          <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+            <Star className="size-3 fill-primary text-primary" />
+            {avgRating.toFixed(1)}
+          </span>
+        )}
+      </div>
       <p className="mt-1 text-sm font-bold text-foreground">Rs. {price.toLocaleString()}</p>
 
       {(creatorBuyerCount > 0 || unitsSold > 0) && (
