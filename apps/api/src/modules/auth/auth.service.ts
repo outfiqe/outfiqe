@@ -1,3 +1,9 @@
+import { randomUUID } from "node:crypto";
+
+import { addMilliseconds } from "date-fns/addMilliseconds";
+import { fromUnixTime } from "date-fns/fromUnixTime";
+import { getUnixTime } from "date-fns/getUnixTime";
+import { isPast } from "date-fns/isPast";
 import jwt from "jsonwebtoken";
 
 import { env } from "#config/env.config.js";
@@ -10,16 +16,26 @@ import { parseDurationMs } from "#lib/duration.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { generateToken } from "#lib/generate-token.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
-import { hashPassword, verifyPassword } from "#lib/password.utils.js";
+import { hashPassword, needsRehash, verifyPassword } from "#lib/password.utils.js";
+import { isPasswordBreached } from "#lib/password-breach.utils.js";
 import { signPurposeToken, verifyPurposeToken } from "#lib/purpose-token.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { adminInviteRepository } from "#modules/admin-invites/adminInvite.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
 import type { UserRecord } from "#modules/users/user.types.js";
+import { describeError } from "#redis/redis.utils.js";
+import type { DbClient } from "#types/db.types.js";
 import type { PurposeTokenPayload } from "#types/token.types.js";
 
-import { PURPOSE_ERROR_COPY } from "./auth.constants.js";
+import { verifyCaptcha } from "./auth.captcha.utils.js";
+import { LOGIN_CAPTCHA_CHALLENGE_THRESHOLD, PURPOSE_ERROR_COPY } from "./auth.constants.js";
+import {
+  getFailedLoginCount,
+  isLockedOut,
+  recordFailedLogin,
+  resetFailedLogins,
+} from "./auth.lockout.utils.js";
 import { authRepository } from "./auth.repository.js";
 import type {
   AdminInviteInfo,
@@ -33,6 +49,7 @@ import type {
   RegisterBrandInput,
   RegisterInput,
 } from "./auth.types.js";
+import { toAuthUser } from "./auth.utils.js";
 
 const CONFLICT_STATUS = 409;
 const BAD_REQUEST_STATUS = 400;
@@ -48,8 +65,14 @@ const PASSWORD_RESET_URL = `${env.FRONTEND_URL}/reset-password`;
 
 const INVALID_CREDENTIALS_MESSAGE = "Incorrect email or password.";
 const USER_NOT_FOUND_MESSAGE = "User not found.";
+const PASSWORD_BREACHED_MESSAGE =
+  "This password has appeared in a data breach. Please choose another.";
+const CAPTCHA_FAILED_MESSAGE = "Please complete the challenge to continue.";
 
-const verifyPurposeTokenOrThrow = (token: string, purpose: TokenPurpose): PurposeTokenPayload => {
+const verifyPurposeTokenOrThrow = async (
+  token: string,
+  purpose: TokenPurpose,
+): Promise<PurposeTokenPayload> => {
   const copy = PURPOSE_ERROR_COPY[purpose];
 
   let tokenPayload: PurposeTokenPayload;
@@ -66,10 +89,47 @@ const verifyPurposeTokenOrThrow = (token: string, purpose: TokenPurpose): Purpos
     throw new AppError("INVALID_TOKEN", copy.invalid, BAD_REQUEST_STATUS);
   }
 
+  const alreadyUsed = await authRepository.findUsedPurposeToken(tokenPayload.jti);
+  if (alreadyUsed) {
+    throw new AppError("INVALID_TOKEN", copy.invalid, BAD_REQUEST_STATUS);
+  }
+
   return tokenPayload;
 };
 
-const issueTokens = async (user: Pick<UserRecord, "id" | "role">): Promise<IssuedTokens> => {
+const purposeTokenExpiry = (tokenPayload: PurposeTokenPayload): Date =>
+  fromUnixTime(tokenPayload.exp ?? getUnixTime(new Date()));
+
+const isUniqueConstraintViolation = (error: unknown): boolean =>
+  error instanceof Error && "code" in error && error.code === "P2002";
+
+const redeemPurposeTokenOrThrow = async (
+  tokenPayload: PurposeTokenPayload,
+  purpose: TokenPurpose,
+  applyEffect: (tx: DbClient) => Promise<void>,
+): Promise<void> => {
+  try {
+    await prisma.$transaction(async (tx) => {
+      await applyEffect(tx);
+      await authRepository.markPurposeTokenUsed(
+        tokenPayload.jti,
+        purpose,
+        purposeTokenExpiry(tokenPayload),
+        tx,
+      );
+    });
+  } catch (err) {
+    if (isUniqueConstraintViolation(err)) {
+      throw new AppError("INVALID_TOKEN", PURPOSE_ERROR_COPY[purpose].invalid, BAD_REQUEST_STATUS);
+    }
+    throw err;
+  }
+};
+
+export const issueTokens = async (
+  user: Pick<UserRecord, "id" | "role">,
+  familyId: string = randomUUID(),
+): Promise<IssuedTokens> => {
   const { id, role } = user;
   const accessToken = generateToken({ sub: id, role }, TokenTypeEnum.ACCESS);
 
@@ -79,7 +139,8 @@ const issueTokens = async (user: Pick<UserRecord, "id" | "role">): Promise<Issue
   await authRepository.createRefreshToken({
     userId: id,
     tokenHash: hashToken(rawRefreshToken),
-    expiresAt: new Date(Date.now() + refreshTokenTtlMs),
+    familyId,
+    expiresAt: addMilliseconds(new Date(), refreshTokenTtlMs),
   });
 
   return {
@@ -105,13 +166,45 @@ const sendVerificationEmail = async (user: Pick<UserRecord, "id" | "email">): Pr
   });
 };
 
+type AuthAuditOutcome = "success" | "failure";
+
+const auditLog = (
+  outcome: AuthAuditOutcome,
+  message: string,
+  fields: { event: string; userId?: string; email?: string; ip?: string },
+): void => {
+  const level = outcome === "success" ? "info" : "warn";
+  logger[level](message, { ...fields, outcome });
+};
+
+const rehashPasswordInBackground = (userId: string, plaintextPassword: string): void => {
+  hashPassword(plaintextPassword)
+    .then((newPasswordHash) => userRepository.updatePasswordHash(userId, newPasswordHash))
+    .catch((err: unknown) => {
+      logger.error(`Password rehash failed for user ${userId}: ${describeError(err)}`);
+    });
+};
+
 export const authService = {
   async register(input: RegisterInput): Promise<{ userId: string }> {
-    const { name, email, phone, password } = input;
+    const { name, email, phone, password, captchaToken, remoteIp } = input;
+
+    if (!(await verifyCaptcha(captchaToken, remoteIp))) {
+      auditLog("failure", "Register blocked: captcha challenge failed", {
+        event: "register.captcha_failed",
+        email,
+        ip: remoteIp,
+      });
+      throw new AppError("CAPTCHA_FAILED", CAPTCHA_FAILED_MESSAGE, BAD_REQUEST_STATUS);
+    }
 
     const existingByEmail = await userRepository.findByEmail(email);
     if (existingByEmail) {
-      logger.warn(`Register failed: email already exists (${email})`);
+      auditLog("failure", "Register failed: email already exists", {
+        event: "register.email_exists",
+        email,
+        ip: remoteIp,
+      });
       throw new AppError(
         "USER_EXISTS",
         "An account with this email already exists.",
@@ -121,12 +214,20 @@ export const authService = {
 
     const existingByPhone = await userRepository.findByPhone(phone);
     if (existingByPhone) {
-      logger.warn(`Register failed: phone already exists (${phone})`);
+      auditLog("failure", "Register failed: phone already exists", {
+        event: "register.phone_exists",
+        email,
+        ip: remoteIp,
+      });
       throw new AppError(
         "PHONE_EXISTS",
         "An account with this phone number already exists.",
         CONFLICT_STATUS,
       );
+    }
+
+    if (await isPasswordBreached(password)) {
+      throw new AppError("PASSWORD_BREACHED", PASSWORD_BREACHED_MESSAGE, BAD_REQUEST_STATUS);
     }
 
     const passwordHash = await hashPassword(password);
@@ -142,17 +243,26 @@ export const authService = {
       role,
     });
 
-    logger.info(`User registered: ${id}`);
+    auditLog("success", "User registered", {
+      event: "register.success",
+      userId: id,
+      email: userEmail,
+      ip: remoteIp,
+    });
 
     return { userId: id };
   },
 
   async verifyEmail(token: string): Promise<void> {
-    const tokenPayload = verifyPurposeTokenOrThrow(token, TokenPurpose.EMAIL_VERIFICATION);
+    const tokenPayload = await verifyPurposeTokenOrThrow(token, TokenPurpose.EMAIL_VERIFICATION);
 
     const user = await userRepository.findById(tokenPayload.sub);
     if (!user) {
-      throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
+      throw new AppError(
+        "INVALID_TOKEN",
+        PURPOSE_ERROR_COPY[TokenPurpose.EMAIL_VERIFICATION].invalid,
+        BAD_REQUEST_STATUS,
+      );
     }
 
     const { id, email, emailVerified } = user;
@@ -162,7 +272,10 @@ export const authService = {
       return;
     }
 
-    await userRepository.markEmailVerified(id);
+    await redeemPurposeTokenOrThrow(tokenPayload, TokenPurpose.EMAIL_VERIFICATION, (tx) =>
+      userRepository.markEmailVerified(id, tx),
+    );
+
     await eventBus.publish(DomainEvents.USER_EMAIL_VERIFIED, { userId: id, email });
 
     logger.info(`Email verified for user ${id}`);
@@ -180,22 +293,65 @@ export const authService = {
   },
 
   async validateToken(token: string, purpose: TokenPurpose): Promise<void> {
-    verifyPurposeTokenOrThrow(token, purpose);
+    await verifyPurposeTokenOrThrow(token, purpose);
   },
 
-  async login(email: string, password: string): Promise<AuthSession> {
-    const user = await userRepository.findByEmail(email);
-    const isValid = user ? await verifyPassword(password, user.passwordHash) : false;
-
-    if (!user || !isValid) {
-      logger.warn(`Login failed: invalid credentials for ${email}`);
+  async login(
+    email: string,
+    password: string,
+    captchaToken?: string,
+    remoteIp?: string,
+  ): Promise<AuthSession> {
+    if (await isLockedOut(email)) {
+      auditLog("failure", "Login blocked: account temporarily locked out", {
+        event: "login.locked_out",
+        email,
+        ip: remoteIp,
+      });
       throw new AppError("INVALID_CREDENTIALS", INVALID_CREDENTIALS_MESSAGE, UNAUTHORIZED_STATUS);
     }
 
-    const { id, name, handle, avatarUrl, role, isCreator, creatorStatus } = user;
+    const failedLoginCount = await getFailedLoginCount(email);
+    if (
+      failedLoginCount >= LOGIN_CAPTCHA_CHALLENGE_THRESHOLD &&
+      !(await verifyCaptcha(captchaToken, remoteIp))
+    ) {
+      auditLog("failure", "Login blocked: captcha challenge failed", {
+        event: "login.captcha_failed",
+        email,
+        ip: remoteIp,
+      });
+      throw new AppError("CAPTCHA_FAILED", CAPTCHA_FAILED_MESSAGE, BAD_REQUEST_STATUS);
+    }
+
+    const user = await userRepository.findByEmail(email);
+    const isValid = user?.passwordHash ? await verifyPassword(password, user.passwordHash) : false;
+
+    if (!user || !isValid) {
+      await recordFailedLogin(email);
+      auditLog("failure", "Login failed: invalid credentials", {
+        event: "login.invalid_credentials",
+        email,
+        ip: remoteIp,
+      });
+      throw new AppError("INVALID_CREDENTIALS", INVALID_CREDENTIALS_MESSAGE, UNAUTHORIZED_STATUS);
+    }
+
+    await resetFailedLogins(email);
+
+    const { id } = user;
+
+    if (user.passwordHash && needsRehash(user.passwordHash)) {
+      rehashPasswordInBackground(id, password);
+    }
 
     if (!user.emailVerified) {
-      logger.warn(`Login blocked: email not verified for user ${id}`);
+      auditLog("failure", "Login blocked: email not verified", {
+        event: "login.email_not_verified",
+        userId: id,
+        email,
+        ip: remoteIp,
+      });
       throw new AppError(
         "EMAIL_NOT_VERIFIED",
         "Please verify your email before signing in.",
@@ -205,24 +361,20 @@ export const authService = {
 
     const tokens = await issueTokens(user);
 
-    logger.info(`Login succeeded for user ${id}`);
+    auditLog("success", "Login succeeded", {
+      event: "login.success",
+      userId: id,
+      email,
+      ip: remoteIp,
+    });
 
     return {
       ...tokens,
-      user: {
-        id,
-        name,
-        handle,
-        email: user.email,
-        avatarUrl,
-        role,
-        isCreator,
-        creatorStatus,
-      },
+      user: toAuthUser(user),
     };
   },
 
-  async refresh(rawRefreshToken: string | undefined): Promise<IssuedTokens> {
+  async refresh(rawRefreshToken: string | undefined, remoteIp?: string): Promise<IssuedTokens> {
     if (!rawRefreshToken) {
       throw new AppError("MISSING_TOKEN", "No refresh token provided.", UNAUTHORIZED_STATUS);
     }
@@ -232,9 +384,23 @@ export const authService = {
       throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
     }
 
-    const { expiresAt, id: storedId, userId } = stored;
+    const { id: storedId, userId, familyId, expiresAt, revokedAt } = stored;
 
-    if (expiresAt.getTime() <= Date.now()) {
+    if (revokedAt) {
+      await authRepository.deleteRefreshTokenFamily(familyId);
+      auditLog("failure", "Refresh token reuse detected; token family revoked", {
+        event: "refresh.reuse_detected",
+        userId,
+        ip: remoteIp,
+      });
+      throw new AppError(
+        "TOKEN_REUSE_DETECTED",
+        "This session may have been compromised. Please sign in again.",
+        UNAUTHORIZED_STATUS,
+      );
+    }
+
+    if (isPast(expiresAt)) {
       await authRepository.deleteRefreshTokenById(storedId);
       throw new AppError(
         "TOKEN_EXPIRED",
@@ -244,36 +410,49 @@ export const authService = {
     }
 
     const user = await userRepository.findById(userId);
-
-    // Rotation: the presented token is single-use regardless of outcome below.
-    await authRepository.deleteRefreshTokenById(storedId);
-
     if (!user) {
+      await authRepository.deleteRefreshTokenById(storedId);
       throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
     }
 
-    const tokens = await issueTokens(user);
+    const rawNewRefreshToken = generateOpaqueToken();
+    const newTokenHash = hashToken(rawNewRefreshToken);
+    const refreshTokenTtlMs = parseDurationMs(env.JWT_REFRESH_TTL);
 
-    logger.info(`Refresh succeeded for user ${user.id}`);
+    await authRepository.revokeRefreshTokenById(storedId, newTokenHash);
+    await authRepository.createRefreshToken({
+      userId,
+      tokenHash: newTokenHash,
+      familyId,
+      expiresAt: addMilliseconds(new Date(), refreshTokenTtlMs),
+    });
 
-    return tokens;
+    const accessToken = generateToken({ sub: user.id, role: user.role }, TokenTypeEnum.ACCESS);
+
+    auditLog("success", "Refresh succeeded", {
+      event: "refresh.success",
+      userId: user.id,
+      ip: remoteIp,
+    });
+
+    return {
+      accessToken,
+      refreshToken: rawNewRefreshToken,
+      refreshTokenTtlSeconds: Math.floor(refreshTokenTtlMs / MS_PER_SECOND),
+    };
   },
 
-  // Non-rotating counterpart to refresh(): used by server-side session checks
-  // (SSR pages) that call this on every render and can't propagate a Set-Cookie
-  // back to the browser. Rotating there would burn the browser's refresh token
-  // on its first server-side use, logging the user out on the very next check.
   async validateSession(rawRefreshToken: string | undefined): Promise<{ accessToken: string }> {
     if (!rawRefreshToken) {
       throw new AppError("MISSING_TOKEN", "No refresh token provided.", UNAUTHORIZED_STATUS);
     }
 
     const stored = await authRepository.findRefreshTokenByHash(hashToken(rawRefreshToken));
-    if (!stored) {
+    if (!stored || stored.revokedAt) {
       throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
     }
 
-    if (stored.expiresAt.getTime() <= Date.now()) {
+    if (isPast(stored.expiresAt)) {
       throw new AppError(
         "TOKEN_EXPIRED",
         "Refresh token has expired. Please sign in again.",
@@ -289,12 +468,19 @@ export const authService = {
     return { accessToken: generateToken({ sub: user.id, role: user.role }, TokenTypeEnum.ACCESS) };
   },
 
-  async logout(rawRefreshToken: string | undefined): Promise<void> {
+  async logout(rawRefreshToken: string | undefined, remoteIp?: string): Promise<void> {
     if (!rawRefreshToken) return;
 
-    await authRepository.deleteRefreshTokenByHash(hashToken(rawRefreshToken));
+    const tokenHashValue = hashToken(rawRefreshToken);
+    const stored = await authRepository.findRefreshTokenByHash(tokenHashValue);
 
-    logger.info("Logout: refresh token invalidated");
+    await authRepository.deleteRefreshTokenByHash(tokenHashValue);
+
+    auditLog("success", "Logout: refresh token invalidated", {
+      event: "logout.success",
+      userId: stored?.userId,
+      ip: remoteIp,
+    });
   },
 
   async forgotPassword(email: string): Promise<void> {
@@ -324,21 +510,35 @@ export const authService = {
     logger.info(`Password reset email sent to user ${id}`);
   },
 
-  async resetPassword(token: string, password: string): Promise<void> {
-    const tokenPayload = verifyPurposeTokenOrThrow(token, TokenPurpose.PASSWORD_RESET);
+  async resetPassword(token: string, password: string, remoteIp?: string): Promise<void> {
+    const tokenPayload = await verifyPurposeTokenOrThrow(token, TokenPurpose.PASSWORD_RESET);
 
     const user = await userRepository.findById(tokenPayload.sub);
     if (!user) {
-      throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
+      throw new AppError(
+        "INVALID_TOKEN",
+        PURPOSE_ERROR_COPY[TokenPurpose.PASSWORD_RESET].invalid,
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    if (await isPasswordBreached(password)) {
+      throw new AppError("PASSWORD_BREACHED", PASSWORD_BREACHED_MESSAGE, BAD_REQUEST_STATUS);
     }
 
     const passwordHash = await hashPassword(password);
-    await userRepository.updatePasswordHash(user.id, passwordHash);
+    await redeemPurposeTokenOrThrow(tokenPayload, TokenPurpose.PASSWORD_RESET, (tx) =>
+      userRepository.updatePasswordHash(user.id, passwordHash, tx),
+    );
     await authRepository.deleteAllRefreshTokensForUser(user.id);
 
     await eventBus.publish(DomainEvents.USER_PASSWORD_RESET, { userId: user.id });
 
-    logger.info(`Password reset for user ${user.id}`);
+    auditLog("success", "Password reset succeeded; all sessions revoked", {
+      event: "reset_password.success",
+      userId: user.id,
+      ip: remoteIp,
+    });
   },
 
   async getBrandInvite(inviteToken: string): Promise<BrandInviteInfo> {
@@ -372,7 +572,7 @@ export const authService = {
       throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
     }
 
-    const { id, name, handle, email, role, avatarUrl, isCreator, creatorStatus } = user;
+    const { id, name, email, role } = user;
 
     if (role === UserRole.BRAND_OWNER) {
       const membership = await authRepository.findBrandMembershipByUserId(id);
@@ -390,16 +590,7 @@ export const authService = {
       logger.warn(`Brand owner ${id} has no brand membership — returning degraded profile.`);
     }
 
-    return {
-      id,
-      name,
-      handle,
-      email,
-      avatarUrl,
-      role,
-      isCreator,
-      creatorStatus,
-    };
+    return toAuthUser(user);
   },
 
   async registerBrand(input: RegisterBrandInput): Promise<BrandAuthSession> {
@@ -595,16 +786,7 @@ export const authService = {
 
     return {
       ...tokens,
-      user: {
-        id: user.id,
-        name: user.name,
-        handle: user.handle,
-        email: user.email,
-        avatarUrl: user.avatarUrl,
-        role: user.role,
-        isCreator: user.isCreator,
-        creatorStatus: user.creatorStatus,
-      },
+      user: toAuthUser(user),
     };
   },
 };

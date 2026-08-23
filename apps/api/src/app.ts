@@ -10,6 +10,8 @@ import { sendSuccess } from "#lib/api-response.utils.js";
 import { achievementRoutes } from "./modules/achievements/achievement.routes.js";
 import { adminInviteRoutes } from "./modules/admin-invites/adminInvite.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
+import { facebookWebhookRoutes } from "./modules/auth/oauth/facebook.webhooks.routes.js";
+import { oauthRoutes } from "./modules/auth/oauth/oauth.routes.js";
 import { badgeRoutes } from "./modules/badges/badge.routes.js";
 import { brandApplicationRoutes } from "./modules/brand-applications/brandApplication.routes.js";
 import { brandRoutes } from "./modules/brands/brand.routes.js";
@@ -41,10 +43,29 @@ import { errorHandler } from "./shared/middlewares/error-handler.js";
 import { httpLogger } from "./shared/middlewares/http-logger.js";
 import { resolvedUploadsDir } from "./shared/storage/storage.factory.js";
 
+const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
+
 export const createApp = () => {
   const app = express();
 
-  app.use(helmet());
+  app.set("trust proxy", 1);
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'none'"],
+          frameAncestors: ["'none'"],
+        },
+      },
+      hsts: {
+        maxAge: ONE_YEAR_IN_SECONDS,
+        includeSubDomains: true,
+        preload: true,
+      },
+      frameguard: { action: "deny" },
+    }),
+  );
   app.use(cors({ origin: env.ALLOWED_ORIGINS, credentials: true }));
   app.use(express.json());
   app.use(cookieParser());
@@ -65,6 +86,8 @@ export const createApp = () => {
 
   app.use("/api/users", userRoutes);
   app.use("/api/auth", authRoutes);
+  app.use("/api/auth/oauth", oauthRoutes);
+  app.use("/api/webhooks/facebook", facebookWebhookRoutes);
   app.use("/api/brand-applications", brandApplicationRoutes);
   app.use("/api/brands", brandRoutes);
   app.use("/api/creators", creatorRoutes);

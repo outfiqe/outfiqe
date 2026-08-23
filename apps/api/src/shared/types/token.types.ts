@@ -28,4 +28,5 @@ export type AuthPrincipal = {
 export type PurposeTokenPayload = JwtPayload & {
   sub: string;
   purpose: TokenPurpose;
+  jti: string;
 };

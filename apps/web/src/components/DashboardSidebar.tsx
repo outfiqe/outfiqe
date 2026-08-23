@@ -12,6 +12,7 @@ import {
   LogOut,
   Package,
   Share2,
+  ShieldCheck,
   ShoppingBag,
   Sparkles,
   Store,
@@ -27,6 +28,13 @@ import { cn } from "@/shared/lib/cn";
 
 import { useNextSidebarNavigation } from "./useNextSidebarNavigation";
 
+const SECURITY_NAV_ITEM: SidebarNavItem = {
+  id: "security",
+  href: "/dashboard/settings/security",
+  label: "Security",
+  icon: ShieldCheck,
+};
+
 const CREATOR_NAV: SidebarNavItem[] = [
   { id: "profile", href: "/dashboard/profile", label: "Profile", icon: User },
   { id: "share", href: "/dashboard/share", label: "Share", icon: Share2 },
@@ -34,12 +42,14 @@ const CREATOR_NAV: SidebarNavItem[] = [
   { id: "progress", href: "/dashboard/progress", label: "Progress", icon: Sparkles },
   { id: "badges", href: "/dashboard/badges", label: "Badges", icon: Award },
   { id: "challenges", href: "/dashboard/challenges", label: "Challenges", icon: Trophy },
+  SECURITY_NAV_ITEM,
 ];
 
 const BRAND_NAV: SidebarNavItem[] = [
   { id: "profile", href: "/dashboard/profile", label: "Profile", icon: Store },
   { id: "products", href: "/dashboard/products", label: "Products", icon: Package },
   { id: "orders", href: "/dashboard/orders", label: "Orders", icon: ShoppingBag },
+  SECURITY_NAV_ITEM,
 ];
 
 export const DashboardSidebar = () => {

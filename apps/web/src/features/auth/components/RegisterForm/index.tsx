@@ -14,20 +14,31 @@ import {
   Input,
 } from "@outfiqe/design-system";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { FormFieldError } from "@/components/FormFieldError";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 
+import { CaptchaChallenge } from "../../components/CaptchaChallenge";
+import { ContinueWithOAuthButtons } from "../../components/ContinueWithOAuthButtons";
 import { useRegister } from "../../hooks/useRegister";
 import { type RegisterInput, registerSchema } from "../../schemas/register.schema";
 import { AuthErrorCode, getAuthErrorMessage } from "../../utils/authErrors";
+import { getSafeRedirect } from "../../utils/safeRedirect";
 import { RegisterSuccess } from "./RegisterSuccess";
+
+const DEFAULT_OAUTH_REDIRECT = "/dashboard";
 
 export const RegisterForm = () => {
   const register = useRegister();
   const showPending = useDelayedPending(register.isPending);
+  const [captchaToken, setCaptchaToken] = useState<string | undefined>(undefined);
+  const searchParams = useSearchParams();
+  const oauthRedirectAfter =
+    getSafeRedirect(searchParams.get("redirect")) ?? DEFAULT_OAUTH_REDIRECT;
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
@@ -37,7 +48,7 @@ export const RegisterForm = () => {
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
-      await register.mutateAsync(values);
+      await register.mutateAsync({ ...values, captchaToken });
     } catch {
       // Surfaced below via register.error.
     }
@@ -56,7 +67,8 @@ export const RegisterForm = () => {
 
   const isUserExists = register.error?.code === AuthErrorCode.USER_EXISTS;
   const isPhoneExists = register.error?.code === AuthErrorCode.PHONE_EXISTS;
-  const isUnexpectedError = register.isError && !isUserExists && !isPhoneExists;
+  const isCaptchaFailed = register.error?.code === AuthErrorCode.CAPTCHA_FAILED;
+  const isUnexpectedError = register.isError && !isUserExists && !isPhoneExists && !isCaptchaFailed;
 
   return (
     <div>
@@ -66,6 +78,7 @@ export const RegisterForm = () => {
       </p>
 
       {isUnexpectedError && <FormBanner>{getAuthErrorMessage(register.error?.code)}</FormBanner>}
+      {isCaptchaFailed && <FormBanner>{getAuthErrorMessage(register.error?.code)}</FormBanner>}
 
       <Form {...form}>
         <form onSubmit={onSubmit} noValidate className="mt-6">
@@ -151,11 +164,27 @@ export const RegisterForm = () => {
             )}
           />
 
-          <Button type="submit" className="mt-6 w-full" disabled={register.isPending}>
+          <CaptchaChallenge
+            onVerify={setCaptchaToken}
+            onExpire={() => setCaptchaToken(undefined)}
+          />
+
+          <Button
+            type="submit"
+            className="mt-6 w-full"
+            disabled={register.isPending || !captchaToken}
+          >
             {showPending ? "Creating account…" : "Create account"}
           </Button>
         </form>
       </Form>
+
+      <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />
+        or continue with
+        <span className="h-px flex-1 bg-border" />
+      </div>
+      <ContinueWithOAuthButtons redirectAfter={oauthRedirectAfter} />
 
       <p className="mt-5 text-center text-sm text-muted-foreground">
         Already have an account?{" "}

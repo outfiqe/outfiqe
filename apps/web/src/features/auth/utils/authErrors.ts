@@ -8,6 +8,14 @@ export enum AuthErrorCode {
   INVALID_INVITE = "INVALID_INVITE",
   INVITE_EXPIRED = "INVITE_EXPIRED",
   INVITE_USED = "INVITE_USED",
+  CAPTCHA_FAILED = "CAPTCHA_FAILED",
+  ONLY_AUTH_METHOD = "ONLY_AUTH_METHOD",
+  OAUTH_IDENTITY_ALREADY_LINKED = "OAUTH_IDENTITY_ALREADY_LINKED",
+  OAUTH_IDENTITY_NOT_FOUND = "OAUTH_IDENTITY_NOT_FOUND",
+  OAUTH_LINK_TOKEN_INVALID = "OAUTH_LINK_TOKEN_INVALID",
+  OAUTH_STATE_INVALID = "OAUTH_STATE_INVALID",
+  OAUTH_EMAIL_UNVERIFIED = "OAUTH_EMAIL_UNVERIFIED",
+  OAUTH_EXCHANGE_FAILED = "OAUTH_EXCHANGE_FAILED",
 }
 
 const MESSAGES: Record<AuthErrorCode, string> = {
@@ -20,6 +28,18 @@ const MESSAGES: Record<AuthErrorCode, string> = {
   [AuthErrorCode.INVALID_INVITE]: "This invite link is not valid.",
   [AuthErrorCode.INVITE_EXPIRED]: "This invite link has expired.",
   [AuthErrorCode.INVITE_USED]: "This invite link has already been used.",
+  [AuthErrorCode.CAPTCHA_FAILED]: "Please complete the challenge below and try again.",
+  [AuthErrorCode.ONLY_AUTH_METHOD]: "Connect another sign-in method before disconnecting this one.",
+  [AuthErrorCode.OAUTH_IDENTITY_ALREADY_LINKED]:
+    "This account is already connected to a different Outfiqe account.",
+  [AuthErrorCode.OAUTH_IDENTITY_NOT_FOUND]: "This provider isn't connected to your account.",
+  [AuthErrorCode.OAUTH_LINK_TOKEN_INVALID]:
+    "This link confirmation has expired. Please try connecting again.",
+  [AuthErrorCode.OAUTH_STATE_INVALID]:
+    "This sign-in attempt has expired or was already used. Please try again.",
+  [AuthErrorCode.OAUTH_EMAIL_UNVERIFIED]:
+    "Your account's email isn't verified with this provider. Please verify it and try again.",
+  [AuthErrorCode.OAUTH_EXCHANGE_FAILED]: "Could not complete sign-in. Please try again.",
 };
 
 const isKnownAuthErrorCode = (code: string): code is AuthErrorCode => {

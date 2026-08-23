@@ -1,3 +1,4 @@
+import type { TokenPurpose } from "#constants/enums/auth.enum.js";
 import { prisma } from "#db/prisma.js";
 import type { BrandRole } from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
@@ -8,6 +9,7 @@ export const authRepository = {
   async createRefreshToken(input: {
     userId: string;
     tokenHash: string;
+    familyId: string;
     expiresAt: Date;
   }): Promise<RefreshTokenRecord> {
     return prisma.refreshToken.create({ data: input });
@@ -15,6 +17,13 @@ export const authRepository = {
 
   async findRefreshTokenByHash(tokenHash: string): Promise<RefreshTokenRecord | null> {
     return prisma.refreshToken.findUnique({ where: { tokenHash } });
+  },
+
+  async revokeRefreshTokenById(id: string, replacedByTokenHash: string): Promise<void> {
+    await prisma.refreshToken.updateMany({
+      where: { id },
+      data: { revokedAt: new Date(), replacedByTokenHash },
+    });
   },
 
   async deleteRefreshTokenById(id: string): Promise<void> {
@@ -25,8 +34,25 @@ export const authRepository = {
     await prisma.refreshToken.deleteMany({ where: { tokenHash } });
   },
 
+  async deleteRefreshTokenFamily(familyId: string): Promise<void> {
+    await prisma.refreshToken.deleteMany({ where: { familyId } });
+  },
+
   async deleteAllRefreshTokensForUser(userId: string): Promise<void> {
     await prisma.refreshToken.deleteMany({ where: { userId } });
+  },
+
+  async findUsedPurposeToken(jti: string): Promise<{ jti: string } | null> {
+    return prisma.usedPurposeToken.findUnique({ where: { jti }, select: { jti: true } });
+  },
+
+  async markPurposeTokenUsed(
+    jti: string,
+    purpose: TokenPurpose,
+    expiresAt: Date,
+    client: DbClient = prisma,
+  ): Promise<void> {
+    await client.usedPurposeToken.create({ data: { jti, purpose, expiresAt } });
   },
 
   async findBrandInviteByTokenHash(tokenHash: string): Promise<BrandInviteRecord | null> {

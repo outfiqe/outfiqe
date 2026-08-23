@@ -5,9 +5,9 @@ export interface UserRecord {
   email: string;
   name: string;
   handle: string;
-  phone: string;
+  phone: string | null;
   avatarUrl: string | null;
-  passwordHash: string;
+  passwordHash: string | null;
   role: UserRole;
   isCreator: boolean;
   creatorStatus: CreatorStatus;
@@ -32,7 +32,10 @@ export interface CreateUserInput {
 }
 
 export type UpdateUserProfileInput = Partial<
-  Pick<UserRecord, "name" | "avatarUrl" | "heightCm" | "showHeight" | "hideFromLeaderboards">
+  Pick<
+    UserRecord,
+    "name" | "phone" | "avatarUrl" | "heightCm" | "showHeight" | "hideFromLeaderboards"
+  >
 >;
 
 export interface PublicUser {

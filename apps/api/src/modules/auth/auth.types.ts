@@ -4,8 +4,11 @@ export interface RefreshTokenRecord {
   id: string;
   tokenHash: string;
   userId: string;
+  familyId: string;
   expiresAt: Date;
   createdAt: Date;
+  revokedAt: Date | null;
+  replacedByTokenHash: string | null;
 }
 
 export interface BrandInviteRecord {
@@ -29,6 +32,8 @@ export type RegisterInput = {
   email: string;
   phone: string;
   password: string;
+  captchaToken?: string;
+  remoteIp?: string;
 };
 
 export type RegisterBrandInput = {
@@ -60,10 +65,12 @@ export type AuthUser = {
   name: string;
   handle: string;
   email: string;
+  phone: string | null;
   avatarUrl: string | null;
   role: UserRole;
   isCreator: boolean;
   creatorStatus: CreatorStatus;
+  hasPassword: boolean;
 };
 
 export type BrandAuthUser = {

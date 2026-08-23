@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import type { JwtPayload } from "jsonwebtoken";
 import jwt from "jsonwebtoken";
 
@@ -13,6 +15,7 @@ type SignPurposeTokenInput = {
 
 const isPurposeTokenPayload = (payload: JwtPayload): payload is PurposeTokenPayload =>
   typeof payload.sub === "string" &&
+  typeof payload.jti === "string" &&
   (payload.purpose === TokenPurpose.EMAIL_VERIFICATION ||
     payload.purpose === TokenPurpose.PASSWORD_RESET);
 
@@ -22,6 +25,7 @@ export const signPurposeToken = (payload: SignPurposeTokenInput, expiresIn: stri
     audience: TOKEN.AUDIENCE,
     issuer: TOKEN.ISSUER,
     expiresIn: expiresIn as jwt.SignOptions["expiresIn"],
+    jwtid: randomUUID(),
   };
 
   return jwt.sign(payload, env.JWT_SECRET, options);

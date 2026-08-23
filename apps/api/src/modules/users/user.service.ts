@@ -6,6 +6,8 @@ import { userRepository } from "./user.repository.js";
 import type { CreateUserInput, PublicUser, UpdateUserProfileInput } from "./user.types.js";
 import { toPublicUser } from "./user.utils.js";
 
+const CONFLICT_STATUS = 409;
+
 export const userService = {
   async createUser(input: CreateUserInput): Promise<PublicUser> {
     const existing = await userRepository.findByEmail(input.email);
@@ -33,6 +35,17 @@ export const userService = {
   },
 
   async updateMe(id: string, input: UpdateUserProfileInput): Promise<PublicUser> {
+    if (input.phone) {
+      const existingByPhone = await userRepository.findByPhone(input.phone);
+      if (existingByPhone && existingByPhone.id !== id) {
+        throw new AppError(
+          "PHONE_EXISTS",
+          "An account with this phone number already exists.",
+          CONFLICT_STATUS,
+        );
+      }
+    }
+
     const updated = await userRepository.updateProfile(id, input);
     return toPublicUser(updated);
   },

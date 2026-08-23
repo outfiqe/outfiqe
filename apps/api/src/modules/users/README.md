@@ -1,0 +1,28 @@
+# Users
+
+## Purpose
+
+The `User` record itself — creation, lookup, and self-service profile updates. Registration, login, and session issuance live in `../auth`; this module owns the row those flows read and write.
+
+## Structure
+
+- `user.controller.ts`, `user.routes.ts` — `POST /` (admin-only user creation), `PATCH /me` (`requireAuth`, self-service profile update), `GET /` and `GET /:id` (admin-only listing/lookup).
+- `user.schemas.ts` — zod validation: `createUserSchema`, `updateOwnProfileSchema` (`name`/`phone`/`avatarUrl`, all optional — a partial patch, not a full replace), `userIdParamSchema`.
+- `user.repository.ts` — `userRepository`, the `User` persistence layer: `create`, `createOAuthOnlyUser` (see `../auth/oauth`), `findByEmail`/`findByPhone`/`findById`/`findByHandle`, `list`/`findManyByIds`/`searchCreatorIds`/`listByCreatorStatus`, `updateProfile`, `markEmailVerified`, `updatePasswordHash`, `updateCreatorStatus`.
+- `user.service.ts` — `userService.createUser`/`getUser`/`listUsers`/`updateMe`.
+- `user.types.ts` — `UserRecord`, `CreateUserInput`, `UpdateUserProfileInput`, `PublicUser`.
+- `user.utils.ts` — `toPublicUser`, strips internal fields (`passwordHash`, `phone`, etc.) before a user record reaches an API response.
+
+## Funnel
+
+**User-facing:** a signed-in user can update their display name and, if they don't have one yet, add a phone number — from Account Settings (`../auth/oauth`'s Security page nudges an OAuth-only account to add one, since OAuth sign-up never collects one). Admins can list/create/inspect users through the same `PATCH /me`-adjacent routes, gated by `requireRole(ADMIN)`.
+
+**Technical:** `user.routes.ts` → `user.controller.ts` → `user.service.ts` → `user.repository.ts` → Prisma. `updateMe` checks phone uniqueness itself (`findByPhone`, excluding the caller's own row) before writing, rather than relying on the DB's `@unique` constraint and catching the violation — same find-then-write pattern `../auth/auth.service.ts` already uses for registration, so a conflict comes back as the same `PHONE_EXISTS` 409 everywhere in the app instead of a raw constraint-violation error surfacing from one path and not another.
+
+## Non-obvious rationale
+
+`updateOwnProfileSchema`'s `phone` field only ever sets a phone, never clears one — reusing the same `phoneSchema` regex validator registration uses (`#lib/phone.utils.js`), which requires an actual valid number. There's no "remove my phone number" affordance in this endpoint; `UserRecord.phone` being nullable (see `../auth/README.md`) exists to support OAuth-only accounts that never had one, not to let an existing phone be cleared.
+
+## Follow-ups
+
+- `user.integration.test.ts` covers `updateMe` (the behavior this module's most recent change added) but not `createUser`/`getUser`/`listUsers` — those three predate this test file and were already untested; adding coverage for them is a natural next step, not done here since it's outside what this change touched. `user.service.ts` is in `vitest.config.ts`'s `coverage.include`, so its per-file number in a coverage report reflects that gap honestly — the repo-wide 80% gate is checked in aggregate, not per file, so this doesn't fail the build.

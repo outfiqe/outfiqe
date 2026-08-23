@@ -24,9 +24,9 @@ model User {
   email                String        @unique
   name                 String
   handle               String        @unique
-  phone                String        @unique
+  phone                String?       @unique
   avatarUrl            String?       @map("avatar_url")
-  passwordHash         String        @map("password_hash")
+  passwordHash         String?       @map("password_hash")
   role                 UserRole      @default(CUSTOMER)
   isCreator            Boolean       @default(false) @map("is_creator")
   creatorStatus        CreatorStatus @default(NONE) @map("creator_status")
@@ -69,6 +69,7 @@ model User {
   notifications           Notification[]           @relation("NotificationRecipient")
   notificationsCaused     Notification[]           @relation("NotificationActor")
   notificationPreferences NotificationPreference[]
+  oauthIdentities         OAuthIdentity[]
 
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
@@ -89,21 +90,52 @@ enum CreatorStatus {
   REJECTED
 }
 
-/**
- * One row per issued refresh token. Only the sha256 hash is stored — see
- * src/shared/utils/opaque-token.utils.ts — so a DB read alone can't be
- * replayed as a valid cookie value. Rotated (deleted + reissued) on every
- * use, so a row's presence also means "not yet redeemed".
- */
 model RefreshToken {
-  id        String   @id @default(uuid()) @db.Uuid
-  tokenHash String   @unique @map("token_hash")
-  userId    String   @map("user_id") @db.Uuid
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(uuid()) @db.Uuid
+  tokenHash           String    @unique @map("token_hash")
+  userId              String    @map("user_id") @db.Uuid
+  familyId            String    @map("family_id") @db.Uuid
+  expiresAt           DateTime  @map("expires_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  revokedAt           DateTime? @map("revoked_at")
+  replacedByTokenHash String?   @map("replaced_by_token_hash")
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([familyId])
+  @@index([expiresAt])
+  @@index([userId, revokedAt])
   @@map("refresh_tokens")
+}
+
+model UsedPurposeToken {
+  jti       String   @id
+  purpose   String
+  usedAt    DateTime @default(now()) @map("used_at")
+  expiresAt DateTime @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("used_purpose_tokens")
+}
+
+enum OAuthProvider {
+  GOOGLE
+  FACEBOOK
+}
+
+model OAuthIdentity {
+  id              String        @id @default(uuid()) @db.Uuid
+  userId          String        @map("user_id") @db.Uuid
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider        OAuthProvider
+  providerUserId  String        @map("provider_user_id")
+  emailAtLinkTime String        @map("email_at_link_time")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  revokedAt       DateTime?     @map("revoked_at")
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("oauth_identities")
 }
 
 model BrandInvite {

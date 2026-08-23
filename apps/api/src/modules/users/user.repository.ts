@@ -47,6 +47,24 @@ export const userRepository = {
     );
   },
 
+  async createOAuthOnlyUser(
+    input: { name: string; email: string; avatarUrl: string | null },
+    client: DbClient = prisma,
+  ): Promise<UserRecord> {
+    return createWithUniqueHandle(
+      client,
+      {
+        email: input.email,
+        name: input.name,
+        phone: null,
+        passwordHash: null,
+        avatarUrl: input.avatarUrl,
+        emailVerified: true,
+      },
+      input.name,
+    );
+  },
+
   async findByEmail(email: string): Promise<UserRecord | null> {
     return prisma.user.findUnique({ where: { email } });
   },
@@ -89,12 +107,16 @@ export const userRepository = {
     return rows.map((row) => row.id);
   },
 
-  async markEmailVerified(id: string): Promise<void> {
-    await prisma.user.update({ where: { id }, data: { emailVerified: true } });
+  async markEmailVerified(id: string, client: DbClient = prisma): Promise<void> {
+    await client.user.update({ where: { id }, data: { emailVerified: true } });
   },
 
-  async updatePasswordHash(id: string, passwordHash: string): Promise<void> {
-    await prisma.user.update({ where: { id }, data: { passwordHash } });
+  async updatePasswordHash(
+    id: string,
+    passwordHash: string,
+    client: DbClient = prisma,
+  ): Promise<void> {
+    await client.user.update({ where: { id }, data: { passwordHash } });
   },
 
   async updateProfile(id: string, profileInput: UpdateUserProfileInput): Promise<UserRecord> {

@@ -14,23 +14,34 @@ import {
 } from "@outfiqe/design-system";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { FormFieldError } from "@/components/FormFieldError";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
+import { ApiClientError } from "@/shared/lib/apiClient";
 
+import { CaptchaChallenge } from "../components/CaptchaChallenge";
+import { ContinueWithOAuthButtons } from "../components/ContinueWithOAuthButtons";
 import { useLogin } from "../hooks/useLogin";
 import { useResendVerification } from "../hooks/useResendVerification";
 import { type LoginInput, loginSchema } from "../schemas/login.schema";
 import { AuthErrorCode, getAuthErrorMessage } from "../utils/authErrors";
+import { getSafeRedirect } from "../utils/safeRedirect";
+
+const DEFAULT_OAUTH_REDIRECT = "/dashboard";
 
 export const LoginForm = () => {
   const login = useLogin();
   const resend = useResendVerification();
   const searchParams = useSearchParams();
   const justReset = searchParams.get("reset") === "1";
+  const oauthRedirectAfter =
+    getSafeRedirect(searchParams.get("redirect")) ?? DEFAULT_OAUTH_REDIRECT;
   const showPending = useDelayedPending(login.isPending);
+  const [captchaToken, setCaptchaToken] = useState<string | undefined>(undefined);
+  const [captchaRequired, setCaptchaRequired] = useState(false);
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -40,15 +51,19 @@ export const LoginForm = () => {
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
-      await login.mutateAsync(values);
-    } catch {
-      // Surfaced below via login.error — nothing else to do here.
+      await login.mutateAsync({ ...values, captchaToken });
+    } catch (error) {
+      if (error instanceof ApiClientError && error.code === AuthErrorCode.CAPTCHA_FAILED) {
+        setCaptchaRequired(true);
+      }
     }
   });
 
   const isEmailNotVerified = login.error?.code === AuthErrorCode.EMAIL_NOT_VERIFIED;
   const isInvalidCredentials = login.error?.code === AuthErrorCode.INVALID_CREDENTIALS;
-  const isUnexpectedError = login.isError && !isEmailNotVerified && !isInvalidCredentials;
+  const isCaptchaFailed = login.error?.code === AuthErrorCode.CAPTCHA_FAILED;
+  const isUnexpectedError =
+    login.isError && !isEmailNotVerified && !isInvalidCredentials && !isCaptchaFailed;
   const attemptedEmail = login.variables?.email;
 
   return (
@@ -73,6 +88,7 @@ export const LoginForm = () => {
       )}
 
       {isUnexpectedError && <FormBanner>{getAuthErrorMessage(login.error?.code)}</FormBanner>}
+      {isCaptchaFailed && <FormBanner>{getAuthErrorMessage(login.error?.code)}</FormBanner>}
 
       <Form {...form}>
         <form onSubmit={onSubmit} noValidate className="mt-6">
@@ -115,11 +131,29 @@ export const LoginForm = () => {
             )}
           />
 
-          <Button type="submit" className="mt-6 w-full" disabled={login.isPending}>
+          {captchaRequired && (
+            <CaptchaChallenge
+              onVerify={setCaptchaToken}
+              onExpire={() => setCaptchaToken(undefined)}
+            />
+          )}
+
+          <Button
+            type="submit"
+            className="mt-6 w-full"
+            disabled={login.isPending || (captchaRequired && !captchaToken)}
+          >
             {showPending ? "Signing in…" : "Sign in"}
           </Button>
         </form>
       </Form>
+
+      <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />
+        or continue with
+        <span className="h-px flex-1 bg-border" />
+      </div>
+      <ContinueWithOAuthButtons redirectAfter={oauthRedirectAfter} />
 
       <p className="mt-5 text-center text-sm text-muted-foreground">
         New here?{" "}

@@ -11,6 +11,12 @@ const SANDBOX_ENV_OVERRIDES_PREVENTING_REAL_EXTERNAL_SERVICE_CALLS_IN_TESTS = {
   GMAIL_APP_PASSWORD: "",
   ESEWA_SECRET_KEY: "8gBm/:&EnhH.1/q",
   KHALTI_SECRET_KEY: "KHALTI_TEST_SECRET_KEY_NOT_SET",
+  PASSWORD_BREACH_CHECK_ENABLED: "false",
+  CAPTCHA_ENABLED: "false",
+  GOOGLE_CLIENT_ID: "GOOGLE_CLIENT_ID_NOT_SET",
+  GOOGLE_CLIENT_SECRET: "GOOGLE_CLIENT_SECRET_NOT_SET",
+  FACEBOOK_APP_ID: "FACEBOOK_APP_ID_NOT_SET",
+  FACEBOOK_APP_SECRET: "FACEBOOK_APP_SECRET_NOT_SET",
 };
 
 const definedProcessEnv = Object.fromEntries(
@@ -26,7 +32,15 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: [
+        "src/app.ts",
         "src/shared/utils/pagination.utils.ts",
+        "src/shared/utils/password.utils.ts",
+        "src/shared/utils/password-breach.utils.ts",
+        "src/modules/auth/auth.retention.ts",
+        "src/modules/auth/auth.lockout.utils.ts",
+        "src/modules/auth/auth.captcha.utils.ts",
+        "src/modules/auth/oauth/**/*.ts",
+        "src/modules/users/user.service.ts",
         "src/shared/utils/opaque-token.utils.ts",
         "src/shared/utils/iso-week.utils.ts",
         "src/shared/utils/creator-engagement-affinity.utils.ts",

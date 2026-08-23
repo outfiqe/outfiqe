@@ -1,10 +1,11 @@
 import { afterAll, afterEach } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import { disconnectRedis } from "#redis/redis.client.js";
+import { disconnectRedis, redis } from "#redis/redis.client.js";
 
 afterEach(async () => {
   await resetDatabase();
+  await resetEphemeralRedisState();
 });
 
 afterAll(async () => {
@@ -20,4 +21,16 @@ const resetDatabase = async (): Promise<void> => {
 
   const quotedTableNames = tables.map(({ tablename }) => `"public"."${tablename}"`).join(", ");
   await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${quotedTableNames} RESTART IDENTITY CASCADE;`);
+};
+
+const EPHEMERAL_REDIS_KEY_PATTERNS = ["ratelimit:*", "auth:login-lockout:*"];
+
+const resetEphemeralRedisState = async (): Promise<void> => {
+  const keysPerPattern = await Promise.all(
+    EPHEMERAL_REDIS_KEY_PATTERNS.map((pattern) => redis.keys(pattern)),
+  );
+  const keys = keysPerPattern.flat();
+  if (keys.length === 0) return;
+
+  await redis.del(...keys);
 };

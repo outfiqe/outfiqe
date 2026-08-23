@@ -37,6 +37,14 @@ const envSchema = z.object({
   ESEWA_STATUS_URL: z.url().default("https://rc.esewa.com.np/api/epay/transaction/status/"),
   KHALTI_BASE_URL: z.url().default("https://dev.khalti.com/api/v2/"),
   KHALTI_SECRET_KEY: z.string().min(1).default("KHALTI_TEST_SECRET_KEY_NOT_SET"),
+  PASSWORD_BREACH_CHECK_ENABLED: z.stringbool().default(true),
+  CAPTCHA_ENABLED: z.stringbool().default(true),
+  TURNSTILE_SECRET_KEY: z.string().min(1).default("1x0000000000000000000000000000000AA"),
+  OAUTH_REDIRECT_BASE_URL: z.url().default("http://localhost:3000"),
+  GOOGLE_CLIENT_ID: z.string().min(1).default("GOOGLE_CLIENT_ID_NOT_SET"),
+  GOOGLE_CLIENT_SECRET: z.string().min(1).default("GOOGLE_CLIENT_SECRET_NOT_SET"),
+  FACEBOOK_APP_ID: z.string().min(1).default("FACEBOOK_APP_ID_NOT_SET"),
+  FACEBOOK_APP_SECRET: z.string().min(1).default("FACEBOOK_APP_SECRET_NOT_SET"),
 });
 
 const parsed = envSchema.safeParse(process.env);
