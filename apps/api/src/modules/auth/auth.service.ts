@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
 
+import { addMilliseconds } from "date-fns/addMilliseconds";
+import { fromUnixTime } from "date-fns/fromUnixTime";
+import { getUnixTime } from "date-fns/getUnixTime";
+import { isPast } from "date-fns/isPast";
 import jwt from "jsonwebtoken";
 
 import { env } from "#config/env.config.js";
@@ -21,6 +25,7 @@ import { adminInviteRepository } from "#modules/admin-invites/adminInvite.reposi
 import { userRepository } from "#modules/users/user.repository.js";
 import type { UserRecord } from "#modules/users/user.types.js";
 import { describeError } from "#redis/redis.utils.js";
+import type { DbClient } from "#types/db.types.js";
 import type { PurposeTokenPayload } from "#types/token.types.js";
 
 import { PURPOSE_ERROR_COPY } from "./auth.constants.js";
@@ -55,7 +60,10 @@ const USER_NOT_FOUND_MESSAGE = "User not found.";
 const PASSWORD_BREACHED_MESSAGE =
   "This password has appeared in a data breach. Please choose another.";
 
-const verifyPurposeTokenOrThrow = (token: string, purpose: TokenPurpose): PurposeTokenPayload => {
+const verifyPurposeTokenOrThrow = async (
+  token: string,
+  purpose: TokenPurpose,
+): Promise<PurposeTokenPayload> => {
   const copy = PURPOSE_ERROR_COPY[purpose];
 
   let tokenPayload: PurposeTokenPayload;
@@ -72,7 +80,41 @@ const verifyPurposeTokenOrThrow = (token: string, purpose: TokenPurpose): Purpos
     throw new AppError("INVALID_TOKEN", copy.invalid, BAD_REQUEST_STATUS);
   }
 
+  const alreadyUsed = await authRepository.findUsedPurposeToken(tokenPayload.jti);
+  if (alreadyUsed) {
+    throw new AppError("INVALID_TOKEN", copy.invalid, BAD_REQUEST_STATUS);
+  }
+
   return tokenPayload;
+};
+
+const purposeTokenExpiry = (tokenPayload: PurposeTokenPayload): Date =>
+  fromUnixTime(tokenPayload.exp ?? getUnixTime(new Date()));
+
+const isUniqueConstraintViolation = (error: unknown): boolean =>
+  error instanceof Error && "code" in error && error.code === "P2002";
+
+const redeemPurposeTokenOrThrow = async (
+  tokenPayload: PurposeTokenPayload,
+  purpose: TokenPurpose,
+  applyEffect: (tx: DbClient) => Promise<void>,
+): Promise<void> => {
+  try {
+    await prisma.$transaction(async (tx) => {
+      await applyEffect(tx);
+      await authRepository.markPurposeTokenUsed(
+        tokenPayload.jti,
+        purpose,
+        purposeTokenExpiry(tokenPayload),
+        tx,
+      );
+    });
+  } catch (err) {
+    if (isUniqueConstraintViolation(err)) {
+      throw new AppError("INVALID_TOKEN", PURPOSE_ERROR_COPY[purpose].invalid, BAD_REQUEST_STATUS);
+    }
+    throw err;
+  }
 };
 
 const issueTokens = async (
@@ -89,7 +131,7 @@ const issueTokens = async (
     userId: id,
     tokenHash: hashToken(rawRefreshToken),
     familyId,
-    expiresAt: new Date(Date.now() + refreshTokenTtlMs),
+    expiresAt: addMilliseconds(new Date(), refreshTokenTtlMs),
   });
 
   return {
@@ -170,7 +212,7 @@ export const authService = {
   },
 
   async verifyEmail(token: string): Promise<void> {
-    const tokenPayload = verifyPurposeTokenOrThrow(token, TokenPurpose.EMAIL_VERIFICATION);
+    const tokenPayload = await verifyPurposeTokenOrThrow(token, TokenPurpose.EMAIL_VERIFICATION);
 
     const user = await userRepository.findById(tokenPayload.sub);
     if (!user) {
@@ -188,7 +230,10 @@ export const authService = {
       return;
     }
 
-    await userRepository.markEmailVerified(id);
+    await redeemPurposeTokenOrThrow(tokenPayload, TokenPurpose.EMAIL_VERIFICATION, (tx) =>
+      userRepository.markEmailVerified(id, tx),
+    );
+
     await eventBus.publish(DomainEvents.USER_EMAIL_VERIFIED, { userId: id, email });
 
     logger.info(`Email verified for user ${id}`);
@@ -206,7 +251,7 @@ export const authService = {
   },
 
   async validateToken(token: string, purpose: TokenPurpose): Promise<void> {
-    verifyPurposeTokenOrThrow(token, purpose);
+    await verifyPurposeTokenOrThrow(token, purpose);
   },
 
   async login(email: string, password: string): Promise<AuthSession> {
@@ -276,7 +321,7 @@ export const authService = {
       );
     }
 
-    if (expiresAt.getTime() <= Date.now()) {
+    if (isPast(expiresAt)) {
       await authRepository.deleteRefreshTokenById(storedId);
       throw new AppError(
         "TOKEN_EXPIRED",
@@ -300,7 +345,7 @@ export const authService = {
       userId,
       tokenHash: newTokenHash,
       familyId,
-      expiresAt: new Date(Date.now() + refreshTokenTtlMs),
+      expiresAt: addMilliseconds(new Date(), refreshTokenTtlMs),
     });
 
     const accessToken = generateToken({ sub: user.id, role: user.role }, TokenTypeEnum.ACCESS);
@@ -324,7 +369,7 @@ export const authService = {
       throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
     }
 
-    if (stored.expiresAt.getTime() <= Date.now()) {
+    if (isPast(stored.expiresAt)) {
       throw new AppError(
         "TOKEN_EXPIRED",
         "Refresh token has expired. Please sign in again.",
@@ -376,7 +421,7 @@ export const authService = {
   },
 
   async resetPassword(token: string, password: string): Promise<void> {
-    const tokenPayload = verifyPurposeTokenOrThrow(token, TokenPurpose.PASSWORD_RESET);
+    const tokenPayload = await verifyPurposeTokenOrThrow(token, TokenPurpose.PASSWORD_RESET);
 
     const user = await userRepository.findById(tokenPayload.sub);
     if (!user) {
@@ -392,7 +437,9 @@ export const authService = {
     }
 
     const passwordHash = await hashPassword(password);
-    await userRepository.updatePasswordHash(user.id, passwordHash);
+    await redeemPurposeTokenOrThrow(tokenPayload, TokenPurpose.PASSWORD_RESET, (tx) =>
+      userRepository.updatePasswordHash(user.id, passwordHash, tx),
+    );
     await authRepository.deleteAllRefreshTokensForUser(user.id);
 
     await eventBus.publish(DomainEvents.USER_PASSWORD_RESET, { userId: user.id });

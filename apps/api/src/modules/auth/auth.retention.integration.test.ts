@@ -1,13 +1,12 @@
 import { randomUUID } from "node:crypto";
 
+import { subDays } from "date-fns/subDays";
 import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 
 import { runAuthRetentionSweep } from "./auth.retention.js";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 const uniquePhone = () => `93${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
@@ -24,7 +23,7 @@ const createUser = async () => {
   });
 };
 
-const daysAgo = (days: number): Date => new Date(Date.now() - days * DAY_MS);
+const daysAgo = (days: number): Date => subDays(new Date(), days);
 
 const insertRefreshToken = async (
   userId: string,

@@ -1,6 +1,8 @@
 import { randomBytes, randomUUID, scrypt } from "node:crypto";
 import { promisify } from "node:util";
 
+import { addHours } from "date-fns/addHours";
+import { subHours } from "date-fns/subHours";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
@@ -15,7 +17,6 @@ import { testApp } from "#test/integration/testApp.js";
 const DEFAULT_TEST_PASSWORD = "correct-horse-battery";
 const DEFAULT_TOKEN_TTL = "1h";
 const EXPIRED_TOKEN_TTL = "-1h";
-const ONE_HOUR_MS = 60 * 60 * 1000;
 const FORGOT_PASSWORD_RATE_LIMIT_MAX = 3;
 const LEGACY_SCRYPT_KEY_LEN = 64;
 const PASSWORD_UPGRADE_POLL_INTERVAL_MS = 25;
@@ -96,7 +97,7 @@ const insertRefreshToken = async (
       userId,
       tokenHash: hashToken(rawToken),
       familyId,
-      expiresAt: new Date(Date.now() + (expired ? -ONE_HOUR_MS : ONE_HOUR_MS)),
+      expiresAt: expired ? subHours(new Date(), 1) : addHours(new Date(), 1),
       revokedAt: revoked ? new Date() : null,
     },
   });
@@ -177,6 +178,24 @@ describe("POST /api/auth/verify-email", () => {
     const response = await request(testApp).post("/api/auth/verify-email").send({ token });
 
     expect(response.status).toBe(200);
+  });
+
+  it("allows exactly one success when the same verification token is submitted concurrently", async () => {
+    const { user } = await createUser({ emailVerified: false });
+    const token = mintPurposeToken(user.id, TokenPurpose.EMAIL_VERIFICATION);
+
+    const [first, second] = await Promise.all([
+      request(testApp).post("/api/auth/verify-email").send({ token }),
+      request(testApp).post("/api/auth/verify-email").send({ token }),
+    ]);
+
+    expect([first.status, second.status]).toContain(200);
+
+    const stored = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+    expect(stored.emailVerified).toBe(true);
+
+    const usedTokenRowCount = await prisma.usedPurposeToken.count();
+    expect(usedTokenRowCount).toBe(1);
   });
 
   it("rejects an expired token", async () => {
@@ -556,6 +575,54 @@ describe("POST /api/auth/reset-password", () => {
 
     expect(response.status).toBe(400);
     expect(response.body.code).toBe("INVALID_TOKEN");
+  });
+
+  it("rejects replaying an already-used reset token", async () => {
+    const { user } = await createUser();
+    const token = mintPurposeToken(user.id, TokenPurpose.PASSWORD_RESET);
+
+    const first = await request(testApp)
+      .post("/api/auth/reset-password")
+      .send({ token, password: "brand-new-password", confirmPassword: "brand-new-password" });
+    expect(first.status).toBe(200);
+
+    const replay = await request(testApp)
+      .post("/api/auth/reset-password")
+      .send({ token, password: "another-password", confirmPassword: "another-password" });
+
+    expect(replay.status).toBe(400);
+    expect(replay.body.code).toBe("INVALID_TOKEN");
+  });
+
+  it("allows exactly one success when the same reset token is submitted concurrently", async () => {
+    const { user } = await createUser();
+    const token = mintPurposeToken(user.id, TokenPurpose.PASSWORD_RESET);
+
+    const [first, second] = await Promise.all([
+      request(testApp)
+        .post("/api/auth/reset-password")
+        .send({
+          token,
+          password: "concurrent-password-a",
+          confirmPassword: "concurrent-password-a",
+        }),
+      request(testApp)
+        .post("/api/auth/reset-password")
+        .send({
+          token,
+          password: "concurrent-password-b",
+          confirmPassword: "concurrent-password-b",
+        }),
+    ]);
+
+    const statuses = [first.status, second.status].sort();
+    expect(statuses).toEqual([200, 400]);
+
+    const [loser] = [first, second].filter((response) => response.status === 400);
+    expect(loser.body.code).toBe("INVALID_TOKEN");
+
+    const usedTokenRowCount = await prisma.usedPurposeToken.count();
+    expect(usedTokenRowCount).toBe(1);
   });
 });
 

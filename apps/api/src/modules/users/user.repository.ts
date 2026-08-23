@@ -89,12 +89,16 @@ export const userRepository = {
     return rows.map((row) => row.id);
   },
 
-  async markEmailVerified(id: string): Promise<void> {
-    await prisma.user.update({ where: { id }, data: { emailVerified: true } });
+  async markEmailVerified(id: string, client: DbClient = prisma): Promise<void> {
+    await client.user.update({ where: { id }, data: { emailVerified: true } });
   },
 
-  async updatePasswordHash(id: string, passwordHash: string): Promise<void> {
-    await prisma.user.update({ where: { id }, data: { passwordHash } });
+  async updatePasswordHash(
+    id: string,
+    passwordHash: string,
+    client: DbClient = prisma,
+  ): Promise<void> {
+    await client.user.update({ where: { id }, data: { passwordHash } });
   },
 
   async updateProfile(id: string, profileInput: UpdateUserProfileInput): Promise<UserRecord> {

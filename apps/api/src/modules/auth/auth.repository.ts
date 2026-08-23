@@ -1,3 +1,4 @@
+import type { TokenPurpose } from "#constants/enums/auth.enum.js";
 import { prisma } from "#db/prisma.js";
 import type { BrandRole } from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
@@ -39,6 +40,19 @@ export const authRepository = {
 
   async deleteAllRefreshTokensForUser(userId: string): Promise<void> {
     await prisma.refreshToken.deleteMany({ where: { userId } });
+  },
+
+  async findUsedPurposeToken(jti: string): Promise<{ jti: string } | null> {
+    return prisma.usedPurposeToken.findUnique({ where: { jti }, select: { jti: true } });
+  },
+
+  async markPurposeTokenUsed(
+    jti: string,
+    purpose: TokenPurpose,
+    expiresAt: Date,
+    client: DbClient = prisma,
+  ): Promise<void> {
+    await client.usedPurposeToken.create({ data: { jti, purpose, expiresAt } });
   },
 
   async findBrandInviteByTokenHash(tokenHash: string): Promise<BrandInviteRecord | null> {
