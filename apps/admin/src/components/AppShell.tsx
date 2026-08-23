@@ -2,6 +2,8 @@ import { HeaderBar } from "@outfiqe/components";
 import { ThemeToggle } from "@outfiqe/design-system";
 import type { ReactNode } from "react";
 
+import { AdminNotificationBell } from "@/features/notifications";
+
 import { AccountMenu } from "./AccountMenu";
 import { AdminSidebar } from "./AdminSidebar";
 import { Logo } from "./Logo";
@@ -16,6 +18,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
         </span>
 
         <div className="ml-auto flex items-center gap-3">
+          <AdminNotificationBell />
           <ThemeToggle />
           <AccountMenu />
         </div>

@@ -192,7 +192,7 @@ export const authService = {
       throw new AppError("INVALID_CREDENTIALS", INVALID_CREDENTIALS_MESSAGE, UNAUTHORIZED_STATUS);
     }
 
-    const { id, name, avatarUrl, role, isCreator, creatorStatus } = user;
+    const { id, name, handle, avatarUrl, role, isCreator, creatorStatus } = user;
 
     if (!user.emailVerified) {
       logger.warn(`Login blocked: email not verified for user ${id}`);
@@ -212,6 +212,7 @@ export const authService = {
       user: {
         id,
         name,
+        handle,
         email: user.email,
         avatarUrl,
         role,
@@ -371,7 +372,7 @@ export const authService = {
       throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
     }
 
-    const { id, name, email, role, avatarUrl, isCreator, creatorStatus } = user;
+    const { id, name, handle, email, role, avatarUrl, isCreator, creatorStatus } = user;
 
     if (role === UserRole.BRAND_OWNER) {
       const membership = await authRepository.findBrandMembershipByUserId(id);
@@ -392,6 +393,7 @@ export const authService = {
     return {
       id,
       name,
+      handle,
       email,
       avatarUrl,
       role,
@@ -596,6 +598,7 @@ export const authService = {
       user: {
         id: user.id,
         name: user.name,
+        handle: user.handle,
         email: user.email,
         avatarUrl: user.avatarUrl,
         role: user.role,

@@ -1,6 +1,7 @@
 import type { DefaultEventsMap, Server, Socket } from "socket.io";
 
 import type { LeaderboardCategory } from "#constants/leaderboard.constants.js";
+import type { NotificationBroadcastPayload } from "#events/event-bus.types.js";
 import type { CreatorLeaderboardCategory } from "#generated/prisma/enums.js";
 import type { AuthPrincipal } from "#types/token.types.js";
 
@@ -78,6 +79,9 @@ export type LevelUpPayload = {
   currentLevel: { level: number; name: string; icon: string | null };
 };
 
+export type NotificationReadPayload = { id: string };
+export type NotificationReadAllPayload = { readAt: string };
+
 // Key literals must match SOCKET_EVENTS in socket.keys.ts.
 export type ServerToClientEvents = {
   "look:created": (payload: LookCreatedPayload) => void;
@@ -86,6 +90,10 @@ export type ServerToClientEvents = {
   "creator-leaderboard:updated": (payload: CreatorLeaderboardUpdatedPayload) => void;
   "achievement:unlocked": (payload: AchievementUnlockedPayload) => void;
   "level:up": (payload: LevelUpPayload) => void;
+  "notification:created": (payload: NotificationBroadcastPayload) => void;
+  "notification:updated": (payload: NotificationBroadcastPayload) => void;
+  "notification:read": (payload: NotificationReadPayload) => void;
+  "notification:read-all": (payload: NotificationReadAllPayload) => void;
 };
 
 export type ClientToServerEvents = {

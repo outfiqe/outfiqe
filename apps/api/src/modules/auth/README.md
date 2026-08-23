@@ -23,6 +23,8 @@ Identity and session management: email/password registration and email verificat
 
 `forgot-password` and `resend-verification` both return the same success response whether or not the email is registered, and `resendVerification`/`forgotPassword` no-op silently for an unknown or already-verified address — this is deliberate enumeration resistance, not a missing error case.
 
+`AuthUser` (regular users, not `BrandAuthUser`) carries `handle` — added specifically so the frontend can build a `/creator/{handle}` link to the signed-in user's own profile without a second lookup (the notifications bell's click-to-navigate needs it for `LOOK_LIKED`/`LOOK_COMMENTED`, see `apps/web/src/features/notifications/README.md`). `BrandAuthUser` deliberately doesn't get one — brand owners have no public creator-profile page to link to.
+
 ## Follow-ups
 
 - Integration coverage (`auth.integration.test.ts`) currently covers the core identity/session surface: register, verify-email, resend-verification, login, refresh, session, logout, forgot-password (including its rate limit), reset-password, and `/me`. It does **not** yet cover `registerBrand`/`registerAdmin`/`getBrandInvite`/`getAdminInvite`/`validateToken` — those depend on invite provisioning from `../brand-applications` and `../admin-invites`, which is a natural next phase rather than part of this pass. Once added, `src/modules/auth/**` should go into `vitest.config.ts`'s `coverage.include` allowlist (left out for now since partial coverage would fail the 80% gate).

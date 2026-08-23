@@ -3,7 +3,7 @@ import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -15,6 +15,7 @@ import type * as ExploreModule from "@/features/explore";
 
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(),
+  useSearchParams: vi.fn(),
 }));
 
 vi.mock("@/features/auth/context/AuthContext", () => ({
@@ -81,7 +82,14 @@ beforeAll(() => {
 });
 
 const push = vi.fn();
+const replace = vi.fn();
 const fetchNextPage = vi.fn();
+
+const mockSearchParams = (params: Record<string, string> = {}) => {
+  vi.mocked(useSearchParams).mockReturnValue(
+    new URLSearchParams(params) as ReturnType<typeof useSearchParams>,
+  );
+};
 
 const buildPost = (id: string) => ({
   id,
@@ -176,7 +184,7 @@ const renderProfile = (creator: CreatorProfileType) => {
 beforeEach(() => {
   vi.mocked(useRouter).mockReturnValue({
     push,
-    replace: vi.fn(),
+    replace,
     back: vi.fn(),
     forward: vi.fn(),
     refresh: vi.fn(),
@@ -184,6 +192,8 @@ beforeEach(() => {
     bfcacheId: "test-bfcache-id",
   });
   push.mockClear();
+  replace.mockClear();
+  mockSearchParams();
   fetchNextPage.mockClear();
   mockLooks();
   mockAuth("viewer-1");
@@ -431,15 +441,44 @@ describe("CreatorProfile edit flow", () => {
 });
 
 describe("CreatorProfile post detail modal", () => {
-  it("opens the post detail modal when a thumbnail is clicked, and closes it", async () => {
+  it("navigates to the post's ?look= url when a thumbnail is clicked", async () => {
     const user = userEvent.setup();
     renderProfile(buildCreator());
 
     await user.click(screen.getByRole("button", { name: "Caption p1" }));
+
+    expect(replace).toHaveBeenCalledWith("/creator/ava?look=p1", { scroll: false });
+  });
+
+  it("opens the post detail modal when ?look= matches an already-loaded post", () => {
+    mockSearchParams({ look: "p1" });
+    renderProfile(buildCreator());
+
     expect(screen.getByRole("dialog", { name: "Post detail" })).toBeInTheDocument();
+  });
+
+  it("clears the ?look= param when the modal is closed", async () => {
+    mockSearchParams({ look: "p1" });
+    const user = userEvent.setup();
+    renderProfile(buildCreator());
 
     await user.click(screen.getByRole("button", { name: "Close detail" }));
-    expect(screen.queryByRole("dialog", { name: "Post detail" })).not.toBeInTheDocument();
+
+    expect(replace).toHaveBeenCalledWith("/creator/ava", { scroll: false });
+  });
+
+  it("fetches and shows a post that isn't already loaded in the grid (e.g. a deep link)", async () => {
+    mockSearchParams({ look: "p99" });
+    mswServer.use(
+      http.get("/api/creator-looks/p99/public", () =>
+        HttpResponse.json({ success: true, message: "Post.", data: buildPost("p99") }),
+      ),
+    );
+    renderProfile(buildCreator());
+
+    await waitFor(() =>
+      expect(screen.getByRole("dialog", { name: "Post detail" })).toBeInTheDocument(),
+    );
   });
 });
 

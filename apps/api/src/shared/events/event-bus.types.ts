@@ -1,11 +1,32 @@
 import type { LeaderboardCategory } from "#constants/leaderboard.constants.js";
-import type { CreatorLeaderboardCategory, UserRole } from "#generated/prisma/enums.js";
+import type {
+  CreatorLeaderboardCategory,
+  FulfilmentStatus,
+  NotificationEntityType,
+  NotificationType,
+  UserRole,
+} from "#generated/prisma/enums.js";
 
 import type { DomainEvents } from "./event-bus.js";
 
 export type DomainEvent = (typeof DomainEvents)[keyof typeof DomainEvents];
 
 type FollowPayload = { followerId: string; followingId: string };
+
+export type NotificationBroadcastPayload = {
+  id: string;
+  recipientId: string;
+  actorId: string | null;
+  type: NotificationType;
+  entityType: NotificationEntityType | null;
+  entityId: string | null;
+  metadata: Record<string, unknown>;
+  groupKey: string | null;
+  actorCount: number;
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export type DomainEventPayloads = {
   [DomainEvents.USER_CREATED]: { userId: string; email: string; role?: UserRole };
@@ -16,6 +37,7 @@ export type DomainEventPayloads = {
   [DomainEvents.ADMIN_REGISTERED]: { userId: string; email: string };
   [DomainEvents.LOOK_CREATED]: { lookId: string; creatorId: string; createdAt: string };
   [DomainEvents.LOOK_LIKED]: { lookId: string; creatorId: string; userId: string };
+  [DomainEvents.LOOK_UNLIKED]: { lookId: string; creatorId: string; userId: string };
   [DomainEvents.LOOK_SAVED]: { lookId: string; creatorId: string; userId: string };
   [DomainEvents.LOOK_COMMENTED]: {
     lookId: string;
@@ -53,6 +75,14 @@ export type DomainEventPayloads = {
     previousLevel: { level: number; name: string };
     currentLevel: { level: number; name: string; icon: string | null };
   };
+  [DomainEvents.BRAND_APPLICATION_SUBMITTED]: { applicationId: string; brandName: string };
+  [DomainEvents.ORDER_STATUS_CHANGED]: {
+    orderId: string;
+    userId: string;
+    status: FulfilmentStatus;
+  };
+  [DomainEvents.NOTIFICATION_CREATED]: NotificationBroadcastPayload;
+  [DomainEvents.NOTIFICATION_UPDATED]: NotificationBroadcastPayload;
 };
 
 export type DomainEventHandler<E extends DomainEvent> = (

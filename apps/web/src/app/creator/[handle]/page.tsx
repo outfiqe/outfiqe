@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { CreatorProfile, getCreatorProfileServerPublic } from "@/features/creator-profile";
+import {
+  CreatorProfile,
+  CreatorProfilePageSkeleton,
+  getCreatorProfileServerPublic,
+} from "@/features/creator-profile";
 
 interface CreatorPageProps {
   params: Promise<{ handle: string }>;
@@ -25,7 +30,9 @@ const CreatorPage = async ({ params }: CreatorPageProps) => {
     <div className="pb-20 lg:pb-0">
       <SiteHeader />
       <main>
-        <CreatorProfile creator={creator} />
+        <Suspense fallback={<CreatorProfilePageSkeleton />}>
+          <CreatorProfile creator={creator} />
+        </Suspense>
       </main>
       <SiteFooter />
       <MobileTabBar />

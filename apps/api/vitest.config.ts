@@ -42,6 +42,8 @@ export default defineConfig({
         "src/modules/brands/**/*.ts",
         "src/modules/categories/**/*.ts",
         "src/modules/follows/**/*.ts",
+        "src/modules/notifications/notification.utils.ts",
+        "src/modules/notifications/notification.retention.ts",
       ],
       thresholds: {
         lines: 80,

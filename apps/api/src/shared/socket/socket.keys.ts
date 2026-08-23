@@ -22,6 +22,10 @@ export const SOCKET_EVENTS = {
   CREATOR_LEADERBOARD_UNSUBSCRIBE: "creator-leaderboard:unsubscribe",
   ACHIEVEMENT_UNLOCKED: "achievement:unlocked",
   LEVEL_UP: "level:up",
+  NOTIFICATION_CREATED: "notification:created",
+  NOTIFICATION_UPDATED: "notification:updated",
+  NOTIFICATION_READ: "notification:read",
+  NOTIFICATION_READ_ALL: "notification:read-all",
 } as const;
 
 export const SOCKET_RATE_LIMIT = {

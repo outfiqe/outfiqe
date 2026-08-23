@@ -58,6 +58,7 @@ export type IssuedTokens = {
 export type AuthUser = {
   id: string;
   name: string;
+  handle: string;
   email: string;
   avatarUrl: string | null;
   role: UserRole;

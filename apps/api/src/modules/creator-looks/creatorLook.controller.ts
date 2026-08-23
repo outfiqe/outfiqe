@@ -39,6 +39,14 @@ export const creatorLookController = {
     sendSuccess(res, look, "Post detail.");
   },
 
+  async getPublic(_req: Request, res: Response) {
+    const { lookId } = validated.params<LookIdParams>(res);
+    const principal = getAuthPrincipal(res);
+
+    const post = await creatorLookService.getPublicById(lookId, principal?.userId);
+    sendSuccess(res, post, "Post.");
+  },
+
   async update(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const { lookId } = validated.params<LookIdParams>(res);

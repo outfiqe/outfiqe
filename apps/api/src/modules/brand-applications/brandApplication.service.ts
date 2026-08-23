@@ -4,6 +4,7 @@ import {
   brandApprovedTemplate,
   brandRejectedTemplate,
 } from "#email-templates/templates.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { BrandApplicationStatus } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
@@ -56,6 +57,11 @@ export const brandApplicationService = {
       subject,
       body: `${input.brandName} applied. Review it in the admin panel: ${env.ADMIN_URL}/brand-applications`,
       html,
+    });
+
+    await eventBus.publish(DomainEvents.BRAND_APPLICATION_SUBMITTED, {
+      applicationId: application.id,
+      brandName: application.brandName,
     });
 
     logger.info(`Brand application received: ${application.id}`);

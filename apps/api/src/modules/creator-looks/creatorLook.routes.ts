@@ -81,6 +81,12 @@ creatorLookRoutes.get(
   validate({ params: lookIdParamsSchema }),
   creatorLookController.getOwn,
 );
+creatorLookRoutes.get(
+  "/:lookId/public",
+  optionalAuth,
+  validate({ params: lookIdParamsSchema }),
+  creatorLookController.getPublic,
+);
 creatorLookRoutes.patch(
   "/:lookId",
   requireAuth,

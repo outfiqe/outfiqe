@@ -5,6 +5,7 @@ import { CreatorStatus, creatorStatusSchema, userRoleSchema, type UserSession } 
 export const customerUserSchema = z.object({
   id: z.string(),
   name: z.string(),
+  handle: z.string().optional(),
   email: z.email(),
   avatarUrl: z.url().nullable(),
   role: userRoleSchema,
@@ -34,6 +35,7 @@ export const toUserSession = (
   return {
     id: user.id,
     name: user.name,
+    handle: "handle" in user ? user.handle : undefined,
     email: user.email,
     avatarUrl: user.avatarUrl,
     role: user.role,

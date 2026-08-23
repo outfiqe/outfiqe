@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { useCart } from "@/features/cart";
+import { SiteNotificationBell } from "@/features/notifications";
 import { ExploreSearchBox, ProductSearchBox } from "@/features/search";
 import { cn } from "@/shared/lib/cn";
 import { isExploreRoute, searchPathFor } from "@/shared/lib/exploreMode";
@@ -136,6 +137,7 @@ export const SiteHeader = () => {
           )}
         </Link>
 
+        <SiteNotificationBell />
         <ThemeToggle />
         <AccountMenu />
         <MobileNav />

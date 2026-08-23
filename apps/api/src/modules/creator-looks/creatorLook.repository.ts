@@ -1062,6 +1062,14 @@ export const creatorLookRepository = {
     return { posts, nextCursor: listed.nextCursor };
   },
 
+  async findPublicById(
+    lookId: string,
+    viewerId: string | undefined,
+  ): Promise<CreatorLookFeedPost | null> {
+    const [post] = await hydrateFeedPosts([lookId], viewerId);
+    return post ?? null;
+  },
+
   async listSaved(
     userId: string,
     { cursor, limit }: { cursor?: string; limit: number },
@@ -1181,20 +1189,20 @@ export const creatorLookRepository = {
     });
   },
 
-  async unlike(lookId: string, userId: string): Promise<{ likeCount: number }> {
+  async unlike(lookId: string, userId: string): Promise<{ likeCount: number; unliked: boolean }> {
     return prisma.$transaction(async (tx) => {
       const deleted = await tx.creatorLookLike.deleteMany({
         where: { creatorLookId: lookId, userId },
       });
       if (deleted.count === 0) {
         const look = await tx.creatorLook.findUniqueOrThrow({ where: { id: lookId } });
-        return { likeCount: look.likeCount };
+        return { likeCount: look.likeCount, unliked: false };
       }
       const look = await tx.creatorLook.update({
         where: { id: lookId },
         data: { likeCount: { decrement: 1 } },
       });
-      return { likeCount: look.likeCount };
+      return { likeCount: look.likeCount, unliked: true };
     });
   },
 

@@ -32,6 +32,7 @@ import type {
 import type {
   CommentPage,
   CreatorLookEditDetail,
+  CreatorLookFeedPost,
   CreatorLookSummary,
   CreatorMomentumEntry,
   FeedPage,
@@ -193,6 +194,13 @@ export const creatorLookService = {
       limit: query.limit,
       viewerId,
     });
+  },
+
+  async getPublicById(lookId: string, viewerId: string | undefined): Promise<CreatorLookFeedPost> {
+    await requireActiveLook(lookId);
+    const post = await creatorLookRepository.findPublicById(lookId, viewerId);
+    if (!post) throw new AppError("NOT_FOUND", "Post not found.", NOT_FOUND_STATUS);
+    return post;
   },
 
   async feed(
@@ -375,8 +383,15 @@ export const creatorLookService = {
   },
 
   async unlike(lookId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
-    await requireActiveLook(lookId);
-    const { likeCount } = await creatorLookRepository.unlike(lookId, userId);
+    const look = await requireActiveLook(lookId);
+    const { likeCount, unliked } = await creatorLookRepository.unlike(lookId, userId);
+    if (unliked) {
+      await eventBus.publish(DomainEvents.LOOK_UNLIKED, {
+        lookId,
+        creatorId: look.creatorId,
+        userId,
+      });
+    }
     return { liked: false, likeCount };
   },
 
