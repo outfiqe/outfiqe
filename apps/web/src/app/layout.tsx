@@ -2,6 +2,7 @@ import "./globals.css";
 
 import { THEME_INIT_SCRIPT } from "@outfiqe/design-system";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 
 import { Providers } from "./providers";
 
@@ -20,11 +21,16 @@ export const metadata: Metadata = {
   },
 };
 
-const RootLayout = ({ children }: { children: React.ReactNode }) => {
+const RootLayout = async ({ children }: { children: React.ReactNode }) => {
+  const nonce = (await headers()).get("x-nonce");
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script
+          nonce={nonce ?? undefined}
+          dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+        />
       </head>
       <body>
         <Providers>{children}</Providers>
