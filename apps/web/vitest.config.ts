@@ -70,6 +70,8 @@ export default defineConfig({
         "src/features/explore/components/SuggestedCreatorsModal.tsx",
         "src/features/notifications/resolveNotificationHref.ts",
         "src/features/auth/api/userSchemas.ts",
+        "src/features/explore/utils/commentCacheUpdate.ts",
+        "src/features/explore/components/CommentThread.tsx",
       ],
       thresholds: {
         lines: 80,

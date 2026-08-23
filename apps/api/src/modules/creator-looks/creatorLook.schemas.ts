@@ -37,9 +37,16 @@ const DEFAULT_FEED_PAGE_SIZE = 12;
 const MAX_FEED_PAGE_SIZE = 30;
 const DEFAULT_COMMENT_PAGE_SIZE = 20;
 const MAX_COMMENT_PAGE_SIZE = 50;
+const DEFAULT_REPLY_PAGE_SIZE = 10;
+const MAX_REPLY_PAGE_SIZE = 30;
 
 export const lookIdParamsSchema = z.object({
   lookId: z.uuid(),
+});
+
+export const commentIdParamsSchema = z.object({
+  lookId: z.uuid(),
+  commentId: z.uuid(),
 });
 
 export const tagClickParamsSchema = z.object({
@@ -89,6 +96,15 @@ export const createCommentSchema = z.object({
   body: z.string().min(1).max(COMMENT_BODY_MAX).trim(),
 });
 
+export const repliesQuerySchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_REPLY_PAGE_SIZE).default(DEFAULT_REPLY_PAGE_SIZE),
+});
+
+export const createReplySchema = z.object({
+  body: z.string().min(1).max(COMMENT_BODY_MAX).trim(),
+});
+
 export const tagClickSchema = z.object({
   sessionId: z.string().min(1).max(SESSION_ID_MAX),
   source: z.enum(["FEED", "PRODUCT_PAGE"]).default("FEED"),
@@ -101,6 +117,7 @@ export const recordViewSchema = z.object({
 export type CreateCreatorLookBody = z.infer<typeof createCreatorLookSchema>;
 export type ListCreatorLooksQuery = z.infer<typeof listCreatorLooksQuerySchema>;
 export type LookIdParams = z.infer<typeof lookIdParamsSchema>;
+export type CommentIdParams = z.infer<typeof commentIdParamsSchema>;
 export type TagClickParams = z.infer<typeof tagClickParamsSchema>;
 export type FeedQuery = z.infer<typeof feedQuerySchema>;
 export type SearchCreatorLooksQuery = z.infer<typeof searchCreatorLooksQuerySchema>;
@@ -109,5 +126,7 @@ export type ListSavedQuery = z.infer<typeof listSavedQuerySchema>;
 export type FeedSyncRequest = z.infer<typeof feedSyncRequestSchema>;
 export type CommentsQuery = z.infer<typeof commentsQuerySchema>;
 export type CreateCommentBody = z.infer<typeof createCommentSchema>;
+export type RepliesQuery = z.infer<typeof repliesQuerySchema>;
+export type CreateReplyBody = z.infer<typeof createReplySchema>;
 export type TagClickBody = z.infer<typeof tagClickSchema>;
 export type RecordViewBody = z.infer<typeof recordViewSchema>;

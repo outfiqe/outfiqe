@@ -108,6 +108,7 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
 
         {commentsOpen && (
           <PostCommentsSection
+            lookId={id}
             isLoading={commentsLoading}
             comments={commentsData?.comments}
             isAuthenticated={isAuthenticated}

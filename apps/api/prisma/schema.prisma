@@ -479,16 +479,21 @@ model CreatorLookSave {
 }
 
 model CreatorLookComment {
-  id            String      @id @default(uuid()) @db.Uuid
-  creatorLookId String      @map("creator_look_id") @db.Uuid
-  userId        String      @map("user_id") @db.Uuid
-  body          String
-  deletedAt     DateTime?   @map("deleted_at")
-  createdAt     DateTime    @default(now()) @map("created_at")
-  creatorLook   CreatorLook @relation(fields: [creatorLookId], references: [id], onDelete: Cascade)
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String               @id @default(uuid()) @db.Uuid
+  creatorLookId   String               @map("creator_look_id") @db.Uuid
+  userId          String               @map("user_id") @db.Uuid
+  parentCommentId String?              @map("parent_comment_id") @db.Uuid
+  body            String
+  replyCount      Int                  @default(0) @map("reply_count")
+  deletedAt       DateTime?            @map("deleted_at")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  creatorLook     CreatorLook          @relation(fields: [creatorLookId], references: [id], onDelete: Cascade)
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentComment   CreatorLookComment?  @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  replies         CreatorLookComment[] @relation("CommentReplies")
 
   @@index([creatorLookId, deletedAt])
+  @@index([parentCommentId, createdAt])
   @@map("creator_look_comments")
 }
 
@@ -1239,6 +1244,7 @@ model UserBadge {
 enum NotificationType {
   LOOK_LIKED
   LOOK_COMMENTED
+  COMMENT_REPLIED
   NEW_FOLLOWER
   NEW_BRAND_FOLLOWER
   ACHIEVEMENT_UNLOCKED

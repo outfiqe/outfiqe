@@ -10,7 +10,10 @@ import {
   registerCreatorLeaderboardEventConsumer,
   registerCreatorLeaderboardSocketHandlers,
 } from "#modules/creator-leaderboard/creatorLeaderboard.socket.js";
-import { registerCreatorLookSocketHandlers } from "#modules/creator-looks/creatorLook.socket.js";
+import {
+  registerCommentEventConsumer,
+  registerCreatorLookSocketHandlers,
+} from "#modules/creator-looks/creatorLook.socket.js";
 import {
   registerLeaderboardEventConsumer,
   registerLeaderboardSocketHandlers,
@@ -37,6 +40,7 @@ const httpServer = createServer(app);
 initSocket(httpServer);
 registerSocketListeners();
 registerCreatorLookSocketHandlers();
+registerCommentEventConsumer();
 registerLeaderboardSocketHandlers();
 registerLeaderboardEventConsumer();
 registerCreatorLeaderboardSocketHandlers();

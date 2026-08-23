@@ -53,3 +53,5 @@ export const MASONRY_BREAKPOINT_COLUMNS = { default: 3, 1279: 2, 639: 1 };
 export const EXPLORE_GRID_BREAKPOINT_COLUMNS = { default: 3, 1279: 2 };
 
 export const SUGGESTED_CREATORS_MODAL_PAGE_SIZE = 12;
+
+export const COMMENT_REPLY_PREVIEW_COUNT = 2;

@@ -23,7 +23,7 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
 });
 
 describe("resolveNotificationHref", () => {
-  it("deep-links look likes and comments to the exact post on the owner's profile", () => {
+  it("deep-links look likes, comments, and comment replies to the exact post on the owner's profile", () => {
     const liked = buildNotification({ type: "LOOK_LIKED", entityId: "look-1" });
     expect(resolveNotificationHref(liked, OWN_HANDLE)).toBe(`/creator/${OWN_HANDLE}?look=look-1`);
 
@@ -31,6 +31,9 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(commented, OWN_HANDLE)).toBe(
       `/creator/${OWN_HANDLE}?look=look-2`,
     );
+
+    const replied = buildNotification({ type: "COMMENT_REPLIED", entityId: "look-3" });
+    expect(resolveNotificationHref(replied, OWN_HANDLE)).toBe(`/creator/${OWN_HANDLE}?look=look-3`);
   });
 
   it("falls back to the dashboard profile when the own handle or entityId is missing", () => {

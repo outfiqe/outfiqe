@@ -1,6 +1,7 @@
 export type NotificationType =
   | "LOOK_LIKED"
   | "LOOK_COMMENTED"
+  | "COMMENT_REPLIED"
   | "NEW_FOLLOWER"
   | "NEW_BRAND_FOLLOWER"
   | "ACHIEVEMENT_UNLOCKED"

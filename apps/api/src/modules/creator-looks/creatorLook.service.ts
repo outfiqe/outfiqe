@@ -31,6 +31,7 @@ import type {
 } from "./creatorLook.schemas.js";
 import type {
   CommentPage,
+  CommentReplyPage,
   CreatorLookEditDetail,
   CreatorLookFeedPost,
   CreatorLookSummary,
@@ -71,6 +72,24 @@ const requireOwnedLook = async (lookId: string, userId: string): Promise<Creator
   const look = await creatorLookRepository.findOwnedById(lookId, userId);
   if (!look) throw new AppError("LOOK_NOT_FOUND", "This post no longer exists.", NOT_FOUND_STATUS);
   return look;
+};
+
+const requireTopLevelComment = async (
+  lookId: string,
+  commentId: string,
+): Promise<{ id: string; creatorLookId: string; userId: string }> => {
+  const comment = await creatorLookRepository.findCommentById(commentId);
+  if (!comment || comment.creatorLookId !== lookId) {
+    throw new AppError("COMMENT_NOT_FOUND", "This comment no longer exists.", NOT_FOUND_STATUS);
+  }
+  if (comment.parentCommentId !== null) {
+    throw new AppError(
+      "COMMENT_NOT_TOP_LEVEL",
+      "You can only reply to a top-level comment.",
+      VALIDATION_STATUS,
+    );
+  }
+  return comment;
 };
 
 const requireApprovedProducts = async (productIds: string[]): Promise<void> => {
@@ -426,6 +445,31 @@ export const creatorLookService = {
       userId,
     });
     return comment;
+  },
+
+  async listReplies(
+    lookId: string,
+    commentId: string,
+    query: { cursor?: string; limit: number },
+  ): Promise<CommentReplyPage> {
+    await requireActiveLook(lookId);
+    await requireTopLevelComment(lookId, commentId);
+    return creatorLookRepository.listReplies(commentId, query);
+  },
+
+  async addReply(lookId: string, commentId: string, userId: string, body: string) {
+    const look = await requireActiveLook(lookId);
+    const parentComment = await requireTopLevelComment(lookId, commentId);
+    const reply = await creatorLookRepository.createReply(lookId, commentId, userId, body);
+    await eventBus.publish(DomainEvents.LOOK_COMMENT_REPLIED, {
+      lookId,
+      creatorId: look.creatorId,
+      parentCommentId: commentId,
+      parentCommentAuthorId: parentComment.userId,
+      replyId: reply.id,
+      userId,
+    });
+    return reply;
   },
 
   async recordTagClick(

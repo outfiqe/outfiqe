@@ -6,14 +6,17 @@ import { validated } from "#middlewares/validate.js";
 
 import type {
   AutocompleteQuery,
+  CommentIdParams,
   CommentsQuery,
   CreateCommentBody,
   CreateCreatorLookBody,
+  CreateReplyBody,
   FeedQuery,
   ListCreatorLooksQuery,
   ListSavedQuery,
   LookIdParams,
   RecordViewBody,
+  RepliesQuery,
   SearchCreatorLooksQuery,
   TagClickBody,
   TagClickParams,
@@ -153,6 +156,23 @@ export const creatorLookController = {
 
     const comment = await creatorLookService.addComment(lookId, userId, body);
     sendSuccess(res, comment, "Comment added.", CREATED_STATUS);
+  },
+
+  async listReplies(_req: Request, res: Response) {
+    const { lookId, commentId } = validated.params<CommentIdParams>(res);
+    const query = validated.query<RepliesQuery>(res);
+
+    const page = await creatorLookService.listReplies(lookId, commentId, query);
+    sendSuccess(res, page, "Replies.");
+  },
+
+  async addReply(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { lookId, commentId } = validated.params<CommentIdParams>(res);
+    const { body } = validated.body<CreateReplyBody>(res);
+
+    const reply = await creatorLookService.addReply(lookId, commentId, userId, body);
+    sendSuccess(res, reply, "Reply added.", CREATED_STATUS);
   },
 
   async recordTagClick(_req: Request, res: Response) {

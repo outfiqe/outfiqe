@@ -5,11 +5,12 @@ import { Skeleton } from "@outfiqe/design-system";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
-import { formatRelativeTime } from "@/shared/lib/formatRelativeTime";
 
 import type { FeedComment } from "../api/exploreFeedSchemas";
+import { CommentThread } from "./CommentThread";
 
 type PostCommentsSectionProps = {
+  lookId: string;
   isLoading: boolean;
   comments: FeedComment[] | undefined;
   isAuthenticated: boolean;
@@ -19,13 +20,13 @@ type PostCommentsSectionProps = {
   className?: string;
 };
 
-type CommentAvatarProps = {
+export type CommentAvatarProps = {
   userId: string;
   name: string;
   avatarUrl: string | null;
 };
 
-const CommentAvatar = ({ userId, name, avatarUrl }: CommentAvatarProps) => (
+export const CommentAvatar = ({ userId, name, avatarUrl }: CommentAvatarProps) => (
   <span
     aria-hidden
     className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cover bg-center text-[11px] font-bold text-white"
@@ -40,6 +41,7 @@ const CommentAvatar = ({ userId, name, avatarUrl }: CommentAvatarProps) => (
 );
 
 export const PostCommentsSection = ({
+  lookId,
   isLoading,
   comments,
   isAuthenticated,
@@ -63,26 +65,14 @@ export const PostCommentsSection = ({
         <p className="text-[12px] text-muted-foreground">No comments yet.</p>
       )}
       <ul className="flex flex-col gap-5">
-        {comments?.map((comment) => {
-          const { id, userId, userName, userHandle, userAvatarUrl, body, createdAt } = comment;
-
-          return (
-            <li key={id} className="flex items-start gap-3">
-              <CommentAvatar userId={userId} name={userName} avatarUrl={userAvatarUrl} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="truncate text-[13px] font-semibold text-foreground">
-                    @{userHandle}
-                  </span>
-                  <span className="shrink-0 text-[11px] text-muted-foreground">
-                    {formatRelativeTime(createdAt)}
-                  </span>
-                </div>
-                <p className="mt-0.5 text-[13px] leading-relaxed text-foreground">{body}</p>
-              </div>
-            </li>
-          );
-        })}
+        {comments?.map((comment) => (
+          <CommentThread
+            key={comment.id}
+            lookId={lookId}
+            comment={comment}
+            isAuthenticated={isAuthenticated}
+          />
+        ))}
       </ul>
 
       <form

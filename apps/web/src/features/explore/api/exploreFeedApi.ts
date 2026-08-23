@@ -6,8 +6,12 @@ import { getSessionId } from "@/shared/lib/sessionId";
 import {
   type CommentPage,
   commentPageSchema,
+  type CommentReplyPage,
+  commentReplyPageSchema,
+  commentReplySchema,
   commentSchema,
   type FeedComment,
+  type FeedCommentReply,
   type FeedPage,
   feedPageSchema,
   type FeedPost,
@@ -96,6 +100,24 @@ export const exploreFeedApi = {
   async addComment(lookId: string, body: string): Promise<FeedComment> {
     const res = await apiClient.post<FeedComment>(`/creator-looks/${lookId}/comments`, { body });
     return commentSchema.parse(res.data);
+  },
+
+  async listReplies(lookId: string, commentId: string, cursor?: string): Promise<CommentReplyPage> {
+    const params = new URLSearchParams();
+    if (cursor) params.set("cursor", cursor);
+
+    const res = await apiClient.get<CommentReplyPage>(
+      `/creator-looks/${lookId}/comments/${commentId}/replies?${params.toString()}`,
+    );
+    return commentReplyPageSchema.parse(res.data);
+  },
+
+  async addReply(lookId: string, commentId: string, body: string): Promise<FeedCommentReply> {
+    const res = await apiClient.post<FeedCommentReply>(
+      `/creator-looks/${lookId}/comments/${commentId}/replies`,
+      { body },
+    );
+    return commentReplySchema.parse(res.data);
   },
 
   async recordTagClick(

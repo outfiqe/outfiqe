@@ -82,6 +82,29 @@ export const registerNotificationEventConsumers = (): void => {
   });
 
   subscribeToDomainEvent({
+    event: DomainEvents.LOOK_COMMENT_REPLIED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ lookId, parentCommentAuthorId, userId: replierId }): Promise<void> => {
+      if (replierId === parentCommentAuthorId) return;
+
+      const [actor, look] = await Promise.all([
+        notificationRepository.findActorSnapshot(replierId),
+        notificationRepository.findLookSnapshot(lookId),
+      ]);
+      if (!actor) return;
+
+      await notificationService.notifyIndividual({
+        recipientId: parentCommentAuthorId,
+        actorId: replierId,
+        type: NotificationType.COMMENT_REPLIED,
+        entityType: NotificationEntityType.LOOK,
+        entityId: lookId,
+        metadata: { actor, lookImageUrl: look?.imageUrl, lookCaption: look?.caption ?? null },
+      });
+    },
+  });
+
+  subscribeToDomainEvent({
     event: DomainEvents.USER_FOLLOWED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
     handler: async ({ followerId, followingId }): Promise<void> => {
