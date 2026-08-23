@@ -21,6 +21,7 @@ import {
 } from "./oauth.constants.js";
 import { oauthRepository } from "./oauth.repository.js";
 import type {
+  LinkedOAuthAccount,
   OAuthIdentityResolution,
   OAuthLinkPendingRecord,
   OAuthProfile,
@@ -40,6 +41,11 @@ const OAUTH_LINK_PENDING_TTL_MS = OAUTH_STATE_TTL_MS;
 const PROVIDER_PARAM_TO_ENUM: Record<OAuthProviderParam, OAuthProvider> = {
   [OAuthProviderParam.GOOGLE]: OAuthProvider.GOOGLE,
   [OAuthProviderParam.FACEBOOK]: OAuthProvider.FACEBOOK,
+};
+
+const ENUM_TO_PROVIDER_PARAM: Record<OAuthProvider, OAuthProviderParam> = {
+  [OAuthProvider.GOOGLE]: OAuthProviderParam.GOOGLE,
+  [OAuthProvider.FACEBOOK]: OAuthProviderParam.FACEBOOK,
 };
 
 const PROVIDER_EXCHANGERS: Record<OAuthProviderParam, typeof exchangeGoogleAuthorizationCode> = {
@@ -421,5 +427,14 @@ export const oauthService = {
     }
 
     await oauthRepository.revokeOAuthIdentity(identity.id);
+  },
+
+  async listLinkedAccounts(userId: string): Promise<LinkedOAuthAccount[]> {
+    const identities = await oauthRepository.findActiveOAuthIdentitiesForUser(userId);
+    return identities.map((identity) => ({
+      provider: ENUM_TO_PROVIDER_PARAM[identity.provider],
+      emailAtLinkTime: identity.emailAtLinkTime,
+      connectedAt: identity.createdAt.toISOString(),
+    }));
   },
 };

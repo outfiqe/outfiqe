@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 import { TokenPurpose } from "#constants/enums/auth.enum.js";
 import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
+import { generateToken } from "#lib/generate-token.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { hashPassword } from "#lib/password.utils.js";
 import { signPurposeToken } from "#lib/purpose-token.utils.js";
@@ -875,7 +876,31 @@ describe("GET /api/auth/me", () => {
     expect(response.body.data).toMatchObject({
       id: user.id,
       email: user.email,
+      phone: user.phone,
       role: UserRole.CUSTOMER,
+      hasPassword: true,
     });
+  });
+
+  it("reports hasPassword false for an oauth-only account with no password", async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const oauthOnlyUser = await prisma.user.create({
+      data: {
+        email: `oauth-only-${suffix}@outfiqe.test`,
+        name: "OAuth Only",
+        handle: `oauth-only-${suffix}`,
+        phone: null,
+        passwordHash: null,
+        emailVerified: true,
+      },
+    });
+    const accessToken = generateToken({ sub: oauthOnlyUser.id, role: oauthOnlyUser.role });
+
+    const response = await request(testApp)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({ phone: null, hasPassword: false });
   });
 });

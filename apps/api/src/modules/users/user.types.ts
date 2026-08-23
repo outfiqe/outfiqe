@@ -32,7 +32,10 @@ export interface CreateUserInput {
 }
 
 export type UpdateUserProfileInput = Partial<
-  Pick<UserRecord, "name" | "avatarUrl" | "heightCm" | "showHeight" | "hideFromLeaderboards">
+  Pick<
+    UserRecord,
+    "name" | "phone" | "avatarUrl" | "heightCm" | "showHeight" | "hideFromLeaderboards"
+  >
 >;
 
 export interface PublicUser {

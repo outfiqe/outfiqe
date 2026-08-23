@@ -40,6 +40,12 @@ export type OAuthLinkPendingRecord = {
   emailAtLinkTime: string;
 };
 
+export type LinkedOAuthAccount = {
+  provider: OAuthProviderParam;
+  emailAtLinkTime: string;
+  connectedAt: string;
+};
+
 export type OAuthIdentityResolution =
   | { status: OAuthCallbackStatus.SIGNED_IN; tokens: IssuedTokens; redirectAfter: string }
   | { status: OAuthCallbackStatus.LINK_REQUIRED; linkToken: string; email: string }

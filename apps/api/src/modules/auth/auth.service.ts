@@ -572,7 +572,7 @@ export const authService = {
       throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
     }
 
-    const { id, name, handle, email, role, avatarUrl, isCreator, creatorStatus } = user;
+    const { id, name, email, role } = user;
 
     if (role === UserRole.BRAND_OWNER) {
       const membership = await authRepository.findBrandMembershipByUserId(id);
@@ -590,16 +590,7 @@ export const authService = {
       logger.warn(`Brand owner ${id} has no brand membership — returning degraded profile.`);
     }
 
-    return {
-      id,
-      name,
-      handle,
-      email,
-      avatarUrl,
-      role,
-      isCreator,
-      creatorStatus,
-    };
+    return toAuthUser(user);
   },
 
   async registerBrand(input: RegisterBrandInput): Promise<BrandAuthSession> {
@@ -795,16 +786,7 @@ export const authService = {
 
     return {
       ...tokens,
-      user: {
-        id: user.id,
-        name: user.name,
-        handle: user.handle,
-        email: user.email,
-        avatarUrl: user.avatarUrl,
-        role: user.role,
-        isCreator: user.isCreator,
-        creatorStatus: user.creatorStatus,
-      },
+      user: toAuthUser(user),
     };
   },
 };

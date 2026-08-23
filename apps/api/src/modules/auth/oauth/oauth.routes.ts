@@ -47,6 +47,8 @@ const oauthLinkConfirmIpRateLimit = rateLimit({
 
 export const oauthRoutes = Router();
 
+oauthRoutes.get("/linked", requireAuth, oauthController.linked);
+
 oauthRoutes.get(
   "/:provider/start",
   oauthStartIpRateLimit,

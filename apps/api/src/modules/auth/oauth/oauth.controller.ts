@@ -123,4 +123,11 @@ export const oauthController = {
     await oauthService.unlinkIdentity(userId, provider, password);
     sendSuccess(res, null, "Account disconnected.");
   },
+
+  async linked(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+
+    const accounts = await oauthService.listLinkedAccounts(userId);
+    sendSuccess(res, { accounts }, "Linked accounts.");
+  },
 };

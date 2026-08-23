@@ -65,10 +65,12 @@ export type AuthUser = {
   name: string;
   handle: string;
   email: string;
+  phone: string | null;
   avatarUrl: string | null;
   role: UserRole;
   isCreator: boolean;
   creatorStatus: CreatorStatus;
+  hasPassword: boolean;
 };
 
 export type BrandAuthUser = {

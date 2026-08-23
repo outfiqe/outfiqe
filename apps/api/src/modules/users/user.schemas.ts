@@ -16,6 +16,7 @@ export const userIdParamSchema = z.object({
 export const updateOwnProfileSchema = z
   .object({
     name: z.string().trim().min(1).max(100),
+    phone: phoneSchema,
     avatarUrl: z.url().nullable(),
   })
   .partial();

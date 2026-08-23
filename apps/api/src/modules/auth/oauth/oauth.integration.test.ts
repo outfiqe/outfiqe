@@ -581,3 +581,45 @@ describe("DELETE /api/auth/oauth/:provider/link", () => {
     expect(response.status).toBe(200);
   });
 });
+
+describe("GET /api/auth/oauth/linked", () => {
+  it("requires authentication", async () => {
+    const response = await request(testApp).get("/api/auth/oauth/linked");
+
+    expect(response.status).toBe(401);
+  });
+
+  it("lists the caller's active linked providers", async () => {
+    const { user, password } = await createPasswordUser();
+    await prisma.oAuthIdentity.create({
+      data: {
+        userId: user.id,
+        provider: OAuthProvider.GOOGLE,
+        providerUserId: `google-${randomUUID()}`,
+        emailAtLinkTime: user.email,
+      },
+    });
+    const revokedIdentity = await prisma.oAuthIdentity.create({
+      data: {
+        userId: user.id,
+        provider: OAuthProvider.FACEBOOK,
+        providerUserId: `facebook-${randomUUID()}`,
+        emailAtLinkTime: user.email,
+      },
+    });
+    await prisma.oAuthIdentity.update({
+      where: { id: revokedIdentity.id },
+      data: { revokedAt: new Date() },
+    });
+    const accessToken = await loginAndGetAccessToken(user.email, password);
+
+    const response = await request(testApp)
+      .get("/api/auth/oauth/linked")
+      .set(...bearer(accessToken));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.accounts).toEqual([
+      expect.objectContaining({ provider: "google", emailAtLinkTime: user.email }),
+    ]);
+  });
+});
