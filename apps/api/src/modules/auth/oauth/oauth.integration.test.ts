@@ -61,13 +61,19 @@ const expectNoSessionCookies = (response: request.Response): void => {
   expect(extractCookieValue(response, "has_session")).toBeUndefined();
 };
 
+const redirectLocationOf = (response: request.Response): URL => {
+  const location = response.headers.location as string | undefined;
+  if (!location) throw new Error("Expected a Location header on the redirect response");
+  return new URL(location);
+};
+
 const startGoogleFlow = async (redirectAfter?: string): Promise<{ state: string }> => {
   const response = await request(testApp)
     .get("/api/auth/oauth/google/start")
     .query(redirectAfter !== undefined ? { redirect: redirectAfter } : {});
 
   expect(response.status).toBe(302);
-  const location = new URL(response.headers.location);
+  const location = redirectLocationOf(response);
   const state = location.searchParams.get("state");
   if (!state)
     throw new Error(`No state param found in redirect location: ${response.headers.location}`);
@@ -115,7 +121,7 @@ const startGoogleLinkFlow = async (accessToken: string): Promise<{ state: string
     .set(...bearer(accessToken));
 
   expect(response.status).toBe(302);
-  const location = new URL(response.headers.location);
+  const location = redirectLocationOf(response);
   const state = location.searchParams.get("state");
   if (!state)
     throw new Error(`No state param found in redirect location: ${response.headers.location}`);
@@ -128,7 +134,7 @@ describe("GET /api/auth/oauth/:provider/start", () => {
     const response = await request(testApp).get("/api/auth/oauth/google/start");
 
     expect(response.status).toBe(302);
-    const location = new URL(response.headers.location);
+    const location = redirectLocationOf(response);
     expect(location.origin + location.pathname).toBe(
       "https://accounts.google.com/o/oauth2/v2/auth",
     );
@@ -236,7 +242,7 @@ describe("GET /api/auth/oauth/:provider/callback", () => {
     const response = await callGoogleCallback({ code: "test-code", state });
 
     expect(response.status).toBe(302);
-    const location = new URL(response.headers.location);
+    const location = redirectLocationOf(response);
     expect(location.pathname).toBe("/auth/oauth-callback");
     expect(location.searchParams.get("email")).toBe(existingUser.email);
     expect(location.searchParams.get("provider")).toBe("google");
@@ -261,7 +267,7 @@ describe("GET /api/auth/oauth/:provider/callback", () => {
     const response = await callGoogleCallback({ code: "test-code", state });
 
     expect(response.status).toBe(302);
-    const location = new URL(response.headers.location);
+    const location = redirectLocationOf(response);
     expect(location.pathname).toBe("/auth/oauth-callback");
     expect(location.searchParams.get("error")).toBeTruthy();
     expectNoSessionCookies(response);
@@ -274,7 +280,7 @@ describe("GET /api/auth/oauth/:provider/callback", () => {
     const response = await callGoogleCallback({ code: "test-code", state: "never-issued-state" });
 
     expect(response.status).toBe(302);
-    const location = new URL(response.headers.location);
+    const location = redirectLocationOf(response);
     expect(location.pathname).toBe("/auth/oauth-callback");
     expect(location.searchParams.get("error")).toBeTruthy();
     expectNoSessionCookies(response);
@@ -292,7 +298,7 @@ describe("GET /api/auth/oauth/:provider/callback", () => {
     const replayedResponse = await callGoogleCallback({ code: "test-code", state });
 
     expect(replayedResponse.status).toBe(302);
-    const location = new URL(replayedResponse.headers.location);
+    const location = redirectLocationOf(replayedResponse);
     expect(location.searchParams.get("error")).toBeTruthy();
     expectNoSessionCookies(replayedResponse);
     expect(googleExchangeMock).toHaveBeenCalledTimes(1);
@@ -306,7 +312,7 @@ describe("GET /api/auth/oauth/:provider/callback", () => {
       .query({ code: "test-code", state });
 
     expect(response.status).toBe(302);
-    const location = new URL(response.headers.location);
+    const location = redirectLocationOf(response);
     expect(location.searchParams.get("error")).toBeTruthy();
     expectNoSessionCookies(response);
     expect(facebookExchangeMock).not.toHaveBeenCalled();
@@ -316,7 +322,7 @@ describe("GET /api/auth/oauth/:provider/callback", () => {
     const response = await callGoogleCallback({ error: "access_denied" });
 
     expect(response.status).toBe(302);
-    const location = new URL(response.headers.location);
+    const location = redirectLocationOf(response);
     expect(location.pathname).toBe("/auth/oauth-callback");
     expect(location.searchParams.get("error")).toBeTruthy();
     expectNoSessionCookies(response);
@@ -351,7 +357,7 @@ describe("GET /api/auth/oauth/:provider/link/start", () => {
       .set(...bearer(accessToken));
 
     expect(response.status).toBe(302);
-    const location = new URL(response.headers.location);
+    const location = redirectLocationOf(response);
     expect(location.origin + location.pathname).toBe(
       "https://accounts.google.com/o/oauth2/v2/auth",
     );
@@ -370,7 +376,7 @@ describe("GET /api/auth/oauth/:provider/callback (link intent)", () => {
     const response = await callGoogleCallback({ code: "test-code", state });
 
     expect(response.status).toBe(302);
-    const location = new URL(response.headers.location);
+    const location = redirectLocationOf(response);
     expect(location.pathname).toBe("/dashboard/settings/security");
     expect(location.searchParams.get("linked")).toBe("google");
     expectNoSessionCookies(response);
@@ -407,7 +413,7 @@ describe("GET /api/auth/oauth/:provider/callback (link intent)", () => {
     const response = await callGoogleCallback({ code: "test-code", state });
 
     expect(response.status).toBe(302);
-    const location = new URL(response.headers.location);
+    const location = redirectLocationOf(response);
     expect(location.searchParams.get("error")).toBeTruthy();
 
     const identity = await prisma.oAuthIdentity.findUniqueOrThrow({
@@ -430,7 +436,7 @@ describe("POST /api/auth/oauth/:provider/link/confirm", () => {
 
     const { state } = await startGoogleFlow();
     const collisionResponse = await callGoogleCallback({ code: "test-code", state });
-    const linkToken = new URL(collisionResponse.headers.location).searchParams.get("linkToken");
+    const linkToken = redirectLocationOf(collisionResponse).searchParams.get("linkToken");
     if (!linkToken) throw new Error("Expected a linkToken from the collision redirect");
 
     const response = await request(testApp)
@@ -462,7 +468,7 @@ describe("POST /api/auth/oauth/:provider/link/confirm", () => {
 
     const { state } = await startGoogleFlow();
     const collisionResponse = await callGoogleCallback({ code: "test-code", state });
-    const linkToken = new URL(collisionResponse.headers.location).searchParams.get("linkToken");
+    const linkToken = redirectLocationOf(collisionResponse).searchParams.get("linkToken");
     if (!linkToken) throw new Error("Expected a linkToken from the collision redirect");
 
     const wrongAttempt = await request(testApp)
@@ -568,7 +574,7 @@ describe("DELETE /api/auth/oauth/:provider/link", () => {
     const linkStartResponse = await request(testApp)
       .get("/api/auth/oauth/facebook/link/start")
       .set(...bearer(accessToken));
-    const linkState = new URL(linkStartResponse.headers.location).searchParams.get("state");
+    const linkState = redirectLocationOf(linkStartResponse).searchParams.get("state");
     if (!linkState) throw new Error("Expected a state param from the link/start redirect");
     await request(testApp)
       .get("/api/auth/oauth/facebook/callback")

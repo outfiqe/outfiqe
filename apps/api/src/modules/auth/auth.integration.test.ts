@@ -46,7 +46,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const waitForPasswordHashUpgrade = async (userId: string): Promise<string> => {
   for (let attempt = 0; attempt < PASSWORD_UPGRADE_POLL_ATTEMPTS; attempt += 1) {
     const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
-    if (user.passwordHash.startsWith("$argon2id$")) return user.passwordHash;
+    if (user.passwordHash?.startsWith("$argon2id$")) return user.passwordHash;
     await wait(PASSWORD_UPGRADE_POLL_INTERVAL_MS);
   }
 
@@ -829,6 +829,7 @@ describe("POST /api/auth/reset-password", () => {
     expect(statuses).toEqual([200, 400]);
 
     const [loser] = [first, second].filter((response) => response.status === 400);
+    if (!loser) throw new Error("Expected exactly one of the concurrent resets to lose the race");
     expect(loser.body.code).toBe("INVALID_TOKEN");
 
     const usedTokenRowCount = await prisma.usedPurposeToken.count();
