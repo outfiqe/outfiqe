@@ -21,6 +21,9 @@ import { withIdempotency } from "#lib/idempotency.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { GATEWAY_FEE_BY_PROVIDER_NPR } from "#modules/brand-payouts/brandPayout.constants.js";
+import { brandPayoutRepository } from "#modules/brand-payouts/brandPayout.repository.js";
+import { computePlatformFee } from "#modules/brand-payouts/brandPayout.utils.js";
 import { cartRepository } from "#modules/cart/cart.repository.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
 import { creatorLinkRepository } from "#modules/creator-links/creatorLink.repository.js";
@@ -60,6 +63,7 @@ const CART_EMPTY_STATUS = 400;
 const ITEMS_UNAVAILABLE_STATUS = 409;
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
+const SERVICE_UNAVAILABLE_STATUS = 503;
 
 const FULFILMENT_ADVANCE_FROM: Partial<Record<FulfilmentStatus, FulfilmentStatus[]>> = {
   [FulfilmentStatus.PACKED]: [FulfilmentStatus.PLACED],
@@ -105,7 +109,13 @@ const checkoutOnce = async (
 
   const { id: cartId } = await cartRepository.getOrCreateCart(userId);
 
-  let lines: { productId: string; sizeId: string; qty: number; unitPrice: number }[];
+  let lines: {
+    productId: string;
+    sizeId: string;
+    qty: number;
+    unitPrice: number;
+    brandId: string;
+  }[];
 
   if (buyNow) {
     const product = await productRepository.findById(buyNow.productId);
@@ -124,6 +134,7 @@ const checkoutOnce = async (
         sizeId: buyNow.sizeId,
         qty: buyNow.qty,
         unitPrice: product.price,
+        brandId: product.brandId,
       },
     ];
   } else {
@@ -136,6 +147,7 @@ const checkoutOnce = async (
       sizeId,
       qty,
       unitPrice: product.price,
+      brandId: product.brandId,
     }));
   }
 
@@ -172,13 +184,14 @@ const checkoutOnce = async (
   );
 
   const items: CreateOrderItemInput[] = lines.map((line, index) => {
+    const { brandId: _brandId, ...orderItemLine } = line;
     const attribution = attributions[index];
-    if (!attribution) return { ...line, attributionSource: undefined };
+    if (!attribution) return { ...orderItemLine, attributionSource: undefined };
 
     const { source, creatorId, referenceId } = attribution;
     const isTagClick = source === CommissionSource.TAG_CLICK;
     return {
-      ...line,
+      ...orderItemLine,
       attributedCreatorId: creatorId,
       attributedCreatorLookId: isTagClick ? referenceId : undefined,
       attributedLinkId: isTagClick ? undefined : referenceId,
@@ -192,6 +205,15 @@ const checkoutOnce = async (
     paymentMethod === PaymentMethod.COD
       ? PaymentTransactionStatus.SUCCEEDED
       : PaymentTransactionStatus.INITIATED;
+
+  const commissionRule = await brandPayoutRepository.findActiveRule();
+  if (!commissionRule) {
+    throw new AppError(
+      "COMMISSION_RULE_NOT_CONFIGURED",
+      "Checkout isn't available right now. Please try again shortly.",
+      SERVICE_UNAVAILABLE_STATUS,
+    );
+  }
 
   const createdCommissions: { creatorId: string; orderItemId: string; amount: number }[] = [];
 
@@ -231,6 +253,23 @@ const checkoutOnce = async (
     });
 
     for (const [index, orderItem] of createdOrder.items.entries()) {
+      const line = lines[index];
+      if (line) {
+        const grossAmount = line.unitPrice * line.qty;
+        const platformFee = computePlatformFee(grossAmount, commissionRule.ratePercentBasisPoints);
+        const gatewayFee = GATEWAY_FEE_BY_PROVIDER_NPR;
+
+        await brandPayoutRepository.createPending(tx, {
+          orderItemId: orderItem.id,
+          brandId: line.brandId,
+          commissionRuleId: commissionRule.id,
+          grossAmount,
+          platformFee,
+          gatewayFee,
+          netAmount: grossAmount - platformFee - gatewayFee,
+        });
+      }
+
       const attribution = attributions[index];
       const tier = tiers[index];
       if (!attribution || !tier) continue;
@@ -365,6 +404,7 @@ export const orderService = {
 
       await productService.restoreStockForItems(tx, order.items);
       await commissionRepository.voidForOrder(tx, orderId, reason);
+      await brandPayoutRepository.voidForOrder(tx, orderId, reason);
 
       if (refundOutcome) {
         await paymentRepository.recordRefund(

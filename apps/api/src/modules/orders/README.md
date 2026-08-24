@@ -12,6 +12,27 @@ COD orders decrement stock immediately, inside the checkout transaction — ther
 
 Everything read-only (cart contents, stock levels, attribution resolution, commission tier lookup) happens _before_ `prisma.$transaction` opens. Only the stock decrement, the order+items insert, and the commission inserts happen inside it — kept short deliberately, no gateway or email call is ever inside a transaction. Verified against the real DB: two concurrent checkouts for a size with exactly 1 unit left resolve to one success and one clean `ITEMS_UNAVAILABLE`, with final stock at 0.
 
+## Settlement ledger: `BrandPayout` is created for every item, not just attributed ones
+
+`checkoutOnce` creates one `BrandPayout` per order item inside the same transaction as
+`CreatorCommission` — but unlike commissions (attributed sales only), **every** item gets one,
+regardless of creator attribution. A brand is owed its cut of a sale whether or not a creator
+sourced it; commission is an additional payout on top, not a substitute. The active
+`PlatformCommissionRule` is read once before the transaction opens (a rule change mid-checkout
+isn't a correctness issue — rule rows are deactivated, never deleted, so the FK stays valid
+either way) and snapshotted onto each `BrandPayout` (`commissionRuleId`, `platformFee`), same
+"never let a later rate change retroactively touch an existing payable" rule commission tiers
+already follow. See `brand-payouts/README.md` for the fee math and lifecycle.
+
+`orderService.cancel`'s transaction voids `PENDING` `BrandPayout` rows the same way it already
+voids `PENDING` commissions — one more atomic conditional update, no new failure mode.
+
+`brandId` is resolved per line (from the product, threaded through `lines`) purely for building
+the `BrandPayout` row — it must **not** leak into the `OrderItem` create payload (`OrderItem` has
+no `brandId` column). `items` is built by destructuring `brandId` back out of each line before
+spreading it into the Prisma create call; this was an actual `PrismaClientValidationError` caught
+by the checkout integration test, not a hypothetical one.
+
 ## Idempotency is claim-first, not check-then-write
 
 `withIdempotency` inserts a `RequestIdempotency` row with a pending sentinel _before_ running the handler — the unique constraint on `(userId, endpoint, key)` is what makes the claim atomic. A losing concurrent request gets a `DUPLICATE_REQUEST` 409, not a silently-created second order. An earlier check-then-write version of this was tested and proven to let two concurrent requests both create orders; this version was verified to produce exactly one success and one 409 under the same conditions.

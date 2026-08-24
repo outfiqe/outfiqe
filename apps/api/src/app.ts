@@ -16,6 +16,7 @@ import { badgeRoutes } from "./modules/badges/badge.routes.js";
 import { bankAccountRoutes } from "./modules/bank-accounts/bankAccount.routes.js";
 import { brandApplicationRoutes } from "./modules/brand-applications/brandApplication.routes.js";
 import { brandBankAccountRoutes } from "./modules/brand-bank-accounts/brandBankAccount.routes.js";
+import { brandPayoutRoutes } from "./modules/brand-payouts/brandPayout.routes.js";
 import { brandRoutes } from "./modules/brands/brand.routes.js";
 import { cartRoutes } from "./modules/cart/cart.routes.js";
 import { categoryRoutes } from "./modules/categories/category.routes.js";
@@ -124,6 +125,7 @@ export const createApp = () => {
   app.use("/api/banks", nepalBankRoutes);
   app.use("/api/bank-accounts", bankAccountRoutes);
   app.use("/api/brand-bank-accounts", brandBankAccountRoutes);
+  app.use("/api/brand-payouts", brandPayoutRoutes);
 
   Sentry.setupExpressErrorHandler(app);
   app.use(errorHandler);

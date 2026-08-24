@@ -65,6 +65,8 @@ export default defineConfig({
         "src/shared/utils/bank-account-body.schemas.ts",
         "src/shared/utils/name-mismatch.utils.ts",
         "src/modules/brand-bank-accounts/**/*.ts",
+        "src/modules/brand-payouts/**/*.ts",
+        "src/shared/utils/lifecycle-sweep.utils.ts",
       ],
       thresholds: {
         lines: 80,

@@ -47,14 +47,6 @@ export const bankAccountRepository = {
     return rows.map(flattenBankName);
   },
 
-  async findByIdForUser(id: string, userId: string): Promise<BankAccountWithBankName | null> {
-    const record = await prisma.bankAccount.findFirst({
-      where: { id, userId },
-      include: withBankName,
-    });
-    return record ? flattenBankName(record) : null;
-  },
-
   async findById(id: string): Promise<BankAccountRecord | null> {
     return prisma.bankAccount.findUnique({ where: { id } });
   },
@@ -79,17 +71,6 @@ export const bankAccountRepository = {
       data: { isVerified: true, verifiedAt: new Date(), verifiedById: adminId },
     });
     return result.count > 0;
-  },
-
-  async stampFirstPayoutCrossCheck(
-    id: string,
-    adminId: string,
-    client: DbClient = prisma,
-  ): Promise<void> {
-    await client.bankAccount.update({
-      where: { id },
-      data: { firstPayoutCrossCheckedAt: new Date(), firstPayoutCrossCheckedById: adminId },
-    });
   },
 
   async createAccessLog(bankAccountId: string, adminId: string): Promise<void> {

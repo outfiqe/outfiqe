@@ -1,0 +1,2 @@
+export const BASIS_POINTS_PER_PERCENT = 100;
+export const GATEWAY_FEE_BY_PROVIDER_NPR = 0;

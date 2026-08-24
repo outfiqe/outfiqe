@@ -1,0 +1,125 @@
+import { prisma } from "#db/prisma.js";
+import { BrandPayoutStatus, FulfilmentStatus, PaymentStatus } from "#generated/prisma/enums.js";
+import type { DbClient } from "#types/db.types.js";
+
+import type {
+  CreatePendingBrandPayoutInput,
+  PlatformCommissionRuleRecord,
+} from "./brandPayout.types.js";
+
+export const brandPayoutRepository = {
+  async findActiveRule(client: DbClient = prisma): Promise<PlatformCommissionRuleRecord | null> {
+    return client.platformCommissionRule.findFirst({ where: { isActive: true } });
+  },
+
+  async listRules(): Promise<PlatformCommissionRuleRecord[]> {
+    return prisma.platformCommissionRule.findMany({ orderBy: { createdAt: "desc" } });
+  },
+
+  async createActiveRule(
+    ratePercentBasisPoints: number,
+    adminId: string,
+  ): Promise<PlatformCommissionRuleRecord> {
+    return prisma.$transaction(async (tx) => {
+      await tx.platformCommissionRule.updateMany({
+        where: { isActive: true },
+        data: { isActive: false },
+      });
+      return tx.platformCommissionRule.create({
+        data: { ratePercentBasisPoints, isActive: true, updatedById: adminId },
+      });
+    });
+  },
+
+  async createPending(client: DbClient, input: CreatePendingBrandPayoutInput): Promise<void> {
+    await client.brandPayout.create({ data: input });
+  },
+
+  async findApprovableIds(deliveredBefore: Date): Promise<string[]> {
+    const rows = await prisma.brandPayout.findMany({
+      where: {
+        status: BrandPayoutStatus.PENDING,
+        orderItem: {
+          order: {
+            fulfilmentStatus: FulfilmentStatus.DELIVERED,
+            deliveredAt: { lte: deliveredBefore },
+          },
+        },
+      },
+      select: { id: true },
+    });
+    return rows.map((row) => row.id);
+  },
+
+  async findVoidableForCancelledIds(): Promise<string[]> {
+    const rows = await prisma.brandPayout.findMany({
+      where: {
+        status: BrandPayoutStatus.PENDING,
+        orderItem: { order: { fulfilmentStatus: FulfilmentStatus.CANCELLED } },
+      },
+      select: { id: true },
+    });
+    return rows.map((row) => row.id);
+  },
+
+  async findVoidableForFailedPaymentIds(): Promise<string[]> {
+    const rows = await prisma.brandPayout.findMany({
+      where: {
+        status: BrandPayoutStatus.PENDING,
+        orderItem: {
+          order: { paymentStatus: { in: [PaymentStatus.FAILED, PaymentStatus.REFUNDED] } },
+        },
+      },
+      select: { id: true },
+    });
+    return rows.map((row) => row.id);
+  },
+
+  async approve(id: string): Promise<boolean> {
+    const result = await prisma.brandPayout.updateMany({
+      where: { id, status: BrandPayoutStatus.PENDING },
+      data: { status: BrandPayoutStatus.AVAILABLE, availableAt: new Date() },
+    });
+    return result.count > 0;
+  },
+
+  async void(id: string, voidedReason: string): Promise<boolean> {
+    const result = await prisma.brandPayout.updateMany({
+      where: { id, status: BrandPayoutStatus.PENDING },
+      data: { status: BrandPayoutStatus.VOIDED, voidedReason },
+    });
+    return result.count > 0;
+  },
+
+  async voidForOrder(client: DbClient, orderId: string, voidedReason: string): Promise<number> {
+    const result = await client.brandPayout.updateMany({
+      where: { orderItem: { orderId }, status: BrandPayoutStatus.PENDING },
+      data: { status: BrandPayoutStatus.VOIDED, voidedReason },
+    });
+    return result.count;
+  },
+
+  async sumByStatusForBrand(brandId: string): Promise<Partial<Record<BrandPayoutStatus, number>>> {
+    const grouped = await prisma.brandPayout.groupBy({
+      by: ["status"],
+      where: { brandId },
+      _sum: { netAmount: true },
+    });
+
+    const sums: Partial<Record<BrandPayoutStatus, number>> = {};
+    for (const { status, _sum } of grouped) {
+      sums[status] = _sum.netAmount ?? 0;
+    }
+    return sums;
+  },
+
+  async listForBrand(brandId: string, params: { cursor?: string; limit: number }) {
+    return prisma.brandPayout.findMany({
+      where: { brandId },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: params.limit + 1,
+      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
+      include: { orderItem: { select: { product: { select: { name: true, imageUrl: true } } } } },
+    });
+  },
+};

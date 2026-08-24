@@ -3,6 +3,7 @@ import { DYNAMIC_BADGE_RECHECK_INTERVAL_MS } from "#modules/achievements/achieve
 import { achievementService } from "#modules/achievements/achievement.service.js";
 import { AUTH_RETENTION_SWEEP_INTERVAL_MS } from "#modules/auth/auth.constants.js";
 import { runAuthRetentionSweep } from "#modules/auth/auth.retention.js";
+import { runBrandPayoutLifecycleSweep } from "#modules/brand-payouts/brandPayout.lifecycle.js";
 import { COMMISSION_SWEEP_INTERVAL_MS } from "#modules/commissions/commission.constants.js";
 import { runCommissionLifecycleSweep } from "#modules/commissions/commission.lifecycle.js";
 import { creatorCompetitionService } from "#modules/creator-competitions/creatorCompetition.service.js";
@@ -41,6 +42,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
   {
     name: "commission-lifecycle",
     run: runCommissionLifecycleSweep,
+    intervalMs: COMMISSION_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "brand-payout-lifecycle",
+    run: runBrandPayoutLifecycleSweep,
     intervalMs: COMMISSION_SWEEP_INTERVAL_MS,
   },
   {

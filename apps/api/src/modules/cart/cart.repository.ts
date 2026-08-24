@@ -53,7 +53,13 @@ export const cartRepository = {
       orderBy: { createdAt: "asc" },
       include: {
         product: {
-          select: { name: true, price: true, imageUrl: true, brand: { select: { name: true } } },
+          select: {
+            name: true,
+            price: true,
+            imageUrl: true,
+            brandId: true,
+            brand: { select: { name: true } },
+          },
         },
         size: { select: { label: true } },
       },
