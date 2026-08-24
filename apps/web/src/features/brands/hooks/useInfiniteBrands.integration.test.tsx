@@ -17,6 +17,7 @@ const buildBrand = (id: string) => ({
   productCount: 4,
   followerCount: 10,
   isFollowing: false,
+  contactUserId: null,
 });
 
 const wrapper = ({ children }: { children: ReactNode }) => {
