@@ -82,6 +82,9 @@ export type LevelUpPayload = {
 export type NotificationReadPayload = { id: string };
 export type NotificationReadAllPayload = { readAt: string };
 
+export type ChatSettingsUpdatedPayload = { isChatEnabled: boolean };
+export type ChatBlockListUpdatedPayload = { updatedAt: string };
+
 export type CommentSubscriptionPayload = {
   lookId: string;
 };
@@ -124,6 +127,8 @@ export type ServerToClientEvents = {
   "notification:read-all": (payload: NotificationReadAllPayload) => void;
   "comment:created": (payload: CommentCreatedPayload) => void;
   "comment:reply:created": (payload: CommentReplyCreatedPayload) => void;
+  "chat:settings:updated": (payload: ChatSettingsUpdatedPayload) => void;
+  "chat:block-list:updated": (payload: ChatBlockListUpdatedPayload) => void;
 };
 
 export type ClientToServerEvents = {

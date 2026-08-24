@@ -6,6 +6,7 @@ import { stopDomainEventConsumers } from "#events/event-bus.consumer.js";
 import logger from "#lib/winston.utils.js";
 import { registerAchievementEventConsumers } from "#modules/achievements/achievement.events.js";
 import { registerAchievementSocketEventConsumer } from "#modules/achievements/achievement.socket.js";
+import { registerChatSocketEventConsumer } from "#modules/chat/chat.socket.js";
 import {
   registerCreatorLeaderboardEventConsumer,
   registerCreatorLeaderboardSocketHandlers,
@@ -51,6 +52,7 @@ registerNotificationEventConsumers();
 registerXpSocketEventConsumer();
 registerAchievementSocketEventConsumer();
 registerNotificationSocketEventConsumer();
+registerChatSocketEventConsumer();
 
 startIntervalScheduler(INTERVAL_JOBS);
 startBoundaryScheduler(BOUNDARY_JOBS);

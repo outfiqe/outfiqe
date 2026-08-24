@@ -97,6 +97,8 @@ export type DomainEventPayloads = {
   };
   [DomainEvents.NOTIFICATION_CREATED]: NotificationBroadcastPayload;
   [DomainEvents.NOTIFICATION_UPDATED]: NotificationBroadcastPayload;
+  [DomainEvents.CHAT_SETTINGS_UPDATED]: { userId: string; isChatEnabled: boolean };
+  [DomainEvents.CHAT_BLOCK_LIST_UPDATED]: { userId: string };
 };
 
 export type DomainEventHandler<E extends DomainEvent> = (

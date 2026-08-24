@@ -32,6 +32,8 @@ export const SOCKET_EVENTS = {
   COMMENTS_UNSUBSCRIBE: "comments:unsubscribe",
   COMMENT_CREATED: "comment:created",
   COMMENT_REPLY_CREATED: "comment:reply:created",
+  CHAT_SETTINGS_UPDATED: "chat:settings:updated",
+  CHAT_BLOCK_LIST_UPDATED: "chat:block-list:updated",
 } as const;
 
 export const SOCKET_RATE_LIMIT = {

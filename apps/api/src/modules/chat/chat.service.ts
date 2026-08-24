@@ -1,3 +1,4 @@
+import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -49,6 +50,10 @@ export const chatService = {
     }
 
     const settings = await chatRepository.upsertSettings(userId, isChatEnabled);
+    await eventBus.publish(DomainEvents.CHAT_SETTINGS_UPDATED, {
+      userId,
+      isChatEnabled: settings.isChatEnabled,
+    });
     return { isChatEnabled: settings.isChatEnabled };
   },
 
@@ -64,11 +69,17 @@ export const chatService = {
     await requireBlockableTarget(targetId);
 
     const existing = await chatRepository.findBlockBetween(userId, targetId);
-    if (!existing) await chatRepository.createBlock(userId, targetId);
+    if (!existing) {
+      await chatRepository.createBlock(userId, targetId);
+      await eventBus.publish(DomainEvents.CHAT_BLOCK_LIST_UPDATED, { userId });
+    }
   },
 
   async unblockUser(userId: string, targetId: string): Promise<void> {
-    await chatRepository.deleteBlock(userId, targetId);
+    const wasDeleted = await chatRepository.deleteBlock(userId, targetId);
+    if (wasDeleted) {
+      await eventBus.publish(DomainEvents.CHAT_BLOCK_LIST_UPDATED, { userId });
+    }
   },
 
   async listBlockedUsers(
