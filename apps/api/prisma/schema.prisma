@@ -75,6 +75,8 @@ model User {
   chatSettings              ChatSettings?
   chatBlocksInitiated       ChatBlock[]                @relation("ChatBlocksInitiated")
   chatBlocksReceived        ChatBlock[]                @relation("ChatBlocksReceived")
+  conversationParticipants  ConversationParticipant[]
+  messagesSent              Message[]                  @relation("MessageSender")
 
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
@@ -1315,6 +1317,7 @@ enum NotificationType {
   BRAND_APPLICATION_SUBMITTED
   PRODUCT_REVIEWED
   REVIEW_REQUESTED
+  NEW_MESSAGE
 }
 
 enum NotificationEntityType {
@@ -1324,6 +1327,7 @@ enum NotificationEntityType {
   BRAND_APPLICATION
   BADGE
   PRODUCT
+  CONVERSATION
 }
 
 model Notification {
@@ -1380,4 +1384,54 @@ model ChatBlock {
   @@id([blockerId, blockedId])
   @@index([blockedId])
   @@map("chat_blocks")
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+  SUPPORT
+}
+
+model Conversation {
+  id                 String            @id @default(uuid()) @db.Uuid
+  type               ConversationType  @default(DIRECT)
+  directKey          String?           @unique @map("direct_key")
+  lastMessageAt      DateTime?         @map("last_message_at")
+  lastMessagePreview String?           @map("last_message_preview")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  participants       ConversationParticipant[]
+  messages           Message[]
+
+  @@index([type, lastMessageAt])
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  conversationId    String       @map("conversation_id") @db.Uuid
+  userId            String       @map("user_id") @db.Uuid
+  joinedAt          DateTime     @default(now()) @map("joined_at")
+  lastReadAt        DateTime?    @map("last_read_at")
+  lastReadMessageId String?      @map("last_read_message_id") @db.Uuid
+  unreadCount       Int          @default(0) @map("unread_count")
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+  @@index([userId, conversationId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String       @id @default(uuid()) @db.Uuid
+  conversationId String       @map("conversation_id") @db.Uuid
+  senderId       String       @map("sender_id") @db.Uuid
+  body           String
+  createdAt      DateTime     @default(now()) @map("created_at")
+  deletedAt      DateTime?    @map("deleted_at")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
 }
