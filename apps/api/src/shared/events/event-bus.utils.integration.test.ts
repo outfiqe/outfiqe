@@ -17,7 +17,12 @@ describe("publishToDeadLetter", () => {
     const entries = await redis.xrange(`${streamKey}:dead-letter`, "-", "+");
     expect(entries).toHaveLength(1);
 
-    const [, fields] = entries[0];
+    const deadLetterEntry = entries[0];
+    if (!deadLetterEntry) {
+      throw new Error("Expected the dead-letter stream to contain an entry");
+    }
+
+    const [, fields] = deadLetterEntry;
     expect(fields).toEqual(["originalId", "5-0", "payload", '{"a":1}']);
   });
 });
