@@ -75,16 +75,7 @@ export const Drawer = ({
         </div>
       </div>
 
-      <div
-        className={cn(
-          "flex-1 overflow-y-auto",
-          "[scrollbar-width:thin] [scrollbar-color:var(--color-border)_transparent]",
-          "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full",
-          "[&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent",
-        )}
-      >
-        {children}
-      </div>
+      <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
 
       {footer && <div className="shrink-0 border-t border-border">{footer}</div>}
     </div>
