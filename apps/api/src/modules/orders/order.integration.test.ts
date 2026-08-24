@@ -8,6 +8,7 @@ import {
   BrandPayoutStatus,
   FulfilmentStatus,
   PaymentMethod,
+  PlatformFeeType,
   ProductStatus,
   ProductType,
   UserRole,
@@ -66,7 +67,22 @@ const createPurchasableProduct = async (price: number) => {
 
 const createActiveCommissionRule = async (adminId: string, ratePercentBasisPoints = 1200) =>
   prisma.platformCommissionRule.create({
-    data: { ratePercentBasisPoints, isActive: true, updatedById: adminId },
+    data: {
+      isActive: true,
+      updatedById: adminId,
+      tiers: {
+        create: [
+          {
+            minPrice: 0,
+            maxPrice: null,
+            feeType: PlatformFeeType.PERCENT,
+            ratePercentBasisPoints,
+            sortOrder: 0,
+          },
+        ],
+      },
+    },
+    include: { tiers: true },
   });
 
 const createBuyer = async () => {
@@ -173,6 +189,125 @@ describe("POST /api/orders/checkout — settlement ledger", () => {
     expect(payout.platformFee).toBe(120);
     expect(payout.netAmount).toBe(880);
     expect(payout.status).toBe(BrandPayoutStatus.PENDING);
+  });
+
+  it("deducts the gateway fee estimate for a non-COD payment method but never for COD", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await prisma.gatewayFeeRate.create({
+      data: {
+        paymentMethod: PaymentMethod.ESEWA,
+        ratePercentBasisPoints: 200,
+        isActive: true,
+        updatedById: adminId,
+      },
+    });
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(1000);
+    const buyer = await createBuyer();
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.ESEWA,
+        buyNow: { productId: product.id, sizeId: size.id, qty: 1 },
+      });
+
+    expect(response.status).toBe(201);
+
+    const payout = await prisma.brandPayout.findFirstOrThrow({
+      where: { orderItem: { orderId: response.body.data.id } },
+    });
+    expect(payout.platformFee).toBe(120);
+    expect(payout.gatewayFee).toBe(20);
+    expect(payout.netAmount).toBe(860);
+  });
+
+  it("zeroes the platform fee for an exempt brand but still deducts the gateway fee", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await prisma.gatewayFeeRate.create({
+      data: {
+        paymentMethod: PaymentMethod.ESEWA,
+        ratePercentBasisPoints: 200,
+        isActive: true,
+        updatedById: adminId,
+      },
+    });
+    await createDefaultDeliveryZone();
+    const { brand, product, size } = await createPurchasableProduct(1000);
+    await prisma.brandCommissionExemption.create({
+      data: {
+        brandId: brand.id,
+        startsAt: new Date(Date.now() - 1000),
+        endsAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+        reason: "Launch cohort",
+        createdById: adminId,
+      },
+    });
+    const buyer = await createBuyer();
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.ESEWA,
+        buyNow: { productId: product.id, sizeId: size.id, qty: 1 },
+      });
+
+    expect(response.status).toBe(201);
+
+    const payout = await prisma.brandPayout.findFirstOrThrow({
+      where: { orderItem: { orderId: response.body.data.id } },
+    });
+    expect(payout.platformFee).toBe(0);
+    expect(payout.platformCommissionTierId).toBeNull();
+    expect(payout.gatewayFee).toBe(20);
+    expect(payout.netAmount).toBe(980);
+  });
+
+  it("applies the correct band of a multi-tier ladder based on the item's price", async () => {
+    const { authHeader } = await createAdminSession();
+    await request(testApp)
+      .post("/api/brand-payouts/commission-rules")
+      .set("Authorization", authHeader)
+      .send({
+        tiers: [
+          { minPrice: 0, maxPrice: 1_000, feeType: "FLAT", flatAmount: 30 },
+          { minPrice: 1_000, maxPrice: null, feeType: "PERCENT", ratePercent: 5 },
+        ],
+      });
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(1_500);
+    const buyer = await createBuyer();
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.COD,
+        buyNow: { productId: product.id, sizeId: size.id, qty: 1 },
+      });
+
+    expect(response.status).toBe(201);
+
+    const payout = await prisma.brandPayout.findFirstOrThrow({
+      where: { orderItem: { orderId: response.body.data.id } },
+    });
+    expect(payout.platformFee).toBe(75);
   });
 });
 

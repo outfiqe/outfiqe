@@ -1,23 +1,41 @@
 import { prisma } from "#db/prisma.js";
-import { BrandPayoutStatus, FulfilmentStatus, PaymentStatus } from "#generated/prisma/enums.js";
+import {
+  BrandPayoutStatus,
+  FulfilmentStatus,
+  type PaymentMethod,
+  PaymentStatus,
+} from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
 import type {
+  BrandCommissionExemptionRecord,
   CreatePendingBrandPayoutInput,
+  GatewayFeeRateRecord,
   PlatformCommissionRuleRecord,
+  PlatformCommissionTierInput,
 } from "./brandPayout.types.js";
 
+const TIER_ORDER_BY = { sortOrder: "asc" as const };
+
 export const brandPayoutRepository = {
-  async findActiveRule(client: DbClient = prisma): Promise<PlatformCommissionRuleRecord | null> {
-    return client.platformCommissionRule.findFirst({ where: { isActive: true } });
+  async findActiveRuleWithTiers(
+    client: DbClient = prisma,
+  ): Promise<PlatformCommissionRuleRecord | null> {
+    return client.platformCommissionRule.findFirst({
+      where: { isActive: true },
+      include: { tiers: { orderBy: TIER_ORDER_BY } },
+    });
   },
 
-  async listRules(): Promise<PlatformCommissionRuleRecord[]> {
-    return prisma.platformCommissionRule.findMany({ orderBy: { createdAt: "desc" } });
+  async listRulesWithTiers(): Promise<PlatformCommissionRuleRecord[]> {
+    return prisma.platformCommissionRule.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { tiers: { orderBy: TIER_ORDER_BY } },
+    });
   },
 
-  async createActiveRule(
-    ratePercentBasisPoints: number,
+  async createActiveRuleVersion(
+    tiers: PlatformCommissionTierInput[],
     adminId: string,
   ): Promise<PlatformCommissionRuleRecord> {
     return prisma.$transaction(async (tx) => {
@@ -26,9 +44,110 @@ export const brandPayoutRepository = {
         data: { isActive: false },
       });
       return tx.platformCommissionRule.create({
-        data: { ratePercentBasisPoints, isActive: true, updatedById: adminId },
+        data: {
+          isActive: true,
+          updatedById: adminId,
+          tiers: {
+            create: tiers.map((tier, index) => ({ ...tier, sortOrder: index })),
+          },
+        },
+        include: { tiers: { orderBy: TIER_ORDER_BY } },
       });
     });
+  },
+
+  async findActiveGatewayFeeRate(
+    paymentMethod: PaymentMethod,
+    client: DbClient = prisma,
+  ): Promise<GatewayFeeRateRecord | null> {
+    return client.gatewayFeeRate.findFirst({ where: { paymentMethod, isActive: true } });
+  },
+
+  async listGatewayFeeRates(): Promise<GatewayFeeRateRecord[]> {
+    return prisma.gatewayFeeRate.findMany({
+      orderBy: [{ paymentMethod: "asc" }, { createdAt: "desc" }],
+    });
+  },
+
+  async createActiveGatewayFeeRateVersion(
+    paymentMethod: PaymentMethod,
+    ratePercentBasisPoints: number,
+    adminId: string,
+  ): Promise<GatewayFeeRateRecord> {
+    return prisma.$transaction(async (tx) => {
+      await tx.gatewayFeeRate.updateMany({
+        where: { paymentMethod, isActive: true },
+        data: { isActive: false },
+      });
+      return tx.gatewayFeeRate.create({
+        data: { paymentMethod, ratePercentBasisPoints, isActive: true, updatedById: adminId },
+      });
+    });
+  },
+
+  async findActiveExemptBrandIds(
+    brandIds: string[],
+    at: Date,
+    client: DbClient = prisma,
+  ): Promise<Set<string>> {
+    if (brandIds.length === 0) return new Set();
+
+    const rows = await client.brandCommissionExemption.findMany({
+      where: {
+        brandId: { in: brandIds },
+        startsAt: { lte: at },
+        endsAt: { gte: at },
+        revokedAt: null,
+      },
+      select: { brandId: true },
+    });
+    return new Set(rows.map((row) => row.brandId));
+  },
+
+  async listExemptions(brandId?: string): Promise<BrandCommissionExemptionRecord[]> {
+    const rows = await prisma.brandCommissionExemption.findMany({
+      where: brandId ? { brandId } : undefined,
+      orderBy: { createdAt: "desc" },
+      include: { brand: { select: { name: true } } },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      brandId: row.brandId,
+      brandName: row.brand.name,
+      startsAt: row.startsAt,
+      endsAt: row.endsAt,
+      reason: row.reason,
+      createdAt: row.createdAt,
+      revokedAt: row.revokedAt,
+    }));
+  },
+
+  async createExemption(
+    input: { brandId: string; startsAt: Date; endsAt: Date; reason: string },
+    adminId: string,
+  ): Promise<BrandCommissionExemptionRecord> {
+    const row = await prisma.brandCommissionExemption.create({
+      data: { ...input, createdById: adminId },
+      include: { brand: { select: { name: true } } },
+    });
+    return {
+      id: row.id,
+      brandId: row.brandId,
+      brandName: row.brand.name,
+      startsAt: row.startsAt,
+      endsAt: row.endsAt,
+      reason: row.reason,
+      createdAt: row.createdAt,
+      revokedAt: row.revokedAt,
+    };
+  },
+
+  async revokeExemption(id: string, adminId: string): Promise<boolean> {
+    const result = await prisma.brandCommissionExemption.updateMany({
+      where: { id, revokedAt: null },
+      data: { revokedAt: new Date(), revokedById: adminId },
+    });
+    return result.count > 0;
   },
 
   async createPending(client: DbClient, input: CreatePendingBrandPayoutInput): Promise<void> {

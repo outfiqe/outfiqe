@@ -48,7 +48,7 @@ const createBrandPayoutFixture = async (order: {
     },
   });
   const rule = await prisma.platformCommissionRule.create({
-    data: { ratePercentBasisPoints: 1200, isActive: true, updatedById: admin.id },
+    data: { isActive: true, updatedById: admin.id },
   });
   const brand = await prisma.brand.create({
     data: {

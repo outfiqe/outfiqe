@@ -415,7 +415,19 @@ async function seedNepalBanks() {
 }
 
 const BASIS_POINTS_PER_PERCENT = 100;
-const DEFAULT_PLATFORM_COMMISSION_RATE_PERCENT = 12;
+
+const DEFAULT_PLATFORM_COMMISSION_TIERS = [
+  { minPrice: 0, maxPrice: 1_000, feeType: "FLAT", flatAmount: 30 },
+  { minPrice: 1_000, maxPrice: 2_000, feeType: "PERCENT", ratePercent: 5 },
+  { minPrice: 2_000, maxPrice: 3_000, feeType: "PERCENT", ratePercent: 4 },
+  { minPrice: 3_000, maxPrice: 5_000, feeType: "PERCENT", ratePercent: 3.5 },
+  { minPrice: 5_000, maxPrice: null, feeType: "PERCENT", ratePercent: 3 },
+] as const;
+
+const DEFAULT_GATEWAY_FEE_RATE_PERCENT: Record<"ESEWA" | "KHALTI", number> = {
+  ESEWA: 2,
+  KHALTI: 2,
+};
 
 const LOCKED_WITHDRAW_POLICIES: {
   ownerType: keyof typeof WithdrawOwnerType;
@@ -491,11 +503,44 @@ async function seedPlatformCommissionRule() {
 
   await prisma.platformCommissionRule.create({
     data: {
-      ratePercentBasisPoints: DEFAULT_PLATFORM_COMMISSION_RATE_PERCENT * BASIS_POINTS_PER_PERCENT,
       isActive: true,
       updatedById: admin.id,
+      tiers: {
+        create: DEFAULT_PLATFORM_COMMISSION_TIERS.map((tier, index) => ({
+          minPrice: tier.minPrice,
+          maxPrice: tier.maxPrice,
+          feeType: tier.feeType,
+          flatAmount: tier.feeType === "FLAT" ? tier.flatAmount : null,
+          ratePercentBasisPoints:
+            tier.feeType === "PERCENT" ? tier.ratePercent * BASIS_POINTS_PER_PERCENT : null,
+          sortOrder: index,
+        })),
+      },
     },
   });
+}
+
+async function seedGatewayFeeRates() {
+  const existing = await prisma.gatewayFeeRate.count();
+  if (existing > 0) return;
+
+  const admin = await prisma.user.findFirst({ where: { role: UserRole.ADMIN } });
+  if (!admin) {
+    console.warn("Skipping GatewayFeeRate seed — no ADMIN user exists yet.");
+    return;
+  }
+
+  for (const paymentMethod of ["ESEWA", "KHALTI"] as const) {
+    await prisma.gatewayFeeRate.create({
+      data: {
+        paymentMethod,
+        ratePercentBasisPoints:
+          DEFAULT_GATEWAY_FEE_RATE_PERCENT[paymentMethod] * BASIS_POINTS_PER_PERCENT,
+        isActive: true,
+        updatedById: admin.id,
+      },
+    });
+  }
 }
 
 const TROUSERS_PHOTOS = [
@@ -1886,6 +1931,7 @@ async function main() {
   await seedNepalBanks();
   await seedWithdrawPolicies();
   await seedPlatformCommissionRule();
+  await seedGatewayFeeRates();
   await seedLevels();
   await seedActivityXpConfig();
   await seedCreatorLeaderboardCategoryConfig();

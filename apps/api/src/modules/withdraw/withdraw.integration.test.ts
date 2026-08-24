@@ -193,7 +193,7 @@ const grantAvailableCommission = async (creatorId: string, amount: number) => {
 const grantAvailableBrandPayout = async (brandId: string, netAmount: number) => {
   const admin = await createUser(UserRole.ADMIN);
   const rule = await prisma.platformCommissionRule.create({
-    data: { ratePercentBasisPoints: 0, isActive: true, updatedById: admin.id },
+    data: { isActive: true, updatedById: admin.id },
   });
   const buyer = await createUser(UserRole.CUSTOMER);
   const product = await prisma.product.create({

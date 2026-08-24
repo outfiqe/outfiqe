@@ -145,7 +145,7 @@ const grantBrandPayout = async (
 ) => {
   const admin = await createUser(UserRole.ADMIN);
   const rule = await prisma.platformCommissionRule.create({
-    data: { ratePercentBasisPoints: 0, isActive: false, updatedById: admin.id },
+    data: { isActive: false, updatedById: admin.id },
   });
   const brand = await prisma.brand.create({
     data: {

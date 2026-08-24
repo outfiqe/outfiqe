@@ -8,6 +8,7 @@ import {
   BrandPayoutStatus,
   BrandRole,
   PaymentMethod,
+  PlatformFeeType,
   ProductStatus,
   ProductType,
   UserRole,
@@ -115,6 +116,13 @@ const createBrandPayout = async (
   });
 };
 
+const SINGLE_FLAT_TIER = [{ minPrice: 0, maxPrice: null, feeType: "FLAT", flatAmount: 30 }];
+
+const TWO_TIER_LADDER = [
+  { minPrice: 0, maxPrice: 1_000, feeType: "FLAT", flatAmount: 30 },
+  { minPrice: 1_000, maxPrice: null, feeType: "PERCENT", ratePercent: 5 },
+];
+
 describe("platform commission rules (admin)", () => {
   it("requires admin", async () => {
     const user = await createUser();
@@ -122,7 +130,7 @@ describe("platform commission rules (admin)", () => {
     const response = await request(testApp)
       .post("/api/brand-payouts/commission-rules")
       .set("Authorization", authHeaderFor(user.id, UserRole.BRAND_OWNER))
-      .send({ ratePercent: 12 });
+      .send({ tiers: SINGLE_FLAT_TIER });
 
     expect(response.status).toBe(FORBIDDEN_STATUS);
   });
@@ -132,16 +140,17 @@ describe("platform commission rules (admin)", () => {
     const first = await request(testApp)
       .post("/api/brand-payouts/commission-rules")
       .set("Authorization", authHeader)
-      .send({ ratePercent: 10 });
+      .send({ tiers: SINGLE_FLAT_TIER });
     expect(first.status).toBe(CREATED_STATUS);
-    expect(first.body.data.ratePercent).toBe(10);
+    expect(first.body.data.tiers).toHaveLength(1);
+    expect(first.body.data.tiers[0]).toMatchObject({ feeType: "FLAT", flatAmount: 30 });
 
     const second = await request(testApp)
       .post("/api/brand-payouts/commission-rules")
       .set("Authorization", authHeader)
-      .send({ ratePercent: 12.5 });
+      .send({ tiers: TWO_TIER_LADDER });
     expect(second.status).toBe(CREATED_STATUS);
-    expect(second.body.data.ratePercent).toBe(12.5);
+    expect(second.body.data.tiers).toHaveLength(2);
     expect(second.body.data.isActive).toBe(true);
 
     const rules = await prisma.platformCommissionRule.findMany({
@@ -157,6 +166,44 @@ describe("platform commission rules (admin)", () => {
     expect(listResponse.status).toBe(OK_STATUS);
     expect(listResponse.body.data).toHaveLength(2);
   });
+
+  it("rejects a tier ladder with a gap", async () => {
+    const { authHeader } = await createAdminSession();
+
+    const response = await request(testApp)
+      .post("/api/brand-payouts/commission-rules")
+      .set("Authorization", authHeader)
+      .send({
+        tiers: [
+          { minPrice: 0, maxPrice: 1_000, feeType: "FLAT", flatAmount: 30 },
+          { minPrice: 1_500, maxPrice: null, feeType: "PERCENT", ratePercent: 5 },
+        ],
+      });
+
+    expect(response.status).toBe(422);
+  });
+
+  it("rejects a tier ladder that doesn't start at 0", async () => {
+    const { authHeader } = await createAdminSession();
+
+    const response = await request(testApp)
+      .post("/api/brand-payouts/commission-rules")
+      .set("Authorization", authHeader)
+      .send({ tiers: [{ minPrice: 100, maxPrice: null, feeType: "FLAT", flatAmount: 30 }] });
+
+    expect(response.status).toBe(422);
+  });
+
+  it("rejects a tier ladder whose highest tier is capped", async () => {
+    const { authHeader } = await createAdminSession();
+
+    const response = await request(testApp)
+      .post("/api/brand-payouts/commission-rules")
+      .set("Authorization", authHeader)
+      .send({ tiers: [{ minPrice: 0, maxPrice: 1_000, feeType: "FLAT", flatAmount: 30 }] });
+
+    expect(response.status).toBe(422);
+  });
 });
 
 describe("GET /api/brand-payouts/me/summary", () => {
@@ -164,7 +211,21 @@ describe("GET /api/brand-payouts/me/summary", () => {
     const { brand, member } = await createBrandWithMember();
     const { userId: adminId } = await createAdminSession();
     const rule = await prisma.platformCommissionRule.create({
-      data: { ratePercentBasisPoints: 1200, isActive: true, updatedById: adminId },
+      data: {
+        isActive: true,
+        updatedById: adminId,
+        tiers: {
+          create: [
+            {
+              minPrice: 0,
+              maxPrice: null,
+              feeType: PlatformFeeType.PERCENT,
+              ratePercentBasisPoints: 1200,
+              sortOrder: 0,
+            },
+          ],
+        },
+      },
     });
 
     await createBrandPayout(brand.id, BrandPayoutStatus.PENDING, 500, rule.id);

@@ -21,9 +21,11 @@ import { withIdempotency } from "#lib/idempotency.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
-import { GATEWAY_FEE_BY_PROVIDER_NPR } from "#modules/brand-payouts/brandPayout.constants.js";
 import { brandPayoutRepository } from "#modules/brand-payouts/brandPayout.repository.js";
-import { computePlatformFee } from "#modules/brand-payouts/brandPayout.utils.js";
+import {
+  computeGatewayFee,
+  computeTieredPlatformFee,
+} from "#modules/brand-payouts/brandPayout.utils.js";
 import { cartRepository } from "#modules/cart/cart.repository.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
 import { creatorLinkRepository } from "#modules/creator-links/creatorLink.repository.js";
@@ -207,7 +209,7 @@ const checkoutOnce = async (
       ? PaymentTransactionStatus.SUCCEEDED
       : PaymentTransactionStatus.INITIATED;
 
-  const commissionRule = await brandPayoutRepository.findActiveRule();
+  const commissionRule = await brandPayoutRepository.findActiveRuleWithTiers();
   if (!commissionRule) {
     throw new AppError(
       "COMMISSION_RULE_NOT_CONFIGURED",
@@ -215,6 +217,17 @@ const checkoutOnce = async (
       SERVICE_UNAVAILABLE_STATUS,
     );
   }
+
+  const gatewayFeeRate =
+    paymentMethod === PaymentMethod.COD
+      ? null
+      : await brandPayoutRepository.findActiveGatewayFeeRate(paymentMethod);
+
+  const distinctBrandIds = [...new Set(lines.map((line) => line.brandId))];
+  const exemptBrandIds = await brandPayoutRepository.findActiveExemptBrandIds(
+    distinctBrandIds,
+    orderPlacedAt,
+  );
 
   const createdCommissions: { creatorId: string; orderItemId: string; amount: number }[] = [];
 
@@ -257,13 +270,17 @@ const checkoutOnce = async (
       const line = lines[index];
       if (line) {
         const grossAmount = line.unitPrice * line.qty;
-        const platformFee = computePlatformFee(grossAmount, commissionRule.ratePercentBasisPoints);
-        const gatewayFee = GATEWAY_FEE_BY_PROVIDER_NPR;
+        const isExemptBrand = exemptBrandIds.has(line.brandId);
+        const { fee: platformFee, tierId: platformCommissionTierId } = isExemptBrand
+          ? { fee: 0, tierId: null }
+          : computeTieredPlatformFee(grossAmount, commissionRule.tiers);
+        const gatewayFee = computeGatewayFee(grossAmount, paymentMethod, gatewayFeeRate);
 
         await brandPayoutRepository.createPending(tx, {
           orderItemId: orderItem.id,
           brandId: line.brandId,
           commissionRuleId: commissionRule.id,
+          platformCommissionTierId,
           grossAmount,
           platformFee,
           gatewayFee,

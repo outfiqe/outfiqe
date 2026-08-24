@@ -86,6 +86,9 @@ model User {
   firstApprovedWithdrawRequests            WithdrawRequest[]           @relation("WithdrawRequestFirstApprover")
   paidWithdrawRequests                     WithdrawRequest[]           @relation("WithdrawRequestPaidBy")
   platformCommissionRuleEdits              PlatformCommissionRule[]    @relation("PlatformCommissionRuleUpdatedBy")
+  gatewayFeeRateEdits                      GatewayFeeRate[]            @relation("GatewayFeeRateUpdatedBy")
+  createdBrandCommissionExemptions         BrandCommissionExemption[]  @relation("BrandCommissionExemptionCreatedBy")
+  revokedBrandCommissionExemptions         BrandCommissionExemption[]  @relation("BrandCommissionExemptionRevokedBy")
 
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
@@ -217,13 +220,14 @@ model Brand {
   createdAt     DateTime          @default(now()) @map("created_at")
   updatedAt     DateTime          @updatedAt @map("updated_at")
 
-  invites          BrandInvite[]
-  memberships      BrandMembership[]
-  products         Product[]
-  sponsoredBadges  Badge[]
-  bankAccounts     BrandBankAccount[]
-  payouts          BrandPayout[]
-  withdrawRequests WithdrawRequest[]  @relation("WithdrawRequestBrandOwner")
+  invites              BrandInvite[]
+  memberships          BrandMembership[]
+  products             Product[]
+  sponsoredBadges      Badge[]
+  bankAccounts         BrandBankAccount[]
+  payouts              BrandPayout[]
+  withdrawRequests     WithdrawRequest[]          @relation("WithdrawRequestBrandOwner")
+  commissionExemptions BrandCommissionExemption[]
 
   @@map("brands")
 }
@@ -1523,18 +1527,76 @@ model BrandBankAccountAccessLog {
 }
 
 model PlatformCommissionRule {
-  id                     String   @id @default(uuid()) @db.Uuid
-  ratePercentBasisPoints Int      @map("rate_percent_basis_points")
-  isActive               Boolean  @default(true) @map("is_active")
-  updatedById            String   @map("updated_by_id") @db.Uuid
-  updatedBy              User     @relation("PlatformCommissionRuleUpdatedBy", fields: [updatedById], references: [id])
-  createdAt              DateTime @default(now()) @map("created_at")
-  updatedAt              DateTime @updatedAt @map("updated_at")
+  id          String   @id @default(uuid()) @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  updatedById String   @map("updated_by_id") @db.Uuid
+  updatedBy   User     @relation("PlatformCommissionRuleUpdatedBy", fields: [updatedById], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
+  tiers   PlatformCommissionTier[]
   payouts BrandPayout[]
 
   @@index([isActive])
   @@map("platform_commission_rules")
+}
+
+enum PlatformFeeType {
+  FLAT
+  PERCENT
+}
+
+model PlatformCommissionTier {
+  id     String                 @id @default(uuid()) @db.Uuid
+  ruleId String                 @map("rule_id") @db.Uuid
+  rule   PlatformCommissionRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  minPrice               Int             @map("min_price")
+  maxPrice               Int?            @map("max_price")
+  feeType                PlatformFeeType @map("fee_type")
+  flatAmount             Int?            @map("flat_amount")
+  ratePercentBasisPoints Int?            @map("rate_percent_basis_points")
+  sortOrder              Int             @default(0) @map("sort_order")
+
+  payouts BrandPayout[]
+
+  @@index([ruleId])
+  @@map("platform_commission_tiers")
+}
+
+model GatewayFeeRate {
+  id                     String        @id @default(uuid()) @db.Uuid
+  paymentMethod          PaymentMethod @map("payment_method")
+  ratePercentBasisPoints Int           @map("rate_percent_basis_points")
+  isActive               Boolean       @default(true) @map("is_active")
+  updatedById            String        @map("updated_by_id") @db.Uuid
+  updatedBy              User          @relation("GatewayFeeRateUpdatedBy", fields: [updatedById], references: [id])
+  createdAt              DateTime      @default(now()) @map("created_at")
+  updatedAt              DateTime      @updatedAt @map("updated_at")
+
+  @@index([paymentMethod, isActive])
+  @@map("gateway_fee_rates")
+}
+
+model BrandCommissionExemption {
+  id      String @id @default(uuid()) @db.Uuid
+  brandId String @map("brand_id") @db.Uuid
+  brand   Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  startsAt DateTime @map("starts_at")
+  endsAt   DateTime @map("ends_at")
+  reason   String
+
+  createdById String   @map("created_by_id") @db.Uuid
+  createdBy   User     @relation("BrandCommissionExemptionCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  revokedAt   DateTime? @map("revoked_at")
+  revokedById String?   @map("revoked_by_id") @db.Uuid
+  revokedBy   User?     @relation("BrandCommissionExemptionRevokedBy", fields: [revokedById], references: [id])
+
+  @@index([brandId, startsAt, endsAt])
+  @@map("brand_commission_exemptions")
 }
 
 enum BrandPayoutStatus {
@@ -1553,6 +1615,9 @@ model BrandPayout {
 
   commissionRuleId String                 @map("commission_rule_id") @db.Uuid
   commissionRule   PlatformCommissionRule @relation(fields: [commissionRuleId], references: [id])
+
+  platformCommissionTierId String?                 @map("platform_commission_tier_id") @db.Uuid
+  platformCommissionTier   PlatformCommissionTier? @relation(fields: [platformCommissionTierId], references: [id], onDelete: SetNull)
 
   grossAmount Int @map("gross_amount")
   platformFee Int @map("platform_fee")

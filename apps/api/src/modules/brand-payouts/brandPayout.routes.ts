@@ -7,7 +7,11 @@ import { validate } from "#middlewares/validate.js";
 
 import { brandPayoutController } from "./brandPayout.controller.js";
 import {
+  createBrandCommissionExemptionSchema,
+  createGatewayFeeRateSchema,
   createPlatformCommissionRuleSchema,
+  exemptionIdParamSchema,
+  listBrandCommissionExemptionsQuerySchema,
   listBrandPayoutsQuerySchema,
 } from "./brandPayout.schemas.js";
 
@@ -31,4 +35,38 @@ brandPayoutRoutes.post(
   ...requireAdmin,
   validate({ body: createPlatformCommissionRuleSchema }),
   brandPayoutController.createRule,
+);
+
+brandPayoutRoutes.get(
+  "/gateway-fee-rates",
+  ...requireAdmin,
+  brandPayoutController.listGatewayFeeRates,
+);
+
+brandPayoutRoutes.post(
+  "/gateway-fee-rates",
+  ...requireAdmin,
+  validate({ body: createGatewayFeeRateSchema }),
+  brandPayoutController.createGatewayFeeRate,
+);
+
+brandPayoutRoutes.get(
+  "/exemptions",
+  ...requireAdmin,
+  validate({ query: listBrandCommissionExemptionsQuerySchema }),
+  brandPayoutController.listExemptions,
+);
+
+brandPayoutRoutes.post(
+  "/exemptions",
+  ...requireAdmin,
+  validate({ body: createBrandCommissionExemptionSchema }),
+  brandPayoutController.createExemption,
+);
+
+brandPayoutRoutes.patch(
+  "/exemptions/:id/revoke",
+  ...requireAdmin,
+  validate({ params: exemptionIdParamSchema }),
+  brandPayoutController.revokeExemption,
 );

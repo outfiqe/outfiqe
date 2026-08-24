@@ -429,7 +429,7 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
       },
     });
     const rule = await prisma.platformCommissionRule.create({
-      data: { ratePercentBasisPoints: 0, isActive: true, updatedById: admin.userId },
+      data: { isActive: true, updatedById: admin.userId },
     });
     const buyer = await createUser(UserRole.CUSTOMER);
     const product = await prisma.product.create({
