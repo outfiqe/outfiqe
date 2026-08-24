@@ -512,4 +512,39 @@ describe("GET /api/withdraw/requests", () => {
     expect(response.body.data.items).toHaveLength(1);
     expect(response.body.data.items[0].amount).toBe(500);
   });
+
+  it("pages through the caller's requests with a cursor", async () => {
+    await createOpenPolicy(WithdrawOwnerType.CREATOR, { maxAttemptsPerWindow: 5 });
+    const creator = await createUser();
+    await grantAvailableCommission(creator.id, 5000);
+    const bankAccount = await createVerifiedBankAccount(creator.id);
+    const authHeader = authHeaderFor(creator.id, UserRole.CUSTOMER);
+
+    await request(testApp)
+      .post("/api/withdraw/requests")
+      .set("Authorization", authHeader)
+      .send({ ownerType: "CREATOR", bankAccountId: bankAccount.id, amount: 500 });
+    await request(testApp)
+      .post("/api/withdraw/requests")
+      .set("Authorization", authHeader)
+      .send({ ownerType: "CREATOR", bankAccountId: bankAccount.id, amount: 600 });
+
+    const firstPage = await request(testApp)
+      .get("/api/withdraw/requests")
+      .query({ ownerType: "CREATOR", limit: 1 })
+      .set("Authorization", authHeader);
+
+    expect(firstPage.status).toBe(OK_STATUS);
+    expect(firstPage.body.data.items).toHaveLength(1);
+    expect(firstPage.body.data.nextCursor).not.toBeNull();
+
+    const secondPage = await request(testApp)
+      .get("/api/withdraw/requests")
+      .query({ ownerType: "CREATOR", limit: 1, cursor: firstPage.body.data.nextCursor })
+      .set("Authorization", authHeader);
+
+    expect(secondPage.status).toBe(OK_STATUS);
+    expect(secondPage.body.data.items).toHaveLength(1);
+    expect(secondPage.body.data.items[0].id).not.toBe(firstPage.body.data.items[0].id);
+  });
 });

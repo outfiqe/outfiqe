@@ -261,4 +261,21 @@ describe("GET /api/admin/financial-rollup", () => {
     expect(response.status).toBe(OK_STATUS);
     expect(response.body.data.gateway.grossCollected).toBe(500);
   });
+
+  it("excludes rows from before the current billing cycle for range=cycle", async () => {
+    const { authHeader } = await createAdminSession();
+    const beforeThisMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 15);
+    const now = new Date();
+
+    await createOrderWithTransaction(1000, PaymentTransactionType.PAYMENT, beforeThisMonth);
+    await createOrderWithTransaction(500, PaymentTransactionType.PAYMENT, now);
+
+    const response = await request(testApp)
+      .get("/api/admin/financial-rollup")
+      .query({ range: "cycle" })
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(OK_STATUS);
+    expect(response.body.data.gateway.grossCollected).toBe(500);
+  });
 });

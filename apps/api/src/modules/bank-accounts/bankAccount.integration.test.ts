@@ -120,6 +120,17 @@ describe("POST /api/bank-accounts", () => {
 
     expect(response.status).toBe(NOT_FOUND_STATUS);
   });
+
+  it("404s when the authenticated user no longer exists", async () => {
+    const bank = await createBank();
+
+    const response = await request(testApp)
+      .post("/api/bank-accounts")
+      .set("Authorization", authHeaderFor(randomUUID(), UserRole.CUSTOMER))
+      .send(validBody(bank.id));
+
+    expect(response.status).toBe(NOT_FOUND_STATUS);
+  });
 });
 
 describe("GET /api/bank-accounts", () => {
@@ -243,5 +254,25 @@ describe("admin bank account actions", () => {
     const logs = await prisma.bankAccountAccessLog.findMany({ where: { bankAccountId: id } });
     expect(logs).toHaveLength(1);
     expect(logs[0]?.adminId).toBe(admin.id);
+  });
+
+  it("404s verifying a bank account that doesn't exist", async () => {
+    const admin = await createUser({ role: UserRole.ADMIN });
+
+    const response = await request(testApp)
+      .patch(`/api/bank-accounts/${randomUUID()}/verify`)
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(NOT_FOUND_STATUS);
+  });
+
+  it("404s revealing a bank account that doesn't exist", async () => {
+    const admin = await createUser({ role: UserRole.ADMIN });
+
+    const response = await request(testApp)
+      .get(`/api/bank-accounts/${randomUUID()}/reveal`)
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(NOT_FOUND_STATUS);
   });
 });

@@ -143,6 +143,57 @@ describe("GET /api/brand-bank-accounts", () => {
   });
 });
 
+describe("PATCH /api/brand-bank-accounts/:id/default", () => {
+  it("swaps the default between two of the brand's own accounts", async () => {
+    const brand = await createBrand();
+    const member = await createMember(brand.id);
+    const bank = await createBank();
+    const authHeader = authHeaderFor(member.id, UserRole.BRAND_OWNER);
+
+    const first = await request(testApp)
+      .post("/api/brand-bank-accounts")
+      .set("Authorization", authHeader)
+      .send(
+        validBody(bank.id, { accountNumber: "1111111111", confirmAccountNumber: "1111111111" }),
+      );
+    const second = await request(testApp)
+      .post("/api/brand-bank-accounts")
+      .set("Authorization", authHeader)
+      .send(
+        validBody(bank.id, { accountNumber: "2222222222", confirmAccountNumber: "2222222222" }),
+      );
+
+    const secondId = second.body.data.bankAccount.id;
+    await request(testApp)
+      .patch(`/api/brand-bank-accounts/${secondId}/default`)
+      .set("Authorization", authHeader);
+
+    const accounts = await prisma.brandBankAccount.findMany({ where: { brandId: brand.id } });
+    const byId = new Map(accounts.map((account) => [account.id, account.isDefault]));
+    expect(byId.get(secondId)).toBe(true);
+    expect(byId.get(first.body.data.bankAccount.id)).toBe(false);
+  });
+
+  it("404s when the account doesn't belong to the caller's brand", async () => {
+    const brand = await createBrand();
+    const member = await createMember(brand.id);
+    const otherBrand = await createBrand();
+    const otherMember = await createMember(otherBrand.id);
+    const bank = await createBank();
+
+    const created = await request(testApp)
+      .post("/api/brand-bank-accounts")
+      .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
+      .send(validBody(bank.id));
+
+    const response = await request(testApp)
+      .patch(`/api/brand-bank-accounts/${created.body.data.bankAccount.id}/default`)
+      .set("Authorization", authHeaderFor(otherMember.id, UserRole.BRAND_OWNER));
+
+    expect(response.status).toBe(NOT_FOUND_STATUS);
+  });
+});
+
 describe("admin brand bank account actions", () => {
   it("verify requires admin and marks the account verified", async () => {
     const brand = await createBrand();
@@ -194,5 +245,25 @@ describe("admin brand bank account actions", () => {
     });
     expect(logs).toHaveLength(1);
     expect(logs[0]?.adminId).toBe(admin.id);
+  });
+
+  it("404s verifying a brand bank account that doesn't exist", async () => {
+    const admin = await createUser({ role: UserRole.ADMIN });
+
+    const response = await request(testApp)
+      .patch(`/api/brand-bank-accounts/${randomUUID()}/verify`)
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(NOT_FOUND_STATUS);
+  });
+
+  it("404s revealing a brand bank account that doesn't exist", async () => {
+    const admin = await createUser({ role: UserRole.ADMIN });
+
+    const response = await request(testApp)
+      .get(`/api/brand-bank-accounts/${randomUUID()}/reveal`)
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(NOT_FOUND_STATUS);
   });
 });

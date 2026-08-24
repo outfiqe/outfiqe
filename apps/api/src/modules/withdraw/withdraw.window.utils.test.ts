@@ -79,3 +79,16 @@ describe("computeWithdrawWindow — CUSTOM_DAYS", () => {
     expect(result.isOpen).toBe(true);
   });
 });
+
+describe("computeWithdrawWindow — unhandled window type", () => {
+  it("throws for a window type outside the known enum", () => {
+    const now = new Date("2026-01-01T00:00:00.000Z");
+
+    expect(() =>
+      computeWithdrawWindow(
+        { windowType: "UNKNOWN" as WithdrawWindowType, windowValue: 1, createdAt: now },
+        now,
+      ),
+    ).toThrow("Unhandled withdraw window type");
+  });
+});

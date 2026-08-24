@@ -202,6 +202,65 @@ describe("PATCH /api/withdraw/admin/requests/:id/approve", () => {
     expect(updatedAccount.firstPayoutCrossCheckedAt).not.toBeNull();
   });
 
+  it("requires an identity cross-check on a brand bank account's first payout", async () => {
+    const { authHeader } = await createAdminSession();
+    const policy = await createOpenPolicy(WithdrawOwnerType.BUSINESS);
+    const brand = await prisma.brand.create({
+      data: {
+        name: `Cross-Check Brand ${randomUUID().slice(0, 6)}`,
+        contactName: "Contact",
+        email: `${randomUUID()}@brand.outfiqe.test`,
+        phone: uniquePhone(),
+        instagram: `@${randomUUID().slice(0, 8)}`,
+      },
+    });
+    const member = await createUser(UserRole.BRAND_OWNER);
+    await prisma.brandMembership.create({
+      data: { userId: member.id, brandId: brand.id, role: BrandRole.OWNER },
+    });
+    const bank = await createBank();
+    const brandBankAccount = await prisma.brandBankAccount.create({
+      data: {
+        brandId: brand.id,
+        bankId: bank.id,
+        accountName: "Brand Account",
+        accountNumberCiphertext: "fake.fake.fake",
+        accountNumberLast4: "5678",
+        branchName: "Branch",
+        isDefault: true,
+        isVerified: true,
+      },
+    });
+    const withdrawRequest = await prisma.withdrawRequest.create({
+      data: {
+        ownerType: WithdrawOwnerType.BUSINESS,
+        brandId: brand.id,
+        requestedById: member.id,
+        brandBankAccountId: brandBankAccount.id,
+        policyId: policy.id,
+        amount: 1000,
+      },
+    });
+
+    const withoutConfirmation = await request(testApp)
+      .patch(`/api/withdraw/admin/requests/${withdrawRequest.id}/approve`)
+      .set("Authorization", authHeader)
+      .send({});
+    expect(withoutConfirmation.status).toBe(BAD_REQUEST_STATUS);
+    expect(withoutConfirmation.body.code).toBe("IDENTITY_CROSS_CHECK_REQUIRED");
+
+    const withConfirmation = await request(testApp)
+      .patch(`/api/withdraw/admin/requests/${withdrawRequest.id}/approve`)
+      .set("Authorization", authHeader)
+      .send({ identityCrossCheckConfirmed: true });
+    expect(withConfirmation.status).toBe(OK_STATUS);
+
+    const updatedAccount = await prisma.brandBankAccount.findUniqueOrThrow({
+      where: { id: brandBankAccount.id },
+    });
+    expect(updatedAccount.firstPayoutCrossCheckedAt).not.toBeNull();
+  });
+
   it("does not re-require the cross-check on a second payout to the same account", async () => {
     const { authHeader } = await createAdminSession();
     const policy = await createOpenPolicy(WithdrawOwnerType.CREATOR);
@@ -521,6 +580,91 @@ describe("GET /api/withdraw/admin/requests", () => {
     expect(response.body.data.items).toHaveLength(1);
     expect(response.body.data.items[0].ownerName).toBe(creator.name);
     expect(response.body.data.items[0].bankAccountLast4).toBe("1234");
+  });
+
+  it("lists every owner type's requests when no status filter is given", async () => {
+    const { authHeader } = await createAdminSession();
+    const policy = await createOpenPolicy(WithdrawOwnerType.CREATOR);
+    const creator = await createUser();
+    const bankAccount = await createVerifiedBankAccount(creator.id);
+    await createWithdrawRequest(creator, bankAccount.id, policy.id, 1000);
+
+    const brand = await prisma.brand.create({
+      data: {
+        name: `List Brand ${randomUUID().slice(0, 6)}`,
+        contactName: "Contact",
+        email: `${randomUUID()}@brand.outfiqe.test`,
+        phone: uniquePhone(),
+        instagram: `@${randomUUID().slice(0, 8)}`,
+      },
+    });
+    const member = await createUser(UserRole.BRAND_OWNER);
+    await prisma.brandMembership.create({
+      data: { userId: member.id, brandId: brand.id, role: BrandRole.OWNER },
+    });
+    const bank = await createBank();
+    const brandBankAccount = await prisma.brandBankAccount.create({
+      data: {
+        brandId: brand.id,
+        bankId: bank.id,
+        accountName: "Brand Account",
+        accountNumberCiphertext: "fake.fake.fake",
+        accountNumberLast4: "9012",
+        branchName: "Branch",
+        isDefault: true,
+        isVerified: true,
+      },
+    });
+    const businessPolicy = await createOpenPolicy(WithdrawOwnerType.BUSINESS);
+    await prisma.withdrawRequest.create({
+      data: {
+        ownerType: WithdrawOwnerType.BUSINESS,
+        brandId: brand.id,
+        requestedById: member.id,
+        brandBankAccountId: brandBankAccount.id,
+        policyId: businessPolicy.id,
+        amount: 2000,
+      },
+    });
+
+    const response = await request(testApp)
+      .get("/api/withdraw/admin/requests")
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(OK_STATUS);
+    expect(response.body.data.items).toHaveLength(2);
+    const businessItem = response.body.data.items.find(
+      (item: { ownerType: string }) => item.ownerType === "BUSINESS",
+    );
+    expect(businessItem.ownerName).toBe(brand.name);
+    expect(businessItem.bankAccountLast4).toBe("9012");
+  });
+
+  it("pages through the admin request list with a cursor", async () => {
+    const { authHeader } = await createAdminSession();
+    const policy = await createOpenPolicy(WithdrawOwnerType.CREATOR);
+    const creator = await createUser();
+    const bankAccount = await createVerifiedBankAccount(creator.id);
+    await createWithdrawRequest(creator, bankAccount.id, policy.id, 1000);
+    await createWithdrawRequest(creator, bankAccount.id, policy.id, 500);
+
+    const firstPage = await request(testApp)
+      .get("/api/withdraw/admin/requests")
+      .query({ limit: 1 })
+      .set("Authorization", authHeader);
+
+    expect(firstPage.status).toBe(OK_STATUS);
+    expect(firstPage.body.data.items).toHaveLength(1);
+    expect(firstPage.body.data.nextCursor).not.toBeNull();
+
+    const secondPage = await request(testApp)
+      .get("/api/withdraw/admin/requests")
+      .query({ limit: 1, cursor: firstPage.body.data.nextCursor })
+      .set("Authorization", authHeader);
+
+    expect(secondPage.status).toBe(OK_STATUS);
+    expect(secondPage.body.data.items).toHaveLength(1);
+    expect(secondPage.body.data.items[0].id).not.toBe(firstPage.body.data.items[0].id);
   });
 });
 

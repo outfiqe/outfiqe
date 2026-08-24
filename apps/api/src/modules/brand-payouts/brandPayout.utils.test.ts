@@ -65,6 +65,22 @@ describe("computeTieredPlatformFee", () => {
     expect(computeTieredPlatformFee(50_000, LADDER)).toEqual({ fee: 2_000, tierId: "tier-4pct" });
   });
 
+  it("charges 0 when a FLAT tier has no flatAmount configured", () => {
+    const noAmountLadder = [
+      buildTier({
+        id: "tier-empty-flat",
+        minPrice: 0,
+        maxPrice: null,
+        feeType: PlatformFeeType.FLAT,
+        flatAmount: null,
+      }),
+    ];
+    expect(computeTieredPlatformFee(500, noAmountLadder)).toEqual({
+      fee: 0,
+      tierId: "tier-empty-flat",
+    });
+  });
+
   it("rounds the percent fee to the nearest rupee", () => {
     const oddLadder = [
       buildTier({

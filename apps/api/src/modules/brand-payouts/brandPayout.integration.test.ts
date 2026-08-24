@@ -397,3 +397,65 @@ describe("GET /api/brand-payouts/me/summary", () => {
     expect(response.status).toBe(NOT_FOUND_STATUS);
   });
 });
+
+describe("GET /api/brand-payouts/me", () => {
+  it("lists the brand's own payout ledger, newest first, with product details", async () => {
+    const { brand, member } = await createBrandWithMember();
+    const { userId: adminId } = await createAdminSession();
+    const rule = await prisma.platformCommissionRule.create({
+      data: { isActive: true, updatedById: adminId },
+    });
+
+    const first = await createBrandPayout(brand.id, BrandPayoutStatus.PENDING, 500, rule.id);
+    const second = await createBrandPayout(brand.id, BrandPayoutStatus.AVAILABLE, 800, rule.id);
+
+    const response = await request(testApp)
+      .get("/api/brand-payouts/me")
+      .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER));
+
+    expect(response.status).toBe(OK_STATUS);
+    expect(response.body.data.items).toHaveLength(2);
+    expect(response.body.data.items[0].id).toBe(second.id);
+    expect(response.body.data.items[0].productName).toBe("Ledger Item");
+    expect(response.body.data.items[1].id).toBe(first.id);
+  });
+
+  it("pages through the brand's payout ledger with a cursor", async () => {
+    const { brand, member } = await createBrandWithMember();
+    const { userId: adminId } = await createAdminSession();
+    const rule = await prisma.platformCommissionRule.create({
+      data: { isActive: true, updatedById: adminId },
+    });
+    await createBrandPayout(brand.id, BrandPayoutStatus.PENDING, 500, rule.id);
+    await createBrandPayout(brand.id, BrandPayoutStatus.AVAILABLE, 800, rule.id);
+    const authHeader = authHeaderFor(member.id, UserRole.BRAND_OWNER);
+
+    const firstPage = await request(testApp)
+      .get("/api/brand-payouts/me")
+      .query({ limit: 1 })
+      .set("Authorization", authHeader);
+
+    expect(firstPage.status).toBe(OK_STATUS);
+    expect(firstPage.body.data.items).toHaveLength(1);
+    expect(firstPage.body.data.nextCursor).not.toBeNull();
+
+    const secondPage = await request(testApp)
+      .get("/api/brand-payouts/me")
+      .query({ limit: 1, cursor: firstPage.body.data.nextCursor })
+      .set("Authorization", authHeader);
+
+    expect(secondPage.status).toBe(OK_STATUS);
+    expect(secondPage.body.data.items).toHaveLength(1);
+    expect(secondPage.body.data.items[0].id).not.toBe(firstPage.body.data.items[0].id);
+  });
+
+  it("404s for a user with no brand membership", async () => {
+    const outsider = await createUser();
+
+    const response = await request(testApp)
+      .get("/api/brand-payouts/me")
+      .set("Authorization", authHeaderFor(outsider.id, UserRole.BRAND_OWNER));
+
+    expect(response.status).toBe(NOT_FOUND_STATUS);
+  });
+});
