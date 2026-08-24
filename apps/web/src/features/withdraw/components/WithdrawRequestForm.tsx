@@ -46,13 +46,14 @@ export const WithdrawRequestForm = ({
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
-    try {
-      await createWithdrawRequest.mutateAsync(values);
-      toast.success("Withdrawal request submitted.");
-      form.reset({ bankAccountId: values.bankAccountId, amount: eligibility.minAmount });
-    } catch {
-      // Surfaced below via createWithdrawRequest.error.
-    }
+    const succeeded = await createWithdrawRequest.mutateAsync(values).then(
+      () => true,
+      () => false,
+    );
+    if (!succeeded) return;
+
+    toast.success("Withdrawal request submitted.");
+    form.reset({ bankAccountId: values.bankAccountId, amount: eligibility.minAmount });
   });
 
   if (verifiedBankAccounts.length === 0) {

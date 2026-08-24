@@ -30,7 +30,7 @@ mark-paid`, `PUT /admin/policy` (versioned — creates a new active row for the 
 **User-facing:** a creator or brand sees a read-only policy panel (min/max, cycle, processing
 time) and their current balance, submits a withdrawal request against a verified bank account,
 and sees it move through their request history with a status badge. Admin review/settlement is
-`withdraw-requests` (admin console, later chunk).
+`apps/admin/src/features/withdraw-requests` — see that feature's README.
 
 **Technical:** `withdraw.routes.ts` → `withdraw.controller.ts` → `withdraw.service.ts` →
 `withdraw.repository.ts` (+ read-only calls into `commissions`/`brand-payouts` for the ledger sum,

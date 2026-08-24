@@ -50,17 +50,15 @@ export const AddBankAccountModal = ({ ownerType, onClose }: AddBankAccountModalP
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
-    try {
-      const { nameMismatch } = await addBankAccount.mutateAsync(values);
-      if (nameMismatch) {
-        toast.warning(
-          "The account holder name doesn't match your profile name — this may slow down verification.",
-        );
-      }
-      onClose();
-    } catch {
-      // Surfaced below via addBankAccount.error.
+    const result = await addBankAccount.mutateAsync(values).catch(() => null);
+    if (!result) return;
+
+    if (result.nameMismatch) {
+      toast.warning(
+        "The account holder name doesn't match your profile name — this may slow down verification.",
+      );
     }
+    onClose();
   });
 
   return (
