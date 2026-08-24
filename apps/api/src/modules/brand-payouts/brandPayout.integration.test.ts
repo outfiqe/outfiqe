@@ -206,6 +206,147 @@ describe("platform commission rules (admin)", () => {
   });
 });
 
+describe("gateway fee rates (admin)", () => {
+  it("requires admin", async () => {
+    const user = await createUser();
+
+    const response = await request(testApp)
+      .post("/api/brand-payouts/gateway-fee-rates")
+      .set("Authorization", authHeaderFor(user.id, UserRole.BRAND_OWNER))
+      .send({ paymentMethod: PaymentMethod.ESEWA, ratePercent: 2 });
+
+    expect(response.status).toBe(FORBIDDEN_STATUS);
+  });
+
+  it("creates a new active rate and deactivates only the previous rate for that provider", async () => {
+    const { userId: adminId, authHeader } = await createAdminSession();
+
+    const firstEsewa = await request(testApp)
+      .post("/api/brand-payouts/gateway-fee-rates")
+      .set("Authorization", authHeader)
+      .send({ paymentMethod: PaymentMethod.ESEWA, ratePercent: 2 });
+    expect(firstEsewa.status).toBe(CREATED_STATUS);
+
+    const khalti = await request(testApp)
+      .post("/api/brand-payouts/gateway-fee-rates")
+      .set("Authorization", authHeader)
+      .send({ paymentMethod: PaymentMethod.KHALTI, ratePercent: 2.5 });
+    expect(khalti.status).toBe(CREATED_STATUS);
+
+    const secondEsewa = await request(testApp)
+      .post("/api/brand-payouts/gateway-fee-rates")
+      .set("Authorization", authHeader)
+      .send({ paymentMethod: PaymentMethod.ESEWA, ratePercent: 3 });
+    expect(secondEsewa.status).toBe(CREATED_STATUS);
+    expect(secondEsewa.body.data.isActive).toBe(true);
+
+    const rates = await prisma.gatewayFeeRate.findMany({
+      where: { updatedById: adminId },
+      orderBy: [{ paymentMethod: "asc" }, { createdAt: "asc" }],
+    });
+    const esewaRates = rates.filter((rate) => rate.paymentMethod === PaymentMethod.ESEWA);
+    expect(esewaRates[0]?.isActive).toBe(false);
+    expect(esewaRates[1]?.isActive).toBe(true);
+    const khaltiRate = rates.find((rate) => rate.paymentMethod === PaymentMethod.KHALTI);
+    expect(khaltiRate?.isActive).toBe(true);
+
+    const listResponse = await request(testApp)
+      .get("/api/brand-payouts/gateway-fee-rates")
+      .set("Authorization", authHeader);
+    expect(listResponse.status).toBe(OK_STATUS);
+    expect(listResponse.body.data).toHaveLength(3);
+  });
+});
+
+describe("brand commission exemptions (admin)", () => {
+  it("requires admin", async () => {
+    const user = await createUser();
+    const { brand } = await createBrandWithMember();
+
+    const response = await request(testApp)
+      .post("/api/brand-payouts/exemptions")
+      .set("Authorization", authHeaderFor(user.id, UserRole.BRAND_OWNER))
+      .send({
+        brandId: brand.id,
+        startsAt: new Date().toISOString(),
+        endsAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+        reason: "Launch cohort",
+      });
+
+    expect(response.status).toBe(FORBIDDEN_STATUS);
+  });
+
+  it("creates, lists, and revokes an exemption", async () => {
+    const { authHeader } = await createAdminSession();
+    const { brand } = await createBrandWithMember();
+
+    const createResponse = await request(testApp)
+      .post("/api/brand-payouts/exemptions")
+      .set("Authorization", authHeader)
+      .send({
+        brandId: brand.id,
+        startsAt: new Date().toISOString(),
+        endsAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+        reason: "Launch cohort, first 10 brands",
+      });
+    expect(createResponse.status).toBe(CREATED_STATUS);
+    expect(createResponse.body.data.brandName).toBe(brand.name);
+    expect(createResponse.body.data.revokedAt).toBeNull();
+    const exemptionId = createResponse.body.data.id;
+
+    const listResponse = await request(testApp)
+      .get(`/api/brand-payouts/exemptions?brandId=${brand.id}`)
+      .set("Authorization", authHeader);
+    expect(listResponse.status).toBe(OK_STATUS);
+    expect(listResponse.body.data).toHaveLength(1);
+
+    const revokeResponse = await request(testApp)
+      .patch(`/api/brand-payouts/exemptions/${exemptionId}/revoke`)
+      .set("Authorization", authHeader);
+    expect(revokeResponse.status).toBe(OK_STATUS);
+
+    const revoked = await prisma.brandCommissionExemption.findUniqueOrThrow({
+      where: { id: exemptionId },
+    });
+    expect(revoked.revokedAt).not.toBeNull();
+
+    const secondRevoke = await request(testApp)
+      .patch(`/api/brand-payouts/exemptions/${exemptionId}/revoke`)
+      .set("Authorization", authHeader);
+    expect(secondRevoke.status).toBe(NOT_FOUND_STATUS);
+  });
+
+  it("does not alter an already-created brand payout when its brand's exemption is revoked", async () => {
+    const { userId: adminId, authHeader } = await createAdminSession();
+    const { brand } = await createBrandWithMember();
+    const rule = await prisma.platformCommissionRule.create({
+      data: { isActive: true, updatedById: adminId },
+    });
+    const exemption = await prisma.brandCommissionExemption.create({
+      data: {
+        brandId: brand.id,
+        startsAt: new Date(Date.now() - 1000),
+        endsAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+        reason: "Launch cohort",
+        createdById: adminId,
+      },
+    });
+    const payout = await createBrandPayout(brand.id, BrandPayoutStatus.PENDING, 1000, rule.id);
+    await prisma.brandPayout.update({ where: { id: payout.id }, data: { platformFee: 0 } });
+
+    const revokeResponse = await request(testApp)
+      .patch(`/api/brand-payouts/exemptions/${exemption.id}/revoke`)
+      .set("Authorization", authHeader);
+    expect(revokeResponse.status).toBe(OK_STATUS);
+
+    const unchangedPayout = await prisma.brandPayout.findUniqueOrThrow({
+      where: { id: payout.id },
+    });
+    expect(unchangedPayout.platformFee).toBe(0);
+    expect(unchangedPayout.netAmount).toBe(1000);
+  });
+});
+
 describe("GET /api/brand-payouts/me/summary", () => {
   it("sums netAmount by status, excluding voided rows", async () => {
     const { brand, member } = await createBrandWithMember();

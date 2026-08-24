@@ -275,6 +275,43 @@ describe("POST /api/orders/checkout — settlement ledger", () => {
     expect(payout.netAmount).toBe(980);
   });
 
+  it("charges the normal commission once a brand's exemption has expired", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const { brand, product, size } = await createPurchasableProduct(1000);
+    await prisma.brandCommissionExemption.create({
+      data: {
+        brandId: brand.id,
+        startsAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
+        endsAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
+        reason: "Launch cohort, already over",
+        createdById: adminId,
+      },
+    });
+    const buyer = await createBuyer();
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.COD,
+        buyNow: { productId: product.id, sizeId: size.id, qty: 1 },
+      });
+
+    expect(response.status).toBe(201);
+
+    const payout = await prisma.brandPayout.findFirstOrThrow({
+      where: { orderItem: { orderId: response.body.data.id } },
+    });
+    expect(payout.platformFee).toBe(120);
+    expect(payout.platformCommissionTierId).not.toBeNull();
+  });
+
   it("applies the correct band of a multi-tier ladder based on the item's price", async () => {
     const { authHeader } = await createAdminSession();
     await request(testApp)

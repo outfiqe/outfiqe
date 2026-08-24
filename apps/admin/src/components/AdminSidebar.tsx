@@ -16,6 +16,7 @@ import {
   Layers,
   MapPin,
   Package,
+  Percent,
   PiggyBank,
   Ruler,
   ShoppingBag,
@@ -49,6 +50,12 @@ const NAV_SECTIONS: SidebarNavSection[] = [
       { id: "trending", href: "/trending", label: "Trending debug", icon: TrendingUp },
       { id: "creators", href: "/creators", label: "Creators", icon: Users },
       { id: "commissions", href: "/commissions", label: "Commissions", icon: Wallet },
+      {
+        id: "platform-commission",
+        href: "/platform-commission",
+        label: "Platform commission",
+        icon: Percent,
+      },
       {
         id: "withdraw-requests",
         href: "/withdraw-requests",
