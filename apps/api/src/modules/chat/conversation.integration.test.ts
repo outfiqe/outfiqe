@@ -124,6 +124,56 @@ describe("Sending and listing messages", () => {
     expect(listResponse.body.data.items).toHaveLength(0);
   });
 
+  it("filters the conversation list by the other participant's name or handle", async () => {
+    const searcher = await createUser("Search Caller", "search-caller");
+    const jane = await createUser("Jane Match", "jane-handle");
+    const bob = await createUser("Bob NoMatch", "bob-handle");
+    await sendMessage(
+      searcher.id,
+      searcher.role,
+      (await startConversation(searcher.id, searcher.role, jane.id)).body.data.id,
+      { body: "hi jane" },
+    );
+    await sendMessage(
+      searcher.id,
+      searcher.role,
+      (await startConversation(searcher.id, searcher.role, bob.id)).body.data.id,
+      { body: "hi bob" },
+    );
+
+    const byName = await request(testApp)
+      .get("/api/conversations")
+      .query({ q: "Jane" })
+      .set("Authorization", authHeaderFor(searcher.id, searcher.role));
+    expect(byName.body.data.items).toHaveLength(1);
+    expect(byName.body.data.items[0].otherParticipant.id).toBe(jane.id);
+
+    const byHandle = await request(testApp)
+      .get("/api/conversations")
+      .query({ q: "jane-handle" })
+      .set("Authorization", authHeaderFor(searcher.id, searcher.role));
+    expect(byHandle.body.data.items).toHaveLength(1);
+    expect(byHandle.body.data.items[0].otherParticipant.id).toBe(jane.id);
+  });
+
+  it("never lets a search term leak a conversation the caller isn't part of", async () => {
+    const outsider = await createUser("Outsider", "outsider");
+    const memberA = await createUser("Member A Match", "member-a-match");
+    const memberB = await createUser("Member B", "member-b");
+    await sendMessage(
+      memberA.id,
+      memberA.role,
+      (await startConversation(memberA.id, memberA.role, memberB.id)).body.data.id,
+      { body: "private chat" },
+    );
+
+    const response = await request(testApp)
+      .get("/api/conversations")
+      .query({ q: "Match" })
+      .set("Authorization", authHeaderFor(outsider.id, outsider.role));
+    expect(response.body.data.items).toHaveLength(0);
+  });
+
   it("sends an image-only message with no body", async () => {
     const userA = await createUser("Photo Sender", "photo-sender");
     const userB = await createUser("Photo Recipient", "photo-recipient");

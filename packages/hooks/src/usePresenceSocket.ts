@@ -6,7 +6,7 @@ import { useEffect } from "react";
 
 import type { EventSocket } from "./socketEventAdapter";
 import { conversationQueryKey } from "./useConversation";
-import { CONVERSATIONS_QUERY_KEY } from "./useConversations";
+import { invalidateConversationsList } from "./useConversations";
 
 const PRESENCE_SOCKET_EVENT = "presence:changed";
 
@@ -47,7 +47,7 @@ export const usePresenceSocket = (
           (data) => patchOtherParticipant(data, payload),
         );
       }
-      void queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY, exact: true });
+      void invalidateConversationsList(queryClient);
     };
 
     socket.on(PRESENCE_SOCKET_EVENT, handlePresenceChanged);

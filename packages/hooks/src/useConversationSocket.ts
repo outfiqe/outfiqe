@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 import type { EventSocket } from "./socketEventAdapter";
-import { CONVERSATIONS_QUERY_KEY } from "./useConversations";
+import { invalidateConversationsList } from "./useConversations";
 import { conversationMessagesQueryKey } from "./useConversationThread";
 
 const CONVERSATION_SOCKET_EVENTS = {
@@ -78,7 +78,7 @@ export const useConversationSocket = (
     };
 
     const handleConversationUpdated = (): void => {
-      void queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY, exact: true });
+      void invalidateConversationsList(queryClient);
     };
 
     socket.on(CONVERSATION_SOCKET_EVENTS.MESSAGE_CREATED, handleMessageCreated);

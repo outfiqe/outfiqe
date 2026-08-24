@@ -79,14 +79,22 @@ flows work elsewhere and avoids inventing brand-as-participant semantics this sy
 The button is hidden entirely when `contactUserId` is null (no owner membership yet) or when the
 viewer's own `state.user.brandId` matches the brand being viewed.
 
-**Every `CONVERSATIONS_QUERY_KEY` invalidation in `@outfiqe/hooks` passes `exact: true`.** React
-Query's default `invalidateQueries` match is a key-prefix match, and `CONVERSATIONS_QUERY_KEY` is
-`["conversations"]` — a prefix of both `conversationQueryKey(id)` (`useConversation`) and
-`conversationMessagesQueryKey(id)` (`useConversationThread`). Without `exact: true`, invalidating
-the conversation list on every send/mark-read/presence-change/socket event also invalidates and
-refetches every currently-open thread, which both wastes a request and can overwrite an
-optimistic message-send with a stale response mid-flight. `exact: true` scopes the invalidation to
-the list query only, which is the only one these call sites actually mean to refresh.
+**Every `CONVERSATIONS_QUERY_KEY` invalidation in `@outfiqe/hooks` goes through
+`invalidateConversationsList` (`useConversations.ts`), never a raw `invalidateQueries({ queryKey:
+CONVERSATIONS_QUERY_KEY })`.** React Query's default `invalidateQueries` match is a key-prefix
+match, and `CONVERSATIONS_QUERY_KEY` is `["conversations"]` — a prefix of both
+`conversationQueryKey(id)` (`useConversation`) and `conversationMessagesQueryKey(id)`
+(`useConversationThread`) too. A bare prefix invalidation on every send/mark-read/presence-change/
+socket event would also invalidate and refetch every currently-open thread, wasting a request and
+able to overwrite an optimistic message-send with a stale response mid-flight.
+`invalidateConversationsList` uses a `predicate` instead, matching only the bare list key
+(`["conversations"]`) and its search variants (`["conversations", { q }]`, from
+`useConversations`' optional search term) — never a query whose second key segment is a
+conversation id string. Search itself is server-side (`GET /conversations?q=`, filtered in the
+Prisma query alongside the existing participant/`lastMessageAt` `where` clauses, debounced 300ms
+client-side via `useDebouncedValue`, same shape as `useChatContactSearch`) rather than filtering
+the already-loaded page client-side, since a user's full conversation history isn't guaranteed to
+already be loaded.
 
 **No `Switch`/multi-window chat, but a new `Drawer` primitive was added to `packages/design-system`.**
 Neither `Modal` (blocking, unmounts with its page) nor `Popover` (anchored, sized for small

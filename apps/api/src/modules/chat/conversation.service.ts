@@ -98,7 +98,7 @@ export const conversationService = {
 
   async listConversations(
     callerId: string,
-    query: { cursor?: string; limit: number },
+    query: { cursor?: string; limit: number; q?: string },
   ): Promise<ConversationsPage> {
     const rows = await conversationRepository.listForUser(callerId, query);
     const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);

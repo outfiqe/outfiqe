@@ -29,13 +29,13 @@ export const FloatingChatLauncher = () => {
       type="button"
       onClick={openList}
       aria-label={totalUnread > 0 ? `Open chat, ${totalUnread} unread` : "Open chat"}
-      className="fixed bottom-6 right-6 z-30 flex size-14 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105"
+      className="fixed bottom-6 right-6 z-30 flex size-11 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105"
     >
-      <MessageCircle className="size-6" />
+      <MessageCircle className="size-5" />
       {totalUnread > 0 && (
         <span
           aria-hidden
-          className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white"
+          className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white"
         >
           {formatBadgeCount(totalUnread)}
         </span>

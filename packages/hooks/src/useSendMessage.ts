@@ -4,7 +4,7 @@ import type { ConversationsApi } from "@outfiqe/client";
 import type { Message, MessagesPage, NewMessageAttachmentInput } from "@outfiqe/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { CONVERSATIONS_QUERY_KEY } from "./useConversations";
+import { invalidateConversationsList } from "./useConversations";
 import { conversationMessagesQueryKey } from "./useConversationThread";
 
 type InfiniteMessagesData = {
@@ -40,7 +40,7 @@ export const useSendMessage = (conversationsApi: ConversationsApi, conversationI
         conversationMessagesQueryKey(conversationId),
         (data) => prependMessage(data, message),
       );
-      void queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY, exact: true });
+      void invalidateConversationsList(queryClient);
     },
   });
 };

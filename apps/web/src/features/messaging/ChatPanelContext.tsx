@@ -74,6 +74,7 @@ export const ChatPanelProvider = ({ children }: { children: ReactNode }) => {
   const openConversationWith = useCallback(
     (userId: string) => {
       setIsOpen(true);
+      setView({ kind: "list" });
       startConversation.mutate(userId, {
         onSuccess: (conversation) => setView({ kind: "thread", conversationId: conversation.id }),
       });

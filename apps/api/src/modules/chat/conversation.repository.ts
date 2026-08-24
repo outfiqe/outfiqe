@@ -53,9 +53,31 @@ export const conversationRepository = {
     });
   },
 
-  async listForUser(userId: string, params: { cursor?: string; limit: number }) {
+  async listForUser(userId: string, params: { cursor?: string; limit: number; q?: string }) {
     return prisma.conversation.findMany({
-      where: { participants: { some: { userId } }, lastMessageAt: { not: null } },
+      where: {
+        AND: [
+          { participants: { some: { userId } } },
+          { lastMessageAt: { not: null } },
+          ...(params.q
+            ? [
+                {
+                  participants: {
+                    some: {
+                      userId: { not: userId },
+                      user: {
+                        OR: [
+                          { name: { contains: params.q, mode: "insensitive" as const } },
+                          { handle: { contains: params.q, mode: "insensitive" as const } },
+                        ],
+                      },
+                    },
+                  },
+                },
+              ]
+            : []),
+        ],
+      },
       orderBy: [{ lastMessageAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),

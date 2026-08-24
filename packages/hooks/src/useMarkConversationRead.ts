@@ -3,7 +3,7 @@
 import type { ConversationsApi } from "@outfiqe/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { CONVERSATIONS_QUERY_KEY } from "./useConversations";
+import { invalidateConversationsList } from "./useConversations";
 
 export const useMarkConversationRead = (
   conversationsApi: ConversationsApi,
@@ -14,7 +14,7 @@ export const useMarkConversationRead = (
   return useMutation({
     mutationFn: () => conversationsApi.markConversationRead(conversationId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY, exact: true });
+      void invalidateConversationsList(queryClient);
     },
   });
 };

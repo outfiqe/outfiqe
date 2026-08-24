@@ -20,7 +20,7 @@ export const createConversationsApi = (client: ApiClient) => ({
   },
 
   listConversations: async (
-    params: { cursor?: string; limit?: number } = {},
+    params: { cursor?: string; limit?: number; q?: string } = {},
   ): Promise<ConversationsPage> => {
     const res = await client.get<ConversationsPage>("/conversations", { params });
     return res.data;

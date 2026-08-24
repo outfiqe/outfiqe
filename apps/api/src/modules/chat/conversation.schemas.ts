@@ -18,6 +18,7 @@ export const listConversationsQuerySchema = z.object({
     .min(1)
     .max(CONVERSATIONS_MAX_PAGE_SIZE)
     .default(CONVERSATIONS_DEFAULT_PAGE_SIZE),
+  q: z.string().trim().min(1).optional(),
 });
 
 export type StartConversationBody = z.infer<typeof startConversationBodySchema>;
