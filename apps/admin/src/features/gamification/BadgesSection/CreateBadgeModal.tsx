@@ -1,5 +1,6 @@
 import { Button, FormBanner, Modal } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { type FormEvent, useState } from "react";
 
 import { gamificationApi } from "../api";
@@ -7,6 +8,7 @@ import { BadgeFields } from "./BadgeFields";
 import { BADGES_QUERY_KEY } from "./badgeForm.constants";
 import type { BadgeFormState } from "./badgeForm.types";
 import { toFormInput } from "./badgeForm.utils";
+import { writeBadgeStudioDraft } from "./DesignStudio/badgeStudioDraft.utils";
 
 const CREATE_BADGE_FORM_ID = "create-badge-form";
 
@@ -18,8 +20,14 @@ export const CreateBadgeModal = ({
   onClose: () => void;
 }) => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [form, setForm] = useState<BadgeFormState>(initialForm);
   const [error, setError] = useState<string | null>(null);
+
+  const openDesignStudio = () => {
+    writeBadgeStudioDraft({ mode: "create", form });
+    void navigate({ to: "/gamification/badges/design-studio" });
+  };
 
   const create = useMutation({
     mutationFn: () => gamificationApi.createBadge(toFormInput(form)),
@@ -56,7 +64,12 @@ export const CreateBadgeModal = ({
       }
     >
       <form id={CREATE_BADGE_FORM_ID} onSubmit={handleSubmit}>
-        <BadgeFields idPrefix="create-badge" form={form} onChange={setForm} />
+        <BadgeFields
+          idPrefix="create-badge"
+          form={form}
+          onChange={setForm}
+          onOpenDesignStudio={openDesignStudio}
+        />
       </form>
     </Modal>
   );

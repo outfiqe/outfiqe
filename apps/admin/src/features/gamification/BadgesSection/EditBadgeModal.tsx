@@ -1,5 +1,6 @@
 import { Button, Checkbox, FormBanner, Modal } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { type FormEvent, useState } from "react";
 
 import type { UpdateBadgeFormInput } from "../api";
@@ -9,15 +10,34 @@ import { BadgeFields } from "./BadgeFields";
 import { BADGES_QUERY_KEY } from "./badgeForm.constants";
 import type { BadgeFormState } from "./badgeForm.types";
 import { formForBadge, toFormInput } from "./badgeForm.utils";
+import { writeBadgeStudioDraft } from "./DesignStudio/badgeStudioDraft.utils";
 
-export const EditBadgeModal = ({ badge, onClose }: { badge: BadgeAdmin; onClose: () => void }) => {
+export const EditBadgeModal = ({
+  badge,
+  initialForm,
+  initialIsActive,
+  initialAchievementIsActive,
+  onClose,
+}: {
+  badge: BadgeAdmin;
+  initialForm?: BadgeFormState;
+  initialIsActive?: boolean;
+  initialAchievementIsActive?: boolean;
+  onClose: () => void;
+}) => {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState<BadgeFormState>(() => formForBadge(badge));
-  const [isActive, setIsActive] = useState(badge.isActive);
+  const navigate = useNavigate();
+  const [form, setForm] = useState<BadgeFormState>(() => initialForm ?? formForBadge(badge));
+  const [isActive, setIsActive] = useState(initialIsActive ?? badge.isActive);
   const [achievementIsActive, setAchievementIsActive] = useState(
-    badge.achievement?.isActive ?? true,
+    initialAchievementIsActive ?? badge.achievement?.isActive ?? true,
   );
   const [error, setError] = useState<string | null>(null);
+
+  const openDesignStudio = () => {
+    writeBadgeStudioDraft({ mode: "edit", badge, form, isActive, achievementIsActive });
+    void navigate({ to: "/gamification/badges/design-studio" });
+  };
 
   const formId = `edit-badge-${badge.id}-form`;
 
@@ -60,7 +80,12 @@ export const EditBadgeModal = ({ badge, onClose }: { badge: BadgeAdmin; onClose:
       }
     >
       <form id={formId} onSubmit={handleSubmit} className="space-y-4">
-        <BadgeFields idPrefix={`edit-badge-${badge.id}`} form={form} onChange={setForm} />
+        <BadgeFields
+          idPrefix={`edit-badge-${badge.id}`}
+          form={form}
+          onChange={setForm}
+          onOpenDesignStudio={openDesignStudio}
+        />
         <label className="flex items-center gap-2 text-sm text-foreground">
           <Checkbox checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
           Active
