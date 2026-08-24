@@ -77,6 +77,8 @@ export default defineConfig({
         "src/features/explore/components/CommentThread.tsx",
         "src/shared/lib/contentSecurityPolicy.ts",
         "src/shared/lib/apiOrigin.ts",
+        "src/features/chat-settings/ChatAvailabilitySettings.tsx",
+        "src/shared/lib/chatApi.ts",
       ],
       thresholds: {
         lines: 80,

@@ -83,5 +83,7 @@ export const useChatBlocks = (chatApi: ChatApi, enabled = true) => {
     blocksQuery,
     blockUser: blockMutation.mutate,
     unblockUser: unblockMutation.mutate,
+    pendingBlockContactId: blockMutation.isPending ? blockMutation.variables?.id : undefined,
+    pendingUnblockContactId: unblockMutation.isPending ? unblockMutation.variables : undefined,
   };
 };
