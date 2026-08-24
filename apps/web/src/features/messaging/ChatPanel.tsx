@@ -10,7 +10,7 @@ import { MessageThread } from "./MessageThread";
 
 export const ChatPanel = () => {
   const router = useRouter();
-  const { isOpen, view, openList, close } = useChatPanel();
+  const { isOpen, view, openConversation, openList, close } = useChatPanel();
 
   if (!isOpen) return null;
 
@@ -39,7 +39,7 @@ export const ChatPanel = () => {
       {view.kind === "thread" ? (
         <MessageThread conversationId={view.conversationId} onBack={openList} />
       ) : (
-        <ConversationList />
+        <ConversationList onSelect={openConversation} />
       )}
     </Drawer>
   );

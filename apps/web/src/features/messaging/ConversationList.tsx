@@ -4,10 +4,9 @@ import { Button, Skeleton } from "@outfiqe/design-system";
 import { useConversations } from "@outfiqe/hooks";
 
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+import { cn } from "@/shared/lib/cn";
 import { conversationsApi } from "@/shared/lib/conversationsApi";
 import { formatRelativeTime } from "@/shared/lib/formatRelativeTime";
-
-import { useChatPanel } from "./ChatPanelContext";
 
 const SKELETON_ROW_COUNT = 4;
 const MAX_DISPLAYED_ROW_UNREAD_COUNT = 9;
@@ -22,8 +21,12 @@ const ConversationRowSkeleton = () => (
   </li>
 );
 
-export const ConversationList = () => {
-  const { openConversation } = useChatPanel();
+type ConversationListProps = {
+  onSelect: (conversationId: string) => void;
+  activeConversationId?: string;
+};
+
+export const ConversationList = ({ onSelect, activeConversationId }: ConversationListProps) => {
   const conversationsQuery = useConversations(conversationsApi);
   const conversations = conversationsQuery.data?.pages.flatMap((page) => page.items) ?? [];
 
@@ -71,8 +74,11 @@ export const ConversationList = () => {
           <li key={conversation.id}>
             <button
               type="button"
-              onClick={() => openConversation(conversation.id)}
-              className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted"
+              onClick={() => onSelect(conversation.id)}
+              className={cn(
+                "flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted",
+                activeConversationId === conversation.id && "bg-muted",
+              )}
             >
               <span className="relative shrink-0">
                 <span
