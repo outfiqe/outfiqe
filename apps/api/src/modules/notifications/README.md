@@ -30,9 +30,9 @@ activity to an open bell/panel live.
   `notification_preferences`. The rest are small, single-purpose cross-module reads the write path
   needs to build a denormalized `metadata` snapshot or resolve a fan-out recipient list
   (`findActorSnapshot`, `findLookSnapshot`, `findBrandMemberIds`,
-  `findOrderNotificationContext`) — kept here rather than added to each producing module's own
-  repository, since "who should this notification go to and what should it show" is this module's
-  concern, not theirs.
+  `findOrderNotificationContext`, `findProductReviewSnapshot`, `findDeliveredOrderProducts`) —
+  kept here rather than added to each producing module's own repository, since "who should this
+  notification go to and what should it show" is this module's concern, not theirs.
 - `notification.service.ts` — `notifyIndividual`/`notifyManyIndividual`/`notifyGroup`/
   `retractGroupActor`: the mute-check + write + realtime-handoff orchestration every event handler
   calls into. Never called directly by another module — only by `notification.events.ts`.
@@ -107,6 +107,16 @@ a `Notification` against at review time. The existing `brandApprovedTemplate`/
 **`ORDER_STATUS_CHANGED`'s recipient is the order's buyer, not a creator/business role** — the one
 notification type any authenticated customer can receive regardless of `isCreator`/`role`. The
 bell therefore mounts for every authenticated user on `apps/web`, not just creators/businesses.
+
+**`REVIEW_REQUESTED` piggybacks on the existing `ORDER_STATUS_CHANGED` handler instead of a new
+domain event.** `product-reviews` doesn't own a consumer file of its own — the order module
+already publishes `ORDER_STATUS_CHANGED` with the new `DELIVERED` status on every delivery, so this
+module's existing handler additionally fans out one `REVIEW_REQUESTED` notification per distinct
+product in that order (`findDeliveredOrderProducts`), deep-linking to that product's review section
+on the web product page. `PRODUCT_REVIEWED` (a review's target product owner being notified) is a
+genuine new domain event, `DomainEvents.PRODUCT_REVIEWED`, published by `product-reviews.service.ts`
+after a review is created — resolved to every `BrandMembership` row for that product's brand, same
+fan-out `PRODUCT_PURCHASED` → `NEW_ORDER` already does.
 
 **Self-actions never notify.** Every handler that has both an actor and a recipient skips the
 write when they're the same user (liking/commenting/following your own content, or — impossible

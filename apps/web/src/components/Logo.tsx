@@ -1,8 +1,7 @@
+import { LogoMark } from "@outfiqe/design-system";
 import Link from "next/link";
 
 import { cn } from "@/shared/lib/cn";
-
-import { LogoMark } from "./LogoMark";
 
 const SIZES = {
   sm: { text: "text-lg", mark: "size-5" },

@@ -6,7 +6,12 @@ import type { ProductType } from "#generated/prisma/enums.js";
 import { CreatorStatus, ProductStatus } from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
-import { NEW_ARRIVAL_WINDOW_MS, TRENDING_LIMIT } from "./product.constants.js";
+import {
+  NEW_ARRIVAL_WINDOW_MS,
+  PRODUCT_RATING_MAX,
+  PRODUCT_RATING_MIN,
+  TRENDING_LIMIT,
+} from "./product.constants.js";
 import type {
   BrandProductSize,
   CreateProductInput,
@@ -70,6 +75,17 @@ const withTotalStock = <T extends { sizes: { stock: number }[] }>(
   rows.map(({ sizes, ...rest }) => ({ ...rest, totalStock: sumStock(sizes) }));
 
 const EMPTY_SALES_STATS: ProductSalesStats = { creatorBuyerCount: 0, unitsSold: 0 };
+
+type RatingCountField =
+  "rating1Count" | "rating2Count" | "rating3Count" | "rating4Count" | "rating5Count";
+
+const RATING_COUNT_FIELD_BY_VALUE: Record<number, RatingCountField> = {
+  1: "rating1Count",
+  2: "rating2Count",
+  3: "rating3Count",
+  4: "rating4Count",
+  5: "rating5Count",
+};
 
 const getSalesStatsByProductIds = async (
   productIds: string[],
@@ -451,6 +467,44 @@ export const productRepository = {
 
   async updateWornByCount(productId: string, wornByCount: number): Promise<void> {
     await prisma.product.update({ where: { id: productId }, data: { wornByCount } });
+  },
+
+  async refreshRatingSummary(productId: string): Promise<void> {
+    const grouped = await prisma.productReview.groupBy({
+      by: ["rating"],
+      where: { productId, deletedAt: null },
+      _count: { _all: true },
+    });
+
+    const ratingCounts: Record<RatingCountField, number> = {
+      rating1Count: 0,
+      rating2Count: 0,
+      rating3Count: 0,
+      rating4Count: 0,
+      rating5Count: 0,
+    };
+    let reviewCount = 0;
+    let weightedSum = 0;
+    for (const {
+      rating,
+      _count: { _all: count },
+    } of grouped) {
+      if (rating < PRODUCT_RATING_MIN || rating > PRODUCT_RATING_MAX) continue;
+      const field = RATING_COUNT_FIELD_BY_VALUE[rating];
+      if (!field) continue;
+      ratingCounts[field] = count;
+      reviewCount += count;
+      weightedSum += rating * count;
+    }
+
+    await prisma.product.update({
+      where: { id: productId },
+      data: {
+        ...ratingCounts,
+        reviewCount,
+        avgRating: reviewCount > 0 ? weightedSum / reviewCount : null,
+      },
+    });
   },
 
   async listProductIdsTaggedByCreator(creatorId: string): Promise<string[]> {

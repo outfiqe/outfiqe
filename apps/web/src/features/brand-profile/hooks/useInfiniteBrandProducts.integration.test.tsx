@@ -21,6 +21,8 @@ const buildProduct = (id: string) => ({
   isNew: true,
   creatorBuyerCount: 0,
   unitsSold: 0,
+  avgRating: null,
+  reviewCount: 0,
 });
 
 const wrapper = ({ children }: { children: ReactNode }) => {

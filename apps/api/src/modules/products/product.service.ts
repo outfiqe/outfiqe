@@ -383,6 +383,10 @@ export const productService = {
     await Promise.all(productIds.map((productId) => productService.recountWornBy(productId)));
   },
 
+  async recomputeRatingSummary(productId: string): Promise<void> {
+    await productRepository.refreshRatingSummary(productId);
+  },
+
   async listPublicByBrand(
     brandId: string,
     { type: typeSlug, cursor, limit }: ListBrandProductsQuery,

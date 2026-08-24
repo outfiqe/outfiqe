@@ -29,6 +29,12 @@ export const resolveNotificationHref = (
       return "/dashboard/profile";
     case "BRAND_APPLICATION_SUBMITTED":
       return null;
+    case "PRODUCT_REVIEWED":
+      return "/dashboard/products";
+    case "REVIEW_REQUESTED":
+      return notification.entityId
+        ? `/product/${notification.entityId}?review=write#reviews`
+        : null;
     default:
       return null;
   }

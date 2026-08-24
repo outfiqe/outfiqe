@@ -2,6 +2,16 @@ import type { ProductStatus, ProductType } from "#generated/prisma/enums.js";
 
 import type { ProductTypeSlug } from "./product.constants.js";
 
+export type ProductRatingSummary = {
+  avgRating: number | null;
+  reviewCount: number;
+  rating1Count: number;
+  rating2Count: number;
+  rating3Count: number;
+  rating4Count: number;
+  rating5Count: number;
+};
+
 export type ProductRecord = {
   id: string;
   brandId: string;
@@ -17,7 +27,7 @@ export type ProductRecord = {
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
-};
+} & ProductRatingSummary;
 
 export type ProductSizeRecord = {
   id: string;
@@ -113,7 +123,7 @@ export type PublicProduct = {
   isNew: boolean;
   creatorBuyerCount: number;
   unitsSold: number;
-};
+} & ProductRatingSummary;
 
 export type PublicProductPage = {
   products: PublicProduct[];

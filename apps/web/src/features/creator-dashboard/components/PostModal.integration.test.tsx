@@ -191,6 +191,8 @@ describe("PostModal", () => {
                 isNew: false,
                 creatorBuyerCount: 0,
                 unitsSold: 0,
+                avgRating: null,
+                reviewCount: 0,
               },
             ],
             nextCursor: null,
@@ -223,6 +225,8 @@ describe("PostModal", () => {
     isNew: false,
     creatorBuyerCount: 0,
     unitsSold: 0,
+    avgRating: null,
+    reviewCount: 0,
   };
 
   it("untags a product when it's selected again from search results", async () => {

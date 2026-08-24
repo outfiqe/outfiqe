@@ -15,6 +15,8 @@ export const publicProductSchema = z.object({
   isNew: z.boolean(),
   creatorBuyerCount: z.number(),
   unitsSold: z.number(),
+  avgRating: z.number().nullable(),
+  reviewCount: z.number(),
 });
 export type PublicProduct = z.infer<typeof publicProductSchema>;
 

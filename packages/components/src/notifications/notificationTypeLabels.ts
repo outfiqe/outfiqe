@@ -12,4 +12,6 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   NEW_ORDER: "New orders",
   ORDER_STATUS_CHANGED: "Order status updates",
   BRAND_APPLICATION_SUBMITTED: "New brand applications",
+  PRODUCT_REVIEWED: "New product reviews",
+  REVIEW_REQUESTED: "Review reminders",
 };

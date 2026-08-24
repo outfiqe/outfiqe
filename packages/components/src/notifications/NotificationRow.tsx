@@ -1,4 +1,4 @@
-import { cn } from "@outfiqe/design-system";
+import { cn, LogoMark } from "@outfiqe/design-system";
 import type { Notification, RecentActor } from "@outfiqe/types";
 
 import { formatNotificationTimestamp } from "./formatNotificationTimestamp";
@@ -17,7 +17,9 @@ const ActorStack = ({ actors }: { actors: RecentActor[] }) => {
         {only ? (
           <NotificationAvatar actor={only} />
         ) : (
-          <div className="size-full rounded-full bg-muted" />
+          <div className="flex size-full items-center justify-center rounded-full bg-muted p-2 ring-2 ring-card">
+            <LogoMark className="size-full" />
+          </div>
         )}
       </div>
     );

@@ -9,6 +9,7 @@ import { useState } from "react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useAddToCart } from "@/features/cart";
 import { saveBuyNowPayload } from "@/features/checkout";
+import { ReviewsSection } from "@/features/product-reviews";
 import { useToggleWishlist } from "@/features/wishlist";
 import { cn } from "@/shared/lib/cn";
 
@@ -183,6 +184,8 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
       </div>
 
       <SeenOnCreators productId={product.id} creators={product.seenOnCreators} />
+
+      <ReviewsSection productId={product.id} initialRatingSummary={product} />
     </div>
   );
 };

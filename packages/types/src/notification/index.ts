@@ -9,9 +9,12 @@ export type NotificationType =
   | "COMMISSION_EARNED"
   | "NEW_ORDER"
   | "ORDER_STATUS_CHANGED"
-  | "BRAND_APPLICATION_SUBMITTED";
+  | "BRAND_APPLICATION_SUBMITTED"
+  | "PRODUCT_REVIEWED"
+  | "REVIEW_REQUESTED";
 
-export type NotificationEntityType = "LOOK" | "USER" | "ORDER" | "BRAND_APPLICATION" | "BADGE";
+export type NotificationEntityType =
+  "LOOK" | "USER" | "ORDER" | "BRAND_APPLICATION" | "BADGE" | "PRODUCT";
 
 export type RecentActor = {
   id: string;
@@ -34,6 +37,9 @@ export type NotificationMetadata = {
   orderTotal?: number;
   brandName?: string;
   status?: string;
+  productName?: string;
+  productImageUrl?: string | null;
+  rating?: number;
 };
 
 export type Notification = {

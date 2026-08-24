@@ -89,6 +89,12 @@ export type DomainEventPayloads = {
     userId: string;
     status: FulfilmentStatus;
   };
+  [DomainEvents.PRODUCT_REVIEWED]: {
+    productId: string;
+    reviewId: string;
+    userId: string;
+    rating: number;
+  };
   [DomainEvents.NOTIFICATION_CREATED]: NotificationBroadcastPayload;
   [DomainEvents.NOTIFICATION_UPDATED]: NotificationBroadcastPayload;
 };

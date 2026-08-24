@@ -23,6 +23,8 @@ const buildProduct = (overrides: Partial<PublicProduct> = {}): PublicProduct => 
   isNew: false,
   creatorBuyerCount: 0,
   unitsSold: 0,
+  avgRating: null,
+  reviewCount: 0,
   ...overrides,
 });
 
