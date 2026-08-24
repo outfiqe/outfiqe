@@ -28,6 +28,27 @@ export type NotificationBroadcastPayload = {
   updatedAt: string;
 };
 
+export type MessageAttachmentBroadcast = {
+  id: string;
+  url: string;
+  mimeType: string;
+  width: number | null;
+  height: number | null;
+};
+
+export type MessageBroadcastPayload = {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderName: string;
+  senderHandle: string;
+  senderAvatarUrl: string | null;
+  body: string | null;
+  attachments: MessageAttachmentBroadcast[];
+  createdAt: string;
+  recipientIds: string[];
+};
+
 export type DomainEventPayloads = {
   [DomainEvents.USER_CREATED]: { userId: string; email: string; role?: UserRole };
   [DomainEvents.USER_DELETED]: { userId: string };
@@ -97,6 +118,14 @@ export type DomainEventPayloads = {
   };
   [DomainEvents.NOTIFICATION_CREATED]: NotificationBroadcastPayload;
   [DomainEvents.NOTIFICATION_UPDATED]: NotificationBroadcastPayload;
+  [DomainEvents.CHAT_SETTINGS_UPDATED]: { userId: string; isChatEnabled: boolean };
+  [DomainEvents.CHAT_BLOCK_LIST_UPDATED]: { userId: string };
+  [DomainEvents.MESSAGE_CREATED]: MessageBroadcastPayload;
+  [DomainEvents.PRESENCE_CHANGED]: {
+    userId: string;
+    isOnline: boolean;
+    lastSeenAt: string | null;
+  };
 };
 
 export type DomainEventHandler<E extends DomainEvent> = (

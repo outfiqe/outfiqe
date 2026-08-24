@@ -12,6 +12,9 @@ export const creatorLeaderboardRoom = (category: CreatorLeaderboardCategory): st
 
 export const commentsRoom = (lookId: string): string => `comments:${lookId}`;
 
+export const conversationRoom = (conversationId: string): string =>
+  `conversation:${conversationId}`;
+
 export const SOCKET_EVENTS = {
   LOOK_CREATED: "look:created",
   FEED_SYNC_REQUEST: "feed:sync:request",
@@ -32,6 +35,13 @@ export const SOCKET_EVENTS = {
   COMMENTS_UNSUBSCRIBE: "comments:unsubscribe",
   COMMENT_CREATED: "comment:created",
   COMMENT_REPLY_CREATED: "comment:reply:created",
+  CHAT_SETTINGS_UPDATED: "chat:settings:updated",
+  CHAT_BLOCK_LIST_UPDATED: "chat:block-list:updated",
+  CONVERSATION_SUBSCRIBE: "conversation:subscribe",
+  CONVERSATION_UNSUBSCRIBE: "conversation:unsubscribe",
+  MESSAGE_CREATED: "message:created",
+  CONVERSATION_UPDATED: "conversation:updated",
+  PRESENCE_CHANGED: "presence:changed",
 } as const;
 
 export const SOCKET_RATE_LIMIT = {

@@ -61,6 +61,7 @@ export default defineConfig({
         "src/modules/follows/**/*.ts",
         "src/modules/notifications/notification.utils.ts",
         "src/modules/notifications/notification.retention.ts",
+        "src/modules/chat/**/*.ts",
       ],
       thresholds: {
         lines: 80,

@@ -3,6 +3,7 @@ export * from "./api";
 export * from "./badges";
 export * from "./brand";
 export * from "./category";
+export * from "./chat";
 export * from "./collection";
 export * from "./commission";
 export * from "./hero-slide";

@@ -21,6 +21,7 @@ import { EditPostModal } from "@/features/creator-dashboard/components/EditPostM
 import { useDeleteLook } from "@/features/creator-dashboard/hooks/useDeleteLook";
 import { useUpdateCreatorProfile } from "@/features/creator-dashboard/hooks/useUpdateCreatorProfile";
 import { AddPostButton, PostDetailModal, usePublicLook } from "@/features/explore";
+import { useChatPanel } from "@/features/messaging";
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
@@ -51,6 +52,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const searchParams = useSearchParams();
   const { isAuthenticated, state, updateUser } = useAuth();
   const followMutation = useToggleFollow("user");
+  const { openConversationWith, isStartingConversation } = useChatPanel();
   const updateProfile = useUpdateCreatorProfile();
   const deleteLook = useDeleteLook();
   const {
@@ -118,6 +120,14 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
         },
       },
     );
+  };
+
+  const messageCreator = () => {
+    if (!isAuthenticated) {
+      router.push(`/login?redirect=/creator/${handle}`);
+      return;
+    }
+    openConversationWith(userId);
   };
 
   const openEdit = () => {
@@ -329,14 +339,24 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
             Edit profile
           </Button>
         ) : (
-          <Button
-            variant="outline"
-            aria-pressed={isFollowing}
-            onClick={toggleFollow}
-            className="shrink-0"
-          >
-            {isFollowing ? "Following" : "Follow"}
-          </Button>
+          <div className="flex shrink-0 gap-2">
+            <Button
+              variant="outline"
+              aria-pressed={isFollowing}
+              onClick={toggleFollow}
+              className="shrink-0"
+            >
+              {isFollowing ? "Following" : "Follow"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={messageCreator}
+              disabled={isStartingConversation}
+              className="shrink-0"
+            >
+              Message
+            </Button>
+          </div>
         )}
       </div>
 

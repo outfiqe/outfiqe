@@ -1,5 +1,5 @@
 import { prisma } from "#db/prisma.js";
-import { ProductStatus } from "#generated/prisma/enums.js";
+import { BrandRole, ProductStatus } from "#generated/prisma/enums.js";
 
 import type {
   BrandProfile,
@@ -26,6 +26,14 @@ export const brandRepository = {
 
   async findById(id: string): Promise<BrandRecord | null> {
     return prisma.brand.findUnique({ where: { id } });
+  },
+
+  async findOwnerUserId(brandId: string): Promise<string | null> {
+    const membership = await prisma.brandMembership.findFirst({
+      where: { brandId, role: BrandRole.OWNER },
+      select: { userId: true },
+    });
+    return membership?.userId ?? null;
   },
 
   async findManyByIds(ids: string[], q?: string): Promise<BrandRecord[]> {

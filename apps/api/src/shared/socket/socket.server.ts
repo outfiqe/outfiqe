@@ -4,12 +4,15 @@ import { createAdapter } from "@socket.io/redis-adapter";
 import { Server as SocketIOServer } from "socket.io";
 
 import { env } from "#config/env.config.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
 import logger from "#lib/winston.utils.js";
+import { userRepository } from "#modules/users/user.repository.js";
 import { redis } from "#redis/redis.client.js";
-import { attachRedisLifecycleLogging } from "#redis/redis.utils.js";
+import { attachRedisLifecycleLogging, describeError } from "#redis/redis.utils.js";
 
 import { socketAuth } from "./socket.auth.js";
 import { EXPLORE_ROOM, userRoom } from "./socket.keys.js";
+import { isUserOnline } from "./socket.presence.js";
 import { socketConnectionRateLimit } from "./socket.rate-limit.js";
 import type { AppSocketServer } from "./socket.types.js";
 
@@ -44,7 +47,24 @@ export const initSocket = (httpServer: HttpServer): AppSocketServer => {
 
     const auth = socket.data.auth;
     if (auth) {
-      socket.join(userRoom(auth.userId));
+      void (async () => {
+        try {
+          const wasOnline = await isUserOnline(auth.userId);
+          socket.join(userRoom(auth.userId));
+          if (!wasOnline) {
+            await eventBus.publish(DomainEvents.PRESENCE_CHANGED, {
+              userId: auth.userId,
+              isOnline: true,
+              lastSeenAt: null,
+            });
+          }
+        } catch (error) {
+          logger.error(
+            `Failed to track presence for connecting user ${auth.userId}: ${describeError(error)}`,
+          );
+          socket.join(userRoom(auth.userId));
+        }
+      })();
       logger.info(`Socket connected: user=${auth.userId} socket=${id}`);
     } else {
       logger.info(`Socket connected: guest socket=${id}`);
@@ -54,6 +74,26 @@ export const initSocket = (httpServer: HttpServer): AppSocketServer => {
       logger.info(
         `Socket disconnected: user=${auth?.userId ?? "guest"} socket=${id} reason=${reason}`,
       );
+
+      if (!auth) return;
+      void (async () => {
+        try {
+          const stillOnline = await isUserOnline(auth.userId);
+          if (stillOnline) return;
+
+          const lastSeenAt = new Date();
+          await userRepository.updateLastSeenAt(auth.userId, lastSeenAt);
+          await eventBus.publish(DomainEvents.PRESENCE_CHANGED, {
+            userId: auth.userId,
+            isOnline: false,
+            lastSeenAt: lastSeenAt.toISOString(),
+          });
+        } catch (error) {
+          logger.error(
+            `Failed to track presence for disconnecting user ${auth.userId}: ${describeError(error)}`,
+          );
+        }
+      })();
     });
   });
 
