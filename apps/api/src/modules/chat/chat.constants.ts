@@ -1,0 +1,10 @@
+export const CHAT_CONTACT_SEARCH_RESULT_LIMIT = 20;
+
+export const CHAT_BLOCKS_DEFAULT_PAGE_SIZE = 20;
+export const CHAT_BLOCKS_MAX_PAGE_SIZE = 50;
+
+export const CHAT_SETTINGS_RATE_LIMIT_NAMESPACE = "chat-settings";
+export const CHAT_SETTINGS_RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
+export const CHAT_SETTINGS_RATE_LIMIT_MAX_REQUESTS = 20;
+
+export const CHAT_SOCKET_CONSUMER_GROUP = "socket-broadcast";
