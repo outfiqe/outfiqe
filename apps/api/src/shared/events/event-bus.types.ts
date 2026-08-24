@@ -5,6 +5,7 @@ import type {
   NotificationEntityType,
   NotificationType,
   UserRole,
+  WithdrawRequestStatus,
 } from "#generated/prisma/enums.js";
 
 import type { DomainEvents } from "./event-bus.js";
@@ -115,6 +116,14 @@ export type DomainEventPayloads = {
     reviewId: string;
     userId: string;
     rating: number;
+  };
+  [DomainEvents.WITHDRAW_REQUEST_STATUS_CHANGED]: {
+    requestId: string;
+    requestedById: string;
+    actorId: string;
+    status: WithdrawRequestStatus;
+    amount: number;
+    rejectionReason: string | null;
   };
   [DomainEvents.NOTIFICATION_CREATED]: NotificationBroadcastPayload;
   [DomainEvents.NOTIFICATION_UPDATED]: NotificationBroadcastPayload;

@@ -34,6 +34,7 @@ const push = (message: string) => {
 export const toast = {
   error: push,
   success: push,
+  warning: push,
 };
 
 export const Toaster = () => {

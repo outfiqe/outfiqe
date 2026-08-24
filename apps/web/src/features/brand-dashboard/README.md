@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The signed-in brand owner's workspace: manage the brand profile, list/create/edit/delete products, manage stock, and view orders containing the brand's items. Three pages — `/dashboard/profile`, `/dashboard/products`, `/dashboard/orders` — one per concern, each its own `DashboardSidebar` nav item.
+The signed-in brand owner's workspace: manage the brand profile, list/create/edit/delete products, manage stock, and view orders containing the brand's items. Four pages — `/dashboard/profile`, `/dashboard/products`, `/dashboard/orders`, `/dashboard/wallet` — one per concern, each its own `DashboardSidebar` nav item.
 
 ## Structure
 
@@ -11,8 +11,13 @@ The signed-in brand owner's workspace: manage the brand profile, list/create/edi
 - `components/ProductModal.constants.ts` — `PRODUCT_PHOTO_ASPECT` (1:1, matching the square product-grid thumbnails), `PRODUCT_CROP_BOX_STYLE`, `DEFAULT_IMAGE_MIME_TYPE` — the product-specific parameters fed into the shared photo-crop pieces below.
 - Both product forms render their photo side through `@/shared/components/MediaFormShell` + `PhotoCropPane` + `@/shared/hooks/usePendingPhotos` — the same fixed-photo-pane / scrollable-fields / sticky-footer chrome and single-active-photo crop editor as `creator-dashboard`'s `PostModal`. See that feature's README and the rationale below for what's shared vs. product-specific.
 - `components/OrdersSection.tsx` — read-only list of orders containing this brand's items, its own page (`/dashboard/orders`).
-- `api/brandDashboardApi.ts`, `brandProductsApi.ts`, `brandOrdersApi.ts` (+ matching `*Schemas.ts`) — one API/schema pair per sub-area.
-- `hooks/` — one hook per mutation/query (`useCreateProduct`, `useUpdateProduct`, `useAdjustStock`, `useDeleteProduct`, `useBrandProducts`, `useBrandOrders`, `useUpdateBrandProfile`).
+- `components/WalletSummaryTiles.tsx` — the settlement-ledger breakdown (total sales, pending,
+  available, withdrawn) shown at the top of `/dashboard/wallet`, mirroring
+  `creator-dashboard/EarningsSummaryTiles.tsx`. The wallet page's bank-account management and
+  withdraw request flow itself isn't owned by this feature — see below.
+- `api/brandDashboardApi.ts`, `brandProductsApi.ts`, `brandOrdersApi.ts`, `brandPayoutApi.ts` (+
+  matching `*Schemas.ts`) — one API/schema pair per sub-area.
+- `hooks/` — one hook per mutation/query (`useCreateProduct`, `useUpdateProduct`, `useAdjustStock`, `useDeleteProduct`, `useBrandProducts`, `useBrandOrders`, `useUpdateBrandProfile`, `useBrandPayoutSummary`).
 - `schemas/productForm.schema.ts` — `productFormSchema` (create) and `buildEditProductFormSchema` (edit — a factory, not a static schema; see below).
 
 ## Funnel
@@ -36,3 +41,5 @@ Photos: both forms hold their photos in `usePendingPhotos` (create seeds it empt
 **The product form modals fully reuse `PostModal`'s crop pipeline, not just its chrome.** `usePendingPhotos`, `resolvePendingPhotoUrls`, `PendingPhotoThumbnailRail`/`PhotoCropPane`, and `MediaFormShell` moved to `@/shared` once this feature needed the exact same "pick photos, crop the active one, defer upload to submit" experience `creator-dashboard/PostModal.tsx` already had — same fixed-width left pane / scrollable right pane / sticky footer, same single-active-photo crop editor, same deferred-upload-at-submit flow. Only the parameters differ: products use a 1:1 `PRODUCT_PHOTO_ASPECT` (matching the square product-grid thumbnails) instead of Post's 4:5 portrait, and photos stay optional (no `.min()` on `imageUrls` in `productFormSchema`, unlike Post's mandatory one).
 
 **Existing product photos aren't re-cropped in edit mode, same rationale as `EditPostForm`.** `usePendingPhotos` accepts `product.imageUrls` as seed entries with `file: null`. `PhotoCropPane` renders those as a plain static preview (still remove/add-able) instead of an interactive `CropSurface`, because `getCroppedImageFile` loads images with `crossOrigin="anonymous"` — re-cropping an already-hosted image would depend on the uploads host sending permissive CORS headers, which isn't guaranteed. `resolvePendingPhotoUrls` passes those `file: null` entries straight through untouched and only crops+uploads newly added ones, so this costs nothing beyond what edit already needed.
+
+**`/dashboard/wallet` (`app/dashboard/wallet/page.tsx`) composes this feature's `WalletSummaryTiles` with the owner-agnostic `bank-accounts` and `withdraw` features, rather than this feature owning bank accounts/withdraw itself.** Those two concerns are identical in shape for a creator and a brand (same request/response contracts, same review flow), so they're built once, parameterized by `ownerType`, and reused from `/dashboard/withdraw` (creator) and `/dashboard/wallet` (brand) alike — see `bank-accounts/README.md` and `withdraw/README.md` for the full reasoning. This feature only supplies the brand-specific ledger summary tiles, which have no creator equivalent worth sharing (the creator side already has its own `EarningsSummaryTiles`, with different fields).

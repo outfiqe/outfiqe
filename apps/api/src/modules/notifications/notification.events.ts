@@ -6,6 +6,7 @@ import {
   NotificationEntityType,
   NotificationType,
   UserRole,
+  WithdrawRequestStatus,
 } from "#generated/prisma/enums.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
@@ -17,6 +18,14 @@ import type { CreateIndividualNotificationInput } from "./notification.types.js"
 const isApprovedCreator = async (userId: string): Promise<boolean> => {
   const user = await userRepository.findById(userId);
   return Boolean(user?.isCreator) && user?.creatorStatus === CreatorStatus.APPROVED;
+};
+
+const WITHDRAW_REQUEST_NOTIFICATION_TYPES: Partial<
+  Record<WithdrawRequestStatus, NotificationType>
+> = {
+  [WithdrawRequestStatus.APPROVED]: NotificationType.WITHDRAW_REQUEST_APPROVED,
+  [WithdrawRequestStatus.REJECTED]: NotificationType.WITHDRAW_REQUEST_REJECTED,
+  [WithdrawRequestStatus.PAID]: NotificationType.WITHDRAW_REQUEST_PAID,
 };
 
 export const registerNotificationEventConsumers = (): void => {
@@ -285,6 +294,34 @@ export const registerNotificationEventConsumers = (): void => {
         metadata: { brandName },
       }));
       await notificationService.notifyManyIndividual(inputs);
+    },
+  });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.WITHDRAW_REQUEST_STATUS_CHANGED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({
+      requestId,
+      requestedById,
+      actorId,
+      status,
+      amount,
+      rejectionReason,
+    }): Promise<void> => {
+      const type = WITHDRAW_REQUEST_NOTIFICATION_TYPES[status];
+      if (!type) return;
+
+      await notificationService.notifyIndividual({
+        recipientId: requestedById,
+        actorId,
+        type,
+        entityType: NotificationEntityType.WITHDRAW_REQUEST,
+        entityId: requestId,
+        metadata: {
+          withdrawAmount: amount,
+          ...(rejectionReason ? { rejectionReason } : {}),
+        },
+      });
     },
   });
 };

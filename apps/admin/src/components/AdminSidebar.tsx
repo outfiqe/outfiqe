@@ -8,12 +8,16 @@ import { cn } from "@outfiqe/design-system";
 import { getAvatarColor, initialsFor } from "@outfiqe/utils";
 import {
   Award,
+  BanknoteArrowUp,
   ClipboardList,
   Crown,
   GalleryHorizontal,
+  Landmark,
   Layers,
   MapPin,
   Package,
+  Percent,
+  PiggyBank,
   Ruler,
   ShoppingBag,
   SlidersHorizontal,
@@ -46,6 +50,30 @@ const NAV_SECTIONS: SidebarNavSection[] = [
       { id: "trending", href: "/trending", label: "Trending debug", icon: TrendingUp },
       { id: "creators", href: "/creators", label: "Creators", icon: Users },
       { id: "commissions", href: "/commissions", label: "Commissions", icon: Wallet },
+      {
+        id: "platform-commission",
+        href: "/platform-commission",
+        label: "Platform commission",
+        icon: Percent,
+      },
+      {
+        id: "withdraw-requests",
+        href: "/withdraw-requests",
+        label: "Withdrawal requests",
+        icon: BanknoteArrowUp,
+      },
+      {
+        id: "withdraw-policy",
+        href: "/withdraw-policy",
+        label: "Withdrawal policy",
+        icon: Landmark,
+      },
+      {
+        id: "financial-rollup",
+        href: "/financial-rollup",
+        label: "Financial rollup",
+        icon: PiggyBank,
+      },
       {
         id: "gamification",
         href: "/gamification",

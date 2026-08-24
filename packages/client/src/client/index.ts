@@ -125,6 +125,15 @@ export const createApiClient = ({
     return res.data;
   };
 
+  const put = async <T>(
+    path: string,
+    body?: unknown,
+    options?: RequestOptions,
+  ): Promise<ApiSuccessEnvelope<T>> => {
+    const res = await http.put<ApiSuccessEnvelope<T>>(path, body, options);
+    return res.data;
+  };
+
   const del = async <T>(path: string, options?: RequestOptions): Promise<ApiSuccessEnvelope<T>> => {
     const res = await http.delete<ApiSuccessEnvelope<T>>(path, options);
     return res.data;
@@ -134,6 +143,7 @@ export const createApiClient = ({
     get,
     post,
     patch,
+    put,
     del,
     setAccessToken,
     getAccessToken,

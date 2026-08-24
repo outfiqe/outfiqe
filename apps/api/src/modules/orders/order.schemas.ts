@@ -61,6 +61,10 @@ export const cancelOrderSchema = z.object({
   reason: z.string().trim().min(1).max(REASON_MAX),
 });
 
+export const cancelMyOrderSchema = z.object({
+  reason: z.string().trim().min(1).max(REASON_MAX).optional(),
+});
+
 export type CheckoutBody = z.infer<typeof checkoutBodySchema>;
 export type OrderIdParam = z.infer<typeof orderIdParamSchema>;
 export type ListOrdersQuery = z.infer<typeof listOrdersQuerySchema>;
@@ -68,3 +72,4 @@ export type ListAdminOrdersQuery = z.infer<typeof listAdminOrdersQuerySchema>;
 export type ListBrandOrdersQuery = z.infer<typeof listBrandOrdersQuerySchema>;
 export type AdvanceFulfilmentBody = z.infer<typeof advanceFulfilmentSchema>;
 export type CancelOrderBody = z.infer<typeof cancelOrderSchema>;
+export type CancelMyOrderBody = z.infer<typeof cancelMyOrderSchema>;

@@ -108,3 +108,6 @@ export type BrandOrderItemView = {
   paymentStatus: PaymentStatus;
   fulfilmentStatus: FulfilmentStatus;
 };
+
+export type CancelOrderActor =
+  { type: "ADMIN"; adminUserId: string } | { type: "BUYER"; userId: string };

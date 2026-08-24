@@ -1,0 +1,1 @@
+export const BASIS_POINTS_PER_PERCENT = 100;
