@@ -13,7 +13,9 @@ import { authRoutes } from "./modules/auth/auth.routes.js";
 import { facebookWebhookRoutes } from "./modules/auth/oauth/facebook.webhooks.routes.js";
 import { oauthRoutes } from "./modules/auth/oauth/oauth.routes.js";
 import { badgeRoutes } from "./modules/badges/badge.routes.js";
+import { bankAccountRoutes } from "./modules/bank-accounts/bankAccount.routes.js";
 import { brandApplicationRoutes } from "./modules/brand-applications/brandApplication.routes.js";
+import { brandBankAccountRoutes } from "./modules/brand-bank-accounts/brandBankAccount.routes.js";
 import { brandRoutes } from "./modules/brands/brand.routes.js";
 import { cartRoutes } from "./modules/cart/cart.routes.js";
 import { categoryRoutes } from "./modules/categories/category.routes.js";
@@ -29,6 +31,7 @@ import { deliveryZoneRoutes } from "./modules/delivery-zones/deliveryZone.routes
 import { followRoutes } from "./modules/follows/follow.routes.js";
 import { heroSlideRoutes } from "./modules/hero-slides/heroSlide.routes.js";
 import { leaderboardRoutes } from "./modules/leaderboard/leaderboard.routes.js";
+import { nepalBankRoutes } from "./modules/nepal-banks/nepalBank.routes.js";
 import { notificationRoutes } from "./modules/notifications/notification.routes.js";
 import { orderRoutes } from "./modules/orders/order.routes.js";
 import { paymentRoutes } from "./modules/payments/payment.routes.js";
@@ -118,6 +121,9 @@ export const createApp = () => {
   app.use("/api/challenges", challengeRoutes);
   app.use("/api/creator-competitions", creatorCompetitionRoutes);
   app.use("/api/notifications", notificationRoutes);
+  app.use("/api/banks", nepalBankRoutes);
+  app.use("/api/bank-accounts", bankAccountRoutes);
+  app.use("/api/brand-bank-accounts", brandBankAccountRoutes);
 
   Sentry.setupExpressErrorHandler(app);
   app.use(errorHandler);

@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { slugifyHandle } from "#lib/handle.utils.js";
 import { hashPassword } from "#lib/password.utils.js";
 
@@ -5,6 +7,7 @@ import {
   AchievementRequirementType,
   BadgeCategory,
   BadgeRarity,
+  BankType,
   CategoryStatus,
   CollectionStatus,
   CreatorLeaderboardCategory,
@@ -13,9 +16,18 @@ import {
   HeroSlideStatus,
   ProductStatus,
   ProductType,
+  UserRole,
+  WithdrawOwnerType,
+  WithdrawWindowType,
   XpActivityType,
 } from "../src/generated/prisma/enums.js";
 import { prisma } from "../src/shared/db/prisma.js";
+
+type NepalBankSeedRow = { code: string; name: string; type: keyof typeof BankType };
+
+const NEPAL_BANKS: NepalBankSeedRow[] = JSON.parse(
+  readFileSync(new URL("./seed-data/nepal-banks.json", import.meta.url), "utf8"),
+);
 
 const CREATOR_NAMES = [
   "Sabin Shrestha",
@@ -387,6 +399,102 @@ async function seedCommissionTiers() {
 
   await prisma.commissionTier.createMany({
     data: DEFAULT_COMMISSION_TIERS.map((tier, index) => ({ ...tier, sortOrder: index })),
+  });
+}
+
+async function seedNepalBanks() {
+  await Promise.all(
+    NEPAL_BANKS.map((bank) =>
+      prisma.nepalBank.upsert({
+        where: { code: bank.code },
+        update: { name: bank.name, type: BankType[bank.type] },
+        create: { code: bank.code, name: bank.name, type: BankType[bank.type] },
+      }),
+    ),
+  );
+}
+
+const BASIS_POINTS_PER_PERCENT = 100;
+const DEFAULT_PLATFORM_COMMISSION_RATE_PERCENT = 12;
+
+const LOCKED_WITHDRAW_POLICIES: {
+  ownerType: keyof typeof WithdrawOwnerType;
+  minAmount: number;
+  maxAmount: number;
+  windowType: keyof typeof WithdrawWindowType;
+  windowValue: number;
+  maxAttemptsPerWindow: number;
+  cooldownAfterRejectionDays: number;
+  processingNoteText: string;
+}[] = [
+  {
+    ownerType: "CREATOR",
+    minAmount: 500,
+    maxAmount: 100_000,
+    windowType: "MONTHLY",
+    windowValue: 5,
+    maxAttemptsPerWindow: 1,
+    cooldownAfterRejectionDays: 7,
+    processingNoteText: "Processed manually, 5-7 business days after approval.",
+  },
+  {
+    ownerType: "BUSINESS",
+    minAmount: 3_000,
+    maxAmount: 500_000,
+    windowType: "CUSTOM_DAYS",
+    windowValue: 14,
+    maxAttemptsPerWindow: 1,
+    cooldownAfterRejectionDays: 5,
+    processingNoteText: "Processed manually, 3-5 business days after approval.",
+  },
+];
+
+async function seedWithdrawPolicies() {
+  const admin = await prisma.user.findFirst({ where: { role: UserRole.ADMIN } });
+  if (!admin) {
+    console.warn("Skipping WithdrawPolicy seed — no ADMIN user exists yet.");
+    return;
+  }
+
+  for (const policy of LOCKED_WITHDRAW_POLICIES) {
+    const existing = await prisma.withdrawPolicy.findFirst({
+      where: { ownerType: WithdrawOwnerType[policy.ownerType] },
+    });
+    if (existing) continue;
+
+    await prisma.withdrawPolicy.create({
+      data: {
+        ownerType: WithdrawOwnerType[policy.ownerType],
+        minAmount: policy.minAmount,
+        maxAmount: policy.maxAmount,
+        windowType: WithdrawWindowType[policy.windowType],
+        windowValue: policy.windowValue,
+        maxAttemptsPerWindow: policy.maxAttemptsPerWindow,
+        cooldownAfterRejectionDays: policy.cooldownAfterRejectionDays,
+        processingNoteText: policy.processingNoteText,
+        isActive: true,
+        updatedById: admin.id,
+      },
+    });
+  }
+}
+
+async function seedPlatformCommissionRule() {
+  const existing = await prisma.platformCommissionRule.count();
+  if (existing > 0) return;
+
+  const admin = await prisma.user.findFirst({ where: { role: UserRole.ADMIN } });
+  if (!admin) {
+    console.warn("Skipping PlatformCommissionRule seed — no ADMIN user exists yet.");
+    return;
+  }
+
+  await prisma.platformCommissionRule.create({
+    data: {
+      ratePercentBasisPoints: DEFAULT_PLATFORM_COMMISSION_RATE_PERCENT * BASIS_POINTS_PER_PERCENT,
+      isActive: true,
+      updatedById: admin.id,
+    },
   });
 }
 
@@ -1775,6 +1883,9 @@ async function main() {
   await seedCollections();
   await seedHeroSlides();
   await seedCommissionTiers();
+  await seedNepalBanks();
+  await seedWithdrawPolicies();
+  await seedPlatformCommissionRule();
   await seedLevels();
   await seedActivityXpConfig();
   await seedCreatorLeaderboardCategoryConfig();

@@ -45,6 +45,10 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().min(1).default("GOOGLE_CLIENT_SECRET_NOT_SET"),
   FACEBOOK_APP_ID: z.string().min(1).default("FACEBOOK_APP_ID_NOT_SET"),
   FACEBOOK_APP_SECRET: z.string().min(1).default("FACEBOOK_APP_SECRET_NOT_SET"),
+  BANK_ACCOUNT_ENCRYPTION_KEY: z
+    .string()
+    .regex(/^[0-9a-f]{64}$/i, "BANK_ACCOUNT_ENCRYPTION_KEY must be exactly 64 hex characters")
+    .default("0".repeat(63) + "1"),
 });
 
 const parsed = envSchema.safeParse(process.env);

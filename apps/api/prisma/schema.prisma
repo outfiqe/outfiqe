@@ -40,38 +40,51 @@ model User {
   createdAt            DateTime      @default(now()) @map("created_at")
   updatedAt            DateTime      @updatedAt @map("updated_at")
 
-  memberships               BrandMembership[]
-  refreshTokens             RefreshToken[]
-  reviewedApplications      BrandApplication[]         @relation("BrandApplicationReviewer")
-  approvedInvites           BrandInvite[]              @relation("BrandInviteApprover")
-  sentAdminInvites          AdminInvite[]              @relation("AdminInviteSender")
-  reviewedProducts          Product[]                  @relation("ProductReviewer")
-  productReviews            ProductReview[]            @relation("ProductReviewAuthor")
-  productReviewHelpfulVotes ProductReviewHelpfulVote[]
-  creatorLooks              CreatorLook[]              @relation("CreatorLooks")
-  lookLikes                 CreatorLookLike[]
-  lookSaves                 CreatorLookSave[]
-  lookComments              CreatorLookComment[]
-  tagClicks                 CreatorLookTagClick[]
-  lookViews                 CreatorLookView[]
-  following                 Follow[]                   @relation("FollowerEdges")
-  savedProducts             SavedProduct[]
-  cart                      Cart?
-  orders                    Order[]
-  idempotencyRequests       RequestIdempotency[]
-  attributedOrderItems      OrderItem[]                @relation("AttributedOrderItems")
-  creatorCommissions        CreatorCommission[]        @relation("CreatorCommissions")
-  creatorLinks              CreatorLink[]              @relation("CreatorLinks")
-  creatorLinkClicks         CreatorLinkClick[]
-  deliveryZoneChanges       DeliveryZoneHistory[]      @relation("DeliveryZoneChanges")
-  xpTransactions            XpTransaction[]
-  progress                  UserProgress?
-  badges                    UserBadge[]                @relation("UserBadges")
-  badgesAwarded             UserBadge[]                @relation("UserBadgeAwardedBy")
-  notifications             Notification[]             @relation("NotificationRecipient")
-  notificationsCaused       Notification[]             @relation("NotificationActor")
-  notificationPreferences   NotificationPreference[]
-  oauthIdentities           OAuthIdentity[]
+  memberships                              BrandMembership[]
+  refreshTokens                            RefreshToken[]
+  reviewedApplications                     BrandApplication[]          @relation("BrandApplicationReviewer")
+  approvedInvites                          BrandInvite[]               @relation("BrandInviteApprover")
+  sentAdminInvites                         AdminInvite[]               @relation("AdminInviteSender")
+  reviewedProducts                         Product[]                   @relation("ProductReviewer")
+  productReviews                           ProductReview[]             @relation("ProductReviewAuthor")
+  productReviewHelpfulVotes                ProductReviewHelpfulVote[]
+  creatorLooks                             CreatorLook[]               @relation("CreatorLooks")
+  lookLikes                                CreatorLookLike[]
+  lookSaves                                CreatorLookSave[]
+  lookComments                             CreatorLookComment[]
+  tagClicks                                CreatorLookTagClick[]
+  lookViews                                CreatorLookView[]
+  following                                Follow[]                    @relation("FollowerEdges")
+  savedProducts                            SavedProduct[]
+  cart                                     Cart?
+  orders                                   Order[]
+  idempotencyRequests                      RequestIdempotency[]
+  attributedOrderItems                     OrderItem[]                 @relation("AttributedOrderItems")
+  creatorCommissions                       CreatorCommission[]         @relation("CreatorCommissions")
+  creatorLinks                             CreatorLink[]               @relation("CreatorLinks")
+  creatorLinkClicks                        CreatorLinkClick[]
+  deliveryZoneChanges                      DeliveryZoneHistory[]       @relation("DeliveryZoneChanges")
+  xpTransactions                           XpTransaction[]
+  progress                                 UserProgress?
+  badges                                   UserBadge[]                 @relation("UserBadges")
+  badgesAwarded                            UserBadge[]                 @relation("UserBadgeAwardedBy")
+  notifications                            Notification[]              @relation("NotificationRecipient")
+  notificationsCaused                      Notification[]              @relation("NotificationActor")
+  notificationPreferences                  NotificationPreference[]
+  oauthIdentities                          OAuthIdentity[]
+  bankAccounts                             BankAccount[]               @relation("BankAccountOwner")
+  verifiedBankAccounts                     BankAccount[]               @relation("BankAccountVerifier")
+  bankAccountAccessLogs                    BankAccountAccessLog[]      @relation("BankAccountAccessedBy")
+  firstPayoutCrossCheckedBankAccounts      BankAccount[]               @relation("BankAccountFirstPayoutCrossChecker")
+  verifiedBrandBankAccounts                BrandBankAccount[]          @relation("BrandBankAccountVerifier")
+  brandBankAccountAccessLogs               BrandBankAccountAccessLog[] @relation("BrandBankAccountAccessedBy")
+  firstPayoutCrossCheckedBrandBankAccounts BrandBankAccount[]          @relation("BrandBankAccountFirstPayoutCrossChecker")
+  withdrawPolicyVersions                   WithdrawPolicy[]            @relation("WithdrawPolicyUpdatedBy")
+  creatorWithdrawRequests                  WithdrawRequest[]           @relation("WithdrawRequestCreatorOwner")
+  submittedWithdrawRequests                WithdrawRequest[]           @relation("WithdrawRequestSubmitter")
+  reviewedWithdrawRequests                 WithdrawRequest[]           @relation("WithdrawRequestReviewer")
+  firstApprovedWithdrawRequests            WithdrawRequest[]           @relation("WithdrawRequestFirstApprover")
+  platformCommissionRuleEdits              PlatformCommissionRule[]    @relation("PlatformCommissionRuleUpdatedBy")
 
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
@@ -203,10 +216,13 @@ model Brand {
   createdAt     DateTime          @default(now()) @map("created_at")
   updatedAt     DateTime          @updatedAt @map("updated_at")
 
-  invites         BrandInvite[]
-  memberships     BrandMembership[]
-  products        Product[]
-  sponsoredBadges Badge[]
+  invites          BrandInvite[]
+  memberships      BrandMembership[]
+  products         Product[]
+  sponsoredBadges  Badge[]
+  bankAccounts     BrandBankAccount[]
+  payouts          BrandPayout[]
+  withdrawRequests WithdrawRequest[]  @relation("WithdrawRequestBrandOwner")
 
   @@map("brands")
 }
@@ -808,7 +824,8 @@ model OrderItem {
   attributedLink          CreatorLink?      @relation(fields: [attributedLinkId], references: [id], onDelete: SetNull)
   attributionSource       CommissionSource? @map("attribution_source")
 
-  commission CreatorCommission?
+  commission  CreatorCommission?
+  brandPayout BrandPayout?
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -931,6 +948,8 @@ model CreatorCommission {
   voidedReason String?   @map("voided_reason")
 
   createdAt DateTime @default(now()) @map("created_at")
+
+  ledgerEntry WithdrawRequestLedgerEntry?
 
   @@index([creatorId, status])
   @@map("creator_commissions")
@@ -1356,4 +1375,273 @@ model NotificationPreference {
 
   @@unique([userId, type])
   @@map("notification_preferences")
+}
+
+// ---------------------------------------------------------------------------
+// Bank Accounts & Withdrawals
+// ---------------------------------------------------------------------------
+
+enum BankType {
+  COMMERCIAL
+  DEVELOPMENT
+  FINANCE
+}
+
+model NepalBank {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  code      String   @unique
+  type      BankType
+  logoUrl   String?  @map("logo_url")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  bankAccounts      BankAccount[]
+  brandBankAccounts BrandBankAccount[]
+
+  @@index([isActive])
+  @@map("nepal_banks")
+}
+
+model BankAccount {
+  id                      String    @id @default(uuid()) @db.Uuid
+  userId                  String    @map("user_id") @db.Uuid
+  user                    User      @relation("BankAccountOwner", fields: [userId], references: [id], onDelete: Cascade)
+  bankId                  String    @map("bank_id") @db.Uuid
+  bank                    NepalBank @relation(fields: [bankId], references: [id])
+  accountName             String    @map("account_name")
+  accountNumberCiphertext String    @map("account_number_ciphertext")
+  accountNumberLast4      String    @map("account_number_last4")
+  branchName              String    @map("branch_name")
+  isDefault               Boolean   @default(false) @map("is_default")
+  isVerified              Boolean   @default(false) @map("is_verified")
+  verifiedAt              DateTime? @map("verified_at")
+  verifiedById            String?   @map("verified_by_id") @db.Uuid
+  verifiedBy              User?     @relation("BankAccountVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  firstPayoutCrossCheckedAt   DateTime? @map("first_payout_cross_checked_at")
+  firstPayoutCrossCheckedById String?   @map("first_payout_cross_checked_by_id") @db.Uuid
+  firstPayoutCrossCheckedBy   User?     @relation("BankAccountFirstPayoutCrossChecker", fields: [firstPayoutCrossCheckedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  withdrawRequests WithdrawRequest[]
+  accessLogs       BankAccountAccessLog[]
+
+  @@index([userId])
+  @@index([userId, isDefault])
+  @@map("bank_accounts")
+}
+
+model BankAccountAccessLog {
+  id            String      @id @default(uuid()) @db.Uuid
+  bankAccountId String      @map("bank_account_id") @db.Uuid
+  bankAccount   BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+  adminId       String      @map("admin_id") @db.Uuid
+  admin         User        @relation("BankAccountAccessedBy", fields: [adminId], references: [id])
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  @@index([bankAccountId])
+  @@map("bank_account_access_logs")
+}
+
+enum WithdrawWindowType {
+  MONTHLY
+  WEEKLY
+  CUSTOM_DAYS
+}
+
+model WithdrawPolicy {
+  id                         String             @id @default(uuid()) @db.Uuid
+  ownerType                  WithdrawOwnerType  @map("owner_type")
+  minAmount                  Int                @map("min_amount")
+  maxAmount                  Int                @map("max_amount")
+  windowType                 WithdrawWindowType @map("window_type")
+  windowValue                Int                @map("window_value")
+  maxAttemptsPerWindow       Int                @map("max_attempts_per_window")
+  cooldownAfterRejectionDays Int                @map("cooldown_after_rejection_days")
+  processingNoteText         String             @map("processing_note_text")
+  isActive                   Boolean            @default(true) @map("is_active")
+  updatedById                String             @map("updated_by_id") @db.Uuid
+  updatedBy                  User               @relation("WithdrawPolicyUpdatedBy", fields: [updatedById], references: [id])
+  createdAt                  DateTime           @default(now()) @map("created_at")
+
+  withdrawRequests WithdrawRequest[]
+
+  @@index([ownerType, isActive])
+  @@map("withdraw_policies")
+}
+
+model BrandBankAccount {
+  id                      String    @id @default(uuid()) @db.Uuid
+  brandId                 String    @map("brand_id") @db.Uuid
+  brand                   Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  bankId                  String    @map("bank_id") @db.Uuid
+  bank                    NepalBank @relation(fields: [bankId], references: [id])
+  accountName             String    @map("account_name")
+  accountNumberCiphertext String    @map("account_number_ciphertext")
+  accountNumberLast4      String    @map("account_number_last4")
+  branchName              String    @map("branch_name")
+  isDefault               Boolean   @default(false) @map("is_default")
+  isVerified              Boolean   @default(false) @map("is_verified")
+  verifiedAt              DateTime? @map("verified_at")
+  verifiedById            String?   @map("verified_by_id") @db.Uuid
+  verifiedBy              User?     @relation("BrandBankAccountVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  firstPayoutCrossCheckedAt   DateTime? @map("first_payout_cross_checked_at")
+  firstPayoutCrossCheckedById String?   @map("first_payout_cross_checked_by_id") @db.Uuid
+  firstPayoutCrossCheckedBy   User?     @relation("BrandBankAccountFirstPayoutCrossChecker", fields: [firstPayoutCrossCheckedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  withdrawRequests WithdrawRequest[]
+  accessLogs       BrandBankAccountAccessLog[]
+
+  @@index([brandId])
+  @@index([brandId, isDefault])
+  @@map("brand_bank_accounts")
+}
+
+model BrandBankAccountAccessLog {
+  id                 String           @id @default(uuid()) @db.Uuid
+  brandBankAccountId String           @map("brand_bank_account_id") @db.Uuid
+  brandBankAccount   BrandBankAccount @relation(fields: [brandBankAccountId], references: [id], onDelete: Cascade)
+  adminId            String           @map("admin_id") @db.Uuid
+  admin              User             @relation("BrandBankAccountAccessedBy", fields: [adminId], references: [id])
+  createdAt          DateTime         @default(now()) @map("created_at")
+
+  @@index([brandBankAccountId])
+  @@map("brand_bank_account_access_logs")
+}
+
+model PlatformCommissionRule {
+  id                     String   @id @default(uuid()) @db.Uuid
+  ratePercentBasisPoints Int      @map("rate_percent_basis_points")
+  isActive               Boolean  @default(true) @map("is_active")
+  updatedById            String   @map("updated_by_id") @db.Uuid
+  updatedBy              User     @relation("PlatformCommissionRuleUpdatedBy", fields: [updatedById], references: [id])
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  payouts BrandPayout[]
+
+  @@index([isActive])
+  @@map("platform_commission_rules")
+}
+
+enum BrandPayoutStatus {
+  PENDING
+  AVAILABLE
+  WITHDRAWN
+  VOIDED
+}
+
+model BrandPayout {
+  id          String    @id @default(uuid()) @db.Uuid
+  orderItemId String    @unique @map("order_item_id") @db.Uuid
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  brandId     String    @map("brand_id") @db.Uuid
+  brand       Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  commissionRuleId String                 @map("commission_rule_id") @db.Uuid
+  commissionRule   PlatformCommissionRule @relation(fields: [commissionRuleId], references: [id])
+
+  grossAmount Int @map("gross_amount")
+  platformFee Int @map("platform_fee")
+  gatewayFee  Int @default(0) @map("gateway_fee")
+  netAmount   Int @map("net_amount")
+
+  status BrandPayoutStatus @default(PENDING)
+
+  availableAt         DateTime? @map("available_at")
+  withdrawnAt         DateTime? @map("withdrawn_at")
+  voidedReason        String?   @map("voided_reason")
+  needsManualClawback Boolean   @default(false) @map("needs_manual_clawback")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ledgerEntry WithdrawRequestLedgerEntry?
+
+  @@index([brandId, status])
+  @@map("brand_payouts")
+}
+
+enum WithdrawOwnerType {
+  CREATOR
+  BUSINESS
+}
+
+enum WithdrawRequestStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  PAID
+  REJECTED
+}
+
+model WithdrawRequest {
+  id            String            @id @default(uuid()) @db.Uuid
+  ownerType     WithdrawOwnerType @map("owner_type")
+  requestedById String            @map("requested_by_id") @db.Uuid
+  requestedBy   User              @relation("WithdrawRequestSubmitter", fields: [requestedById], references: [id], onDelete: Cascade)
+
+  creatorId String? @map("creator_id") @db.Uuid
+  creator   User?   @relation("WithdrawRequestCreatorOwner", fields: [creatorId], references: [id], onDelete: Cascade)
+  brandId   String? @map("brand_id") @db.Uuid
+  brand     Brand?  @relation("WithdrawRequestBrandOwner", fields: [brandId], references: [id], onDelete: Cascade)
+
+  bankAccountId      String?           @map("bank_account_id") @db.Uuid
+  bankAccount        BankAccount?      @relation(fields: [bankAccountId], references: [id])
+  brandBankAccountId String?           @map("brand_bank_account_id") @db.Uuid
+  brandBankAccount   BrandBankAccount? @relation(fields: [brandBankAccountId], references: [id])
+
+  policyId String         @map("policy_id") @db.Uuid
+  policy   WithdrawPolicy @relation(fields: [policyId], references: [id])
+
+  amount          Int
+  status          WithdrawRequestStatus @default(PENDING)
+  rejectionReason String?               @map("rejection_reason")
+  referenceNote   String?               @map("reference_note")
+
+  requiresSecondSignOff Boolean   @default(false) @map("requires_second_sign_off")
+  firstApprovedById     String?   @map("first_approved_by_id") @db.Uuid
+  firstApprovedBy       User?     @relation("WithdrawRequestFirstApprover", fields: [firstApprovedById], references: [id], onDelete: SetNull)
+  firstApprovedAt       DateTime? @map("first_approved_at")
+
+  reviewedById String?   @map("reviewed_by_id") @db.Uuid
+  reviewedBy   User?     @relation("WithdrawRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt   DateTime? @map("reviewed_at")
+  paidAt       DateTime? @map("paid_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  ledgerEntries WithdrawRequestLedgerEntry[]
+
+  @@index([creatorId, status])
+  @@index([brandId, status])
+  @@index([status, createdAt])
+  @@map("withdraw_requests")
+}
+
+enum LedgerEntryKind {
+  CREATOR_COMMISSION
+  BRAND_PAYOUT
+}
+
+model WithdrawRequestLedgerEntry {
+  id                  String             @id @default(uuid()) @db.Uuid
+  withdrawRequestId   String             @map("withdraw_request_id") @db.Uuid
+  withdrawRequest     WithdrawRequest    @relation(fields: [withdrawRequestId], references: [id], onDelete: Cascade)
+  entryKind           LedgerEntryKind    @map("entry_kind")
+  creatorCommissionId String?            @unique @map("creator_commission_id") @db.Uuid
+  creatorCommission   CreatorCommission? @relation(fields: [creatorCommissionId], references: [id])
+  brandPayoutId       String?            @unique @map("brand_payout_id") @db.Uuid
+  brandPayout         BrandPayout?       @relation(fields: [brandPayoutId], references: [id])
+  createdAt           DateTime           @default(now()) @map("created_at")
+
+  @@index([withdrawRequestId])
+  @@map("withdraw_request_ledger_entries")
 }

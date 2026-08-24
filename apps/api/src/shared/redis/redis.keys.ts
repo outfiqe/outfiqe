@@ -29,6 +29,7 @@ export const CACHE_TTL = {
   LOOK_AUTOCOMPLETE: 120,
   CREATOR_MOMENTUM_SCORE: 2400,
   SUGGESTED_CREATORS_SNAPSHOT: 1200,
+  NEPAL_BANKS_PUBLIC: 3600,
 } as const;
 
 export const CREATOR_MOMENTUM_SCORE_CACHE_KEY = redisKeys.cache("creator-momentum-score", "global");

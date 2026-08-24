@@ -59,6 +59,12 @@ export default defineConfig({
         "src/modules/follows/**/*.ts",
         "src/modules/notifications/notification.utils.ts",
         "src/modules/notifications/notification.retention.ts",
+        "src/modules/nepal-banks/**/*.ts",
+        "src/modules/bank-accounts/**/*.ts",
+        "src/shared/utils/account-number-encryption.utils.ts",
+        "src/shared/utils/bank-account-body.schemas.ts",
+        "src/shared/utils/name-mismatch.utils.ts",
+        "src/modules/brand-bank-accounts/**/*.ts",
       ],
       thresholds: {
         lines: 80,

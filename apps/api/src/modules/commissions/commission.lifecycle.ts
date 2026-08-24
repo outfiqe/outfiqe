@@ -1,6 +1,6 @@
+import { RETURN_WINDOW_MS } from "#constants/settlement.constants.js";
 import logger from "#lib/winston.utils.js";
 
-import { RETURN_WINDOW_MS } from "./commission.constants.js";
 import { commissionRepository } from "./commission.repository.js";
 
 const VOID_REASON_CANCELLED = "order cancelled";
