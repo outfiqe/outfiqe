@@ -1,5 +1,6 @@
 import { hostname } from "node:os";
 
+import { computeBackoffDelayMs, waitMs } from "#lib/backoff.utils.js";
 import logger from "#lib/winston.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
@@ -12,7 +13,12 @@ import {
   MAX_DELIVERY_ATTEMPTS,
 } from "./event-bus.constants.js";
 import type { DomainEvent, DomainEventHandler } from "./event-bus.types.js";
-import { extractPayloadField, parseEventPayload, publishToDeadLetter } from "./event-bus.utils.js";
+import {
+  extractPayloadField,
+  isMissingConsumerGroupError,
+  parseEventPayload,
+  publishToDeadLetter,
+} from "./event-bus.utils.js";
 
 type StreamEntry = { id: string; fields: string[] | null };
 type PendingEntry = { id: string; deliveryCount: number };
@@ -144,25 +150,35 @@ export const subscribeToDomainEvent = <E extends DomainEvent>({
     }
   };
 
-  const runLoop = async (): Promise<void> => {
+  const ensureConsumerGroup = async (): Promise<boolean> => {
     try {
       await streamClient.xgroup("CREATE", streamKey, groupName, "0", "MKSTREAM");
+      return true;
     } catch (error) {
-      if (!describeError(error).includes("BUSYGROUP")) {
-        logger.error(
-          `Failed to create consumer group ${groupName} for ${event}: ${describeError(error)}`,
-        );
-        return;
-      }
+      if (describeError(error).includes("BUSYGROUP")) return true;
+      logger.error(
+        `Failed to create consumer group ${groupName} for ${event}: ${describeError(error)}`,
+      );
+      return false;
     }
+  };
+
+  const runLoop = async (): Promise<void> => {
+    if (!(await ensureConsumerGroup())) return;
+
+    let consecutiveErrorCount = 0;
 
     while (!stopped) {
       try {
         await claimStuckEntries();
         await readNewEntries();
+        consecutiveErrorCount = 0;
       } catch (error) {
         if (stopped) break;
         logger.error(`Domain event consumer loop error: ${event}: ${describeError(error)}`);
+        if (isMissingConsumerGroupError(error)) await ensureConsumerGroup();
+        await waitMs(computeBackoffDelayMs(consecutiveErrorCount));
+        consecutiveErrorCount += 1;
       }
     }
 
