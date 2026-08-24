@@ -11,6 +11,7 @@ import {
   Award,
   BanknoteArrowUp,
   LogOut,
+  MessageCircleOff,
   Package,
   Share2,
   ShieldCheck,
@@ -36,6 +37,13 @@ const SECURITY_NAV_ITEM: SidebarNavItem = {
   icon: ShieldCheck,
 };
 
+const CHAT_SETTINGS_NAV_ITEM: SidebarNavItem = {
+  id: "chat-settings",
+  href: "/dashboard/settings/chat",
+  label: "Chat",
+  icon: MessageCircleOff,
+};
+
 const CREATOR_NAV: SidebarNavItem[] = [
   { id: "profile", href: "/dashboard/profile", label: "Profile", icon: User },
   { id: "share", href: "/dashboard/share", label: "Share", icon: Share2 },
@@ -44,6 +52,7 @@ const CREATOR_NAV: SidebarNavItem[] = [
   { id: "progress", href: "/dashboard/progress", label: "Progress", icon: Sparkles },
   { id: "badges", href: "/dashboard/badges", label: "Badges", icon: Award },
   { id: "challenges", href: "/dashboard/challenges", label: "Challenges", icon: Trophy },
+  CHAT_SETTINGS_NAV_ITEM,
   SECURITY_NAV_ITEM,
 ];
 
@@ -52,6 +61,7 @@ const BRAND_NAV: SidebarNavItem[] = [
   { id: "products", href: "/dashboard/products", label: "Products", icon: Package },
   { id: "orders", href: "/dashboard/orders", label: "Orders", icon: ShoppingBag },
   { id: "wallet", href: "/dashboard/wallet", label: "Wallet", icon: Wallet },
+  CHAT_SETTINGS_NAV_ITEM,
   SECURITY_NAV_ITEM,
 ];
 

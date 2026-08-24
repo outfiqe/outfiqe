@@ -111,6 +111,19 @@ export const userRepository = {
     await client.user.update({ where: { id }, data: { emailVerified: true } });
   },
 
+  async updateLastSeenAt(id: string, lastSeenAt: Date): Promise<void> {
+    await prisma.user.update({ where: { id }, data: { lastSeenAt } });
+  },
+
+  async findLastSeenAtByIds(ids: string[]): Promise<Map<string, Date | null>> {
+    if (ids.length === 0) return new Map();
+    const rows = await prisma.user.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, lastSeenAt: true },
+    });
+    return new Map(rows.map((row) => [row.id, row.lastSeenAt]));
+  },
+
   async updatePasswordHash(
     id: string,
     passwordHash: string,

@@ -38,6 +38,7 @@ export type PublicBrandProfile = {
   productCount: number;
   followerCount: number;
   isFollowing: boolean;
+  contactUserId: string | null;
 };
 
 export type PublicBrandPage = {

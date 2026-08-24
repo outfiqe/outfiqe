@@ -6,6 +6,7 @@ import { type ReactNode, useState } from "react";
 
 import { AuthProvider } from "@/features/auth";
 import { GamificationSocketListener } from "@/features/creator-dashboard/components/GamificationSocketListener";
+import { ChatPanel, ChatPanelProvider, FloatingChatLauncher } from "@/features/messaging";
 
 const DEFAULT_STALE_TIME_MS = 30 * 1000;
 
@@ -25,9 +26,13 @@ export const Providers = ({ children }: { children: ReactNode }) => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {children}
-        <Toaster />
-        <GamificationSocketListener />
+        <ChatPanelProvider>
+          {children}
+          <Toaster />
+          <GamificationSocketListener />
+          <FloatingChatLauncher />
+          <ChatPanel />
+        </ChatPanelProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

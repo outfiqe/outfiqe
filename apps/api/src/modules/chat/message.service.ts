@@ -1,0 +1,143 @@
+import { DomainEvents, eventBus } from "#events/event-bus.js";
+import { ConversationType } from "#generated/prisma/enums.js";
+import { buildCursorPage } from "#lib/pagination.utils.js";
+import { AppError } from "#middlewares/error-handler.js";
+import { isUserOnline } from "#socket/socket.presence.js";
+
+import { chatService } from "./chat.service.js";
+import { conversationRepository } from "./conversation.repository.js";
+import { requireParticipant } from "./conversation.service.js";
+import { messageRepository } from "./message.repository.js";
+import type { MessageRecord, MessagesPage, NewMessageAttachmentInput } from "./message.types.js";
+import { toMessageRecord } from "./message.utils.js";
+
+const NOT_FOUND_STATUS = 404;
+const FORBIDDEN_STATUS = 403;
+const BAD_REQUEST_STATUS = 400;
+
+export const messageService = {
+  async sendMessage(
+    callerId: string,
+    conversationId: string,
+    body: string | undefined,
+    attachments: NewMessageAttachmentInput[],
+  ): Promise<MessageRecord> {
+    const trimmedBody = body?.trim() || null;
+    if (!trimmedBody && attachments.length === 0) {
+      throw new AppError(
+        "EMPTY_MESSAGE",
+        "A message needs text or at least one photo.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    await requireParticipant(conversationId, callerId);
+
+    const conversation = await conversationRepository.getById(conversationId);
+    if (!conversation) {
+      throw new AppError("NOT_FOUND", "Conversation not found.", NOT_FOUND_STATUS);
+    }
+
+    if (conversation.type === ConversationType.DIRECT) {
+      const otherParticipant = await conversationRepository.findOtherParticipant(
+        conversationId,
+        callerId,
+      );
+      if (otherParticipant) {
+        const available = await chatService.isChatAvailableBetween(
+          callerId,
+          otherParticipant.userId,
+        );
+        if (!available) {
+          throw new AppError(
+            "CHAT_UNAVAILABLE",
+            "You can't message this person right now.",
+            FORBIDDEN_STATUS,
+          );
+        }
+      }
+    }
+
+    const message = await messageRepository.send(
+      conversationId,
+      callerId,
+      trimmedBody,
+      attachments,
+    );
+
+    const recipientIds = conversation.participants
+      .map((participant) => participant.userId)
+      .filter((participantId) => participantId !== callerId);
+
+    await eventBus.publish(DomainEvents.MESSAGE_CREATED, {
+      id: message.id,
+      conversationId,
+      senderId: callerId,
+      senderName: message.sender.name,
+      senderHandle: message.sender.handle,
+      senderAvatarUrl: message.sender.avatarUrl,
+      body: message.body,
+      attachments: message.attachments.map((attachment) => ({
+        id: attachment.id,
+        url: attachment.url,
+        mimeType: attachment.mimeType,
+        width: attachment.width,
+        height: attachment.height,
+      })),
+      createdAt: message.createdAt.toISOString(),
+      recipientIds,
+    });
+
+    await Promise.all(
+      recipientIds.map(async (recipientId) => {
+        if (await isUserOnline(recipientId)) {
+          await messageRepository.markDelivered(
+            conversationId,
+            recipientId,
+            message.id,
+            message.createdAt,
+          );
+        }
+      }),
+    );
+
+    return toMessageRecord(message, callerId, null);
+  },
+
+  async listMessages(
+    callerId: string,
+    conversationId: string,
+    query: { cursor?: string; limit: number },
+  ): Promise<MessagesPage> {
+    await requireParticipant(conversationId, callerId);
+
+    const [rows, otherParticipant] = await Promise.all([
+      messageRepository.listForConversation(conversationId, query),
+      conversationRepository.findOtherParticipant(conversationId, callerId),
+    ]);
+    const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
+
+    if (!query.cursor) {
+      const latestMessageId = await messageRepository.findLatestId(conversationId);
+      if (latestMessageId) {
+        await messageRepository.markDelivered(
+          conversationId,
+          callerId,
+          latestMessageId,
+          new Date(),
+        );
+      }
+    }
+
+    return {
+      items: items.map((row) => toMessageRecord(row, callerId, otherParticipant)),
+      nextCursor,
+    };
+  },
+
+  async markRead(callerId: string, conversationId: string): Promise<void> {
+    await requireParticipant(conversationId, callerId);
+    const latestMessageId = await messageRepository.findLatestId(conversationId);
+    await messageRepository.markRead(conversationId, callerId, latestMessageId, new Date());
+  },
+};

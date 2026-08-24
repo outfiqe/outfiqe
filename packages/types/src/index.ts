@@ -5,6 +5,7 @@ export * from "./bank";
 export * from "./brand";
 export * from "./brand-payout";
 export * from "./category";
+export * from "./chat";
 export * from "./collection";
 export * from "./commission";
 export * from "./hero-slide";

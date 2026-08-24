@@ -21,6 +21,8 @@ import { brandRoutes } from "./modules/brands/brand.routes.js";
 import { cartRoutes } from "./modules/cart/cart.routes.js";
 import { categoryRoutes } from "./modules/categories/category.routes.js";
 import { challengeRoutes } from "./modules/challenges/challenge.routes.js";
+import { chatRoutes } from "./modules/chat/chat.routes.js";
+import { conversationRoutes } from "./modules/chat/conversation.routes.js";
 import { collectionRoutes } from "./modules/collections/collection.routes.js";
 import { commissionRoutes } from "./modules/commissions/commission.routes.js";
 import { creatorCompetitionRoutes } from "./modules/creator-competitions/creatorCompetition.routes.js";
@@ -130,6 +132,8 @@ export const createApp = () => {
   app.use("/api/brand-payouts", brandPayoutRoutes);
   app.use("/api/withdraw", withdrawRoutes);
   app.use("/api/admin/financial-rollup", financialRollupRoutes);
+  app.use("/api/chat", chatRoutes);
+  app.use("/api/conversations", conversationRoutes);
 
   Sentry.setupExpressErrorHandler(app);
   app.use(errorHandler);

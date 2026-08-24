@@ -3,28 +3,13 @@
 import type { Notification } from "@outfiqe/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import type { Socket } from "socket.io-client";
 
+import type { EventSocket } from "./socketEventAdapter";
+import { toEventSocket } from "./socketEventAdapter";
 import { NOTIFICATIONS_QUERY_KEY, NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY } from "./useNotifications";
 
-export interface NotificationSocket {
-  on(event: string, handler: (...args: never[]) => void): unknown;
-  off(event: string, handler: (...args: never[]) => void): unknown;
-}
-
-const notificationSocketAdapters = new WeakMap<Socket, NotificationSocket>();
-
-export const toNotificationSocket = (socket: Socket): NotificationSocket => {
-  const existing = notificationSocketAdapters.get(socket);
-  if (existing) return existing;
-
-  const adapter: NotificationSocket = {
-    on: (event, handler) => socket.on(event as never, handler as never),
-    off: (event, handler) => socket.off(event as never, handler as never),
-  };
-  notificationSocketAdapters.set(socket, adapter);
-  return adapter;
-};
+export type NotificationSocket = EventSocket;
+export const toNotificationSocket = toEventSocket;
 
 const NOTIFICATION_SOCKET_EVENTS = {
   CREATED: "notification:created",

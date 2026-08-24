@@ -8,7 +8,7 @@ The `User` record itself — creation, lookup, and self-service profile updates.
 
 - `user.controller.ts`, `user.routes.ts` — `POST /` (admin-only user creation), `PATCH /me` (`requireAuth`, self-service profile update), `GET /` and `GET /:id` (admin-only listing/lookup).
 - `user.schemas.ts` — zod validation: `createUserSchema`, `updateOwnProfileSchema` (`name`/`phone`/`avatarUrl`, all optional — a partial patch, not a full replace), `userIdParamSchema`.
-- `user.repository.ts` — `userRepository`, the `User` persistence layer: `create`, `createOAuthOnlyUser` (see `../auth/oauth`), `findByEmail`/`findByPhone`/`findById`/`findByHandle`, `list`/`findManyByIds`/`searchCreatorIds`/`listByCreatorStatus`, `updateProfile`, `markEmailVerified`, `updatePasswordHash`, `updateCreatorStatus`.
+- `user.repository.ts` — `userRepository`, the `User` persistence layer: `create`, `createOAuthOnlyUser` (see `../auth/oauth`), `findByEmail`/`findByPhone`/`findById`/`findByHandle`, `list`/`findManyByIds`/`searchCreatorIds`/`listByCreatorStatus`, `updateProfile`, `markEmailVerified`, `updatePasswordHash`, `updateCreatorStatus`, `updateLastSeenAt`/`findLastSeenAtByIds` (written by `../chat`'s presence tracking on socket disconnect — see `../chat/README.md`, not by this module itself).
 - `user.service.ts` — `userService.createUser`/`getUser`/`listUsers`/`updateMe`.
 - `user.types.ts` — `UserRecord`, `CreateUserInput`, `UpdateUserProfileInput`, `PublicUser`.
 - `user.utils.ts` — `toPublicUser`, strips internal fields (`passwordHash`, `phone`, etc.) before a user record reaches an API response.

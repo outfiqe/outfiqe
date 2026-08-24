@@ -44,12 +44,13 @@ export const brandService = {
     const brand = await brandRepository.findById(id);
     if (!brand) throw new AppError("NOT_FOUND", "Brand not found.", NOT_FOUND_STATUS);
 
-    const [productCount, isFollowing] = await Promise.all([
+    const [productCount, isFollowing, contactUserId] = await Promise.all([
       brandRepository.countApprovedProducts(id),
       viewerId ? followRepository.isFollowing(viewerId, FollowTargetType.BRAND, id) : false,
+      brandRepository.findOwnerUserId(id),
     ]);
 
-    return toPublicBrandProfile(brand, productCount, isFollowing);
+    return toPublicBrandProfile(brand, productCount, isFollowing, contactUserId);
   },
 
   async listPublic(query: ListBrandsQuery, viewerId?: string): Promise<PublicBrandPage> {

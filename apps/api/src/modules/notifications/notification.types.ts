@@ -26,6 +26,7 @@ export type NotificationMetadata = {
   rating?: number;
   withdrawAmount?: number;
   rejectionReason?: string;
+  messagePreview?: string;
 };
 
 export type NotificationRecord = {

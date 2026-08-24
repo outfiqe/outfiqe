@@ -34,6 +34,7 @@ describe("toPublicBrandProfile", () => {
       productCount: 7,
       followerCount: baseBrand.followerCount,
       isFollowing: true,
+      contactUserId: null,
     });
   });
 

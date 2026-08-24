@@ -15,6 +15,9 @@ export const extractPayloadField = (fields: string[]): string | undefined => {
   return fieldIndex === -1 ? undefined : fields[fieldIndex + 1];
 };
 
+export const isMissingConsumerGroupError = (error: unknown): boolean =>
+  error instanceof Error && error.message.includes("NOGROUP");
+
 export const publishToDeadLetter = async (
   redisClient: Redis,
   streamKey: string,

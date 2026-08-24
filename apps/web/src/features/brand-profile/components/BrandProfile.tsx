@@ -8,6 +8,7 @@ import { FollowersModal } from "@/components/FollowersModal";
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { ProductCard } from "@/features/landing/components/ProductCard";
+import { useChatPanel } from "@/features/messaging";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
@@ -26,11 +27,14 @@ type BrandProfileProps = {
 
 export const BrandProfile = ({ brand }: BrandProfileProps) => {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, state } = useAuth();
   const followMutation = useToggleFollow("brand");
   const productTypes = useProductTypes();
+  const { openConversationWith, isStartingConversation } = useChatPanel();
 
-  const { id, bannerUrl, avatarUrl, name, madeInNepal, productCount, rating } = brand;
+  const { id, bannerUrl, avatarUrl, name, madeInNepal, productCount, rating, contactUserId } =
+    brand;
+  const isOwnBrand = state.user?.brandId === id;
 
   const [isFollowing, setIsFollowing] = useState(brand.isFollowing);
   const [followerCount, setFollowerCount] = useState(brand.followerCount);
@@ -59,6 +63,15 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
         },
       },
     );
+  };
+
+  const messageBrand = () => {
+    if (!isAuthenticated) {
+      router.push(`/login?redirect=/brand/${id}`);
+      return;
+    }
+    if (!contactUserId) return;
+    openConversationWith(contactUserId);
   };
 
   const {
@@ -144,14 +157,16 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
             )}
           </div>
 
-          <Button
-            variant="outline"
-            aria-pressed={isFollowing}
-            onClick={toggleFollow}
-            className="mt-5"
-          >
-            {isFollowing ? "Following" : "Follow brand"}
-          </Button>
+          <div className="mt-5 flex gap-2">
+            <Button variant="outline" aria-pressed={isFollowing} onClick={toggleFollow}>
+              {isFollowing ? "Following" : "Follow brand"}
+            </Button>
+            {!isOwnBrand && contactUserId && (
+              <Button variant="outline" onClick={messageBrand} disabled={isStartingConversation}>
+                Message
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

@@ -80,6 +80,10 @@ export default defineConfig({
         "src/features/bank-accounts/components/AddBankAccountModal.tsx",
         "src/features/withdraw/components/WithdrawRequestForm.tsx",
         "src/features/withdraw/components/WithdrawRequestStatusBadge.tsx",
+        "src/features/chat-settings/ChatAvailabilitySettings.tsx",
+        "src/shared/lib/chatApi.ts",
+        "src/features/messaging/ConversationList.tsx",
+        "src/features/messaging/MessageThread.tsx",
       ],
       thresholds: {
         lines: 80,
