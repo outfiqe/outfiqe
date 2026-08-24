@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 
 import request from "supertest";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { prisma } from "#db/prisma.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
+import type { MessageBroadcastPayload } from "#events/event-bus.types.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
@@ -11,6 +13,7 @@ import { testApp } from "#test/integration/testApp.js";
 
 beforeEach(async () => {
   await redis.flushdb();
+  vi.restoreAllMocks();
 });
 
 const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
@@ -185,6 +188,31 @@ describe("Sending and listing messages", () => {
     expect(response.status).toBe(200);
     expect(response.body.data.body).toBeNull();
     expect(response.body.data.attachments).toHaveLength(1);
+  });
+
+  it("includes full attachment data in the real-time broadcast, not just a boolean flag", async () => {
+    const userA = await createUser("Broadcast Sender", "broadcast-sender");
+    const userB = await createUser("Broadcast Recipient", "broadcast-recipient");
+    const { body: conversation } = await startConversation(userA.id, userA.role, userB.id);
+    const publishSpy = vi.spyOn(eventBus, "publish");
+
+    await sendMessage(userA.id, userA.role, conversation.data.id, {
+      attachments: [{ url: "https://cdn.outfiqe.test/photo.jpg", mimeType: "image/jpeg" }],
+    });
+
+    const isMessageCreatedCall = (
+      call: (typeof publishSpy.mock.calls)[number],
+    ): call is [typeof DomainEvents.MESSAGE_CREATED, MessageBroadcastPayload] =>
+      call[0] === DomainEvents.MESSAGE_CREATED;
+    const messageCreatedCall = publishSpy.mock.calls.find(isMessageCreatedCall);
+
+    expect(messageCreatedCall).toBeDefined();
+    expect(messageCreatedCall?.[1].attachments).toEqual([
+      expect.objectContaining({
+        url: "https://cdn.outfiqe.test/photo.jpg",
+        mimeType: "image/jpeg",
+      }),
+    ]);
   });
 
   it("rejects an empty message with no body and no attachments", async () => {

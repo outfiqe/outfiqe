@@ -77,7 +77,13 @@ export const messageService = {
       senderHandle: message.sender.handle,
       senderAvatarUrl: message.sender.avatarUrl,
       body: message.body,
-      hasAttachments: message.attachments.length > 0,
+      attachments: message.attachments.map((attachment) => ({
+        id: attachment.id,
+        url: attachment.url,
+        mimeType: attachment.mimeType,
+        width: attachment.width,
+        height: attachment.height,
+      })),
       createdAt: message.createdAt.toISOString(),
       recipientIds,
     });

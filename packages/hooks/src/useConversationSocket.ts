@@ -13,6 +13,14 @@ const CONVERSATION_SOCKET_EVENTS = {
   CONVERSATION_UPDATED: "conversation:updated",
 } as const;
 
+type MessageAttachmentBroadcast = {
+  id: string;
+  url: string;
+  mimeType: string;
+  width: number | null;
+  height: number | null;
+};
+
 type MessageBroadcast = {
   id: string;
   conversationId: string;
@@ -21,7 +29,7 @@ type MessageBroadcast = {
   senderHandle: string;
   senderAvatarUrl: string | null;
   body: string | null;
-  hasAttachments: boolean;
+  attachments: MessageAttachmentBroadcast[];
   createdAt: string;
 };
 
@@ -44,7 +52,7 @@ const toBroadcastMessage = (
     avatarUrl: payload.senderAvatarUrl,
   },
   body: payload.body,
-  attachments: [],
+  attachments: payload.attachments,
   createdAt: payload.createdAt,
   isMine: payload.senderId === currentUserId,
   isDeliveredToOthers: false,

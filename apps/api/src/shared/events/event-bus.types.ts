@@ -28,6 +28,14 @@ export type NotificationBroadcastPayload = {
   updatedAt: string;
 };
 
+export type MessageAttachmentBroadcast = {
+  id: string;
+  url: string;
+  mimeType: string;
+  width: number | null;
+  height: number | null;
+};
+
 export type MessageBroadcastPayload = {
   id: string;
   conversationId: string;
@@ -36,7 +44,7 @@ export type MessageBroadcastPayload = {
   senderHandle: string;
   senderAvatarUrl: string | null;
   body: string | null;
-  hasAttachments: boolean;
+  attachments: MessageAttachmentBroadcast[];
   createdAt: string;
   recipientIds: string[];
 };

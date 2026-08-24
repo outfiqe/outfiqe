@@ -96,6 +96,14 @@ client-side via `useDebouncedValue`, same shape as `useChatContactSearch`) rathe
 the already-loaded page client-side, since a user's full conversation history isn't guaranteed to
 already be loaded.
 
+**The `message:created`/`MESSAGE_CREATED` socket payload carries full attachment data
+(`id`/`url`/`mimeType`/`width`/`height`), not a `hasAttachments` boolean.** The sender's own bubble
+comes from the REST response, which always has the real attachments, so this only mattered for the
+_recipient's_ live view — `useConversationSocket`'s `toBroadcastMessage` used to hardcode
+`attachments: []`, which meant a live-received photo message rendered with no image at all until
+the thread was refetched (reopening it, or a full refresh). Keep the payload's attachment shape
+matching `MessageAttachment` (`packages/types`) if that type ever changes.
+
 **No `Switch`/multi-window chat, but a new `Drawer` primitive was added to `packages/design-system`.**
 Neither `Modal` (blocking, unmounts with its page) nor `Popover` (anchored, sized for small
 transient content) fit a non-blocking panel that has to survive route changes — see that
