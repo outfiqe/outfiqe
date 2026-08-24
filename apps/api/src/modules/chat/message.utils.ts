@@ -1,6 +1,12 @@
 import type { ConversationParticipantSummary } from "./conversation.types.js";
 import type { MessageAttachmentRecord, MessageRecord } from "./message.types.js";
 
+const MESSAGE_PREVIEW_LENGTH = 140;
+const PHOTO_PREVIEW_TEXT = "Sent a photo";
+
+export const messagePreviewFor = (body: string | null): string =>
+  body ? body.slice(0, MESSAGE_PREVIEW_LENGTH) : PHOTO_PREVIEW_TEXT;
+
 type MessageRow = {
   id: string;
   conversationId: string;

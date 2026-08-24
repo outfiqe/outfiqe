@@ -1,3 +1,4 @@
+import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { ConversationType } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -62,6 +63,23 @@ export const messageService = {
       trimmedBody,
       attachments,
     );
+
+    const recipientIds = conversation.participants
+      .map((participant) => participant.userId)
+      .filter((participantId) => participantId !== callerId);
+    await eventBus.publish(DomainEvents.MESSAGE_CREATED, {
+      id: message.id,
+      conversationId,
+      senderId: callerId,
+      senderName: message.sender.name,
+      senderHandle: message.sender.handle,
+      senderAvatarUrl: message.sender.avatarUrl,
+      body: message.body,
+      hasAttachments: message.attachments.length > 0,
+      createdAt: message.createdAt.toISOString(),
+      recipientIds,
+    });
+
     return toMessageRecord(message, callerId, null);
   },
 

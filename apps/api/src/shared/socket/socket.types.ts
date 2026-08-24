@@ -1,7 +1,10 @@
 import type { DefaultEventsMap, Server, Socket } from "socket.io";
 
 import type { LeaderboardCategory } from "#constants/leaderboard.constants.js";
-import type { NotificationBroadcastPayload } from "#events/event-bus.types.js";
+import type {
+  MessageBroadcastPayload,
+  NotificationBroadcastPayload,
+} from "#events/event-bus.types.js";
 import type { CreatorLeaderboardCategory } from "#generated/prisma/enums.js";
 import type { AuthPrincipal } from "#types/token.types.js";
 
@@ -113,6 +116,10 @@ export type CommentReplyCreatedPayload = {
   createdAt: string;
 };
 
+export type ConversationSubscriptionPayload = {
+  conversationId: string;
+};
+
 // Key literals must match SOCKET_EVENTS in socket.keys.ts.
 export type ServerToClientEvents = {
   "look:created": (payload: LookCreatedPayload) => void;
@@ -129,6 +136,8 @@ export type ServerToClientEvents = {
   "comment:reply:created": (payload: CommentReplyCreatedPayload) => void;
   "chat:settings:updated": (payload: ChatSettingsUpdatedPayload) => void;
   "chat:block-list:updated": (payload: ChatBlockListUpdatedPayload) => void;
+  "message:created": (payload: MessageBroadcastPayload) => void;
+  "conversation:updated": (payload: MessageBroadcastPayload) => void;
 };
 
 export type ClientToServerEvents = {
@@ -139,6 +148,8 @@ export type ClientToServerEvents = {
   "creator-leaderboard:unsubscribe": (payload: CreatorLeaderboardSubscriptionPayload) => void;
   "comments:subscribe": (payload: CommentSubscriptionPayload) => void;
   "comments:unsubscribe": (payload: CommentSubscriptionPayload) => void;
+  "conversation:subscribe": (payload: ConversationSubscriptionPayload) => void;
+  "conversation:unsubscribe": (payload: ConversationSubscriptionPayload) => void;
 };
 
 export type AppSocketServer = Server<

@@ -28,6 +28,19 @@ export type NotificationBroadcastPayload = {
   updatedAt: string;
 };
 
+export type MessageBroadcastPayload = {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderName: string;
+  senderHandle: string;
+  senderAvatarUrl: string | null;
+  body: string | null;
+  hasAttachments: boolean;
+  createdAt: string;
+  recipientIds: string[];
+};
+
 export type DomainEventPayloads = {
   [DomainEvents.USER_CREATED]: { userId: string; email: string; role?: UserRole };
   [DomainEvents.USER_DELETED]: { userId: string };
@@ -99,6 +112,7 @@ export type DomainEventPayloads = {
   [DomainEvents.NOTIFICATION_UPDATED]: NotificationBroadcastPayload;
   [DomainEvents.CHAT_SETTINGS_UPDATED]: { userId: string; isChatEnabled: boolean };
   [DomainEvents.CHAT_BLOCK_LIST_UPDATED]: { userId: string };
+  [DomainEvents.MESSAGE_CREATED]: MessageBroadcastPayload;
 };
 
 export type DomainEventHandler<E extends DomainEvent> = (

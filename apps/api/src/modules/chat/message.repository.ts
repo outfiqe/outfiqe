@@ -2,9 +2,7 @@ import { prisma } from "#db/prisma.js";
 
 import { participantUserSelect } from "./conversation.utils.js";
 import type { NewMessageAttachmentInput } from "./message.types.js";
-
-const MESSAGE_PREVIEW_LENGTH = 140;
-const DEFAULT_PREVIEW_TEXT = "Sent a photo";
+import { messagePreviewFor } from "./message.utils.js";
 
 const messageInclude = {
   sender: { select: participantUserSelect },
@@ -12,9 +10,6 @@ const messageInclude = {
     select: { id: true, url: true, mimeType: true, width: true, height: true },
   },
 } as const;
-
-const previewFor = (body: string | null): string =>
-  body ? body.slice(0, MESSAGE_PREVIEW_LENGTH) : DEFAULT_PREVIEW_TEXT;
 
 export const messageRepository = {
   async send(
@@ -36,7 +31,7 @@ export const messageRepository = {
 
       await tx.conversation.update({
         where: { id: conversationId },
-        data: { lastMessageAt: message.createdAt, lastMessagePreview: previewFor(body) },
+        data: { lastMessageAt: message.createdAt, lastMessagePreview: messagePreviewFor(body) },
       });
 
       await tx.conversationParticipant.updateMany({

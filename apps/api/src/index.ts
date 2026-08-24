@@ -8,6 +8,10 @@ import { registerAchievementEventConsumers } from "#modules/achievements/achieve
 import { registerAchievementSocketEventConsumer } from "#modules/achievements/achievement.socket.js";
 import { registerChatSocketEventConsumer } from "#modules/chat/chat.socket.js";
 import {
+  registerConversationSocketHandlers,
+  registerMessageEventConsumer,
+} from "#modules/chat/conversation.socket.js";
+import {
   registerCreatorLeaderboardEventConsumer,
   registerCreatorLeaderboardSocketHandlers,
 } from "#modules/creator-leaderboard/creatorLeaderboard.socket.js";
@@ -53,6 +57,8 @@ registerXpSocketEventConsumer();
 registerAchievementSocketEventConsumer();
 registerNotificationSocketEventConsumer();
 registerChatSocketEventConsumer();
+registerConversationSocketHandlers();
+registerMessageEventConsumer();
 
 startIntervalScheduler(INTERVAL_JOBS);
 startBoundaryScheduler(BOUNDARY_JOBS);
