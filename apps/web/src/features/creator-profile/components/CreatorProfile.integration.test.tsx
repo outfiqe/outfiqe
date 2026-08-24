@@ -12,6 +12,7 @@ import type { CreatorProfile as CreatorProfileType } from "@/features/creator-pr
 import { CreatorProfile } from "@/features/creator-profile/components/CreatorProfile";
 import { useInfiniteCreatorLooks } from "@/features/creator-profile/hooks/useInfiniteCreatorLooks";
 import type * as ExploreModule from "@/features/explore";
+import { useChatPanel } from "@/features/messaging";
 
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(),
@@ -20,6 +21,10 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/features/auth/context/AuthContext", () => ({
   useAuth: vi.fn(),
+}));
+
+vi.mock("@/features/messaging", () => ({
+  useChatPanel: vi.fn(),
 }));
 
 vi.mock("../hooks/useInfiniteCreatorLooks", () => ({
@@ -197,6 +202,16 @@ beforeEach(() => {
   fetchNextPage.mockClear();
   mockLooks();
   mockAuth("viewer-1");
+  vi.mocked(useChatPanel).mockReturnValue({
+    isOpen: false,
+    view: { kind: "list" },
+    isStartingConversation: false,
+    socket: null,
+    openConversationWith: vi.fn(),
+    openConversation: vi.fn(),
+    openList: vi.fn(),
+    close: vi.fn(),
+  });
 });
 
 describe("CreatorProfile loading and post states", () => {
@@ -249,6 +264,50 @@ describe("CreatorProfile own vs visitor view", () => {
     expect(screen.getByRole("button", { name: "Follow" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Edit profile" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Add post" })).not.toBeInTheDocument();
+  });
+
+  it("shows the Message button for a visitor, not the profile owner", () => {
+    mockAuth("viewer-1");
+    const visitorRender = renderProfile(buildCreator());
+    expect(screen.getByRole("button", { name: "Message" })).toBeInTheDocument();
+    visitorRender.unmount();
+
+    mockAuth("creator-9");
+    renderProfile(buildCreator());
+    expect(screen.queryByRole("button", { name: "Message" })).not.toBeInTheDocument();
+  });
+});
+
+describe("CreatorProfile message button", () => {
+  it("redirects an unauthenticated visitor to login instead of messaging", async () => {
+    mockAuth(null, false);
+    const user = userEvent.setup();
+    renderProfile(buildCreator());
+
+    await user.click(screen.getByRole("button", { name: "Message" }));
+
+    expect(push).toHaveBeenCalledWith("/login?redirect=/creator/ava");
+  });
+
+  it("starts a conversation with the creator when Message is clicked", async () => {
+    const openConversationWith = vi.fn();
+    vi.mocked(useChatPanel).mockReturnValue({
+      isOpen: false,
+      view: { kind: "list" },
+      isStartingConversation: false,
+      socket: null,
+      openConversationWith,
+      openConversation: vi.fn(),
+      openList: vi.fn(),
+      close: vi.fn(),
+    });
+
+    const user = userEvent.setup();
+    renderProfile(buildCreator());
+
+    await user.click(screen.getByRole("button", { name: "Message" }));
+
+    expect(openConversationWith).toHaveBeenCalledWith("creator-9");
   });
 });
 

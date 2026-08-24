@@ -10,5 +10,6 @@ export const brandProfileSchema = z.object({
   productCount: z.number(),
   followerCount: z.number(),
   isFollowing: z.boolean(),
+  contactUserId: z.string().nullable(),
 });
 export type BrandProfile = z.infer<typeof brandProfileSchema>;

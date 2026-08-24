@@ -32,6 +32,7 @@ const buildBrand = (id: string): BrandSummary => ({
   productCount: 1,
   followerCount: 1,
   isFollowing: false,
+  contactUserId: null,
 });
 
 const mockInfiniteBrands = (overrides: Partial<ReturnType<typeof useInfiniteBrands>>) => {

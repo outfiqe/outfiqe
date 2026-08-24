@@ -4,6 +4,7 @@ export const toPublicBrandProfile = (
   brand: BrandRecord,
   productCount: number,
   isFollowing: boolean,
+  contactUserId: string | null = null,
 ): PublicBrandProfile => ({
   id: brand.id,
   name: brand.name,
@@ -14,4 +15,5 @@ export const toPublicBrandProfile = (
   productCount,
   followerCount: brand.followerCount,
   isFollowing,
+  contactUserId,
 });

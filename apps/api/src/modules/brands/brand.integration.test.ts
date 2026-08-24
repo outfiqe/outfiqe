@@ -319,6 +319,23 @@ describe("GET /api/brands/:id", () => {
     });
   });
 
+  it("exposes the brand owner's user id as contactUserId for messaging", async () => {
+    const brand = await createBrand("Contact Profile Brand");
+    const owner = await createBrandOwner(brand.id, "Contact Owner", "contact-owner");
+
+    const response = await request(testApp).get(`/api/brands/${brand.id}`);
+
+    expect(response.body.data.contactUserId).toBe(owner.id);
+  });
+
+  it("returns a null contactUserId for a brand with no owner membership yet", async () => {
+    const brand = await createBrand("Ownerless Profile Brand");
+
+    const response = await request(testApp).get(`/api/brands/${brand.id}`);
+
+    expect(response.body.data.contactUserId).toBeNull();
+  });
+
   it("reflects isFollowing true for a viewer who follows this brand", async () => {
     const brand = await createBrand("Followed Profile Brand");
     const viewer = await createUser("Following Viewer", "following-viewer");

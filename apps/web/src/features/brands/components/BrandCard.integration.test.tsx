@@ -37,6 +37,7 @@ const buildBrand = (overrides: Partial<BrandSummary> = {}): BrandSummary => ({
   productCount: 4,
   followerCount: 10,
   isFollowing: false,
+  contactUserId: null,
   ...overrides,
 });
 
