@@ -17,12 +17,20 @@ type MessageRow = {
   createdAt: Date;
 };
 
+export type OtherParticipantCursor = {
+  lastReadAt: Date | null;
+  lastDeliveredAt: Date | null;
+};
+
 export const toMessageRecord = (
   row: MessageRow,
   callerId: string,
-  otherParticipantLastReadAt: Date | null,
+  otherParticipant: OtherParticipantCursor | null,
 ): MessageRecord => {
   const isMine = row.senderId === callerId;
+  const lastReadAt = otherParticipant?.lastReadAt ?? null;
+  const lastDeliveredAt = otherParticipant?.lastDeliveredAt ?? null;
+
   return {
     id: row.id,
     conversationId: row.conversationId,
@@ -32,7 +40,7 @@ export const toMessageRecord = (
     attachments: row.attachments,
     createdAt: row.createdAt.toISOString(),
     isMine,
-    isReadByOthers:
-      isMine && otherParticipantLastReadAt !== null && row.createdAt <= otherParticipantLastReadAt,
+    isDeliveredToOthers: isMine && lastDeliveredAt !== null && row.createdAt <= lastDeliveredAt,
+    isReadByOthers: isMine && lastReadAt !== null && row.createdAt <= lastReadAt,
   };
 };

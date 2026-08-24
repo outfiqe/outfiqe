@@ -113,6 +113,11 @@ export type DomainEventPayloads = {
   [DomainEvents.CHAT_SETTINGS_UPDATED]: { userId: string; isChatEnabled: boolean };
   [DomainEvents.CHAT_BLOCK_LIST_UPDATED]: { userId: string };
   [DomainEvents.MESSAGE_CREATED]: MessageBroadcastPayload;
+  [DomainEvents.PRESENCE_CHANGED]: {
+    userId: string;
+    isOnline: boolean;
+    lastSeenAt: string | null;
+  };
 };
 
 export type DomainEventHandler<E extends DomainEvent> = (

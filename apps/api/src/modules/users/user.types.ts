@@ -18,6 +18,7 @@ export interface UserRecord {
   followerCount: number;
   followingCount: number;
   hideFromLeaderboards: boolean;
+  lastSeenAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

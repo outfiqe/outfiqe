@@ -5,6 +5,7 @@ import logger from "#lib/winston.utils.js";
 import { notificationService } from "#modules/notifications/notification.service.js";
 import { describeError } from "#redis/redis.utils.js";
 import { conversationRoom, SOCKET_EVENTS, userRoom } from "#socket/socket.keys.js";
+import { isUserOnline } from "#socket/socket.presence.js";
 import { getIO } from "#socket/socket.server.js";
 import type { ConversationSubscriptionPayload } from "#socket/socket.types.js";
 
@@ -43,11 +44,6 @@ export const registerConversationSocketHandlers = (): void => {
   });
 };
 
-const hasActiveConnection = async (userId: string): Promise<boolean> => {
-  const sockets = await getIO().in(userRoom(userId)).fetchSockets();
-  return sockets.length > 0;
-};
-
 export const registerMessageEventConsumer = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.MESSAGE_CREATED,
@@ -68,8 +64,7 @@ export const registerMessageEventConsumer = (): void => {
 
       for (const recipientId of payload.recipientIds) {
         try {
-          const isOnline = await hasActiveConnection(recipientId);
-          if (isOnline) continue;
+          if (await isUserOnline(recipientId)) continue;
 
           await notificationService.notifyIndividual({
             recipientId,
@@ -84,6 +79,29 @@ export const registerMessageEventConsumer = (): void => {
             `Failed to create offline message notification for ${recipientId}: ${describeError(error)}`,
           );
         }
+      }
+    },
+  });
+};
+
+export const registerPresenceSocketConsumer = (): void => {
+  subscribeToDomainEvent({
+    event: DomainEvents.PRESENCE_CHANGED,
+    groupName: CHAT_SOCKET_CONSUMER_GROUP,
+    handler: async (payload): Promise<void> => {
+      try {
+        const conversationIds = await conversationRepository.listConversationIdsForUser(
+          payload.userId,
+        );
+        for (const conversationId of conversationIds) {
+          getIO()
+            .to(conversationRoom(conversationId))
+            .emit(SOCKET_EVENTS.PRESENCE_CHANGED, payload);
+        }
+      } catch (error) {
+        logger.error(
+          `Failed to broadcast presence:changed for user ${payload.userId}: ${describeError(error)}`,
+        );
       }
     },
   });

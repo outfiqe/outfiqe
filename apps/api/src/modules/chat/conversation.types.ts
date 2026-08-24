@@ -7,10 +7,18 @@ export type ConversationParticipantSummary = {
   avatarUrl: string | null;
 };
 
+export type ConversationParticipantPresence = {
+  isOnline: boolean;
+  lastSeenAt: string | null;
+};
+
+export type ConversationParticipantView = ConversationParticipantSummary &
+  ConversationParticipantPresence;
+
 export type ConversationPreview = {
   id: string;
   type: ConversationType;
-  otherParticipant: ConversationParticipantSummary | null;
+  otherParticipant: ConversationParticipantView | null;
   lastMessagePreview: string | null;
   lastMessageAt: string | null;
   unreadCount: number;

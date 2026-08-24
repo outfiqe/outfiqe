@@ -73,4 +73,16 @@ export const messageRepository = {
       data: { unreadCount: 0, lastReadAt: readAt, lastReadMessageId },
     });
   },
+
+  async markDelivered(
+    conversationId: string,
+    userId: string,
+    lastDeliveredMessageId: string,
+    deliveredAt: Date,
+  ): Promise<void> {
+    await prisma.conversationParticipant.update({
+      where: { conversationId_userId: { conversationId, userId } },
+      data: { lastDeliveredAt: deliveredAt, lastDeliveredMessageId },
+    });
+  },
 };

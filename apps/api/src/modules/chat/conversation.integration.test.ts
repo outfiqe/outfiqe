@@ -204,3 +204,40 @@ describe("PATCH /api/conversations/:id/read", () => {
     expect(afterRead.body.data.items[0].isReadByOthers).toBe(true);
   });
 });
+
+describe("Delivery status", () => {
+  it("marks a message delivered once the recipient fetches the thread", async () => {
+    const userA = await createUser("Delivery Sender", "delivery-sender");
+    const userB = await createUser("Delivery Recipient", "delivery-recipient");
+    const { body: conversation } = await startConversation(userA.id, userA.role, userB.id);
+    await sendMessage(userA.id, userA.role, conversation.data.id, { body: "Delivered?" });
+
+    const beforeFetch = await request(testApp)
+      .get(`/api/conversations/${conversation.data.id}/messages`)
+      .set("Authorization", authHeaderFor(userA.id, userA.role));
+    expect(beforeFetch.body.data.items[0].isDeliveredToOthers).toBe(false);
+
+    await request(testApp)
+      .get(`/api/conversations/${conversation.data.id}/messages`)
+      .set("Authorization", authHeaderFor(userB.id, userB.role));
+
+    const afterFetch = await request(testApp)
+      .get(`/api/conversations/${conversation.data.id}/messages`)
+      .set("Authorization", authHeaderFor(userA.id, userA.role));
+    expect(afterFetch.body.data.items[0].isDeliveredToOthers).toBe(true);
+  });
+
+  it("never marks a message delivered or read to the recipient's own eyes", async () => {
+    const userA = await createUser("Own Eyes Sender", "own-eyes-sender");
+    const userB = await createUser("Own Eyes Recipient", "own-eyes-recipient");
+    const { body: conversation } = await startConversation(userA.id, userA.role, userB.id);
+    await sendMessage(userA.id, userA.role, conversation.data.id, { body: "Hi" });
+
+    const asRecipient = await request(testApp)
+      .get(`/api/conversations/${conversation.data.id}/messages`)
+      .set("Authorization", authHeaderFor(userB.id, userB.role));
+    expect(asRecipient.body.data.items[0].isMine).toBe(false);
+    expect(asRecipient.body.data.items[0].isDeliveredToOthers).toBe(false);
+    expect(asRecipient.body.data.items[0].isReadByOthers).toBe(false);
+  });
+});

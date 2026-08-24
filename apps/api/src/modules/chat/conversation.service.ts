@@ -1,10 +1,15 @@
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
+import { isUserOnline } from "#socket/socket.presence.js";
 
 import { chatService } from "./chat.service.js";
 import { conversationRepository } from "./conversation.repository.js";
-import type { ConversationPreview, ConversationsPage } from "./conversation.types.js";
+import type {
+  ConversationParticipantPresence,
+  ConversationPreview,
+  ConversationsPage,
+} from "./conversation.types.js";
 import { toConversationPreview } from "./conversation.utils.js";
 
 const BAD_REQUEST_STATUS = 400;
@@ -21,6 +26,28 @@ export const requireParticipant = async (conversationId: string, userId: string)
     );
   }
   return participant;
+};
+
+const buildPresenceMap = async (
+  userIds: string[],
+): Promise<Map<string, ConversationParticipantPresence>> => {
+  const uniqueIds = [...new Set(userIds)];
+  if (uniqueIds.length === 0) return new Map();
+
+  const [onlineFlags, lastSeenByUserId] = await Promise.all([
+    Promise.all(uniqueIds.map((userId) => isUserOnline(userId))),
+    userRepository.findLastSeenAtByIds(uniqueIds),
+  ]);
+
+  return new Map(
+    uniqueIds.map((userId, index) => [
+      userId,
+      {
+        isOnline: onlineFlags[index] ?? false,
+        lastSeenAt: lastSeenByUserId.get(userId)?.toISOString() ?? null,
+      },
+    ]),
+  );
 };
 
 export const conversationService = {
@@ -51,7 +78,8 @@ export const conversationService = {
     }
 
     const conversation = await conversationRepository.findOrCreateDirect(callerId, targetUserId);
-    return toConversationPreview(conversation, callerId);
+    const presenceByUserId = await buildPresenceMap([targetUserId]);
+    return toConversationPreview(conversation, callerId, presenceByUserId);
   },
 
   async getConversation(callerId: string, conversationId: string): Promise<ConversationPreview> {
@@ -60,7 +88,12 @@ export const conversationService = {
     if (!conversation) {
       throw new AppError("NOT_FOUND", "Conversation not found.", NOT_FOUND_STATUS);
     }
-    return toConversationPreview(conversation, callerId);
+
+    const otherParticipantId = conversation.participants.find(
+      (participant) => participant.userId !== callerId,
+    )?.userId;
+    const presenceByUserId = await buildPresenceMap(otherParticipantId ? [otherParticipantId] : []);
+    return toConversationPreview(conversation, callerId, presenceByUserId);
   },
 
   async listConversations(
@@ -69,6 +102,15 @@ export const conversationService = {
   ): Promise<ConversationsPage> {
     const rows = await conversationRepository.listForUser(callerId, query);
     const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
-    return { items: items.map((row) => toConversationPreview(row, callerId)), nextCursor };
+
+    const otherParticipantIds = items
+      .map((row) => row.participants.find((participant) => participant.userId !== callerId)?.userId)
+      .filter((userId): userId is string => Boolean(userId));
+    const presenceByUserId = await buildPresenceMap(otherParticipantIds);
+
+    return {
+      items: items.map((row) => toConversationPreview(row, callerId, presenceByUserId)),
+      nextCursor,
+    };
   },
 };

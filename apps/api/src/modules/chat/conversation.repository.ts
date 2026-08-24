@@ -4,6 +4,8 @@ import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 
 import { buildDirectKey, participantUserSelect } from "./conversation.utils.js";
 
+const PRESENCE_BROADCAST_CONVERSATION_CAP = 200;
+
 const participantsInclude = {
   participants: { include: { user: { select: participantUserSelect } } },
 } as const;
@@ -59,5 +61,14 @@ export const conversationRepository = {
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
       include: participantsInclude,
     });
+  },
+
+  async listConversationIdsForUser(userId: string): Promise<string[]> {
+    const rows = await prisma.conversationParticipant.findMany({
+      where: { userId },
+      select: { conversationId: true },
+      take: PRESENCE_BROADCAST_CONVERSATION_CAP,
+    });
+    return rows.map((row) => row.conversationId);
   },
 };

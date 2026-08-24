@@ -10,6 +10,7 @@ import { registerChatSocketEventConsumer } from "#modules/chat/chat.socket.js";
 import {
   registerConversationSocketHandlers,
   registerMessageEventConsumer,
+  registerPresenceSocketConsumer,
 } from "#modules/chat/conversation.socket.js";
 import {
   registerCreatorLeaderboardEventConsumer,
@@ -59,6 +60,7 @@ registerNotificationSocketEventConsumer();
 registerChatSocketEventConsumer();
 registerConversationSocketHandlers();
 registerMessageEventConsumer();
+registerPresenceSocketConsumer();
 
 startIntervalScheduler(INTERVAL_JOBS);
 startBoundaryScheduler(BOUNDARY_JOBS);

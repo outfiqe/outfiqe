@@ -120,6 +120,12 @@ export type ConversationSubscriptionPayload = {
   conversationId: string;
 };
 
+export type PresenceChangedPayload = {
+  userId: string;
+  isOnline: boolean;
+  lastSeenAt: string | null;
+};
+
 // Key literals must match SOCKET_EVENTS in socket.keys.ts.
 export type ServerToClientEvents = {
   "look:created": (payload: LookCreatedPayload) => void;
@@ -138,6 +144,7 @@ export type ServerToClientEvents = {
   "chat:block-list:updated": (payload: ChatBlockListUpdatedPayload) => void;
   "message:created": (payload: MessageBroadcastPayload) => void;
   "conversation:updated": (payload: MessageBroadcastPayload) => void;
+  "presence:changed": (payload: PresenceChangedPayload) => void;
 };
 
 export type ClientToServerEvents = {

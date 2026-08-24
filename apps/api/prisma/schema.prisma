@@ -37,6 +37,7 @@ model User {
   followerCount        Int           @default(0) @map("follower_count")
   followingCount       Int           @default(0) @map("following_count")
   hideFromLeaderboards Boolean       @default(false) @map("hide_from_leaderboards")
+  lastSeenAt           DateTime?     @map("last_seen_at")
   createdAt            DateTime      @default(now()) @map("created_at")
   updatedAt            DateTime      @updatedAt @map("updated_at")
 
@@ -1408,14 +1409,16 @@ model Conversation {
 }
 
 model ConversationParticipant {
-  conversationId    String       @map("conversation_id") @db.Uuid
-  userId            String       @map("user_id") @db.Uuid
-  joinedAt          DateTime     @default(now()) @map("joined_at")
-  lastReadAt        DateTime?    @map("last_read_at")
-  lastReadMessageId String?      @map("last_read_message_id") @db.Uuid
-  unreadCount       Int          @default(0) @map("unread_count")
-  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId     String       @map("conversation_id") @db.Uuid
+  userId             String       @map("user_id") @db.Uuid
+  joinedAt           DateTime     @default(now()) @map("joined_at")
+  lastReadAt         DateTime?    @map("last_read_at")
+  lastReadMessageId  String?      @map("last_read_message_id") @db.Uuid
+  lastDeliveredAt    DateTime?    @map("last_delivered_at")
+  lastDeliveredMessageId String?  @map("last_delivered_message_id") @db.Uuid
+  unreadCount        Int          @default(0) @map("unread_count")
+  conversation       Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([conversationId, userId])
   @@index([userId, conversationId])

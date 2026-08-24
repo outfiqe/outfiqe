@@ -41,6 +41,7 @@ export const SOCKET_EVENTS = {
   CONVERSATION_UNSUBSCRIBE: "conversation:unsubscribe",
   MESSAGE_CREATED: "message:created",
   CONVERSATION_UPDATED: "conversation:updated",
+  PRESENCE_CHANGED: "presence:changed",
 } as const;
 
 export const SOCKET_RATE_LIMIT = {

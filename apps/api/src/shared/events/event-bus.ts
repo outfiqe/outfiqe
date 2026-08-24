@@ -40,6 +40,7 @@ export const DomainEvents = {
   CHAT_SETTINGS_UPDATED: "chat.settings.updated",
   CHAT_BLOCK_LIST_UPDATED: "chat.block-list.updated",
   MESSAGE_CREATED: "message.created",
+  PRESENCE_CHANGED: "presence.changed",
 } as const;
 
 // A Redis hiccup must never fail the caller's request (like/comment/follow/etc.) — log and move on,

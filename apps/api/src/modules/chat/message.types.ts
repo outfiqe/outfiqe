@@ -24,6 +24,7 @@ export type MessageRecord = {
   attachments: MessageAttachmentRecord[];
   createdAt: string;
   isMine: boolean;
+  isDeliveredToOthers: boolean;
   isReadByOthers: boolean;
 };
 

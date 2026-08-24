@@ -2,6 +2,7 @@ import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { ConversationType } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { isUserOnline } from "#socket/socket.presence.js";
 
 import { chatService } from "./chat.service.js";
 import { conversationRepository } from "./conversation.repository.js";
@@ -67,6 +68,7 @@ export const messageService = {
     const recipientIds = conversation.participants
       .map((participant) => participant.userId)
       .filter((participantId) => participantId !== callerId);
+
     await eventBus.publish(DomainEvents.MESSAGE_CREATED, {
       id: message.id,
       conversationId,
@@ -79,6 +81,19 @@ export const messageService = {
       createdAt: message.createdAt.toISOString(),
       recipientIds,
     });
+
+    await Promise.all(
+      recipientIds.map(async (recipientId) => {
+        if (await isUserOnline(recipientId)) {
+          await messageRepository.markDelivered(
+            conversationId,
+            recipientId,
+            message.id,
+            message.createdAt,
+          );
+        }
+      }),
+    );
 
     return toMessageRecord(message, callerId, null);
   },
@@ -96,10 +111,20 @@ export const messageService = {
     ]);
     const { items, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
 
+    if (!query.cursor) {
+      const latestMessageId = await messageRepository.findLatestId(conversationId);
+      if (latestMessageId) {
+        await messageRepository.markDelivered(
+          conversationId,
+          callerId,
+          latestMessageId,
+          new Date(),
+        );
+      }
+    }
+
     return {
-      items: items.map((row) =>
-        toMessageRecord(row, callerId, otherParticipant?.lastReadAt ?? null),
-      ),
+      items: items.map((row) => toMessageRecord(row, callerId, otherParticipant)),
       nextCursor,
     };
   },

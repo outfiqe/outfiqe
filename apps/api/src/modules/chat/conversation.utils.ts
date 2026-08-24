@@ -1,6 +1,10 @@
 import type { ConversationType } from "#generated/prisma/enums.js";
 
-import type { ConversationParticipantSummary, ConversationPreview } from "./conversation.types.js";
+import type {
+  ConversationParticipantPresence,
+  ConversationParticipantSummary,
+  ConversationPreview,
+} from "./conversation.types.js";
 
 export const buildDirectKey = (userAId: string, userBId: string): string =>
   [userAId, userBId].sort().join(":");
@@ -28,14 +32,22 @@ type ConversationWithParticipantsRow = {
 export const toConversationPreview = (
   conversation: ConversationWithParticipantsRow,
   callerId: string,
+  presenceByUserId: Map<string, ConversationParticipantPresence>,
 ): ConversationPreview => {
   const callerParticipant = conversation.participants.find((p) => p.userId === callerId);
   const otherParticipant = conversation.participants.find((p) => p.userId !== callerId);
+  const presence = otherParticipant ? presenceByUserId.get(otherParticipant.userId) : undefined;
 
   return {
     id: conversation.id,
     type: conversation.type,
-    otherParticipant: otherParticipant?.user ?? null,
+    otherParticipant: otherParticipant
+      ? {
+          ...otherParticipant.user,
+          isOnline: presence?.isOnline ?? false,
+          lastSeenAt: presence?.lastSeenAt ?? null,
+        }
+      : null,
     lastMessagePreview: conversation.lastMessagePreview,
     lastMessageAt: conversation.lastMessageAt ? conversation.lastMessageAt.toISOString() : null,
     unreadCount: callerParticipant?.unreadCount ?? 0,
