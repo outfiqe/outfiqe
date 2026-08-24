@@ -19,7 +19,7 @@ type TierRowState = {
   ratePercent: string;
 };
 
-const rowForTier = (tier: PlatformCommissionTier): TierRowState => ({
+const tierRowFor = (tier: PlatformCommissionTier): TierRowState => ({
   key: tier.id,
   minPrice: String(tier.minPrice),
   maxPrice: tier.maxPrice === null ? "" : String(tier.maxPrice),
@@ -28,7 +28,7 @@ const rowForTier = (tier: PlatformCommissionTier): TierRowState => ({
   ratePercent: tier.ratePercent === null ? "" : String(tier.ratePercent),
 });
 
-const emptyRow = (key: string, minPrice: string): TierRowState => ({
+const emptyTierRow = (key: string, minPrice: string): TierRowState => ({
   key,
   minPrice,
   maxPrice: "",
@@ -37,43 +37,43 @@ const emptyRow = (key: string, minPrice: string): TierRowState => ({
   ratePercent: "",
 });
 
-const toCreateTierInput = (row: TierRowState): CreateTierInput => ({
-  minPrice: Number(row.minPrice),
-  maxPrice: row.maxPrice === "" ? null : Number(row.maxPrice),
-  feeType: row.feeType,
-  ...(row.feeType === "FLAT"
-    ? { flatAmount: Number(row.flatAmount) }
-    : { ratePercent: Number(row.ratePercent) }),
+const toCreateTierInput = (tierRow: TierRowState): CreateTierInput => ({
+  minPrice: Number(tierRow.minPrice),
+  maxPrice: tierRow.maxPrice === "" ? null : Number(tierRow.maxPrice),
+  feeType: tierRow.feeType,
+  ...(tierRow.feeType === "FLAT"
+    ? { flatAmount: Number(tierRow.flatAmount) }
+    : { ratePercent: Number(tierRow.ratePercent) }),
 });
 
-const validateLadder = (rows: TierRowState[]): string | null => {
-  if (rows.length === 0) return "Add at least one price band.";
+const validateLadder = (tierRows: TierRowState[]): string | null => {
+  if (tierRows.length === 0) return "Add at least one price band.";
 
-  const sortedRows = [...rows].sort((a, b) => Number(a.minPrice) - Number(b.minPrice));
-  const firstRow = sortedRows[0];
-  const lastRow = sortedRows[sortedRows.length - 1];
-  if (!firstRow || !lastRow) return "Add at least one price band.";
+  const sortedTierRows = [...tierRows].sort((a, b) => Number(a.minPrice) - Number(b.minPrice));
+  const firstTierRow = sortedTierRows[0];
+  const lastTierRow = sortedTierRows[sortedTierRows.length - 1];
+  if (!firstTierRow || !lastTierRow) return "Add at least one price band.";
 
-  if (Number(firstRow.minPrice) !== LADDER_FLOOR_PRICE) {
+  if (Number(firstTierRow.minPrice) !== LADDER_FLOOR_PRICE) {
     return "The lowest band must start at Rs. 0.";
   }
-  if (lastRow.maxPrice !== "") {
+  if (lastTierRow.maxPrice !== "") {
     return "The highest band must be open-ended — leave its max price blank.";
   }
 
-  for (let index = 0; index < sortedRows.length - 1; index += 1) {
-    const currentRow = sortedRows[index];
-    const nextRow = sortedRows[index + 1];
-    if (Number(currentRow?.maxPrice) !== Number(nextRow?.minPrice)) {
+  for (let index = 0; index < sortedTierRows.length - 1; index += 1) {
+    const currentTierRow = sortedTierRows[index];
+    const nextTierRow = sortedTierRows[index + 1];
+    if (Number(currentTierRow?.maxPrice) !== Number(nextTierRow?.minPrice)) {
       return "Bands must be contiguous, with no gaps or overlaps between them.";
     }
   }
 
-  for (const row of rows) {
-    if (row.feeType === "FLAT" && row.flatAmount === "") {
+  for (const tierRow of tierRows) {
+    if (tierRow.feeType === "FLAT" && tierRow.flatAmount === "") {
       return "Every FLAT band needs a commission amount.";
     }
-    if (row.feeType === "PERCENT" && row.ratePercent === "") {
+    if (tierRow.feeType === "PERCENT" && tierRow.ratePercent === "") {
       return "Every PERCENT band needs a commission rate.";
     }
   }
@@ -82,12 +82,12 @@ const validateLadder = (rows: TierRowState[]): string | null => {
 };
 
 const TierRowFields = ({
-  row,
+  tierRow,
   onChange,
   onRemove,
 }: {
-  row: TierRowState;
-  onChange: (row: TierRowState) => void;
+  tierRow: TierRowState;
+  onChange: (tierRow: TierRowState) => void;
   onRemove: () => void;
 }) => (
   <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4">
@@ -97,8 +97,8 @@ const TierRowFields = ({
         type="number"
         required
         min={0}
-        value={row.minPrice}
-        onChange={(e) => onChange({ ...row, minPrice: e.target.value })}
+        value={tierRow.minPrice}
+        onChange={(e) => onChange({ ...tierRow, minPrice: e.target.value })}
         className="w-28"
       />
     </div>
@@ -108,31 +108,31 @@ const TierRowFields = ({
         type="number"
         min={0}
         placeholder="No limit"
-        value={row.maxPrice}
-        onChange={(e) => onChange({ ...row, maxPrice: e.target.value })}
+        value={tierRow.maxPrice}
+        onChange={(e) => onChange({ ...tierRow, maxPrice: e.target.value })}
         className="w-28"
       />
     </div>
     <div className="space-y-1.5">
       <label className="block text-xs text-muted-foreground">Fee type</label>
       <Select
-        value={row.feeType}
-        onChange={(e) => onChange({ ...row, feeType: e.target.value as FeeTypeValue })}
+        value={tierRow.feeType}
+        onChange={(e) => onChange({ ...tierRow, feeType: e.target.value as FeeTypeValue })}
         className="w-32"
       >
         <option value="FLAT">Flat (Rs.)</option>
         <option value="PERCENT">Percent (%)</option>
       </Select>
     </div>
-    {row.feeType === "FLAT" ? (
+    {tierRow.feeType === "FLAT" ? (
       <div className="space-y-1.5">
         <label className="block text-xs text-muted-foreground">Commission (Rs.)</label>
         <Input
           type="number"
           required
           min={1}
-          value={row.flatAmount}
-          onChange={(e) => onChange({ ...row, flatAmount: e.target.value })}
+          value={tierRow.flatAmount}
+          onChange={(e) => onChange({ ...tierRow, flatAmount: e.target.value })}
           className="w-28"
         />
       </div>
@@ -144,8 +144,8 @@ const TierRowFields = ({
           required
           min={0.01}
           step={0.01}
-          value={row.ratePercent}
-          onChange={(e) => onChange({ ...row, ratePercent: e.target.value })}
+          value={tierRow.ratePercent}
+          onChange={(e) => onChange({ ...tierRow, ratePercent: e.target.value })}
           className="w-24"
         />
       </div>
@@ -158,7 +158,7 @@ const TierRowFields = ({
 
 export const CommissionTiersSection = () => {
   const queryClient = useQueryClient();
-  const nextRowKey = useRef(0);
+  const nextTierRowKey = useRef(0);
 
   const { data: rules, isLoading } = useQuery({
     queryKey: RULES_QUERY_KEY,
@@ -166,49 +166,52 @@ export const CommissionTiersSection = () => {
   });
   const activeRule = rules?.find((rule) => rule.isActive) ?? null;
 
-  const [rows, setRows] = useState<TierRowState[] | null>(null);
+  const [tierRows, setTierRows] = useState<TierRowState[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const activeRows =
-    rows ??
+  const activeTierRows =
+    tierRows ??
     (activeRule
-      ? activeRule.tiers.map(rowForTier)
-      : [emptyRow("new-0", String(LADDER_FLOOR_PRICE))]);
+      ? activeRule.tiers.map(tierRowFor)
+      : [emptyTierRow("new-0", String(LADDER_FLOOR_PRICE))]);
 
   const createRule = useMutation({
     mutationFn: (tiers: CreateTierInput[]) => platformCommissionApi.createRule(tiers),
     onSuccess: (rule) => {
-      setRows(rule.tiers.map(rowForTier));
+      setTierRows(rule.tiers.map(tierRowFor));
       setError(null);
       queryClient.invalidateQueries({ queryKey: RULES_QUERY_KEY });
     },
     onError: (mutationError) => setError(getErrorMessage(mutationError)),
   });
 
-  const updateRow = (key: string, nextRow: TierRowState) => {
-    setRows(activeRows.map((row) => (row.key === key ? nextRow : row)));
+  const updateTierRow = (key: string, updatedTierRow: TierRowState) => {
+    setTierRows(activeTierRows.map((tierRow) => (tierRow.key === key ? updatedTierRow : tierRow)));
   };
 
-  const removeRow = (key: string) => {
-    setRows(activeRows.filter((row) => row.key !== key));
+  const removeTierRow = (key: string) => {
+    setTierRows(activeTierRows.filter((tierRow) => tierRow.key !== key));
   };
 
-  const addRow = () => {
-    const lastRow = activeRows[activeRows.length - 1];
-    nextRowKey.current += 1;
-    setRows([
-      ...activeRows,
-      emptyRow(`new-${nextRowKey.current}`, lastRow?.maxPrice ?? String(LADDER_FLOOR_PRICE)),
+  const addTierRow = () => {
+    const lastTierRow = activeTierRows[activeTierRows.length - 1];
+    nextTierRowKey.current += 1;
+    setTierRows([
+      ...activeTierRows,
+      emptyTierRow(
+        `new-${nextTierRowKey.current}`,
+        lastTierRow?.maxPrice ?? String(LADDER_FLOOR_PRICE),
+      ),
     ]);
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const validationError = validateLadder(activeRows);
+    const validationError = validateLadder(activeTierRows);
     if (validationError) {
       setError(validationError);
       return;
     }
-    createRule.mutate(activeRows.map(toCreateTierInput));
+    createRule.mutate(activeTierRows.map(toCreateTierInput));
   };
 
   return (
@@ -229,18 +232,18 @@ export const CommissionTiersSection = () => {
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
 
         {!isLoading &&
-          activeRows.map((row) => (
+          activeTierRows.map((tierRow) => (
             <TierRowFields
-              key={row.key}
-              row={row}
-              onChange={(nextRow) => updateRow(row.key, nextRow)}
-              onRemove={() => removeRow(row.key)}
+              key={tierRow.key}
+              tierRow={tierRow}
+              onChange={(updatedTierRow) => updateTierRow(tierRow.key, updatedTierRow)}
+              onRemove={() => removeTierRow(tierRow.key)}
             />
           ))}
 
         {!isLoading && (
           <div className="flex flex-wrap items-center gap-3">
-            <Button type="button" variant="outline" size="sm" onClick={addRow}>
+            <Button type="button" variant="outline" size="sm" onClick={addTierRow}>
               Add band
             </Button>
             <Button type="submit" disabled={createRule.isPending}>
