@@ -1,5 +1,6 @@
-import { AchievementBadgeIcon, Button, Modal, Select } from "@outfiqe/design-system";
-import { Circle, Sparkles, Type } from "lucide-react";
+import { AchievementBadgeIcon, Button, Select } from "@outfiqe/design-system";
+import { Link } from "@tanstack/react-router";
+import { ArrowLeft, Circle, Sparkles, Type } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -81,14 +82,27 @@ export const DesignStudio = ({
       : { shape: DEFAULT_BACKGROUND_SHAPE, primaryColor: DEFAULT_LAYER_FILL_COLOR };
 
   return (
-    <Modal
-      open
-      onClose={onCancel}
-      title="Design Studio"
-      description="Drag a layer to move it, or use the corner handles to resize it."
-      className="sm:max-w-5xl"
-      footer={
-        <div className="flex items-center justify-between gap-3">
+    <div>
+      <Link
+        to="/gamification/badges"
+        onClick={(e) => {
+          e.preventDefault();
+          onCancel();
+        }}
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="size-4" />
+        Badges
+      </Link>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Design Studio</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Drag a layer to move it, or use the corner handles to resize it.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
           <p className="text-xs text-muted-foreground">
             {layers.length} / {MAX_BADGE_LAYERS} layers
           </p>
@@ -105,9 +119,9 @@ export const DesignStudio = ({
             </Button>
           </div>
         </div>
-      }
-    >
-      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)_240px]">
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[352px_minmax(0,1fr)_240px]">
         <StudioSection
           title="Canvas"
           hint="Click a layer to select it, then drag or resize it with the handles."
@@ -210,6 +224,6 @@ export const DesignStudio = ({
           </StudioSection>
         </div>
       </div>
-    </Modal>
+    </div>
   );
 };

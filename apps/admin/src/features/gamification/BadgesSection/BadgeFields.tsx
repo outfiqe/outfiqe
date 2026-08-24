@@ -1,5 +1,4 @@
 import { Button, Checkbox, Input, Select } from "@outfiqe/design-system";
-import { useState } from "react";
 
 import {
   ANIMATION_OPTION_LABEL,
@@ -15,40 +14,20 @@ import { ConditionsEditor } from "../conditions/ConditionsEditor";
 import type { BadgeCategoryValue, BadgeRarityValue, BadgeShapeValue } from "../schemas";
 import type { BadgeFormState } from "./badgeForm.types";
 import { BrandSponsorField } from "./BrandSponsorField";
-import { DesignStudio } from "./DesignStudio/DesignStudio";
 
 export const BadgeFields = ({
   idPrefix,
   form,
   onChange,
+  onOpenDesignStudio,
 }: {
   idPrefix: string;
   form: BadgeFormState;
   onChange: (form: BadgeFormState) => void;
+  onOpenDesignStudio: () => void;
 }) => {
-  const [isStudioOpen, setIsStudioOpen] = useState(false);
-
   return (
     <div className="space-y-4">
-      {isStudioOpen && (
-        <DesignStudio
-          icon={form.icon || "🏆"}
-          rarity={form.rarity}
-          initialLayers={form.studioLayers}
-          initialAnimation={form.animation}
-          onCancel={() => setIsStudioOpen(false)}
-          onDone={(layers, animation) => {
-            onChange({
-              ...form,
-              designMode: BADGE_DESIGN_MODE.STUDIO,
-              studioLayers: layers,
-              animation,
-            });
-            setIsStudioOpen(false);
-          }}
-        />
-      )}
-
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-xl border border-border p-4">
           <p className="mb-3 text-sm font-medium text-foreground">Identity</p>
@@ -152,12 +131,7 @@ export const BadgeFields = ({
                   <p className="text-sm text-foreground">
                     Studio design ({form.studioLayers.length} layers)
                   </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsStudioOpen(true)}
-                  >
+                  <Button type="button" variant="outline" size="sm" onClick={onOpenDesignStudio}>
                     Edit
                   </Button>
                   <Button
@@ -223,7 +197,7 @@ export const BadgeFields = ({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setIsStudioOpen(true)}
+                    onClick={onOpenDesignStudio}
                   >
                     Design Studio
                   </Button>
