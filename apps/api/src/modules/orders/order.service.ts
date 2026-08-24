@@ -45,6 +45,7 @@ import type {
 } from "./order.schemas.js";
 import type {
   BrandOrderItemView,
+  CancelOrderActor,
   CreateOrderItemInput,
   OrderAdminSummaryView,
   OrderAdminView,
@@ -382,9 +383,12 @@ export const orderService = {
     });
   },
 
-  async cancel(orderId: string, adminUserId: string, reason: string): Promise<void> {
+  async cancel(orderId: string, actor: CancelOrderActor, reason: string): Promise<void> {
     const order = await orderRepository.findForAdminAction(orderId);
     if (!order) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    if (actor.type === "BUYER" && order.userId !== actor.userId) {
+      throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    }
     if (!CANCELLABLE_FULFILMENT_STATUSES.includes(order.fulfilmentStatus)) {
       throw new AppError(
         "INVALID_TRANSITION",
@@ -456,7 +460,9 @@ export const orderService = {
       });
     }
 
-    logger.info(`Order ${orderId} cancelled by admin ${adminUserId}: ${reason}`);
+    const actorDescription =
+      actor.type === "ADMIN" ? `admin ${actor.adminUserId}` : `buyer ${actor.userId}`;
+    logger.info(`Order ${orderId} cancelled by ${actorDescription}: ${reason}`);
   },
 
   async listMineAsBrand(

@@ -79,4 +79,15 @@ export const brandBankAccountRepository = {
   async createAccessLog(brandBankAccountId: string, adminId: string): Promise<void> {
     await prisma.brandBankAccountAccessLog.create({ data: { brandBankAccountId, adminId } });
   },
+
+  async stampFirstPayoutCrossCheck(
+    id: string,
+    adminId: string,
+    client: DbClient = prisma,
+  ): Promise<void> {
+    await client.brandBankAccount.update({
+      where: { id },
+      data: { firstPayoutCrossCheckedAt: new Date(), firstPayoutCrossCheckedById: adminId },
+    });
+  },
 };

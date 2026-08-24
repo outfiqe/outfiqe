@@ -41,6 +41,11 @@ activity to an open bell/panel live.
   `metadata` snapshot, and calling into `notification.service.ts`. A second, independent consumer
   group from every other module already subscribed to the same streams (`xp.events.ts`,
   `achievement.events.ts`) — Redis Streams consumer groups don't interfere with each other.
+  `DomainEvents.WITHDRAW_REQUEST_STATUS_CHANGED` (published by `withdraw/withdraw.service.ts` on a
+  final approval, a rejection, and a mark-paid) is handled the same way: the handler maps the
+  event's `status` to a `NotificationType` via `WITHDRAW_REQUEST_NOTIFICATION_TYPES` and no-ops on
+  any status not in that map (`PENDING`/`UNDER_REVIEW`, which are never published in the first
+  place).
 - `notification.socket.ts` — `registerNotificationSocketEventConsumer()`: the `socket-broadcast`
   relay for `NOTIFICATION_CREATED`/`NOTIFICATION_UPDATED` (see Funnel below).
 - `notification.schemas.ts` / `notification.controller.ts` / `notification.routes.ts` — the REST

@@ -67,6 +67,9 @@ export default defineConfig({
         "src/modules/brand-bank-accounts/**/*.ts",
         "src/modules/brand-payouts/**/*.ts",
         "src/shared/utils/lifecycle-sweep.utils.ts",
+        "src/modules/withdraw/**/*.ts",
+        "src/shared/utils/prisma.utils.ts",
+        "src/modules/financial-rollup/**/*.ts",
       ],
       thresholds: {
         lines: 80,

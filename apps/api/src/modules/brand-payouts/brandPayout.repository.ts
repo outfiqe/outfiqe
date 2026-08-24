@@ -122,4 +122,31 @@ export const brandPayoutRepository = {
       include: { orderItem: { select: { product: { select: { name: true, imageUrl: true } } } } },
     });
   },
+
+  async claimAvailableForBrand(
+    client: DbClient,
+    brandId: string,
+    amount: number,
+  ): Promise<string[]> {
+    const candidates = await client.brandPayout.findMany({
+      where: { brandId, status: BrandPayoutStatus.AVAILABLE },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, netAmount: true },
+    });
+
+    const claimedIds: string[] = [];
+    let runningTotal = 0;
+    for (const candidate of candidates) {
+      if (runningTotal >= amount) break;
+      claimedIds.push(candidate.id);
+      runningTotal += candidate.netAmount;
+    }
+    if (runningTotal < amount) return [];
+
+    const result = await client.brandPayout.updateMany({
+      where: { id: { in: claimedIds }, status: BrandPayoutStatus.AVAILABLE },
+      data: { status: BrandPayoutStatus.WITHDRAWN, withdrawnAt: new Date() },
+    });
+    return result.count === claimedIds.length ? claimedIds : [];
+  },
 };

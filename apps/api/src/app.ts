@@ -29,6 +29,7 @@ import { creatorLinkRoutes } from "./modules/creator-links/creatorLink.routes.js
 import { creatorLookRoutes } from "./modules/creator-looks/creatorLook.routes.js";
 import { creatorRoutes } from "./modules/creators/creator.routes.js";
 import { deliveryZoneRoutes } from "./modules/delivery-zones/deliveryZone.routes.js";
+import { financialRollupRoutes } from "./modules/financial-rollup/financialRollup.routes.js";
 import { followRoutes } from "./modules/follows/follow.routes.js";
 import { heroSlideRoutes } from "./modules/hero-slides/heroSlide.routes.js";
 import { leaderboardRoutes } from "./modules/leaderboard/leaderboard.routes.js";
@@ -43,6 +44,7 @@ import { trendingRoutes } from "./modules/trending/trending.routes.js";
 import { uploadRoutes } from "./modules/uploads/upload.routes.js";
 import { userRoutes } from "./modules/users/user.routes.js";
 import { wishlistRoutes } from "./modules/wishlist/wishlist.routes.js";
+import { withdrawRoutes } from "./modules/withdraw/withdraw.routes.js";
 import { xpRoutes } from "./modules/xp/xp.routes.js";
 import { errorHandler } from "./shared/middlewares/error-handler.js";
 import { httpLogger } from "./shared/middlewares/http-logger.js";
@@ -126,6 +128,8 @@ export const createApp = () => {
   app.use("/api/bank-accounts", bankAccountRoutes);
   app.use("/api/brand-bank-accounts", brandBankAccountRoutes);
   app.use("/api/brand-payouts", brandPayoutRoutes);
+  app.use("/api/withdraw", withdrawRoutes);
+  app.use("/api/admin/financial-rollup", financialRollupRoutes);
 
   Sentry.setupExpressErrorHandler(app);
   app.use(errorHandler);

@@ -9,6 +9,7 @@ import { validate } from "#middlewares/validate.js";
 import { orderController } from "./order.controller.js";
 import {
   advanceFulfilmentSchema,
+  cancelMyOrderSchema,
   cancelOrderSchema,
   checkoutBodySchema,
   listAdminOrdersQuerySchema,
@@ -26,6 +27,17 @@ const checkoutRateLimit = rateLimit({
   max: CHECKOUT_MAX_REQUESTS,
   keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
   message: "Too many checkout attempts. Please wait a moment and try again.",
+});
+
+const CANCEL_WINDOW_MS = 60 * 60 * 1000;
+const CANCEL_MAX_REQUESTS = 10;
+
+const cancelMyOrderRateLimit = rateLimit({
+  namespace: "order-cancel-mine",
+  windowMs: CANCEL_WINDOW_MS,
+  max: CANCEL_MAX_REQUESTS,
+  keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
+  message: "Too many cancellation attempts. Please wait a moment and try again.",
 });
 
 const requireAdmin = [requireAuth, requireRole(UserRole.ADMIN)];
@@ -87,4 +99,12 @@ orderRoutes.get(
   requireAuth,
   validate({ params: orderIdParamSchema }),
   orderController.get,
+);
+
+orderRoutes.post(
+  "/:orderId/cancel",
+  requireAuth,
+  cancelMyOrderRateLimit,
+  validate({ params: orderIdParamSchema, body: cancelMyOrderSchema }),
+  orderController.cancelMine,
 );

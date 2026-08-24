@@ -5,3 +5,6 @@ export const isUniqueConstraintError = (error: unknown): boolean =>
 
 export const isForeignKeyConstraintError = (error: unknown): boolean =>
   error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003";
+
+export const isTransactionConflictError = (error: unknown): boolean =>
+  error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034";

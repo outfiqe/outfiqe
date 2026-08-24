@@ -6,6 +6,7 @@ import { validated } from "#middlewares/validate.js";
 
 import type {
   AdvanceFulfilmentBody,
+  CancelMyOrderBody,
   CancelOrderBody,
   CheckoutBody,
   ListAdminOrdersQuery,
@@ -17,6 +18,7 @@ import { orderService } from "./order.service.js";
 
 const IDEMPOTENCY_HEADER = "Idempotency-Key";
 const CREATED_STATUS = 201;
+const BUYER_CANCEL_DEFAULT_REASON = "Cancelled by buyer";
 
 export const orderController = {
   async checkout(req: Request, res: Response) {
@@ -68,7 +70,20 @@ export const orderController = {
     const { reason } = validated.body<CancelOrderBody>(res);
     const { userId } = requireAuthPrincipal(res);
 
-    await orderService.cancel(orderId, userId, reason);
+    await orderService.cancel(orderId, { type: "ADMIN", adminUserId: userId }, reason);
+    sendSuccess(res, null, "Order cancelled.");
+  },
+
+  async cancelMine(_req: Request, res: Response) {
+    const { orderId } = validated.params<OrderIdParam>(res);
+    const { reason } = validated.body<CancelMyOrderBody>(res);
+    const { userId } = requireAuthPrincipal(res);
+
+    await orderService.cancel(
+      orderId,
+      { type: "BUYER", userId },
+      reason ?? BUYER_CANCEL_DEFAULT_REASON,
+    );
     sendSuccess(res, null, "Order cancelled.");
   },
 

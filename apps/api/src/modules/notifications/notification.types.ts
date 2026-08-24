@@ -24,6 +24,8 @@ export type NotificationMetadata = {
   productName?: string;
   productImageUrl?: string | null;
   rating?: number;
+  withdrawAmount?: number;
+  rejectionReason?: string;
 };
 
 export type NotificationRecord = {

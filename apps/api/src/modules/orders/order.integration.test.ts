@@ -211,3 +211,83 @@ describe("POST /api/orders/admin/:orderId/cancel — settlement ledger", () => {
     expect(payout.voidedReason).toBe("Buyer requested cancellation");
   });
 });
+
+describe("POST /api/orders/:orderId/cancel — buyer self-service", () => {
+  const placeOrder = async (adminId: string, buyer: { id: string }) => {
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(1000);
+
+    const checkout = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.COD,
+        buyNow: { productId: product.id, sizeId: size.id, qty: 1 },
+      });
+    return { orderId: checkout.body.data.id, size };
+  };
+
+  it("lets a buyer cancel their own PLACED order, restoring stock and voiding the payout", async () => {
+    const { userId: adminId } = await createAdminSession();
+    const buyer = await createBuyer();
+    const { orderId, size } = await placeOrder(adminId, buyer);
+
+    const response = await request(testApp)
+      .post(`/api/orders/${orderId}/cancel`)
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({});
+
+    expect(response.status).toBe(200);
+
+    const order = await prisma.order.findUniqueOrThrow({ where: { id: orderId } });
+    expect(order.fulfilmentStatus).toBe(FulfilmentStatus.CANCELLED);
+
+    const restoredSize = await prisma.productSize.findUniqueOrThrow({ where: { id: size.id } });
+    expect(restoredSize.stock).toBe(10);
+
+    const payout = await prisma.brandPayout.findFirstOrThrow({ where: { orderItem: { orderId } } });
+    expect(payout.status).toBe(BrandPayoutStatus.VOIDED);
+    expect(payout.voidedReason).toBe("Cancelled by buyer");
+  });
+
+  it("404s when cancelling someone else's order", async () => {
+    const { userId: adminId } = await createAdminSession();
+    const buyer = await createBuyer();
+    const otherBuyer = await createBuyer();
+    const { orderId } = await placeOrder(adminId, buyer);
+
+    const response = await request(testApp)
+      .post(`/api/orders/${orderId}/cancel`)
+      .set("Authorization", authHeaderFor(otherBuyer.id, UserRole.CUSTOMER))
+      .send({});
+
+    expect(response.status).toBe(404);
+  });
+
+  it("rejects cancelling an order that has already shipped", async () => {
+    const { userId: adminId, authHeader } = await createAdminSession();
+    const buyer = await createBuyer();
+    const { orderId } = await placeOrder(adminId, buyer);
+
+    await request(testApp)
+      .patch(`/api/orders/admin/${orderId}/fulfilment`)
+      .set("Authorization", authHeader)
+      .send({ status: FulfilmentStatus.PACKED });
+    await request(testApp)
+      .patch(`/api/orders/admin/${orderId}/fulfilment`)
+      .set("Authorization", authHeader)
+      .send({ status: FulfilmentStatus.SHIPPED });
+
+    const response = await request(testApp)
+      .post(`/api/orders/${orderId}/cancel`)
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({});
+
+    expect(response.status).toBe(409);
+  });
+});

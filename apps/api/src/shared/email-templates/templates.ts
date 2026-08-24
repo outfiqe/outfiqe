@@ -250,6 +250,28 @@ export const refundFailedTemplate = (
   }),
 });
 
+type WithdrawRequestReceivedInput = {
+  ownerName: string;
+  ownerType: string;
+  amount: number;
+  reviewUrl: string;
+};
+
+export const withdrawRequestReceivedInternalTemplate = (
+  input: WithdrawRequestReceivedInput,
+): { subject: string; html: string } => ({
+  subject: `New withdrawal request: Rs. ${input.amount} (${input.ownerName})`,
+  html: renderEmailLayout({
+    preheader: `${input.ownerName} requested a withdrawal of Rs. ${input.amount}.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 12px;">New withdrawal request</h1>
+      <p style="margin:4px 0;"><strong>From:</strong> ${input.ownerName} (${input.ownerType})</p>
+      <p style="margin:4px 0;"><strong>Amount:</strong> Rs. ${input.amount}</p>
+      ${emailButtonHtml("Review in admin panel", input.reviewUrl)}
+    `,
+  }),
+});
+
 export const adminInviteTemplate = (
   name: string,
   inviteUrl: string,

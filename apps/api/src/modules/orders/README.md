@@ -87,6 +87,24 @@ chunk as "manual refund/cancel recording" as one combined feature, and a standal
 would need its own decision about whether stock goes back to sellable inventory, which is a
 different question than "we never shipped it." Easy to add later as a separate action if needed.
 
+## Buyer self-service cancellation
+
+`POST /:orderId/cancel` (any authenticated user, no admin role) is the same `orderService.cancel`
+transaction as the admin path above — `cancel` takes a `CancelOrderActor`
+(`{ type: "ADMIN"; adminUserId } | { type: "BUYER"; userId }`) instead of assuming an admin. A
+`BUYER` actor gets an extra ownership check (`order.userId !== actor.userId` → `404`, not `403` —
+same "don't reveal another user's order exists" reasoning used elsewhere) before the existing
+`CANCELLABLE_FULFILMENT_STATUSES` window check, so a buyer can only ever cancel their own
+`PLACED`/`PACKED` order, same restriction admin already enforces. `reason` is optional on this
+route (defaults to `"Cancelled by buyer"`, filled in by the controller) — required and
+admin-authored on the admin route, same schema-per-route split `cancelOrderSchema`/
+`cancelMyOrderSchema` already follows for other admin-vs-buyer field differences in this module.
+
+Deliberately **not** extended to brands (per the design doc): a single order can hold items from
+multiple brands, and `fulfilmentStatus` lives on the order as a whole, not per item — a brand
+cancelling "its" item could strand or wrongly affect another brand's item on the same order.
+Cancelling on a brand's behalf stays an admin action, unchanged.
+
 ## Brand visibility (chunk 16)
 
 `GET /orders/brand` — `requireAuth`+`BRAND_OWNER`, resolves the caller's brand via the shared

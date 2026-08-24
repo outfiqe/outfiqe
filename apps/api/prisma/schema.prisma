@@ -84,6 +84,7 @@ model User {
   submittedWithdrawRequests                WithdrawRequest[]           @relation("WithdrawRequestSubmitter")
   reviewedWithdrawRequests                 WithdrawRequest[]           @relation("WithdrawRequestReviewer")
   firstApprovedWithdrawRequests            WithdrawRequest[]           @relation("WithdrawRequestFirstApprover")
+  paidWithdrawRequests                     WithdrawRequest[]           @relation("WithdrawRequestPaidBy")
   platformCommissionRuleEdits              PlatformCommissionRule[]    @relation("PlatformCommissionRuleUpdatedBy")
 
   @@index([isCreator, creatorStatus, followerCount])
@@ -1331,6 +1332,9 @@ enum NotificationType {
   BRAND_APPLICATION_SUBMITTED
   PRODUCT_REVIEWED
   REVIEW_REQUESTED
+  WITHDRAW_REQUEST_APPROVED
+  WITHDRAW_REQUEST_REJECTED
+  WITHDRAW_REQUEST_PAID
 }
 
 enum NotificationEntityType {
@@ -1340,6 +1344,7 @@ enum NotificationEntityType {
   BRAND_APPLICATION
   BADGE
   PRODUCT
+  WITHDRAW_REQUEST
 }
 
 model Notification {
@@ -1614,6 +1619,8 @@ model WithdrawRequest {
   reviewedById String?   @map("reviewed_by_id") @db.Uuid
   reviewedBy   User?     @relation("WithdrawRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
   reviewedAt   DateTime? @map("reviewed_at")
+  paidById     String?   @map("paid_by_id") @db.Uuid
+  paidBy       User?     @relation("WithdrawRequestPaidBy", fields: [paidById], references: [id], onDelete: SetNull)
   paidAt       DateTime? @map("paid_at")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
