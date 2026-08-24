@@ -9,6 +9,7 @@ import {
 } from "@outfiqe/components";
 import {
   Award,
+  BanknoteArrowUp,
   LogOut,
   Package,
   Share2,
@@ -39,6 +40,7 @@ const CREATOR_NAV: SidebarNavItem[] = [
   { id: "profile", href: "/dashboard/profile", label: "Profile", icon: User },
   { id: "share", href: "/dashboard/share", label: "Share", icon: Share2 },
   { id: "earnings", href: "/dashboard/earnings", label: "Earnings", icon: Wallet },
+  { id: "withdraw", href: "/dashboard/withdraw", label: "Withdraw", icon: BanknoteArrowUp },
   { id: "progress", href: "/dashboard/progress", label: "Progress", icon: Sparkles },
   { id: "badges", href: "/dashboard/badges", label: "Badges", icon: Award },
   { id: "challenges", href: "/dashboard/challenges", label: "Challenges", icon: Trophy },
@@ -49,6 +51,7 @@ const BRAND_NAV: SidebarNavItem[] = [
   { id: "profile", href: "/dashboard/profile", label: "Profile", icon: Store },
   { id: "products", href: "/dashboard/products", label: "Products", icon: Package },
   { id: "orders", href: "/dashboard/orders", label: "Orders", icon: ShoppingBag },
+  { id: "wallet", href: "/dashboard/wallet", label: "Wallet", icon: Wallet },
   SECURITY_NAV_ITEM,
 ];
 
