@@ -1,0 +1,206 @@
+import { randomUUID } from "node:crypto";
+
+import request from "supertest";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { prisma } from "#db/prisma.js";
+import { UserRole } from "#generated/prisma/enums.js";
+import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
+import { redis } from "#redis/redis.client.js";
+import { testApp } from "#test/integration/testApp.js";
+
+beforeEach(async () => {
+  await redis.flushdb();
+});
+
+const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
+
+const createUser = async (name: string, handle: string, role: UserRole = UserRole.CUSTOMER) =>
+  prisma.user.create({
+    data: {
+      email: `${handle}-${randomUUID()}@outfiqe.test`,
+      name,
+      handle: `${handle}-${randomUUID().slice(0, 6)}`,
+      phone: uniquePhone(),
+      passwordHash: "not-used-in-tests",
+      role,
+    },
+  });
+
+const authHeaderFor = (userId: string, role: UserRole) => {
+  const { accessToken } = generateTokenpair({ sub: userId, role });
+  return `Bearer ${accessToken}`;
+};
+
+const startConversation = (callerId: string, callerRole: UserRole, targetUserId: string) =>
+  request(testApp)
+    .post("/api/conversations")
+    .set("Authorization", authHeaderFor(callerId, callerRole))
+    .send({ userId: targetUserId });
+
+const sendMessage = (
+  callerId: string,
+  callerRole: UserRole,
+  conversationId: string,
+  payload: { body?: string; attachments?: unknown[] },
+) =>
+  request(testApp)
+    .post(`/api/conversations/${conversationId}/messages`)
+    .set("Authorization", authHeaderFor(callerId, callerRole))
+    .send(payload);
+
+describe("POST /api/conversations", () => {
+  it("starts a direct conversation between two users", async () => {
+    const userA = await createUser("Convo A", "convo-a");
+    const userB = await createUser("Convo B", "convo-b");
+
+    const response = await startConversation(userA.id, userA.role, userB.id);
+    expect(response.status).toBe(200);
+    expect(response.body.data.type).toBe("DIRECT");
+    expect(response.body.data.otherParticipant.id).toBe(userB.id);
+  });
+
+  it("returns the same conversation on repeated start, from either side", async () => {
+    const userA = await createUser("Idempotent A", "idempotent-a");
+    const userB = await createUser("Idempotent B", "idempotent-b");
+
+    const first = await startConversation(userA.id, userA.role, userB.id);
+    const second = await startConversation(userA.id, userA.role, userB.id);
+    const reverse = await startConversation(userB.id, userB.role, userA.id);
+
+    expect(second.body.data.id).toBe(first.body.data.id);
+    expect(reverse.body.data.id).toBe(first.body.data.id);
+    expect(await prisma.conversation.count()).toBe(1);
+  });
+
+  it("rejects starting a conversation with yourself", async () => {
+    const user = await createUser("Self Convo", "self-convo");
+
+    const response = await startConversation(user.id, user.role, user.id);
+    expect(response.status).toBe(400);
+    expect(response.body.code).toBe("CANNOT_MESSAGE_SELF");
+  });
+
+  it("rejects starting a conversation when the pair has chat unavailable", async () => {
+    const userA = await createUser("Blocked Starter", "blocked-starter");
+    const userB = await createUser("Blocked Target", "blocked-target");
+    await prisma.chatBlock.create({ data: { blockerId: userB.id, blockedId: userA.id } });
+
+    const response = await startConversation(userA.id, userA.role, userB.id);
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("CHAT_UNAVAILABLE");
+  });
+});
+
+describe("Sending and listing messages", () => {
+  it("sends a text message and shows it in the other participant's conversation list", async () => {
+    const userA = await createUser("Sender", "sender");
+    const userB = await createUser("Recipient", "recipient");
+    const { body: conversation } = await startConversation(userA.id, userA.role, userB.id);
+
+    const sendResponse = await sendMessage(userA.id, userA.role, conversation.data.id, {
+      body: "Hello there",
+    });
+    expect(sendResponse.status).toBe(200);
+    expect(sendResponse.body.data.body).toBe("Hello there");
+    expect(sendResponse.body.data.isMine).toBe(true);
+
+    const listResponse = await request(testApp)
+      .get("/api/conversations")
+      .set("Authorization", authHeaderFor(userB.id, userB.role));
+    expect(listResponse.body.data.items).toHaveLength(1);
+    expect(listResponse.body.data.items[0].lastMessagePreview).toBe("Hello there");
+    expect(listResponse.body.data.items[0].unreadCount).toBe(1);
+  });
+
+  it("excludes conversations with no messages yet from the list", async () => {
+    const userA = await createUser("Empty Starter", "empty-starter");
+    const userB = await createUser("Empty Target", "empty-target");
+    await startConversation(userA.id, userA.role, userB.id);
+
+    const listResponse = await request(testApp)
+      .get("/api/conversations")
+      .set("Authorization", authHeaderFor(userA.id, userA.role));
+    expect(listResponse.body.data.items).toHaveLength(0);
+  });
+
+  it("sends an image-only message with no body", async () => {
+    const userA = await createUser("Photo Sender", "photo-sender");
+    const userB = await createUser("Photo Recipient", "photo-recipient");
+    const { body: conversation } = await startConversation(userA.id, userA.role, userB.id);
+
+    const response = await sendMessage(userA.id, userA.role, conversation.data.id, {
+      attachments: [{ url: "https://cdn.outfiqe.test/photo.jpg", mimeType: "image/jpeg" }],
+    });
+    expect(response.status).toBe(200);
+    expect(response.body.data.body).toBeNull();
+    expect(response.body.data.attachments).toHaveLength(1);
+  });
+
+  it("rejects an empty message with no body and no attachments", async () => {
+    const userA = await createUser("Empty Sender", "empty-sender");
+    const userB = await createUser("Empty Recipient", "empty-recipient");
+    const { body: conversation } = await startConversation(userA.id, userA.role, userB.id);
+
+    const response = await sendMessage(userA.id, userA.role, conversation.data.id, {});
+    expect(response.status).toBe(400);
+    expect(response.body.code).toBe("EMPTY_MESSAGE");
+  });
+
+  it("rejects sending from someone who isn't a participant", async () => {
+    const userA = await createUser("Owner A", "owner-a");
+    const userB = await createUser("Owner B", "owner-b");
+    const outsider = await createUser("Outsider", "outsider");
+    const { body: conversation } = await startConversation(userA.id, userA.role, userB.id);
+
+    const response = await sendMessage(outsider.id, outsider.role, conversation.data.id, {
+      body: "I shouldn't be able to send this",
+    });
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("NOT_A_PARTICIPANT");
+  });
+
+  it("rejects sending once the pair's chat becomes unavailable mid-conversation", async () => {
+    const userA = await createUser("Mid Blocker", "mid-blocker");
+    const userB = await createUser("Mid Blocked", "mid-blocked");
+    const { body: conversation } = await startConversation(userA.id, userA.role, userB.id);
+    await sendMessage(userA.id, userA.role, conversation.data.id, { body: "First message" });
+
+    await prisma.chatBlock.create({ data: { blockerId: userB.id, blockedId: userA.id } });
+
+    const response = await sendMessage(userA.id, userA.role, conversation.data.id, {
+      body: "Can you still see this?",
+    });
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("CHAT_UNAVAILABLE");
+  });
+});
+
+describe("PATCH /api/conversations/:id/read", () => {
+  it("resets the caller's unread count and marks their messages read by the sender", async () => {
+    const userA = await createUser("Read Sender", "read-sender");
+    const userB = await createUser("Read Recipient", "read-recipient");
+    const { body: conversation } = await startConversation(userA.id, userA.role, userB.id);
+    await sendMessage(userA.id, userA.role, conversation.data.id, { body: "Are you there?" });
+
+    const beforeRead = await request(testApp)
+      .get(`/api/conversations/${conversation.data.id}/messages`)
+      .set("Authorization", authHeaderFor(userA.id, userA.role));
+    expect(beforeRead.body.data.items[0].isReadByOthers).toBe(false);
+
+    const readResponse = await request(testApp)
+      .patch(`/api/conversations/${conversation.data.id}/read`)
+      .set("Authorization", authHeaderFor(userB.id, userB.role));
+    expect(readResponse.status).toBe(200);
+
+    const listResponse = await request(testApp)
+      .get("/api/conversations")
+      .set("Authorization", authHeaderFor(userB.id, userB.role));
+    expect(listResponse.body.data.items[0].unreadCount).toBe(0);
+
+    const afterRead = await request(testApp)
+      .get(`/api/conversations/${conversation.data.id}/messages`)
+      .set("Authorization", authHeaderFor(userA.id, userA.role));
+    expect(afterRead.body.data.items[0].isReadByOthers).toBe(true);
+  });
+});
