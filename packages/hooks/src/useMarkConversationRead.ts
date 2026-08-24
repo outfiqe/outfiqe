@@ -14,7 +14,7 @@ export const useMarkConversationRead = (
   return useMutation({
     mutationFn: () => conversationsApi.markConversationRead(conversationId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY, exact: true });
     },
   });
 };

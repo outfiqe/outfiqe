@@ -11,7 +11,7 @@ export const useStartConversation = (conversationsApi: ConversationsApi) => {
   return useMutation({
     mutationFn: (userId: string) => conversationsApi.startConversation(userId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY, exact: true });
     },
   });
 };

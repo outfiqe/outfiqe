@@ -47,7 +47,7 @@ export const usePresenceSocket = (
           (data) => patchOtherParticipant(data, payload),
         );
       }
-      void queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY, exact: true });
     };
 
     socket.on(PRESENCE_SOCKET_EVENT, handlePresenceChanged);

@@ -40,7 +40,7 @@ export const useSendMessage = (conversationsApi: ConversationsApi, conversationI
         conversationMessagesQueryKey(conversationId),
         (data) => prependMessage(data, message),
       );
-      void queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY, exact: true });
     },
   });
 };

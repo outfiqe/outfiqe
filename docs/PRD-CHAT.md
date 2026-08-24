@@ -214,3 +214,137 @@ Built chunk-by-chunk, one commit per chunk, on `feat/chat-turn-off-toggle`:
 **How to apply Phase 2+:** read `apps/api/src/modules/chat/README.md`'s Follow-ups
 section for the full roadmap, and call `chatService.isChatAvailableBetween` from the
 new message-send path rather than re-deriving any of §8's rules.
+
+---
+
+## 13. Phase 2 — 1:1 messaging, real-time delivery, presence & receipts
+
+Shipped this session, same branch. Full technical detail lives in
+`apps/api/src/modules/chat/README.md` and `apps/web/src/features/messaging/README.md` — this
+section is the product-level spec.
+
+### 13.1 In scope
+
+- Real 1:1 direct messaging — text, emoji, up to 6 photos per message — created on first message
+  from a "Message" button on Creator/Business profiles or from the chat panel's contact picker.
+- A floating chat panel reachable from anywhere in the app (bottom-right launcher, unread badge),
+  plus a full `/messages` page the panel can expand out to — both share the same components.
+- Real-time delivery over the existing socket layer: a sent message appears live for the
+  recipient and in any other open tab/device of the sender's own.
+- Presence ("Active now") and last-seen ("Active 3h ago"), live-updated in an open thread.
+- Per-message sent/delivered/read ticks, computed from participant read/delivery cursors — not a
+  per-message receipts table.
+- Offline-recipient fallback: a `NEW_MESSAGE` notification through the existing `Notification`
+  pipeline when the recipient has no live connection at send time.
+- Day-one rate limiting on message send, matching every other public write endpoint in this
+  codebase — not deferred to a later hardening pass.
+
+### 13.2 Explicitly out of scope (Phase 2 — not oversights)
+
+- Typing indicators, group chats, and the Admin/Support conversation type — Phases 3–5 (see
+  `apps/api/src/modules/chat/README.md` Follow-ups).
+- Client-side delivery acknowledgement — "delivered" is inferred from live presence at send time
+  or from the recipient's next thread fetch, not a dedicated ack round trip over the socket.
+- Message editing, deletion, reactions, replies/threads.
+- Any chat UI in `apps/admin` — unchanged from Phase 1; Admin's channel is still exempt by design.
+
+### 13.3 Actors
+
+Unchanged from §5 — Creator and Business behave identically; Admin has no chat surface.
+
+### 13.4 Data model
+
+```
+Conversation
+  id             uuid
+  type           DIRECT | GROUP | SUPPORT   // only DIRECT active this phase
+  directKey      String? @unique            // sorted "userA:userB", DIRECT only
+  lastMessageAt / lastMessagePreview
+  createdAt / updatedAt
+
+ConversationParticipant
+  conversationId, userId  (composite PK)
+  lastReadAt / lastReadMessageId
+  lastDeliveredAt / lastDeliveredMessageId
+  unreadCount     Int @default(0)           // denormalized, bumped/reset transactionally
+
+Message
+  id, conversationId, senderId
+  body           String?                    // nullable — an image-only message has no text
+  createdAt, deletedAt
+
+MessageAttachment
+  id, messageId, url, mimeType, width?, height?
+
+User
+  + lastSeenAt   DateTime?                  // written on last-connection-closes, not per event
+```
+
+### 13.5 Complete flow
+
+1. **Starting a conversation** — `POST /api/conversations { userId }`. Rejects messaging yourself
+   (400) or a user `isChatAvailableBetween` says is unreachable (403) — the exact Phase 1 rule,
+   re-checked here rather than assumed. Idempotent: repeated starts between the same pair, from
+   either side, return the same conversation (`directKey`'s unique constraint, race-safe via
+   catch-and-reread).
+2. **Sending** — `POST /api/conversations/:id/messages { body?, attachments? }`. Requires a body
+   or at least one attachment (400 otherwise). Re-checks `isChatAvailableBetween` at send time, not
+   just at conversation-creation time — a conversation can predate one side later blocking the
+   other. Persists, bumps the conversation's preview/ordering, increments the other participant's
+   unread count, broadcasts live to the conversation's socket room and to each recipient's own
+   room (for list/badge updates), and marks delivered immediately for a recipient who's online
+   right now.
+3. **Reading** — opening a thread (`GET /api/conversations/:id/messages`, first page) marks
+   everything up to the newest message delivered for the caller (fetching the thread is delivery)
+   and, once the client observes a new message, calls `PATCH /api/conversations/:id/read` to reset
+   their own unread count and advance their read cursor — which is what turns the sender's ticks
+   from delivered to read, live, in the sender's own open thread.
+4. **Presence** — a user's first socket connection publishes "online"; their last connection
+   closing publishes "offline" and stamps `lastSeenAt`. Every conversation they're part of gets the
+   update pushed to its socket room, so an open thread's header updates without a refresh.
+5. **Offline fallback** — if a recipient has zero live connections at send time, the existing
+   `Notification` pipeline creates a `NEW_MESSAGE` row (mutable via the recipient's existing
+   notification preferences) instead of relying solely on the live broadcast.
+
+### 13.6 Business rules locked this session
+
+| Decision                                                                  | Answer                                                                                                                                                        |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Chat UI pattern for "Message" → "chat appears"                            | **Floating panel** (bottom-right, non-blocking, persists across navigation), **plus** a full `/messages` page it can expand into — both requested explicitly. |
+| Who does "Message" on a Business profile actually message?                | The brand's `BrandMembership{role: OWNER}` user (`contactUserId`) — chat participants are always `User`s, never a `Brand`.                                    |
+| Does a block/settings change apply to a conversation that already exists? | **Yes** — re-checked on every send, not just at conversation start.                                                                                           |
+| Emoji/image support                                                       | A small curated emoji grid (no new dependency) + up to 6 photo attachments per message, reusing the existing generic uploads endpoint.                        |
+| Delivery/read ticks and presence/last-seen                                | Built now rather than deferred — folded Phase 3 (presence) forward into this phase since delivery ticks genuinely depend on it.                               |
+
+### 13.7 Security & resilience additions
+
+- Message-send is rate-limited from the first commit (`MESSAGE_SEND_RATE_LIMIT_*`), matching every
+  other public write endpoint in this codebase.
+- A socket can only join a conversation's private room after a server-side participant-membership
+  check — unlike the public `commentsRoom`, this room carries private message content.
+- `isUserOnline` (presence) fails open (reports offline) if the socket layer is unreachable,
+  matching this codebase's standing "a Redis/socket hiccup never fails the primary request"
+  convention — verified directly by the integration suite running with no live Socket.IO server.
+- Empty states covered: no conversations yet, no messages yet in a new thread, a contact search
+  with no matches.
+
+### 13.8 Chunk plan (as built)
+
+Continued on the same branch/chunk-per-commit discipline as Phase 1:
+
+1. Schema — `Conversation`/`ConversationParticipant`/`Message`/`MessageAttachment`, `NEW_MESSAGE`
+   notification type.
+2. Core logic — conversation/message repository + service (enforcement, atomic find-or-create,
+   image attachments).
+3. API surface — schemas/controller/routes, 13-case integration suite.
+4. Real-time — `MESSAGE_CREATED` domain event, socket broadcast, offline-notification fallback.
+5. Presence + delivery receipts — `User.lastSeenAt`, connection-lifecycle presence tracking,
+   delivery cursors, 2 additional integration tests.
+6. Frontend data layer — types/client/hooks, including the presence/delivery socket bridges.
+7. `Drawer` design-system primitive.
+8. Floating chat panel — context, launcher, conversation list, message thread, composer (emoji +
+   image upload), working send/receive end to end.
+9. Full `/messages` + `/messages/:conversationId` pages, reusing the panel's own components.
+10. Profile entry points — Creator and Business "Message" buttons, including the backend
+    `contactUserId` addition for brands.
+11. Docs — this section, module READMEs, `TESTING-CHAT.md`, full `pnpm test`, `graphify update .`.

@@ -1,11 +1,10 @@
-# Outfiqe Chat — Turn Off Chat Test Plan
+# Outfiqe Chat — Test Plan
 
-Covers Phase 1 of the chat system (branch `feat/chat-turn-off-toggle`): the global
-"turn off chat" switch and the per-person mutual block, and their server-side
-enforcement. Organized as funnels, matching
-[TESTING-GAMIFICATION.md](./TESTING-GAMIFICATION.md)'s format. There's no message-send
-feature yet (Phase 2+, see `PRD-CHAT.md`) — this plan only covers what actually ships
-this phase: the availability controls themselves.
+Covers Phase 1 (availability controls) and Phase 2 (1:1 messaging, real-time delivery, presence,
+receipts) of the chat system, both on branch `feat/chat-turn-off-toggle`. Organized as funnels,
+matching [TESTING-GAMIFICATION.md](./TESTING-GAMIFICATION.md)'s format. §2–9 cover Phase 1
+(unchanged); §11+ cover Phase 2. Typing indicators, group chats, and Admin/Support conversations
+aren't built yet (see `PRD-CHAT.md`) — nothing below tests them.
 
 ## 1. Test accounts you'll need
 
@@ -77,23 +76,104 @@ funnels (§3/§4).
 
 ---
 
-## 10. Known accepted limitations — please don't file these as bugs
+## 10. Known accepted limitations (Phase 1) — please don't file these as bugs
 
-These are deliberate Phase 1 scope decisions, documented in `PRD-CHAT.md`/
-`apps/api/src/modules/chat/README.md`:
-
-- **No actual chat/messaging yet** — no conversation list, no message thread, nothing to
-  send. This phase only ships the availability controls those future features will
-  enforce against.
-- **No presence, typing indicators, delivery/read receipts, or unread counts** — later
-  phases (see `PRD-CHAT.md` §2 roadmap).
-- **No group chats, no Admin/Support conversation UI** — later phases; Admin has no chat
-  surface at all yet, by design (§5 above).
-- **No profile-page "message"/block button** — the per-person toggle lives only in
-  Settings > Chat for this phase; there's no message entry point yet to attach a
-  profile-page control to.
 - **The blocked party is never told they've been blocked, in the UI or via any
   notification** — intentional; blocking here is framed as an availability setting, not
   a moderation action with a notice.
 - **No admin-facing view of who has chat turned off or who's blocked whom** — not built
   this phase; nothing in Phase 1 required an admin-facing surface for these settings.
+
+---
+
+## 11. Test accounts for Phase 2
+
+Reuse §1's accounts. You'll want **Creator A and Creator B signed in separately** (two browser
+profiles) for send/receive funnels, and to be able to make one of them go offline (close its
+browser/tab entirely, not just navigate away) to test the offline-notification and presence
+funnels.
+
+## 12. Funnel: Starting a conversation
+
+- [ ] As Creator A, visit Creator B's profile (not your own) and confirm a "Message" button shows
+      next to Follow — click it and confirm the floating chat panel opens directly into a thread with
+      Creator B (empty, "Say hello").
+- [ ] Visit your own profile — confirm no "Message" button appears (only "Edit profile").
+- [ ] Visit a Business profile you're not a member of — confirm "Message" shows (assuming that
+      brand has an owner account) and opens a thread with the brand's contact person, not a generic
+      "brand" identity.
+- [ ] Visit your own Business's public profile (as its owner) — confirm no "Message" button shows.
+- [ ] As a signed-out visitor, click "Message" on any profile — confirm you're redirected to
+      `/login?redirect=...` rather than silently failing or erroring.
+- [ ] Click "Message" on the same person twice (e.g. leave and revisit their profile) — confirm you
+      land in the same conversation both times, not a duplicate.
+
+## 13. Funnel: Sending and receiving messages
+
+- [ ] Send a text-only message — confirm it appears immediately in your own thread, and live
+      (no refresh) in Creator B's thread if they have it open.
+- [ ] Send an emoji from the emoji picker — confirm it inserts into the text box and sends
+      normally.
+- [ ] Attach 1–6 photos (with or without text) and send — confirm thumbnails preview before
+      sending, the sent message shows the photo(s), and attempting a 7th photo is blocked.
+- [ ] Attempt to send with no text and no photos — confirm the send button stays disabled /
+      nothing is sent.
+- [ ] Close the chat panel and reopen it (or reload the page) — confirm history persists and
+      loads correctly, newest at the bottom.
+- [ ] Scroll to the top of a long thread — confirm older messages load automatically (infinite
+      scroll upward) without losing your scroll position.
+- [ ] From the panel, click the expand icon — confirm it navigates to `/messages/:conversationId`
+      showing the same conversation, and the panel closes.
+- [ ] Visit `/messages` directly — confirm the conversation list renders, and selecting a
+      conversation shows its thread in the same two-pane layout.
+
+## 14. Funnel: Delivery and read receipts
+
+- [ ] Send a message to Creator B while Creator B is **offline** (not connected) — confirm your
+      own message shows a single check (sent, not delivered).
+- [ ] Have Creator B come online (open the app) — confirm your sent message's tick updates to a
+      double check (delivered) without you refreshing.
+- [ ] Have Creator B open the conversation thread — confirm your tick updates to a colored double
+      check (read), live.
+- [ ] As Creator B, confirm you never see delivery/read ticks on messages Creator A sent to you
+      (ticks only ever show on your own sent messages).
+
+## 15. Funnel: Presence and last seen
+
+- [ ] With Creator B online and their thread open (as Creator A), confirm the thread header shows
+      a green dot and "Active now".
+- [ ] Have Creator B close their browser/tab entirely — confirm Creator A's open thread updates,
+      within a few seconds, to "Active just now" / "Active Xm ago" (no green dot), without a refresh.
+- [ ] Confirm the same online dot appears next to Creator B's row in Creator A's conversation
+      list.
+
+## 16. Funnel: Unread counts and offline notification
+
+- [ ] Send a message to Creator B while Creator B is offline — confirm, once Creator B signs back
+      in, they see a `NEW_MESSAGE` notification (bell) in addition to the unread badge on the chat
+      launcher and the conversation row.
+- [ ] Send a message to Creator B while Creator B is online but the panel is closed — confirm the
+      floating launcher's unread badge increments live.
+- [ ] Have Creator B open the conversation — confirm the unread badge (both on that row and the
+      launcher total) clears.
+
+## 17. Funnel: Enforcement carries over from Phase 1
+
+- [ ] Start a conversation between Creator A and Creator B, exchange a message, then have either
+      side turn off chat globally (Settings > Chat) or block the other person — confirm the next send
+      attempt from the still-willing side is rejected (`CHAT_UNAVAILABLE`), even though the
+      conversation and its history already exist.
+- [ ] Attempt to send a message as a user who isn't a participant in a given conversation id
+      (e.g. via the API directly) — confirm it's rejected (`403`, `NOT_A_PARTICIPANT`).
+
+---
+
+## 18. Known accepted limitations (Phase 2) — please don't file these as bugs
+
+- **No typing indicators, group chats, or Admin/Support conversations** — later phases (see
+  `PRD-CHAT.md` §2 roadmap and `apps/api/src/modules/chat/README.md` Follow-ups).
+- **No message editing, deletion, or reactions.**
+- **"Delivered" has no client-side acknowledgement** — it's inferred from live presence at send
+  time or the recipient's next thread fetch, not a dedicated ack round trip; in rare timing edge
+  cases a message could show "sent" slightly longer than it was technically deliverable.
+- **No chat UI in `apps/admin`** — unchanged from Phase 1, by design.

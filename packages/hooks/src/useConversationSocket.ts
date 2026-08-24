@@ -78,7 +78,7 @@ export const useConversationSocket = (
     };
 
     const handleConversationUpdated = (): void => {
-      void queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY, exact: true });
     };
 
     socket.on(CONVERSATION_SOCKET_EVENTS.MESSAGE_CREATED, handleMessageCreated);
