@@ -42,7 +42,7 @@ returns `null` so the socket is never touched during SSR.
 **`resolveNotificationHref` deep-links `LOOK_LIKED`/`LOOK_COMMENTED` straight to the post**
 (`/creator/{ownHandle}?look={lookId}`), not just the profile grid — see
 `creator-profile/README.md`'s "Deep-linking a specific post" for how that param is consumed. Falls
-back to the bare `/dashboard/profile` only when the own handle isn't available yet (session still
+back to the bare `/profile` only when the own handle isn't available yet (session still
 loading) or the notification has no `entityId`. `NEW_FOLLOWER` links to the follower's own profile
 (`metadata.recentActors[0].handle`, already denormalized by the write path) when known, falling
 back to the dashboard profile otherwise.

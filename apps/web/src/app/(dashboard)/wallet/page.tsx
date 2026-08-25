@@ -9,8 +9,8 @@ import { requireDashboardSession } from "../requireDashboardSession";
 export const metadata: Metadata = { title: "Wallet" };
 
 const DashboardWalletPage = async () => {
-  const { user } = await requireDashboardSession("/dashboard/wallet");
-  if (user.role !== UserRole.BRAND_OWNER) redirect("/dashboard/profile");
+  const { user } = await requireDashboardSession("/wallet");
+  if (user.role !== UserRole.BRAND_OWNER) redirect("/profile");
 
   return <WalletSection />;
 };

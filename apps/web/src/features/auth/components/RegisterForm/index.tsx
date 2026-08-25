@@ -30,7 +30,7 @@ import { AuthErrorCode, getAuthErrorMessage } from "../../utils/authErrors";
 import { getSafeRedirect } from "../../utils/safeRedirect";
 import { RegisterSuccess } from "./RegisterSuccess";
 
-const DEFAULT_OAUTH_REDIRECT = "/dashboard";
+const DEFAULT_OAUTH_REDIRECT = "/profile";
 
 export const RegisterForm = () => {
   const register = useRegister();

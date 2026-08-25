@@ -9,8 +9,8 @@ import { requireDashboardSession } from "../requireDashboardSession";
 export const metadata: Metadata = { title: "Badge collection" };
 
 const DashboardBadgesPage = async () => {
-  const { user } = await requireDashboardSession("/dashboard/badges");
-  if (user.role === UserRole.BRAND_OWNER) redirect("/dashboard/profile");
+  const { user } = await requireDashboardSession("/badges");
+  if (user.role === UserRole.BRAND_OWNER) redirect("/profile");
 
   return <BadgeCollectionSection />;
 };

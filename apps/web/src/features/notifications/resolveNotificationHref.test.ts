@@ -38,10 +38,10 @@ describe("resolveNotificationHref", () => {
 
   it("falls back to the dashboard profile when the own handle or entityId is missing", () => {
     const notification = buildNotification({ type: "LOOK_LIKED", entityId: "look-1" });
-    expect(resolveNotificationHref(notification, undefined)).toBe("/dashboard/profile");
+    expect(resolveNotificationHref(notification, undefined)).toBe("/profile");
 
     const noEntity = buildNotification({ type: "LOOK_LIKED", entityId: null });
-    expect(resolveNotificationHref(noEntity, OWN_HANDLE)).toBe("/dashboard/profile");
+    expect(resolveNotificationHref(noEntity, OWN_HANDLE)).toBe("/profile");
   });
 
   it("routes a new follower to the follower's own profile when a handle is known", () => {
@@ -54,28 +54,28 @@ describe("resolveNotificationHref", () => {
 
   it("falls back to the dashboard profile for a new follower with no denormalized handle", () => {
     const notification = buildNotification({ type: "NEW_FOLLOWER", metadata: {} });
-    expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/dashboard/profile");
+    expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/profile");
   });
 
   it("routes gamification types to their dashboard pages", () => {
     expect(
       resolveNotificationHref(buildNotification({ type: "ACHIEVEMENT_UNLOCKED" }), OWN_HANDLE),
-    ).toBe("/dashboard/badges");
+    ).toBe("/badges");
     expect(resolveNotificationHref(buildNotification({ type: "LEVEL_UP" }), OWN_HANDLE)).toBe(
-      "/dashboard/progress",
+      "/progress",
     );
     expect(
       resolveNotificationHref(buildNotification({ type: "COMMISSION_EARNED" }), OWN_HANDLE),
-    ).toBe("/dashboard/earnings");
+    ).toBe("/earnings");
   });
 
   it("routes business types to their dashboard pages", () => {
     expect(resolveNotificationHref(buildNotification({ type: "NEW_ORDER" }), OWN_HANDLE)).toBe(
-      "/dashboard/orders",
+      "/manage-orders",
     );
     expect(
       resolveNotificationHref(buildNotification({ type: "NEW_BRAND_FOLLOWER" }), OWN_HANDLE),
-    ).toBe("/dashboard/profile");
+    ).toBe("/profile");
   });
 
   it("routes an order status change to that order's detail page", () => {
@@ -100,7 +100,7 @@ describe("resolveNotificationHref", () => {
   it("routes a new product review to the brand's product dashboard", () => {
     expect(
       resolveNotificationHref(buildNotification({ type: "PRODUCT_REVIEWED" }), OWN_HANDLE),
-    ).toBe("/dashboard/products");
+    ).toBe("/products");
   });
 
   it("deep-links a review request straight to the product's review section", () => {

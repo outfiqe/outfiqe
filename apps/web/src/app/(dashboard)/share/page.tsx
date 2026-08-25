@@ -9,8 +9,8 @@ import { requireDashboardSession } from "../requireDashboardSession";
 export const metadata: Metadata = { title: "Share" };
 
 const DashboardSharePage = async () => {
-  const { user } = await requireDashboardSession("/dashboard/share");
-  if (user.role === UserRole.BRAND_OWNER) redirect("/dashboard/profile");
+  const { user } = await requireDashboardSession("/share");
+  if (user.role === UserRole.BRAND_OWNER) redirect("/profile");
 
   return <ShareSection creatorStatus={user.creatorStatus} />;
 };

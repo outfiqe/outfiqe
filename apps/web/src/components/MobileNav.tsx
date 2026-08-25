@@ -18,7 +18,7 @@ export const MobileNav = () => {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
-  const { state, isAuthenticated } = useAuth();
+  const { state, isAuthenticated, isAdmin } = useAuth();
   const logout = useLogout();
 
   return (
@@ -98,14 +98,21 @@ export const MobileNav = () => {
             {state.status === AuthStatus.IDLE ||
             state.status === AuthStatus.LOADING ? null : isAuthenticated ? (
               <>
-                <Link
-                  href="/dashboard"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-semibold text-foreground hover:bg-muted"
-                >
-                  <User className="size-4 shrink-0" />
-                  {state.user?.name}
-                </Link>
+                {isAdmin ? (
+                  <div className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-semibold text-foreground">
+                    <User className="size-4 shrink-0" />
+                    {state.user?.name}
+                  </div>
+                ) : (
+                  <Link
+                    href="/profile"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-semibold text-foreground hover:bg-muted"
+                  >
+                    <User className="size-4 shrink-0" />
+                    {state.user?.name}
+                  </Link>
+                )}
                 <Button
                   variant="outline"
                   onClick={() => {

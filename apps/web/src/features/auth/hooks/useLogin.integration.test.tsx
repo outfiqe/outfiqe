@@ -65,7 +65,7 @@ describe("useLogin", () => {
     await waitFor(() => expect(result.current.login.isSuccess).toBe(true));
     expect(result.current.auth.isAuthenticated).toBe(true);
     expect(result.current.auth.state.user).toMatchObject({ id: customerUser.id });
-    expect(replace).toHaveBeenCalledWith("/dashboard");
+    expect(replace).toHaveBeenCalledWith("/profile");
   });
 
   it("redirects to a safe ?redirect= target when present", async () => {

@@ -35,39 +35,54 @@ export const AccountMenu = () => {
   const user = state.user;
   const { avatarUrl, id, name } = user ?? {};
 
+  const avatar = (
+    <div
+      className="flex size-full items-center justify-center bg-cover bg-center"
+      style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
+    >
+      {!avatarUrl && (
+        <span
+          aria-hidden
+          className="flex size-full items-center justify-center text-xs font-bold text-white"
+          style={{ backgroundColor: getAvatarColor(id ?? "") }}
+        >
+          {initialsFor(name ?? "")}
+        </span>
+      )}
+    </div>
+  );
+
   return (
     <div className="group relative hidden lg:block">
-      <Link
-        href="/dashboard"
-        aria-label="Your account"
-        className="block size-9 shrink-0 overflow-hidden rounded-full bg-muted transition-opacity hover:opacity-80"
-      >
+      {isAdmin ? (
         <div
-          className="flex size-full items-center justify-center bg-cover bg-center"
-          style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
+          aria-label="Your account"
+          className="block size-9 shrink-0 overflow-hidden rounded-full bg-muted"
         >
-          {!avatarUrl && (
-            <span
-              aria-hidden
-              className="flex size-full items-center justify-center text-xs font-bold text-white"
-              style={{ backgroundColor: getAvatarColor(id ?? "") }}
-            >
-              {initialsFor(name ?? "")}
-            </span>
-          )}
+          {avatar}
         </div>
-      </Link>
+      ) : (
+        <Link
+          href="/profile"
+          aria-label="Your account"
+          className="block size-9 shrink-0 overflow-hidden rounded-full bg-muted transition-opacity hover:opacity-80"
+        >
+          {avatar}
+        </Link>
+      )}
 
       <div className="invisible absolute right-0 top-full z-20 w-56 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
         <div className="mt-2 rounded-xl border border-border bg-card p-2 shadow-lg">
           <p className="truncate px-3 py-2 text-sm font-semibold text-foreground">{name}</p>
 
-          <Link
-            href="/dashboard"
-            className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
-          >
-            {isBrandOwner ? "Brand dashboard" : "Dashboard"}
-          </Link>
+          {!isAdmin && (
+            <Link
+              href="/profile"
+              className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
+            >
+              {isBrandOwner ? "Brand dashboard" : "Dashboard"}
+            </Link>
+          )}
           <Link
             href="/wishlist"
             className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
@@ -100,7 +115,7 @@ export const AccountMenu = () => {
                 </button>
               ) : (
                 <Link
-                  href="/dashboard/profile"
+                  href="/profile"
                   className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
                 >
                   Become a creator

@@ -31,8 +31,8 @@ withdrawal, watch it move from pending through the admin's review to paid (or se
 rejected).
 
 **Technical:** `WithdrawSection` (parameterized by `ownerType`) → the four hooks above →
-`withdrawApi` → the matching REST path. `apps/web/src/app/dashboard/withdraw/page.tsx` renders it
-with `ownerType="CREATOR"`; `apps/web/src/app/dashboard/wallet/page.tsx` renders it with
+`withdrawApi` → the matching REST path. `apps/web/src/app/(dashboard)/withdraw/page.tsx` renders it
+with `ownerType="CREATOR"`; `apps/web/src/app/(dashboard)/wallet/page.tsx` renders it with
 `ownerType="BUSINESS"` — one component tree, not two, per the same reasoning as `bank-accounts`'
 README.
 

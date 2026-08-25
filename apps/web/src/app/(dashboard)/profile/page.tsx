@@ -11,7 +11,7 @@ import { requireDashboardSession } from "../requireDashboardSession";
 export const metadata: Metadata = { title: "Profile" };
 
 const DashboardProfilePage = async () => {
-  const { user, accessToken } = await requireDashboardSession("/dashboard/profile");
+  const { user, accessToken } = await requireDashboardSession("/profile");
 
   if (user.role === UserRole.BRAND_OWNER) {
     const profile = await getBrandProfileServer(accessToken);

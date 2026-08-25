@@ -9,8 +9,8 @@ import { requireDashboardSession } from "../requireDashboardSession";
 export const metadata: Metadata = { title: "Earnings" };
 
 const DashboardEarningsPage = async () => {
-  const { user } = await requireDashboardSession("/dashboard/earnings");
-  if (user.role === UserRole.BRAND_OWNER) redirect("/dashboard/profile");
+  const { user } = await requireDashboardSession("/earnings");
+  if (user.role === UserRole.BRAND_OWNER) redirect("/profile");
 
   return <EarningsSection creatorStatus={user.creatorStatus} />;
 };
