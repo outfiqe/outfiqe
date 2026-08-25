@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@outfiqe/design-system";
+import { Button, Skeleton } from "@outfiqe/design-system";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -17,7 +17,7 @@ export const AccountMenu = () => {
   const [creatorModalOpen, setCreatorModalOpen] = useState(false);
 
   if (state.status === AuthStatus.IDLE || state.status === AuthStatus.LOADING) {
-    return <div className="hidden h-9 w-9 lg:block" aria-hidden />;
+    return <Skeleton aria-hidden className="hidden size-9 rounded-full lg:block" />;
   }
 
   if (!isAuthenticated) {
