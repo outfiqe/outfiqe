@@ -27,6 +27,25 @@ const buildUser = (overrides: Partial<UserSession> = {}): UserSession => ({
   ...overrides,
 });
 
+const buildIdleLogoutMutation = (): ReturnType<typeof useLogout> => ({
+  context: undefined,
+  data: undefined,
+  error: null,
+  failureCount: 0,
+  failureReason: null,
+  isPaused: false,
+  status: "idle",
+  variables: undefined,
+  submittedAt: 0,
+  isError: false,
+  isIdle: true,
+  isPending: false,
+  isSuccess: false,
+  mutate: vi.fn(),
+  mutateAsync: vi.fn(),
+  reset: vi.fn(),
+});
+
 const mockAuth = (overrides: Partial<ReturnType<typeof useAuth>>) => {
   vi.mocked(useAuth).mockReturnValue({
     state: { status: AuthStatus.UNAUTHENTICATED, user: null, accessToken: null },
@@ -44,10 +63,7 @@ const mockAuth = (overrides: Partial<ReturnType<typeof useAuth>>) => {
 
 describe("AccountMenu", () => {
   beforeEach(() => {
-    vi.mocked(useLogout).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-    } as ReturnType<typeof useLogout>);
+    vi.mocked(useLogout).mockReturnValue(buildIdleLogoutMutation());
   });
 
   it("renders a skeleton placeholder, not empty space, while the session is still resolving", () => {
