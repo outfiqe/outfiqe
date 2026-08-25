@@ -286,3 +286,18 @@ export const adminInviteTemplate = (
     `,
   }),
 });
+
+export const crmOrganizationInviteTemplate = (
+  roleName: string,
+  inviteUrl: string,
+): { subject: string; html: string } => ({
+  subject: "You've been invited to the Outfiqe CRM",
+  html: renderEmailLayout({
+    preheader: "You've been invited to the Outfiqe CRM.",
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">You're invited</h1>
+      <p style="color:${SUB};margin:0;">You've been granted "${roleName}" access to the Outfiqe CRM. This link expires in 7 days.</p>
+      ${emailButtonHtml("Accept invite", inviteUrl)}
+    `,
+  }),
+});

@@ -95,6 +95,8 @@ model User {
   gatewayFeeRateEdits                      GatewayFeeRate[]            @relation("GatewayFeeRateUpdatedBy")
   createdBrandCommissionExemptions         BrandCommissionExemption[]  @relation("BrandCommissionExemptionCreatedBy")
   revokedBrandCommissionExemptions         BrandCommissionExemption[]  @relation("BrandCommissionExemptionRevokedBy")
+  crmMemberships                           Membership[]
+  sentOrganizationInvites                  OrganizationInvite[]        @relation("OrganizationInviteSender")
 
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
@@ -1812,4 +1814,106 @@ model MessageAttachment {
 
   @@index([messageId])
   @@map("message_attachments")
+}
+
+// ---------------------------------------------------------------------------
+// CRM — tenant + PBAC foundation
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id                     String    @id @default(uuid()) @db.Uuid
+  name                   String
+  plan                   String    @default("trial")
+  trialEndsAt            DateTime? @map("trial_ends_at")
+  superAdminMembershipId String?   @unique @map("super_admin_membership_id") @db.Uuid
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  memberships Membership[]
+  roles       Role[]
+  invites     OrganizationInvite[]
+
+  @@map("organizations")
+}
+
+model Membership {
+  id             String           @id @default(uuid()) @db.Uuid
+  userId         String           @map("user_id") @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  roleId         String           @map("role_id") @db.Uuid
+  status         MembershipStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role         Role         @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@map("memberships")
+}
+
+enum MembershipStatus {
+  ACTIVE
+  DEACTIVATED
+}
+
+model Role {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String
+  isBuiltIn      Boolean  @default(false) @map("is_built_in")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  memberships  Membership[]
+  permissions  RolePermission[]
+  invites      OrganizationInvite[]
+
+  @@unique([organizationId, name])
+  @@map("roles")
+}
+
+model Permission {
+  key   String @id
+  label String
+  group String
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId        String @map("role_id") @db.Uuid
+  permissionKey String @map("permission_key")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionKey], references: [key], onDelete: Cascade)
+
+  @@id([roleId, permissionKey])
+  @@map("role_permissions")
+}
+
+model OrganizationInvite {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  email          String
+  roleId         String    @map("role_id") @db.Uuid
+  tokenHash      String    @unique @map("token_hash")
+  expiresAt      DateTime  @map("expires_at")
+  acceptedAt     DateTime? @map("accepted_at")
+  revokedAt      DateTime? @map("revoked_at")
+  invitedById    String    @map("invited_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role         Role         @relation(fields: [roleId], references: [id])
+  invitedBy    User         @relation("OrganizationInviteSender", fields: [invitedById], references: [id])
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("organization_invites")
 }
