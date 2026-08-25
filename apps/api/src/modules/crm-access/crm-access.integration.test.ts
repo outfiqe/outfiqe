@@ -101,6 +101,114 @@ const makeSuperAdmin = async (organizationId: string, membershipId: string) =>
     data: { superAdminMembershipId: membershipId },
   });
 
+describe("POST /api/crm/organizations", () => {
+  it("creates an organization and makes the caller its SUPERADMIN", async () => {
+    await prisma.permission.createMany({ data: PERMISSION_CATALOG, skipDuplicates: true });
+    const creator = await createStaffUser("Org Creator");
+
+    const response = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({ name: "Acme", subdomain: `acme-${randomUUID().slice(0, 8)}` });
+
+    expect(response.status).toBe(201);
+
+    const organization = await prisma.organization.findUniqueOrThrow({
+      where: { id: response.body.data.id },
+    });
+    const membership = await prisma.membership.findUniqueOrThrow({
+      where: { userId_organizationId: { userId: creator.id, organizationId: organization.id } },
+      include: { role: true },
+    });
+
+    expect(organization.superAdminMembershipId).toBe(membership.id);
+    expect(membership.role.name).toBe(BUILT_IN_ROLE_NAME.ADMIN);
+
+    const roles = await prisma.role.findMany({ where: { organizationId: organization.id } });
+    expect(roles.map((role) => role.name).sort()).toEqual(
+      [BUILT_IN_ROLE_NAME.ADMIN, BUILT_IN_ROLE_NAME.MEMBER].sort(),
+    );
+  });
+
+  it("rejects a reserved subdomain", async () => {
+    await prisma.permission.createMany({ data: PERMISSION_CATALOG, skipDuplicates: true });
+    const creator = await createStaffUser("Reserved Subdomain Creator");
+
+    const response = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({ name: "Impostor", subdomain: "www" });
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("SUBDOMAIN_RESERVED");
+  });
+
+  it("rejects a subdomain that's already taken", async () => {
+    const { organization: existing } = await seedOrganization();
+    const creator = await createStaffUser("Duplicate Subdomain Creator");
+
+    const response = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({ name: "Copycat", subdomain: existing.subdomain });
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("SUBDOMAIN_TAKEN");
+  });
+
+  it("rejects a malformed subdomain", async () => {
+    const creator = await createStaffUser("Malformed Subdomain Creator");
+
+    const response = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({ name: "Bad Subdomain Co", subdomain: "-not-valid-" });
+
+    expect(response.status).toBe(422);
+  });
+
+  it("requires a platform ADMIN account", async () => {
+    const shopper = await createCustomerUser("Not An Admin");
+    const { accessToken } = generateTokenpair({ sub: shopper.id, role: UserRole.CUSTOMER });
+
+    const response = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ name: "Shouldn't Work", subdomain: `nope-${randomUUID().slice(0, 8)}` });
+
+    expect(response.status).toBe(403);
+  });
+});
+
+describe("GET /api/crm/organizations", () => {
+  it("lists every organization for a platform ADMIN, oldest first", async () => {
+    const { organization: first } = await seedOrganization();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const { organization: second } = await seedOrganization();
+    const staff = await createStaffUser("Org Lister");
+
+    const response = await request(testApp)
+      .get("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+    const ids = response.body.data.map((organization: { id: string }) => organization.id);
+    expect(ids).toEqual(expect.arrayContaining([first.id, second.id]));
+    expect(ids.indexOf(first.id)).toBeLessThan(ids.indexOf(second.id));
+  });
+
+  it("requires a platform ADMIN account", async () => {
+    const shopper = await createCustomerUser("Not An Admin Either");
+    const { accessToken } = generateTokenpair({ sub: shopper.id, role: UserRole.CUSTOMER });
+
+    const response = await request(testApp)
+      .get("/api/crm/organizations")
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(403);
+  });
+});
+
 describe("GET /api/crm/organization", () => {
   it("rejects a staff account with no CRM membership", async () => {
     await seedOrganization();

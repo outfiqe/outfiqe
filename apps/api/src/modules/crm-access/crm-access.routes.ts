@@ -1,7 +1,9 @@
 import { Router } from "express";
 
+import { UserRole } from "#generated/prisma/enums.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
+import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
 
 import { crmAccessController } from "./crm-access.controller.js";
@@ -9,6 +11,7 @@ import { requirePermission, resolveTenant } from "./crm-access.middleware.js";
 import {
   acceptOrganizationInviteSchema,
   createOrganizationInviteSchema,
+  createOrganizationSchema,
   inviteIdParamsSchema,
   membershipIdParamsSchema,
   updateMembershipSchema,
@@ -16,6 +19,8 @@ import {
 
 const CRM_INVITE_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const CRM_INVITE_RATE_LIMIT_MAX_REQUESTS = 20;
+const CRM_ORGANIZATION_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+const CRM_ORGANIZATION_RATE_LIMIT_MAX_REQUESTS = 10;
 
 const crmInviteRateLimit = rateLimit({
   namespace: "crm-invite",
@@ -25,7 +30,30 @@ const crmInviteRateLimit = rateLimit({
   message: "Too many invites sent. Please try again later.",
 });
 
+const crmOrganizationRateLimit = rateLimit({
+  namespace: "crm-organization-create",
+  windowMs: CRM_ORGANIZATION_RATE_LIMIT_WINDOW_MS,
+  max: CRM_ORGANIZATION_RATE_LIMIT_MAX_REQUESTS,
+  keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
+  message: "Too many organizations created. Please try again later.",
+});
+
 export const crmAccessRoutes = Router();
+
+crmAccessRoutes.get(
+  "/organizations",
+  requireAuth,
+  requireRole(UserRole.ADMIN),
+  crmAccessController.listOrganizations,
+);
+crmAccessRoutes.post(
+  "/organizations",
+  requireAuth,
+  requireRole(UserRole.ADMIN),
+  crmOrganizationRateLimit,
+  validate({ body: createOrganizationSchema }),
+  crmAccessController.createOrganization,
+);
 
 crmAccessRoutes.use(resolveTenant, requireAuth);
 

@@ -7,6 +7,7 @@ import { validated } from "#middlewares/validate.js";
 import { getResolvedOrganization } from "./crm-access.middleware.js";
 import type {
   AcceptOrganizationInviteBody,
+  CreateOrganizationBody,
   CreateOrganizationInviteBody,
   InviteIdParams,
   MembershipIdParams,
@@ -17,6 +18,23 @@ import { crmAccessService } from "./crm-access.service.js";
 const CREATED_STATUS = 201;
 
 export const crmAccessController = {
+  async createOrganization(_req: Request, res: Response) {
+    const { name, subdomain } = validated.body<CreateOrganizationBody>(res);
+    const principal = requireAuthPrincipal(res);
+
+    const organization = await crmAccessService.createOrganization(
+      name,
+      subdomain,
+      principal.userId,
+    );
+    sendSuccess(res, organization, "Organization created.", CREATED_STATUS);
+  },
+
+  async listOrganizations(_req: Request, res: Response) {
+    const organizations = await crmAccessService.listOrganizations();
+    sendSuccess(res, organizations, "Organizations.");
+  },
+
   async getOrganization(_req: Request, res: Response) {
     sendSuccess(res, getResolvedOrganization(res), "CRM organization.");
   },

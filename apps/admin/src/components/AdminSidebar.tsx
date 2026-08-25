@@ -9,6 +9,7 @@ import { getAvatarColor, initialsFor } from "@outfiqe/utils";
 import {
   Award,
   BanknoteArrowUp,
+  Building2,
   ClipboardList,
   Crown,
   GalleryHorizontal,
@@ -109,6 +110,7 @@ const NAV_SECTIONS: SidebarNavSection[] = [
       },
       { id: "delivery-zones", href: "/delivery-zones", label: "Delivery zones", icon: MapPin },
       { id: "crm", href: "/crm", label: "CRM", icon: Handshake },
+      { id: "organizations", href: "/organizations", label: "Organizations", icon: Building2 },
       { id: "team", href: "/team", label: "Team", icon: UserCog },
     ],
   },

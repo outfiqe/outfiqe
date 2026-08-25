@@ -1,6 +1,7 @@
 import { prisma } from "#db/prisma.js";
 import type { MembershipStatus } from "#generated/prisma/enums.js";
 
+import { BUILT_IN_ROLE_NAME, BUILT_IN_ROLE_PERMISSIONS } from "./crm-access.constants.js";
 import type {
   CreateOrganizationInviteInput,
   CreateRoleInput,
@@ -38,11 +39,57 @@ const toRoleWithPermissions = (role: {
 
 export const crmAccessRepository = {
   async findDefaultOrganization(): Promise<OrganizationRecord | null> {
-    return prisma.organization.findFirst();
+    return prisma.organization.findFirst({ orderBy: { createdAt: "asc" } });
+  },
+
+  async listOrganizations(): Promise<OrganizationRecord[]> {
+    return prisma.organization.findMany({ orderBy: { createdAt: "asc" } });
   },
 
   async findOrganizationBySubdomain(subdomain: string): Promise<OrganizationRecord | null> {
     return prisma.organization.findUnique({ where: { subdomain } });
+  },
+
+  async createOrganization(input: {
+    name: string;
+    subdomain: string;
+    superAdminUserId: string;
+  }): Promise<{ organization: OrganizationRecord; membership: MembershipRecord }> {
+    return prisma.$transaction(async (tx) => {
+      const organization = await tx.organization.create({
+        data: { name: input.name, subdomain: input.subdomain },
+      });
+
+      let adminRoleId: string | undefined;
+      for (const [roleName, permissionKeys] of Object.entries(BUILT_IN_ROLE_PERMISSIONS)) {
+        const role = await tx.role.create({
+          data: {
+            organizationId: organization.id,
+            name: roleName,
+            isBuiltIn: true,
+            permissions: { create: permissionKeys.map((permissionKey) => ({ permissionKey })) },
+          },
+        });
+        if (roleName === BUILT_IN_ROLE_NAME.ADMIN) adminRoleId = role.id;
+      }
+      if (!adminRoleId) throw new Error("built-in Admin role was not created");
+
+      const membership = await tx.membership.create({
+        data: {
+          userId: input.superAdminUserId,
+          organizationId: organization.id,
+          roleId: adminRoleId,
+          status: "ACTIVE",
+        },
+      });
+
+      const superAdminOrganization = await tx.organization.update({
+        where: { id: organization.id },
+        data: { superAdminMembershipId: membership.id },
+      });
+
+      return { organization: superAdminOrganization, membership };
+    });
   },
 
   async setSuperAdminMembership(organizationId: string, membershipId: string): Promise<void> {

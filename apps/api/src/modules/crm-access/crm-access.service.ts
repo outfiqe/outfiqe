@@ -8,7 +8,7 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
-import { ORGANIZATION_INVITE_TTL_MS } from "./crm-access.constants.js";
+import { ORGANIZATION_INVITE_TTL_MS, RESERVED_SUBDOMAINS } from "./crm-access.constants.js";
 import { crmAccessRepository } from "./crm-access.repository.js";
 import type {
   MembershipRecord,
@@ -25,6 +25,38 @@ const CONFLICT_STATUS = 409;
 const FORBIDDEN_STATUS = 403;
 
 export const crmAccessService = {
+  async createOrganization(
+    name: string,
+    subdomain: string,
+    superAdminUserId: string,
+  ): Promise<OrganizationRecord> {
+    if (RESERVED_SUBDOMAINS.includes(subdomain)) {
+      throw new AppError(
+        "SUBDOMAIN_RESERVED",
+        "This subdomain is reserved and can't be used.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    try {
+      const { organization } = await crmAccessRepository.createOrganization({
+        name,
+        subdomain,
+        superAdminUserId,
+      });
+      return organization;
+    } catch (err) {
+      if (isUniqueConstraintError(err)) {
+        throw new AppError("SUBDOMAIN_TAKEN", "This subdomain is already in use.", CONFLICT_STATUS);
+      }
+      throw err;
+    }
+  },
+
+  async listOrganizations(): Promise<OrganizationRecord[]> {
+    return crmAccessRepository.listOrganizations();
+  },
+
   async listPermissions(): Promise<PermissionRecord[]> {
     return crmAccessRepository.listPermissions();
   },
