@@ -34,6 +34,9 @@ import { deliveryZoneRoutes } from "./modules/delivery-zones/deliveryZone.routes
 import { financialRollupRoutes } from "./modules/financial-rollup/financialRollup.routes.js";
 import { followRoutes } from "./modules/follows/follow.routes.js";
 import { heroSlideRoutes } from "./modules/hero-slides/heroSlide.routes.js";
+import { createImageProcessingBullBoardRouter } from "./modules/image-processing/image-processing.bull-board.js";
+import { imageProcessingRoutes } from "./modules/image-processing/image-processing.routes.js";
+import { resolvedImageStorageRootDir } from "./modules/image-processing/image-processing.storage.js";
 import { leaderboardRoutes } from "./modules/leaderboard/leaderboard.routes.js";
 import { nepalBankRoutes } from "./modules/nepal-banks/nepalBank.routes.js";
 import { notificationRoutes } from "./modules/notifications/notification.routes.js";
@@ -50,6 +53,8 @@ import { withdrawRoutes } from "./modules/withdraw/withdraw.routes.js";
 import { xpRoutes } from "./modules/xp/xp.routes.js";
 import { errorHandler } from "./shared/middlewares/error-handler.js";
 import { httpLogger } from "./shared/middlewares/http-logger.js";
+import { requireAuth } from "./shared/middlewares/require-auth.js";
+import { requireRole } from "./shared/middlewares/require-role.js";
 import { resolvedUploadsDir } from "./shared/storage/storage.factory.js";
 
 const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
@@ -88,6 +93,18 @@ export const createApp = () => {
       }),
     );
   }
+  app.use(
+    "/image-processing-assets",
+    express.static(resolvedImageStorageRootDir, {
+      setHeaders: (res) => res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"),
+    }),
+  );
+  app.use(
+    "/internal/queues",
+    requireAuth,
+    requireRole("ADMIN"),
+    createImageProcessingBullBoardRouter(),
+  );
 
   app.get("/health", (_req, res) => {
     sendSuccess(res, { status: "ok" }, "Service is healthy");
@@ -117,6 +134,7 @@ export const createApp = () => {
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/categories", categoryRoutes);
   app.use("/api/hero-slides", heroSlideRoutes);
+  app.use("/api/image-processing", imageProcessingRoutes);
   app.use("/api/admin/trending", trendingRoutes);
   app.use("/api/leaderboard", leaderboardRoutes);
   app.use("/api/creator-leaderboard", creatorLeaderboardRoutes);

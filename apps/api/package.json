@@ -41,13 +41,17 @@
     "db:reset": "prisma migrate reset"
   },
   "dependencies": {
+    "@bull-board/api": "^6.5.4",
+    "@bull-board/express": "^6.5.4",
     "@node-rs/argon2": "^2.1.0",
+    "@outfiqe/image-pipeline": "workspace:*",
     "@outfiqe/types": "workspace:*",
     "@outfiqe/utils": "workspace:*",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "@sentry/node": "^10.70.0",
     "@socket.io/redis-adapter": "^8.3.0",
+    "bullmq": "^5.34.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "date-fns": "^4.4.0",
