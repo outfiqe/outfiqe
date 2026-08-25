@@ -117,3 +117,22 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   role create/update/delete, and ownership transfer are deliberately not here yet — they belong to
   later chunks (custom-role builder, org settings UI, ownership transfer) and would be unused,
   unscoped code if added now.
+- **`TENANT_BASE_DOMAIN` can't be `localhost` if you actually want to browser-test subdomain
+  switching.** The session cookie (`shared/utils/cookie.utils.ts`) is set with
+  `domain: env.TENANT_BASE_DOMAIN` so one login is shared across every tenant subdomain — the same
+  mechanism a real deployment on `outfiqe.com` needs to make `daraz.outfiqe.com` and
+  `meridian.outfiqe.com` share a session without re-authenticating. Browsers (and curl) refuse to
+  honor a `Domain=` cookie on a single-label host like `localhost` — it has no dots, so it's
+  treated like a public suffix and subdomain cookie-sharing is blocked outright (the same
+  supercookie-prevention rule that stops a cookie being scoped to bare `com`). A real domain
+  (`outfiqe.com`) is inherently multi-label so it never hits this in production; locally it means
+  `localhost` genuinely cannot exercise cross-subdomain login. To actually test it:
+  1. Set `TENANT_BASE_DOMAIN=outfiqe.local` in `apps/api/.env` (any multi-label host works —
+     `outfiqe.local`/`.test` are the conventional reserved-for-testing choices) and restart the API
+     process (env vars are read once at boot, `tsx watch` does not reload `.env` on its own).
+  2. Add loopback entries to the hosts file (`C:\Windows\System32\drivers\etc\hosts` on Windows,
+     needs an elevated/administrator editor to save; `/etc/hosts` on macOS/Linux) for the base
+     domain and every org subdomain you want to reach, e.g. `127.0.0.1 outfiqe.local`,
+     `127.0.0.1 daraz.outfiqe.local`.
+  3. Log in via the base domain (`http://outfiqe.local:3000`) and navigate to a tenant subdomain
+     (`http://daraz.outfiqe.local:3000/admin/crm`) — the session now carries over.
