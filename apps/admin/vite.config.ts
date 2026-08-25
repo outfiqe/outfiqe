@@ -11,6 +11,7 @@ export default defineConfig({
     hmr: {
       clientPort: 5173,
     },
+    allowedHosts: [".outfiqe.local"],
     proxy: {
       "/api": {
         target: "http://localhost:4000",
