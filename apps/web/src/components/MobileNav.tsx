@@ -8,6 +8,7 @@ import { useState } from "react";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
+import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
 import { ExploreSearchBox, ProductSearchBox } from "@/features/search";
 import { cn } from "@/shared/lib/cn";
 import { isExploreRoute } from "@/shared/lib/exploreMode";
@@ -99,10 +100,14 @@ export const MobileNav = () => {
             state.status === AuthStatus.LOADING ? null : isAuthenticated ? (
               <>
                 {isAdmin ? (
-                  <div className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-semibold text-foreground">
+                  <a
+                    href={ADMIN_URL}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-semibold text-foreground hover:bg-muted"
+                  >
                     <User className="size-4 shrink-0" />
-                    {state.user?.name}
-                  </div>
+                    Dashboard
+                  </a>
                 ) : (
                   <Link
                     href="/profile"

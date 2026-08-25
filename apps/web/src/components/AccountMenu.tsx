@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
+import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 
 import { CreatorModeModal } from "./CreatorModeModal";
@@ -55,12 +56,13 @@ export const AccountMenu = () => {
   return (
     <div className="group relative hidden lg:block">
       {isAdmin ? (
-        <div
-          aria-label="Your account"
-          className="block size-9 shrink-0 overflow-hidden rounded-full bg-muted"
+        <a
+          href={ADMIN_URL}
+          aria-label="Dashboard"
+          className="block size-9 shrink-0 overflow-hidden rounded-full bg-muted transition-opacity hover:opacity-80"
         >
           {avatar}
-        </div>
+        </a>
       ) : (
         <Link
           href="/profile"
@@ -75,7 +77,14 @@ export const AccountMenu = () => {
         <div className="mt-2 rounded-xl border border-border bg-card p-2 shadow-lg">
           <p className="truncate px-3 py-2 text-sm font-semibold text-foreground">{name}</p>
 
-          {!isAdmin && (
+          {isAdmin ? (
+            <a
+              href={ADMIN_URL}
+              className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
+            >
+              Dashboard
+            </a>
+          ) : (
             <Link
               href="/profile"
               className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
