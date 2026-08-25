@@ -24,6 +24,8 @@ export default defineConfig({
         "src/features/auth/components/ContinueWithOAuthButtons.tsx",
         "src/features/auth/components/OAuthCallbackScreen/**",
         "src/components/ProductGridSkeleton.tsx",
+        "src/components/AccountMenu.tsx",
+        "src/features/notifications/SiteNotificationBell.tsx",
         "src/features/landing/components/ProductCard/index.tsx",
         "src/features/product-reviews/components/RatingSummary.tsx",
         "src/features/product-reviews/components/ReviewCard.tsx",

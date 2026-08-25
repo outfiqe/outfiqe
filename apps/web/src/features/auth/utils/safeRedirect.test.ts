@@ -14,7 +14,7 @@ describe("getSafeRedirect", () => {
   });
 
   it("allows a same-app relative path", () => {
-    expect(getSafeRedirect("/dashboard/orders")).toBe("/dashboard/orders");
+    expect(getSafeRedirect("/manage-orders")).toBe("/manage-orders");
   });
 
   it("rejects a protocol-relative URL (open-redirect attempt)", () => {

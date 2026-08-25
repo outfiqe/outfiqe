@@ -21,7 +21,7 @@ import { oauthService } from "./oauth.service.js";
 import { sanitizeOAuthRedirectPath } from "./oauth.utils.js";
 
 const OAUTH_CALLBACK_PAGE_PATH = "/auth/oauth-callback";
-const OAUTH_LINK_CALLBACK_PAGE_PATH = "/dashboard/settings/security";
+const OAUTH_LINK_CALLBACK_PAGE_PATH = "/settings/security";
 const OAUTH_GENERIC_FAILURE_CODE = "OAUTH_EXCHANGE_FAILED";
 const OAUTH_ERROR_QUERY_KEY = "error";
 const OAUTH_LINK_TOKEN_QUERY_KEY = "linkToken";

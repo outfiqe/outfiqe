@@ -1,11 +1,12 @@
 "use client";
 
-import { Button } from "@outfiqe/design-system";
+import { Button, Skeleton } from "@outfiqe/design-system";
 import Link from "next/link";
 import { useState } from "react";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
+import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 
 import { CreatorModeModal } from "./CreatorModeModal";
@@ -16,7 +17,7 @@ export const AccountMenu = () => {
   const [creatorModalOpen, setCreatorModalOpen] = useState(false);
 
   if (state.status === AuthStatus.IDLE || state.status === AuthStatus.LOADING) {
-    return <div className="hidden h-9 w-9 lg:block" aria-hidden />;
+    return <Skeleton aria-hidden className="hidden size-9 rounded-full lg:block" />;
   }
 
   if (!isAuthenticated) {
@@ -35,39 +36,62 @@ export const AccountMenu = () => {
   const user = state.user;
   const { avatarUrl, id, name } = user ?? {};
 
+  const avatar = (
+    <div
+      className="flex size-full items-center justify-center bg-cover bg-center"
+      style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
+    >
+      {!avatarUrl && (
+        <span
+          aria-hidden
+          className="flex size-full items-center justify-center text-xs font-bold text-white"
+          style={{ backgroundColor: getAvatarColor(id ?? "") }}
+        >
+          {initialsFor(name ?? "")}
+        </span>
+      )}
+    </div>
+  );
+
   return (
     <div className="group relative hidden lg:block">
-      <Link
-        href="/dashboard"
-        aria-label="Your account"
-        className="block size-9 shrink-0 overflow-hidden rounded-full bg-muted transition-opacity hover:opacity-80"
-      >
-        <div
-          className="flex size-full items-center justify-center bg-cover bg-center"
-          style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
+      {isAdmin ? (
+        <a
+          href={ADMIN_URL}
+          aria-label="Dashboard"
+          className="block size-9 shrink-0 overflow-hidden rounded-full bg-muted transition-opacity hover:opacity-80"
         >
-          {!avatarUrl && (
-            <span
-              aria-hidden
-              className="flex size-full items-center justify-center text-xs font-bold text-white"
-              style={{ backgroundColor: getAvatarColor(id ?? "") }}
-            >
-              {initialsFor(name ?? "")}
-            </span>
-          )}
-        </div>
-      </Link>
+          {avatar}
+        </a>
+      ) : (
+        <Link
+          href="/profile"
+          aria-label="Your account"
+          className="block size-9 shrink-0 overflow-hidden rounded-full bg-muted transition-opacity hover:opacity-80"
+        >
+          {avatar}
+        </Link>
+      )}
 
       <div className="invisible absolute right-0 top-full z-20 w-56 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
         <div className="mt-2 rounded-xl border border-border bg-card p-2 shadow-lg">
           <p className="truncate px-3 py-2 text-sm font-semibold text-foreground">{name}</p>
 
-          <Link
-            href="/dashboard"
-            className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
-          >
-            {isBrandOwner ? "Brand dashboard" : "Dashboard"}
-          </Link>
+          {isAdmin ? (
+            <a
+              href={ADMIN_URL}
+              className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
+            >
+              Dashboard
+            </a>
+          ) : (
+            <Link
+              href="/profile"
+              className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
+            >
+              {isBrandOwner ? "Brand dashboard" : "Dashboard"}
+            </Link>
+          )}
           <Link
             href="/wishlist"
             className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
@@ -100,7 +124,7 @@ export const AccountMenu = () => {
                 </button>
               ) : (
                 <Link
-                  href="/dashboard/profile"
+                  href="/profile"
                   className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
                 >
                   Become a creator

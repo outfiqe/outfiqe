@@ -88,7 +88,7 @@ feature only picks back up if that redirect instead lands on `/auth/oauth-callba
   brand owner's session is mapped through the same `toUserSession`, which defaults `hasPassword` to
   `true` for that branch (registering as a brand always requires a password) and `phone` to `null`.
   Components reading these fields (`ConnectedAccounts`, the Security page) only ever render for
-  roles that actually reach `/dashboard/settings/security`.
+  roles that actually reach `/settings/security`.
 - A component test that hits the network through `mswServer` must be named `*.integration.test.tsx`,
   not `*.test.tsx` — `vitest.config.ts` only loads the MSW setup file for the `integration` project;
   a network-mocked test under the plain `unit` project's name pattern silently gets no server

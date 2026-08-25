@@ -30,7 +30,7 @@ import { type LoginInput, loginSchema } from "../schemas/login.schema";
 import { AuthErrorCode, getAuthErrorMessage } from "../utils/authErrors";
 import { getSafeRedirect } from "../utils/safeRedirect";
 
-const DEFAULT_OAUTH_REDIRECT = "/dashboard";
+const DEFAULT_OAUTH_REDIRECT = "/profile";
 
 export const LoginForm = () => {
   const login = useLogin();

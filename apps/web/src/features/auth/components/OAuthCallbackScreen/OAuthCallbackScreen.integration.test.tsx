@@ -73,7 +73,7 @@ describe("OAuthCallbackScreen", () => {
     await user.type(screen.getByLabelText("Password"), "correct-horse-battery");
     await user.click(screen.getByRole("button", { name: "Connect Google" }));
 
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/dashboard"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/profile"));
   });
 
   it("surfaces an incorrect password without redirecting", async () => {

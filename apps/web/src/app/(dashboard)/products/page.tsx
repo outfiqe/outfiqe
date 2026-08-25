@@ -9,8 +9,8 @@ import { requireDashboardSession } from "../requireDashboardSession";
 export const metadata: Metadata = { title: "Products" };
 
 const DashboardProductsPage = async () => {
-  const session = await requireDashboardSession("/dashboard/products");
-  if (session.user.role !== UserRole.BRAND_OWNER) redirect("/dashboard/profile");
+  const session = await requireDashboardSession("/products");
+  if (session.user.role !== UserRole.BRAND_OWNER) redirect("/profile");
 
   return <ProductsSection />;
 };

@@ -9,8 +9,8 @@ import { requireDashboardSession } from "../requireDashboardSession";
 export const metadata: Metadata = { title: "Your progress" };
 
 const DashboardProgressPage = async () => {
-  const { user } = await requireDashboardSession("/dashboard/progress");
-  if (user.role === UserRole.BRAND_OWNER) redirect("/dashboard/profile");
+  const { user } = await requireDashboardSession("/progress");
+  if (user.role === UserRole.BRAND_OWNER) redirect("/profile");
 
   return <ProgressSection />;
 };

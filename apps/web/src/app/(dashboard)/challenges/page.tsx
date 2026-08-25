@@ -9,8 +9,8 @@ import { requireDashboardSession } from "../requireDashboardSession";
 export const metadata: Metadata = { title: "Challenges" };
 
 const DashboardChallengesPage = async () => {
-  const { user } = await requireDashboardSession("/dashboard/challenges");
-  if (user.role === UserRole.BRAND_OWNER) redirect("/dashboard/profile");
+  const { user } = await requireDashboardSession("/challenges");
+  if (user.role === UserRole.BRAND_OWNER) redirect("/profile");
 
   return <ChallengesSection />;
 };

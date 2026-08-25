@@ -377,7 +377,7 @@ describe("GET /api/auth/oauth/:provider/callback (link intent)", () => {
 
     expect(response.status).toBe(302);
     const location = redirectLocationOf(response);
-    expect(location.pathname).toBe("/dashboard/settings/security");
+    expect(location.pathname).toBe("/settings/security");
     expect(location.searchParams.get("linked")).toBe("google");
     expectNoSessionCookies(response);
 

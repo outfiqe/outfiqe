@@ -25,7 +25,7 @@ export const CreatorModeModal = ({ open, onClose }: CreatorModeModalProps) => {
 
   const confirmSwitch = () => {
     onClose();
-    router.push("/dashboard");
+    router.push("/profile");
   };
 
   return (

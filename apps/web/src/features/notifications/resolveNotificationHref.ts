@@ -10,27 +10,27 @@ export const resolveNotificationHref = (
     case "COMMENT_REPLIED":
       return ownHandle && notification.entityId
         ? `/creator/${ownHandle}?look=${notification.entityId}`
-        : "/dashboard/profile";
+        : "/profile";
     case "NEW_FOLLOWER": {
       const actorHandle = notification.metadata.recentActors?.[0]?.handle;
-      return actorHandle ? `/creator/${actorHandle}` : "/dashboard/profile";
+      return actorHandle ? `/creator/${actorHandle}` : "/profile";
     }
     case "ACHIEVEMENT_UNLOCKED":
-      return "/dashboard/badges";
+      return "/badges";
     case "LEVEL_UP":
-      return "/dashboard/progress";
+      return "/progress";
     case "COMMISSION_EARNED":
-      return "/dashboard/earnings";
+      return "/earnings";
     case "NEW_ORDER":
-      return "/dashboard/orders";
+      return "/manage-orders";
     case "ORDER_STATUS_CHANGED":
       return notification.entityId ? `/orders/${notification.entityId}` : "/orders";
     case "NEW_BRAND_FOLLOWER":
-      return "/dashboard/profile";
+      return "/profile";
     case "BRAND_APPLICATION_SUBMITTED":
       return null;
     case "PRODUCT_REVIEWED":
-      return "/dashboard/products";
+      return "/products";
     case "REVIEW_REQUESTED":
       return notification.entityId
         ? `/product/${notification.entityId}?review=write#reviews`

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Settings > Chat (`/dashboard/settings/chat`): lets a signed-in Creator or Business turn chat off
+Settings > Chat (`/settings/chat`): lets a signed-in Creator or Business turn chat off
 globally, or off with one specific person, and manage the resulting blocked-people list. This is
 the entire user-facing surface of Phase 1 of a larger chat system (see
 `apps/api/src/modules/chat/README.md` for the full architecture and roadmap) — there's no message
@@ -24,7 +24,7 @@ UI yet, since nothing sends messages yet.
   specifically) and passes the wrapped socket down.
 - `index.ts` — exports both.
 
-The route itself, `apps/web/src/app/dashboard/settings/chat/page.tsx`, is a server component copied
+The route itself, `apps/web/src/app/(dashboard)/settings/chat/page.tsx`, is a server component copied
 from `settings/security/page.tsx`'s shape (`requireDashboardSession` gate, `max-w-xl` container),
 delegating to `SiteChatAvailabilitySettings`. The "Chat" sidebar entry lives in
 `apps/web/src/components/DashboardSidebar.tsx` next to "Security", in both the Creator and Business

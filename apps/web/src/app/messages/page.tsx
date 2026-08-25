@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MessagesPageLayout } from "@/features/messaging";
 
-import { requireDashboardSession } from "../dashboard/requireDashboardSession";
+import { requireDashboardSession } from "../(dashboard)/requireDashboardSession";
 
 export const metadata: Metadata = { title: "Messages" };
 

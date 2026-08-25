@@ -10,8 +10,8 @@ import { requireDashboardSession } from "../requireDashboardSession";
 export const metadata: Metadata = { title: "Withdraw" };
 
 const DashboardWithdrawPage = async () => {
-  const { user } = await requireDashboardSession("/dashboard/withdraw");
-  if (user.role === UserRole.BRAND_OWNER) redirect("/dashboard/profile");
+  const { user } = await requireDashboardSession("/withdraw");
+  if (user.role === UserRole.BRAND_OWNER) redirect("/profile");
 
   if (user.creatorStatus !== CreatorStatus.APPROVED) {
     return (

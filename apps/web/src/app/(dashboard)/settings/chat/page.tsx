@@ -7,7 +7,7 @@ import { requireDashboardSession } from "../../requireDashboardSession";
 export const metadata: Metadata = { title: "Chat" };
 
 const DashboardChatSettingsPage = async () => {
-  await requireDashboardSession("/dashboard/settings/chat");
+  await requireDashboardSession("/settings/chat");
 
   return (
     <div className="max-w-xl">

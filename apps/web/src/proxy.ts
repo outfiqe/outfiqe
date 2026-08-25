@@ -42,7 +42,22 @@ const fetchSessionUser = async (refreshToken: string): Promise<ProxyUser | null>
   }
 };
 
-// role gate per dashboard segment: who may render it, and where non-holders bounce
+const DASHBOARD_PATHS = new Set([
+  "/profile",
+  "/share",
+  "/earnings",
+  "/withdraw",
+  "/progress",
+  "/badges",
+  "/challenges",
+  "/settings/chat",
+  "/settings/security",
+  "/products",
+  "/manage-orders",
+  "/wallet",
+]);
+
+// role gate per dashboard path: who may render it, and where non-holders bounce
 const DASHBOARD_ROLE_RULES: Record<
   string,
   { allow: (role: UserRole) => boolean; fallback: string }
@@ -52,7 +67,7 @@ export const proxy = async (request: NextRequest) => {
   const { pathname } = request.nextUrl;
   const refreshToken = request.cookies.get(REFRESH_COOKIE_NAME)?.value;
 
-  if (pathname.startsWith("/dashboard")) {
+  if (DASHBOARD_PATHS.has(pathname)) {
     if (!refreshToken) {
       const loginUrl = new URL(`/login?redirect=${encodeURIComponent(pathname)}`, request.url);
       return NextResponse.redirect(loginUrl);
@@ -88,5 +103,19 @@ export const proxy = async (request: NextRequest) => {
 };
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login"],
+  matcher: [
+    "/profile",
+    "/share",
+    "/earnings",
+    "/withdraw",
+    "/progress",
+    "/badges",
+    "/challenges",
+    "/settings/chat",
+    "/settings/security",
+    "/products",
+    "/manage-orders",
+    "/wallet",
+    "/login",
+  ],
 };

@@ -37,6 +37,6 @@ byte-for-byte identical. Splitting the frontend into two near-duplicate feature 
 mean maintaining the same form, the same card, and the same list twice. Instead
 `bankAccountApi.ts` resolves the REST base path from `ownerType`, the same discriminated-owner
 pattern `withdraw`'s own `OwnerContext` already uses on the backend and `withdraw`'s frontend
-feature uses here too. `apps/web/src/app/dashboard/withdraw/page.tsx` renders
-`<BankAccountsList ownerType="CREATOR" />`; `apps/web/src/app/dashboard/wallet/page.tsx` renders
+feature uses here too. `apps/web/src/app/(dashboard)/withdraw/page.tsx` renders
+`<BankAccountsList ownerType="CREATOR" />`; `apps/web/src/app/(dashboard)/wallet/page.tsx` renders
 `<BankAccountsList ownerType="BUSINESS" />`.

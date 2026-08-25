@@ -8,6 +8,7 @@ import { useState } from "react";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
+import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
 import { ExploreSearchBox, ProductSearchBox } from "@/features/search";
 import { cn } from "@/shared/lib/cn";
 import { isExploreRoute } from "@/shared/lib/exploreMode";
@@ -18,7 +19,7 @@ export const MobileNav = () => {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
-  const { state, isAuthenticated } = useAuth();
+  const { state, isAuthenticated, isAdmin } = useAuth();
   const logout = useLogout();
 
   return (
@@ -98,14 +99,25 @@ export const MobileNav = () => {
             {state.status === AuthStatus.IDLE ||
             state.status === AuthStatus.LOADING ? null : isAuthenticated ? (
               <>
-                <Link
-                  href="/dashboard"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-semibold text-foreground hover:bg-muted"
-                >
-                  <User className="size-4 shrink-0" />
-                  {state.user?.name}
-                </Link>
+                {isAdmin ? (
+                  <a
+                    href={ADMIN_URL}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-semibold text-foreground hover:bg-muted"
+                  >
+                    <User className="size-4 shrink-0" />
+                    Dashboard
+                  </a>
+                ) : (
+                  <Link
+                    href="/profile"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-semibold text-foreground hover:bg-muted"
+                  >
+                    <User className="size-4 shrink-0" />
+                    {state.user?.name}
+                  </Link>
+                )}
                 <Button
                   variant="outline"
                   onClick={() => {

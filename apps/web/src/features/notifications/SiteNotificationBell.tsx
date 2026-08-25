@@ -1,6 +1,7 @@
 "use client";
 
 import { NotificationBell } from "@outfiqe/components";
+import { Skeleton } from "@outfiqe/design-system";
 import { type NotificationSocket, toNotificationSocket } from "@outfiqe/hooks";
 import type { Notification } from "@outfiqe/types";
 import { useRouter } from "next/navigation";
@@ -20,7 +21,7 @@ const getSocketSnapshot = (): NotificationSocket => toNotificationSocket(getSock
 const getServerSocketSnapshot = (): null => null;
 
 export const SiteNotificationBell = () => {
-  const { isAuthenticated, state } = useAuth();
+  const { isAuthenticated, isAuthResolved, state } = useAuth();
   const router = useRouter();
 
   const subscribeToSocket = useCallback(
@@ -38,6 +39,7 @@ export const SiteNotificationBell = () => {
     getServerSocketSnapshot,
   );
 
+  if (!isAuthResolved) return <Skeleton aria-hidden className="size-10 rounded-full" />;
   if (!isAuthenticated) return null;
 
   const handleSelect = (notification: Notification): void => {

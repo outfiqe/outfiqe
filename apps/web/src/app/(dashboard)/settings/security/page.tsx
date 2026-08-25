@@ -7,7 +7,7 @@ import { requireDashboardSession } from "../../requireDashboardSession";
 export const metadata: Metadata = { title: "Security" };
 
 const DashboardSecurityPage = async () => {
-  const { user } = await requireDashboardSession("/dashboard/settings/security");
+  const { user } = await requireDashboardSession("/settings/security");
 
   return (
     <div className="max-w-xl">
