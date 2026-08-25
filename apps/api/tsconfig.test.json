@@ -11,5 +11,5 @@
     "src/**/*.integration.test.ts",
     "src/testing/**/*.ts"
   ],
-  "references": [{ "path": "../../packages/utils" }]
+  "references": [{ "path": "../../packages/utils" }, { "path": "../../packages/image-pipeline" }]
 }

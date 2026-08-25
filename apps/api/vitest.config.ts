@@ -72,6 +72,7 @@ export default defineConfig({
         "src/modules/withdraw/**/*.ts",
         "src/shared/utils/prisma.utils.ts",
         "src/modules/financial-rollup/**/*.ts",
+        "src/modules/image-processing/**/*.ts",
         "src/modules/chat/**/*.ts",
       ],
       thresholds: {

@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 
+import { closeImageProcessingQueues } from "@outfiqe/image-pipeline";
 import * as Sentry from "@sentry/node";
 
 import { stopDomainEventConsumers } from "#events/event-bus.consumer.js";
@@ -36,6 +37,11 @@ import { closeSocket, initSocket } from "#socket/socket.server.js";
 import { createApp } from "./app.js";
 import { env } from "./config/env.config.js";
 import { BOUNDARY_JOBS, INTERVAL_JOBS } from "./jobs/scheduled-jobs.js";
+import { imageProcessingQueues } from "./modules/image-processing/image-processing.queue.js";
+import {
+  startImageProcessingWorkers,
+  stopImageProcessingWorkers,
+} from "./modules/image-processing/image-processing.workers.js";
 import { bootstrapAdminIfNeeded } from "./shared/bootstrap/bootstrap-admin.js";
 import { disconnectDb } from "./shared/db/prisma.js";
 
@@ -64,6 +70,7 @@ registerPresenceSocketConsumer();
 
 startIntervalScheduler(INTERVAL_JOBS);
 startBoundaryScheduler(BOUNDARY_JOBS);
+await startImageProcessingWorkers();
 
 const server = httpServer.listen(env.PORT, () => {
   logger.info(`API listening on http://localhost:${env.PORT}`);
@@ -77,6 +84,8 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
     server.close(async () => {
       await closeSocket();
       await stopDomainEventConsumers();
+      await stopImageProcessingWorkers();
+      await closeImageProcessingQueues(imageProcessingQueues);
       await disconnectDb();
       await disconnectRedis();
       await Sentry.close(SENTRY_SHUTDOWN_FLUSH_TIMEOUT_MS);
