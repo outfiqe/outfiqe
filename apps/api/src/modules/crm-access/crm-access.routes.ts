@@ -5,7 +5,7 @@ import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 
 import { crmAccessController } from "./crm-access.controller.js";
-import { requirePermission } from "./crm-access.middleware.js";
+import { requirePermission, resolveTenant } from "./crm-access.middleware.js";
 import {
   acceptOrganizationInviteSchema,
   createOrganizationInviteSchema,
@@ -27,7 +27,7 @@ const crmInviteRateLimit = rateLimit({
 
 export const crmAccessRoutes = Router();
 
-crmAccessRoutes.use(requireAuth);
+crmAccessRoutes.use(resolveTenant, requireAuth);
 
 crmAccessRoutes.get(
   "/organization",

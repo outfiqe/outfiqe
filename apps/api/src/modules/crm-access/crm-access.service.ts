@@ -3,6 +3,7 @@ import { crmOrganizationInviteTemplate } from "#email-templates/templates.js";
 import { type MembershipStatus, UserRole } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
+import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
@@ -23,23 +24,7 @@ const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
 const FORBIDDEN_STATUS = 403;
 
-const requireOrganization = async (): Promise<OrganizationRecord> => {
-  const organization = await crmAccessRepository.getOrganization();
-  if (!organization) {
-    throw new AppError(
-      "ORGANIZATION_NOT_FOUND",
-      "No CRM organization is configured.",
-      NOT_FOUND_STATUS,
-    );
-  }
-  return organization;
-};
-
 export const crmAccessService = {
-  async getOrganization(): Promise<OrganizationRecord> {
-    return requireOrganization();
-  },
-
   async listPermissions(): Promise<PermissionRecord[]> {
     return crmAccessRepository.listPermissions();
   },
@@ -48,20 +33,18 @@ export const crmAccessService = {
     return crmAccessRepository.listRoles(organizationId);
   },
 
-  async listMembers(organizationId: string): Promise<MembershipSummary[]> {
-    const organization = await requireOrganization();
-    const memberships = await crmAccessRepository.listMemberships(organizationId);
+  async listMembers(organization: OrganizationRecord): Promise<MembershipSummary[]> {
+    const memberships = await crmAccessRepository.listMemberships(organization.id);
     return memberships.map((membership) =>
       toMembershipSummary(membership, organization.superAdminMembershipId),
     );
   },
 
   async updateMembership(
-    organizationId: string,
+    organization: OrganizationRecord,
     membershipId: string,
     data: { roleId?: string; status?: MembershipStatus },
   ): Promise<MembershipRecord> {
-    const organization = await requireOrganization();
     if (organization.superAdminMembershipId === membershipId) {
       throw new AppError(
         "SUPERADMIN_MEMBERSHIP_LOCKED",
@@ -70,19 +53,19 @@ export const crmAccessService = {
       );
     }
 
-    const membership = await crmAccessRepository.findMembershipById(organizationId, membershipId);
+    const membership = await crmAccessRepository.findMembershipById(organization.id, membershipId);
     if (!membership) {
       throw new AppError("MEMBERSHIP_NOT_FOUND", "Member not found.", NOT_FOUND_STATUS);
     }
 
     if (data.roleId) {
-      const role = await crmAccessRepository.findRoleById(organizationId, data.roleId);
+      const role = await crmAccessRepository.findRoleById(organization.id, data.roleId);
       if (!role) {
         throw new AppError("ROLE_NOT_FOUND", "Role not found.", NOT_FOUND_STATUS);
       }
     }
 
-    return crmAccessRepository.updateMembership(organizationId, membershipId, data);
+    return crmAccessRepository.updateMembership(organization.id, membershipId, data);
   },
 
   async listInvites(organizationId: string): Promise<OrganizationInviteSummary[]> {
@@ -90,9 +73,12 @@ export const crmAccessService = {
     return invites.map(toInviteSummary);
   },
 
-  async inviteMember(email: string, roleId: string, invitedById: string): Promise<void> {
-    const organization = await requireOrganization();
-
+  async inviteMember(
+    organization: OrganizationRecord,
+    email: string,
+    roleId: string,
+    invitedById: string,
+  ): Promise<void> {
     const role = await crmAccessRepository.findRoleById(organization.id, roleId);
     if (!role) {
       throw new AppError("ROLE_NOT_FOUND", "Role not found.", NOT_FOUND_STATUS);
@@ -184,6 +170,13 @@ export const crmAccessService = {
       throw new AppError("MEMBER_EXISTS", "You already have CRM access.", CONFLICT_STATUS);
     }
 
-    return crmAccessRepository.acceptInvite(invite, acceptingUserId);
+    try {
+      return await crmAccessRepository.acceptInvite(invite, acceptingUserId);
+    } catch (err) {
+      if (isUniqueConstraintError(err)) {
+        throw new AppError("MEMBER_EXISTS", "You already have CRM access.", CONFLICT_STATUS);
+      }
+      throw err;
+    }
   },
 };

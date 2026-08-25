@@ -1,3 +1,4 @@
+import { RESERVED_SUBDOMAINS, SUBDOMAIN_REGEX } from "./crm-access.constants.js";
 import type {
   MembershipJoinRow,
   MembershipSummary,
@@ -39,3 +40,15 @@ export const toInviteSummary = (
   createdAt: invite.createdAt,
   expiresAt: invite.expiresAt,
 });
+
+export const extractSubdomain = (hostHeader: string, baseDomain: string): string | null => {
+  const host = (hostHeader.split(":").at(0) ?? "").toLowerCase();
+  const base = baseDomain.toLowerCase();
+
+  if (host === base || !host.endsWith(`.${base}`)) return null;
+
+  const candidate = host.slice(0, host.length - base.length - 1);
+  if (!SUBDOMAIN_REGEX.test(candidate) || RESERVED_SUBDOMAINS.includes(candidate)) return null;
+
+  return candidate;
+};

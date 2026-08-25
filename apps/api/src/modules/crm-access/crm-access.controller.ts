@@ -4,6 +4,7 @@ import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 
+import { getResolvedOrganization } from "./crm-access.middleware.js";
 import type {
   AcceptOrganizationInviteBody,
   CreateOrganizationInviteBody,
@@ -17,8 +18,7 @@ const CREATED_STATUS = 201;
 
 export const crmAccessController = {
   async getOrganization(_req: Request, res: Response) {
-    const organization = await crmAccessService.getOrganization();
-    sendSuccess(res, organization, "CRM organization.");
+    sendSuccess(res, getResolvedOrganization(res), "CRM organization.");
   },
 
   async listPermissions(_req: Request, res: Response) {
@@ -27,28 +27,28 @@ export const crmAccessController = {
   },
 
   async listRoles(_req: Request, res: Response) {
-    const organization = await crmAccessService.getOrganization();
+    const organization = getResolvedOrganization(res);
     const roles = await crmAccessService.listRoles(organization.id);
     sendSuccess(res, roles, "CRM roles.");
   },
 
   async listMembers(_req: Request, res: Response) {
-    const organization = await crmAccessService.getOrganization();
-    const members = await crmAccessService.listMembers(organization.id);
+    const organization = getResolvedOrganization(res);
+    const members = await crmAccessService.listMembers(organization);
     sendSuccess(res, members, "CRM members.");
   },
 
   async updateMember(_req: Request, res: Response) {
     const { membershipId } = validated.params<MembershipIdParams>(res);
     const body = validated.body<UpdateMembershipBody>(res);
-    const organization = await crmAccessService.getOrganization();
+    const organization = getResolvedOrganization(res);
 
-    const membership = await crmAccessService.updateMembership(organization.id, membershipId, body);
+    const membership = await crmAccessService.updateMembership(organization, membershipId, body);
     sendSuccess(res, membership, "Member updated.");
   },
 
   async listInvites(_req: Request, res: Response) {
-    const organization = await crmAccessService.getOrganization();
+    const organization = getResolvedOrganization(res);
     const invites = await crmAccessService.listInvites(organization.id);
     sendSuccess(res, invites, "Pending CRM invites.");
   },
@@ -56,14 +56,15 @@ export const crmAccessController = {
   async createInvite(_req: Request, res: Response) {
     const { email, roleId } = validated.body<CreateOrganizationInviteBody>(res);
     const principal = requireAuthPrincipal(res);
+    const organization = getResolvedOrganization(res);
 
-    await crmAccessService.inviteMember(email, roleId, principal.userId);
+    await crmAccessService.inviteMember(organization, email, roleId, principal.userId);
     sendSuccess(res, null, "Invite sent.", CREATED_STATUS);
   },
 
   async revokeInvite(_req: Request, res: Response) {
     const { inviteId } = validated.params<InviteIdParams>(res);
-    const organization = await crmAccessService.getOrganization();
+    const organization = getResolvedOrganization(res);
 
     await crmAccessService.revokeInvite(organization.id, inviteId);
     sendSuccess(res, null, "Invite revoked.");

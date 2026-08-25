@@ -9,6 +9,7 @@ import {
 import { prisma } from "../src/shared/db/prisma.js";
 
 const TRIAL_LENGTH_DAYS = 14;
+const DEFAULT_ORGANIZATION_SUBDOMAIN = "outfiqe";
 
 async function seedPermissionCatalog() {
   for (const permission of PERMISSION_CATALOG) {
@@ -27,6 +28,7 @@ async function seedOrganization() {
   return prisma.organization.create({
     data: {
       name: "Outfiqe",
+      subdomain: DEFAULT_ORGANIZATION_SUBDOMAIN,
       plan: "trial",
       trialEndsAt: addDays(new Date(), TRIAL_LENGTH_DAYS),
     },

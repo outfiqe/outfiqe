@@ -1823,6 +1823,7 @@ model MessageAttachment {
 model Organization {
   id                     String    @id @default(uuid()) @db.Uuid
   name                   String
+  subdomain              String    @unique
   plan                   String    @default("trial")
   trialEndsAt            DateTime? @map("trial_ends_at")
   superAdminMembershipId String?   @unique @map("super_admin_membership_id") @db.Uuid

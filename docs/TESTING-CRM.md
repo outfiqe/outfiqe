@@ -1,9 +1,11 @@
 # Outfiqe Internal CRM — Test Plan
 
-Covers Chunks 1–2 (tenant/PBAC foundation schema, CRM access on existing admin auth) on branch
-`feat/crm-tenant-pbac-foundation`. There is **no UI yet** — Chunk 4 builds the first `apps/admin`
-CRM screen — so every funnel below is an API-level pass against `/api/crm/*` directly. Organized
-as funnels, matching [TESTING-CHAT.md](./TESTING-CHAT.md)'s format.
+Covers Chunks 1, 2, and 4 (tenant/PBAC foundation schema, CRM access + subdomain tenant
+resolution on existing admin auth, the first `apps/admin` CRM screen) on branch
+`feat/crm-tenant-pbac-foundation`. §2–7 are an API-level pass against `/api/crm/*` directly
+(curl/Postman) — useful for exercising edge cases the UI doesn't surface a control for yet. §8
+covers the same flows through the actual `apps/admin` UI. Organized as funnels, matching
+[TESTING-CHAT.md](./TESTING-CHAT.md)'s format.
 
 ## 1. Test accounts and setup you'll need
 
@@ -116,16 +118,63 @@ need the raw token from the point it was generated, not reconstructed after the 
       alone cannot).
 - [ ] `PATCH /api/crm/members/:membershipId` with neither `roleId` nor `status` in the body —
       confirm `422` (schema requires at least one).
-- [ ] `PATCH /api/crm/members/:membershipId` with a `roleId` from a different organization (once
-      more than one org exists, e.g. in a manually-crafted test scenario) — confirm `404
-ROLE_NOT_FOUND`, not a cross-tenant write.
+- [ ] `PATCH /api/crm/members/:membershipId` with a `roleId` from a different organization
+      (create a second org directly in the DB, per §7) — confirm `404 ROLE_NOT_FOUND`, not a
+      cross-tenant write.
+
+## 7. Funnel: Subdomain tenant resolution
+
+There's only ever one real `Organization` in this build (`db:seed` creates it with subdomain
+`outfiqe`), so this funnel manufactures a second one directly in the DB to prove isolation —
+`apps/admin` itself never visits a per-org subdomain (see `docs/PRD-CRM.md` §9).
+
+- [ ] Confirm `outfiqe.localhost:4000` resolves without any hosts-file changes — modern OS/browser
+      resolvers treat every `*.localhost` name as loopback automatically (RFC 6761). `curl -s
+http://outfiqe.localhost:4000/health` should succeed exactly like `http://localhost:4000/health`.
+- [ ] As the seeded SUPERADMIN, `curl -H "Host: outfiqe.localhost:4000" .../api/crm/organization`
+      — confirm `200` and the same organization as the no-subdomain request.
+- [ ] Open Prisma Studio (`pnpm --filter @outfiqe/api db:studio`), create a second `Organization`
+      row with a distinct `subdomain` (e.g. `acme-test`) and its own `Role`/`Membership` for a
+      second staff account. Hit `GET /api/crm/organization` with `Host: acme-test.localhost:4000`
+      logged in as that second account — confirm it resolves to the _second_ org, not Outfiqe's.
+- [ ] With that same second-org session, set `Host` back to a subdomain belonging to the _first_
+      org (or to no subdomain at all) — confirm the response is `403` (no membership there), never
+      a silent view into the wrong org's data.
+- [ ] Hit any `/api/crm/*` route with `Host: no-such-org.localhost:4000` — confirm `404
+ORGANIZATION_NOT_FOUND`, not a fallback to the default org.
+- [ ] Hit any `/api/crm/*` route with `Host: www.localhost:4000` or `Host: api.localhost:4000` —
+      confirm these resolve via the single-org fallback (reserved words are treated as "no tenant
+      signal", not as an unknown-org 404).
 
 ---
 
-## 7. Known accepted limitations (Chunks 1–2) — please don't file these as bugs
+## 8. Funnel: Through the apps/admin UI
 
-- **No UI anywhere yet.** Every funnel above is API-only by design — Chunk 4 is the first
-  `apps/admin` CRM screen.
+- [ ] Log in to `apps/admin` as the seeded SUPERADMIN (`admin@outfiqe.local`) — open **CRM** in
+      the sidebar. Confirm the organization name/plan banner renders and you appear in the member
+      list with a SUPERADMIN badge, role `Select` and Deactivate button both disabled on your own
+      row.
+- [ ] Fill in the invite form with a second existing `UserRole.ADMIN` account's email and a role,
+      submit — confirm it appears under "Pending invites" with a Revoke button, and a real email
+      arrives in that inbox (this build has `GMAIL_APP_PASSWORD` configured, so it's a real send,
+      not a console stub).
+- [ ] Click the emailed link — confirm it lands on `/crm/invites/accept`, shows "Accepting your
+      invite…" briefly, then a success state with a "Go to CRM" button; confirm that account is
+      now visible in the CRM member list.
+- [ ] As the SUPERADMIN, change that new member's role via the `Select` in their row — confirm no
+      page reload is needed and the row updates in place.
+- [ ] Click Deactivate on that member's row, then confirm (either via a second session or by
+      checking `GET /api/crm/members` directly) their access now returns `403` on every
+      `/api/crm/*` route.
+- [ ] Revoke a still-pending invite from the Pending invites list — confirm it disappears (or
+      updates to `REVOKED`) without a page reload.
+- [ ] Log in as a staff account with no CRM `Membership` at all and open `/crm` directly — confirm
+      the page fails gracefully (an inline error, not a blank crash) rather than assuming access.
+
+---
+
+## 9. Known accepted limitations (Chunks 1, 2, 4) — please don't file these as bugs
+
 - **No way to create a custom role, edit a built-in role's permissions, or view the full
   permission catalog grouped for a role-builder UI beyond `GET /permissions`'s flat list** — the
   custom-role builder is Chunk 9.
@@ -134,6 +183,9 @@ ROLE_NOT_FOUND`, not a cross-tenant write.
 - **No ownership-transfer endpoint.** The SUPERADMIN membership is genuinely immovable until
   Chunk 9 ships it — `PATCH /members/:id` on the SUPERADMIN's own row is expected to always
   `403`.
-- **Single-organization assumption throughout.** `requirePermission` doesn't resolve "which org"
-  from the request — it looks up the one row via `getOrganization()`. This is correct for the
-  current scope (§2 of `PRD-CRM.md`) and is the one place a future multi-org chunk would change.
+- **`apps/admin` never actually visits a per-org subdomain**, even though the backend now
+  resolves tenants by subdomain (§7). There's still only one real organization and one shared
+  frontend; the resolution mechanism is provably correct (§7's funnel, plus
+  `crm-access.integration.test.ts`) but isn't exercised by any real `apps/admin` request today —
+  it only becomes observable once a second org has its own subdomain-serving frontend, which
+  isn't built.

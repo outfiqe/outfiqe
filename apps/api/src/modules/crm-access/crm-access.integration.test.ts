@@ -50,10 +50,14 @@ const authHeaderFor = (userId: string) => {
   return `Bearer ${accessToken}`;
 };
 
-const seedOrganization = async () => {
+const seedOrganization = async (overrides: { subdomain?: string } = {}) => {
   await prisma.permission.createMany({ data: PERMISSION_CATALOG, skipDuplicates: true });
   const organization = await prisma.organization.create({
-    data: { name: `Test Org ${randomUUID()}`, plan: "trial" },
+    data: {
+      name: `Test Org ${randomUUID()}`,
+      subdomain: overrides.subdomain ?? `test-org-${randomUUID().slice(0, 8)}`,
+      plan: "trial",
+    },
   });
 
   const adminRole = await prisma.role.create({
@@ -145,6 +149,67 @@ describe("GET /api/crm/organization", () => {
       .set("Authorization", authHeaderFor(staff.id));
 
     expect(response.status).toBe(403);
+  });
+});
+
+describe("Tenant resolution via subdomain", () => {
+  it("resolves the organization from a subdomain Host header", async () => {
+    const { organization, adminRole } = await seedOrganization({ subdomain: "acme-corp" });
+    const staff = await createStaffUser("Acme Owner");
+    const membership = await addMembership(organization.id, staff.id, adminRole.id);
+    await makeSuperAdmin(organization.id, membership.id);
+
+    const response = await request(testApp)
+      .get("/api/crm/organization")
+      .set("Host", "acme-corp.localhost")
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.id).toBe(organization.id);
+  });
+
+  it("does not leak a different organization's data across subdomains", async () => {
+    const orgA = await seedOrganization({ subdomain: "org-a" });
+    const orgB = await seedOrganization({ subdomain: "org-b" });
+
+    const staffA = await createStaffUser("Org A Owner");
+    const membershipA = await addMembership(orgA.organization.id, staffA.id, orgA.adminRole.id);
+    await makeSuperAdmin(orgA.organization.id, membershipA.id);
+
+    const response = await request(testApp)
+      .get("/api/crm/organization")
+      .set("Host", "org-b.localhost")
+      .set("Authorization", authHeaderFor(staffA.id));
+
+    expect(response.status).toBe(403);
+    expect(response.body.data?.id).not.toBe(orgB.organization.id);
+  });
+
+  it("returns 404 for a well-formed but unknown subdomain", async () => {
+    await seedOrganization();
+    const staff = await createStaffUser("Random Visitor");
+
+    const response = await request(testApp)
+      .get("/api/crm/organization")
+      .set("Host", "no-such-org.localhost")
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(404);
+    expect(response.body.code).toBe("ORGANIZATION_NOT_FOUND");
+  });
+
+  it("falls back to the single seeded organization when no subdomain is present", async () => {
+    const { organization, adminRole } = await seedOrganization();
+    const staff = await createStaffUser("Default Org User");
+    const membership = await addMembership(organization.id, staff.id, adminRole.id);
+    await makeSuperAdmin(organization.id, membership.id);
+
+    const response = await request(testApp)
+      .get("/api/crm/organization")
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.id).toBe(organization.id);
   });
 });
 
@@ -307,5 +372,40 @@ describe("CRM invites", () => {
       .send({ email: shopper.email, roleId: memberRole.id });
 
     expect(response.status).toBe(404);
+  });
+
+  it("resolves two concurrent accepts of the same invite cleanly, without a raw server error", async () => {
+    const { organization, memberRole } = await seedOrganization();
+    const invitee = await createStaffUser("Concurrent Acceptor");
+    const rawToken = generateOpaqueToken();
+
+    await prisma.organizationInvite.create({
+      data: {
+        organizationId: organization.id,
+        email: invitee.email,
+        roleId: memberRole.id,
+        tokenHash: hashToken(rawToken),
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        invitedById: invitee.id,
+      },
+    });
+
+    const acceptOnce = () =>
+      request(testApp)
+        .post("/api/crm/invites/accept")
+        .set("Authorization", authHeaderFor(invitee.id))
+        .send({ token: rawToken });
+
+    const [first, second] = await Promise.all([acceptOnce(), acceptOnce()]);
+    const statuses = [first.status, second.status].sort();
+
+    expect(statuses).toEqual([201, 409]);
+    const failed = first.status === 409 ? first : second;
+    expect(["INVITE_INVALID", "MEMBER_EXISTS"]).toContain(failed.body.code);
+
+    const memberships = await prisma.membership.findMany({
+      where: { userId: invitee.id, organizationId: organization.id },
+    });
+    expect(memberships).toHaveLength(1);
   });
 });

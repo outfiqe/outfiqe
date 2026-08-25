@@ -77,4 +77,18 @@ export const BUILT_IN_ROLE_PERMISSIONS: Record<BuiltInRoleName, string[]> = {
   [BUILT_IN_ROLE_NAME.MEMBER]: MEMBER_PERMISSION_KEYS,
 };
 
+export const SUBDOMAIN_REGEX = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+
+export const RESERVED_SUBDOMAINS = [
+  "www",
+  "api",
+  "admin",
+  "app",
+  "mail",
+  "ftp",
+  "staging",
+  "localhost",
+  "crm",
+];
+
 export const ORGANIZATION_INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;

@@ -3,6 +3,7 @@ import type { MembershipStatus } from "#generated/prisma/enums.js";
 export interface OrganizationRecord {
   id: string;
   name: string;
+  subdomain: string;
   plan: string;
   trialEndsAt: Date | null;
   superAdminMembershipId: string | null;

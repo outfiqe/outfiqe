@@ -1,22 +1,48 @@
 import type { NextFunction, Request, Response } from "express";
 
+import { env } from "#config/env.config.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 
 import { crmAccessRepository } from "./crm-access.repository.js";
-import type { MembershipWithRole } from "./crm-access.types.js";
+import type { MembershipWithRole, OrganizationRecord } from "./crm-access.types.js";
+import { extractSubdomain } from "./crm-access.utils.js";
 
+const NOT_FOUND_STATUS = 404;
 const FORBIDDEN_STATUS = 403;
 const FORBIDDEN_MESSAGE = "You do not have permission to do this.";
+
+export const resolveTenant = async (req: Request, res: Response, next: NextFunction) => {
+  const subdomain = extractSubdomain(req.hostname, env.TENANT_BASE_DOMAIN);
+
+  const organization = subdomain
+    ? await crmAccessRepository.findOrganizationBySubdomain(subdomain)
+    : await crmAccessRepository.findDefaultOrganization();
+
+  if (!organization) {
+    return next(
+      new AppError(
+        "ORGANIZATION_NOT_FOUND",
+        "No CRM organization is configured.",
+        NOT_FOUND_STATUS,
+      ),
+    );
+  }
+
+  res.locals.crmOrganization = organization;
+  next();
+};
+
+export const getResolvedOrganization = (res: Response): OrganizationRecord => {
+  const organization = res.locals.crmOrganization as OrganizationRecord | undefined;
+  if (!organization) throw new Error("reached without a resolved CRM organization");
+  return organization;
+};
 
 export const requirePermission = (permissionKey: string) => {
   return async (_req: Request, res: Response, next: NextFunction) => {
     const principal = requireAuthPrincipal(res);
-
-    const organization = await crmAccessRepository.getOrganization();
-    if (!organization) {
-      return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, FORBIDDEN_STATUS));
-    }
+    const organization = getResolvedOrganization(res);
 
     const membership = await crmAccessRepository.findMembershipByUserAndOrg(
       principal.userId,

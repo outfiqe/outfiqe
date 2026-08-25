@@ -45,23 +45,28 @@ server-side, that every later chunk's routes call into rather than re-derive.
 | SUPERADMIN                             | One per `Organization`, implicit allow-all, seeded once — not an invitable role (§6)          |
 | Outside companies / public signups     | None. Not in scope for this build (§10)                                                       |
 
-## 4. Chunk 1–2 — In scope (built this session)
+## 4. Chunks 1, 2 & 4 — In scope (built this session)
 
-- **Chunk 1 — Tenant + PBAC foundation schema.** `Organization`, `Membership`, `Role`,
-  `Permission`, `RolePermission`, `OrganizationInvite` — a purely additive Prisma migration,
-  nothing existing touched. A seed script (`prisma/seed-crm.ts`) creates the permission catalog,
-  the single Outfiqe `Organization`, the built-in `Admin`/`Member` roles, and the first
-  SUPERADMIN `Membership` (idempotent — safe to re-run).
-- **Chunk 2 — CRM access on existing admin auth.** `requirePermission(key)` middleware
-  (`crm-access.middleware.ts`), stacked after `requireAuth` exactly like `requireRole` — no new
-  signup/login flow. Invite an existing staff account into a CRM role by email
-  (`POST /api/crm/invites`), accept it on their own session (`POST /api/crm/invites/accept`),
-  list/update members, list roles/permissions/the organization.
+- **Chunk 1 — Tenant + PBAC foundation schema.** `Organization` (now including a unique
+  `subdomain`), `Membership`, `Role`, `Permission`, `RolePermission`, `OrganizationInvite` — a
+  purely additive Prisma migration, nothing existing touched. A seed script
+  (`prisma/seed-crm.ts`) creates the permission catalog, the single Outfiqe `Organization`, the
+  built-in `Admin`/`Member` roles, and the first SUPERADMIN `Membership` (idempotent — safe to
+  re-run).
+- **Chunk 2 — CRM access on existing admin auth**, plus real subdomain-based tenant resolution
+  (added mid-session, beyond the original Chunk 2 spec — see §9). `resolveTenant` +
+  `requirePermission(key)` middleware (`crm-access.middleware.ts`), stacked after `requireAuth`
+  exactly like `requireRole` — no new signup/login flow. Invite an existing staff account into a
+  CRM role by email (`POST /api/crm/invites`), accept it on their own session
+  (`POST /api/crm/invites/accept`), list/update members, list roles/permissions/the organization.
+- **Chunk 4 — `apps/admin` CRM feature area.** The first real screen:
+  `apps/admin/src/features/crm` (`CrmPage`, `MembersSection`, `InviteSection`,
+  `AcceptInvitePage`), routed at `/crm` and `/crm/invites/accept`, a new `AdminSidebar` entry.
+  Covers the full Chunk 2 API surface end to end through the UI. Chunk 3 (billing) was
+  deliberately skipped for now — confirmed with the user as out of scope for this pass.
 
-## 5. Explicitly out of scope (Chunks 1–2 — not oversights)
+## 5. Explicitly out of scope (Chunks 3, 5–11 — not oversights)
 
-- Any `apps/admin` UI — Chunk 4. Everything in Chunks 1–2 is API-only; `TESTING-CRM.md` is
-  therefore a curl-level test pass, not a UI walkthrough.
 - Billing/`Subscription`, eSewa/Khalti checkout — Chunk 3.
 - `Partner`/`Customer`/`Deal`/`Ticket`/`Activity`/`Task` — Chunks 5–8. Chunk 1's schema stops at
   the tenant/PBAC tables listed in §4.
@@ -75,7 +80,7 @@ server-side, that every later chunk's routes call into rather than re-derive.
 
 ```
 Organization
-  id, name, plan (default "trial"), trialEndsAt
+  id, name, subdomain (unique), plan (default "trial"), trialEndsAt
   superAdminMembershipId   uuid? @unique -> Membership   // set post-creation, not at insert time
 
 Membership
@@ -166,11 +171,19 @@ module → shared dependency direction. It's still designed as a drop-in sibling
 actually has the data it depends on. Any future CRM module (`crm-partners`, `crm-deals`, …) is
 expected to import it from here.
 
-**One repository round-trip per protected request, not a JWT claim.** Embedding the resolved
-permission set into the access token would mean a token minted before a role change stays valid
-with stale permissions until it expires. With exactly one `Organization` today, the extra
-`getOrganization` + `findMembershipByUserAndOrg` lookup is cheap; if a future multi-org chunk
-needs to resolve _which_ org a request belongs to, that's the one place that changes.
+**Tenant resolution by subdomain, not a JWT claim.** Permissions are never embedded in the access
+token (a token minted before a role change would stay valid with stale permissions until it
+expires) — every protected request resolves fresh from the DB instead. `resolveTenant`
+(`crm-access.middleware.ts`) extracts a subdomain from the request's `Host` header
+(`extractSubdomain`, validated against `env.TENANT_BASE_DOMAIN` and a reserved-word list) and
+looks up the matching `Organization`; a subdomain that doesn't match any org is a `404`, never a
+silent fallback, so a wrong/mistyped subdomain can never reach another tenant's data. Only a
+genuinely absent subdomain — `apps/admin`'s real traffic today, since it's one shared app at one
+fixed URL, not per-org — falls back to the single seeded organization. The resolved organization
+is cached on `res.locals.crmOrganization` for the rest of the request, so `requirePermission` and
+every controller method read it once rather than each re-querying. This closes the gap the
+original session flagged (a bare `findFirst()` with no subdomain concept at all) without waiting
+for an actual second organization to force the issue.
 
 **`crm-access.repository.ts` only exposes what Chunks 1–2 need.** Org update, role
 create/edit/delete, and ownership transfer are deliberately absent — they belong to later chunks
@@ -219,28 +232,32 @@ Same ASVS-aligned bar the rest of this codebase holds itself to (`CLAUDE.md` "Se
 
 Built chunk-by-chunk, on `feat/crm-tenant-pbac-foundation`:
 
-1. **Tenant + PBAC foundation schema** — built this session. Migration
-   `20260825070957_add_crm_tenant_pbac_foundation`, `crm-access.types.ts`/`.constants.ts`/
-   `.repository.ts`, `prisma/seed-crm.ts` wired into `prisma/seed.ts`.
-2. **CRM access on existing admin auth** — built this session. `crm-access.middleware.ts`,
-   `.service.ts`, `.controller.ts`, `.routes.ts`, `.schemas.ts`, mounted at `/api/crm`, a 9-case
-   integration suite (`crm-access.integration.test.ts`), module `README.md`, this doc,
-   `TESTING-CRM.md`.
+1. **Tenant + PBAC foundation schema** — built this session. Migrations
+   `20260825070957_add_crm_tenant_pbac_foundation` and `20260825142503_add_organization_subdomain`,
+   `crm-access.types.ts`/`.constants.ts`/`.repository.ts`, `prisma/seed-crm.ts` wired into
+   `prisma/seed.ts`.
+2. **CRM access on existing admin auth**, plus subdomain-based tenant resolution — built this
+   session. `crm-access.middleware.ts` (`resolveTenant` + `requirePermission`), `.service.ts`,
+   `.controller.ts`, `.routes.ts`, `.schemas.ts`, mounted at `/api/crm`, a 14-case integration
+   suite plus a unit suite for `extractSubdomain` (`crm-access.integration.test.ts`,
+   `crm-access.utils.test.ts`), module `README.md`, this doc, `TESTING-CRM.md`.
+3. **`apps/admin` CRM feature area** — built this session. `apps/admin/src/features/crm`
+   (`CrmPage`, `MembersSection`, `InviteSection`, `AcceptInvitePage`), routes at `/crm` and
+   `/crm/invites/accept`, a new `AdminSidebar` entry, module `README.md`.
 
 **Forward-looking (not built, not scheduled yet):**
 
 3. Subscriptions & billing — eSewa/Khalti via the existing `payments` module, per-seat tiers,
    14-day no-card trial, gates advanced features, scheduled renewal job.
-4. `apps/admin` CRM feature area — first UI, `apps/admin/src/features/crm`.
-5. Partners & Customers — relationship layer over existing `Creator`/`Brand`/shopper `User`
+4. Partners & Customers — relationship layer over existing `Creator`/`Brand`/shopper `User`
    records.
-6. Pipeline & Deals — configurable stages, Kanban board primitive in `packages/design-system`.
-7. Interaction timeline & tasks — logged note/call/message/email, merged at query time with live
+5. Pipeline & Deals — configurable stages, Kanban board primitive in `packages/design-system`.
+6. Interaction timeline & tasks — logged note/call/message/email, merged at query time with live
    `orders`/`payments` history.
-8. Support & ticketing.
-9. Team management — custom-role builder UI, ownership transfer.
-10. Search, filters, basic reporting.
-11. Hardening — audit logging, full empty/error-state pass.
+7. Support & ticketing.
+8. Team management — custom-role builder UI, ownership transfer.
+9. Search, filters, basic reporting.
+10. Hardening — audit logging, full empty/error-state pass.
 
 **How to apply Chunk 3+:** read §12 above for scope per chunk; call `requirePermission` from
 every new CRM route rather than re-deriving access logic, and extend

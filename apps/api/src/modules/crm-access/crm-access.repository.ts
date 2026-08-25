@@ -37,8 +37,12 @@ const toRoleWithPermissions = (role: {
 });
 
 export const crmAccessRepository = {
-  async getOrganization(): Promise<OrganizationRecord | null> {
+  async findDefaultOrganization(): Promise<OrganizationRecord | null> {
     return prisma.organization.findFirst();
+  },
+
+  async findOrganizationBySubdomain(subdomain: string): Promise<OrganizationRecord | null> {
+    return prisma.organization.findUnique({ where: { subdomain } });
   },
 
   async setSuperAdminMembership(organizationId: string, membershipId: string): Promise<void> {

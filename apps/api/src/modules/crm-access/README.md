@@ -5,12 +5,15 @@
 Foundation module for Outfiqe's internal CRM: the tenant/PBAC schema (`Organization`,
 `Membership`, `Role`, `Permission`, `RolePermission`, `OrganizationInvite`) and the access layer
 that grants existing `apps/admin` staff accounts CRM permissions — no second login, no public
-signup. There is exactly one `Organization` row, seeded for Outfiqe itself; the schema stays
-genuinely multi-tenant so it could be reopened to outside companies later without a rearchitecture,
-but nothing here is built to sell it. The full 11-chunk roadmap (billing, Partners/Customers,
-pipeline & deals, support/ticketing, the `apps/admin` CRM UI, custom-role builder, ownership
-transfer, reporting) isn't checked into this repo as a doc yet — this module covers Chunks 1–2 only
-(tenant/PBAC schema + access on existing admin auth).
+signup. There is exactly one `Organization` row today, seeded for Outfiqe itself, but tenant
+resolution is genuinely multi-tenant-capable — every request is resolved to an organization by
+subdomain (with a single-org fallback), not by grabbing whichever row exists first. Nothing here
+is built to sell the product externally (no public signup, no per-org frontend) — the resolution
+mechanism is just built correctly from day one so a second organization doesn't require a
+rearchitecture. The full 11-chunk roadmap (billing, Partners/Customers, pipeline & deals,
+support/ticketing, custom-role builder, ownership transfer, reporting) isn't checked into this
+repo as a doc yet — this module covers Chunks 1–2 (tenant/PBAC schema + access on existing admin
+auth); the first `apps/admin` CRM screen (Chunk 4, `apps/admin/src/features/crm`) is built too.
 
 ## Structure
 
@@ -21,14 +24,17 @@ transfer, reporting) isn't checked into this repo as a doc yet — this module c
   applicable. `acceptInvite` wraps the Membership-create + invite-accept pair in a transaction.
 - `crm-access.utils.ts` — pure mappers: `toMembershipSummary`, `toInviteSummary` (derives
   PENDING/ACCEPTED/REVOKED/EXPIRED from an invite's timestamps, the same shape as
-  `admin-invites/adminInvite.utils.ts`'s `toSummary`).
+  `admin-invites/adminInvite.utils.ts`'s `toSummary`) and `extractSubdomain(host, baseDomain)`
+  (pure hostname parsing, unit-tested in `crm-access.utils.test.ts`).
 - `crm-access.service.ts` — business rules: invite target must already be an existing staff
   account, one pending invite per email, accept requires the invite's email to match the accepting
   account, the SUPERADMIN membership can't be edited via `updateMembership`.
-- `crm-access.middleware.ts` — `requirePermission(key)`, stacked after `requireAuth` exactly like
-  `#middlewares/require-role.js`. Lives here, not in `#middlewares/`, because it queries this
-  module's own repository — a shared middleware depending on a module would invert this codebase's
-  module → shared dependency direction.
+- `crm-access.middleware.ts` — `resolveTenant` (resolves the request's `Organization` by
+  subdomain, stores it on `res.locals.crmOrganization`) and `requirePermission(key)` (reads that
+  resolved organization, stacked after `requireAuth` exactly like `#middlewares/require-role.js`).
+  Both live here, not in `#middlewares/`, because they query this module's own repository — a
+  shared middleware depending on a module would invert this codebase's module → shared dependency
+  direction.
 - `crm-access.controller.ts` / `crm-access.routes.ts` — routes mounted at `/api/crm` in `app.ts`.
 - `crm-access.schemas.ts` — Zod request validation.
 - `crm-access.integration.test.ts` — end-to-end through `testApp` + a real test database.
@@ -44,9 +50,11 @@ another staff member's email, picking a role. That person accepts the invite fro
 already-logged-in admin session — accepting is what actually grants them CRM access; nothing about
 their `apps/admin` login changes.
 
-**Technical:** `crm-access.routes.ts` → `requireAuth` (existing JWT session) → `requirePermission`
-(resolves `Membership → Role → RolePermission` off the CRM repository, SUPERADMIN short-circuits)
-→ `crm-access.controller.ts` → `crm-access.service.ts` → `crm-access.repository.ts` → Postgres.
+**Technical:** `crm-access.routes.ts` → `resolveTenant` (resolves `Organization` by subdomain,
+falls back to the single seeded org) → `requireAuth` (existing JWT session) → `requirePermission`
+(resolves `Membership → Role → RolePermission` for that organization, SUPERADMIN short-circuits)
+→ `crm-access.controller.ts` (reads the already-resolved organization via `getResolvedOrganization`
+— no repeat query) → `crm-access.service.ts` → `crm-access.repository.ts` → Postgres.
 
 ## Non-obvious rationale
 
@@ -54,10 +62,22 @@ their `apps/admin` login changes.
   one `Membership` — so it can't be edited down, duplicated, or granted through the invite flow
   (`OrganizationInvite.roleId` only ever points at a real `Role`). It's set once by the seed
   script; moving it is a Chunk 9 "transfer ownership" action, not built yet.
-- **`requirePermission` does one repository round-trip per request** (`getOrganization` +
-  `findMembershipByUserAndOrg`) rather than embedding permissions in the JWT. With one Organization
-  this is cheap; if this module ever needs to resolve which org a request belongs to (multi-org),
-  that lookup is the one place that changes.
+- **Tenant resolution is subdomain-first, single-org-fallback, resolved once per request.**
+  `resolveTenant` extracts a subdomain from `req.hostname` against `env.TENANT_BASE_DOMAIN`
+  (`extractSubdomain` — rejects malformed labels and a reserved list: `www`, `api`, `admin`, `app`,
+  `crm`, etc.). If a subdomain is present, the organization **must** match it exactly — an unknown
+  subdomain is a `404`, never a silent fallback to the default org, since that would let a
+  mistyped/malicious subdomain reach the wrong tenant's data. Only the _absence_ of a subdomain
+  (today's only real traffic — `apps/admin` calls a single fixed API host) falls back to
+  `findDefaultOrganization()`. The result is stored once on `res.locals.crmOrganization`
+  (`getResolvedOrganization`), so `requirePermission` and every controller method read it instead
+  of re-querying — the same "resolve once, read from `res.locals`" shape `requireAuth`/
+  `res.locals.auth` already uses.
+- **`apps/admin` itself does not move to a subdomain.** It's still one shared internal tool at one
+  fixed URL; the mechanism above only becomes observable in real traffic once a second
+  organization exists with its own subdomain-serving frontend, which isn't built. Until then it's
+  provably correct (`crm-access.integration.test.ts`'s "Tenant resolution via subdomain" suite) but
+  not exercised by `apps/admin`'s actual requests.
 - **Inviting requires an existing `UserRole.ADMIN` account** (`userRepository.findByEmail`, then a
   role check) — there is no CRM signup. `acceptInvite` additionally checks the accepting account's
   email matches the invite's email, so a valid token can't be redeemed by a different logged-in
