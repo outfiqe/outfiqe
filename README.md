@@ -23,22 +23,55 @@ cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
 cp apps/admin/.env.example apps/admin/.env
 
-# 3. Start Postgres
+# 3. Add outfiqe.local to your hosts file (see "Local domain setup" below) — required, the
+#    session cookie can't be shared across subdomains on a bare "localhost"
+
+# 4. Start Postgres
 docker compose up -d
 
-# 4. Set up the database
+# 5. Set up the database
 pnpm --filter @outfiqe/api db:generate   # generate the Prisma client
 pnpm --filter @outfiqe/api db:migrate    # create/apply schema
 pnpm --filter @outfiqe/api db:seed       # optional demo user
 
-# 5. Run the app
+# 6. Run the app
 pnpm dev
 ```
 
-- API: [http://localhost:4000](http://localhost:4000)
-- Web: [http://localhost:3000](http://localhost:3000)
-- Admin: [http://localhost:5173](http://localhost:5173) — no login form of its own, sign in via
-  Web and it redirects you here if your account is `ADMIN`; see "Admin access" below
+- API: [http://outfiqe.local:4000](http://outfiqe.local:4000)
+- Web: [http://outfiqe.local:3000](http://outfiqe.local:3000)
+- Admin: reached through Web at [http://outfiqe.local:3000/admin](http://outfiqe.local:3000/admin)
+  — no login form of its own, sign in via Web and it redirects you here if your account is
+  `ADMIN`; see "Admin access" below
+- Always use `outfiqe.local`, not `localhost` — see "Local domain setup"
+
+### Local domain setup
+
+When filling in `apps/api/.env` and `apps/admin/.env` from their `.env.example` templates, set
+`TENANT_BASE_DOMAIN`, `FRONTEND_URL`, `ADMIN_URL`, `OAUTH_REDIRECT_BASE_URL`, and
+`VITE_WEB_URL` (`apps/admin`) to `outfiqe.local` (with the right port), not bare `localhost`. This
+isn't cosmetic — the session cookie is scoped to `TENANT_BASE_DOMAIN`
+(`domain: env.TENANT_BASE_DOMAIN` in `apps/api/src/shared/utils/cookie.utils.ts`) so one login is
+shared across every CRM tenant subdomain (`daraz.outfiqe.local`, `meridian.outfiqe.local`, …), the
+same way a real deployment shares a session across `daraz.outfiqe.com`/`meridian.outfiqe.com`.
+Browsers refuse to honor a `Domain=` cookie on a single-label host like `localhost` (the same
+supercookie-prevention rule that blocks scoping a cookie to bare `com`), so this genuinely can't be
+tested — or run day to day — on plain `localhost`.
+
+Add these lines to your hosts file (`C:\Windows\System32\drivers\etc\hosts` on Windows — open your
+editor **as Administrator** or the save will be rejected; `/etc/hosts` on macOS/Linux — use `sudo`)
+and add one more line per CRM tenant org you create locally, following the same pattern:
+
+```
+127.0.0.1 outfiqe.local
+127.0.0.1 daraz.outfiqe.local
+127.0.0.1 meridian.outfiqe.local
+127.0.0.1 norday.outfiqe.local
+```
+
+No service restart needed for the hosts file itself — it takes effect immediately. See
+`apps/api/src/modules/crm-access/README.md`'s "Non-obvious rationale" for how subdomain resolution
+itself works end to end.
 
 ## Project Structure
 
@@ -106,12 +139,12 @@ Run from `apps/api` (or via `pnpm --filter @outfiqe/api <script>`):
 
 ## Environment Variables
 
-| File              | Used by              | Notes                                                                                                                                  |
-| ----------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `.env`            | `docker-compose.yml` | Postgres credentials                                                                                                                   |
-| `apps/api/.env`   | API                  | `DATABASE_URL`, `JWT_SECRET`, token TTLs, `ALLOWED_ORIGINS` (CORS allowlist for web + admin), `ADMIN_BOOTSTRAP_*` (see "Admin access") |
-| `apps/web/.env`   | Web                  | `API_URL`, `SITE_URL` (server-only) and `NEXT_PUBLIC_ADMIN_URL` (client-exposed — the post-login redirect target for admins)           |
-| `apps/admin/.env` | Admin                | `VITE_API_URL` (the API), `VITE_WEB_URL` (where signed-out visitors get bounced to sign in) — both sent to the browser bundle          |
+| File              | Used by              | Notes                                                                                                                                                                                                                                                                                      |
+| ----------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `.env`            | `docker-compose.yml` | Postgres credentials                                                                                                                                                                                                                                                                       |
+| `apps/api/.env`   | API                  | `DATABASE_URL`, `JWT_SECRET`, token TTLs, `ALLOWED_ORIGINS` (CORS allowlist for web + admin), `TENANT_BASE_DOMAIN` (see "Local domain setup"), `ADMIN_BOOTSTRAP_*` (see "Admin access")                                                                                                    |
+| `apps/web/.env`   | Web                  | `API_URL`, `SITE_URL` (server-only) and `NEXT_PUBLIC_ADMIN_URL` (client-exposed — the post-login redirect target for admins)                                                                                                                                                               |
+| `apps/admin/.env` | Admin                | `VITE_WEB_URL` (where signed-out visitors get bounced to sign in, sent to the browser bundle). `VITE_API_URL` is optional — `apiClient` defaults to the same-origin `/api`, proxied by `vite.config.ts`'s dev server; only set it to point at a genuinely different, cross-origin API host |
 
 `.env` files are gitignored; only the `.env.example` templates are committed.
 
