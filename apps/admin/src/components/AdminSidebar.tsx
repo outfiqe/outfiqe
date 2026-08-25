@@ -37,7 +37,14 @@ import { useAuth } from "@/features/auth/AuthContext";
 
 import { useTanStackSidebarNavigation } from "./useTanStackSidebarNavigation";
 
-const NAV_SECTIONS: SidebarNavSection[] = [
+const CRM_NAV_SECTIONS: SidebarNavSection[] = [
+  {
+    id: "crm",
+    items: [{ id: "crm", href: "/crm", label: "CRM", icon: Handshake }],
+  },
+];
+
+const PLATFORM_NAV_SECTIONS: SidebarNavSection[] = [
   {
     id: "admin",
     items: [
@@ -109,7 +116,6 @@ const NAV_SECTIONS: SidebarNavSection[] = [
         ],
       },
       { id: "delivery-zones", href: "/delivery-zones", label: "Delivery zones", icon: MapPin },
-      { id: "crm", href: "/crm", label: "CRM", icon: Handshake },
       { id: "organizations", href: "/organizations", label: "Organizations", icon: Building2 },
       { id: "team", href: "/team", label: "Team", icon: UserCog },
     ],
@@ -122,6 +128,9 @@ export const AdminSidebar = () => {
   const { collapsed, toggle } = useSidebarCollapse("outfiqe:admin-sidebar-collapsed");
 
   const user = state.status === "signed-in" ? state.user : null;
+  const navSections = user?.hasPlatformAccess
+    ? [...CRM_NAV_SECTIONS, ...PLATFORM_NAV_SECTIONS]
+    : CRM_NAV_SECTIONS;
 
   const header = user && (
     <div className={cn("flex min-w-0 items-center gap-2.5", collapsed && "justify-center")}>
@@ -154,7 +163,7 @@ export const AdminSidebar = () => {
 
   return (
     <Sidebar
-      sections={NAV_SECTIONS}
+      sections={navSections}
       navigation={navigation}
       ariaLabel="Admin"
       collapsed={collapsed}

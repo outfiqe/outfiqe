@@ -34,6 +34,10 @@ the creator's `Membership` + `superAdminMembershipId`) → Postgres.
 
 - **No client-side subdomain-to-URL preview.** The frontend doesn't know the deployment's base
   domain (`TENANT_BASE_DOMAIN` is an API-only env var) — showing a real clickable
-  `https://<subdomain>.<domain>` link is part of the subdomain-routing work
-  (`apps/admin/src/lib/apiClient.ts` calling same-origin paths, `apps/web`'s proxy forwarding the
-  real Host), not this screen.
+  `https://<subdomain>.<domain>` link would mean either duplicating that value into a
+  `VITE_`-prefixed env var or deriving it from `window.location`, neither done here. The new
+  organization's `subdomain` is shown as plain text; visiting it is a manual step for now.
+- **`apiClient` already calls same-origin `/api` paths** (`apps/admin/src/lib/apiClient.ts`), so
+  once a real subdomain-serving proxy is in front of this app in a given environment, creating an
+  org here and then navigating to its subdomain already resolves to the right tenant — nothing
+  else in this feature needs to change for that to work.

@@ -1,10 +1,12 @@
 import type { NextFunction, Request, Response } from "express";
 
 import { env } from "#config/env.config.js";
+import { UserRole } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 
 import { crmAccessRepository } from "./crm-access.repository.js";
+import { crmAccessService } from "./crm-access.service.js";
 import type { MembershipWithRole, OrganizationRecord } from "./crm-access.types.js";
 import { extractSubdomain } from "./crm-access.utils.js";
 
@@ -61,6 +63,20 @@ export const requirePermission = (permissionKey: string) => {
     res.locals.crmMembership = membership;
     next();
   };
+};
+
+export const requirePlatformAccess = async (_req: Request, res: Response, next: NextFunction) => {
+  const principal = requireAuthPrincipal(res);
+  if (principal.role !== UserRole.ADMIN) {
+    return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, FORBIDDEN_STATUS));
+  }
+
+  const hasPlatformAccess = await crmAccessService.resolveHasPlatformAccess(principal.userId);
+  if (!hasPlatformAccess) {
+    return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, FORBIDDEN_STATUS));
+  }
+
+  next();
 };
 
 export const getCrmMembership = (res: Response): MembershipWithRole => {

@@ -13,6 +13,7 @@ import {
   BUILT_IN_ROLE_NAME,
   BUILT_IN_ROLE_PERMISSIONS,
   PERMISSION_CATALOG,
+  PLATFORM_ACCESS_PERMISSION_KEY,
 } from "./crm-access.constants.js";
 
 const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
@@ -100,6 +101,46 @@ const makeSuperAdmin = async (organizationId: string, membershipId: string) =>
     where: { id: organizationId },
     data: { superAdminMembershipId: membershipId },
   });
+
+const seedPlatformOrganization = async () => {
+  await prisma.permission.createMany({ data: PERMISSION_CATALOG, skipDuplicates: true });
+  const organization = await prisma.organization.create({
+    data: {
+      name: `Platform Org ${randomUUID()}`,
+      subdomain: `platform-org-${randomUUID().slice(0, 8)}`,
+      isPlatformOrg: true,
+      plan: "trial",
+    },
+  });
+
+  const adminRole = await prisma.role.create({
+    data: {
+      organizationId: organization.id,
+      name: BUILT_IN_ROLE_NAME.ADMIN,
+      isBuiltIn: true,
+      permissions: {
+        create: [
+          ...BUILT_IN_ROLE_PERMISSIONS[BUILT_IN_ROLE_NAME.ADMIN],
+          PLATFORM_ACCESS_PERMISSION_KEY,
+        ].map((permissionKey) => ({ permissionKey })),
+      },
+    },
+  });
+  const memberRole = await prisma.role.create({
+    data: {
+      organizationId: organization.id,
+      name: BUILT_IN_ROLE_NAME.MEMBER,
+      isBuiltIn: true,
+      permissions: {
+        create: BUILT_IN_ROLE_PERMISSIONS[BUILT_IN_ROLE_NAME.MEMBER].map((permissionKey) => ({
+          permissionKey,
+        })),
+      },
+    },
+  });
+
+  return { organization, adminRole, memberRole };
+};
 
 describe("POST /api/crm/organizations", () => {
   it("creates an organization and makes the caller its SUPERADMIN", async () => {
@@ -515,5 +556,105 @@ describe("CRM invites", () => {
       where: { userId: invitee.id, organizationId: organization.id },
     });
     expect(memberships).toHaveLength(1);
+  });
+});
+
+describe("Platform access", () => {
+  it("rejects a tenant-only staff member from a non-CRM admin route", async () => {
+    const { organization, memberRole } = await seedOrganization();
+    const staff = await createStaffUser("Tenant Only Staff");
+    await addMembership(organization.id, staff.id, memberRole.id);
+
+    const response = await request(testApp)
+      .get("/api/admin/financial-rollup")
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(403);
+  });
+
+  it("still lets a tenant-only staff member reach their own CRM organization", async () => {
+    const { organization, memberRole } = await seedOrganization();
+    const staff = await createStaffUser("Tenant Only Staff Two");
+    await addMembership(organization.id, staff.id, memberRole.id);
+
+    const response = await request(testApp)
+      .get("/api/crm/organization")
+      .set("Host", `${organization.subdomain}.localhost`)
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.id).toBe(organization.id);
+  });
+
+  it("rejects a tenant-only staff member from creating or listing organizations", async () => {
+    const { organization, memberRole } = await seedOrganization();
+    const staff = await createStaffUser("Tenant Only Org Creator");
+    await addMembership(organization.id, staff.id, memberRole.id);
+
+    const listResponse = await request(testApp)
+      .get("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id));
+    expect(listResponse.status).toBe(403);
+
+    const createResponse = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({ name: "Sneaky Org", subdomain: `sneaky-${randomUUID().slice(0, 8)}` });
+    expect(createResponse.status).toBe(403);
+  });
+
+  it("allows an ADMIN account with no CRM membership at all (grandfathered)", async () => {
+    const staff = await createStaffUser("No Membership At All");
+
+    const response = await request(testApp)
+      .get("/api/admin/financial-rollup")
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+  });
+
+  it("allows the platform organization's SUPERADMIN", async () => {
+    const { organization, adminRole } = await seedPlatformOrganization();
+    const staff = await createStaffUser("Platform Super Admin");
+    const membership = await addMembership(organization.id, staff.id, adminRole.id);
+    await makeSuperAdmin(organization.id, membership.id);
+
+    const response = await request(testApp)
+      .get("/api/admin/financial-rollup")
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+  });
+
+  it("allows a platform organization member holding the platform:access permission", async () => {
+    const { organization, adminRole } = await seedPlatformOrganization();
+    const otherAdmin = await createStaffUser("Other Platform Admin");
+    const membership = await addMembership(organization.id, otherAdmin.id, adminRole.id);
+    await makeSuperAdmin(organization.id, membership.id);
+
+    const staff = await createStaffUser("Platform Admin Two");
+    await addMembership(organization.id, staff.id, adminRole.id);
+
+    const response = await request(testApp)
+      .get("/api/admin/financial-rollup")
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+  });
+
+  it("rejects a platform organization member without the platform:access permission", async () => {
+    const { organization, adminRole, memberRole } = await seedPlatformOrganization();
+    const superAdmin = await createStaffUser("Platform Org Owner");
+    const superAdminMembership = await addMembership(organization.id, superAdmin.id, adminRole.id);
+    await makeSuperAdmin(organization.id, superAdminMembership.id);
+
+    const staff = await createStaffUser("Platform Org Regular Member");
+    await addMembership(organization.id, staff.id, memberRole.id);
+
+    const response = await request(testApp)
+      .get("/api/admin/financial-rollup")
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(403);
   });
 });

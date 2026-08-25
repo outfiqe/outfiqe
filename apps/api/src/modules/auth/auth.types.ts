@@ -71,6 +71,7 @@ export type AuthUser = {
   isCreator: boolean;
   creatorStatus: CreatorStatus;
   hasPassword: boolean;
+  hasPlatformAccess: boolean;
 };
 
 export type BrandAuthUser = {

@@ -1,13 +1,15 @@
 import { Router } from "express";
 
-import { UserRole } from "#generated/prisma/enums.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
-import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
 
 import { crmAccessController } from "./crm-access.controller.js";
-import { requirePermission, resolveTenant } from "./crm-access.middleware.js";
+import {
+  requirePermission,
+  requirePlatformAccess,
+  resolveTenant,
+} from "./crm-access.middleware.js";
 import {
   acceptOrganizationInviteSchema,
   createOrganizationInviteSchema,
@@ -43,13 +45,13 @@ export const crmAccessRoutes = Router();
 crmAccessRoutes.get(
   "/organizations",
   requireAuth,
-  requireRole(UserRole.ADMIN),
+  requirePlatformAccess,
   crmAccessController.listOrganizations,
 );
 crmAccessRoutes.post(
   "/organizations",
   requireAuth,
-  requireRole(UserRole.ADMIN),
+  requirePlatformAccess,
   crmOrganizationRateLimit,
   validate({ body: createOrganizationSchema }),
   crmAccessController.createOrganization,

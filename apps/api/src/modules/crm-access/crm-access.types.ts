@@ -4,6 +4,7 @@ export interface OrganizationRecord {
   id: string;
   name: string;
   subdomain: string;
+  isPlatformOrg: boolean;
   plan: string;
   trialEndsAt: Date | null;
   superAdminMembershipId: string | null;

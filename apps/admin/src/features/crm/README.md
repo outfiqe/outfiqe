@@ -32,8 +32,10 @@ convention treats `_authenticated.crm.tsx` as a layout parent for anything under
 never actually display (see the "Non-obvious rationale" section below). Both routes sit under the
 existing `_authenticated` layout — accepting an invite still requires the caller to already be
 logged in (`requireAuth`), it just isn't gated by `requirePermission` since accepting
-is the action that grants the permission. Sidebar entry added to `AdminSidebar.tsx`'s
-`NAV_SECTIONS`.
+is the action that grants the permission. Sidebar entry lives in `AdminSidebar.tsx`'s
+`CRM_NAV_SECTIONS` — the one section always shown regardless of `hasPlatformAccess`, since CRM is
+exactly what tenant-org-only staff are meant to reach (see `crm-access`'s README for the
+`requirePlatformAccess`/`hasPlatformAccess` gating the rest of the sidebar goes through).
 
 ## Funnel
 

@@ -1,10 +1,9 @@
-import { Router } from "express";
+﻿import { Router } from "express";
 
-import { UserRole } from "#generated/prisma/enums.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
-import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
+import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 
 import { withdrawController } from "./withdraw.controller.js";
 import {
@@ -30,7 +29,7 @@ const createWithdrawRequestRateLimit = rateLimit({
   message: "Too many withdrawal attempts. Please wait a moment and try again.",
 });
 
-const requireAdmin = [requireAuth, requireRole(UserRole.ADMIN)];
+const requireAdmin = [requireAuth, requirePlatformAccess];
 
 export const withdrawRoutes = Router();
 

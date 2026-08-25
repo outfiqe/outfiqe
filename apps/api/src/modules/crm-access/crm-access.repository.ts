@@ -46,6 +46,15 @@ export const crmAccessRepository = {
     return prisma.organization.findMany({ orderBy: { createdAt: "asc" } });
   },
 
+  async findPlatformOrganization(): Promise<OrganizationRecord | null> {
+    return prisma.organization.findFirst({ where: { isPlatformOrg: true } });
+  },
+
+  async hasAnyMembership(userId: string): Promise<boolean> {
+    const membership = await prisma.membership.findFirst({ where: { userId } });
+    return membership !== null;
+  },
+
   async findOrganizationBySubdomain(subdomain: string): Promise<OrganizationRecord | null> {
     return prisma.organization.findUnique({ where: { subdomain } });
   },

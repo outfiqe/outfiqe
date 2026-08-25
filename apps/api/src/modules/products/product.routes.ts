@@ -5,6 +5,7 @@ import { optionalAuth } from "#middlewares/optional-auth.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
+import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 
 import { productController } from "./product.controller.js";
 import {
@@ -19,7 +20,7 @@ import {
 } from "./product.schemas.js";
 
 const requireBrandOwner = [requireAuth, requireRole(UserRole.BRAND_OWNER)];
-const requireAdmin = [requireAuth, requireRole(UserRole.ADMIN)];
+const requireAdmin = [requireAuth, requirePlatformAccess];
 
 export const productRoutes = Router();
 

@@ -4,6 +4,7 @@ import { UserRole } from "#generated/prisma/enums.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
+import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 
 import { sizeOptionController } from "./size-option.controller.js";
 import {
@@ -12,7 +13,7 @@ import {
   sizeOptionIdParamSchema,
 } from "./size-option.schemas.js";
 
-const requireAdmin = [requireAuth, requireRole(UserRole.ADMIN)];
+const requireAdmin = [requireAuth, requirePlatformAccess];
 const requireBrandOwner = [requireAuth, requireRole(UserRole.BRAND_OWNER)];
 
 export const sizeOptionRoutes = Router();

@@ -36,13 +36,22 @@ export const PERMISSION_CATALOG: PermissionRecord[] = [
   { key: "tasks:read", label: "View tasks", group: "Activities, tasks & reports" },
   { key: "tasks:write", label: "Edit tasks", group: "Activities, tasks & reports" },
   { key: "reports:read", label: "View reports", group: "Activities, tasks & reports" },
+  {
+    key: "platform:access",
+    label: "Access Outfiqe's own commerce admin sections",
+    group: "Platform",
+  },
 ];
 
 export const SUPERADMIN_ONLY_PERMISSION_KEYS = ["org:transfer_ownership"];
 
+export const PLATFORM_ACCESS_PERMISSION_KEY = "platform:access";
+
 const NON_SUPERADMIN_PERMISSION_KEYS = PERMISSION_CATALOG.map(
   (permission) => permission.key,
-).filter((key) => !SUPERADMIN_ONLY_PERMISSION_KEYS.includes(key));
+).filter(
+  (key) => !SUPERADMIN_ONLY_PERMISSION_KEYS.includes(key) && key !== PLATFORM_ACCESS_PERMISSION_KEY,
+);
 
 const MEMBER_PERMISSION_KEYS = [
   "org:read",

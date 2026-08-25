@@ -8,7 +8,11 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
-import { ORGANIZATION_INVITE_TTL_MS, RESERVED_SUBDOMAINS } from "./crm-access.constants.js";
+import {
+  ORGANIZATION_INVITE_TTL_MS,
+  PLATFORM_ACCESS_PERMISSION_KEY,
+  RESERVED_SUBDOMAINS,
+} from "./crm-access.constants.js";
 import { crmAccessRepository } from "./crm-access.repository.js";
 import type {
   MembershipRecord,
@@ -25,6 +29,24 @@ const CONFLICT_STATUS = 409;
 const FORBIDDEN_STATUS = 403;
 
 export const crmAccessService = {
+  async resolveHasPlatformAccess(userId: string): Promise<boolean> {
+    const hasAnyMembership = await crmAccessRepository.hasAnyMembership(userId);
+    if (!hasAnyMembership) return true;
+
+    const platformOrganization = await crmAccessRepository.findPlatformOrganization();
+    const platformMembership = platformOrganization
+      ? await crmAccessRepository.findMembershipByUserAndOrg(userId, platformOrganization.id)
+      : null;
+
+    if (!platformMembership || platformMembership.status !== "ACTIVE") return false;
+
+    const isSuperAdmin = platformOrganization?.superAdminMembershipId === platformMembership.id;
+    const hasPlatformPermission = platformMembership.role.permissionKeys.includes(
+      PLATFORM_ACCESS_PERMISSION_KEY,
+    );
+    return isSuperAdmin || hasPlatformPermission;
+  },
+
   async createOrganization(
     name: string,
     subdomain: string,

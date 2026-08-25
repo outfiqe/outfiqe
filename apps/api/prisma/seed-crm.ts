@@ -5,6 +5,7 @@ import {
   BUILT_IN_ROLE_NAME,
   BUILT_IN_ROLE_PERMISSIONS,
   PERMISSION_CATALOG,
+  PLATFORM_ACCESS_PERMISSION_KEY,
 } from "../src/modules/crm-access/crm-access.constants.js";
 import { prisma } from "../src/shared/db/prisma.js";
 import { hashPassword } from "../src/shared/utils/password.utils.js";
@@ -77,16 +78,40 @@ async function seedPermissionCatalog() {
 }
 
 async function seedOrganization() {
-  const existing = await prisma.organization.findFirst();
-  if (existing) return existing;
+  const existing = await prisma.organization.findUnique({
+    where: { subdomain: DEFAULT_ORGANIZATION_SUBDOMAIN },
+  });
+  if (existing) {
+    if (existing.isPlatformOrg) return existing;
+    return prisma.organization.update({
+      where: { id: existing.id },
+      data: { isPlatformOrg: true },
+    });
+  }
 
   return prisma.organization.create({
     data: {
       name: "Outfiqe",
       subdomain: DEFAULT_ORGANIZATION_SUBDOMAIN,
+      isPlatformOrg: true,
       plan: "trial",
       trialEndsAt: addDays(new Date(), TRIAL_LENGTH_DAYS),
     },
+  });
+}
+
+async function seedPlatformAccessGrant(organizationId: string) {
+  const adminRole = await prisma.role.findFirst({
+    where: { organizationId, name: BUILT_IN_ROLE_NAME.ADMIN },
+  });
+  if (!adminRole) return;
+
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionKey: { roleId: adminRole.id, permissionKey: PLATFORM_ACCESS_PERMISSION_KEY },
+    },
+    update: {},
+    create: { roleId: adminRole.id, permissionKey: PLATFORM_ACCESS_PERMISSION_KEY },
   });
 }
 
@@ -208,6 +233,7 @@ export async function seedCrmAccess() {
   await seedPermissionCatalog();
   const organization = await seedOrganization();
   await seedBuiltInRoles(organization.id);
+  await seedPlatformAccessGrant(organization.id);
   await seedSuperAdmin(organization.id, organization.superAdminMembershipId);
   await seedDemoOrganizations();
 }

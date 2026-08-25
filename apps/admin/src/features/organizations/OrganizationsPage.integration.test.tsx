@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 
 import { OrganizationsPage } from "./OrganizationsPage";
 
-const API_BASE = "http://localhost:4000/api";
+const API_BASE = "http://localhost:3000/api";
 
 const wrapper = ({ children }: { children: ReactNode }) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

@@ -904,4 +904,42 @@ describe("GET /api/auth/me", () => {
     expect(response.status).toBe(200);
     expect(response.body.data).toMatchObject({ phone: null, hasPassword: false });
   });
+
+  it("reports hasPlatformAccess false for a customer account", async () => {
+    const { user, password } = await createUser({ emailVerified: true });
+    const login = await request(testApp)
+      .post("/api/auth/login")
+      .send({ email: user.email, password });
+    const accessToken: string = login.body.data.accessToken;
+
+    const response = await request(testApp)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({ hasPlatformAccess: false });
+  });
+
+  it("reports hasPlatformAccess true for an admin account with no CRM membership", async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const adminUser = await prisma.user.create({
+      data: {
+        email: `admin-no-crm-${suffix}@outfiqe.test`,
+        name: "Admin No CRM",
+        handle: `admin-no-crm-${suffix}`,
+        phone: null,
+        passwordHash: null,
+        role: UserRole.ADMIN,
+        emailVerified: true,
+      },
+    });
+    const accessToken = generateToken({ sub: adminUser.id, role: adminUser.role });
+
+    const response = await request(testApp)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({ hasPlatformAccess: true });
+  });
 });
