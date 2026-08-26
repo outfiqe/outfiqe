@@ -6,6 +6,7 @@ import helmet from "helmet";
 
 import { env } from "#config/env.config.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
+import { isAllowedOrigin } from "#lib/cors.utils.js";
 
 import { achievementRoutes } from "./modules/achievements/achievement.routes.js";
 import { adminInviteRoutes } from "./modules/admin-invites/adminInvite.routes.js";
@@ -30,6 +31,7 @@ import { creatorLeaderboardRoutes } from "./modules/creator-leaderboard/creatorL
 import { creatorLinkRoutes } from "./modules/creator-links/creatorLink.routes.js";
 import { creatorLookRoutes } from "./modules/creator-looks/creatorLook.routes.js";
 import { creatorRoutes } from "./modules/creators/creator.routes.js";
+import { crmAccessRoutes } from "./modules/crm-access/crm-access.routes.js";
 import { deliveryZoneRoutes } from "./modules/delivery-zones/deliveryZone.routes.js";
 import { financialRollupRoutes } from "./modules/financial-rollup/financialRollup.routes.js";
 import { followRoutes } from "./modules/follows/follow.routes.js";
@@ -80,7 +82,15 @@ export const createApp = () => {
       frameguard: { action: "deny" },
     }),
   );
-  app.use(cors({ origin: env.ALLOWED_ORIGINS, credentials: true }));
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        const isAllowed = isAllowedOrigin(origin, env.ALLOWED_ORIGINS, env.TENANT_BASE_DOMAIN);
+        callback(isAllowed ? null : new Error("Not allowed by CORS"), isAllowed);
+      },
+      credentials: true,
+    }),
+  );
   app.use(express.json());
   app.use(cookieParser());
   app.use(httpLogger);
@@ -127,6 +137,7 @@ export const createApp = () => {
   app.use("/api/payments", paymentRoutes);
   app.use("/api/commissions", commissionRoutes);
   app.use("/api/collections", collectionRoutes);
+  app.use("/api/crm", crmAccessRoutes);
   app.use("/api/creator-links", creatorLinkRoutes);
   app.use("/api/creator-looks", creatorLookRoutes);
   app.use("/api/follows", followRoutes);

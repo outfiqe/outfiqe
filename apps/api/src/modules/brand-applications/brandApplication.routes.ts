@@ -1,10 +1,9 @@
-import { Router } from "express";
+﻿import { Router } from "express";
 
-import { UserRole } from "#generated/prisma/enums.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { requireAuth } from "#middlewares/require-auth.js";
-import { requireRole } from "#middlewares/require-role.js";
 import { validate, validated } from "#middlewares/validate.js";
+import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 
 import { brandApplicationController } from "./brandApplication.controller.js";
 import type { CreateBrandApplicationBody } from "./brandApplication.schemas.js";
@@ -26,7 +25,7 @@ const brandApplicationRateLimit = rateLimit({
   message: "Too many applications from this number. Please try again tomorrow.",
 });
 
-const requireAdmin = [requireAuth, requireRole(UserRole.ADMIN)];
+const requireAdmin = [requireAuth, requirePlatformAccess];
 
 export const brandApplicationRoutes = Router();
 

@@ -14,8 +14,10 @@ and a successful `ADMIN`-role login sends you straight back. See `getDefaultRout
 pnpm --filter @outfiqe/admin dev
 ```
 
-Copy `.env.example` to `.env` — `VITE_API_URL` (the API) and `VITE_WEB_URL` (where to send
-signed-out visitors).
+Copy `.env.example` to `.env` — `VITE_WEB_URL` (where to send signed-out visitors) is required.
+`VITE_API_URL` is optional: `apiClient` defaults to the same-origin `/api` (proxied to the API by
+`vite.config.ts`'s dev server, matching the browser-facing setup in every other environment) and
+only needs overriding to point at a genuinely different, cross-origin API host.
 
 The first admin in an environment is created via the API's boot-time bootstrap
 (`ADMIN_BOOTSTRAP_EMAIL`/`ADMIN_BOOTSTRAP_PASSWORD`/`ADMIN_BOOTSTRAP_PHONE`, see

@@ -14,6 +14,7 @@ const baseCookieOptions: CookieOptions = {
   secure: env.NODE_ENV === "production",
   sameSite: "strict",
   path: AUTH_COOKIE_PATH,
+  domain: env.TENANT_BASE_DOMAIN,
 };
 
 const hasSessionCookieOptions: CookieOptions = { ...baseCookieOptions, httpOnly: false };

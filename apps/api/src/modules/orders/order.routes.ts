@@ -5,6 +5,7 @@ import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
+import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 
 import { orderController } from "./order.controller.js";
 import {
@@ -40,7 +41,7 @@ const cancelMyOrderRateLimit = rateLimit({
   message: "Too many cancellation attempts. Please wait a moment and try again.",
 });
 
-const requireAdmin = [requireAuth, requireRole(UserRole.ADMIN)];
+const requireAdmin = [requireAuth, requirePlatformAccess];
 const requireBrandOwner = [requireAuth, requireRole(UserRole.BRAND_OWNER)];
 
 export const orderRoutes = Router();

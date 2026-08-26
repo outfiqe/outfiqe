@@ -45,6 +45,7 @@ export const authApi = {
     inviteToken: string;
     phone: string;
     password: string;
+    confirmPassword: string;
   }): Promise<LoginResult> {
     const res = await apiClient.post<LoginResult>("/auth/register/admin", input);
     return loginResponseSchema.parse(res.data);

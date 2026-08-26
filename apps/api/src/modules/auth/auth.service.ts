@@ -22,6 +22,7 @@ import { signPurposeToken, verifyPurposeToken } from "#lib/purpose-token.utils.j
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { adminInviteRepository } from "#modules/admin-invites/adminInvite.repository.js";
+import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 import type { UserRecord } from "#modules/users/user.types.js";
 import { describeError } from "#redis/redis.utils.js";
@@ -590,7 +591,13 @@ export const authService = {
       logger.warn(`Brand owner ${id} has no brand membership — returning degraded profile.`);
     }
 
-    return toAuthUser(user);
+    const authUser = toAuthUser(user);
+    if (role !== UserRole.ADMIN) return authUser;
+
+    return {
+      ...authUser,
+      hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(id),
+    };
   },
 
   async registerBrand(input: RegisterBrandInput): Promise<BrandAuthSession> {

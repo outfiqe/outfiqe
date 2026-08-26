@@ -21,6 +21,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  allowedDevOrigins: ["outfiqe.local", "*.outfiqe.local"],
 
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

@@ -22,6 +22,7 @@ import {
   XpActivityType,
 } from "../src/generated/prisma/enums.js";
 import { prisma } from "../src/shared/db/prisma.js";
+import { seedCrmAccess } from "./seed-crm.js";
 
 type NepalBankSeedRow = { code: string; name: string; type: keyof typeof BankType };
 
@@ -1937,6 +1938,7 @@ async function main() {
   await seedCreatorLeaderboardCategoryConfig();
   await seedGamificationBadges();
   await seedUserBadges(creators);
+  await seedCrmAccess();
 }
 
 main()

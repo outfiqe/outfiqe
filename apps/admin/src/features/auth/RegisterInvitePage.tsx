@@ -66,7 +66,7 @@ export const RegisterInvitePage = () => {
 
     setIsSubmitting(true);
     try {
-      await authApi.registerAdmin({ inviteToken: token, phone, password });
+      await authApi.registerAdmin({ inviteToken: token, phone, password, confirmPassword });
       navigate({ to: "/", replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

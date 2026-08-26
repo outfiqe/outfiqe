@@ -26,5 +26,6 @@ export const toAuthUser = (user: UserRecord): AuthUser => {
     isCreator,
     creatorStatus,
     hasPassword: passwordHash !== null,
+    hasPlatformAccess: false,
   };
 };

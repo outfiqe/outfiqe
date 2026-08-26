@@ -19,7 +19,7 @@ const envSchema = z.object({
   GMAIL_USER: z.email().default("anjesh67890@gmail.com"),
   GMAIL_APP_PASSWORD: z.string().optional(),
   FRONTEND_URL: z.url().default("http://localhost:3000"),
-  ADMIN_URL: z.url().default("http://localhost:5173"),
+  ADMIN_URL: z.url().default("http://localhost:3000/admin"),
   ALLOWED_ORIGINS: z
     .string()
     .default("http://localhost:3000,http://localhost:5173")
@@ -30,6 +30,7 @@ const envSchema = z.object({
   STORAGE_DRIVER: z.enum(["local"]).default("local"),
   UPLOADS_DIR: z.string().default("uploads"),
   API_PUBLIC_URL: z.url().default("http://localhost:4000"),
+  TENANT_BASE_DOMAIN: z.string().min(1).default("localhost"),
   REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
   ESEWA_PRODUCT_CODE: z.string().min(1).default("EPAYTEST"),
   ESEWA_SECRET_KEY: z.string().min(1).default("8gBm/:&EnhH.1/q"),

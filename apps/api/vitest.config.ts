@@ -71,9 +71,11 @@ export default defineConfig({
         "src/shared/utils/lifecycle-sweep.utils.ts",
         "src/modules/withdraw/**/*.ts",
         "src/shared/utils/prisma.utils.ts",
+        "src/shared/utils/cors.utils.ts",
         "src/modules/financial-rollup/**/*.ts",
         "src/modules/image-processing/**/*.ts",
         "src/modules/chat/**/*.ts",
+        "src/modules/crm-access/**/*.ts",
       ],
       thresholds: {
         lines: 80,

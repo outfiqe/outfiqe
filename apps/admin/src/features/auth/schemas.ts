@@ -10,6 +10,7 @@ export const adminUserSchema = z.object({
   email: z.email(),
   avatarUrl: z.url().nullable(),
   role: userRoleSchema,
+  hasPlatformAccess: z.boolean(),
 });
 export type AdminUser = z.infer<typeof adminUserSchema>;
 

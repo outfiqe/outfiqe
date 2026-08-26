@@ -1,14 +1,13 @@
-import { Router } from "express";
+﻿import { Router } from "express";
 
-import { UserRole } from "#generated/prisma/enums.js";
 import { requireAuth } from "#middlewares/require-auth.js";
-import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
+import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 
 import { userController } from "./user.controller.js";
 import { createUserSchema, updateOwnProfileSchema, userIdParamSchema } from "./user.schemas.js";
 
-const requireAdmin = [requireAuth, requireRole(UserRole.ADMIN)];
+const requireAdmin = [requireAuth, requirePlatformAccess];
 
 export const userRoutes = Router();
 
