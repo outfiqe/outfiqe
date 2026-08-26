@@ -97,6 +97,7 @@ model User {
   revokedBrandCommissionExemptions         BrandCommissionExemption[]  @relation("BrandCommissionExemptionRevokedBy")
   crmMemberships                           Membership[]
   sentOrganizationInvites                  OrganizationInvite[]        @relation("OrganizationInviteSender")
+  imageProcessingAssets                    ImageProcessingAsset[]
 
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
@@ -1918,4 +1919,48 @@ model OrganizationInvite {
   @@index([organizationId])
   @@index([email])
   @@map("organization_invites")
+}
+
+model ImageProcessingAsset {
+  id                   String                      @id @default(uuid()) @db.Uuid
+  ownerId              String                      @map("owner_id") @db.Uuid
+  owner                User                        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  checksum             String
+  priorityTier         ImageProcessingPriorityTier @map("priority_tier")
+  qualityTier          ImageProcessingQualityTier  @map("quality_tier")
+  status               ImageProcessingStatus       @default(PENDING)
+  tempStorageKey       String                      @map("temp_storage_key")
+  tempFileCleanedUp    Boolean                     @default(false) @map("temp_file_cleaned_up")
+  originalStorageKey   String?                     @map("original_storage_key")
+  resizedVariants      Json?                       @map("resized_variants")
+  encodedVariants      Json?                       @map("encoded_variants")
+  thumbnailStorageKey  String?                     @map("thumbnail_storage_key")
+  lqip                 String?
+  optimizeCompletedAt  DateTime?                   @map("optimize_completed_at")
+  thumbnailCompletedAt DateTime?                   @map("thumbnail_completed_at")
+  errorMessage         String?                     @map("error_message")
+  createdAt            DateTime                    @default(now()) @map("created_at")
+  updatedAt            DateTime                    @updatedAt @map("updated_at")
+
+  @@unique([ownerId, checksum])
+  @@index([status])
+  @@map("image_processing_assets")
+}
+
+enum ImageProcessingPriorityTier {
+  PAID_CREATOR
+  STANDARD
+  BULK_ADMIN
+}
+
+enum ImageProcessingQualityTier {
+  STANDARD
+  HERO
+}
+
+enum ImageProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }

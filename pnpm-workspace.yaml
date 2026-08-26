@@ -16,6 +16,8 @@ allowBuilds:
   # CLI binary used for build-time sourcemap upload, which isn't wired up
   # here (no Sentry auth token configured) — not needed at runtime.
   "@sentry/cli": false
+  msgpackr-extract: true
+  sharp: true
 
 # pnpm 11 also quarantines packages published within the last ~24h, so a
 # compromised fresh release can't slip straight into your install.

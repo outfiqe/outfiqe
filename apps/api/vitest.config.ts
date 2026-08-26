@@ -73,6 +73,7 @@ export default defineConfig({
         "src/shared/utils/prisma.utils.ts",
         "src/shared/utils/cors.utils.ts",
         "src/modules/financial-rollup/**/*.ts",
+        "src/modules/image-processing/**/*.ts",
         "src/modules/chat/**/*.ts",
         "src/modules/crm-access/**/*.ts",
       ],
