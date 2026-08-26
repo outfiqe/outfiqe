@@ -6,7 +6,7 @@ import helmet from "helmet";
 
 import { env } from "#config/env.config.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
-import { isTenantOrigin } from "#lib/cors.utils.js";
+import { isAllowedOrigin } from "#lib/cors.utils.js";
 
 import { achievementRoutes } from "./modules/achievements/achievement.routes.js";
 import { adminInviteRoutes } from "./modules/admin-invites/adminInvite.routes.js";
@@ -80,10 +80,7 @@ export const createApp = () => {
   app.use(
     cors({
       origin: (origin, callback) => {
-        const isAllowed =
-          !origin ||
-          env.ALLOWED_ORIGINS.includes(origin) ||
-          isTenantOrigin(origin, env.TENANT_BASE_DOMAIN);
+        const isAllowed = isAllowedOrigin(origin, env.ALLOWED_ORIGINS, env.TENANT_BASE_DOMAIN);
         callback(isAllowed ? null : new Error("Not allowed by CORS"), isAllowed);
       },
       credentials: true,

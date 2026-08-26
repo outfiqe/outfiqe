@@ -8,6 +8,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   base: "/admin/",
   server: {
+    host: "0.0.0.0",
     hmr: {
       clientPort: 5173,
     },

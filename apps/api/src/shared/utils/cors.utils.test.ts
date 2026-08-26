@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isTenantOrigin } from "./cors.utils.js";
+import { isAllowedOrigin, isTenantOrigin } from "./cors.utils.js";
 
 describe("isTenantOrigin", () => {
   it("allows the bare base domain", () => {
@@ -22,5 +22,33 @@ describe("isTenantOrigin", () => {
 
   it("rejects a malformed origin", () => {
     expect(isTenantOrigin("not-a-url", "outfiqe.com")).toBe(false);
+  });
+});
+
+describe("isAllowedOrigin", () => {
+  const allowedOrigins = ["http://localhost:5173"];
+  const tenantBaseDomain = "outfiqe.local";
+
+  it("allows a request with no origin (same-origin/non-browser clients)", () => {
+    expect(isAllowedOrigin(undefined, allowedOrigins, tenantBaseDomain)).toBe(true);
+  });
+
+  it("allows an origin from the static allowlist", () => {
+    expect(isAllowedOrigin("http://localhost:5173", allowedOrigins, tenantBaseDomain)).toBe(true);
+  });
+
+  it("allows the tenant base domain and its subdomains", () => {
+    expect(isAllowedOrigin("http://outfiqe.local:3000", allowedOrigins, tenantBaseDomain)).toBe(
+      true,
+    );
+    expect(
+      isAllowedOrigin("http://daraz.outfiqe.local:3000", allowedOrigins, tenantBaseDomain),
+    ).toBe(true);
+  });
+
+  it("rejects an origin that is neither allowlisted nor a tenant subdomain", () => {
+    expect(isAllowedOrigin("https://evil.example.com", allowedOrigins, tenantBaseDomain)).toBe(
+      false,
+    );
   });
 });
