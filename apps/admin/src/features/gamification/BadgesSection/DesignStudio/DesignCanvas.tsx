@@ -1,4 +1,5 @@
 import { cn, SHAPE_CLIP_PATH } from "@outfiqe/design-system";
+import { ImageIcon } from "lucide-react";
 import { Rnd } from "react-rnd";
 
 import type { BadgeLayer } from "../../schemas";
@@ -36,6 +37,29 @@ const LayerContent = ({ layer }: { layer: BadgeLayer }) => {
 
   if (layer.type === BADGE_LAYER_TYPE.ICON) {
     return <span style={{ fontSize: `${layer.fontSize}%` }}>{layer.glyph}</span>;
+  }
+
+  if (layer.type === BADGE_LAYER_TYPE.IMAGE) {
+    if (!layer.url) {
+      return (
+        <div className="flex size-full flex-col items-center justify-center gap-1 rounded-md border border-dashed border-foreground/40 bg-background/70 text-muted-foreground">
+          <ImageIcon className="size-4" />
+          <span className="text-[10px] font-medium">No image</span>
+        </div>
+      );
+    }
+    return (
+      <div
+        className="size-full"
+        style={{
+          backgroundImage: `url(${layer.url})`,
+          backgroundSize: layer.fit,
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center",
+          borderRadius: layer.radius ? `${layer.radius}%` : undefined,
+        }}
+      />
+    );
   }
 
   return (

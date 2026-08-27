@@ -1,27 +1,35 @@
-import { Button } from "@outfiqe/design-system";
+import { AchievementBadgeIcon, Button } from "@outfiqe/design-system";
+import { Link } from "@tanstack/react-router";
 
 import { ADMIN_AWARD_REQUIREMENT_TYPE, type BadgeAdmin } from "../schemas";
 
 export const BadgeCard = ({
   badge,
-  onEdit,
   onDuplicate,
 }: {
   badge: BadgeAdmin;
-  onEdit: (badge: BadgeAdmin) => void;
   onDuplicate: (badge: BadgeAdmin) => void;
 }) => (
   <div className="rounded-xl border border-border bg-card p-4">
     <div className="flex items-start justify-between gap-2">
-      <p className="text-sm font-medium text-foreground">
-        {badge.icon} {badge.name}
-      </p>
+      <div className="flex min-w-0 items-center gap-2">
+        <AchievementBadgeIcon
+          icon={badge.icon}
+          designConfig={badge.designConfig}
+          rarity={badge.rarity}
+          isLocked={false}
+          className="size-10"
+        />
+        <p className="truncate text-sm font-medium text-foreground">{badge.name}</p>
+      </div>
       <div className="flex shrink-0 gap-1.5">
         <Button variant="outline" size="sm" onClick={() => onDuplicate(badge)}>
           Duplicate
         </Button>
-        <Button variant="outline" size="sm" onClick={() => onEdit(badge)}>
-          Edit
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/gamification/badges/$badgeId/edit" params={{ badgeId: badge.id }}>
+            Edit
+          </Link>
         </Button>
       </div>
     </div>

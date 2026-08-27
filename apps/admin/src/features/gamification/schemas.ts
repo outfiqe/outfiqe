@@ -106,6 +106,7 @@ export type ActivityXpConfig = z.infer<typeof activityXpConfigSchema>;
 const LAYER_ID_MAX_LENGTH = 64;
 const LAYER_GLYPH_MAX_LENGTH = 8;
 const LAYER_TEXT_MAX_LENGTH = 40;
+const LAYER_IMAGE_URL_MAX_LENGTH = 2048;
 const MAX_BADGE_LAYERS = 12;
 const MIN_LAYER_PERCENT = 0;
 const MAX_LAYER_PERCENT = 100;
@@ -113,8 +114,13 @@ const MIN_LAYER_FONT_SIZE = 5;
 const MAX_LAYER_FONT_SIZE = 100;
 const MIN_LAYER_BORDER_WIDTH = 0;
 const MAX_LAYER_BORDER_WIDTH = 8;
+const MIN_LAYER_RADIUS = 0;
+const MAX_LAYER_RADIUS = 100;
 
-export const badgeLayerTypeSchema = z.enum(["background", "icon", "text"]);
+export const badgeImageFitSchema = z.enum(["contain", "cover"]);
+export type BadgeImageFitValue = z.infer<typeof badgeImageFitSchema>;
+
+export const badgeLayerTypeSchema = z.enum(["background", "icon", "text", "image"]);
 export type BadgeLayerTypeValue = z.infer<typeof badgeLayerTypeSchema>;
 
 const badgeLayerBaseFields = {
@@ -153,16 +159,27 @@ export const badgeTextLayerSchema = z.object({
 });
 export type BadgeTextLayer = z.infer<typeof badgeTextLayerSchema>;
 
+export const badgeImageLayerSchema = z.object({
+  ...badgeLayerBaseFields,
+  type: z.literal("image"),
+  url: z.string().trim().min(1).max(LAYER_IMAGE_URL_MAX_LENGTH),
+  fit: badgeImageFitSchema,
+  radius: z.number().min(MIN_LAYER_RADIUS).max(MAX_LAYER_RADIUS).optional(),
+});
+export type BadgeImageLayer = z.infer<typeof badgeImageLayerSchema>;
+
 export const badgeLayerSchema = z.discriminatedUnion("type", [
   badgeBackgroundLayerSchema,
   badgeIconLayerSchema,
   badgeTextLayerSchema,
+  badgeImageLayerSchema,
 ]);
 export type BadgeLayer = z.infer<typeof badgeLayerSchema>;
 
 const legacyBadgeDesignConfigSchema = z.object({
   shape: badgeShapeSchema,
   primaryColor: z.string(),
+  imageUrl: z.string().trim().min(1).max(LAYER_IMAGE_URL_MAX_LENGTH).optional(),
   animation: badgeAnimationSchema.optional(),
 });
 
@@ -184,6 +201,14 @@ export const sponsorBrandSchema = z.object({
   avatarUrl: z.string().nullable(),
 });
 export type SponsorBrand = z.infer<typeof sponsorBrandSchema>;
+
+export const userSearchResultSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  handle: z.string(),
+  avatarUrl: z.string().nullable(),
+});
+export type UserSearchResult = z.infer<typeof userSearchResultSchema>;
 
 export const badgeAdminSchema = z.object({
   id: z.string(),

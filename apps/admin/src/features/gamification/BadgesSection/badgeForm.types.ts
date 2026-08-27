@@ -20,6 +20,7 @@ export type BadgeFormState = {
   category: BadgeCategoryValue;
   rarity: BadgeRarityValue;
   icon: string;
+  iconImageUrl: string;
   shape: BadgeShapeValue;
   primaryColor: string;
   animation: BadgeAnimationValue | typeof AUTO_ANIMATION_OPTION;

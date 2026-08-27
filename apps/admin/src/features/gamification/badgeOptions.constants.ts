@@ -1,6 +1,7 @@
 import type {
   BadgeAnimationValue,
   BadgeCategoryValue,
+  BadgeImageFitValue,
   BadgeRarityValue,
   BadgeShapeValue,
   CreatorLeaderboardCategoryValue,
@@ -32,6 +33,17 @@ export const BADGE_DESIGN_MODE = {
   SIMPLE: "simple",
   STUDIO: "studio",
 } as const;
+
+export const IMAGE_FIT_OPTIONS: BadgeImageFitValue[] = ["contain", "cover"];
+
+export const IMAGE_FIT_OPTION_LABEL: Record<BadgeImageFitValue, string> = {
+  contain: "Fit inside",
+  cover: "Fill",
+};
+
+export const BADGE_ICON_IMAGE_ACCEPT = "image/png,image/jpeg,image/svg+xml";
+
+export const DEFAULT_BADGE_ICON = "🏆";
 
 export const ANIMATION_OPTIONS: BadgeAnimationValue[] = [
   "none",

@@ -1,6 +1,7 @@
 import type {
   BadgeBackgroundLayer,
   BadgeIconLayer,
+  BadgeImageLayer,
   BadgeShapeValue,
   BadgeTextLayer,
 } from "../../schemas";
@@ -18,7 +19,10 @@ export const BADGE_LAYER_TYPE = {
   BACKGROUND: "background",
   ICON: "icon",
   TEXT: "text",
+  IMAGE: "image",
 } as const;
+
+export const DEFAULT_IMAGE_LAYER_FIT = "contain";
 
 export const BADGE_FONT_WEIGHT = {
   NORMAL: "normal",
@@ -32,6 +36,7 @@ export const LAYER_TYPE_OPTIONS = [
   BADGE_LAYER_TYPE.BACKGROUND,
   BADGE_LAYER_TYPE.ICON,
   BADGE_LAYER_TYPE.TEXT,
+  BADGE_LAYER_TYPE.IMAGE,
 ] as const;
 
 export const LAYER_TYPE_LABEL: Record<
@@ -41,6 +46,7 @@ export const LAYER_TYPE_LABEL: Record<
   [BADGE_LAYER_TYPE.BACKGROUND]: "Background",
   [BADGE_LAYER_TYPE.ICON]: "Icon",
   [BADGE_LAYER_TYPE.TEXT]: "Text",
+  [BADGE_LAYER_TYPE.IMAGE]: "Image",
 };
 
 const DEFAULT_LAYER_BOUNDS = { x: 10, y: 10, width: 80, height: 80 };
@@ -64,6 +70,14 @@ export const createDefaultIconLayer = (): BadgeIconLayer => ({
   ...DEFAULT_LAYER_BOUNDS,
   glyph: "⭐",
   fontSize: 50,
+});
+
+export const createDefaultImageLayer = (): BadgeImageLayer => ({
+  id: generateLayerId(),
+  type: BADGE_LAYER_TYPE.IMAGE,
+  ...DEFAULT_LAYER_BOUNDS,
+  url: "",
+  fit: DEFAULT_IMAGE_LAYER_FIT,
 });
 
 export const createDefaultTextLayer = (): BadgeTextLayer => ({
