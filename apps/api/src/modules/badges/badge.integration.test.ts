@@ -66,6 +66,10 @@ const validBadgePayload = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+const TINY_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+const tinyPngBuffer = Buffer.from(TINY_PNG_BASE64, "base64");
+
 const adminAwardBadgePayload = (overrides: Record<string, unknown> = {}) =>
   validBadgePayload({
     requirementType: "ADMIN_AWARD",
@@ -635,5 +639,174 @@ describe("POST /api/badges/user-badges/:userBadgeId/remove (admin)", () => {
       .send({ reason: "Again" });
 
     expect(second.status).toBe(404);
+  });
+});
+
+describe("GET /api/badges/admin/:badgeId (admin)", () => {
+  it("returns a single badge with its achievement", async () => {
+    const admin = await createAdmin();
+    const created = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(validBadgePayload());
+    const badgeId = created.body.data.id;
+
+    const response = await request(testApp)
+      .get(`/api/badges/admin/${badgeId}`)
+      .set("Authorization", admin.header);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.id).toBe(badgeId);
+    expect(response.body.data.achievement.requirementType).toBe("ENGAGEMENT");
+  });
+
+  it("404s for a badge that doesn't exist", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .get(`/api/badges/admin/${randomUUID()}`)
+      .set("Authorization", admin.header);
+
+    expect(response.status).toBe(404);
+  });
+
+  it("requires the ADMIN role", async () => {
+    const nonAdmin = await createUser("Non Admin Reader");
+
+    const response = await request(testApp)
+      .get(`/api/badges/admin/${randomUUID()}`)
+      .set("Authorization", authHeaderFor(nonAdmin.id));
+
+    expect(response.status).toBe(403);
+  });
+});
+
+describe("POST /api/badges/admin/icon-image (admin)", () => {
+  it("normalizes an uploaded image and returns a managed uploads URL", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .post("/api/badges/admin/icon-image")
+      .set("Authorization", admin.header)
+      .attach("file", tinyPngBuffer, { filename: "icon.png", contentType: "image/png" });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.url).toMatch(/\/uploads\/[^/]+\.png$/);
+  });
+
+  it("rejects a non-image mime type", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .post("/api/badges/admin/icon-image")
+      .set("Authorization", admin.header)
+      .attach("file", Buffer.from("<svg/>"), {
+        filename: "icon.svg",
+        contentType: "image/svg+xml",
+      });
+
+    expect(response.status).toBe(422);
+  });
+
+  it("rejects a file larger than the size limit", async () => {
+    const admin = await createAdmin();
+    const oversized = Buffer.alloc(2 * 1024 * 1024 + 1, 1);
+
+    const response = await request(testApp)
+      .post("/api/badges/admin/icon-image")
+      .set("Authorization", admin.header)
+      .attach("file", oversized, { filename: "icon.png", contentType: "image/png" });
+
+    expect(response.status).toBe(422);
+  });
+
+  it("requires the ADMIN role", async () => {
+    const nonAdmin = await createUser("Non Admin Uploader");
+
+    const response = await request(testApp)
+      .post("/api/badges/admin/icon-image")
+      .set("Authorization", authHeaderFor(nonAdmin.id))
+      .attach("file", tinyPngBuffer, { filename: "icon.png", contentType: "image/png" });
+
+    expect(response.status).toBe(403);
+  });
+});
+
+describe("POST /api/badges (admin) — icon image designConfig", () => {
+  it("accepts a simple designConfig whose imageUrl points at the managed uploads host", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(
+        validBadgePayload({
+          designConfig: {
+            shape: "circle",
+            primaryColor: "#123456",
+            imageUrl: `${process.env.API_PUBLIC_URL ?? "http://localhost:4000"}/uploads/badge-icon.png`,
+          },
+        }),
+      );
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.designConfig.imageUrl).toMatch(/\/uploads\/badge-icon\.png$/);
+  });
+
+  it("rejects a designConfig imageUrl pointing at an external host", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(
+        validBadgePayload({
+          designConfig: {
+            shape: "circle",
+            primaryColor: "#123456",
+            imageUrl: "https://evil.example.com/uploads/badge-icon.png",
+          },
+        }),
+      );
+
+    expect(response.status).toBe(422);
+  });
+
+  it("accepts a studio image layer with a managed url and rejects an external one", async () => {
+    const admin = await createAdmin();
+    const managedUrl = `${process.env.API_PUBLIC_URL ?? "http://localhost:4000"}/uploads/layer.png`;
+    const imageLayer = (url: string) => ({
+      id: "img",
+      type: "image",
+      url,
+      fit: "contain",
+      x: 10,
+      y: 10,
+      width: 80,
+      height: 80,
+    });
+
+    const accepted = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(
+        validBadgePayload({
+          designConfig: { version: 2, layers: [imageLayer(managedUrl)] },
+        }),
+      );
+    expect(accepted.status).toBe(201);
+
+    const rejected = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(
+        validBadgePayload({
+          designConfig: {
+            version: 2,
+            layers: [imageLayer("https://evil.example.com/layer.png")],
+          },
+        }),
+      );
+    expect(rejected.status).toBe(422);
   });
 });
