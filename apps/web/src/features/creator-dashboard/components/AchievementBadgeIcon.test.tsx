@@ -141,4 +141,62 @@ describe("AchievementBadgeIcon", () => {
     const style = (container.firstElementChild as HTMLElement).style;
     expect(style.getPropertyValue("--badge-glow-color")).toBe("#1d4ed8");
   });
+
+  const hasBackgroundImage = (element: Element | null, url: string) =>
+    Boolean((element as HTMLElement | null)?.style.backgroundImage.includes(url));
+
+  it("renders a simple design's imageUrl instead of the emoji", () => {
+    const { container } = renderIcon({
+      designConfig: {
+        shape: "circle",
+        primaryColor: "#f97316",
+        imageUrl: "https://cdn.test/i.png",
+      },
+    });
+
+    const imageLayer = container.querySelector("[style*='background-image']");
+    expect(hasBackgroundImage(imageLayer, "https://cdn.test/i.png")).toBe(true);
+    expect(container.textContent).not.toContain("🏆");
+  });
+
+  it("falls back to the emoji, not the image, while a badge with an imageUrl is locked", () => {
+    const { container } = renderIcon({
+      isLocked: true,
+      designConfig: {
+        shape: "circle",
+        primaryColor: "#f97316",
+        imageUrl: "https://cdn.test/i.png",
+      },
+    });
+
+    expect(container.querySelector("[style*='background-image']")).toBeNull();
+  });
+
+  it("renders a studio image layer with the configured background-size", () => {
+    const { container } = renderIcon({
+      designConfig: {
+        version: 2,
+        layers: [
+          ...studioLayers,
+          {
+            id: "photo",
+            type: "image",
+            url: "https://cdn.test/layer.png",
+            fit: "cover",
+            x: 10,
+            y: 10,
+            width: 80,
+            height: 80,
+          },
+        ],
+      },
+    });
+
+    const layersContainer = container.firstElementChild?.firstElementChild;
+    const imageLayer = Array.from(layersContainer?.children ?? []).find((child) =>
+      hasBackgroundImage(child, "https://cdn.test/layer.png"),
+    ) as HTMLElement;
+    expect(imageLayer).not.toBeUndefined();
+    expect(imageLayer.style.backgroundSize).toBe("cover");
+  });
 });
