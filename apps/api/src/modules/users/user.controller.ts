@@ -4,7 +4,12 @@ import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 
-import type { CreateUserBody, UpdateOwnProfileBody, UserIdParam } from "./user.schemas.js";
+import type {
+  CreateUserBody,
+  SearchUsersQuery,
+  UpdateOwnProfileBody,
+  UserIdParam,
+} from "./user.schemas.js";
 import { userService } from "./user.service.js";
 
 const CREATED_STATUS = 201;
@@ -25,6 +30,12 @@ export const userController = {
   async list(_req: Request, res: Response) {
     const users = await userService.listUsers();
     sendSuccess(res, users, "Users fetched successfully");
+  },
+
+  async search(_req: Request, res: Response) {
+    const { q } = validated.query<SearchUsersQuery>(res);
+    const users = await userService.searchUsers(q);
+    sendSuccess(res, users, "Users matching the search.");
   },
 
   async updateMe(_req: Request, res: Response) {

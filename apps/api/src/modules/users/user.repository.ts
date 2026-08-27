@@ -4,7 +4,12 @@ import type { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
-import type { CreateUserInput, UpdateUserProfileInput, UserRecord } from "./user.types.js";
+import type {
+  CreateUserInput,
+  UpdateUserProfileInput,
+  UserRecord,
+  UserSearchResult,
+} from "./user.types.js";
 
 const MAX_HANDLE_ATTEMPTS = 5;
 
@@ -100,6 +105,20 @@ export const userRepository = {
 
   async list(): Promise<UserRecord[]> {
     return prisma.user.findMany({ orderBy: { createdAt: "desc" } });
+  },
+
+  async search(query: string, limit: number): Promise<UserSearchResult[]> {
+    return prisma.user.findMany({
+      where: {
+        OR: [
+          { name: { contains: query, mode: "insensitive" } },
+          { handle: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      orderBy: [{ followerCount: "desc" }, { name: "asc" }],
+      take: limit,
+      select: { id: true, name: true, handle: true, avatarUrl: true },
+    });
   },
 
   async findIdsByRole(role: UserRole): Promise<string[]> {

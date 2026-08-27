@@ -50,3 +50,10 @@ export interface PublicUser {
   emailVerified: boolean;
   createdAt: string;
 }
+
+export interface UserSearchResult {
+  id: string;
+  name: string;
+  handle: string;
+  avatarUrl: string | null;
+}

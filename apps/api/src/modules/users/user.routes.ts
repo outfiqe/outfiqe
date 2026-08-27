@@ -5,7 +5,12 @@ import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 
 import { userController } from "./user.controller.js";
-import { createUserSchema, updateOwnProfileSchema, userIdParamSchema } from "./user.schemas.js";
+import {
+  createUserSchema,
+  searchUsersQuerySchema,
+  updateOwnProfileSchema,
+  userIdParamSchema,
+} from "./user.schemas.js";
 
 const requireAdmin = [requireAuth, requirePlatformAccess];
 
@@ -19,6 +24,12 @@ userRoutes.patch(
   userController.updateMe,
 );
 userRoutes.get("/", ...requireAdmin, userController.list);
+userRoutes.get(
+  "/search",
+  ...requireAdmin,
+  validate({ query: searchUsersQuerySchema }),
+  userController.search,
+);
 userRoutes.get(
   "/:id",
   ...requireAdmin,
