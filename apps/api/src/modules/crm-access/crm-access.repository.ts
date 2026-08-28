@@ -4,12 +4,15 @@ import type { MembershipStatus } from "#generated/prisma/enums.js";
 import { BUILT_IN_ROLE_NAME, BUILT_IN_ROLE_PERMISSIONS } from "./crm-access.constants.js";
 import type {
   CreateOrganizationInviteInput,
+  CreateOwnershipTransferRequestInput,
   CreateRoleInput,
   MembershipJoinRow,
   MembershipRecord,
   MembershipWithRole,
   OrganizationInviteRecord,
   OrganizationRecord,
+  OwnershipTransferJoinRow,
+  OwnershipTransferRequestRecord,
   PermissionRecord,
   RoleWithPermissions,
   UpdateMembershipInput,
@@ -258,6 +261,67 @@ export const crmAccessRepository = {
       });
 
       return membership;
+    });
+  },
+
+  async createOwnershipTransferRequest(
+    input: CreateOwnershipTransferRequestInput,
+  ): Promise<OwnershipTransferRequestRecord> {
+    return prisma.ownershipTransferRequest.create({ data: input });
+  },
+
+  async findOwnershipTransferById(
+    organizationId: string,
+    requestId: string,
+  ): Promise<OwnershipTransferRequestRecord | null> {
+    return prisma.ownershipTransferRequest.findFirst({
+      where: { id: requestId, organizationId },
+    });
+  },
+
+  async findPendingOwnershipTransfer(
+    organizationId: string,
+  ): Promise<OwnershipTransferJoinRow | null> {
+    return prisma.ownershipTransferRequest.findFirst({
+      where: {
+        organizationId,
+        acceptedAt: null,
+        declinedAt: null,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      include: {
+        toMembership: { select: { userId: true, user: { select: { name: true } } } },
+        fromMembership: { select: { user: { select: { name: true } } } },
+      },
+    });
+  },
+
+  async acceptOwnershipTransfer(request: OwnershipTransferRequestRecord): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      await tx.organization.update({
+        where: { id: request.organizationId },
+        data: { superAdminMembershipId: request.toMembershipId },
+      });
+
+      await tx.ownershipTransferRequest.update({
+        where: { id: request.id },
+        data: { acceptedAt: new Date() },
+      });
+    });
+  },
+
+  async declineOwnershipTransfer(organizationId: string, requestId: string): Promise<void> {
+    await prisma.ownershipTransferRequest.update({
+      where: { id: requestId, organizationId },
+      data: { declinedAt: new Date() },
+    });
+  },
+
+  async revokeOwnershipTransfer(organizationId: string, requestId: string): Promise<void> {
+    await prisma.ownershipTransferRequest.update({
+      where: { id: requestId, organizationId },
+      data: { revokedAt: new Date() },
     });
   },
 };

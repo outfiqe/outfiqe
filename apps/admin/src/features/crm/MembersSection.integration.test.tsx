@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
@@ -20,7 +20,16 @@ const wrapper = ({ children }: { children: ReactNode }) => {
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 };
 
-const renderMembersSection = () => render(<MembersSection />, { wrapper });
+const renderMembersSection = (
+  overrides: { viewerIsSuperAdmin?: boolean; hasPendingOwnershipTransfer?: boolean } = {},
+) =>
+  render(
+    <MembersSection
+      viewerIsSuperAdmin={overrides.viewerIsSuperAdmin ?? false}
+      hasPendingOwnershipTransfer={overrides.hasPendingOwnershipTransfer ?? false}
+    />,
+    { wrapper },
+  );
 
 describe("MembersSection", () => {
   it("renders the member list, disabling controls on the SUPERADMIN's own row", async () => {
@@ -118,5 +127,101 @@ describe("MembersSection", () => {
     await user.click(screen.getByRole("button", { name: "Deactivate" }));
 
     await waitFor(() => expect(lastPatchBody).toEqual({ status: "DEACTIVATED" }));
+  });
+
+  it("shows a transfer ownership button for an eligible member when the viewer is the SUPERADMIN", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/crm/roles`, () => HttpResponse.json({ success: true, data: ROLES })),
+      http.get(`${API_BASE}/crm/members`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [
+            {
+              id: "membership-2",
+              userId: "user-2",
+              userName: "Grace Hopper",
+              userEmail: "grace@outfiqe.test",
+              roleId: "role-member",
+              roleName: "Member",
+              status: "ACTIVE",
+              isSuperAdmin: false,
+              createdAt: "2026-01-01T00:00:00.000Z",
+            },
+          ],
+        }),
+      ),
+    );
+
+    renderMembersSection({ viewerIsSuperAdmin: true });
+
+    expect(await screen.findByRole("button", { name: "Transfer ownership" })).toBeInTheDocument();
+  });
+
+  it("hides the transfer ownership button when a transfer is already pending", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/crm/roles`, () => HttpResponse.json({ success: true, data: ROLES })),
+      http.get(`${API_BASE}/crm/members`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [
+            {
+              id: "membership-2",
+              userId: "user-2",
+              userName: "Grace Hopper",
+              userEmail: "grace@outfiqe.test",
+              roleId: "role-member",
+              roleName: "Member",
+              status: "ACTIVE",
+              isSuperAdmin: false,
+              createdAt: "2026-01-01T00:00:00.000Z",
+            },
+          ],
+        }),
+      ),
+    );
+
+    renderMembersSection({ viewerIsSuperAdmin: true, hasPendingOwnershipTransfer: true });
+
+    await screen.findByText("Grace Hopper");
+    expect(screen.queryByRole("button", { name: "Transfer ownership" })).not.toBeInTheDocument();
+  });
+
+  it("requests an ownership transfer after confirming in the modal", async () => {
+    let lastTransferBody: unknown;
+    mswServer.use(
+      http.get(`${API_BASE}/crm/roles`, () => HttpResponse.json({ success: true, data: ROLES })),
+      http.get(`${API_BASE}/crm/members`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [
+            {
+              id: "membership-2",
+              userId: "user-2",
+              userName: "Grace Hopper",
+              userEmail: "grace@outfiqe.test",
+              roleId: "role-member",
+              roleName: "Member",
+              status: "ACTIVE",
+              isSuperAdmin: false,
+              createdAt: "2026-01-01T00:00:00.000Z",
+            },
+          ],
+        }),
+      ),
+      http.post(`${API_BASE}/crm/ownership-transfer`, async ({ request }) => {
+        lastTransferBody = await request.json();
+        return HttpResponse.json({ success: true, data: null }, { status: 201 });
+      }),
+    );
+
+    renderMembersSection({ viewerIsSuperAdmin: true });
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Transfer ownership" }));
+
+    const dialog = screen.getByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Transfer ownership" }));
+
+    await waitFor(() => expect(lastTransferBody).toEqual({ toMembershipId: "membership-2" }));
   });
 });

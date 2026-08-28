@@ -1,5 +1,8 @@
 import { env } from "#config/env.config.js";
-import { crmOrganizationInviteTemplate } from "#email-templates/templates.js";
+import {
+  crmOrganizationInviteTemplate,
+  crmOwnershipTransferRequestTemplate,
+} from "#email-templates/templates.js";
 import { type MembershipStatus, UserRole } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
@@ -10,6 +13,7 @@ import { userRepository } from "#modules/users/user.repository.js";
 
 import {
   ORGANIZATION_INVITE_TTL_MS,
+  OWNERSHIP_TRANSFER_REQUEST_TTL_MS,
   PLATFORM_ACCESS_PERMISSION_KEY,
   RESERVED_SUBDOMAINS,
 } from "./crm-access.constants.js";
@@ -19,14 +23,27 @@ import type {
   MembershipSummary,
   OrganizationInviteSummary,
   OrganizationRecord,
+  OwnershipTransferRequestRecord,
+  PendingOwnershipTransferSummary,
   PermissionRecord,
   RoleWithPermissions,
 } from "./crm-access.types.js";
-import { toInviteSummary, toMembershipSummary } from "./crm-access.utils.js";
+import {
+  toInviteSummary,
+  toMembershipSummary,
+  toPendingOwnershipTransferSummary,
+} from "./crm-access.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
 const FORBIDDEN_STATUS = 403;
+const BAD_REQUEST_STATUS = 400;
+
+const isOwnershipTransferPending = (request: OwnershipTransferRequestRecord): boolean =>
+  !request.acceptedAt && !request.declinedAt && !request.revokedAt;
+
+const isOwnershipTransferExpired = (request: OwnershipTransferRequestRecord): boolean =>
+  request.expiresAt.getTime() <= Date.now();
 
 export const crmAccessService = {
   async resolveHasPlatformAccess(userId: string): Promise<boolean> {
@@ -232,5 +249,155 @@ export const crmAccessService = {
       }
       throw err;
     }
+  },
+
+  async getPendingOwnershipTransfer(
+    organizationId: string,
+  ): Promise<PendingOwnershipTransferSummary | null> {
+    const request = await crmAccessRepository.findPendingOwnershipTransfer(organizationId);
+    return request ? toPendingOwnershipTransferSummary(request) : null;
+  },
+
+  async createOwnershipTransfer(
+    organization: OrganizationRecord,
+    fromMembershipId: string,
+    toMembershipId: string,
+  ): Promise<void> {
+    if (organization.superAdminMembershipId !== fromMembershipId) {
+      throw new AppError(
+        "NOT_SUPERADMIN",
+        "Only the current owner can transfer ownership.",
+        FORBIDDEN_STATUS,
+      );
+    }
+
+    if (toMembershipId === fromMembershipId) {
+      throw new AppError(
+        "TRANSFER_SELF",
+        "Can't transfer ownership to yourself.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    const toMembership = await crmAccessRepository.findMembershipById(
+      organization.id,
+      toMembershipId,
+    );
+    if (!toMembership || toMembership.status !== "ACTIVE") {
+      throw new AppError("MEMBERSHIP_NOT_FOUND", "Member not found.", NOT_FOUND_STATUS);
+    }
+
+    const pendingTransfer = await crmAccessRepository.findPendingOwnershipTransfer(organization.id);
+    if (pendingTransfer) {
+      throw new AppError(
+        "TRANSFER_ALREADY_PENDING",
+        "An ownership transfer is already pending for this organization.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    await crmAccessRepository.createOwnershipTransferRequest({
+      organizationId: organization.id,
+      fromMembershipId,
+      toMembershipId,
+      expiresAt: new Date(Date.now() + OWNERSHIP_TRANSFER_REQUEST_TTL_MS),
+    });
+
+    const recipientUser = await userRepository.findById(toMembership.userId);
+    if (!recipientUser) return;
+
+    const { subject, html } = crmOwnershipTransferRequestTemplate(
+      organization.name,
+      `${env.ADMIN_URL}/crm`,
+    );
+    await sendEmail({
+      to: recipientUser.email,
+      subject,
+      body: `You've been asked to become the owner of ${organization.name} on Outfiqe CRM: ${env.ADMIN_URL}/crm`,
+      html,
+    });
+
+    logger.info(`Ownership transfer requested for ${organization.id} to ${toMembershipId}`);
+  },
+
+  async acceptOwnershipTransfer(
+    organization: OrganizationRecord,
+    requestId: string,
+    acceptingUserId: string,
+  ): Promise<void> {
+    const request = await crmAccessRepository.findOwnershipTransferById(organization.id, requestId);
+    if (!request || !isOwnershipTransferPending(request) || isOwnershipTransferExpired(request)) {
+      throw new AppError(
+        "TRANSFER_INVALID",
+        "This ownership transfer is no longer available.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const toMembership = await crmAccessRepository.findMembershipById(
+      organization.id,
+      request.toMembershipId,
+    );
+    if (!toMembership || toMembership.userId !== acceptingUserId) {
+      throw new AppError(
+        "TRANSFER_USER_MISMATCH",
+        "This ownership transfer wasn't addressed to you.",
+        FORBIDDEN_STATUS,
+      );
+    }
+    if (toMembership.status !== "ACTIVE") {
+      throw new AppError(
+        "MEMBERSHIP_NOT_FOUND",
+        "Your membership is no longer active.",
+        NOT_FOUND_STATUS,
+      );
+    }
+
+    await crmAccessRepository.acceptOwnershipTransfer(request);
+  },
+
+  async declineOwnershipTransfer(
+    organization: OrganizationRecord,
+    requestId: string,
+    decliningUserId: string,
+  ): Promise<void> {
+    const request = await crmAccessRepository.findOwnershipTransferById(organization.id, requestId);
+    if (!request || !isOwnershipTransferPending(request) || isOwnershipTransferExpired(request)) {
+      throw new AppError(
+        "TRANSFER_INVALID",
+        "This ownership transfer is no longer available.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const toMembership = await crmAccessRepository.findMembershipById(
+      organization.id,
+      request.toMembershipId,
+    );
+    if (!toMembership || toMembership.userId !== decliningUserId) {
+      throw new AppError(
+        "TRANSFER_USER_MISMATCH",
+        "This ownership transfer wasn't addressed to you.",
+        FORBIDDEN_STATUS,
+      );
+    }
+
+    await crmAccessRepository.declineOwnershipTransfer(organization.id, requestId);
+  },
+
+  async revokeOwnershipTransfer(
+    organization: OrganizationRecord,
+    requestId: string,
+  ): Promise<void> {
+    const request = await crmAccessRepository.findOwnershipTransferById(organization.id, requestId);
+    if (!request || !isOwnershipTransferPending(request)) {
+      throw new AppError(
+        "TRANSFER_INVALID",
+        "This ownership transfer is no longer pending.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    await crmAccessRepository.revokeOwnershipTransfer(organization.id, requestId);
   },
 };

@@ -1832,9 +1832,10 @@ model Organization {
   createdAt              DateTime  @default(now()) @map("created_at")
   updatedAt              DateTime  @updatedAt @map("updated_at")
 
-  memberships Membership[]
-  roles       Role[]
-  invites     OrganizationInvite[]
+  memberships               Membership[]
+  roles                     Role[]
+  invites                   OrganizationInvite[]
+  ownershipTransferRequests OwnershipTransferRequest[]
 
   @@map("organizations")
 }
@@ -1851,6 +1852,9 @@ model Membership {
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   role         Role         @relation(fields: [roleId], references: [id])
+
+  ownershipTransfersSent     OwnershipTransferRequest[] @relation("OwnershipTransferFrom")
+  ownershipTransfersReceived OwnershipTransferRequest[] @relation("OwnershipTransferTo")
 
   @@unique([userId, organizationId])
   @@index([organizationId])
@@ -1870,7 +1874,7 @@ model Role {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   memberships  Membership[]
   permissions  RolePermission[]
   invites      OrganizationInvite[]
@@ -1919,6 +1923,26 @@ model OrganizationInvite {
   @@index([organizationId])
   @@index([email])
   @@map("organization_invites")
+}
+
+model OwnershipTransferRequest {
+  id               String    @id @default(uuid()) @db.Uuid
+  organizationId   String    @map("organization_id") @db.Uuid
+  fromMembershipId String    @map("from_membership_id") @db.Uuid
+  toMembershipId   String    @map("to_membership_id") @db.Uuid
+  expiresAt        DateTime  @map("expires_at")
+  acceptedAt       DateTime? @map("accepted_at")
+  declinedAt       DateTime? @map("declined_at")
+  revokedAt        DateTime? @map("revoked_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  fromMembership Membership   @relation("OwnershipTransferFrom", fields: [fromMembershipId], references: [id], onDelete: Cascade)
+  toMembership   Membership   @relation("OwnershipTransferTo", fields: [toMembershipId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([toMembershipId])
+  @@map("ownership_transfer_requests")
 }
 
 model ImageProcessingAsset {

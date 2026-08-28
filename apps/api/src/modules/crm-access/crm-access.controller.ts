@@ -9,8 +9,10 @@ import type {
   AcceptOrganizationInviteBody,
   CreateOrganizationBody,
   CreateOrganizationInviteBody,
+  CreateOwnershipTransferBody,
   InviteIdParams,
   MembershipIdParams,
+  OwnershipTransferIdParams,
   UpdateMembershipBody,
 } from "./crm-access.schemas.js";
 import { crmAccessService } from "./crm-access.service.js";
@@ -39,9 +41,12 @@ export const crmAccessController = {
   async getOrganization(_req: Request, res: Response) {
     const organization = getResolvedOrganization(res);
     const membership = getCrmMembership(res);
+    const pendingOwnershipTransfer = await crmAccessService.getPendingOwnershipTransfer(
+      organization.id,
+    );
     sendSuccess(
       res,
-      toOrganizationWithViewerContext(organization, membership),
+      toOrganizationWithViewerContext(organization, membership, pendingOwnershipTransfer),
       "CRM organization.",
     );
   },
@@ -101,5 +106,40 @@ export const crmAccessController = {
 
     const membership = await crmAccessService.acceptInvite(token, principal.userId);
     sendSuccess(res, membership, "CRM access granted.", CREATED_STATUS);
+  },
+
+  async createOwnershipTransfer(_req: Request, res: Response) {
+    const { toMembershipId } = validated.body<CreateOwnershipTransferBody>(res);
+    const organization = getResolvedOrganization(res);
+    const membership = getCrmMembership(res);
+
+    await crmAccessService.createOwnershipTransfer(organization, membership.id, toMembershipId);
+    sendSuccess(res, null, "Ownership transfer requested.", CREATED_STATUS);
+  },
+
+  async acceptOwnershipTransfer(_req: Request, res: Response) {
+    const { requestId } = validated.params<OwnershipTransferIdParams>(res);
+    const organization = getResolvedOrganization(res);
+    const principal = requireAuthPrincipal(res);
+
+    await crmAccessService.acceptOwnershipTransfer(organization, requestId, principal.userId);
+    sendSuccess(res, null, "Ownership transfer accepted.");
+  },
+
+  async declineOwnershipTransfer(_req: Request, res: Response) {
+    const { requestId } = validated.params<OwnershipTransferIdParams>(res);
+    const organization = getResolvedOrganization(res);
+    const principal = requireAuthPrincipal(res);
+
+    await crmAccessService.declineOwnershipTransfer(organization, requestId, principal.userId);
+    sendSuccess(res, null, "Ownership transfer declined.");
+  },
+
+  async revokeOwnershipTransfer(_req: Request, res: Response) {
+    const { requestId } = validated.params<OwnershipTransferIdParams>(res);
+    const organization = getResolvedOrganization(res);
+
+    await crmAccessService.revokeOwnershipTransfer(organization, requestId);
+    sendSuccess(res, null, "Ownership transfer revoked.");
   },
 };

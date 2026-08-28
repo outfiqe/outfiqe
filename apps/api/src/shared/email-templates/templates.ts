@@ -301,3 +301,18 @@ export const crmOrganizationInviteTemplate = (
     `,
   }),
 });
+
+export const crmOwnershipTransferRequestTemplate = (
+  organizationName: string,
+  crmUrl: string,
+): { subject: string; html: string } => ({
+  subject: `You've been asked to become the owner of ${organizationName}`,
+  html: renderEmailLayout({
+    preheader: `You've been asked to become the owner of ${organizationName} on the Outfiqe CRM.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Ownership transfer requested</h1>
+      <p style="color:${SUB};margin:0;">The current owner of "${organizationName}" wants to make you its owner on the Outfiqe CRM. Sign in and open the CRM to accept or decline.</p>
+      ${emailButtonHtml("Open CRM", crmUrl)}
+    `,
+  }),
+});

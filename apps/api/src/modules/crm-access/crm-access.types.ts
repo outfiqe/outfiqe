@@ -1,6 +1,6 @@
 import type { MembershipStatus } from "#generated/prisma/enums.js";
 
-export interface OrganizationRecord {
+export type OrganizationRecord = {
   id: string;
   name: string;
   subdomain: string;
@@ -10,28 +10,28 @@ export interface OrganizationRecord {
   superAdminMembershipId: string | null;
   createdAt: Date;
   updatedAt: Date;
-}
+};
 
-export interface RoleRecord {
+export type RoleRecord = {
   id: string;
   organizationId: string;
   name: string;
   isBuiltIn: boolean;
   createdAt: Date;
   updatedAt: Date;
-}
+};
 
-export interface RoleWithPermissions extends RoleRecord {
+export type RoleWithPermissions = RoleRecord & {
   permissionKeys: string[];
-}
+};
 
-export interface PermissionRecord {
+export type PermissionRecord = {
   key: string;
   label: string;
   group: string;
-}
+};
 
-export interface MembershipRecord {
+export type MembershipRecord = {
   id: string;
   userId: string;
   organizationId: string;
@@ -39,18 +39,28 @@ export interface MembershipRecord {
   status: MembershipStatus;
   createdAt: Date;
   updatedAt: Date;
-}
+};
 
-export interface MembershipWithRole extends MembershipRecord {
+export type MembershipWithRole = MembershipRecord & {
   role: RoleWithPermissions;
-}
+};
 
-export interface OrganizationWithViewerContext extends OrganizationRecord {
+export type PendingOwnershipTransferSummary = {
+  id: string;
+  toMembershipId: string;
+  toUserId: string;
+  toUserName: string;
+  fromUserName: string;
+  expiresAt: Date;
+};
+
+export type OrganizationWithViewerContext = OrganizationRecord & {
   viewerIsSuperAdmin: boolean;
   viewerPermissionKeys: string[];
-}
+  pendingOwnershipTransfer: PendingOwnershipTransferSummary | null;
+};
 
-export interface MembershipSummary {
+export type MembershipSummary = {
   id: string;
   userId: string;
   userName: string;
@@ -60,9 +70,9 @@ export interface MembershipSummary {
   status: MembershipStatus;
   isSuperAdmin: boolean;
   createdAt: Date;
-}
+};
 
-export interface MembershipJoinRow {
+export type MembershipJoinRow = {
   id: string;
   userId: string;
   roleId: string;
@@ -70,11 +80,11 @@ export interface MembershipJoinRow {
   createdAt: Date;
   user: { name: string; email: string };
   role: { name: string };
-}
+};
 
 export type OrganizationInviteStatus = "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
 
-export interface OrganizationInviteRecord {
+export type OrganizationInviteRecord = {
   id: string;
   organizationId: string;
   email: string;
@@ -85,9 +95,9 @@ export interface OrganizationInviteRecord {
   revokedAt: Date | null;
   invitedById: string;
   createdAt: Date;
-}
+};
 
-export interface OrganizationInviteSummary {
+export type OrganizationInviteSummary = {
   id: string;
   email: string;
   roleId: string;
@@ -95,25 +105,49 @@ export interface OrganizationInviteSummary {
   status: OrganizationInviteStatus;
   createdAt: Date;
   expiresAt: Date;
-}
+};
 
-export interface CreateOrganizationInviteInput {
+export type CreateOrganizationInviteInput = {
   organizationId: string;
   email: string;
   roleId: string;
   tokenHash: string;
   expiresAt: Date;
   invitedById: string;
-}
+};
 
-export interface CreateRoleInput {
+export type OwnershipTransferRequestRecord = {
+  id: string;
+  organizationId: string;
+  fromMembershipId: string;
+  toMembershipId: string;
+  expiresAt: Date;
+  acceptedAt: Date | null;
+  declinedAt: Date | null;
+  revokedAt: Date | null;
+  createdAt: Date;
+};
+
+export type CreateOwnershipTransferRequestInput = {
+  organizationId: string;
+  fromMembershipId: string;
+  toMembershipId: string;
+  expiresAt: Date;
+};
+
+export type OwnershipTransferJoinRow = OwnershipTransferRequestRecord & {
+  toMembership: { userId: string; user: { name: string } };
+  fromMembership: { user: { name: string } };
+};
+
+export type CreateRoleInput = {
   organizationId: string;
   name: string;
   isBuiltIn?: boolean;
   permissionKeys: string[];
-}
+};
 
-export interface UpdateMembershipInput {
+export type UpdateMembershipInput = {
   roleId?: string;
   status?: MembershipStatus;
-}
+};

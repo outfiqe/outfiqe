@@ -8,15 +8,30 @@ import type {
   OrganizationInviteSummary,
   OrganizationRecord,
   OrganizationWithViewerContext,
+  OwnershipTransferJoinRow,
+  PendingOwnershipTransferSummary,
 } from "./crm-access.types.js";
 
 export const toOrganizationWithViewerContext = (
   organization: OrganizationRecord,
   viewerMembership: MembershipWithRole,
+  pendingOwnershipTransfer: PendingOwnershipTransferSummary | null,
 ): OrganizationWithViewerContext => ({
   ...organization,
   viewerIsSuperAdmin: organization.superAdminMembershipId === viewerMembership.id,
   viewerPermissionKeys: viewerMembership.role.permissionKeys,
+  pendingOwnershipTransfer,
+});
+
+export const toPendingOwnershipTransferSummary = (
+  request: OwnershipTransferJoinRow,
+): PendingOwnershipTransferSummary => ({
+  id: request.id,
+  toMembershipId: request.toMembershipId,
+  toUserId: request.toMembership.userId,
+  toUserName: request.toMembership.user.name,
+  fromUserName: request.fromMembership.user.name,
+  expiresAt: request.expiresAt,
 });
 
 export const toMembershipSummary = (

@@ -6,6 +6,16 @@ export type MembershipStatusValue = z.infer<typeof membershipStatusSchema>;
 export const organizationInviteStatusSchema = z.enum(["PENDING", "ACCEPTED", "REVOKED", "EXPIRED"]);
 export type OrganizationInviteStatusValue = z.infer<typeof organizationInviteStatusSchema>;
 
+export const pendingOwnershipTransferSchema = z.object({
+  id: z.string(),
+  toMembershipId: z.string(),
+  toUserId: z.string(),
+  toUserName: z.string(),
+  fromUserName: z.string(),
+  expiresAt: z.string(),
+});
+export type PendingOwnershipTransfer = z.infer<typeof pendingOwnershipTransferSchema>;
+
 export const organizationSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -14,6 +24,7 @@ export const organizationSchema = z.object({
   superAdminMembershipId: z.string().nullable(),
   viewerIsSuperAdmin: z.boolean(),
   viewerPermissionKeys: z.array(z.string()),
+  pendingOwnershipTransfer: pendingOwnershipTransferSchema.nullable(),
 });
 export type Organization = z.infer<typeof organizationSchema>;
 

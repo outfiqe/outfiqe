@@ -1,5 +1,6 @@
-import { Badge, Button, Select, toast } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Modal, Select, toast } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -11,8 +12,18 @@ const STATUS_TONE: Record<MembershipStatusValue, "neutral" | "positive" | "negat
   DEACTIVATED: "negative",
 };
 
-export const MembersSection = () => {
+type MembersSectionProps = {
+  viewerIsSuperAdmin: boolean;
+  hasPendingOwnershipTransfer: boolean;
+};
+
+export const MembersSection = ({
+  viewerIsSuperAdmin,
+  hasPendingOwnershipTransfer,
+}: MembersSectionProps) => {
   const queryClient = useQueryClient();
+  const [transferTarget, setTransferTarget] = useState<MembershipSummary | null>(null);
+  const [transferError, setTransferError] = useState<string | null>(null);
 
   const {
     data: members,
@@ -42,7 +53,27 @@ export const MembersSection = () => {
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
+  const transferOwnership = useMutation({
+    mutationFn: (toMembershipId: string) => crmApi.createOwnershipTransfer(toMembershipId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["crm-organization"] });
+      setTransferTarget(null);
+    },
+    onError: (mutationError) => setTransferError(getErrorMessage(mutationError)),
+  });
+
   const isActing = changeRole.isPending || toggleStatus.isPending;
+
+  const canTransferOwnershipTo = (member: MembershipSummary) =>
+    viewerIsSuperAdmin &&
+    !member.isSuperAdmin &&
+    member.status === "ACTIVE" &&
+    !hasPendingOwnershipTransfer;
+
+  const openTransferConfirm = (member: MembershipSummary) => {
+    setTransferError(null);
+    setTransferTarget(member);
+  };
 
   const renderRow = (member: MembershipSummary) => (
     <div
@@ -90,6 +121,11 @@ export const MembersSection = () => {
         >
           {member.status === "ACTIVE" ? "Deactivate" : "Reactivate"}
         </Button>
+        {canTransferOwnershipTo(member) && (
+          <Button variant="outline" size="sm" onClick={() => openTransferConfirm(member)}>
+            Transfer ownership
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -107,6 +143,41 @@ export const MembersSection = () => {
 
         {members?.map(renderRow)}
       </div>
+
+      {transferTarget && (
+        <Modal
+          open
+          onClose={() => setTransferTarget(null)}
+          title="Transfer ownership"
+          footer={
+            <div className="space-y-3">
+              {transferError && <FormBanner>{transferError}</FormBanner>}
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setTransferTarget(null)}
+                  disabled={transferOwnership.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => transferOwnership.mutate(transferTarget.id)}
+                  disabled={transferOwnership.isPending}
+                >
+                  {transferOwnership.isPending ? "Requesting…" : "Transfer ownership"}
+                </Button>
+              </div>
+            </div>
+          }
+        >
+          <p className="text-sm text-muted-foreground">
+            Transfer ownership to <strong>{transferTarget.userName}</strong>? They&apos;ll need to
+            accept before this takes effect.
+          </p>
+        </Modal>
+      )}
     </div>
   );
 };
