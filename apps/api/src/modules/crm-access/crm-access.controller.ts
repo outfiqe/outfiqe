@@ -4,7 +4,7 @@ import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 
-import { getResolvedOrganization } from "./crm-access.middleware.js";
+import { getCrmMembership, getResolvedOrganization } from "./crm-access.middleware.js";
 import type {
   AcceptOrganizationInviteBody,
   CreateOrganizationBody,
@@ -14,6 +14,7 @@ import type {
   UpdateMembershipBody,
 } from "./crm-access.schemas.js";
 import { crmAccessService } from "./crm-access.service.js";
+import { toOrganizationWithViewerContext } from "./crm-access.utils.js";
 
 const CREATED_STATUS = 201;
 
@@ -36,7 +37,13 @@ export const crmAccessController = {
   },
 
   async getOrganization(_req: Request, res: Response) {
-    sendSuccess(res, getResolvedOrganization(res), "CRM organization.");
+    const organization = getResolvedOrganization(res);
+    const membership = getCrmMembership(res);
+    sendSuccess(
+      res,
+      toOrganizationWithViewerContext(organization, membership),
+      "CRM organization.",
+    );
   },
 
   async listPermissions(_req: Request, res: Response) {

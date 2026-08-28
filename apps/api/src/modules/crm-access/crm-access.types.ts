@@ -45,6 +45,11 @@ export interface MembershipWithRole extends MembershipRecord {
   role: RoleWithPermissions;
 }
 
+export interface OrganizationWithViewerContext extends OrganizationRecord {
+  viewerIsSuperAdmin: boolean;
+  viewerPermissionKeys: string[];
+}
+
 export interface MembershipSummary {
   id: string;
   userId: string;

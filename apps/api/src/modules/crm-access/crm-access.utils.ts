@@ -2,10 +2,22 @@ import { RESERVED_SUBDOMAINS, SUBDOMAIN_REGEX } from "./crm-access.constants.js"
 import type {
   MembershipJoinRow,
   MembershipSummary,
+  MembershipWithRole,
   OrganizationInviteRecord,
   OrganizationInviteStatus,
   OrganizationInviteSummary,
+  OrganizationRecord,
+  OrganizationWithViewerContext,
 } from "./crm-access.types.js";
+
+export const toOrganizationWithViewerContext = (
+  organization: OrganizationRecord,
+  viewerMembership: MembershipWithRole,
+): OrganizationWithViewerContext => ({
+  ...organization,
+  viewerIsSuperAdmin: organization.superAdminMembershipId === viewerMembership.id,
+  viewerPermissionKeys: viewerMembership.role.permissionKeys,
+});
 
 export const toMembershipSummary = (
   membership: MembershipJoinRow,
