@@ -1,30 +1,24 @@
-import { Button, Checkbox, Input, Select } from "@outfiqe/design-system";
+import { Checkbox, Input, Select } from "@outfiqe/design-system";
 
 import {
-  ANIMATION_OPTION_LABEL,
-  ANIMATION_OPTIONS,
-  AUTO_ANIMATION_OPTION,
-  BADGE_DESIGN_MODE,
   CATEGORY_OPTIONS,
+  DEFAULT_BADGE_ICON,
   RARITY_OPTIONS,
   RULE_BASED_REQUIREMENT_TYPES,
-  SHAPE_OPTIONS,
 } from "../badgeOptions.constants";
 import { ConditionsEditor } from "../conditions/ConditionsEditor";
-import type { BadgeCategoryValue, BadgeRarityValue, BadgeShapeValue } from "../schemas";
+import type { BadgeCategoryValue, BadgeRarityValue } from "../schemas";
 import type { BadgeFormState } from "./badgeForm.types";
 import { BrandSponsorField } from "./BrandSponsorField";
 
-export const BadgeFields = ({
+export const BadgeDetailsFields = ({
   idPrefix,
   form,
   onChange,
-  onOpenDesignStudio,
 }: {
   idPrefix: string;
   form: BadgeFormState;
   onChange: (form: BadgeFormState) => void;
-  onOpenDesignStudio: () => void;
 }) => {
   return (
     <div className="space-y-4">
@@ -46,13 +40,13 @@ export const BadgeFields = ({
               </div>
               <div className="space-y-1.5">
                 <label htmlFor={`${idPrefix}-icon`} className="block text-xs text-muted-foreground">
-                  Icon (emoji)
+                  Icon (emoji, optional)
                 </label>
                 <Input
                   id={`${idPrefix}-icon`}
-                  required
                   value={form.icon}
                   onChange={(e) => onChange({ ...form, icon: e.target.value })}
+                  placeholder={DEFAULT_BADGE_ICON}
                   className="w-20"
                 />
               </div>
@@ -71,183 +65,70 @@ export const BadgeFields = ({
                 onChange={(e) => onChange({ ...form, description: e.target.value })}
               />
             </div>
+            <p className="text-xs text-muted-foreground">
+              The emoji is the badge&apos;s text fallback (defaults to {DEFAULT_BADGE_ICON}) — its
+              shape, colour and any custom image live on the Design tab.
+            </p>
           </div>
         </div>
 
         <div className="rounded-xl border border-border p-4">
-          <p className="mb-3 text-sm font-medium text-foreground">Appearance</p>
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="space-y-1.5">
-                <label
-                  htmlFor={`${idPrefix}-category`}
-                  className="block text-xs text-muted-foreground"
-                >
-                  Category
-                </label>
-                <Select
-                  id={`${idPrefix}-category`}
-                  value={form.category}
-                  onChange={(e) =>
-                    onChange({ ...form, category: e.target.value as BadgeCategoryValue })
-                  }
-                  className="w-36"
-                >
-                  {CATEGORY_OPTIONS.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <label
-                  htmlFor={`${idPrefix}-rarity`}
-                  className="block text-xs text-muted-foreground"
-                >
-                  Rarity
-                </label>
-                <Select
-                  id={`${idPrefix}-rarity`}
-                  value={form.rarity}
-                  onChange={(e) =>
-                    onChange({ ...form, rarity: e.target.value as BadgeRarityValue })
-                  }
-                  className="w-36"
-                >
-                  {RARITY_OPTIONS.map((rarity) => (
-                    <option key={rarity} value={rarity}>
-                      {rarity}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+          <p className="mb-3 text-sm font-medium text-foreground">Classification</p>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1.5">
+              <label
+                htmlFor={`${idPrefix}-category`}
+                className="block text-xs text-muted-foreground"
+              >
+                Category
+              </label>
+              <Select
+                id={`${idPrefix}-category`}
+                value={form.category}
+                onChange={(e) =>
+                  onChange({ ...form, category: e.target.value as BadgeCategoryValue })
+                }
+                className="w-36"
+              >
+                {CATEGORY_OPTIONS.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </Select>
             </div>
-
-            {form.designMode === BADGE_DESIGN_MODE.STUDIO ? (
-              <div className="space-y-1.5">
-                <p className="block text-xs text-muted-foreground">Design</p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm text-foreground">
-                    Studio design ({form.studioLayers.length} layers)
-                  </p>
-                  <Button type="button" variant="outline" size="sm" onClick={onOpenDesignStudio}>
-                    Edit
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      onChange({ ...form, designMode: BADGE_DESIGN_MODE.SIMPLE, studioLayers: [] })
-                    }
-                  >
-                    Use simple design
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-wrap items-end gap-3">
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor={`${idPrefix}-shape`}
-                    className="block text-xs text-muted-foreground"
-                  >
-                    Shape
-                  </label>
-                  <Select
-                    id={`${idPrefix}-shape`}
-                    value={form.shape}
-                    onChange={(e) =>
-                      onChange({ ...form, shape: e.target.value as BadgeShapeValue })
-                    }
-                    className="w-32"
-                  >
-                    {SHAPE_OPTIONS.map((shape) => (
-                      <option key={shape} value={shape}>
-                        {shape}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor={`${idPrefix}-color`}
-                    className="block text-xs text-muted-foreground"
-                  >
-                    Color
-                  </label>
-                  <Input
-                    id={`${idPrefix}-color`}
-                    type="color"
-                    value={form.primaryColor}
-                    onChange={(e) => onChange({ ...form, primaryColor: e.target.value })}
-                    className="h-11 w-16 p-1"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor={`${idPrefix}-open-studio`}
-                    className="block text-xs text-muted-foreground"
-                  >
-                    &nbsp;
-                  </label>
-                  <Button
-                    id={`${idPrefix}-open-studio`}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={onOpenDesignStudio}
-                  >
-                    Design Studio
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="space-y-1.5">
-                <label
-                  htmlFor={`${idPrefix}-animation`}
-                  className="block text-xs text-muted-foreground"
-                >
-                  Animation
-                </label>
-                <Select
-                  id={`${idPrefix}-animation`}
-                  value={form.animation}
-                  onChange={(e) =>
-                    onChange({
-                      ...form,
-                      animation: e.target.value as BadgeFormState["animation"],
-                    })
-                  }
-                  className="w-36"
-                >
-                  <option value={AUTO_ANIMATION_OPTION}>Auto (by rarity)</option>
-                  {ANIMATION_OPTIONS.map((animation) => (
-                    <option key={animation} value={animation}>
-                      {ANIMATION_OPTION_LABEL[animation]}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <label
-                  htmlFor={`${idPrefix}-xp-reward`}
-                  className="block text-xs text-muted-foreground"
-                >
-                  XP reward
-                </label>
-                <Input
-                  id={`${idPrefix}-xp-reward`}
-                  type="number"
-                  min={0}
-                  value={form.xpReward}
-                  onChange={(e) => onChange({ ...form, xpReward: e.target.value })}
-                  className="w-24"
-                />
-              </div>
+            <div className="space-y-1.5">
+              <label htmlFor={`${idPrefix}-rarity`} className="block text-xs text-muted-foreground">
+                Rarity
+              </label>
+              <Select
+                id={`${idPrefix}-rarity`}
+                value={form.rarity}
+                onChange={(e) => onChange({ ...form, rarity: e.target.value as BadgeRarityValue })}
+                className="w-36"
+              >
+                {RARITY_OPTIONS.map((rarity) => (
+                  <option key={rarity} value={rarity}>
+                    {rarity}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <label
+                htmlFor={`${idPrefix}-xp-reward`}
+                className="block text-xs text-muted-foreground"
+              >
+                XP reward
+              </label>
+              <Input
+                id={`${idPrefix}-xp-reward`}
+                type="number"
+                min={0}
+                value={form.xpReward}
+                onChange={(e) => onChange({ ...form, xpReward: e.target.value })}
+                className="w-24"
+              />
             </div>
           </div>
         </div>

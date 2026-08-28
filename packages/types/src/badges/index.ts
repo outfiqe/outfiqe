@@ -7,7 +7,9 @@ export type BadgeShape = "circle" | "shield" | "star" | "diamond" | "hexagon";
 
 export type BadgeAnimation = "none" | "glow" | "shimmer" | "pulse" | "radiant";
 
-export type BadgeLayerType = "background" | "icon" | "text";
+export type BadgeLayerType = "background" | "icon" | "text" | "image";
+
+export type BadgeImageFit = "contain" | "cover";
 
 type BadgeLayerBase = {
   id: string;
@@ -39,11 +41,19 @@ export type BadgeTextLayer = BadgeLayerBase & {
   fontWeight: "normal" | "bold";
 };
 
-export type BadgeLayer = BadgeBackgroundLayer | BadgeIconLayer | BadgeTextLayer;
+export type BadgeImageLayer = BadgeLayerBase & {
+  type: "image";
+  url: string;
+  fit: BadgeImageFit;
+  radius?: number;
+};
+
+export type BadgeLayer = BadgeBackgroundLayer | BadgeIconLayer | BadgeTextLayer | BadgeImageLayer;
 
 export type LegacyBadgeDesignConfig = {
   shape: BadgeShape;
   primaryColor: string;
+  imageUrl?: string;
   animation?: BadgeAnimation;
 };
 

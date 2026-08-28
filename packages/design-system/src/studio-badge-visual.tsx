@@ -48,6 +48,22 @@ export const StudioBadgeVisual = ({
         );
       }
 
+      if (layer.type === "image") {
+        return (
+          <div
+            key={layer.id}
+            style={{
+              ...layerPositionStyle(layer),
+              backgroundImage: `url(${layer.url})`,
+              backgroundSize: layer.fit,
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center",
+              borderRadius: layer.radius ? `${layer.radius}%` : undefined,
+            }}
+          />
+        );
+      }
+
       return (
         <div
           key={layer.id}

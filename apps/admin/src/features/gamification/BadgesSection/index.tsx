@@ -1,48 +1,21 @@
 import { Button } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import { gamificationApi } from "../api";
 import type { BadgeAdmin } from "../schemas";
 import { BadgeCard } from "./BadgeCard";
-import { BADGES_QUERY_KEY, EMPTY_FORM } from "./badgeForm.constants";
-import { formForBadge } from "./badgeForm.utils";
-import { CreateBadgeModal } from "./CreateBadgeModal";
-import {
-  clearBadgeStudioDraft,
-  readBadgeStudioDraft,
-  resolveCreateFormFromDraft,
-  resolveEditingBadgeFromDraft,
-} from "./DesignStudio/badgeStudioDraft.utils";
-import { EditBadgeModal } from "./EditBadgeModal";
-
-const DUPLICATE_NAME_PREFIX = "Copy of ";
-
-const readAndClearBadgeStudioDraft = () => {
-  const draft = readBadgeStudioDraft();
-  if (draft) clearBadgeStudioDraft();
-  return draft;
-};
+import { BADGES_QUERY_KEY } from "./badgeForm.constants";
 
 export const BadgesSection = () => {
+  const navigate = useNavigate();
   const { data: badges, isLoading } = useQuery({
     queryKey: BADGES_QUERY_KEY,
     queryFn: gamificationApi.listBadgesAdmin,
   });
 
-  const [resumedBadgeStudioDraft] = useState(readAndClearBadgeStudioDraft);
-
-  const [editingBadge, setEditingBadge] = useState(() =>
-    resolveEditingBadgeFromDraft(resumedBadgeStudioDraft),
-  );
-  const [createForm, setCreateForm] = useState(() =>
-    resolveCreateFormFromDraft(resumedBadgeStudioDraft),
-  );
-
-  const handleDuplicate = (badge: BadgeAdmin) => {
-    const duplicatedForm = formForBadge(badge);
-    setCreateForm({ ...duplicatedForm, name: `${DUPLICATE_NAME_PREFIX}${duplicatedForm.name}` });
-  };
+  const duplicateBadge = (badge: BadgeAdmin) =>
+    void navigate({ to: "/gamification/badges/new", search: { duplicateFrom: badge.id } });
 
   return (
     <div>
@@ -53,8 +26,10 @@ export const BadgesSection = () => {
             The full badge catalog — rule-based and admin-award.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setCreateForm(EMPTY_FORM)}>
-          New badge
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/gamification/badges/new" search={{ duplicateFrom: undefined }}>
+            New badge
+          </Link>
         </Button>
       </div>
 
@@ -63,29 +38,9 @@ export const BadgesSection = () => {
         {badges?.length === 0 && <p className="text-sm text-muted-foreground">No badges yet.</p>}
 
         {badges?.map((badge) => (
-          <BadgeCard
-            key={badge.id}
-            badge={badge}
-            onEdit={(selectedBadge) => setEditingBadge({ badge: selectedBadge })}
-            onDuplicate={handleDuplicate}
-          />
+          <BadgeCard key={badge.id} badge={badge} onDuplicate={duplicateBadge} />
         ))}
       </div>
-
-      {createForm && (
-        <CreateBadgeModal initialForm={createForm} onClose={() => setCreateForm(null)} />
-      )}
-
-      {editingBadge && (
-        <EditBadgeModal
-          key={editingBadge.badge.id}
-          badge={editingBadge.badge}
-          initialForm={editingBadge.formOverride?.form}
-          initialIsActive={editingBadge.formOverride?.isActive}
-          initialAchievementIsActive={editingBadge.formOverride?.achievementIsActive}
-          onClose={() => setEditingBadge(null)}
-        />
-      )}
     </div>
   );
 };

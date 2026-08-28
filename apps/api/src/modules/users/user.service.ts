@@ -3,10 +3,16 @@ import { hashPassword } from "#lib/password.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { userRepository } from "./user.repository.js";
-import type { CreateUserInput, PublicUser, UpdateUserProfileInput } from "./user.types.js";
+import type {
+  CreateUserInput,
+  PublicUser,
+  UpdateUserProfileInput,
+  UserSearchResult,
+} from "./user.types.js";
 import { toPublicUser } from "./user.utils.js";
 
 const CONFLICT_STATUS = 409;
+const USER_SEARCH_LIMIT = 10;
 
 export const userService = {
   async createUser(input: CreateUserInput): Promise<PublicUser> {
@@ -32,6 +38,10 @@ export const userService = {
   async listUsers(): Promise<PublicUser[]> {
     const users = await userRepository.list();
     return users.map(toPublicUser);
+  },
+
+  async searchUsers(query: string): Promise<UserSearchResult[]> {
+    return userRepository.search(query, USER_SEARCH_LIMIT);
   },
 
   async updateMe(id: string, input: UpdateUserProfileInput): Promise<PublicUser> {

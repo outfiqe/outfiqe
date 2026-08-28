@@ -1,5 +1,13 @@
 import { cn } from "@outfiqe/design-system";
-import { ArrowDown, ArrowUp, Circle, Sparkles, Trash2, Type } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Circle,
+  Image as ImageIcon,
+  Sparkles,
+  Trash2,
+  Type,
+} from "lucide-react";
 
 import type { BadgeLayer } from "../../schemas";
 import { BADGE_LAYER_TYPE, LAYER_TYPE_LABEL } from "./studioLayer.constants";
@@ -7,12 +15,14 @@ import { BADGE_LAYER_TYPE, LAYER_TYPE_LABEL } from "./studioLayer.constants";
 const layerLabel = (layer: BadgeLayer): string => {
   if (layer.type === BADGE_LAYER_TYPE.TEXT) return layer.content || LAYER_TYPE_LABEL.text;
   if (layer.type === BADGE_LAYER_TYPE.ICON) return layer.glyph || LAYER_TYPE_LABEL.icon;
+  if (layer.type === BADGE_LAYER_TYPE.IMAGE) return LAYER_TYPE_LABEL.image;
   return LAYER_TYPE_LABEL.background;
 };
 
 const LayerTypeIcon = ({ type }: { type: BadgeLayer["type"] }) => {
   if (type === BADGE_LAYER_TYPE.TEXT) return <Type className="size-3.5 shrink-0" />;
   if (type === BADGE_LAYER_TYPE.ICON) return <Sparkles className="size-3.5 shrink-0" />;
+  if (type === BADGE_LAYER_TYPE.IMAGE) return <ImageIcon className="size-3.5 shrink-0" />;
   return <Circle className="size-3.5 shrink-0" />;
 };
 

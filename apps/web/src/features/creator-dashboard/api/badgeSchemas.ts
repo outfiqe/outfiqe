@@ -47,12 +47,17 @@ export type BadgeAnimationValue = (typeof BadgeAnimation)[keyof typeof BadgeAnim
 const LAYER_ID_MAX_LENGTH = 64;
 const LAYER_GLYPH_MAX_LENGTH = 8;
 const LAYER_TEXT_MAX_LENGTH = 40;
+const LAYER_IMAGE_URL_MAX_LENGTH = 2048;
 const MAX_BADGE_LAYERS = 12;
 const MIN_LAYER_PERCENT = 0;
 const MAX_LAYER_PERCENT = 100;
 const MIN_LAYER_FONT_SIZE = 5;
 const MAX_LAYER_FONT_SIZE = 100;
 const MAX_LAYER_BORDER_WIDTH = 8;
+const MAX_LAYER_RADIUS = 100;
+
+export const BadgeImageFit = { CONTAIN: "contain", COVER: "cover" } as const;
+export type BadgeImageFitValue = (typeof BadgeImageFit)[keyof typeof BadgeImageFit];
 
 const badgeLayerBaseFields = {
   id: z.string().trim().min(1).max(LAYER_ID_MAX_LENGTH),
@@ -91,6 +96,15 @@ export const badgeLayerSchema = z.discriminatedUnion("type", [
       fontWeight: z.enum(["normal", "bold"]),
     })
     .strict(),
+  z
+    .object({
+      ...badgeLayerBaseFields,
+      type: z.literal("image"),
+      url: z.string().trim().min(1).max(LAYER_IMAGE_URL_MAX_LENGTH),
+      fit: z.enum(BadgeImageFit),
+      radius: z.number().min(0).max(MAX_LAYER_RADIUS).optional(),
+    })
+    .strict(),
 ]);
 export type BadgeLayer = z.infer<typeof badgeLayerSchema>;
 
@@ -98,6 +112,7 @@ const legacyBadgeDesignConfigSchema = z
   .object({
     shape: z.enum(BadgeShape),
     primaryColor: z.string(),
+    imageUrl: z.string().trim().min(1).max(LAYER_IMAGE_URL_MAX_LENGTH).optional(),
     animation: z.enum(BadgeAnimation).optional(),
   })
   .strict();

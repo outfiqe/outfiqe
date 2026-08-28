@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { isStudioDesignConfig, legacyShapeAndColorOf, studioLayersOf } from "./designConfig.utils";
+import {
+  isStudioDesignConfig,
+  legacyImageUrlOf,
+  legacyShapeAndColorOf,
+  studioLayersOf,
+} from "./designConfig.utils";
 import type { BadgeDesignConfig, BadgeLayer } from "./schemas";
 
 const legacyConfig: BadgeDesignConfig = { shape: "star", primaryColor: "#ff0000" };
@@ -48,5 +53,18 @@ describe("studioLayersOf", () => {
 
   it("returns the layers for a studio design config", () => {
     expect(studioLayersOf(studioConfig)).toBe(layers);
+  });
+});
+
+describe("legacyImageUrlOf", () => {
+  it("returns the imageUrl from a legacy design config", () => {
+    expect(
+      legacyImageUrlOf({ shape: "circle", primaryColor: "#000", imageUrl: "https://cdn/i.png" }),
+    ).toBe("https://cdn/i.png");
+  });
+
+  it("returns an empty string for a legacy config with no imageUrl or a studio config", () => {
+    expect(legacyImageUrlOf(legacyConfig)).toBe("");
+    expect(legacyImageUrlOf(studioConfig)).toBe("");
   });
 });

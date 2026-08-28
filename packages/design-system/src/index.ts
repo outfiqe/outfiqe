@@ -26,6 +26,7 @@ export * from "./progress-bar";
 export * from "./rating";
 export * from "./select";
 export * from "./skeleton";
+export * from "./tabs";
 export * from "./theme";
 export * from "./theme-toggle";
 export * from "./toast";

@@ -5,6 +5,7 @@ import { achievementConditionSchema } from "#modules/achievements/achievement.sc
 
 import {
   BADGE_ANIMATION,
+  BADGE_IMAGE_FIT,
   BADGE_LAYER_TYPE,
   BADGE_SHAPE,
   MAX_BADGE_LAYERS,
@@ -18,6 +19,9 @@ const REASON_MAX_LENGTH = 500;
 const LAYER_ID_MAX_LENGTH = 64;
 const LAYER_GLYPH_MAX_LENGTH = 8;
 const LAYER_TEXT_MAX_LENGTH = 40;
+const LAYER_IMAGE_URL_MAX_LENGTH = 2048;
+const MIN_LAYER_RADIUS = 0;
+const MAX_LAYER_RADIUS = 100;
 const MIN_LAYER_PERCENT = 0;
 const MAX_LAYER_PERCENT = 100;
 const MIN_LAYER_FONT_SIZE = 5;
@@ -69,6 +73,15 @@ export const badgeLayerSchema = z.discriminatedUnion("type", [
       fontWeight: z.enum(["normal", "bold"]),
     })
     .strict(),
+  z
+    .object({
+      ...badgeLayerBaseFields,
+      type: z.literal(BADGE_LAYER_TYPE.IMAGE),
+      url: z.string().trim().min(1).max(LAYER_IMAGE_URL_MAX_LENGTH),
+      fit: z.enum(BADGE_IMAGE_FIT),
+      radius: z.number().min(MIN_LAYER_RADIUS).max(MAX_LAYER_RADIUS).optional(),
+    })
+    .strict(),
 ]);
 export type BadgeLayer = z.infer<typeof badgeLayerSchema>;
 
@@ -76,6 +89,7 @@ const legacyDesignConfigSchema = z
   .object({
     shape: z.enum(BADGE_SHAPE),
     primaryColor: z.string(),
+    imageUrl: z.string().trim().min(1).max(LAYER_IMAGE_URL_MAX_LENGTH).optional(),
     animation: z.enum(BADGE_ANIMATION).optional(),
   })
   .strict();

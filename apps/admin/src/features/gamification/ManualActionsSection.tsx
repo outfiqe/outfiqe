@@ -5,6 +5,7 @@ import { type FormEvent, useState } from "react";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { gamificationApi } from "./api";
+import { type SelectedUser, UserSearchField } from "./UserSearchField";
 
 const BADGES_QUERY_KEY = ["admin-badges"];
 const MANUAL_AWARDS_QUERY_KEY = ["admin-manual-awards"];
@@ -18,18 +19,18 @@ const AwardBadgeForm = () => {
   const activeBadges = badges?.filter((badge) => badge.isActive) ?? [];
 
   const [badgeId, setBadgeId] = useState("");
-  const [userId, setUserId] = useState("");
+  const [recipient, setRecipient] = useState<SelectedUser | null>(null);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const award = useMutation({
-    mutationFn: () => gamificationApi.awardBadge(badgeId, userId, reason),
+    mutationFn: (recipientId: string) => gamificationApi.awardBadge(badgeId, recipientId, reason),
     onSuccess: (result) => {
       if (!result.awarded) {
         setError(result.reason);
         return;
       }
-      setUserId("");
+      setRecipient(null);
       setReason("");
       setError(null);
       queryClient.invalidateQueries({ queryKey: MANUAL_AWARDS_QUERY_KEY });
@@ -40,7 +41,7 @@ const AwardBadgeForm = () => {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    award.mutate();
+    if (recipient) award.mutate(recipient.id);
   };
 
   return (
@@ -69,18 +70,8 @@ const AwardBadgeForm = () => {
           ))}
         </Select>
       </div>
-      <div className="w-full space-y-1.5 sm:w-72">
-        <label htmlFor="award-user-id" className="block text-xs text-muted-foreground">
-          User ID
-        </label>
-        <Input
-          id="award-user-id"
-          required
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          className="w-full"
-          placeholder="uuid"
-        />
+      <div className="w-full sm:w-72">
+        <UserSearchField id="award-user" label="User" value={recipient} onChange={setRecipient} />
       </div>
       <div className="min-w-0 flex-1 space-y-1.5">
         <label htmlFor="award-reason" className="block text-xs text-muted-foreground">
@@ -93,7 +84,7 @@ const AwardBadgeForm = () => {
           onChange={(e) => setReason(e.target.value)}
         />
       </div>
-      <Button type="submit" disabled={award.isPending}>
+      <Button type="submit" disabled={award.isPending || !recipient || !badgeId}>
         {award.isPending ? "Awarding…" : "Award badge"}
       </Button>
       {error && <FormBanner className="w-full">{error}</FormBanner>}
@@ -102,14 +93,14 @@ const AwardBadgeForm = () => {
 };
 
 const AdjustXpForm = () => {
-  const [userId, setUserId] = useState("");
+  const [target, setTarget] = useState<SelectedUser | null>(null);
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
 
   const adjust = useMutation({
-    mutationFn: () => gamificationApi.adjustXp(userId, Number(amount), reason),
+    mutationFn: (targetId: string) => gamificationApi.adjustXp(targetId, Number(amount), reason),
     onSuccess: (outcome) => {
       if (!outcome.awarded) {
         setError(outcome.reason);
@@ -120,7 +111,7 @@ const AdjustXpForm = () => {
       setResult(
         `New total: ${outcome.totalXp} XP${outcome.leveledUp ? ` — leveled up to Level ${outcome.currentLevel.level} (${outcome.currentLevel.name})!` : ""}`,
       );
-      setUserId("");
+      setTarget(null);
       setAmount("");
       setReason("");
     },
@@ -132,7 +123,7 @@ const AdjustXpForm = () => {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    adjust.mutate();
+    if (target) adjust.mutate(target.id);
   };
 
   return (
@@ -140,18 +131,8 @@ const AdjustXpForm = () => {
       onSubmit={handleSubmit}
       className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
     >
-      <div className="w-full space-y-1.5 sm:w-72">
-        <label htmlFor="adjust-xp-user-id" className="block text-xs text-muted-foreground">
-          User ID
-        </label>
-        <Input
-          id="adjust-xp-user-id"
-          required
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          className="w-full"
-          placeholder="uuid"
-        />
+      <div className="w-full sm:w-72">
+        <UserSearchField id="adjust-xp-user" label="User" value={target} onChange={setTarget} />
       </div>
       <div className="w-full space-y-1.5 sm:w-32">
         <label htmlFor="adjust-xp-amount" className="block text-xs text-muted-foreground">
@@ -177,7 +158,7 @@ const AdjustXpForm = () => {
           onChange={(e) => setReason(e.target.value)}
         />
       </div>
-      <Button type="submit" disabled={adjust.isPending}>
+      <Button type="submit" disabled={adjust.isPending || !target}>
         {adjust.isPending ? "Adjusting…" : "Adjust XP"}
       </Button>
       {error && <FormBanner className="w-full">{error}</FormBanner>}

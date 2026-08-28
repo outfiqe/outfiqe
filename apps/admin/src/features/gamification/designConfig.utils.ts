@@ -16,3 +16,6 @@ export const legacyShapeAndColorOf = (
 
 export const studioLayersOf = (designConfig: BadgeDesignConfig): BadgeLayer[] =>
   isStudioDesignConfig(designConfig) ? designConfig.layers : [];
+
+export const legacyImageUrlOf = (designConfig: BadgeDesignConfig): string =>
+  isStudioDesignConfig(designConfig) ? "" : (designConfig.imageUrl ?? "");

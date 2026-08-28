@@ -1,3 +1,5 @@
+import sharp from "sharp";
+
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { XpActivityType } from "#generated/prisma/enums.js";
@@ -7,10 +9,13 @@ import { achievementService } from "#modules/achievements/achievement.service.js
 import { brandRepository } from "#modules/brands/brand.repository.js";
 import { XP_SOURCE } from "#modules/xp/xp.constants.js";
 import { xpService } from "#modules/xp/xp.service.js";
+import { storage } from "#storage/storage.js";
 
+import { ICON_IMAGE_EDGE_PX } from "./badge.constants.js";
 import { badgeRepository } from "./badge.repository.js";
 import type {
   AwardBadgeBody,
+  BadgeDesignConfig,
   CreateBadgeBody,
   RemoveUserBadgeBody,
   UpdateBadgeBody,
@@ -23,7 +28,7 @@ import type {
   FeaturedBadgeView,
   ManualAwardRecord,
 } from "./badge.types.js";
-import { parseDesignConfig } from "./badge.utils.js";
+import { hasOnlyManagedImageUrls, parseDesignConfig } from "./badge.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const VALIDATION_STATUS = 422;
@@ -186,6 +191,41 @@ const updateTitle = async (userId: string, badgeId: string | null): Promise<void
 const listAllBadgesAdmin = async (): Promise<BadgeAdminRecord[]> =>
   badgeRepository.listAllBadgesAdmin();
 
+const findBadgeAdmin = async (badgeId: string): Promise<BadgeAdminRecord> => {
+  const badge = await badgeRepository.findBadgeAdminById(badgeId);
+  if (!badge) {
+    throw new AppError("BADGE_NOT_FOUND", "This badge doesn't exist.", NOT_FOUND_STATUS);
+  }
+  return badge;
+};
+
+const processIconImage = async (fileBuffer: Buffer): Promise<{ url: string }> => {
+  const normalized = await sharp(fileBuffer)
+    .resize(ICON_IMAGE_EDGE_PX, ICON_IMAGE_EDGE_PX, {
+      fit: "contain",
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+    .png()
+    .toBuffer();
+
+  const { url } = await storage.upload({
+    buffer: normalized,
+    originalName: "badge-icon.png",
+    mimeType: "image/png",
+  });
+  return { url };
+};
+
+const assertManagedImageUrls = (designConfig: BadgeDesignConfig): void => {
+  if (!hasOnlyManagedImageUrls(designConfig)) {
+    throw new AppError(
+      "INVALID_ICON_IMAGE_URL",
+      "A badge icon image must be uploaded through the badge icon uploader.",
+      VALIDATION_STATUS,
+    );
+  }
+};
+
 const assertSponsorBrandExists = async (sponsorBrandId: string | null): Promise<void> => {
   if (sponsorBrandId === null) return;
   const [sponsorBrand] = await brandRepository.findManyByIds([sponsorBrandId]);
@@ -199,6 +239,7 @@ const assertSponsorBrandExists = async (sponsorBrandId: string | null): Promise<
 };
 
 const createBadge = async (input: CreateBadgeBody): Promise<BadgeAdminRecord> => {
+  assertManagedImageUrls(input.designConfig);
   await assertSponsorBrandExists(input.sponsorBrandId);
   return badgeRepository.createBadgeWithAchievement(input);
 };
@@ -208,6 +249,7 @@ const updateBadge = async (badgeId: string, input: UpdateBadgeBody): Promise<Bad
   if (!existing) {
     throw new AppError("BADGE_NOT_FOUND", "This badge doesn't exist.", NOT_FOUND_STATUS);
   }
+  assertManagedImageUrls(input.designConfig);
   await assertSponsorBrandExists(input.sponsorBrandId);
   return badgeRepository.updateBadgeWithAchievement(badgeId, input);
 };
@@ -282,6 +324,8 @@ export const badgeService = {
   updateTitle,
   awardBadge,
   listAllBadgesAdmin,
+  findBadgeAdmin,
+  processIconImage,
   createBadge,
   updateBadge,
   awardBadgeManually,

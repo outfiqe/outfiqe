@@ -26,6 +26,8 @@ import {
   manualAwardSchema,
   type SponsorBrand,
   sponsorBrandSchema,
+  type UserSearchResult,
+  userSearchResultSchema,
   type XpMultiplier,
   xpMultiplierSchema,
   type XpStats,
@@ -41,6 +43,7 @@ const manualAwardListSchema = z.array(manualAwardSchema);
 const challengeListSchema = z.array(challengeAdminSchema);
 const creatorCompetitionListSchema = z.array(creatorCompetitionAdminSchema);
 const creatorLeaderboardCategoryListSchema = z.array(creatorLeaderboardCategoryStateSchema);
+const userSearchResultListSchema = z.array(userSearchResultSchema);
 
 const BRAND_SEARCH_RESULT_LIMIT = 8;
 
@@ -69,7 +72,7 @@ export type UpdateActivityXpConfigInput = Partial<{
 }>;
 
 export type BadgeDesignConfigInput =
-  | { shape: string; primaryColor: string; animation?: string }
+  | { shape: string; primaryColor: string; imageUrl?: string; animation?: string }
   | { version: 2; animation?: string; layers: BadgeLayer[] };
 
 export type BadgeFormInput = {
@@ -203,6 +206,18 @@ export const gamificationApi = {
     return badgeListSchema.parse(res.data);
   },
 
+  async getBadgeAdmin(badgeId: string): Promise<BadgeAdmin> {
+    const res = await apiClient.get<BadgeAdmin>(`/badges/admin/${badgeId}`);
+    return badgeAdminSchema.parse(res.data);
+  },
+
+  async uploadBadgeIconImage(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await apiClient.post<{ url: string }>("/badges/admin/icon-image", formData);
+    return z.object({ url: z.string() }).parse(res.data).url;
+  },
+
   async createBadge(input: BadgeFormInput): Promise<BadgeAdmin> {
     const res = await apiClient.post<BadgeAdmin>("/badges", input);
     return badgeAdminSchema.parse(res.data);
@@ -218,6 +233,11 @@ export const gamificationApi = {
       params: { q, limit: BRAND_SEARCH_RESULT_LIMIT },
     });
     return sponsorBrandListSchema.parse(res.data.brands);
+  },
+
+  async searchUsers(q: string): Promise<UserSearchResult[]> {
+    const res = await apiClient.get<UserSearchResult[]>("/users/search", { params: { q } });
+    return userSearchResultListSchema.parse(res.data);
   },
 
   async awardBadge(badgeId: string, userId: string, reason: string): Promise<AwardBadgeResult> {

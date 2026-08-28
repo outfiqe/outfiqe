@@ -64,13 +64,14 @@ export const AchievementBadgeIcon = ({
   }
 
   const clipPath = SHAPE_CLIP_PATH[designConfig.shape];
+  const hasImage = Boolean(designConfig.imageUrl) && !isLocked;
 
   return (
     <div
       aria-hidden
       className={cn(
         LOCKED_SIZE_CLASS,
-        "flex shrink-0 items-center justify-center text-2xl",
+        "flex shrink-0 items-center justify-center overflow-hidden text-2xl",
         isLocked ? "bg-muted grayscale" : RARITY_RING[rarity],
         !clipPath && "rounded-full",
         animationClass,
@@ -78,13 +79,22 @@ export const AchievementBadgeIcon = ({
       )}
       style={{
         clipPath,
-        backgroundColor: isLocked ? undefined : designConfig.primaryColor,
+        backgroundColor: isLocked || hasImage ? undefined : designConfig.primaryColor,
         ...(isShimmering ? SHIMMER_OVERLAY_STYLE : undefined),
         ...(!isLocked && ({ "--tw-ring-color": designConfig.primaryColor } as CSSProperties)),
         ...(!isLocked && ({ "--badge-glow-color": designConfig.primaryColor } as CSSProperties)),
       }}
     >
-      {isLocked ? <Lock className="size-5 text-muted-foreground" /> : icon}
+      {isLocked ? (
+        <Lock className="size-5 text-muted-foreground" />
+      ) : hasImage ? (
+        <span
+          className="size-full bg-cover bg-center"
+          style={{ backgroundImage: `url(${designConfig.imageUrl})` }}
+        />
+      ) : (
+        icon
+      )}
     </div>
   );
 };

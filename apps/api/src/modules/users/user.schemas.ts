@@ -13,6 +13,10 @@ export const userIdParamSchema = z.object({
   id: z.uuid(),
 });
 
+export const searchUsersQuerySchema = z.object({
+  q: z.string().trim().min(1).max(100),
+});
+
 export const updateOwnProfileSchema = z
   .object({
     name: z.string().trim().min(1).max(100),
@@ -23,4 +27,5 @@ export const updateOwnProfileSchema = z
 
 export type CreateUserBody = z.infer<typeof createUserSchema>;
 export type UserIdParam = z.infer<typeof userIdParamSchema>;
+export type SearchUsersQuery = z.infer<typeof searchUsersQuerySchema>;
 export type UpdateOwnProfileBody = z.infer<typeof updateOwnProfileSchema>;

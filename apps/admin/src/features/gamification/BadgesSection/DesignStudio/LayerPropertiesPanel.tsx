@@ -1,7 +1,12 @@
 import { Checkbox, Input, Select } from "@outfiqe/design-system";
 
-import { SHAPE_OPTIONS } from "../../badgeOptions.constants";
-import type { BadgeLayer, BadgeShapeValue } from "../../schemas";
+import {
+  IMAGE_FIT_OPTION_LABEL,
+  IMAGE_FIT_OPTIONS,
+  SHAPE_OPTIONS,
+} from "../../badgeOptions.constants";
+import type { BadgeImageFitValue, BadgeLayer, BadgeShapeValue } from "../../schemas";
+import { BadgeIconUploader } from "../BadgeIconUploader";
 import {
   BADGE_FONT_WEIGHT,
   BADGE_LAYER_TYPE,
@@ -14,6 +19,8 @@ import {
 const DEFAULT_BORDER_COLOR = "#000000";
 const DEFAULT_BORDER_WIDTH_PX = 2;
 const NO_BORDER_WIDTH_PX = 0;
+const MIN_LAYER_RADIUS = 0;
+const MAX_LAYER_RADIUS = 100;
 
 export const LayerPropertiesPanel = ({
   layer,
@@ -130,6 +137,52 @@ export const LayerPropertiesPanel = ({
             max={MAX_LAYER_FONT_SIZE}
             value={layer.fontSize}
             onChange={(e) => onChange({ fontSize: Number(e.target.value) })}
+            className="w-20"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (layer.type === BADGE_LAYER_TYPE.IMAGE) {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <p className="block text-xs text-muted-foreground">Image</p>
+          <BadgeIconUploader
+            value={layer.url}
+            onChange={(url) => onChange({ url })}
+            onClear={() => onChange({ url: "" })}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="layer-image-fit" className="block text-xs text-muted-foreground">
+            Fit
+          </label>
+          <Select
+            id="layer-image-fit"
+            value={layer.fit}
+            onChange={(e) => onChange({ fit: e.target.value as BadgeImageFitValue })}
+            className="w-36"
+          >
+            {IMAGE_FIT_OPTIONS.map((fit) => (
+              <option key={fit} value={fit}>
+                {IMAGE_FIT_OPTION_LABEL[fit]}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="layer-image-radius" className="block text-xs text-muted-foreground">
+            Corner radius (%)
+          </label>
+          <Input
+            id="layer-image-radius"
+            type="number"
+            min={MIN_LAYER_RADIUS}
+            max={MAX_LAYER_RADIUS}
+            value={layer.radius ?? MIN_LAYER_RADIUS}
+            onChange={(e) => onChange({ radius: Number(e.target.value) })}
             className="w-20"
           />
         </div>

@@ -1,10 +1,37 @@
+import type { BadgeDesignConfig } from "@outfiqe/types";
+
 import type { BadgeFormInput } from "../api";
-import { AUTO_ANIMATION_OPTION, BADGE_DESIGN_MODE } from "../badgeOptions.constants";
+import {
+  AUTO_ANIMATION_OPTION,
+  BADGE_DESIGN_MODE,
+  DEFAULT_BADGE_ICON,
+} from "../badgeOptions.constants";
 import { EMPTY_CONDITION } from "../conditions/condition.constants";
 import { toDatetimeLocalValue, toIsoOrNull } from "../datetime.utils";
-import { isStudioDesignConfig, legacyShapeAndColorOf, studioLayersOf } from "../designConfig.utils";
+import {
+  isStudioDesignConfig,
+  legacyImageUrlOf,
+  legacyShapeAndColorOf,
+  studioLayersOf,
+} from "../designConfig.utils";
 import { ADMIN_AWARD_REQUIREMENT_TYPE, type BadgeAdmin } from "../schemas";
 import type { BadgeFormState } from "./badgeForm.types";
+
+export const toPreviewDesignConfig = (form: BadgeFormState): BadgeDesignConfig => {
+  if (form.designMode === BADGE_DESIGN_MODE.STUDIO && form.studioLayers.length > 0) {
+    return {
+      version: 2,
+      layers: form.studioLayers,
+      ...(form.animation === AUTO_ANIMATION_OPTION ? {} : { animation: form.animation }),
+    };
+  }
+  return {
+    shape: form.shape,
+    primaryColor: form.primaryColor,
+    ...(form.iconImageUrl ? { imageUrl: form.iconImageUrl } : {}),
+    ...(form.animation === AUTO_ANIMATION_OPTION ? {} : { animation: form.animation }),
+  };
+};
 
 export const formForBadge = (badge: BadgeAdmin): BadgeFormState => {
   const isStudioDesign = isStudioDesignConfig(badge.designConfig);
@@ -16,6 +43,7 @@ export const formForBadge = (badge: BadgeAdmin): BadgeFormState => {
     category: badge.category,
     rarity: badge.rarity,
     icon: badge.icon,
+    iconImageUrl: legacyImageUrlOf(badge.designConfig),
     shape,
     primaryColor,
     animation: badge.designConfig.animation ?? AUTO_ANIMATION_OPTION,
@@ -52,7 +80,7 @@ export const toFormInput = (form: BadgeFormState): BadgeFormInput => ({
   description: form.description,
   category: form.category,
   rarity: form.rarity,
-  icon: form.icon,
+  icon: form.icon.trim() || DEFAULT_BADGE_ICON,
   designConfig:
     form.designMode === BADGE_DESIGN_MODE.STUDIO
       ? {
@@ -63,6 +91,7 @@ export const toFormInput = (form: BadgeFormState): BadgeFormInput => ({
       : {
           shape: form.shape,
           primaryColor: form.primaryColor,
+          ...(form.iconImageUrl ? { imageUrl: form.iconImageUrl } : {}),
           ...(form.animation === AUTO_ANIMATION_OPTION ? {} : { animation: form.animation }),
         },
   xpReward: Number(form.xpReward),

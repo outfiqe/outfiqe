@@ -10,6 +10,7 @@ export const EMPTY_FORM: BadgeFormState = {
   category: "ENGAGEMENT",
   rarity: "COMMON",
   icon: "",
+  iconImageUrl: "",
   shape: "circle",
   primaryColor: "#94a3b8",
   animation: AUTO_ANIMATION_OPTION,

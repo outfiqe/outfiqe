@@ -6,11 +6,11 @@ The `User` record itself — creation, lookup, and self-service profile updates.
 
 ## Structure
 
-- `user.controller.ts`, `user.routes.ts` — `POST /` (admin-only user creation), `PATCH /me` (`requireAuth`, self-service profile update), `GET /` and `GET /:id` (admin-only listing/lookup).
-- `user.schemas.ts` — zod validation: `createUserSchema`, `updateOwnProfileSchema` (`name`/`phone`/`avatarUrl`, all optional — a partial patch, not a full replace), `userIdParamSchema`.
-- `user.repository.ts` — `userRepository`, the `User` persistence layer: `create`, `createOAuthOnlyUser` (see `../auth/oauth`), `findByEmail`/`findByPhone`/`findById`/`findByHandle`, `list`/`findManyByIds`/`searchCreatorIds`/`listByCreatorStatus`, `updateProfile`, `markEmailVerified`, `updatePasswordHash`, `updateCreatorStatus`, `updateLastSeenAt`/`findLastSeenAtByIds` (written by `../chat`'s presence tracking on socket disconnect — see `../chat/README.md`, not by this module itself).
-- `user.service.ts` — `userService.createUser`/`getUser`/`listUsers`/`updateMe`.
-- `user.types.ts` — `UserRecord`, `CreateUserInput`, `UpdateUserProfileInput`, `PublicUser`.
+- `user.controller.ts`, `user.routes.ts` — `POST /` (admin-only user creation), `PATCH /me` (`requireAuth`, self-service profile update), `GET /` and `GET /:id` (admin-only listing/lookup), `GET /search?q=` (admin-only, name/handle typeahead — see rationale below).
+- `user.schemas.ts` — zod validation: `createUserSchema`, `updateOwnProfileSchema` (`name`/`phone`/`avatarUrl`, all optional — a partial patch, not a full replace), `userIdParamSchema`, `searchUsersQuerySchema`.
+- `user.repository.ts` — `userRepository`, the `User` persistence layer: `create`, `createOAuthOnlyUser` (see `../auth/oauth`), `findByEmail`/`findByPhone`/`findById`/`findByHandle`, `list`/`search`/`findManyByIds`/`searchCreatorIds`/`listByCreatorStatus`, `updateProfile`, `markEmailVerified`, `updatePasswordHash`, `updateCreatorStatus`, `updateLastSeenAt`/`findLastSeenAtByIds` (written by `../chat`'s presence tracking on socket disconnect — see `../chat/README.md`, not by this module itself).
+- `user.service.ts` — `userService.createUser`/`getUser`/`listUsers`/`searchUsers`/`updateMe`.
+- `user.types.ts` — `UserRecord`, `CreateUserInput`, `UpdateUserProfileInput`, `PublicUser`, `UserSearchResult`.
 - `user.utils.ts` — `toPublicUser`, strips internal fields (`passwordHash`, `phone`, etc.) before a user record reaches an API response.
 
 ## Funnel
@@ -20,6 +20,8 @@ The `User` record itself — creation, lookup, and self-service profile updates.
 **Technical:** `user.routes.ts` → `user.controller.ts` → `user.service.ts` → `user.repository.ts` → Prisma. `updateMe` checks phone uniqueness itself (`findByPhone`, excluding the caller's own row) before writing, rather than relying on the DB's `@unique` constraint and catching the violation — same find-then-write pattern `../auth/auth.service.ts` already uses for registration, so a conflict comes back as the same `PHONE_EXISTS` 409 everywhere in the app instead of a raw constraint-violation error surfacing from one path and not another.
 
 ## Non-obvious rationale
+
+**`GET /users/search` runs the `search_users()` SQL function — the same shape as `../creators`' `search_creators()`, minus the `is_creator`/`creator_status` filter.** `../gamification`'s Manual Actions (hand-award a badge, grant/dock XP) can target _any_ user, not just creators — a shopper or brand owner too — so the creator-scoped search isn't enough. The function reuses the existing `users_name_trgm_idx`/`users_handle_trgm_idx` GIN trigram indexes, ranks exact-prefix > handle `word_similarity` > name `word_similarity` (then follower count), and is capped at 10 — an autocomplete, so there's no pagination/`offset` the way `search_creators` has. `userRepository.search` calls it via `$queryRaw`, matching `searchCreatorIds`. No LRU/Redis cache layer like `creatorService.autocomplete` — this endpoint is admin-only and low-traffic; add one if that changes. It returns only `id`/`name`/`handle`/`avatarUrl` — never `email`/`phone` — since the admin UI just needs to pick a row and submit its id. Route order in `user.routes.ts` puts `/search` before `/:id` so the literal path wins over the uuid param.
 
 `updateOwnProfileSchema`'s `phone` field only ever sets a phone, never clears one — reusing the same `phoneSchema` regex validator registration uses (`#lib/phone.utils.js`), which requires an actual valid number. There's no "remove my phone number" affordance in this endpoint; `UserRecord.phone` being nullable (see `../auth/README.md`) exists to support OAuth-only accounts that never had one, not to let an existing phone be cleared.
 
