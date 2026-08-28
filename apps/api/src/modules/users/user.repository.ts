@@ -108,17 +108,10 @@ export const userRepository = {
   },
 
   async search(query: string, limit: number): Promise<UserSearchResult[]> {
-    return prisma.user.findMany({
-      where: {
-        OR: [
-          { name: { contains: query, mode: "insensitive" } },
-          { handle: { contains: query, mode: "insensitive" } },
-        ],
-      },
-      orderBy: [{ followerCount: "desc" }, { name: "asc" }],
-      take: limit,
-      select: { id: true, name: true, handle: true, avatarUrl: true },
-    });
+    return prisma.$queryRaw<UserSearchResult[]>(Prisma.sql`
+      SELECT id, name, handle, avatar_url AS "avatarUrl"
+      FROM search_users(${query}, ${limit})
+    `);
   },
 
   async findIdsByRole(role: UserRole): Promise<string[]> {
