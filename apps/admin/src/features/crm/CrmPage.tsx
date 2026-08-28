@@ -6,6 +6,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { crmApi } from "./api";
 import { InviteSection } from "./InviteSection";
 import { MembersSection } from "./MembersSection";
+import { OwnershipTransferBanner } from "./OwnershipTransferBanner";
 import type { Organization } from "./schemas";
 
 const MEMBERS_READ_PERMISSION_KEY = "members:read";
@@ -45,17 +46,27 @@ export const CrmPage = () => {
       {isLoading && <p className="mt-6 text-sm text-muted-foreground">Loading…</p>}
       {error && <FormBanner className="mt-6">{getErrorMessage(error)}</FormBanner>}
 
-      {organization &&
-        (canViewMembers(organization) || canInviteMembers(organization) ? (
-          <div className="mt-6 space-y-8">
-            {canViewMembers(organization) && <MembersSection />}
-            {canInviteMembers(organization) && <InviteSection />}
-          </div>
-        ) : (
-          <p className="mt-6 text-sm text-muted-foreground">
-            There&apos;s nothing here for your role yet.
-          </p>
-        ))}
+      {organization && (
+        <div className="mt-6">
+          <OwnershipTransferBanner organization={organization} />
+
+          {canViewMembers(organization) || canInviteMembers(organization) ? (
+            <div className="space-y-8">
+              {canViewMembers(organization) && (
+                <MembersSection
+                  viewerIsSuperAdmin={organization.viewerIsSuperAdmin}
+                  hasPendingOwnershipTransfer={organization.pendingOwnershipTransfer !== null}
+                />
+              )}
+              {canInviteMembers(organization) && <InviteSection />}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              There&apos;s nothing here for your role yet.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 };

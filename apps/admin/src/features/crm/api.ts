@@ -57,4 +57,20 @@ export const crmApi = {
   async acceptInvite(token: string): Promise<void> {
     await apiClient.post("/crm/invites/accept", { token });
   },
+
+  async createOwnershipTransfer(toMembershipId: string): Promise<void> {
+    await apiClient.post("/crm/ownership-transfer", { toMembershipId });
+  },
+
+  async acceptOwnershipTransfer(requestId: string): Promise<void> {
+    await apiClient.post(`/crm/ownership-transfer/${requestId}/accept`);
+  },
+
+  async declineOwnershipTransfer(requestId: string): Promise<void> {
+    await apiClient.post(`/crm/ownership-transfer/${requestId}/decline`);
+  },
+
+  async revokeOwnershipTransfer(requestId: string): Promise<void> {
+    await apiClient.del(`/crm/ownership-transfer/${requestId}`);
+  },
 };

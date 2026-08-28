@@ -39,9 +39,19 @@ export const inviteIdParamsSchema = z.object({
   inviteId: z.uuid(),
 });
 
+export const createOwnershipTransferSchema = z.object({
+  toMembershipId: z.uuid(),
+});
+
+export const ownershipTransferIdParamsSchema = z.object({
+  requestId: z.uuid(),
+});
+
 export type CreateOrganizationBody = z.infer<typeof createOrganizationSchema>;
 export type CreateOrganizationInviteBody = z.infer<typeof createOrganizationInviteSchema>;
 export type AcceptOrganizationInviteBody = z.infer<typeof acceptOrganizationInviteSchema>;
 export type UpdateMembershipBody = z.infer<typeof updateMembershipSchema>;
 export type MembershipIdParams = z.infer<typeof membershipIdParamsSchema>;
 export type InviteIdParams = z.infer<typeof inviteIdParamsSchema>;
+export type CreateOwnershipTransferBody = z.infer<typeof createOwnershipTransferSchema>;
+export type OwnershipTransferIdParams = z.infer<typeof ownershipTransferIdParamsSchema>;

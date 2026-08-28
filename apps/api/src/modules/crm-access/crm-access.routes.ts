@@ -4,6 +4,14 @@ import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 
+import {
+  CRM_INVITE_RATE_LIMIT_MAX_REQUESTS,
+  CRM_INVITE_RATE_LIMIT_WINDOW_MS,
+  CRM_ORGANIZATION_RATE_LIMIT_MAX_REQUESTS,
+  CRM_ORGANIZATION_RATE_LIMIT_WINDOW_MS,
+  CRM_OWNERSHIP_TRANSFER_RATE_LIMIT_MAX_REQUESTS,
+  CRM_OWNERSHIP_TRANSFER_RATE_LIMIT_WINDOW_MS,
+} from "./crm-access.constants.js";
 import { crmAccessController } from "./crm-access.controller.js";
 import {
   requirePermission,
@@ -14,15 +22,12 @@ import {
   acceptOrganizationInviteSchema,
   createOrganizationInviteSchema,
   createOrganizationSchema,
+  createOwnershipTransferSchema,
   inviteIdParamsSchema,
   membershipIdParamsSchema,
+  ownershipTransferIdParamsSchema,
   updateMembershipSchema,
 } from "./crm-access.schemas.js";
-
-const CRM_INVITE_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
-const CRM_INVITE_RATE_LIMIT_MAX_REQUESTS = 20;
-const CRM_ORGANIZATION_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
-const CRM_ORGANIZATION_RATE_LIMIT_MAX_REQUESTS = 10;
 
 const crmInviteRateLimit = rateLimit({
   namespace: "crm-invite",
@@ -38,6 +43,14 @@ const crmOrganizationRateLimit = rateLimit({
   max: CRM_ORGANIZATION_RATE_LIMIT_MAX_REQUESTS,
   keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
   message: "Too many organizations created. Please try again later.",
+});
+
+const crmOwnershipTransferRateLimit = rateLimit({
+  namespace: "crm-ownership-transfer",
+  windowMs: CRM_OWNERSHIP_TRANSFER_RATE_LIMIT_WINDOW_MS,
+  max: CRM_OWNERSHIP_TRANSFER_RATE_LIMIT_MAX_REQUESTS,
+  keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
+  message: "Too many ownership transfers requested. Please try again later.",
 });
 
 export const crmAccessRoutes = Router();
@@ -100,4 +113,28 @@ crmAccessRoutes.post(
   "/invites/accept",
   validate({ body: acceptOrganizationInviteSchema }),
   crmAccessController.acceptInvite,
+);
+
+crmAccessRoutes.post(
+  "/ownership-transfer",
+  requirePermission("org:transfer_ownership"),
+  crmOwnershipTransferRateLimit,
+  validate({ body: createOwnershipTransferSchema }),
+  crmAccessController.createOwnershipTransfer,
+);
+crmAccessRoutes.post(
+  "/ownership-transfer/:requestId/accept",
+  validate({ params: ownershipTransferIdParamsSchema }),
+  crmAccessController.acceptOwnershipTransfer,
+);
+crmAccessRoutes.post(
+  "/ownership-transfer/:requestId/decline",
+  validate({ params: ownershipTransferIdParamsSchema }),
+  crmAccessController.declineOwnershipTransfer,
+);
+crmAccessRoutes.delete(
+  "/ownership-transfer/:requestId",
+  requirePermission("org:transfer_ownership"),
+  validate({ params: ownershipTransferIdParamsSchema }),
+  crmAccessController.revokeOwnershipTransfer,
 );

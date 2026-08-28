@@ -20,9 +20,15 @@ deals, billing, or custom-role UI yet — those are later chunks.
   (`organization.viewerIsSuperAdmin`/`viewerPermissionKeys` from `GET /api/crm/organization` —
   see "Non-obvious rationale"). A role with neither (e.g. the built-in Member role) sees an
   explicit "nothing here for your role yet" message instead of a blank page.
-- `MembersSection.tsx` — member list, role `Select`, deactivate/reactivate button per row.
-  Disables both controls on the SUPERADMIN's row rather than letting the user hit the API's
-  `SUPERADMIN_MEMBERSHIP_LOCKED` 403.
+- `MembersSection.tsx` — member list, role `Select`, deactivate/reactivate button per row, plus a
+  "Transfer ownership" button on any `ACTIVE`, non-SUPERADMIN row (shown only when the viewer
+  themselves is the SUPERADMIN and no transfer is already pending — takes `viewerIsSuperAdmin`/
+  `hasPendingOwnershipTransfer` as props from `CrmPage`, since it otherwise only fetches the
+  member/role lists itself). Disables the role `Select` and deactivate/reactivate button on the
+  SUPERADMIN's own row rather than letting the user hit the API's `SUPERADMIN_MEMBERSHIP_LOCKED` 403.
+- `OwnershipTransferBanner.tsx` — renders from `organization.pendingOwnershipTransfer`: Accept/
+  Decline for the recipient (matched against `useAuth()`'s current user id), a Cancel option for
+  the SUPERADMIN who sent it, nothing for anyone else.
 - `InviteSection.tsx` — invite form (email + role) and the pending-invites list with revoke.
 - `AcceptInvitePage.tsx` — the screen an already-logged-in staff member with no CRM access lands
   on after clicking the link in their invite email, mirroring
@@ -74,6 +80,17 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
   rejects the data fetch; the page just doesn't know to redirect instead of rendering). This
   covers only the root route, not every non-CRM page reached by direct URL — a full route-level
   guard for every admin page is a larger change not built yet.
+- **Ownership transfer requires the recipient's acceptance, matching every other
+  membership-changing action in this feature** — clicking "Transfer ownership" in
+  `MembersSection` opens a confirm `Modal` (`@outfiqe/design-system`, same pattern as
+  `ChallengesSection/CreateChallengeModal.tsx`) rather than transferring immediately; the actual
+  handoff only happens once the target accepts via `OwnershipTransferBanner`. See
+  `crm-access`'s README for why the backend enforces this the same way.
+- **Text split across a `<strong>` tag can't be matched by a single `screen.findByText(/regex/)`
+  in tests** — Testing Library matches one text node at a time by default, so
+  `OwnershipTransferBanner`'s "Ownership transfer to **{name}** is pending…" renders as three
+  separate text nodes. `CrmPage.integration.test.tsx` asserts on the name and the trailing phrase
+  as two separate queries instead of one combined regex spanning the bolded name.
 - **The SUPERADMIN's role `Select` and deactivate button are disabled client-side**, even though
   the backend already rejects the underlying request (`403 SUPERADMIN_MEMBERSHIP_LOCKED`). This
   is UX, not a security boundary — the real enforcement is server-side in
