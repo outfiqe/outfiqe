@@ -29,9 +29,10 @@ Chunk 9); the first `apps/admin` CRM screen (Chunk 4, `apps/admin/src/features/c
   `admin-invites/adminInvite.utils.ts`'s `toSummary`), `toOrganizationWithViewerContext` (adds the
   calling membership's own `viewerIsSuperAdmin`/`viewerPermissionKeys` plus any
   `pendingOwnershipTransfer` onto the organization response, so `apps/admin` can decide what to
-  render without guessing at a 403), `toPendingOwnershipTransferSummary`, and
+  render without guessing at a 403), `toPendingOwnershipTransferSummary`,
   `extractSubdomain(host, baseDomain)` (pure hostname parsing, unit-tested in
-  `crm-access.utils.test.ts`).
+  `crm-access.utils.test.ts`), and `buildOrganizationAdminUrl` (see "Non-obvious rationale" for why
+  invite/ownership-transfer emails need it instead of the raw `env.ADMIN_URL`).
 - `crm-access.service.ts` — business rules: invite target must already be an existing staff
   account, one pending invite per email, accept requires the invite's email to match the accepting
   account, the SUPERADMIN membership can't be edited via `updateMembership` (use ownership transfer

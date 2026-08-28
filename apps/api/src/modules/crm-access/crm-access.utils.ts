@@ -68,6 +68,19 @@ export const toInviteSummary = (
   expiresAt: invite.expiresAt,
 });
 
+export const buildOrganizationAdminUrl = (
+  organization: Pick<OrganizationRecord, "subdomain" | "isPlatformOrg">,
+  path: string,
+  adminUrl: string,
+  tenantBaseDomain: string,
+): string => {
+  if (organization.isPlatformOrg) return `${adminUrl}${path}`;
+
+  const { protocol, port, pathname } = new URL(adminUrl);
+  const tenantPort = port ? `:${port}` : "";
+  return `${protocol}//${organization.subdomain}.${tenantBaseDomain}${tenantPort}${pathname}${path}`;
+};
+
 export const extractSubdomain = (hostHeader: string, baseDomain: string): string | null => {
   const host = (hostHeader.split(":").at(0) ?? "").toLowerCase();
   const base = baseDomain.toLowerCase();

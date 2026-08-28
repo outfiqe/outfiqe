@@ -29,6 +29,7 @@ import type {
   RoleWithPermissions,
 } from "./crm-access.types.js";
 import {
+  buildOrganizationAdminUrl,
   toInviteSummary,
   toMembershipSummary,
   toPendingOwnershipTransferSummary,
@@ -194,7 +195,12 @@ export const crmAccessService = {
       invitedById,
     });
 
-    const inviteUrl = `${env.ADMIN_URL}/crm/invites/accept?token=${rawToken}`;
+    const inviteUrl = buildOrganizationAdminUrl(
+      organization,
+      `/crm/invites/accept?token=${rawToken}`,
+      env.ADMIN_URL,
+      env.TENANT_BASE_DOMAIN,
+    );
     const { subject, html } = crmOrganizationInviteTemplate(role.name, inviteUrl);
 
     await sendEmail({
@@ -306,14 +312,17 @@ export const crmAccessService = {
     const recipientUser = await userRepository.findById(toMembership.userId);
     if (!recipientUser) return;
 
-    const { subject, html } = crmOwnershipTransferRequestTemplate(
-      organization.name,
-      `${env.ADMIN_URL}/crm`,
+    const crmUrl = buildOrganizationAdminUrl(
+      organization,
+      "/crm",
+      env.ADMIN_URL,
+      env.TENANT_BASE_DOMAIN,
     );
+    const { subject, html } = crmOwnershipTransferRequestTemplate(organization.name, crmUrl);
     await sendEmail({
       to: recipientUser.email,
       subject,
-      body: `You've been asked to become the owner of ${organization.name} on Outfiqe CRM: ${env.ADMIN_URL}/crm`,
+      body: `You've been asked to become the owner of ${organization.name} on Outfiqe CRM: ${crmUrl}`,
       html,
     });
 
