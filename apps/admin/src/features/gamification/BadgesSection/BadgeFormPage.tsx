@@ -9,7 +9,7 @@ import {
   TabsTrigger,
 } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useBlocker, useNavigate } from "@tanstack/react-router";
+import { getRouteApi, Link, useBlocker, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { type FormEvent, useMemo, useRef, useState } from "react";
 
@@ -225,4 +225,17 @@ export const BadgeFormPage = (props: BadgeFormPageProps) => {
       initialForm={{ ...duplicatedForm, name: `${DUPLICATE_NAME_PREFIX}${duplicatedForm.name}` }}
     />
   );
+};
+
+const newRouteApi = getRouteApi("/_authenticated/gamification/badges/new");
+const editRouteApi = getRouteApi("/_authenticated/gamification/badges/$badgeId/edit");
+
+export const NewBadgePage = () => {
+  const { duplicateFrom } = newRouteApi.useSearch();
+  return <BadgeFormPage mode="create" duplicateFromId={duplicateFrom} />;
+};
+
+export const EditBadgePage = () => {
+  const { badgeId } = editRouteApi.useParams();
+  return <BadgeFormPage mode="edit" badgeId={badgeId} />;
 };
