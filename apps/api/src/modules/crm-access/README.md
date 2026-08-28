@@ -24,8 +24,11 @@ auth); the first `apps/admin` CRM screen (Chunk 4, `apps/admin/src/features/crm`
   applicable. `acceptInvite` wraps the Membership-create + invite-accept pair in a transaction.
 - `crm-access.utils.ts` — pure mappers: `toMembershipSummary`, `toInviteSummary` (derives
   PENDING/ACCEPTED/REVOKED/EXPIRED from an invite's timestamps, the same shape as
-  `admin-invites/adminInvite.utils.ts`'s `toSummary`) and `extractSubdomain(host, baseDomain)`
-  (pure hostname parsing, unit-tested in `crm-access.utils.test.ts`).
+  `admin-invites/adminInvite.utils.ts`'s `toSummary`), `toOrganizationWithViewerContext` (adds the
+  calling membership's own `viewerIsSuperAdmin`/`viewerPermissionKeys` onto the organization
+  response, so `apps/admin` can decide what to render without guessing at a 403), and
+  `extractSubdomain(host, baseDomain)` (pure hostname parsing, unit-tested in
+  `crm-access.utils.test.ts`).
 - `crm-access.service.ts` — business rules: invite target must already be an existing staff
   account, one pending invite per email, accept requires the invite's email to match the accepting
   account, the SUPERADMIN membership can't be edited via `updateMembership`.

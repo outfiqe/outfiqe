@@ -12,6 +12,8 @@ export const organizationSchema = z.object({
   plan: z.string(),
   trialEndsAt: z.string().nullable(),
   superAdminMembershipId: z.string().nullable(),
+  viewerIsSuperAdmin: z.boolean(),
+  viewerPermissionKeys: z.array(z.string()),
 });
 export type Organization = z.infer<typeof organizationSchema>;
 

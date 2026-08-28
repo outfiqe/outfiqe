@@ -15,7 +15,11 @@ deals, billing, or custom-role UI yet — those are later chunks.
   the backend, parse on the way in" pattern as `features/team/schemas.ts`.
 - `api.ts` — `crmApi`, thin `apiClient` calls + schema `.parse()`, one function per
   `/api/crm/*` endpoint this UI uses.
-- `CrmPage.tsx` — the page shell: organization banner + `MembersSection` + `InviteSection`.
+- `CrmPage.tsx` — the page shell: organization banner + `MembersSection` + `InviteSection`, each
+  shown only if the viewer's own CRM role actually carries `members:read`/`members:invite`
+  (`organization.viewerIsSuperAdmin`/`viewerPermissionKeys` from `GET /api/crm/organization` —
+  see "Non-obvious rationale"). A role with neither (e.g. the built-in Member role) sees an
+  explicit "nothing here for your role yet" message instead of a blank page.
 - `MembersSection.tsx` — member list, role `Select`, deactivate/reactivate button per row.
   Disables both controls on the SUPERADMIN's row rather than letting the user hit the API's
   `SUPERADMIN_MEMBERSHIP_LOCKED` 403.
@@ -52,6 +56,24 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
 
 ## Non-obvious rationale
 
+- **`GET /api/crm/organization` returns the viewer's own permission context alongside the
+  organization** (`viewerIsSuperAdmin`, `viewerPermissionKeys` —
+  `crm-access.utils.ts`'s `toOrganizationWithViewerContext`, populated from the `Membership`
+  `requirePermission("org:read")` already resolved onto `res.locals.crmMembership`, no extra
+  query). `CrmPage` uses it to hide `MembersSection`/`InviteSection` entirely for a role that
+  can't use them, rather than rendering the section and letting it fail with a
+  "You do not have permission to do this" error — a Member (built-in role) genuinely has no
+  `members:read`/`members:invite`, and showing a control guaranteed to reject every request is
+  worse than not showing it, the same reasoning the SUPERADMIN-row-disabling bullet below already
+  applies to `MembersSection`'s own controls.
+- **The admin app's root route (`/`, "Brand applications") redirects to `/crm` for anyone without
+  `hasPlatformAccess`** (`routes/_authenticated.index.tsx`). Without this, a tenant-only account
+  landing on the bare `/admin` URL — which isn't in their sidebar, but is still directly
+  reachable by URL since `hasPlatformAccess` only hides sidebar links, not routes — would see a
+  broken-looking page with a real backend 403 underneath it (`requirePlatformAccess` correctly
+  rejects the data fetch; the page just doesn't know to redirect instead of rendering). This
+  covers only the root route, not every non-CRM page reached by direct URL — a full route-level
+  guard for every admin page is a larger change not built yet.
 - **The SUPERADMIN's role `Select` and deactivate button are disabled client-side**, even though
   the backend already rejects the underlying request (`403 SUPERADMIN_MEMBERSHIP_LOCKED`). This
   is UX, not a security boundary — the real enforcement is server-side in

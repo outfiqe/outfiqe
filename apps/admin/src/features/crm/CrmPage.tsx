@@ -6,6 +6,18 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { crmApi } from "./api";
 import { InviteSection } from "./InviteSection";
 import { MembersSection } from "./MembersSection";
+import type { Organization } from "./schemas";
+
+const MEMBERS_READ_PERMISSION_KEY = "members:read";
+const MEMBERS_INVITE_PERMISSION_KEY = "members:invite";
+
+const canViewMembers = (organization: Organization) =>
+  organization.viewerIsSuperAdmin ||
+  organization.viewerPermissionKeys.includes(MEMBERS_READ_PERMISSION_KEY);
+
+const canInviteMembers = (organization: Organization) =>
+  organization.viewerIsSuperAdmin ||
+  organization.viewerPermissionKeys.includes(MEMBERS_INVITE_PERMISSION_KEY);
 
 export const CrmPage = () => {
   const {
@@ -33,12 +45,17 @@ export const CrmPage = () => {
       {isLoading && <p className="mt-6 text-sm text-muted-foreground">Loading…</p>}
       {error && <FormBanner className="mt-6">{getErrorMessage(error)}</FormBanner>}
 
-      {organization && (
-        <div className="mt-6 space-y-8">
-          <MembersSection />
-          <InviteSection />
-        </div>
-      )}
+      {organization &&
+        (canViewMembers(organization) || canInviteMembers(organization) ? (
+          <div className="mt-6 space-y-8">
+            {canViewMembers(organization) && <MembersSection />}
+            {canInviteMembers(organization) && <InviteSection />}
+          </div>
+        ) : (
+          <p className="mt-6 text-sm text-muted-foreground">
+            There&apos;s nothing here for your role yet.
+          </p>
+        ))}
     </div>
   );
 };
