@@ -6,13 +6,28 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AcceptInvitePage } from "./AcceptInvitePage";
 
 const API_BASE = "http://localhost:3000/api";
+
+const updateUser = vi.fn();
+
+vi.mock("@/features/auth/AuthContext", () => ({
+  useAuth: () => ({ updateUser }),
+}));
+
+const refreshedUser = {
+  id: "user-1",
+  name: "Daraz Org Admin",
+  email: "daraz-admin@yopmail.com",
+  avatarUrl: null,
+  role: "ADMIN",
+  hasPlatformAccess: false,
+};
 
 const renderAcceptInvitePage = (initialPath: string) => {
   const rootRoute = createRootRoute();
@@ -34,6 +49,8 @@ const renderAcceptInvitePage = (initialPath: string) => {
 };
 
 describe("AcceptInvitePage", () => {
+  beforeEach(() => updateUser.mockClear());
+
   it("shows an error immediately when the link has no token", async () => {
     renderAcceptInvitePage("/_authenticated/crm/invites/accept");
 
@@ -45,12 +62,16 @@ describe("AcceptInvitePage", () => {
       http.post(`${API_BASE}/crm/invites/accept`, () =>
         HttpResponse.json({ success: true, data: { id: "membership-1" } }),
       ),
+      http.get(`${API_BASE}/auth/me`, () =>
+        HttpResponse.json({ success: true, data: refreshedUser }),
+      ),
     );
 
     renderAcceptInvitePage("/_authenticated/crm/invites/accept?token=raw-token-value");
 
     expect(await screen.findByText(/You now have CRM access/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Go to CRM" })).toBeInTheDocument();
+    await waitFor(() => expect(updateUser).toHaveBeenCalledWith(refreshedUser));
   });
 
   it("shows the server's error message for an invalid token", async () => {
@@ -74,5 +95,6 @@ describe("AcceptInvitePage", () => {
     expect(
       await screen.findByText("This invite link has expired or was already used."),
     ).toBeInTheDocument();
+    expect(updateUser).not.toHaveBeenCalled();
   });
 });

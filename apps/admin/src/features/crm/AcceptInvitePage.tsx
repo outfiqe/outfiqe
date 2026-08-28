@@ -2,6 +2,9 @@ import { Button, FormBanner } from "@outfiqe/design-system";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
+import { authApi } from "@/features/auth/api";
+import { useAuth } from "@/features/auth/AuthContext";
+
 import { crmApi } from "./api";
 
 const routeApi = getRouteApi("/_authenticated/crm/invites/accept");
@@ -11,6 +14,7 @@ type AcceptState =
 
 export const AcceptInvitePage = () => {
   const { token } = routeApi.useSearch();
+  const { updateUser } = useAuth();
   const [state, setState] = useState<AcceptState>(() =>
     token
       ? { status: "loading" }
@@ -22,14 +26,18 @@ export const AcceptInvitePage = () => {
 
     crmApi
       .acceptInvite(token)
-      .then(() => setState({ status: "done" }))
+      .then(() => authApi.me())
+      .then((user) => {
+        updateUser(user);
+        setState({ status: "done" });
+      })
       .catch((err) =>
         setState({
           status: "error",
           message: err instanceof Error ? err.message : "This invite link is not valid.",
         }),
       );
-  }, [token]);
+  }, [token, updateUser]);
 
   return (
     <div className="mx-auto max-w-md">

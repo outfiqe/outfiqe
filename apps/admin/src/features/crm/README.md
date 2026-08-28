@@ -32,7 +32,9 @@ deals, billing, or custom-role UI yet — those are later chunks.
 - `InviteSection.tsx` — invite form (email + role) and the pending-invites list with revoke.
 - `AcceptInvitePage.tsx` — the screen an already-logged-in staff member with no CRM access lands
   on after clicking the link in their invite email, mirroring
-  `features/auth/RegisterInvitePage.tsx`'s loading/invalid/valid state-machine shape.
+  `features/auth/RegisterInvitePage.tsx`'s loading/invalid/valid state-machine shape. Once the
+  accept call succeeds, it also re-fetches `/api/auth/me` and pushes the result into
+  `AuthContext` via `updateUser` — see "Non-obvious rationale" for why.
 
 Routes: `apps/admin/src/routes/_authenticated.crm.index.tsx` (`/crm` → `CrmPage`) and
 `_authenticated.crm.invites.accept.tsx` (`/crm/invites/accept` → `AcceptInvitePage`) — the `.index`
@@ -91,6 +93,16 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
   `OwnershipTransferBanner`'s "Ownership transfer to **{name}** is pending…" renders as three
   separate text nodes. `CrmPage.integration.test.tsx` asserts on the name and the trailing phrase
   as two separate queries instead of one combined regex spanning the bolded name.
+- **`AcceptInvitePage` re-fetches the current user after accepting, instead of relying on the
+  session state already in `AuthContext`.** `requirePlatformAccess` grandfathers any account with
+  zero `Membership` rows anywhere as having platform access (see `crm-access`'s README) — a
+  brand-new invitee genuinely has zero memberships until the moment they accept, so the
+  `hasPlatformAccess` value baked into their login response is stale the instant the invite is
+  accepted (it flips from grandfathered-true to correctly-false). Without an explicit re-fetch,
+  `AdminSidebar` would keep showing the full platform nav (Products, Orders, etc.) to a
+  tenant-only account until an unrelated full page reload happened to re-run `AuthContext`'s
+  bootstrap `/api/auth/me` call. This is UI staleness only, not a security gap — every real route
+  still re-checks `requirePlatformAccess` live on the server regardless of what the sidebar shows.
 - **The SUPERADMIN's role `Select` and deactivate button are disabled client-side**, even though
   the backend already rejects the underlying request (`403 SUPERADMIN_MEMBERSHIP_LOCKED`). This
   is UX, not a security boundary — the real enforcement is server-side in

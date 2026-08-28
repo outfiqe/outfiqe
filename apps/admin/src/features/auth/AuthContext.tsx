@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 import { setAccessToken, setUnauthorizedHandler } from "@/lib/apiClient";
 
@@ -43,11 +43,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setState({ status: "signed-out" });
   };
 
-  const updateUser = (patch: Partial<AdminUser>) => {
+  const updateUser = useCallback((patch: Partial<AdminUser>) => {
     setState((prev) =>
       prev.status === "signed-in" ? { ...prev, user: { ...prev.user, ...patch } } : prev,
     );
-  };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ state, logout, updateUser }}>{children}</AuthContext.Provider>
