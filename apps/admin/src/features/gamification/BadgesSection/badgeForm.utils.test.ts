@@ -131,9 +131,9 @@ describe("toFormInput", () => {
 
 describe("toPreviewDesignConfig", () => {
   it("returns a legacy config with the emoji shape/colour for simple mode", () => {
-    expect(toPreviewDesignConfig({ ...EMPTY_FORM, shape: "hexagon", primaryColor: "#111" })).toEqual(
-      { shape: "hexagon", primaryColor: "#111" },
-    );
+    expect(
+      toPreviewDesignConfig({ ...EMPTY_FORM, shape: "hexagon", primaryColor: "#111" }),
+    ).toEqual({ shape: "hexagon", primaryColor: "#111" });
   });
 
   it("adds imageUrl and a non-auto animation to the legacy preview", () => {

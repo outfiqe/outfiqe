@@ -9,7 +9,10 @@ const PASSWORD = process.env.ADMIN_PASSWORD ?? "admin-password-123";
 const NAME = process.env.ADMIN_NAME ?? "Platform Admin";
 
 const handleFor = (email: string) =>
-  `${email.split("@")[0]!.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-admin`;
+  `${email
+    .split("@")[0]!
+    .replace(/[^a-z0-9]+/gi, "-")
+    .toLowerCase()}-admin`;
 
 async function main() {
   const passwordHash = await hashPassword(PASSWORD);
