@@ -128,7 +128,7 @@ describe("useLogin", () => {
     result.current.login.mutate({ email: customerUser.email, password: "correct-horse-battery" });
 
     await waitFor(() => expect(result.current.login.isSuccess).toBe(true));
-    expect(locationReplace).toHaveBeenCalledWith(ADMIN_URL);
+    await waitFor(() => expect(locationReplace).toHaveBeenCalledWith(ADMIN_URL));
     expect(replace).not.toHaveBeenCalled();
     expect(result.current.auth.isAuthenticated).toBe(false);
 
@@ -159,7 +159,7 @@ describe("useLogin", () => {
     result.current.login.mutate({ email: customerUser.email, password: "correct-horse-battery" });
 
     await waitFor(() => expect(result.current.login.isSuccess).toBe(true));
-    expect(locationReplace).toHaveBeenCalledWith(deepAdminRedirect);
+    await waitFor(() => expect(locationReplace).toHaveBeenCalledWith(deepAdminRedirect));
     expect(replace).not.toHaveBeenCalled();
     expect(result.current.auth.isAuthenticated).toBe(false);
 
