@@ -10,7 +10,7 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (status !== "signed-out") return;
-    const redirect = encodeURIComponent(window.location.origin);
+    const redirect = encodeURIComponent(window.location.pathname + window.location.search);
     window.location.href = `${WEB_URL}/login?redirect=${redirect}`;
   }, [status]);
 
