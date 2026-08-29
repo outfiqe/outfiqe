@@ -6,6 +6,8 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
+import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
+import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
 const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
@@ -30,6 +32,8 @@ const authHeaderFor = (userId: string, role: UserRole = UserRole.CUSTOMER) => {
 
 const createAdmin = async () => {
   const admin = await createUser("Test Admin");
+  await ensurePlatformOrganizationExists();
+  await crmAccessService.grantPlatformStaffMembership(admin.id);
   return { ...admin, header: authHeaderFor(admin.id, UserRole.ADMIN) };
 };
 

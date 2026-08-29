@@ -6,6 +6,8 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
+import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
+import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
 const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
@@ -57,6 +59,13 @@ const authHeaderFor = (userId: string, role: UserRole = UserRole.CUSTOMER) => {
 };
 
 const adminAuthHeaderFor = (userId: string) => authHeaderFor(userId, UserRole.ADMIN);
+
+const createAdmin = async (name: string, handle: string) => {
+  const admin = await createPlainUser(name, handle);
+  await ensurePlatformOrganizationExists();
+  await crmAccessService.grantPlatformStaffMembership(admin.id);
+  return admin;
+};
 
 describe("GET /api/creators/autocomplete", () => {
   it("returns approved creators ranked by name/handle match", async () => {
@@ -353,7 +362,7 @@ describe("GET /api/creators/search", () => {
 
 describe("GET /api/creators (admin list)", () => {
   it("lists creators filtered by status for an admin", async () => {
-    const admin = await createPlainUser("List Admin", "list-admin");
+    const admin = await createAdmin("List Admin", "list-admin");
     const pending = await createPendingCreator("Listed Pending", "listed-pending");
 
     const response = await request(testApp)
@@ -386,7 +395,7 @@ describe("GET /api/creators (admin list)", () => {
 
 describe("POST /api/creators/:userId/approve", () => {
   it("approves a pending creator", async () => {
-    const admin = await createPlainUser("Approving Admin", "approving-admin");
+    const admin = await createAdmin("Approving Admin", "approving-admin");
     const pending = await createPendingCreator("To Be Approved", "to-be-approved");
 
     const response = await request(testApp)
@@ -401,7 +410,7 @@ describe("POST /api/creators/:userId/approve", () => {
   });
 
   it("rejects approving a creator who isn't pending", async () => {
-    const admin = await createPlainUser("Approving Admin Two", "approving-admin-two");
+    const admin = await createAdmin("Approving Admin Two", "approving-admin-two");
     const creator = await createApprovedCreator("Already Done", "already-done");
 
     const response = await request(testApp)
@@ -412,7 +421,7 @@ describe("POST /api/creators/:userId/approve", () => {
   });
 
   it("returns 404 for a user that doesn't exist", async () => {
-    const admin = await createPlainUser("Approving Admin Three", "approving-admin-three");
+    const admin = await createAdmin("Approving Admin Three", "approving-admin-three");
 
     const response = await request(testApp)
       .post(`/api/creators/${randomUUID()}/approve`)
@@ -434,7 +443,7 @@ describe("POST /api/creators/:userId/approve", () => {
 
 describe("POST /api/creators/:userId/reject", () => {
   it("rejects a pending creator", async () => {
-    const admin = await createPlainUser("Rejecting Admin", "rejecting-admin");
+    const admin = await createAdmin("Rejecting Admin", "rejecting-admin");
     const pending = await createPendingCreator("To Be Rejected", "to-be-rejected");
 
     const response = await request(testApp)
@@ -449,7 +458,7 @@ describe("POST /api/creators/:userId/reject", () => {
   });
 
   it("rejects rejecting a creator who isn't pending", async () => {
-    const admin = await createPlainUser("Rejecting Admin Two", "rejecting-admin-two");
+    const admin = await createAdmin("Rejecting Admin Two", "rejecting-admin-two");
     const creator = await createApprovedCreator("Not Pending", "not-pending-reject");
 
     const response = await request(testApp)

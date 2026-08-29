@@ -8,6 +8,8 @@ import { CreatorLeaderboardCategory, CreatorStatus, UserRole } from "#generated/
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { previousIsoWeekKey } from "#lib/iso-week.utils.js";
 import { creatorLeaderboardRepository } from "#modules/creator-leaderboard/creatorLeaderboard.repository.js";
+import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
+import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
 import { creatorCompetitionService } from "./creatorCompetition.service.js";
@@ -34,6 +36,8 @@ const authHeaderFor = (userId: string, role: UserRole = UserRole.CUSTOMER) => {
 
 const createAdmin = async () => {
   const admin = await createUser();
+  await ensurePlatformOrganizationExists();
+  await crmAccessService.grantPlatformStaffMembership(admin.id);
   return { ...admin, header: authHeaderFor(admin.id, UserRole.ADMIN) };
 };
 

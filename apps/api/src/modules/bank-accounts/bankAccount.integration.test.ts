@@ -6,7 +6,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { BankType, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
+import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { redis } from "#redis/redis.client.js";
+import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
 const OK_STATUS = 200;
@@ -36,6 +38,13 @@ const createUser = async (overrides: Partial<{ name: string; role: UserRole }> =
       role: overrides.role ?? UserRole.CUSTOMER,
     },
   });
+};
+
+const createAdmin = async () => {
+  const admin = await createUser({ role: UserRole.ADMIN });
+  await ensurePlatformOrganizationExists();
+  await crmAccessService.grantPlatformStaffMembership(admin.id);
+  return admin;
 };
 
 const createBank = () =>
@@ -209,7 +218,7 @@ describe("PATCH /api/bank-accounts/:id/default", () => {
 describe("admin bank account actions", () => {
   it("verify requires admin and marks the account verified", async () => {
     const owner = await createUser();
-    const admin = await createUser({ role: UserRole.ADMIN });
+    const admin = await createAdmin();
     const bank = await createBank();
 
     const created = await request(testApp)
@@ -235,7 +244,7 @@ describe("admin bank account actions", () => {
 
   it("reveal decrypts the number and writes an audit log entry", async () => {
     const owner = await createUser();
-    const admin = await createUser({ role: UserRole.ADMIN });
+    const admin = await createAdmin();
     const bank = await createBank();
 
     const created = await request(testApp)
@@ -257,7 +266,7 @@ describe("admin bank account actions", () => {
   });
 
   it("404s verifying a bank account that doesn't exist", async () => {
-    const admin = await createUser({ role: UserRole.ADMIN });
+    const admin = await createAdmin();
 
     const response = await request(testApp)
       .patch(`/api/bank-accounts/${randomUUID()}/verify`)
@@ -267,7 +276,7 @@ describe("admin bank account actions", () => {
   });
 
   it("404s revealing a bank account that doesn't exist", async () => {
-    const admin = await createUser({ role: UserRole.ADMIN });
+    const admin = await createAdmin();
 
     const response = await request(testApp)
       .get(`/api/bank-accounts/${randomUUID()}/reveal`)
