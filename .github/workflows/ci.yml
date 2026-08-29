@@ -14,14 +14,13 @@ concurrency:
 permissions:
   contents: read
 
-# Not real secrets — just enough for `prisma generate` and `tsc` to run
-# without a live database. Nothing here connects to an actual Postgres
-# instance; these checks are build/typecheck only.
+# Not real secrets — just enough for `prisma generate`, `tsc` and `next build`
+# to run without a live database. Nothing here connects to an actual Postgres
+# instance; the integration and coverage jobs use their own service containers.
 #
-# Sourced from repo Settings → Secrets and variables → Actions → Variables
-# (vars.*), with a fallback baked in so CI still passes before those exist.
-# See the "GitHub Variables" section in README for the exact values to set.
-
+# Optional overrides come from repo Settings → Secrets and variables → Actions →
+# Variables (vars.*), with a working fallback baked in so CI is green before any
+# variable is configured. See the "GitHub Variables" section in README.
 env:
   DATABASE_URL: ${{ vars.CI_DATABASE_URL || 'postgresql://outfiqe:outfiqe@localhost:5432/outfiqe_db?schema=public' }}
   JWT_SECRET: ${{ vars.CI_JWT_SECRET || 'ci-placeholder-secret-not-used-for-anything-real' }}
@@ -66,8 +65,19 @@ jobs:
       - name: Build all packages
         run: pnpm build
 
-  test:
-    name: Test
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run unit tests (no coverage — fast feedback)
+        run: pnpm test:unit
+
+  integration:
+    name: Integration tests
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -100,8 +110,45 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup workspace
         uses: ./.github/actions/setup-workspace
-      - name: Run unit + integration tests with coverage
-        run: pnpm test
+      - name: Run integration tests (no coverage)
+        run: pnpm test:integration
+
+  coverage:
+    name: Coverage gate
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: outfiqe
+          POSTGRES_PASSWORD: outfiqe
+          POSTGRES_DB: outfiqe_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U outfiqe -d outfiqe_test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://outfiqe:outfiqe@localhost:5432/outfiqe_test_db
+      REDIS_URL: redis://localhost:6379
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run full suite with coverage (fails below the 80% thresholds in vitest.config.ts)
+        run: pnpm test:coverage
 
   commitlint:
     name: Commit Messages

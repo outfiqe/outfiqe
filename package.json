@@ -11,6 +11,7 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
     "test:unit": "turbo run test:unit",
     "test:integration": "turbo run test:integration",
     "format": "prettier --write .",
