@@ -237,6 +237,7 @@ model Brand {
   payouts              BrandPayout[]
   withdrawRequests     WithdrawRequest[]          @relation("WithdrawRequestBrandOwner")
   commissionExemptions BrandCommissionExemption[]
+  linkedOrganization   Organization?
 
   @@map("brands")
 }
@@ -1829,6 +1830,8 @@ model Organization {
   plan                   String    @default("trial")
   trialEndsAt            DateTime? @map("trial_ends_at")
   superAdminMembershipId String?   @unique @map("super_admin_membership_id") @db.Uuid
+  linkedBrandId          String?   @unique @map("linked_brand_id") @db.Uuid
+  linkedBrand            Brand?    @relation(fields: [linkedBrandId], references: [id], onDelete: SetNull)
   createdAt              DateTime  @default(now()) @map("created_at")
   updatedAt              DateTime  @updatedAt @map("updated_at")
 

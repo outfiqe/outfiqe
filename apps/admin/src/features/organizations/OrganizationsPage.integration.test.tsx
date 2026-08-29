@@ -18,7 +18,7 @@ const wrapper = ({ children }: { children: ReactNode }) => {
 const renderOrganizationsPage = () => render(<OrganizationsPage />, { wrapper });
 
 describe("OrganizationsPage", () => {
-  it("renders the organization list", async () => {
+  it("renders the organization list with linked-brand status", async () => {
     mswServer.use(
       http.get(`${API_BASE}/crm/organizations`, () =>
         HttpResponse.json({
@@ -29,7 +29,18 @@ describe("OrganizationsPage", () => {
               name: "Outfiqe",
               subdomain: "outfiqe",
               plan: "trial",
+              linkedBrandId: null,
+              linkedBrandName: null,
               createdAt: "2026-01-01T00:00:00.000Z",
+            },
+            {
+              id: "org-2",
+              name: "Meridian Apparel Co.",
+              subdomain: "meridian",
+              plan: "trial",
+              linkedBrandId: "brand-7",
+              linkedBrandName: "Kastha Studio",
+              createdAt: "2026-01-02T00:00:00.000Z",
             },
           ],
         }),
@@ -39,7 +50,8 @@ describe("OrganizationsPage", () => {
     renderOrganizationsPage();
 
     expect(await screen.findByText("Outfiqe")).toBeInTheDocument();
-    expect(screen.getByText("outfiqe · trial")).toBeInTheDocument();
+    expect(screen.getByText("outfiqe · trial · no linked brand")).toBeInTheDocument();
+    expect(screen.getByText("meridian · trial · linked to Kastha Studio")).toBeInTheDocument();
   });
 
   it("shows an explicit empty state when there are no organizations", async () => {
@@ -83,7 +95,10 @@ describe("OrganizationsPage", () => {
   };
 
   const mockSuggestion = (
-    overrides: Partial<{ ownerExistingOrganizations: { id: string; name: string }[] }> = {},
+    overrides: Partial<{
+      ownerExistingOrganizations: { id: string; name: string }[];
+      existingOrganizationForBrand: { id: string; name: string } | null;
+    }> = {},
   ) => {
     mswServer.use(
       http.get(`${API_BASE}/crm/organizations/suggest`, () =>
@@ -96,6 +111,7 @@ describe("OrganizationsPage", () => {
             ownerName: "Ava Martinez",
             suggestedSubdomain: "acme",
             ownerExistingOrganizations: overrides.ownerExistingOrganizations ?? [],
+            existingOrganizationForBrand: overrides.existingOrganizationForBrand ?? null,
           },
         }),
       ),
@@ -124,6 +140,8 @@ describe("OrganizationsPage", () => {
               name: "Acme",
               subdomain: "acme",
               plan: "trial",
+              linkedBrandId: "brand-1",
+              linkedBrandName: "Acme",
               createdAt: "2026-01-01T00:00:00.000Z",
             },
           },
@@ -146,6 +164,7 @@ describe("OrganizationsPage", () => {
         name: "Acme",
         subdomain: "acme",
         targetOwnerUserId: "owner-1",
+        linkedBrandId: "brand-1",
       }),
     );
     await waitFor(() => expect(screen.getByLabelText("Business")).toHaveValue(""));
@@ -199,5 +218,24 @@ describe("OrganizationsPage", () => {
 
     expect(await screen.findByText(/Ava Martinez already owns/)).toBeInTheDocument();
     expect(screen.getByText(/Daraz-Org/)).toBeInTheDocument();
+  });
+
+  it("warns when the picked business is already linked to an organization", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/crm/organizations`, () =>
+        HttpResponse.json({ success: true, data: [] }),
+      ),
+    );
+    mockBrandSearch();
+    mockSuggestion({ existingOrganizationForBrand: { id: "org-3", name: "Acme CRM" } });
+
+    renderOrganizationsPage();
+    await screen.findByText("No organizations yet.");
+
+    const user = userEvent.setup();
+    await selectAcme(user);
+
+    expect(await screen.findByText(/already linked to the organization/)).toBeInTheDocument();
+    expect(screen.getByText(/Acme CRM/)).toBeInTheDocument();
   });
 });

@@ -24,12 +24,13 @@ export const organizationsApi = {
     return organizationCreationSuggestionSchema.parse(res.data);
   },
 
-  async create(name: string, subdomain: string, targetOwnerUserId?: string): Promise<Organization> {
-    const res = await apiClient.post<Organization>("/crm/organizations", {
-      name,
-      subdomain,
-      targetOwnerUserId,
-    });
+  async create(input: {
+    name: string;
+    subdomain: string;
+    targetOwnerUserId: string;
+    linkedBrandId: string;
+  }): Promise<Organization> {
+    const res = await apiClient.post<Organization>("/crm/organizations", input);
     return organizationSchema.parse(res.data);
   },
 };

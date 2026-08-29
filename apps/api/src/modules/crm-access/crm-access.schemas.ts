@@ -12,6 +12,7 @@ export const createOrganizationSchema = z.object({
     .max(63)
     .regex(SUBDOMAIN_REGEX, "Subdomain must be lowercase letters, numbers, and hyphens only."),
   targetOwnerUserId: z.uuid().optional(),
+  linkedBrandId: z.uuid().optional(),
 });
 
 export const suggestOrganizationQuerySchema = z.object({

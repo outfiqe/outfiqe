@@ -5,12 +5,14 @@ import type { DbClient } from "#types/db.types.js";
 import { BUILT_IN_ROLE_NAME, BUILT_IN_ROLE_PERMISSIONS } from "./crm-access.constants.js";
 import type {
   CreateOrganizationInviteInput,
+  CreateOrganizationParams,
   CreateOwnershipTransferRequestInput,
   CreateRoleInput,
   MembershipJoinRow,
   MembershipRecord,
   MembershipWithRole,
   OrganizationInviteRecord,
+  OrganizationListItem,
   OrganizationRecord,
   OwnershipTransferJoinRow,
   OwnershipTransferRequestRecord,
@@ -46,12 +48,23 @@ export const crmAccessRepository = {
     return prisma.organization.findFirst({ orderBy: { createdAt: "asc" } });
   },
 
-  async listOrganizations(): Promise<OrganizationRecord[]> {
-    return prisma.organization.findMany({ orderBy: { createdAt: "asc" } });
+  async listOrganizations(): Promise<OrganizationListItem[]> {
+    const organizations = await prisma.organization.findMany({
+      orderBy: { createdAt: "asc" },
+      include: { linkedBrand: { select: { name: true } } },
+    });
+    return organizations.map(({ linkedBrand, ...organization }) => ({
+      ...organization,
+      linkedBrandName: linkedBrand?.name ?? null,
+    }));
   },
 
   async findPlatformOrganization(): Promise<OrganizationRecord | null> {
     return prisma.organization.findFirst({ where: { isPlatformOrg: true } });
+  },
+
+  async findOrganizationByLinkedBrandId(brandId: string): Promise<OrganizationRecord | null> {
+    return prisma.organization.findUnique({ where: { linkedBrandId: brandId } });
   },
 
   async hasAnyMembership(userId: string): Promise<boolean> {
@@ -89,14 +102,16 @@ export const crmAccessRepository = {
     return prisma.organization.findUnique({ where: { subdomain } });
   },
 
-  async createOrganization(input: {
-    name: string;
-    subdomain: string;
-    superAdminUserId: string;
-  }): Promise<{ organization: OrganizationRecord; membership: MembershipRecord }> {
+  async createOrganization(
+    input: CreateOrganizationParams,
+  ): Promise<{ organization: OrganizationRecord; membership: MembershipRecord }> {
     return prisma.$transaction(async (tx) => {
       const organization = await tx.organization.create({
-        data: { name: input.name, subdomain: input.subdomain },
+        data: {
+          name: input.name,
+          subdomain: input.subdomain,
+          linkedBrandId: input.linkedBrandId ?? null,
+        },
       });
 
       let adminRoleId: string | undefined;

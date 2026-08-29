@@ -269,6 +269,61 @@ describe("POST /api/crm/organizations", () => {
     });
     expect(remainingStaffMembership).toBeNull();
   });
+
+  it("persists and returns the linked brand when one is provided", async () => {
+    const staff = await createPlatformStaffUser("Linked Brand Onboarder");
+    const brand = await createBrand("Linked Brand Co");
+    const owner = await createBrandOwner(brand.id);
+
+    const response = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({
+        name: brand.name,
+        subdomain: `linked-${randomUUID().slice(0, 8)}`,
+        targetOwnerUserId: owner.id,
+        linkedBrandId: brand.id,
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.linkedBrandId).toBe(brand.id);
+
+    const organization = await prisma.organization.findUniqueOrThrow({
+      where: { id: response.body.data.id },
+    });
+    expect(organization.linkedBrandId).toBe(brand.id);
+  });
+
+  it("rejects linking a brand that already backs another organization", async () => {
+    const staff = await createPlatformStaffUser("Double Link Onboarder");
+    const brand = await createBrand("Already Linked Co");
+    const owner = await createBrandOwner(brand.id);
+
+    const firstResponse = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({
+        name: brand.name,
+        subdomain: `first-${randomUUID().slice(0, 8)}`,
+        targetOwnerUserId: owner.id,
+        linkedBrandId: brand.id,
+      });
+    expect(firstResponse.status).toBe(201);
+
+    const secondResponse = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({
+        name: brand.name,
+        subdomain: `second-${randomUUID().slice(0, 8)}`,
+        targetOwnerUserId: owner.id,
+        linkedBrandId: brand.id,
+      });
+
+    expect(secondResponse.status).toBe(409);
+    expect(secondResponse.body.code).toBe("BRAND_ALREADY_LINKED");
+    expect(JSON.stringify(secondResponse.body)).not.toMatch(/prisma|constraint|P2002/i);
+  });
 });
 
 describe("GET /api/crm/organizations/suggest", () => {
@@ -287,6 +342,35 @@ describe("GET /api/crm/organizations/suggest", () => {
     expect(response.body.data.brandName).toBe("Everest Threads");
     expect(response.body.data.suggestedSubdomain).toMatch(/^[a-z0-9-]+$/);
     expect(response.body.data.ownerExistingOrganizations).toEqual([]);
+    expect(response.body.data.existingOrganizationForBrand).toBeNull();
+  });
+
+  it("surfaces the organization a brand is already linked to", async () => {
+    const staff = await createPlatformStaffUser("Already Linked Suggestion Requester");
+    const brand = await createBrand("Twice Onboarded Co");
+    const owner = await createBrandOwner(brand.id);
+
+    const createResponse = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({
+        name: brand.name,
+        subdomain: `twice-${randomUUID().slice(0, 8)}`,
+        targetOwnerUserId: owner.id,
+        linkedBrandId: brand.id,
+      });
+    expect(createResponse.status).toBe(201);
+
+    const response = await request(testApp)
+      .get("/api/crm/organizations/suggest")
+      .query({ brandId: brand.id })
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.existingOrganizationForBrand).toEqual({
+      id: createResponse.body.data.id,
+      name: brand.name,
+    });
   });
 
   it("lists the owner's existing organizations instead of hiding them", async () => {
@@ -362,6 +446,29 @@ describe("GET /api/crm/organizations", () => {
     const ids = response.body.data.map((organization: { id: string }) => organization.id);
     expect(ids).toEqual(expect.arrayContaining([first.id, second.id]));
     expect(ids.indexOf(first.id)).toBeLessThan(ids.indexOf(second.id));
+    for (const organization of response.body.data) {
+      expect(organization).toHaveProperty("linkedBrandName");
+    }
+  });
+
+  it("includes the linked brand name for a brand-linked organization", async () => {
+    const brand = await createBrand("Rollup Brand Co");
+    const { organization } = await seedOrganization();
+    await prisma.organization.update({
+      where: { id: organization.id },
+      data: { linkedBrandId: brand.id },
+    });
+    const staff = await createPlatformStaffUser("Linked Org Lister");
+
+    const response = await request(testApp)
+      .get("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+    const linkedOrganization = response.body.data.find(
+      (candidate: { id: string }) => candidate.id === organization.id,
+    );
+    expect(linkedOrganization.linkedBrandName).toBe("Rollup Brand Co");
   });
 
   it("requires a platform ADMIN account", async () => {

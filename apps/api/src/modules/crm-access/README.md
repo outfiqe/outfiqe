@@ -113,6 +113,20 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   business has no legitimate reason to remain a member afterward — unlike the manual transfer flow,
   where that's a real per-transfer choice (see the ownership-transfer bullet below), it's hardcoded
   here.
+- **`Organization.linkedBrandId` is the anchor every tenant-scoped commerce query hangs off.**
+  Nullable (the platform org and any org not yet tied to a commerce brand have none), `@unique`
+  (one `Brand` backs at most one tenant `Organization`), `onDelete: SetNull` (deleting a brand
+  doesn't cascade-delete a whole CRM tenant). It's set at provisioning time — the Organizations
+  screen already makes the staffer pick a `Brand`, so `POST /api/crm/organizations` now persists
+  that choice onto the created row via `createOrganization`'s `linkedBrandId`. A second org for a
+  brand that already backs one is rejected as `BRAND_ALREADY_LINKED` (409) off the DB `@unique`
+  itself — not a read-then-write pre-check — with the raw Prisma error kept server-side only;
+  `uniqueConstraintTargetIncludes` (`shared/utils/prisma.utils.ts`) is what tells that violation
+  apart from a `subdomain` collision, since Prisma 7's driver-adapter errors carry the offending
+  columns under `meta.driverAdapterError.cause.constraint.fields`, not the legacy `meta.target`.
+  `suggestOrganizationFromBrand` additionally returns `existingOrganizationForBrand` so the
+  platform admin sees an already-onboarded brand before submitting — surfaced, not silently
+  blocked, the same treatment `ownerExistingOrganizations` already gets.
 - **`suggestOrganizationFromBrand` derives a subdomain suggestion, never a silent commitment.**
   `Brand` has no slug field, so the suggestion slugifies the brand's name and retries with a random
   suffix on collision — the same `slugifyHandle`/`withHandleSuffix` pair `user.repository.ts`
@@ -158,10 +172,11 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   role check) — there is no CRM signup. `acceptInvite` additionally checks the accepting account's
   email matches the invite's email, so a valid token can't be redeemed by a different logged-in
   staff member than the one it was addressed to.
-- **`crm-access.repository.ts` only exposes what Chunks 1–2 need, plus ownership transfer.**
-  `updateOrganization` and role create/update/delete are still deliberately not here — they belong
-  to later chunks (custom-role builder, org settings UI) and would be unused, unscoped code if
-  added now.
+- **`crm-access.repository.ts` only exposes what Chunks 1–2 need, plus ownership transfer and the
+  brand link.** `updateOrganization` and role create/update/delete are still deliberately not
+  here — they belong to later chunks (custom-role builder, org settings UI) and would be unused,
+  unscoped code if added now. `findOrganizationByLinkedBrandId` and the `linkedBrand` name join on
+  `listOrganizations` are the only Step-0 additions.
 - **Ownership transfer requires the recipient's acceptance — it's never an immediate, unilateral
   handoff.** Every other membership-changing action in this module already works this way (CRM
   invites, admin invites both require an explicit accept step), so this follows the same shape

@@ -23,15 +23,17 @@ const CREATED_STATUS = 201;
 
 export const crmAccessController = {
   async createOrganization(_req: Request, res: Response) {
-    const { name, subdomain, targetOwnerUserId } = validated.body<CreateOrganizationBody>(res);
+    const { name, subdomain, targetOwnerUserId, linkedBrandId } =
+      validated.body<CreateOrganizationBody>(res);
     const principal = requireAuthPrincipal(res);
 
-    const organization = await crmAccessService.createOrganization(
+    const organization = await crmAccessService.createOrganization({
       name,
       subdomain,
-      principal.userId,
+      creatingUserId: principal.userId,
       targetOwnerUserId,
-    );
+      linkedBrandId,
+    });
     sendSuccess(res, organization, "Organization created.", CREATED_STATUS);
   },
 

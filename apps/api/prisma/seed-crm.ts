@@ -19,6 +19,7 @@ type DemoStaffSeed = { name: string; email: string; phone: string; roleName: str
 type DemoOrganizationSeed = {
   name: string;
   subdomain: string;
+  linkedBrandName: string;
   staff: DemoStaffSeed[];
 };
 
@@ -26,6 +27,7 @@ const DEMO_ORGANIZATIONS: DemoOrganizationSeed[] = [
   {
     name: "Meridian Apparel Co.",
     subdomain: "meridian",
+    linkedBrandName: "Kastha Studio",
     staff: [
       {
         name: "Bipin Karki",
@@ -50,6 +52,7 @@ const DEMO_ORGANIZATIONS: DemoOrganizationSeed[] = [
   {
     name: "Norday Studio",
     subdomain: "norday",
+    linkedBrandName: "Nepa Threads",
     staff: [
       {
         name: "Prapti Basnet",
@@ -203,12 +206,31 @@ async function seedDemoStaffUser(staff: DemoStaffSeed) {
   });
 }
 
+async function resolveLinkedBrandId(brandName: string): Promise<string | null> {
+  const brand = await prisma.brand.findFirst({ where: { name: brandName }, select: { id: true } });
+  if (!brand) {
+    console.warn(`Demo org linked brand "${brandName}" not found — leaving the link empty.`);
+    return null;
+  }
+  return brand.id;
+}
+
 async function seedDemoOrganizations() {
   for (const demo of DEMO_ORGANIZATIONS) {
+    const linkedBrandId = await resolveLinkedBrandId(demo.linkedBrandName);
+
     const existing = await prisma.organization.findUnique({
       where: { subdomain: demo.subdomain },
     });
-    if (existing) continue;
+    if (existing) {
+      if (!existing.linkedBrandId && linkedBrandId) {
+        await prisma.organization.update({
+          where: { id: existing.id },
+          data: { linkedBrandId },
+        });
+      }
+      continue;
+    }
 
     const organization = await prisma.organization.create({
       data: {
@@ -216,6 +238,7 @@ async function seedDemoOrganizations() {
         subdomain: demo.subdomain,
         plan: "trial",
         trialEndsAt: addDays(new Date(), TRIAL_LENGTH_DAYS),
+        linkedBrandId,
       },
     });
 

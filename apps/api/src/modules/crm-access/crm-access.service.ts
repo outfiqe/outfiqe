@@ -7,7 +7,7 @@ import { type MembershipStatus, UserRole } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
-import { isUniqueConstraintError } from "#lib/prisma.utils.js";
+import { isUniqueConstraintError, uniqueConstraintTargetIncludes } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
@@ -23,10 +23,12 @@ import {
 } from "./crm-access.constants.js";
 import { crmAccessRepository } from "./crm-access.repository.js";
 import type {
+  CreateOrganizationInput,
   MembershipRecord,
   MembershipSummary,
   OrganizationCreationSuggestion,
   OrganizationInviteSummary,
+  OrganizationListItem,
   OrganizationRecord,
   OwnershipTransferRequestRecord,
   PendingOwnershipTransferSummary,
@@ -98,12 +100,9 @@ export const crmAccessService = {
     return crmAccessRepository.grantPlatformStaffMembership(userId, client);
   },
 
-  async createOrganization(
-    name: string,
-    subdomain: string,
-    creatingUserId: string,
-    targetOwnerUserId?: string,
-  ): Promise<OrganizationRecord> {
+  async createOrganization(input: CreateOrganizationInput): Promise<OrganizationRecord> {
+    const { name, subdomain, creatingUserId, targetOwnerUserId, linkedBrandId } = input;
+
     if (RESERVED_SUBDOMAINS.includes(subdomain)) {
       throw new AppError(
         "SUBDOMAIN_RESERVED",
@@ -119,10 +118,18 @@ export const crmAccessService = {
         name,
         subdomain,
         superAdminUserId: creatingUserId,
+        linkedBrandId,
       });
       organization = created.organization;
       creatorMembershipId = created.membership.id;
     } catch (err) {
+      if (uniqueConstraintTargetIncludes(err, "linked_brand_id")) {
+        throw new AppError(
+          "BRAND_ALREADY_LINKED",
+          "This business is already linked to another organization.",
+          CONFLICT_STATUS,
+        );
+      }
       if (isUniqueConstraintError(err)) {
         throw new AppError("SUBDOMAIN_TAKEN", "This subdomain is already in use.", CONFLICT_STATUS);
       }
@@ -172,6 +179,8 @@ export const crmAccessService = {
 
     const suggestedSubdomain = await generateUniqueSubdomain(brand.name);
     const ownerOrganizations = await crmAccessRepository.findOrganizationsOwnedByUser(ownerUserId);
+    const organizationAlreadyLinkedToBrand =
+      await crmAccessRepository.findOrganizationByLinkedBrandId(brandId);
 
     return {
       brandId: brand.id,
@@ -183,10 +192,16 @@ export const crmAccessService = {
         id: existingOrganization.id,
         name: existingOrganization.name,
       })),
+      existingOrganizationForBrand: organizationAlreadyLinkedToBrand
+        ? {
+            id: organizationAlreadyLinkedToBrand.id,
+            name: organizationAlreadyLinkedToBrand.name,
+          }
+        : null,
     };
   },
 
-  async listOrganizations(): Promise<OrganizationRecord[]> {
+  async listOrganizations(): Promise<OrganizationListItem[]> {
     return crmAccessRepository.listOrganizations();
   },
 
