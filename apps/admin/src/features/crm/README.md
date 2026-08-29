@@ -63,14 +63,22 @@ yet — those are later chunks.
   (`@outfiqe/hooks`).
 - `PartnerDetailPage.tsx` / `CustomerDetailPage.tsx` — per-product breakdown + recent attributed
   orders (partner) / recent order history (customer), reached from a list row.
+- `pipelineApi.ts` / `pipelineSchemas.ts` — `crmPipelineApi` (stage CRUD + reorder, deal CRUD) +
+  Zod mirrors of `/api/crm/pipeline/*` and `/api/crm/deals`.
+- `PipelinePage.tsx` — a `KanbanBoard` (`@outfiqe/components`) of stages → deals. `deals:write`
+  gets a "New deal" button (`DealFormModal.tsx`, with a partner picker fed by
+  `crmRelationshipsApi.listPartners`); `pipeline:configure` gets "Configure stages"
+  (`StageConfigModal.tsx` — add / rename-less delete / up-down reorder). Moving a card patches the
+  deal's `stageId`.
 
 Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
 `_authenticated.crm.invites.accept.tsx` (`/crm/invites/accept` → `AcceptInvitePage`),
 `_authenticated.crm.billing.index.tsx` / `_authenticated.crm.billing.return.tsx`,
 `_authenticated.crm.partners.index.tsx` (`/crm/partners` → `PartnersPage`),
 `_authenticated.crm.partners.$creatorId.tsx` (`→ PartnerDetailPage`),
-`_authenticated.crm.customers.index.tsx` (`/crm/customers` → `CustomersPage`), and
-`_authenticated.crm.customers.$userId.tsx` (`→ CustomerDetailPage`) — the `.index`
+`_authenticated.crm.customers.index.tsx` (`/crm/customers` → `CustomersPage`),
+`_authenticated.crm.customers.$userId.tsx` (`→ CustomerDetailPage`), and
+`_authenticated.crm.pipeline.index.tsx` (`/crm/pipeline` → `PipelinePage`) — the `.index`
 suffix on the leaf routes is load-bearing, not stylistic: without it, TanStack Router's file-based
 convention treats `_authenticated.crm.tsx` as a layout parent for anything under `crm.*`
 (including the accept route), and since `CrmPage` renders no `<Outlet/>`, the accept route would

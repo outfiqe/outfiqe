@@ -1,5 +1,6 @@
 import { prisma } from "#db/prisma.js";
 import type { MembershipStatus } from "#generated/prisma/enums.js";
+import { DEFAULT_PIPELINE_STAGES } from "#modules/crm-pipeline/crm-pipeline.constants.js";
 import type { DbClient } from "#types/db.types.js";
 
 import { BUILT_IN_ROLE_NAME, BUILT_IN_ROLE_PERMISSIONS } from "./crm-access.constants.js";
@@ -127,6 +128,16 @@ export const crmAccessRepository = {
         if (roleName === BUILT_IN_ROLE_NAME.ADMIN) adminRoleId = role.id;
       }
       if (!adminRoleId) throw new Error("built-in Admin role was not created");
+
+      await tx.pipelineStage.createMany({
+        data: DEFAULT_PIPELINE_STAGES.map((stage) => ({
+          organizationId: organization.id,
+          name: stage.name,
+          sortOrder: stage.sortOrder,
+          isWon: stage.isWon,
+          isLost: stage.isLost,
+        })),
+      });
 
       const membership = await tx.membership.create({
         data: {

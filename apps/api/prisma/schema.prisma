@@ -64,6 +64,7 @@ model User {
   creatorCommissions                       CreatorCommission[]         @relation("CreatorCommissions")
   creatorLinks                             CreatorLink[]               @relation("CreatorLinks")
   creatorLinkClicks                        CreatorLinkClick[]
+  crmPartnerDeals                          Deal[]                     @relation("DealPartnerCreator")
   deliveryZoneChanges                      DeliveryZoneHistory[]       @relation("DeliveryZoneChanges")
   xpTransactions                           XpTransaction[]
   progress                                 UserProgress?
@@ -1840,8 +1841,57 @@ model Organization {
   invites                   OrganizationInvite[]
   ownershipTransferRequests OwnershipTransferRequest[]
   subscription              Subscription?
+  pipelineStages            PipelineStage[]
+  deals                     Deal[]
 
   @@map("organizations")
+}
+
+model PipelineStage {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  sortOrder      Int      @map("sort_order")
+  isWon          Boolean  @default(false) @map("is_won")
+  isLost         Boolean  @default(false) @map("is_lost")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  deals Deal[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId, sortOrder])
+  @@map("pipeline_stages")
+}
+
+enum DealStatus {
+  OPEN
+  WON
+  LOST
+}
+
+model Deal {
+  id                String     @id @default(uuid()) @db.Uuid
+  organizationId    String     @map("organization_id") @db.Uuid
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stageId           String     @map("stage_id") @db.Uuid
+  stage             PipelineStage @relation(fields: [stageId], references: [id])
+  title             String
+  value             Int        @default(0)
+  currency          String     @default("NPR")
+  expectedCloseDate DateTime?  @map("expected_close_date")
+  ownerMembershipId String?    @map("owner_membership_id") @db.Uuid
+  ownerMembership   Membership? @relation("DealOwnerMembership", fields: [ownerMembershipId], references: [id], onDelete: SetNull)
+  partnerCreatorId  String     @map("partner_creator_id") @db.Uuid
+  partnerCreator    User       @relation("DealPartnerCreator", fields: [partnerCreatorId], references: [id], onDelete: Cascade)
+  status            DealStatus @default(OPEN)
+  closedAt          DateTime?  @map("closed_at")
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+
+  @@index([organizationId, stageId])
+  @@map("deals")
 }
 
 enum SubscriptionStatus {
@@ -1918,6 +1968,7 @@ model Membership {
 
   ownershipTransfersSent     OwnershipTransferRequest[] @relation("OwnershipTransferFrom")
   ownershipTransfersReceived OwnershipTransferRequest[] @relation("OwnershipTransferTo")
+  ownedDeals                 Deal[]                    @relation("DealOwnerMembership")
 
   @@unique([userId, organizationId])
   @@index([organizationId])

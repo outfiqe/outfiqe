@@ -33,6 +33,7 @@ import { creatorLookRoutes } from "./modules/creator-looks/creatorLook.routes.js
 import { creatorRoutes } from "./modules/creators/creator.routes.js";
 import { crmAccessRoutes } from "./modules/crm-access/crm-access.routes.js";
 import { crmBillingRoutes } from "./modules/crm-billing/crm-billing.routes.js";
+import { crmPipelineRoutes } from "./modules/crm-pipeline/crm-pipeline.routes.js";
 import { crmRelationshipsRoutes } from "./modules/crm-relationships/crm-relationships.routes.js";
 import { deliveryZoneRoutes } from "./modules/delivery-zones/deliveryZone.routes.js";
 import { financialRollupRoutes } from "./modules/financial-rollup/financialRollup.routes.js";
@@ -141,6 +142,7 @@ export const createApp = () => {
   app.use("/api/collections", collectionRoutes);
   app.use("/api/crm/billing", crmBillingRoutes);
   app.use("/api/crm", crmRelationshipsRoutes);
+  app.use("/api/crm", crmPipelineRoutes);
   app.use("/api/crm", crmAccessRoutes);
   app.use("/api/creator-links", creatorLinkRoutes);
   app.use("/api/creator-looks", creatorLookRoutes);

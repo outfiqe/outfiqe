@@ -6,6 +6,7 @@ const CRM_TABS: CrmTab[] = [
   { label: "Overview", to: "/crm", permissionKey: null },
   { label: "Partners", to: "/crm/partners", permissionKey: "accounts:read" },
   { label: "Customers", to: "/crm/customers", permissionKey: "customers:read" },
+  { label: "Pipeline", to: "/crm/pipeline", permissionKey: "pipeline:read" },
   { label: "Billing", to: "/crm/billing", permissionKey: "billing:read" },
 ];
 

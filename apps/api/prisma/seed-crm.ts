@@ -13,6 +13,7 @@ import {
   PLATFORM_ACCESS_PERMISSION_KEY,
 } from "../src/modules/crm-access/crm-access.constants.js";
 import { CRM_PLAN_CATALOG, CRM_PLAN_ID } from "../src/modules/crm-billing/crm-billing.constants.js";
+import { DEFAULT_PIPELINE_STAGES } from "../src/modules/crm-pipeline/crm-pipeline.constants.js";
 import { prisma } from "../src/shared/db/prisma.js";
 import { hashPassword } from "../src/shared/utils/password.utils.js";
 
@@ -246,6 +247,16 @@ async function seedDemoOrganizations() {
         trialEndsAt: addDays(new Date(), TRIAL_LENGTH_DAYS),
         linkedBrandId,
       },
+    });
+
+    await prisma.pipelineStage.createMany({
+      data: DEFAULT_PIPELINE_STAGES.map((stage) => ({
+        organizationId: organization.id,
+        name: stage.name,
+        sortOrder: stage.sortOrder,
+        isWon: stage.isWon,
+        isLost: stage.isLost,
+      })),
     });
 
     const roleIdByName = new Map<string, string>();
