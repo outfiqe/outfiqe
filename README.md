@@ -163,6 +163,7 @@ them only if you want to change what CI uses.
 | `CI_JWT_SECRET`   | any string ≥ 16 characters                                             |
 | `CI_API_URL`      | `http://localhost:4000` (workflow default, rarely needs overriding)    |
 | `CI_SITE_URL`     | `http://localhost:3000` (workflow default, rarely needs overriding)    |
+| `CI_ADMIN_URL`    | `/admin` (workflow default, rarely needs overriding)                   |
 
 Via `gh` CLI instead of the UI:
 
