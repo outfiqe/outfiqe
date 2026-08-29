@@ -35,6 +35,7 @@ const pendingTransferToCurrentUser = {
   toUserId: CURRENT_USER_ID,
   toUserName: "Current User",
   fromUserName: "Bipin Karki",
+  removeSenderMembershipOnAccept: false,
   expiresAt: "2026-09-08T00:00:00.000Z",
 };
 

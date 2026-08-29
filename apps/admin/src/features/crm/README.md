@@ -74,6 +74,17 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
   `members:read`/`members:invite`, and showing a control guaranteed to reject every request is
   worse than not showing it, the same reasoning the SUPERADMIN-row-disabling bullet below already
   applies to `MembersSection`'s own controls.
+- **`AdminSidebar` always shows the CRM nav item to any signed-in admin-role user, regardless of
+  which subdomain they're currently on or whether they have a membership there** — CRM access is
+  tenant/subdomain-scoped, and the sidebar has no cheap way to know in advance whether the
+  currently-resolved organization is one the viewer belongs to (that's exactly what
+  `GET /api/crm/organization` determines, fetched only once `CrmPage` itself mounts). Lifting that
+  query up to a shared layout so the sidebar could hide the link ahead of time would mean firing it
+  on every admin page load, not just CRM ones — not worth the added request for what's a narrow
+  edge case (visiting the wrong tenant's subdomain by URL). Instead, `CrmPage` detects the specific
+  `FORBIDDEN` error from that fetch and swaps in a message pointing the viewer at checking they're
+  on the right organization's subdomain, rather than the generic "You do not have permission to do
+  this."
 - **The admin app's root route (`/`, "Brand applications") redirects to `/crm` for anyone without
   `hasPlatformAccess`** (`routes/_authenticated.index.tsx`). Without this, a tenant-only account
   landing on the bare `/admin` URL — which isn't in their sidebar, but is still directly
@@ -88,6 +99,12 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
   `ChallengesSection/CreateChallengeModal.tsx`) rather than transferring immediately; the actual
   handoff only happens once the target accepts via `OwnershipTransferBanner`. See
   `crm-access`'s README for why the backend enforces this the same way.
+- **The transfer confirm modal's "Remove my own access after this transfer" checkbox defaults
+  unchecked.** The sender decides per-transfer whether they should be removed from the org
+  entirely once it's accepted, rather than the system guessing based on account type — see
+  `crm-access`'s README for the full reasoning. When set, `OwnershipTransferBanner` shows the
+  recipient an explicit note ("The current owner will be removed...") before they accept, since it
+  materially changes what accepting does to the org's member list.
 - **Text split across a `<strong>` tag can't be matched by a single `screen.findByText(/regex/)`
   in tests** — Testing Library matches one text node at a time by default, so
   `OwnershipTransferBanner`'s "Ownership transfer to **{name}** is pending…" renders as three

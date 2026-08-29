@@ -1,6 +1,7 @@
 import { FormBanner } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 
+import { ApiClientError } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
@@ -11,6 +12,12 @@ import type { Organization } from "./schemas";
 
 const MEMBERS_READ_PERMISSION_KEY = "members:read";
 const MEMBERS_INVITE_PERMISSION_KEY = "members:invite";
+const FORBIDDEN_ERROR_CODE = "FORBIDDEN";
+const NO_ORGANIZATION_ACCESS_MESSAGE =
+  "You don't have CRM access on this organization. If you were invited to a different organization, make sure you're on that organization's own subdomain.";
+
+const isNoOrganizationAccessError = (error: unknown): boolean =>
+  error instanceof ApiClientError && error.code === FORBIDDEN_ERROR_CODE;
 
 const canViewMembers = (organization: Organization) =>
   organization.viewerIsSuperAdmin ||
@@ -44,7 +51,13 @@ export const CrmPage = () => {
       </div>
 
       {isLoading && <p className="mt-6 text-sm text-muted-foreground">Loading…</p>}
-      {error && <FormBanner className="mt-6">{getErrorMessage(error)}</FormBanner>}
+      {error && (
+        <FormBanner className="mt-6">
+          {isNoOrganizationAccessError(error)
+            ? NO_ORGANIZATION_ACCESS_MESSAGE
+            : getErrorMessage(error)}
+        </FormBanner>
+      )}
 
       {organization && (
         <div className="mt-6">
