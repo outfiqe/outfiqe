@@ -26,6 +26,7 @@ export default defineConfig({
         "src/features/gamification/BadgesSection/DesignStudio/BadgeDesignSection.tsx",
         "src/features/crm/**/*.{ts,tsx}",
         "src/features/organizations/**/*.{ts,tsx}",
+        "src/lib/brandsApi.ts",
       ],
       thresholds: {
         lines: 80,

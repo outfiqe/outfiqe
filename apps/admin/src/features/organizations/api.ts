@@ -2,7 +2,12 @@ import { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
 
-import { type Organization, organizationSchema } from "./schemas";
+import {
+  type Organization,
+  type OrganizationCreationSuggestion,
+  organizationCreationSuggestionSchema,
+  organizationSchema,
+} from "./schemas";
 
 const organizationsListSchema = z.array(organizationSchema);
 
@@ -12,8 +17,19 @@ export const organizationsApi = {
     return organizationsListSchema.parse(res.data);
   },
 
-  async create(name: string, subdomain: string): Promise<Organization> {
-    const res = await apiClient.post<Organization>("/crm/organizations", { name, subdomain });
+  async suggestFromBrand(brandId: string): Promise<OrganizationCreationSuggestion> {
+    const res = await apiClient.get<OrganizationCreationSuggestion>("/crm/organizations/suggest", {
+      params: { brandId },
+    });
+    return organizationCreationSuggestionSchema.parse(res.data);
+  },
+
+  async create(name: string, subdomain: string, targetOwnerUserId?: string): Promise<Organization> {
+    const res = await apiClient.post<Organization>("/crm/organizations", {
+      name,
+      subdomain,
+      targetOwnerUserId,
+    });
     return organizationSchema.parse(res.data);
   },
 };

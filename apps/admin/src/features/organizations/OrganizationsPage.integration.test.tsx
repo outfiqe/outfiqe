@@ -71,6 +71,43 @@ describe("OrganizationsPage", () => {
     await waitFor(() => expect(screen.getByText("Forbidden")).toBeInTheDocument());
   });
 
+  const mockBrandSearch = () => {
+    mswServer.use(
+      http.get(`${API_BASE}/brands`, () =>
+        HttpResponse.json({
+          success: true,
+          data: { brands: [{ id: "brand-1", name: "Acme", avatarUrl: null }] },
+        }),
+      ),
+    );
+  };
+
+  const mockSuggestion = (
+    overrides: Partial<{ ownerExistingOrganizations: { id: string; name: string }[] }> = {},
+  ) => {
+    mswServer.use(
+      http.get(`${API_BASE}/crm/organizations/suggest`, () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            brandId: "brand-1",
+            brandName: "Acme",
+            ownerUserId: "owner-1",
+            ownerName: "Ava Martinez",
+            suggestedSubdomain: "acme",
+            ownerExistingOrganizations: overrides.ownerExistingOrganizations ?? [],
+          },
+        }),
+      ),
+    );
+  };
+
+  const selectAcme = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.type(screen.getByLabelText("Business"), "Acme");
+    await user.click(await screen.findByRole("option", { name: "Acme" }));
+    await screen.findByDisplayValue("acme");
+  };
+
   it("creates an organization and clears the form on success", async () => {
     let requestBody: unknown;
     mswServer.use(
@@ -94,17 +131,24 @@ describe("OrganizationsPage", () => {
         );
       }),
     );
+    mockBrandSearch();
+    mockSuggestion();
 
     renderOrganizationsPage();
     await screen.findByText("No organizations yet.");
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Name"), "Acme");
-    await user.type(screen.getByLabelText("Subdomain"), "acme");
+    await selectAcme(user);
     await user.click(screen.getByRole("button", { name: "Create organization" }));
 
-    await waitFor(() => expect(requestBody).toEqual({ name: "Acme", subdomain: "acme" }));
-    await waitFor(() => expect(screen.getByLabelText("Name")).toHaveValue(""));
+    await waitFor(() =>
+      expect(requestBody).toEqual({
+        name: "Acme",
+        subdomain: "acme",
+        targetOwnerUserId: "owner-1",
+      }),
+    );
+    await waitFor(() => expect(screen.getByLabelText("Business")).toHaveValue(""));
   });
 
   it("shows the backend error message when creation fails", async () => {
@@ -125,15 +169,35 @@ describe("OrganizationsPage", () => {
           ),
       ),
     );
+    mockBrandSearch();
+    mockSuggestion();
 
     renderOrganizationsPage();
     await screen.findByText("No organizations yet.");
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Name"), "Acme");
-    await user.type(screen.getByLabelText("Subdomain"), "acme");
+    await selectAcme(user);
     await user.click(screen.getByRole("button", { name: "Create organization" }));
 
     expect(await screen.findByText("This subdomain is already in use.")).toBeInTheDocument();
+  });
+
+  it("shows the owner's existing organizations instead of hiding them", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/crm/organizations`, () =>
+        HttpResponse.json({ success: true, data: [] }),
+      ),
+    );
+    mockBrandSearch();
+    mockSuggestion({ ownerExistingOrganizations: [{ id: "org-9", name: "Daraz-Org" }] });
+
+    renderOrganizationsPage();
+    await screen.findByText("No organizations yet.");
+
+    const user = userEvent.setup();
+    await selectAcme(user);
+
+    expect(await screen.findByText(/Ava Martinez already owns/)).toBeInTheDocument();
+    expect(screen.getByText(/Daraz-Org/)).toBeInTheDocument();
   });
 });
