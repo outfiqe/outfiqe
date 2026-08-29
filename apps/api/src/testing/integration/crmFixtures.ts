@@ -54,3 +54,36 @@ export const ensurePlatformOrganizationExists = async (): Promise<OrganizationRe
   const { organization } = await seedPlatformOrganization();
   return organization;
 };
+
+export const seedTenantOrganization = async (
+  options: { linkedBrandId?: string } = {},
+): Promise<{
+  organization: OrganizationRecord;
+  adminRole: RoleWithPermissions;
+  memberRole: RoleWithPermissions;
+}> => {
+  await prisma.permission.createMany({ data: PERMISSION_CATALOG, skipDuplicates: true });
+  const organization = await prisma.organization.create({
+    data: {
+      name: `Tenant Org ${randomUUID()}`,
+      subdomain: `tenant-${randomUUID().slice(0, 8)}`,
+      plan: "trial",
+      linkedBrandId: options.linkedBrandId ?? null,
+    },
+  });
+
+  const adminRole = await crmAccessRepository.createRole({
+    organizationId: organization.id,
+    name: BUILT_IN_ROLE_NAME.ADMIN,
+    isBuiltIn: true,
+    permissionKeys: BUILT_IN_ROLE_PERMISSIONS[BUILT_IN_ROLE_NAME.ADMIN],
+  });
+  const memberRole = await crmAccessRepository.createRole({
+    organizationId: organization.id,
+    name: BUILT_IN_ROLE_NAME.MEMBER,
+    isBuiltIn: true,
+    permissionKeys: BUILT_IN_ROLE_PERMISSIONS[BUILT_IN_ROLE_NAME.MEMBER],
+  });
+
+  return { organization, adminRole, memberRole };
+};

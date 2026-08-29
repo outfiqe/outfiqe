@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
+import { crmBillingService } from "#modules/crm-billing/crm-billing.service.js";
 
 import { getCrmMembership, getResolvedOrganization } from "./crm-access.middleware.js";
 import type {
@@ -52,12 +53,18 @@ export const crmAccessController = {
   async getOrganization(_req: Request, res: Response) {
     const organization = getResolvedOrganization(res);
     const membership = getCrmMembership(res);
-    const pendingOwnershipTransfer = await crmAccessService.getPendingOwnershipTransfer(
-      organization.id,
-    );
+    const [pendingOwnershipTransfer, advancedFeaturesEnabled] = await Promise.all([
+      crmAccessService.getPendingOwnershipTransfer(organization.id),
+      crmBillingService.resolveAdvancedFeaturesForOrganization(organization),
+    ]);
     sendSuccess(
       res,
-      toOrganizationWithViewerContext(organization, membership, pendingOwnershipTransfer),
+      toOrganizationWithViewerContext(
+        organization,
+        membership,
+        pendingOwnershipTransfer,
+        advancedFeaturesEnabled,
+      ),
       "CRM organization.",
     );
   },

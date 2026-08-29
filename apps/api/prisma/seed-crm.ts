@@ -1,12 +1,18 @@
 import { addDays } from "date-fns/addDays";
 
-import { UserRole } from "../src/generated/prisma/enums.js";
+import {
+  CrmBillingProvider,
+  SubscriptionInvoiceStatus,
+  SubscriptionStatus,
+  UserRole,
+} from "../src/generated/prisma/enums.js";
 import {
   BUILT_IN_ROLE_NAME,
   BUILT_IN_ROLE_PERMISSIONS,
   PERMISSION_CATALOG,
   PLATFORM_ACCESS_PERMISSION_KEY,
 } from "../src/modules/crm-access/crm-access.constants.js";
+import { CRM_PLAN_CATALOG, CRM_PLAN_ID } from "../src/modules/crm-billing/crm-billing.constants.js";
 import { prisma } from "../src/shared/db/prisma.js";
 import { hashPassword } from "../src/shared/utils/password.utils.js";
 
@@ -276,6 +282,46 @@ async function seedDemoOrganizations() {
   }
 }
 
+async function seedDemoSubscriptions() {
+  const meridian = await prisma.organization.findUnique({ where: { subdomain: "meridian" } });
+  if (!meridian) return;
+
+  const existing = await prisma.subscription.findUnique({
+    where: { organizationId: meridian.id },
+  });
+  if (existing) return;
+
+  const seats = 5;
+  const periodStart = new Date();
+  const periodEnd = addDays(periodStart, 30);
+  const amount = CRM_PLAN_CATALOG[CRM_PLAN_ID.STARTER].pricePerSeatPerMonth * seats;
+
+  const subscription = await prisma.subscription.create({
+    data: {
+      organizationId: meridian.id,
+      plan: CRM_PLAN_ID.STARTER,
+      status: SubscriptionStatus.ACTIVE,
+      seats,
+      currentPeriodEnd: periodEnd,
+    },
+  });
+
+  await prisma.subscriptionInvoice.create({
+    data: {
+      subscriptionId: subscription.id,
+      plan: CRM_PLAN_ID.STARTER,
+      seats,
+      amount,
+      status: SubscriptionInvoiceStatus.PAID,
+      periodStart,
+      periodEnd,
+      provider: CrmBillingProvider.ESEWA,
+      initiatedAt: periodStart,
+      paidAt: periodStart,
+    },
+  });
+}
+
 export async function seedCrmAccess() {
   await seedPermissionCatalog();
   const organization = await seedOrganization();
@@ -284,4 +330,5 @@ export async function seedCrmAccess() {
   await seedSuperAdmin(organization.id, organization.superAdminMembershipId);
   await seedDemoOrganizations();
   await seedPlatformStaffMemberships(organization.id);
+  await seedDemoSubscriptions();
 }

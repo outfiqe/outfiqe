@@ -1,4 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
@@ -18,13 +25,24 @@ vi.mock("@/features/auth/AuthContext", () => ({
 
 const wrapper = ({ children }: { children: ReactNode }) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  const rootRoute = createRootRoute({ component: () => <>{children}</> });
+  const billingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/crm/billing" });
+  const router = createRouter({
+    routeTree: rootRoute.addChildren([billingRoute]),
+    history: createMemoryHistory({ initialEntries: ["/"] }),
+  });
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
+  );
 };
 
 const mockOrganizationEndpoint = (
   overrides: Partial<{
     viewerIsSuperAdmin: boolean;
     viewerPermissionKeys: string[];
+    advancedFeaturesEnabled: boolean;
     pendingOwnershipTransfer: {
       id: string;
       toMembershipId: string;
@@ -50,6 +68,7 @@ const mockOrganizationEndpoint = (
           viewerIsSuperAdmin: false,
           viewerPermissionKeys: [],
           pendingOwnershipTransfer: null,
+          advancedFeaturesEnabled: true,
           ...overrides,
         },
       }),

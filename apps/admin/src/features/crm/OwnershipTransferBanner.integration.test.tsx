@@ -48,6 +48,7 @@ const baseOrganization: Organization = {
   viewerIsSuperAdmin: false,
   viewerPermissionKeys: [],
   pendingOwnershipTransfer: pendingTransferToCurrentUser,
+  advancedFeaturesEnabled: true,
 };
 
 describe("OwnershipTransferBanner", () => {

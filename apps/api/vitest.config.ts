@@ -76,6 +76,7 @@ export default defineConfig({
         "src/modules/image-processing/**/*.ts",
         "src/modules/chat/**/*.ts",
         "src/modules/crm-access/**/*.ts",
+        "src/modules/crm-billing/**/*.ts",
       ],
       thresholds: {
         lines: 80,

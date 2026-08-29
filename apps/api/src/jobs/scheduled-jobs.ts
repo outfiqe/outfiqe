@@ -17,6 +17,14 @@ import {
 } from "#modules/creator-looks/creatorLook.constants.js";
 import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
 import {
+  INVOICE_RECONCILE_INTERVAL_MS,
+  RENEWAL_SWEEP_INTERVAL_MS,
+} from "#modules/crm-billing/crm-billing.constants.js";
+import {
+  runCrmBillingReconciliationSweep,
+  runCrmSubscriptionRenewalSweep,
+} from "#modules/crm-billing/crm-billing.jobs.js";
+import {
   FASTEST_GROWING_RECOMPUTE_INTERVAL_MS,
   MOST_PURCHASED_RECOMPUTE_INTERVAL_MS,
   TRENDING_RECOMPUTE_INTERVAL_MS,
@@ -48,6 +56,16 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "brand-payout-lifecycle",
     run: runBrandPayoutLifecycleSweep,
     intervalMs: COMMISSION_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "crm-subscription-renewal",
+    run: runCrmSubscriptionRenewalSweep,
+    intervalMs: RENEWAL_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "crm-billing-reconciliation",
+    run: runCrmBillingReconciliationSweep,
+    intervalMs: INVOICE_RECONCILE_INTERVAL_MS,
   },
   {
     name: "trending-aggregation",

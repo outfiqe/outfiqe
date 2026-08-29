@@ -2,11 +2,12 @@
 
 ## Purpose
 
-The first visible screen for Outfiqe's internal CRM (Chunk 4 of the roadmap in
-`docs/PRD-CRM.md`). Lets a staff member with CRM access view the organization, see and manage
-CRM members, invite an existing staff account, and accept a CRM invite — all against the
-`/api/crm/*` endpoints built in Chunks 1–2 (`apps/api/src/modules/crm-access`). No pipeline,
-deals, billing, or custom-role UI yet — those are later chunks.
+The visible screens for Outfiqe's internal CRM. Lets a staff member with CRM access view the
+organization, see and manage CRM members, invite an existing staff account, accept a CRM invite,
+and manage the organization's paid subscription — against the `/api/crm/*` endpoints in
+`apps/api/src/modules/crm-access` (Chunks 1–2 + ownership transfer) and
+`apps/api/src/modules/crm-billing` (Chunk 3). No pipeline, deals, tickets, or custom-role UI yet —
+those are later chunks.
 
 ## Structure
 
@@ -35,10 +36,26 @@ deals, billing, or custom-role UI yet — those are later chunks.
   `features/auth/RegisterInvitePage.tsx`'s loading/invalid/valid state-machine shape. Once the
   accept call succeeds, it also re-fetches `/api/auth/me` and pushes the result into
   `AuthContext` via `updateUser` — see "Non-obvious rationale" for why.
+- `billingApi.ts` / `billingSchemas.ts` — `crmBillingApi` (`getOverview`/`listInvoices`/`checkout`/
+  `payInvoice`/`verifyInvoice`/`cancel`) + Zod mirrors of `/api/crm/billing/*` responses.
+- `BillingPage.tsx` / `BillingSection.tsx` — plan + seat + status card, invoice history table,
+  outstanding-renewal-invoice "Pay now" banner, and a "Cancel renewal" action. `PlanCheckoutModal.tsx`
+  is the plan/seats/gateway picker; on submit it calls `checkout` (or `payInvoice` for an existing
+  renewal invoice) and hands the redirect to `paymentRedirect.ts`.
+- `paymentRedirect.ts` — turns a checkout redirect into a real navigation: `window.location` for
+  Khalti's REDIRECT mode, an auto-submitted hidden `<form>` for eSewa's FORM_POST mode. This is a
+  deliberate near-duplicate of `apps/web/src/features/payments/paymentRedirect.utils.ts`; lift both
+  into `packages/utils` the next time payment redirects are touched in `apps/web`.
+- `BillingReturnPage.tsx` — the page the gateway redirects back to; reads `?invoiceId`, calls
+  `verifyInvoice` server-side, and reports COMPLETE / PENDING / FAILED.
+- `PlanGateBanner.tsx` — shown above CRM content when `organization.advancedFeaturesEnabled` is
+  false (trial ended, no active subscription), linking to `/crm/billing`.
 
-Routes: `apps/admin/src/routes/_authenticated.crm.index.tsx` (`/crm` → `CrmPage`) and
-`_authenticated.crm.invites.accept.tsx` (`/crm/invites/accept` → `AcceptInvitePage`) — the `.index`
-suffix on the first is load-bearing, not stylistic: without it, TanStack Router's file-based
+Routes: `apps/admin/src/routes/_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
+`_authenticated.crm.invites.accept.tsx` (`/crm/invites/accept` → `AcceptInvitePage`),
+`_authenticated.crm.billing.index.tsx` (`/crm/billing` → `BillingPage`), and
+`_authenticated.crm.billing.return.tsx` (`/crm/billing/return` → `BillingReturnPage`) — the `.index`
+suffix on the leaf routes is load-bearing, not stylistic: without it, TanStack Router's file-based
 convention treats `_authenticated.crm.tsx` as a layout parent for anything under `crm.*`
 (including the accept route), and since `CrmPage` renders no `<Outlet/>`, the accept route would
 never actually display (see the "Non-obvious rationale" section below). Both routes sit under the
@@ -74,6 +91,16 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
   `members:read`/`members:invite`, and showing a control guaranteed to reject every request is
   worse than not showing it, the same reasoning the SUPERADMIN-row-disabling bullet below already
   applies to `MembersSection`'s own controls.
+- **`advancedFeaturesEnabled` rides on `GET /api/crm/organization`, not a separate billing fetch.**
+  `crm-access`'s org-context response calls `crmBillingService.resolveAdvancedFeaturesForOrganization`,
+  so `CrmPage` already knows whether to show `PlanGateBanner` without every viewer needing
+  `billing:read`. The dedicated `BillingSection` still fetches `GET /api/crm/billing` for the full
+  plan/seat/invoice detail, gated on `billing:read`.
+- **`CrmPage.integration.test.tsx`'s render wrapper mounts a real `RouterProvider`**, not just a
+  `QueryClientProvider`, because `CrmPage` now renders `<Link to="/crm/billing">` (directly and via
+  `PlanGateBanner`). The wrapper builds a one-route memory router whose root component renders the
+  test's `children`, the same minimal-router pattern `AcceptInvitePage.integration.test.tsx` and
+  `BillingReturnPage.integration.test.tsx` already use.
 - **`AdminSidebar` always shows the CRM nav item to any signed-in admin-role user, regardless of
   which subdomain they're currently on or whether they have a membership there** — CRM access is
   tenant/subdomain-scoped, and the sidebar has no cheap way to know in advance whether the

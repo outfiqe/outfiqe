@@ -64,6 +64,7 @@ export type OrganizationWithViewerContext = OrganizationRecord & {
   viewerIsSuperAdmin: boolean;
   viewerPermissionKeys: string[];
   pendingOwnershipTransfer: PendingOwnershipTransferSummary | null;
+  advancedFeaturesEnabled: boolean;
 };
 
 export type MembershipSummary = {
