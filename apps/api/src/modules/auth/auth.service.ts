@@ -573,7 +573,7 @@ export const authService = {
       throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
     }
 
-    const { id, name, email, role } = user;
+    const { id, name, email, phone, role } = user;
 
     if (role === UserRole.BRAND_OWNER) {
       const membership = await authRepository.findBrandMembershipByUserId(id);
@@ -582,6 +582,7 @@ export const authService = {
           id,
           name,
           email,
+          phone,
           avatarUrl: membership.brandAvatarUrl,
           role,
           brandId: membership.brandId,
@@ -693,6 +694,7 @@ export const authService = {
         id: user.id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         avatarUrl: brand.avatarUrl,
         role: user.role,
         brandId,

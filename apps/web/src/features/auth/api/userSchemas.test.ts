@@ -42,11 +42,26 @@ describe("toUserSession", () => {
       id: "brand-user-1",
       name: "Brand Owner",
       email: "owner@brand.com",
+      phone: null,
       avatarUrl: null,
       role: UserRole.BRAND_OWNER,
       brandId: "brand-1",
     });
 
     expect(toUserSession(user).handle).toBeUndefined();
+  });
+
+  it("carries a brand user's real phone number through, instead of always reporting none", () => {
+    const user = brandUserSchema.parse({
+      id: "brand-user-1",
+      name: "Brand Owner",
+      email: "owner@brand.com",
+      phone: "9828282824",
+      avatarUrl: null,
+      role: UserRole.BRAND_OWNER,
+      brandId: "brand-1",
+    });
+
+    expect(toUserSession(user).phone).toBe("9828282824");
   });
 });

@@ -1022,4 +1022,40 @@ describe("GET /api/auth/me", () => {
       hasPlatformAccess: false,
     });
   });
+
+  it("includes a brand owner's real phone number, instead of always reporting none", async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const phone = uniquePhone();
+    const brandOwner = await prisma.user.create({
+      data: {
+        email: `brand-owner-${suffix}@outfiqe.test`,
+        name: "Brand Owner",
+        handle: `brand-owner-${suffix}`,
+        phone,
+        passwordHash: null,
+        role: UserRole.BRAND_OWNER,
+        emailVerified: true,
+      },
+    });
+    const brand = await prisma.brand.create({
+      data: {
+        name: "Test Brand",
+        contactName: "Brand Contact",
+        email: `brand-${suffix}@outfiqe.test`,
+        phone: uniquePhone(),
+        instagram: `@${suffix}`,
+      },
+    });
+    await prisma.brandMembership.create({
+      data: { userId: brandOwner.id, brandId: brand.id, role: BrandRole.OWNER },
+    });
+    const accessToken = generateToken({ sub: brandOwner.id, role: brandOwner.role });
+
+    const response = await request(testApp)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({ phone });
+  });
 });

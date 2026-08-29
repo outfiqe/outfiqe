@@ -19,6 +19,7 @@ export const brandUserSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.email(),
+  phone: z.string().nullable(),
   avatarUrl: z.url().nullable(),
   role: userRoleSchema,
   brandId: z.string(),
