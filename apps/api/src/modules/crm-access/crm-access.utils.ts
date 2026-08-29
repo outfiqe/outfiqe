@@ -31,6 +31,7 @@ export const toPendingOwnershipTransferSummary = (
   toUserId: request.toMembership.userId,
   toUserName: request.toMembership.user.name,
   fromUserName: request.fromMembership.user.name,
+  removeSenderMembershipOnAccept: request.removeSenderMembershipOnAccept,
   expiresAt: request.expiresAt,
 });
 

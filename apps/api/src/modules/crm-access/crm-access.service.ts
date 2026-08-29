@@ -10,6 +10,7 @@ import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
+import type { DbClient } from "#types/db.types.js";
 
 import {
   ORGANIZATION_INVITE_TTL_MS,
@@ -48,9 +49,6 @@ const isOwnershipTransferExpired = (request: OwnershipTransferRequestRecord): bo
 
 export const crmAccessService = {
   async resolveHasPlatformAccess(userId: string): Promise<boolean> {
-    const hasAnyMembership = await crmAccessRepository.hasAnyMembership(userId);
-    if (!hasAnyMembership) return true;
-
     const platformOrganization = await crmAccessRepository.findPlatformOrganization();
     const platformMembership = platformOrganization
       ? await crmAccessRepository.findMembershipByUserAndOrg(userId, platformOrganization.id)
@@ -63,6 +61,13 @@ export const crmAccessService = {
       PLATFORM_ACCESS_PERMISSION_KEY,
     );
     return isSuperAdmin || hasPlatformPermission;
+  },
+
+  async grantPlatformStaffMembership(
+    userId: string,
+    client?: DbClient,
+  ): Promise<MembershipRecord | null> {
+    return crmAccessRepository.grantPlatformStaffMembership(userId, client);
   },
 
   async createOrganization(
@@ -268,6 +273,7 @@ export const crmAccessService = {
     organization: OrganizationRecord,
     fromMembershipId: string,
     toMembershipId: string,
+    removeSenderMembershipOnAccept: boolean,
   ): Promise<void> {
     if (organization.superAdminMembershipId !== fromMembershipId) {
       throw new AppError(
@@ -306,6 +312,7 @@ export const crmAccessService = {
       organizationId: organization.id,
       fromMembershipId,
       toMembershipId,
+      removeSenderMembershipOnAccept,
       expiresAt: new Date(Date.now() + OWNERSHIP_TRANSFER_REQUEST_TTL_MS),
     });
 

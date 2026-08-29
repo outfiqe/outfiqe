@@ -51,6 +51,7 @@ export type PendingOwnershipTransferSummary = {
   toUserId: string;
   toUserName: string;
   fromUserName: string;
+  removeSenderMembershipOnAccept: boolean;
   expiresAt: Date;
 };
 
@@ -121,6 +122,7 @@ export type OwnershipTransferRequestRecord = {
   organizationId: string;
   fromMembershipId: string;
   toMembershipId: string;
+  removeSenderMembershipOnAccept: boolean;
   expiresAt: Date;
   acceptedAt: Date | null;
   declinedAt: Date | null;
@@ -132,6 +134,7 @@ export type CreateOwnershipTransferRequestInput = {
   organizationId: string;
   fromMembershipId: string;
   toMembershipId: string;
+  removeSenderMembershipOnAccept: boolean;
   expiresAt: Date;
 };
 

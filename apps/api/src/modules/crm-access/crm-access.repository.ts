@@ -1,5 +1,6 @@
 import { prisma } from "#db/prisma.js";
 import type { MembershipStatus } from "#generated/prisma/enums.js";
+import type { DbClient } from "#types/db.types.js";
 
 import { BUILT_IN_ROLE_NAME, BUILT_IN_ROLE_PERMISSIONS } from "./crm-access.constants.js";
 import type {
@@ -56,6 +57,32 @@ export const crmAccessRepository = {
   async hasAnyMembership(userId: string): Promise<boolean> {
     const membership = await prisma.membership.findFirst({ where: { userId } });
     return membership !== null;
+  },
+
+  async grantPlatformStaffMembership(
+    userId: string,
+    client: DbClient = prisma,
+  ): Promise<MembershipRecord | null> {
+    const platformOrganization = await client.organization.findFirst({
+      where: { isPlatformOrg: true },
+    });
+    if (!platformOrganization) return null;
+
+    const adminRole = await client.role.findFirst({
+      where: { organizationId: platformOrganization.id, name: BUILT_IN_ROLE_NAME.ADMIN },
+    });
+    if (!adminRole) return null;
+
+    return client.membership.upsert({
+      where: { userId_organizationId: { userId, organizationId: platformOrganization.id } },
+      update: {},
+      create: {
+        userId,
+        organizationId: platformOrganization.id,
+        roleId: adminRole.id,
+        status: "ACTIVE",
+      },
+    });
   },
 
   async findOrganizationBySubdomain(subdomain: string): Promise<OrganizationRecord | null> {
@@ -308,6 +335,10 @@ export const crmAccessRepository = {
         where: { id: request.id },
         data: { acceptedAt: new Date() },
       });
+
+      if (request.removeSenderMembershipOnAccept) {
+        await tx.membership.delete({ where: { id: request.fromMembershipId } });
+      }
     });
   },
 

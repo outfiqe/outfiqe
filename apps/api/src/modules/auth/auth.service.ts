@@ -773,17 +773,34 @@ export const authService = {
     }
 
     const passwordHash = await hashPassword(password);
-    const user = await userRepository.create({
-      name: inviteName,
-      email: inviteEmail,
-      phone,
-      password,
-      passwordHash,
-      role: UserRole.ADMIN,
-      emailVerified: true,
-    });
+    const user = await prisma.$transaction(async (tx) => {
+      const createdUser = await userRepository.create(
+        {
+          name: inviteName,
+          email: inviteEmail,
+          phone,
+          password,
+          passwordHash,
+          role: UserRole.ADMIN,
+          emailVerified: true,
+        },
+        tx,
+      );
 
-    await adminInviteRepository.markAccepted(inviteId);
+      await adminInviteRepository.markAccepted(inviteId, tx);
+
+      const platformMembership = await crmAccessService.grantPlatformStaffMembership(
+        createdUser.id,
+        tx,
+      );
+      if (!platformMembership) {
+        logger.warn(
+          `Registered admin ${createdUser.id} without a platform staff membership — platform organization or built-in Admin role is missing`,
+        );
+      }
+
+      return createdUser;
+    });
 
     await eventBus.publish(DomainEvents.ADMIN_REGISTERED, { userId: user.id, email: user.email });
 

@@ -41,6 +41,7 @@ export const inviteIdParamsSchema = z.object({
 
 export const createOwnershipTransferSchema = z.object({
   toMembershipId: z.uuid(),
+  removeSenderMembership: z.boolean().optional().default(false),
 });
 
 export const ownershipTransferIdParamsSchema = z.object({

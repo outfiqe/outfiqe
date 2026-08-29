@@ -1,4 +1,5 @@
 import { prisma } from "#db/prisma.js";
+import type { DbClient } from "#types/db.types.js";
 
 import type { AdminInviteRecord, CreateAdminInviteInput } from "./adminInvite.types.js";
 
@@ -15,7 +16,7 @@ export const adminInviteRepository = {
     return prisma.adminInvite.findUnique({ where: { tokenHash } });
   },
 
-  async markAccepted(id: string): Promise<void> {
-    await prisma.adminInvite.update({ where: { id }, data: { acceptedAt: new Date() } });
+  async markAccepted(id: string, client: DbClient = prisma): Promise<void> {
+    await client.adminInvite.update({ where: { id }, data: { acceptedAt: new Date() } });
   },
 };

@@ -109,11 +109,17 @@ export const crmAccessController = {
   },
 
   async createOwnershipTransfer(_req: Request, res: Response) {
-    const { toMembershipId } = validated.body<CreateOwnershipTransferBody>(res);
+    const { toMembershipId, removeSenderMembership } =
+      validated.body<CreateOwnershipTransferBody>(res);
     const organization = getResolvedOrganization(res);
     const membership = getCrmMembership(res);
 
-    await crmAccessService.createOwnershipTransfer(organization, membership.id, toMembershipId);
+    await crmAccessService.createOwnershipTransfer(
+      organization,
+      membership.id,
+      toMembershipId,
+      removeSenderMembership,
+    );
     sendSuccess(res, null, "Ownership transfer requested.", CREATED_STATUS);
   },
 

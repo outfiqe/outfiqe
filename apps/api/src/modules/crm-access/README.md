@@ -110,14 +110,28 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   from `BUILT_IN_ROLE_PERMISSIONS` so no tenant org's Admin/Member role ever receives it
   automatically — it's granted only to Outfiqe's own built-in Admin role via a dedicated seed step,
   the same "special, not automatic" treatment `org:transfer_ownership` already gets.
-  `requirePlatformAccess` resolves in order: not `UserRole.ADMIN` → `403`; no `Membership` row
-  anywhere for this user → **allow** (grandfathers every admin account that predates the CRM
-  system entirely, zero regression); an active `Membership` in the platform org that's either its
-  SUPERADMIN or holds `platform:access` → **allow**; any other combination (including a
-  `Membership` only in a tenant org) → **deny**. `crm-access.service.ts`'s
-  `resolveHasPlatformAccess` holds this resolution once, reused by both the middleware and
-  `auth.service.ts`'s `getCurrentUser` (which exposes it to `apps/admin` as `hasPlatformAccess` on
-  `/api/auth/me`, so `AdminSidebar` can hide non-CRM navigation for tenant-only staff).
+  `requirePlatformAccess` resolves in order: not `UserRole.ADMIN` → `403`; an active `Membership`
+  in the platform org that's either its SUPERADMIN or holds `platform:access` → **allow**; any
+  other combination (including zero memberships anywhere, or a `Membership` only in a tenant org)
+  → **deny**. `crm-access.service.ts`'s `resolveHasPlatformAccess` holds this resolution once,
+  reused by both the middleware and `auth.service.ts`'s `getCurrentUser` (which exposes it to
+  `apps/admin` as `hasPlatformAccess` on `/api/auth/me`, so `AdminSidebar` can hide non-CRM
+  navigation for tenant-only staff).
+- **Zero memberships anywhere denies platform access — it used to grandfather every such account
+  as an implicit `allow`.** That grandfather clause was meant to cover admin accounts that predate
+  the CRM system entirely, but it couldn't tell that apart from a brand-new tenant staff member who
+  simply hadn't accepted a CRM invite yet — meaning any freshly-created `UserRole.ADMIN` account
+  had full access to Outfiqe's real internal data (Products, Orders, Brand applications, etc.)
+  until the moment they accepted an invite, if they ever did. Fixed as a deny-by-default default
+  instead, with two companion changes so it doesn't regress real onboarding: `seed-crm.ts`'s
+  `seedPlatformStaffMemberships` backfills every pre-existing zero-membership `UserRole.ADMIN`
+  account with a real platform-org Membership (one-time, idempotent, must run after
+  `seedDemoOrganizations` so tenant demo staff — who already have their own tenant membership by
+  then — aren't wrongly swept in); and `auth.service.ts`'s `registerAdmin` (the ongoing path that
+  creates brand-new platform staff accounts via the admin-invite flow) now grants a platform-org
+  Membership atomically in the same transaction as the user create and invite-accept, via
+  `crmAccessService.grantPlatformStaffMembership`, so every future legitimate hire is explicitly
+  provisioned instead of implicitly trusted.
 - **Inviting requires an existing `UserRole.ADMIN` account** (`userRepository.findByEmail`, then a
   role check) — there is no CRM signup. `acceptInvite` additionally checks the accepting account's
   email matches the invite's email, so a valid token can't be redeemed by a different logged-in
@@ -137,6 +151,18 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   `revokedAt` even though both just mean "no longer actionable," because two different people can
   end a pending request from two different sides (recipient declines vs. sender/SUPERADMIN
   cancels) — worth distinguishing in the data.
+- **Whether the sender keeps their own membership after a transfer is an explicit choice made at
+  request time, not a system-decided default** (`removeSenderMembershipOnAccept`, set from
+  `createOwnershipTransfer`'s `removeSenderMembership` argument, unchecked by default in
+  `apps/admin`'s modal). The system can't tell apart a support/concierge account handing an org
+  back to its real owner (who should lose access entirely) from a real business owner handing off
+  to a co-founder (who should very much stay a member) — both look identical as `Membership A
+transfers to Membership B`. Rather than guessing, the person initiating the transfer decides,
+  the same way GitHub asks "remain a collaborator?" when transferring a repository. When set,
+  `acceptOwnershipTransfer` deletes the `fromMembership` row in the same transaction that moves
+  `superAdminMembershipId` — which also cascades away any of that membership's own historical
+  `OwnershipTransferRequest` rows via the existing `onDelete: Cascade` on `fromMembershipId`, since
+  they're no longer meaningful once the membership itself is gone.
 - **Only the current SUPERADMIN can initiate a transfer, and this falls out of the existing
   permission model for free.** `org:transfer_ownership` is deliberately in
   `SUPERADMIN_ONLY_PERMISSION_KEYS` (excluded from every role's default permission set, granted to

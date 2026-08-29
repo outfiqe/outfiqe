@@ -163,6 +163,30 @@ async function seedSuperAdmin(
   });
 }
 
+async function seedPlatformStaffMemberships(organizationId: string) {
+  const adminRole = await prisma.role.findFirst({
+    where: { organizationId, name: BUILT_IN_ROLE_NAME.ADMIN },
+  });
+  if (!adminRole) {
+    console.warn(
+      "Skipping platform staff membership backfill — built-in Admin role wasn't seeded yet.",
+    );
+    return;
+  }
+
+  const unaffiliatedAdmins = await prisma.user.findMany({
+    where: { role: UserRole.ADMIN, crmMemberships: { none: {} } },
+  });
+
+  for (const admin of unaffiliatedAdmins) {
+    await prisma.membership.upsert({
+      where: { userId_organizationId: { userId: admin.id, organizationId } },
+      update: {},
+      create: { userId: admin.id, organizationId, roleId: adminRole.id, status: "ACTIVE" },
+    });
+  }
+}
+
 async function seedDemoStaffUser(staff: DemoStaffSeed) {
   return prisma.user.upsert({
     where: { email: staff.email },
@@ -236,4 +260,5 @@ export async function seedCrmAccess() {
   await seedPlatformAccessGrant(organization.id);
   await seedSuperAdmin(organization.id, organization.superAdminMembershipId);
   await seedDemoOrganizations();
+  await seedPlatformStaffMemberships(organization.id);
 }
