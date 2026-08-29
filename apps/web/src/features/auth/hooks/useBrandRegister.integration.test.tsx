@@ -33,6 +33,7 @@ const brandUser = {
   id: "user-1",
   name: "Jordan Lee",
   email: "jordan@outfiqe.test",
+  phone: "9812345678",
   avatarUrl: null,
   role: "BRAND_OWNER",
   brandId: "brand-1",

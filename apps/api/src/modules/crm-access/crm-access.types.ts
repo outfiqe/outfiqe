@@ -51,6 +51,7 @@ export type PendingOwnershipTransferSummary = {
   toUserId: string;
   toUserName: string;
   fromUserName: string;
+  removeSenderMembershipOnAccept: boolean;
   expiresAt: Date;
 };
 
@@ -121,6 +122,7 @@ export type OwnershipTransferRequestRecord = {
   organizationId: string;
   fromMembershipId: string;
   toMembershipId: string;
+  removeSenderMembershipOnAccept: boolean;
   expiresAt: Date;
   acceptedAt: Date | null;
   declinedAt: Date | null;
@@ -132,12 +134,22 @@ export type CreateOwnershipTransferRequestInput = {
   organizationId: string;
   fromMembershipId: string;
   toMembershipId: string;
+  removeSenderMembershipOnAccept: boolean;
   expiresAt: Date;
 };
 
 export type OwnershipTransferJoinRow = OwnershipTransferRequestRecord & {
   toMembership: { userId: string; user: { name: string } };
   fromMembership: { user: { name: string } };
+};
+
+export type OrganizationCreationSuggestion = {
+  brandId: string;
+  brandName: string;
+  ownerUserId: string;
+  ownerName: string;
+  suggestedSubdomain: string;
+  ownerExistingOrganizations: { id: string; name: string }[];
 };
 
 export type CreateRoleInput = {

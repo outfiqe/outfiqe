@@ -24,6 +24,7 @@ export const useLogin = () => {
       const destination = requested ?? getDefaultRouteForUser(data.user);
       const isExternal =
         destination === ADMIN_URL ||
+        destination.startsWith(`${ADMIN_URL}/`) ||
         (destination.startsWith("http") && !destination.startsWith(window.location.origin));
 
       if (isExternal) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { extractSubdomain } from "./crm-access.utils.js";
+import { buildOrganizationAdminUrl, extractSubdomain } from "./crm-access.utils.js";
 
 describe("extractSubdomain", () => {
   it("extracts a valid subdomain ahead of the base domain", () => {
@@ -33,5 +33,40 @@ describe("extractSubdomain", () => {
   it("returns null for a malformed subdomain label", () => {
     expect(extractSubdomain("-bad.localhost", "localhost")).toBeNull();
     expect(extractSubdomain("multi.level.localhost", "localhost")).toBeNull();
+  });
+});
+
+describe("buildOrganizationAdminUrl", () => {
+  it("uses the tenant's own subdomain for a non-platform organization", () => {
+    expect(
+      buildOrganizationAdminUrl(
+        { subdomain: "daraz", isPlatformOrg: false },
+        "/crm/invites/accept?token=abc123",
+        "http://outfiqe.local:3000/admin",
+        "outfiqe.local",
+      ),
+    ).toBe("http://daraz.outfiqe.local:3000/admin/crm/invites/accept?token=abc123");
+  });
+
+  it("keeps the bare admin url for the platform organization", () => {
+    expect(
+      buildOrganizationAdminUrl(
+        { subdomain: "outfiqe", isPlatformOrg: true },
+        "/crm",
+        "http://outfiqe.local:3000/admin",
+        "outfiqe.local",
+      ),
+    ).toBe("http://outfiqe.local:3000/admin/crm");
+  });
+
+  it("omits the port when the admin url doesn't have one", () => {
+    expect(
+      buildOrganizationAdminUrl(
+        { subdomain: "daraz", isPlatformOrg: false },
+        "/crm",
+        "https://outfiqe.com/admin",
+        "outfiqe.com",
+      ),
+    ).toBe("https://daraz.outfiqe.com/admin/crm");
   });
 });

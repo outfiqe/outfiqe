@@ -11,6 +11,11 @@ export const createOrganizationSchema = z.object({
     .min(1)
     .max(63)
     .regex(SUBDOMAIN_REGEX, "Subdomain must be lowercase letters, numbers, and hyphens only."),
+  targetOwnerUserId: z.uuid().optional(),
+});
+
+export const suggestOrganizationQuerySchema = z.object({
+  brandId: z.uuid(),
 });
 
 export const createOrganizationInviteSchema = z.object({
@@ -41,6 +46,7 @@ export const inviteIdParamsSchema = z.object({
 
 export const createOwnershipTransferSchema = z.object({
   toMembershipId: z.uuid(),
+  removeSenderMembership: z.boolean().optional().default(false),
 });
 
 export const ownershipTransferIdParamsSchema = z.object({
@@ -48,6 +54,7 @@ export const ownershipTransferIdParamsSchema = z.object({
 });
 
 export type CreateOrganizationBody = z.infer<typeof createOrganizationSchema>;
+export type SuggestOrganizationQuery = z.infer<typeof suggestOrganizationQuerySchema>;
 export type CreateOrganizationInviteBody = z.infer<typeof createOrganizationInviteSchema>;
 export type AcceptOrganizationInviteBody = z.infer<typeof acceptOrganizationInviteSchema>;
 export type UpdateMembershipBody = z.infer<typeof updateMembershipSchema>;

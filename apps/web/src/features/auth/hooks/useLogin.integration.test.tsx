@@ -128,7 +128,38 @@ describe("useLogin", () => {
     result.current.login.mutate({ email: customerUser.email, password: "correct-horse-battery" });
 
     await waitFor(() => expect(result.current.login.isSuccess).toBe(true));
-    expect(locationReplace).toHaveBeenCalledWith(ADMIN_URL);
+    await waitFor(() => expect(locationReplace).toHaveBeenCalledWith(ADMIN_URL));
+    expect(replace).not.toHaveBeenCalled();
+    expect(result.current.auth.isAuthenticated).toBe(false);
+
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+  });
+
+  it("hard-navigates to a deep admin redirect target instead of updating auth state", async () => {
+    const originalLocation = window.location;
+    const locationReplace = vi.fn();
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, replace: locationReplace },
+    });
+
+    const deepAdminRedirect = `${ADMIN_URL}/crm/invites/accept?token=abc123`;
+    mockRedirectParam(deepAdminRedirect);
+    mswServer.use(
+      http.post(LOGIN_URL, () =>
+        HttpResponse.json({
+          success: true,
+          message: "Login successful",
+          data: { accessToken: "access-token", user: customerUser },
+        }),
+      ),
+    );
+
+    const { result } = renderUseLogin();
+    result.current.login.mutate({ email: customerUser.email, password: "correct-horse-battery" });
+
+    await waitFor(() => expect(result.current.login.isSuccess).toBe(true));
+    await waitFor(() => expect(locationReplace).toHaveBeenCalledWith(deepAdminRedirect));
     expect(replace).not.toHaveBeenCalled();
     expect(result.current.auth.isAuthenticated).toBe(false);
 

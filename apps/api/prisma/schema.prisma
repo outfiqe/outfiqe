@@ -1926,15 +1926,16 @@ model OrganizationInvite {
 }
 
 model OwnershipTransferRequest {
-  id               String    @id @default(uuid()) @db.Uuid
-  organizationId   String    @map("organization_id") @db.Uuid
-  fromMembershipId String    @map("from_membership_id") @db.Uuid
-  toMembershipId   String    @map("to_membership_id") @db.Uuid
-  expiresAt        DateTime  @map("expires_at")
-  acceptedAt       DateTime? @map("accepted_at")
-  declinedAt       DateTime? @map("declined_at")
-  revokedAt        DateTime? @map("revoked_at")
-  createdAt        DateTime  @default(now()) @map("created_at")
+  id                          String    @id @default(uuid()) @db.Uuid
+  organizationId              String    @map("organization_id") @db.Uuid
+  fromMembershipId            String    @map("from_membership_id") @db.Uuid
+  toMembershipId              String    @map("to_membership_id") @db.Uuid
+  removeSenderMembershipOnAccept Boolean @default(false) @map("remove_sender_membership_on_accept")
+  expiresAt                   DateTime  @map("expires_at")
+  acceptedAt                  DateTime? @map("accepted_at")
+  declinedAt                  DateTime? @map("declined_at")
+  revokedAt                   DateTime? @map("revoked_at")
+  createdAt                   DateTime  @default(now()) @map("created_at")
 
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   fromMembership Membership   @relation("OwnershipTransferFrom", fields: [fromMembershipId], references: [id], onDelete: Cascade)

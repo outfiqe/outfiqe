@@ -222,6 +222,58 @@ describe("MembersSection", () => {
     const dialog = screen.getByRole("dialog");
     await user.click(within(dialog).getByRole("button", { name: "Transfer ownership" }));
 
-    await waitFor(() => expect(lastTransferBody).toEqual({ toMembershipId: "membership-2" }));
+    await waitFor(() =>
+      expect(lastTransferBody).toEqual({
+        toMembershipId: "membership-2",
+        removeSenderMembership: false,
+      }),
+    );
+  });
+
+  it("requests removal of the sender's own membership when that checkbox is checked", async () => {
+    let lastTransferBody: unknown;
+    mswServer.use(
+      http.get(`${API_BASE}/crm/roles`, () => HttpResponse.json({ success: true, data: ROLES })),
+      http.get(`${API_BASE}/crm/members`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [
+            {
+              id: "membership-2",
+              userId: "user-2",
+              userName: "Grace Hopper",
+              userEmail: "grace@outfiqe.test",
+              roleId: "role-member",
+              roleName: "Member",
+              status: "ACTIVE",
+              isSuperAdmin: false,
+              createdAt: "2026-01-01T00:00:00.000Z",
+            },
+          ],
+        }),
+      ),
+      http.post(`${API_BASE}/crm/ownership-transfer`, async ({ request }) => {
+        lastTransferBody = await request.json();
+        return HttpResponse.json({ success: true, data: null }, { status: 201 });
+      }),
+    );
+
+    renderMembersSection({ viewerIsSuperAdmin: true });
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Transfer ownership" }));
+
+    const dialog = screen.getByRole("dialog");
+    await user.click(
+      within(dialog).getByRole("checkbox", { name: "Remove my own access after this transfer" }),
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Transfer ownership" }));
+
+    await waitFor(() =>
+      expect(lastTransferBody).toEqual({
+        toMembershipId: "membership-2",
+        removeSenderMembership: true,
+      }),
+    );
   });
 });

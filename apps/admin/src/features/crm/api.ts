@@ -58,8 +58,11 @@ export const crmApi = {
     await apiClient.post("/crm/invites/accept", { token });
   },
 
-  async createOwnershipTransfer(toMembershipId: string): Promise<void> {
-    await apiClient.post("/crm/ownership-transfer", { toMembershipId });
+  async createOwnershipTransfer(
+    toMembershipId: string,
+    removeSenderMembership: boolean,
+  ): Promise<void> {
+    await apiClient.post("/crm/ownership-transfer", { toMembershipId, removeSenderMembership });
   },
 
   async acceptOwnershipTransfer(requestId: string): Promise<void> {

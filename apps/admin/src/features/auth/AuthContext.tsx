@@ -1,9 +1,12 @@
-import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 import { setAccessToken, setUnauthorizedHandler } from "@/lib/apiClient";
 
 import { authApi } from "./api";
 import type { AdminUser } from "./schemas";
+
+const canAccessAdminApp = (role: AdminUser["role"]): boolean =>
+  role === "ADMIN" || role === "BRAND_OWNER";
 
 type AuthState =
   { status: "loading" } | { status: "signed-out" } | { status: "signed-in"; user: AdminUser };
@@ -27,7 +30,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { accessToken } = await authApi.refresh();
         setAccessToken(accessToken);
         const user = await authApi.me();
-        setState(user.role === "ADMIN" ? { status: "signed-in", user } : { status: "signed-out" });
+        setState(
+          canAccessAdminApp(user.role) ? { status: "signed-in", user } : { status: "signed-out" },
+        );
       } catch {
         setState({ status: "signed-out" });
       }
@@ -43,11 +48,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setState({ status: "signed-out" });
   };
 
-  const updateUser = (patch: Partial<AdminUser>) => {
+  const updateUser = useCallback((patch: Partial<AdminUser>) => {
     setState((prev) =>
       prev.status === "signed-in" ? { ...prev, user: { ...prev.user, ...patch } } : prev,
     );
-  };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ state, logout, updateUser }}>{children}</AuthContext.Provider>

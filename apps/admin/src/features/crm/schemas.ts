@@ -12,6 +12,7 @@ export const pendingOwnershipTransferSchema = z.object({
   toUserId: z.string(),
   toUserName: z.string(),
   fromUserName: z.string(),
+  removeSenderMembershipOnAccept: z.boolean(),
   expiresAt: z.string(),
 });
 export type PendingOwnershipTransfer = z.infer<typeof pendingOwnershipTransferSchema>;

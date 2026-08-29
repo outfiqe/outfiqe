@@ -8,11 +8,12 @@ import { describe, expect, it } from "vitest";
 
 import { TokenPurpose } from "#constants/enums/auth.enum.js";
 import { prisma } from "#db/prisma.js";
-import { UserRole } from "#generated/prisma/enums.js";
+import { BrandRole, UserRole } from "#generated/prisma/enums.js";
 import { generateToken } from "#lib/generate-token.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { hashPassword } from "#lib/password.utils.js";
 import { signPurposeToken } from "#lib/purpose-token.utils.js";
+import { seedPlatformOrganization } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
 import {
@@ -84,6 +85,23 @@ const registerBody = (overrides: Partial<Record<string, string>> = {}) => ({
   confirmPassword: DEFAULT_TEST_PASSWORD,
   ...overrides,
 });
+
+const createAdminInvite = async (overrides: { email?: string; name?: string } = {}) => {
+  const { user: inviter } = await createUser();
+  const rawToken = generateOpaqueToken();
+
+  await prisma.adminInvite.create({
+    data: {
+      email: overrides.email ?? `admin-invite-${randomUUID()}@outfiqe.test`,
+      name: overrides.name ?? "New Admin",
+      tokenHash: hashToken(rawToken),
+      expiresAt: addHours(new Date(), 1),
+      invitedById: inviter.id,
+    },
+  });
+
+  return rawToken;
+};
 
 const extractCookieValue = (response: request.Response, cookieName: string): string | undefined => {
   const rawCookies = response.headers["set-cookie"];
@@ -181,6 +199,29 @@ describe("POST /api/auth/register", () => {
 
     expect(limited.status).toBe(429);
     expect(limited.body.code).toBe("RATE_LIMITED");
+  });
+});
+
+describe("POST /api/auth/register/admin", () => {
+  it("grants immediate platform access to a newly registered admin", async () => {
+    await seedPlatformOrganization();
+    const inviteToken = await createAdminInvite();
+
+    const response = await request(testApp).post("/api/auth/register/admin").send({
+      inviteToken,
+      phone: uniquePhone(),
+      password: DEFAULT_TEST_PASSWORD,
+      confirmPassword: DEFAULT_TEST_PASSWORD,
+    });
+
+    expect(response.status).toBe(201);
+
+    const { accessToken } = response.body.data;
+    const platformResponse = await request(testApp)
+      .get("/api/admin/financial-rollup")
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(platformResponse.status).toBe(200);
   });
 });
 
@@ -920,7 +961,7 @@ describe("GET /api/auth/me", () => {
     expect(response.body.data).toMatchObject({ hasPlatformAccess: false });
   });
 
-  it("reports hasPlatformAccess true for an admin account with no CRM membership", async () => {
+  it("reports hasPlatformAccess false for an admin account with no CRM membership", async () => {
     const suffix = randomUUID().slice(0, 8);
     const adminUser = await prisma.user.create({
       data: {
@@ -940,6 +981,81 @@ describe("GET /api/auth/me", () => {
       .set("Authorization", `Bearer ${accessToken}`);
 
     expect(response.status).toBe(200);
-    expect(response.body.data).toMatchObject({ hasPlatformAccess: true });
+    expect(response.body.data).toMatchObject({ hasPlatformAccess: false });
+  });
+
+  it("includes hasPlatformAccess for a brand owner account, so apps/admin can sign them in", async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const brandOwner = await prisma.user.create({
+      data: {
+        email: `brand-owner-${suffix}@outfiqe.test`,
+        name: "Brand Owner",
+        handle: `brand-owner-${suffix}`,
+        phone: uniquePhone(),
+        passwordHash: null,
+        role: UserRole.BRAND_OWNER,
+        emailVerified: true,
+      },
+    });
+    const brand = await prisma.brand.create({
+      data: {
+        name: "Test Brand",
+        contactName: "Brand Contact",
+        email: `brand-${suffix}@outfiqe.test`,
+        phone: uniquePhone(),
+        instagram: `@${suffix}`,
+      },
+    });
+    await prisma.brandMembership.create({
+      data: { userId: brandOwner.id, brandId: brand.id, role: BrandRole.OWNER },
+    });
+    const accessToken = generateToken({ sub: brandOwner.id, role: brandOwner.role });
+
+    const response = await request(testApp)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({
+      role: UserRole.BRAND_OWNER,
+      brandId: brand.id,
+      hasPlatformAccess: false,
+    });
+  });
+
+  it("includes a brand owner's real phone number, instead of always reporting none", async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const phone = uniquePhone();
+    const brandOwner = await prisma.user.create({
+      data: {
+        email: `brand-owner-${suffix}@outfiqe.test`,
+        name: "Brand Owner",
+        handle: `brand-owner-${suffix}`,
+        phone,
+        passwordHash: null,
+        role: UserRole.BRAND_OWNER,
+        emailVerified: true,
+      },
+    });
+    const brand = await prisma.brand.create({
+      data: {
+        name: "Test Brand",
+        contactName: "Brand Contact",
+        email: `brand-${suffix}@outfiqe.test`,
+        phone: uniquePhone(),
+        instagram: `@${suffix}`,
+      },
+    });
+    await prisma.brandMembership.create({
+      data: { userId: brandOwner.id, brandId: brand.id, role: BrandRole.OWNER },
+    });
+    const accessToken = generateToken({ sub: brandOwner.id, role: brandOwner.role });
+
+    const response = await request(testApp)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({ phone });
   });
 });

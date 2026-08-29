@@ -13,6 +13,7 @@ import type {
   InviteIdParams,
   MembershipIdParams,
   OwnershipTransferIdParams,
+  SuggestOrganizationQuery,
   UpdateMembershipBody,
 } from "./crm-access.schemas.js";
 import { crmAccessService } from "./crm-access.service.js";
@@ -22,15 +23,23 @@ const CREATED_STATUS = 201;
 
 export const crmAccessController = {
   async createOrganization(_req: Request, res: Response) {
-    const { name, subdomain } = validated.body<CreateOrganizationBody>(res);
+    const { name, subdomain, targetOwnerUserId } = validated.body<CreateOrganizationBody>(res);
     const principal = requireAuthPrincipal(res);
 
     const organization = await crmAccessService.createOrganization(
       name,
       subdomain,
       principal.userId,
+      targetOwnerUserId,
     );
     sendSuccess(res, organization, "Organization created.", CREATED_STATUS);
+  },
+
+  async suggestOrganization(_req: Request, res: Response) {
+    const { brandId } = validated.query<SuggestOrganizationQuery>(res);
+
+    const suggestion = await crmAccessService.suggestOrganizationFromBrand(brandId);
+    sendSuccess(res, suggestion, "Organization creation suggestion.");
   },
 
   async listOrganizations(_req: Request, res: Response) {
@@ -109,11 +118,17 @@ export const crmAccessController = {
   },
 
   async createOwnershipTransfer(_req: Request, res: Response) {
-    const { toMembershipId } = validated.body<CreateOwnershipTransferBody>(res);
+    const { toMembershipId, removeSenderMembership } =
+      validated.body<CreateOwnershipTransferBody>(res);
     const organization = getResolvedOrganization(res);
     const membership = getCrmMembership(res);
 
-    await crmAccessService.createOwnershipTransfer(organization, membership.id, toMembershipId);
+    await crmAccessService.createOwnershipTransfer(
+      organization,
+      membership.id,
+      toMembershipId,
+      removeSenderMembership,
+    );
     sendSuccess(res, null, "Ownership transfer requested.", CREATED_STATUS);
   },
 

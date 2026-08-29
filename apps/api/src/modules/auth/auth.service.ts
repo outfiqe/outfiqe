@@ -573,7 +573,7 @@ export const authService = {
       throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
     }
 
-    const { id, name, email, role } = user;
+    const { id, name, email, phone, role } = user;
 
     if (role === UserRole.BRAND_OWNER) {
       const membership = await authRepository.findBrandMembershipByUserId(id);
@@ -582,9 +582,11 @@ export const authService = {
           id,
           name,
           email,
+          phone,
           avatarUrl: membership.brandAvatarUrl,
           role,
           brandId: membership.brandId,
+          hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(id),
         };
       }
 
@@ -692,9 +694,11 @@ export const authService = {
         id: user.id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         avatarUrl: brand.avatarUrl,
         role: user.role,
         brandId,
+        hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(user.id),
       },
     };
   },
@@ -773,17 +777,34 @@ export const authService = {
     }
 
     const passwordHash = await hashPassword(password);
-    const user = await userRepository.create({
-      name: inviteName,
-      email: inviteEmail,
-      phone,
-      password,
-      passwordHash,
-      role: UserRole.ADMIN,
-      emailVerified: true,
-    });
+    const user = await prisma.$transaction(async (tx) => {
+      const createdUser = await userRepository.create(
+        {
+          name: inviteName,
+          email: inviteEmail,
+          phone,
+          password,
+          passwordHash,
+          role: UserRole.ADMIN,
+          emailVerified: true,
+        },
+        tx,
+      );
 
-    await adminInviteRepository.markAccepted(inviteId);
+      await adminInviteRepository.markAccepted(inviteId, tx);
+
+      const platformMembership = await crmAccessService.grantPlatformStaffMembership(
+        createdUser.id,
+        tx,
+      );
+      if (!platformMembership) {
+        logger.warn(
+          `Registered admin ${createdUser.id} without a platform staff membership — platform organization or built-in Admin role is missing`,
+        );
+      }
+
+      return createdUser;
+    });
 
     await eventBus.publish(DomainEvents.ADMIN_REGISTERED, { userId: user.id, email: user.email });
 

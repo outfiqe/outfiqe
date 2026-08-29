@@ -5,13 +5,17 @@ import {
 } from "#email-templates/templates.js";
 import { type MembershipStatus, UserRole } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
+import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { brandRepository } from "#modules/brands/brand.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
+import type { DbClient } from "#types/db.types.js";
 
 import {
+  BUILT_IN_ROLE_NAME,
   ORGANIZATION_INVITE_TTL_MS,
   OWNERSHIP_TRANSFER_REQUEST_TTL_MS,
   PLATFORM_ACCESS_PERMISSION_KEY,
@@ -21,6 +25,7 @@ import { crmAccessRepository } from "./crm-access.repository.js";
 import type {
   MembershipRecord,
   MembershipSummary,
+  OrganizationCreationSuggestion,
   OrganizationInviteSummary,
   OrganizationRecord,
   OwnershipTransferRequestRecord,
@@ -29,6 +34,7 @@ import type {
   RoleWithPermissions,
 } from "./crm-access.types.js";
 import {
+  buildOrganizationAdminUrl,
   toInviteSummary,
   toMembershipSummary,
   toPendingOwnershipTransferSummary,
@@ -38,18 +44,39 @@ const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
 const FORBIDDEN_STATUS = 403;
 const BAD_REQUEST_STATUS = 400;
+const MAX_SUBDOMAIN_SUGGESTION_ATTEMPTS = 5;
+const FIRST_SUGGESTION_ATTEMPT = 0;
 
 const isOwnershipTransferPending = (request: OwnershipTransferRequestRecord): boolean =>
   !request.acceptedAt && !request.declinedAt && !request.revokedAt;
+
+const generateUniqueSubdomain = async (brandName: string): Promise<string> => {
+  const base = slugifyHandle(brandName);
+
+  for (
+    let attempt = FIRST_SUGGESTION_ATTEMPT;
+    attempt < MAX_SUBDOMAIN_SUGGESTION_ATTEMPTS;
+    attempt++
+  ) {
+    const candidate = attempt === FIRST_SUGGESTION_ATTEMPT ? base : withHandleSuffix(base);
+    if (RESERVED_SUBDOMAINS.includes(candidate)) continue;
+
+    const existing = await crmAccessRepository.findOrganizationBySubdomain(candidate);
+    if (!existing) return candidate;
+  }
+
+  throw new AppError(
+    "SUBDOMAIN_SUGGESTION_FAILED",
+    "Couldn't find an available subdomain for this brand. Enter one manually.",
+    CONFLICT_STATUS,
+  );
+};
 
 const isOwnershipTransferExpired = (request: OwnershipTransferRequestRecord): boolean =>
   request.expiresAt.getTime() <= Date.now();
 
 export const crmAccessService = {
   async resolveHasPlatformAccess(userId: string): Promise<boolean> {
-    const hasAnyMembership = await crmAccessRepository.hasAnyMembership(userId);
-    if (!hasAnyMembership) return true;
-
     const platformOrganization = await crmAccessRepository.findPlatformOrganization();
     const platformMembership = platformOrganization
       ? await crmAccessRepository.findMembershipByUserAndOrg(userId, platformOrganization.id)
@@ -64,10 +91,18 @@ export const crmAccessService = {
     return isSuperAdmin || hasPlatformPermission;
   },
 
+  async grantPlatformStaffMembership(
+    userId: string,
+    client?: DbClient,
+  ): Promise<MembershipRecord | null> {
+    return crmAccessRepository.grantPlatformStaffMembership(userId, client);
+  },
+
   async createOrganization(
     name: string,
     subdomain: string,
-    superAdminUserId: string,
+    creatingUserId: string,
+    targetOwnerUserId?: string,
   ): Promise<OrganizationRecord> {
     if (RESERVED_SUBDOMAINS.includes(subdomain)) {
       throw new AppError(
@@ -77,19 +112,78 @@ export const crmAccessService = {
       );
     }
 
+    let organization: OrganizationRecord;
+    let creatorMembershipId: string;
     try {
-      const { organization } = await crmAccessRepository.createOrganization({
+      const created = await crmAccessRepository.createOrganization({
         name,
         subdomain,
-        superAdminUserId,
+        superAdminUserId: creatingUserId,
       });
-      return organization;
+      organization = created.organization;
+      creatorMembershipId = created.membership.id;
     } catch (err) {
       if (isUniqueConstraintError(err)) {
         throw new AppError("SUBDOMAIN_TAKEN", "This subdomain is already in use.", CONFLICT_STATUS);
       }
       throw err;
     }
+
+    const isHandingOffToSomeoneElse =
+      targetOwnerUserId !== undefined && targetOwnerUserId !== creatingUserId;
+    if (!isHandingOffToSomeoneElse) return organization;
+
+    const roles = await crmAccessRepository.listRoles(organization.id);
+    const adminRole = roles.find((role) => role.name === BUILT_IN_ROLE_NAME.ADMIN);
+    if (!adminRole) throw new Error("built-in Admin role was not created");
+
+    const targetMembership = await crmAccessRepository.createMembership(
+      targetOwnerUserId,
+      organization.id,
+      adminRole.id,
+      "ACTIVE",
+    );
+
+    await crmAccessService.createOwnershipTransfer(
+      organization,
+      creatorMembershipId,
+      targetMembership.id,
+      true,
+    );
+
+    return organization;
+  },
+
+  async suggestOrganizationFromBrand(brandId: string): Promise<OrganizationCreationSuggestion> {
+    const brand = await brandRepository.findById(brandId);
+    if (!brand) {
+      throw new AppError("BRAND_NOT_FOUND", "Brand not found.", NOT_FOUND_STATUS);
+    }
+
+    const ownerUserId = await brandRepository.findOwnerUserId(brandId);
+    const owner = ownerUserId ? await userRepository.findById(ownerUserId) : null;
+    if (!ownerUserId || !owner) {
+      throw new AppError(
+        "BRAND_HAS_NO_OWNER",
+        "This brand has no owner account to invite.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const suggestedSubdomain = await generateUniqueSubdomain(brand.name);
+    const ownerOrganizations = await crmAccessRepository.findOrganizationsOwnedByUser(ownerUserId);
+
+    return {
+      brandId: brand.id,
+      brandName: brand.name,
+      ownerUserId,
+      ownerName: owner.name,
+      suggestedSubdomain,
+      ownerExistingOrganizations: ownerOrganizations.map((existingOrganization) => ({
+        id: existingOrganization.id,
+        name: existingOrganization.name,
+      })),
+    };
   },
 
   async listOrganizations(): Promise<OrganizationRecord[]> {
@@ -194,7 +288,12 @@ export const crmAccessService = {
       invitedById,
     });
 
-    const inviteUrl = `${env.ADMIN_URL}/crm/invites/accept?token=${rawToken}`;
+    const inviteUrl = buildOrganizationAdminUrl(
+      organization,
+      `/crm/invites/accept?token=${rawToken}`,
+      env.ADMIN_URL,
+      env.TENANT_BASE_DOMAIN,
+    );
     const { subject, html } = crmOrganizationInviteTemplate(role.name, inviteUrl);
 
     await sendEmail({
@@ -262,6 +361,7 @@ export const crmAccessService = {
     organization: OrganizationRecord,
     fromMembershipId: string,
     toMembershipId: string,
+    removeSenderMembershipOnAccept: boolean,
   ): Promise<void> {
     if (organization.superAdminMembershipId !== fromMembershipId) {
       throw new AppError(
@@ -300,20 +400,24 @@ export const crmAccessService = {
       organizationId: organization.id,
       fromMembershipId,
       toMembershipId,
+      removeSenderMembershipOnAccept,
       expiresAt: new Date(Date.now() + OWNERSHIP_TRANSFER_REQUEST_TTL_MS),
     });
 
     const recipientUser = await userRepository.findById(toMembership.userId);
     if (!recipientUser) return;
 
-    const { subject, html } = crmOwnershipTransferRequestTemplate(
-      organization.name,
-      `${env.ADMIN_URL}/crm`,
+    const crmUrl = buildOrganizationAdminUrl(
+      organization,
+      "/crm",
+      env.ADMIN_URL,
+      env.TENANT_BASE_DOMAIN,
     );
+    const { subject, html } = crmOwnershipTransferRequestTemplate(organization.name, crmUrl);
     await sendEmail({
       to: recipientUser.email,
       subject,
-      body: `You've been asked to become the owner of ${organization.name} on Outfiqe CRM: ${env.ADMIN_URL}/crm`,
+      body: `You've been asked to become the owner of ${organization.name} on Outfiqe CRM: ${crmUrl}`,
       html,
     });
 

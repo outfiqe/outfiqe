@@ -31,6 +31,7 @@ const mockOrganizationEndpoint = (
       toUserId: string;
       toUserName: string;
       fromUserName: string;
+      removeSenderMembershipOnAccept: boolean;
       expiresAt: string;
     } | null;
   }> = {},
@@ -72,6 +73,29 @@ describe("CrmPage", () => {
     expect(screen.getByText("Invite a staff member")).toBeInTheDocument();
   });
 
+  it("tells the viewer to check their subdomain when they have no access to this organization", async () => {
+    mswServer.use(
+      http.get(
+        `${API_BASE}/crm/organization`,
+        () =>
+          new HttpResponse(
+            JSON.stringify({
+              success: false,
+              message: "You do not have permission to do this.",
+              code: "FORBIDDEN",
+            }),
+            { status: 403 },
+          ),
+      ),
+    );
+
+    render(<CrmPage />, { wrapper });
+
+    expect(
+      await screen.findByText(/make sure you're on that organization's own subdomain/),
+    ).toBeInTheDocument();
+  });
+
   it("hides members and invite sections for a role without those permissions", async () => {
     mockOrganizationEndpoint({ viewerPermissionKeys: ["org:read", "deals:read"] });
 
@@ -92,6 +116,7 @@ describe("CrmPage", () => {
         toUserId: "some-other-user-id",
         toUserName: "Sunita Adhikari",
         fromUserName: "Bipin Karki",
+        removeSenderMembershipOnAccept: false,
         expiresAt: "2026-09-08T00:00:00.000Z",
       },
     });
@@ -116,6 +141,7 @@ describe("CrmPage", () => {
         toUserId: CURRENT_USER_ID,
         toUserName: "Current User",
         fromUserName: "Bipin Karki",
+        removeSenderMembershipOnAccept: false,
         expiresAt: "2026-09-08T00:00:00.000Z",
       },
     });
@@ -129,6 +155,26 @@ describe("CrmPage", () => {
     expect(screen.getByRole("button", { name: "Decline" })).toBeInTheDocument();
   });
 
+  it("warns the recipient the sender will be removed when that was requested", async () => {
+    mockOrganizationEndpoint({
+      pendingOwnershipTransfer: {
+        id: "transfer-1",
+        toMembershipId: "membership-2",
+        toUserId: CURRENT_USER_ID,
+        toUserName: "Current User",
+        fromUserName: "Bipin Karki",
+        removeSenderMembershipOnAccept: true,
+        expiresAt: "2026-09-08T00:00:00.000Z",
+      },
+    });
+
+    render(<CrmPage />, { wrapper });
+
+    expect(
+      await screen.findByText(/The current owner will be removed from this organization/),
+    ).toBeInTheDocument();
+  });
+
   it("shows a bystander neither the cancel nor the accept/decline actions", async () => {
     mockOrganizationEndpoint({
       pendingOwnershipTransfer: {
@@ -137,6 +183,7 @@ describe("CrmPage", () => {
         toUserId: "some-other-user-id",
         toUserName: "Sunita Adhikari",
         fromUserName: "Bipin Karki",
+        removeSenderMembershipOnAccept: false,
         expiresAt: "2026-09-08T00:00:00.000Z",
       },
     });

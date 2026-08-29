@@ -5,6 +5,7 @@ import { type FormEvent, useState } from "react";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { organizationsApi } from "./api";
+import { BusinessOwnerField } from "./BusinessOwnerField";
 
 export const OrganizationsPage = () => {
   const queryClient = useQueryClient();
@@ -15,16 +16,45 @@ export const OrganizationsPage = () => {
     error,
   } = useQuery({ queryKey: ["organizations"], queryFn: organizationsApi.list });
 
-  const [name, setName] = useState("");
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
+  const [selectedBrandName, setSelectedBrandName] = useState("");
   const [subdomain, setSubdomain] = useState("");
+  const [subdomainTouchedByUser, setSubdomainTouchedByUser] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  const { data: suggestion, isFetching: isSuggesting } = useQuery({
+    queryKey: ["organization-suggestion", selectedBrandId],
+    queryFn: () => organizationsApi.suggestFromBrand(selectedBrandId as string),
+    enabled: selectedBrandId !== null,
+  });
+
+  if (suggestion && !subdomainTouchedByUser && subdomain !== suggestion.suggestedSubdomain) {
+    setSubdomain(suggestion.suggestedSubdomain);
+  }
+
+  const selectBusiness = (brand: { id: string; name: string } | null) => {
+    setSelectedBrandId(brand?.id ?? null);
+    setSelectedBrandName(brand?.name ?? "");
+    setSubdomainTouchedByUser(false);
+    if (!brand) setSubdomain("");
+    setFormError(null);
+  };
+
+  const resetForm = () => {
+    setSelectedBrandId(null);
+    setSelectedBrandName("");
+    setSubdomain("");
+    setSubdomainTouchedByUser(false);
+    setFormError(null);
+  };
+
   const create = useMutation({
-    mutationFn: () => organizationsApi.create(name, subdomain),
+    mutationFn: () => {
+      if (!suggestion) throw new Error("No business selected yet.");
+      return organizationsApi.create(suggestion.brandName, subdomain, suggestion.ownerUserId);
+    },
     onSuccess: () => {
-      setName("");
-      setSubdomain("");
-      setFormError(null);
+      resetForm();
       queryClient.invalidateQueries({ queryKey: ["organizations"] });
     },
     onError: (mutationError) => setFormError(getErrorMessage(mutationError)),
@@ -39,25 +69,20 @@ export const OrganizationsPage = () => {
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Organizations</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Each organization is a fully independent CRM tenant — its own members, roles, and data.
+        Each organization is a fully independent CRM tenant — its own members, roles, and data. Pick
+        a business already on Outfiqe; they become the new organization&apos;s owner once they
+        accept.
       </p>
 
       <form
         onSubmit={handleSubmit}
         className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
       >
-        <div className="space-y-1.5">
-          <label htmlFor="org-name" className="text-xs text-muted-foreground">
-            Name
-          </label>
-          <Input
-            id="org-name"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-48"
-          />
-        </div>
+        <BusinessOwnerField
+          selectedBrandId={selectedBrandId}
+          selectedBrandName={selectedBrandName}
+          onSelect={selectBusiness}
+        />
         <div className="space-y-1.5">
           <label htmlFor="org-subdomain" className="text-xs text-muted-foreground">
             Subdomain
@@ -66,15 +91,28 @@ export const OrganizationsPage = () => {
             id="org-subdomain"
             required
             pattern="[a-z0-9-]+"
+            disabled={!selectedBrandId || isSuggesting}
             value={subdomain}
-            onChange={(e) => setSubdomain(e.target.value.toLowerCase())}
+            onChange={(e) => {
+              setSubdomainTouchedByUser(true);
+              setSubdomain(e.target.value.toLowerCase());
+            }}
             className="w-48"
           />
         </div>
-        <Button type="submit" disabled={create.isPending}>
+        <Button type="submit" disabled={!selectedBrandId || isSuggesting || create.isPending}>
           {create.isPending ? "Creating…" : "Create organization"}
         </Button>
       </form>
+
+      {suggestion && suggestion.ownerExistingOrganizations.length > 0 && (
+        <FormBanner tone="neutral" className="mt-3">
+          {suggestion.ownerName} already owns:{" "}
+          {suggestion.ownerExistingOrganizations
+            .map((organization) => organization.name)
+            .join(", ")}
+        </FormBanner>
+      )}
 
       {formError && <FormBanner className="mt-3">{formError}</FormBanner>}
 

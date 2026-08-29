@@ -46,7 +46,11 @@ export const OwnershipTransferBanner = ({ organization }: { organization: Organi
     return (
       <FormBanner tone="positive">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span>You&apos;ve been asked to become the owner of {organization.name}.</span>
+          <span>
+            You&apos;ve been asked to become the owner of {organization.name}.
+            {pendingTransfer.removeSenderMembershipOnAccept &&
+              " The current owner will be removed from this organization once you accept."}
+          </span>
           <div className="flex gap-2">
             <Button
               size="sm"

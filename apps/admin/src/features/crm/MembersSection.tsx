@@ -1,4 +1,4 @@
-import { Badge, Button, FormBanner, Modal, Select, toast } from "@outfiqe/design-system";
+import { Badge, Button, Checkbox, FormBanner, Modal, Select, toast } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -24,6 +24,7 @@ export const MembersSection = ({
   const queryClient = useQueryClient();
   const [transferTarget, setTransferTarget] = useState<MembershipSummary | null>(null);
   const [transferError, setTransferError] = useState<string | null>(null);
+  const [removeSenderMembership, setRemoveSenderMembership] = useState(false);
 
   const {
     data: members,
@@ -54,7 +55,8 @@ export const MembersSection = ({
   });
 
   const transferOwnership = useMutation({
-    mutationFn: (toMembershipId: string) => crmApi.createOwnershipTransfer(toMembershipId),
+    mutationFn: (toMembershipId: string) =>
+      crmApi.createOwnershipTransfer(toMembershipId, removeSenderMembership),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["crm-organization"] });
       setTransferTarget(null);
@@ -72,6 +74,7 @@ export const MembersSection = ({
 
   const openTransferConfirm = (member: MembershipSummary) => {
     setTransferError(null);
+    setRemoveSenderMembership(false);
     setTransferTarget(member);
   };
 
@@ -176,6 +179,13 @@ export const MembersSection = ({
             Transfer ownership to <strong>{transferTarget.userName}</strong>? They&apos;ll need to
             accept before this takes effect.
           </p>
+          <label className="mt-4 flex items-center gap-2 text-sm text-foreground">
+            <Checkbox
+              checked={removeSenderMembership}
+              onChange={(e) => setRemoveSenderMembership(e.target.checked)}
+            />
+            Remove my own access after this transfer
+          </label>
         </Modal>
       )}
     </div>
