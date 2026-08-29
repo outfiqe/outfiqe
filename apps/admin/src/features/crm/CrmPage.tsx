@@ -1,11 +1,11 @@
 import { FormBanner } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 
 import { ApiClientError } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
+import { CrmTabs } from "./CrmTabs";
 import { InviteSection } from "./InviteSection";
 import { MembersSection } from "./MembersSection";
 import { OwnershipTransferBanner } from "./OwnershipTransferBanner";
@@ -14,7 +14,6 @@ import type { Organization } from "./schemas";
 
 const MEMBERS_READ_PERMISSION_KEY = "members:read";
 const MEMBERS_INVITE_PERMISSION_KEY = "members:invite";
-const BILLING_READ_PERMISSION_KEY = "billing:read";
 const FORBIDDEN_ERROR_CODE = "FORBIDDEN";
 const NO_ORGANIZATION_ACCESS_MESSAGE =
   "You don't have CRM access on this organization. If you were invited to a different organization, make sure you're on that organization's own subdomain.";
@@ -29,10 +28,6 @@ const canViewMembers = (organization: Organization) =>
 const canInviteMembers = (organization: Organization) =>
   organization.viewerIsSuperAdmin ||
   organization.viewerPermissionKeys.includes(MEMBERS_INVITE_PERMISSION_KEY);
-
-const canReadBilling = (organization: Organization) =>
-  organization.viewerIsSuperAdmin ||
-  organization.viewerPermissionKeys.includes(BILLING_READ_PERMISSION_KEY);
 
 export const CrmPage = () => {
   const {
@@ -68,16 +63,12 @@ export const CrmPage = () => {
 
       {organization && (
         <div className="mt-6">
+          <CrmTabs
+            viewerIsSuperAdmin={organization.viewerIsSuperAdmin}
+            viewerPermissionKeys={organization.viewerPermissionKeys}
+          />
           <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
           <OwnershipTransferBanner organization={organization} />
-
-          {canReadBilling(organization) && (
-            <p className="mb-6 text-sm">
-              <Link to="/crm/billing" className="font-semibold text-primary-strong underline">
-                Manage billing &amp; subscription
-              </Link>
-            </p>
-          )}
 
           {canViewMembers(organization) || canInviteMembers(organization) ? (
             <div className="space-y-8">

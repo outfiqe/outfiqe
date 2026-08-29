@@ -77,6 +77,7 @@ export default defineConfig({
         "src/modules/chat/**/*.ts",
         "src/modules/crm-access/**/*.ts",
         "src/modules/crm-billing/**/*.ts",
+        "src/modules/crm-relationships/**/*.ts",
       ],
       thresholds: {
         lines: 80,

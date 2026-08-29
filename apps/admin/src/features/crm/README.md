@@ -4,10 +4,11 @@
 
 The visible screens for Outfiqe's internal CRM. Lets a staff member with CRM access view the
 organization, see and manage CRM members, invite an existing staff account, accept a CRM invite,
-and manage the organization's paid subscription — against the `/api/crm/*` endpoints in
-`apps/api/src/modules/crm-access` (Chunks 1–2 + ownership transfer) and
-`apps/api/src/modules/crm-billing` (Chunk 3). No pipeline, deals, tickets, or custom-role UI yet —
-those are later chunks.
+manage the organization's paid subscription, and browse the tenant brand's Partners (creators) and
+Customers (shoppers) — against the `/api/crm/*` endpoints in `apps/api/src/modules/crm-access`
+(Chunks 1–2 + ownership transfer), `apps/api/src/modules/crm-billing` (Chunk 3), and
+`apps/api/src/modules/crm-relationships` (Chunk 5). No pipeline, deals, tickets, or custom-role UI
+yet — those are later chunks.
 
 ## Structure
 
@@ -50,11 +51,26 @@ those are later chunks.
   `verifyInvoice` server-side, and reports COMPLETE / PENDING / FAILED.
 - `PlanGateBanner.tsx` — shown above CRM content when `organization.advancedFeaturesEnabled` is
   false (trial ended, no active subscription), linking to `/crm/billing`.
+- `CrmTabs.tsx` — the Overview / Partners / Customers / Billing nav strip. Each tab is a router
+  `<Link>` filtered by the viewer's permission keys (`accounts:read` / `customers:read` /
+  `billing:read`); every page in the CRM area renders it itself (see "Non-obvious rationale").
+- `relationshipsApi.ts` / `relationshipsSchemas.ts` — `crmRelationshipsApi`
+  (`listPartners`/`getPartner`/`listCustomers`/`getCustomer`) + Zod mirrors of
+  `/api/crm/partners*` and `/api/crm/customers*`.
+- `PartnersPage.tsx` / `CustomersPage.tsx` — searchable, offset-paginated tables with a loading
+  skeleton, an error banner, a distinct "not linked to a brand" empty state, and a plain "no
+  partners/customers yet" empty state. Search is debounced via `useDebouncedValue`
+  (`@outfiqe/hooks`).
+- `PartnerDetailPage.tsx` / `CustomerDetailPage.tsx` — per-product breakdown + recent attributed
+  orders (partner) / recent order history (customer), reached from a list row.
 
-Routes: `apps/admin/src/routes/_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
+Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
 `_authenticated.crm.invites.accept.tsx` (`/crm/invites/accept` → `AcceptInvitePage`),
-`_authenticated.crm.billing.index.tsx` (`/crm/billing` → `BillingPage`), and
-`_authenticated.crm.billing.return.tsx` (`/crm/billing/return` → `BillingReturnPage`) — the `.index`
+`_authenticated.crm.billing.index.tsx` / `_authenticated.crm.billing.return.tsx`,
+`_authenticated.crm.partners.index.tsx` (`/crm/partners` → `PartnersPage`),
+`_authenticated.crm.partners.$creatorId.tsx` (`→ PartnerDetailPage`),
+`_authenticated.crm.customers.index.tsx` (`/crm/customers` → `CustomersPage`), and
+`_authenticated.crm.customers.$userId.tsx` (`→ CustomerDetailPage`) — the `.index`
 suffix on the leaf routes is load-bearing, not stylistic: without it, TanStack Router's file-based
 convention treats `_authenticated.crm.tsx` as a layout parent for anything under `crm.*`
 (including the accept route), and since `CrmPage` renders no `<Outlet/>`, the accept route would
@@ -91,6 +107,12 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
   `members:read`/`members:invite`, and showing a control guaranteed to reject every request is
   worse than not showing it, the same reasoning the SUPERADMIN-row-disabling bullet below already
   applies to `MembersSection`'s own controls.
+- **`CrmTabs` is rendered per-page, not from a `_authenticated.crm.tsx` layout route.** A layout
+  route would be the natural home for shared chrome, but adding `_authenticated.crm.tsx` turns it
+  into the parent of _every_ `/crm/*` route — including `/crm/invites/accept`, which a not-yet-a-
+  member is on and must not see CRM tabs for. Every CRM-area page (`CrmPage`, `PartnersPage`,
+  `CustomersPage`, `BillingPage`) renders `<CrmTabs>` itself off the `viewerIsSuperAdmin` /
+  `viewerPermissionKeys` it already fetches — one line per page, no routing-structure risk.
 - **`advancedFeaturesEnabled` rides on `GET /api/crm/organization`, not a separate billing fetch.**
   `crm-access`'s org-context response calls `crmBillingService.resolveAdvancedFeaturesForOrganization`,
   so `CrmPage` already knows whether to show `PlanGateBanner` without every viewer needing
