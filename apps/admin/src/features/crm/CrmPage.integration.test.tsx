@@ -26,9 +26,14 @@ vi.mock("@/features/auth/AuthContext", () => ({
 const wrapper = ({ children }: { children: ReactNode }) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const rootRoute = createRootRoute({ component: () => <>{children}</> });
-  const childRoutes = ["/crm", "/crm/partners", "/crm/customers", "/crm/billing"].map((path) =>
-    createRoute({ getParentRoute: () => rootRoute, path }),
-  );
+  const childRoutes = [
+    "/crm",
+    "/crm/partners",
+    "/crm/customers",
+    "/crm/pipeline",
+    "/crm/tasks",
+    "/crm/billing",
+  ].map((path) => createRoute({ getParentRoute: () => rootRoute, path }));
   const router = createRouter({
     routeTree: rootRoute.addChildren(childRoutes),
     history: createMemoryHistory({ initialEntries: ["/"] }),

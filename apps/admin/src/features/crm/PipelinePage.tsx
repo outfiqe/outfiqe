@@ -8,6 +8,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { crmApi } from "./api";
 import { CrmTabs } from "./CrmTabs";
 import { DealFormModal } from "./DealFormModal";
+import { formatRupees } from "./format.utils";
 import { crmPipelineApi } from "./pipelineApi";
 import type { Deal } from "./pipelineSchemas";
 import { PlanGateBanner } from "./PlanGateBanner";
@@ -17,8 +18,6 @@ const STAGES_QUERY_KEY = ["crm-pipeline-stages"];
 const DEALS_QUERY_KEY = ["crm-deals"];
 const PIPELINE_CONFIGURE_PERMISSION = "pipeline:configure";
 const DEALS_WRITE_PERMISSION = "deals:write";
-
-const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
 
 export const PipelinePage = () => {
   const queryClient = useQueryClient();

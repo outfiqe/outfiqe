@@ -70,6 +70,15 @@ yet — those are later chunks.
   `crmRelationshipsApi.listPartners`); `pipeline:configure` gets "Configure stages"
   (`StageConfigModal.tsx` — add / rename-less delete / up-down reorder). Moving a card patches the
   deal's `stageId`.
+- `activitiesApi.ts` / `activitiesSchemas.ts` — `crmActivitiesApi` (timeline, log activity, task
+  CRUD) + Zod mirrors of `/api/crm/timeline`, `/api/crm/activities`, `/api/crm/tasks`.
+- `TimelineSection.tsx` — the merged Timeline (logged activity + live order rows) with an inline
+  "log a note/call/message/email" composer, embedded on `PartnerDetailPage` / `CustomerDetailPage`.
+  Shows a notice when the response is `partial`.
+- `TasksPage.tsx` — the Tasks tab: a list of due-dated tasks with an overdue badge and a
+  complete checkbox, plus a "New task" modal with an assignee picker (needs `members:read`).
+- `format.utils.ts` — `formatRupees` / `formatDate` / `formatDateTime`, shared by every CRM
+  screen instead of a per-file copy.
 
 Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
 `_authenticated.crm.invites.accept.tsx` (`/crm/invites/accept` → `AcceptInvitePage`),
@@ -78,7 +87,8 @@ Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
 `_authenticated.crm.partners.$creatorId.tsx` (`→ PartnerDetailPage`),
 `_authenticated.crm.customers.index.tsx` (`/crm/customers` → `CustomersPage`),
 `_authenticated.crm.customers.$userId.tsx` (`→ CustomerDetailPage`), and
-`_authenticated.crm.pipeline.index.tsx` (`/crm/pipeline` → `PipelinePage`) — the `.index`
+`_authenticated.crm.pipeline.index.tsx` (`/crm/pipeline` → `PipelinePage`),
+`_authenticated.crm.tasks.index.tsx` (`/crm/tasks` → `TasksPage`) — the `.index`
 suffix on the leaf routes is load-bearing, not stylistic: without it, TanStack Router's file-based
 convention treats `_authenticated.crm.tsx` as a layout parent for anything under `crm.*`
 (including the accept route), and since `CrmPage` renders no `<Outlet/>`, the accept route would

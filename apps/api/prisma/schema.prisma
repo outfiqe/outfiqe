@@ -65,6 +65,10 @@ model User {
   creatorLinks                             CreatorLink[]               @relation("CreatorLinks")
   creatorLinkClicks                        CreatorLinkClick[]
   crmPartnerDeals                          Deal[]                     @relation("DealPartnerCreator")
+  crmActivitiesAsPartner                   CrmActivity[]              @relation("CrmActivityPartner")
+  crmActivitiesAsCustomer                  CrmActivity[]              @relation("CrmActivityCustomer")
+  crmTasksAsPartner                        CrmTask[]                  @relation("CrmTaskPartner")
+  crmTasksAsCustomer                       CrmTask[]                  @relation("CrmTaskCustomer")
   deliveryZoneChanges                      DeliveryZoneHistory[]       @relation("DeliveryZoneChanges")
   xpTransactions                           XpTransaction[]
   progress                                 UserProgress?
@@ -1843,6 +1847,8 @@ model Organization {
   subscription              Subscription?
   pipelineStages            PipelineStage[]
   deals                     Deal[]
+  crmActivities             CrmActivity[]
+  crmTasks                  CrmTask[]
 
   @@map("organizations")
 }
@@ -1892,6 +1898,72 @@ model Deal {
 
   @@index([organizationId, stageId])
   @@map("deals")
+
+  activities CrmActivity[]
+  tasks      CrmTask[]
+}
+
+enum CrmActivityType {
+  NOTE
+  CALL
+  MESSAGE
+  EMAIL
+}
+
+enum CrmTaskStatus {
+  OPEN
+  DONE
+}
+
+model CrmActivity {
+  id                 String          @id @default(uuid()) @db.Uuid
+  organizationId     String          @map("organization_id") @db.Uuid
+  organization       Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  type               CrmActivityType
+  body               String
+  occurredAt         DateTime        @default(now()) @map("occurred_at")
+  authorMembershipId String?         @map("author_membership_id") @db.Uuid
+  authorMembership   Membership?     @relation("CrmActivityAuthor", fields: [authorMembershipId], references: [id], onDelete: SetNull)
+  partnerCreatorId   String?         @map("partner_creator_id") @db.Uuid
+  partnerCreator     User?           @relation("CrmActivityPartner", fields: [partnerCreatorId], references: [id], onDelete: Cascade)
+  customerUserId     String?         @map("customer_user_id") @db.Uuid
+  customerUser       User?           @relation("CrmActivityCustomer", fields: [customerUserId], references: [id], onDelete: Cascade)
+  dealId             String?         @map("deal_id") @db.Uuid
+  deal               Deal?           @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+
+  @@index([organizationId, partnerCreatorId, occurredAt])
+  @@index([organizationId, customerUserId, occurredAt])
+  @@index([organizationId, dealId, occurredAt])
+  @@map("crm_activities")
+}
+
+model CrmTask {
+  id                   String        @id @default(uuid()) @db.Uuid
+  organizationId       String        @map("organization_id") @db.Uuid
+  organization         Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title                String
+  description          String?
+  dueAt                DateTime      @map("due_at")
+  status               CrmTaskStatus @default(OPEN)
+  assigneeMembershipId String        @map("assignee_membership_id") @db.Uuid
+  assigneeMembership   Membership    @relation("CrmTaskAssignee", fields: [assigneeMembershipId], references: [id], onDelete: Cascade)
+  createdByMembershipId String?      @map("created_by_membership_id") @db.Uuid
+  createdByMembership   Membership?  @relation("CrmTaskCreatedBy", fields: [createdByMembershipId], references: [id], onDelete: SetNull)
+  partnerCreatorId     String?       @map("partner_creator_id") @db.Uuid
+  partnerCreator       User?         @relation("CrmTaskPartner", fields: [partnerCreatorId], references: [id], onDelete: Cascade)
+  customerUserId       String?       @map("customer_user_id") @db.Uuid
+  customerUser         User?         @relation("CrmTaskCustomer", fields: [customerUserId], references: [id], onDelete: Cascade)
+  dealId               String?       @map("deal_id") @db.Uuid
+  deal                 Deal?         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  completedAt          DateTime?     @map("completed_at")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+
+  @@index([organizationId, assigneeMembershipId, dueAt])
+  @@index([organizationId, status, dueAt])
+  @@map("crm_tasks")
 }
 
 enum SubscriptionStatus {
@@ -1969,6 +2041,9 @@ model Membership {
   ownershipTransfersSent     OwnershipTransferRequest[] @relation("OwnershipTransferFrom")
   ownershipTransfersReceived OwnershipTransferRequest[] @relation("OwnershipTransferTo")
   ownedDeals                 Deal[]                    @relation("DealOwnerMembership")
+  crmActivitiesAuthored      CrmActivity[]             @relation("CrmActivityAuthor")
+  crmTasksAssigned           CrmTask[]                 @relation("CrmTaskAssignee")
+  crmTasksCreated            CrmTask[]                 @relation("CrmTaskCreatedBy")
 
   @@unique([userId, organizationId])
   @@index([organizationId])

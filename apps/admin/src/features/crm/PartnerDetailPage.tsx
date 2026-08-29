@@ -4,12 +4,11 @@ import { getRouteApi, Link } from "@tanstack/react-router";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { formatDate, formatRupees } from "./format.utils";
 import { crmRelationshipsApi } from "./relationshipsApi";
+import { TimelineSection } from "./TimelineSection";
 
 const routeApi = getRouteApi("/_authenticated/crm/partners/$creatorId");
-
-const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
-const formatDate = (iso: string) => new Date(iso).toLocaleDateString();
 
 export const PartnerDetailPage = () => {
   const { creatorId } = routeApi.useParams();
@@ -90,6 +89,8 @@ export const PartnerDetailPage = () => {
               </ul>
             )}
           </section>
+
+          <TimelineSection subjectType="partner" subjectId={creatorId} />
         </div>
       )}
     </div>

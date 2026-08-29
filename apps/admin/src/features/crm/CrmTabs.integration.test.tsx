@@ -12,9 +12,14 @@ import { CrmTabs } from "./CrmTabs";
 
 const renderTabs = (props: { viewerIsSuperAdmin: boolean; viewerPermissionKeys: string[] }) => {
   const rootRoute = createRootRoute({ component: () => <CrmTabs {...props} /> });
-  const children = ["/crm", "/crm/partners", "/crm/customers", "/crm/billing"].map((path) =>
-    createRoute({ getParentRoute: () => rootRoute, path }),
-  );
+  const children = [
+    "/crm",
+    "/crm/partners",
+    "/crm/customers",
+    "/crm/pipeline",
+    "/crm/tasks",
+    "/crm/billing",
+  ].map((path) => createRoute({ getParentRoute: () => rootRoute, path }));
   const router = createRouter({
     routeTree: rootRoute.addChildren(children),
     history: createMemoryHistory({ initialEntries: ["/crm"] }),

@@ -11,7 +11,11 @@ const STAGES_QUERY_KEY = ["crm-pipeline-stages"];
 
 const swap = (ids: string[], from: number, to: number): string[] => {
   const next = [...ids];
-  [next[from], next[to]] = [next[to], next[from]];
+  const moved = next[from];
+  const displaced = next[to];
+  if (moved === undefined || displaced === undefined) return ids;
+  next[from] = displaced;
+  next[to] = moved;
   return next;
 };
 

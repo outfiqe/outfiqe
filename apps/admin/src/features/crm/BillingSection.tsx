@@ -11,6 +11,7 @@ import {
   type SubscriptionInvoice,
   type SubscriptionStatusValue,
 } from "./billingSchemas";
+import { formatDate, formatRupees } from "./format.utils";
 import { PlanCheckoutModal } from "./PlanCheckoutModal";
 
 const BILLING_OVERVIEW_KEY = ["crm-billing-overview"];
@@ -31,10 +32,6 @@ const INVOICE_STATUS_TONE: Record<InvoiceStatusValue, "neutral" | "positive" | "
   PAID: "positive",
   VOID: "negative",
 };
-
-const formatDate = (iso: string) => new Date(iso).toLocaleDateString();
-
-const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
 
 const SubscriptionCard = ({
   overview,

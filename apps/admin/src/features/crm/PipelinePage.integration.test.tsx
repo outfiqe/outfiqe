@@ -78,9 +78,14 @@ const mockPipeline = (overrides: { patchDeal?: () => Response } = {}) => {
 const renderPipelinePage = () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const rootRoute = createRootRoute({ component: PipelinePage });
-  const children = ["/crm", "/crm/partners", "/crm/customers", "/crm/pipeline", "/crm/billing"].map(
-    (path) => createRoute({ getParentRoute: () => rootRoute, path }),
-  );
+  const children = [
+    "/crm",
+    "/crm/partners",
+    "/crm/customers",
+    "/crm/pipeline",
+    "/crm/tasks",
+    "/crm/billing",
+  ].map((path) => createRoute({ getParentRoute: () => rootRoute, path }));
   const router = createRouter({
     routeTree: rootRoute.addChildren(children),
     history: createMemoryHistory({ initialEntries: ["/crm/pipeline"] }),

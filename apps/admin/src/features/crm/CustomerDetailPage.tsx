@@ -4,12 +4,11 @@ import { getRouteApi, Link } from "@tanstack/react-router";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { formatDate, formatRupees } from "./format.utils";
 import { crmRelationshipsApi } from "./relationshipsApi";
+import { TimelineSection } from "./TimelineSection";
 
 const routeApi = getRouteApi("/_authenticated/crm/customers/$userId");
-
-const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
-const formatDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString() : "—");
 
 export const CustomerDetailPage = () => {
   const { userId } = routeApi.useParams();
@@ -58,6 +57,8 @@ export const CustomerDetailPage = () => {
               </ul>
             )}
           </section>
+
+          <TimelineSection subjectType="customer" subjectId={userId} />
         </div>
       )}
     </div>

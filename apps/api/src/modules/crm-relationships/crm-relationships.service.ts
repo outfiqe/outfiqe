@@ -114,4 +114,13 @@ export const crmRelationshipsService = {
     if (!organization.linkedBrandId) return false;
     return crmRelationshipsRepository.isBrandPartner(organization.linkedBrandId, creatorId);
   },
+
+  async isCustomer(organization: TenantBrandOrganization, userId: string): Promise<boolean> {
+    if (!organization.linkedBrandId) return false;
+    const core = await crmRelationshipsRepository.findCustomerCore(
+      organization.linkedBrandId,
+      userId,
+    );
+    return core !== null;
+  },
 };

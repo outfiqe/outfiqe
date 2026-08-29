@@ -8,13 +8,11 @@ import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
 import { CrmTabs } from "./CrmTabs";
+import { formatDate, formatRupees } from "./format.utils";
 import { crmRelationshipsApi } from "./relationshipsApi";
 
 const PAGE_SIZE = 25;
 const SEARCH_DEBOUNCE_MS = 300;
-
-const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
-const formatDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString() : "—");
 
 export const CustomersPage = () => {
   const { data: organization } = useQuery({
