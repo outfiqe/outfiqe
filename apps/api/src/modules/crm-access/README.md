@@ -97,8 +97,30 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   tenant-scoped — there's no `Membership` to check permissions against before the org exists — so
   it's gated on `requirePlatformAccess` instead, registered before
   `crmAccessRoutes.use(resolveTenant, ...)` so it never runs through tenant resolution at all. The
-  creating account automatically becomes the new org's SUPERADMIN — matching how creating a
-  workspace in Slack/Notion/Vercel makes you its owner, not a separate "assign yourself" step.
+  creating account automatically becomes the new org's SUPERADMIN at creation time — matching how
+  creating a workspace in Slack/Notion/Vercel makes you its owner, not a separate "assign yourself"
+  step — but see the next bullet for what happens immediately after, when a target owner is given.
+- **`createOrganization`'s optional `targetOwnerUserId` hands the new org off to a real business
+  automatically, reusing ownership transfer rather than a second acceptance mechanism.** When
+  provided (from `apps/admin`'s Organizations screen, which resolves it from an existing `Brand`'s
+  owner via `suggestOrganizationFromBrand`), the creating staff member still becomes SUPERADMIN
+  first as above, but the service then creates a Membership for the target in the org's built-in
+  Admin role and immediately calls `createOwnershipTransfer` from the creator to that new
+  membership with `removeSenderMembershipOnAccept: true` — the exact same accept/decline flow (and
+  UI, and email) a manual "Transfer ownership" click already produces. The target only becomes
+  SUPERADMIN once they accept, and the creating staff member is removed from the organization
+  entirely at that point, since a platform staffer concierge-provisioning an org for an external
+  business has no legitimate reason to remain a member afterward — unlike the manual transfer flow,
+  where that's a real per-transfer choice (see the ownership-transfer bullet below), it's hardcoded
+  here.
+- **`suggestOrganizationFromBrand` derives a subdomain suggestion, never a silent commitment.**
+  `Brand` has no slug field, so the suggestion slugifies the brand's name and retries with a random
+  suffix on collision — the same `slugifyHandle`/`withHandleSuffix` pair `user.repository.ts`
+  already uses for `User.handle` collisions, reused rather than reinventing a second collision
+  strategy. It also surfaces every organization the resolved owner already has
+  (`findOrganizationsOwnedByUser`) so the platform admin can see, not just guess, whether they're
+  about to onboard the same business a second time — allowed, since a real company can legitimately
+  run more than one business, but never silent.
 - **Tenant organizations must never reach Outfiqe's own commerce-admin sections** (Products,
   Orders, Brand applications, Commissions, Withdrawals, etc.). Once real tenant orgs exist with
   their own `UserRole.ADMIN` staff (e.g. a Meridian Apparel employee), gating every non-CRM

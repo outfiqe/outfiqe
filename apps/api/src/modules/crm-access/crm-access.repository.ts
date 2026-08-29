@@ -210,6 +210,19 @@ export const crmAccessRepository = {
     });
   },
 
+  async findOrganizationsOwnedByUser(userId: string): Promise<OrganizationRecord[]> {
+    const memberships = await prisma.membership.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const membershipIds = memberships.map((membership) => membership.id);
+    if (membershipIds.length === 0) return [];
+
+    return prisma.organization.findMany({
+      where: { superAdminMembershipId: { in: membershipIds } },
+    });
+  },
+
   async createMembership(
     userId: string,
     organizationId: string,

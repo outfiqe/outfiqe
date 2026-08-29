@@ -4,7 +4,7 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import { UserRole } from "#generated/prisma/enums.js";
+import { BrandRole, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
@@ -113,6 +113,34 @@ const makeSuperAdmin = async (organizationId: string, membershipId: string) =>
     data: { superAdminMembershipId: membershipId },
   });
 
+const createBrand = (name: string) =>
+  prisma.brand.create({
+    data: {
+      name,
+      contactName: "Brand Contact",
+      email: `${randomUUID()}@brand.outfiqe.test`,
+      phone: uniquePhone(),
+      instagram: `@${randomUUID().slice(0, 8)}`,
+    },
+  });
+
+const createBrandOwner = async (brandId: string) => {
+  const owner = await prisma.user.create({
+    data: {
+      email: `brand-owner-${randomUUID()}@outfiqe.test`,
+      name: "Brand Owner",
+      handle: `brand-owner-${randomUUID().slice(0, 8)}`,
+      phone: uniquePhone(),
+      passwordHash: "not-used-in-tests",
+      role: UserRole.BRAND_OWNER,
+    },
+  });
+  await prisma.brandMembership.create({
+    data: { userId: owner.id, brandId, role: BrandRole.OWNER },
+  });
+  return owner;
+};
+
 describe("POST /api/crm/organizations", () => {
   it("creates an organization and makes the caller its SUPERADMIN", async () => {
     await prisma.permission.createMany({ data: PERMISSION_CATALOG, skipDuplicates: true });
@@ -187,6 +215,133 @@ describe("POST /api/crm/organizations", () => {
       .post("/api/crm/organizations")
       .set("Authorization", `Bearer ${accessToken}`)
       .send({ name: "Shouldn't Work", subdomain: `nope-${randomUUID().slice(0, 8)}` });
+
+    expect(response.status).toBe(403);
+  });
+
+  it("hands off ownership to the target owner instead of the creating staff member", async () => {
+    const staff = await createPlatformStaffUser("Concierge Onboarder");
+    const brand = await createBrand("Kastha Apparel");
+    const owner = await createBrandOwner(brand.id);
+    const subdomain = `kastha-${randomUUID().slice(0, 8)}`;
+
+    const createResponse = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({ name: brand.name, subdomain, targetOwnerUserId: owner.id });
+    expect(createResponse.status).toBe(201);
+
+    const organizationId = createResponse.body.data.id as string;
+
+    const staffMembership = await prisma.membership.findUniqueOrThrow({
+      where: { userId_organizationId: { userId: staff.id, organizationId } },
+    });
+    const ownerMembership = await prisma.membership.findUniqueOrThrow({
+      where: { userId_organizationId: { userId: owner.id, organizationId } },
+      include: { role: true },
+    });
+    expect(ownerMembership.role.name).toBe(BUILT_IN_ROLE_NAME.ADMIN);
+
+    const organizationBeforeAccept = await prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+    });
+    expect(organizationBeforeAccept.superAdminMembershipId).toBe(staffMembership.id);
+
+    const pendingTransfer = await prisma.ownershipTransferRequest.findFirstOrThrow({
+      where: { organizationId },
+    });
+    expect(pendingTransfer.toMembershipId).toBe(ownerMembership.id);
+    expect(pendingTransfer.removeSenderMembershipOnAccept).toBe(true);
+
+    const acceptResponse = await request(testApp)
+      .post(`/api/crm/ownership-transfer/${pendingTransfer.id}/accept`)
+      .set("Host", `${subdomain}.localhost`)
+      .set("Authorization", authHeaderFor(owner.id));
+    expect(acceptResponse.status).toBe(200);
+
+    const organizationAfterAccept = await prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+    });
+    expect(organizationAfterAccept.superAdminMembershipId).toBe(ownerMembership.id);
+
+    const remainingStaffMembership = await prisma.membership.findUnique({
+      where: { id: staffMembership.id },
+    });
+    expect(remainingStaffMembership).toBeNull();
+  });
+});
+
+describe("GET /api/crm/organizations/suggest", () => {
+  it("suggests a subdomain and resolves the owning user for a brand", async () => {
+    const staff = await createPlatformStaffUser("Suggestion Requester");
+    const brand = await createBrand("Everest Threads");
+    const owner = await createBrandOwner(brand.id);
+
+    const response = await request(testApp)
+      .get("/api/crm/organizations/suggest")
+      .query({ brandId: brand.id })
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.ownerUserId).toBe(owner.id);
+    expect(response.body.data.brandName).toBe("Everest Threads");
+    expect(response.body.data.suggestedSubdomain).toMatch(/^[a-z0-9-]+$/);
+    expect(response.body.data.ownerExistingOrganizations).toEqual([]);
+  });
+
+  it("lists the owner's existing organizations instead of hiding them", async () => {
+    const staff = await createPlatformStaffUser("Suggestion Requester Two");
+    const brand = await createBrand("Solu Textiles");
+    const owner = await createBrandOwner(brand.id);
+    const { organization: existingOrg, adminRole } = await seedOrganization();
+    const existingMembership = await addMembership(existingOrg.id, owner.id, adminRole.id);
+    await makeSuperAdmin(existingOrg.id, existingMembership.id);
+
+    const response = await request(testApp)
+      .get("/api/crm/organizations/suggest")
+      .query({ brandId: brand.id })
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.ownerExistingOrganizations).toEqual([
+      { id: existingOrg.id, name: existingOrg.name },
+    ]);
+  });
+
+  it("404s for a brand that doesn't exist", async () => {
+    const staff = await createPlatformStaffUser("Suggestion Requester Three");
+
+    const response = await request(testApp)
+      .get("/api/crm/organizations/suggest")
+      .query({ brandId: randomUUID() })
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(404);
+    expect(response.body.code).toBe("BRAND_NOT_FOUND");
+  });
+
+  it("rejects a brand with no owner membership", async () => {
+    const staff = await createPlatformStaffUser("Suggestion Requester Four");
+    const brand = await createBrand("Ownerless Co");
+
+    const response = await request(testApp)
+      .get("/api/crm/organizations/suggest")
+      .query({ brandId: brand.id })
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("BRAND_HAS_NO_OWNER");
+  });
+
+  it("requires a platform ADMIN account", async () => {
+    const brand = await createBrand("Restricted Co");
+    const shopper = await createCustomerUser("Not An Admin Either");
+    const { accessToken } = generateTokenpair({ sub: shopper.id, role: UserRole.CUSTOMER });
+
+    const response = await request(testApp)
+      .get("/api/crm/organizations/suggest")
+      .query({ brandId: brand.id })
+      .set("Authorization", `Bearer ${accessToken}`);
 
     expect(response.status).toBe(403);
   });

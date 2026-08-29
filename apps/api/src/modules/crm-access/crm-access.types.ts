@@ -143,6 +143,15 @@ export type OwnershipTransferJoinRow = OwnershipTransferRequestRecord & {
   fromMembership: { user: { name: string } };
 };
 
+export type OrganizationCreationSuggestion = {
+  brandId: string;
+  brandName: string;
+  ownerUserId: string;
+  ownerName: string;
+  suggestedSubdomain: string;
+  ownerExistingOrganizations: { id: string; name: string }[];
+};
+
 export type CreateRoleInput = {
   organizationId: string;
   name: string;

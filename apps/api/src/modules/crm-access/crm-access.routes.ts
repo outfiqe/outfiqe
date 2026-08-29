@@ -26,6 +26,7 @@ import {
   inviteIdParamsSchema,
   membershipIdParamsSchema,
   ownershipTransferIdParamsSchema,
+  suggestOrganizationQuerySchema,
   updateMembershipSchema,
 } from "./crm-access.schemas.js";
 
@@ -60,6 +61,13 @@ crmAccessRoutes.get(
   requireAuth,
   requirePlatformAccess,
   crmAccessController.listOrganizations,
+);
+crmAccessRoutes.get(
+  "/organizations/suggest",
+  requireAuth,
+  requirePlatformAccess,
+  validate({ query: suggestOrganizationQuerySchema }),
+  crmAccessController.suggestOrganization,
 );
 crmAccessRoutes.post(
   "/organizations",

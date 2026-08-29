@@ -7,6 +7,8 @@ import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateToken } from "#lib/generate-token.utils.js";
 import { hashPassword } from "#lib/password.utils.js";
+import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
+import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
 const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
@@ -91,6 +93,8 @@ describe("GET /api/users/search (admin)", () => {
   const createAdminToken = async () => {
     const { user } = await createUserWithAccessToken();
     await prisma.user.update({ where: { id: user.id }, data: { role: UserRole.ADMIN } });
+    await ensurePlatformOrganizationExists();
+    await crmAccessService.grantPlatformStaffMembership(user.id);
     return generateToken({ sub: user.id, role: UserRole.ADMIN });
   };
 
