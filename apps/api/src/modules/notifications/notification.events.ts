@@ -298,6 +298,32 @@ export const registerNotificationEventConsumers = (): void => {
   });
 
   subscribeToDomainEvent({
+    event: DomainEvents.CRM_ITEM_ASSIGNED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({
+      itemKind,
+      itemId,
+      title,
+      assigneeUserId,
+      assignedByUserId,
+    }): Promise<void> => {
+      if (assigneeUserId === assignedByUserId) return;
+
+      await notificationService.notifyIndividual({
+        recipientId: assigneeUserId,
+        actorId: assignedByUserId,
+        type: NotificationType.CRM_ITEM_ASSIGNED,
+        entityType:
+          itemKind === "ticket"
+            ? NotificationEntityType.CRM_TICKET
+            : NotificationEntityType.CRM_TASK,
+        entityId: itemId,
+        metadata: { crmItemKind: itemKind, crmItemTitle: title },
+      });
+    },
+  });
+
+  subscribeToDomainEvent({
     event: DomainEvents.WITHDRAW_REQUEST_STATUS_CHANGED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
     handler: async ({

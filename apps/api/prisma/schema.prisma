@@ -69,6 +69,8 @@ model User {
   crmActivitiesAsCustomer                  CrmActivity[]              @relation("CrmActivityCustomer")
   crmTasksAsPartner                        CrmTask[]                  @relation("CrmTaskPartner")
   crmTasksAsCustomer                       CrmTask[]                  @relation("CrmTaskCustomer")
+  crmTicketsAsPartner                      CrmTicket[]                @relation("CrmTicketPartner")
+  crmTicketsAsCustomer                     CrmTicket[]                @relation("CrmTicketCustomer")
   deliveryZoneChanges                      DeliveryZoneHistory[]       @relation("DeliveryZoneChanges")
   xpTransactions                           XpTransaction[]
   progress                                 UserProgress?
@@ -1355,6 +1357,7 @@ enum NotificationType {
   WITHDRAW_REQUEST_REJECTED
   WITHDRAW_REQUEST_PAID
   NEW_MESSAGE
+  CRM_ITEM_ASSIGNED
 }
 
 enum NotificationEntityType {
@@ -1366,6 +1369,8 @@ enum NotificationEntityType {
   PRODUCT
   WITHDRAW_REQUEST
   CONVERSATION
+  CRM_TASK
+  CRM_TICKET
 }
 
 model Notification {
@@ -1849,6 +1854,7 @@ model Organization {
   deals                     Deal[]
   crmActivities             CrmActivity[]
   crmTasks                  CrmTask[]
+  crmTickets                CrmTicket[]
 
   @@map("organizations")
 }
@@ -1908,6 +1914,58 @@ enum CrmActivityType {
   CALL
   MESSAGE
   EMAIL
+}
+
+enum CrmTicketType {
+  COMPLAINT
+  REQUEST
+}
+
+enum CrmTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model CrmTicket {
+  id                   String          @id @default(uuid()) @db.Uuid
+  organizationId       String          @map("organization_id") @db.Uuid
+  organization         Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  type                 CrmTicketType
+  status               CrmTicketStatus @default(OPEN)
+  title                String
+  description          String
+  partnerCreatorId     String?         @map("partner_creator_id") @db.Uuid
+  partnerCreator       User?           @relation("CrmTicketPartner", fields: [partnerCreatorId], references: [id], onDelete: Cascade)
+  customerUserId       String?         @map("customer_user_id") @db.Uuid
+  customerUser         User?           @relation("CrmTicketCustomer", fields: [customerUserId], references: [id], onDelete: Cascade)
+  assigneeMembershipId String?         @map("assignee_membership_id") @db.Uuid
+  assigneeMembership   Membership?     @relation("CrmTicketAssignee", fields: [assigneeMembershipId], references: [id], onDelete: SetNull)
+  createdByMembershipId String?        @map("created_by_membership_id") @db.Uuid
+  createdByMembership   Membership?    @relation("CrmTicketCreatedBy", fields: [createdByMembershipId], references: [id], onDelete: SetNull)
+  resolvedAt           DateTime?       @map("resolved_at")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+
+  comments CrmTicketComment[]
+
+  @@index([organizationId, status, createdAt])
+  @@index([organizationId, assigneeMembershipId])
+  @@map("crm_tickets")
+}
+
+model CrmTicketComment {
+  id                 String       @id @default(uuid()) @db.Uuid
+  ticketId           String       @map("ticket_id") @db.Uuid
+  ticket             CrmTicket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorMembershipId String?      @map("author_membership_id") @db.Uuid
+  authorMembership   Membership?  @relation("CrmTicketCommentAuthor", fields: [authorMembershipId], references: [id], onDelete: SetNull)
+  body               String
+  createdAt          DateTime     @default(now()) @map("created_at")
+
+  @@index([ticketId, createdAt])
+  @@map("crm_ticket_comments")
 }
 
 enum CrmTaskStatus {
@@ -2044,6 +2102,9 @@ model Membership {
   crmActivitiesAuthored      CrmActivity[]             @relation("CrmActivityAuthor")
   crmTasksAssigned           CrmTask[]                 @relation("CrmTaskAssignee")
   crmTasksCreated            CrmTask[]                 @relation("CrmTaskCreatedBy")
+  crmTicketsAssigned         CrmTicket[]               @relation("CrmTicketAssignee")
+  crmTicketsCreated          CrmTicket[]               @relation("CrmTicketCreatedBy")
+  crmTicketCommentsAuthored  CrmTicketComment[]        @relation("CrmTicketCommentAuthor")
 
   @@unique([userId, organizationId])
   @@index([organizationId])

@@ -135,6 +135,14 @@ export type DomainEventPayloads = {
     isOnline: boolean;
     lastSeenAt: string | null;
   };
+  [DomainEvents.CRM_ITEM_ASSIGNED]: {
+    organizationId: string;
+    itemKind: "task" | "ticket";
+    itemId: string;
+    title: string;
+    assigneeUserId: string;
+    assignedByUserId: string | null;
+  };
 };
 
 export type DomainEventHandler<E extends DomainEvent> = (

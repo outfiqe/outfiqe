@@ -64,6 +64,7 @@ const renderTasksPage = () => {
     "/crm/customers",
     "/crm/pipeline",
     "/crm/tasks",
+    "/crm/support",
     "/crm/billing",
   ].map((path) => createRoute({ getParentRoute: () => rootRoute, path }));
   const router = createRouter({

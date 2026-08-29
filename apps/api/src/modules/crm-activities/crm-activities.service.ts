@@ -1,5 +1,6 @@
 import { addDays } from "date-fns/addDays";
 
+import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { CrmTaskStatus } from "#generated/prisma/enums.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -50,6 +51,22 @@ const resolveDealPartner = async (
 ): Promise<string | null> => {
   const deal = await crmPipelineRepository.findDeal(organizationId, dealId);
   return deal?.partnerCreatorId ?? null;
+};
+
+const publishTaskAssignment = async (
+  organizationId: string,
+  task: TaskRecord,
+  assigneeUserId: string,
+  assignedByUserId: string | null,
+): Promise<void> => {
+  await eventBus.publish(DomainEvents.CRM_ITEM_ASSIGNED, {
+    organizationId,
+    itemKind: "task",
+    itemId: task.id,
+    title: task.title,
+    assigneeUserId,
+    assignedByUserId,
+  });
 };
 
 export const crmActivitiesService = {
@@ -129,10 +146,17 @@ export const crmActivitiesService = {
   async createTask(
     organization: TenantOrganization,
     input: Omit<CreateTaskInput, "organizationId">,
+    actorUserId: string | null,
   ): Promise<TaskRecord> {
     if (input.subject) await requireValidSubject(organization, input.subject);
-    await this.requireMembership(organization.id, input.assigneeMembershipId);
-    return crmActivitiesRepository.createTask({ ...input, organizationId: organization.id });
+    const assignee = await this.requireMembership(organization.id, input.assigneeMembershipId);
+
+    const task = await crmActivitiesRepository.createTask({
+      ...input,
+      organizationId: organization.id,
+    });
+    await publishTaskAssignment(organization.id, task, assignee.userId, actorUserId);
+    return task;
   },
 
   listTasks(
@@ -156,12 +180,15 @@ export const crmActivitiesService = {
       assigneeMembershipId?: string;
       status?: CrmTaskStatus;
     },
+    actorUserId: string | null,
   ): Promise<TaskRecord> {
     const existing = await crmActivitiesRepository.findTask(organizationId, taskId);
     if (!existing) throw new AppError("TASK_NOT_FOUND", "Task not found.", NOT_FOUND_STATUS);
 
-    if (data.assigneeMembershipId) {
-      await this.requireMembership(organizationId, data.assigneeMembershipId);
+    let reassignedUserId: string | null = null;
+    if (data.assigneeMembershipId && data.assigneeMembershipId !== existing.assigneeMembershipId) {
+      reassignedUserId = (await this.requireMembership(organizationId, data.assigneeMembershipId))
+        .userId;
     }
 
     const completedAt =
@@ -171,10 +198,15 @@ export const crmActivitiesService = {
           ? null
           : undefined;
 
-    return crmActivitiesRepository.updateTask(organizationId, taskId, {
+    const task = await crmActivitiesRepository.updateTask(organizationId, taskId, {
       ...data,
       ...(completedAt !== undefined ? { completedAt } : {}),
     });
+
+    if (reassignedUserId) {
+      await publishTaskAssignment(organizationId, task, reassignedUserId, actorUserId);
+    }
+    return task;
   },
 
   async deleteTask(organizationId: string, taskId: string): Promise<void> {
@@ -183,7 +215,10 @@ export const crmActivitiesService = {
     await crmActivitiesRepository.deleteTask(organizationId, taskId);
   },
 
-  async requireMembership(organizationId: string, membershipId: string): Promise<void> {
+  async requireMembership(
+    organizationId: string,
+    membershipId: string,
+  ): Promise<{ id: string; userId: string }> {
     const membership = await crmActivitiesRepository.findMembership(organizationId, membershipId);
     if (!membership) {
       throw new AppError(
@@ -192,6 +227,7 @@ export const crmActivitiesService = {
         BAD_REQUEST_STATUS,
       );
     }
+    return membership;
   },
 
   defaultTaskDueAt(): Date {

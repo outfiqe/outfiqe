@@ -18,6 +18,7 @@ const renderTabs = (props: { viewerIsSuperAdmin: boolean; viewerPermissionKeys: 
     "/crm/customers",
     "/crm/pipeline",
     "/crm/tasks",
+    "/crm/support",
     "/crm/billing",
   ].map((path) => createRoute({ getParentRoute: () => rootRoute, path }));
   const router = createRouter({

@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 
 import { sendSuccess } from "#lib/api-response.utils.js";
+import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 import {
   getCrmMembership,
@@ -91,15 +92,20 @@ export const crmActivitiesController = {
     const body = validated.body<CreateTaskBody>(res);
     const organization = getResolvedOrganization(res);
     const membership = getCrmMembership(res);
+    const principal = requireAuthPrincipal(res);
 
-    const task = await crmActivitiesService.createTask(organization, {
-      title: body.title,
-      description: body.description,
-      dueAt: body.dueAt ?? crmActivitiesService.defaultTaskDueAt(),
-      assigneeMembershipId: body.assigneeMembershipId,
-      createdByMembershipId: membership.id,
-      subject: readSubject(body),
-    });
+    const task = await crmActivitiesService.createTask(
+      organization,
+      {
+        title: body.title,
+        description: body.description,
+        dueAt: body.dueAt ?? crmActivitiesService.defaultTaskDueAt(),
+        assigneeMembershipId: body.assigneeMembershipId,
+        createdByMembershipId: membership.id,
+        subject: readSubject(body),
+      },
+      principal.userId,
+    );
     sendSuccess(res, task, "Task created.", CREATED_STATUS);
   },
 
@@ -107,7 +113,13 @@ export const crmActivitiesController = {
     const { taskId } = validated.params<TaskIdParams>(res);
     const body = validated.body<UpdateTaskBody>(res);
     const organization = getResolvedOrganization(res);
-    const task = await crmActivitiesService.updateTask(organization.id, taskId, body);
+    const principal = requireAuthPrincipal(res);
+    const task = await crmActivitiesService.updateTask(
+      organization.id,
+      taskId,
+      body,
+      principal.userId,
+    );
     sendSuccess(res, task, "Task updated.");
   },
 

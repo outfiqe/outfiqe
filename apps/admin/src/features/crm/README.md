@@ -77,6 +77,11 @@ yet — those are later chunks.
   Shows a notice when the response is `partial`.
 - `TasksPage.tsx` — the Tasks tab: a list of due-dated tasks with an overdue badge and a
   complete checkbox, plus a "New task" modal with an assignee picker (needs `members:read`).
+- `ticketsApi.ts` / `ticketsSchemas.ts` — `crmTicketsApi` (list, get-with-comments, create,
+  status change, assign, comment) + Zod mirrors of `/api/crm/tickets*`.
+- `TicketsPage.tsx` — the Support tab: a status-filtered ticket list; clicking a row expands
+  `TicketDetail.tsx` inline (description, forward-only status buttons, assignee `<Select>`,
+  internal comment thread). "New ticket" modal collects type / title / description / customer.
 - `format.utils.ts` — `formatRupees` / `formatDate` / `formatDateTime`, shared by every CRM
   screen instead of a per-file copy.
 
@@ -88,7 +93,8 @@ Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
 `_authenticated.crm.customers.index.tsx` (`/crm/customers` → `CustomersPage`),
 `_authenticated.crm.customers.$userId.tsx` (`→ CustomerDetailPage`), and
 `_authenticated.crm.pipeline.index.tsx` (`/crm/pipeline` → `PipelinePage`),
-`_authenticated.crm.tasks.index.tsx` (`/crm/tasks` → `TasksPage`) — the `.index`
+`_authenticated.crm.tasks.index.tsx` (`/crm/tasks` → `TasksPage`),
+`_authenticated.crm.support.index.tsx` (`/crm/support` → `TicketsPage`) — the `.index`
 suffix on the leaf routes is load-bearing, not stylistic: without it, TanStack Router's file-based
 convention treats `_authenticated.crm.tsx` as a layout parent for anything under `crm.*`
 (including the accept route), and since `CrmPage` renders no `<Outlet/>`, the accept route would
