@@ -33,8 +33,17 @@ export type Organization = z.infer<typeof organizationSchema>;
 export const roleSchema = z.object({
   id: z.string(),
   name: z.string(),
+  isBuiltIn: z.boolean(),
+  permissionKeys: z.array(z.string()),
 });
 export type Role = z.infer<typeof roleSchema>;
+
+export const permissionSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  group: z.string(),
+});
+export type Permission = z.infer<typeof permissionSchema>;
 
 export const membershipSummarySchema = z.object({
   id: z.string(),

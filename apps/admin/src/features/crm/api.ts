@@ -10,13 +10,18 @@ import {
   type OrganizationInviteSummary,
   organizationInviteSummarySchema,
   organizationSchema,
+  type Permission,
+  permissionSchema,
   type Role,
   roleSchema,
 } from "./schemas";
 
 const membersListSchema = z.array(membershipSummarySchema);
 const rolesListSchema = z.array(roleSchema);
+const permissionsListSchema = z.array(permissionSchema);
 const invitesListSchema = z.array(organizationInviteSummarySchema);
+
+type RoleInput = { name: string; permissionKeys: string[] };
 
 export const crmApi = {
   async getOrganization(): Promise<Organization> {
@@ -27,6 +32,29 @@ export const crmApi = {
   async listRoles(): Promise<Role[]> {
     const res = await apiClient.get<Role[]>("/crm/roles");
     return rolesListSchema.parse(res.data);
+  },
+
+  async listPermissions(): Promise<Permission[]> {
+    const res = await apiClient.get<Permission[]>("/crm/permissions");
+    return permissionsListSchema.parse(res.data);
+  },
+
+  async createRole(body: RoleInput): Promise<Role> {
+    const res = await apiClient.post<Role>("/crm/roles", body);
+    return roleSchema.parse(res.data);
+  },
+
+  async updateRole(roleId: string, body: Partial<RoleInput>): Promise<Role> {
+    const res = await apiClient.patch<Role>(`/crm/roles/${roleId}`, body);
+    return roleSchema.parse(res.data);
+  },
+
+  async deleteRole(roleId: string): Promise<void> {
+    await apiClient.del(`/crm/roles/${roleId}`);
+  },
+
+  async updateOrganization(body: { name: string }): Promise<void> {
+    await apiClient.patch("/crm/organization", body);
   },
 
   async listMembers(): Promise<MembershipSummary[]> {

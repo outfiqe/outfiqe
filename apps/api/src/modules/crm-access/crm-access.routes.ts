@@ -11,6 +11,8 @@ import {
   CRM_ORGANIZATION_RATE_LIMIT_WINDOW_MS,
   CRM_OWNERSHIP_TRANSFER_RATE_LIMIT_MAX_REQUESTS,
   CRM_OWNERSHIP_TRANSFER_RATE_LIMIT_WINDOW_MS,
+  CRM_ROLE_RATE_LIMIT_MAX_REQUESTS,
+  CRM_ROLE_RATE_LIMIT_WINDOW_MS,
 } from "./crm-access.constants.js";
 import { crmAccessController } from "./crm-access.controller.js";
 import {
@@ -23,11 +25,15 @@ import {
   createOrganizationInviteSchema,
   createOrganizationSchema,
   createOwnershipTransferSchema,
+  createRoleSchema,
   inviteIdParamsSchema,
   membershipIdParamsSchema,
   ownershipTransferIdParamsSchema,
+  roleIdParamsSchema,
   suggestOrganizationQuerySchema,
   updateMembershipSchema,
+  updateOrganizationSchema,
+  updateRoleSchema,
 } from "./crm-access.schemas.js";
 
 const crmInviteRateLimit = rateLimit({
@@ -52,6 +58,14 @@ const crmOwnershipTransferRateLimit = rateLimit({
   max: CRM_OWNERSHIP_TRANSFER_RATE_LIMIT_MAX_REQUESTS,
   keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
   message: "Too many ownership transfers requested. Please try again later.",
+});
+
+const crmRoleRateLimit = rateLimit({
+  namespace: "crm-role-mutation",
+  windowMs: CRM_ROLE_RATE_LIMIT_WINDOW_MS,
+  max: CRM_ROLE_RATE_LIMIT_MAX_REQUESTS,
+  keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
+  message: "Too many role changes. Please try again later.",
 });
 
 export const crmAccessRoutes = Router();
@@ -85,10 +99,38 @@ crmAccessRoutes.get(
   requirePermission("org:read"),
   crmAccessController.getOrganization,
 );
+crmAccessRoutes.patch(
+  "/organization",
+  requirePermission("org:update"),
+  crmRoleRateLimit,
+  validate({ body: updateOrganizationSchema }),
+  crmAccessController.updateOrganization,
+);
 
 crmAccessRoutes.get("/permissions", crmAccessController.listPermissions);
 
 crmAccessRoutes.get("/roles", requirePermission("roles:read"), crmAccessController.listRoles);
+crmAccessRoutes.post(
+  "/roles",
+  requirePermission("roles:manage"),
+  crmRoleRateLimit,
+  validate({ body: createRoleSchema }),
+  crmAccessController.createRole,
+);
+crmAccessRoutes.patch(
+  "/roles/:roleId",
+  requirePermission("roles:manage"),
+  crmRoleRateLimit,
+  validate({ params: roleIdParamsSchema, body: updateRoleSchema }),
+  crmAccessController.updateRole,
+);
+crmAccessRoutes.delete(
+  "/roles/:roleId",
+  requirePermission("roles:manage"),
+  crmRoleRateLimit,
+  validate({ params: roleIdParamsSchema }),
+  crmAccessController.deleteRole,
+);
 
 crmAccessRoutes.get("/members", requirePermission("members:read"), crmAccessController.listMembers);
 crmAccessRoutes.patch(

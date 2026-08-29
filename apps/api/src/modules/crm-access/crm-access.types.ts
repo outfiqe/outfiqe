@@ -183,6 +183,15 @@ export type CreateRoleInput = {
   permissionKeys: string[];
 };
 
+export type UpdateRoleInput = {
+  name?: string;
+  permissionKeys?: string[];
+};
+
+export type UpdateOrganizationInput = {
+  name: string;
+};
+
 export type UpdateMembershipInput = {
   roleId?: string;
   status?: MembershipStatus;

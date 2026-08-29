@@ -11,11 +11,15 @@ import type {
   CreateOrganizationBody,
   CreateOrganizationInviteBody,
   CreateOwnershipTransferBody,
+  CreateRoleBody,
   InviteIdParams,
   MembershipIdParams,
   OwnershipTransferIdParams,
+  RoleIdParams,
   SuggestOrganizationQuery,
   UpdateMembershipBody,
+  UpdateOrganizationBody,
+  UpdateRoleBody,
 } from "./crm-access.schemas.js";
 import { crmAccessService } from "./crm-access.service.js";
 import { toOrganizationWithViewerContext } from "./crm-access.utils.js";
@@ -78,6 +82,39 @@ export const crmAccessController = {
     const organization = getResolvedOrganization(res);
     const roles = await crmAccessService.listRoles(organization.id);
     sendSuccess(res, roles, "CRM roles.");
+  },
+
+  async createRole(_req: Request, res: Response) {
+    const { name, permissionKeys } = validated.body<CreateRoleBody>(res);
+    const organization = getResolvedOrganization(res);
+
+    const role = await crmAccessService.createRole(organization.id, { name, permissionKeys });
+    sendSuccess(res, role, "Role created.", CREATED_STATUS);
+  },
+
+  async updateRole(_req: Request, res: Response) {
+    const { roleId } = validated.params<RoleIdParams>(res);
+    const body = validated.body<UpdateRoleBody>(res);
+    const organization = getResolvedOrganization(res);
+
+    const role = await crmAccessService.updateRole(organization.id, roleId, body);
+    sendSuccess(res, role, "Role updated.");
+  },
+
+  async deleteRole(_req: Request, res: Response) {
+    const { roleId } = validated.params<RoleIdParams>(res);
+    const organization = getResolvedOrganization(res);
+
+    await crmAccessService.deleteRole(organization.id, roleId);
+    sendSuccess(res, null, "Role deleted.");
+  },
+
+  async updateOrganization(_req: Request, res: Response) {
+    const { name } = validated.body<UpdateOrganizationBody>(res);
+    const organization = getResolvedOrganization(res);
+
+    const updated = await crmAccessService.updateOrganization(organization, { name });
+    sendSuccess(res, updated, "Organization updated.");
   },
 
   async listMembers(_req: Request, res: Response) {

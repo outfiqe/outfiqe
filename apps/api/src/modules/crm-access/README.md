@@ -18,7 +18,9 @@ Chunk 9); the first `apps/admin` CRM screen (Chunk 4, `apps/admin/src/features/c
 ## Structure
 
 - `crm-access.types.ts` — record/summary/input types for every entity this module owns.
-- `crm-access.constants.ts` — `PERMISSION_CATALOG` (the full permission key catalog, grouped) and
+- `crm-access.constants.ts` — `PERMISSION_CATALOG` (the full permission key catalog, grouped),
+  `SELECTABLE_ROLE_PERMISSION_KEYS` (the catalog minus `platform:access` and
+  `org:transfer_ownership` — the set a custom role is allowed to grant), and
   `BUILT_IN_ROLE_PERMISSIONS` (the Admin/Member built-in role presets derived from it).
 - `crm-access.repository.ts` — Prisma queries, every one scoped by `organizationId` where
   applicable. `acceptInvite` wraps the Membership-create + invite-accept pair in a transaction, as
@@ -37,7 +39,8 @@ Chunk 9); the first `apps/admin` CRM screen (Chunk 4, `apps/admin/src/features/c
   account, one pending invite per email, accept requires the invite's email to match the accepting
   account, the SUPERADMIN membership can't be edited via `updateMembership` (use ownership transfer
   instead — see Non-obvious rationale), one pending ownership-transfer request per organization at
-  a time.
+  a time. Custom-role rules live here too — `createRole`/`updateRole`/`deleteRole`/
+  `updateOrganization` (see the custom-role-builder bullet in Non-obvious rationale).
 - `crm-access.middleware.ts` — `resolveTenant` (resolves the request's `Organization` by
   subdomain, stores it on `res.locals.crmOrganization`), `requirePermission(key)` (reads that
   resolved organization, stacked after `requireAuth` exactly like `#middlewares/require-role.js`),
@@ -172,11 +175,22 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   role check) — there is no CRM signup. `acceptInvite` additionally checks the accepting account's
   email matches the invite's email, so a valid token can't be redeemed by a different logged-in
   staff member than the one it was addressed to.
-- **`crm-access.repository.ts` only exposes what Chunks 1–2 need, plus ownership transfer and the
-  brand link.** `updateOrganization` and role create/update/delete are still deliberately not
-  here — they belong to later chunks (custom-role builder, org settings UI) and would be unused,
-  unscoped code if added now. `findOrganizationByLinkedBrandId` and the `linkedBrand` name join on
-  `listOrganizations` are the only Step-0 additions.
+- **Custom-role builder: what a tenant can and can't do to its own roles.** `POST/PATCH/DELETE
+/api/crm/roles` (gated `roles:manage`) let a tenant compose roles from any subset of
+  `SELECTABLE_ROLE_PERMISSION_KEYS`. Four rules are enforced server-side, not just in the admin UI:
+  a built-in role (`isBuiltIn`, the seeded Admin/Member) is never editable or deletable
+  (`403 ROLE_IS_BUILT_IN`); a role that still has any `Membership` — active or deactivated — can't
+  be deleted (`409 ROLE_IN_USE`, pre-checked via `countMembershipsForRole` and again caught off the
+  `Membership.role` FK `Restrict` for the concurrent-write race); `platform:access` and
+  `org:transfer_ownership` (and any key not in the catalog at all) are rejected on create/update
+  (`400 INVALID_PERMISSION_KEYS` via `findUnselectablePermissionKeys`), the same "special, not
+  automatic" treatment those two keys already get in `BUILT_IN_ROLE_PERMISSIONS`; a duplicate name
+  is a `409 ROLE_NAME_TAKEN` off the `@@unique([organizationId, name])` constraint, not a
+  read-then-write pre-check, with the raw Prisma error kept server-side. `updateRole` replaces the
+  whole `RolePermission` set in one transaction (delete-all + `createMany`) rather than diffing.
+  `PATCH /api/crm/organization` (gated `org:update`) renames the organization — the one org-settings
+  write a tenant has. `findOrganizationByLinkedBrandId` and the `linkedBrand` name join on
+  `listOrganizations` remain the only Step-0 additions.
 - **Ownership transfer requires the recipient's acceptance — it's never an immediate, unilateral
   handoff.** Every other membership-changing action in this module already works this way (CRM
   invites, admin invites both require an explicit accept step), so this follows the same shape

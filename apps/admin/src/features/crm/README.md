@@ -4,11 +4,13 @@
 
 The visible screens for Outfiqe's internal CRM. Lets a staff member with CRM access view the
 organization, see and manage CRM members, invite an existing staff account, accept a CRM invite,
-manage the organization's paid subscription, and browse the tenant brand's Partners (creators) and
-Customers (shoppers) — against the `/api/crm/*` endpoints in `apps/api/src/modules/crm-access`
-(Chunks 1–2 + ownership transfer), `apps/api/src/modules/crm-billing` (Chunk 3), and
-`apps/api/src/modules/crm-relationships` (Chunk 5). No pipeline, deals, tickets, or custom-role UI
-yet — those are later chunks.
+manage the organization's paid subscription, browse the tenant brand's Partners (creators) and
+Customers (shoppers), run a deal pipeline, log activities/tasks, work support tickets, and build
+custom roles from the permission catalog — against the `/api/crm/*` endpoints in
+`apps/api/src/modules/crm-access` (Chunks 1–2 + ownership transfer + custom roles),
+`apps/api/src/modules/crm-billing` (Chunk 3), `apps/api/src/modules/crm-relationships` (Chunk 5),
+`apps/api/src/modules/crm-pipeline` (Chunk 6), `apps/api/src/modules/crm-activities` (Chunk 7),
+and `apps/api/src/modules/crm-tickets` (Chunk 8).
 
 ## Structure
 
@@ -51,9 +53,17 @@ yet — those are later chunks.
   `verifyInvoice` server-side, and reports COMPLETE / PENDING / FAILED.
 - `PlanGateBanner.tsx` — shown above CRM content when `organization.advancedFeaturesEnabled` is
   false (trial ended, no active subscription), linking to `/crm/billing`.
-- `CrmTabs.tsx` — the Overview / Partners / Customers / Billing nav strip. Each tab is a router
-  `<Link>` filtered by the viewer's permission keys (`accounts:read` / `customers:read` /
-  `billing:read`); every page in the CRM area renders it itself (see "Non-obvious rationale").
+- `CrmTabs.tsx` — the Overview / Partners / Customers / Pipeline / Tasks / Support / Roles /
+  Billing nav strip. Each tab is a router `<Link>` filtered by the viewer's permission keys
+  (`accounts:read` / `customers:read` / `pipeline:read` / `tasks:read` / `tickets:read` /
+  `roles:read` / `billing:read`); every page in the CRM area renders it itself (see "Non-obvious
+  rationale").
+- `RolesSection.tsx` / `RolesPage.tsx` — the Roles tab: an organization-rename card (shown to a
+  viewer with `org:update`) plus the role list. Built-in roles show a badge and no controls;
+  custom roles get Edit / Delete for a viewer with `roles:manage`. The role modal is a
+  grouped permission-checkbox matrix (design-system `Checkbox`) built from `GET /crm/permissions`,
+  with `platform:access` and `org:transfer_ownership` filtered out client-side (the API rejects
+  them too). Delete surfaces the API's `ROLE_IN_USE` / `ROLE_IS_BUILT_IN` message inline.
 - `relationshipsApi.ts` / `relationshipsSchemas.ts` — `crmRelationshipsApi`
   (`listPartners`/`getPartner`/`listCustomers`/`getCustomer`) + Zod mirrors of
   `/api/crm/partners*` and `/api/crm/customers*`.

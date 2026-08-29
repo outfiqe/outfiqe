@@ -7,7 +7,11 @@ import { type MembershipStatus, UserRole } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
-import { isUniqueConstraintError, uniqueConstraintTargetIncludes } from "#lib/prisma.utils.js";
+import {
+  isForeignKeyConstraintError,
+  isUniqueConstraintError,
+  uniqueConstraintTargetIncludes,
+} from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
@@ -34,9 +38,12 @@ import type {
   PendingOwnershipTransferSummary,
   PermissionRecord,
   RoleWithPermissions,
+  UpdateRoleInput,
 } from "./crm-access.types.js";
 import {
   buildOrganizationAdminUrl,
+  canDeleteRole,
+  findUnselectablePermissionKeys,
   toInviteSummary,
   toMembershipSummary,
   toPendingOwnershipTransferSummary,
@@ -76,6 +83,22 @@ const generateUniqueSubdomain = async (brandName: string): Promise<string> => {
 
 const isOwnershipTransferExpired = (request: OwnershipTransferRequestRecord): boolean =>
   request.expiresAt.getTime() <= Date.now();
+
+const assertPermissionKeysSelectable = (permissionKeys: string[]): void => {
+  const unselectable = findUnselectablePermissionKeys(permissionKeys);
+  if (unselectable.length > 0) {
+    throw new AppError(
+      "INVALID_PERMISSION_KEYS",
+      "One or more of the selected permissions can't be granted to a custom role.",
+      BAD_REQUEST_STATUS,
+    );
+  }
+};
+
+const asRoleNameConflict = (err: unknown): unknown =>
+  isUniqueConstraintError(err)
+    ? new AppError("ROLE_NAME_TAKEN", "A role with that name already exists.", CONFLICT_STATUS)
+    : err;
 
 export const crmAccessService = {
   async resolveHasPlatformAccess(userId: string): Promise<boolean> {
@@ -211,6 +234,85 @@ export const crmAccessService = {
 
   async listRoles(organizationId: string): Promise<RoleWithPermissions[]> {
     return crmAccessRepository.listRoles(organizationId);
+  },
+
+  async createRole(
+    organizationId: string,
+    input: { name: string; permissionKeys: string[] },
+  ): Promise<RoleWithPermissions> {
+    assertPermissionKeysSelectable(input.permissionKeys);
+    try {
+      return await crmAccessRepository.createRole({
+        organizationId,
+        name: input.name,
+        isBuiltIn: false,
+        permissionKeys: input.permissionKeys,
+      });
+    } catch (err) {
+      throw asRoleNameConflict(err);
+    }
+  },
+
+  async updateRole(
+    organizationId: string,
+    roleId: string,
+    input: UpdateRoleInput,
+  ): Promise<RoleWithPermissions> {
+    const role = await crmAccessRepository.findRoleById(organizationId, roleId);
+    if (!role) {
+      throw new AppError("ROLE_NOT_FOUND", "Role not found.", NOT_FOUND_STATUS);
+    }
+    if (role.isBuiltIn) {
+      throw new AppError("ROLE_IS_BUILT_IN", "Built-in roles can't be edited.", FORBIDDEN_STATUS);
+    }
+    if (input.permissionKeys !== undefined) {
+      assertPermissionKeysSelectable(input.permissionKeys);
+    }
+
+    try {
+      return await crmAccessRepository.updateRole(organizationId, roleId, input);
+    } catch (err) {
+      throw asRoleNameConflict(err);
+    }
+  },
+
+  async deleteRole(organizationId: string, roleId: string): Promise<void> {
+    const role = await crmAccessRepository.findRoleById(organizationId, roleId);
+    if (!role) {
+      throw new AppError("ROLE_NOT_FOUND", "Role not found.", NOT_FOUND_STATUS);
+    }
+    if (role.isBuiltIn) {
+      throw new AppError("ROLE_IS_BUILT_IN", "Built-in roles can't be deleted.", FORBIDDEN_STATUS);
+    }
+
+    const memberCount = await crmAccessRepository.countMembershipsForRole(organizationId, roleId);
+    if (!canDeleteRole(role, memberCount)) {
+      throw new AppError(
+        "ROLE_IN_USE",
+        "Reassign every member on this role before deleting it.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    try {
+      await crmAccessRepository.deleteRole(organizationId, roleId);
+    } catch (err) {
+      if (isForeignKeyConstraintError(err)) {
+        throw new AppError(
+          "ROLE_IN_USE",
+          "Reassign every member on this role before deleting it.",
+          CONFLICT_STATUS,
+        );
+      }
+      throw err;
+    }
+  },
+
+  async updateOrganization(
+    organization: OrganizationRecord,
+    input: { name: string },
+  ): Promise<OrganizationRecord> {
+    return crmAccessRepository.updateOrganizationName(organization.id, input.name);
   },
 
   async listMembers(organization: OrganizationRecord): Promise<MembershipSummary[]> {

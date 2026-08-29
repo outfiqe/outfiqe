@@ -1,4 +1,8 @@
-import { RESERVED_SUBDOMAINS, SUBDOMAIN_REGEX } from "./crm-access.constants.js";
+import {
+  RESERVED_SUBDOMAINS,
+  SELECTABLE_ROLE_PERMISSION_KEYS,
+  SUBDOMAIN_REGEX,
+} from "./crm-access.constants.js";
 import type {
   MembershipJoinRow,
   MembershipSummary,
@@ -83,6 +87,14 @@ export const buildOrganizationAdminUrl = (
   const tenantPort = port ? `:${port}` : "";
   return `${protocol}//${organization.subdomain}.${tenantBaseDomain}${tenantPort}${pathname}${path}`;
 };
+
+const selectableRolePermissionKeys = new Set(SELECTABLE_ROLE_PERMISSION_KEYS);
+
+export const findUnselectablePermissionKeys = (permissionKeys: string[]): string[] =>
+  permissionKeys.filter((key) => !selectableRolePermissionKeys.has(key));
+
+export const canDeleteRole = (role: { isBuiltIn: boolean }, memberCount: number): boolean =>
+  !role.isBuiltIn && memberCount === 0;
 
 export const extractSubdomain = (hostHeader: string, baseDomain: string): string | null => {
   const host = (hostHeader.split(":").at(0) ?? "").toLowerCase();

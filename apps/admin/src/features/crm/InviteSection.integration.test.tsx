@@ -11,8 +11,8 @@ import { InviteSection } from "./InviteSection";
 const API_BASE = "http://localhost:3000/api";
 
 const ROLES = [
-  { id: "role-admin", name: "Admin" },
-  { id: "role-member", name: "Member" },
+  { id: "role-admin", name: "Admin", isBuiltIn: true, permissionKeys: ["members:read"] },
+  { id: "role-member", name: "Member", isBuiltIn: true, permissionKeys: [] },
 ];
 
 const wrapper = ({ children }: { children: ReactNode }) => {
