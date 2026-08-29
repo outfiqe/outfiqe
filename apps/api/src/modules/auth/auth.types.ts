@@ -81,6 +81,7 @@ export type BrandAuthUser = {
   avatarUrl: string | null;
   role: UserRole;
   brandId: string;
+  hasPlatformAccess: boolean;
 };
 
 export type AuthSession = IssuedTokens & { user: AuthUser };

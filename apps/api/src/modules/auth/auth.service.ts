@@ -585,6 +585,7 @@ export const authService = {
           avatarUrl: membership.brandAvatarUrl,
           role,
           brandId: membership.brandId,
+          hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(id),
         };
       }
 
@@ -695,6 +696,7 @@ export const authService = {
         avatarUrl: brand.avatarUrl,
         role: user.role,
         brandId,
+        hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(user.id),
       },
     };
   },
