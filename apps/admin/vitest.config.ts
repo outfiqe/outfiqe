@@ -27,6 +27,9 @@ export default defineConfig({
         "src/features/crm/**/*.{ts,tsx}",
         "src/features/organizations/**/*.{ts,tsx}",
         "src/lib/brandsApi.ts",
+        "src/features/auth/AuthContext.tsx",
+        "src/components/ProtectedRoute.tsx",
+        "src/components/ProtectedRoute.utils.ts",
       ],
       thresholds: {
         lines: 80,

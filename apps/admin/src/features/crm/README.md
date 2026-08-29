@@ -85,6 +85,25 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
   `FORBIDDEN` error from that fetch and swaps in a message pointing the viewer at checking they're
   on the right organization's subdomain, rather than the generic "You do not have permission to do
   this."
+- **`apps/admin`'s login gate (`AuthContext.tsx`) accepts `BRAND_OWNER` accounts, not just
+  `UserRole.ADMIN`.** A CRM organization can now be handed off to an existing business's own login
+  (`features/organizations`'s business-picker onboarding) — that account has to actually be able to
+  sign into `apps/admin` to see and accept the ownership transfer, or reach its org's CRM
+  afterward. This doesn't widen what a `BRAND_OWNER` account can reach: `requirePlatformAccess`
+  already denies non-`ADMIN` roles server-side (see `crm-access`'s README), and `AdminSidebar`
+  already shows only the CRM nav item to any account without `hasPlatformAccess` — a business owner
+  was already structurally incapable of reaching Outfiqe's own platform sections the moment they
+  could get past the login gate at all; this change only lets them get past that gate.
+- **`ProtectedRoute` preserves the current subdomain when bouncing a signed-out visitor to log in,
+  instead of always using the fixed `VITE_WEB_URL`.** A tenant's own subdomain (e.g.
+  `daraz.outfiqe.local`) also serves `apps/web`'s login page, proxied the same way it serves
+  `/admin`, so redirecting there keeps the visitor on that same origin — necessary for an invited
+  business owner clicking a CRM email link while signed out: bouncing to the bare configured domain
+  instead would land them back on the wrong organization's CRM after signing in, the same class of
+  bug the deep-link-path preservation fix (`redirect=`) already solved for the path, just for the
+  host instead. `resolveLoginOrigin` (`ProtectedRoute.utils.ts`) falls back to the fixed configured
+  URL when the current host isn't on that domain at all, which is what running `apps/admin`
+  standalone against its own dev server (not proxied through `apps/web`) looks like.
 - **The admin app's root route (`/`, "Brand applications") redirects to `/crm` for anyone without
   `hasPlatformAccess`** (`routes/_authenticated.index.tsx`). Without this, a tenant-only account
   landing on the bare `/admin` URL — which isn't in their sidebar, but is still directly

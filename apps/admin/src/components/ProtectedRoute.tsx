@@ -2,7 +2,9 @@ import { type ReactNode, useEffect } from "react";
 
 import { useAuth } from "@/features/auth/AuthContext";
 
-const WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
+import { resolveLoginOrigin } from "./ProtectedRoute.utils";
+
+const CONFIGURED_WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
 
 export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { state } = useAuth();
@@ -11,7 +13,8 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (status !== "signed-out") return;
     const redirect = encodeURIComponent(window.location.pathname + window.location.search);
-    window.location.href = `${WEB_URL}/login?redirect=${redirect}`;
+    const loginOrigin = resolveLoginOrigin(CONFIGURED_WEB_URL, window.location.hostname);
+    window.location.href = `${loginOrigin}/login?redirect=${redirect}`;
   }, [status]);
 
   if (status === "signed-in") return <>{children}</>;
