@@ -63,7 +63,7 @@ describe("OwnershipTransferBanner", () => {
 
     render(<OwnershipTransferBanner organization={baseOrganization} />, { wrapper });
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     await user.click(await screen.findByRole("button", { name: "Accept" }));
 
     await waitFor(() => expect(acceptedRequestId).toBe("transfer-1"));
@@ -80,7 +80,7 @@ describe("OwnershipTransferBanner", () => {
 
     render(<OwnershipTransferBanner organization={baseOrganization} />, { wrapper });
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     await user.click(await screen.findByRole("button", { name: "Decline" }));
 
     await waitFor(() => expect(declinedRequestId).toBe("transfer-1"));
@@ -104,7 +104,7 @@ describe("OwnershipTransferBanner", () => {
 
     render(<OwnershipTransferBanner organization={baseOrganization} />, { wrapper });
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     await user.click(await screen.findByRole("button", { name: "Accept" }));
 
     expect(
@@ -129,7 +129,7 @@ describe("OwnershipTransferBanner", () => {
 
     render(<OwnershipTransferBanner organization={organizationForSender} />, { wrapper });
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     await user.click(await screen.findByRole("button", { name: "Cancel" }));
 
     await waitFor(() => expect(revokedRequestId).toBe("transfer-1"));

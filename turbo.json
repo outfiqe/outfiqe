@@ -65,7 +65,18 @@
     "test:unit": {
       "dependsOn": ["db:generate"],
       "outputs": ["coverage/**"],
-      "cache": true
+      "cache": true,
+      "env": [
+        "DATABASE_URL",
+        "TEST_DATABASE_URL",
+        "REDIS_URL",
+        "JWT_SECRET",
+        "IMAGE_QUEUE_REDIS_HOST",
+        "IMAGE_QUEUE_REDIS_PORT",
+        "IMAGE_QUEUE_REDIS_PASSWORD",
+        "IMAGE_QUEUE_REDIS_TLS",
+        "IMAGE_PIPELINE_TEST_REDIS_URL"
+      ]
     },
     "test:integration": {
       "dependsOn": ["db:generate"],

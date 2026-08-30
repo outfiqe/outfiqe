@@ -101,7 +101,7 @@ describe("RolesSection", () => {
     );
 
     renderRolesSection({ viewerPermissionKeys: ["roles:read", "roles:manage"] });
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     await user.click(await screen.findByRole("button", { name: "New role" }));
     const dialog = screen.getByRole("dialog");
@@ -136,7 +136,7 @@ describe("RolesSection", () => {
     );
 
     renderRolesSection({ viewerPermissionKeys: ["roles:read", "roles:manage"] });
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     const supportRow = (await screen.findByText("Support agent")).closest(
       "div.rounded-xl",
@@ -176,7 +176,7 @@ describe("RolesSection", () => {
     );
 
     renderRolesSection({ viewerPermissionKeys: ["roles:read", "roles:manage"] });
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     const supportRow = (await screen.findByText("Support agent")).closest(
       "div.rounded-xl",
@@ -202,7 +202,7 @@ describe("RolesSection", () => {
     );
 
     renderRolesSection({ viewerPermissionKeys: ["roles:read", "org:update"] });
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     const nameField = await screen.findByLabelText("Organization name");
     await user.clear(nameField);

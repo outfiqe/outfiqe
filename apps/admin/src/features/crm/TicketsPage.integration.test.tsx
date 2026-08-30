@@ -83,6 +83,9 @@ const renderTicketsPage = () => {
     "/crm/pipeline",
     "/crm/tasks",
     "/crm/support",
+    "/crm/reports",
+    "/crm/roles",
+    "/crm/audit",
     "/crm/billing",
   ].map((path) => createRoute({ getParentRoute: () => rootRoute, path }));
   const router = createRouter({
@@ -106,7 +109,7 @@ describe("TicketsPage", () => {
     );
 
     renderTicketsPage();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     await user.click(await screen.findByRole("button", { name: /Damaged package/ }));
 
@@ -129,7 +132,7 @@ describe("TicketsPage", () => {
     );
 
     renderTicketsPage();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     await user.click(await screen.findByRole("button", { name: /Damaged package/ }));
     await user.type(await screen.findByLabelText("New comment"), "Refund approved");

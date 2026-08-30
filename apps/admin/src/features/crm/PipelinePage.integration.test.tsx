@@ -85,6 +85,9 @@ const renderPipelinePage = () => {
     "/crm/pipeline",
     "/crm/tasks",
     "/crm/support",
+    "/crm/reports",
+    "/crm/roles",
+    "/crm/audit",
     "/crm/billing",
   ].map((path) => createRoute({ getParentRoute: () => rootRoute, path }));
   const router = createRouter({
@@ -122,7 +125,7 @@ describe("PipelinePage", () => {
     );
 
     renderPipelinePage();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     await user.selectOptions(await screen.findByLabelText("Move to"), "s-won");
 
@@ -141,7 +144,7 @@ describe("PipelinePage", () => {
     );
 
     renderPipelinePage();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     await user.click(await screen.findByRole("button", { name: "New deal" }));
 

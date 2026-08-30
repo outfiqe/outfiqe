@@ -159,7 +159,7 @@ const DeleteRoleModal = ({ role, onClose }: { role: Role; onClose: () => void })
           </Button>
           <Button
             type="button"
-            variant="destructive"
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             disabled={remove.isPending}
             onClick={() => remove.mutate()}
           >

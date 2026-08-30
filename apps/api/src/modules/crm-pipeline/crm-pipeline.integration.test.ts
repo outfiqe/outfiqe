@@ -70,7 +70,7 @@ const seedPipelineTenant = async () => {
     data: { superAdminMembershipId: membership.id, trialEndsAt: addDays(new Date(), 10) },
   });
 
-  const partner = await createUser("Partner Creator", UserRole.CREATOR);
+  const partner = await createUser("Partner Creator", UserRole.CUSTOMER);
   await prisma.creatorLink.create({
     data: {
       creatorId: partner.id,
@@ -149,9 +149,8 @@ describe("CRM pipeline stages", () => {
 
   it("rejects a partial reorder and a stage that is both won and lost", async () => {
     const tenant = await seedPipelineTenant();
-    const [firstStage] = await prisma.pipelineStage.findMany({
+    const firstStage = await prisma.pipelineStage.findFirstOrThrow({
       where: { organizationId: tenant.organization.id },
-      take: 1,
     });
 
     const partial = await request(testApp)
@@ -172,7 +171,7 @@ describe("CRM pipeline stages", () => {
 
   it("won't delete a stage that still has deals", async () => {
     const tenant = await seedPipelineTenant();
-    const stages = await prisma.pipelineStage.findMany({
+    const firstStage = await prisma.pipelineStage.findFirstOrThrow({
       where: { organizationId: tenant.organization.id },
       orderBy: { sortOrder: "asc" },
     });
@@ -181,10 +180,10 @@ describe("CRM pipeline stages", () => {
       .post("/api/crm/deals")
       .set("Host", tenant.host)
       .set("Authorization", tenant.auth)
-      .send({ stageId: stages[0].id, title: "Holding deal", partnerCreatorId: tenant.partner.id });
+      .send({ stageId: firstStage.id, title: "Holding deal", partnerCreatorId: tenant.partner.id });
 
     const response = await request(testApp)
-      .delete(`/api/crm/pipeline/stages/${stages[0].id}`)
+      .delete(`/api/crm/pipeline/stages/${firstStage.id}`)
       .set("Host", tenant.host)
       .set("Authorization", tenant.auth);
 
@@ -200,7 +199,8 @@ describe("CRM deals", () => {
       where: { organizationId: tenant.organization.id },
       orderBy: { sortOrder: "asc" },
     });
-    const leadStage = stages[0];
+    const [leadStage] = stages;
+    if (!leadStage) throw new Error("pipeline stages were not seeded");
     const wonStage = stages.find((stage) => stage.isWon);
 
     const created = await request(testApp)
@@ -231,17 +231,16 @@ describe("CRM deals", () => {
 
   it("rejects a deal against a creator who is not a partner of this brand", async () => {
     const tenant = await seedPipelineTenant();
-    const stages = await prisma.pipelineStage.findMany({
+    const firstStage = await prisma.pipelineStage.findFirstOrThrow({
       where: { organizationId: tenant.organization.id },
-      take: 1,
     });
-    const stranger = await createUser("Random Creator", UserRole.CREATOR);
+    const stranger = await createUser("Random Creator", UserRole.CUSTOMER);
 
     const response = await request(testApp)
       .post("/api/crm/deals")
       .set("Host", tenant.host)
       .set("Authorization", tenant.auth)
-      .send({ stageId: stages[0].id, title: "Bad deal", partnerCreatorId: stranger.id });
+      .send({ stageId: firstStage.id, title: "Bad deal", partnerCreatorId: stranger.id });
 
     expect(response.status).toBe(400);
     expect(response.body.code).toBe("NOT_A_PARTNER");
@@ -250,16 +249,15 @@ describe("CRM deals", () => {
   it("keeps deals isolated between tenants", async () => {
     const tenantA = await seedPipelineTenant();
     const tenantB = await seedPipelineTenant();
-    const stagesA = await prisma.pipelineStage.findMany({
+    const firstStageA = await prisma.pipelineStage.findFirstOrThrow({
       where: { organizationId: tenantA.organization.id },
-      take: 1,
     });
 
     const created = await request(testApp)
       .post("/api/crm/deals")
       .set("Host", tenantA.host)
       .set("Authorization", tenantA.auth)
-      .send({ stageId: stagesA[0].id, title: "A deal", partnerCreatorId: tenantA.partner.id });
+      .send({ stageId: firstStageA.id, title: "A deal", partnerCreatorId: tenantA.partner.id });
 
     const crossTenant = await request(testApp)
       .patch(`/api/crm/deals/${created.body.data.id}`)

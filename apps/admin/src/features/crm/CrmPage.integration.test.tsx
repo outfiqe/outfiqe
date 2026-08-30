@@ -33,6 +33,9 @@ const wrapper = ({ children }: { children: ReactNode }) => {
     "/crm/pipeline",
     "/crm/tasks",
     "/crm/support",
+    "/crm/reports",
+    "/crm/roles",
+    "/crm/audit",
     "/crm/billing",
   ].map((path) => createRoute({ getParentRoute: () => rootRoute, path }));
   const router = createRouter({

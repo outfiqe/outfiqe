@@ -67,7 +67,7 @@ describe("TimelineSection", () => {
     );
 
     render(<TimelineSection subjectType="partner" subjectId="p-1" />, { wrapper });
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     expect(
       await screen.findByText(/live order history is temporarily unavailable/i),

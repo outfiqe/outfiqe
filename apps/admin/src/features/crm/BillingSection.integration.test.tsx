@@ -146,7 +146,7 @@ describe("BillingSection", () => {
 
     render(<BillingSection />, { wrapper });
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     await user.click(await screen.findByRole("button", { name: "Subscribe" }));
 
     expect(await screen.findByLabelText("Plan")).toBeInTheDocument();

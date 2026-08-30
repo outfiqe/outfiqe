@@ -93,7 +93,7 @@ describe("InviteSection", () => {
     renderInviteSection();
     await screen.findByText("No invites yet.");
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     await user.type(screen.getByLabelText("Email"), "colleague@outfiqe.test");
     await user.selectOptions(screen.getByLabelText("Role"), "role-member");
     await user.click(screen.getByRole("button", { name: "Send invite" }));

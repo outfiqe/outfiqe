@@ -206,7 +206,7 @@ describe("POST /api/crm/billing/checkout", () => {
       where: { subscription: { organizationId: organization.id } },
     });
     expect(invoices).toHaveLength(1);
-    expect(invoices[0].status).toBe("VOID");
+    expect(invoices[0]?.status).toBe("VOID");
   });
 
   it("rejects an unknown plan", async () => {

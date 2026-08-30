@@ -123,7 +123,7 @@ describe("MembersSection", () => {
     renderMembersSection();
     await screen.findByText("Grace Hopper");
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     await user.click(screen.getByRole("button", { name: "Deactivate" }));
 
     await waitFor(() => expect(lastPatchBody).toEqual({ status: "DEACTIVATED" }));
@@ -216,7 +216,7 @@ describe("MembersSection", () => {
 
     renderMembersSection({ viewerIsSuperAdmin: true });
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     await user.click(await screen.findByRole("button", { name: "Transfer ownership" }));
 
     const dialog = screen.getByRole("dialog");
@@ -260,7 +260,7 @@ describe("MembersSection", () => {
 
     renderMembersSection({ viewerIsSuperAdmin: true });
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     await user.click(await screen.findByRole("button", { name: "Transfer ownership" }));
 
     const dialog = screen.getByRole("dialog");

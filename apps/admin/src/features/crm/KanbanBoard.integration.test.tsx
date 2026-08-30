@@ -40,7 +40,7 @@ describe("KanbanBoard", () => {
       />,
     );
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     await user.selectOptions(screen.getByLabelText("Move to"), "won");
 
     expect(onCardMove).toHaveBeenCalledWith("d-1", "won");

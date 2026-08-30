@@ -65,6 +65,9 @@ const renderTasksPage = () => {
     "/crm/pipeline",
     "/crm/tasks",
     "/crm/support",
+    "/crm/reports",
+    "/crm/roles",
+    "/crm/audit",
     "/crm/billing",
   ].map((path) => createRoute({ getParentRoute: () => rootRoute, path }));
   const router = createRouter({
@@ -147,7 +150,7 @@ describe("TasksPage", () => {
     );
 
     renderTasksPage();
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
 
     await user.click(await screen.findByLabelText(/Mark Send brief done/));
 
