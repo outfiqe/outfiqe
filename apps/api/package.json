@@ -34,6 +34,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
+    "db:sync": "prisma migrate deploy && prisma generate",
     "db:seed": "prisma db seed",
     "db:seed:suggestions": "tsx prisma/seedSuggestions.ts",
     "db:seed:reviews": "tsx prisma/seedProductReviews.ts",
