@@ -7,8 +7,9 @@ describe("Logo", () => {
   it("renders the wordmark and links to the web app's home page", () => {
     render(<Logo />);
 
+    const expectedWebHref = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
     const link = screen.getByRole("link", { name: "Outfique home" });
-    expect(link).toHaveAttribute("href", "http://localhost:3000");
+    expect(link).toHaveAttribute("href", expectedWebHref);
     expect(link).toHaveTextContent("outfiqe.");
   });
 
