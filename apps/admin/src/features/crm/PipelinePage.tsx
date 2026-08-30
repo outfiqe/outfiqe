@@ -6,7 +6,6 @@ import { useState } from "react";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
-import { CrmTabs } from "./CrmTabs";
 import { DealFormModal } from "./DealFormModal";
 import { formatRupees } from "./format.utils";
 import { crmPipelineApi } from "./pipelineApi";
@@ -67,13 +66,7 @@ export const PipelinePage = () => {
   return (
     <div>
       {organization && (
-        <>
-          <CrmTabs
-            viewerIsSuperAdmin={organization.viewerIsSuperAdmin}
-            viewerPermissionKeys={organization.viewerPermissionKeys}
-          />
-          <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
-        </>
+        <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">

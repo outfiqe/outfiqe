@@ -5,7 +5,6 @@ import { type FormEvent, useState } from "react";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
-import { CrmTabs } from "./CrmTabs";
 import { formatDate } from "./format.utils";
 import { PlanGateBanner } from "./PlanGateBanner";
 import { crmRelationshipsApi } from "./relationshipsApi";
@@ -171,13 +170,7 @@ export const TicketsPage = () => {
   return (
     <div>
       {organization && (
-        <>
-          <CrmTabs
-            viewerIsSuperAdmin={organization.viewerIsSuperAdmin}
-            viewerPermissionKeys={organization.viewerPermissionKeys}
-          />
-          <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
-        </>
+        <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">

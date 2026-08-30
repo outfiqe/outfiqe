@@ -1,12 +1,10 @@
 import { Badge, Button, FormBanner, Skeleton } from "@outfiqe/design-system";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmApi } from "./api";
 import { crmAuditApi } from "./auditApi";
 import type { CrmAuditEntry } from "./auditSchemas";
-import { CrmTabs } from "./CrmTabs";
 import { formatDateTime } from "./format.utils";
 
 const AUDIT_QUERY_KEY = ["crm-audit"];
@@ -49,11 +47,6 @@ const AuditRow = ({ entry }: { entry: CrmAuditEntry }) => (
 );
 
 export const AuditPage = () => {
-  const { data: organization } = useQuery({
-    queryKey: ["crm-organization"],
-    queryFn: crmApi.getOrganization,
-  });
-
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
       queryKey: AUDIT_QUERY_KEY,
@@ -66,13 +59,6 @@ export const AuditPage = () => {
 
   return (
     <div>
-      {organization && (
-        <CrmTabs
-          viewerIsSuperAdmin={organization.viewerIsSuperAdmin}
-          viewerPermissionKeys={organization.viewerPermissionKeys}
-        />
-      )}
-
       <h1 className="font-display text-2xl font-bold text-foreground">Audit log</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Every membership, role, ownership and billing change on this organization.

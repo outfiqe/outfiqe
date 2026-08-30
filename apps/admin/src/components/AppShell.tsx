@@ -1,14 +1,22 @@
 import { HeaderBar } from "@outfiqe/components";
 import { ThemeToggle } from "@outfiqe/design-system";
+import { useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { CrmSearchBox } from "@/features/crm/CrmSearchBox";
 import { AdminNotificationBell } from "@/features/notifications";
 
 import { AccountMenu } from "./AccountMenu";
 import { AdminSidebar } from "./AdminSidebar";
 import { Logo } from "./Logo";
 
+const isCrmAreaPath = (pathname: string) =>
+  pathname.startsWith("/crm") && !pathname.startsWith("/crm/invites/accept");
+
 export const AppShell = ({ children }: { children: ReactNode }) => {
+  const pathname = useRouterState({ select: (routerState) => routerState.location.pathname });
+  const inCrmArea = isCrmAreaPath(pathname);
+
   return (
     <div className="min-h-dvh">
       <HeaderBar>
@@ -17,7 +25,17 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
           Admin
         </span>
 
-        <div className="ml-auto flex items-center gap-3">
+        {inCrmArea && (
+          <div className="ml-auto flex items-center gap-3 sm:ml-0 sm:flex-1 sm:justify-center">
+            <span className="hidden font-display text-lg font-bold tracking-tight sm:inline">
+              <span className="text-primary">C</span>
+              <span className="text-secondary">RM</span>
+            </span>
+            <CrmSearchBox />
+          </div>
+        )}
+
+        <div className={`flex items-center gap-3 ${inCrmArea ? "sm:ml-0" : "ml-auto"}`}>
           <AdminNotificationBell />
           <ThemeToggle />
           <AccountMenu />

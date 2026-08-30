@@ -8,11 +8,12 @@ manage the organization's paid subscription, browse the tenant brand's Partners 
 Customers (shoppers), run a deal pipeline, log activities/tasks, work support tickets, and build
 custom roles from the permission catalog, search across every CRM entity, read pipeline and
 support reports, and review the organization's audit log — against the `/api/crm/*` endpoints in
-`apps/api/src/modules/crm-access` (Chunks 1–2 + ownership transfer + custom roles),
-`apps/api/src/modules/crm-billing` (Chunk 3), `apps/api/src/modules/crm-relationships` (Chunk 5),
-`apps/api/src/modules/crm-pipeline` (Chunk 6), `apps/api/src/modules/crm-activities` (Chunk 7),
-`apps/api/src/modules/crm-tickets` (Chunk 8), `apps/api/src/modules/crm-reporting`
-(Chunk 10 — search + reports), and `apps/api/src/modules/crm-audit` (Chunk 11 — audit log).
+`apps/api/src/modules/crm-access` (tenant/PBAC, ownership transfer, custom roles),
+`apps/api/src/modules/crm-billing` (subscription), `apps/api/src/modules/crm-relationships`
+(Partners/Customers), `apps/api/src/modules/crm-pipeline` (stages & deals),
+`apps/api/src/modules/crm-activities` (activities, tasks, timeline),
+`apps/api/src/modules/crm-tickets` (support), `apps/api/src/modules/crm-reporting`
+(search + reports), and `apps/api/src/modules/crm-audit` (audit log).
 
 ## Structure
 
@@ -55,13 +56,16 @@ support reports, and review the organization's audit log — against the `/api/c
   `verifyInvoice` server-side, and reports COMPLETE / PENDING / FAILED.
 - `PlanGateBanner.tsx` — shown above CRM content when `organization.advancedFeaturesEnabled` is
   false (trial ended, no active subscription), linking to `/crm/billing`.
-- `CrmTabs.tsx` — the CRM area header: the Overview / Partners / Customers / Pipeline / Tasks /
-  Support / Reports / Roles / Audit / Billing nav strip plus the global `CrmSearchBox` on the
-  right. Each tab is a router `<Link>` filtered by the viewer's permission keys (`accounts:read` /
-  `customers:read` / `pipeline:read` / `tasks:read` / `tickets:read` / `reports:read` /
-  `roles:read` / `audit:read` / `billing:read`); every page in the CRM area renders it itself (see
-  "Non-obvious rationale"). Because it now renders a `useQuery`-driven child, a test rendering
-  `CrmTabs` in isolation needs a `QueryClientProvider` as well as a router.
+- **Navigation lives in the app shell, not a per-page strip.** `AdminSidebar`
+  (`components/AdminSidebar.tsx`) renders a flat "CRM" section — Overview / Partners / Customers /
+  Pipeline / Tasks / Support / Reports / Roles / Audit / Billing — filtered by the viewer's
+  permission keys. The sidebar fetches `GET /api/crm/organization` itself, but only
+  `enabled` while `pathname.startsWith("/crm")`, and on the same `["crm-organization"]` query key
+  the pages already use — so React Query dedupes it and it costs no extra request. `AppShell`
+  renders the two-tone `CRM` wordmark + `<CrmSearchBox>` centered in the header on `/crm/*` routes
+  (excluding `/crm/invites/accept`). The pages themselves render only their own content plus, where
+  relevant, `PlanGateBanner`. `useTanStackSidebarNavigation` supplies an `isActive` that matches
+  `/crm` exactly (not as a prefix) so "Overview" isn't lit up on every sub-route.
 - `auditApi.ts` / `auditSchemas.ts` / `AuditPage.tsx` — the Audit tab (`audit:read`): a
   reverse-chronological table (when / who / action / details) of the organization's security
   changes, `useInfiniteQuery` with a "Load more" cursor button, loading / error / empty states.
@@ -123,8 +127,8 @@ support reports, and review the organization's audit log — against the `/api/c
   for them. Widening those unions and adding the `/crm/support` / `/crm/tasks` link mapping is a
   cross-package change that also touches `apps/web`'s notification rendering; tracked separately.
 - **Per-list status / owner / date-range filters** on Partners / Customers / Deals. Tickets
-  already has a server-side status filter (Chunk 8) demonstrating the query-string → `where`
-  pattern; extending it to the other lists is a follow-up.
+  already has a server-side status filter demonstrating the query-string → `where` pattern;
+  extending it to the other lists is a follow-up.
 
 Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
 `_authenticated.crm.invites.accept.tsx` (`/crm/invites/accept` → `AcceptInvitePage`),
@@ -175,12 +179,14 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
   `members:read`/`members:invite`, and showing a control guaranteed to reject every request is
   worse than not showing it, the same reasoning the SUPERADMIN-row-disabling bullet below already
   applies to `MembersSection`'s own controls.
-- **`CrmTabs` is rendered per-page, not from a `_authenticated.crm.tsx` layout route.** A layout
-  route would be the natural home for shared chrome, but adding `_authenticated.crm.tsx` turns it
-  into the parent of _every_ `/crm/*` route — including `/crm/invites/accept`, which a not-yet-a-
-  member is on and must not see CRM tabs for. Every CRM-area page (`CrmPage`, `PartnersPage`,
-  `CustomersPage`, `BillingPage`) renders `<CrmTabs>` itself off the `viewerIsSuperAdmin` /
-  `viewerPermissionKeys` it already fetches — one line per page, no routing-structure risk.
+- **CRM chrome (the sidebar section, the header wordmark + search) lives in `AppShell` /
+  `AdminSidebar`, not a `_authenticated.crm.tsx` layout route.** A layout route would be the
+  natural home for shared chrome, but adding `_authenticated.crm.tsx` turns it into the parent of
+  _every_ `/crm/*` route — including `/crm/invites/accept`, which a not-yet-a-member is on and must
+  not see CRM chrome for. `AppShell` gates the header block on `pathname.startsWith("/crm") &&
+!pathname.startsWith("/crm/invites/accept")`, and the sidebar CRM section is always present (its
+  items just 404-guard themselves like any other admin route) — no routing-structure risk, and the
+  routes stay flat leaf files.
 - **`advancedFeaturesEnabled` rides on `GET /api/crm/organization`, not a separate billing fetch.**
   `crm-access`'s org-context response calls `crmBillingService.resolveAdvancedFeaturesForOrganization`,
   so `CrmPage` already knows whether to show `PlanGateBanner` without every viewer needing

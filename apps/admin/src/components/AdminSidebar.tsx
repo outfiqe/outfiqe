@@ -1,26 +1,35 @@
 import {
   Sidebar,
+  type SidebarNavItem,
   type SidebarNavSection,
   sidebarWidthClass,
   useSidebarCollapse,
 } from "@outfiqe/components";
 import { cn } from "@outfiqe/design-system";
 import { getAvatarColor, initialsFor } from "@outfiqe/utils";
+import { useQuery } from "@tanstack/react-query";
 import {
   Award,
   BanknoteArrowUp,
+  BarChart3,
   Building2,
   ClipboardList,
+  CreditCard,
   Crown,
   GalleryHorizontal,
-  Handshake,
+  KanbanSquare,
   Landmark,
   Layers,
+  LayoutGrid,
+  LifeBuoy,
+  ListChecks,
   MapPin,
   Package,
   Percent,
   PiggyBank,
   Ruler,
+  ScrollText,
+  ShieldCheck,
   ShoppingBag,
   SlidersHorizontal,
   Star,
@@ -28,21 +37,87 @@ import {
   TrendingUp,
   Trophy,
   UserCog,
+  UserRound,
   Users,
   Wallet,
   Zap,
 } from "lucide-react";
 
 import { useAuth } from "@/features/auth/AuthContext";
+import { crmApi } from "@/features/crm/api";
 
 import { useTanStackSidebarNavigation } from "./useTanStackSidebarNavigation";
 
-const CRM_NAV_ITEM: SidebarNavSection["items"][number] = {
-  id: "crm",
-  href: "/crm",
-  label: "CRM",
-  icon: Handshake,
-};
+type CrmSubItem = SidebarNavItem & { permissionKey: string | null };
+
+const CRM_SUB_ITEMS: CrmSubItem[] = [
+  { id: "crm-overview", href: "/crm", label: "Overview", icon: LayoutGrid, permissionKey: null },
+  {
+    id: "crm-partners",
+    href: "/crm/partners",
+    label: "Partners",
+    icon: Users,
+    permissionKey: "accounts:read",
+  },
+  {
+    id: "crm-customers",
+    href: "/crm/customers",
+    label: "Customers",
+    icon: UserRound,
+    permissionKey: "customers:read",
+  },
+  {
+    id: "crm-pipeline",
+    href: "/crm/pipeline",
+    label: "Pipeline",
+    icon: KanbanSquare,
+    permissionKey: "pipeline:read",
+  },
+  {
+    id: "crm-tasks",
+    href: "/crm/tasks",
+    label: "Tasks",
+    icon: ListChecks,
+    permissionKey: "tasks:read",
+  },
+  {
+    id: "crm-support",
+    href: "/crm/support",
+    label: "Support",
+    icon: LifeBuoy,
+    permissionKey: "tickets:read",
+  },
+  {
+    id: "crm-reports",
+    href: "/crm/reports",
+    label: "Reports",
+    icon: BarChart3,
+    permissionKey: "reports:read",
+  },
+  {
+    id: "crm-roles",
+    href: "/crm/roles",
+    label: "Roles",
+    icon: ShieldCheck,
+    permissionKey: "roles:read",
+  },
+  {
+    id: "crm-audit",
+    href: "/crm/audit",
+    label: "Audit",
+    icon: ScrollText,
+    permissionKey: "audit:read",
+  },
+  {
+    id: "crm-billing",
+    href: "/crm/billing",
+    label: "Billing",
+    icon: CreditCard,
+    permissionKey: "billing:read",
+  },
+];
+
+const toNavItem = ({ permissionKey: _permissionKey, ...item }: CrmSubItem): SidebarNavItem => item;
 
 const PLATFORM_NAV_ITEMS: SidebarNavSection["items"] = [
   { id: "brand-applications", href: "/", label: "Brand applications", icon: ClipboardList },
@@ -122,12 +197,29 @@ export const AdminSidebar = () => {
   const navigation = useTanStackSidebarNavigation();
   const { collapsed, toggle } = useSidebarCollapse("outfiqe:admin-sidebar-collapsed");
 
+  const isInCrmArea = navigation.pathname.startsWith("/crm");
+  const { data: crmOrganization } = useQuery({
+    queryKey: ["crm-organization"],
+    queryFn: crmApi.getOrganization,
+    enabled: isInCrmArea,
+    retry: false,
+  });
+
+  const visibleCrmItems = CRM_SUB_ITEMS.filter((item) => {
+    if (item.permissionKey === null) return true;
+    if (!crmOrganization) return true;
+    return (
+      crmOrganization.viewerIsSuperAdmin ||
+      crmOrganization.viewerPermissionKeys.includes(item.permissionKey)
+    );
+  }).map(toNavItem);
+
   const user = state.status === "signed-in" ? state.user : null;
   const navSections: SidebarNavSection[] = [
-    {
-      id: "admin",
-      items: user?.hasPlatformAccess ? [CRM_NAV_ITEM, ...PLATFORM_NAV_ITEMS] : [CRM_NAV_ITEM],
-    },
+    { id: "crm", label: "CRM", items: visibleCrmItems },
+    ...(user?.hasPlatformAccess
+      ? [{ id: "platform", label: "Platform", items: PLATFORM_NAV_ITEMS }]
+      : []),
   ];
 
   const header = user && (

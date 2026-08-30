@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { crmApi } from "./api";
-import { CrmTabs } from "./CrmTabs";
 import { PlanGateBanner } from "./PlanGateBanner";
 import { ReportsSection } from "./ReportsSection";
 
@@ -14,13 +13,7 @@ export const ReportsPage = () => {
   return (
     <div>
       {organization && (
-        <>
-          <CrmTabs
-            viewerIsSuperAdmin={organization.viewerIsSuperAdmin}
-            viewerPermissionKeys={organization.viewerPermissionKeys}
-          />
-          <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
-        </>
+        <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
       )}
 
       <h1 className="font-display text-2xl font-bold text-foreground">Reports</h1>

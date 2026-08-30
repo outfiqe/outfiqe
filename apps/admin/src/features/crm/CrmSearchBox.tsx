@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { crmApi } from "./api";
 import { crmReportingApi } from "./reportingApi";
 import type { CrmSearchResults } from "./reportingSchemas";
 
@@ -21,11 +22,6 @@ const SEARCH_READ_PERMISSION_KEYS = [
   "deals:read",
   "tickets:read",
 ];
-
-type CrmSearchBoxProps = {
-  viewerIsSuperAdmin: boolean;
-  viewerPermissionKeys: string[];
-};
 
 type ResultRow = {
   key: string;
@@ -72,16 +68,21 @@ const buildRows = (
   })),
 ];
 
-export const CrmSearchBox = ({ viewerIsSuperAdmin, viewerPermissionKeys }: CrmSearchBoxProps) => {
+export const CrmSearchBox = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
   const trimmedQuery = debouncedQuery.trim();
   const isSearching = trimmedQuery.length >= MIN_QUERY_LENGTH;
 
+  const { data: organization } = useQuery({
+    queryKey: ["crm-organization"],
+    queryFn: crmApi.getOrganization,
+  });
   const canSearch =
-    viewerIsSuperAdmin ||
-    SEARCH_READ_PERMISSION_KEYS.some((key) => viewerPermissionKeys.includes(key));
+    organization !== undefined &&
+    (organization.viewerIsSuperAdmin ||
+      SEARCH_READ_PERMISSION_KEYS.some((key) => organization.viewerPermissionKeys.includes(key)));
 
   const { data: results, isLoading } = useQuery({
     queryKey: ["crm-search", trimmedQuery],

@@ -18,14 +18,33 @@ const API_BASE = "http://localhost:3000/api";
 
 const EMPTY_RESULTS = { partners: [], customers: [], deals: [], tickets: [] };
 
-const renderSearchBox = (
-  props: { viewerIsSuperAdmin: boolean; viewerPermissionKeys: string[] } = {
+const mockOrganization = (
+  viewer: { viewerIsSuperAdmin: boolean; viewerPermissionKeys: string[] } = {
     viewerIsSuperAdmin: true,
     viewerPermissionKeys: [],
   },
-) => {
+) =>
+  mswServer.use(
+    http.get(`${API_BASE}/crm/organization`, () =>
+      HttpResponse.json({
+        success: true,
+        data: {
+          id: "o-1",
+          name: "Meridian",
+          plan: "trial",
+          trialEndsAt: null,
+          superAdminMembershipId: "m-1",
+          pendingOwnershipTransfer: null,
+          advancedFeaturesEnabled: true,
+          ...viewer,
+        },
+      }),
+    ),
+  );
+
+const renderSearchBox = () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const rootRoute = createRootRoute({ component: () => <CrmSearchBox {...props} /> });
+  const rootRoute = createRootRoute({ component: CrmSearchBox });
   const children = [
     "/crm",
     "/crm/partners/$creatorId",
@@ -45,12 +64,15 @@ const renderSearchBox = (
 };
 
 describe("CrmSearchBox", () => {
-  it("renders nothing for a viewer with no CRM read permissions", () => {
-    renderSearchBox({ viewerIsSuperAdmin: false, viewerPermissionKeys: ["billing:read"] });
+  it("renders nothing for a viewer with no CRM read permissions", async () => {
+    mockOrganization({ viewerIsSuperAdmin: false, viewerPermissionKeys: ["billing:read"] });
+    renderSearchBox();
+    await new Promise((resolve) => setTimeout(resolve, 50));
     expect(screen.queryByLabelText("Search the CRM")).not.toBeInTheDocument();
   });
 
   it("groups matches by entity type and clears the box after a selection", async () => {
+    mockOrganization();
     mswServer.use(
       http.get(`${API_BASE}/crm/search`, () =>
         HttpResponse.json({
@@ -87,6 +109,7 @@ describe("CrmSearchBox", () => {
   }, 15000);
 
   it("shows an explicit empty state when nothing matches", async () => {
+    mockOrganization();
     mswServer.use(
       http.get(`${API_BASE}/crm/search`, () =>
         HttpResponse.json({ success: true, data: EMPTY_RESULTS }),

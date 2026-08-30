@@ -7,7 +7,6 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { crmActivitiesApi } from "./activitiesApi";
 import type { Task } from "./activitiesSchemas";
 import { crmApi } from "./api";
-import { CrmTabs } from "./CrmTabs";
 import { formatDate } from "./format.utils";
 import { PlanGateBanner } from "./PlanGateBanner";
 
@@ -143,13 +142,7 @@ export const TasksPage = () => {
   return (
     <div>
       {organization && (
-        <>
-          <CrmTabs
-            viewerIsSuperAdmin={organization.viewerIsSuperAdmin}
-            viewerPermissionKeys={organization.viewerPermissionKeys}
-          />
-          <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
-        </>
+        <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
       )}
 
       <div className="flex items-center justify-between">

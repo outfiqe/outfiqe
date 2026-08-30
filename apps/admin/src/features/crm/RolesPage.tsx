@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
-import { CrmTabs } from "./CrmTabs";
 import { RolesSection } from "./RolesSection";
 
 export const RolesPage = () => {
@@ -16,13 +15,6 @@ export const RolesPage = () => {
 
   return (
     <div>
-      {organization && (
-        <CrmTabs
-          viewerIsSuperAdmin={organization.viewerIsSuperAdmin}
-          viewerPermissionKeys={organization.viewerPermissionKeys}
-        />
-      )}
-
       <h1 className="font-display text-2xl font-bold text-foreground">Roles &amp; settings</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Build custom roles from the permission catalog and rename this organization.

@@ -5,7 +5,6 @@ import { ApiClientError } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
-import { CrmTabs } from "./CrmTabs";
 import { InviteSection } from "./InviteSection";
 import { MembersSection } from "./MembersSection";
 import { OwnershipTransferBanner } from "./OwnershipTransferBanner";
@@ -63,10 +62,6 @@ export const CrmPage = () => {
 
       {organization && (
         <div className="mt-6">
-          <CrmTabs
-            viewerIsSuperAdmin={organization.viewerIsSuperAdmin}
-            viewerPermissionKeys={organization.viewerPermissionKeys}
-          />
           <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
           <OwnershipTransferBanner organization={organization} />
 

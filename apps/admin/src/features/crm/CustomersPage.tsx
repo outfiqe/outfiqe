@@ -6,8 +6,6 @@ import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
-import { crmApi } from "./api";
-import { CrmTabs } from "./CrmTabs";
 import { formatDate, formatRupees } from "./format.utils";
 import { crmRelationshipsApi } from "./relationshipsApi";
 
@@ -15,11 +13,6 @@ const PAGE_SIZE = 25;
 const SEARCH_DEBOUNCE_MS = 300;
 
 export const CustomersPage = () => {
-  const { data: organization } = useQuery({
-    queryKey: ["crm-organization"],
-    queryFn: crmApi.getOrganization,
-  });
-
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const debounced = useDebouncedValue(searchTerm, SEARCH_DEBOUNCE_MS);
@@ -36,13 +29,6 @@ export const CustomersPage = () => {
 
   return (
     <div>
-      {organization && (
-        <CrmTabs
-          viewerIsSuperAdmin={organization.viewerIsSuperAdmin}
-          viewerPermissionKeys={organization.viewerPermissionKeys}
-        />
-      )}
-
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-bold text-foreground">Customers</h1>
         <Input
