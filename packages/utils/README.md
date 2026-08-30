@@ -12,6 +12,13 @@ to any one app.
   display name's fallback avatar initial).
 - `format/` — `toTitleCase`, a generic `SNAKE_CASE` -> `Title Case` formatter.
 - `phone/` — `NEPAL_PHONE_REGEX`, the phone-number validation pattern this codebase's forms use.
+- `tenant/` — `extractTenantSubdomain(host, baseDomain)` / `isTenantHost(host, baseDomain)` plus
+  `TENANT_SUBDOMAIN_REGEX`/`RESERVED_TENANT_SUBDOMAINS`, the one definition of "what counts as a
+  tenant subdomain". `apps/api`'s `crm-access` module re-exports these as `extractSubdomain`/
+  `SUBDOMAIN_REGEX`/`RESERVED_SUBDOMAINS` for its `resolveTenant` middleware; `apps/web`
+  (`useTenantHost`) and `apps/admin` (`isOnTenantHost`) use them to only show the storefront ⇄ CRM
+  cross-links, and only honour a cross-app `?redirect=` after login, when the browser is actually on
+  a tenant subdomain rather than the apex domain.
 - `product-sort/` — `PRODUCT_SORT_VALUES`/`PRODUCT_SORT`/`ProductSort`, the shop's sort-order enum.
 - `product-type/` — `PRODUCT_TYPE_SLUGS`/`ProductTypeSlug`, the fixed product-category slug list.
 - `notifications/` — `formatActorList`, the grouped-notification actor-list formatter (`"Jane"` ->

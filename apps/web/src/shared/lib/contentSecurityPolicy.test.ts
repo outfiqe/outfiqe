@@ -47,6 +47,15 @@ describe("buildContentSecurityPolicy", () => {
     );
   });
 
+  it("uses 'strict-dynamic' outside dev, but drops it in dev so same-origin HMR chunks load", () => {
+    expect(buildContentSecurityPolicy({ ...baseOptions, isDev: false })).toContain(
+      "'strict-dynamic'",
+    );
+    expect(buildContentSecurityPolicy({ ...baseOptions, isDev: true })).not.toContain(
+      "'strict-dynamic'",
+    );
+  });
+
   it("embeds the given nonce in script-src", () => {
     const csp = buildContentSecurityPolicy({ ...baseOptions, nonce: "abc123" });
     expect(csp).toContain("'nonce-abc123'");

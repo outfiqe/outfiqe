@@ -3,12 +3,17 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus, CreatorStatus, UserRole, type UserSession } from "@/features/auth/types";
+import { useTenantHost } from "@/shared/hooks/useTenantHost";
 
 import { DashboardSidebar } from "./DashboardSidebar";
 
 vi.mock("@/features/auth", () => ({
   useAuth: vi.fn(),
   useLogout: vi.fn(),
+}));
+
+vi.mock("@/shared/hooks/useTenantHost", () => ({
+  useTenantHost: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -78,6 +83,7 @@ const buildIdleLogoutMutation = (): ReturnType<typeof useLogout> => ({
 describe("DashboardSidebar", () => {
   beforeEach(() => {
     vi.mocked(useLogout).mockReturnValue(buildIdleLogoutMutation());
+    vi.mocked(useTenantHost).mockReturnValue(true);
   });
 
   it("shows a CRM entry pointing at the admin app for a brand owner with CRM access", () => {
@@ -97,6 +103,22 @@ describe("DashboardSidebar", () => {
 
   it("hides the CRM entry from a brand owner without CRM access", () => {
     mockAuth({ hasCrmAccess: false });
+
+    render(<DashboardSidebar />);
+
+    expect(screen.queryByRole("link", { name: "CRM" })).not.toBeInTheDocument();
+  });
+
+  it("hides the CRM entry when the storefront is not on a tenant host", () => {
+    vi.mocked(useTenantHost).mockReturnValue(false);
+    mockAuth({
+      state: {
+        status: AuthStatus.AUTHENTICATED,
+        user: buildUser({ hasCrmAccess: true }),
+        accessToken: "token",
+      },
+      hasCrmAccess: true,
+    });
 
     render(<DashboardSidebar />);
 

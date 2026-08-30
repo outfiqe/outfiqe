@@ -64,4 +64,35 @@ describe("toUserSession", () => {
 
     expect(toUserSession(user).phone).toBe("9828282824");
   });
+
+  it("carries hasCrmAccess through for a brand user who has a CRM membership", () => {
+    const user = brandUserSchema.parse({
+      id: "brand-user-1",
+      name: "Brand Owner",
+      email: "owner@brand.com",
+      phone: null,
+      avatarUrl: null,
+      role: UserRole.BRAND_OWNER,
+      brandId: "brand-1",
+      hasCrmAccess: true,
+    });
+
+    expect(toUserSession(user).hasCrmAccess).toBe(true);
+  });
+
+  it("defaults hasCrmAccess to false when the API response omits it", () => {
+    const user = customerUserSchema.parse({
+      id: "user-1",
+      name: "Sabin Shrestha",
+      email: "creator1@example.com",
+      phone: null,
+      avatarUrl: null,
+      role: UserRole.CUSTOMER,
+      isCreator: false,
+      creatorStatus: CreatorStatus.NONE,
+      hasPassword: true,
+    });
+
+    expect(toUserSession(user).hasCrmAccess).toBe(false);
+  });
 });

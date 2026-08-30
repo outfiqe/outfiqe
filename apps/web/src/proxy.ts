@@ -1,8 +1,9 @@
+import { isTenantHost } from "@outfiqe/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
 import { UserRole } from "@/features/auth/types";
 import { getDefaultRouteForUser } from "@/features/auth/utils/getDefaultRoute";
-import { getSafeRedirect } from "@/features/auth/utils/safeRedirect";
+import { getSafeRedirect, resolveLoginDestination } from "@/features/auth/utils/safeRedirect";
 
 /* 
  Deliberately not going through serverApiClient/serverAuth here — those are
@@ -15,6 +16,7 @@ import { getSafeRedirect } from "@/features/auth/utils/safeRedirect";
 
 const API_URL = process.env.API_URL ?? "http://localhost:4000";
 const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "/admin";
+const TENANT_BASE_DOMAIN = process.env.NEXT_PUBLIC_TENANT_BASE_DOMAIN ?? "localhost";
 const REFRESH_COOKIE_NAME = "refresh_token";
 
 type ProxyUser = { role: UserRole };
@@ -92,8 +94,11 @@ export const proxy = async (request: NextRequest) => {
   if (pathname === "/login" && refreshToken) {
     const user = await fetchSessionUser(refreshToken);
     if (user) {
-      const requested = request.nextUrl.searchParams.get("redirect");
-      const target = getSafeRedirect(requested) ?? getDefaultRouteForUser(user);
+      const target = resolveLoginDestination(
+        getSafeRedirect(request.nextUrl.searchParams.get("redirect")),
+        getDefaultRouteForUser(user),
+        isTenantHost(request.nextUrl.hostname, TENANT_BASE_DOMAIN),
+      );
       const destination = target.startsWith("http") ? target : new URL(target, request.url);
       return NextResponse.redirect(destination);
     }

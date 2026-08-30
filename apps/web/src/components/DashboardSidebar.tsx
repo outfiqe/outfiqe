@@ -26,6 +26,7 @@ import {
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus, UserRole } from "@/features/auth/types";
+import { useTenantHost } from "@/shared/hooks/useTenantHost";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
@@ -77,6 +78,7 @@ export const DashboardSidebar = () => {
   const { state, hasCrmAccess } = useAuth();
   const logout = useLogout();
   const navigation = useNextSidebarNavigation();
+  const isOnTenantHost = useTenantHost();
   const { collapsed, toggle } = useSidebarCollapse("outfiqe:web-sidebar-collapsed");
 
   if (state.status === AuthStatus.IDLE || state.status === AuthStatus.LOADING) {
@@ -90,7 +92,8 @@ export const DashboardSidebar = () => {
 
   const isBrand = role === UserRole.BRAND_OWNER;
   const baseNavItems = isBrand ? BRAND_NAV : CREATOR_NAV;
-  const navItems = hasCrmAccess ? [...baseNavItems, CRM_NAV_ITEM] : baseNavItems;
+  const showCrmLink = hasCrmAccess && isOnTenantHost;
+  const navItems = showCrmLink ? [...baseNavItems, CRM_NAV_ITEM] : baseNavItems;
   const sections: SidebarNavSection[] = [{ id: isBrand ? "brand" : "creator", items: navItems }];
 
   const header = (

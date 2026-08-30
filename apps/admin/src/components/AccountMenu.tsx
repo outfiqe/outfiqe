@@ -2,6 +2,7 @@ import { getAvatarColor, initialsFor } from "@outfiqe/utils";
 import { useNavigate } from "@tanstack/react-router";
 
 import { useAuth } from "@/features/auth/AuthContext";
+import { isOnTenantHost } from "@/lib/tenantHost";
 
 export const AccountMenu = () => {
   const { state, logout } = useAuth();
@@ -11,7 +12,7 @@ export const AccountMenu = () => {
 
   const { user } = state;
   const { avatarUrl, id, name } = user;
-  const isTenantUser = !user.hasPlatformAccess;
+  const isTenantUser = !user.hasPlatformAccess && isOnTenantHost();
 
   return (
     <div className="group relative">

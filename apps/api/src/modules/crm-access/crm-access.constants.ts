@@ -1,3 +1,5 @@
+import { RESERVED_TENANT_SUBDOMAINS, TENANT_SUBDOMAIN_REGEX } from "@outfiqe/utils";
+
 import type { PermissionRecord } from "./crm-access.types.js";
 
 export const PERMISSION_CATALOG: PermissionRecord[] = [
@@ -92,19 +94,9 @@ export const CUSTOM_ROLE_NAME_MAX_LENGTH = 50;
 export const ORGANIZATION_NAME_MIN_LENGTH = 2;
 export const ORGANIZATION_NAME_MAX_LENGTH = 100;
 
-export const SUBDOMAIN_REGEX = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+export const SUBDOMAIN_REGEX = TENANT_SUBDOMAIN_REGEX;
 
-export const RESERVED_SUBDOMAINS = [
-  "www",
-  "api",
-  "admin",
-  "app",
-  "mail",
-  "ftp",
-  "staging",
-  "localhost",
-  "crm",
-];
+export const RESERVED_SUBDOMAINS = RESERVED_TENANT_SUBDOMAINS;
 
 export const CRM_TRIAL_LENGTH_DAYS = 14;
 

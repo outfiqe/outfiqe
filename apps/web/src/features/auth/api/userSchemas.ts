@@ -13,6 +13,7 @@ export const customerUserSchema = z.object({
   isCreator: z.boolean(),
   creatorStatus: creatorStatusSchema,
   hasPassword: z.boolean(),
+  hasCrmAccess: z.boolean().optional(),
 });
 
 export const brandUserSchema = z.object({
@@ -23,6 +24,7 @@ export const brandUserSchema = z.object({
   avatarUrl: z.url().nullable(),
   role: userRoleSchema,
   brandId: z.string(),
+  hasCrmAccess: z.boolean().optional(),
 });
 
 export const currentUserSchema = z.union([customerUserSchema, brandUserSchema]);
@@ -47,5 +49,6 @@ export const toUserSession = (
     creatorStatus: "creatorStatus" in user ? user.creatorStatus : CreatorStatus.NONE,
     brandId: "brandId" in user ? user.brandId : undefined,
     hasPassword: "hasPassword" in user ? user.hasPassword : true,
+    hasCrmAccess: user.hasCrmAccess ?? false,
   };
 };

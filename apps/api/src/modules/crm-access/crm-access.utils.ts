@@ -1,8 +1,6 @@
-import {
-  RESERVED_SUBDOMAINS,
-  SELECTABLE_ROLE_PERMISSION_KEYS,
-  SUBDOMAIN_REGEX,
-} from "./crm-access.constants.js";
+import { extractTenantSubdomain } from "@outfiqe/utils";
+
+import { SELECTABLE_ROLE_PERMISSION_KEYS } from "./crm-access.constants.js";
 import type {
   MembershipJoinRow,
   MembershipSummary,
@@ -96,14 +94,4 @@ export const findUnselectablePermissionKeys = (permissionKeys: string[]): string
 export const canDeleteRole = (role: { isBuiltIn: boolean }, memberCount: number): boolean =>
   !role.isBuiltIn && memberCount === 0;
 
-export const extractSubdomain = (hostHeader: string, baseDomain: string): string | null => {
-  const host = (hostHeader.split(":").at(0) ?? "").toLowerCase();
-  const base = baseDomain.toLowerCase();
-
-  if (host === base || !host.endsWith(`.${base}`)) return null;
-
-  const candidate = host.slice(0, host.length - base.length - 1);
-  if (!SUBDOMAIN_REGEX.test(candidate) || RESERVED_SUBDOMAINS.includes(candidate)) return null;
-
-  return candidate;
-};
+export const extractSubdomain = extractTenantSubdomain;
