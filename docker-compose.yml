@@ -30,6 +30,55 @@ services:
       timeout: 5s
       retries: 10
 
+  postgres-test:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    profiles: ["test"]
+    command:
+      - postgres
+      - -c
+      - fsync=off
+      - -c
+      - synchronous_commit=off
+      - -c
+      - full_page_writes=off
+      - -c
+      - wal_level=minimal
+      - -c
+      - max_wal_senders=0
+      - -c
+      - max_connections=200
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-outfiqe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-outfiqe}
+      POSTGRES_DB: ${TEST_POSTGRES_DB:-outfiqe_test_db}
+    ports:
+      - "${TEST_POSTGRES_PORT:-5433}:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-outfiqe} -d ${TEST_POSTGRES_DB:-outfiqe_test_db}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis-test:
+    image: redis:7-alpine
+    restart: unless-stopped
+    profiles: ["test"]
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "${TEST_REDIS_PORT:-6380}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 volumes:
   pgdata:
   redisdata:
