@@ -140,4 +140,109 @@ describe("TicketsPage", () => {
 
     await waitFor(() => expect(postedBody).toEqual({ body: "Refund approved" }));
   });
+
+  it("moves a ticket forward and reassigns it from the detail view", async () => {
+    mockCommon();
+    let statusBody: unknown;
+    let assigneeBody: unknown;
+    mswServer.use(
+      http.get(`${API_BASE}/crm/tickets/tk-1`, () =>
+        HttpResponse.json({ success: true, data: { ...TICKET, comments: [] } }),
+      ),
+      http.patch(`${API_BASE}/crm/tickets/tk-1/status`, async ({ request }) => {
+        statusBody = await request.json();
+        return HttpResponse.json({
+          success: true,
+          data: { ...TICKET, status: "IN_PROGRESS", comments: [] },
+        });
+      }),
+      http.patch(`${API_BASE}/crm/tickets/tk-1/assignee`, async ({ request }) => {
+        assigneeBody = await request.json();
+        return HttpResponse.json({
+          success: true,
+          data: { ...TICKET, assigneeMembershipId: "mem-1" },
+        });
+      }),
+    );
+
+    renderTicketsPage();
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("button", { name: /Damaged package/ }));
+    await user.click(await screen.findByRole("button", { name: "in progress" }));
+    await waitFor(() => expect(statusBody).toEqual({ status: "IN_PROGRESS" }));
+
+    await user.selectOptions(await screen.findByLabelText("Assignee"), "mem-1");
+    await waitFor(() => expect(assigneeBody).toEqual({ assigneeMembershipId: "mem-1" }));
+  });
+
+  it("creates a ticket from the New ticket modal", async () => {
+    mockCommon();
+    let createBody: unknown;
+    mswServer.use(
+      http.get(`${API_BASE}/crm/customers`, () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            items: [
+              {
+                userId: "c-1",
+                name: "Sita",
+                handle: "sita",
+                avatarUrl: null,
+                orderCount: 1,
+                itemCount: 1,
+                totalPaid: 1000,
+                firstOrderAt: null,
+                lastOrderAt: null,
+              },
+            ],
+            total: 1,
+            hasMore: false,
+            reason: null,
+          },
+        }),
+      ),
+      http.post(`${API_BASE}/crm/tickets`, async ({ request }) => {
+        createBody = await request.json();
+        return HttpResponse.json({ success: true, data: TICKET }, { status: 201 });
+      }),
+    );
+
+    renderTicketsPage();
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("button", { name: "New ticket" }));
+    await user.type(await screen.findByLabelText("Title"), "Late delivery");
+    await user.type(screen.getByLabelText("Description"), "Nothing arrived");
+    await user.selectOptions(await screen.findByLabelText("Customer"), "c-1");
+    await user.click(screen.getByRole("button", { name: "Create ticket" }));
+
+    await waitFor(() =>
+      expect(createBody).toMatchObject({
+        type: "COMPLAINT",
+        title: "Late delivery",
+        subjectId: "c-1",
+      }),
+    );
+  });
+
+  it("filters the ticket list by status", async () => {
+    mockCommon();
+    let lastStatusParam: string | null = "unset";
+    mswServer.use(
+      http.get(`${API_BASE}/crm/tickets`, ({ request }) => {
+        lastStatusParam = new URL(request.url).searchParams.get("status");
+        return HttpResponse.json({ success: true, data: [TICKET] });
+      }),
+    );
+
+    renderTicketsPage();
+    const user = userEvent.setup({ delay: null });
+
+    await screen.findByRole("button", { name: /Damaged package/ });
+    await user.selectOptions(screen.getByLabelText("Filter by status"), "RESOLVED");
+
+    await waitFor(() => expect(lastStatusParam).toBe("RESOLVED"));
+  });
 });

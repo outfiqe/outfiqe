@@ -156,4 +156,28 @@ describe("TasksPage", () => {
 
     await waitFor(() => expect(patchBody).toEqual({ status: "DONE" }));
   });
+
+  it("creates a task from the New task modal", async () => {
+    mockCommon();
+    let createBody: unknown;
+    mswServer.use(
+      http.get(`${API_BASE}/crm/tasks`, () => HttpResponse.json({ success: true, data: [] })),
+      http.post(`${API_BASE}/crm/tasks`, async ({ request }) => {
+        createBody = await request.json();
+        return HttpResponse.json({ success: true, data: {} }, { status: 201 });
+      }),
+    );
+
+    renderTasksPage();
+    const user = userEvent.setup({ delay: null });
+
+    expect(await screen.findByText("No tasks yet.")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "New task" }));
+    await user.type(await screen.findByLabelText("Title"), "Prep deck");
+    await user.click(screen.getByRole("button", { name: "Create task" }));
+
+    await waitFor(() =>
+      expect(createBody).toMatchObject({ title: "Prep deck", assigneeMembershipId: "mem-1" }),
+    );
+  });
 });

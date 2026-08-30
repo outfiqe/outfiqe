@@ -19,11 +19,6 @@ export type KanbanBoardProps<TCard extends KanbanCard> = {
   emptyColumnLabel?: string;
 };
 
-/**
- * A reusable pipeline board. Cards move between columns two ways, both
- * keyboard-accessible: native HTML5 drag-and-drop, and a "Move to" `<select>` on
- * every card for pointer-free reordering. No drag-and-drop library dependency.
- */
 export const KanbanBoard = <TCard extends KanbanCard>({
   columns,
   cards,
