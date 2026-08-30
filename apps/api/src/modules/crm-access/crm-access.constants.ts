@@ -106,6 +106,8 @@ export const RESERVED_SUBDOMAINS = [
   "crm",
 ];
 
+export const CRM_TRIAL_LENGTH_DAYS = 14;
+
 export const ORGANIZATION_INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export const OWNERSHIP_TRANSFER_REQUEST_TTL_MS = 7 * 24 * 60 * 60 * 1000;

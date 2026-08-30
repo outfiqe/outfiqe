@@ -1,9 +1,15 @@
+import { addDays } from "date-fns/addDays";
+
 import { prisma } from "#db/prisma.js";
 import type { MembershipStatus } from "#generated/prisma/enums.js";
 import { DEFAULT_PIPELINE_STAGES } from "#modules/crm-pipeline/crm-pipeline.constants.js";
 import type { DbClient } from "#types/db.types.js";
 
-import { BUILT_IN_ROLE_NAME, BUILT_IN_ROLE_PERMISSIONS } from "./crm-access.constants.js";
+import {
+  BUILT_IN_ROLE_NAME,
+  BUILT_IN_ROLE_PERMISSIONS,
+  CRM_TRIAL_LENGTH_DAYS,
+} from "./crm-access.constants.js";
 import type {
   CreateOrganizationInviteInput,
   CreateOrganizationParams,
@@ -113,6 +119,7 @@ export const crmAccessRepository = {
           name: input.name,
           subdomain: input.subdomain,
           linkedBrandId: input.linkedBrandId ?? null,
+          trialEndsAt: addDays(new Date(), CRM_TRIAL_LENGTH_DAYS),
         },
       });
 

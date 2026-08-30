@@ -170,6 +170,33 @@ describe("POST /api/crm/organizations", () => {
     );
   });
 
+  it("starts a 14-day advanced-features trial for a newly created organization", async () => {
+    await prisma.permission.createMany({ data: PERMISSION_CATALOG, skipDuplicates: true });
+    const creator = await createPlatformStaffUser("Trial Org Creator");
+    const subdomain = `trial-${randomUUID().slice(0, 8)}`;
+
+    const response = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({ name: "Trial Co", subdomain });
+    expect(response.status).toBe(201);
+
+    const organization = await prisma.organization.findUniqueOrThrow({
+      where: { id: response.body.data.id },
+    });
+    const daysUntilTrialEnd =
+      (organization.trialEndsAt!.getTime() - Date.now()) / (24 * 60 * 60 * 1000);
+    expect(daysUntilTrialEnd).toBeGreaterThan(13);
+    expect(daysUntilTrialEnd).toBeLessThanOrEqual(14);
+
+    const orgContext = await request(testApp)
+      .get("/api/crm/organization")
+      .set("Authorization", authHeaderFor(creator.id))
+      .set("Host", `${subdomain}.localhost`);
+    expect(orgContext.status).toBe(200);
+    expect(orgContext.body.data.advancedFeaturesEnabled).toBe(true);
+  });
+
   it("rejects a reserved subdomain", async () => {
     await prisma.permission.createMany({ data: PERMISSION_CATALOG, skipDuplicates: true });
     const creator = await createPlatformStaffUser("Reserved Subdomain Creator");
