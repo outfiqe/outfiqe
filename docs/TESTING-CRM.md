@@ -61,7 +61,7 @@ tenant-scoped, also send `-H "Host: <subdomain>.localhost:4000"` for the organiz
       with the full `viewerPermissionKeys` list.
 - [ ] `GET /api/crm/members` — confirm the owner appears with its role and an owner marker.
 - [ ] `PATCH /api/crm/members/:ownMembershipId` (any body) — confirm `403
-    SUPERADMIN_MEMBERSHIP_LOCKED`. The owner only moves via ownership transfer (§6).
+SUPERADMIN_MEMBERSHIP_LOCKED`. The owner only moves via ownership transfer (§6).
 - [ ] Re-run `db:seed` — confirm no duplicate organization / role / membership rows and the
       owner membership id is unchanged.
 
@@ -73,11 +73,11 @@ tenant-scoped, also send `-H "Host: <subdomain>.localhost:4000"` for the organiz
       — confirm `201`.
 - [ ] Repeat the identical request — confirm `409 INVITE_ALREADY_PENDING`, not a second row.
 - [ ] `POST /api/crm/invites` for an email that isn't a staff account — confirm `404
-    STAFF_ACCOUNT_NOT_FOUND` (the "no CRM signup" rule).
+STAFF_ACCOUNT_NOT_FOUND` (the "no CRM signup" rule).
 - [ ] `POST /api/crm/invites` for someone who already holds a membership — confirm `409
-    MEMBER_EXISTS`.
+MEMBER_EXISTS`.
 - [ ] `POST /api/crm/invites` with a `roleId` from another organization — confirm `404
-    ROLE_NOT_FOUND`, never a cross-tenant read.
+ROLE_NOT_FOUND`, never a cross-tenant read.
 - [ ] As a plain `Member` (no `members:invite`), `POST /api/crm/invites` — confirm `403`.
 - [ ] `GET /api/crm/invites` as the inviter — the pending invite shows with `status: "PENDING"`
       and the right role name.
@@ -104,7 +104,7 @@ stored).
 ## 6. Funnel: ownership transfer
 
 - [ ] As the owner, `POST /api/crm/ownership-transfer { "targetMembershipId": "<an active,
-    non-owner member>" }` — confirm `201` and a pending transfer on the org response.
+non-owner member>" }` — confirm `201` and a pending transfer on the org response.
 - [ ] `POST /api/crm/ownership-transfer` again while one is pending — confirm `409` (one at a
       time).
 - [ ] As the **target**, accept the transfer — confirm `200`, the org's owner membership is now
@@ -145,7 +145,7 @@ stored).
 ## 8. Funnel: provisioning an organization and the brand link
 
 - [ ] As a platform-access account, `POST /api/crm/organizations { "name": "...", "subdomain":
-    "...", "linkedBrandId": "<a brand id>" }` — confirm `201`, the caller is its owner, and the
+"...", "linkedBrandId": "<a brand id>" }` — confirm `201`, the caller is its owner, and the
       row carries `linked_brand_id`, a default pipeline stage set, and a ~14-day `trial_ends_at`.
 - [ ] `POST /api/crm/organizations` with a `linkedBrandId` already linked to another org —
       confirm `409 BRAND_ALREADY_LINKED`, no raw Prisma message.
@@ -196,7 +196,7 @@ Run as a **demo tenant** staff account (Meridian or Norday), with that org's `Ho
 - [ ] `DELETE` a stage that has deals — confirm the defined behaviour (blocked or reassigned),
       never orphaned deals.
 - [ ] `POST /api/crm/deals { "stageId": ..., "title": ..., "value": ..., "partnerCreatorId": ...
-    }` with a real partner — confirm `201`; with a creator who isn't a partner of this brand —
+}` with a real partner — confirm `201`; with a creator who isn't a partner of this brand —
       confirm it's rejected.
 - [ ] `PATCH` a deal's `stageId` to the won stage — confirm `status` becomes `WON` and
       `closedAt` is stamped in the same write; move it back to an open stage — confirm it
@@ -226,7 +226,7 @@ Run as a **demo tenant** staff account (Meridian or Norday), with that org's `Ho
 ## 13. Funnel: support tickets
 
 - [ ] `POST /api/crm/tickets { "type": "COMPLAINT", "title": ..., "description": ...,
-    "customerUserId": ... }` — confirm `201`, status `OPEN`.
+"customerUserId": ... }` — confirm `201`, status `OPEN`.
 - [ ] `PATCH /api/crm/tickets/:id/status { "status": "RESOLVED" }` directly from `OPEN` — confirm
       it's rejected as an out-of-order jump (`409 INVALID_TICKET_TRANSITION`).
 - [ ] Walk `OPEN → IN_PROGRESS → RESOLVED → CLOSED` — confirm each step is accepted and
@@ -254,7 +254,7 @@ Run as a **demo tenant** staff account (Meridian or Norday), with that org's `Ho
 **Roles**
 
 - [ ] `POST /api/crm/roles { "name": "Support agent", "permissionKeys": ["tickets:read",
-    "tickets:write"] }` — confirm `201`.
+"tickets:write"] }` — confirm `201`.
 - [ ] `PATCH` / `DELETE` a **built-in** role — confirm `403 ROLE_IS_BUILT_IN`.
 - [ ] `DELETE` a custom role that a member still holds — confirm `409 ROLE_IN_USE`.
 - [ ] `POST` / `PATCH` a role including `platform:access` or `org:transfer_ownership` — confirm
