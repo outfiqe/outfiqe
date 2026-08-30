@@ -81,6 +81,7 @@ export default defineConfig({
         "src/modules/crm-pipeline/**/*.ts",
         "src/modules/crm-activities/**/*.ts",
         "src/modules/crm-tickets/**/*.ts",
+        "src/modules/crm-reporting/**/*.ts",
       ],
       thresholds: {
         lines: 80,

@@ -6,11 +6,13 @@ The visible screens for Outfiqe's internal CRM. Lets a staff member with CRM acc
 organization, see and manage CRM members, invite an existing staff account, accept a CRM invite,
 manage the organization's paid subscription, browse the tenant brand's Partners (creators) and
 Customers (shoppers), run a deal pipeline, log activities/tasks, work support tickets, and build
-custom roles from the permission catalog — against the `/api/crm/*` endpoints in
+custom roles from the permission catalog, search across every CRM entity, and read pipeline and
+support reports — against the `/api/crm/*` endpoints in
 `apps/api/src/modules/crm-access` (Chunks 1–2 + ownership transfer + custom roles),
 `apps/api/src/modules/crm-billing` (Chunk 3), `apps/api/src/modules/crm-relationships` (Chunk 5),
 `apps/api/src/modules/crm-pipeline` (Chunk 6), `apps/api/src/modules/crm-activities` (Chunk 7),
-and `apps/api/src/modules/crm-tickets` (Chunk 8).
+`apps/api/src/modules/crm-tickets` (Chunk 8), and `apps/api/src/modules/crm-reporting`
+(Chunk 10 — search + reports).
 
 ## Structure
 
@@ -53,11 +55,25 @@ and `apps/api/src/modules/crm-tickets` (Chunk 8).
   `verifyInvoice` server-side, and reports COMPLETE / PENDING / FAILED.
 - `PlanGateBanner.tsx` — shown above CRM content when `organization.advancedFeaturesEnabled` is
   false (trial ended, no active subscription), linking to `/crm/billing`.
-- `CrmTabs.tsx` — the Overview / Partners / Customers / Pipeline / Tasks / Support / Roles /
-  Billing nav strip. Each tab is a router `<Link>` filtered by the viewer's permission keys
-  (`accounts:read` / `customers:read` / `pipeline:read` / `tasks:read` / `tickets:read` /
+- `CrmTabs.tsx` — the CRM area header: the Overview / Partners / Customers / Pipeline / Tasks /
+  Support / Reports / Roles / Billing nav strip plus the global `CrmSearchBox` on the right. Each
+  tab is a router `<Link>` filtered by the viewer's permission keys (`accounts:read` /
+  `customers:read` / `pipeline:read` / `tasks:read` / `tickets:read` / `reports:read` /
   `roles:read` / `billing:read`); every page in the CRM area renders it itself (see "Non-obvious
-  rationale").
+  rationale"). Because it now renders a `useQuery`-driven child, a test rendering `CrmTabs` in
+  isolation needs a `QueryClientProvider` as well as a router.
+- `CrmSearchBox.tsx` — the always-present global search (`Autocomplete`, `useDebouncedValue`),
+  hitting `GET /api/crm/search`. Results are grouped by entity (Partners / Customers / Deals /
+  Tickets); selecting one navigates to its detail route (`/crm/partners/$creatorId`,
+  `/crm/customers/$userId`) or the relevant tab (`/crm/pipeline`, `/crm/support`). Renders nothing
+  for a viewer holding none of the four per-entity read permissions (the endpoint would 403).
+- `reportingApi.ts` / `reportingSchemas.ts` — `crmReportingApi` (`getPipelineReport`,
+  `getTicketReport`, `search`) + Zod mirrors of `/api/crm/reports/*` and `/api/crm/search`.
+- `ReportsSection.tsx` / `ReportsPage.tsx` — the Reports tab. Pipeline card: open/won/lost stat
+  tiles + a horizontal bar per open stage (single-series `bg-primary` fill, value direct-labelled,
+  per-row `title` tooltip — see the dataviz method). Ticket card: open / resolved / mean-time-to-
+  resolve tiles + a status-breakdown bar list. Each card has its own loading skeleton, error
+  banner, and an explicit "not enough data yet" state for the first-record / no-data case.
 - `RolesSection.tsx` / `RolesPage.tsx` — the Roles tab: an organization-rename card (shown to a
   viewer with `org:update`) plus the role list. Built-in roles show a badge and no controls;
   custom roles get Edit / Delete for a viewer with `roles:manage`. The role modal is a
@@ -92,8 +108,8 @@ and `apps/api/src/modules/crm-tickets` (Chunk 8).
 - `TicketsPage.tsx` — the Support tab: a status-filtered ticket list; clicking a row expands
   `TicketDetail.tsx` inline (description, forward-only status buttons, assignee `<Select>`,
   internal comment thread). "New ticket" modal collects type / title / description / customer.
-- `format.utils.ts` — `formatRupees` / `formatDate` / `formatDateTime`, shared by every CRM
-  screen instead of a per-file copy.
+- `format.utils.ts` — `formatRupees` / `formatDate` / `formatDateTime` / `formatDuration`
+  (seconds → `2h 15m` / `3d 4h` / `—`), shared by every CRM screen instead of a per-file copy.
 
 Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
 `_authenticated.crm.invites.accept.tsx` (`/crm/invites/accept` → `AcceptInvitePage`),
@@ -104,7 +120,9 @@ Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
 `_authenticated.crm.customers.$userId.tsx` (`→ CustomerDetailPage`), and
 `_authenticated.crm.pipeline.index.tsx` (`/crm/pipeline` → `PipelinePage`),
 `_authenticated.crm.tasks.index.tsx` (`/crm/tasks` → `TasksPage`),
-`_authenticated.crm.support.index.tsx` (`/crm/support` → `TicketsPage`) — the `.index`
+`_authenticated.crm.support.index.tsx` (`/crm/support` → `TicketsPage`),
+`_authenticated.crm.roles.index.tsx` (`/crm/roles` → `RolesPage`),
+`_authenticated.crm.reports.index.tsx` (`/crm/reports` → `ReportsPage`) — the `.index`
 suffix on the leaf routes is load-bearing, not stylistic: without it, TanStack Router's file-based
 convention treats `_authenticated.crm.tsx` as a layout parent for anything under `crm.*`
 (including the accept route), and since `CrmPage` renders no `<Outlet/>`, the accept route would
