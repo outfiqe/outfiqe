@@ -43,6 +43,13 @@ provisions one Postgres database and one Redis logical database per worker up fr
 `perWorkerEnv.ts` points each worker at its own pair before the app boots, so parallel files never
 see each other's rows or Redis keys.
 
+`pnpm test:integration` (and `pnpm test`) run `test:db:up` first — `docker compose --profile test
+up -d --wait` for the throwaway `postgres-test` (`:5433`, tuned for speed, see rationale below) and
+`redis-test` (`:6380`) containers that `.env.test` / `.env.test.example` point at. It's a fast
+no-op once they're running, and `restart: unless-stopped` keeps them up across reboots;
+`pnpm test:db:down` removes them. Calling `vitest` directly (single-file iteration) skips
+`test:db:up`, so start the containers once yourself in that case.
+
 ## Non-obvious rationale
 
 - This isn't colocated with a single source file the way `<name>.test.ts` files are: `testApp` and
@@ -80,12 +87,14 @@ see each other's rows or Redis keys.
   a point the shared Postgres/Redis instance is the bottleneck anyway.
 - **The per-test `TRUNCATE` of every table, hundreds of times, is the suite's dominant cost, and it
   is `fsync`-bound.** The biggest single lever for local speed (serial or parallel) is a test
-  Postgres with durability turned off and its data directory on a RAM disk — e.g. a
-  `postgres:16-alpine` container run with `-c fsync=off -c synchronous_commit=off -c
-full_page_writes=off -c wal_level=minimal` and a `tmpfs` mount at `/var/lib/postgresql/data`, with
-  `TEST_DATABASE_URL` pointed at it. This is safe precisely because the data is disposable. CI's
-  Postgres service already gets `--tmpfs /var/lib/postgresql/data`; GitHub service containers can't
-  take the `-c` flags, so full tuning there needs a `docker run` step instead of a `services:` block.
+  Postgres with durability turned off and its data directory on a RAM disk. That is what the
+  `postgres-test` service in `docker-compose.yml` is: `-c fsync=off -c synchronous_commit=off -c
+full_page_writes=off -c wal_level=minimal` with a `tmpfs` mount at `/var/lib/postgresql/data`,
+  which `.env.test.example` points `TEST_DATABASE_URL` at. Safe precisely because the data is
+  disposable — the tradeoff is that a container (re)start loses the databases, so the next
+  `globalSetup` replays all migrations into the fresh template once (~1 min) before caching it.
+  CI's Postgres service gets `--tmpfs /var/lib/postgresql/data` but not the `-c` flags — GitHub
+  `services:` containers can't take a command, so full tuning there would need a `docker run` step.
 - **The Prisma migration check moved from `setup.ts`'s `beforeAll` to `globalSetup.ts` because
   `pool: "forks"` gives every integration test file its own process, so a hook in `setupFiles` reruns
   once per file, not once per run.** `pnpm exec prisma migrate deploy` takes real, measurable
