@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { useTenantHost } from "./useTenantHost";
 
+const BASE_DOMAIN = process.env.NEXT_PUBLIC_TENANT_BASE_DOMAIN ?? "localhost";
+
 const originalLocation = window.location;
 
 const setHostname = (hostname: string) => {
@@ -37,7 +39,7 @@ describe("isTenantHost", () => {
 
 describe("useTenantHost", () => {
   it("is true on a tenant subdomain of the base domain", () => {
-    setHostname("studio.localhost");
+    setHostname(`studio.${BASE_DOMAIN}`);
 
     const { result } = renderHook(() => useTenantHost());
 
@@ -45,7 +47,7 @@ describe("useTenantHost", () => {
   });
 
   it("is false on the bare base domain", () => {
-    setHostname("localhost");
+    setHostname(BASE_DOMAIN);
 
     const { result } = renderHook(() => useTenantHost());
 
@@ -53,7 +55,7 @@ describe("useTenantHost", () => {
   });
 
   it("is false on a reserved subdomain", () => {
-    setHostname("www.localhost");
+    setHostname(`www.${BASE_DOMAIN}`);
 
     const { result } = renderHook(() => useTenantHost());
 

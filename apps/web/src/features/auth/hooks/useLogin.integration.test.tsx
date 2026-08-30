@@ -11,6 +11,7 @@ import { ADMIN_URL } from "../utils/getDefaultRoute";
 import { useLogin } from "./useLogin";
 
 const LOGIN_URL = "/api/auth/login";
+const TENANT_BASE_DOMAIN = process.env.NEXT_PUBLIC_TENANT_BASE_DOMAIN ?? "localhost";
 
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(),
@@ -140,7 +141,11 @@ describe("useLogin", () => {
     const locationReplace = vi.fn();
     Object.defineProperty(window, "location", {
       configurable: true,
-      value: { ...originalLocation, hostname: "studio.localhost", replace: locationReplace },
+      value: {
+        ...originalLocation,
+        hostname: `studio.${TENANT_BASE_DOMAIN}`,
+        replace: locationReplace,
+      },
     });
 
     const deepAdminRedirect = `${ADMIN_URL}/crm/invites/accept?token=abc123`;
