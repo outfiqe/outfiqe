@@ -291,6 +291,7 @@ model Product {
   rating5Count Int    @default(0) @map("rating_5_count")
 
   @@index([deletedAt])
+  @@index([brandId])
   @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "products_name_trgm_idx")
   @@index([searchVector], type: Gin, map: "products_search_vector_idx")
   @@map("products")
@@ -548,6 +549,7 @@ model CreatorLookProduct {
   createdAt     DateTime    @default(now()) @map("created_at")
 
   @@unique([creatorLookId, productId])
+  @@index([productId])
   @@map("creator_look_products")
 }
 
@@ -630,6 +632,7 @@ model CreatorLookTagClick {
   commissions   CreatorCommission[]
 
   @@index([createdAt])
+  @@index([productId])
   @@map("creator_look_tag_clicks")
 }
 
@@ -851,6 +854,8 @@ model OrderItem {
 
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@index([productId])
+  @@index([attributedCreatorId])
   @@map("order_items")
 }
 
@@ -1005,6 +1010,7 @@ model CreatorLink {
   orderItems OrderItem[]
 
   @@index([creatorId])
+  @@index([productId])
   @@map("creator_links")
 }
 
