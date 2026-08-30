@@ -3,6 +3,8 @@ import path from "node:path";
 import { config as loadEnvFile } from "dotenv";
 import { defineConfig } from "vitest/config";
 
+import { INTEGRATION_WORKER_COUNT } from "./src/testing/integration/workerPool.js";
+
 const parsedTestEnv =
   loadEnvFile({ path: path.resolve(import.meta.dirname, ".env.test") }).parsed ?? {};
 const testDatabaseUrl = parsedTestEnv.TEST_DATABASE_URL ?? process.env.TEST_DATABASE_URL;
@@ -33,6 +35,7 @@ export default defineConfig({
       provider: "v8",
       include: [
         "src/app.ts",
+        "src/testing/integration/workerPool.ts",
         "src/shared/utils/pagination.utils.ts",
         "src/shared/utils/password.utils.ts",
         "src/shared/utils/password-breach.utils.ts",
@@ -113,12 +116,16 @@ export default defineConfig({
             ...(testDatabaseUrl ? { DATABASE_URL: testDatabaseUrl } : {}),
             ...SANDBOX_ENV_OVERRIDES_PREVENTING_REAL_EXTERNAL_SERVICE_CALLS_IN_TESTS,
           },
-          setupFiles: ["./src/testing/integration/setup.ts"],
+          setupFiles: [
+            "./src/testing/integration/perWorkerEnv.ts",
+            "./src/testing/integration/setup.ts",
+          ],
           globalSetup: ["./src/testing/integration/globalSetup.ts"],
           testTimeout: 15000,
           hookTimeout: 30000,
           pool: "forks",
-          maxWorkers: 1,
+          fileParallelism: true,
+          maxWorkers: INTEGRATION_WORKER_COUNT,
         },
       },
     ],
