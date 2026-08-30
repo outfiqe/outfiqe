@@ -28,8 +28,9 @@ CRM is gated here; only the advanced feature set is.
 - `crm-billing.jobs.ts` — `runCrmSubscriptionRenewalSweep` and `runCrmBillingReconciliationSweep`;
   their `{ name, run, intervalMs }` entries are composed into `src/jobs/scheduled-jobs.ts`.
 - `crm-billing.middleware.ts` — `requireAdvancedCrmFeatures`, a `402 ADVANCED_FEATURES_LOCKED`
-  gate other CRM modules (`crm-relationships`, and later chunks) stack after `resolveTenant` to
-  block advanced features on a lapsed trial with no active subscription.
+  gate the advanced CRM modules (`crm-relationships`, `crm-pipeline`, `crm-activities`,
+  `crm-tickets`, `crm-reporting`) stack after `resolveTenant` to block advanced features on a
+  lapsed trial with no active subscription.
 - `*.integration.test.ts` — end-to-end through `testApp` with the providers mocked;
   `crm-billing.utils.test.ts` — the pure gate/pricing rules.
 

@@ -18,7 +18,7 @@ bought the linked brand's products. Every query is scoped to `Organization.linke
   recent-orders/recent-attributed-orders reads and `isBrandPartner`.
 - `crm-relationships.service.ts` — resolves the org's `linkedBrandId`, returns an empty page with
   a `reason` when there is none (list endpoints) or a `404` (detail endpoints), clamps the page
-  window, and exposes `isPartner(organization, creatorId)` for later chunks (deal subjects).
+  window, and exposes `isPartner(organization, creatorId)` for `crm-pipeline` (deal subjects).
 - `crm-relationships.controller.ts` / `crm-relationships.routes.ts` — `GET /api/crm/partners`,
   `/partners/:creatorId`, `/api/crm/customers`, `/customers/:userId`. The router is mounted at
   `/api/crm` **before** `crm-access`'s router; it only defines these four paths, so every other
@@ -42,11 +42,11 @@ tenant's own brand.
 
 ## Non-obvious rationale
 
-- **Brand-scoping _is_ tenant isolation for this chunk.** Partner/Customer data lives entirely in
+- **Brand-scoping _is_ tenant isolation here.** Partner/Customer data lives entirely in
   commerce tables that carry no `organizationId`; filtering every query by the resolved
   organization's `linkedBrandId` is exactly what keeps one tenant from seeing another's creators
-  and shoppers. `organizationId` starts mattering as a second scope key once later chunks add
-  CRM-owned rows (deals, activities, tickets) that reference these people by id.
+  and shoppers. `organizationId` matters as a second scope key in the CRM-owned modules
+  (deals, activities, tickets) that reference these people by id.
 - **Partner = any one of three signals**, unioned in SQL: a `CreatorLink` on one of the brand's
   products, a `CreatorLookProduct` tagging one, or an `OrderItem` with `attributed_creator_id` set
   on one. The list's derived columns (tag-click count, attributed order count + revenue) are

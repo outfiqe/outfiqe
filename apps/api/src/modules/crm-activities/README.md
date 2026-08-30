@@ -54,7 +54,7 @@ elsewhere) → Postgres.
 - **`IS NOT DISTINCT FROM` for the subject match.** The three subject columns are nullable and
   exactly one is set; `a.partner_creator_id IS NOT DISTINCT FROM $1` matches both "equal" and
   "both null" without a pile of `OR (… IS NULL AND … IS NULL)` branches.
-- **Real-time task-assignment alerts are deferred to Chunk 8.** Chunk 8 (Support & ticketing)
-  needs the same assignee-notification path for tickets, so the `NotificationType` enum addition +
-  the Redis Streams consumer + the admin notification route-resolver entry are done once there and
-  reused, rather than half-wired here.
+- **Task assignment shares the ticket assignment path.** Assigning a task publishes
+  `DomainEvents.CRM_ITEM_ASSIGNED` on the Redis Streams event bus with `itemKind: "task"`; the
+  same `notifications` consumer that handles ticket assignment turns it into a `Notification` for
+  the assignee. One event, one consumer, two callers (`crm-activities` and `crm-tickets`).

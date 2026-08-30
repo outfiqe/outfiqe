@@ -54,6 +54,6 @@ columns; `pipeline:configure` renames, reorders, adds, and removes stages.
   no duplicates, then `prisma.$transaction`s one `sortOrder` update per stage. A partial list or a
   stray id can't half-apply.
 - **Default stages are seeded three ways for one preset.** `DEFAULT_PIPELINE_STAGES` is the single
-  source: the Chunk 6 migration backfills it for every organization that already existed,
+  source: a migration backfills it for every organization that already existed,
   `crm-access`'s `createOrganization` transaction creates it for every new tenant, and
   `seed-crm.ts` creates it for the demo orgs (which bypass `createOrganization`).

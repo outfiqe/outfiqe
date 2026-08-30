@@ -1,265 +1,460 @@
-# Outfiqe Internal CRM — PRD
+# Outfiqe Internal CRM — Product Reference
 
-Internal reference doc, committed to the repo. Full behavioral spec of the internal CRM: the
-target 11-chunk architecture, and a complete spec of Chunks 1–2 — tenant/PBAC foundation schema
-and CRM access on the existing admin auth — designed and built this session. Branch:
-`feat/crm-tenant-pbac-foundation`. `TESTING-CRM.md` (also committed) is the API-level test pass
-derived from this.
+Internal reference doc, committed to the repo. This describes **what the CRM is, what every
+section does, who can see it, the funnel a person walks through, and the request path through the
+code** — written so someone new to the product can understand each area without reading the
+source first. `TESTING-CRM.md` is the companion manual test pass.
 
 ---
 
-## 1. Goal
+## 1. What the CRM is
 
-Give Outfiqe's own staff (Sales/Support/Ops) a relationship-management tool for the business's
-real creators, brands, and shoppers — pipeline/deals, notes/calls, support tickets — without
-standing up a second product, a second login, or a second frontend app. This is **not** a
-sellable, multi-tenant SaaS CRM: there is exactly one `Organization` row, seeded for Outfiqe
-itself, no public signup, and it ships as a new feature area inside `apps/admin`, the same tool
-staff already use to manage creators, brands, and orders. The multi-tenant/PBAC schema is still
-built properly underneath — every table scoped by `organizationId`, every action gated by a
-permission — so it stays reopenable to outside companies later without a rearchitecture, even
-though nothing in this build is meant to be sold.
+A relationship-management tool for Outfiqe's own staff — Sales, Support, and Ops — covering the
+business's real creators, brands, and shoppers: subscriptions, partners, customers, a deal
+pipeline, activities and tasks, support tickets, reporting, custom roles, and an audit log.
 
-Chunks 1–2 ship the one piece that has to exist before any of the rest is safe to build on: a
-tenant/permission schema and a way to grant an existing staff account CRM access, enforced
-server-side, that every later chunk's routes call into rather than re-derive.
+- **One product, one login.** It lives as a feature area inside the admin app
+  (`apps/admin/src/features/crm`) and reuses the existing staff sign-in, the app shell, the
+  sidebar, and the account menu. There is no separate CRM app, no second login, no public signup.
+- **Multi-tenant by design.** Every CRM record belongs to an **organization**, and every screen
+  is gated by a permission. Today Outfiqe runs its own organization plus demo organizations, but
+  the schema is built so a real outside business can be given its own organization and handed
+  ownership without a rearchitecture.
+- **Link, don't duplicate.** Partners and Customers are live views over the existing commerce
+  data (creator links, looks, orders), scoped to the brand an organization is linked to. The CRM
+  never copies a creator or shopper profile — it always reads the source of truth.
 
-## 2. Architecture decision (applies to every chunk)
+### The sections
 
-| Concern        | Decision                                                                                                                     | Why                                                                                                                                                                     |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Frontend home  | `apps/admin/src/features/crm` (Chunk 4+) — **not** a new `apps/crm` app                                                      | CRM's only users are Outfiqe staff, the same audience already using `apps/admin`; reuses `AppShell`/`AdminSidebar`/`AccountMenu`/staff auth instead of duplicating them |
-| Backend home   | New modules in `apps/api` (`crm-access` this chunk; `crm-partners`, `crm-deals`, … later)                                    | Not a separate service — revisit only if scaling or deploy cadence genuinely demand it                                                                                  |
-| Session        | The existing `apps/admin` staff JWT session, no second login                                                                 | There's no outside company to self-serve signup; CRM access is a permission layer on top of an existing account, not a new account type                                 |
-| Tenancy        | Shared Postgres DB, one seeded `Organization` row, every CRM table carries `organizationId`                                  | Keeps the schema honest and reopenable later even with exactly one tenant today                                                                                         |
-| Access control | Full PBAC (permission catalog, roles, custom roles later) — not the flat `UserRole` + `requireRole()` pattern used elsewhere | Sales/Support/Ops need genuinely different access to creator/brand data; a flat role can't express that                                                                 |
-| Data model     | Relationship layer over existing `Creator`/`Brand`/`User` records, not a duplicate profile model (Chunk 5+)                  | This repo's own rule: link/query live, don't duplicate                                                                                                                  |
-| Billing        | eSewa/Khalti via the existing `payments` module (Chunk 3), not Stripe                                                        | Outfiqe already has both gateways integrated; neither has a native subscription object, so renewal is tracked in-house on a scheduler                                   |
+| Section   | Route                             | In one line                                              |
+| --------- | --------------------------------- | -------------------------------------------------------- |
+| Overview  | `/crm`                            | Who has access, invite a colleague, transfer ownership   |
+| Billing   | `/crm/billing`                    | Subscription, seats, invoices, the 14-day trial          |
+| Partners  | `/crm/partners`                   | Creators who promote or sell the linked brand            |
+| Customers | `/crm/customers`                  | Shoppers who have bought the linked brand                |
+| Pipeline  | `/crm/pipeline`                   | A configurable stage board of deals                      |
+| Tasks     | `/crm/tasks`                      | Due-dated tasks; activities and timeline on detail pages |
+| Support   | `/crm/support`                    | Complaint / request tickets with an internal thread      |
+| Reports   | `/crm/reports`                    | Pipeline value and support health                        |
+| Roles     | `/crm/roles`                      | Build custom roles; rename the organization              |
+| Audit     | `/crm/audit`                      | An append-only trail of who changed what                 |
+| Search    | header box on every `/crm/*` page | Find a partner, customer, deal, or ticket                |
 
-## 3. Actors
+---
 
-| Actor                                  | Surface                                                                                       |
-| -------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Outfiqe staff with no CRM `Membership` | Existing `apps/admin` login works as always; every `/api/crm/*` route returns `403` (Chunk 2) |
-| Outfiqe staff with a CRM `Membership`  | Same login; `/api/crm/*` routes gated per-permission (§6)                                     |
-| SUPERADMIN                             | One per `Organization`, implicit allow-all, seeded once — not an invitable role (§6)          |
-| Outside companies / public signups     | None. Not in scope for this build (§10)                                                       |
+## 2. Who uses it — access model
 
-## 4. Chunks 1, 2 & 4 — In scope (built this session)
+Access is **permission-based**, not a fixed set of job titles.
 
-- **Chunk 1 — Tenant + PBAC foundation schema.** `Organization` (now including a unique
-  `subdomain`), `Membership`, `Role`, `Permission`, `RolePermission`, `OrganizationInvite` — a
-  purely additive Prisma migration, nothing existing touched. A seed script
-  (`prisma/seed-crm.ts`) creates the permission catalog, the single Outfiqe `Organization`, the
-  built-in `Admin`/`Member` roles, and the first SUPERADMIN `Membership` (idempotent — safe to
-  re-run).
-- **Chunk 2 — CRM access on existing admin auth**, plus real subdomain-based tenant resolution
-  (added mid-session, beyond the original Chunk 2 spec — see §9). `resolveTenant` +
-  `requirePermission(key)` middleware (`crm-access.middleware.ts`), stacked after `requireAuth`
-  exactly like `requireRole` — no new signup/login flow. Invite an existing staff account into a
-  CRM role by email (`POST /api/crm/invites`), accept it on their own session
-  (`POST /api/crm/invites/accept`), list/update members, list roles/permissions/the organization.
-- **Chunk 4 — `apps/admin` CRM feature area.** The first real screen:
-  `apps/admin/src/features/crm` (`CrmPage`, `MembersSection`, `InviteSection`,
-  `AcceptInvitePage`), routed at `/crm` and `/crm/invites/accept`, a new `AdminSidebar` entry.
-  Covers the full Chunk 2 API surface end to end through the UI. Chunk 3 (billing) was
-  deliberately skipped for now — confirmed with the user as out of scope for this pass.
+- **Permission keys** are grouped strings like `members:read`, `roles:manage`, `billing:manage`,
+  `accounts:read` (partners), `customers:read`, `pipeline:configure`, `deals:write`,
+  `tickets:manage`, `activities:write`, `reports:read`, `audit:read`.
+- **Built-in roles**, seeded for every organization:
+  - **Admin** — every permission a role can hold.
+  - **Member** — a read-mostly subset: can see partners, customers, pipeline, tasks, tickets, and
+    reports, but not roles, members, billing management, or the audit log.
+- **Custom roles** — an organization can build its own roles from any subset of the catalog
+  (see §12). Two keys are never grantable to a role: platform access (Outfiqe's own commerce
+  admin) and the ability to transfer ownership.
+- **The owner** is one person per organization, not a role. They implicitly have every permission
+  and are the only one who can start an ownership transfer. Ownership moves only through the
+  transfer flow — it can't be reassigned by editing a membership.
 
-## 5. Explicitly out of scope (Chunks 3, 5–11 — not oversights)
+The sidebar hides a section a person's role can't use; the server enforces the same rules on
+every request, so hiding a link is a convenience, not the security boundary.
 
-- Billing/`Subscription`, eSewa/Khalti checkout — Chunk 3.
-- `Partner`/`Customer`/`Deal`/`Ticket`/`Activity`/`Task` — Chunks 5–8. Chunk 1's schema stops at
-  the tenant/PBAC tables listed in §4.
-- Custom-role builder, org settings UI, ownership transfer (`org:transfer_ownership` is in the
-  permission catalog and reserved, but no endpoint exists yet to exercise it) — Chunk 9.
-- Search, reporting/dashboards — Chunk 10.
-- Opening the product to external companies — the schema stays capable of it; not the current
-  goal (§2).
+### The advanced-features gate
 
-## 6. Data model
+Partners, Customers, Pipeline, Tasks, Support, Reports, and Search are **advanced features**.
+They're available during the 14-day trial and while a subscription is active. If the trial lapses
+with no active subscription, those sections show a "subscribe to keep using…" banner instead of
+their content, and their API calls return a 402. Overview, Billing, Roles, and the Audit log
+stay available regardless — a lapsed organization can still manage its account and review its
+history.
 
-```
-Organization
-  id, name, subdomain (unique), plan (default "trial"), trialEndsAt
-  superAdminMembershipId   uuid? @unique -> Membership   // set post-creation, not at insert time
+---
 
-Membership
-  id, userId -> User, organizationId -> Organization, roleId -> Role
-  status   ACTIVE | DEACTIVATED
-  // @@unique([userId, organizationId])
+## 3. Organizations and the brand link
 
-Role
-  id, organizationId -> Organization, name, isBuiltIn
-  // @@unique([organizationId, name])
+- Each organization resolves from the request (by subdomain when one is configured, otherwise the
+  single default organization). An unknown subdomain is a hard 404 — never a silent fall-through
+  to another organization's data.
+- An organization can be **linked to one commerce brand**. That link is what every
+  partner/customer query is scoped by. One brand backs at most one organization.
+- An organization with no linked brand (Outfiqe's own, or a newly provisioned one) shows a
+  specific "not linked to a brand yet" empty state on Partners and Customers — not a blank list.
 
-Permission
-  key    String @id   // e.g. "deals:write"
-  label, group
+---
 
-RolePermission
-  roleId -> Role, permissionKey -> Permission   // @@id([roleId, permissionKey])
+## 4. Overview (`/crm`)
 
-OrganizationInvite
-  id, organizationId -> Organization, email, roleId -> Role
-  tokenHash, expiresAt, acceptedAt?, revokedAt?, invitedById -> User
-```
+**Purpose.** The landing page: see who has CRM access, invite a colleague, and — for the owner —
+transfer ownership of the organization.
 
-**Permission catalog** (seeded once, shared across all orgs): `org:read`, `org:update`,
-`org:transfer_ownership` (reserved, SUPERADMIN-only) · `roles:read`, `roles:manage` ·
-`members:read`, `members:invite`, `members:manage` · `billing:read`, `billing:manage` ·
-`accounts:read`, `accounts:write`, `accounts:delete` · `customers:read`, `customers:write` ·
-`contacts:read`, `contacts:write`, `contacts:delete` · `pipeline:read`, `pipeline:configure` ·
-`deals:read`, `deals:write`, `deals:delete` · `tickets:read`, `tickets:write`, `tickets:manage` ·
-`activities:read`, `activities:write` · `tasks:read`, `tasks:write` · `reports:read`.
+**Who can see it.** Anyone with a CRM membership. The member list itself needs `members:read`;
+sending invites needs `members:invite`.
 
-**Built-in roles:** `Admin` gets every permission except `org:transfer_ownership`; `Member` gets
-read/write on the operational permissions (partners/customers/contacts/pipeline/deals/tickets/
-activities/tasks/reports) but not org/roles/members/billing management.
+**User funnel.**
 
-## 7. Complete flow
+1. A staff member opens **CRM → Overview**. They see the organization name and plan, a banner if
+   the trial has lapsed, an ownership-transfer banner if one is pending for them, and — if their
+   role allows — the list of members with their roles and status.
+2. To add someone: fill the invite form (email + role) and send. The invitee must already have an
+   Outfiqe staff account — there is no CRM signup. They receive an email with an accept link.
+3. The invitee, already signed in, opens the link. Accepting is what grants them CRM access;
+   their normal admin login is unchanged.
+4. The owner sees a **Transfer ownership** control on any active member's row. They confirm
+   (optionally choosing to give up their own access afterwards); the recipient must accept from
+   their own Overview banner before it takes effect. Either side can cancel while it's pending.
 
-1. **Seeding** (`prisma/seed-crm.ts`, run via `pnpm db:seed`) — idempotent: inserts the
-   permission catalog, creates the one `Organization` if none exists, creates the built-in roles
-   if missing, and — only if `Organization.superAdminMembershipId` is still null — picks the
-   first `User` with `UserRole.ADMIN`, gives them an `Admin`-role `Membership`, and points
-   `superAdminMembershipId` at it. If no `ADMIN` user exists yet, this step logs a warning and
-   skips rather than failing the whole seed run.
-2. **Requesting a protected route** — every `/api/crm/*` route (except
-   `GET /permissions` and `POST /invites/accept`, which only need `requireAuth`) runs
-   `requirePermission(key)`. It resolves the caller's `userId` → `Membership` in the single
-   seeded `Organization`, rejects (`403`) if no `ACTIVE` membership exists, short-circuits to
-   allow if the membership **is** the org's `superAdminMembershipId`, otherwise checks the
-   membership's `Role`'s permission set for `key`.
-3. **Inviting** — `POST /api/crm/invites { email, roleId }`, gated on `members:invite`. Rejects
-   if `roleId` doesn't belong to this org (`404`), if `email` doesn't match an existing staff
-   `User` (`404` `STAFF_ACCOUNT_NOT_FOUND` — no CRM signup), if that user already has a
-   `Membership` (`409`), or if a pending invite for that email already exists (`409`). Otherwise
-   generates an opaque token (`generateOpaqueToken`/`hashToken`, same pattern as
-   `admin-invites`), stores only the hash, and emails the invitee a link into
-   `${ADMIN_URL}/crm/invites/accept?token=...` (7-day TTL).
-4. **Accepting** — `POST /api/crm/invites/accept { token }`, `requireAuth` only (any existing
-   staff session). Rejects an unknown/expired/revoked/already-accepted token (`404`/`409`), or
-   one whose `email` doesn't match the accepting account's own email (`403`
-   `INVITE_EMAIL_MISMATCH` — a valid token can't be redeemed by a different logged-in staff
-   member than the one it was addressed to). On success, creates the `Membership` and marks the
-   invite accepted in one transaction.
-5. **Managing members** — `GET /api/crm/members` (`members:read`) lists everyone with access,
-   their role, and whether they're the SUPERADMIN. `PATCH /api/crm/members/:membershipId`
-   (`members:manage`) changes role/status but refuses to target the SUPERADMIN membership
-   (`403` `SUPERADMIN_MEMBERSHIP_LOCKED` — that's only ever moved via the not-yet-built Chunk 9
-   ownership-transfer action).
+**How it works.** The Overview page and its member/invite/ownership components call the CRM API
+(`/api/crm/organization`, `/members`, `/invites`, `/ownership-transfer`), which routes to the
+`crm-access` module: controller → service (an invite target must be an existing staff account;
+one pending invite per email; accepting requires the email to match; one pending transfer per
+organization) → repository → database. Accepting an invite or an ownership transfer runs as a
+single transaction.
 
-## 8. Business rules locked this session
+---
 
-| Decision                                                                  | Answer                                                                                                                                   |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Is SUPERADMIN a `Role` row?                                               | **No.** It's `Organization.superAdminMembershipId`, a direct FK to one `Membership` — can't be edited down, duplicated, or invited into. |
-| Can CRM access be granted to someone with no existing admin account?      | **No.** `inviteMember` requires an existing `UserRole.ADMIN` account; there is no CRM-specific signup.                                   |
-| Can a valid invite token be accepted by a different logged-in account?    | **No.** The accepting account's email must match the invite's target email.                                                              |
-| Can `members:manage` edit the SUPERADMIN's role/status?                   | **No.** Blocked with a dedicated error; only ownership transfer (Chunk 9, not built) moves SUPERADMIN.                                   |
-| Does `requirePermission` read the JWT's flat `role` claim?                | **No.** It ignores `UserRole` entirely and resolves CRM permissions from `Membership → Role → RolePermission` in the DB.                 |
-| Where does `requirePermission` live — `shared/middlewares` or the module? | **The module** (`crm-access.middleware.ts`) — it depends on the CRM repository, and `shared/` must never depend on a module (see §9).    |
+## 5. Billing (`/crm/billing`)
 
-## 9. Non-obvious rationale
+**Purpose.** A per-seat subscription, paid through Outfiqe's existing eSewa / Khalti gateways
+(there is no Stripe). Billing gates the advanced features, not sign-in itself.
 
-**`requirePermission` lives in `crm-access.middleware.ts`, not `shared/middlewares/`.** Every
-existing shared middleware (`require-auth.ts`, `require-role.ts`) is module-agnostic — no
-dependency on any `#modules/*` code. `requirePermission` genuinely needs the CRM repository to
-resolve a membership's permission set, so putting it in `shared/` would invert this codebase's
-module → shared dependency direction. It's still designed as a drop-in sibling to `requireRole`
-(same signature shape, same `requireAuth`-then-this stacking) — just owned by the module that
-actually has the data it depends on. Any future CRM module (`crm-partners`, `crm-deals`, …) is
-expected to import it from here.
+**Who can see it.** `billing:read` to view; `billing:manage` to change the plan, change seats, or
+cancel.
 
-**Tenant resolution by subdomain, not a JWT claim.** Permissions are never embedded in the access
-token (a token minted before a role change would stay valid with stale permissions until it
-expires) — every protected request resolves fresh from the DB instead. `resolveTenant`
-(`crm-access.middleware.ts`) extracts a subdomain from the request's `Host` header
-(`extractSubdomain`, validated against `env.TENANT_BASE_DOMAIN` and a reserved-word list) and
-looks up the matching `Organization`; a subdomain that doesn't match any org is a `404`, never a
-silent fallback, so a wrong/mistyped subdomain can never reach another tenant's data. Only a
-genuinely absent subdomain — `apps/admin`'s real traffic today, since it's one shared app at one
-fixed URL, not per-org — falls back to the single seeded organization. The resolved organization
-is cached on `res.locals.crmOrganization` for the rest of the request, so `requirePermission` and
-every controller method read it once rather than each re-querying. This closes the gap the
-original session flagged (a bare `findFirst()` with no subdomain concept at all) without waiting
-for an actual second organization to force the issue.
+**The trial.** A new organization gets a 14-day trial with no card. During the trial — and while
+a subscription is active — the advanced features are on. When the trial ends with no
+subscription, the advanced sections show the subscribe banner.
 
-**`crm-access.repository.ts` only exposes what Chunks 1–2 need.** Org update, role
-create/edit/delete, and ownership transfer are deliberately absent — they belong to later chunks
-(org settings UI, custom-role builder, ownership transfer) and would be unused, unscoped surface
-area if added now.
+**User funnel.**
 
-**Why the seed script skips silently instead of failing when no `ADMIN` user exists yet.**
-Matches the existing precedent in `prisma/seed.ts` (`seedWithdrawPolicies`,
-`seedPlatformCommissionRule`) — a fresh/partial database shouldn't hard-fail the entire seed run
-over one downstream step; the CRM SUPERADMIN seed step is retried for free on the next `db:seed`
-run once an `ADMIN` user exists.
+1. **CRM → Billing** shows the current plan, seat count, trial countdown, and an invoice history.
+   If a renewal invoice is open, a "pay now" banner appears.
+2. **Change plan or seats** opens a checkout dialog. Checkout never sells fewer seats than the
+   organization has active members.
+3. Submitting redirects to the chosen payment gateway.
+4. The gateway returns to a billing return page, which asks the server to verify the payment
+   directly — the redirect itself is never trusted. On success the invoice is marked paid, the
+   period rolls forward one month, and the subscription becomes active.
+5. **Cancel** schedules the subscription to stop at the end of the current period.
 
-## 10. Security & compliance
+**Behind the scenes.** Two scheduled jobs keep billing moving without anyone watching it: a
+**renewal** job opens the next invoice near period end, starts the charge, and emails the
+billing contacts a pay link (marking the subscription past-due if the period lapses unpaid, then
+cancelled after a grace window); a **reconciliation** job re-checks invoices left pending and
+voids ones that never completed. Marking an invoice paid advances the subscription exactly once,
+even if a verify runs twice.
 
-Same ASVS-aligned bar the rest of this codebase holds itself to (`CLAUDE.md` "Security" section):
+**How it works.** The billing section calls `/api/crm/billing*` → the `crm-billing` module:
+controller → service (checkout / verify / cancel, using the shared payment-provider interface) →
+repository. Whether the advanced features are currently on is also returned on
+`/api/crm/organization`, so every page can gate itself without its own billing request.
 
-- Every `/api/crm/*` route requires `requireAuth`; permission checks happen server-side in
-  `requirePermission`, never trusting a client-supplied role or membership id.
-- `POST /api/crm/invites` is rate-limited (`rateLimit()`, keyed on the caller's user id) — the
-  same public-write-endpoint standard every other mutation in this codebase holds itself to.
-- Invite tokens are opaque, cryptographically random, single-use (`acceptedAt` set on accept),
-  revocable (`revokedAt`), and short-TTL (7 days) — only the hash is ever persisted, matching
-  `admin-invites`' existing pattern.
-- No information leak beyond what's necessary: an invite to an email with no matching staff
-  account fails fast (`404 STAFF_ACCOUNT_NOT_FOUND`) rather than silently no-op'ing, since (unlike
-  login) this is an authenticated, permissioned action — the caller already had to prove
-  `members:invite` to reach it.
-- No new PII surface — `Membership`/`OrganizationInvite` store ids, a role, and status/timestamp
-  fields; no profile data is duplicated onto them (§2).
+---
 
-## 11. Resilience & edge cases
+## 6. Partners (`/crm/partners`, `/crm/partners/:creatorId`)
 
-- **No `Organization` row yet** (schema migrated but seed never run) — `requirePermission` and
-  every service method that needs it fail closed (`403`/`404`), never a raw DB error.
-- **A staff account with no `Membership`** — `403`, same as an explicitly denied permission; no
-  distinction is made between "never invited" and "invited but revoked."
-- **A `DEACTIVATED` membership** — treated as no access, same as having none, without deleting
-  the row (preserves history for Chunk 9's audit logging).
-- **Re-running the seed script** — every step is upsert/existence-checked; a second run produces
-  no duplicate `Permission`/`Role`/`Membership` rows and doesn't move an already-set
-  `superAdminMembershipId`.
-- **Inviting someone who already has access, or who already has a pending invite** — both
-  rejected (`409`) rather than silently creating a duplicate.
+**Purpose.** A live, read-only list of the creators who have a commercial relationship with the
+organization's linked brand.
 
-## 12. Chunk plan
+**Who can see it.** `accounts:read`. Behind the advanced-features gate.
 
-Built chunk-by-chunk, on `feat/crm-tenant-pbac-foundation`:
+**Who counts as a partner.** Any creator connected to the linked brand by _any_ promotion or
+sale signal: a creator link on one of the brand's products, a look that tags one, or an order
+item attributed to the creator on a non-cancelled order. Each row shows tag-click count,
+attributed order count, attributed revenue, and last activity.
 
-1. **Tenant + PBAC foundation schema** — built this session. Migrations
-   `20260825070957_add_crm_tenant_pbac_foundation` and `20260825142503_add_organization_subdomain`,
-   `crm-access.types.ts`/`.constants.ts`/`.repository.ts`, `prisma/seed-crm.ts` wired into
-   `prisma/seed.ts`.
-2. **CRM access on existing admin auth**, plus subdomain-based tenant resolution — built this
-   session. `crm-access.middleware.ts` (`resolveTenant` + `requirePermission`), `.service.ts`,
-   `.controller.ts`, `.routes.ts`, `.schemas.ts`, mounted at `/api/crm`, a 14-case integration
-   suite plus a unit suite for `extractSubdomain` (`crm-access.integration.test.ts`,
-   `crm-access.utils.test.ts`), module `README.md`, this doc, `TESTING-CRM.md`.
-3. **`apps/admin` CRM feature area** — built this session. `apps/admin/src/features/crm`
-   (`CrmPage`, `MembersSection`, `InviteSection`, `AcceptInvitePage`), routes at `/crm` and
-   `/crm/invites/accept`, a new `AdminSidebar` entry, module `README.md`.
+**User funnel.** CRM → Partners → a searchable, paginated table. Clicking a row opens the partner
+detail: a per-product breakdown and recent attributed orders **for this brand only**, plus the
+activity timeline. A creator who promotes two brands appears in both organizations' lists with
+per-brand-correct numbers. Opening a creator with no signal for this brand returns a 404 (not a
+403 — the CRM doesn't reveal that a creator exists for another organization).
 
-**Forward-looking (not built, not scheduled yet):**
+**How it works.** The Partners pages call `/api/crm/partners*` → the `crm-relationships` module:
+controller → service → repository, which runs a single aggregating SQL query scoped by **both**
+the linked brand and the organization. An optional heavier metric that fails is logged and
+returned as blank rather than failing the whole list.
 
-3. Subscriptions & billing — eSewa/Khalti via the existing `payments` module, per-seat tiers,
-   14-day no-card trial, gates advanced features, scheduled renewal job.
-4. Partners & Customers — relationship layer over existing `Creator`/`Brand`/shopper `User`
-   records.
-5. Pipeline & Deals — configurable stages, Kanban board primitive in `packages/design-system`.
-6. Interaction timeline & tasks — logged note/call/message/email, merged at query time with live
-   `orders`/`payments` history.
-7. Support & ticketing.
-8. Team management — custom-role builder UI, ownership transfer.
-9. Search, filters, basic reporting.
-10. Hardening — audit logging, full empty/error-state pass.
+---
 
-**How to apply Chunk 3+:** read §12 above for scope per chunk; call `requirePermission` from
-every new CRM route rather than re-deriving access logic, and extend
-`crm-access.constants.ts`'s `PERMISSION_CATALOG`/`BUILT_IN_ROLE_PERMISSIONS` rather than
-hardcoding new permission checks inline.
+## 7. Customers (`/crm/customers`, `/crm/customers/:userId`)
+
+**Purpose.** The same idea as Partners, for shoppers.
+
+**Who can see it.** `customers:read`. Behind the advanced-features gate.
+
+**Who counts as a customer.** Any shopper with at least one paid order item for a linked-brand
+product. Each row shows order count, item count, total spent, and first / last order date. Buyer
+personal data is limited to name and handle — the same limit the brand order view uses, since a
+brand doesn't ship directly.
+
+**User funnel.** Same shape as Partners: a searchable, paginated list; a detail page with the
+order history filtered to the linked brand plus the merged activity timeline.
+
+**How it works.** Same module and path as Partners (`crm-relationships`), a mirrored
+brand-scoped aggregate query.
+
+---
+
+## 8. Pipeline & Deals (`/crm/pipeline`)
+
+**Purpose.** A configurable board of stages, with deals moving across it. Every deal is attached
+to a partner.
+
+**Who can see it.** `pipeline:read` to view, `pipeline:configure` to add/rename/reorder stages;
+`deals:read` / `deals:write` / `deals:delete` for the deals themselves. Behind the
+advanced-features gate.
+
+**User funnel.**
+
+1. CRM → Pipeline shows a Kanban board: a column per stage, a card per deal (title, value,
+   partner, owner). A default stage set (Lead → Contacted → Negotiating → Won → Lost) exists from
+   the start.
+2. With `deals:write`, **New deal** opens a form with a partner picker (fed by the same partner
+   search as the Partners screen).
+3. Cards move by drag-and-drop or a keyboard "move to" menu — both are supported.
+4. Won and Lost are **stage properties**, not separate buttons: moving a card into a stage marked
+   won or lost closes the deal and stamps the close date; moving it back to an open stage
+   reopens it.
+5. With `pipeline:configure`, **Configure stages** lets you add, delete, and reorder stages.
+
+**How it works.** The Pipeline page calls `/api/crm/pipeline/stages` and `/deals` → the
+`crm-pipeline` module: controller → service (a stage reorder is one transaction; a deal's partner
+is validated live against the partner data) → repository.
+
+---
+
+## 9. Tasks, Activities & Timeline (`/crm/tasks`; timeline on detail pages)
+
+**Purpose.** Two things: a record of interactions (note / call / message / email) against a
+partner, customer, or deal; and due-dated tasks. Plus a **timeline** that merges those logged
+interactions with live order history at read time — it's a view, never a copied feed.
+
+**Who can see it.** `activities:read` / `activities:write`, `tasks:read` / `tasks:write`. Behind
+the advanced-features gate.
+
+**User funnel.**
+
+- **Tasks** is a due-dated list with an overdue badge and a complete checkbox. **New task** takes
+  a title, due date, and an assignee (choosing an assignee needs `members:read`). The assignee
+  gets a notification.
+- **Timeline**, shown on partner / customer / deal detail pages, interleaves logged activities
+  and live order events, each tagged with its source, newest first. An inline composer logs a
+  note / call / message / email without leaving the page. If the live order read fails, the
+  timeline still shows the logged activities and notes that it's partial.
+
+**How it works.** The Tasks page and timeline component call `/api/crm/timeline`, `/activities`,
+and `/tasks` → the `crm-activities` module: controller → service (the timeline merge is wrapped
+so a failure degrades to activities-only) → repository, where the merge is a single query that
+unions logged activities with live orders and lets the database sort and page them.
+
+---
+
+## 10. Support (`/crm/support`)
+
+**Purpose.** Complaint and request tickets against a customer or partner, with an internal
+comment thread and an assignee.
+
+**Who can see it.** `tickets:read` / `tickets:write` / `tickets:manage`. Behind the
+advanced-features gate.
+
+**User funnel.**
+
+1. CRM → Support shows a status-filtered ticket list. **New ticket** takes a type
+   (complaint / request), title, description, and the customer it's about.
+2. Clicking a row expands the ticket inline: description, status controls, an assignee picker,
+   and the comment thread.
+3. Status moves forward through Open → In progress → Resolved → Closed (with defined reopen
+   paths). An out-of-order jump is rejected, and so is a change made against a stale view. Moving
+   to Resolved or Closed stamps the resolution time; reopening clears it.
+4. Assigning a ticket notifies the assignee.
+
+**How it works.** The Support page calls `/api/crm/tickets*` → the `crm-tickets` module:
+controller → service (a status change is checked against the allowed-transitions table, then
+applied with a guard so two people can't both move it) → repository. Every write is rate-limited.
+
+---
+
+## 11. Reports (`/crm/reports`)
+
+**Purpose.** Two dashboards: pipeline health and support health. Every number is computed in the
+database.
+
+**Who can see it.** `reports:read`. Behind the advanced-features gate.
+
+**User funnel.** CRM → Reports shows two cards:
+
+- **Pipeline value by stage** — open / won / lost totals, plus a bar per open stage.
+- **Support tickets** — open / resolved counts, mean time to resolve, and a status breakdown.
+
+Each card has its own loading, error, and "not enough data yet" state (the first-record case).
+
+**How it works.** The Reports section calls `/api/crm/reports/pipeline` and `/reports/tickets` →
+the `crm-reporting` module: controller → service → repository, one aggregating SQL statement per
+card. Nothing is fetched and reduced in application code.
+
+---
+
+## 12. Roles & settings (`/crm/roles`)
+
+**Purpose.** Build custom roles from the permission catalog, and rename the organization.
+
+**Who can see it.** `roles:read` to view, `roles:manage` to edit roles, `org:update` to rename.
+Not behind the advanced-features gate.
+
+**User funnel.**
+
+1. CRM → Roles shows an organization-rename card (for `org:update`) and the role list.
+2. Built-in roles show a badge and have no edit controls. Custom roles have edit and delete.
+3. The role editor is a grouped checkbox matrix of every permission, minus the two that a role
+   can never hold (platform access, ownership transfer).
+
+**Key rules (enforced on the server, not just hidden in the UI).**
+
+- A built-in role can't be edited or deleted.
+- A role that any member still holds can't be deleted.
+- An unknown or withheld permission key is rejected.
+- A duplicate role name is rejected.
+- Saving a role replaces its whole permission set in one transaction.
+
+**Seat accounting.** The active-member count feeds Billing: checkout floors seats at that number,
+and Billing shows "N in use".
+
+**How it works.** The Roles section calls `/api/crm/roles` and `PATCH /api/crm/organization` →
+the `crm-access` module: controller → service → repository. All role routes are rate-limited.
+
+---
+
+## 13. Audit log (`/crm/audit`)
+
+**Purpose.** A per-organization, append-only trail of security-relevant changes.
+
+**Who can see it.** `audit:read` — the built-in Admin role has it, Member does not; an
+organization may grant it to a custom role. **Not** behind the advanced-features gate — a lapsed
+organization can still review its history.
+
+**What's recorded.** Invites (sent / revoked / accepted), member role and status changes,
+custom-role create / update / delete, organization rename, the four ownership-transfer steps, and
+subscription checkout / activation / cancellation. Each entry records the action, the outcome, a
+readable summary sentence, who did it, their IP, and safe descriptive details — never a token, a
+password, or a raw payment payload. Entries survive the actor being deleted (the name then shows
+as "System").
+
+**User funnel.** CRM → Audit shows a newest-first table (when / who / action / details) with a
+"load more" button.
+
+**How it works.** Each audited action records an entry right after it succeeds; recording is
+best-effort and never blocks or fails the action it's logging. The Audit page calls
+`/api/crm/audit` → the `crm-audit` module: controller → service → repository, paginated by a
+stable keyset.
+
+---
+
+## 14. Global search (header box on every `/crm/*` page)
+
+**Purpose.** One box that finds partners, customers, deals, and tickets.
+
+**Who can see it.** Anyone who can read at least one of those types; results are then filtered to
+exactly the types the person's role can read. Behind the advanced-features gate.
+
+**User funnel.** Type two or more characters in the header box → grouped results (Partners /
+Customers / Deals / Tickets) → pick one → land on its detail page or the relevant section.
+
+**How it works.** The search box calls `/api/crm/search` → the `crm-reporting` module: the
+service runs the permitted groups in parallel, each wrapped so one failing group returns nothing
+rather than failing the search. Partner and customer results reuse the relationship data; deal
+and ticket results are title matches backed by trigram indexes.
+
+---
+
+## 15. Real-time notifications
+
+Assigning a **task** or a **ticket** notifies the assignee. This travels over the same Redis
+Streams event bus and notification pipeline every other Outfiqe domain event uses — consumer
+groups acknowledge on success, and a message that keeps failing lands in a dead-letter stream
+after five attempts rather than retrying forever. Self-assignment doesn't notify.
+
+---
+
+## 16. Resilience & edge cases
+
+- **Reads degrade, they don't 500.** The timeline merge, optional relationship metrics, and each
+  search group catch failures, log them, and fall back (activities-only, a blank metric, an empty
+  group).
+- **Explicit empty states everywhere.** Every list, detail, and report has a distinct loading,
+  empty, and error state — including "not linked to a brand" and "not enough data yet".
+- **Concurrency is handled.** Ticket status changes, invoice settlement, invite acceptance, and
+  ownership acceptance all use guarded writes, so a race ends in a clean conflict response or
+  an exactly-once result, never a raw error.
+- **Rate limiting.** Invites, organization creation, ownership transfer, role changes, billing
+  checkout, and search each have their own limit; pipeline, activity, and ticket writes share a
+  per-user limit.
+
+---
+
+## 17. Security
+
+- **Organization isolation** is applied on every CRM query, and the linked-brand scope on every
+  commerce read. Cross-organization detail lookups return 404, never 403.
+- **Platform access** (Outfiqe's own commerce admin) is a separate permission that no default
+  CRM role includes, so organization staff can't reach it.
+- **No secret material** in error messages or audit entries.
+- The surface is aligned with OWASP ASVS and the OWASP Top 10, and has been through a security
+  review with no outstanding findings.
+
+---
+
+## 18. Data model (reference)
+
+| Table                                                   | Holds                                                                  |
+| ------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `Organization`                                          | One tenant; carries the linked brand and the owner membership          |
+| `Membership` / `Role` / `Permission` / `RolePermission` | Who has access, with which role, granting which permission keys        |
+| `OrganizationInvite`                                    | Pending invites (hashed token, TTL, single-use)                        |
+| `OwnershipTransferRequest`                              | A pending owner handover and its state                                 |
+| `Subscription` / `SubscriptionInvoice`                  | Plan, seats, period, and the invoice history                           |
+| `PipelineStage` / `Deal`                                | The board and its cards                                                |
+| `CrmActivity` / `CrmTask`                               | Logged interactions and due-dated tasks (one polymorphic subject each) |
+| `CrmTicket` / `CrmTicketComment`                        | Support tickets and their internal threads                             |
+| `CrmAuditLog`                                           | The append-only audit trail                                            |
+
+Partners and Customers have **no tables** — they're live queries over the existing commerce data.
+
+---
+
+## 19. API surface (reference)
+
+| Method & path                                                                        | Permission                            |
+| ------------------------------------------------------------------------------------ | ------------------------------------- |
+| `GET /api/crm/organization`                                                          | member                                |
+| `PATCH /api/crm/organization`                                                        | `org:update`                          |
+| `GET /api/crm/permissions`                                                           | member                                |
+| `GET/POST/PATCH/DELETE /api/crm/roles`                                               | `roles:read` / `roles:manage`         |
+| `GET /api/crm/members`, `PATCH /members/:id`                                         | `members:read` / `members:manage`     |
+| `GET/POST/DELETE /api/crm/invites`, `POST /invites/accept`                           | `members:invite` (accept: signed-in)  |
+| `POST /api/crm/ownership-transfer` (+ accept / decline / cancel)                     | `org:transfer_ownership`              |
+| `GET /api/crm/billing`, `POST /billing/checkout` / `verify` / `cancel`               | `billing:read` / `billing:manage`     |
+| `GET /api/crm/partners`, `/partners/:creatorId`                                      | `accounts:read` + advanced            |
+| `GET /api/crm/customers`, `/customers/:userId`                                       | `customers:read` + advanced           |
+| `GET/POST/PATCH/DELETE /api/crm/pipeline/stages`, `/deals`                           | `pipeline:*` / `deals:*` + advanced   |
+| `GET /api/crm/timeline`, `.../activities`, `.../tasks`                               | `activities:*` / `tasks:*` + advanced |
+| `GET/POST /api/crm/tickets`, `PATCH /:id/status` / `/assignee`, `POST /:id/comments` | `tickets:*` + advanced                |
+| `GET /api/crm/reports/pipeline`, `/reports/tickets`                                  | `reports:read` + advanced             |
+| `GET /api/crm/search`                                                                | any read permission + advanced        |
+| `GET /api/crm/audit`                                                                 | `audit:read`                          |
+
+---
+
+## 20. Not yet built
+
+- **Assignment notifications in the notification bell.** Assigning a task or ticket creates the
+  notification record, but the shared notification row in the web and admin apps doesn't yet have
+  a link rule for the CRM types, so it isn't surfaced in the bell dropdown.
+- **Per-list filters** (status, owner, date range) on Partners, Customers, and Deals. Support
+  tickets already have a server-side status filter.
+- **Contacts** — a person-level record separate from the creator/shopper accounts.
+
+Module-level detail lives in each `apps/api/src/modules/crm-*/README.md` and
+`apps/admin/src/features/crm/README.md`.

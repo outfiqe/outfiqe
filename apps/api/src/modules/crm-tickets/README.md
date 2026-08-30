@@ -4,7 +4,8 @@
 
 Support ticketing for a CRM tenant: complaint/request tickets against a **Customer** or
 **Partner**, a forward-only status lifecycle, assignment to a teammate, and an internal comment
-thread. Assigning a ticket (or a Chunk 7 task) to someone else fires a real-time notification.
+thread. Assigning a ticket (or a `crm-activities` task) to someone else fires a real-time
+notification.
 
 ## Structure
 
@@ -46,7 +47,7 @@ assignment.
 assigneeUserId, assignedByUserId }`) is published on the existing Redis Streams event bus; a
   consumer in `notifications/notification.events.ts` turns it into a `Notification` for the
   assignee (`NotificationType.CRM_ITEM_ASSIGNED`, entity `CRM_TASK` / `CRM_TICKET`), skipping
-  self-assignment. Chunk 7's task assignment retro-emits the same event — one path, two callers.
+  self-assignment. `crm-activities`' task assignment emits the same event — one path, two callers.
 - **`resolveAt` is stamped by the transition, not a separate action.** Moving to `RESOLVED` or
   `CLOSED` sets `resolvedAt`; reopening to `IN_PROGRESS`/`OPEN` clears it — there's no standalone
   "resolve" endpoint to keep in sync with the board state.
@@ -54,4 +55,4 @@ assigneeUserId, assignedByUserId }`) is published on the existing Redis Streams 
   `packages/types`' hand-maintained `NotificationType` union (a subset of the Prisma enum — it
   already omits `WITHDRAW_REQUEST_*`) would need the new value, a shared-package change with
   web + admin fan-out. The notification is still created and shown; the click-through route is a
-  Chunk 11 polish item.
+  deferred follow-up.

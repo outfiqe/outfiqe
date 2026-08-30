@@ -78,9 +78,9 @@ verbatim rather than inventing a second acceptance mechanism.
   blocking it would be a false restriction, and silently allowing it with no visibility risks
   accidental duplicate onboarding.
 - **The picked business is persisted as `Organization.linkedBrandId` at create time.** Every
-  later CRM chunk (Partners, Customers, deals, tickets, reporting) scopes a tenant's real
-  commerce data — orders, creator links, looks — by this brand id, so provisioning has to record
-  it, not just use it to derive a subdomain. Unlike `ownerExistingOrganizations` (same owner, a
+  CRM area that reads real commerce data (Partners, Customers, deals, tickets, reporting) scopes
+  it — orders, creator links, looks — by this brand id, so provisioning has to record it, not
+  just use it to derive a subdomain. Unlike `ownerExistingOrganizations` (same owner, a
   _different_ brand — allowed, surfaced), linking the _same_ brand to a second organization is
   hard-blocked by a DB `@unique` and comes back as `BRAND_ALREADY_LINKED`; the page shows
   `existingOrganizationForBrand` as a warning banner before the staffer even submits.
