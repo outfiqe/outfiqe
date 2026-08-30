@@ -1,10 +1,15 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const useAuthMock = vi.fn();
+const isOnTenantHostMock = vi.fn();
 
 vi.mock("@/features/auth/AuthContext", () => ({
   useAuth: () => useAuthMock(),
+}));
+
+vi.mock("@/lib/tenantHost", () => ({
+  isOnTenantHost: () => isOnTenantHostMock(),
 }));
 
 vi.mock("@tanstack/react-router", () => ({
@@ -27,6 +32,10 @@ const signedIn = (hasPlatformAccess: boolean) => ({
 });
 
 describe("admin AccountMenu", () => {
+  beforeEach(() => {
+    isOnTenantHostMock.mockReturnValue(true);
+  });
+
   it("offers a storefront profile link to a tenant (non-platform) user", () => {
     useAuthMock.mockReturnValue(signedIn(false));
 
@@ -40,6 +49,15 @@ describe("admin AccountMenu", () => {
 
   it("hides the storefront profile link from platform staff", () => {
     useAuthMock.mockReturnValue(signedIn(true));
+
+    render(<AccountMenu />);
+
+    expect(screen.queryByRole("link", { name: "Storefront profile" })).not.toBeInTheDocument();
+  });
+
+  it("hides the storefront profile link when the CRM is not on a tenant host", () => {
+    isOnTenantHostMock.mockReturnValue(false);
+    useAuthMock.mockReturnValue(signedIn(false));
 
     render(<AccountMenu />);
 

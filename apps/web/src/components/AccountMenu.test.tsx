@@ -4,12 +4,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus, CreatorStatus, UserRole, type UserSession } from "@/features/auth/types";
 import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
+import { useTenantHost } from "@/shared/hooks/useTenantHost";
 
 import { AccountMenu } from "./AccountMenu";
 
 vi.mock("@/features/auth", () => ({
   useAuth: vi.fn(),
   useLogout: vi.fn(),
+}));
+
+vi.mock("@/shared/hooks/useTenantHost", () => ({
+  useTenantHost: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -65,6 +70,7 @@ const mockAuth = (overrides: Partial<ReturnType<typeof useAuth>>) => {
 describe("AccountMenu", () => {
   beforeEach(() => {
     vi.mocked(useLogout).mockReturnValue(buildIdleLogoutMutation());
+    vi.mocked(useTenantHost).mockReturnValue(true);
   });
 
   it("renders a skeleton placeholder, not empty space, while the session is still resolving", () => {
@@ -111,6 +117,21 @@ describe("AccountMenu", () => {
       state: { status: AuthStatus.AUTHENTICATED, user: brandOwner, accessToken: "token" },
       isAuthenticated: true,
       isBrandOwner: true,
+    });
+
+    render(<AccountMenu />);
+
+    expect(screen.queryByRole("link", { name: "CRM" })).not.toBeInTheDocument();
+  });
+
+  it("hides the CRM link when the storefront is not on a tenant host", () => {
+    vi.mocked(useTenantHost).mockReturnValue(false);
+    const brandOwner = buildUser({ role: UserRole.BRAND_OWNER, hasCrmAccess: true });
+    mockAuth({
+      state: { status: AuthStatus.AUTHENTICATED, user: brandOwner, accessToken: "token" },
+      isAuthenticated: true,
+      isBrandOwner: true,
+      hasCrmAccess: true,
     });
 
     render(<AccountMenu />);

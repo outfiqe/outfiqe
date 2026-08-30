@@ -27,7 +27,7 @@ export const buildContentSecurityPolicy = ({
 }: BuildContentSecurityPolicyOptions): string =>
   [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' ${TURNSTILE_ORIGIN}${isDev ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'nonce-${nonce}' ${isDev ? "'unsafe-eval'" : "'strict-dynamic'"} ${TURNSTILE_ORIGIN}`,
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: blob: https: ${apiOrigin}`,
     "font-src 'self' data:",

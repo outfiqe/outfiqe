@@ -32,7 +32,10 @@ activities/tasks, support/ticketing, reporting, audit log) lives in the sibling 
   calling membership's own `viewerIsSuperAdmin`/`viewerPermissionKeys` plus any
   `pendingOwnershipTransfer` onto the organization response, so `apps/admin` can decide what to
   render without guessing at a 403), `toPendingOwnershipTransferSummary`,
-  `extractSubdomain(host, baseDomain)` (pure hostname parsing, unit-tested in
+  `extractSubdomain(host, baseDomain)` (a re-export of `@outfiqe/utils`' `extractTenantSubdomain`,
+  which `apps/web` and `apps/admin` also use to gate the storefront ⇄ CRM links; `SUBDOMAIN_REGEX`
+  and `RESERVED_SUBDOMAINS` likewise re-export the `@outfiqe/utils` originals so all three apps share
+  one definition of a valid tenant subdomain — unit-tested via `extractSubdomain` in
   `crm-access.utils.test.ts`), and `buildOrganizationAdminUrl` (see "Non-obvious rationale" for why
   invite/ownership-transfer emails need it instead of the raw `env.ADMIN_URL`).
 - `crm-access.service.ts` — business rules: invite target must already be an existing staff

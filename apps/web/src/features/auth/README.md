@@ -53,8 +53,11 @@ client-side session/user context the rest of the app reads.
 - `types/index.ts` — shared auth types (`UserSession`, `UserRole`, `CreatorStatus`, etc.).
 - `utils/authErrors.ts` — maps API auth error codes to user-facing messages.
 - `utils/getDefaultRoute.ts` — picks the post-login landing route by role.
-- `utils/safeRedirect.ts` (+ colocated `safeRedirect.test.ts`) — validates a `?redirect=` query
-  value before using it, so a login/register flow can't be used as an open-redirect vector.
+- `utils/safeRedirect.ts` (+ colocated `safeRedirect.test.ts`) — `getSafeRedirect` validates a
+  `?redirect=` query value before using it, so a login/register flow can't be used as an
+  open-redirect vector; `isAdminAppTarget` reports whether a (already-safe) path points into the CRM
+  app (`/admin` or `/admin/...`), which `useLogin` and `proxy.ts` use to decide a cross-app
+  navigation.
 - `index.ts` — the feature's public exports.
 
 ## Funnel
@@ -83,6 +86,15 @@ feature only picks back up if that redirect instead lands on `/auth/oauth-callba
   same-app, single-leading-slash path (rejecting protocol-relative URLs like `//evil.com` and
   backslash tricks like `/\evil.com`) and refuses to redirect back into an auth screen, which would
   otherwise create a login/redirect loop.
+- A `?redirect=` that points into the CRM app (`isAdminAppTarget`) is only honoured when the login
+  page is itself on a tenant subdomain (`useTenantHost` in `useLogin`, `isTenantHost` against
+  `NEXT_PUBLIC_TENANT_BASE_DOMAIN` in `proxy.ts`). The CRM's own `ProtectedRoute` bounces a
+  signed-out user to `<tenant-origin>/login?redirect=/admin/...`, and this rule is what keeps that
+  storefront ⇄ CRM round trip scoped to a real tenant: on the apex domain the redirect is dropped
+  and the user lands on their role's default route instead. A platform admin signing in on the apex
+  therefore always goes to `/admin` (its default) rather than being deep-linked back — an accepted
+  trade for keeping the "only in a tenant" rule simple. OAuth's `redirectAfter` is not gated here;
+  the dominant path is the `ProtectedRoute` → `/login` → `useLogin` bounce.
 - `UserSession.phone`/`hasPassword` are optional on the shared type (unlike the API-response
   `customerUserSchema`, where they're required) because `brandUserSchema` doesn't carry them — a
   brand owner's session is mapped through the same `toUserSession`, which defaults `hasPassword` to

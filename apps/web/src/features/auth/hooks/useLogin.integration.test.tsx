@@ -11,6 +11,7 @@ import { ADMIN_URL } from "../utils/getDefaultRoute";
 import { useLogin } from "./useLogin";
 
 const LOGIN_URL = "/api/auth/login";
+const TENANT_BASE_DOMAIN = process.env.NEXT_PUBLIC_TENANT_BASE_DOMAIN ?? "localhost";
 
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(),
@@ -135,12 +136,16 @@ describe("useLogin", () => {
     Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
   });
 
-  it("hard-navigates to a deep admin redirect target instead of updating auth state", async () => {
+  it("hard-navigates to a deep admin redirect target from a tenant host", async () => {
     const originalLocation = window.location;
     const locationReplace = vi.fn();
     Object.defineProperty(window, "location", {
       configurable: true,
-      value: { ...originalLocation, replace: locationReplace },
+      value: {
+        ...originalLocation,
+        hostname: `studio.${TENANT_BASE_DOMAIN}`,
+        replace: locationReplace,
+      },
     });
 
     const deepAdminRedirect = `${ADMIN_URL}/crm/invites/accept?token=abc123`;
@@ -162,6 +167,36 @@ describe("useLogin", () => {
     await waitFor(() => expect(locationReplace).toHaveBeenCalledWith(deepAdminRedirect));
     expect(replace).not.toHaveBeenCalled();
     expect(result.current.auth.isAuthenticated).toBe(false);
+
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+  });
+
+  it("ignores a cross-app admin redirect target when the login page is not on a tenant host", async () => {
+    const originalLocation = window.location;
+    const locationReplace = vi.fn();
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, hostname: "localhost", replace: locationReplace },
+    });
+
+    mockRedirectParam(`${ADMIN_URL}/crm/invites/accept?token=abc123`);
+    mswServer.use(
+      http.post(LOGIN_URL, () =>
+        HttpResponse.json({
+          success: true,
+          message: "Login successful",
+          data: { accessToken: "access-token", user: customerUser },
+        }),
+      ),
+    );
+
+    const { result } = renderUseLogin();
+    result.current.login.mutate({ email: customerUser.email, password: "correct-horse-battery" });
+
+    await waitFor(() => expect(result.current.login.isSuccess).toBe(true));
+    expect(locationReplace).not.toHaveBeenCalled();
+    expect(replace).toHaveBeenCalledWith("/profile");
+    expect(result.current.auth.isAuthenticated).toBe(true);
 
     Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
   });

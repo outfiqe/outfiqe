@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { getSafeRedirect } from "@/features/auth/utils/safeRedirect";
+import {
+  getSafeRedirect,
+  isAdminAppTarget,
+  resolveLoginDestination,
+} from "@/features/auth/utils/safeRedirect";
+
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "/admin";
 
 describe("getSafeRedirect", () => {
   it("returns null for a null or undefined value", () => {
@@ -32,5 +38,32 @@ describe("getSafeRedirect", () => {
   it("rejects the auth screens to avoid redirect loops", () => {
     expect(getSafeRedirect("/login")).toBeNull();
     expect(getSafeRedirect("/register")).toBeNull();
+  });
+});
+
+describe("isAdminAppTarget", () => {
+  it("matches the admin root and any path under it", () => {
+    expect(isAdminAppTarget(ADMIN_URL)).toBe(true);
+    expect(isAdminAppTarget(`${ADMIN_URL}/crm`)).toBe(true);
+  });
+
+  it("does not match a storefront path", () => {
+    expect(isAdminAppTarget("/profile")).toBe(false);
+    expect(isAdminAppTarget("/administrators")).toBe(false);
+  });
+});
+
+describe("resolveLoginDestination", () => {
+  it("falls back to the default route when no redirect was requested", () => {
+    expect(resolveLoginDestination(null, "/profile", true)).toBe("/profile");
+  });
+
+  it("honours a storefront redirect regardless of the host", () => {
+    expect(resolveLoginDestination("/checkout", "/profile", false)).toBe("/checkout");
+  });
+
+  it("honours a cross-app admin redirect only on a tenant host", () => {
+    expect(resolveLoginDestination(`${ADMIN_URL}/crm`, "/profile", true)).toBe(`${ADMIN_URL}/crm`);
+    expect(resolveLoginDestination(`${ADMIN_URL}/crm`, "/profile", false)).toBe("/profile");
   });
 });
