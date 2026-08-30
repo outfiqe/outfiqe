@@ -8,6 +8,7 @@ import { crmApi } from "./api";
 import { InviteSection } from "./InviteSection";
 import { MembersSection } from "./MembersSection";
 import { OwnershipTransferBanner } from "./OwnershipTransferBanner";
+import { PlanGateBanner } from "./PlanGateBanner";
 import type { Organization } from "./schemas";
 
 const MEMBERS_READ_PERMISSION_KEY = "members:read";
@@ -61,6 +62,7 @@ export const CrmPage = () => {
 
       {organization && (
         <div className="mt-6">
+          <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
           <OwnershipTransferBanner organization={organization} />
 
           {canViewMembers(organization) || canInviteMembers(organization) ? (

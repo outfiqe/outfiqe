@@ -316,3 +316,19 @@ export const crmOwnershipTransferRequestTemplate = (
     `,
   }),
 });
+
+export const crmSubscriptionRenewalDueTemplate = (
+  organizationName: string,
+  amount: number,
+  billingUrl: string,
+): { subject: string; html: string } => ({
+  subject: `Your ${organizationName} CRM subscription is due for renewal`,
+  html: renderEmailLayout({
+    preheader: `Renew the ${organizationName} CRM subscription to keep advanced features.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Renewal due</h1>
+      <p style="color:${SUB};margin:0;">The Outfiqe CRM subscription for "${organizationName}" is up for renewal. Pay Rs. ${amount} to keep pipeline, deals, tickets and reporting available for your team.</p>
+      ${emailButtonHtml("Review billing", billingUrl)}
+    `,
+  }),
+});

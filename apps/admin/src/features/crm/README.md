@@ -2,11 +2,18 @@
 
 ## Purpose
 
-The first visible screen for Outfiqe's internal CRM (Chunk 4 of the roadmap in
-`docs/PRD-CRM.md`). Lets a staff member with CRM access view the organization, see and manage
-CRM members, invite an existing staff account, and accept a CRM invite — all against the
-`/api/crm/*` endpoints built in Chunks 1–2 (`apps/api/src/modules/crm-access`). No pipeline,
-deals, billing, or custom-role UI yet — those are later chunks.
+The visible screens for Outfiqe's internal CRM. Lets a staff member with CRM access view the
+organization, see and manage CRM members, invite an existing staff account, accept a CRM invite,
+manage the organization's paid subscription, browse the tenant brand's Partners (creators) and
+Customers (shoppers), run a deal pipeline, log activities/tasks, work support tickets, and build
+custom roles from the permission catalog, search across every CRM entity, read pipeline and
+support reports, and review the organization's audit log — against the `/api/crm/*` endpoints in
+`apps/api/src/modules/crm-access` (tenant/PBAC, ownership transfer, custom roles),
+`apps/api/src/modules/crm-billing` (subscription), `apps/api/src/modules/crm-relationships`
+(Partners/Customers), `apps/api/src/modules/crm-pipeline` (stages & deals),
+`apps/api/src/modules/crm-activities` (activities, tasks, timeline),
+`apps/api/src/modules/crm-tickets` (support), `apps/api/src/modules/crm-reporting`
+(search + reports), and `apps/api/src/modules/crm-audit` (audit log).
 
 ## Structure
 
@@ -35,10 +42,108 @@ deals, billing, or custom-role UI yet — those are later chunks.
   `features/auth/RegisterInvitePage.tsx`'s loading/invalid/valid state-machine shape. Once the
   accept call succeeds, it also re-fetches `/api/auth/me` and pushes the result into
   `AuthContext` via `updateUser` — see "Non-obvious rationale" for why.
+- `billingApi.ts` / `billingSchemas.ts` — `crmBillingApi` (`getOverview`/`listInvoices`/`checkout`/
+  `payInvoice`/`verifyInvoice`/`cancel`) + Zod mirrors of `/api/crm/billing/*` responses.
+- `BillingPage.tsx` / `BillingSection.tsx` — plan + seat + status card, invoice history table,
+  outstanding-renewal-invoice "Pay now" banner, and a "Cancel renewal" action. `PlanCheckoutModal.tsx`
+  is the plan/seats/gateway picker; on submit it calls `checkout` (or `payInvoice` for an existing
+  renewal invoice) and hands the redirect to `paymentRedirect.ts`.
+- `paymentRedirect.ts` — turns a checkout redirect into a real navigation: `window.location` for
+  Khalti's REDIRECT mode, an auto-submitted hidden `<form>` for eSewa's FORM_POST mode. This is a
+  deliberate near-duplicate of `apps/web/src/features/payments/paymentRedirect.utils.ts`; lift both
+  into `packages/utils` the next time payment redirects are touched in `apps/web`.
+- `BillingReturnPage.tsx` — the page the gateway redirects back to; reads `?invoiceId`, calls
+  `verifyInvoice` server-side, and reports COMPLETE / PENDING / FAILED.
+- `PlanGateBanner.tsx` — shown above CRM content when `organization.advancedFeaturesEnabled` is
+  false (trial ended, no active subscription), linking to `/crm/billing`.
+- **Navigation lives in the app shell, not a per-page strip.** `AdminSidebar`
+  (`components/AdminSidebar.tsx`) renders a flat "CRM" section — Overview / Partners / Customers /
+  Pipeline / Tasks / Support / Reports / Roles / Audit / Billing — filtered by the viewer's
+  permission keys. The sidebar fetches `GET /api/crm/organization` itself, but only
+  `enabled` while `pathname.startsWith("/crm")`, and on the same `["crm-organization"]` query key
+  the pages already use — so React Query dedupes it and it costs no extra request. `AppShell`
+  renders the two-tone `CRM` wordmark + `<CrmSearchBox>` centered in the header on `/crm/*` routes
+  (excluding `/crm/invites/accept`). The pages themselves render only their own content plus, where
+  relevant, `PlanGateBanner`. `useTanStackSidebarNavigation` supplies an `isActive` that matches
+  `/crm` exactly (not as a prefix) so "Overview" isn't lit up on every sub-route.
+- `auditApi.ts` / `auditSchemas.ts` / `AuditPage.tsx` — the Audit tab (`audit:read`): a
+  reverse-chronological table (when / who / action / details) of the organization's security
+  changes, `useInfiniteQuery` with a "Load more" cursor button, loading / error / empty states.
+- `CrmSearchBox.tsx` — the always-present global search (`Autocomplete`, `useDebouncedValue`),
+  hitting `GET /api/crm/search`. Results are grouped by entity (Partners / Customers / Deals /
+  Tickets); selecting one navigates to its detail route (`/crm/partners/$creatorId`,
+  `/crm/customers/$userId`) or the relevant tab (`/crm/pipeline`, `/crm/support`). Renders nothing
+  for a viewer holding none of the four per-entity read permissions (the endpoint would 403).
+- `reportingApi.ts` / `reportingSchemas.ts` — `crmReportingApi` (`getPipelineReport`,
+  `getTicketReport`, `search`) + Zod mirrors of `/api/crm/reports/*` and `/api/crm/search`.
+- `ReportsSection.tsx` / `ReportsPage.tsx` — the Reports tab. Pipeline card: open/won/lost stat
+  tiles + a horizontal bar per open stage (single-series `bg-primary` fill, value direct-labelled,
+  per-row `title` tooltip — see the dataviz method). Ticket card: open / resolved / mean-time-to-
+  resolve tiles + a status-breakdown bar list. Each card has its own loading skeleton, error
+  banner, and an explicit "not enough data yet" state for the first-record / no-data case.
+- `RolesSection.tsx` / `RolesPage.tsx` — the Roles tab: an organization-rename card (shown to a
+  viewer with `org:update`) plus the role list. Built-in roles show a badge and no controls;
+  custom roles get Edit / Delete for a viewer with `roles:manage`. The role modal is a
+  grouped permission-checkbox matrix (design-system `Checkbox`) built from `GET /crm/permissions`,
+  with `platform:access` and `org:transfer_ownership` filtered out client-side (the API rejects
+  them too). Delete surfaces the API's `ROLE_IN_USE` / `ROLE_IS_BUILT_IN` message inline.
+- `relationshipsApi.ts` / `relationshipsSchemas.ts` — `crmRelationshipsApi`
+  (`listPartners`/`getPartner`/`listCustomers`/`getCustomer`) + Zod mirrors of
+  `/api/crm/partners*` and `/api/crm/customers*`.
+- `PartnersPage.tsx` / `CustomersPage.tsx` — searchable, offset-paginated tables with a loading
+  skeleton, an error banner, a distinct "not linked to a brand" empty state, and a plain "no
+  partners/customers yet" empty state. Search is debounced via `useDebouncedValue`
+  (`@outfiqe/hooks`).
+- `PartnerDetailPage.tsx` / `CustomerDetailPage.tsx` — per-product breakdown + recent attributed
+  orders (partner) / recent order history (customer), reached from a list row.
+- `pipelineApi.ts` / `pipelineSchemas.ts` — `crmPipelineApi` (stage CRUD + reorder, deal CRUD) +
+  Zod mirrors of `/api/crm/pipeline/*` and `/api/crm/deals`.
+- `PipelinePage.tsx` — a `KanbanBoard` (`@outfiqe/components`) of stages → deals. `deals:write`
+  gets a "New deal" button (`DealFormModal.tsx`, with a partner picker fed by
+  `crmRelationshipsApi.listPartners`); `pipeline:configure` gets "Configure stages"
+  (`StageConfigModal.tsx` — add / rename-less delete / up-down reorder). Moving a card patches the
+  deal's `stageId`.
+- `activitiesApi.ts` / `activitiesSchemas.ts` — `crmActivitiesApi` (timeline, log activity, task
+  CRUD) + Zod mirrors of `/api/crm/timeline`, `/api/crm/activities`, `/api/crm/tasks`.
+- `TimelineSection.tsx` — the merged Timeline (logged activity + live order rows) with an inline
+  "log a note/call/message/email" composer, embedded on `PartnerDetailPage` / `CustomerDetailPage`.
+  Shows a notice when the response is `partial`.
+- `TasksPage.tsx` — the Tasks tab: a list of due-dated tasks with an overdue badge and a
+  complete checkbox, plus a "New task" modal with an assignee picker (needs `members:read`).
+- `ticketsApi.ts` / `ticketsSchemas.ts` — `crmTicketsApi` (list, get-with-comments, create,
+  status change, assign, comment) + Zod mirrors of `/api/crm/tickets*`.
+- `TicketsPage.tsx` — the Support tab: a status-filtered ticket list; clicking a row expands
+  `TicketDetail.tsx` inline (description, forward-only status buttons, assignee `<Select>`,
+  internal comment thread). "New ticket" modal collects type / title / description / customer.
+- `format.utils.ts` — `formatRupees` / `formatDate` / `formatDateTime` / `formatDuration`
+  (seconds → `2h 15m` / `3d 4h` / `—`), shared by every CRM screen instead of a per-file copy.
 
-Routes: `apps/admin/src/routes/_authenticated.crm.index.tsx` (`/crm` → `CrmPage`) and
-`_authenticated.crm.invites.accept.tsx` (`/crm/invites/accept` → `AcceptInvitePage`) — the `.index`
-suffix on the first is load-bearing, not stylistic: without it, TanStack Router's file-based
+## Deferred follow-ups
+
+- **`CRM_ITEM_ASSIGNED` in the notification bell.** The backend emits the event and writes a
+  `Notification` (`crm-tickets` / `crm-activities` → `notifications`), but `packages/types`'
+  hand-maintained `NotificationType` / `NotificationEntityType` unions — shared by `apps/web` and
+  `apps/admin` — don't yet carry the CRM values, so the shared `NotificationRow` has no link rule
+  for them. Widening those unions and adding the `/crm/support` / `/crm/tasks` link mapping is a
+  cross-package change that also touches `apps/web`'s notification rendering; tracked separately.
+- **Per-list status / owner / date-range filters** on Partners / Customers / Deals. Tickets
+  already has a server-side status filter demonstrating the query-string → `where` pattern;
+  extending it to the other lists is a follow-up.
+
+Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
+`_authenticated.crm.invites.accept.tsx` (`/crm/invites/accept` → `AcceptInvitePage`),
+`_authenticated.crm.billing.index.tsx` / `_authenticated.crm.billing.return.tsx`,
+`_authenticated.crm.partners.index.tsx` (`/crm/partners` → `PartnersPage`),
+`_authenticated.crm.partners.$creatorId.tsx` (`→ PartnerDetailPage`),
+`_authenticated.crm.customers.index.tsx` (`/crm/customers` → `CustomersPage`),
+`_authenticated.crm.customers.$userId.tsx` (`→ CustomerDetailPage`), and
+`_authenticated.crm.pipeline.index.tsx` (`/crm/pipeline` → `PipelinePage`),
+`_authenticated.crm.tasks.index.tsx` (`/crm/tasks` → `TasksPage`),
+`_authenticated.crm.support.index.tsx` (`/crm/support` → `TicketsPage`),
+`_authenticated.crm.roles.index.tsx` (`/crm/roles` → `RolesPage`),
+`_authenticated.crm.reports.index.tsx` (`/crm/reports` → `ReportsPage`),
+`_authenticated.crm.audit.index.tsx` (`/crm/audit` → `AuditPage`) — the `.index`
+suffix on the leaf routes is load-bearing, not stylistic: without it, TanStack Router's file-based
 convention treats `_authenticated.crm.tsx` as a layout parent for anything under `crm.*`
 (including the accept route), and since `CrmPage` renders no `<Outlet/>`, the accept route would
 never actually display (see the "Non-obvious rationale" section below). Both routes sit under the
@@ -74,6 +179,24 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
   `members:read`/`members:invite`, and showing a control guaranteed to reject every request is
   worse than not showing it, the same reasoning the SUPERADMIN-row-disabling bullet below already
   applies to `MembersSection`'s own controls.
+- **CRM chrome (the sidebar section, the header wordmark + search) lives in `AppShell` /
+  `AdminSidebar`, not a `_authenticated.crm.tsx` layout route.** A layout route would be the
+  natural home for shared chrome, but adding `_authenticated.crm.tsx` turns it into the parent of
+  _every_ `/crm/*` route — including `/crm/invites/accept`, which a not-yet-a-member is on and must
+  not see CRM chrome for. `AppShell` gates the header block on `pathname.startsWith("/crm") &&
+!pathname.startsWith("/crm/invites/accept")`, and the sidebar CRM section is always present (its
+  items just 404-guard themselves like any other admin route) — no routing-structure risk, and the
+  routes stay flat leaf files.
+- **`advancedFeaturesEnabled` rides on `GET /api/crm/organization`, not a separate billing fetch.**
+  `crm-access`'s org-context response calls `crmBillingService.resolveAdvancedFeaturesForOrganization`,
+  so `CrmPage` already knows whether to show `PlanGateBanner` without every viewer needing
+  `billing:read`. The dedicated `BillingSection` still fetches `GET /api/crm/billing` for the full
+  plan/seat/invoice detail, gated on `billing:read`.
+- **`CrmPage.integration.test.tsx`'s render wrapper mounts a real `RouterProvider`**, not just a
+  `QueryClientProvider`, because `CrmPage` now renders `<Link to="/crm/billing">` (directly and via
+  `PlanGateBanner`). The wrapper builds a one-route memory router whose root component renders the
+  test's `children`, the same minimal-router pattern `AcceptInvitePage.integration.test.tsx` and
+  `BillingReturnPage.integration.test.tsx` already use.
 - **`AdminSidebar` always shows the CRM nav item to any signed-in admin-role user, regardless of
   which subdomain they're currently on or whether they have a membership there** — CRM access is
   tenant/subdomain-scoped, and the sidebar has no cheap way to know in advance whether the

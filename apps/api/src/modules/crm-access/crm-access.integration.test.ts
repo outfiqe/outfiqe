@@ -170,6 +170,33 @@ describe("POST /api/crm/organizations", () => {
     );
   });
 
+  it("starts a 14-day advanced-features trial for a newly created organization", async () => {
+    await prisma.permission.createMany({ data: PERMISSION_CATALOG, skipDuplicates: true });
+    const creator = await createPlatformStaffUser("Trial Org Creator");
+    const subdomain = `trial-${randomUUID().slice(0, 8)}`;
+
+    const response = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({ name: "Trial Co", subdomain });
+    expect(response.status).toBe(201);
+
+    const organization = await prisma.organization.findUniqueOrThrow({
+      where: { id: response.body.data.id },
+    });
+    const daysUntilTrialEnd =
+      (organization.trialEndsAt!.getTime() - Date.now()) / (24 * 60 * 60 * 1000);
+    expect(daysUntilTrialEnd).toBeGreaterThan(13);
+    expect(daysUntilTrialEnd).toBeLessThanOrEqual(14);
+
+    const orgContext = await request(testApp)
+      .get("/api/crm/organization")
+      .set("Authorization", authHeaderFor(creator.id))
+      .set("Host", `${subdomain}.localhost`);
+    expect(orgContext.status).toBe(200);
+    expect(orgContext.body.data.advancedFeaturesEnabled).toBe(true);
+  });
+
   it("rejects a reserved subdomain", async () => {
     await prisma.permission.createMany({ data: PERMISSION_CATALOG, skipDuplicates: true });
     const creator = await createPlatformStaffUser("Reserved Subdomain Creator");
@@ -269,6 +296,61 @@ describe("POST /api/crm/organizations", () => {
     });
     expect(remainingStaffMembership).toBeNull();
   });
+
+  it("persists and returns the linked brand when one is provided", async () => {
+    const staff = await createPlatformStaffUser("Linked Brand Onboarder");
+    const brand = await createBrand("Linked Brand Co");
+    const owner = await createBrandOwner(brand.id);
+
+    const response = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({
+        name: brand.name,
+        subdomain: `linked-${randomUUID().slice(0, 8)}`,
+        targetOwnerUserId: owner.id,
+        linkedBrandId: brand.id,
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.linkedBrandId).toBe(brand.id);
+
+    const organization = await prisma.organization.findUniqueOrThrow({
+      where: { id: response.body.data.id },
+    });
+    expect(organization.linkedBrandId).toBe(brand.id);
+  });
+
+  it("rejects linking a brand that already backs another organization", async () => {
+    const staff = await createPlatformStaffUser("Double Link Onboarder");
+    const brand = await createBrand("Already Linked Co");
+    const owner = await createBrandOwner(brand.id);
+
+    const firstResponse = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({
+        name: brand.name,
+        subdomain: `first-${randomUUID().slice(0, 8)}`,
+        targetOwnerUserId: owner.id,
+        linkedBrandId: brand.id,
+      });
+    expect(firstResponse.status).toBe(201);
+
+    const secondResponse = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({
+        name: brand.name,
+        subdomain: `second-${randomUUID().slice(0, 8)}`,
+        targetOwnerUserId: owner.id,
+        linkedBrandId: brand.id,
+      });
+
+    expect(secondResponse.status).toBe(409);
+    expect(secondResponse.body.code).toBe("BRAND_ALREADY_LINKED");
+    expect(JSON.stringify(secondResponse.body)).not.toMatch(/prisma|constraint|P2002/i);
+  });
 });
 
 describe("GET /api/crm/organizations/suggest", () => {
@@ -287,6 +369,35 @@ describe("GET /api/crm/organizations/suggest", () => {
     expect(response.body.data.brandName).toBe("Everest Threads");
     expect(response.body.data.suggestedSubdomain).toMatch(/^[a-z0-9-]+$/);
     expect(response.body.data.ownerExistingOrganizations).toEqual([]);
+    expect(response.body.data.existingOrganizationForBrand).toBeNull();
+  });
+
+  it("surfaces the organization a brand is already linked to", async () => {
+    const staff = await createPlatformStaffUser("Already Linked Suggestion Requester");
+    const brand = await createBrand("Twice Onboarded Co");
+    const owner = await createBrandOwner(brand.id);
+
+    const createResponse = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({
+        name: brand.name,
+        subdomain: `twice-${randomUUID().slice(0, 8)}`,
+        targetOwnerUserId: owner.id,
+        linkedBrandId: brand.id,
+      });
+    expect(createResponse.status).toBe(201);
+
+    const response = await request(testApp)
+      .get("/api/crm/organizations/suggest")
+      .query({ brandId: brand.id })
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.existingOrganizationForBrand).toEqual({
+      id: createResponse.body.data.id,
+      name: brand.name,
+    });
   });
 
   it("lists the owner's existing organizations instead of hiding them", async () => {
@@ -362,6 +473,29 @@ describe("GET /api/crm/organizations", () => {
     const ids = response.body.data.map((organization: { id: string }) => organization.id);
     expect(ids).toEqual(expect.arrayContaining([first.id, second.id]));
     expect(ids.indexOf(first.id)).toBeLessThan(ids.indexOf(second.id));
+    for (const organization of response.body.data) {
+      expect(organization).toHaveProperty("linkedBrandName");
+    }
+  });
+
+  it("includes the linked brand name for a brand-linked organization", async () => {
+    const brand = await createBrand("Rollup Brand Co");
+    const { organization } = await seedOrganization();
+    await prisma.organization.update({
+      where: { id: organization.id },
+      data: { linkedBrandId: brand.id },
+    });
+    const staff = await createPlatformStaffUser("Linked Org Lister");
+
+    const response = await request(testApp)
+      .get("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+    const linkedOrganization = response.body.data.find(
+      (candidate: { id: string }) => candidate.id === organization.id,
+    );
+    expect(linkedOrganization.linkedBrandName).toBe("Rollup Brand Co");
   });
 
   it("requires a platform ADMIN account", async () => {
@@ -998,5 +1132,183 @@ describe("Ownership transfer", () => {
 
     expect(response.status).toBe(400);
     expect(response.body.code).toBe("TRANSFER_SELF");
+  });
+});
+
+describe("Custom roles and organization settings", () => {
+  const seedSuperAdminOrganization = async (label: string) => {
+    const { organization, adminRole, memberRole } = await seedOrganization();
+    const owner = await createStaffUser(`${label} Owner`);
+    const ownerMembership = await addMembership(organization.id, owner.id, adminRole.id);
+    await makeSuperAdmin(organization.id, ownerMembership.id);
+    return { organization, owner, memberRole };
+  };
+
+  const host = (subdomain: string) => `${subdomain}.localhost`;
+
+  it("creates a custom role from a subset of the permission catalog", async () => {
+    const { organization, owner } = await seedSuperAdminOrganization("Role Create");
+
+    const response = await request(testApp)
+      .post("/api/crm/roles")
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain))
+      .send({ name: "Support agent", permissionKeys: ["tickets:read", "tickets:write"] });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.isBuiltIn).toBe(false);
+    expect([...response.body.data.permissionKeys].sort()).toEqual([
+      "tickets:read",
+      "tickets:write",
+    ]);
+
+    const stored = await prisma.role.findFirstOrThrow({
+      where: { organizationId: organization.id, name: "Support agent" },
+      include: { permissions: true },
+    });
+    expect(stored.permissions.map((permission) => permission.permissionKey).sort()).toEqual([
+      "tickets:read",
+      "tickets:write",
+    ]);
+  });
+
+  it("rejects a role that includes a withheld permission key", async () => {
+    const { organization, owner } = await seedSuperAdminOrganization("Withheld Key");
+
+    const response = await request(testApp)
+      .post("/api/crm/roles")
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain))
+      .send({ name: "Sneaky", permissionKeys: ["tickets:read", "org:transfer_ownership"] });
+
+    expect(response.status).toBe(400);
+    expect(response.body.code).toBe("INVALID_PERMISSION_KEYS");
+  });
+
+  it("rejects a duplicate role name off the database uniqueness constraint", async () => {
+    const { organization, owner } = await seedSuperAdminOrganization("Duplicate Role");
+
+    const first = await request(testApp)
+      .post("/api/crm/roles")
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain))
+      .send({ name: "Analyst", permissionKeys: ["reports:read"] });
+    expect(first.status).toBe(201);
+
+    const second = await request(testApp)
+      .post("/api/crm/roles")
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain))
+      .send({ name: "Analyst", permissionKeys: ["deals:read"] });
+
+    expect(second.status).toBe(409);
+    expect(second.body.code).toBe("ROLE_NAME_TAKEN");
+  });
+
+  it("replaces a custom role's permission set on update", async () => {
+    const { organization, owner } = await seedSuperAdminOrganization("Role Update");
+
+    const created = await request(testApp)
+      .post("/api/crm/roles")
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain))
+      .send({ name: "Deal desk", permissionKeys: ["deals:read", "deals:write"] });
+
+    const response = await request(testApp)
+      .patch(`/api/crm/roles/${created.body.data.id}`)
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain))
+      .send({ permissionKeys: ["deals:read"] });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.permissionKeys).toEqual(["deals:read"]);
+
+    const stored = await prisma.rolePermission.findMany({
+      where: { roleId: created.body.data.id },
+    });
+    expect(stored.map((permission) => permission.permissionKey)).toEqual(["deals:read"]);
+  });
+
+  it("refuses to edit a built-in role", async () => {
+    const { organization, owner } = await seedSuperAdminOrganization("Built-in Edit");
+    const adminRole = await prisma.role.findFirstOrThrow({
+      where: { organizationId: organization.id, name: BUILT_IN_ROLE_NAME.ADMIN },
+    });
+
+    const response = await request(testApp)
+      .patch(`/api/crm/roles/${adminRole.id}`)
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain))
+      .send({ name: "Renamed admin" });
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("ROLE_IS_BUILT_IN");
+  });
+
+  it("blocks deleting a custom role that still has members", async () => {
+    const { organization, owner } = await seedSuperAdminOrganization("Role In Use");
+
+    const created = await request(testApp)
+      .post("/api/crm/roles")
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain))
+      .send({ name: "Occupied", permissionKeys: ["tickets:read"] });
+
+    const teammate = await createStaffUser("Occupied Member");
+    await addMembership(organization.id, teammate.id, created.body.data.id);
+
+    const response = await request(testApp)
+      .delete(`/api/crm/roles/${created.body.data.id}`)
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("ROLE_IN_USE");
+  });
+
+  it("deletes an unused custom role", async () => {
+    const { organization, owner } = await seedSuperAdminOrganization("Role Delete");
+
+    const created = await request(testApp)
+      .post("/api/crm/roles")
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain))
+      .send({ name: "Temporary", permissionKeys: ["tickets:read"] });
+
+    const response = await request(testApp)
+      .delete(`/api/crm/roles/${created.body.data.id}`)
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.status).toBe(200);
+    expect(await prisma.role.findUnique({ where: { id: created.body.data.id } })).toBeNull();
+  });
+
+  it("denies role mutation to a member without roles:manage", async () => {
+    const { organization, memberRole } = await seedSuperAdminOrganization("Role Perm Gate");
+    const teammate = await createStaffUser("Plain Member");
+    await addMembership(organization.id, teammate.id, memberRole.id);
+
+    const response = await request(testApp)
+      .post("/api/crm/roles")
+      .set("Authorization", authHeaderFor(teammate.id))
+      .set("Host", host(organization.subdomain))
+      .send({ name: "Nope", permissionKeys: ["tickets:read"] });
+
+    expect(response.status).toBe(403);
+  });
+
+  it("renames the organization", async () => {
+    const { organization, owner } = await seedSuperAdminOrganization("Org Rename");
+
+    const response = await request(testApp)
+      .patch("/api/crm/organization")
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain))
+      .send({ name: "Renamed Org Co" });
+
+    expect(response.status).toBe(200);
+    const stored = await prisma.organization.findUniqueOrThrow({ where: { id: organization.id } });
+    expect(stored.name).toBe("Renamed Org Co");
   });
 });

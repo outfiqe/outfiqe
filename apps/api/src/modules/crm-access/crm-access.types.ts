@@ -8,8 +8,13 @@ export type OrganizationRecord = {
   plan: string;
   trialEndsAt: Date | null;
   superAdminMembershipId: string | null;
+  linkedBrandId: string | null;
   createdAt: Date;
   updatedAt: Date;
+};
+
+export type OrganizationListItem = OrganizationRecord & {
+  linkedBrandName: string | null;
 };
 
 export type RoleRecord = {
@@ -59,6 +64,7 @@ export type OrganizationWithViewerContext = OrganizationRecord & {
   viewerIsSuperAdmin: boolean;
   viewerPermissionKeys: string[];
   pendingOwnershipTransfer: PendingOwnershipTransferSummary | null;
+  advancedFeaturesEnabled: boolean;
 };
 
 export type MembershipSummary = {
@@ -143,13 +149,31 @@ export type OwnershipTransferJoinRow = OwnershipTransferRequestRecord & {
   fromMembership: { user: { name: string } };
 };
 
+export type LinkedOrganizationRef = { id: string; name: string };
+
 export type OrganizationCreationSuggestion = {
   brandId: string;
   brandName: string;
   ownerUserId: string;
   ownerName: string;
   suggestedSubdomain: string;
-  ownerExistingOrganizations: { id: string; name: string }[];
+  ownerExistingOrganizations: LinkedOrganizationRef[];
+  existingOrganizationForBrand: LinkedOrganizationRef | null;
+};
+
+export type CreateOrganizationInput = {
+  name: string;
+  subdomain: string;
+  creatingUserId: string;
+  targetOwnerUserId?: string;
+  linkedBrandId?: string;
+};
+
+export type CreateOrganizationParams = {
+  name: string;
+  subdomain: string;
+  superAdminUserId: string;
+  linkedBrandId?: string | null;
 };
 
 export type CreateRoleInput = {
@@ -157,6 +181,15 @@ export type CreateRoleInput = {
   name: string;
   isBuiltIn?: boolean;
   permissionKeys: string[];
+};
+
+export type UpdateRoleInput = {
+  name?: string;
+  permissionKeys?: string[];
+};
+
+export type UpdateOrganizationInput = {
+  name: string;
 };
 
 export type UpdateMembershipInput = {

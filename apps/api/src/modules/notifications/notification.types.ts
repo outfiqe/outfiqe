@@ -27,6 +27,8 @@ export type NotificationMetadata = {
   withdrawAmount?: number;
   rejectionReason?: string;
   messagePreview?: string;
+  crmItemKind?: "task" | "ticket";
+  crmItemTitle?: string;
 };
 
 export type NotificationRecord = {

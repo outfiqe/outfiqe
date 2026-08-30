@@ -11,8 +11,8 @@ import { MembersSection } from "./MembersSection";
 const API_BASE = "http://localhost:3000/api";
 
 const ROLES = [
-  { id: "role-admin", name: "Admin" },
-  { id: "role-member", name: "Member" },
+  { id: "role-admin", name: "Admin", isBuiltIn: true, permissionKeys: ["members:read"] },
+  { id: "role-member", name: "Member", isBuiltIn: true, permissionKeys: [] },
 ];
 
 const wrapper = ({ children }: { children: ReactNode }) => {
@@ -123,7 +123,7 @@ describe("MembersSection", () => {
     renderMembersSection();
     await screen.findByText("Grace Hopper");
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     await user.click(screen.getByRole("button", { name: "Deactivate" }));
 
     await waitFor(() => expect(lastPatchBody).toEqual({ status: "DEACTIVATED" }));
@@ -216,7 +216,7 @@ describe("MembersSection", () => {
 
     renderMembersSection({ viewerIsSuperAdmin: true });
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     await user.click(await screen.findByRole("button", { name: "Transfer ownership" }));
 
     const dialog = screen.getByRole("dialog");
@@ -260,7 +260,7 @@ describe("MembersSection", () => {
 
     renderMembersSection({ viewerIsSuperAdmin: true });
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     await user.click(await screen.findByRole("button", { name: "Transfer ownership" }));
 
     const dialog = screen.getByRole("dialog");

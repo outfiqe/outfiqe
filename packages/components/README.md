@@ -13,6 +13,11 @@ passed in.
 - `header/` — `HeaderBar` and its condense-on-scroll behavior (`useHeaderCondense`).
 - `sidebar/` — `Sidebar`, `SidebarSection`, `SidebarNavItemView`, and their active-trail/expanded-
   group/collapse state (`activeTrail.ts`, `useExpandedGroups.ts`, `useSidebarCollapse.ts`).
+- `kanban/` — `KanbanBoard<TCard>`, a generic pipeline board: `columns` + `cards` +
+  `renderCard` + `onCardMove(cardId, toColumnId)`. Cards move two ways, both keyboard-accessible —
+  native HTML5 drag-and-drop and a "Move to" `<select>` on every card — so it needs **no
+  drag-and-drop library dependency** (a deliberate call for an internal-tool board; revisit if a
+  richer DnD interaction is ever required). First consumer: `apps/admin`'s CRM Pipeline page.
 - `notifications/` — the shared notification bell UI, reused by `apps/web`'s
   `SiteNotificationBell` and `apps/admin`'s `AdminNotificationBell` (each app supplies its own
   `NotificationsApi`, socket, and `type -> route` resolver — see those features' own READMEs):

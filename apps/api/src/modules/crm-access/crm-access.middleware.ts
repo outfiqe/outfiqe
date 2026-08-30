@@ -65,6 +65,31 @@ export const requirePermission = (permissionKey: string) => {
   };
 };
 
+export const requireAnyPermission = (permissionKeys: string[]) => {
+  return async (_req: Request, res: Response, next: NextFunction) => {
+    const principal = requireAuthPrincipal(res);
+    const organization = getResolvedOrganization(res);
+
+    const membership = await crmAccessRepository.findMembershipByUserAndOrg(
+      principal.userId,
+      organization.id,
+    );
+
+    if (!membership || membership.status !== "ACTIVE") {
+      return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, FORBIDDEN_STATUS));
+    }
+
+    const isSuperAdmin = organization.superAdminMembershipId === membership.id;
+    const holdsAnyKey = permissionKeys.some((key) => membership.role.permissionKeys.includes(key));
+    if (!isSuperAdmin && !holdsAnyKey) {
+      return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, FORBIDDEN_STATUS));
+    }
+
+    res.locals.crmMembership = membership;
+    next();
+  };
+};
+
 export const requirePlatformAccess = async (_req: Request, res: Response, next: NextFunction) => {
   const principal = requireAuthPrincipal(res);
   if (principal.role !== UserRole.ADMIN) {

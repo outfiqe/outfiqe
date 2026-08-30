@@ -51,7 +51,12 @@ export const OrganizationsPage = () => {
   const create = useMutation({
     mutationFn: () => {
       if (!suggestion) throw new Error("No business selected yet.");
-      return organizationsApi.create(suggestion.brandName, subdomain, suggestion.ownerUserId);
+      return organizationsApi.create({
+        name: suggestion.brandName,
+        subdomain,
+        targetOwnerUserId: suggestion.ownerUserId,
+        linkedBrandId: suggestion.brandId,
+      });
     },
     onSuccess: () => {
       resetForm();
@@ -105,6 +110,14 @@ export const OrganizationsPage = () => {
         </Button>
       </form>
 
+      {suggestion && suggestion.existingOrganizationForBrand && (
+        <FormBanner tone="neutral" className="mt-3">
+          This business is already linked to the organization &ldquo;
+          {suggestion.existingOrganizationForBrand.name}&rdquo;. Creating another will fail — link a
+          different business instead.
+        </FormBanner>
+      )}
+
       {suggestion && suggestion.ownerExistingOrganizations.length > 0 && (
         <FormBanner tone="neutral" className="mt-3">
           {suggestion.ownerName} already owns:{" "}
@@ -133,7 +146,10 @@ export const OrganizationsPage = () => {
                 {organization.name}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {organization.subdomain} · {organization.plan}
+                {organization.subdomain} · {organization.plan} ·{" "}
+                {organization.linkedBrandName
+                  ? `linked to ${organization.linkedBrandName}`
+                  : "no linked brand"}
               </p>
             </div>
           </div>

@@ -76,6 +76,13 @@ export default defineConfig({
         "src/modules/image-processing/**/*.ts",
         "src/modules/chat/**/*.ts",
         "src/modules/crm-access/**/*.ts",
+        "src/modules/crm-billing/**/*.ts",
+        "src/modules/crm-relationships/**/*.ts",
+        "src/modules/crm-pipeline/**/*.ts",
+        "src/modules/crm-activities/**/*.ts",
+        "src/modules/crm-tickets/**/*.ts",
+        "src/modules/crm-reporting/**/*.ts",
+        "src/modules/crm-audit/**/*.ts",
       ],
       thresholds: {
         lines: 80,

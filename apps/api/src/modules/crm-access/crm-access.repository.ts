@@ -1,22 +1,32 @@
+import { addDays } from "date-fns/addDays";
+
 import { prisma } from "#db/prisma.js";
 import type { MembershipStatus } from "#generated/prisma/enums.js";
+import { DEFAULT_PIPELINE_STAGES } from "#modules/crm-pipeline/crm-pipeline.constants.js";
 import type { DbClient } from "#types/db.types.js";
 
-import { BUILT_IN_ROLE_NAME, BUILT_IN_ROLE_PERMISSIONS } from "./crm-access.constants.js";
+import {
+  BUILT_IN_ROLE_NAME,
+  BUILT_IN_ROLE_PERMISSIONS,
+  CRM_TRIAL_LENGTH_DAYS,
+} from "./crm-access.constants.js";
 import type {
   CreateOrganizationInviteInput,
+  CreateOrganizationParams,
   CreateOwnershipTransferRequestInput,
   CreateRoleInput,
   MembershipJoinRow,
   MembershipRecord,
   MembershipWithRole,
   OrganizationInviteRecord,
+  OrganizationListItem,
   OrganizationRecord,
   OwnershipTransferJoinRow,
   OwnershipTransferRequestRecord,
   PermissionRecord,
   RoleWithPermissions,
   UpdateMembershipInput,
+  UpdateRoleInput,
 } from "./crm-access.types.js";
 
 const roleWithPermissionsInclude = {
@@ -46,12 +56,23 @@ export const crmAccessRepository = {
     return prisma.organization.findFirst({ orderBy: { createdAt: "asc" } });
   },
 
-  async listOrganizations(): Promise<OrganizationRecord[]> {
-    return prisma.organization.findMany({ orderBy: { createdAt: "asc" } });
+  async listOrganizations(): Promise<OrganizationListItem[]> {
+    const organizations = await prisma.organization.findMany({
+      orderBy: { createdAt: "asc" },
+      include: { linkedBrand: { select: { name: true } } },
+    });
+    return organizations.map(({ linkedBrand, ...organization }) => ({
+      ...organization,
+      linkedBrandName: linkedBrand?.name ?? null,
+    }));
   },
 
   async findPlatformOrganization(): Promise<OrganizationRecord | null> {
     return prisma.organization.findFirst({ where: { isPlatformOrg: true } });
+  },
+
+  async findOrganizationByLinkedBrandId(brandId: string): Promise<OrganizationRecord | null> {
+    return prisma.organization.findUnique({ where: { linkedBrandId: brandId } });
   },
 
   async hasAnyMembership(userId: string): Promise<boolean> {
@@ -89,14 +110,17 @@ export const crmAccessRepository = {
     return prisma.organization.findUnique({ where: { subdomain } });
   },
 
-  async createOrganization(input: {
-    name: string;
-    subdomain: string;
-    superAdminUserId: string;
-  }): Promise<{ organization: OrganizationRecord; membership: MembershipRecord }> {
+  async createOrganization(
+    input: CreateOrganizationParams,
+  ): Promise<{ organization: OrganizationRecord; membership: MembershipRecord }> {
     return prisma.$transaction(async (tx) => {
       const organization = await tx.organization.create({
-        data: { name: input.name, subdomain: input.subdomain },
+        data: {
+          name: input.name,
+          subdomain: input.subdomain,
+          linkedBrandId: input.linkedBrandId ?? null,
+          trialEndsAt: addDays(new Date(), CRM_TRIAL_LENGTH_DAYS),
+        },
       });
 
       let adminRoleId: string | undefined;
@@ -112,6 +136,16 @@ export const crmAccessRepository = {
         if (roleName === BUILT_IN_ROLE_NAME.ADMIN) adminRoleId = role.id;
       }
       if (!adminRoleId) throw new Error("built-in Admin role was not created");
+
+      await tx.pipelineStage.createMany({
+        data: DEFAULT_PIPELINE_STAGES.map((stage) => ({
+          organizationId: organization.id,
+          name: stage.name,
+          sortOrder: stage.sortOrder,
+          isWon: stage.isWon,
+          isLost: stage.isLost,
+        })),
+      });
 
       const membership = await tx.membership.create({
         data: {
@@ -163,6 +197,41 @@ export const crmAccessRepository = {
       include: roleWithPermissionsInclude,
     });
     return role ? toRoleWithPermissions(role) : null;
+  },
+
+  async updateRole(
+    organizationId: string,
+    roleId: string,
+    input: UpdateRoleInput,
+  ): Promise<RoleWithPermissions> {
+    const role = await prisma.$transaction(async (tx) => {
+      if (input.name !== undefined) {
+        await tx.role.update({ where: { id: roleId, organizationId }, data: { name: input.name } });
+      }
+      if (input.permissionKeys !== undefined) {
+        await tx.rolePermission.deleteMany({ where: { roleId } });
+        await tx.rolePermission.createMany({
+          data: input.permissionKeys.map((permissionKey) => ({ roleId, permissionKey })),
+        });
+      }
+      return tx.role.findFirstOrThrow({
+        where: { id: roleId, organizationId },
+        include: roleWithPermissionsInclude,
+      });
+    });
+    return toRoleWithPermissions(role);
+  },
+
+  async deleteRole(organizationId: string, roleId: string): Promise<void> {
+    await prisma.role.delete({ where: { id: roleId, organizationId } });
+  },
+
+  async countMembershipsForRole(organizationId: string, roleId: string): Promise<number> {
+    return prisma.membership.count({ where: { organizationId, roleId } });
+  },
+
+  async updateOrganizationName(organizationId: string, name: string): Promise<OrganizationRecord> {
+    return prisma.organization.update({ where: { id: organizationId }, data: { name } });
   },
 
   async listRoles(organizationId: string): Promise<RoleWithPermissions[]> {

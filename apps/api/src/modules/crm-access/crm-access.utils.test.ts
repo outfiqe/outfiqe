@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { buildOrganizationAdminUrl, extractSubdomain } from "./crm-access.utils.js";
+import {
+  buildOrganizationAdminUrl,
+  canDeleteRole,
+  extractSubdomain,
+  findUnselectablePermissionKeys,
+} from "./crm-access.utils.js";
 
 describe("extractSubdomain", () => {
   it("extracts a valid subdomain ahead of the base domain", () => {
@@ -68,5 +73,37 @@ describe("buildOrganizationAdminUrl", () => {
         "outfiqe.com",
       ),
     ).toBe("https://daraz.outfiqe.com/admin/crm");
+  });
+});
+
+describe("findUnselectablePermissionKeys", () => {
+  it("returns nothing when every key is a grantable catalog key", () => {
+    expect(findUnselectablePermissionKeys(["tickets:read", "deals:write", "reports:read"])).toEqual(
+      [],
+    );
+  });
+
+  it("flags SUPERADMIN-only and platform keys", () => {
+    expect(
+      findUnselectablePermissionKeys(["tickets:read", "org:transfer_ownership", "platform:access"]),
+    ).toEqual(["org:transfer_ownership", "platform:access"]);
+  });
+
+  it("flags keys that aren't in the catalog at all", () => {
+    expect(findUnselectablePermissionKeys(["tickets:read", "made:up"])).toEqual(["made:up"]);
+  });
+});
+
+describe("canDeleteRole", () => {
+  it("allows deleting a custom role with no members", () => {
+    expect(canDeleteRole({ isBuiltIn: false }, 0)).toBe(true);
+  });
+
+  it("blocks deleting a custom role that still has members", () => {
+    expect(canDeleteRole({ isBuiltIn: false }, 1)).toBe(false);
+  });
+
+  it("blocks deleting a built-in role regardless of member count", () => {
+    expect(canDeleteRole({ isBuiltIn: true }, 0)).toBe(false);
   });
 });

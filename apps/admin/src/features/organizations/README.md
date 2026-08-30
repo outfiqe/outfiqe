@@ -15,9 +15,11 @@ signup.
 ## Structure
 
 - `schemas.ts` — `Organization`/`OrganizationCreationSuggestion` Zod schemas mirroring the API's
-  response shapes.
+  response shapes. `Organization` carries `linkedBrandId`/`linkedBrandName`;
+  `OrganizationCreationSuggestion` carries `existingOrganizationForBrand`.
 - `api.ts` — `organizationsApi.list`/`.suggestFromBrand`/`.create`, thin `apiClient` calls against
   `GET /api/crm/organizations`, `GET /api/crm/organizations/suggest`, `POST /api/crm/organizations`.
+  `.create` takes a single `{ name, subdomain, targetOwnerUserId, linkedBrandId }` input.
 - `BusinessOwnerField.tsx` — brand-search autocomplete for picking the business to onboard, same
   shape as `features/gamification/BadgesSection/BrandSponsorField.tsx`, built on the shared
   `brandsApi.search` (`apps/admin/src/lib/brandsApi.ts`) rather than a third local copy of that
@@ -46,7 +48,7 @@ is removed from the organization entirely the moment that happens.
 brand's owner via `brandRepository.findOwnerUserId` and a candidate subdomain via
 `slugifyHandle`/`withHandleSuffix`, the same collision-retry helpers `user.repository.ts` already
 uses for handles). Submitting calls `POST /api/crm/organizations` with the resolved
-`targetOwnerUserId` — `crm-access.service.ts`'s `createOrganization` creates the org with the
+`targetOwnerUserId` and the picked `linkedBrandId` — `crm-access.service.ts`'s `createOrganization` creates the org with the
 calling staff member as its initial SUPERADMIN (unchanged from before), then creates a Membership
 for the target owner and immediately kicks off an ownership transfer to them with
 `removeSenderMembershipOnAccept: true`, reusing the existing ownership-transfer accept/decline flow
@@ -75,6 +77,16 @@ verbatim rather than inventing a second acceptance mechanism.
   on the suggestion response is shown as a plain informational banner, not a hard stop — silently
   blocking it would be a false restriction, and silently allowing it with no visibility risks
   accidental duplicate onboarding.
+- **The picked business is persisted as `Organization.linkedBrandId` at create time.** Every
+  CRM area that reads real commerce data (Partners, Customers, deals, tickets, reporting) scopes
+  it — orders, creator links, looks — by this brand id, so provisioning has to record it, not
+  just use it to derive a subdomain. Unlike `ownerExistingOrganizations` (same owner, a
+  _different_ brand — allowed, surfaced), linking the _same_ brand to a second organization is
+  hard-blocked by a DB `@unique` and comes back as `BRAND_ALREADY_LINKED`; the page shows
+  `existingOrganizationForBrand` as a warning banner before the staffer even submits.
+- **The org list row shows linked-brand status** (`linked to <brand>` / `no linked brand`) so a
+  platform admin can see at a glance which tenants are wired to real data and which are still
+  shells.
 - **`brandsApi.search` lives in `apps/admin/src/lib/`, not this feature.** It was already duplicated
   once between `features/gamification` and `features/platform-commission` before this feature
   existed; adding a third local copy here would have made that worse. This is the first time it's

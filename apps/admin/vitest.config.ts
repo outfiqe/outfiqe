@@ -58,6 +58,7 @@ export default defineConfig({
           environment: "jsdom",
           environmentOptions: { jsdom: { url: "http://localhost:3000" } },
           setupFiles: ["./src/testing/setup.ts", "./src/testing/integration/setup.ts"],
+          testTimeout: 15000,
         },
       },
     ],

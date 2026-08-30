@@ -64,6 +64,13 @@ model User {
   creatorCommissions                       CreatorCommission[]         @relation("CreatorCommissions")
   creatorLinks                             CreatorLink[]               @relation("CreatorLinks")
   creatorLinkClicks                        CreatorLinkClick[]
+  crmPartnerDeals                          Deal[]                     @relation("DealPartnerCreator")
+  crmActivitiesAsPartner                   CrmActivity[]              @relation("CrmActivityPartner")
+  crmActivitiesAsCustomer                  CrmActivity[]              @relation("CrmActivityCustomer")
+  crmTasksAsPartner                        CrmTask[]                  @relation("CrmTaskPartner")
+  crmTasksAsCustomer                       CrmTask[]                  @relation("CrmTaskCustomer")
+  crmTicketsAsPartner                      CrmTicket[]                @relation("CrmTicketPartner")
+  crmTicketsAsCustomer                     CrmTicket[]                @relation("CrmTicketCustomer")
   deliveryZoneChanges                      DeliveryZoneHistory[]       @relation("DeliveryZoneChanges")
   xpTransactions                           XpTransaction[]
   progress                                 UserProgress?
@@ -237,6 +244,7 @@ model Brand {
   payouts              BrandPayout[]
   withdrawRequests     WithdrawRequest[]          @relation("WithdrawRequestBrandOwner")
   commissionExemptions BrandCommissionExemption[]
+  linkedOrganization   Organization?
 
   @@map("brands")
 }
@@ -1349,6 +1357,7 @@ enum NotificationType {
   WITHDRAW_REQUEST_REJECTED
   WITHDRAW_REQUEST_PAID
   NEW_MESSAGE
+  CRM_ITEM_ASSIGNED
 }
 
 enum NotificationEntityType {
@@ -1360,6 +1369,8 @@ enum NotificationEntityType {
   PRODUCT
   WITHDRAW_REQUEST
   CONVERSATION
+  CRM_TASK
+  CRM_TICKET
 }
 
 model Notification {
@@ -1829,6 +1840,8 @@ model Organization {
   plan                   String    @default("trial")
   trialEndsAt            DateTime? @map("trial_ends_at")
   superAdminMembershipId String?   @unique @map("super_admin_membership_id") @db.Uuid
+  linkedBrandId          String?   @unique @map("linked_brand_id") @db.Uuid
+  linkedBrand            Brand?    @relation(fields: [linkedBrandId], references: [id], onDelete: SetNull)
   createdAt              DateTime  @default(now()) @map("created_at")
   updatedAt              DateTime  @updatedAt @map("updated_at")
 
@@ -1836,8 +1849,282 @@ model Organization {
   roles                     Role[]
   invites                   OrganizationInvite[]
   ownershipTransferRequests OwnershipTransferRequest[]
+  subscription              Subscription?
+  pipelineStages            PipelineStage[]
+  deals                     Deal[]
+  crmActivities             CrmActivity[]
+  crmTasks                  CrmTask[]
+  crmTickets                CrmTicket[]
+  crmAuditLogs              CrmAuditLog[]
 
   @@map("organizations")
+}
+
+model PipelineStage {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  sortOrder      Int      @map("sort_order")
+  isWon          Boolean  @default(false) @map("is_won")
+  isLost         Boolean  @default(false) @map("is_lost")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  deals Deal[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId, sortOrder])
+  @@map("pipeline_stages")
+}
+
+enum DealStatus {
+  OPEN
+  WON
+  LOST
+}
+
+model Deal {
+  id                String     @id @default(uuid()) @db.Uuid
+  organizationId    String     @map("organization_id") @db.Uuid
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stageId           String     @map("stage_id") @db.Uuid
+  stage             PipelineStage @relation(fields: [stageId], references: [id])
+  title             String
+  value             Int        @default(0)
+  currency          String     @default("NPR")
+  expectedCloseDate DateTime?  @map("expected_close_date")
+  ownerMembershipId String?    @map("owner_membership_id") @db.Uuid
+  ownerMembership   Membership? @relation("DealOwnerMembership", fields: [ownerMembershipId], references: [id], onDelete: SetNull)
+  partnerCreatorId  String     @map("partner_creator_id") @db.Uuid
+  partnerCreator    User       @relation("DealPartnerCreator", fields: [partnerCreatorId], references: [id], onDelete: Cascade)
+  status            DealStatus @default(OPEN)
+  closedAt          DateTime?  @map("closed_at")
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+
+  @@index([organizationId, stageId])
+  @@map("deals")
+
+  activities CrmActivity[]
+  tasks      CrmTask[]
+}
+
+enum CrmActivityType {
+  NOTE
+  CALL
+  MESSAGE
+  EMAIL
+}
+
+enum CrmTicketType {
+  COMPLAINT
+  REQUEST
+}
+
+enum CrmTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model CrmTicket {
+  id                   String          @id @default(uuid()) @db.Uuid
+  organizationId       String          @map("organization_id") @db.Uuid
+  organization         Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  type                 CrmTicketType
+  status               CrmTicketStatus @default(OPEN)
+  title                String
+  description          String
+  partnerCreatorId     String?         @map("partner_creator_id") @db.Uuid
+  partnerCreator       User?           @relation("CrmTicketPartner", fields: [partnerCreatorId], references: [id], onDelete: Cascade)
+  customerUserId       String?         @map("customer_user_id") @db.Uuid
+  customerUser         User?           @relation("CrmTicketCustomer", fields: [customerUserId], references: [id], onDelete: Cascade)
+  assigneeMembershipId String?         @map("assignee_membership_id") @db.Uuid
+  assigneeMembership   Membership?     @relation("CrmTicketAssignee", fields: [assigneeMembershipId], references: [id], onDelete: SetNull)
+  createdByMembershipId String?        @map("created_by_membership_id") @db.Uuid
+  createdByMembership   Membership?    @relation("CrmTicketCreatedBy", fields: [createdByMembershipId], references: [id], onDelete: SetNull)
+  resolvedAt           DateTime?       @map("resolved_at")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+
+  comments CrmTicketComment[]
+
+  @@index([organizationId, status, createdAt])
+  @@index([organizationId, assigneeMembershipId])
+  @@map("crm_tickets")
+}
+
+model CrmTicketComment {
+  id                 String       @id @default(uuid()) @db.Uuid
+  ticketId           String       @map("ticket_id") @db.Uuid
+  ticket             CrmTicket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorMembershipId String?      @map("author_membership_id") @db.Uuid
+  authorMembership   Membership?  @relation("CrmTicketCommentAuthor", fields: [authorMembershipId], references: [id], onDelete: SetNull)
+  body               String
+  createdAt          DateTime     @default(now()) @map("created_at")
+
+  @@index([ticketId, createdAt])
+  @@map("crm_ticket_comments")
+}
+
+enum CrmTaskStatus {
+  OPEN
+  DONE
+}
+
+model CrmActivity {
+  id                 String          @id @default(uuid()) @db.Uuid
+  organizationId     String          @map("organization_id") @db.Uuid
+  organization       Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  type               CrmActivityType
+  body               String
+  occurredAt         DateTime        @default(now()) @map("occurred_at")
+  authorMembershipId String?         @map("author_membership_id") @db.Uuid
+  authorMembership   Membership?     @relation("CrmActivityAuthor", fields: [authorMembershipId], references: [id], onDelete: SetNull)
+  partnerCreatorId   String?         @map("partner_creator_id") @db.Uuid
+  partnerCreator     User?           @relation("CrmActivityPartner", fields: [partnerCreatorId], references: [id], onDelete: Cascade)
+  customerUserId     String?         @map("customer_user_id") @db.Uuid
+  customerUser       User?           @relation("CrmActivityCustomer", fields: [customerUserId], references: [id], onDelete: Cascade)
+  dealId             String?         @map("deal_id") @db.Uuid
+  deal               Deal?           @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+
+  @@index([organizationId, partnerCreatorId, occurredAt])
+  @@index([organizationId, customerUserId, occurredAt])
+  @@index([organizationId, dealId, occurredAt])
+  @@map("crm_activities")
+}
+
+model CrmTask {
+  id                   String        @id @default(uuid()) @db.Uuid
+  organizationId       String        @map("organization_id") @db.Uuid
+  organization         Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title                String
+  description          String?
+  dueAt                DateTime      @map("due_at")
+  status               CrmTaskStatus @default(OPEN)
+  assigneeMembershipId String        @map("assignee_membership_id") @db.Uuid
+  assigneeMembership   Membership    @relation("CrmTaskAssignee", fields: [assigneeMembershipId], references: [id], onDelete: Cascade)
+  createdByMembershipId String?      @map("created_by_membership_id") @db.Uuid
+  createdByMembership   Membership?  @relation("CrmTaskCreatedBy", fields: [createdByMembershipId], references: [id], onDelete: SetNull)
+  partnerCreatorId     String?       @map("partner_creator_id") @db.Uuid
+  partnerCreator       User?         @relation("CrmTaskPartner", fields: [partnerCreatorId], references: [id], onDelete: Cascade)
+  customerUserId       String?       @map("customer_user_id") @db.Uuid
+  customerUser         User?         @relation("CrmTaskCustomer", fields: [customerUserId], references: [id], onDelete: Cascade)
+  dealId               String?       @map("deal_id") @db.Uuid
+  deal                 Deal?         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  completedAt          DateTime?     @map("completed_at")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+
+  @@index([organizationId, assigneeMembershipId, dueAt])
+  @@index([organizationId, status, dueAt])
+  @@map("crm_tasks")
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum SubscriptionInvoiceStatus {
+  OPEN
+  PAID
+  VOID
+}
+
+enum CrmBillingProvider {
+  ESEWA
+  KHALTI
+}
+
+model Subscription {
+  id                String             @id @default(uuid()) @db.Uuid
+  organizationId    String             @unique @map("organization_id") @db.Uuid
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan              String
+  status            SubscriptionStatus @default(TRIALING)
+  seats             Int                @default(1)
+  currentPeriodEnd  DateTime           @map("current_period_end")
+  cancelAtPeriodEnd Boolean            @default(false) @map("cancel_at_period_end")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  invoices SubscriptionInvoice[]
+
+  @@map("subscriptions")
+}
+
+model SubscriptionInvoice {
+  id             String                    @id @default(uuid()) @db.Uuid
+  subscriptionId String                    @map("subscription_id") @db.Uuid
+  subscription   Subscription              @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  plan           String
+  seats          Int
+  amount         Int
+  status         SubscriptionInvoiceStatus @default(OPEN)
+  periodStart    DateTime                  @map("period_start")
+  periodEnd      DateTime                  @map("period_end")
+  provider       CrmBillingProvider?
+  providerRef    String?                   @map("provider_ref")
+  rawResponse    Json?                     @map("raw_response")
+  initiatedAt    DateTime?                 @map("initiated_at")
+  paidAt         DateTime?                 @map("paid_at")
+  voidedAt       DateTime?                 @map("voided_at")
+  createdAt      DateTime                  @default(now()) @map("created_at")
+  updatedAt      DateTime                  @updatedAt @map("updated_at")
+
+  @@index([subscriptionId, createdAt])
+  @@index([status, initiatedAt])
+  @@map("subscription_invoices")
+}
+
+enum CrmAuditAction {
+  INVITE_SENT
+  INVITE_REVOKED
+  INVITE_ACCEPTED
+  MEMBER_ROLE_CHANGED
+  MEMBER_STATUS_CHANGED
+  ROLE_CREATED
+  ROLE_UPDATED
+  ROLE_DELETED
+  ORGANIZATION_RENAMED
+  OWNERSHIP_TRANSFER_REQUESTED
+  OWNERSHIP_TRANSFER_ACCEPTED
+  OWNERSHIP_TRANSFER_DECLINED
+  OWNERSHIP_TRANSFER_REVOKED
+  SUBSCRIPTION_CHECKOUT_STARTED
+  SUBSCRIPTION_ACTIVATED
+  SUBSCRIPTION_CANCELED
+}
+
+enum CrmAuditOutcome {
+  SUCCESS
+  FAILURE
+}
+
+model CrmAuditLog {
+  id                String          @id @default(uuid()) @db.Uuid
+  organizationId    String          @map("organization_id") @db.Uuid
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actorUserId       String?         @map("actor_user_id") @db.Uuid
+  actorMembershipId String?         @map("actor_membership_id") @db.Uuid
+  action            CrmAuditAction
+  outcome           CrmAuditOutcome @default(SUCCESS)
+  targetType        String?         @map("target_type")
+  targetId          String?         @map("target_id") @db.Uuid
+  summary           String
+  metadata          Json            @default("{}")
+  ipAddress         String?         @map("ip_address")
+  createdAt         DateTime        @default(now()) @map("created_at")
+
+  @@index([organizationId, createdAt])
+  @@map("crm_audit_logs")
 }
 
 model Membership {
@@ -1855,6 +2142,13 @@ model Membership {
 
   ownershipTransfersSent     OwnershipTransferRequest[] @relation("OwnershipTransferFrom")
   ownershipTransfersReceived OwnershipTransferRequest[] @relation("OwnershipTransferTo")
+  ownedDeals                 Deal[]                    @relation("DealOwnerMembership")
+  crmActivitiesAuthored      CrmActivity[]             @relation("CrmActivityAuthor")
+  crmTasksAssigned           CrmTask[]                 @relation("CrmTaskAssignee")
+  crmTasksCreated            CrmTask[]                 @relation("CrmTaskCreatedBy")
+  crmTicketsAssigned         CrmTicket[]               @relation("CrmTicketAssignee")
+  crmTicketsCreated          CrmTicket[]               @relation("CrmTicketCreatedBy")
+  crmTicketCommentsAuthored  CrmTicketComment[]        @relation("CrmTicketCommentAuthor")
 
   @@unique([userId, organizationId])
   @@index([organizationId])

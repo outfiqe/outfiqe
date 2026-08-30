@@ -1,12 +1,19 @@
 import { addDays } from "date-fns/addDays";
 
-import { UserRole } from "../src/generated/prisma/enums.js";
+import {
+  CrmBillingProvider,
+  SubscriptionInvoiceStatus,
+  SubscriptionStatus,
+  UserRole,
+} from "../src/generated/prisma/enums.js";
 import {
   BUILT_IN_ROLE_NAME,
   BUILT_IN_ROLE_PERMISSIONS,
   PERMISSION_CATALOG,
   PLATFORM_ACCESS_PERMISSION_KEY,
 } from "../src/modules/crm-access/crm-access.constants.js";
+import { CRM_PLAN_CATALOG, CRM_PLAN_ID } from "../src/modules/crm-billing/crm-billing.constants.js";
+import { DEFAULT_PIPELINE_STAGES } from "../src/modules/crm-pipeline/crm-pipeline.constants.js";
 import { prisma } from "../src/shared/db/prisma.js";
 import { hashPassword } from "../src/shared/utils/password.utils.js";
 
@@ -19,6 +26,7 @@ type DemoStaffSeed = { name: string; email: string; phone: string; roleName: str
 type DemoOrganizationSeed = {
   name: string;
   subdomain: string;
+  linkedBrandName: string;
   staff: DemoStaffSeed[];
 };
 
@@ -26,6 +34,7 @@ const DEMO_ORGANIZATIONS: DemoOrganizationSeed[] = [
   {
     name: "Meridian Apparel Co.",
     subdomain: "meridian",
+    linkedBrandName: "Kastha Studio",
     staff: [
       {
         name: "Bipin Karki",
@@ -50,6 +59,7 @@ const DEMO_ORGANIZATIONS: DemoOrganizationSeed[] = [
   {
     name: "Norday Studio",
     subdomain: "norday",
+    linkedBrandName: "Nepa Threads",
     staff: [
       {
         name: "Prapti Basnet",
@@ -203,12 +213,31 @@ async function seedDemoStaffUser(staff: DemoStaffSeed) {
   });
 }
 
+async function resolveLinkedBrandId(brandName: string): Promise<string | null> {
+  const brand = await prisma.brand.findFirst({ where: { name: brandName }, select: { id: true } });
+  if (!brand) {
+    console.warn(`Demo org linked brand "${brandName}" not found — leaving the link empty.`);
+    return null;
+  }
+  return brand.id;
+}
+
 async function seedDemoOrganizations() {
   for (const demo of DEMO_ORGANIZATIONS) {
+    const linkedBrandId = await resolveLinkedBrandId(demo.linkedBrandName);
+
     const existing = await prisma.organization.findUnique({
       where: { subdomain: demo.subdomain },
     });
-    if (existing) continue;
+    if (existing) {
+      if (!existing.linkedBrandId && linkedBrandId) {
+        await prisma.organization.update({
+          where: { id: existing.id },
+          data: { linkedBrandId },
+        });
+      }
+      continue;
+    }
 
     const organization = await prisma.organization.create({
       data: {
@@ -216,7 +245,18 @@ async function seedDemoOrganizations() {
         subdomain: demo.subdomain,
         plan: "trial",
         trialEndsAt: addDays(new Date(), TRIAL_LENGTH_DAYS),
+        linkedBrandId,
       },
+    });
+
+    await prisma.pipelineStage.createMany({
+      data: DEFAULT_PIPELINE_STAGES.map((stage) => ({
+        organizationId: organization.id,
+        name: stage.name,
+        sortOrder: stage.sortOrder,
+        isWon: stage.isWon,
+        isLost: stage.isLost,
+      })),
     });
 
     const roleIdByName = new Map<string, string>();
@@ -253,6 +293,46 @@ async function seedDemoOrganizations() {
   }
 }
 
+async function seedDemoSubscriptions() {
+  const meridian = await prisma.organization.findUnique({ where: { subdomain: "meridian" } });
+  if (!meridian) return;
+
+  const existing = await prisma.subscription.findUnique({
+    where: { organizationId: meridian.id },
+  });
+  if (existing) return;
+
+  const seats = 5;
+  const periodStart = new Date();
+  const periodEnd = addDays(periodStart, 30);
+  const amount = CRM_PLAN_CATALOG[CRM_PLAN_ID.STARTER].pricePerSeatPerMonth * seats;
+
+  const subscription = await prisma.subscription.create({
+    data: {
+      organizationId: meridian.id,
+      plan: CRM_PLAN_ID.STARTER,
+      status: SubscriptionStatus.ACTIVE,
+      seats,
+      currentPeriodEnd: periodEnd,
+    },
+  });
+
+  await prisma.subscriptionInvoice.create({
+    data: {
+      subscriptionId: subscription.id,
+      plan: CRM_PLAN_ID.STARTER,
+      seats,
+      amount,
+      status: SubscriptionInvoiceStatus.PAID,
+      periodStart,
+      periodEnd,
+      provider: CrmBillingProvider.ESEWA,
+      initiatedAt: periodStart,
+      paidAt: periodStart,
+    },
+  });
+}
+
 export async function seedCrmAccess() {
   await seedPermissionCatalog();
   const organization = await seedOrganization();
@@ -261,4 +341,5 @@ export async function seedCrmAccess() {
   await seedSuperAdmin(organization.id, organization.superAdminMembershipId);
   await seedDemoOrganizations();
   await seedPlatformStaffMemberships(organization.id);
+  await seedDemoSubscriptions();
 }
