@@ -116,6 +116,10 @@ export const crmAccessService = {
     return isSuperAdmin || hasPlatformPermission;
   },
 
+  async resolveHasCrmAccess(userId: string): Promise<boolean> {
+    return crmAccessRepository.hasActiveMembership(userId);
+  },
+
   async grantPlatformStaffMembership(
     userId: string,
     client?: DbClient,

@@ -54,6 +54,7 @@ const mockAuth = (overrides: Partial<ReturnType<typeof useAuth>>) => {
     isBrandOwner: false,
     isAdmin: false,
     isCreator: false,
+    hasCrmAccess: false,
     dispatch: vi.fn(),
     logout: vi.fn(),
     updateUser: vi.fn(),
@@ -88,6 +89,33 @@ describe("AccountMenu", () => {
 
     const profileLinks = screen.getAllByRole("link", { name: /Your account|Dashboard/ });
     expect(profileLinks.every((link) => link.getAttribute("href") === "/profile")).toBe(true);
+  });
+
+  it("offers a CRM link to a tenant user who has CRM access", () => {
+    const brandOwner = buildUser({ role: UserRole.BRAND_OWNER, hasCrmAccess: true });
+    mockAuth({
+      state: { status: AuthStatus.AUTHENTICATED, user: brandOwner, accessToken: "token" },
+      isAuthenticated: true,
+      isBrandOwner: true,
+      hasCrmAccess: true,
+    });
+
+    render(<AccountMenu />);
+
+    expect(screen.getByRole("link", { name: "CRM" })).toHaveAttribute("href", `${ADMIN_URL}/crm`);
+  });
+
+  it("hides the CRM link from a user without CRM access", () => {
+    const brandOwner = buildUser({ role: UserRole.BRAND_OWNER });
+    mockAuth({
+      state: { status: AuthStatus.AUTHENTICATED, user: brandOwner, accessToken: "token" },
+      isAuthenticated: true,
+      isBrandOwner: true,
+    });
+
+    render(<AccountMenu />);
+
+    expect(screen.queryByRole("link", { name: "CRM" })).not.toBeInTheDocument();
   });
 
   it("sends an admin straight to the admin app instead of the creator/business dashboard", () => {

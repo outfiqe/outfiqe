@@ -10,6 +10,7 @@ import {
 import {
   Award,
   BanknoteArrowUp,
+  LayoutGrid,
   LogOut,
   MessageCircleOff,
   Package,
@@ -65,8 +66,15 @@ const BRAND_NAV: SidebarNavItem[] = [
   SECURITY_NAV_ITEM,
 ];
 
+const CRM_NAV_ITEM: SidebarNavItem = {
+  id: "crm",
+  href: "/admin/crm",
+  label: "CRM",
+  icon: LayoutGrid,
+};
+
 export const DashboardSidebar = () => {
-  const { state } = useAuth();
+  const { state, hasCrmAccess } = useAuth();
   const logout = useLogout();
   const navigation = useNextSidebarNavigation();
   const { collapsed, toggle } = useSidebarCollapse("outfiqe:web-sidebar-collapsed");
@@ -81,7 +89,8 @@ export const DashboardSidebar = () => {
   const { role, avatarUrl, id, name } = user;
 
   const isBrand = role === UserRole.BRAND_OWNER;
-  const navItems = isBrand ? BRAND_NAV : CREATOR_NAV;
+  const baseNavItems = isBrand ? BRAND_NAV : CREATOR_NAV;
+  const navItems = hasCrmAccess ? [...baseNavItems, CRM_NAV_ITEM] : baseNavItems;
   const sections: SidebarNavSection[] = [{ id: isBrand ? "brand" : "creator", items: navItems }];
 
   const header = (

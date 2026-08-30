@@ -11,6 +11,7 @@ export const AccountMenu = () => {
 
   const { user } = state;
   const { avatarUrl, id, name } = user;
+  const isTenantUser = !user.hasPlatformAccess;
 
   return (
     <div className="group relative">
@@ -46,6 +47,15 @@ export const AccountMenu = () => {
           >
             Edit profile
           </button>
+
+          {isTenantUser && (
+            <a
+              href={`${window.location.origin}/profile`}
+              className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
+            >
+              Storefront profile
+            </a>
+          )}
 
           <div className="my-1.5 h-px bg-border" />
           <button
