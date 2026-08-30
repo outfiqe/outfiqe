@@ -72,6 +72,7 @@ export type AuthUser = {
   creatorStatus: CreatorStatus;
   hasPassword: boolean;
   hasPlatformAccess: boolean;
+  hasCrmAccess: boolean;
 };
 
 export type BrandAuthUser = {
@@ -83,6 +84,7 @@ export type BrandAuthUser = {
   role: UserRole;
   brandId: string;
   hasPlatformAccess: boolean;
+  hasCrmAccess: boolean;
 };
 
 export type AuthSession = IssuedTokens & { user: AuthUser };

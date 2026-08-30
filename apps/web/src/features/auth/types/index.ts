@@ -36,6 +36,7 @@ export const userSessionSchema = z.object({
   creatorStatus: creatorStatusSchema,
   brandId: z.string().optional(),
   hasPassword: z.boolean().optional(),
+  hasCrmAccess: z.boolean().optional(),
 });
 export type UserSession = z.infer<typeof userSessionSchema>;
 

@@ -371,7 +371,11 @@ export const authService = {
 
     return {
       ...tokens,
-      user: toAuthUser(user),
+      user: {
+        ...toAuthUser(user),
+        hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(id),
+        hasCrmAccess: await crmAccessService.resolveHasCrmAccess(id),
+      },
     };
   },
 
@@ -574,6 +578,7 @@ export const authService = {
     }
 
     const { id, name, email, phone, role } = user;
+    const hasCrmAccess = await crmAccessService.resolveHasCrmAccess(id);
 
     if (role === UserRole.BRAND_OWNER) {
       const membership = await authRepository.findBrandMembershipByUserId(id);
@@ -587,13 +592,14 @@ export const authService = {
           role,
           brandId: membership.brandId,
           hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(id),
+          hasCrmAccess,
         };
       }
 
       logger.warn(`Brand owner ${id} has no brand membership — returning degraded profile.`);
     }
 
-    const authUser = toAuthUser(user);
+    const authUser = { ...toAuthUser(user), hasCrmAccess };
     if (role !== UserRole.ADMIN) return authUser;
 
     return {
@@ -699,6 +705,7 @@ export const authService = {
         role: user.role,
         brandId,
         hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(user.id),
+        hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
       },
     };
   },
@@ -814,7 +821,11 @@ export const authService = {
 
     return {
       ...tokens,
-      user: toAuthUser(user),
+      user: {
+        ...toAuthUser(user),
+        hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(user.id),
+        hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
+      },
     };
   },
 };

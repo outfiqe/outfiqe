@@ -12,7 +12,7 @@ import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { CreatorModeModal } from "./CreatorModeModal";
 
 export const AccountMenu = () => {
-  const { state, isAuthenticated, isBrandOwner, isAdmin, isCreator } = useAuth();
+  const { state, isAuthenticated, isBrandOwner, isAdmin, isCreator, hasCrmAccess } = useAuth();
   const logout = useLogout();
   const [creatorModalOpen, setCreatorModalOpen] = useState(false);
 
@@ -91,6 +91,14 @@ export const AccountMenu = () => {
             >
               {isBrandOwner ? "Brand dashboard" : "Dashboard"}
             </Link>
+          )}
+          {hasCrmAccess && !isAdmin && (
+            <a
+              href={`${ADMIN_URL}/crm`}
+              className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
+            >
+              CRM
+            </a>
           )}
           <Link
             href="/wishlist"

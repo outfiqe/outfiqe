@@ -80,6 +80,13 @@ export const crmAccessRepository = {
     return membership !== null;
   },
 
+  async hasActiveMembership(userId: string): Promise<boolean> {
+    const membership = await prisma.membership.findFirst({
+      where: { userId, status: "ACTIVE" },
+    });
+    return membership !== null;
+  },
+
   async grantPlatformStaffMembership(
     userId: string,
     client: DbClient = prisma,
