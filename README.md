@@ -154,8 +154,8 @@ CI has no database, so `.github/workflows/ci.yml` reads placeholder values for
 `prisma generate`/`tsc` from repo **Settings → Secrets and variables →
 Actions → Variables**. These are not secrets — nothing they point to is a
 real, reachable service — so they're set as Variables, not Secrets. The
-workflow falls back to a working default even if they're never set; create
-them only if you want to change what CI uses.
+workflow falls back to a working default for any that are unset; all five
+are currently set on the repo.
 
 | Variable          | Example value                                                          |
 | ----------------- | ---------------------------------------------------------------------- |
