@@ -1,5 +1,6 @@
 import { Router } from "express";
 
+import { crmWriteRateLimit } from "#middlewares/crm-rate-limit.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePermission, resolveTenant } from "#modules/crm-access/crm-access.middleware.js";
@@ -20,6 +21,7 @@ const TICKETS_WRITE = "tickets:write";
 const TICKETS_MANAGE = "tickets:manage";
 
 const tenantChain = [resolveTenant, requireAuth, requireAdvancedCrmFeatures] as const;
+const writeChain = [...tenantChain, crmWriteRateLimit] as const;
 
 export const crmTicketsRoutes = Router();
 
@@ -32,7 +34,7 @@ crmTicketsRoutes.get(
 );
 crmTicketsRoutes.post(
   "/tickets",
-  ...tenantChain,
+  ...writeChain,
   requirePermission(TICKETS_WRITE),
   validate({ body: createTicketSchema }),
   crmTicketsController.createTicket,
@@ -46,21 +48,21 @@ crmTicketsRoutes.get(
 );
 crmTicketsRoutes.patch(
   "/tickets/:ticketId/status",
-  ...tenantChain,
+  ...writeChain,
   requirePermission(TICKETS_WRITE),
   validate({ params: ticketIdParamsSchema, body: changeStatusSchema }),
   crmTicketsController.changeStatus,
 );
 crmTicketsRoutes.patch(
   "/tickets/:ticketId/assignee",
-  ...tenantChain,
+  ...writeChain,
   requirePermission(TICKETS_MANAGE),
   validate({ params: ticketIdParamsSchema, body: assignTicketSchema }),
   crmTicketsController.assign,
 );
 crmTicketsRoutes.post(
   "/tickets/:ticketId/comments",
-  ...tenantChain,
+  ...writeChain,
   requirePermission(TICKETS_WRITE),
   validate({ params: ticketIdParamsSchema, body: addCommentSchema }),
   crmTicketsController.addComment,

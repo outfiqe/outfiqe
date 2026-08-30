@@ -36,6 +36,7 @@ export const PERMISSION_CATALOG: PermissionRecord[] = [
   { key: "tasks:read", label: "View tasks", group: "Activities, tasks & reports" },
   { key: "tasks:write", label: "Edit tasks", group: "Activities, tasks & reports" },
   { key: "reports:read", label: "View reports", group: "Activities, tasks & reports" },
+  { key: "audit:read", label: "View the audit log", group: "Audit" },
   {
     key: "platform:access",
     label: "Access Outfiqe's own commerce admin sections",

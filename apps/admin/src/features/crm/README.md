@@ -6,13 +6,13 @@ The visible screens for Outfiqe's internal CRM. Lets a staff member with CRM acc
 organization, see and manage CRM members, invite an existing staff account, accept a CRM invite,
 manage the organization's paid subscription, browse the tenant brand's Partners (creators) and
 Customers (shoppers), run a deal pipeline, log activities/tasks, work support tickets, and build
-custom roles from the permission catalog, search across every CRM entity, and read pipeline and
-support reports — against the `/api/crm/*` endpoints in
+custom roles from the permission catalog, search across every CRM entity, read pipeline and
+support reports, and review the organization's audit log — against the `/api/crm/*` endpoints in
 `apps/api/src/modules/crm-access` (Chunks 1–2 + ownership transfer + custom roles),
 `apps/api/src/modules/crm-billing` (Chunk 3), `apps/api/src/modules/crm-relationships` (Chunk 5),
 `apps/api/src/modules/crm-pipeline` (Chunk 6), `apps/api/src/modules/crm-activities` (Chunk 7),
-`apps/api/src/modules/crm-tickets` (Chunk 8), and `apps/api/src/modules/crm-reporting`
-(Chunk 10 — search + reports).
+`apps/api/src/modules/crm-tickets` (Chunk 8), `apps/api/src/modules/crm-reporting`
+(Chunk 10 — search + reports), and `apps/api/src/modules/crm-audit` (Chunk 11 — audit log).
 
 ## Structure
 
@@ -56,12 +56,15 @@ support reports — against the `/api/crm/*` endpoints in
 - `PlanGateBanner.tsx` — shown above CRM content when `organization.advancedFeaturesEnabled` is
   false (trial ended, no active subscription), linking to `/crm/billing`.
 - `CrmTabs.tsx` — the CRM area header: the Overview / Partners / Customers / Pipeline / Tasks /
-  Support / Reports / Roles / Billing nav strip plus the global `CrmSearchBox` on the right. Each
-  tab is a router `<Link>` filtered by the viewer's permission keys (`accounts:read` /
+  Support / Reports / Roles / Audit / Billing nav strip plus the global `CrmSearchBox` on the
+  right. Each tab is a router `<Link>` filtered by the viewer's permission keys (`accounts:read` /
   `customers:read` / `pipeline:read` / `tasks:read` / `tickets:read` / `reports:read` /
-  `roles:read` / `billing:read`); every page in the CRM area renders it itself (see "Non-obvious
-  rationale"). Because it now renders a `useQuery`-driven child, a test rendering `CrmTabs` in
-  isolation needs a `QueryClientProvider` as well as a router.
+  `roles:read` / `audit:read` / `billing:read`); every page in the CRM area renders it itself (see
+  "Non-obvious rationale"). Because it now renders a `useQuery`-driven child, a test rendering
+  `CrmTabs` in isolation needs a `QueryClientProvider` as well as a router.
+- `auditApi.ts` / `auditSchemas.ts` / `AuditPage.tsx` — the Audit tab (`audit:read`): a
+  reverse-chronological table (when / who / action / details) of the organization's security
+  changes, `useInfiniteQuery` with a "Load more" cursor button, loading / error / empty states.
 - `CrmSearchBox.tsx` — the always-present global search (`Autocomplete`, `useDebouncedValue`),
   hitting `GET /api/crm/search`. Results are grouped by entity (Partners / Customers / Deals /
   Tickets); selecting one navigates to its detail route (`/crm/partners/$creatorId`,
@@ -111,6 +114,18 @@ support reports — against the `/api/crm/*` endpoints in
 - `format.utils.ts` — `formatRupees` / `formatDate` / `formatDateTime` / `formatDuration`
   (seconds → `2h 15m` / `3d 4h` / `—`), shared by every CRM screen instead of a per-file copy.
 
+## Deferred follow-ups
+
+- **`CRM_ITEM_ASSIGNED` in the notification bell.** The backend emits the event and writes a
+  `Notification` (`crm-tickets` / `crm-activities` → `notifications`), but `packages/types`'
+  hand-maintained `NotificationType` / `NotificationEntityType` unions — shared by `apps/web` and
+  `apps/admin` — don't yet carry the CRM values, so the shared `NotificationRow` has no link rule
+  for them. Widening those unions and adding the `/crm/support` / `/crm/tasks` link mapping is a
+  cross-package change that also touches `apps/web`'s notification rendering; tracked separately.
+- **Per-list status / owner / date-range filters** on Partners / Customers / Deals. Tickets
+  already has a server-side status filter (Chunk 8) demonstrating the query-string → `where`
+  pattern; extending it to the other lists is a follow-up.
+
 Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
 `_authenticated.crm.invites.accept.tsx` (`/crm/invites/accept` → `AcceptInvitePage`),
 `_authenticated.crm.billing.index.tsx` / `_authenticated.crm.billing.return.tsx`,
@@ -122,7 +137,8 @@ Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
 `_authenticated.crm.tasks.index.tsx` (`/crm/tasks` → `TasksPage`),
 `_authenticated.crm.support.index.tsx` (`/crm/support` → `TicketsPage`),
 `_authenticated.crm.roles.index.tsx` (`/crm/roles` → `RolesPage`),
-`_authenticated.crm.reports.index.tsx` (`/crm/reports` → `ReportsPage`) — the `.index`
+`_authenticated.crm.reports.index.tsx` (`/crm/reports` → `ReportsPage`),
+`_authenticated.crm.audit.index.tsx` (`/crm/audit` → `AuditPage`) — the `.index`
 suffix on the leaf routes is load-bearing, not stylistic: without it, TanStack Router's file-based
 convention treats `_authenticated.crm.tsx` as a layout parent for anything under `crm.*`
 (including the accept route), and since `CrmPage` renders no `<Outlet/>`, the accept route would

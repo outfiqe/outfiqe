@@ -1,5 +1,6 @@
 import { Router } from "express";
 
+import { crmWriteRateLimit } from "#middlewares/crm-rate-limit.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePermission, resolveTenant } from "#modules/crm-access/crm-access.middleware.js";
@@ -23,6 +24,7 @@ const TASKS_READ = "tasks:read";
 const TASKS_WRITE = "tasks:write";
 
 const tenantChain = [resolveTenant, requireAuth, requireAdvancedCrmFeatures] as const;
+const writeChain = [...tenantChain, crmWriteRateLimit] as const;
 
 export const crmActivitiesRoutes = Router();
 
@@ -43,14 +45,14 @@ crmActivitiesRoutes.get(
 );
 crmActivitiesRoutes.post(
   "/activities",
-  ...tenantChain,
+  ...writeChain,
   requirePermission(ACTIVITIES_WRITE),
   validate({ body: createActivitySchema }),
   crmActivitiesController.logActivity,
 );
 crmActivitiesRoutes.delete(
   "/activities/:activityId",
-  ...tenantChain,
+  ...writeChain,
   requirePermission(ACTIVITIES_WRITE),
   validate({ params: activityIdParamsSchema }),
   crmActivitiesController.deleteActivity,
@@ -65,21 +67,21 @@ crmActivitiesRoutes.get(
 );
 crmActivitiesRoutes.post(
   "/tasks",
-  ...tenantChain,
+  ...writeChain,
   requirePermission(TASKS_WRITE),
   validate({ body: createTaskSchema }),
   crmActivitiesController.createTask,
 );
 crmActivitiesRoutes.patch(
   "/tasks/:taskId",
-  ...tenantChain,
+  ...writeChain,
   requirePermission(TASKS_WRITE),
   validate({ params: taskIdParamsSchema, body: updateTaskSchema }),
   crmActivitiesController.updateTask,
 );
 crmActivitiesRoutes.delete(
   "/tasks/:taskId",
-  ...tenantChain,
+  ...writeChain,
   requirePermission(TASKS_WRITE),
   validate({ params: taskIdParamsSchema }),
   crmActivitiesController.deleteTask,

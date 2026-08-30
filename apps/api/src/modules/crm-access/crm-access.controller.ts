@@ -1,8 +1,12 @@
 import type { Request, Response } from "express";
 
+import { CrmAuditAction } from "#generated/prisma/enums.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
+import { AUDIT_TARGET_TYPE } from "#modules/crm-audit/crm-audit.constants.js";
+import { crmAudit } from "#modules/crm-audit/crm-audit.service.js";
+import { buildAuditActor } from "#modules/crm-audit/crm-audit.utils.js";
 import { crmBillingService } from "#modules/crm-billing/crm-billing.service.js";
 
 import { getCrmMembership, getResolvedOrganization } from "./crm-access.middleware.js";
@@ -84,36 +88,70 @@ export const crmAccessController = {
     sendSuccess(res, roles, "CRM roles.");
   },
 
-  async createRole(_req: Request, res: Response) {
+  async createRole(req: Request, res: Response) {
     const { name, permissionKeys } = validated.body<CreateRoleBody>(res);
     const organization = getResolvedOrganization(res);
 
     const role = await crmAccessService.createRole(organization.id, { name, permissionKeys });
+    await crmAudit.record({
+      organizationId: organization.id,
+      action: CrmAuditAction.ROLE_CREATED,
+      summary: `Created role "${role.name}"`,
+      actor: buildAuditActor(req, res),
+      target: { type: AUDIT_TARGET_TYPE.ROLE, id: role.id },
+      metadata: { permissionCount: role.permissionKeys.length },
+    });
     sendSuccess(res, role, "Role created.", CREATED_STATUS);
   },
 
-  async updateRole(_req: Request, res: Response) {
+  async updateRole(req: Request, res: Response) {
     const { roleId } = validated.params<RoleIdParams>(res);
     const body = validated.body<UpdateRoleBody>(res);
     const organization = getResolvedOrganization(res);
 
     const role = await crmAccessService.updateRole(organization.id, roleId, body);
+    await crmAudit.record({
+      organizationId: organization.id,
+      action: CrmAuditAction.ROLE_UPDATED,
+      summary: `Updated role "${role.name}"`,
+      actor: buildAuditActor(req, res),
+      target: { type: AUDIT_TARGET_TYPE.ROLE, id: role.id },
+      metadata: {
+        renamed: body.name !== undefined,
+        permissionsChanged: body.permissionKeys !== undefined,
+      },
+    });
     sendSuccess(res, role, "Role updated.");
   },
 
-  async deleteRole(_req: Request, res: Response) {
+  async deleteRole(req: Request, res: Response) {
     const { roleId } = validated.params<RoleIdParams>(res);
     const organization = getResolvedOrganization(res);
 
     await crmAccessService.deleteRole(organization.id, roleId);
+    await crmAudit.record({
+      organizationId: organization.id,
+      action: CrmAuditAction.ROLE_DELETED,
+      summary: "Deleted a custom role",
+      actor: buildAuditActor(req, res),
+      target: { type: AUDIT_TARGET_TYPE.ROLE, id: roleId },
+    });
     sendSuccess(res, null, "Role deleted.");
   },
 
-  async updateOrganization(_req: Request, res: Response) {
+  async updateOrganization(req: Request, res: Response) {
     const { name } = validated.body<UpdateOrganizationBody>(res);
     const organization = getResolvedOrganization(res);
 
     const updated = await crmAccessService.updateOrganization(organization, { name });
+    await crmAudit.record({
+      organizationId: organization.id,
+      action: CrmAuditAction.ORGANIZATION_RENAMED,
+      summary: `Renamed the organization to "${updated.name}"`,
+      actor: buildAuditActor(req, res),
+      target: { type: AUDIT_TARGET_TYPE.ORGANIZATION, id: organization.id },
+      metadata: { previousName: organization.name },
+    });
     sendSuccess(res, updated, "Organization updated.");
   },
 
@@ -123,12 +161,26 @@ export const crmAccessController = {
     sendSuccess(res, members, "CRM members.");
   },
 
-  async updateMember(_req: Request, res: Response) {
+  async updateMember(req: Request, res: Response) {
     const { membershipId } = validated.params<MembershipIdParams>(res);
     const body = validated.body<UpdateMembershipBody>(res);
     const organization = getResolvedOrganization(res);
 
     const membership = await crmAccessService.updateMembership(organization, membershipId, body);
+    await crmAudit.record({
+      organizationId: organization.id,
+      action:
+        body.roleId !== undefined
+          ? CrmAuditAction.MEMBER_ROLE_CHANGED
+          : CrmAuditAction.MEMBER_STATUS_CHANGED,
+      summary:
+        body.roleId !== undefined
+          ? "Changed a member's role"
+          : `Set a member's status to ${body.status}`,
+      actor: buildAuditActor(req, res),
+      target: { type: AUDIT_TARGET_TYPE.MEMBERSHIP, id: membershipId },
+      metadata: { ...(body.status ? { status: body.status } : {}) },
+    });
     sendSuccess(res, membership, "Member updated.");
   },
 
@@ -138,32 +190,58 @@ export const crmAccessController = {
     sendSuccess(res, invites, "Pending CRM invites.");
   },
 
-  async createInvite(_req: Request, res: Response) {
+  async createInvite(req: Request, res: Response) {
     const { email, roleId } = validated.body<CreateOrganizationInviteBody>(res);
     const principal = requireAuthPrincipal(res);
     const organization = getResolvedOrganization(res);
 
     await crmAccessService.inviteMember(organization, email, roleId, principal.userId);
+    await crmAudit.record({
+      organizationId: organization.id,
+      action: CrmAuditAction.INVITE_SENT,
+      summary: `Invited ${email}`,
+      actor: buildAuditActor(req, res),
+      target: { type: AUDIT_TARGET_TYPE.INVITE, id: null },
+      metadata: { email, roleId },
+    });
     sendSuccess(res, null, "Invite sent.", CREATED_STATUS);
   },
 
-  async revokeInvite(_req: Request, res: Response) {
+  async revokeInvite(req: Request, res: Response) {
     const { inviteId } = validated.params<InviteIdParams>(res);
     const organization = getResolvedOrganization(res);
 
     await crmAccessService.revokeInvite(organization.id, inviteId);
+    await crmAudit.record({
+      organizationId: organization.id,
+      action: CrmAuditAction.INVITE_REVOKED,
+      summary: "Revoked a pending invite",
+      actor: buildAuditActor(req, res),
+      target: { type: AUDIT_TARGET_TYPE.INVITE, id: inviteId },
+    });
     sendSuccess(res, null, "Invite revoked.");
   },
 
-  async acceptInvite(_req: Request, res: Response) {
+  async acceptInvite(req: Request, res: Response) {
     const { token } = validated.body<AcceptOrganizationInviteBody>(res);
     const principal = requireAuthPrincipal(res);
 
     const membership = await crmAccessService.acceptInvite(token, principal.userId);
+    await crmAudit.record({
+      organizationId: membership.organizationId,
+      action: CrmAuditAction.INVITE_ACCEPTED,
+      summary: "Accepted a CRM invite",
+      actor: {
+        actorUserId: principal.userId,
+        actorMembershipId: membership.id,
+        ipAddress: req.ip ?? null,
+      },
+      target: { type: AUDIT_TARGET_TYPE.MEMBERSHIP, id: membership.id },
+    });
     sendSuccess(res, membership, "CRM access granted.", CREATED_STATUS);
   },
 
-  async createOwnershipTransfer(_req: Request, res: Response) {
+  async createOwnershipTransfer(req: Request, res: Response) {
     const { toMembershipId, removeSenderMembership } =
       validated.body<CreateOwnershipTransferBody>(res);
     const organization = getResolvedOrganization(res);
@@ -175,32 +253,61 @@ export const crmAccessController = {
       toMembershipId,
       removeSenderMembership,
     );
+    await crmAudit.record({
+      organizationId: organization.id,
+      action: CrmAuditAction.OWNERSHIP_TRANSFER_REQUESTED,
+      summary: "Requested an ownership transfer",
+      actor: buildAuditActor(req, res),
+      target: { type: AUDIT_TARGET_TYPE.OWNERSHIP_TRANSFER, id: toMembershipId },
+      metadata: { removeSenderMembership },
+    });
     sendSuccess(res, null, "Ownership transfer requested.", CREATED_STATUS);
   },
 
-  async acceptOwnershipTransfer(_req: Request, res: Response) {
+  async acceptOwnershipTransfer(req: Request, res: Response) {
     const { requestId } = validated.params<OwnershipTransferIdParams>(res);
     const organization = getResolvedOrganization(res);
     const principal = requireAuthPrincipal(res);
 
     await crmAccessService.acceptOwnershipTransfer(organization, requestId, principal.userId);
+    await crmAudit.record({
+      organizationId: organization.id,
+      action: CrmAuditAction.OWNERSHIP_TRANSFER_ACCEPTED,
+      summary: "Accepted an ownership transfer",
+      actor: { actorUserId: principal.userId, actorMembershipId: null, ipAddress: req.ip ?? null },
+      target: { type: AUDIT_TARGET_TYPE.OWNERSHIP_TRANSFER, id: requestId },
+    });
     sendSuccess(res, null, "Ownership transfer accepted.");
   },
 
-  async declineOwnershipTransfer(_req: Request, res: Response) {
+  async declineOwnershipTransfer(req: Request, res: Response) {
     const { requestId } = validated.params<OwnershipTransferIdParams>(res);
     const organization = getResolvedOrganization(res);
     const principal = requireAuthPrincipal(res);
 
     await crmAccessService.declineOwnershipTransfer(organization, requestId, principal.userId);
+    await crmAudit.record({
+      organizationId: organization.id,
+      action: CrmAuditAction.OWNERSHIP_TRANSFER_DECLINED,
+      summary: "Declined an ownership transfer",
+      actor: { actorUserId: principal.userId, actorMembershipId: null, ipAddress: req.ip ?? null },
+      target: { type: AUDIT_TARGET_TYPE.OWNERSHIP_TRANSFER, id: requestId },
+    });
     sendSuccess(res, null, "Ownership transfer declined.");
   },
 
-  async revokeOwnershipTransfer(_req: Request, res: Response) {
+  async revokeOwnershipTransfer(req: Request, res: Response) {
     const { requestId } = validated.params<OwnershipTransferIdParams>(res);
     const organization = getResolvedOrganization(res);
 
     await crmAccessService.revokeOwnershipTransfer(organization, requestId);
+    await crmAudit.record({
+      organizationId: organization.id,
+      action: CrmAuditAction.OWNERSHIP_TRANSFER_REVOKED,
+      summary: "Revoked a pending ownership transfer",
+      actor: buildAuditActor(req, res),
+      target: { type: AUDIT_TARGET_TYPE.OWNERSHIP_TRANSFER, id: requestId },
+    });
     sendSuccess(res, null, "Ownership transfer revoked.");
   },
 };

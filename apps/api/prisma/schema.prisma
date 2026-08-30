@@ -1855,6 +1855,7 @@ model Organization {
   crmActivities             CrmActivity[]
   crmTasks                  CrmTask[]
   crmTickets                CrmTicket[]
+  crmAuditLogs              CrmAuditLog[]
 
   @@map("organizations")
 }
@@ -2081,6 +2082,49 @@ model SubscriptionInvoice {
   @@index([subscriptionId, createdAt])
   @@index([status, initiatedAt])
   @@map("subscription_invoices")
+}
+
+enum CrmAuditAction {
+  INVITE_SENT
+  INVITE_REVOKED
+  INVITE_ACCEPTED
+  MEMBER_ROLE_CHANGED
+  MEMBER_STATUS_CHANGED
+  ROLE_CREATED
+  ROLE_UPDATED
+  ROLE_DELETED
+  ORGANIZATION_RENAMED
+  OWNERSHIP_TRANSFER_REQUESTED
+  OWNERSHIP_TRANSFER_ACCEPTED
+  OWNERSHIP_TRANSFER_DECLINED
+  OWNERSHIP_TRANSFER_REVOKED
+  SUBSCRIPTION_CHECKOUT_STARTED
+  SUBSCRIPTION_ACTIVATED
+  SUBSCRIPTION_CANCELED
+}
+
+enum CrmAuditOutcome {
+  SUCCESS
+  FAILURE
+}
+
+model CrmAuditLog {
+  id                String          @id @default(uuid()) @db.Uuid
+  organizationId    String          @map("organization_id") @db.Uuid
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actorUserId       String?         @map("actor_user_id") @db.Uuid
+  actorMembershipId String?         @map("actor_membership_id") @db.Uuid
+  action            CrmAuditAction
+  outcome           CrmAuditOutcome @default(SUCCESS)
+  targetType        String?         @map("target_type")
+  targetId          String?         @map("target_id") @db.Uuid
+  summary           String
+  metadata          Json            @default("{}")
+  ipAddress         String?         @map("ip_address")
+  createdAt         DateTime        @default(now()) @map("created_at")
+
+  @@index([organizationId, createdAt])
+  @@map("crm_audit_logs")
 }
 
 model Membership {

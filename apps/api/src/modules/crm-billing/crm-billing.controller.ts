@@ -1,8 +1,13 @@
 import type { Request, Response } from "express";
 
+import { CrmAuditAction } from "#generated/prisma/enums.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { validated } from "#middlewares/validate.js";
 import { getResolvedOrganization } from "#modules/crm-access/crm-access.middleware.js";
+import { AUDIT_TARGET_TYPE } from "#modules/crm-audit/crm-audit.constants.js";
+import { crmAudit } from "#modules/crm-audit/crm-audit.service.js";
+import { buildAuditActor } from "#modules/crm-audit/crm-audit.utils.js";
+import { PaymentVerifyStatus } from "#modules/payments/payment.types.js";
 
 import { DEFAULT_INVOICE_PAGE_SIZE } from "./crm-billing.constants.js";
 import type {
@@ -31,7 +36,7 @@ export const crmBillingController = {
     sendSuccess(res, page, "CRM billing invoices.");
   },
 
-  async checkout(_req: Request, res: Response) {
+  async checkout(req: Request, res: Response) {
     const { plan, seats, provider } = validated.body<BillingCheckoutBody>(res);
     const organization = getResolvedOrganization(res);
 
@@ -39,6 +44,14 @@ export const crmBillingController = {
       planId: plan,
       seats,
       provider,
+    });
+    await crmAudit.record({
+      organizationId: organization.id,
+      action: CrmAuditAction.SUBSCRIPTION_CHECKOUT_STARTED,
+      summary: `Started checkout for the ${plan} plan (${seats} seats)`,
+      actor: buildAuditActor(req, res),
+      target: { type: AUDIT_TARGET_TYPE.SUBSCRIPTION, id: null },
+      metadata: { plan, seats, provider },
     });
     sendSuccess(res, redirect, "Checkout started.");
   },
@@ -56,17 +69,33 @@ export const crmBillingController = {
     sendSuccess(res, redirect, "Payment started.");
   },
 
-  async verifyInvoice(_req: Request, res: Response) {
+  async verifyInvoice(req: Request, res: Response) {
     const { invoiceId } = validated.params<InvoiceIdParams>(res);
     const organization = getResolvedOrganization(res);
 
     const result = await crmBillingService.verifyInvoice(organization.id, invoiceId);
+    if (result.status === PaymentVerifyStatus.COMPLETE) {
+      await crmAudit.record({
+        organizationId: organization.id,
+        action: CrmAuditAction.SUBSCRIPTION_ACTIVATED,
+        summary: "Subscription payment confirmed",
+        actor: buildAuditActor(req, res),
+        target: { type: AUDIT_TARGET_TYPE.SUBSCRIPTION, id: invoiceId },
+      });
+    }
     sendSuccess(res, result, "Invoice verification result.");
   },
 
-  async cancel(_req: Request, res: Response) {
+  async cancel(req: Request, res: Response) {
     const organization = getResolvedOrganization(res);
     await crmBillingService.cancelAtPeriodEnd(organization.id);
+    await crmAudit.record({
+      organizationId: organization.id,
+      action: CrmAuditAction.SUBSCRIPTION_CANCELED,
+      summary: "Set the subscription not to renew",
+      actor: buildAuditActor(req, res),
+      target: { type: AUDIT_TARGET_TYPE.SUBSCRIPTION, id: null },
+    });
     sendSuccess(res, null, "Subscription will not renew.");
   },
 };
