@@ -1,5 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 
+import { APP_ENV } from "@/shared/lib/appEnv";
+
 const SENTRY_TRACES_SAMPLE_RATE = 0.2;
 
 export const register = () => {
@@ -7,7 +9,7 @@ export const register = () => {
 
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
-    environment: process.env.NODE_ENV,
+    environment: APP_ENV,
     tracesSampleRate: SENTRY_TRACES_SAMPLE_RATE,
   });
 };
