@@ -1,6 +1,71 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["NODE_ENV", "APP_ENV"],
+  "globalEnv": [
+    "NODE_ENV",
+    "APP_ENV",
+    "PROCESS_ROLE",
+    "PORT",
+    "DATABASE_URL",
+    "DIRECT_DATABASE_URL",
+    "DATABASE_POOL_MAX",
+    "TEST_DATABASE_URL",
+    "JWT_SECRET",
+    "JWT_ACCESS_TTL",
+    "JWT_REFRESH_TTL",
+    "GMAIL_USER",
+    "GMAIL_APP_PASSWORD",
+    "FRONTEND_URL",
+    "ADMIN_URL",
+    "ALLOWED_ORIGINS",
+    "TENANT_BASE_DOMAIN",
+    "API_PUBLIC_URL",
+    "OAUTH_REDIRECT_BASE_URL",
+    "ADMIN_BOOTSTRAP_EMAIL",
+    "ADMIN_BOOTSTRAP_PASSWORD",
+    "ADMIN_BOOTSTRAP_PHONE",
+    "STORAGE_DRIVER",
+    "UPLOADS_DIR",
+    "REDIS_URL",
+    "ESEWA_PRODUCT_CODE",
+    "ESEWA_SECRET_KEY",
+    "ESEWA_BASE_URL",
+    "ESEWA_STATUS_URL",
+    "KHALTI_BASE_URL",
+    "KHALTI_SECRET_KEY",
+    "PASSWORD_BREACH_CHECK_ENABLED",
+    "CAPTCHA_ENABLED",
+    "TURNSTILE_SECRET_KEY",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "FACEBOOK_APP_ID",
+    "FACEBOOK_APP_SECRET",
+    "BANK_ACCOUNT_ENCRYPTION_KEY",
+    "SENTRY_DSN",
+    "IMAGE_QUEUE_REDIS_HOST",
+    "IMAGE_QUEUE_REDIS_PORT",
+    "IMAGE_QUEUE_REDIS_PASSWORD",
+    "IMAGE_QUEUE_REDIS_TLS",
+    "IMAGE_QUEUE_REDIS_DB",
+    "IMAGE_STORAGE_ROOT_DIR",
+    "IMAGE_TEMP_UPLOAD_DIR",
+    "IMAGE_PIPELINE_TEST_REDIS_URL",
+    "INTEGRATION_WORKERS",
+    "API_URL",
+    "SITE_URL",
+    "ADMIN_ORIGIN_URL",
+    "NEXT_PUBLIC_APP_ENV",
+    "NEXT_PUBLIC_ADMIN_URL",
+    "NEXT_PUBLIC_TENANT_BASE_DOMAIN",
+    "NEXT_PUBLIC_SOCKET_URL",
+    "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
+    "NEXT_PUBLIC_SENTRY_DSN",
+    "VITE_APP_ENV",
+    "VITE_API_URL",
+    "VITE_WEB_URL",
+    "VITE_TENANT_BASE_DOMAIN",
+    "VITE_SOCKET_URL",
+    "VITE_SENTRY_DSN"
+  ],
   "tasks": {
     "db:generate": {
       "cache": false,
@@ -14,21 +79,6 @@
     },
     "build": {
       "dependsOn": ["^build", "db:generate"],
-      "env": [
-        "DATABASE_URL",
-        "JWT_SECRET",
-        "API_URL",
-        "SITE_URL",
-        "NEXT_PUBLIC_APP_ENV",
-        "NEXT_PUBLIC_ADMIN_URL",
-        "ADMIN_ORIGIN_URL",
-        "NEXT_PUBLIC_TENANT_BASE_DOMAIN",
-        "ALLOWED_ORIGINS",
-        "VITE_APP_ENV",
-        "VITE_API_URL",
-        "VITE_WEB_URL",
-        "VITE_TENANT_BASE_DOMAIN"
-      ],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "typecheck": {
@@ -37,66 +87,22 @@
     "lint": {},
     "test": {
       "dependsOn": ["^build", "db:generate"],
-      "cache": true,
-      "env": [
-        "DATABASE_URL",
-        "TEST_DATABASE_URL",
-        "REDIS_URL",
-        "JWT_SECRET",
-        "IMAGE_QUEUE_REDIS_HOST",
-        "IMAGE_QUEUE_REDIS_PORT",
-        "IMAGE_QUEUE_REDIS_PASSWORD",
-        "IMAGE_QUEUE_REDIS_TLS",
-        "IMAGE_PIPELINE_TEST_REDIS_URL"
-      ]
+      "cache": true
     },
     "test:coverage": {
       "dependsOn": ["^build", "db:generate"],
       "outputs": ["coverage/**"],
-      "cache": true,
-      "env": [
-        "DATABASE_URL",
-        "TEST_DATABASE_URL",
-        "REDIS_URL",
-        "JWT_SECRET",
-        "IMAGE_QUEUE_REDIS_HOST",
-        "IMAGE_QUEUE_REDIS_PORT",
-        "IMAGE_QUEUE_REDIS_PASSWORD",
-        "IMAGE_QUEUE_REDIS_TLS",
-        "IMAGE_PIPELINE_TEST_REDIS_URL"
-      ]
+      "cache": true
     },
     "test:unit": {
       "dependsOn": ["db:generate"],
       "outputs": ["coverage/**"],
-      "cache": true,
-      "env": [
-        "DATABASE_URL",
-        "TEST_DATABASE_URL",
-        "REDIS_URL",
-        "JWT_SECRET",
-        "IMAGE_QUEUE_REDIS_HOST",
-        "IMAGE_QUEUE_REDIS_PORT",
-        "IMAGE_QUEUE_REDIS_PASSWORD",
-        "IMAGE_QUEUE_REDIS_TLS",
-        "IMAGE_PIPELINE_TEST_REDIS_URL"
-      ]
+      "cache": true
     },
     "test:integration": {
       "dependsOn": ["db:generate"],
       "outputs": ["coverage/**"],
-      "cache": false,
-      "env": [
-        "DATABASE_URL",
-        "TEST_DATABASE_URL",
-        "REDIS_URL",
-        "JWT_SECRET",
-        "IMAGE_QUEUE_REDIS_HOST",
-        "IMAGE_QUEUE_REDIS_PORT",
-        "IMAGE_QUEUE_REDIS_PASSWORD",
-        "IMAGE_QUEUE_REDIS_TLS",
-        "IMAGE_PIPELINE_TEST_REDIS_URL"
-      ]
+      "cache": false
     }
   }
 }
