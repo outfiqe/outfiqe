@@ -53,6 +53,10 @@ export const TasteCategories = () => {
     router.replace(`/?category=${slug}`, { scroll: false });
   };
 
+  if (!categories.isLoading && categories.data?.length === 0) {
+    return null;
+  }
+
   return (
     <section className="px-6 pb-4 pt-4 sm:pb-6 sm:pt-6 lg:px-10">
       <span className="text-xs font-bold uppercase tracking-widest text-primary-strong">

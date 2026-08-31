@@ -72,7 +72,11 @@ jobs:
             set -euo pipefail
             cd /srv/outfiqe
             export IMAGE_TAG="${{ steps.target.outputs.sha }}"
-            DIRECT_URL="$(grep -E '^DIRECT_DATABASE_URL=' .env.prod | cut -d= -f2-)"
+            DIRECT_URL="$(grep -E '^DIRECT_DATABASE_URL=' .env.prod | head -n1 | cut -d= -f2-)"
+            DIRECT_URL="${DIRECT_URL%\"}"
+            DIRECT_URL="${DIRECT_URL#\"}"
+            DIRECT_URL="${DIRECT_URL%\'}"
+            DIRECT_URL="${DIRECT_URL#\'}"
 
             docker compose -f docker-compose.prod.yml --env-file .env.prod pull
 
