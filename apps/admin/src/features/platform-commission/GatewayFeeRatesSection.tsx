@@ -1,4 +1,4 @@
-import { Button, FormBanner, Input } from "@outfiqe/design-system";
+import { Button, FormBanner, Input, Skeleton } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
@@ -16,7 +16,7 @@ const PROVIDER_LABEL: Record<GatewayPaymentMethodValue, string> = {
 
 const ProviderRateForm = ({ paymentMethod }: { paymentMethod: GatewayPaymentMethodValue }) => {
   const queryClient = useQueryClient();
-  const { data: rates } = useQuery({
+  const { data: rates, isLoading: isRatesLoading } = useQuery({
     queryKey: RATES_QUERY_KEY,
     queryFn: platformCommissionApi.listGatewayFeeRates,
   });
@@ -50,9 +50,15 @@ const ProviderRateForm = ({ paymentMethod }: { paymentMethod: GatewayPaymentMeth
         <h3 className="font-display text-sm font-bold text-foreground">
           {PROVIDER_LABEL[paymentMethod]}
         </h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {activeRate ? `Current estimate: ${activeRate.ratePercent}%` : "No rate configured yet."}
-        </p>
+        {isRatesLoading ? (
+          <Skeleton role="status" aria-label="Loading current rate" className="mt-1 h-4 w-40" />
+        ) : (
+          <p className="mt-1 text-xs text-muted-foreground">
+            {activeRate
+              ? `Current estimate: ${activeRate.ratePercent}%`
+              : "No rate configured yet."}
+          </p>
+        )}
       </div>
       <div className="space-y-1.5">
         <label className="block text-xs text-muted-foreground">New rate (%)</label>
