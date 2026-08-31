@@ -1,5 +1,4 @@
-import { config } from "dotenv";
-config();
+import "../src/config/load-env.js";
 
 import { prisma } from "../src/shared/db/prisma.js";
 import { hashPassword } from "../src/shared/utils/password.utils.js";

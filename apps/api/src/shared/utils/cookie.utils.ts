@@ -1,5 +1,6 @@
 import type { CookieOptions, Request, Response } from "express";
 
+import { IS_DEPLOYED } from "#config/app-env.js";
 import { env } from "#config/env.config.js";
 import { generateOpaqueToken } from "#lib/opaque-token.utils.js";
 
@@ -11,7 +12,7 @@ const MS_PER_SECOND = 1000;
 
 const baseCookieOptions: CookieOptions = {
   httpOnly: true,
-  secure: env.NODE_ENV === "production",
+  secure: IS_DEPLOYED,
   sameSite: "strict",
   path: AUTH_COOKIE_PATH,
   domain: env.TENANT_BASE_DOMAIN,
