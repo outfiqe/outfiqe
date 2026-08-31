@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
+    { "source": "/api/:path*", "destination": "https://api.outfiqe.com/api/:path*" },
     { "source": "/admin/assets/:path*", "destination": "/assets/:path*" },
     { "source": "/admin/favicon.svg", "destination": "/favicon.svg" },
     { "source": "/admin", "destination": "/index.html" },

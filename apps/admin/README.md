@@ -34,3 +34,10 @@ Static hosts serve the build output at their root, not under `/admin/`, so `verc
 prefixed paths back onto the real files: `/admin/assets/*` -> `/assets/*`, `/admin/favicon.svg`
 -> `/favicon.svg`, and every other `/admin/*` (plus `/`) -> `/index.html` for client-side
 routing. Without it, `admin.<domain>/admin/` and the `outfiqe.com/admin` proxy both 404.
+
+`vercel.json` also proxies `/api/*` to the API host so the browser always talks to a same-origin
+`/api` -- identical to how `apps/web` reaches the API. `apiClient` must therefore use the
+same-origin default: **leave `VITE_API_URL` unset in production** (or set it to `/api`). Setting it
+to the bare API origin (`https://api.<domain>`) drops the `/api` path segment the routes are
+mounted under, so every call 404s and the auth gate falls into a redirect loop with the web
+login.
