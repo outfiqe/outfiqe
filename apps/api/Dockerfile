@@ -8,24 +8,23 @@ FROM base AS pruner
 COPY . .
 RUN pnpm dlx turbo@2.10.11 prune @outfiqe/api --docker
 
-FROM base AS installer
+FROM base AS builder
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 COPY --from=pruner /repo/out/json/ .
 RUN pnpm install --frozen-lockfile
 COPY --from=pruner /repo/out/full/ .
+COPY --from=pruner /repo/tsconfig.base.json ./tsconfig.base.json
 ENV DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder
 RUN pnpm --filter @outfiqe/api exec prisma generate
-
-FROM installer AS deployer
-RUN pnpm --filter=@outfiqe/api --prod --legacy deploy /app
-RUN rm -rf /app/src/generated && cp -r /repo/apps/api/src/generated /app/src/generated
+RUN rm -rf /repo/out /repo/graphify-out /repo/.turbo
 
 FROM node:22-bookworm-slim AS runner
 ENV NODE_ENV=production
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends tini \
+  && apt-get install -y --no-install-recommends tini openssl \
   && rm -rf /var/lib/apt/lists/*
-WORKDIR /app
-COPY --from=deployer --chown=node:node /app ./
+COPY --from=builder --chown=node:node /repo /repo
+WORKDIR /repo/apps/api
 RUN mkdir -p /data/uploads /data/image-assets /data/image-temp && chown -R node:node /data
 USER node
 EXPOSE 4000

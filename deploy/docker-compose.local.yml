@@ -1,9 +1,6 @@
 name: outfiqe-local
 
 x-api-service: &api-service
-  build:
-    context: ..
-    dockerfile: apps/api/Dockerfile
   image: outfiqe-api:local
   restart: unless-stopped
   env_file:
@@ -31,6 +28,9 @@ x-api-service: &api-service
 services:
   api:
     <<: *api-service
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
     environment:
       PROCESS_ROLE: api
     ports:
@@ -56,7 +56,7 @@ services:
       POSTGRES_PASSWORD: outfiqe
       POSTGRES_DB: outfiqe_db
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
