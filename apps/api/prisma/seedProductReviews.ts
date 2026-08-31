@@ -1,5 +1,4 @@
-import { config } from "dotenv";
-config();
+import "../src/config/load-env.js";
 
 import { UserRole } from "../src/generated/prisma/enums.js";
 import { productRepository } from "../src/modules/products/product.repository.js";

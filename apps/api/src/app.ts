@@ -7,6 +7,9 @@ import helmet from "helmet";
 import { env } from "#config/env.config.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { isAllowedOrigin } from "#lib/cors.utils.js";
+import { checkReadiness } from "#lib/readiness.utils.js";
+import logger from "#lib/winston.utils.js";
+import { describeError } from "#redis/redis.utils.js";
 
 import { achievementRoutes } from "./modules/achievements/achievement.routes.js";
 import { adminInviteRoutes } from "./modules/admin-invites/adminInvite.routes.js";
@@ -67,6 +70,7 @@ import { requireRole } from "./shared/middlewares/require-role.js";
 import { resolvedUploadsDir } from "./shared/storage/storage.factory.js";
 
 const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
+const SERVICE_UNAVAILABLE_STATUS = 503;
 
 export const createApp = () => {
   const app = express();
@@ -125,6 +129,18 @@ export const createApp = () => {
 
   app.get("/health", (_req, res) => {
     sendSuccess(res, { status: "ok" }, "Service is healthy");
+  });
+
+  app.get("/ready", async (_req, res) => {
+    try {
+      await checkReadiness();
+      sendSuccess(res, { status: "ready" }, "Service is ready");
+    } catch (error) {
+      logger.error(`Readiness check failed: ${describeError(error)}`);
+      res
+        .status(SERVICE_UNAVAILABLE_STATUS)
+        .json({ success: false, message: "Service is not ready", data: null });
+    }
   });
 
   app.use("/api/users", userRoutes);

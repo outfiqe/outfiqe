@@ -19,9 +19,9 @@ pnpm install
 
 # 2. Copy env files
 cp .env.example .env
-cp apps/api/.env.example apps/api/.env
-cp apps/web/.env.example apps/web/.env
-cp apps/admin/.env.example apps/admin/.env
+cp apps/api/.env.local.example apps/api/.env.local
+cp apps/web/.env.local.example apps/web/.env.local
+cp apps/admin/.env.local.example apps/admin/.env.local
 
 # 3. Add outfiqe.local to your hosts file (see "Local domain setup" below) — required, the
 #    session cookie can't be shared across subdomains on a bare "localhost"
@@ -47,7 +47,7 @@ pnpm dev
 
 ### Local domain setup
 
-When filling in `apps/api/.env` and `apps/admin/.env` from their `.env.example` templates, set
+When filling in `apps/api/.env.local` and `apps/admin/.env.local` from their `.env.local.example` templates, set
 `TENANT_BASE_DOMAIN`, `FRONTEND_URL`, `ADMIN_URL`, `OAUTH_REDIRECT_BASE_URL`, and
 `VITE_WEB_URL` (`apps/admin`) to `outfiqe.local` (with the right port), not bare `localhost`. This
 isn't cosmetic — the session cookie is scoped to `TENANT_BASE_DOMAIN`
@@ -103,8 +103,8 @@ in `apps/web/src/features/auth`). Visiting the admin panel while signed out boun
 `apps/web`'s login and back.
 
 The **first** admin in an environment is created by the API on boot from env vars
-(`ADMIN_BOOTSTRAP_EMAIL`/`ADMIN_BOOTSTRAP_PASSWORD`/`ADMIN_BOOTSTRAP_PHONE` in `apps/api/.env`,
-see `apps/api/.env.example`) — set all three, start the API once, then unset or rotate the
+(`ADMIN_BOOTSTRAP_EMAIL`/`ADMIN_BOOTSTRAP_PASSWORD`/`ADMIN_BOOTSTRAP_PHONE` in `apps/api/.env.local`,
+see `apps/api/.env.local.example`) — set all three, start the API once, then unset or rotate the
 password. From there, sign in (via `apps/web`) and use **Team** to invite further admins (email +
 link, same pattern as brand invites).
 
@@ -139,38 +139,37 @@ Run from `apps/api` (or via `pnpm --filter @outfiqe/api <script>`):
 
 ## Environment Variables
 
-| File              | Used by              | Notes                                                                                                                                                                                                                                                                                      |
-| ----------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `.env`            | `docker-compose.yml` | Postgres credentials                                                                                                                                                                                                                                                                       |
-| `apps/api/.env`   | API                  | `DATABASE_URL`, `JWT_SECRET`, token TTLs, `ALLOWED_ORIGINS` (CORS allowlist for web + admin), `TENANT_BASE_DOMAIN` (see "Local domain setup"), `ADMIN_BOOTSTRAP_*` (see "Admin access")                                                                                                    |
-| `apps/web/.env`   | Web                  | `API_URL`, `SITE_URL` (server-only) and `NEXT_PUBLIC_ADMIN_URL` (client-exposed — the post-login redirect target for admins)                                                                                                                                                               |
-| `apps/admin/.env` | Admin                | `VITE_WEB_URL` (where signed-out visitors get bounced to sign in, sent to the browser bundle). `VITE_API_URL` is optional — `apiClient` defaults to the same-origin `/api`, proxied by `vite.config.ts`'s dev server; only set it to point at a genuinely different, cross-origin API host |
+| File                    | Used by               | Notes                                                                                                                                                                                                                                                                              |
+| ----------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.env`                  | `docker-compose.yml`  | Postgres credentials                                                                                                                                                                                                                                                               |
+| `apps/api/.env.local`   | API (local dev)       | Every var in `apps/api/src/config/env.config.ts` is required — there are no code defaults. `DATABASE_URL`, `JWT_SECRET`, token TTLs, `ALLOWED_ORIGINS` (CORS allowlist for web + admin), `TENANT_BASE_DOMAIN` (see "Local domain setup"), `ADMIN_BOOTSTRAP_*` (see "Admin access") |
+| `apps/api/.env.test`    | API integration tests | Complete required set with test-safe values; `TEST_DATABASE_URL` points at the `docker compose --profile test` Postgres                                                                                                                                                            |
+| `apps/web/.env.local`   | Web (local dev)       | `NEXT_PUBLIC_APP_ENV`, `API_URL`, `SITE_URL` (server-only) and `NEXT_PUBLIC_ADMIN_URL` (client-exposed — the post-login redirect target for admins)                                                                                                                                |
+| `apps/admin/.env.local` | Admin (local dev)     | `VITE_APP_ENV`, `VITE_WEB_URL` (where signed-out visitors get bounced to sign in). `VITE_API_URL` defaults to the same-origin `/api`, proxied by `vite.config.ts`'s dev server                                                                                                     |
+| `deploy/.env.prod`      | production compose    | Droplet-only, `chmod 600`. See `deploy/README.md`                                                                                                                                                                                                                                  |
 
-`.env` files are gitignored; only the `.env.example` templates are committed.
+`.env*` files are gitignored; only the `*.example` templates (`.env.example`, `.env.local.example`, `.env.test.example`, `deploy/.env.prod.example`, `deploy/.env.dev.example`) are committed.
 
-### GitHub Variables (CI only)
+`NODE_ENV` is the Node/library mode. `APP_ENV` (`local` | `dev` | `prod`) is the deployment identity — a `dev` deploy and a `prod` deploy are both `NODE_ENV=production` builds, so structured logging, secure cookies, HSTS, and the Sentry environment tag key off `APP_ENV` instead. `PROCESS_ROLE` (`all` | `api` | `worker` | `scheduler`) picks which part of the API a container runs — see `apps/api/src/processes/README.md`.
 
-CI has no database, so `.github/workflows/ci.yml` reads placeholder values for
-`prisma generate`/`tsc` from repo **Settings → Secrets and variables →
-Actions → Variables**. These are not secrets — nothing they point to is a
-real, reachable service — so they're set as Variables, not Secrets. The
-workflow falls back to a working default for any that are unset; all five
-are currently set on the repo.
+### GitHub Actions config (CI only)
 
-| Variable          | Example value                                                          |
-| ----------------- | ---------------------------------------------------------------------- |
-| `CI_DATABASE_URL` | `postgresql://outfiqe:outfiqe@localhost:5432/outfiqe_db?schema=public` |
-| `CI_JWT_SECRET`   | any string ≥ 16 characters                                             |
-| `CI_API_URL`      | `http://localhost:4000` (workflow default, rarely needs overriding)    |
-| `CI_SITE_URL`     | `http://localhost:3000` (workflow default, rarely needs overriding)    |
-| `CI_ADMIN_URL`    | `/admin` (workflow default, rarely needs overriding)                   |
+`env.config.ts` has no code defaults, so `.github/workflows/ci.yml` supplies the
+whole environment from repo **Settings → Secrets and variables → Actions**,
+with no inline fallbacks. Non-sensitive values are **Variables** (`vars.CI_*`),
+credential-shaped ones are **Secrets** (`secrets.CI_*`). Nothing points at a real
+service — the secrets are placeholder/test values — but they are stored as
+secrets so nothing credential-shaped is printed in workflow logs.
 
-Via `gh` CLI instead of the UI:
+- Variables (`CI_API_URL`, `CI_APP_ENV`, `CI_PROCESS_ROLE`, `CI_REDIS_URL`,
+  `CI_ALLOWED_ORIGINS`, `CI_ESEWA_*` URLs, `CI_KHALTI_BASE_URL`,
+  `CI_PASSWORD_BREACH_CHECK_ENABLED`, … — see `ci.yml` for the full list).
+- Secrets: `CI_DATABASE_URL`, `CI_JWT_SECRET`, `CI_BANK_ACCOUNT_ENCRYPTION_KEY`,
+  `CI_ESEWA_SECRET_KEY`, `CI_KHALTI_SECRET_KEY`, `CI_TURNSTILE_SECRET_KEY`,
+  `CI_GOOGLE_CLIENT_SECRET`, `CI_FACEBOOK_APP_SECRET`.
 
-```bash
-gh variable set CI_DATABASE_URL --body "postgresql://outfiqe:outfiqe@localhost:5432/outfiqe_db?schema=public"
-gh variable set CI_JWT_SECRET --body "ci-placeholder-secret-not-used-for-anything-real"
-```
+Every name referenced in `ci.yml` must exist or the test jobs fail at env
+validation. Set them via the UI or `gh variable set` / `gh secret set`.
 
 ## Code Quality & Commits
 

@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
 
 # Cancel superseded runs on the same branch/PR instead of letting them queue.
 concurrency:
@@ -14,20 +14,46 @@ concurrency:
 permissions:
   contents: read
 
-# Not real secrets — just enough for `prisma generate`, `tsc` and `next build`
-# to run without a live database. Nothing here connects to an actual Postgres
-# instance; the integration and coverage jobs use their own service containers.
-#
-# Optional overrides come from repo Settings → Secrets and variables → Actions →
-# Variables (vars.*), with a working fallback baked in so CI is green before any
-# variable is configured. See the "GitHub Variables" section in README.
 env:
-  DATABASE_URL: ${{ vars.CI_DATABASE_URL || 'postgresql://outfiqe:outfiqe@localhost:5432/outfiqe_db?schema=public' }}
-  JWT_SECRET: ${{ vars.CI_JWT_SECRET || 'ci-placeholder-secret-not-used-for-anything-real' }}
-  API_URL: ${{ vars.CI_API_URL || 'http://localhost:4000' }}
-  SITE_URL: ${{ vars.CI_SITE_URL || 'http://localhost:3000' }}
-  VITE_WEB_URL: ${{ vars.CI_SITE_URL || 'http://localhost:3000' }}
-  NEXT_PUBLIC_ADMIN_URL: ${{ vars.CI_ADMIN_URL || '/admin' }}
+  API_URL: ${{ vars.CI_API_URL }}
+  SITE_URL: ${{ vars.CI_SITE_URL }}
+  VITE_WEB_URL: ${{ vars.CI_SITE_URL }}
+  NEXT_PUBLIC_ADMIN_URL: ${{ vars.CI_ADMIN_URL }}
+  NEXT_PUBLIC_APP_ENV: ${{ vars.CI_PUBLIC_APP_ENV }}
+  VITE_APP_ENV: ${{ vars.CI_PUBLIC_APP_ENV }}
+
+  APP_ENV: ${{ vars.CI_APP_ENV }}
+  PROCESS_ROLE: ${{ vars.CI_PROCESS_ROLE }}
+  PORT: ${{ vars.CI_PORT }}
+  DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+  DATABASE_POOL_MAX: ${{ vars.CI_DATABASE_POOL_MAX }}
+  JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
+  JWT_ACCESS_TTL: ${{ vars.CI_JWT_ACCESS_TTL }}
+  JWT_REFRESH_TTL: ${{ vars.CI_JWT_REFRESH_TTL }}
+  GMAIL_USER: ${{ vars.CI_GMAIL_USER }}
+  FRONTEND_URL: ${{ vars.CI_FRONTEND_URL }}
+  ADMIN_URL: ${{ vars.CI_API_ADMIN_URL }}
+  ALLOWED_ORIGINS: ${{ vars.CI_ALLOWED_ORIGINS }}
+  TENANT_BASE_DOMAIN: ${{ vars.CI_TENANT_BASE_DOMAIN }}
+  API_PUBLIC_URL: ${{ vars.CI_API_PUBLIC_URL }}
+  OAUTH_REDIRECT_BASE_URL: ${{ vars.CI_OAUTH_REDIRECT_BASE_URL }}
+  STORAGE_DRIVER: ${{ vars.CI_STORAGE_DRIVER }}
+  UPLOADS_DIR: ${{ vars.CI_UPLOADS_DIR }}
+  REDIS_URL: ${{ vars.CI_REDIS_URL }}
+  ESEWA_PRODUCT_CODE: ${{ vars.CI_ESEWA_PRODUCT_CODE }}
+  ESEWA_SECRET_KEY: ${{ secrets.CI_ESEWA_SECRET_KEY }}
+  ESEWA_BASE_URL: ${{ vars.CI_ESEWA_BASE_URL }}
+  ESEWA_STATUS_URL: ${{ vars.CI_ESEWA_STATUS_URL }}
+  KHALTI_BASE_URL: ${{ vars.CI_KHALTI_BASE_URL }}
+  KHALTI_SECRET_KEY: ${{ secrets.CI_KHALTI_SECRET_KEY }}
+  PASSWORD_BREACH_CHECK_ENABLED: ${{ vars.CI_PASSWORD_BREACH_CHECK_ENABLED }}
+  CAPTCHA_ENABLED: ${{ vars.CI_CAPTCHA_ENABLED }}
+  TURNSTILE_SECRET_KEY: ${{ secrets.CI_TURNSTILE_SECRET_KEY }}
+  GOOGLE_CLIENT_ID: ${{ vars.CI_GOOGLE_CLIENT_ID }}
+  GOOGLE_CLIENT_SECRET: ${{ secrets.CI_GOOGLE_CLIENT_SECRET }}
+  FACEBOOK_APP_ID: ${{ vars.CI_FACEBOOK_APP_ID }}
+  FACEBOOK_APP_SECRET: ${{ secrets.CI_FACEBOOK_APP_SECRET }}
+  BANK_ACCOUNT_ENCRYPTION_KEY: ${{ secrets.CI_BANK_ACCOUNT_ENCRYPTION_KEY }}
 
 jobs:
   lint:
@@ -119,7 +145,7 @@ jobs:
 
   coverage:
     name: Coverage gate
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:

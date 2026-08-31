@@ -237,12 +237,18 @@ importers:
       pg:
         specifier: ^8.22.0
         version: 8.22.0
+      prisma:
+        specifier: ^7.9.1
+        version: 7.9.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(magicast@0.5.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2)
       sharp:
         specifier: ^0.33.5
         version: 0.33.5
       socket.io:
         specifier: ^4.8.3
         version: 4.8.3(supports-color@8.1.1)
+      tsx:
+        specifier: ^4.23.10
+        version: 4.23.10
       winston:
         specifier: ^3.19.0
         version: 3.19.0
@@ -283,15 +289,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^4.1.10
         version: 4.1.10(vitest@4.1.10)
-      prisma:
-        specifier: ^7.9.1
-        version: 7.9.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(magicast@0.5.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2)
       supertest:
         specifier: ^7.1.4
         version: 7.2.2(supports-color@7.2.0)
-      tsx:
-        specifier: ^4.23.10
-        version: 4.23.10
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
