@@ -59,7 +59,7 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/outfiqe-api:${{ steps.target.outputs.sha }}
             ghcr.io/${{ github.repository_owner }}/outfiqe-api:latest
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
 
       - name: Migrate and deploy on the droplet
         uses: appleboy/ssh-action@v1
