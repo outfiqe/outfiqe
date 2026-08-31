@@ -23,3 +23,14 @@ The first admin in an environment is created via the API's boot-time bootstrap
 (`ADMIN_BOOTSTRAP_EMAIL`/`ADMIN_BOOTSTRAP_PASSWORD`/`ADMIN_BOOTSTRAP_PHONE`, see
 `apps/api/.env.example`). From there, sign in on `apps/web` and use **Team** to invite further
 admins (they set up their own password on `/register?token=...` here).
+
+## Deployment
+
+The Vite build sets `base: "/admin/"`, so every emitted URL (entry script, `assets/*`, favicon)
+is prefixed `/admin/`. This keeps the app self-consistent whether it's hit directly or proxied
+through `apps/web` at `outfiqe.com/admin` (Next rewrites `/admin/:path*` straight to this host).
+
+Static hosts serve the build output at their root, not under `/admin/`, so `vercel.json` maps the
+prefixed paths back onto the real files: `/admin/assets/*` -> `/assets/*`, `/admin/favicon.svg`
+-> `/favicon.svg`, and every other `/admin/*` (plus `/`) -> `/index.html` for client-side
+routing. Without it, `admin.<domain>/admin/` and the `outfiqe.com/admin` proxy both 404.
