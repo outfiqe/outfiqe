@@ -4,6 +4,8 @@ import { ErrorFallback } from "@outfiqe/error-boundary";
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 
+import { IS_PROD } from "@/shared/lib/appEnv";
+
 const GlobalError = ({
   error,
   reset,
@@ -18,11 +20,7 @@ const GlobalError = ({
   return (
     <html lang="en">
       <body>
-        <ErrorFallback
-          error={error}
-          resetErrorBoundary={reset}
-          showDetails={process.env.NODE_ENV === "development"}
-        />
+        <ErrorFallback error={error} resetErrorBoundary={reset} showDetails={!IS_PROD} />
       </body>
     </html>
   );

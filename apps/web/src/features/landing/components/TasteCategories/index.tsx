@@ -53,6 +53,8 @@ export const TasteCategories = () => {
     router.replace(`/?category=${slug}`, { scroll: false });
   };
 
+  const hasNoCategories = !categories.isLoading && categories.data?.length === 0;
+
   return (
     <section className="px-6 pb-4 pt-4 sm:pb-6 sm:pt-6 lg:px-10">
       <span className="text-xs font-bold uppercase tracking-widest text-primary-strong">
@@ -65,69 +67,75 @@ export const TasteCategories = () => {
         Pick a look you like. We&apos;ll show you what fits it, across every brand we carry.
       </p>
 
-      <div className="relative mt-5">
-        <div
-          ref={scrollerRef}
-          onScroll={updateScrollability}
-          aria-busy={isNavigating}
-          className={cn(
-            "-mx-2 flex gap-3 p-2",
-            "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-            categories.isLoading ? "overflow-x-hidden" : "overflow-x-auto",
-          )}
-        >
-          {categories.isLoading &&
-            Array.from({ length: 20 }).map((_, index) => (
-              <Skeleton key={index} className="size-28 shrink-0 rounded-2xl sm:size-32" />
+      {hasNoCategories && (
+        <p className="mt-8 text-sm text-muted-foreground">No categories yet — check back soon.</p>
+      )}
+
+      {!hasNoCategories && (
+        <div className="relative mt-5">
+          <div
+            ref={scrollerRef}
+            onScroll={updateScrollability}
+            aria-busy={isNavigating}
+            className={cn(
+              "-mx-2 flex gap-3 p-2",
+              "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+              categories.isLoading ? "overflow-x-hidden" : "overflow-x-auto",
+            )}
+          >
+            {categories.isLoading &&
+              Array.from({ length: 20 }).map((_, index) => (
+                <Skeleton key={index} className="size-28 shrink-0 rounded-2xl sm:size-32" />
+              ))}
+
+            {categories.data?.map((category) => (
+              <Button
+                key={category.slug}
+                variant="ghost"
+                onClick={() => selectCategory(category.slug)}
+                style={
+                  category.imageUrl
+                    ? {
+                        backgroundImage: `linear-gradient(to top, rgba(20,16,14,0.75), rgba(20,16,14,0.05)), url(${category.imageUrl})`,
+                      }
+                    : { backgroundColor: getAvatarColor(category.slug) }
+                }
+                className={cn(
+                  "relative size-28 shrink-0 items-end justify-start rounded-2xl bg-cover bg-center p-3 text-left font-normal transition-transform hover:-translate-y-0.5 hover:bg-transparent sm:size-32",
+                  category.slug === activeSlug &&
+                    "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                )}
+              >
+                <span className="text-[11px] font-bold uppercase tracking-wide text-white sm:text-xs">
+                  {category.name}
+                </span>
+              </Button>
             ))}
+          </div>
 
-          {categories.data?.map((category) => (
-            <Button
-              key={category.slug}
-              variant="ghost"
-              onClick={() => selectCategory(category.slug)}
-              style={
-                category.imageUrl
-                  ? {
-                      backgroundImage: `linear-gradient(to top, rgba(20,16,14,0.75), rgba(20,16,14,0.05)), url(${category.imageUrl})`,
-                    }
-                  : { backgroundColor: getAvatarColor(category.slug) }
-              }
-              className={cn(
-                "relative size-28 shrink-0 items-end justify-start rounded-2xl bg-cover bg-center p-3 text-left font-normal transition-transform hover:-translate-y-0.5 hover:bg-transparent sm:size-32",
-                category.slug === activeSlug &&
-                  "ring-2 ring-primary ring-offset-2 ring-offset-background",
-              )}
+          {canScrollPrev && (
+            <button
+              type="button"
+              onClick={() => scrollByStep(-1)}
+              aria-label="Scroll categories left"
+              className="absolute left-0 top-1/2 flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-muted"
             >
-              <span className="text-[11px] font-bold uppercase tracking-wide text-white sm:text-xs">
-                {category.name}
-              </span>
-            </Button>
-          ))}
+              <ChevronLeft className="size-4" />
+            </button>
+          )}
+
+          {canScrollNext && (
+            <button
+              type="button"
+              onClick={() => scrollByStep(1)}
+              aria-label="Scroll categories right"
+              className="absolute right-0 top-1/2 flex size-8 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-muted"
+            >
+              <ChevronRight className="size-4" />
+            </button>
+          )}
         </div>
-
-        {canScrollPrev && (
-          <button
-            type="button"
-            onClick={() => scrollByStep(-1)}
-            aria-label="Scroll categories left"
-            className="absolute left-0 top-1/2 flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-muted"
-          >
-            <ChevronLeft className="size-4" />
-          </button>
-        )}
-
-        {canScrollNext && (
-          <button
-            type="button"
-            onClick={() => scrollByStep(1)}
-            aria-label="Scroll categories right"
-            className="absolute right-0 top-1/2 flex size-8 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-muted"
-          >
-            <ChevronRight className="size-4" />
-          </button>
-        )}
-      </div>
+      )}
     </section>
   );
 };

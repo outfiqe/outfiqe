@@ -9,12 +9,12 @@ const apiUrl = process.env.API_URL ?? "http://localhost:4000";
 
 const adminUrl = process.env.ADMIN_ORIGIN_URL ?? "http://localhost:5173";
 
-const isProduction = process.env.NODE_ENV === "production";
+const isProdEnv = process.env.NEXT_PUBLIC_APP_ENV === "prod";
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "origin-when-cross-origin" },
-  ...(isProduction
+  ...(isProdEnv
     ? [{ key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" }]
     : []),
 ];

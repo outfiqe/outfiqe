@@ -39,8 +39,12 @@ export const CategoryResults = () => {
     Boolean(hasNextPage) && !isFetchingNextPage,
   );
 
-  if (!category) {
+  if (categories.isLoading) {
     return <ProductGridSkeleton className="mt-8 px-6 lg:px-10" />;
+  }
+
+  if (!category) {
+    return null;
   }
 
   const { name, slug } = category;

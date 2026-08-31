@@ -8,6 +8,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { AuthProvider } from "./features/auth/AuthContext.tsx";
+import { APP_ENV } from "./lib/appEnv";
 import { routeTree } from "./routeTree.gen";
 
 // Without a staleTime, every route remount and window refocus refetches — the default
@@ -28,7 +29,7 @@ const router = createRouter({ routeTree, basepath: "/admin" });
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
-    environment: import.meta.env.MODE,
+    environment: APP_ENV,
     integrations: [Sentry.tanstackRouterBrowserTracingIntegration(router)],
     tracesSampleRate: SENTRY_TRACES_SAMPLE_RATE,
   });

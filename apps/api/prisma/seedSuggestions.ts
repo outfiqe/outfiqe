@@ -1,5 +1,4 @@
-import { config } from "dotenv";
-config();
+import "../src/config/load-env.js";
 
 import { CreatorStatus, FollowTargetType } from "../src/generated/prisma/enums.js";
 import { creatorLookService } from "../src/modules/creator-looks/creatorLook.service.js";

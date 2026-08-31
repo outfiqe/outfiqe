@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./load-env.js";
 
 import { z } from "zod";
 
@@ -7,50 +7,51 @@ import logger from "#lib/winston.utils.js";
 const JWT_SECRET_MIN_LENGTH = 32;
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  PORT: z.coerce.number().default(4000),
+  NODE_ENV: z.enum(["development", "test", "production"]),
+  APP_ENV: z.enum(["local", "dev", "prod"]),
+  PROCESS_ROLE: z.enum(["all", "api", "worker", "scheduler"]),
+  PORT: z.coerce.number(),
   DATABASE_URL: z.string().min(1),
-  DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
+  DIRECT_DATABASE_URL: z.string().min(1).optional(),
+  DATABASE_POOL_MAX: z.coerce.number().int().positive(),
   JWT_SECRET: z
     .string()
     .min(JWT_SECRET_MIN_LENGTH, `JWT_SECRET must be at least ${JWT_SECRET_MIN_LENGTH} characters`),
-  JWT_ACCESS_TTL: z.string().default("15m"),
-  JWT_REFRESH_TTL: z.string().default("7d"),
-  //TODO: ADD real smtp server when MVP is finished
-  GMAIL_USER: z.email().default("anjesh67890@gmail.com"),
+  JWT_ACCESS_TTL: z.string().min(1),
+  JWT_REFRESH_TTL: z.string().min(1),
+  GMAIL_USER: z.email(),
   GMAIL_APP_PASSWORD: z.string().optional(),
-  FRONTEND_URL: z.url().default("http://localhost:3000"),
-  ADMIN_URL: z.url().default("http://localhost:3000/admin"),
+  FRONTEND_URL: z.url(),
+  ADMIN_URL: z.url(),
   ALLOWED_ORIGINS: z
     .string()
-    .default("http://localhost:3000,http://localhost:5173")
+    .min(1)
     .transform((value) => value.split(",").map((origin) => origin.trim())),
   ADMIN_BOOTSTRAP_EMAIL: z.email().optional(),
   ADMIN_BOOTSTRAP_PASSWORD: z.string().min(1).optional(),
   ADMIN_BOOTSTRAP_PHONE: z.string().min(1).optional(),
-  STORAGE_DRIVER: z.enum(["local"]).default("local"),
-  UPLOADS_DIR: z.string().default("uploads"),
-  API_PUBLIC_URL: z.url().default("http://localhost:4000"),
-  TENANT_BASE_DOMAIN: z.string().min(1).default("localhost"),
-  REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
-  ESEWA_PRODUCT_CODE: z.string().min(1).default("EPAYTEST"),
-  ESEWA_SECRET_KEY: z.string().min(1).default("8gBm/:&EnhH.1/q"),
-  ESEWA_BASE_URL: z.url().default("https://rc-epay.esewa.com.np/api/epay/main/v2/form"),
-  ESEWA_STATUS_URL: z.url().default("https://rc.esewa.com.np/api/epay/transaction/status/"),
-  KHALTI_BASE_URL: z.url().default("https://dev.khalti.com/api/v2/"),
-  KHALTI_SECRET_KEY: z.string().min(1).default("KHALTI_TEST_SECRET_KEY_NOT_SET"),
-  PASSWORD_BREACH_CHECK_ENABLED: z.stringbool().default(true),
-  CAPTCHA_ENABLED: z.stringbool().default(true),
-  TURNSTILE_SECRET_KEY: z.string().min(1).default("1x0000000000000000000000000000000AA"),
-  OAUTH_REDIRECT_BASE_URL: z.url().default("http://localhost:3000"),
-  GOOGLE_CLIENT_ID: z.string().min(1).default("GOOGLE_CLIENT_ID_NOT_SET"),
-  GOOGLE_CLIENT_SECRET: z.string().min(1).default("GOOGLE_CLIENT_SECRET_NOT_SET"),
-  FACEBOOK_APP_ID: z.string().min(1).default("FACEBOOK_APP_ID_NOT_SET"),
-  FACEBOOK_APP_SECRET: z.string().min(1).default("FACEBOOK_APP_SECRET_NOT_SET"),
+  STORAGE_DRIVER: z.enum(["local"]),
+  UPLOADS_DIR: z.string().min(1),
+  API_PUBLIC_URL: z.url(),
+  TENANT_BASE_DOMAIN: z.string().min(1),
+  REDIS_URL: z.string().min(1),
+  ESEWA_PRODUCT_CODE: z.string().min(1),
+  ESEWA_SECRET_KEY: z.string().min(1),
+  ESEWA_BASE_URL: z.url(),
+  ESEWA_STATUS_URL: z.url(),
+  KHALTI_BASE_URL: z.url(),
+  KHALTI_SECRET_KEY: z.string().min(1),
+  PASSWORD_BREACH_CHECK_ENABLED: z.stringbool(),
+  CAPTCHA_ENABLED: z.stringbool(),
+  TURNSTILE_SECRET_KEY: z.string().min(1),
+  OAUTH_REDIRECT_BASE_URL: z.url(),
+  GOOGLE_CLIENT_ID: z.string().min(1),
+  GOOGLE_CLIENT_SECRET: z.string().min(1),
+  FACEBOOK_APP_ID: z.string().min(1),
+  FACEBOOK_APP_SECRET: z.string().min(1),
   BANK_ACCOUNT_ENCRYPTION_KEY: z
     .string()
-    .regex(/^[0-9a-f]{64}$/i, "BANK_ACCOUNT_ENCRYPTION_KEY must be exactly 64 hex characters")
-    .default("0".repeat(63) + "1"),
+    .regex(/^[0-9a-f]{64}$/i, "BANK_ACCOUNT_ENCRYPTION_KEY must be exactly 64 hex characters"),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -7,11 +7,11 @@ coverage
 *.tsbuildinfo
 .DS_Store
 
-# Env files - only .env.example / .env.test.example are committed
+# Env files - only *.example templates are committed
 .env
 .env.*
 !.env.example
-!.env.test.example
+!.env.*.example
 
 # Prisma 7 generates the client into src/, not node_modules
 apps/api/src/generated
