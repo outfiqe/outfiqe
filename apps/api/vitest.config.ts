@@ -10,7 +10,11 @@ const parsedTestEnv =
 const testDatabaseUrl = parsedTestEnv.TEST_DATABASE_URL ?? process.env.TEST_DATABASE_URL;
 
 const SANDBOX_ENV_OVERRIDES_PREVENTING_REAL_EXTERNAL_SERVICE_CALLS_IN_TESTS = {
-  GMAIL_APP_PASSWORD: "",
+  MAIL_FROM: "noreply@example.com",
+  OPS_NOTIFICATION_EMAIL: "ops@example.com",
+  SMTP_HOST: "",
+  SMTP_USER: "",
+  SMTP_PASS: "",
   ESEWA_SECRET_KEY: "8gBm/:&EnhH.1/q",
   KHALTI_SECRET_KEY: "KHALTI_TEST_SECRET_KEY_NOT_SET",
   PASSWORD_BREACH_CHECK_ENABLED: "false",

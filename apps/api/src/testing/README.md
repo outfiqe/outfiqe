@@ -116,7 +116,7 @@ full_page_writes=off -c wal_level=minimal` with a `tmpfs` mount at `/var/lib/pos
   evaluated before the next, and `process.env` mutations persist for the life of the worker process
   across vitest's per-file module-registry resets, so a one-time sentinel (`INTEGRATION_WORKER_ROUTED`)
   keeps the rewrite from compounding (`_w1_w1`) when `setupFiles` re-run for the next file.
-- **`vitest.config.ts`'s integration `env` block explicitly overrides `GMAIL_APP_PASSWORD`,
+- **`vitest.config.ts`'s integration `env` block explicitly overrides `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS`,
   `ESEWA_SECRET_KEY`, and `KHALTI_SECRET_KEY` to safe sandbox values, and this has to be an explicit
   override, not just omitting them.** `#config/env.config.ts` does `import "dotenv/config"` on every
   import, which loads `apps/api/.env` (the real dev file, with real secrets) as a side effect — and
@@ -124,12 +124,13 @@ full_page_writes=off -c wal_level=minimal` with a `tmpfs` mount at `/var/lib/pos
   ambient shell env left them unset at the point `vitest.config.ts` runs, so `env.config.ts`'s own
   `dotenv/config` import re-populated them from the real `.env` moments later, inside every test
   worker. Caught live: `sendEmail` (`shared/utils/email.utils.ts`) was making real SMTP calls to
-  Gmail using a real account's app password during `auth.integration.test.ts`, each call taking
-  several seconds — exactly the kind of external, slow, and non-hermetic dependency an integration
-  test should never have. The override values reuse each key's own Zod-schema sandbox default
-  (`ESEWA_SECRET_KEY`, `KHALTI_SECRET_KEY`) so they still pass that schema's own validation, or an
-  empty string (`GMAIL_APP_PASSWORD`, which is optional and falsy-checked) so `sendEmail` takes its
-  existing console-stub fallback path instead of ever constructing a real transporter.
+  a live provider using a real account's credentials during `auth.integration.test.ts`, each call
+  taking several seconds — exactly the kind of external, slow, and non-hermetic dependency an
+  integration test should never have. The override values reuse each key's own Zod-schema sandbox
+  default (`ESEWA_SECRET_KEY`, `KHALTI_SECRET_KEY`) so they still pass that schema's own validation,
+  or an empty string (`SMTP_HOST`/`SMTP_USER`/`SMTP_PASS`, which are optional and falsy-checked) so
+  `sendEmail` takes its existing console-stub fallback path instead of ever constructing a real
+  transporter.
 - **`setup.ts` clears `ratelimit:*` and `auth:login-lockout:*` Redis keys after every test, not just
   Postgres tables.** Unlike the database, Redis isn't reset between tests, so an IP-keyed rate
   limiter's counter (unlike an email-keyed one, which naturally gets a fresh key per test since each

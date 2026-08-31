@@ -53,7 +53,7 @@ export const brandApplicationService = {
     });
 
     await sendEmail({
-      to: env.GMAIL_USER,
+      to: env.OPS_NOTIFICATION_EMAIL,
       subject,
       body: `${input.brandName} applied. Review it in the admin panel: ${env.ADMIN_URL}/brand-applications`,
       html,

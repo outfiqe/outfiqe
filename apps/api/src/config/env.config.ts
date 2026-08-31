@@ -19,8 +19,11 @@ const envSchema = z.object({
     .min(JWT_SECRET_MIN_LENGTH, `JWT_SECRET must be at least ${JWT_SECRET_MIN_LENGTH} characters`),
   JWT_ACCESS_TTL: z.string().min(1),
   JWT_REFRESH_TTL: z.string().min(1),
-  GMAIL_USER: z.email(),
-  GMAIL_APP_PASSWORD: z.string().optional(),
+  MAIL_FROM: z.email(),
+  OPS_NOTIFICATION_EMAIL: z.email(),
+  SMTP_HOST: z.string().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
   FRONTEND_URL: z.url(),
   ADMIN_URL: z.url(),
   ALLOWED_ORIGINS: z

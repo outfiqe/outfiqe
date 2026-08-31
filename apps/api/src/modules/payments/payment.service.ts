@@ -43,7 +43,7 @@ const requireProvider = (method: PaymentMethod): PaymentProvider => {
 const alertOpsForManualRefund = (orderId: string, total: number): void => {
   const { subject, html } = manualRefundNeededTemplate({ orderId, total });
   void sendEmail({
-    to: env.GMAIL_USER,
+    to: env.OPS_NOTIFICATION_EMAIL,
     subject,
     body: `Order ${orderId} needs a manual refund.`,
     html,

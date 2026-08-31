@@ -11,23 +11,30 @@ type SendEmailInput = {
   html?: string;
 };
 
-const transporter = env.GMAIL_APP_PASSWORD
-  ? nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: env.GMAIL_USER, pass: env.GMAIL_APP_PASSWORD },
-    })
-  : null;
+const SMTP_IMPLICIT_TLS_PORT = 465;
+
+const transporter =
+  env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS
+    ? nodemailer.createTransport({
+        host: env.SMTP_HOST,
+        port: SMTP_IMPLICIT_TLS_PORT,
+        secure: true,
+        auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+      })
+    : null;
 
 export const sendEmail = async ({ to, subject, body, html }: SendEmailInput): Promise<void> => {
   if (!transporter) {
-    logger.warn("GMAIL_APP_PASSWORD not set — falling back to console stub for outgoing email.");
-    logger.info(`[email] from=${env.GMAIL_USER} to=${to} subject="${subject}"\n${body}`);
+    logger.warn(
+      "SMTP_HOST/SMTP_USER/SMTP_PASS not set — falling back to console stub for outgoing email.",
+    );
+    logger.info(`[email] from=${env.MAIL_FROM} to=${to} subject="${subject}"\n${body}`);
     return;
   }
 
   try {
-    await transporter.sendMail({ from: env.GMAIL_USER, to, subject, text: body, html });
+    await transporter.sendMail({ from: env.MAIL_FROM, to, subject, text: body, html });
   } catch (err) {
-    logger.error(`Gmail send failed (to=${to}, subject="${subject}"): ${String(err)}`);
+    logger.error(`Email send failed (to=${to}, subject="${subject}"): ${String(err)}`);
   }
 };
