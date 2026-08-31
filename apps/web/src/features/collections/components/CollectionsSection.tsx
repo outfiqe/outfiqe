@@ -6,7 +6,6 @@ import { CollectionCard } from "./CollectionCard";
 
 export const CollectionsSection = async () => {
   const collections = await getHomepageCollectionsServer();
-  if (collections.length === 0) return null;
 
   return (
     <section className="px-6 py-10 sm:py-14 lg:px-10">
@@ -32,11 +31,15 @@ export const CollectionsSection = async () => {
         </Link>
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
-        {collections.map((collection) => (
-          <CollectionCard key={collection.id} collection={collection} />
-        ))}
-      </div>
+      {collections.length === 0 ? (
+        <p className="mt-8 text-sm text-muted-foreground">No collections yet — check back soon.</p>
+      ) : (
+        <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+          {collections.map((collection) => (
+            <CollectionCard key={collection.id} collection={collection} />
+          ))}
+        </div>
+      )}
     </section>
   );
 };
