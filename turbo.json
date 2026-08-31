@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["NODE_ENV"],
+  "globalEnv": ["NODE_ENV", "APP_ENV"],
   "tasks": {
     "db:generate": {
       "cache": false,
@@ -19,10 +19,12 @@
         "JWT_SECRET",
         "API_URL",
         "SITE_URL",
+        "NEXT_PUBLIC_APP_ENV",
         "NEXT_PUBLIC_ADMIN_URL",
         "ADMIN_ORIGIN_URL",
         "NEXT_PUBLIC_TENANT_BASE_DOMAIN",
         "ALLOWED_ORIGINS",
+        "VITE_APP_ENV",
         "VITE_API_URL",
         "VITE_WEB_URL",
         "VITE_TENANT_BASE_DOMAIN"
