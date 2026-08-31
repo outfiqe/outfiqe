@@ -1,0 +1,84 @@
+name: outfiqe
+
+x-api-service: &api-service
+  image: ${IMAGE_REPO:?set IMAGE_REPO in .env.prod}:${IMAGE_TAG:-latest}
+  restart: unless-stopped
+  env_file:
+    - .env.prod
+  depends_on:
+    redis:
+      condition: service_healthy
+  volumes:
+    - app-uploads:/data/uploads
+    - app-image-assets:/data/image-assets
+    - app-image-temp:/data/image-temp
+  healthcheck:
+    test:
+      - CMD
+      - node
+      - -e
+      - fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    start_period: 25s
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in .env.prod}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+
+  api:
+    <<: *api-service
+    environment:
+      PROCESS_ROLE: api
+
+  worker:
+    <<: *api-service
+    environment:
+      PROCESS_ROLE: worker
+
+  scheduler:
+    <<: *api-service
+    environment:
+      PROCESS_ROLE: scheduler
+    deploy:
+      replicas: 1
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - 192mb
+      - --maxmemory-policy
+      - noeviction
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  caddy-data:
+  caddy-config:
+  redis-data:
+  app-uploads:
+  app-image-assets:
+  app-image-temp:
