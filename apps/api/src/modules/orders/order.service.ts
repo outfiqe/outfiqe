@@ -94,7 +94,7 @@ const buildOrderConfirmationEmail = (userEmail: string, order: OrderView): void 
 
   const opsEmail = newOrderNotificationTemplate({ orderId: order.id, total: order.total });
   void sendEmail({
-    to: env.GMAIL_USER,
+    to: env.OPS_NOTIFICATION_EMAIL,
     subject: opsEmail.subject,
     body: `Order ${order.id} — Rs. ${order.total}.`,
     html: opsEmail.html,
@@ -470,7 +470,7 @@ export const orderService = {
     if (refundOutcome && !refundOutcome.succeeded) {
       const { subject, html } = refundFailedTemplate({ orderId, total: order.total });
       void sendEmail({
-        to: env.GMAIL_USER,
+        to: env.OPS_NOTIFICATION_EMAIL,
         subject,
         body: `Order ${orderId} needs a manual refund — automatic refund failed.`,
         html,

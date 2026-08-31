@@ -300,7 +300,7 @@ export const withdrawService = {
         reviewUrl: `${env.ADMIN_URL}/withdraw-requests`,
       });
       void sendEmail({
-        to: env.GMAIL_USER,
+        to: env.OPS_NOTIFICATION_EMAIL,
         subject,
         body: `${ownerName} requested a withdrawal of Rs. ${body.amount}.`,
         html,
