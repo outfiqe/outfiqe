@@ -1,4 +1,4 @@
-import { Checkbox, FormBanner } from "@outfiqe/design-system";
+import { Checkbox, FormBanner, Skeleton } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -6,6 +6,8 @@ import { gamificationApi } from "./api";
 import { LEADERBOARD_CATEGORY_LABEL } from "./badgeOptions.constants";
 
 const LEADERBOARD_CATEGORIES_QUERY_KEY = ["admin-creator-leaderboard-categories"];
+
+const CATEGORY_ROW_PLACEHOLDER_COUNT = 5;
 
 export const LeaderboardSection = () => {
   const queryClient = useQueryClient();
@@ -37,7 +39,10 @@ export const LeaderboardSection = () => {
       {error && <FormBanner className="mt-3">{error}</FormBanner>}
 
       <div className="mt-4 space-y-2">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: CATEGORY_ROW_PLACEHOLDER_COUNT }).map((_, index) => (
+            <Skeleton key={index} className="h-[58px] rounded-xl" />
+          ))}
 
         {categories?.map(({ category, enabled }) => (
           <label

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@outfiqe/design-system";
+import { Button, Skeleton } from "@outfiqe/design-system";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -8,6 +8,8 @@ import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 import { cn } from "@/shared/lib/cn";
 
 export const ALL_TYPE_ID = "all";
+
+const TYPE_FILTER_PLACEHOLDER_COUNT = 6;
 
 type CategoryTypeFiltersProps = {
   basePath: string;
@@ -64,6 +66,11 @@ export const CategoryTypeFilters = ({
           </Button>
         );
       })}
+
+      {productTypes.isLoading &&
+        Array.from({ length: TYPE_FILTER_PLACEHOLDER_COUNT }).map((_, index) => (
+          <Skeleton key={index} className="h-[38px] w-20 rounded-full" />
+        ))}
     </div>
   );
 };

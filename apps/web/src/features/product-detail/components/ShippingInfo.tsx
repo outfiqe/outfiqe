@@ -1,16 +1,21 @@
 "use client";
 
+import { Skeleton } from "@outfiqe/design-system";
 import { RotateCcw, Truck } from "lucide-react";
 
 import { resolveZonePreview, useDeliveryZones } from "@/features/delivery-zones";
 
 export const ShippingInfo = () => {
-  const { data: zones } = useDeliveryZones();
+  const { data: zones, isLoading: isZonesLoading } = useDeliveryZones();
   const defaultZone = resolveZonePreview(zones ?? [], "");
 
   return (
     <div className="mt-4 space-y-2.5 rounded-xl border border-border bg-muted/40 p-3.5 text-xs text-muted-foreground">
-      {defaultZone && (
+      {isZonesLoading && (
+        <Skeleton role="status" aria-label="Loading delivery estimate" className="h-4 w-3/4" />
+      )}
+
+      {!isZonesLoading && defaultZone && (
         <div className="flex items-center gap-2.5">
           <Truck className="size-4 shrink-0 text-foreground" />
           <span>

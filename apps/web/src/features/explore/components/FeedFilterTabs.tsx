@@ -1,9 +1,13 @@
 "use client";
 
+import { Skeleton } from "@outfiqe/design-system";
+
 import { cn } from "@/shared/lib/cn";
 
 import { EXPLORE_FIXED_TABS, FEED_LAYOUT_OPTIONS, type FeedLayout } from "../explore.constants";
 import { useTrendingTags } from "../hooks/useTrendingTags";
+
+const TRENDING_TAG_PLACEHOLDER_COUNT = 4;
 
 interface FeedFilterTabsProps {
   tab: string;
@@ -13,7 +17,7 @@ interface FeedFilterTabsProps {
 }
 
 export const FeedFilterTabs = ({ tab, onChange, layout, onLayoutChange }: FeedFilterTabsProps) => {
-  const { data: trendingTags } = useTrendingTags();
+  const { data: trendingTags, isLoading: isTrendingTagsLoading } = useTrendingTags();
 
   return (
     <div className="sticky top-[var(--site-header-height,0px)] z-30 bg-background px-4">
@@ -36,22 +40,26 @@ export const FeedFilterTabs = ({ tab, onChange, layout, onLayoutChange }: FeedFi
             </button>
           ))}
 
-          {trendingTags?.map(({ tag }) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => onChange(tag)}
-              aria-pressed={tab === tag}
-              className={cn(
-                "shrink-0 cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                tab === tag
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
-              )}
-            >
-              #{tag}
-            </button>
-          ))}
+          {isTrendingTagsLoading
+            ? Array.from({ length: TRENDING_TAG_PLACEHOLDER_COUNT }).map((_, index) => (
+                <Skeleton key={index} className="h-6 w-16 shrink-0 rounded-full" />
+              ))
+            : trendingTags?.map(({ tag }) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => onChange(tag)}
+                  aria-pressed={tab === tag}
+                  className={cn(
+                    "shrink-0 cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                    tab === tag
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  #{tag}
+                </button>
+              ))}
         </div>
 
         <div className="flex shrink-0 items-center gap-1">

@@ -1,5 +1,7 @@
 "use client";
 
+import { Skeleton } from "@outfiqe/design-system";
+
 import { cn } from "@/shared/lib/cn";
 
 import {
@@ -13,9 +15,21 @@ type CreatorLeaderboardTabsProps = {
   onChange: (category: CreatorLeaderboardCategory) => void;
 };
 
+const PLACEHOLDER_TAB_COUNT = 4;
+
 export const CreatorLeaderboardTabs = ({ category, onChange }: CreatorLeaderboardTabsProps) => {
-  const { data: categories } = useCreatorLeaderboardCategories();
+  const { data: categories, isLoading } = useCreatorLeaderboardCategories();
   const enabledCategories = (categories ?? []).filter((row) => row.enabled);
+
+  if (isLoading) {
+    return (
+      <div role="status" aria-label="Loading rankings" className="flex flex-wrap gap-2">
+        {Array.from({ length: PLACEHOLDER_TAB_COUNT }).map((_, index) => (
+          <Skeleton key={index} className="h-[38px] w-28 rounded-full" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-wrap gap-2">
