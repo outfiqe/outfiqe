@@ -1,0 +1,17 @@
+name: Keep-alive
+
+on:
+  schedule:
+    - cron: "17 6 */3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    name: Ping /ready to keep Supabase awake
+    runs-on: ubuntu-latest
+    steps:
+      - name: Curl the readiness endpoint
+        run: curl -fsS --retry 3 --retry-delay 10 "https://${{ vars.API_DOMAIN }}/ready"

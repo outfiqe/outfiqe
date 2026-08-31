@@ -1,0 +1,92 @@
+name: outfiqe-local
+
+x-api-service: &api-service
+  image: outfiqe-api:local
+  restart: unless-stopped
+  env_file:
+    - .env.local.stack
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  volumes:
+    - app-uploads:/data/uploads
+    - app-image-assets:/data/image-assets
+    - app-image-temp:/data/image-temp
+  healthcheck:
+    test:
+      - CMD
+      - node
+      - -e
+      - fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    start_period: 25s
+
+services:
+  api:
+    <<: *api-service
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    environment:
+      PROCESS_ROLE: api
+    ports:
+      - "4000:4000"
+
+  worker:
+    <<: *api-service
+    environment:
+      PROCESS_ROLE: worker
+
+  scheduler:
+    <<: *api-service
+    environment:
+      PROCESS_ROLE: scheduler
+    deploy:
+      replicas: 1
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: outfiqe
+      POSTGRES_PASSWORD: outfiqe
+      POSTGRES_DB: outfiqe_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U outfiqe -d outfiqe_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - 192mb
+      - --maxmemory-policy
+      - noeviction
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
+  redisdata:
+  app-uploads:
+  app-image-assets:
+  app-image-temp:

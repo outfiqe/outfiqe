@@ -23,7 +23,7 @@
   "scripts": {
     "dev": "tsx watch --import ./src/instrument.ts src/index.ts",
     "build": "tsc -b tsconfig.json",
-    "start": "node --import ./dist/instrument.js dist/index.js",
+    "start": "node --import tsx --import ./src/instrument.ts src/index.ts",
     "typecheck": "tsc -b tsconfig.json tsconfig.test.json",
     "lint": "eslint .",
     "test": "pnpm test:db:up && vitest run",
@@ -69,8 +69,10 @@
     "multer": "^2.2.0",
     "nodemailer": "^9.0.4",
     "pg": "^8.22.0",
+    "prisma": "^7.9.1",
     "sharp": "^0.33.5",
     "socket.io": "^4.8.3",
+    "tsx": "^4.23.10",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
     "zod": "^4.4.3"
@@ -87,9 +89,7 @@
     "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^4.1.10",
     "dotenv": "^17.4.2",
-    "prisma": "^7.9.1",
     "supertest": "^7.1.4",
-    "tsx": "^4.23.10",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   }

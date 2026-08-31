@@ -1,3 +1,5 @@
+import { IS_LOCAL } from "./app-env.js";
+
 export const WINSTON_LOG_LEVELS = {
   error: 0,
   warn: 1,
@@ -6,7 +8,7 @@ export const WINSTON_LOG_LEVELS = {
   debug: 4,
 } as const;
 
-export const WINSTON_LOG_LEVEL = process.env.NODE_ENV === "production" ? "info" : "debug";
+export const WINSTON_LOG_LEVEL = IS_LOCAL ? "debug" : "info";
 
 export const WINSTON_LOG_DATE_PATTERN = "YYYY-MM-DD";
 

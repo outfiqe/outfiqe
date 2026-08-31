@@ -35,6 +35,9 @@ export default defineConfig({
       provider: "v8",
       include: [
         "src/app.ts",
+        "src/config/app-env.ts",
+        "src/processes/consumers.ts",
+        "src/shared/utils/readiness.utils.ts",
         "src/testing/integration/workerPool.ts",
         "src/shared/utils/pagination.utils.ts",
         "src/shared/utils/password.utils.ts",
