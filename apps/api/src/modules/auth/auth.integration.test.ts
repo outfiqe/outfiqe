@@ -15,6 +15,7 @@ import { hashPassword } from "#lib/password.utils.js";
 import { signPurposeToken } from "#lib/purpose-token.utils.js";
 import { seedPlatformOrganization, seedTenantOrganization } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 import {
   FORGOT_PASSWORD_MAX_REQUESTS,
@@ -53,8 +54,6 @@ const waitForPasswordHashUpgrade = async (userId: string): Promise<string> => {
 
   throw new Error(`Password hash for user ${userId} was not upgraded in time`);
 };
-
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
 const mintPurposeToken = (userId: string, purpose: TokenPurpose, ttl = DEFAULT_TOKEN_TTL): string =>
   signPurposeToken({ sub: userId, purpose }, ttl);

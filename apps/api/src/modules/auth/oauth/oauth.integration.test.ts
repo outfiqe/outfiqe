@@ -10,6 +10,7 @@ import { hashPassword } from "#lib/password.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
 import { testApp } from "#test/integration/testApp.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 import { OAUTH_START_IP_RATE_LIMIT_MAX_REQUESTS } from "./oauth.constants.js";
 
@@ -28,7 +29,6 @@ afterEach(() => {
 });
 
 const uniqueEmail = () => `oauth-${randomUUID()}@outfiqe.test`;
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
 const mockGoogleProfile = (
   overrides: Partial<{

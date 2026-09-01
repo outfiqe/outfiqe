@@ -13,10 +13,9 @@ import {
   ProductType,
   UserRole,
 } from "#generated/prisma/enums.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 import { runBrandPayoutLifecycleSweep } from "./brandPayout.lifecycle.js";
-
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
 const createBuyer = async () => {
   const suffix = randomUUID().slice(0, 8);

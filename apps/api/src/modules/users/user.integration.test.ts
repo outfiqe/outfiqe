@@ -10,8 +10,7 @@ import { hashPassword } from "#lib/password.utils.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
-
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 const createUserWithAccessToken = async (overrides: { phone?: string | null } = {}) => {
   const suffix = randomUUID().slice(0, 8);

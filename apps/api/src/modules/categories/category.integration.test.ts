@@ -11,14 +11,13 @@ import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { redis } from "#redis/redis.client.js";
 import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 const CATEGORIES_CACHE_KEY = "cache:categories:all";
 
 beforeEach(async () => {
   await redis.flushdb();
 });
-
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
 const createUser = async (role: UserRole = UserRole.CUSTOMER) =>
   prisma.user.create({

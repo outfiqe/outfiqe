@@ -17,6 +17,7 @@ import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { createAdminSession } from "#test/integration/authHelpers.js";
 import { testApp } from "#test/integration/testApp.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 const OK_STATUS = 200;
 const CREATED_STATUS = 201;
@@ -26,8 +27,6 @@ const NOT_FOUND_STATUS = 404;
 beforeEach(async () => {
   await redis.flushdb();
 });
-
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
 const authHeaderFor = (userId: string, role: UserRole) => {
   const { accessToken } = generateTokenpair({ sub: userId, role });

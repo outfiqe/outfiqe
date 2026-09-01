@@ -17,12 +17,11 @@ import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { createAdminSession } from "#test/integration/authHelpers.js";
 import { testApp } from "#test/integration/testApp.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 beforeEach(async () => {
   await redis.flushdb();
 });
-
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
 const authHeaderFor = (userId: string, role: UserRole) => {
   const { accessToken } = generateTokenpair({ sub: userId, role });

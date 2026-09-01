@@ -13,6 +13,7 @@ import {
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { testApp } from "#test/integration/testApp.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 import { imageOutputStorageAdapter } from "./image-processing.storage.js";
 
@@ -23,8 +24,6 @@ const tinyPngBuffer = Buffer.from(TINY_PNG_BASE64, "base64");
 beforeEach(async () => {
   await redis.flushdb();
 });
-
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
 const createUser = async (
   overrides: Partial<Parameters<typeof prisma.user.create>[0]["data"]> = {},
