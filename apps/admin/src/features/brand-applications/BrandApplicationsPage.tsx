@@ -2,6 +2,8 @@ import { Badge, Button } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { ApiClientError } from "@/lib/apiClient";
+
 import { brandApplicationsApi } from "./api";
 import { useInfiniteBrandApplications } from "./hooks/useInfiniteBrandApplications";
 import type { BrandApplicationStatusValue } from "./schemas";
@@ -50,6 +52,20 @@ export const BrandApplicationsPage = () => {
     reject.mutate({ id, reason: reason || undefined });
   };
 
+  const actionErrorFor = (applicationId: string): string | null => {
+    if (approve.isError && approve.variables === applicationId) {
+      return approve.error instanceof ApiClientError
+        ? approve.error.message
+        : "Couldn't approve this application. Try again.";
+    }
+    if (reject.isError && reject.variables?.id === applicationId) {
+      return reject.error instanceof ApiClientError
+        ? reject.error.message
+        : "Couldn't reject this application. Try again.";
+    }
+    return null;
+  };
+
   return (
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Brand applications</h1>
@@ -82,6 +98,7 @@ export const BrandApplicationsPage = () => {
             application;
 
           const summaryLine = [contactName, makesOwnPieces].filter(Boolean).join(" · ");
+          const actionError = actionErrorFor(id);
 
           return (
             <div key={id} className="rounded-xl border border-border bg-card p-4">
@@ -119,6 +136,8 @@ export const BrandApplicationsPage = () => {
                   </div>
                 )}
               </div>
+
+              {actionError && <p className="mt-3 text-sm text-destructive">{actionError}</p>}
             </div>
           );
         })}
