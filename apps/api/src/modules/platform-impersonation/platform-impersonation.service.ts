@@ -141,4 +141,8 @@ export const platformImpersonationService = {
   }): Promise<ImpersonationSessionSummary[]> {
     return platformImpersonationRepository.listHistory(filters);
   },
+
+  reapExpiredSessions(): Promise<number> {
+    return platformImpersonationRepository.reapExpired();
+  },
 };

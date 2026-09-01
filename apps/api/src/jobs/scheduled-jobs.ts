@@ -35,6 +35,8 @@ import { NOTIFICATION_RETENTION_SWEEP_INTERVAL_MS } from "#modules/notifications
 import { runNotificationRetentionSweep } from "#modules/notifications/notification.retention.js";
 import { RECONCILE_CHECK_INTERVAL_MS } from "#modules/payments/payment.constants.js";
 import { runPaymentReconciliationSweep } from "#modules/payments/payment.reconciliation.js";
+import { IMPERSONATION_REAP_INTERVAL_MS } from "#modules/platform-impersonation/platform-impersonation.constants.js";
+import { platformImpersonationService } from "#modules/platform-impersonation/platform-impersonation.service.js";
 import { PLATFORM_METRICS_SNAPSHOT_INTERVAL_MS } from "#modules/platform-metrics/platform-metrics.constants.js";
 import { platformMetricsService } from "#modules/platform-metrics/platform-metrics.service.js";
 import {
@@ -144,6 +146,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "platform-metrics-snapshot",
     run: platformMetricsService.runDailySnapshot,
     intervalMs: PLATFORM_METRICS_SNAPSHOT_INTERVAL_MS,
+  },
+  {
+    name: "impersonation-session-reap",
+    run: platformImpersonationService.reapExpiredSessions,
+    intervalMs: IMPERSONATION_REAP_INTERVAL_MS,
   },
 ];
 

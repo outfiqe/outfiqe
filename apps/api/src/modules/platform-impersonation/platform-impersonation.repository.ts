@@ -122,6 +122,14 @@ export const platformImpersonationRepository = {
     });
   },
 
+  async reapExpired(): Promise<number> {
+    const result = await prisma.impersonationSession.updateMany({
+      where: { revokedAt: null, expiresAt: { lte: new Date() } },
+      data: { revokedAt: new Date() },
+    });
+    return result.count;
+  },
+
   async listActive(): Promise<ImpersonationSessionSummary[]> {
     return this.hydrate(
       await prisma.impersonationSession.findMany({

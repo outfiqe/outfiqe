@@ -17,6 +17,15 @@ downstream (`requirePermission`, controllers) is unchanged because `sub` is the 
 the ownership-transfer routes, `PATCH /members/:id`, and the `crm-billing` manage routes as the
 reference set — extend it to any other privileged mutation.
 
+`impersonationRequestAudit` (`platform-impersonation.audit.ts`, mounted `app.use("/api/crm", …)`
+before the CRM routers) registers a `res.on("finish")` hook that reads `res.locals.auth` _after_
+the route's `requireAuth` has run: when the request was impersonated it writes one
+`tenant.request` platform-audit row (`method`, route template `path`, `statusCode`,
+`impersonationSessionId`, `onBehalfOfUserId`) for every state-changing request and a 5% sample of
+GETs, and touches `lastSeenAt` at most once a minute per session. The
+`impersonation-session-reap` interval job (hourly) sets `revokedAt` on any session past its
+`expiresAt` so the "active" queries stay clean.
+
 ## Structure
 
 - `platform-impersonation.constants.ts` — TTL (30 min default, 60 min cap), the `read`/`write`

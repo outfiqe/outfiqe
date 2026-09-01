@@ -57,6 +57,7 @@ import { orderRoutes } from "./modules/orders/order.routes.js";
 import { paymentRoutes } from "./modules/payments/payment.routes.js";
 import { platformAuditRoutes } from "./modules/platform-audit/platform-audit.routes.js";
 import { platformFeaturesRoutes } from "./modules/platform-features/platform-features.routes.js";
+import { impersonationRequestAudit } from "./modules/platform-impersonation/platform-impersonation.audit.js";
 import { platformImpersonationRoutes } from "./modules/platform-impersonation/platform-impersonation.routes.js";
 import { platformMetricsRoutes } from "./modules/platform-metrics/platform-metrics.routes.js";
 import { productReviewRoutes } from "./modules/product-reviews/product-review.routes.js";
@@ -166,6 +167,7 @@ export const createApp = () => {
   app.use("/api/commissions", commissionRoutes);
   app.use("/api/collections", collectionRoutes);
   app.use("/api/crm/billing", crmBillingRoutes);
+  app.use("/api/crm", impersonationRequestAudit);
   app.use("/api/crm", crmRelationshipsRoutes);
   app.use("/api/crm", crmContactsRoutes);
   app.use("/api/crm", crmPipelineRoutes);
