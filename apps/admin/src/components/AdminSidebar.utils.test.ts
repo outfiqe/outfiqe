@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { isCrmSubItemVisible, shouldShowCrmSection } from "./AdminSidebar.utils";
+import {
+  isCrmSubItemVisible,
+  shouldShowCrmSection,
+  shouldShowPlatformSection,
+} from "./AdminSidebar.utils";
 
 const brandlessOrg = {
   viewerIsSuperAdmin: true,
@@ -71,5 +75,23 @@ describe("shouldShowCrmSection", () => {
 
   it("shows the section while the organization is still loading", () => {
     expect(shouldShowCrmSection(undefined)).toBe(true);
+  });
+});
+
+describe("shouldShowPlatformSection", () => {
+  it("hides the section from a viewer without platform access", () => {
+    expect(shouldShowPlatformSection(false, { isPlatformOrg: true })).toBe(false);
+  });
+
+  it("shows the section in the platform-org context", () => {
+    expect(shouldShowPlatformSection(true, { isPlatformOrg: true })).toBe(true);
+  });
+
+  it("hides the section on a tenant subdomain even with platform access", () => {
+    expect(shouldShowPlatformSection(true, { isPlatformOrg: false })).toBe(false);
+  });
+
+  it("shows the section before the organization resolves so the platform nav never flashes out", () => {
+    expect(shouldShowPlatformSection(true, undefined)).toBe(true);
   });
 });

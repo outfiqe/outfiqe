@@ -152,6 +152,37 @@ describe("platform metrics", () => {
     });
   });
 
+  it("never counts the platform org as a tenant", async () => {
+    const { auth, platformOrg } = await seedPlatformAdmin();
+    const tenant = await seedTenantWithCounters("starter", {
+      contactCount: 6,
+      dealCount: 0,
+      ticketCount: 0,
+      activityCount: 0,
+    });
+
+    const list = await request(testApp)
+      .get("/api/platform/metrics/tenants")
+      .set("Authorization", auth);
+    const listedIds = list.body.data.items.map(
+      (row: { organizationId: string }) => row.organizationId,
+    );
+    expect(listedIds).toContain(tenant.id);
+    expect(listedIds).not.toContain(platformOrg.id);
+    expect(list.body.data.total).toBe(1);
+
+    const overview = await request(testApp)
+      .get("/api/platform/metrics/overview")
+      .set("Authorization", auth);
+    expect(overview.body.data.tenantCount).toBe(1);
+    expect(overview.body.data.totalContacts).toBe(6);
+
+    const detail = await request(testApp)
+      .get(`/api/platform/metrics/tenants/${platformOrg.id}`)
+      .set("Authorization", auth);
+    expect(detail.status).toBe(404);
+  });
+
   it("rejects a caller without platform:metrics:read", async () => {
     await seedPlatformAdmin();
     const shopper = await createUser(UserRole.CUSTOMER);

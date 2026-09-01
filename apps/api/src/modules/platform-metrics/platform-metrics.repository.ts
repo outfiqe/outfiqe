@@ -32,6 +32,8 @@ const tenantRowSelect = {
 
 type TenantSelectRow = Prisma.OrganizationGetPayload<{ select: typeof tenantRowSelect }>;
 
+const TENANT_SCOPE: Prisma.OrganizationWhereInput = { isPlatformOrg: false };
+
 const toTenantMetricRow = (row: TenantSelectRow): TenantMetricRow => ({
   organizationId: row.id,
   name: row.name,
@@ -59,7 +61,7 @@ const orderByFor = (
 
 export const platformMetricsRepository = {
   async listTenants(filters: TenantMetricListFilters): Promise<TenantMetricListPage> {
-    const where: Prisma.OrganizationWhereInput = {};
+    const where: Prisma.OrganizationWhereInput = { ...TENANT_SCOPE };
     if (filters.plan) where.plan = filters.plan;
     const skip = (filters.page - 1) * filters.pageSize;
 
@@ -82,8 +84,8 @@ export const platformMetricsRepository = {
   },
 
   async findTenant(organizationId: string): Promise<TenantMetricRow | null> {
-    const row = await prismaRead.organization.findUnique({
-      where: { id: organizationId },
+    const row = await prismaRead.organization.findFirst({
+      where: { id: organizationId, ...TENANT_SCOPE },
       select: tenantRowSelect,
     });
     return row ? toTenantMetricRow(row) : null;
@@ -91,8 +93,13 @@ export const platformMetricsRepository = {
 
   async overview(): Promise<PlatformOverview> {
     const [byPlan, totals, totalMembers] = await Promise.all([
-      prismaRead.organization.groupBy({ by: ["plan"], _count: { _all: true } }),
+      prismaRead.organization.groupBy({
+        by: ["plan"],
+        where: TENANT_SCOPE,
+        _count: { _all: true },
+      }),
       prismaRead.organization.aggregate({
+        where: TENANT_SCOPE,
         _count: { _all: true },
         _sum: {
           contactCount: true,
@@ -101,7 +108,7 @@ export const platformMetricsRepository = {
           activityCount: true,
         },
       }),
-      prismaRead.membership.count(),
+      prismaRead.membership.count({ where: { organization: TENANT_SCOPE } }),
     ]);
 
     return {
@@ -163,6 +170,7 @@ export const platformMetricsRepository = {
     }[]
   > {
     return prismaRead.organization.findMany({
+      where: TENANT_SCOPE,
       select: {
         id: true,
         contactCount: true,

@@ -70,7 +70,11 @@ support reports, and review the organization's audit log — against the `/api/c
   is the platform org** (`shouldShowCrmSection` — `crmOrganization.isPlatformOrg`): the platform org
   isn't a tenant, so Contacts/Pipeline/Tasks/Support/Reports have nothing behind them, and platform
   team/role management is a seed-time concern (`bootstrap-platform-crm.ts`). The `/crm/*` routes
-  still resolve by URL for the rare case of granting a new platform admin. The sidebar fetches
+  still resolve by URL for the rare case of granting a new platform admin. Mirror-image on the
+  other side: the **"Platform" section shows only in the platform context** (`shouldShowPlatformSection`
+  — `hasPlatformAccess && crmOrganization.isPlatformOrg !== false`), so a platform admin who is also
+  a member of a tenant org doesn't see platform tools while on that tenant's subdomain; it stays
+  visible while the org is still resolving so the nav never flashes out. The sidebar fetches
   `GET /api/crm/organization` on the shared `["crm-organization"]` query key (5-minute `staleTime`),
   so React Query dedupes it against the pages that already use it. `AppShell`
   renders the two-tone `CRM` wordmark + `<CrmSearchBox>` centered in the header on `/crm/*` routes

@@ -49,7 +49,11 @@ import {
 import { useAuth } from "@/features/auth/AuthContext";
 import { crmApi } from "@/features/crm/api";
 
-import { isCrmSubItemVisible, shouldShowCrmSection } from "./AdminSidebar.utils";
+import {
+  isCrmSubItemVisible,
+  shouldShowCrmSection,
+  shouldShowPlatformSection,
+} from "./AdminSidebar.utils";
 import { useTanStackSidebarNavigation } from "./useTanStackSidebarNavigation";
 
 type CrmSubItem = SidebarNavItem & { permissionKey: string | null; requiresLinkedBrand?: boolean };
@@ -244,7 +248,7 @@ export const AdminSidebar = () => {
     ...(shouldShowCrmSection(crmOrganization)
       ? [{ id: "crm", label: "CRM", items: visibleCrmItems }]
       : []),
-    ...(user?.hasPlatformAccess
+    ...(shouldShowPlatformSection(user?.hasPlatformAccess ?? false, crmOrganization)
       ? [{ id: "platform", label: "Platform", items: PLATFORM_NAV_ITEMS }]
       : []),
   ];

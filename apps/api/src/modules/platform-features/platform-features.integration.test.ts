@@ -42,15 +42,15 @@ describe("platformFeaturesService", () => {
     const organizationId = await seedTenant("starter");
     await platformFeaturesRepository.upsertOverride({
       organizationId,
-      key: "gamification",
+      key: "crm.tickets",
       enabled: false,
     });
     platformFeaturesService.invalidate(organizationId);
-    expect(await platformFeaturesService.isEnabled(organizationId, "gamification")).toBe(false);
+    expect(await platformFeaturesService.isEnabled(organizationId, "crm.tickets")).toBe(false);
 
-    await platformFeaturesRepository.deleteOverride(organizationId, "gamification");
+    await platformFeaturesRepository.deleteOverride(organizationId, "crm.tickets");
     platformFeaturesService.invalidate(organizationId);
-    const resolved = await platformFeaturesService.resolveFeature(organizationId, "gamification");
+    const resolved = await platformFeaturesService.resolveFeature(organizationId, "crm.tickets");
     expect(resolved.source).toBe("plan");
   });
 
@@ -68,7 +68,6 @@ describe("platformFeaturesService", () => {
         "crm.contacts",
         "crm.pipeline",
         "crm.tickets",
-        "gamification",
         "impersonation.allowed",
       ].sort(),
     );

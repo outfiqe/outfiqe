@@ -3,7 +3,6 @@ export const PLATFORM_FEATURE_KEYS = [
   "crm.pipeline",
   "crm.tickets",
   "crm.contacts",
-  "gamification",
   "impersonation.allowed",
 ] as const;
 
@@ -45,13 +44,6 @@ export const PLATFORM_FEATURE_REGISTRY: FeatureDefinition[] = [
     key: "crm.contacts",
     label: "Contacts",
     description: "The manually managed contact list.",
-    registryDefault: true,
-    planDefaults: ALL_PLANS_ON,
-  },
-  {
-    key: "gamification",
-    label: "Gamification",
-    description: "XP, levels, badges and leaderboards for this tenant's creators.",
     registryDefault: true,
     planDefaults: ALL_PLANS_ON,
   },
