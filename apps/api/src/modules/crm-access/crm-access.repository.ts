@@ -1,5 +1,6 @@
 import { addDays } from "date-fns/addDays";
 
+import { TENANT_ORGANIZATION_SCOPE } from "#constants/organization.constants.js";
 import { prisma } from "#db/prisma.js";
 import type { MembershipStatus } from "#generated/prisma/enums.js";
 import { DEFAULT_PIPELINE_STAGES } from "#modules/crm-pipeline/crm-pipeline.constants.js";
@@ -58,6 +59,7 @@ export const crmAccessRepository = {
 
   async listOrganizations(): Promise<OrganizationListItem[]> {
     const organizations = await prisma.organization.findMany({
+      where: TENANT_ORGANIZATION_SCOPE,
       orderBy: { createdAt: "asc" },
       include: { linkedBrand: { select: { name: true } } },
     });

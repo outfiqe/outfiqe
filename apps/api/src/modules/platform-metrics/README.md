@@ -44,10 +44,11 @@ maintained on `Organization` by the `crm-*` write services and the reconcile job
 
 ## Non-obvious rationale
 
-- **Every query is scoped `isPlatformOrg: false`** (`TENANT_SCOPE` in the repository) — the platform
-  org is an `Organization` row too, but it is not a tenant. Without the filter it shows up in the
-  tenant list, the tenant count, the plan breakdown, `totalMembers`, and the nightly rollup; a
-  `GET /metrics/tenants/:id` for the platform org now 404s.
+- **Every query is scoped `isPlatformOrg: false`** (`TENANT_ORGANIZATION_SCOPE` from
+  `#constants/organization.constants`) — the platform org is an `Organization` row too, but it is
+  not a tenant. Without the filter it shows up in the tenant list, the tenant count, the plan
+  breakdown, `totalMembers`, and the nightly rollup; a `GET /metrics/tenants/:id` for the platform
+  org now 404s. The same constant scopes the CRM organizations list in `crm-access`.
 - **No `GROUP BY` over the CRM tables on any request path.** The counter columns on `Organization`
   exist precisely so the dashboard is a select over `organizations`, not a cross-tenant scan of
   `contacts` / `deals` / `crm_tickets` / `crm_activities`. The only per-request CRM-table query is
