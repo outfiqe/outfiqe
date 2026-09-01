@@ -28,6 +28,7 @@ export const organizationSchema = z.object({
   viewerPermissionKeys: z.array(z.string()),
   pendingOwnershipTransfer: pendingOwnershipTransferSchema.nullable(),
   advancedFeaturesEnabled: z.boolean(),
+  features: z.record(z.string(), z.boolean()).optional(),
 });
 export type Organization = z.infer<typeof organizationSchema>;
 

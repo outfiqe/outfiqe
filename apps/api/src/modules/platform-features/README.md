@@ -21,8 +21,24 @@ surface.
   `invalidate(orgId, key?)` (called after a write), and `assertKey`.
 - `platform-features.integration.test.ts`.
 
-The platform CRUD routes, the tenant `requireFeature` middleware, and the `features` map on the
-tenant org response are added in the next change.
+## HTTP surface
+
+- `GET /api/platform/features/registry` — the static registry.
+- `GET /api/platform/features/tenants/:orgId` — the resolved set for one tenant
+  (`ResolvedFeature[]`, each with its `source`).
+- `PUT /api/platform/features/tenants/:orgId/:key` — upsert an override (`{ enabled, metadata?,
+note? }`).
+- `DELETE /api/platform/features/tenants/:orgId/:key` — drop the override.
+
+All four are `requirePlatformRole("platform:features:manage")`; the two writes emit a
+`platform-audit` row and call `invalidate`.
+
+- `requireFeature(key)` (`platform-features.middleware.ts`) — for tenant routes, stacked after
+  `resolveTenant`; reads `res.locals.crmOrganization` and returns `403 FEATURE_NOT_AVAILABLE`
+  when off. Wired onto `crm-contacts` (`crm.contacts`) and `crm-pipeline` (`crm.pipeline`) as the
+  reference; both keys default on for every plan, so no behavior changes.
+- `GET /api/crm/organization` gains a `features: Record<key, boolean>` map (via `featureMap`) so
+  the tenant app can hide disabled surfaces without extra calls.
 
 ## Non-obvious rationale
 

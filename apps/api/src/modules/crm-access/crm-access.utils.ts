@@ -19,12 +19,14 @@ export const toOrganizationWithViewerContext = (
   viewerMembership: MembershipWithRole,
   pendingOwnershipTransfer: PendingOwnershipTransferSummary | null,
   advancedFeaturesEnabled: boolean,
+  features: Record<string, boolean>,
 ): OrganizationWithViewerContext => ({
   ...organization,
   viewerIsSuperAdmin: organization.superAdminMembershipId === viewerMembership.id,
   viewerPermissionKeys: viewerMembership.role.permissionKeys,
   pendingOwnershipTransfer,
   advancedFeaturesEnabled,
+  features,
 });
 
 export const toPendingOwnershipTransferSummary = (

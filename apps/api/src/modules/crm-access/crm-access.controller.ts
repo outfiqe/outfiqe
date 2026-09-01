@@ -8,6 +8,7 @@ import { AUDIT_TARGET_TYPE } from "#modules/crm-audit/crm-audit.constants.js";
 import { crmAudit } from "#modules/crm-audit/crm-audit.service.js";
 import { buildAuditActor } from "#modules/crm-audit/crm-audit.utils.js";
 import { crmBillingService } from "#modules/crm-billing/crm-billing.service.js";
+import { platformFeaturesService } from "#modules/platform-features/platform-features.service.js";
 
 import { getCrmMembership, getResolvedOrganization } from "./crm-access.middleware.js";
 import type {
@@ -61,9 +62,10 @@ export const crmAccessController = {
   async getOrganization(_req: Request, res: Response) {
     const organization = getResolvedOrganization(res);
     const membership = getCrmMembership(res);
-    const [pendingOwnershipTransfer, advancedFeaturesEnabled] = await Promise.all([
+    const [pendingOwnershipTransfer, advancedFeaturesEnabled, features] = await Promise.all([
       crmAccessService.getPendingOwnershipTransfer(organization.id),
       crmBillingService.resolveAdvancedFeaturesForOrganization(organization),
+      platformFeaturesService.featureMap(organization.id),
     ]);
     sendSuccess(
       res,
@@ -72,6 +74,7 @@ export const crmAccessController = {
         membership,
         pendingOwnershipTransfer,
         advancedFeaturesEnabled,
+        features,
       ),
       "CRM organization.",
     );
