@@ -18,10 +18,16 @@ jobs:
           BASE: ${{ github.base_ref }}
         run: |
           echo "Checking branch: $BRANCH -> $BASE"
-          if [[ "$BRANCH" == "dev" && "$BASE" == "main" ]]; then
-            echo "dev -> main is the promotion path."
-            exit 0
+
+          if [[ "$BASE" == "main" ]]; then
+            if [[ "$BRANCH" == "dev" ]]; then
+              echo "dev -> main is the release promotion path."
+              exit 0
+            fi
+            echo "::error::Only 'dev' can PR into 'main' (the release promotion). Base your branch on 'dev' instead."
+            exit 1
           fi
+
           if [[ "$BRANCH" == "main" || "$BRANCH" == "master" || "$BRANCH" == "dev" ]]; then
             echo "::error::'$BRANCH' is a long-lived branch and cannot be the PR source here."
             exit 1
