@@ -1,7 +1,7 @@
 export const focusRingClass =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
-export const railClass = "sticky top-24 flex max-h-[calc(100dvh-7rem)] flex-col gap-4";
+export const railClass = "sticky top-[4.5rem] flex max-h-[calc(100dvh-9rem)] flex-col gap-4";
 
 export const cardClass = "rounded-[28px] border border-border bg-card p-3 shadow-sm";
 
