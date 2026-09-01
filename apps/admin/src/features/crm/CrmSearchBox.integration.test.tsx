@@ -33,6 +33,7 @@ const mockOrganization = (
           name: "Meridian",
           plan: "trial",
           trialEndsAt: null,
+          linkedBrandId: "brand-1",
           superAdminMembershipId: "m-1",
           pendingOwnershipTransfer: null,
           advancedFeaturesEnabled: true,

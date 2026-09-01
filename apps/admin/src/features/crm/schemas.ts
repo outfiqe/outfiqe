@@ -22,6 +22,7 @@ export const organizationSchema = z.object({
   name: z.string(),
   plan: z.string(),
   trialEndsAt: z.string().nullable(),
+  linkedBrandId: z.string().nullable(),
   superAdminMembershipId: z.string().nullable(),
   viewerIsSuperAdmin: z.boolean(),
   viewerPermissionKeys: z.array(z.string()),

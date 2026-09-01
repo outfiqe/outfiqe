@@ -58,8 +58,12 @@ support reports, and review the organization's audit log — against the `/api/c
   false (trial ended, no active subscription), linking to `/crm/billing`.
 - **Navigation lives in the app shell, not a per-page strip.** `AdminSidebar`
   (`components/AdminSidebar.tsx`) renders a flat "CRM" section — Overview / Partners / Customers /
-  Pipeline / Tasks / Support / Reports / Roles / Audit / Billing — filtered by the viewer's
-  permission keys. The sidebar fetches `GET /api/crm/organization` itself, but only
+  Pipeline / Tasks / Support / Reports / Roles / Audit / Billing — filtered by
+  `isCrmSubItemVisible` (`components/AdminSidebar.utils.ts`): the viewer's permission keys (or org
+  SUPERADMIN), and, for the brand-scoped items (Partners, Customers, Billing), whether the resolved
+  organization has a `linkedBrandId` at all. The platform org has none, so a platform admin sees
+  Overview / Pipeline / Tasks / Support / Reports / Roles / Audit but not the three that can only
+  ever be empty for a brand-less org. The sidebar fetches `GET /api/crm/organization` itself, but only
   `enabled` while `pathname.startsWith("/crm")`, and on the same `["crm-organization"]` query key
   the pages already use — so React Query dedupes it and it costs no extra request. `AppShell`
   renders the two-tone `CRM` wordmark + `<CrmSearchBox>` centered in the header on `/crm/*` routes

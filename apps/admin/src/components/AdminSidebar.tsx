@@ -46,9 +46,10 @@ import {
 import { useAuth } from "@/features/auth/AuthContext";
 import { crmApi } from "@/features/crm/api";
 
+import { isCrmSubItemVisible } from "./AdminSidebar.utils";
 import { useTanStackSidebarNavigation } from "./useTanStackSidebarNavigation";
 
-type CrmSubItem = SidebarNavItem & { permissionKey: string | null };
+type CrmSubItem = SidebarNavItem & { permissionKey: string | null; requiresLinkedBrand?: boolean };
 
 const CRM_SUB_ITEMS: CrmSubItem[] = [
   { id: "crm-overview", href: "/crm", label: "Overview", icon: LayoutGrid, permissionKey: null },
@@ -58,6 +59,7 @@ const CRM_SUB_ITEMS: CrmSubItem[] = [
     label: "Partners",
     icon: Users,
     permissionKey: "accounts:read",
+    requiresLinkedBrand: true,
   },
   {
     id: "crm-customers",
@@ -65,6 +67,7 @@ const CRM_SUB_ITEMS: CrmSubItem[] = [
     label: "Customers",
     icon: UserRound,
     permissionKey: "customers:read",
+    requiresLinkedBrand: true,
   },
   {
     id: "crm-pipeline",
@@ -114,10 +117,15 @@ const CRM_SUB_ITEMS: CrmSubItem[] = [
     label: "Billing",
     icon: CreditCard,
     permissionKey: "billing:read",
+    requiresLinkedBrand: true,
   },
 ];
 
-const toNavItem = ({ permissionKey: _permissionKey, ...item }: CrmSubItem): SidebarNavItem => item;
+const toNavItem = ({
+  permissionKey: _permissionKey,
+  requiresLinkedBrand: _requiresLinkedBrand,
+  ...item
+}: CrmSubItem): SidebarNavItem => item;
 
 const PLATFORM_NAV_ITEMS: SidebarNavSection["items"] = [
   { id: "brand-applications", href: "/", label: "Brand applications", icon: ClipboardList },
@@ -205,14 +213,9 @@ export const AdminSidebar = () => {
     retry: false,
   });
 
-  const visibleCrmItems = CRM_SUB_ITEMS.filter((item) => {
-    if (item.permissionKey === null) return true;
-    if (!crmOrganization) return true;
-    return (
-      crmOrganization.viewerIsSuperAdmin ||
-      crmOrganization.viewerPermissionKeys.includes(item.permissionKey)
-    );
-  }).map(toNavItem);
+  const visibleCrmItems = CRM_SUB_ITEMS.filter((item) =>
+    isCrmSubItemVisible(item, crmOrganization),
+  ).map(toNavItem);
 
   const user = state.status === "signed-in" ? state.user : null;
   const navSections: SidebarNavSection[] = [
