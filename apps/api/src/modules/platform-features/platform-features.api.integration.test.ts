@@ -80,7 +80,7 @@ describe("platform feature overrides API", () => {
     const { organization } = await seedTenantOrganization();
 
     const set = await request(testApp)
-      .put(`/api/platform/features/tenants/${organization.id}/gamification`)
+      .put(`/api/platform/features/tenants/${organization.id}/crm.tickets`)
       .set("Authorization", auth)
       .send({ enabled: false, note: "abuse review" });
     expect(set.status).toBe(200);
@@ -89,11 +89,11 @@ describe("platform feature overrides API", () => {
       .get(`/api/platform/features/tenants/${organization.id}`)
       .set("Authorization", auth);
     expect(
-      afterSet.body.data.find((entry: { key: string }) => entry.key === "gamification"),
+      afterSet.body.data.find((entry: { key: string }) => entry.key === "crm.tickets"),
     ).toMatchObject({ enabled: false, source: "override" });
 
     const clear = await request(testApp)
-      .delete(`/api/platform/features/tenants/${organization.id}/gamification`)
+      .delete(`/api/platform/features/tenants/${organization.id}/crm.tickets`)
       .set("Authorization", auth);
     expect(clear.status).toBe(200);
 
@@ -101,7 +101,7 @@ describe("platform feature overrides API", () => {
       .get(`/api/platform/features/tenants/${organization.id}`)
       .set("Authorization", auth);
     expect(
-      afterClear.body.data.find((entry: { key: string }) => entry.key === "gamification").source,
+      afterClear.body.data.find((entry: { key: string }) => entry.key === "crm.tickets").source,
     ).toBe("plan");
 
     const auditActions = await prisma.platformAuditLog.findMany({

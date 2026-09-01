@@ -13,6 +13,11 @@ export const shouldShowCrmSection = (
   crmOrganization: { isPlatformOrg?: boolean } | undefined,
 ): boolean => crmOrganization?.isPlatformOrg !== true;
 
+export const shouldShowPlatformSection = (
+  hasPlatformAccess: boolean,
+  crmOrganization: { isPlatformOrg?: boolean } | undefined,
+): boolean => hasPlatformAccess && crmOrganization?.isPlatformOrg !== false;
+
 export const isCrmSubItemVisible = (
   item: CrmItemVisibilityRules,
   crmOrganization: CrmOrganizationContext | undefined,
