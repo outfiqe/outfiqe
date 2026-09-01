@@ -20,6 +20,7 @@ const ORGANIZATION = {
   name: "Meridian Apparel Co.",
   plan: "trial",
   trialEndsAt: null,
+  linkedBrandId: "brand-1",
   superAdminMembershipId: "m-1",
   viewerIsSuperAdmin: true,
   viewerPermissionKeys: ["accounts:read", "customers:read", "billing:read"],

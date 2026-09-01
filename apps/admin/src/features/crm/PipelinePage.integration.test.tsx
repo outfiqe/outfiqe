@@ -52,6 +52,7 @@ const mockPipeline = (overrides: { patchDeal?: () => Response } = {}) => {
           name: "Meridian",
           plan: "trial",
           trialEndsAt: null,
+          linkedBrandId: "brand-1",
           superAdminMembershipId: "m-1",
           viewerIsSuperAdmin: true,
           viewerPermissionKeys: [],
