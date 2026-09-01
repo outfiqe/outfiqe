@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { slugifyHandle } from "#lib/handle.utils.js";
 import { hashPassword } from "#lib/password.utils.js";
 
+import { IS_PROD } from "../src/config/app-env.js";
 import {
   AchievementRequirementType,
   BadgeCategory,
@@ -17,8 +18,6 @@ import {
   ProductStatus,
   ProductType,
   UserRole,
-  WithdrawOwnerType,
-  WithdrawWindowType,
   XpActivityType,
 } from "../src/generated/prisma/enums.js";
 import { prisma } from "../src/shared/db/prisma.js";
@@ -429,68 +428,6 @@ const DEFAULT_GATEWAY_FEE_RATE_PERCENT: Record<"ESEWA" | "KHALTI", number> = {
   ESEWA: 2,
   KHALTI: 2,
 };
-
-const LOCKED_WITHDRAW_POLICIES: {
-  ownerType: keyof typeof WithdrawOwnerType;
-  minAmount: number;
-  maxAmount: number;
-  windowType: keyof typeof WithdrawWindowType;
-  windowValue: number;
-  maxAttemptsPerWindow: number;
-  cooldownAfterRejectionDays: number;
-  processingNoteText: string;
-}[] = [
-  {
-    ownerType: "CREATOR",
-    minAmount: 500,
-    maxAmount: 100_000,
-    windowType: "MONTHLY",
-    windowValue: 5,
-    maxAttemptsPerWindow: 1,
-    cooldownAfterRejectionDays: 7,
-    processingNoteText: "Processed manually, 5-7 business days after approval.",
-  },
-  {
-    ownerType: "BUSINESS",
-    minAmount: 3_000,
-    maxAmount: 500_000,
-    windowType: "CUSTOM_DAYS",
-    windowValue: 14,
-    maxAttemptsPerWindow: 1,
-    cooldownAfterRejectionDays: 5,
-    processingNoteText: "Processed manually, 3-5 business days after approval.",
-  },
-];
-
-async function seedWithdrawPolicies() {
-  const admin = await prisma.user.findFirst({ where: { role: UserRole.ADMIN } });
-  if (!admin) {
-    console.warn("Skipping WithdrawPolicy seed — no ADMIN user exists yet.");
-    return;
-  }
-
-  for (const policy of LOCKED_WITHDRAW_POLICIES) {
-    const existing = await prisma.withdrawPolicy.findFirst({
-      where: { ownerType: WithdrawOwnerType[policy.ownerType] },
-    });
-    if (existing) continue;
-
-    await prisma.withdrawPolicy.create({
-      data: {
-        ownerType: WithdrawOwnerType[policy.ownerType],
-        minAmount: policy.minAmount,
-        maxAmount: policy.maxAmount,
-        windowType: WithdrawWindowType[policy.windowType],
-        windowValue: policy.windowValue,
-        maxAttemptsPerWindow: policy.maxAttemptsPerWindow,
-        cooldownAfterRejectionDays: policy.cooldownAfterRejectionDays,
-        processingNoteText: policy.processingNoteText,
-        isActive: true,
-        updatedById: admin.id,
-      },
-    });
-  }
-}
 
 async function seedPlatformCommissionRule() {
   const existing = await prisma.platformCommissionRule.count();
@@ -1907,6 +1844,13 @@ async function seedUserBadges(creators: { id: string }[]) {
 }
 
 async function main() {
+  if (IS_PROD) {
+    throw new Error(
+      "prisma/seed.ts seeds demo/sample data and must never run against a production database. " +
+        "Production bootstrap data ships via migrations instead — see withdraw/README.md for the pattern.",
+    );
+  }
+
   await seedCategories();
   const brands = await seedBrands();
   await seedProducts(brands);
@@ -1930,7 +1874,6 @@ async function main() {
   await seedHeroSlides();
   await seedCommissionTiers();
   await seedNepalBanks();
-  await seedWithdrawPolicies();
   await seedPlatformCommissionRule();
   await seedGatewayFeeRates();
   await seedLevels();
