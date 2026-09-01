@@ -5,6 +5,7 @@ import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePermission, resolveTenant } from "#modules/crm-access/crm-access.middleware.js";
 import { requireAdvancedCrmFeatures } from "#modules/crm-billing/crm-billing.middleware.js";
+import { requireFeature } from "#modules/platform-features/platform-features.middleware.js";
 
 import { crmContactsController } from "./crm-contacts.controller.js";
 import {
@@ -18,7 +19,12 @@ const CONTACTS_READ = "contacts:read";
 const CONTACTS_WRITE = "contacts:write";
 const CONTACTS_DELETE = "contacts:delete";
 
-const tenantChain = [resolveTenant, requireAuth, requireAdvancedCrmFeatures] as const;
+const tenantChain = [
+  resolveTenant,
+  requireAuth,
+  requireAdvancedCrmFeatures,
+  requireFeature("crm.contacts"),
+] as const;
 const writeChain = [...tenantChain, crmWriteRateLimit] as const;
 
 export const crmContactsRoutes = Router();

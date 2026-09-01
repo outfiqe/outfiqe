@@ -1,5 +1,6 @@
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { CrmTicketStatus } from "#generated/prisma/enums.js";
+import { applyCrmCounterDelta } from "#lib/crm-counters.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { crmRelationshipsService } from "#modules/crm-relationships/crm-relationships.service.js";
 
@@ -84,6 +85,7 @@ export const crmTicketsService = {
       ...input,
       organizationId: organization.id,
     });
+    await applyCrmCounterDelta(organization.id, "ticketCount", 1);
 
     if (assigneeUserId) await emitAssignment(organization.id, ticket, assigneeUserId, actorUserId);
     return ticket;

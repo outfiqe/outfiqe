@@ -3,6 +3,8 @@ import { z } from "zod";
 import { apiClient } from "@/lib/apiClient";
 
 import {
+  type ImpersonationLogEntry,
+  impersonationLogEntrySchema,
   type MembershipStatusValue,
   type MembershipSummary,
   membershipSummarySchema,
@@ -20,6 +22,7 @@ const membersListSchema = z.array(membershipSummarySchema);
 const rolesListSchema = z.array(roleSchema);
 const permissionsListSchema = z.array(permissionSchema);
 const invitesListSchema = z.array(organizationInviteSummarySchema);
+const impersonationLogSchema = z.array(impersonationLogEntrySchema);
 
 type RoleInput = { name: string; permissionKeys: string[] };
 
@@ -55,6 +58,15 @@ export const crmApi = {
 
   async updateOrganization(body: { name: string }): Promise<void> {
     await apiClient.patch("/crm/organization", body);
+  },
+
+  async listImpersonationLog(): Promise<ImpersonationLogEntry[]> {
+    const res = await apiClient.get<ImpersonationLogEntry[]>("/crm/organization/impersonation-log");
+    return impersonationLogSchema.parse(res.data);
+  },
+
+  async endImpersonation(): Promise<void> {
+    await apiClient.post("/crm/organization/end-impersonation");
   },
 
   async listMembers(): Promise<MembershipSummary[]> {

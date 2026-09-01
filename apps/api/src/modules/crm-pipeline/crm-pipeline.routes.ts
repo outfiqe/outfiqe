@@ -5,6 +5,7 @@ import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePermission, resolveTenant } from "#modules/crm-access/crm-access.middleware.js";
 import { requireAdvancedCrmFeatures } from "#modules/crm-billing/crm-billing.middleware.js";
+import { requireFeature } from "#modules/platform-features/platform-features.middleware.js";
 
 import { crmPipelineController } from "./crm-pipeline.controller.js";
 import {
@@ -23,7 +24,12 @@ const DEALS_READ = "deals:read";
 const DEALS_WRITE = "deals:write";
 const DEALS_DELETE = "deals:delete";
 
-const tenantChain = [resolveTenant, requireAuth, requireAdvancedCrmFeatures] as const;
+const tenantChain = [
+  resolveTenant,
+  requireAuth,
+  requireAdvancedCrmFeatures,
+  requireFeature("crm.pipeline"),
+] as const;
 const writeChain = [...tenantChain, crmWriteRateLimit] as const;
 
 export const crmPipelineRoutes = Router();

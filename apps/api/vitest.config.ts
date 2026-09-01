@@ -82,6 +82,7 @@ export default defineConfig({
         "src/modules/withdraw/**/*.ts",
         "src/shared/utils/prisma.utils.ts",
         "src/shared/utils/cors.utils.ts",
+        "src/shared/utils/crm-counters.ts",
         "src/modules/financial-rollup/**/*.ts",
         "src/modules/image-processing/**/*.ts",
         "src/modules/chat/**/*.ts",
@@ -95,6 +96,10 @@ export default defineConfig({
         "src/modules/crm-reporting/**/*.ts",
         "src/modules/crm-audit/**/*.ts",
         "src/modules/platform-access/**/*.ts",
+        "src/modules/platform-audit/**/*.ts",
+        "src/modules/platform-metrics/**/*.ts",
+        "src/modules/platform-features/**/*.ts",
+        "src/modules/platform-impersonation/**/*.ts",
       ],
       thresholds: {
         lines: 80,

@@ -199,6 +199,24 @@ describe("CRM contacts", () => {
     expect(gone.status).toBe(404);
   });
 
+  it("moves Organization.contactCount as contacts are created and deleted", async () => {
+    const tenant = await seedContactsTenant();
+
+    const created = await createContact(tenant, { name: "Counted" });
+    let org = await prisma.organization.findUniqueOrThrow({
+      where: { id: tenant.organization.id },
+    });
+    expect(org.contactCount).toBe(1);
+    expect(org.lastCrmActivityAt).not.toBeNull();
+
+    await request(testApp)
+      .delete(`/api/crm/contacts/${created.body.data.id}`)
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+    org = await prisma.organization.findUniqueOrThrow({ where: { id: tenant.organization.id } });
+    expect(org.contactCount).toBe(0);
+  });
+
   it("keeps contacts isolated between tenants", async () => {
     const tenant = await seedContactsTenant();
     const otherTenant = await seedContactsTenant();

@@ -1849,6 +1849,11 @@ model Organization {
   superAdminMembershipId String?   @unique @map("super_admin_membership_id") @db.Uuid
   linkedBrandId          String?   @unique @map("linked_brand_id") @db.Uuid
   linkedBrand            Brand?    @relation(fields: [linkedBrandId], references: [id], onDelete: SetNull)
+  contactCount          Int       @default(0) @map("contact_count")
+  dealCount             Int       @default(0) @map("deal_count")
+  ticketCount           Int       @default(0) @map("ticket_count")
+  activityCount         Int       @default(0) @map("activity_count")
+  lastCrmActivityAt     DateTime? @map("last_crm_activity_at")
   createdAt              DateTime  @default(now()) @map("created_at")
   updatedAt              DateTime  @updatedAt @map("updated_at")
 
@@ -1864,6 +1869,9 @@ model Organization {
   crmTickets                CrmTicket[]
   crmAuditLogs              CrmAuditLog[]
   contacts                  Contact[]
+  activityRollups           OrgActivityRollup[]
+  featureOverrides          TenantFeatureOverride[]
+  impersonationSessions     ImpersonationSession[]
 
   @@map("organizations")
 }
@@ -2135,6 +2143,85 @@ model CrmAuditLog {
 
   @@index([organizationId, createdAt])
   @@map("crm_audit_logs")
+}
+
+model ImpersonationSession {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  impersonatorId String       @map("impersonator_id") @db.Uuid
+  targetUserId   String       @map("target_user_id") @db.Uuid
+  scope          String       @default("read")
+  reason         String
+  approvedById   String?      @map("approved_by_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at")
+  expiresAt      DateTime     @map("expires_at")
+  lastSeenAt     DateTime?    @map("last_seen_at")
+  revokedAt      DateTime?    @map("revoked_at")
+  revokedById    String?      @map("revoked_by_id") @db.Uuid
+  ipAddress      String?      @map("ip_address")
+  userAgent      String?      @map("user_agent")
+
+  @@index([organizationId, createdAt])
+  @@index([impersonatorId, createdAt])
+  @@map("impersonation_sessions")
+}
+
+model TenantFeatureOverride {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  key            String
+  enabled        Boolean
+  metadata       Json         @default("{}")
+  note           String?
+  setByUserId    String?      @map("set_by_user_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  @@unique([organizationId, key])
+  @@index([organizationId])
+  @@map("tenant_feature_overrides")
+}
+
+model OrgActivityRollup {
+  id                String       @id @default(uuid()) @db.Uuid
+  organizationId    String       @map("organization_id") @db.Uuid
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  day               DateTime     @db.Date
+  contactCount      Int          @map("contact_count")
+  dealCount         Int          @map("deal_count")
+  ticketCount       Int          @map("ticket_count")
+  activityCount     Int          @map("activity_count")
+  activeMemberCount Int          @map("active_member_count")
+  capturedAt        DateTime     @default(now()) @map("captured_at")
+
+  @@unique([organizationId, day])
+  @@index([day])
+  @@map("org_activity_rollups")
+}
+
+model PlatformAuditLog {
+  id                     String   @id @default(uuid()) @db.Uuid
+  actorUserId            String   @map("actor_user_id") @db.Uuid
+  onBehalfOfUserId       String?  @map("on_behalf_of_user_id") @db.Uuid
+  organizationId         String?  @map("organization_id") @db.Uuid
+  impersonationSessionId String?  @map("impersonation_session_id") @db.Uuid
+  action                 String
+  method                 String?
+  path                   String?
+  statusCode             Int?     @map("status_code")
+  targetType             String?  @map("target_type")
+  targetId               String?  @map("target_id")
+  summary                String
+  metadata               Json     @default("{}")
+  ipAddress              String?  @map("ip_address")
+  createdAt              DateTime @default(now()) @map("created_at")
+
+  @@index([organizationId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([impersonationSessionId, createdAt])
+  @@map("platform_audit_logs")
 }
 
 enum ContactLifecycleStage {

@@ -56,6 +56,11 @@ support reports, and review the organization's audit log — against the `/api/c
   `verifyInvoice` server-side, and reports COMPLETE / PENDING / FAILED.
 - `PlanGateBanner.tsx` — shown above CRM content when `organization.advancedFeaturesEnabled` is
   false (trial ended, no active subscription), linking to `/crm/billing`.
+- `ImpersonationActivityBanner.tsx` — mounted in `AppShell` for the whole CRM area (not just
+  `CrmPage`). Renders from `organization.activeImpersonation`: names the Outfiqe staff member and
+  start time, expands the `/crm/organization/impersonation-log` history on demand, and (for a
+  viewer with `org:update`) offers "End session" → `POST /crm/organization/end-impersonation`.
+  Renders nothing when no session is active.
 - **Navigation lives in the app shell, not a per-page strip.** `AdminSidebar`
   (`components/AdminSidebar.tsx`) renders a flat "CRM" section — Overview / Partners / Customers /
   Pipeline / Tasks / Support / Reports / Roles / Audit / Billing — filtered by
