@@ -1,3 +1,4 @@
+import { CRM_COUNTER_RECONCILE_INTERVAL_MS, recomputeCrmCounters } from "#lib/crm-counters.js";
 import { nextIsoWeekStart } from "#lib/iso-week.utils.js";
 import { DYNAMIC_BADGE_RECHECK_INTERVAL_MS } from "#modules/achievements/achievement.constants.js";
 import { achievementService } from "#modules/achievements/achievement.service.js";
@@ -131,6 +132,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "auth-retention-sweep",
     run: runAuthRetentionSweep,
     intervalMs: AUTH_RETENTION_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "crm-counter-reconcile",
+    run: recomputeCrmCounters,
+    intervalMs: CRM_COUNTER_RECONCILE_INTERVAL_MS,
   },
 ];
 

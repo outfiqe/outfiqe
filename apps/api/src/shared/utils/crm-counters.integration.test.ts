@@ -3,9 +3,8 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
+import { applyCrmCounterDelta, recomputeCrmCounters, touchCrmActivity } from "#lib/crm-counters.js";
 import { seedTenantOrganization } from "#test/integration/crmFixtures.js";
-
-import { backfillCrmCounters } from "../../../prisma/backfill-crm-counters.js";
 
 const seedCountedTenant = async () => {
   const brand = await prisma.brand.create({
@@ -32,7 +31,7 @@ const seedCountedTenant = async () => {
   return { organization, stage, partner };
 };
 
-describe("backfillCrmCounters", () => {
+describe("crm counters", () => {
   it("recomputes every counter and the last-activity timestamp from the tenant's rows", async () => {
     const { organization, stage, partner } = await seedCountedTenant();
 
@@ -63,7 +62,7 @@ describe("backfillCrmCounters", () => {
       data: { organizationId: organization.id, type: "NOTE", body: "hello" },
     });
 
-    const updated = await backfillCrmCounters();
+    const updated = await recomputeCrmCounters();
     expect(updated).toBeGreaterThanOrEqual(1);
 
     const row = await prisma.organization.findUniqueOrThrow({ where: { id: organization.id } });
@@ -78,13 +77,12 @@ describe("backfillCrmCounters", () => {
 
   it("zeroes the counters for an organization with no CRM rows", async () => {
     const { organization } = await seedCountedTenant();
-
     await prisma.organization.update({
       where: { id: organization.id },
       data: { contactCount: 99, dealCount: 99, ticketCount: 99, activityCount: 99 },
     });
 
-    await backfillCrmCounters();
+    await recomputeCrmCounters();
 
     const row = await prisma.organization.findUniqueOrThrow({ where: { id: organization.id } });
     expect(row).toMatchObject({
@@ -94,5 +92,27 @@ describe("backfillCrmCounters", () => {
       activityCount: 0,
       lastCrmActivityAt: null,
     });
+  });
+
+  it("applyCrmCounterDelta increments, decrements, and touches last activity", async () => {
+    const { organization } = await seedCountedTenant();
+
+    await applyCrmCounterDelta(organization.id, "dealCount", 1);
+    let row = await prisma.organization.findUniqueOrThrow({ where: { id: organization.id } });
+    expect(row.dealCount).toBe(1);
+    expect(row.lastCrmActivityAt).not.toBeNull();
+
+    await applyCrmCounterDelta(organization.id, "dealCount", -1, { touchLastActivity: false });
+    row = await prisma.organization.findUniqueOrThrow({ where: { id: organization.id } });
+    expect(row.dealCount).toBe(0);
+  });
+
+  it("touchCrmActivity only moves the timestamp forward", async () => {
+    const { organization } = await seedCountedTenant();
+
+    await touchCrmActivity(organization.id);
+    const row = await prisma.organization.findUniqueOrThrow({ where: { id: organization.id } });
+    expect(row.lastCrmActivityAt).not.toBeNull();
+    expect(row.contactCount).toBe(0);
   });
 });

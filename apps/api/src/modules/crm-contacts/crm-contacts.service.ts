@@ -1,3 +1,4 @@
+import { applyCrmCounterDelta, touchCrmActivity } from "#lib/crm-counters.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
@@ -72,11 +73,14 @@ export const crmContactsService = {
     await assertOwnerMembership(organizationId, body.ownerMembershipId);
     await assertLinkedUser(body.linkedUserId);
 
+    let contact: ContactWithRelations;
     try {
-      return await crmContactsRepository.create({ organizationId, ...body });
+      contact = await crmContactsRepository.create({ organizationId, ...body });
     } catch (error) {
       throw asEmailConflict(error);
     }
+    await applyCrmCounterDelta(organizationId, "contactCount", 1);
+    return contact;
   },
 
   async updateContact(
@@ -88,15 +92,19 @@ export const crmContactsService = {
     await assertOwnerMembership(organizationId, body.ownerMembershipId);
     await assertLinkedUser(body.linkedUserId);
 
+    let contact: ContactWithRelations;
     try {
-      return await crmContactsRepository.update(organizationId, contactId, body);
+      contact = await crmContactsRepository.update(organizationId, contactId, body);
     } catch (error) {
       throw asEmailConflict(error);
     }
+    await touchCrmActivity(organizationId);
+    return contact;
   },
 
   async deleteContact(organizationId: string, contactId: string): Promise<void> {
     await this.getContact(organizationId, contactId);
     await crmContactsRepository.delete(organizationId, contactId);
+    await applyCrmCounterDelta(organizationId, "contactCount", -1, { touchLastActivity: false });
   },
 };
