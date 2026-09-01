@@ -187,6 +187,11 @@ validation. Set them via the UI or `gh variable set` / `gh secret set`.
   - **Type** must be one of the same values as commit types below (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `style`, `revert`) — no personal/username branches.
   - No spaces or uppercase; keep the description short.
 
+- **Branch flow.** `dev` is the integration branch — open every PR against `dev`. `main` is the
+  release branch and only ever receives the `dev → main` promotion PR; a merge to `main` deploys
+  production. `Validate Branch Name` (`.github/workflows/validate-branch.yml`) enforces this:
+  anything other than `dev` targeting `main` fails.
+
 - **Commit messages** follow [Conventional Commits](https://www.conventionalcommits.org), enforced by a commit-msg hook (commitlint, config in `commitlint.config.js`):
 
   ```
