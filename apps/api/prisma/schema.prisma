@@ -1871,6 +1871,7 @@ model Organization {
   contacts                  Contact[]
   activityRollups           OrgActivityRollup[]
   featureOverrides          TenantFeatureOverride[]
+  impersonationSessions     ImpersonationSession[]
 
   @@map("organizations")
 }
@@ -2142,6 +2143,28 @@ model CrmAuditLog {
 
   @@index([organizationId, createdAt])
   @@map("crm_audit_logs")
+}
+
+model ImpersonationSession {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  impersonatorId String       @map("impersonator_id") @db.Uuid
+  targetUserId   String       @map("target_user_id") @db.Uuid
+  scope          String       @default("read")
+  reason         String
+  approvedById   String?      @map("approved_by_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at")
+  expiresAt      DateTime     @map("expires_at")
+  lastSeenAt     DateTime?    @map("last_seen_at")
+  revokedAt      DateTime?    @map("revoked_at")
+  revokedById    String?      @map("revoked_by_id") @db.Uuid
+  ipAddress      String?      @map("ip_address")
+  userAgent      String?      @map("user_agent")
+
+  @@index([organizationId, createdAt])
+  @@index([impersonatorId, createdAt])
+  @@map("impersonation_sessions")
 }
 
 model TenantFeatureOverride {
