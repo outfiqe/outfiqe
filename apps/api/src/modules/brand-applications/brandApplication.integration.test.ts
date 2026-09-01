@@ -7,8 +7,7 @@ import { prisma } from "#db/prisma.js";
 import { BrandApplicationStatus, MakesOwnPieces } from "#generated/prisma/enums.js";
 import { createAdminSession } from "#test/integration/authHelpers.js";
 import { testApp } from "#test/integration/testApp.js";
-
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 const validApplicationBody = (overrides: Partial<Record<string, string>> = {}) => ({
   brandName: "Test Atelier",

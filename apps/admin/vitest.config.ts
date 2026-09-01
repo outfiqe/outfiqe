@@ -33,6 +33,7 @@ export default defineConfig({
         "src/features/auth/AuthContext.tsx",
         "src/components/ProtectedRoute.tsx",
         "src/components/ProtectedRoute.utils.ts",
+        "src/components/AdminSidebar.utils.ts",
       ],
       thresholds: {
         lines: 80,

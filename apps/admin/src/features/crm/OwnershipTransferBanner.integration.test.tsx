@@ -44,6 +44,7 @@ const baseOrganization: Organization = {
   name: "Meridian Apparel Co.",
   plan: "trial",
   trialEndsAt: null,
+  linkedBrandId: "brand-1",
   superAdminMembershipId: "membership-1",
   viewerIsSuperAdmin: false,
   viewerPermissionKeys: [],

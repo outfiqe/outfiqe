@@ -75,6 +75,7 @@ const mockOrganizationEndpoint = (
           subdomain: "meridian",
           plan: "trial",
           trialEndsAt: "2026-09-08T00:00:00.000Z",
+          linkedBrandId: "brand-1",
           superAdminMembershipId: "membership-1",
           viewerIsSuperAdmin: false,
           viewerPermissionKeys: [],

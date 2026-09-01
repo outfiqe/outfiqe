@@ -7,10 +7,9 @@ import { CreatorLeaderboardCategory, CreatorStatus } from "#generated/prisma/enu
 import { currentIsoWeekKey } from "#lib/iso-week.utils.js";
 import { creatorLeaderboardRepository } from "#modules/creator-leaderboard/creatorLeaderboard.repository.js";
 import { creatorLeaderboardService } from "#modules/creator-leaderboard/creatorLeaderboard.service.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 import { achievementService } from "./achievement.service.js";
-
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
 const createCreator = async () =>
   prisma.user.create({
