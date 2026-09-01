@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
 import { AppError } from "#middlewares/error-handler.js";
-import { requireAuthPrincipal } from "#middlewares/require-auth.js";
+import { requireAuth, requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 
 import type { PlatformPermissionKey } from "./platform-access.constants.js";
@@ -27,7 +27,7 @@ export const requirePlatformRole = (key: PlatformPermissionKey) => {
     next();
   };
 
-  return [requirePlatformAccess, enforceKey] as const;
+  return [requireAuth, requirePlatformAccess, enforceKey] as const;
 };
 
 export const getPlatformPrincipal = (res: Response): PlatformPrincipal => {
