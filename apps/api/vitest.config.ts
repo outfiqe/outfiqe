@@ -87,6 +87,7 @@ export default defineConfig({
         "src/modules/chat/**/*.ts",
         "src/modules/crm-access/**/*.ts",
         "src/modules/crm-billing/**/*.ts",
+        "src/modules/crm-contacts/**/*.ts",
         "src/modules/crm-relationships/**/*.ts",
         "src/modules/crm-pipeline/**/*.ts",
         "src/modules/crm-activities/**/*.ts",

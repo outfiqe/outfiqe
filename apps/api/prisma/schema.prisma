@@ -105,6 +105,7 @@ model User {
   crmMemberships                           Membership[]
   sentOrganizationInvites                  OrganizationInvite[]        @relation("OrganizationInviteSender")
   imageProcessingAssets                    ImageProcessingAsset[]
+  crmLinkedContacts                        Contact[]                  @relation("ContactLinkedUser")
 
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
@@ -1862,6 +1863,7 @@ model Organization {
   crmTasks                  CrmTask[]
   crmTickets                CrmTicket[]
   crmAuditLogs              CrmAuditLog[]
+  contacts                  Contact[]
 
   @@map("organizations")
 }
@@ -1910,6 +1912,7 @@ model Deal {
   updatedAt         DateTime   @updatedAt @map("updated_at")
 
   @@index([organizationId, stageId])
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin, map: "deals_title_trgm_idx")
   @@map("deals")
 
   activities CrmActivity[]
@@ -1959,6 +1962,7 @@ model CrmTicket {
 
   @@index([organizationId, status, createdAt])
   @@index([organizationId, assigneeMembershipId])
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin, map: "crm_tickets_title_trgm_idx")
   @@map("crm_tickets")
 }
 
@@ -2133,6 +2137,40 @@ model CrmAuditLog {
   @@map("crm_audit_logs")
 }
 
+enum ContactLifecycleStage {
+  LEAD
+  QUALIFIED
+  CUSTOMER
+  PARTNER
+  OTHER
+}
+
+model Contact {
+  id                String                @id @default(uuid()) @db.Uuid
+  organizationId    String                @map("organization_id") @db.Uuid
+  organization      Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name              String
+  email             String?
+  phone             String?
+  company           String?
+  jobTitle          String?               @map("job_title")
+  lifecycleStage    ContactLifecycleStage @default(LEAD) @map("lifecycle_stage")
+  source            String?
+  tags              String[]              @default([])
+  notes             String?
+  linkedUserId      String?               @map("linked_user_id") @db.Uuid
+  linkedUser        User?                 @relation("ContactLinkedUser", fields: [linkedUserId], references: [id], onDelete: SetNull)
+  ownerMembershipId String?               @map("owner_membership_id") @db.Uuid
+  ownerMembership   Membership?           @relation("ContactOwnerMembership", fields: [ownerMembershipId], references: [id], onDelete: SetNull)
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+
+  @@unique([organizationId, email])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, lifecycleStage])
+  @@map("contacts")
+}
+
 model Membership {
   id             String           @id @default(uuid()) @db.Uuid
   userId         String           @map("user_id") @db.Uuid
@@ -2155,6 +2193,7 @@ model Membership {
   crmTicketsAssigned         CrmTicket[]               @relation("CrmTicketAssignee")
   crmTicketsCreated          CrmTicket[]               @relation("CrmTicketCreatedBy")
   crmTicketCommentsAuthored  CrmTicketComment[]        @relation("CrmTicketCommentAuthor")
+  ownedContacts              Contact[]                 @relation("ContactOwnerMembership")
 
   @@unique([userId, organizationId])
   @@index([organizationId])
