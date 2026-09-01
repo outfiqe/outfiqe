@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isCrmSubItemVisible } from "./AdminSidebar.utils";
+import { isCrmSubItemVisible, shouldShowCrmSection } from "./AdminSidebar.utils";
 
 const brandlessOrg = {
   viewerIsSuperAdmin: true,
@@ -57,5 +57,19 @@ describe("isCrmSubItemVisible", () => {
 
   it("hides a permission-gated item from a viewer without the key", () => {
     expect(isCrmSubItemVisible({ permissionKey: "audit:read" }, brandLinkedOrg)).toBe(false);
+  });
+});
+
+describe("shouldShowCrmSection", () => {
+  it("shows the section for a tenant organization", () => {
+    expect(shouldShowCrmSection({ isPlatformOrg: false })).toBe(true);
+  });
+
+  it("hides the section for the platform organization", () => {
+    expect(shouldShowCrmSection({ isPlatformOrg: true })).toBe(false);
+  });
+
+  it("shows the section while the organization is still loading", () => {
+    expect(shouldShowCrmSection(undefined)).toBe(true);
   });
 });

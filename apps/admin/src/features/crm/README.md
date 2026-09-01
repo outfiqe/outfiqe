@@ -66,11 +66,13 @@ support reports, and review the organization's audit log — against the `/api/c
   Pipeline / Tasks / Support / Reports / Roles / Audit / Billing — filtered by
   `isCrmSubItemVisible` (`components/AdminSidebar.utils.ts`): the viewer's permission keys (or org
   SUPERADMIN), and, for the brand-scoped items (Partners, Customers, Billing), whether the resolved
-  organization has a `linkedBrandId` at all. The platform org has none, so a platform admin sees
-  Overview / Pipeline / Tasks / Support / Reports / Roles / Audit but not the three that can only
-  ever be empty for a brand-less org. The sidebar fetches `GET /api/crm/organization` itself, but only
-  `enabled` while `pathname.startsWith("/crm")`, and on the same `["crm-organization"]` query key
-  the pages already use — so React Query dedupes it and it costs no extra request. `AppShell`
+  organization has a `linkedBrandId` at all. **The whole CRM section is hidden when the resolved org
+  is the platform org** (`shouldShowCrmSection` — `crmOrganization.isPlatformOrg`): the platform org
+  isn't a tenant, so Contacts/Pipeline/Tasks/Support/Reports have nothing behind them, and platform
+  team/role management is a seed-time concern (`bootstrap-platform-crm.ts`). The `/crm/*` routes
+  still resolve by URL for the rare case of granting a new platform admin. The sidebar fetches
+  `GET /api/crm/organization` on the shared `["crm-organization"]` query key (5-minute `staleTime`),
+  so React Query dedupes it against the pages that already use it. `AppShell`
   renders the two-tone `CRM` wordmark + `<CrmSearchBox>` centered in the header on `/crm/*` routes
   (excluding `/crm/invites/accept`). The pages themselves render only their own content plus, where
   relevant, `PlanGateBanner`. `useTanStackSidebarNavigation` supplies an `isActive` that matches
