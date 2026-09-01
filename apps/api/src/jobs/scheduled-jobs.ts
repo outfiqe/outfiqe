@@ -35,6 +35,8 @@ import { NOTIFICATION_RETENTION_SWEEP_INTERVAL_MS } from "#modules/notifications
 import { runNotificationRetentionSweep } from "#modules/notifications/notification.retention.js";
 import { RECONCILE_CHECK_INTERVAL_MS } from "#modules/payments/payment.constants.js";
 import { runPaymentReconciliationSweep } from "#modules/payments/payment.reconciliation.js";
+import { PLATFORM_METRICS_SNAPSHOT_INTERVAL_MS } from "#modules/platform-metrics/platform-metrics.constants.js";
+import { platformMetricsService } from "#modules/platform-metrics/platform-metrics.service.js";
 import {
   AGGREGATION_INTERVAL_MS,
   SCORING_INTERVAL_MS,
@@ -137,6 +139,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "crm-counter-reconcile",
     run: recomputeCrmCounters,
     intervalMs: CRM_COUNTER_RECONCILE_INTERVAL_MS,
+  },
+  {
+    name: "platform-metrics-snapshot",
+    run: platformMetricsService.runDailySnapshot,
+    intervalMs: PLATFORM_METRICS_SNAPSHOT_INTERVAL_MS,
   },
 ];
 

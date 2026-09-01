@@ -56,6 +56,7 @@ import { notificationRoutes } from "./modules/notifications/notification.routes.
 import { orderRoutes } from "./modules/orders/order.routes.js";
 import { paymentRoutes } from "./modules/payments/payment.routes.js";
 import { platformAuditRoutes } from "./modules/platform-audit/platform-audit.routes.js";
+import { platformMetricsRoutes } from "./modules/platform-metrics/platform-metrics.routes.js";
 import { productReviewRoutes } from "./modules/product-reviews/product-review.routes.js";
 import { productRoutes } from "./modules/products/product.routes.js";
 import { sizeOptionRoutes } from "./modules/size-options/size-option.routes.js";
@@ -172,6 +173,7 @@ export const createApp = () => {
   app.use("/api/crm", crmAuditRoutes);
   app.use("/api/crm", crmAccessRoutes);
   app.use("/api/platform", platformAuditRoutes);
+  app.use("/api/platform", platformMetricsRoutes);
   app.use("/api/creator-links", creatorLinkRoutes);
   app.use("/api/creator-looks", creatorLookRoutes);
   app.use("/api/follows", followRoutes);

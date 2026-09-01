@@ -1869,6 +1869,7 @@ model Organization {
   crmTickets                CrmTicket[]
   crmAuditLogs              CrmAuditLog[]
   contacts                  Contact[]
+  activityRollups           OrgActivityRollup[]
 
   @@map("organizations")
 }
@@ -2140,6 +2141,23 @@ model CrmAuditLog {
 
   @@index([organizationId, createdAt])
   @@map("crm_audit_logs")
+}
+
+model OrgActivityRollup {
+  id                String       @id @default(uuid()) @db.Uuid
+  organizationId    String       @map("organization_id") @db.Uuid
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  day               DateTime     @db.Date
+  contactCount      Int          @map("contact_count")
+  dealCount         Int          @map("deal_count")
+  ticketCount       Int          @map("ticket_count")
+  activityCount     Int          @map("activity_count")
+  activeMemberCount Int          @map("active_member_count")
+  capturedAt        DateTime     @default(now()) @map("captured_at")
+
+  @@unique([organizationId, day])
+  @@index([day])
+  @@map("org_activity_rollups")
 }
 
 model PlatformAuditLog {
