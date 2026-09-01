@@ -83,6 +83,13 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
 
 ## Non-obvious rationale
 
+- **`Organization` carries denormalised CRM counters** (`contactCount`, `dealCount`,
+  `ticketCount`, `activityCount`, `lastCrmActivityAt`). They exist so the platform metrics
+  dashboard is a per-org point read instead of a cross-tenant `GROUP BY` over every CRM table.
+  They are maintained inline by the `crm-*` write services and reconciled nightly; the true
+  values can always be recomputed from the tenant's own rows by
+  `prisma/backfill-crm-counters.ts` (`pnpm --filter @outfiqe/api db:backfill:crm-counters`),
+  which is what the reconcile job runs.
 - **SUPERADMIN is not a `Role` row.** It's `Organization.superAdminMembershipId`, a direct FK to
   one `Membership` — so it can't be edited down, duplicated, or granted through the invite flow
   (`OrganizationInvite.roleId` only ever points at a real `Role`). It's set once by the seed
