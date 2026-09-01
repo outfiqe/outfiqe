@@ -14,6 +14,7 @@ import {
 import { prisma } from "../src/shared/db/prisma.js";
 
 const DEMO_SUBDOMAIN = "meridian";
+const MAX_DEMO_CUSTOMER_ORDERS = 6;
 
 const daysFromNow = (days: number): Date => {
   const date = new Date();
@@ -21,17 +22,17 @@ const daysFromNow = (days: number): Date => {
   return date;
 };
 
-const pick = <T>(items: T[], index: number): T => {
-  const value = items[index % items.length];
-  if (value === undefined) throw new Error("pick from empty list");
-  return value;
+const pick = <T>(pool: T[], index: number): T => {
+  const picked = pool[index % pool.length];
+  if (picked === undefined) throw new Error("pick from empty list");
+  return picked;
 };
 
-async function seedBrandCustomerOrders(
+const seedBrandCustomerOrders = async (
   linkedBrandId: string | null,
   shoppers: { id: string; name: string }[],
   creators: { id: string; name: string; handle: string }[],
-) {
+): Promise<void> => {
   if (!linkedBrandId || shoppers.length === 0) return;
 
   const products = await prisma.product.findMany({
@@ -42,10 +43,10 @@ async function seedBrandCustomerOrders(
   const sellable = products.filter((product) => product.sizes.length > 0);
   if (sellable.length === 0) return;
 
-  const existing = await prisma.orderItem.count({
+  const existingOrderItemCount = await prisma.orderItem.count({
     where: { product: { brandId: linkedBrandId } },
   });
-  if (existing > 0) {
+  if (existingOrderItemCount > 0) {
     console.warn("Brand already has customer orders — skipping order seed.");
     return;
   }
@@ -59,14 +60,14 @@ async function seedBrandCustomerOrders(
     FulfilmentStatus.DELIVERED,
   ];
 
-  let created = 0;
-  for (const [index, shopper] of shoppers.slice(0, 6).entries()) {
+  let ordersCreated = 0;
+  for (const [index, shopper] of shoppers.slice(0, MAX_DEMO_CUSTOMER_ORDERS).entries()) {
     const lineCount = (index % 2) + 1;
-    const lines = Array.from({ length: lineCount }, (_, line) => {
-      const product = pick(sellable, index + line);
+    const lines = Array.from({ length: lineCount }, (_, lineIndex) => {
+      const product = pick(sellable, index + lineIndex);
       const size = product.sizes[0];
       if (!size) return null;
-      const qty = (line % 2) + 1;
+      const qty = (lineIndex % 2) + 1;
       return { productId: product.id, sizeId: size.id, qty, unitPrice: product.price };
     }).filter((line): line is NonNullable<typeof line> => line !== null);
     if (lines.length === 0) continue;
@@ -102,13 +103,13 @@ async function seedBrandCustomerOrders(
         },
       },
     });
-    created += 1;
+    ordersCreated += 1;
   }
 
-  console.warn(`Seeded ${created} customer orders for the linked brand.`);
-}
+  console.warn(`Seeded ${ordersCreated} customer orders for the linked brand.`);
+};
 
-async function main() {
+const main = async (): Promise<void> => {
   const organization = await prisma.organization.findUnique({
     where: { subdomain: DEMO_SUBDOMAIN },
     include: {
@@ -425,7 +426,7 @@ async function main() {
       `${dealsCreated.length} deals, ${contactSeeds.length} contacts, ` +
       `${taskSeeds.length} tasks, ${ticketSeeds.length} tickets, ${activityBodies.length} activities.`,
   );
-}
+};
 
 main()
   .catch((error) => {

@@ -104,19 +104,15 @@ export const MobileNav = () => {
                 </span>
               )}
             </Link>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={toggleTheme}
               aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              className="flex items-center gap-2.5 rounded-lg px-2 py-2.5 text-left text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="h-auto justify-start gap-2.5 rounded-lg px-2 py-2.5 font-normal text-muted-foreground hover:text-foreground"
             >
-              {isDark ? (
-                <Sun className="size-4 shrink-0" suppressHydrationWarning />
-              ) : (
-                <Moon className="size-4 shrink-0" suppressHydrationWarning />
-              )}
+              {isDark ? <Sun suppressHydrationWarning /> : <Moon suppressHydrationWarning />}
               Theme
-            </button>
+            </Button>
           </div>
 
           <div className="mt-6 flex flex-col gap-2 border-t border-border pt-6">

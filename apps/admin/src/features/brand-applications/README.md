@@ -19,12 +19,16 @@ infinite-scrolling list filtered by status, with approve/reject actions.
 - `hooks/useInfiniteBrandApplications.integration.test.tsx` — colocated integration test; renders
   the hook against a mocked API (MSW) to verify the full fetch → parse → paginate path, and covers
   `brandApplicationsApi`'s approve/reject/list request shapes directly.
+- `BrandApplicationsPage.integration.test.tsx` — colocated integration test; renders the page
+  against a mocked API and asserts a failed approve/reject shows the server's message inline.
 
 ## Funnel
 
 **User-facing:** an admin opens Brand Applications, switches between Pending/Approved/Rejected
 tabs, scrolls to load more, and approves or rejects a pending application (rejecting can include
-an optional reason, prompted inline).
+an optional reason, prompted inline). If an action fails — e.g. the API rejects the approval
+because the applicant email already belongs to an account — the server's message shows inline
+under that card and the application stays put.
 
 **Technical:** `BrandApplicationsPage.tsx` → `useInfiniteBrandApplications` (or a direct
 `brandApplicationsApi` call for approve/reject) → `brandApplicationsApi` → the API client

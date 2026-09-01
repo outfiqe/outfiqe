@@ -22,6 +22,9 @@ const STATUS_LABEL: Record<BrandApplicationStatusValue, string> = {
   REJECTED: "Rejected",
 };
 
+const reviewFailureMessage = (mutationError: unknown, fallback: string): string =>
+  mutationError instanceof ApiClientError ? mutationError.message : fallback;
+
 export const BrandApplicationsPage = () => {
   const [tab, setTab] = useState<BrandApplicationStatusValue>("PENDING");
   const queryClient = useQueryClient();
@@ -54,14 +57,10 @@ export const BrandApplicationsPage = () => {
 
   const actionErrorFor = (applicationId: string): string | null => {
     if (approve.isError && approve.variables === applicationId) {
-      return approve.error instanceof ApiClientError
-        ? approve.error.message
-        : "Couldn't approve this application. Try again.";
+      return reviewFailureMessage(approve.error, "Couldn't approve this application. Try again.");
     }
     if (reject.isError && reject.variables?.id === applicationId) {
-      return reject.error instanceof ApiClientError
-        ? reject.error.message
-        : "Couldn't reject this application. Try again.";
+      return reviewFailureMessage(reject.error, "Couldn't reject this application. Try again.");
     }
     return null;
   };

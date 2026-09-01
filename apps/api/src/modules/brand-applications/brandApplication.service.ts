@@ -81,8 +81,9 @@ export const brandApplicationService = {
 
   async approve(applicationId: string, adminUserId: string): Promise<void> {
     const application = await requirePendingApplication(applicationId);
+    const { brandName, email } = application;
 
-    const existingAccountWithEmail = await userRepository.findByEmail(application.email);
+    const existingAccountWithEmail = await userRepository.findByEmail(email);
     if (existingAccountWithEmail) {
       throw new AppError(
         "EMAIL_ALREADY_REGISTERED",
@@ -97,8 +98,6 @@ export const brandApplicationService = {
       tokenHash: hashToken(inviteToken),
       expiresAt: new Date(Date.now() + INVITE_TTL_MS),
     });
-
-    const { brandName, email } = application;
 
     const inviteUrl = `${env.FRONTEND_URL}/register/brand?token=${inviteToken}`;
     const { subject, html } = brandApprovedTemplate(brandName, inviteUrl);
