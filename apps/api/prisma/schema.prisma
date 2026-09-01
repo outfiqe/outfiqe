@@ -1870,6 +1870,7 @@ model Organization {
   crmAuditLogs              CrmAuditLog[]
   contacts                  Contact[]
   activityRollups           OrgActivityRollup[]
+  featureOverrides          TenantFeatureOverride[]
 
   @@map("organizations")
 }
@@ -2141,6 +2142,23 @@ model CrmAuditLog {
 
   @@index([organizationId, createdAt])
   @@map("crm_audit_logs")
+}
+
+model TenantFeatureOverride {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  key            String
+  enabled        Boolean
+  metadata       Json         @default("{}")
+  note           String?
+  setByUserId    String?      @map("set_by_user_id") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  @@unique([organizationId, key])
+  @@index([organizationId])
+  @@map("tenant_feature_overrides")
 }
 
 model OrgActivityRollup {

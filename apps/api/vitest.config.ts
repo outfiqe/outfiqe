@@ -98,6 +98,7 @@ export default defineConfig({
         "src/modules/platform-access/**/*.ts",
         "src/modules/platform-audit/**/*.ts",
         "src/modules/platform-metrics/**/*.ts",
+        "src/modules/platform-features/**/*.ts",
       ],
       thresholds: {
         lines: 80,
