@@ -1,4 +1,5 @@
 import { DealStatus } from "#generated/prisma/enums.js";
+import { applyCrmCounterDelta, touchCrmActivity } from "#lib/crm-counters.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { crmRelationshipsService } from "#modules/crm-relationships/crm-relationships.service.js";
@@ -187,6 +188,8 @@ export const crmPipelineService = {
       partnerCreatorId: payload.partnerCreatorId,
     });
 
+    await applyCrmCounterDelta(organization.id, "dealCount", 1);
+
     if (stage.isWon || stage.isLost) {
       return crmPipelineRepository.updateDeal(
         organization.id,
@@ -212,12 +215,20 @@ export const crmPipelineService = {
       resolvedStatus = resolveStatusForStage(stage);
     }
 
-    return crmPipelineRepository.updateDeal(organizationId, dealId, data, resolvedStatus);
+    const deal = await crmPipelineRepository.updateDeal(
+      organizationId,
+      dealId,
+      data,
+      resolvedStatus,
+    );
+    await touchCrmActivity(organizationId);
+    return deal;
   },
 
   async deleteDeal(organizationId: string, dealId: string): Promise<void> {
     await this.getDeal(organizationId, dealId);
     await crmPipelineRepository.deleteDeal(organizationId, dealId);
+    await applyCrmCounterDelta(organizationId, "dealCount", -1, { touchLastActivity: false });
   },
 
   async assertPartner(organization: TenantOrganization, partnerCreatorId: string): Promise<void> {

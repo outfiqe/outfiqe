@@ -14,6 +14,7 @@ import {
 } from "../src/modules/crm-access/crm-access.constants.js";
 import { CRM_PLAN_CATALOG, CRM_PLAN_ID } from "../src/modules/crm-billing/crm-billing.constants.js";
 import { DEFAULT_PIPELINE_STAGES } from "../src/modules/crm-pipeline/crm-pipeline.constants.js";
+import { PLATFORM_PERMISSION_CATALOG } from "../src/modules/platform-access/platform-access.constants.js";
 import { prisma } from "../src/shared/db/prisma.js";
 import { hashPassword } from "../src/shared/utils/password.utils.js";
 
@@ -78,7 +79,7 @@ const DEMO_ORGANIZATIONS: DemoOrganizationSeed[] = [
 ];
 
 async function seedPermissionCatalog() {
-  for (const permission of PERMISSION_CATALOG) {
+  for (const permission of [...PERMISSION_CATALOG, ...PLATFORM_PERMISSION_CATALOG]) {
     await prisma.permission.upsert({
       where: { key: permission.key },
       update: { label: permission.label, group: permission.group },
@@ -116,13 +117,18 @@ async function seedPlatformAccessGrant(organizationId: string) {
   });
   if (!adminRole) return;
 
-  await prisma.rolePermission.upsert({
-    where: {
-      roleId_permissionKey: { roleId: adminRole.id, permissionKey: PLATFORM_ACCESS_PERMISSION_KEY },
-    },
-    update: {},
-    create: { roleId: adminRole.id, permissionKey: PLATFORM_ACCESS_PERMISSION_KEY },
-  });
+  const platformKeys = [
+    PLATFORM_ACCESS_PERMISSION_KEY,
+    ...PLATFORM_PERMISSION_CATALOG.map((permission) => permission.key),
+  ];
+
+  for (const permissionKey of platformKeys) {
+    await prisma.rolePermission.upsert({
+      where: { roleId_permissionKey: { roleId: adminRole.id, permissionKey } },
+      update: {},
+      create: { roleId: adminRole.id, permissionKey },
+    });
+  }
 }
 
 async function seedBuiltInRoles(organizationId: string) {

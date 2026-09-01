@@ -54,7 +54,7 @@ Access is **permission-based**, not a fixed set of job titles.
   - **Member** — a read-mostly subset: can see partners, customers, pipeline, tasks, tickets, and
     reports, but not roles, members, billing management, or the audit log.
 - **Custom roles** — an organization can build its own roles from any subset of the catalog
-  (see §12). Two keys are never grantable to a role: platform access (Outfiqe's own commerce
+  (see §13). Two keys are never grantable to a role: platform access (Outfiqe's own commerce
   admin) and the ability to transfer ownership.
 - **The owner** is one person per organization, not a role. They implicitly have every permission
   and are the only one who can start an ownership transfer. Ownership moves only through the
@@ -198,7 +198,30 @@ brand-scoped aggregate query.
 
 ---
 
-## 8. Pipeline & Deals (`/crm/pipeline`)
+## 8. Contacts (`/crm/contacts`)
+
+**Purpose.** A person-level record the org owns outright — a lead, a vendor, a press contact —
+separate from creator/shopper accounts, which Partners and Customers already cover. Not behind the
+advanced-features gate.
+
+**Who can see it.** `contacts:read` to view, `contacts:write` to create/edit/delete. `Member`
+holds both by default.
+
+**What a contact holds.** Name, optional email, phone, company, title, `lifecycleStage` (a fixed
+enum), free-form `tags[]`, `source`, `notes`, an owner (`ownerMembershipId`), and an optional
+`linkedUserId` bridge to a real account. Email is unique per organization when set, so a repeat is
+a `409`.
+
+**User funnel.** A searchable (`q` over name/email/company), lifecycle-stage-filtered,
+offset-paginated table with an empty state and per-row edit/delete; a create/edit modal.
+
+**How it works.** `crm-contacts` module, mounted at `/api/crm` before `crm-access`; standard
+route → controller → service → repository. `contactCount` on `Organization` is kept in step by
+the shared CRM counter helpers. Every write is gated by the `crm.contacts` platform feature flag.
+
+---
+
+## 9. Pipeline & Deals (`/crm/pipeline`)
 
 **Purpose.** A configurable board of stages, with deals moving across it. Every deal is attached
 to a partner.
@@ -226,7 +249,7 @@ is validated live against the partner data) → repository.
 
 ---
 
-## 9. Tasks, Activities & Timeline (`/crm/tasks`; timeline on detail pages)
+## 10. Tasks, Activities & Timeline (`/crm/tasks`; timeline on detail pages)
 
 **Purpose.** Two things: a record of interactions (note / call / message / email) against a
 partner, customer, or deal; and due-dated tasks. Plus a **timeline** that merges those logged
@@ -252,7 +275,7 @@ unions logged activities with live orders and lets the database sort and page th
 
 ---
 
-## 10. Support (`/crm/support`)
+## 11. Support (`/crm/support`)
 
 **Purpose.** Complaint and request tickets against a customer or partner, with an internal
 comment thread and an assignee.
@@ -277,7 +300,7 @@ applied with a guard so two people can't both move it) → repository. Every wri
 
 ---
 
-## 11. Reports (`/crm/reports`)
+## 12. Reports (`/crm/reports`)
 
 **Purpose.** Two dashboards: pipeline health and support health. Every number is computed in the
 database.
@@ -297,7 +320,7 @@ card. Nothing is fetched and reduced in application code.
 
 ---
 
-## 12. Roles & settings (`/crm/roles`)
+## 13. Roles & settings (`/crm/roles`)
 
 **Purpose.** Build custom roles from the permission catalog, and rename the organization.
 
@@ -327,7 +350,7 @@ the `crm-access` module: controller → service → repository. All role routes 
 
 ---
 
-## 13. Audit log (`/crm/audit`)
+## 14. Audit log (`/crm/audit`)
 
 **Purpose.** A per-organization, append-only trail of security-relevant changes.
 
@@ -352,7 +375,7 @@ stable keyset.
 
 ---
 
-## 14. Global search (header box on every `/crm/*` page)
+## 15. Global search (header box on every `/crm/*` page)
 
 **Purpose.** One box that finds partners, customers, deals, and tickets.
 
@@ -369,7 +392,7 @@ and ticket results are title matches backed by trigram indexes.
 
 ---
 
-## 15. Real-time notifications
+## 16. Real-time notifications
 
 Assigning a **task** or a **ticket** notifies the assignee. This travels over the same Redis
 Streams event bus and notification pipeline every other Outfiqe domain event uses — consumer
@@ -378,7 +401,7 @@ after five attempts rather than retrying forever. Self-assignment doesn't notify
 
 ---
 
-## 16. Resilience & edge cases
+## 17. Resilience & edge cases
 
 - **Reads degrade, they don't 500.** The timeline merge, optional relationship metrics, and each
   search group catch failures, log them, and fall back (activities-only, a blank metric, an empty
@@ -394,7 +417,7 @@ after five attempts rather than retrying forever. Self-assignment doesn't notify
 
 ---
 
-## 17. Security
+## 18. Security
 
 - **Organization isolation** is applied on every CRM query, and the linked-brand scope on every
   commerce read. Cross-organization detail lookups return 404, never 403.
@@ -406,7 +429,7 @@ after five attempts rather than retrying forever. Self-assignment doesn't notify
 
 ---
 
-## 18. Data model (reference)
+## 19. Data model (reference)
 
 | Table                                                   | Holds                                                                  |
 | ------------------------------------------------------- | ---------------------------------------------------------------------- |
@@ -419,12 +442,13 @@ after five attempts rather than retrying forever. Self-assignment doesn't notify
 | `CrmActivity` / `CrmTask`                               | Logged interactions and due-dated tasks (one polymorphic subject each) |
 | `CrmTicket` / `CrmTicketComment`                        | Support tickets and their internal threads                             |
 | `CrmAuditLog`                                           | The append-only audit trail                                            |
+| `Contact`                                               | Person-level records, separate from creator/shopper accounts           |
 
 Partners and Customers have **no tables** — they're live queries over the existing commerce data.
 
 ---
 
-## 19. API surface (reference)
+## 20. API surface (reference)
 
 | Method & path                                                                        | Permission                            |
 | ------------------------------------------------------------------------------------ | ------------------------------------- |
@@ -444,17 +468,19 @@ Partners and Customers have **no tables** — they're live queries over the exis
 | `GET /api/crm/reports/pipeline`, `/reports/tickets`                                  | `reports:read` + advanced             |
 | `GET /api/crm/search`                                                                | any read permission + advanced        |
 | `GET /api/crm/audit`                                                                 | `audit:read`                          |
+| `GET/POST /api/crm/contacts`, `GET/PATCH/DELETE /contacts/:id`                       | `contacts:read` / `contacts:write`    |
+| `GET /api/crm/organization/impersonation-log`                                        | `audit:read`                          |
+| `POST /api/crm/organization/end-impersonation`                                       | `org:update`                          |
 
 ---
 
-## 20. Not yet built
+## 21. Not yet built
 
 - **Assignment notifications in the notification bell.** Assigning a task or ticket creates the
   notification record, but the shared notification row in the web and admin apps doesn't yet have
   a link rule for the CRM types, so it isn't surfaced in the bell dropdown.
 - **Per-list filters** (status, owner, date range) on Partners, Customers, and Deals. Support
   tickets already have a server-side status filter.
-- **Contacts** — a person-level record separate from the creator/shopper accounts.
 
 Module-level detail lives in each `apps/api/src/modules/crm-*/README.md` and
 `apps/admin/src/features/crm/README.md`.
