@@ -41,6 +41,7 @@ import {
   UserCog,
   UserRound,
   Users,
+  VenetianMask,
   Wallet,
   Zap,
 } from "lucide-react";
@@ -144,6 +145,12 @@ const PLATFORM_NAV_ITEMS: SidebarNavSection["items"] = [
     href: "/platform/features",
     label: "Feature flags",
     icon: SlidersHorizontal,
+  },
+  {
+    id: "platform-impersonation",
+    href: "/platform/impersonation",
+    label: "Impersonation",
+    icon: VenetianMask,
   },
   { id: "products", href: "/products", label: "Products", icon: Package },
   { id: "collections", href: "/collections", label: "Collections", icon: Layers },

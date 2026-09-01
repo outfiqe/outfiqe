@@ -20,6 +20,7 @@ export const toOrganizationWithViewerContext = (
   pendingOwnershipTransfer: PendingOwnershipTransferSummary | null,
   advancedFeaturesEnabled: boolean,
   features: Record<string, boolean>,
+  activeImpersonation: { byName: string | null; since: Date } | null,
 ): OrganizationWithViewerContext => ({
   ...organization,
   viewerIsSuperAdmin: organization.superAdminMembershipId === viewerMembership.id,
@@ -27,6 +28,7 @@ export const toOrganizationWithViewerContext = (
   pendingOwnershipTransfer,
   advancedFeaturesEnabled,
   features,
+  activeImpersonation,
 });
 
 export const toPendingOwnershipTransferSummary = (

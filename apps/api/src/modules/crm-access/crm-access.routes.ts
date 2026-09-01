@@ -4,6 +4,7 @@ import { denyDuringImpersonation } from "#middlewares/deny-during-impersonation.
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
+import { AUDIT_READ_PERMISSION_KEY } from "#modules/crm-audit/crm-audit.constants.js";
 
 import {
   CRM_INVITE_RATE_LIMIT_MAX_REQUESTS,
@@ -99,6 +100,16 @@ crmAccessRoutes.get(
   "/organization",
   requirePermission("org:read"),
   crmAccessController.getOrganization,
+);
+crmAccessRoutes.get(
+  "/organization/impersonation-log",
+  requirePermission(AUDIT_READ_PERMISSION_KEY),
+  crmAccessController.listImpersonationLog,
+);
+crmAccessRoutes.post(
+  "/organization/end-impersonation",
+  requirePermission("org:update"),
+  crmAccessController.endImpersonation,
 );
 crmAccessRoutes.patch(
   "/organization",

@@ -5,6 +5,7 @@ import { validated } from "#middlewares/validate.js";
 import { getPlatformPrincipal } from "#modules/platform-access/platform-access.middleware.js";
 
 import type {
+  CandidatesQuery,
   HistoryQuery,
   SessionIdParams,
   StartImpersonationBody,
@@ -35,6 +36,15 @@ export const platformImpersonationController = {
 
   async listActive(_req: Request, res: Response) {
     sendSuccess(res, await platformImpersonationService.listActive(), "Active impersonations.");
+  },
+
+  async candidates(_req: Request, res: Response) {
+    const { organizationId } = validated.query<CandidatesQuery>(res);
+    sendSuccess(
+      res,
+      await platformImpersonationService.listCandidates(organizationId),
+      "Impersonation candidates.",
+    );
   },
 
   async revoke(_req: Request, res: Response) {

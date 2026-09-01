@@ -52,6 +52,13 @@ activities/tasks, support/ticketing, reporting, audit log) lives in the sibling 
   `#middlewares/`, because they query this module's own repository/service — a shared middleware
   depending on a module would invert this codebase's module → shared dependency direction.
 - `crm-access.controller.ts` / `crm-access.routes.ts` — routes mounted at `/api/crm` in `app.ts`.
+  `GET /organization` also carries `activeImpersonation: { byName, since } | null` (from
+  `platform-impersonation`'s `findActiveForOrganization`). Two impersonation-visibility sub-routes
+  live here because they're tenant-scoped: `GET /organization/impersonation-log` (`audit:read`,
+  delegates to `platformImpersonationService.tenantLog`) and
+  `POST /organization/end-impersonation` (`org:update`, delegates to
+  `platformImpersonationService.endAllForOrganization`) — the tenant's own kill switch for a
+  support session touching its data.
 - `crm-access.schemas.ts` — Zod request validation.
 - `crm-access.integration.test.ts` — end-to-end through `testApp` + a real test database.
 

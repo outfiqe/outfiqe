@@ -17,6 +17,22 @@ export const pendingOwnershipTransferSchema = z.object({
 });
 export type PendingOwnershipTransfer = z.infer<typeof pendingOwnershipTransferSchema>;
 
+export const activeImpersonationSchema = z.object({
+  byName: z.string().nullable(),
+  since: z.string(),
+});
+export type ActiveImpersonation = z.infer<typeof activeImpersonationSchema>;
+
+export const impersonationLogEntrySchema = z.object({
+  id: z.string(),
+  kind: z.enum(["started", "ended"]),
+  staffName: z.string().nullable(),
+  at: z.string(),
+  reason: z.string().nullable(),
+  scope: z.string().nullable(),
+});
+export type ImpersonationLogEntry = z.infer<typeof impersonationLogEntrySchema>;
+
 export const organizationSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -29,6 +45,7 @@ export const organizationSchema = z.object({
   pendingOwnershipTransfer: pendingOwnershipTransferSchema.nullable(),
   advancedFeaturesEnabled: z.boolean(),
   features: z.record(z.string(), z.boolean()).optional(),
+  activeImpersonation: activeImpersonationSchema.nullable().optional(),
 });
 export type Organization = z.infer<typeof organizationSchema>;
 

@@ -3,7 +3,8 @@
 ## Purpose
 
 Lets a platform admin trade their session for a short-lived token that acts **as** a specific
-tenant admin — time-boxed, server-revocable, and (from the next change) audited on every request.
+tenant admin — time-boxed, server-revocable, audited on every request, and visible to the tenant it
+touches.
 
 `requireAuth` (`#middlewares/require-auth.ts`) now has an `act` branch: when a token carries
 `act.via === "impersonation"` it loads the `ImpersonationSession` by `act.sid`, rejects with
@@ -35,17 +36,28 @@ GETs, and touches `lastSeenAt` at most once a minute per session. The
 via: "impersonation", sid, scope }`, signed with the same secret/audience/issuer as a normal
   access token but with the impersonation TTL.
 - `platform-impersonation.repository.ts` — `ImpersonationSession` CRUD plus `findActiveMembership`
-  / `isPlatformStaff` (its own `prisma.membership` / `prisma.organization` reads — the platform
-  module does not import a `crm-*` repository).
+  / `isPlatformStaff` / `listImpersonationCandidates` (its own `prisma.membership` /
+  `prisma.organization` reads — the platform module does not import a `crm-*` repository),
+  `findActiveForOrganization` / `listActiveForOrganization` (tenant-visibility reads), and
+  `listOrganizationLog` (the tenant-facing `impersonation.*` slice of `PlatformAuditLog`).
 - `platform-impersonation.service.ts` — `start` (guards: `impersonation.allowed` feature on for
   the org, target is an ACTIVE member, target is not platform staff, one active session per
-  impersonator+org; then create + mint + `impersonation.start` audit), `revoke`
-  (own session, or any with `platform:impersonate:manage`; `impersonation.end` audit),
-  `listActive`, `listHistory`.
+  impersonator+org; then create + mint + `impersonation.start` audit + a best-effort email to the
+  target), `revoke` (own session, or any with `platform:impersonate:manage`; `impersonation.end`
+  audit), `listActive`, `listCandidates`, `listHistory`, plus the tenant-facing
+  `findActiveForOrganization` / `tenantLog` / `endAllForOrganization` (each active session revoked
+  with an `impersonation.end` audit attributed to the tenant user).
 - `platform-impersonation.schemas.ts` / `.controller.ts` / `.routes.ts` —
-  `POST /api/platform/impersonation`, `GET /impersonation/active`, `GET /impersonation` (history),
-  `DELETE /impersonation/:sessionId`, all `requirePlatformRole("platform:impersonate")`.
-- `platform-impersonation.integration.test.ts`.
+  `POST /api/platform/impersonation`, `GET /impersonation/active`, `GET /impersonation/candidates`,
+  `GET /impersonation` (history), `DELETE /impersonation/:sessionId`, all
+  `requirePlatformRole("platform:impersonate")`.
+- The tenant side lives on the CRM router (`crm-access.controller` / `.routes`):
+  `GET /api/crm/organization/impersonation-log` (`audit:read`) and
+  `POST /api/crm/organization/end-impersonation` (`org:update`), and
+  `GET /api/crm/organization` now carries
+  `activeImpersonation: { byName, since } | null`.
+- `platform-impersonation.integration.test.ts`, `impersonation-auth.integration.test.ts`,
+  `impersonation-audit.integration.test.ts`, `impersonation-tenant-visibility.integration.test.ts`.
 
 ## Non-obvious rationale
 
@@ -57,3 +69,9 @@ via: "impersonation", sid, scope }`, signed with the same secret/audience/issuer
   next request even while the JWT is still inside its `exp`.
 - **`approvedById` is reserved but unused** — a later "write scope needs a second platform admin's
   approval" flow fills it without a migration.
+- **The browser "act as" hand-off is deliberately out of scope here.** Tenants are served from
+  their own subdomain, so an in-memory access token can't be carried across origins by a same-tab
+  navigation — a safe hand-off needs a fragment exchange plus rework of the admin app's
+  `AuthContext` session restore, which is its own reviewed change. Until then the platform
+  Impersonation screen surfaces the minted token behind a reveal toggle for use with trusted
+  support tooling, and the session lifecycle / audit / tenant-visibility surface is fully live.

@@ -5,6 +5,7 @@ import { requirePlatformRole } from "#modules/platform-access/platform-access.mi
 
 import { platformImpersonationController } from "./platform-impersonation.controller.js";
 import {
+  candidatesQuerySchema,
   historyQuerySchema,
   sessionIdParamsSchema,
   startImpersonationBodySchema,
@@ -25,6 +26,13 @@ platformImpersonationRoutes.get(
   "/impersonation/active",
   ...impersonateChain,
   platformImpersonationController.listActive,
+);
+
+platformImpersonationRoutes.get(
+  "/impersonation/candidates",
+  ...impersonateChain,
+  validate({ query: candidatesQuerySchema }),
+  platformImpersonationController.candidates,
 );
 
 platformImpersonationRoutes.get(

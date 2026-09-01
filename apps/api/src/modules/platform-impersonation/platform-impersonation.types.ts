@@ -43,3 +43,19 @@ export type StartImpersonationResult = {
   expiresAt: Date;
   session: ImpersonationSessionSummary;
 };
+
+export type ImpersonationCandidate = {
+  userId: string;
+  name: string;
+  email: string;
+  roleName: string;
+};
+
+export type TenantImpersonationLogEntry = {
+  id: string;
+  kind: "started" | "ended";
+  staffName: string | null;
+  at: Date;
+  reason: string | null;
+  scope: string | null;
+};

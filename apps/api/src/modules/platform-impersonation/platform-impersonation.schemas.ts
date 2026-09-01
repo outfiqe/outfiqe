@@ -15,6 +15,8 @@ export const startImpersonationBodySchema = z.object({
 
 export const sessionIdParamsSchema = z.object({ sessionId: z.uuid() });
 
+export const candidatesQuerySchema = z.object({ organizationId: z.uuid() });
+
 export const historyQuerySchema = z.object({
   organizationId: z.uuid().optional(),
   impersonatorId: z.uuid().optional(),
@@ -24,3 +26,4 @@ export const historyQuerySchema = z.object({
 export type StartImpersonationBody = z.infer<typeof startImpersonationBodySchema>;
 export type SessionIdParams = z.infer<typeof sessionIdParamsSchema>;
 export type HistoryQuery = z.infer<typeof historyQuerySchema>;
+export type CandidatesQuery = z.infer<typeof candidatesQuerySchema>;
