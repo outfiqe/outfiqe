@@ -458,7 +458,7 @@ describe("GET /api/crm/organizations/suggest", () => {
 });
 
 describe("GET /api/crm/organizations", () => {
-  it("lists every organization for a platform ADMIN, oldest first", async () => {
+  it("lists every tenant organization for a platform ADMIN, oldest first", async () => {
     const { organization: first } = await seedOrganization();
     await new Promise((resolve) => setTimeout(resolve, 5));
     const { organization: second } = await seedOrganization();
@@ -475,6 +475,21 @@ describe("GET /api/crm/organizations", () => {
     for (const organization of response.body.data) {
       expect(organization).toHaveProperty("linkedBrandName");
     }
+  });
+
+  it("excludes the platform organization, which is not a tenant", async () => {
+    const platformOrganization = await ensurePlatformOrganizationExists();
+    const { organization: tenant } = await seedOrganization();
+    const staff = await createPlatformStaffUser("Platform Org Excluder");
+
+    const response = await request(testApp)
+      .get("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+    const ids = response.body.data.map((organization: { id: string }) => organization.id);
+    expect(ids).toContain(tenant.id);
+    expect(ids).not.toContain(platformOrganization.id);
   });
 
   it("includes the linked brand name for a brand-linked organization", async () => {
