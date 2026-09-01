@@ -10,6 +10,7 @@ import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { redis } from "#redis/redis.client.js";
 import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 const OK_STATUS = 200;
 const CREATED_STATUS = 201;
@@ -24,8 +25,6 @@ const authHeaderFor = (userId: string, role: UserRole) => {
   const { accessToken } = generateTokenpair({ sub: userId, role });
   return `Bearer ${accessToken}`;
 };
-
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
 const createUser = async (overrides: Partial<{ role: UserRole }> = {}) => {
   const suffix = randomUUID().slice(0, 8);

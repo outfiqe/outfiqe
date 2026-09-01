@@ -14,8 +14,7 @@ import {
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
 import { testApp } from "#test/integration/testApp.js";
-
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 const createUser = async (name: string, handle: string, role: UserRole = UserRole.CUSTOMER) =>
   prisma.user.create({

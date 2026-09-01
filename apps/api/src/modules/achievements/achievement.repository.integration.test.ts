@@ -4,10 +4,9 @@ import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { CreatorStatus } from "#generated/prisma/enums.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 import { achievementRepository } from "./achievement.repository.js";
-
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
 const createUser = async () =>
   prisma.user.create({

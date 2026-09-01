@@ -5,10 +5,9 @@ import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 import { runAuthRetentionSweep } from "./auth.retention.js";
-
-const uniquePhone = () => `93${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
 const createUser = async () => {
   const suffix = randomUUID().slice(0, 8);

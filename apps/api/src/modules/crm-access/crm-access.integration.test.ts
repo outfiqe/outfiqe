@@ -13,14 +13,13 @@ import {
   seedPlatformOrganization,
 } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 import {
   BUILT_IN_ROLE_NAME,
   BUILT_IN_ROLE_PERMISSIONS,
   PERMISSION_CATALOG,
 } from "./crm-access.constants.js";
-
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
 const createStaffUser = async (name: string) => {
   const slug = name.toLowerCase().replace(/\s+/g, "-");

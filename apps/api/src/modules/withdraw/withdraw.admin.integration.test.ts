@@ -21,6 +21,7 @@ import {
 import { redis } from "#redis/redis.client.js";
 import { createAdminSession } from "#test/integration/authHelpers.js";
 import { testApp } from "#test/integration/testApp.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 const OK_STATUS = 200;
 const BAD_REQUEST_STATUS = 400;
@@ -29,8 +30,6 @@ const CONFLICT_STATUS = 409;
 beforeEach(async () => {
   await redis.flushdb();
 });
-
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
 const createUser = async (role: UserRole = UserRole.CUSTOMER) => {
   const suffix = randomUUID().slice(0, 8);

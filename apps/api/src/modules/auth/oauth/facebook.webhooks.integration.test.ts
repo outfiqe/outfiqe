@@ -8,6 +8,7 @@ import { prisma } from "#db/prisma.js";
 import { OAuthProvider } from "#generated/prisma/enums.js";
 import { hashPassword } from "#lib/password.utils.js";
 import { testApp } from "#test/integration/testApp.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 const base64UrlEncode = (input: Buffer): string =>
   input.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -25,7 +26,6 @@ const buildTamperedSignedRequest = (payload: unknown): string => {
 };
 
 const uniqueEmail = () => `webhook-${randomUUID()}@outfiqe.test`;
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
 const createUserWithFacebookIdentity = async (providerUserId: string) => {
   const user = await prisma.user.create({

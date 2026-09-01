@@ -9,6 +9,7 @@ import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { seedTenantOrganization } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 const esewaInitiate = vi.hoisted(() => vi.fn());
 const esewaVerify = vi.hoisted(() => vi.fn());
@@ -29,8 +30,6 @@ const FORM_POST_RESULT = {
   fields: { amount: "4500" },
   providerRef: "ref-123",
 };
-
-const uniquePhone = () => `98${randomUUID().replace(/\D/g, "1").slice(0, 8)}`;
 
 const createTenantStaff = async () =>
   prisma.user.create({
