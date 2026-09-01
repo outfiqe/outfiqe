@@ -17,6 +17,7 @@ import {
   CreditCard,
   Crown,
   GalleryHorizontal,
+  IdCard,
   KanbanSquare,
   Landmark,
   Layers,
@@ -68,6 +69,13 @@ const CRM_SUB_ITEMS: CrmSubItem[] = [
     icon: UserRound,
     permissionKey: "customers:read",
     requiresLinkedBrand: true,
+  },
+  {
+    id: "crm-contacts",
+    href: "/crm/contacts",
+    label: "Contacts",
+    icon: IdCard,
+    permissionKey: "contacts:read",
   },
   {
     id: "crm-pipeline",
