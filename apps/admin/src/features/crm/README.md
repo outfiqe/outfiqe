@@ -56,6 +56,11 @@ support reports, and review the organization's audit log — against the `/api/c
   `verifyInvoice` server-side, and reports COMPLETE / PENDING / FAILED.
 - `PlanGateBanner.tsx` — shown above CRM content when `organization.advancedFeaturesEnabled` is
   false (trial ended, no active subscription), linking to `/crm/billing`.
+- `ImpersonationActivityBanner.tsx` — mounted in `AppShell` for the whole CRM area (not just
+  `CrmPage`). Renders from `organization.activeImpersonation`: names the Outfiqe staff member and
+  start time, expands the `/crm/organization/impersonation-log` history on demand, and (for a
+  viewer with `org:update`) offers "End session" → `POST /crm/organization/end-impersonation`.
+  Renders nothing when no session is active.
 - **Navigation lives in the app shell, not a per-page strip.** `AdminSidebar`
   (`components/AdminSidebar.tsx`) renders a flat "CRM" section — Overview / Partners / Customers /
   Pipeline / Tasks / Support / Reports / Roles / Audit / Billing — filtered by
@@ -98,6 +103,14 @@ support reports, and review the organization's audit log — against the `/api/c
   skeleton, an error banner, a distinct "not linked to a brand" empty state, and a plain "no
   partners/customers yet" empty state. Search is debounced via `useDebouncedValue`
   (`@outfiqe/hooks`).
+- `contactsApi.ts` / `contactsSchemas.ts` — `crmContactsApi`
+  (`listContacts`/`getContact`/`createContact`/`updateContact`/`deleteContact`) + Zod mirrors of
+  `/api/crm/contacts*`.
+- `ContactsPage.tsx` / `ContactFormModal.tsx` — the manually-managed contact list (search +
+  lifecycle-stage filter + offset pagination) and the create/edit modal (name, email, phone,
+  company, title, stage, source, comma-separated tags, owner from the members list, notes). The
+  modal is keyed by contact id so its form state resets between create and each edit. Unlike
+  Partners/Customers, Contacts is not brand-scoped, so its sidebar item has no `requiresLinkedBrand`.
 - `PartnerDetailPage.tsx` / `CustomerDetailPage.tsx` — per-product breakdown + recent attributed
   orders (partner) / recent order history (customer), reached from a list row.
 - `pipelineApi.ts` / `pipelineSchemas.ts` — `crmPipelineApi` (stage CRUD + reorder, deal CRUD) +
@@ -140,7 +153,8 @@ Routes: `_authenticated.crm.index.tsx` (`/crm` → `CrmPage`),
 `_authenticated.crm.partners.index.tsx` (`/crm/partners` → `PartnersPage`),
 `_authenticated.crm.partners.$creatorId.tsx` (`→ PartnerDetailPage`),
 `_authenticated.crm.customers.index.tsx` (`/crm/customers` → `CustomersPage`),
-`_authenticated.crm.customers.$userId.tsx` (`→ CustomerDetailPage`), and
+`_authenticated.crm.customers.$userId.tsx` (`→ CustomerDetailPage`),
+`_authenticated.crm.contacts.index.tsx` (`/crm/contacts` → `ContactsPage`), and
 `_authenticated.crm.pipeline.index.tsx` (`/crm/pipeline` → `PipelinePage`),
 `_authenticated.crm.tasks.index.tsx` (`/crm/tasks` → `TasksPage`),
 `_authenticated.crm.support.index.tsx` (`/crm/support` → `TicketsPage`),

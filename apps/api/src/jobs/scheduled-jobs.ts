@@ -1,3 +1,4 @@
+import { CRM_COUNTER_RECONCILE_INTERVAL_MS, recomputeCrmCounters } from "#lib/crm-counters.js";
 import { nextIsoWeekStart } from "#lib/iso-week.utils.js";
 import { DYNAMIC_BADGE_RECHECK_INTERVAL_MS } from "#modules/achievements/achievement.constants.js";
 import { achievementService } from "#modules/achievements/achievement.service.js";
@@ -34,6 +35,10 @@ import { NOTIFICATION_RETENTION_SWEEP_INTERVAL_MS } from "#modules/notifications
 import { runNotificationRetentionSweep } from "#modules/notifications/notification.retention.js";
 import { RECONCILE_CHECK_INTERVAL_MS } from "#modules/payments/payment.constants.js";
 import { runPaymentReconciliationSweep } from "#modules/payments/payment.reconciliation.js";
+import { IMPERSONATION_REAP_INTERVAL_MS } from "#modules/platform-impersonation/platform-impersonation.constants.js";
+import { platformImpersonationService } from "#modules/platform-impersonation/platform-impersonation.service.js";
+import { PLATFORM_METRICS_SNAPSHOT_INTERVAL_MS } from "#modules/platform-metrics/platform-metrics.constants.js";
+import { platformMetricsService } from "#modules/platform-metrics/platform-metrics.service.js";
 import {
   AGGREGATION_INTERVAL_MS,
   SCORING_INTERVAL_MS,
@@ -131,6 +136,21 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "auth-retention-sweep",
     run: runAuthRetentionSweep,
     intervalMs: AUTH_RETENTION_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "crm-counter-reconcile",
+    run: recomputeCrmCounters,
+    intervalMs: CRM_COUNTER_RECONCILE_INTERVAL_MS,
+  },
+  {
+    name: "platform-metrics-snapshot",
+    run: platformMetricsService.runDailySnapshot,
+    intervalMs: PLATFORM_METRICS_SNAPSHOT_INTERVAL_MS,
+  },
+  {
+    name: "impersonation-session-reap",
+    run: platformImpersonationService.reapExpiredSessions,
+    intervalMs: IMPERSONATION_REAP_INTERVAL_MS,
   },
 ];
 

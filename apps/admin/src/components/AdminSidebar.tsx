@@ -17,6 +17,8 @@ import {
   CreditCard,
   Crown,
   GalleryHorizontal,
+  Gauge,
+  IdCard,
   KanbanSquare,
   Landmark,
   Layers,
@@ -39,6 +41,7 @@ import {
   UserCog,
   UserRound,
   Users,
+  VenetianMask,
   Wallet,
   Zap,
 } from "lucide-react";
@@ -68,6 +71,13 @@ const CRM_SUB_ITEMS: CrmSubItem[] = [
     icon: UserRound,
     permissionKey: "customers:read",
     requiresLinkedBrand: true,
+  },
+  {
+    id: "crm-contacts",
+    href: "/crm/contacts",
+    label: "Contacts",
+    icon: IdCard,
+    permissionKey: "contacts:read",
   },
   {
     id: "crm-pipeline",
@@ -129,6 +139,19 @@ const toNavItem = ({
 
 const PLATFORM_NAV_ITEMS: SidebarNavSection["items"] = [
   { id: "brand-applications", href: "/", label: "Brand applications", icon: ClipboardList },
+  { id: "platform-metrics", href: "/platform/metrics", label: "Tenant metrics", icon: Gauge },
+  {
+    id: "platform-features",
+    href: "/platform/features",
+    label: "Feature flags",
+    icon: SlidersHorizontal,
+  },
+  {
+    id: "platform-impersonation",
+    href: "/platform/impersonation",
+    label: "Impersonation",
+    icon: VenetianMask,
+  },
   { id: "products", href: "/products", label: "Products", icon: Package },
   { id: "collections", href: "/collections", label: "Collections", icon: Layers },
   { id: "categories", href: "/categories", label: "Categories", icon: Tags },

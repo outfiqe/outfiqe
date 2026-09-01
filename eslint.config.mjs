@@ -105,6 +105,29 @@ export default tseslint.config(
     },
   },
 
+  {
+    files: ["apps/api/src/modules/platform-*/**/*.ts"],
+    ignores: ["apps/api/src/modules/platform-access/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "#modules/crm-*/*.repository.js",
+                "**/modules/crm-*/*.repository.js",
+                "**/crm-*/*.repository",
+              ],
+              message:
+                "Platform modules read tenant data only through their own aggregate repositories or a crm-* service — never a crm-* repository directly.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // Must stay last: turns off stylistic rules that would conflict with
   // Prettier, which owns formatting.
   eslintConfigPrettier,

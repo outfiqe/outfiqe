@@ -4,6 +4,7 @@ import { useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import { CrmSearchBox } from "@/features/crm/CrmSearchBox";
+import { ImpersonationActivityBanner } from "@/features/crm/ImpersonationActivityBanner";
 import { AdminNotificationBell } from "@/features/notifications";
 
 import { AccountMenu } from "./AccountMenu";
@@ -44,7 +45,10 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
 
       <div className="mx-auto flex max-w-6xl gap-4 px-4 py-6 sm:gap-6 sm:py-8 lg:gap-8">
         <AdminSidebar />
-        <main className="min-w-0 flex-1">{children}</main>
+        <main className="min-w-0 flex-1">
+          {inCrmArea && <ImpersonationActivityBanner />}
+          {children}
+        </main>
       </div>
     </div>
   );

@@ -1,0 +1,11 @@
+export const DEFAULT_TENANTS_PAGE_SIZE = 25;
+
+export const MAX_TENANTS_PAGE_SIZE = 100;
+
+export const SPARKLINE_DAYS = 30;
+
+export const ACTIVE_MEMBER_WINDOW_DAYS = 30;
+
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
+export const PLATFORM_METRICS_SNAPSHOT_INTERVAL_MS = 24 * ONE_HOUR_MS;

@@ -65,6 +65,8 @@ export type OrganizationWithViewerContext = OrganizationRecord & {
   viewerPermissionKeys: string[];
   pendingOwnershipTransfer: PendingOwnershipTransferSummary | null;
   advancedFeaturesEnabled: boolean;
+  features: Record<string, boolean>;
+  activeImpersonation: { byName: string | null; since: Date } | null;
 };
 
 export type MembershipSummary = {

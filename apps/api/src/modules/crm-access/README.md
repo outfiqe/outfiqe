@@ -52,6 +52,13 @@ activities/tasks, support/ticketing, reporting, audit log) lives in the sibling 
   `#middlewares/`, because they query this module's own repository/service — a shared middleware
   depending on a module would invert this codebase's module → shared dependency direction.
 - `crm-access.controller.ts` / `crm-access.routes.ts` — routes mounted at `/api/crm` in `app.ts`.
+  `GET /organization` also carries `activeImpersonation: { byName, since } | null` (from
+  `platform-impersonation`'s `findActiveForOrganization`). Two impersonation-visibility sub-routes
+  live here because they're tenant-scoped: `GET /organization/impersonation-log` (`audit:read`,
+  delegates to `platformImpersonationService.tenantLog`) and
+  `POST /organization/end-impersonation` (`org:update`, delegates to
+  `platformImpersonationService.endAllForOrganization`) — the tenant's own kill switch for a
+  support session touching its data.
 - `crm-access.schemas.ts` — Zod request validation.
 - `crm-access.integration.test.ts` — end-to-end through `testApp` + a real test database.
 
@@ -83,6 +90,13 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
 
 ## Non-obvious rationale
 
+- **`Organization` carries denormalised CRM counters** (`contactCount`, `dealCount`,
+  `ticketCount`, `activityCount`, `lastCrmActivityAt`). They exist so the platform metrics
+  dashboard is a per-org point read instead of a cross-tenant `GROUP BY` over every CRM table.
+  They are maintained inline by the `crm-*` write services and reconciled nightly; the true
+  values can always be recomputed from the tenant's own rows by
+  `prisma/backfill-crm-counters.ts` (`pnpm --filter @outfiqe/api db:backfill:crm-counters`),
+  which is what the reconcile job runs.
 - **SUPERADMIN is not a `Role` row.** It's `Organization.superAdminMembershipId`, a direct FK to
   one `Membership` — so it can't be edited down, duplicated, or granted through the invite flow
   (`OrganizationInvite.roleId` only ever points at a real `Role`). It's set once by the seed

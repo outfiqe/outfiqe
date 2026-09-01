@@ -2,6 +2,7 @@ import { addDays } from "date-fns/addDays";
 
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { CrmTaskStatus } from "#generated/prisma/enums.js";
+import { applyCrmCounterDelta } from "#lib/crm-counters.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { crmPipelineRepository } from "#modules/crm-pipeline/crm-pipeline.repository.js";
@@ -75,7 +76,12 @@ export const crmActivitiesService = {
     input: Omit<CreateActivityInput, "organizationId">,
   ): Promise<ActivityRecord> {
     await requireValidSubject(organization, input.subject);
-    return crmActivitiesRepository.createActivity({ ...input, organizationId: organization.id });
+    const activity = await crmActivitiesRepository.createActivity({
+      ...input,
+      organizationId: organization.id,
+    });
+    await applyCrmCounterDelta(organization.id, "activityCount", 1);
+    return activity;
   },
 
   listActivities(
