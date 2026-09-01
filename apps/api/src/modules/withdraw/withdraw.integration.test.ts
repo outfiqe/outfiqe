@@ -50,10 +50,17 @@ const createUser = async (role: UserRole = UserRole.CUSTOMER, name = "Withdraw T
   });
 };
 
+const deactivateExistingActivePolicy = (ownerType: WithdrawOwnerType) =>
+  prisma.withdrawPolicy.updateMany({
+    where: { ownerType, isActive: true },
+    data: { isActive: false },
+  });
+
 const createOpenPolicy = async (
   ownerType: WithdrawOwnerType,
   overrides: Partial<Record<string, unknown>> = {},
 ) => {
+  await deactivateExistingActivePolicy(ownerType);
   const admin = await createUser(UserRole.ADMIN);
   return prisma.withdrawPolicy.create({
     data: {
@@ -73,6 +80,7 @@ const createOpenPolicy = async (
 };
 
 const createClosedPolicy = async (ownerType: WithdrawOwnerType) => {
+  await deactivateExistingActivePolicy(ownerType);
   const admin = await createUser(UserRole.ADMIN);
   return prisma.withdrawPolicy.create({
     data: {
@@ -269,6 +277,36 @@ describe("GET /api/withdraw/policy", () => {
     expect(response.status).toBe(OK_STATUS);
     expect(response.body.data.ownerType).toBe("CREATOR");
     expect(response.body.data.minAmount).toBe(500);
+  });
+
+  it("bootstraps and persists a default policy instead of failing when none exists yet", async () => {
+    const user = await createUser();
+
+    const response = await request(testApp)
+      .get("/api/withdraw/policy")
+      .query({ ownerType: "CREATOR" })
+      .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER));
+
+    expect(response.status).toBe(OK_STATUS);
+    expect(response.body.data.minAmount).toBe(500);
+    expect(response.body.data.maxAmount).toBe(100_000);
+
+    const persisted = await prisma.withdrawPolicy.findFirst({
+      where: { ownerType: WithdrawOwnerType.CREATOR, isActive: true },
+    });
+    expect(persisted).not.toBeNull();
+    expect(persisted?.updatedById).toBeNull();
+
+    const secondResponse = await request(testApp)
+      .get("/api/withdraw/policy")
+      .query({ ownerType: "CREATOR" })
+      .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER));
+    expect(secondResponse.body.data.minAmount).toBe(response.body.data.minAmount);
+
+    const activePolicyCount = await prisma.withdrawPolicy.count({
+      where: { ownerType: WithdrawOwnerType.CREATOR, isActive: true },
+    });
+    expect(activePolicyCount).toBe(1);
   });
 });
 
@@ -480,6 +518,27 @@ describe("POST /api/withdraw/requests — business soft ceiling", () => {
     expect(response.status).toBe(CREATED_STATUS);
     expect(response.body.data.status).toBe(WithdrawRequestStatus.PENDING);
     expect(response.body.data.requiresSecondSignOff).toBe(false);
+  });
+
+  it("self-heals a missing policy instead of failing when a business withdraws first", async () => {
+    const { brand, member } = await createBrandWithMember();
+    await grantAvailableBrandPayout(brand.id, 10_000);
+    const bankAccount = await createVerifiedBrandBankAccount(brand.id);
+
+    const response = await request(testApp)
+      .post("/api/withdraw/requests")
+      .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
+      .send({ ownerType: "BUSINESS", bankAccountId: bankAccount.id, amount: 5_000 });
+
+    expect(response.status).toBe(CREATED_STATUS);
+    expect(response.body.data.status).toBe(WithdrawRequestStatus.PENDING);
+
+    const persisted = await prisma.withdrawPolicy.findFirst({
+      where: { ownerType: WithdrawOwnerType.BUSINESS, isActive: true },
+    });
+    expect(persisted).not.toBeNull();
+    expect(persisted?.minAmount).toBe(3_000);
+    expect(persisted?.updatedById).toBeNull();
   });
 });
 

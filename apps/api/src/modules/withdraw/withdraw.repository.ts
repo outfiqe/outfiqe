@@ -1,8 +1,10 @@
 import { prisma } from "#db/prisma.js";
-import type { WithdrawWindowType } from "#generated/prisma/enums.js";
+import type { WithdrawOwnerType, WithdrawWindowType } from "#generated/prisma/enums.js";
 import { LedgerEntryKind, WithdrawRequestStatus } from "#generated/prisma/enums.js";
+import logger from "#lib/winston.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
+import { DEFAULT_WITHDRAW_POLICY } from "./withdraw.constants.js";
 import type {
   CreateWithdrawRequestInput,
   OwnerContext,
@@ -30,11 +32,52 @@ const ownerWhere = (owner: OwnerContext): { creatorId: string } | { brandId: str
   owner.ownerType === "CREATOR" ? { creatorId: owner.creatorId } : { brandId: owner.brandId };
 
 export const withdrawRepository = {
-  async findActivePolicy(
-    ownerType: OwnerContext["ownerType"],
+  async getOrCreateActivePolicy(
+    ownerType: WithdrawOwnerType,
     client: DbClient = prisma,
-  ): Promise<WithdrawPolicyRecord | null> {
-    return client.withdrawPolicy.findFirst({ where: { ownerType, isActive: true } });
+  ): Promise<WithdrawPolicyRecord> {
+    const existing = await client.withdrawPolicy.findFirst({
+      where: { ownerType, isActive: true },
+    });
+    if (existing) return existing;
+
+    const defaults = DEFAULT_WITHDRAW_POLICY[ownerType];
+    const inserted = await client.$queryRaw<WithdrawPolicyRecord[]>`
+      INSERT INTO "withdraw_policies" (
+        "id", "owner_type", "min_amount", "max_amount", "window_type", "window_value",
+        "max_attempts_per_window", "cooldown_after_rejection_days", "processing_note_text",
+        "is_active", "updated_by_id", "created_at"
+      )
+      VALUES (
+        gen_random_uuid(), ${ownerType}, ${defaults.minAmount}, ${defaults.maxAmount},
+        ${defaults.windowType}, ${defaults.windowValue}, ${defaults.maxAttemptsPerWindow},
+        ${defaults.cooldownAfterRejectionDays}, ${defaults.processingNoteText}, true, NULL,
+        CURRENT_TIMESTAMP
+      )
+      ON CONFLICT ("owner_type") WHERE "is_active" = true DO NOTHING
+      RETURNING
+        "id", "owner_type" AS "ownerType", "min_amount" AS "minAmount", "max_amount" AS "maxAmount",
+        "window_type" AS "windowType", "window_value" AS "windowValue",
+        "max_attempts_per_window" AS "maxAttemptsPerWindow",
+        "cooldown_after_rejection_days" AS "cooldownAfterRejectionDays",
+        "processing_note_text" AS "processingNoteText", "is_active" AS "isActive",
+        "created_at" AS "createdAt"
+    `;
+
+    if (inserted[0]) {
+      logger.warn(
+        `Bootstrapped a default WithdrawPolicy for ownerType=${ownerType} — no active policy existed. An admin should review and save the policy in the admin panel.`,
+      );
+      return inserted[0];
+    }
+
+    const wonByConcurrentInsert = await client.withdrawPolicy.findFirst({
+      where: { ownerType, isActive: true },
+    });
+    if (!wonByConcurrentInsert) {
+      throw new Error(`Failed to bootstrap a WithdrawPolicy for ownerType=${ownerType}`);
+    }
+    return wonByConcurrentInsert;
   },
 
   async createActiveVersion(
