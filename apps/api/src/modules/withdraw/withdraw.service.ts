@@ -33,7 +33,6 @@ import type {
   AdminWithdrawRequestView,
   OwnerContext,
   WithdrawEligibilityView,
-  WithdrawPolicyRecord,
   WithdrawPolicyView,
   WithdrawRequestRecord,
   WithdrawRequestView,
@@ -47,7 +46,6 @@ import { computeWithdrawWindow } from "./withdraw.window.utils.js";
 
 const BAD_REQUEST_STATUS = 400;
 const NOT_FOUND_STATUS = 404;
-const SERVICE_UNAVAILABLE_STATUS = 503;
 const CONFLICT_STATUS = 409;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -58,20 +56,6 @@ const resolveOwner = async (
   if (ownerType === "CREATOR") return { ownerType, creatorId: userId };
   const brandId = await requireBrandId(userId);
   return { ownerType, brandId };
-};
-
-const requirePolicy = async (
-  ownerType: OwnerContext["ownerType"],
-): Promise<WithdrawPolicyRecord> => {
-  const policy = await withdrawRepository.findActivePolicy(ownerType);
-  if (!policy) {
-    throw new AppError(
-      "WITHDRAW_POLICY_NOT_CONFIGURED",
-      "Withdrawals aren't available right now. Please try again shortly.",
-      SERVICE_UNAVAILABLE_STATUS,
-    );
-  }
-  return policy;
 };
 
 const getAvailableLedgerBalance = async (owner: OwnerContext): Promise<number> => {
@@ -131,7 +115,7 @@ const publishWithdrawRequestStatusChanged = async (
 
 export const withdrawService = {
   async getPolicy(ownerType: OwnerContext["ownerType"]): Promise<WithdrawPolicyView> {
-    const policy = await requirePolicy(ownerType);
+    const policy = await withdrawRepository.getOrCreateActivePolicy(ownerType);
     const window = computeWithdrawWindow(policy);
     return toWithdrawPolicyView(policy, window);
   },
@@ -148,7 +132,7 @@ export const withdrawService = {
     ownerType: OwnerContext["ownerType"],
   ): Promise<WithdrawEligibilityView> {
     const owner = await resolveOwner(userId, ownerType);
-    const policy = await requirePolicy(ownerType);
+    const policy = await withdrawRepository.getOrCreateActivePolicy(ownerType);
     const window = computeWithdrawWindow(policy);
 
     const attemptsUsed = await withdrawRepository.countRequestsSince(owner, window.windowStart);
@@ -202,15 +186,7 @@ export const withdrawService = {
     try {
       const request = await prisma.$transaction(
         async (tx) => {
-          const policy = await withdrawRepository.findActivePolicy(body.ownerType, tx);
-          if (!policy) {
-            throw new AppError(
-              "WITHDRAW_POLICY_NOT_CONFIGURED",
-              "Withdrawals aren't available right now. Please try again shortly.",
-              SERVICE_UNAVAILABLE_STATUS,
-            );
-          }
-
+          const policy = await withdrawRepository.getOrCreateActivePolicy(body.ownerType, tx);
           const window = computeWithdrawWindow(policy);
           if (!window.isOpen) {
             throw new AppError(

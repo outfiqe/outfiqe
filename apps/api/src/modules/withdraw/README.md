@@ -19,6 +19,8 @@ mark-paid`, `PUT /admin/policy` (versioned — creates a new active row for the 
   window/attempt checks, admin approve/reject/mark-paid, policy versioning.
 - `withdraw.repository.ts` — Prisma queries scoped by `OwnerContext` (`creatorId` or `brandId`,
   never both) for the user-facing side; unscoped admin queries/transitions for the review queue.
+- `withdraw.constants.ts` — `DEFAULT_WITHDRAW_POLICY`, the code-level fallback values per
+  `ownerType` (see Non-obvious rationale).
 - `withdraw.window.utils.ts` — pure window-math for `MONTHLY`/`WEEKLY`/`CUSTOM_DAYS`, no I/O.
 - `withdraw.schemas.ts` — Zod validation.
 - `withdraw.types.ts` — `OwnerContext` (the discriminated union every service/repository function
@@ -103,3 +105,24 @@ UNDER_REVIEW, APPROVED))`. A `PAID` request doesn't need subtracting separately 
   (`withdrawRequestReceivedInternalTemplate`) is unaffected by this and stays a direct
   `sendEmail` call, matching `brandApplicationService.submit`'s same split between "email is sent
   synchronously" and "in-app notification is a domain-event side effect."
+- **A missing `WithdrawPolicy` is never a 503 — config is an override, not a prerequisite.**
+  `withdrawRepository.getOrCreateActivePolicy` is the only way any service method reads a policy;
+  if no active row exists for the `ownerType`, it inserts one from `DEFAULT_WITHDRAW_POLICY`
+  (`withdraw.constants.ts`) and logs a warning, instead of throwing. Every real environment
+  already has both rows the moment migrations finish — the
+  `20260901120000_withdraw_policy_bootstrap_defaults` migration inserts them — so this path is
+  defense-in-depth for the pathological case (a row deleted by hand, a restored backup, a future
+  `ownerType` added without its own bootstrap migration), not the common path. It's implemented as
+  a single `INSERT ... ON CONFLICT ("owner_type") WHERE "is_active" = true DO NOTHING` raw query,
+  not a plain `create()` wrapped in try/catch — `getOrCreateActivePolicy` is also called from
+  inside `createRequest`'s explicit transaction, where a real Postgres unique-violation error
+  aborts the whole transaction and would poison any recovery query run after it; `ON CONFLICT DO
+NOTHING` never raises, so the losing side of a concurrent first-insert just falls through to the
+  re-`SELECT` below it. The `withdraw_policies_owner_type_active_key` partial unique index (same
+  migration) is what makes that race safe at the database level, not just in application code.
+  `WithdrawPolicy.updatedById` is nullable for exactly this reason — `NULL` means "system
+  default, no admin has customized this yet," not a data-integrity gap.
+- **`prisma/seed.ts` seeds demo/sample data only and refuses to run when `APP_ENV=prod`.**
+  Reference/config data this module actually depends on ships via migration instead (see above),
+  never via the seed script — that split is what makes "was this environment ever seeded"
+  irrelevant to whether withdrawals work.

@@ -49,6 +49,10 @@ const createOpenPolicy = async (
   ownerType: WithdrawOwnerType,
   overrides: Partial<Record<string, unknown>> = {},
 ) => {
+  await prisma.withdrawPolicy.updateMany({
+    where: { ownerType, isActive: true },
+    data: { isActive: false },
+  });
   const admin = await createUser(UserRole.ADMIN);
   return prisma.withdrawPolicy.create({
     data: {
