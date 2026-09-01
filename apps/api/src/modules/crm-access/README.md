@@ -63,8 +63,10 @@ membership-less `UserRole.ADMIN` account. Those platform-level steps are grouped
 `main()`) runs `seedPlatformCrm` plus the demo tenant organizations and their subscriptions;
 `apps/api/prisma/bootstrap-platform-crm.ts` (`pnpm --filter @outfiqe/api db:bootstrap:crm`) runs
 `seedPlatformCrm` alone — no demo data — for provisioning a real deployment whose admin account
-was created (via `prisma/createAdmin.ts` or otherwise) after, or instead of, the full seed.
-Everything here is idempotent — safe to re-run.
+was created (via `prisma/createAdmin.ts` or otherwise) after, or instead of, the full seed. The
+prod deploy workflow (`.github/workflows/deploy.yml`) runs it on the droplet right after
+`prisma migrate deploy`, so a deployment self-heals without a manual step. Everything here is
+idempotent — safe to re-run.
 
 ## Funnel
 

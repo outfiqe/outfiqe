@@ -85,6 +85,11 @@ jobs:
               --entrypoint node_modules/.bin/prisma \
               api migrate deploy
 
+            docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm \
+              -e DATABASE_URL="$DIRECT_URL" \
+              --entrypoint node_modules/.bin/tsx \
+              api prisma/bootstrap-platform-crm.ts
+
             docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
             docker image prune -f
 
