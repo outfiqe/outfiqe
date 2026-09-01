@@ -116,6 +116,7 @@ export default defineConfig({
           include: ["src/**/*.test.ts"],
           exclude: ["src/**/*.integration.test.ts"],
           environment: "node",
+          sequence: { groupOrder: 0 },
         },
       },
       {
@@ -124,6 +125,7 @@ export default defineConfig({
           name: "integration",
           include: ["src/**/*.integration.test.ts"],
           environment: "node",
+          sequence: { groupOrder: 1 },
           env: {
             ...definedProcessEnv,
             ...parsedTestEnv,
