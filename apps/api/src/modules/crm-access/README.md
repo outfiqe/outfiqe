@@ -55,9 +55,16 @@ activities/tasks, support/ticketing, reporting, audit log) lives in the sibling 
 - `crm-access.schemas.ts` — Zod request validation.
 - `crm-access.integration.test.ts` — end-to-end through `testApp` + a real test database.
 
-`apps/api/prisma/seed-crm.ts` (invoked from `prisma/seed.ts`'s `main()`) seeds the permission
-catalog, the single Organization, the built-in roles, and the first SUPERADMIN membership (on
-whichever seeded `User` holds `UserRole.ADMIN`). It's idempotent — safe to re-run.
+`apps/api/prisma/seed-crm.ts` seeds the permission catalog, the single Organization, the built-in
+roles, the `platform:access` grant on the built-in Admin role, the first SUPERADMIN membership (on
+whichever `User` holds `UserRole.ADMIN`), and a platform-org Membership for every other
+membership-less `UserRole.ADMIN` account. Those platform-level steps are grouped into
+`seedPlatformCrm`, which two entry points share: `seedCrmAccess` (invoked from `prisma/seed.ts`'s
+`main()`) runs `seedPlatformCrm` plus the demo tenant organizations and their subscriptions;
+`apps/api/prisma/bootstrap-platform-crm.ts` (`pnpm --filter @outfiqe/api db:bootstrap:crm`) runs
+`seedPlatformCrm` alone — no demo data — for provisioning a real deployment whose admin account
+was created (via `prisma/createAdmin.ts` or otherwise) after, or instead of, the full seed.
+Everything here is idempotent — safe to re-run.
 
 ## Funnel
 
