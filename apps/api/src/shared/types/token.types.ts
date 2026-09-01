@@ -6,10 +6,25 @@ import type { UserRole } from "#generated/prisma/enums.js";
 
 export type TokenType = TokenTypeEnum;
 
+export type ImpersonationActor = {
+  sub: string;
+  via: "impersonation";
+  sid: string;
+  scope: "read" | "write";
+};
+
 export interface JWTPayload extends JwtPayload {
   sub: string;
   role?: UserRole;
+  act?: ImpersonationActor;
 }
+
+export type ImpersonationContext = {
+  sessionId: string;
+  byUserId: string;
+  organizationId: string;
+  scope: "read" | "write";
+};
 
 export interface AuthRequest extends Request {
   user?: JwtPayload;
@@ -23,6 +38,7 @@ export type TokenPair = {
 export type AuthPrincipal = {
   userId: string;
   role: UserRole;
+  impersonation?: ImpersonationContext;
 };
 
 export type PurposeTokenPayload = JwtPayload & {

@@ -3,9 +3,19 @@
 ## Purpose
 
 Lets a platform admin trade their session for a short-lived token that acts **as** a specific
-tenant admin. This change is the session lifecycle only: minting, listing, and revoking. The
-`requireAuth` branch that honours the token and the per-request audit middleware land in the
-following changes.
+tenant admin — time-boxed, server-revocable, and (from the next change) audited on every request.
+
+`requireAuth` (`#middlewares/require-auth.ts`) now has an `act` branch: when a token carries
+`act.via === "impersonation"` it loads the `ImpersonationSession` by `act.sid`, rejects with
+`401 IMPERSONATION_ENDED` unless `revokedAt` is null and `expiresAt` is in the future (and the
+token subject matches the session target), and stamps
+`res.locals.auth.impersonation = { sessionId, byUserId, organizationId, scope }`. Everything
+downstream (`requirePermission`, controllers) is unchanged because `sub` is the tenant user.
+
+`denyDuringImpersonation` (`#middlewares/deny-during-impersonation.js`) is the read-bias guard:
+`403 IMPERSONATION_READ_ONLY` when `impersonation` is set and its scope isn't `write`. Wired onto
+the ownership-transfer routes, `PATCH /members/:id`, and the `crm-billing` manage routes as the
+reference set — extend it to any other privileged mutation.
 
 ## Structure
 
