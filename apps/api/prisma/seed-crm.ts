@@ -198,13 +198,15 @@ async function seedPlatformStaffMemberships(organizationId: string) {
 }
 
 async function seedDemoStaffUser(staff: DemoStaffSeed) {
+  const [emailLocalPart = staff.email] = staff.email.split("@");
+
   return prisma.user.upsert({
     where: { email: staff.email },
     update: {},
     create: {
       email: staff.email,
       name: staff.name,
-      handle: staff.email.split("@")[0].replace(/\./g, "-"),
+      handle: emailLocalPart.replace(/\./g, "-"),
       phone: staff.phone,
       passwordHash: await hashPassword(DEMO_ACCOUNT_PASSWORD),
       role: UserRole.ADMIN,
@@ -333,13 +335,17 @@ async function seedDemoSubscriptions() {
   });
 }
 
-export async function seedCrmAccess() {
+export async function seedPlatformCrm() {
   await seedPermissionCatalog();
   const organization = await seedOrganization();
   await seedBuiltInRoles(organization.id);
   await seedPlatformAccessGrant(organization.id);
   await seedSuperAdmin(organization.id, organization.superAdminMembershipId);
-  await seedDemoOrganizations();
   await seedPlatformStaffMemberships(organization.id);
+}
+
+export async function seedCrmAccess() {
+  await seedPlatformCrm();
+  await seedDemoOrganizations();
   await seedDemoSubscriptions();
 }
