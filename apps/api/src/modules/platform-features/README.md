@@ -51,3 +51,7 @@ All four are `requirePlatformRole("platform:features:manage")`; the two writes e
 - **`crm-billing`'s `advancedFeaturesEnabled` is not folded in yet.** The `crm.advanced` key
   exists with matching plan defaults; wiring `requireAdvancedCrmFeatures` to
   `isEnabled(org, "crm.advanced")` is a follow-up so that behavior change lands on its own.
+- **This registry is per-_tenant_ only.** Every key is something that can legitimately vary from
+  one tenant to the next (a CRM surface gate, or the `impersonation.allowed` policy). A global
+  product switch — e.g. gamification for the shared storefront — does not belong here; that needs a
+  platform-level setting, not a `TenantFeatureOverride`. See [[outfiqe-gamification-toggle-plan]].

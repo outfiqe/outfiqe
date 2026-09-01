@@ -43,9 +43,9 @@ const mockBase = () => {
         success: true,
         data: [
           {
-            key: "gamification",
-            label: "Gamification",
-            description: "XP and badges.",
+            key: "crm.tickets",
+            label: "Support tickets",
+            description: "The support ticket queue.",
             registryDefault: true,
             planDefaults: { starter: true },
           },
@@ -71,13 +71,13 @@ describe("PlatformFeaturesPage", () => {
       http.get(`${API_BASE}/platform/features/tenants/org-1`, () =>
         HttpResponse.json({
           success: true,
-          data: [{ key: "gamification", enabled: true, source: "plan", metadata: {} }],
+          data: [{ key: "crm.tickets", enabled: true, source: "plan", metadata: {} }],
         }),
       ),
     );
     let putBody: Record<string, unknown> | null = null;
     mswServer.use(
-      http.put(`${API_BASE}/platform/features/tenants/org-1/gamification`, async ({ request }) => {
+      http.put(`${API_BASE}/platform/features/tenants/org-1/crm.tickets`, async ({ request }) => {
         putBody = (await request.json()) as Record<string, unknown>;
         return HttpResponse.json({ success: true, data: null });
       }),
@@ -88,7 +88,7 @@ describe("PlatformFeaturesPage", () => {
     await screen.findByRole("option", { name: /Meridian/ });
     await userEvent.selectOptions(screen.getByLabelText("Tenant"), "org-1");
 
-    expect(await screen.findByText("Gamification")).toBeInTheDocument();
+    expect(await screen.findByText("Support tickets")).toBeInTheDocument();
     expect(screen.getByText("Plan default")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Disable" }));
