@@ -17,6 +17,7 @@ import {
   CreditCard,
   Crown,
   GalleryHorizontal,
+  Gauge,
   IdCard,
   KanbanSquare,
   Landmark,
@@ -137,6 +138,7 @@ const toNavItem = ({
 
 const PLATFORM_NAV_ITEMS: SidebarNavSection["items"] = [
   { id: "brand-applications", href: "/", label: "Brand applications", icon: ClipboardList },
+  { id: "platform-metrics", href: "/platform/metrics", label: "Tenant metrics", icon: Gauge },
   { id: "products", href: "/products", label: "Products", icon: Package },
   { id: "collections", href: "/collections", label: "Collections", icon: Layers },
   { id: "categories", href: "/categories", label: "Categories", icon: Tags },
