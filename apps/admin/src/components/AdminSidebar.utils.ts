@@ -9,6 +9,10 @@ type CrmOrganizationContext = {
   linkedBrandId: string | null;
 };
 
+export const shouldShowCrmSection = (
+  crmOrganization: { isPlatformOrg?: boolean } | undefined,
+): boolean => crmOrganization?.isPlatformOrg !== true;
+
 export const isCrmSubItemVisible = (
   item: CrmItemVisibilityRules,
   crmOrganization: CrmOrganizationContext | undefined,

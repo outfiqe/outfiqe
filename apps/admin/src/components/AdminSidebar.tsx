@@ -49,7 +49,7 @@ import {
 import { useAuth } from "@/features/auth/AuthContext";
 import { crmApi } from "@/features/crm/api";
 
-import { isCrmSubItemVisible } from "./AdminSidebar.utils";
+import { isCrmSubItemVisible, shouldShowCrmSection } from "./AdminSidebar.utils";
 import { useTanStackSidebarNavigation } from "./useTanStackSidebarNavigation";
 
 type CrmSubItem = SidebarNavItem & { permissionKey: string | null; requiresLinkedBrand?: boolean };
@@ -228,12 +228,11 @@ export const AdminSidebar = () => {
   const navigation = useTanStackSidebarNavigation();
   const { collapsed, toggle } = useSidebarCollapse("outfiqe:admin-sidebar-collapsed");
 
-  const isInCrmArea = navigation.pathname.startsWith("/crm");
   const { data: crmOrganization } = useQuery({
     queryKey: ["crm-organization"],
     queryFn: crmApi.getOrganization,
-    enabled: isInCrmArea,
     retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 
   const visibleCrmItems = CRM_SUB_ITEMS.filter((item) =>
@@ -242,7 +241,9 @@ export const AdminSidebar = () => {
 
   const user = state.status === "signed-in" ? state.user : null;
   const navSections: SidebarNavSection[] = [
-    { id: "crm", label: "CRM", items: visibleCrmItems },
+    ...(shouldShowCrmSection(crmOrganization)
+      ? [{ id: "crm", label: "CRM", items: visibleCrmItems }]
+      : []),
     ...(user?.hasPlatformAccess
       ? [{ id: "platform", label: "Platform", items: PLATFORM_NAV_ITEMS }]
       : []),
