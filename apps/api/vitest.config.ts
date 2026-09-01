@@ -94,6 +94,7 @@ export default defineConfig({
         "src/modules/crm-tickets/**/*.ts",
         "src/modules/crm-reporting/**/*.ts",
         "src/modules/crm-audit/**/*.ts",
+        "src/modules/platform-access/**/*.ts",
       ],
       thresholds: {
         lines: 80,
