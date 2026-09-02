@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { prisma } from "#db/prisma.js";
+import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import {
   BUILT_IN_ROLE_NAME,
   BUILT_IN_ROLE_PERMISSIONS,
@@ -13,6 +14,8 @@ import type {
   RoleWithPermissions,
 } from "#modules/crm-access/crm-access.types.js";
 
+const PLATFORM_ORGANIZATION_SUBDOMAIN = "platform-org";
+
 export const seedPlatformOrganization = async (): Promise<{
   organization: OrganizationRecord;
   adminRole: RoleWithPermissions;
@@ -22,7 +25,7 @@ export const seedPlatformOrganization = async (): Promise<{
   const organization = await prisma.organization.create({
     data: {
       name: `Platform Org ${randomUUID()}`,
-      subdomain: `platform-org-${randomUUID().slice(0, 8)}`,
+      subdomain: PLATFORM_ORGANIZATION_SUBDOMAIN,
       isPlatformOrg: true,
       plan: "trial",
     },
@@ -51,8 +54,15 @@ export const ensurePlatformOrganizationExists = async (): Promise<OrganizationRe
   const existing = await crmAccessRepository.findPlatformOrganization();
   if (existing) return existing;
 
-  const { organization } = await seedPlatformOrganization();
-  return organization;
+  try {
+    const { organization } = await seedPlatformOrganization();
+    return organization;
+  } catch (error) {
+    if (!isUniqueConstraintError(error)) throw error;
+    const seededByAnotherCaller = await crmAccessRepository.findPlatformOrganization();
+    if (!seededByAnotherCaller) throw error;
+    return seededByAnotherCaller;
+  }
 };
 
 export const seedTenantOrganization = async (
