@@ -2259,13 +2259,14 @@ model Contact {
 }
 
 model Membership {
-  id             String           @id @default(uuid()) @db.Uuid
-  userId         String           @map("user_id") @db.Uuid
-  organizationId String           @map("organization_id") @db.Uuid
-  roleId         String           @map("role_id") @db.Uuid
-  status         MembershipStatus @default(ACTIVE)
-  createdAt      DateTime         @default(now()) @map("created_at")
-  updatedAt      DateTime         @updatedAt @map("updated_at")
+  id                   String           @id @default(uuid()) @db.Uuid
+  userId               String           @map("user_id") @db.Uuid
+  organizationId       String           @map("organization_id") @db.Uuid
+  roleId               String           @map("role_id") @db.Uuid
+  status               MembershipStatus @default(ACTIVE)
+  isPlatformSuperAdmin Boolean          @default(false) @map("is_platform_super_admin")
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -2328,6 +2329,16 @@ model RolePermission {
 
   @@id([roleId, permissionKey])
   @@map("role_permissions")
+}
+
+model PlatformNavAccess {
+  id                    String   @id @default(uuid()) @db.Uuid
+  hiddenNavKeys         String[] @map("hidden_nav_keys")
+  updatedByMembershipId String?  @map("updated_by_membership_id") @db.Uuid
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_nav_access")
 }
 
 model OrganizationInvite {

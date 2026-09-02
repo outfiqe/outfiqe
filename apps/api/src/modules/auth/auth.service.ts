@@ -23,6 +23,7 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { adminInviteRepository } from "#modules/admin-invites/adminInvite.repository.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
+import { platformNavAccessService } from "#modules/platform-nav-access/platform-nav-access.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 import type { UserRecord } from "#modules/users/user.types.js";
 import { describeError } from "#redis/redis.utils.js";
@@ -179,6 +180,21 @@ const auditLog = (
 ): void => {
   const level = outcome === "success" ? "info" : "warn";
   logger[level](message, { ...fields, outcome });
+};
+
+const resolvePlatformFields = async (
+  userId: string,
+): Promise<{
+  hasPlatformAccess: boolean;
+  isCoFounder: boolean;
+  hiddenPlatformNavKeys: string[];
+}> => {
+  const hasPlatformAccess = await crmAccessService.resolveHasPlatformAccess(userId);
+  if (!hasPlatformAccess) {
+    return { hasPlatformAccess, isCoFounder: false, hiddenPlatformNavKeys: [] };
+  }
+  const { isCoFounder, hiddenNavKeys } = await platformNavAccessService.resolveFor(userId);
+  return { hasPlatformAccess, isCoFounder, hiddenPlatformNavKeys: hiddenNavKeys };
 };
 
 const rehashPasswordInBackground = (userId: string, plaintextPassword: string): void => {
@@ -376,7 +392,7 @@ export const authService = {
       ...tokens,
       user: {
         ...toAuthUser(user),
-        hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(id),
+        ...(await resolvePlatformFields(id)),
         hasCrmAccess: await crmAccessService.resolveHasCrmAccess(id),
       },
     };
@@ -594,7 +610,7 @@ export const authService = {
           avatarUrl: membership.brandAvatarUrl,
           role,
           brandId: membership.brandId,
-          hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(id),
+          ...(await resolvePlatformFields(id)),
           hasCrmAccess,
         };
       }
@@ -607,7 +623,7 @@ export const authService = {
 
     return {
       ...authUser,
-      hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(id),
+      ...(await resolvePlatformFields(id)),
     };
   },
 
@@ -707,7 +723,7 @@ export const authService = {
         avatarUrl: brand.avatarUrl,
         role: user.role,
         brandId,
-        hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(user.id),
+        ...(await resolvePlatformFields(user.id)),
         hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
       },
     };
@@ -826,7 +842,7 @@ export const authService = {
       ...tokens,
       user: {
         ...toAuthUser(user),
-        hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(user.id),
+        ...(await resolvePlatformFields(user.id)),
         hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
       },
     };
@@ -895,7 +911,7 @@ export const authService = {
       ...tokens,
       user: {
         ...toAuthUser(user),
-        hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(user.id),
+        ...(await resolvePlatformFields(user.id)),
         hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
       },
       crmMembership: { id: membership.id, organizationId: membership.organizationId },

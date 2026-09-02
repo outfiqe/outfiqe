@@ -74,6 +74,12 @@ export type IssuedTokens = {
   refreshTokenTtlSeconds: number;
 };
 
+export type PlatformNavAccessFields = {
+  hasPlatformAccess: boolean;
+  isCoFounder: boolean;
+  hiddenPlatformNavKeys: string[];
+};
+
 export type AuthUser = {
   id: string;
   name: string;
@@ -85,9 +91,8 @@ export type AuthUser = {
   isCreator: boolean;
   creatorStatus: CreatorStatus;
   hasPassword: boolean;
-  hasPlatformAccess: boolean;
   hasCrmAccess: boolean;
-};
+} & PlatformNavAccessFields;
 
 export type BrandAuthUser = {
   id: string;
@@ -97,9 +102,8 @@ export type BrandAuthUser = {
   avatarUrl: string | null;
   role: UserRole;
   brandId: string;
-  hasPlatformAccess: boolean;
   hasCrmAccess: boolean;
-};
+} & PlatformNavAccessFields;
 
 export type AuthSession = IssuedTokens & { user: AuthUser };
 export type BrandAuthSession = IssuedTokens & { user: BrandAuthUser };

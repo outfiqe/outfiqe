@@ -1,7 +1,32 @@
+import type { SidebarNavItem } from "@outfiqe/components";
+import type { PlatformNavKey } from "@outfiqe/utils";
+
 type CrmItemVisibilityRules = {
   permissionKey: string | null;
   requiresLinkedBrand?: boolean;
 };
+
+export type PlatformNavItem = Omit<SidebarNavItem, "id"> & {
+  id: PlatformNavKey;
+  coFounderOnly?: boolean;
+};
+
+type PlatformNavViewer = {
+  isCoFounder: boolean;
+  hiddenNavKeys: string[];
+};
+
+export const visiblePlatformNavItems = (
+  items: PlatformNavItem[],
+  viewer: PlatformNavViewer,
+): SidebarNavItem[] =>
+  items
+    .filter((item) => {
+      if (item.coFounderOnly && !viewer.isCoFounder) return false;
+      if (viewer.isCoFounder) return true;
+      return !viewer.hiddenNavKeys.includes(item.id);
+    })
+    .map(({ coFounderOnly: _coFounderOnly, ...item }) => item);
 
 type CrmOrganizationContext = {
   viewerIsSuperAdmin: boolean;

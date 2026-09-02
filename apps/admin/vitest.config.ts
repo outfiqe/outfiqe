@@ -32,6 +32,7 @@ export default defineConfig({
         "src/features/platform-metrics/**/*.{ts,tsx}",
         "src/features/platform-features/**/*.{ts,tsx}",
         "src/features/platform-impersonation/**/*.{ts,tsx}",
+        "src/features/platform-nav-access/**/*.{ts,tsx}",
         "src/lib/brandsApi.ts",
         "src/features/auth/AuthContext.tsx",
         "src/components/ProtectedRoute.tsx",

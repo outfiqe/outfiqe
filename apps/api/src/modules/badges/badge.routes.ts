@@ -6,6 +6,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import { ICON_IMAGE_MIME_TYPES, MAX_ICON_IMAGE_BYTES } from "./badge.constants.js";
 import { badgeController } from "./badge.controller.js";
@@ -21,7 +22,7 @@ import {
   userBadgeIdParamSchema,
 } from "./badge.schemas.js";
 
-const requireAdmin = [requireAuth, requirePlatformAccess];
+const requireAdmin = [requireAuth, requirePlatformAccess, requirePlatformNavItem("gamification")];
 
 const INVALID_FILE_STATUS = 422;
 const allowedIconImageMimeTypes = new Set<string>(ICON_IMAGE_MIME_TYPES);

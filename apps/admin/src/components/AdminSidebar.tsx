@@ -5,7 +5,7 @@ import {
   sidebarWidthClass,
   useSidebarCollapse,
 } from "@outfiqe/components";
-import { cn } from "@outfiqe/design-system";
+import { Badge, cn } from "@outfiqe/design-system";
 import { getAvatarColor, initialsFor } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -16,6 +16,7 @@ import {
   ClipboardList,
   CreditCard,
   Crown,
+  Fingerprint,
   GalleryHorizontal,
   Gauge,
   IdCard,
@@ -51,8 +52,10 @@ import { crmApi } from "@/features/crm/api";
 
 import {
   isCrmSubItemVisible,
+  type PlatformNavItem,
   shouldShowCrmSection,
   shouldShowPlatformSection,
+  visiblePlatformNavItems,
 } from "./AdminSidebar.utils";
 import { useTanStackSidebarNavigation } from "./useTanStackSidebarNavigation";
 
@@ -141,7 +144,7 @@ const toNavItem = ({
   ...item
 }: CrmSubItem): SidebarNavItem => item;
 
-const PLATFORM_NAV_ITEMS: SidebarNavSection["items"] = [
+const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
   { id: "brand-applications", href: "/", label: "Brand applications", icon: ClipboardList },
   { id: "platform-metrics", href: "/platform/metrics", label: "Tenant metrics", icon: Gauge },
   {
@@ -155,6 +158,13 @@ const PLATFORM_NAV_ITEMS: SidebarNavSection["items"] = [
     href: "/platform/impersonation",
     label: "Impersonation",
     icon: VenetianMask,
+  },
+  {
+    id: "platform-nav-access",
+    href: "/platform/nav-access",
+    label: "Navigation access",
+    icon: Fingerprint,
+    coFounderOnly: true,
   },
   { id: "products", href: "/products", label: "Products", icon: Package },
   { id: "collections", href: "/collections", label: "Collections", icon: Layers },
@@ -244,12 +254,17 @@ export const AdminSidebar = () => {
   ).map(toNavItem);
 
   const user = state.status === "signed-in" ? state.user : null;
+  const isCoFounder = user?.isCoFounder ?? false;
+  const platformNavItems = visiblePlatformNavItems(PLATFORM_NAV_ITEMS, {
+    isCoFounder,
+    hiddenNavKeys: user?.hiddenPlatformNavKeys ?? [],
+  });
   const navSections: SidebarNavSection[] = [
     ...(shouldShowCrmSection(crmOrganization)
       ? [{ id: "crm", label: "CRM", items: visibleCrmItems }]
       : []),
     ...(shouldShowPlatformSection(user?.hasPlatformAccess ?? false, crmOrganization)
-      ? [{ id: "platform", label: "Platform", items: PLATFORM_NAV_ITEMS }]
+      ? [{ id: "platform", label: "Platform", items: platformNavItems }]
       : []),
   ];
 
@@ -276,7 +291,13 @@ export const AdminSidebar = () => {
           <p className="truncate text-sm font-semibold text-foreground" title={user.name}>
             {user.name}
           </p>
-          <p className="truncate text-[11px] text-muted-foreground">Admin account</p>
+          {isCoFounder ? (
+            <Badge tone="positive" showDot={false} className="mt-1 px-2 py-0.5 text-[10px]">
+              Co-founder
+            </Badge>
+          ) : (
+            <p className="truncate text-[11px] text-muted-foreground">Admin account</p>
+          )}
         </div>
       )}
     </div>
