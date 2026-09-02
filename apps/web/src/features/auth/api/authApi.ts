@@ -3,6 +3,7 @@ import { z } from "zod";
 import { apiClient } from "@/shared/lib/apiClient";
 
 import type { BrandRegisterInput } from "../schemas/brandRegister.schema";
+import type { ChangePasswordInput } from "../schemas/changePassword.schema";
 import type { ForgotPasswordInput } from "../schemas/forgotPassword.schema";
 import type { LoginInput } from "../schemas/login.schema";
 import type { RegisterInput } from "../schemas/register.schema";
@@ -71,6 +72,11 @@ export const authApi = {
 
   async resetPassword(input: ResetPasswordInput): Promise<MessageResponse> {
     const res = await apiClient.post<null>("/auth/reset-password", input);
+    return { message: res.message };
+  },
+
+  async changePassword(input: ChangePasswordInput): Promise<MessageResponse> {
+    const res = await apiClient.post<null>("/auth/change-password", input);
     return { message: res.message };
   },
 

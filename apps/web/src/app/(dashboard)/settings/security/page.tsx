@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { AddPhoneNumberBanner, ConnectedAccounts } from "@/features/auth";
+import { AddPhoneNumberBanner, ChangePasswordCard, ConnectedAccounts } from "@/features/auth";
 
 import { requireDashboardSession } from "../../requireDashboardSession";
 
@@ -21,6 +21,17 @@ const DashboardSecurityPage = async () => {
           <AddPhoneNumberBanner />
         </div>
       )}
+
+      <div className="mt-6">
+        <h2 className="text-sm font-semibold text-foreground">Password</h2>
+        <p className="mt-1 text-[13px] text-muted-foreground">
+          Choose a strong password you don&apos;t use anywhere else. Changing it signs out your
+          other devices.
+        </p>
+        <div className="mt-3">
+          <ChangePasswordCard hasPassword={user.hasPassword ?? true} />
+        </div>
+      </div>
 
       <div className="mt-6">
         <h2 className="text-sm font-semibold text-foreground">Connected accounts</h2>

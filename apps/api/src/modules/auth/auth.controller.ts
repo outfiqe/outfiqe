@@ -4,6 +4,7 @@ import { TokenPurpose } from "#constants/enums/auth.enum.js";
 import { CrmAuditAction } from "#generated/prisma/enums.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { clearRefreshCookie, getRefreshTokenCookie, setRefreshCookie } from "#lib/cookie.utils.js";
+import { AppError } from "#middlewares/error-handler.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 import { AUDIT_TARGET_TYPE } from "#modules/crm-audit/crm-audit.constants.js";
@@ -12,6 +13,7 @@ import { crmAudit } from "#modules/crm-audit/crm-audit.service.js";
 import type {
   AdminInviteQuery,
   BrandInviteQuery,
+  ChangePasswordBody,
   CrmInviteQuery,
   ForgotPasswordBody,
   LoginBody,
@@ -27,6 +29,7 @@ import type {
 import { authService } from "./auth.service.js";
 
 const CREATED_STATUS = 201;
+const FORBIDDEN_STATUS = 403;
 
 const QUERY_PURPOSE_TO_TOKEN_PURPOSE: Record<ValidateTokenQuery["purpose"], TokenPurpose> = {
   "email-verification": TokenPurpose.EMAIL_VERIFICATION,
@@ -110,6 +113,28 @@ export const authController = {
 
     clearRefreshCookie(res);
     sendSuccess(res, null, "Password updated. Please sign in with your new password.");
+  },
+
+  async changePassword(req: Request, res: Response) {
+    const principal = requireAuthPrincipal(res);
+    if (principal.impersonation) {
+      throw new AppError(
+        "IMPERSONATION_FORBIDDEN",
+        "You can't change the account password while viewing another account.",
+        FORBIDDEN_STATUS,
+      );
+    }
+
+    const { currentPassword, newPassword } = validated.body<ChangePasswordBody>(res);
+    await authService.changePassword({
+      userId: principal.userId,
+      currentPassword,
+      newPassword,
+      currentRefreshToken: getRefreshTokenCookie(req),
+      remoteIp: req.ip,
+    });
+
+    sendSuccess(res, null, "Password updated. Other devices have been signed out.");
   },
 
   async registerBrand(_req: Request, res: Response) {
