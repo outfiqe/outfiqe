@@ -6,6 +6,13 @@ type CrmItemVisibilityRules = {
   requiresLinkedBrand?: boolean;
 };
 
+type CrmOrganizationQueryStatus = "pending" | "error" | "success";
+
+export const isAdminNavReady = (
+  isAuthResolved: boolean,
+  crmOrganizationQueryStatus: CrmOrganizationQueryStatus,
+): boolean => isAuthResolved && crmOrganizationQueryStatus !== "pending";
+
 export type PlatformNavItem = Omit<SidebarNavItem, "id"> & {
   id: PlatformNavKey;
   coFounderOnly?: boolean;

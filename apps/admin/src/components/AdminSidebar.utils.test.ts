@@ -2,6 +2,7 @@ import { Circle } from "lucide-react";
 import { describe, expect, it } from "vitest";
 
 import {
+  isAdminNavReady,
   isCrmSubItemVisible,
   type PlatformNavItem,
   shouldShowCrmSection,
@@ -96,6 +97,24 @@ describe("shouldShowPlatformSection", () => {
 
   it("shows the section before the organization resolves so the platform nav never flashes out", () => {
     expect(shouldShowPlatformSection(true, undefined)).toBe(true);
+  });
+});
+
+describe("isAdminNavReady", () => {
+  it("is not ready while the session is still restoring", () => {
+    expect(isAdminNavReady(false, "success")).toBe(false);
+  });
+
+  it("is not ready while the crm-organization query is still pending", () => {
+    expect(isAdminNavReady(true, "pending")).toBe(false);
+  });
+
+  it("is ready once the session is resolved and the crm-organization query has succeeded", () => {
+    expect(isAdminNavReady(true, "success")).toBe(true);
+  });
+
+  it("is ready once the crm-organization query has errored so a failed lookup never blocks the nav", () => {
+    expect(isAdminNavReady(true, "error")).toBe(true);
   });
 });
 
