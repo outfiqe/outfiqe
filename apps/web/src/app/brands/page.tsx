@@ -4,8 +4,15 @@ import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BrandsGrid } from "@/features/brands";
+import { buildPageMetadata } from "@/shared/seo";
 
-export const metadata: Metadata = { title: "Brands" };
+export const metadata: Metadata = buildPageMetadata({
+  title: "Nepali clothing brands",
+  description:
+    "Every clothing brand on Outfiqe is a Nepali label. Browse them all, follow the ones you like, and shop their pieces styled in real creator looks.",
+  path: "/brands",
+  keywords: ["Nepali clothing brands", "Nepali fashion labels", "made in Nepal clothing"],
+});
 
 const BrandsPage = () => {
   return (

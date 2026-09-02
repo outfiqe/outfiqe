@@ -4,8 +4,15 @@ import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { CollectionsGrid } from "@/features/collections";
+import { buildPageMetadata } from "@/shared/seo";
 
-export const metadata: Metadata = { title: "Collections" };
+export const metadata: Metadata = buildPageMetadata({
+  title: "Fashion collections",
+  description:
+    "Shop Outfiqe's curated collections — seasonal edits, festive looks and occasion-based picks pulled from across every Nepali brand we carry.",
+  path: "/collections",
+  keywords: ["fashion collections Nepal", "festive wear Nepal", "seasonal fashion Nepal"],
+});
 
 const CollectionsPage = () => {
   return (

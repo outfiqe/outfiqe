@@ -6,8 +6,8 @@ import { FOOTER_LINK_GROUPS } from "./siteFooter.constants";
 export const SiteFooter = () => {
   return (
     <footer className="px-6 py-12 sm:py-16 lg:px-10">
-      <div className="grid gap-10 border-t border-border pt-10 sm:grid-cols-[1.5fr_1fr_1fr_1fr]">
-        <div>
+      <div className="grid gap-10 border-t border-border pt-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+        <div className="sm:col-span-2 md:col-span-3 lg:col-span-1">
           <Logo />
           <p className="mt-3 max-w-xs text-sm text-muted-foreground">
             The one place Nepali shoppers go for fashion: local brands, real creator looks, one
@@ -16,7 +16,7 @@ export const SiteFooter = () => {
         </div>
 
         {FOOTER_LINK_GROUPS.map(({ title, links }) => (
-          <div key={title}>
+          <nav key={title} aria-label={title}>
             <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">{title}</h3>
             <ul className="mt-4 flex flex-col gap-2.5">
               {links.map(({ href, label }) => (
@@ -30,7 +30,7 @@ export const SiteFooter = () => {
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
         ))}
       </div>
 

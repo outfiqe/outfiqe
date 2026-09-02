@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { SiteHeader } from "@/components/SiteHeader";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
   return (
