@@ -69,7 +69,7 @@ describe("admin ChangePasswordCard", () => {
 
     await fillAndSubmit(user, { current: "old-secret-1", next: "new-secret-2", confirm: "nope-3" });
 
-    expect(await screen.findByText("Passwords do not match")).toBeInTheDocument();
+    expect(await screen.findByText("Passwords do not match.")).toBeInTheDocument();
     expect(called).toBe(false);
   });
 

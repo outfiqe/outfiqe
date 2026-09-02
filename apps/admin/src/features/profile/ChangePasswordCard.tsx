@@ -3,9 +3,9 @@ import { useMutation } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { authApi } from "@/features/auth/api";
-import { changePasswordInputSchema } from "@/features/auth/schemas";
 import { ApiClientError } from "@/lib/apiClient";
 
+const PASSWORD_MIN_LENGTH = 8;
 const FALLBACK_ERROR = "Something went wrong. Please try again.";
 
 const errorMessageFor = (error: unknown): string => {
@@ -36,18 +36,17 @@ export const ChangePasswordCard = () => {
     event.preventDefault();
     setSaved(false);
 
-    const parsed = changePasswordInputSchema.safeParse({
-      currentPassword,
-      newPassword,
-      confirmNewPassword,
-    });
-    if (!parsed.success) {
-      setValidationError(parsed.error.issues[0]?.message ?? "Check the form and try again.");
+    if (newPassword.length < PASSWORD_MIN_LENGTH) {
+      setValidationError(`New password must be at least ${PASSWORD_MIN_LENGTH} characters.`);
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setValidationError("Passwords do not match.");
       return;
     }
 
     setValidationError(null);
-    changePassword.mutate(parsed.data);
+    changePassword.mutate({ currentPassword, newPassword, confirmNewPassword });
   };
 
   const errorMessage =

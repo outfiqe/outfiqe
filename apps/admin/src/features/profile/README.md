@@ -12,9 +12,9 @@ business owner who now owns a CRM organization) uses this page.
   → `PATCH /users/me`, then `updateUser` on `AuthContext` so the sidebar/header reflect the change
   immediately), followed by the password card.
 - `ChangePasswordCard.tsx` — current + new + confirm password form (`authApi.changePassword` →
-  `POST /auth/change-password`). Validates with `changePasswordInputSchema` before calling the API;
-  surfaces the API's own error message (wrong current password, breached password, etc.) in a
-  `FormBanner`.
+  `POST /auth/change-password`). Checks length and confirmation match client-side (same inline
+  pattern as `RegisterInvitePage`/`CrmInviteRegisterPage`), then surfaces the API's own error
+  message (wrong current password, breached password, etc.) in a `FormBanner`.
 
 ## Funnel
 

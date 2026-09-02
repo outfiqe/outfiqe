@@ -617,8 +617,11 @@ export const authService = {
     const passwordHash = await hashPassword(newPassword);
     await userRepository.updatePasswordHash(userId, passwordHash);
 
-    const keepTokenHash = currentRefreshToken ? hashToken(currentRefreshToken) : "";
-    await authRepository.deleteRefreshTokensForUserExcept(userId, keepTokenHash);
+    if (currentRefreshToken) {
+      await authRepository.deleteRefreshTokensForUserExcept(userId, hashToken(currentRefreshToken));
+    } else {
+      await authRepository.deleteAllRefreshTokensForUser(userId);
+    }
 
     await eventBus.publish(DomainEvents.USER_PASSWORD_RESET, { userId });
 

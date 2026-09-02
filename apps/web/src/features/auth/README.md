@@ -67,8 +67,10 @@ client-side session/user context the rest of the app reads.
 ## Funnel
 
 **User-facing:** a visitor logs in, registers, or (via a brand invite link) registers as a brand;
-a returning visitor can request a password reset or resend a verification email. On success, the
-app redirects them either to a safe `?redirect=` target or their role's default route. Login and
+a returning visitor can request a password reset or resend a verification email. A signed-in
+visitor can change their password from Account Settings → Security (`ChangePasswordCard`) — this
+signs their other devices out but keeps the current one. On success, the app redirects them either
+to a safe `?redirect=` target or their role's default route. Login and
 register both also offer "Continue with Google/Facebook" — a full-page navigation, not a form
 submission — which either signs the visitor straight in, or (if that provider's email already
 belongs to an existing password account) lands them on `/auth/oauth-callback` to confirm the link

@@ -24,22 +24,11 @@ export const updateProfileInputSchema = z
   .partial();
 export type UpdateProfileInput = z.infer<typeof updateProfileInputSchema>;
 
-const PASSWORD_MIN = 8;
-const PASSWORD_MAX = 128;
-
-export const changePasswordInputSchema = z
-  .object({
-    currentPassword: z.string().min(1, "Enter your current password"),
-    newPassword: z
-      .string()
-      .min(PASSWORD_MIN, "Password must be at least 8 characters")
-      .max(PASSWORD_MAX),
-    confirmNewPassword: z.string(),
-  })
-  .refine((fields) => fields.newPassword === fields.confirmNewPassword, {
-    message: "Passwords do not match",
-    path: ["confirmNewPassword"],
-  });
+export const changePasswordInputSchema = z.object({
+  currentPassword: z.string(),
+  newPassword: z.string(),
+  confirmNewPassword: z.string(),
+});
 export type ChangePasswordInput = z.infer<typeof changePasswordInputSchema>;
 
 export const loginResponseSchema = z.object({
