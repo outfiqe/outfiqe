@@ -70,10 +70,12 @@ fails open (`next()`) on an internal error so a config-store blip never blanks a
   `/admin/invites`; `/users/search` is shared infrastructure (gamification manual actions), so
   gating it under `team` would break unrelated screens.
 - **Co-founder seed** (`prisma/seed-crm.ts` → `seedPlatformCoFounders`) only flips the flag for
-  three known accounts and warns (never throws) for any missing — the platform-org owner is not
-  auto-added. The three emails are `prapti.bidari` / `mun.khatiwada` / `anjesh.ghimire` at
-  `@outfiqe.com` when `APP_ENV=prod`, otherwise `@outfiqe.local`; set `PLATFORM_CO_FOUNDER_EMAILS`
-  (comma-separated) to override the list entirely.
+  the known accounts and warns (never throws) for any missing — an account with no active
+  platform-org membership is skipped, not created. The local parts are `prapti.bidari` /
+  `mun.khatiwada` / `anjesh.ghimire` / `admin` at `@outfiqe.com` when `APP_ENV=prod`, otherwise
+  `@outfiqe.local`; set `PLATFORM_CO_FOUNDER_EMAILS` (comma-separated) to override the list
+  entirely. Four names fills the `MAX_PLATFORM_CO_FOUNDERS` cap, so the seed leaves no room to
+  promote a fifth from the UI until one is removed.
 
 ## Deferred
 

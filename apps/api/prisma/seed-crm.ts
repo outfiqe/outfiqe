@@ -180,7 +180,12 @@ async function seedSuperAdmin(
   });
 }
 
-const PLATFORM_CO_FOUNDER_LOCAL_PARTS = ["prapti.bidari", "mun.khatiwada", "anjesh.ghimire"];
+const PLATFORM_CO_FOUNDER_LOCAL_PARTS = [
+  "prapti.bidari",
+  "mun.khatiwada",
+  "anjesh.ghimire",
+  "admin",
+];
 
 const platformCoFounderEmails = (): string[] => {
   const override = process.env.PLATFORM_CO_FOUNDER_EMAILS?.trim();
