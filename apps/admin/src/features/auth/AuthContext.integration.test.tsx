@@ -1,5 +1,6 @@
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
@@ -36,6 +37,34 @@ const StatusProbe = () => {
   return <p>{state.status}</p>;
 };
 
+const SessionProbe = () => {
+  const { state, logout, updateUser, setSession } = useAuth();
+  return (
+    <div>
+      <p>status: {state.status}</p>
+      {state.status === "signed-in" && <p>name: {state.user.name}</p>}
+      <button onClick={() => updateUser({ name: "Renamed User" })}>rename</button>
+      <button
+        onClick={() =>
+          setSession({
+            id: "user-2",
+            name: "Injected User",
+            email: "injected@outfiqe.test",
+            avatarUrl: null,
+            role: "ADMIN",
+            hasPlatformAccess: true,
+            isCoFounder: false,
+            hiddenPlatformNavKeys: [],
+          })
+        }
+      >
+        inject session
+      </button>
+      <button onClick={() => void logout()}>log out</button>
+    </div>
+  );
+};
+
 const renderAuthProvider = () =>
   render(
     <AuthProvider>
@@ -63,6 +92,52 @@ describe("AuthProvider", () => {
     renderAuthProvider();
 
     expect(await screen.findByText("signed-out")).toBeInTheDocument();
+  });
+
+  it("renames the current user in place, injects a session, and clears it on logout", async () => {
+    mockSessionFor("ADMIN");
+    mswServer.use(
+      http.post(`${API_BASE}/auth/logout`, () =>
+        HttpResponse.json({ success: true, message: "Logged out.", data: null }),
+      ),
+    );
+    const user = userEvent.setup();
+
+    render(
+      <AuthProvider>
+        <SessionProbe />
+      </AuthProvider>,
+    );
+
+    expect(await screen.findByText("name: Test User")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "rename" }));
+    expect(await screen.findByText("name: Renamed User")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "inject session" }));
+    expect(await screen.findByText("name: Injected User")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "log out" }));
+    expect(await screen.findByText("status: signed-out")).toBeInTheDocument();
+  });
+
+  it("still signs out locally when the logout request fails", async () => {
+    mockSessionFor("ADMIN");
+    mswServer.use(
+      http.post(`${API_BASE}/auth/logout`, () => new HttpResponse(null, { status: 500 })),
+    );
+    const user = userEvent.setup();
+
+    render(
+      <AuthProvider>
+        <SessionProbe />
+      </AuthProvider>,
+    );
+
+    await screen.findByText("name: Test User");
+    await user.click(screen.getByRole("button", { name: "log out" }));
+
+    expect(await screen.findByText("status: signed-out")).toBeInTheDocument();
   });
 
   it("signs out when the refresh call itself fails", async () => {
