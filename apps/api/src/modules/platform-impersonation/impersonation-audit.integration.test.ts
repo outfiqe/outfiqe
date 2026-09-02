@@ -102,18 +102,27 @@ describe("impersonation request audit", () => {
       .send({ name: "Impersonated Contact" });
     expect(created.status).toBe(201);
 
-    const auditRow = await prisma.platformAuditLog.findFirst({
-      where: { impersonationSessionId: sessionId, action: "tenant.request", method: "POST" },
-    });
-    expect(auditRow).not.toBeNull();
+    const findAuditRow = () =>
+      prisma.platformAuditLog.findFirst({
+        where: { impersonationSessionId: sessionId, action: "tenant.request", method: "POST" },
+      });
+
+    await expect.poll(findAuditRow, { timeout: 5000 }).not.toBeNull();
+
+    const auditRow = await findAuditRow();
     expect(auditRow?.path).toContain("/contacts");
     expect(auditRow?.statusCode).toBe(201);
     expect(auditRow?.onBehalfOfUserId).toBe(scene.target.id);
 
-    const session = await prisma.impersonationSession.findUniqueOrThrow({
-      where: { id: sessionId },
-    });
-    expect(session.lastSeenAt).not.toBeNull();
+    await expect
+      .poll(
+        () =>
+          prisma.impersonationSession
+            .findUniqueOrThrow({ where: { id: sessionId } })
+            .then((session) => session.lastSeenAt),
+        { timeout: 5000 },
+      )
+      .not.toBeNull();
   });
 
   it("reaps expired sessions", async () => {

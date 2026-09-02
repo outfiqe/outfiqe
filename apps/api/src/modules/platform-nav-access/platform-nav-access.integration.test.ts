@@ -104,12 +104,14 @@ describe("platform nav-access writes", () => {
   });
 
   it("caps the co-founder group at four and blocks removing the last one", async () => {
-    const founders = await Promise.all(
-      Array.from({ length: MAX_PLATFORM_CO_FOUNDERS }, () => createAdminSession()),
-    );
-    const membershipIds = await Promise.all(
-      founders.map((founder) => promoteToCoFounder(founder.userId)),
-    );
+    const founders: Awaited<ReturnType<typeof createAdminSession>>[] = [];
+    for (let index = 0; index < MAX_PLATFORM_CO_FOUNDERS; index += 1) {
+      founders.push(await createAdminSession());
+    }
+    const membershipIds: string[] = [];
+    for (const founder of founders) {
+      membershipIds.push(await promoteToCoFounder(founder.userId));
+    }
 
     const fifth = await createAdminSession();
     const fifthMembershipId = (
