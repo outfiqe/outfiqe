@@ -12,9 +12,10 @@ const SIZES = {
 type LogoProps = {
   size?: keyof typeof SIZES;
   className?: string;
+  wordmarkClassName?: string;
 };
 
-export const Logo = ({ size = "md", className }: LogoProps) => {
+export const Logo = ({ size = "md", className, wordmarkClassName }: LogoProps) => {
   const styles = SIZES[size];
 
   return (
@@ -27,7 +28,7 @@ export const Logo = ({ size = "md", className }: LogoProps) => {
       )}
     >
       <LogoMark className={cn(styles.mark, "shrink-0")} />
-      <span className={styles.text}>
+      <span className={cn(styles.text, wordmarkClassName)}>
         <span className="text-primary">out</span>
         <span className="text-secondary">fiqe.</span>
       </span>

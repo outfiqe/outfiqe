@@ -101,6 +101,36 @@ describe("POST /api/brand-applications/:id/approve", () => {
     expect(invite).not.toBeNull();
   });
 
+  it("blocks approval when the application email already belongs to an account", async () => {
+    const { authHeader } = await createAdminSession();
+    const registeredEmail = `registered-${randomUUID()}@outfiqe.test`;
+    await prisma.user.create({
+      data: {
+        email: registeredEmail,
+        name: "Existing Shopper",
+        handle: `existing-shopper-${randomUUID().slice(0, 8)}`,
+      },
+    });
+    const application = await prisma.brandApplication.create({
+      data: validApplicationBody({ email: registeredEmail }),
+    });
+
+    const response = await request(testApp)
+      .post(`/api/brand-applications/${application.id}/approve`)
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("EMAIL_ALREADY_REGISTERED");
+
+    const updated = await prisma.brandApplication.findUniqueOrThrow({
+      where: { id: application.id },
+    });
+    expect(updated.status).toBe(BrandApplicationStatus.PENDING);
+
+    const brand = await prisma.brand.findUnique({ where: { applicationId: application.id } });
+    expect(brand).toBeNull();
+  });
+
   it("rejects re-reviewing an already-approved application", async () => {
     const { authHeader } = await createAdminSession();
     const application = await prisma.brandApplication.create({ data: validApplicationBody() });
