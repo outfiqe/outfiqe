@@ -23,7 +23,11 @@ const resetDatabase = async (): Promise<void> => {
   await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${quotedTableNames} RESTART IDENTITY CASCADE;`);
 };
 
-const EPHEMERAL_REDIS_KEY_PATTERNS = ["ratelimit:*", "auth:login-lockout:*"];
+const EPHEMERAL_REDIS_KEY_PATTERNS = [
+  "ratelimit:*",
+  "auth:login-lockout:*",
+  "platform:nav-access:*",
+];
 
 const resetEphemeralRedisState = async (): Promise<void> => {
   const keysPerPattern = await Promise.all(

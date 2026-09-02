@@ -27,6 +27,8 @@ const refreshedUser = {
   avatarUrl: null,
   role: "ADMIN",
   hasPlatformAccess: false,
+  isCoFounder: false,
+  hiddenPlatformNavKeys: [],
 };
 
 const renderAcceptInvitePage = (initialPath: string) => {

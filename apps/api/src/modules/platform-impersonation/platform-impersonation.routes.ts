@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
+import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import { platformImpersonationController } from "./platform-impersonation.controller.js";
 import {
@@ -13,7 +14,10 @@ import {
 
 export const platformImpersonationRoutes = Router();
 
-const impersonateChain = requirePlatformRole("platform:impersonate");
+const impersonateChain = [
+  ...requirePlatformRole("platform:impersonate"),
+  requirePlatformNavItem("platform-impersonation"),
+];
 
 platformImpersonationRoutes.post(
   "/impersonation",

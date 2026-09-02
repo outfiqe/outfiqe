@@ -3,6 +3,7 @@
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import { commissionController } from "./commission.controller.js";
 import {
@@ -15,7 +16,7 @@ import {
   voidCommissionSchema,
 } from "./commission.schemas.js";
 
-const requireAdmin = [requireAuth, requirePlatformAccess];
+const requireAdmin = [requireAuth, requirePlatformAccess, requirePlatformNavItem("commissions")];
 
 export const commissionRoutes = Router();
 

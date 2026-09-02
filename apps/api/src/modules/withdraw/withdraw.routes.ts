@@ -4,6 +4,7 @@ import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import { withdrawController } from "./withdraw.controller.js";
 import {
@@ -30,40 +31,42 @@ const createWithdrawRequestRateLimit = rateLimit({
 });
 
 const requireAdmin = [requireAuth, requirePlatformAccess];
+const requireWithdrawRequestsAdmin = [...requireAdmin, requirePlatformNavItem("withdraw-requests")];
+const requireWithdrawPolicyAdmin = [...requireAdmin, requirePlatformNavItem("withdraw-policy")];
 
 export const withdrawRoutes = Router();
 
 withdrawRoutes.get(
   "/admin/requests",
-  ...requireAdmin,
+  ...requireWithdrawRequestsAdmin,
   validate({ query: listAdminWithdrawRequestsQuerySchema }),
   withdrawController.listAllAdmin,
 );
 
 withdrawRoutes.patch(
   "/admin/requests/:id/approve",
-  ...requireAdmin,
+  ...requireWithdrawRequestsAdmin,
   validate({ params: withdrawRequestIdParamSchema, body: approveWithdrawRequestSchema }),
   withdrawController.approve,
 );
 
 withdrawRoutes.patch(
   "/admin/requests/:id/reject",
-  ...requireAdmin,
+  ...requireWithdrawRequestsAdmin,
   validate({ params: withdrawRequestIdParamSchema, body: rejectWithdrawRequestSchema }),
   withdrawController.reject,
 );
 
 withdrawRoutes.patch(
   "/admin/requests/:id/mark-paid",
-  ...requireAdmin,
+  ...requireWithdrawRequestsAdmin,
   validate({ params: withdrawRequestIdParamSchema, body: markWithdrawRequestPaidSchema }),
   withdrawController.markPaid,
 );
 
 withdrawRoutes.put(
   "/admin/policy",
-  ...requireAdmin,
+  ...requireWithdrawPolicyAdmin,
   validate({ body: updateWithdrawPolicySchema }),
   withdrawController.updatePolicy,
 );

@@ -23,6 +23,8 @@ const mockSessionFor = (role: "ADMIN" | "BRAND_OWNER" | "CUSTOMER") => {
           avatarUrl: null,
           role,
           hasPlatformAccess: false,
+          isCoFounder: false,
+          hiddenPlatformNavKeys: [],
         },
       }),
     ),
