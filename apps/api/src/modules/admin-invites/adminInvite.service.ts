@@ -48,6 +48,9 @@ export const adminInviteService = {
 
   async list(): Promise<AdminInviteSummary[]> {
     const invites = await adminInviteRepository.list();
-    return invites.map(toSummary);
+    const coFounderEmails = await adminInviteRepository.findPlatformCoFounderEmails(
+      invites.map((invite) => invite.email),
+    );
+    return invites.map((invite) => toSummary(invite, coFounderEmails.has(invite.email)));
   },
 };
