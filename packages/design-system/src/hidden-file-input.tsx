@@ -2,7 +2,8 @@
 
 import type { RefObject } from "react";
 
-const ACCEPTED_IMAGE_TYPES = "image/jpeg,image/png,image/webp";
+export const ACCEPTED_IMAGE_TYPES =
+  "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif";
 
 type HiddenFileInputProps = {
   inputRef: RefObject<HTMLInputElement | null>;

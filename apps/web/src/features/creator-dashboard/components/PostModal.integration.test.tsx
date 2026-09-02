@@ -41,6 +41,7 @@ const mockPending = (photos: PendingPhoto[]) => {
     setActiveId,
     inputRef: { current: null },
     handleFileSelect: vi.fn(),
+    isImportingFile: false,
     removePhoto,
     updateActivePhoto: vi.fn(),
     reset,

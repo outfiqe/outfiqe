@@ -4,6 +4,7 @@ import { ImageIcon, Loader2, X } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { cn } from "./cn";
+import { ACCEPTED_IMAGE_TYPES } from "./hidden-file-input";
 
 type ImageUploaderProps = {
   value: string[];
@@ -12,6 +13,7 @@ type ImageUploaderProps = {
   maxFiles?: number;
   className?: string;
   describeUploadError?: (error: unknown) => string;
+  transformFile?: (file: File) => Promise<File>;
 };
 
 const DEFAULT_MAX_FILES = 6;
@@ -23,6 +25,7 @@ export const ImageUploader = ({
   maxFiles = DEFAULT_MAX_FILES,
   className,
   describeUploadError,
+  transformFile,
 }: ImageUploaderProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -31,12 +34,13 @@ export const ImageUploader = ({
   const handleFiles = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
 
-    const files = Array.from(fileList).slice(0, maxFiles - value.length);
-    if (files.length === 0) return;
+    const selected = Array.from(fileList).slice(0, maxFiles - value.length);
+    if (selected.length === 0) return;
 
     setIsUploading(true);
     setError(null);
     try {
+      const files = transformFile ? await Promise.all(selected.map(transformFile)) : selected;
       const urls = await onUpload(files);
       if (urls.length > 0) onChange([...value, ...urls]);
     } catch (uploadError) {
@@ -91,7 +95,7 @@ export const ImageUploader = ({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept={ACCEPTED_IMAGE_TYPES}
         multiple
         className="hidden"
         onChange={(event) => void handleFiles(event.target.files)}

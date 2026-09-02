@@ -34,3 +34,7 @@ wrong type comes back as an inline error naming the requirement.
   restates them ("Each image must be 5 MB or smaller.", "You can upload at most 6 images at
   once.") so the web layer, which surfaces `AppError.message` verbatim via `getErrorMessage`, has
   something actionable to show.
+- **HEIC never reaches this endpoint.** `ALLOWED_MIME_TYPES` is JPEG/PNG/WebP only — `sharp`'s
+  prebuilt libvips can't decode HEIC (no HEVC codec). iPhone photos are converted to JPEG in the
+  browser before upload (`apps/web/src/shared/lib/heicImage.ts`), so the server only ever sees a
+  format it can serve.

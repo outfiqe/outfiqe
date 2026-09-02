@@ -4,6 +4,7 @@ import { getCroppedImageFile, type PixelCrop } from "@outfiqe/design-system";
 import { useRef, useState } from "react";
 
 import { uploadsApi } from "@/shared/api/uploadsApi";
+import { isHeicImage, toUploadableImage } from "@/shared/lib/heicImage";
 
 export type PendingPhoto = {
   id: string;
@@ -31,6 +32,7 @@ const toExistingPhoto = (url: string): PendingPhoto => ({
 export const usePendingPhotos = (maxPhotos: number, initialUrls: string[] = []) => {
   const [photos, setPhotos] = useState<PendingPhoto[]>(() => initialUrls.map(toExistingPhoto));
   const [activeId, setActiveId] = useState<string | null>(() => initialUrls[0] ?? null);
+  const [isImportingFile, setIsImportingFile] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const activePhoto = photos.find((photo) => photo.id === activeId) ?? null;
@@ -49,10 +51,22 @@ export const usePendingPhotos = (maxPhotos: number, initialUrls: string[] = []) 
     setActiveId(photo.id);
   };
 
-  const handleFileSelect = (fileList: FileList | null) => {
-    const file = fileList?.item(0);
+  const handleFileSelect = async (fileList: FileList | null) => {
+    const selectedFile = fileList?.item(0);
     if (inputRef.current) inputRef.current.value = "";
-    if (file) addFile(file);
+    if (!selectedFile) return;
+
+    if (!isHeicImage(selectedFile)) {
+      addFile(selectedFile);
+      return;
+    }
+
+    setIsImportingFile(true);
+    try {
+      addFile(await toUploadableImage(selectedFile));
+    } finally {
+      setIsImportingFile(false);
+    }
   };
 
   const removePhoto = (id: string) => {
@@ -88,6 +102,7 @@ export const usePendingPhotos = (maxPhotos: number, initialUrls: string[] = []) 
     setActiveId,
     inputRef,
     handleFileSelect,
+    isImportingFile,
     removePhoto,
     updateActivePhoto,
     reset,

@@ -9,6 +9,7 @@ import { useRef, useState } from "react";
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { conversationsApi } from "@/shared/lib/conversationsApi";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
+import { toUploadableImage } from "@/shared/lib/heicImage";
 
 import { EmojiPicker } from "./EmojiPicker";
 
@@ -40,10 +41,11 @@ export const MessageComposer = ({ conversationId }: MessageComposerProps) => {
 
     setIsUploading(true);
     try {
-      const urls = await uploadsApi.upload(selected);
+      const prepared = await Promise.all(selected.map(toUploadableImage));
+      const urls = await uploadsApi.upload(prepared);
       const uploaded: PendingAttachment[] = urls.map((url, index) => ({
         url,
-        mimeType: selected[index]?.type ?? "image/jpeg",
+        mimeType: prepared[index]?.type ?? "image/jpeg",
         previewUrl: url,
       }));
       setPendingAttachments((current) => [...current, ...uploaded].slice(0, MAX_ATTACHMENTS));
