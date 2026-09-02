@@ -1,5 +1,6 @@
 import { addDays } from "date-fns/addDays";
 
+import { IS_PROD } from "../src/config/app-env.js";
 import {
   CrmBillingProvider,
   SubscriptionInvoiceStatus,
@@ -179,6 +180,49 @@ async function seedSuperAdmin(
   });
 }
 
+const PLATFORM_CO_FOUNDER_LOCAL_PARTS = [
+  "prapti.bidari",
+  "mun.khatiwada",
+  "anjesh.ghimire",
+  "admin",
+];
+
+export const platformCoFounderEmails = (): string[] => {
+  const override = process.env.PLATFORM_CO_FOUNDER_EMAILS?.trim();
+  if (override) {
+    return override
+      .split(",")
+      .map((email) => email.trim())
+      .filter(Boolean);
+  }
+  const domain = IS_PROD ? "outfiqe.com" : "outfiqe.local";
+  return PLATFORM_CO_FOUNDER_LOCAL_PARTS.map((localPart) => `${localPart}@${domain}`);
+};
+
+async function seedPlatformCoFounders(organizationId: string) {
+  for (const email of platformCoFounderEmails()) {
+    const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+    if (!user) {
+      console.warn(`Skipping co-founder seed for ${email} — no user with that email.`);
+      continue;
+    }
+
+    const membership = await prisma.membership.findUnique({
+      where: { userId_organizationId: { userId: user.id, organizationId } },
+      select: { id: true, status: true },
+    });
+    if (!membership || membership.status !== "ACTIVE") {
+      console.warn(`Skipping co-founder seed for ${email} — no active platform membership.`);
+      continue;
+    }
+
+    await prisma.membership.update({
+      where: { id: membership.id },
+      data: { isPlatformSuperAdmin: true },
+    });
+  }
+}
+
 async function seedPlatformStaffMemberships(organizationId: string) {
   const adminRole = await prisma.role.findFirst({
     where: { organizationId, name: BUILT_IN_ROLE_NAME.ADMIN },
@@ -348,6 +392,7 @@ export async function seedPlatformCrm() {
   await seedPlatformAccessGrant(organization.id);
   await seedSuperAdmin(organization.id, organization.superAdminMembershipId);
   await seedPlatformStaffMemberships(organization.id);
+  await seedPlatformCoFounders(organization.id);
 }
 
 export async function seedCrmAccess() {

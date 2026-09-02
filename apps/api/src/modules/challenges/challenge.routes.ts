@@ -4,6 +4,7 @@ import { optionalAuth } from "#middlewares/optional-auth.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import { challengeController } from "./challenge.controller.js";
 import {
@@ -12,7 +13,7 @@ import {
   updateChallengeSchema,
 } from "./challenge.schemas.js";
 
-const requireAdmin = [requireAuth, requirePlatformAccess];
+const requireAdmin = [requireAuth, requirePlatformAccess, requirePlatformNavItem("gamification")];
 
 export const challengeRoutes = Router();
 

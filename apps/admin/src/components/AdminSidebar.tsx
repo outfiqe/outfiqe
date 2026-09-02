@@ -1,11 +1,13 @@
 import {
+  cardClass,
+  railClass,
   Sidebar,
   type SidebarNavItem,
   type SidebarNavSection,
   sidebarWidthClass,
   useSidebarCollapse,
 } from "@outfiqe/components";
-import { cn } from "@outfiqe/design-system";
+import { Badge, cn, Skeleton } from "@outfiqe/design-system";
 import { getAvatarColor, initialsFor } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -16,6 +18,7 @@ import {
   ClipboardList,
   CreditCard,
   Crown,
+  Fingerprint,
   GalleryHorizontal,
   Gauge,
   IdCard,
@@ -50,9 +53,12 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { crmApi } from "@/features/crm/api";
 
 import {
+  isAdminNavReady,
   isCrmSubItemVisible,
+  type PlatformNavItem,
   shouldShowCrmSection,
   shouldShowPlatformSection,
+  visiblePlatformNavItems,
 } from "./AdminSidebar.utils";
 import { useTanStackSidebarNavigation } from "./useTanStackSidebarNavigation";
 
@@ -141,7 +147,7 @@ const toNavItem = ({
   ...item
 }: CrmSubItem): SidebarNavItem => item;
 
-const PLATFORM_NAV_ITEMS: SidebarNavSection["items"] = [
+const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
   { id: "brand-applications", href: "/", label: "Brand applications", icon: ClipboardList },
   { id: "platform-metrics", href: "/platform/metrics", label: "Tenant metrics", icon: Gauge },
   {
@@ -155,6 +161,13 @@ const PLATFORM_NAV_ITEMS: SidebarNavSection["items"] = [
     href: "/platform/impersonation",
     label: "Impersonation",
     icon: VenetianMask,
+  },
+  {
+    id: "platform-nav-access",
+    href: "/platform/nav-access",
+    label: "Navigation access",
+    icon: Fingerprint,
+    coFounderOnly: true,
   },
   { id: "products", href: "/products", label: "Products", icon: Package },
   { id: "collections", href: "/collections", label: "Collections", icon: Layers },
@@ -227,29 +240,58 @@ const PLATFORM_NAV_ITEMS: SidebarNavSection["items"] = [
   { id: "team", href: "/team", label: "Team", icon: UserCog },
 ];
 
+const SIDEBAR_SKELETON_ROW_COUNT = 8;
+
+const SidebarLoadingRail = ({ collapsed }: { collapsed: boolean }) => (
+  <nav
+    aria-label="Admin"
+    aria-busy="true"
+    className={cn(railClass, "shrink-0", sidebarWidthClass(collapsed))}
+  >
+    <div className={cn(cardClass, "flex shrink-0 items-center gap-2.5")}>
+      <Skeleton className="size-9 shrink-0 rounded-full" />
+      {!collapsed && <Skeleton className="h-4 flex-1" />}
+    </div>
+    <div className={cn(cardClass, "flex min-h-0 flex-1 flex-col gap-1.5")}>
+      {Array.from({ length: SIDEBAR_SKELETON_ROW_COUNT }, (_, rowIndex) => (
+        <Skeleton key={rowIndex} className="h-11 w-full rounded-2xl" />
+      ))}
+    </div>
+  </nav>
+);
+
 export const AdminSidebar = () => {
   const { state } = useAuth();
   const navigation = useTanStackSidebarNavigation();
   const { collapsed, toggle } = useSidebarCollapse("outfiqe:admin-sidebar-collapsed");
 
-  const { data: crmOrganization } = useQuery({
+  const { data: crmOrganization, status: crmOrganizationStatus } = useQuery({
     queryKey: ["crm-organization"],
     queryFn: crmApi.getOrganization,
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
 
+  if (!isAdminNavReady(state.status !== "loading", crmOrganizationStatus)) {
+    return <SidebarLoadingRail collapsed={collapsed} />;
+  }
+
   const visibleCrmItems = CRM_SUB_ITEMS.filter((item) =>
     isCrmSubItemVisible(item, crmOrganization),
   ).map(toNavItem);
 
   const user = state.status === "signed-in" ? state.user : null;
+  const isCoFounder = user?.isCoFounder ?? false;
+  const platformNavItems = visiblePlatformNavItems(PLATFORM_NAV_ITEMS, {
+    isCoFounder,
+    hiddenNavKeys: user?.hiddenPlatformNavKeys ?? [],
+  });
   const navSections: SidebarNavSection[] = [
     ...(shouldShowCrmSection(crmOrganization)
       ? [{ id: "crm", label: "CRM", items: visibleCrmItems }]
       : []),
     ...(shouldShowPlatformSection(user?.hasPlatformAccess ?? false, crmOrganization)
-      ? [{ id: "platform", label: "Platform", items: PLATFORM_NAV_ITEMS }]
+      ? [{ id: "platform", label: "Platform", items: platformNavItems }]
       : []),
   ];
 
@@ -276,7 +318,13 @@ export const AdminSidebar = () => {
           <p className="truncate text-sm font-semibold text-foreground" title={user.name}>
             {user.name}
           </p>
-          <p className="truncate text-[11px] text-muted-foreground">Admin account</p>
+          {isCoFounder ? (
+            <Badge tone="positive" showDot={false} className="mt-1 px-2 py-0.5 text-[10px]">
+              Co-founder
+            </Badge>
+          ) : (
+            <p className="truncate text-[11px] text-muted-foreground">Admin account</p>
+          )}
         </div>
       )}
     </div>

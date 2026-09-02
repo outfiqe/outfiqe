@@ -11,6 +11,8 @@ export const adminUserSchema = z.object({
   avatarUrl: z.url().nullable(),
   role: userRoleSchema,
   hasPlatformAccess: z.boolean(),
+  isCoFounder: z.boolean(),
+  hiddenPlatformNavKeys: z.array(z.string()),
 });
 export type AdminUser = z.infer<typeof adminUserSchema>;
 

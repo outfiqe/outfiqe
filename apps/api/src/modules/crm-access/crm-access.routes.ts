@@ -5,6 +5,7 @@ import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { AUDIT_READ_PERMISSION_KEY } from "#modules/crm-audit/crm-audit.constants.js";
+import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import {
   CRM_INVITE_RATE_LIMIT_MAX_REQUESTS,
@@ -72,23 +73,26 @@ const crmRoleRateLimit = rateLimit({
 
 export const crmAccessRoutes = Router();
 
-crmAccessRoutes.get(
-  "/organizations",
+const requireOrganizationsAdmin = [
   requireAuth,
   requirePlatformAccess,
+  requirePlatformNavItem("organizations"),
+];
+
+crmAccessRoutes.get(
+  "/organizations",
+  ...requireOrganizationsAdmin,
   crmAccessController.listOrganizations,
 );
 crmAccessRoutes.get(
   "/organizations/suggest",
-  requireAuth,
-  requirePlatformAccess,
+  ...requireOrganizationsAdmin,
   validate({ query: suggestOrganizationQuerySchema }),
   crmAccessController.suggestOrganization,
 );
 crmAccessRoutes.post(
   "/organizations",
-  requireAuth,
-  requirePlatformAccess,
+  ...requireOrganizationsAdmin,
   crmOrganizationRateLimit,
   validate({ body: createOrganizationSchema }),
   crmAccessController.createOrganization,

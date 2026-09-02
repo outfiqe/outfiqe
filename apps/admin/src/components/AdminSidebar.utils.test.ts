@@ -1,9 +1,13 @@
+import { Circle } from "lucide-react";
 import { describe, expect, it } from "vitest";
 
 import {
+  isAdminNavReady,
   isCrmSubItemVisible,
+  type PlatformNavItem,
   shouldShowCrmSection,
   shouldShowPlatformSection,
+  visiblePlatformNavItems,
 } from "./AdminSidebar.utils";
 
 const brandlessOrg = {
@@ -93,5 +97,68 @@ describe("shouldShowPlatformSection", () => {
 
   it("shows the section before the organization resolves so the platform nav never flashes out", () => {
     expect(shouldShowPlatformSection(true, undefined)).toBe(true);
+  });
+});
+
+describe("isAdminNavReady", () => {
+  it("is not ready while the session is still restoring", () => {
+    expect(isAdminNavReady(false, "success")).toBe(false);
+  });
+
+  it("is not ready while the crm-organization query is still pending", () => {
+    expect(isAdminNavReady(true, "pending")).toBe(false);
+  });
+
+  it("is ready once the session is resolved and the crm-organization query has succeeded", () => {
+    expect(isAdminNavReady(true, "success")).toBe(true);
+  });
+
+  it("is ready once the crm-organization query has errored so a failed lookup never blocks the nav", () => {
+    expect(isAdminNavReady(true, "error")).toBe(true);
+  });
+});
+
+const platformItems: PlatformNavItem[] = [
+  { id: "orders", href: "/orders", label: "Orders", icon: Circle },
+  { id: "gamification", href: "/gamification", label: "Gamification", icon: Circle },
+  { id: "team", href: "/team", label: "Team", icon: Circle },
+  {
+    id: "platform-nav-access",
+    href: "/platform/nav-access",
+    label: "Navigation access",
+    icon: Circle,
+    coFounderOnly: true,
+  },
+];
+
+describe("visiblePlatformNavItems", () => {
+  it("gives a co-founder every item, including the co-founder-only one, with the marker stripped", () => {
+    const result = visiblePlatformNavItems(platformItems, {
+      isCoFounder: true,
+      hiddenNavKeys: ["orders", "gamification"],
+    });
+    expect(result.map((item) => item.id)).toEqual([
+      "orders",
+      "gamification",
+      "team",
+      "platform-nav-access",
+    ]);
+    expect(result.every((item) => !("coFounderOnly" in item))).toBe(true);
+  });
+
+  it("drops hidden keys and the co-founder-only item for a non-co-founder", () => {
+    const result = visiblePlatformNavItems(platformItems, {
+      isCoFounder: false,
+      hiddenNavKeys: ["gamification"],
+    });
+    expect(result.map((item) => item.id)).toEqual(["orders", "team"]);
+  });
+
+  it("shows every non-co-founder item when nothing is hidden", () => {
+    const result = visiblePlatformNavItems(platformItems, {
+      isCoFounder: false,
+      hiddenNavKeys: [],
+    });
+    expect(result.map((item) => item.id)).toEqual(["orders", "gamification", "team"]);
   });
 });

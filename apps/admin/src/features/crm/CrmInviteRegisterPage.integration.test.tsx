@@ -78,6 +78,8 @@ describe("CrmInviteRegisterPage", () => {
       avatarUrl: null,
       role: "ADMIN",
       hasPlatformAccess: false,
+      isCoFounder: false,
+      hiddenPlatformNavKeys: [],
     };
     mswServer.use(
       http.get(`${API_BASE}/auth/invite/crm`, () =>
