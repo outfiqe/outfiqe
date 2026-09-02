@@ -21,7 +21,13 @@ const envSchema = z.object({
   JWT_REFRESH_TTL: z.string().min(1),
   MAIL_FROM: z.email(),
   OPS_NOTIFICATION_EMAIL: z.email(),
+  RESEND_API_KEY: z.string().optional(),
   SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().optional(),
+  SMTP_SECURE: z
+    .enum(["true", "false"])
+    .transform((value) => value === "true")
+    .optional(),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   FRONTEND_URL: z.url(),

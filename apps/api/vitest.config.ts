@@ -101,6 +101,7 @@ export default defineConfig({
         "src/modules/platform-features/**/*.ts",
         "src/modules/platform-impersonation/**/*.ts",
         "src/modules/platform-nav-access/**/*.ts",
+        "src/shared/utils/email.utils.ts",
       ],
       thresholds: {
         lines: 80,
