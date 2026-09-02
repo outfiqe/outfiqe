@@ -32,4 +32,8 @@ export const categoriesApi = {
     const res = await apiClient.patch<Category>(`/categories/${id}`, { imageUrl });
     return categorySchema.parse(res.data);
   },
+
+  async reorder(orderedIds: string[]): Promise<void> {
+    await apiClient.post("/categories/reorder", { orderedIds });
+  },
 };

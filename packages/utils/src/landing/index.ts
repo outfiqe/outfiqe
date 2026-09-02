@@ -1,0 +1,1 @@
+export const LANDING_TASTE_CATEGORY_COUNT = 6;

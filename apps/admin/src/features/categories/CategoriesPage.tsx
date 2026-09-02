@@ -1,5 +1,7 @@
 import { Badge, Button, FormBanner, Input } from "@outfiqe/design-system";
+import { LANDING_TASTE_CATEGORY_COUNT } from "@outfiqe/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
 import { ImageUpload } from "@/components/ImageUpload";
@@ -18,6 +20,16 @@ const slugify = (value: string): string =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+
+const withSwappedNeighbours = (list: Category[], from: number, to: number): Category[] => {
+  const next = [...list];
+  const moved = next[from];
+  const displaced = next[to];
+  if (!moved || !displaced) return list;
+  next[from] = displaced;
+  next[to] = moved;
+  return next;
+};
 
 export const CategoriesPage = () => {
   const queryClient = useQueryClient();
@@ -56,6 +68,43 @@ export const CategoriesPage = () => {
       categoriesApi.setImage(id, url),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-categories"] }),
   });
+
+  const reorder = useMutation({
+    mutationFn: (orderedIds: string[]) => categoriesApi.reorder(orderedIds),
+    onMutate: async (orderedIds) => {
+      await queryClient.cancelQueries({ queryKey: ["admin-categories"] });
+      const previous = queryClient.getQueryData<Category[]>(["admin-categories"]);
+      if (previous) {
+        const byId = new Map(previous.map((category) => [category.id, category]));
+        queryClient.setQueryData(
+          ["admin-categories"],
+          orderedIds
+            .map((id) => byId.get(id))
+            .filter((category): category is Category => !!category),
+        );
+      }
+      return { previous };
+    },
+    onError: (_error, _orderedIds, context) => {
+      if (context?.previous) queryClient.setQueryData(["admin-categories"], context.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-categories"] }),
+  });
+
+  const moveCategory = (from: number, to: number) => {
+    if (!categories || to < 0 || to >= categories.length) return;
+    reorder.mutate(withSwappedNeighbours(categories, from, to).map((category) => category.id));
+  };
+
+  const publishedCount = (categories ?? []).filter(
+    (category) => category.status === "PUBLISHED",
+  ).length;
+  const landingCutoffId =
+    publishedCount > LANDING_TASTE_CATEGORY_COUNT
+      ? (categories ?? []).filter((category) => category.status === "PUBLISHED")[
+          LANDING_TASTE_CATEGORY_COUNT - 1
+        ]?.id
+      : null;
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -114,44 +163,78 @@ export const CategoriesPage = () => {
 
       {error && <FormBanner className="mt-3">{error}</FormBanner>}
 
-      <div className="mt-6 space-y-3">
+      <p className="mt-6 text-sm text-muted-foreground">
+        New visitors see the first {LANDING_TASTE_CATEGORY_COUNT} categories on the landing page.
+        Arrange them here — the order also applies everywhere else the list is shown.
+      </p>
+
+      <div className="mt-3 space-y-3">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
         {categories?.length === 0 && (
           <p className="text-sm text-muted-foreground">No categories yet.</p>
         )}
 
-        {categories?.map((category) => {
+        {categories?.map((category, index) => {
           const { id, imageUrl, name, status, slug, productCount } = category;
+          const isLandingCutoff = id === landingCutoffId;
 
           return (
-            <div
-              key={id}
-              className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4"
-            >
-              <ImageUpload
-                value={imageUrl}
-                onChange={(url) => setCategoryImage.mutate({ id, imageUrl: url })}
-              />
-
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h2 className="font-display text-base font-bold text-foreground">{name}</h2>
-                  <Badge tone={STATUS_TONE[status]} showDot={false}>
-                    {status}
-                  </Badge>
+            <div key={id}>
+              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4">
+                <div className="flex flex-col">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    aria-label={`Move ${name} up`}
+                    disabled={index === 0 || reorder.isPending}
+                    onClick={() => moveCategory(index, index - 1)}
+                  >
+                    <ArrowUp />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    aria-label={`Move ${name} down`}
+                    disabled={index === categories.length - 1 || reorder.isPending}
+                    onClick={() => moveCategory(index, index + 1)}
+                  >
+                    <ArrowDown />
+                  </Button>
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  /{slug} · {productCount} products
-                </p>
+
+                <ImageUpload
+                  value={imageUrl}
+                  onChange={(url) => setCategoryImage.mutate({ id, imageUrl: url })}
+                />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-base font-bold text-foreground">{name}</h2>
+                    <Badge tone={STATUS_TONE[status]} showDot={false}>
+                      {status}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    /{slug} · {productCount} products
+                  </p>
+                </div>
+
+                <Button
+                  variant={status === "PUBLISHED" ? "ghost" : "default"}
+                  onClick={() => toggleStatus.mutate(category)}
+                  disabled={toggleStatus.isPending}
+                >
+                  {status === "PUBLISHED" ? "Unpublish" : "Publish"}
+                </Button>
               </div>
 
-              <Button
-                variant={status === "PUBLISHED" ? "ghost" : "default"}
-                onClick={() => toggleStatus.mutate(category)}
-                disabled={toggleStatus.isPending}
-              >
-                {status === "PUBLISHED" ? "Unpublish" : "Publish"}
-              </Button>
+              {isLandingCutoff && (
+                <p className="mt-3 border-t border-dashed border-border pt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Landing page shows published categories down to here
+                </p>
+              )}
             </div>
           );
         })}
