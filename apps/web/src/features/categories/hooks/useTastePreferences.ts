@@ -1,9 +1,17 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
+
+import { useAuth } from "@/features/auth";
+
+import { tastePreferencesApi } from "../api/tastePreferencesApi";
 
 const STORAGE_KEY = "outfiqe:taste-categories";
 const CHANGE_EVENT = "outfiqe:taste-categories-changed";
+const SERVER_STALE_TIME_MS = 5 * 60 * 1000;
+
+const TASTE_PREFERENCES_QUERY_KEY = ["taste-preferences", "me"] as const;
 
 const parseSlugs = (raw: string | null): string[] | null => {
   if (!raw) return null;
@@ -47,7 +55,7 @@ const subscribe = (onChange: () => void): (() => void) => {
   };
 };
 
-const write = (slugs: string[] | null): void => {
+const writeLocal = (slugs: string[] | null): void => {
   try {
     if (slugs) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(slugs));
     else window.localStorage.removeItem(STORAGE_KEY);
@@ -57,11 +65,75 @@ const write = (slugs: string[] | null): void => {
   }
 };
 
-export const useTastePreferences = () => {
+const useLocalTastePreferences = () => {
   const storedSlugs = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const save = useCallback((slugs: string[]) => writeLocal(slugs), []);
+  const reset = useCallback(() => writeLocal(null), []);
+  return { storedSlugs, save, reset };
+};
 
-  const save = useCallback((slugs: string[]) => write(slugs), []);
-  const reset = useCallback(() => write(null), []);
+type TastePreferences = {
+  storedSlugs: string[] | null;
+  isCustomized: boolean;
+  save: (slugs: string[]) => void;
+  reset: () => void;
+};
+
+export const useTastePreferences = (): TastePreferences => {
+  const { isAuthenticated, isAuthResolved } = useAuth();
+  const isSignedIn = isAuthResolved && isAuthenticated;
+
+  const {
+    storedSlugs: localSlugs,
+    save: saveLocal,
+    reset: resetLocal,
+  } = useLocalTastePreferences();
+  const queryClient = useQueryClient();
+
+  const serverQuery = useQuery({
+    queryKey: TASTE_PREFERENCES_QUERY_KEY,
+    queryFn: tastePreferencesApi.get,
+    enabled: isSignedIn,
+    staleTime: SERVER_STALE_TIME_MS,
+  });
+
+  const serverMutation = useMutation({
+    mutationFn: (slugs: string[]) =>
+      slugs.length === 0 ? tastePreferencesApi.clear() : tastePreferencesApi.set(slugs),
+    onMutate: (slugs) => {
+      queryClient.setQueryData<string[] | null>(
+        TASTE_PREFERENCES_QUERY_KEY,
+        slugs.length === 0 ? null : slugs,
+      );
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: TASTE_PREFERENCES_QUERY_KEY }),
+  });
+
+  const serverSlugs = serverQuery.data ?? null;
+  const isServerLoaded = serverQuery.isSuccess;
+  const mutate = serverMutation.mutate;
+  const isMutating = serverMutation.isPending;
+
+  useEffect(() => {
+    if (isSignedIn && isServerLoaded && serverSlugs === null && localSlugs && !isMutating) {
+      mutate(localSlugs);
+    }
+  }, [isSignedIn, isServerLoaded, serverSlugs, localSlugs, isMutating, mutate]);
+
+  const save = useCallback(
+    (slugs: string[]) => {
+      saveLocal(slugs);
+      if (isSignedIn) mutate(slugs);
+    },
+    [saveLocal, isSignedIn, mutate],
+  );
+
+  const reset = useCallback(() => {
+    resetLocal();
+    if (isSignedIn) mutate([]);
+  }, [resetLocal, isSignedIn, mutate]);
+
+  const storedSlugs = isSignedIn ? (serverSlugs ?? localSlugs) : localSlugs;
 
   return { storedSlugs, isCustomized: storedSlugs !== null, save, reset };
 };

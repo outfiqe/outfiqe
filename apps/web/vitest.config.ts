@@ -91,6 +91,10 @@ export default defineConfig({
         "src/shared/lib/chatApi.ts",
         "src/features/messaging/ConversationList.tsx",
         "src/features/messaging/MessageThread.tsx",
+        "src/features/categories/api/tastePreferencesApi.ts",
+        "src/features/categories/hooks/useTastePreferences.ts",
+        "src/features/categories/lib/visibleTasteCategories.ts",
+        "src/features/landing/components/TasteCategories/CustomizeTasteModal.tsx",
       ],
       thresholds: {
         lines: 80,

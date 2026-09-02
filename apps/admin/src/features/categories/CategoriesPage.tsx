@@ -37,6 +37,11 @@ export const CategoriesPage = () => {
     queryKey: ["admin-categories"],
     queryFn: categoriesApi.list,
   });
+  const { data: popularity } = useQuery({
+    queryKey: ["admin-category-popularity"],
+    queryFn: categoriesApi.popularity,
+  });
+  const shopperCountBySlug = new Map((popularity ?? []).map((row) => [row.slug, row.userCount]));
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -217,7 +222,8 @@ export const CategoriesPage = () => {
                     </Badge>
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    /{slug} · {productCount} products
+                    /{slug} · {productCount} products · {shopperCountBySlug.get(slug) ?? 0} shoppers
+                    pinned this
                   </p>
                 </div>
 

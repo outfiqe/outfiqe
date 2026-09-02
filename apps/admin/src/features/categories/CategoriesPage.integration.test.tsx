@@ -24,6 +24,8 @@ const category = (id: string, name: string, sortOrder: number) => ({
   productCount: 0,
 });
 
+const okJson = (data: unknown) => HttpResponse.json({ success: true, message: "ok", data });
+
 const renderPage = () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = ({ children }: { children: ReactNode }) => (
@@ -31,6 +33,9 @@ const renderPage = () => {
   );
   return render(<CategoriesPage />, { wrapper });
 };
+
+const stubPopularity = (rows: { slug: string; userCount: number }[] = []) =>
+  mswServer.use(http.get(`${API_BASE}/taste-preferences/popularity`, () => okJson(rows)));
 
 describe("CategoriesPage", () => {
   it("posts the swapped id order when a category is moved down", async () => {
@@ -52,6 +57,7 @@ describe("CategoriesPage", () => {
         return HttpResponse.json({ success: true, message: "Categories reordered.", data: null });
       }),
     );
+    stubPopularity();
 
     const user = userEvent.setup();
     renderPage();
@@ -61,16 +67,24 @@ describe("CategoriesPage", () => {
     await waitFor(() => expect(reorderBody).toEqual({ orderedIds: ["id-b", "id-a", "id-c"] }));
   });
 
+  it("shows how many shoppers have pinned each category", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/categories/admin`, () => okJson([category("id-a", "Alpha", 0)])),
+    );
+    stubPopularity([{ slug: "alpha", userCount: 4 }]);
+
+    renderPage();
+
+    expect(await screen.findByText(/4 shoppers pinned this/)).toBeInTheDocument();
+  });
+
   it("disables the up arrow on the first category and the down arrow on the last", async () => {
     mswServer.use(
       http.get(`${API_BASE}/categories/admin`, () =>
-        HttpResponse.json({
-          success: true,
-          message: "ok",
-          data: [category("id-a", "Alpha", 0), category("id-b", "Beta", 1)],
-        }),
+        okJson([category("id-a", "Alpha", 0), category("id-b", "Beta", 1)]),
       ),
     );
+    stubPopularity();
 
     renderPage();
 
