@@ -78,6 +78,20 @@ export const adminInviteQuerySchema = z.object({
   token: z.string().min(1),
 });
 
+export const crmInviteQuerySchema = z.object({
+  token: z.string().min(1),
+});
+
+export const registerCrmInviteSchema = z
+  .object({
+    inviteToken: z.string().min(1),
+    name: z.string().min(NAME_MIN).max(NAME_MAX),
+    phone: phoneSchema,
+    password: passwordField,
+    confirmPassword: z.string(),
+  })
+  .refine(passwordsMatch, CONFIRM_PASSWORD_ISSUE);
+
 export const validateTokenQuerySchema = z.object({
   token: z.string().min(1),
   purpose: z.enum(TokenPurpose),
@@ -96,5 +110,7 @@ export type RegisterBrandBody = z.infer<typeof registerBrandSchema>;
 export type BrandInviteQuery = z.infer<typeof brandInviteQuerySchema>;
 export type RegisterAdminBody = z.infer<typeof registerAdminSchema>;
 export type AdminInviteQuery = z.infer<typeof adminInviteQuerySchema>;
+export type CrmInviteQuery = z.infer<typeof crmInviteQuerySchema>;
+export type RegisterCrmInviteBody = z.infer<typeof registerCrmInviteSchema>;
 export type ValidateTokenQuery = z.infer<typeof validateTokenQuerySchema>;
 export type ResendVerificationBody = z.infer<typeof resendVerificationSchema>;

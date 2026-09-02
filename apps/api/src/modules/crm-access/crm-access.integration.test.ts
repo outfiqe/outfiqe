@@ -794,7 +794,37 @@ describe("CRM invites", () => {
       .set("Authorization", authHeaderFor(superAdminUser.id))
       .send({ email: shopper.email, roleId: memberRole.id });
 
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("EMAIL_IN_USE");
+  });
+
+  it("creates a pending invite for an email with no Outfiqe account yet", async () => {
+    const { organization, adminRole, memberRole } = await seedOrganization();
+    const superAdminUser = await createStaffUser("Inviter Five");
+    const superAdminMembership = await addMembership(
+      organization.id,
+      superAdminUser.id,
+      adminRole.id,
+    );
+    await makeSuperAdmin(organization.id, superAdminMembership.id);
+
+    const strangerEmail = `stranger-${randomUUID()}@outfiqe.test`;
+
+    const response = await request(testApp)
+      .post("/api/crm/invites")
+      .set("Authorization", authHeaderFor(superAdminUser.id))
+      .send({ email: strangerEmail, roleId: memberRole.id });
+
+    expect(response.status).toBe(201);
+
+    const storedInvite = await prisma.organizationInvite.findFirstOrThrow({
+      where: { organizationId: organization.id, email: strangerEmail },
+    });
+    expect(storedInvite.roleId).toBe(memberRole.id);
+    expect(storedInvite.acceptedAt).toBeNull();
+
+    const strangerUser = await prisma.user.findUnique({ where: { email: strangerEmail } });
+    expect(strangerUser).toBeNull();
   });
 
   it("resolves two concurrent accepts of the same invite cleanly, without a raw server error", async () => {

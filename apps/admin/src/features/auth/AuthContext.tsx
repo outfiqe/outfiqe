@@ -15,6 +15,7 @@ type AuthContextValue = {
   state: AuthState;
   logout: () => Promise<void>;
   updateUser: (patch: Partial<AdminUser>) => void;
+  setSession: (user: AdminUser) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -54,8 +55,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
   }, []);
 
+  const setSession = useCallback((user: AdminUser) => {
+    setState({ status: "signed-in", user });
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ state, logout, updateUser }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ state, logout, updateUser, setSession }}>
+      {children}
+    </AuthContext.Provider>
   );
 };
 

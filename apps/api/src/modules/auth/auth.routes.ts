@@ -26,10 +26,12 @@ import type { ForgotPasswordBody, LoginBody, ResendVerificationBody } from "./au
 import {
   adminInviteQuerySchema,
   brandInviteQuerySchema,
+  crmInviteQuerySchema,
   forgotPasswordSchema,
   loginSchema,
   registerAdminSchema,
   registerBrandSchema,
+  registerCrmInviteSchema,
   registerSchema,
   resendVerificationSchema,
   resetPasswordSchema,
@@ -143,6 +145,17 @@ authRoutes.get(
   "/invite/admin",
   validate({ query: adminInviteQuerySchema }),
   authController.getAdminInvite,
+);
+authRoutes.get(
+  "/invite/crm",
+  validate({ query: crmInviteQuerySchema }),
+  authController.getCrmInvite,
+);
+authRoutes.post(
+  "/register/crm-invite",
+  registerIpRateLimit,
+  validate({ body: registerCrmInviteSchema }),
+  authController.registerFromCrmInvite,
 );
 authRoutes.get(
   "/validate-token",

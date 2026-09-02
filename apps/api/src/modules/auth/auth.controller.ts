@@ -1,19 +1,24 @@
 import type { Request, Response } from "express";
 
 import { TokenPurpose } from "#constants/enums/auth.enum.js";
+import { CrmAuditAction } from "#generated/prisma/enums.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { clearRefreshCookie, getRefreshTokenCookie, setRefreshCookie } from "#lib/cookie.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
+import { AUDIT_TARGET_TYPE } from "#modules/crm-audit/crm-audit.constants.js";
+import { crmAudit } from "#modules/crm-audit/crm-audit.service.js";
 
 import type {
   AdminInviteQuery,
   BrandInviteQuery,
+  CrmInviteQuery,
   ForgotPasswordBody,
   LoginBody,
   RegisterAdminBody,
   RegisterBody,
   RegisterBrandBody,
+  RegisterCrmInviteBody,
   ResendVerificationBody,
   ResetPasswordBody,
   ValidateTokenQuery,
@@ -137,6 +142,33 @@ export const authController = {
     const invite = await authService.getAdminInvite(token);
 
     sendSuccess(res, invite, "Invite is valid.");
+  },
+
+  async getCrmInvite(_req: Request, res: Response) {
+    const { token } = validated.query<CrmInviteQuery>(res);
+    const invite = await authService.getCrmInvite(token);
+
+    sendSuccess(res, invite, "Invite is valid.");
+  },
+
+  async registerFromCrmInvite(req: Request, res: Response) {
+    const { inviteToken, name, phone, password } = validated.body<RegisterCrmInviteBody>(res);
+    const { accessToken, refreshToken, refreshTokenTtlSeconds, user, crmMembership } =
+      await authService.registerFromCrmInvite({ inviteToken, name, phone, password });
+
+    setRefreshCookie(res, refreshToken, refreshTokenTtlSeconds);
+    await crmAudit.record({
+      organizationId: crmMembership.organizationId,
+      action: CrmAuditAction.INVITE_ACCEPTED,
+      summary: "Accepted a CRM invite",
+      actor: {
+        actorUserId: user.id,
+        actorMembershipId: crmMembership.id,
+        ipAddress: req.ip ?? null,
+      },
+      target: { type: AUDIT_TARGET_TYPE.MEMBERSHIP, id: crmMembership.id },
+    });
+    sendSuccess(res, { accessToken, user }, "CRM account created.", CREATED_STATUS);
   },
 
   async validateToken(_req: Request, res: Response) {

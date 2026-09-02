@@ -102,6 +102,25 @@ const createAdminInvite = async (overrides: { email?: string; name?: string } = 
   return rawToken;
 };
 
+const createCrmInvite = async (overrides: { email?: string; expiresAt?: Date } = {}) => {
+  const { organization, memberRole } = await seedTenantOrganization();
+  const { user: inviter } = await createUser();
+  const rawToken = generateOpaqueToken();
+
+  const invite = await prisma.organizationInvite.create({
+    data: {
+      organizationId: organization.id,
+      email: overrides.email ?? `crm-invitee-${randomUUID()}@outfiqe.test`,
+      roleId: memberRole.id,
+      tokenHash: hashToken(rawToken),
+      expiresAt: overrides.expiresAt ?? addHours(new Date(), 1),
+      invitedById: inviter.id,
+    },
+  });
+
+  return { rawToken, invite, organization, memberRole };
+};
+
 const extractCookieValue = (response: request.Response, cookieName: string): string | undefined => {
   const rawCookies = response.headers["set-cookie"];
   const cookies = Array.isArray(rawCookies) ? rawCookies : rawCookies ? [rawCookies] : [];
@@ -221,6 +240,152 @@ describe("POST /api/auth/register/admin", () => {
       .set("Authorization", `Bearer ${accessToken}`);
 
     expect(platformResponse.status).toBe(200);
+  });
+});
+
+describe("GET /api/auth/invite/crm", () => {
+  it("returns the org and role for a pending invite that needs registration", async () => {
+    const { rawToken, invite, organization, memberRole } = await createCrmInvite();
+
+    const response = await request(testApp).get("/api/auth/invite/crm").query({ token: rawToken });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({
+      email: invite.email,
+      organizationName: organization.name,
+      roleName: memberRole.name,
+      requiresRegistration: true,
+    });
+  });
+
+  it("rejects an expired invite token", async () => {
+    const { rawToken } = await createCrmInvite({ expiresAt: subHours(new Date(), 1) });
+
+    const response = await request(testApp).get("/api/auth/invite/crm").query({ token: rawToken });
+
+    expect(response.status).toBe(409);
+  });
+
+  it("rejects an unknown token", async () => {
+    const response = await request(testApp)
+      .get("/api/auth/invite/crm")
+      .query({ token: generateOpaqueToken() });
+
+    expect(response.status).toBe(404);
+  });
+});
+
+describe("POST /api/auth/register/crm-invite", () => {
+  it("creates a tenant-only admin account and grants CRM access without platform access", async () => {
+    const { rawToken, invite, organization, memberRole } = await createCrmInvite();
+
+    const response = await request(testApp).post("/api/auth/register/crm-invite").send({
+      inviteToken: rawToken,
+      name: "Sujata Rai",
+      phone: uniquePhone(),
+      password: DEFAULT_TEST_PASSWORD,
+      confirmPassword: DEFAULT_TEST_PASSWORD,
+    });
+
+    expect(response.status).toBe(201);
+
+    const { accessToken, user } = response.body.data;
+    expect(user).toMatchObject({
+      role: UserRole.ADMIN,
+      hasPlatformAccess: false,
+      hasCrmAccess: true,
+    });
+
+    const createdUser = await prisma.user.findUniqueOrThrow({ where: { email: invite.email } });
+    expect(createdUser.emailVerified).toBe(true);
+
+    const membership = await prisma.membership.findUniqueOrThrow({
+      where: { userId_organizationId: { userId: createdUser.id, organizationId: organization.id } },
+    });
+    expect(membership).toMatchObject({ roleId: memberRole.id, status: "ACTIVE" });
+
+    const consumedInvite = await prisma.organizationInvite.findUniqueOrThrow({
+      where: { id: invite.id },
+    });
+    expect(consumedInvite.acceptedAt).not.toBeNull();
+
+    const platformResponse = await request(testApp)
+      .get("/api/admin/financial-rollup")
+      .set("Authorization", `Bearer ${accessToken}`);
+    expect(platformResponse.status).toBe(403);
+  });
+
+  it("rejects a second registration with the same invite token", async () => {
+    const { rawToken } = await createCrmInvite();
+
+    const first = await request(testApp).post("/api/auth/register/crm-invite").send({
+      inviteToken: rawToken,
+      name: "First Taker",
+      phone: uniquePhone(),
+      password: DEFAULT_TEST_PASSWORD,
+      confirmPassword: DEFAULT_TEST_PASSWORD,
+    });
+    expect(first.status).toBe(201);
+
+    const second = await request(testApp).post("/api/auth/register/crm-invite").send({
+      inviteToken: rawToken,
+      name: "Second Taker",
+      phone: uniquePhone(),
+      password: DEFAULT_TEST_PASSWORD,
+      confirmPassword: DEFAULT_TEST_PASSWORD,
+    });
+    expect(second.status).toBe(409);
+  });
+
+  it("rejects registration when the invite email already has an account", async () => {
+    const { rawToken, invite } = await createCrmInvite();
+    await prisma.user.create({
+      data: {
+        email: invite.email,
+        name: "Already Here",
+        handle: `already-here-${randomUUID().slice(0, 8)}`,
+        phone: uniquePhone(),
+        passwordHash: await hashPassword(DEFAULT_TEST_PASSWORD),
+        emailVerified: true,
+      },
+    });
+
+    const response = await request(testApp).post("/api/auth/register/crm-invite").send({
+      inviteToken: rawToken,
+      name: "Late Comer",
+      phone: uniquePhone(),
+      password: DEFAULT_TEST_PASSWORD,
+      confirmPassword: DEFAULT_TEST_PASSWORD,
+    });
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("USER_EXISTS");
+  });
+
+  it("rejects registration when the phone number already belongs to another account", async () => {
+    const { rawToken } = await createCrmInvite();
+    const takenPhone = uniquePhone();
+    await prisma.user.create({
+      data: {
+        email: `phone-owner-${randomUUID()}@outfiqe.test`,
+        name: "Phone Owner",
+        handle: `phone-owner-${randomUUID().slice(0, 8)}`,
+        phone: takenPhone,
+        passwordHash: await hashPassword(DEFAULT_TEST_PASSWORD),
+        emailVerified: true,
+      },
+    });
+
+    const response = await request(testApp).post("/api/auth/register/crm-invite").send({
+      inviteToken: rawToken,
+      name: "Phone Clash",
+      phone: takenPhone,
+      password: DEFAULT_TEST_PASSWORD,
+      confirmPassword: DEFAULT_TEST_PASSWORD,
+    });
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("PHONE_EXISTS");
   });
 });
 

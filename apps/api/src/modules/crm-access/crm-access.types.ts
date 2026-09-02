@@ -106,6 +106,13 @@ export type OrganizationInviteRecord = {
   createdAt: Date;
 };
 
+export type CrmInviteRegistrationInfo = {
+  email: string;
+  organizationName: string;
+  roleName: string;
+  requiresRegistration: boolean;
+};
+
 export type OrganizationInviteSummary = {
   id: string;
   email: string;

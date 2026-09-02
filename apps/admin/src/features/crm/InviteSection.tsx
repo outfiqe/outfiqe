@@ -102,6 +102,11 @@ export const InviteSection = () => {
         </Button>
       </form>
 
+      <p className="mt-2 text-xs text-muted-foreground">
+        If they don&rsquo;t have an Outfiqe account yet, they&rsquo;ll set a name and password from
+        the invite email before joining.
+      </p>
+
       {formError && <FormBanner className="mt-3">{formError}</FormBanner>}
 
       <h3 className="mt-6 font-display text-base font-bold text-foreground">Pending invites</h3>
