@@ -39,6 +39,7 @@
     "db:sync": "prisma migrate deploy && prisma generate",
     "db:seed": "prisma db seed",
     "db:bootstrap:crm": "tsx prisma/bootstrap-platform-crm.ts",
+    "db:bootstrap:co-founders": "tsx prisma/bootstrap-platform-co-founders.ts",
     "db:backfill:crm-counters": "tsx prisma/backfill-crm-counters.ts",
     "db:seed:suggestions": "tsx prisma/seedSuggestions.ts",
     "db:seed:reviews": "tsx prisma/seedProductReviews.ts",

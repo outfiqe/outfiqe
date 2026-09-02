@@ -76,6 +76,13 @@ fails open (`next()`) on an internal error so a config-store blip never blanks a
   `@outfiqe.local`; set `PLATFORM_CO_FOUNDER_EMAILS` (comma-separated) to override the list
   entirely. Four names fills the `MAX_PLATFORM_CO_FOUNDERS` cap, so the seed leaves no room to
   promote a fifth from the UI until one is removed.
+- **Bootstrapping the co-founder logins.** `seedPlatformCoFounders` grants the flag but never
+  creates the account, so a fresh environment (prod especially) has no one who can open the
+  screen. `pnpm --filter @outfiqe/api db:bootstrap:co-founders` closes that gap: it upserts every
+  `platformCoFounderEmails()` address as an `emailVerified` `ADMIN` with `PLATFORM_CO_FOUNDER_PASSWORD`
+  (required — the script throws without it), then runs `seedPlatformCrm()` to wire the platform
+  org, memberships and co-founder flags. Idempotent; rotate `PLATFORM_CO_FOUNDER_PASSWORD` (or
+  have each co-founder run the password-reset flow) immediately after.
 
 ## Deferred
 

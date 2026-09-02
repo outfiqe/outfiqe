@@ -187,7 +187,7 @@ const PLATFORM_CO_FOUNDER_LOCAL_PARTS = [
   "admin",
 ];
 
-const platformCoFounderEmails = (): string[] => {
+export const platformCoFounderEmails = (): string[] => {
   const override = process.env.PLATFORM_CO_FOUNDER_EMAILS?.trim();
   if (override) {
     return override
