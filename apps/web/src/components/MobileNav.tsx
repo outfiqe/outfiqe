@@ -1,26 +1,27 @@
 "use client";
 
-import { Button } from "@outfiqe/design-system";
-import { ChevronDown, Menu, User, X } from "lucide-react";
+import { Button, useTheme } from "@outfiqe/design-system";
+import { ChevronDown, Heart, Menu, Moon, ShoppingBag, Sun, User, X } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
 import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
-import { ExploreSearchBox, ProductSearchBox } from "@/features/search";
+import { useCart } from "@/features/cart";
 import { cn } from "@/shared/lib/cn";
-import { isExploreRoute } from "@/shared/lib/exploreMode";
 
 import { LEADERBOARD_LINKS, NAV_LINKS } from "./siteNav.constants";
 
 export const MobileNav = () => {
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const { state, isAuthenticated, isAdmin } = useAuth();
   const logout = useLogout();
+  const { data: cart } = useCart();
+  const cartCount = cart?.itemCount ?? 0;
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
 
   return (
     <div className="lg:hidden">
@@ -37,21 +38,7 @@ export const MobileNav = () => {
 
       {open && (
         <div className="absolute inset-x-0 top-full z-30 max-h-[calc(100vh-72px)] overflow-y-auto border-t border-border bg-background px-6 py-6 shadow-lg">
-          {isExploreRoute(pathname) ? (
-            <ExploreSearchBox
-              placeholder="Search creators & posts"
-              formClassName="flex items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-muted-foreground"
-              onNavigate={() => setOpen(false)}
-            />
-          ) : (
-            <ProductSearchBox
-              placeholder="Search kurta, kastha, jackets"
-              formClassName="flex items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-muted-foreground"
-              onNavigate={() => setOpen(false)}
-            />
-          )}
-
-          <nav className="mt-6 flex flex-col gap-1 text-sm">
+          <nav className="flex flex-col gap-1 text-sm">
             {NAV_LINKS.map(({ href, label }) => (
               <Link
                 key={label}
@@ -94,6 +81,39 @@ export const MobileNav = () => {
               </div>
             )}
           </nav>
+
+          <div className="mt-6 flex flex-col gap-1 border-t border-border pt-6 text-sm">
+            <Link
+              href="/wishlist"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-2 py-2.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <Heart className="size-4 shrink-0" />
+              Wishlist
+            </Link>
+            <Link
+              href="/cart"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-2 py-2.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <ShoppingBag className="size-4 shrink-0" />
+              Bag
+              {cartCount > 0 && (
+                <span className="ml-auto flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-primary-foreground">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+            <Button
+              variant="ghost"
+              onClick={toggleTheme}
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              className="h-auto justify-start gap-2.5 rounded-lg px-2 py-2.5 font-normal text-muted-foreground hover:text-foreground"
+            >
+              {isDark ? <Sun suppressHydrationWarning /> : <Moon suppressHydrationWarning />}
+              Theme
+            </Button>
+          </div>
 
           <div className="mt-6 flex flex-col gap-2 border-t border-border pt-6">
             {state.status === AuthStatus.IDLE ||

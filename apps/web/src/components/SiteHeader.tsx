@@ -2,7 +2,7 @@
 
 import { HeaderBar, useHeaderCondense } from "@outfiqe/components";
 import { ThemeToggle } from "@outfiqe/design-system";
-import { ChevronDown, Heart, Search, ShoppingBag } from "lucide-react";
+import { ChevronDown, Heart, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -11,7 +11,7 @@ import { useCart } from "@/features/cart";
 import { SiteNotificationBell } from "@/features/notifications";
 import { ExploreSearchBox, ProductSearchBox } from "@/features/search";
 import { cn } from "@/shared/lib/cn";
-import { isExploreRoute, searchPathFor } from "@/shared/lib/exploreMode";
+import { isExploreRoute } from "@/shared/lib/exploreMode";
 
 import { AccountMenu } from "./AccountMenu";
 import { Logo } from "./Logo";
@@ -20,6 +20,10 @@ import { ShopExploreToggle } from "./ShopExploreToggle";
 import { LEADERBOARD_LINKS } from "./siteNav.constants";
 
 const SHOP_LINKS = [{ label: "Brands", href: "/brands" }];
+
+const SEARCH_FORM_CLASS =
+  "flex min-w-0 flex-1 items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-muted-foreground " +
+  "transition-all duration-300 lg:max-w-md";
 
 export const SiteHeader = () => {
   const pathname = usePathname();
@@ -31,6 +35,7 @@ export const SiteHeader = () => {
   return (
     <HeaderBar condensed={isCondensed}>
       <Logo
+        wordmarkClassName="hidden sm:inline"
         className={cn(
           "shrink-0 origin-left transition-transform duration-300",
           isCondensed && "scale-90",
@@ -40,14 +45,11 @@ export const SiteHeader = () => {
       <ShopExploreToggle size="header" className="hidden shrink-0 lg:flex" />
 
       {isExploreRoute(pathname) ? (
-        <ExploreSearchBox
-          placeholder="Search creators & posts"
-          formClassName="hidden min-w-0 max-w-md flex-1 items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-muted-foreground transition-all duration-300 lg:flex"
-        />
+        <ExploreSearchBox placeholder="Search creators & posts" formClassName={SEARCH_FORM_CLASS} />
       ) : (
         <ProductSearchBox
           placeholder="Search fashion, brands & categories"
-          formClassName="hidden min-w-0 max-w-md flex-1 items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-muted-foreground transition-all duration-300 lg:flex"
+          formClassName={SEARCH_FORM_CLASS}
         />
       )}
 
@@ -109,17 +111,9 @@ export const SiteHeader = () => {
 
       <div className="ml-auto flex shrink-0 items-center gap-1">
         <Link
-          href={searchPathFor(pathname)}
-          aria-label="Search"
-          className="flex size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted lg:hidden"
-        >
-          <Search className="size-[18px]" />
-        </Link>
-
-        <Link
           href="/wishlist"
           aria-label="Wishlist"
-          className="flex size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted"
+          className="hidden size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted lg:flex"
         >
           <Heart className="size-[18px]" />
         </Link>
@@ -127,7 +121,7 @@ export const SiteHeader = () => {
         <Link
           href="/cart"
           aria-label="Cart"
-          className="relative flex size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted"
+          className="relative hidden size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted lg:flex"
         >
           <ShoppingBag className="size-[18px]" />
           {cartCount > 0 && (
@@ -138,7 +132,7 @@ export const SiteHeader = () => {
         </Link>
 
         <SiteNotificationBell />
-        <ThemeToggle />
+        <ThemeToggle className="hidden lg:inline-flex" />
         <AccountMenu />
         <MobileNav />
       </div>

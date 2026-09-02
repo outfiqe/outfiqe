@@ -2,6 +2,8 @@ import { Badge, Button } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { ApiClientError } from "@/lib/apiClient";
+
 import { brandApplicationsApi } from "./api";
 import { useInfiniteBrandApplications } from "./hooks/useInfiniteBrandApplications";
 import type { BrandApplicationStatusValue } from "./schemas";
@@ -19,6 +21,9 @@ const STATUS_LABEL: Record<BrandApplicationStatusValue, string> = {
   APPROVED: "Approved",
   REJECTED: "Rejected",
 };
+
+const reviewFailureMessage = (mutationError: unknown, fallback: string): string =>
+  mutationError instanceof ApiClientError ? mutationError.message : fallback;
 
 export const BrandApplicationsPage = () => {
   const [tab, setTab] = useState<BrandApplicationStatusValue>("PENDING");
@@ -48,6 +53,16 @@ export const BrandApplicationsPage = () => {
   const handleReject = (id: string) => {
     const reason = window.prompt("Reason for rejecting (optional):") ?? undefined;
     reject.mutate({ id, reason: reason || undefined });
+  };
+
+  const actionErrorFor = (applicationId: string): string | null => {
+    if (approve.isError && approve.variables === applicationId) {
+      return reviewFailureMessage(approve.error, "Couldn't approve this application. Try again.");
+    }
+    if (reject.isError && reject.variables?.id === applicationId) {
+      return reviewFailureMessage(reject.error, "Couldn't reject this application. Try again.");
+    }
+    return null;
   };
 
   return (
@@ -82,6 +97,7 @@ export const BrandApplicationsPage = () => {
             application;
 
           const summaryLine = [contactName, makesOwnPieces].filter(Boolean).join(" · ");
+          const actionError = actionErrorFor(id);
 
           return (
             <div key={id} className="rounded-xl border border-border bg-card p-4">
@@ -119,6 +135,8 @@ export const BrandApplicationsPage = () => {
                   </div>
                 )}
               </div>
+
+              {actionError && <p className="mt-3 text-sm text-destructive">{actionError}</p>}
             </div>
           );
         })}

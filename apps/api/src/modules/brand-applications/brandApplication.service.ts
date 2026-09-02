@@ -11,6 +11,7 @@ import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { userRepository } from "#modules/users/user.repository.js";
 
 import { brandApplicationRepository } from "./brandApplication.repository.js";
 import type { ListBrandApplicationsQuery } from "./brandApplication.schemas.js";
@@ -80,6 +81,16 @@ export const brandApplicationService = {
 
   async approve(applicationId: string, adminUserId: string): Promise<void> {
     const application = await requirePendingApplication(applicationId);
+    const { brandName, email } = application;
+
+    const existingAccountWithEmail = await userRepository.findByEmail(email);
+    if (existingAccountWithEmail) {
+      throw new AppError(
+        "EMAIL_ALREADY_REGISTERED",
+        "This email already belongs to an Outfiqe account, so brand setup can't be completed. Reject this application and ask the applicant to reapply with an email that isn't registered.",
+        CONFLICT_STATUS,
+      );
+    }
 
     const inviteToken = generateOpaqueToken();
     await brandApplicationRepository.approve(application, {
@@ -87,8 +98,6 @@ export const brandApplicationService = {
       tokenHash: hashToken(inviteToken),
       expiresAt: new Date(Date.now() + INVITE_TTL_MS),
     });
-
-    const { brandName, email } = application;
 
     const inviteUrl = `${env.FRONTEND_URL}/register/brand?token=${inviteToken}`;
     const { subject, html } = brandApprovedTemplate(brandName, inviteUrl);

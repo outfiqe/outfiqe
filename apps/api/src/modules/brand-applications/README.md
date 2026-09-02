@@ -44,6 +44,13 @@ half-provisioned.
 - `approve` rejects (409 `ALREADY_REVIEWED`) if the application isn't `PENDING` — this guards
   against a double-click or two admins approving the same application concurrently; only the first
   request wins.
+- `approve` also rejects (409 `EMAIL_ALREADY_REGISTERED`) when the application email already
+  belongs to a `User`. The brand-invite flow (`auth.registerBrand`) only ever _creates_ a new
+  `BRAND_OWNER` account — there is no path to upgrade an existing shopper/creator/staff account —
+  so an approval on a taken email provisions a `Brand` + `BrandInvite` that the applicant can
+  never redeem. Catching it here keeps that dead brand out of the database; the admin rejects the
+  application instead (the reject email carries the reason). The applicant must reapply with an
+  address that isn't registered.
 - The brand invite token is generated as an opaque token and only its hash is stored
   (`generateOpaqueToken`/`hashToken` from `#lib/opaque-token.utils.js`), the same pattern used for
   other invite/reset flows in this codebase — the raw token only ever exists in the outbound email.
