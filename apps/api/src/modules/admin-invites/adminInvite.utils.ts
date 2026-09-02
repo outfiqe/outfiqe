@@ -1,6 +1,6 @@
 import type { AdminInviteRecord, AdminInviteSummary } from "./adminInvite.types.js";
 
-export const toSummary = (invite: AdminInviteRecord): AdminInviteSummary => {
+export const toSummary = (invite: AdminInviteRecord, isCoFounder: boolean): AdminInviteSummary => {
   const status = invite.acceptedAt
     ? "ACCEPTED"
     : invite.expiresAt.getTime() <= Date.now()
@@ -12,6 +12,7 @@ export const toSummary = (invite: AdminInviteRecord): AdminInviteSummary => {
     email: invite.email,
     name: invite.name,
     status,
+    isCoFounder,
     createdAt: invite.createdAt,
     expiresAt: invite.expiresAt,
   };

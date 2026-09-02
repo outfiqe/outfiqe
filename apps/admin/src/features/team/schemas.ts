@@ -9,6 +9,7 @@ export const adminInviteSummarySchema = z.object({
   email: z.string(),
   name: z.string(),
   status: adminInviteStatusSchema,
+  isCoFounder: z.boolean(),
   createdAt: z.string(),
   expiresAt: z.string(),
 });
