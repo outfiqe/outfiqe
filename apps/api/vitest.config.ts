@@ -102,6 +102,7 @@ export default defineConfig({
         "src/modules/platform-impersonation/**/*.ts",
         "src/modules/platform-nav-access/**/*.ts",
         "src/modules/admin-invites/adminInvite.utils.ts",
+        "src/shared/utils/email.utils.ts",
       ],
       thresholds: {
         lines: 80,
