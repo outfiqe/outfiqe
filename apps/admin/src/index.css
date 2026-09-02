@@ -45,4 +45,11 @@
     @apply bg-background text-foreground font-body antialiased;
     font-size: 15px;
   }
+  button:not(:disabled),
+  summary,
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"]:not([aria-disabled="true"]),
+  [role="menuitem"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
 }
