@@ -80,8 +80,8 @@ export const PostModal = ({ open, onClose }: PostModalProps) => {
     let urls: string[];
     try {
       urls = await resolvePendingPhotoUrls(pending.photos, DEFAULT_IMAGE_MIME_TYPE);
-    } catch {
-      setPhotoError("Couldn't process those photos. Try again.");
+    } catch (photoUploadError) {
+      setPhotoError(getErrorMessage(photoUploadError));
       setIsProcessingPhotos(false);
       return;
     }

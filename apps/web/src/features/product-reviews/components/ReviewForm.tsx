@@ -126,6 +126,7 @@ export const ReviewForm = ({
             onChange={setImageUrls}
             onUpload={(files) => uploadsApi.upload(files)}
             maxFiles={MAX_REVIEW_IMAGES}
+            describeUploadError={getErrorMessage}
           />
         </div>
 

@@ -419,6 +419,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
                 onChange={setDraftAvatarUrl}
                 onUpload={uploadsApi.upload}
                 fallback={avatarFallback}
+                describeUploadError={getErrorMessage}
               />
             </div>
             <div>

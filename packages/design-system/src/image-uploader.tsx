@@ -11,6 +11,7 @@ type ImageUploaderProps = {
   onUpload: (files: File[]) => Promise<string[]>;
   maxFiles?: number;
   className?: string;
+  describeUploadError?: (error: unknown) => string;
 };
 
 const DEFAULT_MAX_FILES = 6;
@@ -21,6 +22,7 @@ export const ImageUploader = ({
   onUpload,
   maxFiles = DEFAULT_MAX_FILES,
   className,
+  describeUploadError,
 }: ImageUploaderProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -37,8 +39,10 @@ export const ImageUploader = ({
     try {
       const urls = await onUpload(files);
       if (urls.length > 0) onChange([...value, ...urls]);
-    } catch {
-      setError("Upload failed. Try again.");
+    } catch (uploadError) {
+      setError(
+        describeUploadError ? describeUploadError(uploadError) : "Upload failed. Try again.",
+      );
     } finally {
       setIsUploading(false);
       if (inputRef.current) inputRef.current.value = "";

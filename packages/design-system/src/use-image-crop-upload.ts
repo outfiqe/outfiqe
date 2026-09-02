@@ -11,6 +11,7 @@ type UseImageCropUploadOptions<T> = {
   onChange: (next: T) => void;
   onUpload: (files: File[]) => Promise<string[]>;
   applyUrl: ApplyUrl<T>;
+  describeUploadError?: (error: unknown) => string;
 };
 
 export const useImageCropUpload = <T>({
@@ -18,6 +19,7 @@ export const useImageCropUpload = <T>({
   onChange,
   onUpload,
   applyUrl,
+  describeUploadError,
 }: UseImageCropUploadOptions<T>) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -30,8 +32,10 @@ export const useImageCropUpload = <T>({
     try {
       const [url] = await onUpload([file]);
       if (url) onChange(applyUrl(url, value));
-    } catch {
-      setError("Upload failed. Try again.");
+    } catch (uploadError) {
+      setError(
+        describeUploadError ? describeUploadError(uploadError) : "Upload failed. Try again.",
+      );
     } finally {
       setIsUploading(false);
     }

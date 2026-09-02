@@ -15,6 +15,7 @@ type AvatarUploaderProps = {
   onUpload: (files: File[]) => Promise<string[]>;
   fallback: ReactNode;
   className?: string;
+  describeUploadError?: (error: unknown) => string;
 };
 
 export const AvatarUploader = ({
@@ -23,6 +24,7 @@ export const AvatarUploader = ({
   onUpload,
   fallback,
   className,
+  describeUploadError,
 }: AvatarUploaderProps) => {
   const {
     inputRef,
@@ -32,7 +34,13 @@ export const AvatarUploader = ({
     handleFileSelect,
     closeCropModal,
     handleCropConfirm,
-  } = useImageCropUpload({ value, onChange, onUpload, applyUrl: (url) => url });
+  } = useImageCropUpload({
+    value,
+    onChange,
+    onUpload,
+    applyUrl: (url) => url,
+    describeUploadError,
+  });
 
   return (
     <div className={cn("space-y-2", className)}>

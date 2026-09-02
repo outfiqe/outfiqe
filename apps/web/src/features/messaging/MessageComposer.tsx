@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, HiddenFileInput } from "@outfiqe/design-system";
+import { Button, HiddenFileInput, toast } from "@outfiqe/design-system";
 import { useSendMessage } from "@outfiqe/hooks";
 import type { NewMessageAttachmentInput } from "@outfiqe/types";
 import { ImagePlus, Send, X } from "lucide-react";
@@ -8,6 +8,7 @@ import { useRef, useState } from "react";
 
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { conversationsApi } from "@/shared/lib/conversationsApi";
+import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { EmojiPicker } from "./EmojiPicker";
 
@@ -46,6 +47,8 @@ export const MessageComposer = ({ conversationId }: MessageComposerProps) => {
         previewUrl: url,
       }));
       setPendingAttachments((current) => [...current, ...uploaded].slice(0, MAX_ATTACHMENTS));
+    } catch (uploadError) {
+      toast.error(getErrorMessage(uploadError));
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";

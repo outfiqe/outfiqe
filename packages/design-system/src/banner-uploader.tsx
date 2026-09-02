@@ -15,9 +15,16 @@ type BannerUploaderProps = {
   onChange: (url: string | null) => void;
   onUpload: (files: File[]) => Promise<string[]>;
   className?: string;
+  describeUploadError?: (error: unknown) => string;
 };
 
-export const BannerUploader = ({ value, onChange, onUpload, className }: BannerUploaderProps) => {
+export const BannerUploader = ({
+  value,
+  onChange,
+  onUpload,
+  className,
+  describeUploadError,
+}: BannerUploaderProps) => {
   const {
     inputRef,
     isUploading,
@@ -26,7 +33,13 @@ export const BannerUploader = ({ value, onChange, onUpload, className }: BannerU
     handleFileSelect,
     closeCropModal,
     handleCropConfirm,
-  } = useImageCropUpload({ value, onChange, onUpload, applyUrl: (url) => url });
+  } = useImageCropUpload({
+    value,
+    onChange,
+    onUpload,
+    applyUrl: (url) => url,
+    describeUploadError,
+  });
 
   return (
     <div className={cn("space-y-2", className)}>

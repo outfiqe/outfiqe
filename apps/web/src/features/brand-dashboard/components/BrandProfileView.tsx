@@ -169,6 +169,7 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
               value={draft.bannerUrl}
               onChange={(bannerUrl) => setDraft({ ...draft, bannerUrl })}
               onUpload={uploadsApi.upload}
+              describeUploadError={getErrorMessage}
             />
           </div>
           <div>
@@ -178,6 +179,7 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
               onChange={(avatarUrl) => setDraft({ ...draft, avatarUrl })}
               onUpload={uploadsApi.upload}
               fallback={initialsBadge}
+              describeUploadError={getErrorMessage}
             />
           </div>
           <div>
