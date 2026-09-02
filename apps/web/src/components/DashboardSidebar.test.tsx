@@ -124,4 +124,45 @@ describe("DashboardSidebar", () => {
 
     expect(screen.queryByRole("link", { name: "CRM" })).not.toBeInTheDocument();
   });
+
+  it("hides Share, Earnings and Withdraw from a shopper who is not an approved creator", () => {
+    mockAuth({
+      state: {
+        status: AuthStatus.AUTHENTICATED,
+        user: buildUser({ role: UserRole.CUSTOMER, isCreator: false }),
+        accessToken: "token",
+      },
+      isBrandOwner: false,
+      isCreator: false,
+    });
+
+    render(<DashboardSidebar />);
+
+    expect(screen.getByRole("link", { name: "Profile" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Share" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Earnings" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Withdraw" })).not.toBeInTheDocument();
+  });
+
+  it("shows Share, Earnings and Withdraw to an approved creator", () => {
+    mockAuth({
+      state: {
+        status: AuthStatus.AUTHENTICATED,
+        user: buildUser({
+          role: UserRole.CUSTOMER,
+          isCreator: true,
+          creatorStatus: CreatorStatus.APPROVED,
+        }),
+        accessToken: "token",
+      },
+      isBrandOwner: false,
+      isCreator: true,
+    });
+
+    render(<DashboardSidebar />);
+
+    expect(screen.getByRole("link", { name: "Share" })).toHaveAttribute("href", "/share");
+    expect(screen.getByRole("link", { name: "Earnings" })).toHaveAttribute("href", "/earnings");
+    expect(screen.getByRole("link", { name: "Withdraw" })).toHaveAttribute("href", "/withdraw");
+  });
 });

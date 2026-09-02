@@ -58,6 +58,8 @@ const CREATOR_NAV: SidebarNavItem[] = [
   SECURITY_NAV_ITEM,
 ];
 
+const APPROVED_CREATOR_ONLY_NAV_IDS = new Set(["share", "earnings", "withdraw"]);
+
 const BRAND_NAV: SidebarNavItem[] = [
   { id: "profile", href: "/profile", label: "Profile", icon: Store },
   { id: "products", href: "/products", label: "Products", icon: Package },
@@ -75,7 +77,7 @@ const CRM_NAV_ITEM: SidebarNavItem = {
 };
 
 export const DashboardSidebar = () => {
-  const { state, hasCrmAccess } = useAuth();
+  const { state, hasCrmAccess, isCreator } = useAuth();
   const logout = useLogout();
   const navigation = useNextSidebarNavigation();
   const isOnTenantHost = useTenantHost();
@@ -91,7 +93,10 @@ export const DashboardSidebar = () => {
   const { role, avatarUrl, id, name } = user;
 
   const isBrand = role === UserRole.BRAND_OWNER;
-  const baseNavItems = isBrand ? BRAND_NAV : CREATOR_NAV;
+  const creatorNavItems = isCreator
+    ? CREATOR_NAV
+    : CREATOR_NAV.filter((item) => !APPROVED_CREATOR_ONLY_NAV_IDS.has(item.id));
+  const baseNavItems = isBrand ? BRAND_NAV : creatorNavItems;
   const showCrmLink = hasCrmAccess && isOnTenantHost;
   const navItems = showCrmLink ? [...baseNavItems, CRM_NAV_ITEM] : baseNavItems;
   const sections: SidebarNavSection[] = [{ id: isBrand ? "brand" : "creator", items: navItems }];
@@ -120,7 +125,7 @@ export const DashboardSidebar = () => {
             {name}
           </p>
           <p className="truncate text-[11px] text-muted-foreground">
-            {isBrand ? "Brand account" : "Creator account"}
+            {isBrand ? "Brand account" : isCreator ? "Creator account" : "Shopper account"}
           </p>
         </div>
       )}
