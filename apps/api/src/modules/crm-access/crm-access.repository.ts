@@ -119,6 +119,10 @@ export const crmAccessRepository = {
     return prisma.organization.findUnique({ where: { subdomain } });
   },
 
+  async findOrganizationById(organizationId: string): Promise<OrganizationRecord | null> {
+    return prisma.organization.findUnique({ where: { id: organizationId } });
+  },
+
   async createOrganization(
     input: CreateOrganizationParams,
   ): Promise<{ organization: OrganizationRecord; membership: MembershipRecord }> {
@@ -359,27 +363,35 @@ export const crmAccessRepository = {
     });
   },
 
+  async acceptInviteWithClient(
+    invite: OrganizationInviteRecord,
+    acceptingUserId: string,
+    client: DbClient = prisma,
+  ): Promise<MembershipRecord> {
+    const membership = await client.membership.create({
+      data: {
+        userId: acceptingUserId,
+        organizationId: invite.organizationId,
+        roleId: invite.roleId,
+        status: "ACTIVE",
+      },
+    });
+
+    await client.organizationInvite.update({
+      where: { id: invite.id },
+      data: { acceptedAt: new Date() },
+    });
+
+    return membership;
+  },
+
   async acceptInvite(
     invite: OrganizationInviteRecord,
     acceptingUserId: string,
   ): Promise<MembershipRecord> {
-    return prisma.$transaction(async (tx) => {
-      const membership = await tx.membership.create({
-        data: {
-          userId: acceptingUserId,
-          organizationId: invite.organizationId,
-          roleId: invite.roleId,
-          status: "ACTIVE",
-        },
-      });
-
-      await tx.organizationInvite.update({
-        where: { id: invite.id },
-        data: { acceptedAt: new Date() },
-      });
-
-      return membership;
-    });
+    return prisma.$transaction((tx) =>
+      crmAccessRepository.acceptInviteWithClient(invite, acceptingUserId, tx),
+    );
   },
 
   async createOwnershipTransferRequest(
