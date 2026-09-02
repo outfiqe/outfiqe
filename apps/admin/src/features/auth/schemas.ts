@@ -31,3 +31,11 @@ export const refreshResponseSchema = z.object({ accessToken: z.string() });
 
 export const adminInviteInfoSchema = z.object({ email: z.email(), name: z.string() });
 export type AdminInviteInfo = z.infer<typeof adminInviteInfoSchema>;
+
+export const crmInviteInfoSchema = z.object({
+  email: z.email(),
+  organizationName: z.string(),
+  roleName: z.string(),
+  requiresRegistration: z.boolean(),
+});
+export type CrmInviteInfo = z.infer<typeof crmInviteInfoSchema>;

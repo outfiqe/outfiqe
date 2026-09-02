@@ -45,9 +45,12 @@ import type {
   BrandAuthSession,
   BrandAuthUser,
   BrandInviteInfo,
+  CrmInviteAuthSession,
+  CrmInviteInfo,
   IssuedTokens,
   RegisterAdminInput,
   RegisterBrandInput,
+  RegisterCrmInviteInput,
   RegisterInput,
 } from "./auth.types.js";
 import { toAuthUser } from "./auth.utils.js";
@@ -826,6 +829,76 @@ export const authService = {
         hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(user.id),
         hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
       },
+    };
+  },
+
+  async getCrmInvite(inviteToken: string): Promise<CrmInviteInfo> {
+    return crmAccessService.getInviteRegistrationInfo(inviteToken);
+  },
+
+  async registerFromCrmInvite(input: RegisterCrmInviteInput): Promise<CrmInviteAuthSession> {
+    const { inviteToken, name, phone, password } = input;
+
+    const invite = await crmAccessService.findAcceptableInvite(inviteToken);
+
+    const existingByEmail = await userRepository.findByEmail(invite.email);
+    if (existingByEmail) {
+      throw new AppError(
+        "USER_EXISTS",
+        "An account with this email already exists. Sign in and open the invite link to accept it.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const existingByPhone = await userRepository.findByPhone(phone);
+    if (existingByPhone) {
+      throw new AppError(
+        "PHONE_EXISTS",
+        "An account with this phone number already exists.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const passwordHash = await hashPassword(password);
+    const { user, membership } = await prisma.$transaction(async (tx) => {
+      const createdUser = await userRepository.create(
+        {
+          name,
+          email: invite.email,
+          phone,
+          password,
+          passwordHash,
+          role: UserRole.ADMIN,
+          emailVerified: true,
+        },
+        tx,
+      );
+
+      const createdMembership = await crmAccessService.attachMembershipForInvite(
+        invite,
+        createdUser.id,
+        tx,
+      );
+
+      return { user: createdUser, membership: createdMembership };
+    });
+
+    await eventBus.publish(DomainEvents.ADMIN_REGISTERED, { userId: user.id, email: user.email });
+
+    const tokens = await issueTokens(user);
+
+    logger.info(
+      `CRM invitee registered: ${user.id} into organization ${membership.organizationId}`,
+    );
+
+    return {
+      ...tokens,
+      user: {
+        ...toAuthUser(user),
+        hasPlatformAccess: await crmAccessService.resolveHasPlatformAccess(user.id),
+        hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
+      },
+      crmMembership: { id: membership.id, organizationId: membership.organizationId },
     };
   },
 };

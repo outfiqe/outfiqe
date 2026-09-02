@@ -3,7 +3,8 @@
 ## Purpose
 
 The visible screens for Outfiqe's internal CRM. Lets a staff member with CRM access view the
-organization, see and manage CRM members, invite an existing staff account, accept a CRM invite,
+organization, see and manage CRM members, invite anyone by email (existing staff accept in-session;
+brand-new people register from the invite email), accept a CRM invite,
 manage the organization's paid subscription, browse the tenant brand's Partners (creators) and
 Customers (shoppers), run a deal pipeline, log activities/tasks, work support tickets, and build
 custom roles from the permission catalog, search across every CRM entity, read pipeline and
@@ -42,6 +43,14 @@ support reports, and review the organization's audit log — against the `/api/c
   `features/auth/RegisterInvitePage.tsx`'s loading/invalid/valid state-machine shape. Once the
   accept call succeeds, it also re-fetches `/api/auth/me` and pushes the result into
   `AuthContext` via `updateUser` — see "Non-obvious rationale" for why.
+- `CrmInviteRegisterPage.tsx` — the public counterpart for an invitee who has **no** Outfiqe
+  account. `inviteMember` points the email at `/crm/invites/register` instead of
+  `/crm/invites/accept` in that case. It reads `authApi.getCrmInvite(token)` for the org/role,
+  collects name + phone + password (mirroring `RegisterInvitePage`), then
+  `authApi.registerFromCrmInvite(...)` — which creates the account + tenant membership and issues a
+  session server-side. On success it `setAccessToken`s and does a hard `window.location.assign("/crm")`
+  so `AuthProvider` re-initialises signed-in. Its route (`routes/crm.invites.register.tsx`) sits
+  **outside** the `_authenticated` layout — a brand-new user has no session yet.
 - `billingApi.ts` / `billingSchemas.ts` — `crmBillingApi` (`getOverview`/`listInvoices`/`checkout`/
   `payInvoice`/`verifyInvoice`/`cancel`) + Zod mirrors of `/api/crm/billing/*` responses.
 - `BillingPage.tsx` / `BillingSection.tsx` — plan + seat + status card, invoice history table,

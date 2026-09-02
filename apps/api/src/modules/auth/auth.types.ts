@@ -54,6 +54,20 @@ export type RegisterAdminInput = {
   password: string;
 };
 
+export type CrmInviteInfo = {
+  email: string;
+  organizationName: string;
+  roleName: string;
+  requiresRegistration: boolean;
+};
+
+export type RegisterCrmInviteInput = {
+  inviteToken: string;
+  name: string;
+  phone: string;
+  password: string;
+};
+
 export type IssuedTokens = {
   accessToken: string;
   refreshToken: string;
@@ -89,3 +103,6 @@ export type BrandAuthUser = {
 
 export type AuthSession = IssuedTokens & { user: AuthUser };
 export type BrandAuthSession = IssuedTokens & { user: BrandAuthUser };
+export type CrmInviteAuthSession = AuthSession & {
+  crmMembership: { id: string; organizationId: string };
+};

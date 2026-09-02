@@ -8,6 +8,8 @@ import {
   adminInviteInfoSchema,
   type AdminUser,
   adminUserSchema,
+  type CrmInviteInfo,
+  crmInviteInfoSchema,
   loginResponseSchema,
   type UpdateProfileInput,
 } from "./schemas";
@@ -48,6 +50,24 @@ export const authApi = {
     confirmPassword: string;
   }): Promise<LoginResult> {
     const res = await apiClient.post<LoginResult>("/auth/register/admin", input);
+    return loginResponseSchema.parse(res.data);
+  },
+
+  async getCrmInvite(token: string): Promise<CrmInviteInfo> {
+    const res = await apiClient.get<CrmInviteInfo>(
+      `/auth/invite/crm?token=${encodeURIComponent(token)}`,
+    );
+    return crmInviteInfoSchema.parse(res.data);
+  },
+
+  async registerFromCrmInvite(input: {
+    inviteToken: string;
+    name: string;
+    phone: string;
+    password: string;
+    confirmPassword: string;
+  }): Promise<LoginResult> {
+    const res = await apiClient.post<LoginResult>("/auth/register/crm-invite", input);
     return loginResponseSchema.parse(res.data);
   },
 };

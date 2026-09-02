@@ -28,9 +28,11 @@ import {
 import { crmAccessRepository } from "./crm-access.repository.js";
 import type {
   CreateOrganizationInput,
+  CrmInviteRegistrationInfo,
   MembershipRecord,
   MembershipSummary,
   OrganizationCreationSuggestion,
+  OrganizationInviteRecord,
   OrganizationInviteSummary,
   OrganizationListItem,
   OrganizationRecord,
@@ -371,20 +373,22 @@ export const crmAccessService = {
     }
 
     const invitedUser = await userRepository.findByEmail(email);
-    if (!invitedUser || invitedUser.role !== UserRole.ADMIN) {
+    if (invitedUser && invitedUser.role !== UserRole.ADMIN) {
       throw new AppError(
-        "STAFF_ACCOUNT_NOT_FOUND",
-        "This email doesn't match an existing Outfiqe staff account.",
-        NOT_FOUND_STATUS,
+        "EMAIL_IN_USE",
+        "That email already belongs to a non-staff Outfiqe account and can't be added as staff.",
+        CONFLICT_STATUS,
       );
     }
 
-    const existingMembership = await crmAccessRepository.findMembershipByUserAndOrg(
-      invitedUser.id,
-      organization.id,
-    );
-    if (existingMembership) {
-      throw new AppError("MEMBER_EXISTS", "This person already has CRM access.", CONFLICT_STATUS);
+    if (invitedUser) {
+      const existingMembership = await crmAccessRepository.findMembershipByUserAndOrg(
+        invitedUser.id,
+        organization.id,
+      );
+      if (existingMembership) {
+        throw new AppError("MEMBER_EXISTS", "This person already has CRM access.", CONFLICT_STATUS);
+      }
     }
 
     const pendingInvite = await crmAccessRepository.findPendingInviteByEmail(
@@ -409,9 +413,13 @@ export const crmAccessService = {
       invitedById,
     });
 
+    const inviteeNeedsAccount = !invitedUser;
+    const invitePath = inviteeNeedsAccount
+      ? `/crm/invites/register?token=${rawToken}`
+      : `/crm/invites/accept?token=${rawToken}`;
     const inviteUrl = buildOrganizationAdminUrl(
       organization,
-      `/crm/invites/accept?token=${rawToken}`,
+      invitePath,
       env.ADMIN_URL,
       env.TENANT_BASE_DOMAIN,
     );
@@ -431,7 +439,7 @@ export const crmAccessService = {
     await crmAccessRepository.revokeInvite(organizationId, inviteId);
   },
 
-  async acceptInvite(rawToken: string, acceptingUserId: string): Promise<MembershipRecord> {
+  async findAcceptableInvite(rawToken: string): Promise<OrganizationInviteRecord> {
     const invite = await crmAccessRepository.findInviteByTokenHash(hashToken(rawToken));
     if (!invite) {
       throw new AppError("INVITE_INVALID", "This invite link is invalid.", NOT_FOUND_STATUS);
@@ -443,6 +451,34 @@ export const crmAccessService = {
         CONFLICT_STATUS,
       );
     }
+    return invite;
+  },
+
+  async getInviteRegistrationInfo(rawToken: string): Promise<CrmInviteRegistrationInfo> {
+    const invite = await crmAccessService.findAcceptableInvite(rawToken);
+    const [organization, role, existingUser] = await Promise.all([
+      crmAccessRepository.findOrganizationById(invite.organizationId),
+      crmAccessRepository.findRoleById(invite.organizationId, invite.roleId),
+      userRepository.findByEmail(invite.email),
+    ]);
+    return {
+      email: invite.email,
+      organizationName: organization?.name ?? "",
+      roleName: role?.name ?? "",
+      requiresRegistration: !existingUser,
+    };
+  },
+
+  async attachMembershipForInvite(
+    invite: OrganizationInviteRecord,
+    acceptingUserId: string,
+    client: DbClient,
+  ): Promise<MembershipRecord> {
+    return crmAccessRepository.acceptInviteWithClient(invite, acceptingUserId, client);
+  },
+
+  async acceptInvite(rawToken: string, acceptingUserId: string): Promise<MembershipRecord> {
+    const invite = await crmAccessService.findAcceptableInvite(rawToken);
 
     const acceptingUser = await userRepository.findById(acceptingUserId);
     if (!acceptingUser || acceptingUser.email.toLowerCase() !== invite.email.toLowerCase()) {

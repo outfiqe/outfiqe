@@ -77,10 +77,13 @@ idempotent — safe to re-run.
 
 ## Funnel
 
-**User-facing:** an existing Outfiqe staff member with `members:invite` sends a CRM invite to
-another staff member's email, picking a role. That person accepts the invite from their own
-already-logged-in admin session — accepting is what actually grants them CRM access; nothing about
-their `apps/admin` login changes.
+**User-facing:** a staff member with `members:invite` sends a CRM invite to an email, picking a
+role. If that email already has an Outfiqe staff account, they accept the invite from their own
+already-logged-in admin session (`/crm/invites/accept`) — accepting is what grants them CRM access,
+and nothing about their `apps/admin` login changes. If the email has no Outfiqe account, the invite
+email instead links to a public `/crm/invites/register` page where they set a name and password;
+submitting it creates the account and the tenant `Membership` together and signs them in — see the
+"Invitees without an Outfiqe account" bullet under Non-obvious rationale.
 
 **Technical:** `crm-access.routes.ts` → `resolveTenant` (resolves `Organization` by subdomain,
 falls back to the single seeded org) → `requireAuth` (existing JWT session) → `requirePermission`
@@ -197,10 +200,28 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   Membership atomically in the same transaction as the user create and invite-accept, via
   `crmAccessService.grantPlatformStaffMembership`, so every future legitimate hire is explicitly
   provisioned instead of implicitly trusted.
-- **Inviting requires an existing `UserRole.ADMIN` account** (`userRepository.findByEmail`, then a
-  role check) — there is no CRM signup. `acceptInvite` additionally checks the accepting account's
-  email matches the invite's email, so a valid token can't be redeemed by a different logged-in
-  staff member than the one it was addressed to.
+- **Inviting an existing `UserRole.ADMIN` account** takes the logged-in accept path: `acceptInvite`
+  checks the accepting account's email matches the invite's email, so a valid token can't be
+  redeemed by a different logged-in staff member than the one it was addressed to. An email that
+  already belongs to a **non-staff** account (a storefront shopper/creator) is rejected outright
+  (`409 EMAIL_IN_USE`) rather than silently privilege-escalated — linking a consumer login to a
+  tenant is a deliberate future step, not an emailed-link side effect.
+- **Invitees without an Outfiqe account register on accept, and get a tenant membership only.**
+  `inviteMember` no longer requires the target to pre-exist — when `userRepository.findByEmail`
+  finds nothing it still creates the `OrganizationInvite` and points the email at
+  `/crm/invites/register` instead of `/crm/invites/accept`. That public page calls
+  `GET /api/auth/invite/crm` (→ `crmAccessService.getInviteRegistrationInfo`) to show the org/role,
+  then `POST /api/auth/register/crm-invite` (→ `auth.service.registerFromCrmInvite`) creates the
+  `User` as `UserRole.ADMIN`, `emailVerified: true` (the invite email is proof of control), and the
+  tenant `Membership` in one transaction via `crmAccessService.attachMembershipForInvite`, then
+  issues the normal session. New tenant staff are `UserRole.ADMIN` with a **tenant-only** membership
+  and **no platform-org membership**, so `resolveHasPlatformAccess` stays `false` and they never see
+  Outfiqe's own admin — the same "Meridian Apparel employee" shape the platform-access bullet above
+  describes. This is deliberately the existing identity model, not a new `UserRole` value; a
+  dedicated tenant-staff role is a separate, larger schema decision. The endpoint is IP
+  rate-limited (`registerIpRateLimit`) and gated by the single-use opaque invite token, matching
+  `register/admin` and `register/brand`; a token whose email has since been claimed returns
+  `409 USER_EXISTS`.
 - **Custom-role builder: what a tenant can and can't do to its own roles.** `POST/PATCH/DELETE
 /api/crm/roles` (gated `roles:manage`) let a tenant compose roles from any subset of
   `SELECTABLE_ROLE_PERMISSION_KEYS`. Four rules are enforced server-side, not just in the admin UI:
