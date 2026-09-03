@@ -18,6 +18,7 @@ allowBuilds:
   "@sentry/cli": false
   msgpackr-extract: true
   sharp: true
+  "@swc/core": true
 
 # pnpm 11 also quarantines packages published within the last ~24h, so a
 # compromised fresh release can't slip straight into your install.

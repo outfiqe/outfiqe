@@ -31,3 +31,9 @@ apps/web/CLAUDE.md
 apps/admin/src/routeTree.gen.ts
 
 .vercel
+
+# Playwright browser-test output
+apps/web/test-results
+apps/web/playwright-report
+apps/web/blob-report
+apps/web/.playwright
