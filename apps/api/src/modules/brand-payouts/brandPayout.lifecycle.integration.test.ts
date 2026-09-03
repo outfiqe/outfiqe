@@ -10,9 +10,9 @@ import {
   PaymentMethod,
   PaymentStatus,
   ProductStatus,
-  ProductType,
   UserRole,
 } from "#generated/prisma/enums.js";
+import { ensureProductType } from "#test/integration/productFixtures.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 import { runBrandPayoutLifecycleSweep } from "./brandPayout.lifecycle.js";
@@ -63,7 +63,7 @@ const createBrandPayoutFixture = async (order: {
       brandId: brand.id,
       name: "Lifecycle Item",
       price: 1000,
-      type: ProductType.TOPS,
+      productTypeId: await ensureProductType(),
       status: ProductStatus.APPROVED,
     },
   });

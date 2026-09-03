@@ -1,11 +1,12 @@
 import { prisma } from "#db/prisma.js";
-import type { ProductType } from "#generated/prisma/enums.js";
 
 import type { CreateSizeOptionInput, SizeOptionRecord } from "./size-option.types.js";
 
+const withProductTypeSlug = { productType: { select: { slug: true } } };
+
 export const sizeOptionRepository = {
   async create(input: CreateSizeOptionInput): Promise<SizeOptionRecord> {
-    return prisma.sizeOption.create({ data: input });
+    return prisma.sizeOption.create({ data: input, include: withProductTypeSlug });
   },
 
   async delete(id: string): Promise<boolean> {
@@ -15,18 +16,20 @@ export const sizeOptionRepository = {
 
   async listAll(): Promise<SizeOptionRecord[]> {
     return prisma.sizeOption.findMany({
-      orderBy: [{ type: "asc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
+      include: withProductTypeSlug,
+      orderBy: [{ productType: { sortOrder: "asc" } }, { sortOrder: "asc" }, { createdAt: "asc" }],
     });
   },
 
-  async listByType(type: ProductType): Promise<SizeOptionRecord[]> {
+  async listByProductTypeId(productTypeId: string): Promise<SizeOptionRecord[]> {
     return prisma.sizeOption.findMany({
-      where: { type },
+      where: { productTypeId },
+      include: withProductTypeSlug,
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
   },
 
   async findManyByIds(ids: string[]): Promise<SizeOptionRecord[]> {
-    return prisma.sizeOption.findMany({ where: { id: { in: ids } } });
+    return prisma.sizeOption.findMany({ where: { id: { in: ids } }, include: withProductTypeSlug });
   },
 };

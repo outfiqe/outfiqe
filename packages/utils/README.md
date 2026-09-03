@@ -20,7 +20,9 @@ to any one app.
   cross-links, and only honour a cross-app `?redirect=` after login, when the browser is actually on
   a tenant subdomain rather than the apex domain.
 - `product-sort/` — `PRODUCT_SORT_VALUES`/`PRODUCT_SORT`/`ProductSort`, the shop's sort-order enum.
-- `product-type/` — `PRODUCT_TYPE_SLUGS`/`ProductTypeSlug`, the fixed product-category slug list.
+- `product-type/` — `DEFAULT_PRODUCT_TYPES`, the seed/migration list of garment types. Garment
+  types are now an admin-managed table (`apps/api/src/modules/product-types`); this constant only
+  bootstraps the six originals.
 - `notifications/` — `formatActorList`, the grouped-notification actor-list formatter (`"Jane"` ->
   `"Jane and John"` -> `"Jane, John and 3 others"`), used by `@outfiqe/components`'
   `resolveNotificationMessage.ts`.

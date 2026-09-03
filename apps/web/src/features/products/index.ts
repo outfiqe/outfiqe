@@ -4,4 +4,4 @@ export type { ProductPage, PublicProduct } from "./api/productSchemas";
 export type { PublicProductType } from "./api/productTypesApi";
 export { toExploreProduct } from "./api/toExploreProduct";
 export { useInfiniteProducts } from "./hooks/useInfiniteProducts";
-export { useProductTypes } from "./hooks/useProductTypes";
+export { useAssignableProductTypes, useProductTypes } from "./hooks/useProductTypes";

@@ -9,6 +9,7 @@ import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { crmRelationshipsService } from "#modules/crm-relationships/crm-relationships.service.js";
 import { seedTenantOrganization } from "#test/integration/crmFixtures.js";
+import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -44,7 +45,7 @@ const createBrandWithProduct = async (brandName: string) => {
       brandId: brand.id,
       name: `${brandName} Tee`,
       price: 1500,
-      type: "TOPS",
+      productTypeId: await ensureProductType(),
       status: "APPROVED",
     },
   });

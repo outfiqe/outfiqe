@@ -1,15 +1,14 @@
-import type { ProductType } from "#generated/prisma/enums.js";
-
 export type SizeOptionRecord = {
   id: string;
-  type: ProductType;
+  productTypeId: string;
   label: string;
   sortOrder: number;
   createdAt: Date;
+  productType: { slug: string };
 };
 
 export type CreateSizeOptionInput = {
-  type: ProductType;
+  productTypeId: string;
   label: string;
   sortOrder?: number;
 };

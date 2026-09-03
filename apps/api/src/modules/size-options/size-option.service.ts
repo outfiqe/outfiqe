@@ -1,7 +1,6 @@
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
-import type { ProductTypeSlug } from "#modules/products/product.constants.js";
-import { PRODUCT_TYPE_TO_SLUG, SLUG_TO_PRODUCT_TYPE } from "#modules/products/product.constants.js";
+import { productTypeService } from "#modules/product-types/product-type.service.js";
 
 import { sizeOptionRepository } from "./size-option.repository.js";
 import type { CreateSizeOptionBody } from "./size-option.schemas.js";
@@ -12,23 +11,24 @@ const NOT_FOUND_STATUS = 404;
 
 export type PublicSizeOption = {
   id: string;
-  type: ProductTypeSlug;
+  type: string;
   label: string;
   sortOrder: number;
 };
 
 const toPublicSizeOption = (sizeOption: SizeOptionRecord): PublicSizeOption => ({
   id: sizeOption.id,
-  type: PRODUCT_TYPE_TO_SLUG[sizeOption.type],
+  type: sizeOption.productType.slug,
   label: sizeOption.label,
   sortOrder: sizeOption.sortOrder,
 });
 
 export const sizeOptionService = {
   async create({ type, label, sortOrder }: CreateSizeOptionBody): Promise<PublicSizeOption> {
+    const productType = await productTypeService.getBySlug(type);
     try {
       const sizeOption = await sizeOptionRepository.create({
-        type: SLUG_TO_PRODUCT_TYPE[type],
+        productTypeId: productType.id,
         label,
         sortOrder,
       });
@@ -37,7 +37,7 @@ export const sizeOptionService = {
       if (isUniqueConstraintError(error)) {
         throw new AppError(
           "SIZE_LABEL_TAKEN",
-          "This size already exists for that product type.",
+          "This size already exists for that garment type.",
           CONFLICT_STATUS,
         );
       }
@@ -55,20 +55,20 @@ export const sizeOptionService = {
     return sizeOptions.map(toPublicSizeOption);
   },
 
-  async listByType(type: ProductTypeSlug): Promise<PublicSizeOption[]> {
-    const sizeOptions = await sizeOptionRepository.listByType(SLUG_TO_PRODUCT_TYPE[type]);
+  async listByType(type: string): Promise<PublicSizeOption[]> {
+    const productType = await productTypeService.getBySlug(type);
+    const sizeOptions = await sizeOptionRepository.listByProductTypeId(productType.id);
     return sizeOptions.map(toPublicSizeOption);
   },
 
-  async getManyByIds(ids: string[], type: ProductTypeSlug): Promise<SizeOptionRecord[]> {
+  async getManyByIds(ids: string[], productTypeId: string): Promise<SizeOptionRecord[]> {
     const sizeOptions = await sizeOptionRepository.findManyByIds(ids);
-    const expectedType = SLUG_TO_PRODUCT_TYPE[type];
-    const valid = sizeOptions.filter((sizeOption) => sizeOption.type === expectedType);
+    const valid = sizeOptions.filter((sizeOption) => sizeOption.productTypeId === productTypeId);
 
     if (valid.length !== new Set(ids).size) {
       throw new AppError(
         "SIZE_OPTION_NOT_FOUND",
-        "One or more selected sizes weren't found for this product type.",
+        "One or more selected sizes weren't found for this garment type.",
         NOT_FOUND_STATUS,
       );
     }

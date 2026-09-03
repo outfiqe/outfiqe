@@ -12,6 +12,7 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
 import { categoryService } from "#modules/categories/category.service.js";
+import { productTypeService } from "#modules/product-types/product-type.service.js";
 import { sizeOptionService } from "#modules/size-options/size-option.service.js";
 import { trendingService } from "#modules/trending/trending.service.js";
 import { wishlistRepository } from "#modules/wishlist/wishlist.repository.js";
@@ -19,12 +20,7 @@ import { cacheService } from "#redis/cache.service.js";
 import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
 import { describeError } from "#redis/redis.utils.js";
 
-import {
-  AUTOCOMPLETE_LIMIT,
-  PRODUCT_TYPE_SLUGS,
-  SLUG_TO_PRODUCT_TYPE,
-  TRENDING_LIMIT,
-} from "./product.constants.js";
+import { AUTOCOMPLETE_LIMIT, TRENDING_LIMIT } from "./product.constants.js";
 import type { DbClient } from "./product.repository.js";
 import { productRepository } from "./product.repository.js";
 import type {
@@ -49,15 +45,8 @@ import type {
   PublicProduct,
   PublicProductDetail,
   PublicProductPage,
-  PublicProductType,
 } from "./product.types.js";
-import {
-  humanizeSlug,
-  isUuid,
-  toBrandSummary,
-  toPublicProduct,
-  toSuggestion,
-} from "./product.utils.js";
+import { isUuid, toBrandSummary, toPublicProduct, toSuggestion } from "./product.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
@@ -113,10 +102,11 @@ export const productService = {
     { categories: categorySlugs, name, price, type, imageUrls, lowStock, sizes }: CreateProductBody,
   ): Promise<ProductBrandSummary> {
     const brandId = await requireBrandId(userId);
+    const productType = await productTypeService.getActiveBySlug(type);
     const categories = await categoryService.getManyBySlugs(categorySlugs);
     const sizeOptions = await sizeOptionService.getManyByIds(
       sizes.map((size) => size.sizeOptionId),
-      type,
+      productType.id,
     );
     const sizeOptionById = new Map(sizeOptions.map((sizeOption) => [sizeOption.id, sizeOption]));
 
@@ -124,7 +114,7 @@ export const productService = {
       brandId,
       name,
       price,
-      type: SLUG_TO_PRODUCT_TYPE[type],
+      productTypeId: productType.id,
       categoryIds: categories.map((category) => category.id),
       imageUrls,
       lowStock,
@@ -156,8 +146,12 @@ export const productService = {
       ? (await categoryService.getManyBySlugs(categories)).map((category) => category.id)
       : undefined;
 
+    const targetProductType = type ? await productTypeService.getActiveBySlug(type) : undefined;
+    const isTypeChange =
+      targetProductType !== undefined && targetProductType.id !== product.productTypeId;
+
     let sizeChanges: CreateProductSizeInput[] | undefined;
-    if (type !== undefined && SLUG_TO_PRODUCT_TYPE[type] !== product.type) {
+    if (isTypeChange) {
       if (!sizes || sizes.length === 0) {
         throw new AppError(
           "SIZES_REQUIRED",
@@ -168,7 +162,7 @@ export const productService = {
 
       const sizeOptions = await sizeOptionService.getManyByIds(
         sizes.map((size) => size.sizeOptionId),
-        type,
+        targetProductType.id,
       );
       const sizeOptionById = new Map(sizeOptions.map((sizeOption) => [sizeOption.id, sizeOption]));
 
@@ -189,7 +183,7 @@ export const productService = {
       const product = await productRepository.update(productId, {
         name,
         price,
-        type: type ? SLUG_TO_PRODUCT_TYPE[type] : undefined,
+        productTypeId: targetProductType?.id,
         categoryIds,
         imageUrls,
         lowStock,
@@ -289,7 +283,7 @@ export const productService = {
     cursor,
     limit,
   }: ListPublicProductsQuery): Promise<PublicProductPage> {
-    const type = typeSlug ? SLUG_TO_PRODUCT_TYPE[typeSlug] : undefined;
+    const productTypeId = typeSlug ? (await productTypeService.getBySlug(typeSlug)).id : undefined;
     const categoryId = category ? (await categoryService.getBySlug(category)).id : undefined;
 
     if (q) {
@@ -299,7 +293,7 @@ export const productService = {
         limit,
         offset,
         categoryId,
-        type,
+        productTypeId,
         minPrice,
         maxPrice,
         inStockOnly: inStock,
@@ -313,7 +307,12 @@ export const productService = {
     }
 
     const isUnfilteredTrendingBrowse =
-      sort === PRODUCT_SORT.TRENDING && !categoryId && !type && !minPrice && !maxPrice && !inStock;
+      sort === PRODUCT_SORT.TRENDING &&
+      !categoryId &&
+      !productTypeId &&
+      !minPrice &&
+      !maxPrice &&
+      !inStock;
 
     if (isUnfilteredTrendingBrowse) {
       const { ids, nextCursor } = await trendingService.listTrendingProductIds({ cursor, limit });
@@ -335,7 +334,7 @@ export const productService = {
     }
 
     const keysetCursor = cursor && isUuid(cursor) ? cursor : undefined;
-    const filter = { categoryId, type, minPrice, maxPrice, inStockOnly: inStock, sort };
+    const filter = { categoryId, productTypeId, minPrice, maxPrice, inStockOnly: inStock, sort };
     const [rows, counts] = await Promise.all([
       productRepository.listPublic({ ...filter, cursor: keysetCursor, limit }),
       productRepository.countPublic(filter),
@@ -391,11 +390,11 @@ export const productService = {
     brandId: string,
     { type: typeSlug, cursor, limit }: ListBrandProductsQuery,
   ): Promise<PublicProductPage> {
-    const type = typeSlug ? SLUG_TO_PRODUCT_TYPE[typeSlug] : undefined;
+    const productTypeId = typeSlug ? (await productTypeService.getBySlug(typeSlug)).id : undefined;
 
     const [rows, counts] = await Promise.all([
-      productRepository.listPublic({ brandId, type, cursor, limit }),
-      productRepository.countPublic({ brandId, type }),
+      productRepository.listPublic({ brandId, productTypeId, cursor, limit }),
+      productRepository.countPublic({ brandId, productTypeId }),
     ]);
 
     const { items: pagedProducts, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
@@ -406,10 +405,6 @@ export const productService = {
       total: counts.total,
       brandCount: counts.brandCount,
     };
-  },
-
-  async listTypes(): Promise<PublicProductType[]> {
-    return PRODUCT_TYPE_SLUGS.map((slug) => ({ slug, label: humanizeSlug(slug) }));
   },
 
   async listTrending(): Promise<PublicProduct[]> {

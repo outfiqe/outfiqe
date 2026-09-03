@@ -4,10 +4,9 @@ import { z } from "zod";
 import { SEARCH_QUERY_MAX_LENGTH } from "#constants/search.constants.js";
 import { ProductStatus } from "#generated/prisma/enums.js";
 
-import { PRODUCT_TYPE_SLUGS } from "./product.constants.js";
-
 const NAME_MIN = 2;
 const NAME_MAX = 150;
+const TYPE_SLUG_MAX = 40;
 const PRICE_MIN = 1;
 const PRICE_MAX = 10_000_000;
 const FILTER_PRICE_MIN = 0;
@@ -17,7 +16,7 @@ const MAX_IMAGES = 6;
 const STOCK_MIN = 0;
 const STOCK_MAX = 100_000;
 
-export const productTypeSlugSchema = z.enum(PRODUCT_TYPE_SLUGS);
+export const productTypeSlugSchema = z.string().trim().min(1).max(TYPE_SLUG_MAX);
 export const categorySlugFieldSchema = z.string().trim().min(1).max(60);
 export const productStatusSchema = z.enum(ProductStatus);
 

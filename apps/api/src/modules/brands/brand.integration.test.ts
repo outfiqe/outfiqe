@@ -4,15 +4,10 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import {
-  BrandRole,
-  FollowTargetType,
-  ProductStatus,
-  ProductType,
-  UserRole,
-} from "#generated/prisma/enums.js";
+import { BrandRole, FollowTargetType, ProductStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
+import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -54,7 +49,7 @@ const createApprovedProductForBrand = async (brandId: string, name: string) =>
       brandId,
       name,
       price: 1000,
-      type: ProductType.TOPS,
+      productTypeId: await ensureProductType(),
       status: ProductStatus.APPROVED,
       imageUrl: `https://cdn.outfiqe.test/${randomUUID()}.jpg`,
     },
@@ -146,7 +141,7 @@ describe("GET /api/brands", () => {
         brandId: brand.id,
         name: "Pending Piece",
         price: 500,
-        type: ProductType.TOPS,
+        productTypeId: await ensureProductType(),
         status: ProductStatus.PENDING,
       },
     });
@@ -372,7 +367,7 @@ describe("GET /api/brands/:id/products", () => {
         brandId: brand.id,
         name: "Listed Pending Piece",
         price: 500,
-        type: ProductType.TOPS,
+        productTypeId: await ensureProductType(),
         status: ProductStatus.PENDING,
       },
     });

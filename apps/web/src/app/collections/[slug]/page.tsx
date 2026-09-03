@@ -57,7 +57,7 @@ const CollectionPage = async ({ params }: CollectionPageProps) => {
     <div className="pb-20 lg:pb-0">
       <SiteHeader />
       <main>
-        <div className="px-6 pt-4 sm:pt-6 lg:px-10">
+        <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8">
           <Breadcrumbs
             crumbs={[
               { name: "Home", path: "/" },

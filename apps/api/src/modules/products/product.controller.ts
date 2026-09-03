@@ -78,11 +78,6 @@ export const productController = {
     sendSuccess(res, page, "Products.");
   },
 
-  async listTypes(_req: Request, res: Response) {
-    const types = await productService.listTypes();
-    sendSuccess(res, types, "Product types.");
-  },
-
   async listTrending(_req: Request, res: Response) {
     const products = await productService.listTrending();
     sendSuccess(res, products, "Trending products.");

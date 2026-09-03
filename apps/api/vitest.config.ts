@@ -68,6 +68,7 @@ export default defineConfig({
         "src/modules/product-reviews/**/*.ts",
         "src/modules/brands/**/*.ts",
         "src/modules/categories/**/*.ts",
+        "src/modules/product-types/**/*.ts",
         "src/modules/taste-preferences/**/*.ts",
         "src/modules/follows/**/*.ts",
         "src/modules/notifications/notification.utils.ts",

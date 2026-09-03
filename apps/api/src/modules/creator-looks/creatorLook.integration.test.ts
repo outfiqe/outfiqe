@@ -8,12 +8,12 @@ import {
   CreatorStatus,
   FollowTargetType,
   ProductStatus,
-  ProductType,
   UserRole,
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
 import { redis } from "#redis/redis.client.js";
+import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -72,7 +72,7 @@ const createApprovedProduct = async (name: string, price = 1000) => {
       brandId: brand.id,
       name,
       price,
-      type: ProductType.TOPS,
+      productTypeId: await ensureProductType(),
       status: ProductStatus.APPROVED,
       imageUrl: `https://cdn.outfiqe.test/${randomUUID()}.jpg`,
     },
@@ -86,7 +86,7 @@ const createPendingProduct = async (name: string, price = 1000) => {
       brandId: brand.id,
       name,
       price,
-      type: ProductType.TOPS,
+      productTypeId: await ensureProductType(),
       status: ProductStatus.PENDING,
       imageUrl: `https://cdn.outfiqe.test/${randomUUID()}.jpg`,
     },

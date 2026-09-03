@@ -4,16 +4,12 @@ import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import {
-  FulfilmentStatus,
-  PaymentMethod,
-  ProductStatus,
-  ProductType,
-} from "#generated/prisma/enums.js";
+import { FulfilmentStatus, PaymentMethod, ProductStatus } from "#generated/prisma/enums.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { createAdminSession } from "#test/integration/authHelpers.js";
+import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -47,7 +43,7 @@ const createProduct = async (name: string) => {
       brandId: brand.id,
       name,
       price: 1000,
-      type: ProductType.TOPS,
+      productTypeId: await ensureProductType(),
       status: ProductStatus.APPROVED,
     },
   });

@@ -13,3 +13,11 @@ export const useProductTypes = () => {
     staleTime: PRODUCT_TYPES_STALE_TIME_MS,
   });
 };
+
+export const useAssignableProductTypes = () => {
+  return useQuery({
+    queryKey: ["product-types", "assignable"],
+    queryFn: productTypesApi.listAssignable,
+    staleTime: PRODUCT_TYPES_STALE_TIME_MS,
+  });
+};

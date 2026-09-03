@@ -12,12 +12,12 @@ import {
   PaymentTransactionStatus,
   PaymentTransactionType,
   ProductStatus,
-  ProductType,
   UserRole,
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { createAdminSession } from "#test/integration/authHelpers.js";
+import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -98,7 +98,7 @@ const grantCommission = async (status: CommissionStatus, amount: number, created
       brandId: brand.id,
       name: "Item",
       price: amount,
-      type: ProductType.TOPS,
+      productTypeId: await ensureProductType(),
       status: ProductStatus.APPROVED,
     },
   });
@@ -161,7 +161,7 @@ const grantBrandPayout = async (
       brandId: brand.id,
       name: "Item",
       price: netAmount + platformFee,
-      type: ProductType.TOPS,
+      productTypeId: await ensureProductType(),
       status: ProductStatus.APPROVED,
     },
   });

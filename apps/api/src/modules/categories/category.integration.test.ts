@@ -4,12 +4,13 @@ import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import { CategoryStatus, ProductStatus, ProductType, UserRole } from "#generated/prisma/enums.js";
+import { CategoryStatus, ProductStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { categoryService } from "#modules/categories/category.service.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { redis } from "#redis/redis.client.js";
 import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
+import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -320,7 +321,7 @@ describe("GET /api/categories", () => {
         brandId: brand.id,
         name: "Counted Product",
         price: 1000,
-        type: ProductType.TOPS,
+        productTypeId: await ensureProductType(),
         status: ProductStatus.APPROVED,
         categories: { connect: { id: category.id } },
       },

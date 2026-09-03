@@ -232,7 +232,7 @@ describe("PostModal", () => {
     reviewCount: 0,
   };
 
-  it("untags a product when it's selected again from search results", async () => {
+  it("closes the results and clears the search after tagging a product", async () => {
     mswServer.use(
       http.get("/api/products", () =>
         HttpResponse.json({
@@ -249,7 +249,30 @@ describe("PostModal", () => {
 
     await user.click(screen.getByRole("button", { name: "Tag a product" }));
     await searchAndSelectProduct(user, "denim", /Denim Jacket/);
-    await user.click(screen.getByRole("option", { name: /Denim Jacket/ }));
+
+    expect(screen.getByRole("button", { name: "1 product tagged" })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Search products to tag…")).toHaveValue("");
+    expect(screen.queryByRole("option", { name: /Denim Jacket/ })).not.toBeInTheDocument();
+  });
+
+  it("untags a product by searching for it again and reselecting it", async () => {
+    mswServer.use(
+      http.get("/api/products", () =>
+        HttpResponse.json({
+          success: true,
+          message: "Products.",
+          data: { products: [denimProduct], nextCursor: null, total: 1, brandCount: 1 },
+        }),
+      ),
+    );
+
+    mockPending([buildExistingPhoto("p1")]);
+    const user = userEvent.setup();
+    renderModal();
+
+    await user.click(screen.getByRole("button", { name: "Tag a product" }));
+    await searchAndSelectProduct(user, "denim", /Denim Jacket/);
+    await searchAndSelectProduct(user, "denim", /Denim Jacket/);
 
     expect(screen.getByRole("button", { name: "Tag a product" })).toBeInTheDocument();
   });

@@ -130,7 +130,7 @@ describe("EditPostForm", () => {
     expect(screen.getByRole("button", { name: "Tag a product" })).toBeInTheDocument();
   });
 
-  it("tags an additional product found through search, then untags it by reselecting", async () => {
+  it("tags an additional product found through search, then untags it by searching again", async () => {
     mswServer.use(
       http.get("/api/products", () =>
         HttpResponse.json({
@@ -169,8 +169,9 @@ describe("EditPostForm", () => {
     await searchAndSelectProduct(user, "scarf", /Wool Scarf/);
 
     expect(screen.getByRole("button", { name: "2 products tagged" })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Search products to tag…")).toHaveValue("");
 
-    await user.click(screen.getByRole("option", { name: /Wool Scarf/ }));
+    await searchAndSelectProduct(user, "scarf", /Wool Scarf/);
 
     expect(screen.getByRole("button", { name: "1 product tagged" })).toBeInTheDocument();
   });

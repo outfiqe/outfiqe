@@ -12,11 +12,11 @@ import {
   PaymentMethod,
   PaymentStatus,
   ProductStatus,
-  ProductType,
   UserRole,
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
+import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -64,13 +64,13 @@ const createBrandWithMember = async () => {
   return { brand, member };
 };
 
-const createProductWithStock = (brandId: string, stock: number) =>
+const createProductWithStock = async (brandId: string, stock: number) =>
   prisma.product.create({
     data: {
       brandId,
       name: "Item",
       price: 1000,
-      type: ProductType.TOPS,
+      productTypeId: await ensureProductType(),
       status: ProductStatus.APPROVED,
       sizes: { create: [{ label: "M", stock }] },
     },

@@ -1,4 +1,3 @@
-import type { ProductType } from "#generated/prisma/enums.js";
 import {
   ageHoursOf,
   applyDiversity as applyGroupDiversity,
@@ -108,8 +107,8 @@ export const computeGroupBaselines = (
   metaById: Map<string, ProductTrendMeta>,
   now: Date,
   windowDays: number,
-): { byType: Map<ProductType, number>; global: number } => {
-  const averagesByType = new Map<ProductType, number[]>();
+): { byType: Map<string, number>; global: number } => {
+  const averagesByType = new Map<string, number[]>();
   const allAverages: number[] = [];
 
   for (const [productId, buckets] of bucketsByProduct) {
@@ -120,12 +119,12 @@ export const computeGroupBaselines = (
     if (nonEmptyWindows === 0) continue;
 
     allAverages.push(average);
-    const existing = averagesByType.get(meta.type);
+    const existing = averagesByType.get(meta.productTypeId);
     if (existing) existing.push(average);
-    else averagesByType.set(meta.type, [average]);
+    else averagesByType.set(meta.productTypeId, [average]);
   }
 
-  const byType = new Map<ProductType, number>();
+  const byType = new Map<string, number>();
   for (const [type, averages] of averagesByType) byType.set(type, meanOf(averages));
 
   return { byType, global: meanOf(allAverages) };
@@ -135,9 +134,9 @@ export const isWithinFreshnessWindow = (createdAt: Date, now: Date): boolean =>
   now.getTime() - createdAt.getTime() <= FRESHNESS_WINDOW_MS;
 
 export const pickBaseline = (
-  productType: ProductType,
+  productType: string,
   ownBaseline: { average: number; nonEmptyWindows: number },
-  categoryBaselines: Map<ProductType, number>,
+  categoryBaselines: Map<string, number>,
   globalBaseline: number,
 ): { source: BaselineSource; value: number } => {
   if (ownBaseline.nonEmptyWindows >= MIN_BUCKETS_FOR_OWN_BASELINE) {
@@ -155,8 +154,8 @@ export const scoreProduct = (params: {
   brandId: string;
   buckets: MetricBucket[];
   productCreatedAt: Date;
-  productType: ProductType;
-  categoryBaselines: Map<ProductType, number>;
+  productType: string;
+  categoryBaselines: Map<string, number>;
   globalBaseline: number;
   now: Date;
 }): ProductScoreBreakdown => {
