@@ -7,7 +7,14 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import { CrmTicketStatus, CrmTicketType, DealStatus, UserRole } from "#generated/prisma/enums.js";
+import {
+  CrmActivityType,
+  CrmTaskStatus,
+  CrmTicketStatus,
+  CrmTicketType,
+  DealStatus,
+  UserRole,
+} from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
 import { DEFAULT_PIPELINE_STAGES } from "#modules/crm-pipeline/crm-pipeline.constants.js";
@@ -392,5 +399,123 @@ describe("GET /api/crm/search", () => {
       .set("Host", host(organization.subdomain));
 
     expect(response.status).toBe(422);
+  });
+});
+
+describe("GET /api/crm/reports/overview", () => {
+  const ACTIVITY_TREND_DAYS = 30;
+
+  it("returns pipeline, ticket, activity-trend and tasks-due figures in one payload", async () => {
+    const { organization, owner, partnerCreator, leadStage, wonStage } =
+      await seedReportingTenant();
+    const ownerMembership = await prisma.membership.findFirstOrThrow({
+      where: { organizationId: organization.id, userId: owner.id },
+    });
+
+    await prisma.deal.createMany({
+      data: [
+        {
+          organizationId: organization.id,
+          stageId: leadStage.id,
+          title: "Open deal",
+          value: 4000,
+          partnerCreatorId: partnerCreator.id,
+          status: DealStatus.OPEN,
+        },
+        {
+          organizationId: organization.id,
+          stageId: wonStage.id,
+          title: "Won deal",
+          value: 9000,
+          partnerCreatorId: partnerCreator.id,
+          status: DealStatus.WON,
+          closedAt: new Date(),
+        },
+      ],
+    });
+
+    await prisma.crmTicket.create({
+      data: {
+        organizationId: organization.id,
+        title: "Open ticket",
+        description: "x",
+        type: CrmTicketType.REQUEST,
+        status: CrmTicketStatus.OPEN,
+        partnerCreatorId: partnerCreator.id,
+      },
+    });
+
+    await prisma.crmActivity.createMany({
+      data: [
+        {
+          organizationId: organization.id,
+          type: CrmActivityType.NOTE,
+          body: "Recent note",
+          occurredAt: subHours(new Date(), 2),
+        },
+        {
+          organizationId: organization.id,
+          type: CrmActivityType.CALL,
+          body: "Old call",
+          occurredAt: addDays(new Date(), -60),
+        },
+      ],
+    });
+
+    await prisma.crmTask.create({
+      data: {
+        organizationId: organization.id,
+        title: "Due task",
+        dueAt: addHours(new Date(), 3),
+        status: CrmTaskStatus.OPEN,
+        assigneeMembershipId: ownerMembership.id,
+      },
+    });
+
+    const response = await request(testApp)
+      .get("/api/crm/reports/overview")
+      .set("Authorization", authHeaderFor(owner.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.status).toBe(200);
+    const { pipeline, tickets, activityTrend, openTasksDueTodayCount } = response.body.data;
+
+    expect(pipeline.totals.openValue).toBe(4000);
+    expect(pipeline.totals.wonValue).toBe(9000);
+    expect(tickets.openCount).toBe(1);
+
+    expect(activityTrend).toHaveLength(ACTIVITY_TREND_DAYS);
+    const trendTotal = activityTrend.reduce(
+      (sum: number, point: { count: number }) => sum + point.count,
+      0,
+    );
+    expect(trendTotal).toBe(1);
+
+    expect(openTasksDueTodayCount).toBe(1);
+  });
+
+  it("denies a member without reports:read", async () => {
+    const { organization } = await seedReportingTenant();
+    const memberRole = await crmAccessRepository.createRole({
+      organizationId: organization.id,
+      name: "No reports",
+      permissionKeys: ["org:read", "deals:read"],
+    });
+    const member = await createStaff("No Reports Member");
+    await prisma.membership.create({
+      data: {
+        organizationId: organization.id,
+        userId: member.id,
+        roleId: memberRole.id,
+        status: "ACTIVE",
+      },
+    });
+
+    const response = await request(testApp)
+      .get("/api/crm/reports/overview")
+      .set("Authorization", authHeaderFor(member.id))
+      .set("Host", host(organization.subdomain));
+
+    expect(response.status).toBe(403);
   });
 });
