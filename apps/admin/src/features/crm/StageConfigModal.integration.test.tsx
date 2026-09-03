@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
@@ -52,6 +52,26 @@ describe("StageConfigModal", () => {
 
     await user.click(screen.getByRole("button", { name: "Delete Lead" }));
     await waitFor(() => expect(deleted).toBe(true));
+  });
+
+  it("reorders stages by dragging one row onto another", async () => {
+    let reorderBody: unknown;
+    mswServer.use(
+      http.post(`${API_BASE}/crm/pipeline/stages/reorder`, async ({ request }) => {
+        reorderBody = await request.json();
+        return HttpResponse.json({ success: true, data: null });
+      }),
+    );
+
+    render(<StageConfigModal open onClose={() => {}} stages={STAGES} />, { wrapper });
+
+    const rowFor = (name: string) => screen.getByText(name).closest("li") as HTMLElement;
+
+    fireEvent.dragStart(rowFor("Won"));
+    fireEvent.dragEnter(rowFor("Lead"));
+    fireEvent.drop(rowFor("Lead"));
+
+    await waitFor(() => expect(reorderBody).toEqual({ orderedStageIds: ["s2", "s1"] }));
   });
 
   it("surfaces a mutation error", async () => {
