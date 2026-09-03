@@ -1,7 +1,7 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
-const COVERAGE_THRESHOLD = 80;
+const COVERAGE_THRESHOLD = 85;
 
 export default defineConfig({
   plugins: [react()],
