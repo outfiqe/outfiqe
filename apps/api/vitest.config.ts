@@ -85,6 +85,7 @@ export default defineConfig({
         "src/shared/utils/cors.utils.ts",
         "src/shared/utils/crm-counters.ts",
         "src/modules/financial-rollup/**/*.ts",
+        "src/modules/support/**/*.ts",
         "src/modules/image-processing/**/*.ts",
         "src/modules/chat/**/*.ts",
         "src/modules/crm-access/**/*.ts",

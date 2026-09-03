@@ -24,6 +24,21 @@ export const PLATFORM_PERMISSION_CATALOG = [
     label: "Read the platform audit log",
     group: "Platform",
   },
+  {
+    key: "platform:support:read",
+    label: "Read support requests",
+    group: "Support",
+  },
+  {
+    key: "platform:support:respond",
+    label: "Reply to and move support requests",
+    group: "Support",
+  },
+  {
+    key: "platform:support:manage",
+    label: "Assign and configure support",
+    group: "Support",
+  },
 ] as const;
 
 export type PlatformPermissionKey = (typeof PLATFORM_PERMISSION_CATALOG)[number]["key"];

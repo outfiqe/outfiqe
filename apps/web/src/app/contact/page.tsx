@@ -15,8 +15,8 @@ export const metadata: Metadata = buildPageMetadata({
 const channels = [
   {
     heading: "Order help",
-    body: "Have a question about an order, delivery or a return? Start with the help centre. It covers the common issues and tells you how to reach support if you still need a hand.",
-    action: { href: "/help", label: "Visit the help centre" },
+    body: "Have a question about an order, delivery or a return? The help centre covers the common issues. If you still need a hand, raise a request and we'll reply by email.",
+    action: { href: "/settings/support", label: "Raise a support request" },
   },
   {
     heading: "Sell on Outfiqe",

@@ -43,6 +43,11 @@ export const DomainEvents = {
   MESSAGE_CREATED: "message.created",
   PRESENCE_CHANGED: "presence.changed",
   CRM_ITEM_ASSIGNED: "crm.item.assigned",
+  SUPPORT_TICKET_CREATED: "support.ticket.created",
+  SUPPORT_TICKET_ASSIGNED: "support.ticket.assigned",
+  SUPPORT_TICKET_STAFF_REPLIED: "support.ticket.staff_replied",
+  SUPPORT_TICKET_CUSTOMER_REPLIED: "support.ticket.customer_replied",
+  SUPPORT_TICKET_RESOLVED: "support.ticket.resolved",
 } as const;
 
 // A Redis hiccup must never fail the caller's request (like/comment/follow/etc.) — log and move on,

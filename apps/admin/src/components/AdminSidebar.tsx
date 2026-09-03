@@ -174,6 +174,7 @@ const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
   { id: "size-options", href: "/size-options", label: "Sizes", icon: Ruler },
   { id: "hero-slides", href: "/hero-slides", label: "Hero slides", icon: GalleryHorizontal },
   { id: "orders", href: "/orders", label: "Orders", icon: ShoppingBag },
+  { id: "support", href: "/support", label: "Support requests", icon: LifeBuoy },
   { id: "product-reviews", href: "/product-reviews", label: "Product Reviews", icon: Star },
   { id: "trending", href: "/trending", label: "Trending debug", icon: TrendingUp },
   { id: "creators", href: "/creators", label: "Creators", icon: Users },

@@ -1,9 +1,13 @@
 import type { Notification } from "@outfiqe/types";
 
-export const resolveNotificationHref = (notification: Notification): "/" | null => {
+export const resolveNotificationHref = (notification: Notification): string | null => {
   switch (notification.type) {
     case "BRAND_APPLICATION_SUBMITTED":
       return "/";
+    case "SUPPORT_TICKET_CREATED":
+    case "SUPPORT_TICKET_ASSIGNED":
+    case "SUPPORT_TICKET_REPLY":
+      return notification.entityId ? `/support/${notification.entityId}` : "/support";
     case "LOOK_LIKED":
     case "LOOK_COMMENTED":
     case "COMMENT_REPLIED":
@@ -14,6 +18,7 @@ export const resolveNotificationHref = (notification: Notification): "/" | null 
     case "COMMISSION_EARNED":
     case "NEW_ORDER":
     case "ORDER_STATUS_CHANGED":
+    case "SUPPORT_TICKET_RESOLVED":
       return null;
     default:
       return null;
