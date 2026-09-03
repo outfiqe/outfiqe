@@ -1,7 +1,16 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 type SidebarPendingNav = {
   readonly pendingHref: string | null;
@@ -13,6 +22,8 @@ type PendingNavigation = {
   readonly fromPathname: string;
 };
 
+const STUCK_PENDING_TIMEOUT_MS = 3000;
+
 const SidebarPendingNavContext = createContext<SidebarPendingNav>({
   pendingHref: null,
   markPending: () => {},
@@ -21,11 +32,18 @@ const SidebarPendingNavContext = createContext<SidebarPendingNav>({
 export const SidebarPendingNavProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const [pending, setPending] = useState<PendingNavigation | null>(null);
+  const stuckTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const markPending = useCallback(
-    (href: string) => setPending({ href, fromPathname: pathname }),
+    (href: string) => {
+      clearTimeout(stuckTimeoutRef.current);
+      setPending({ href, fromPathname: pathname });
+      stuckTimeoutRef.current = setTimeout(() => setPending(null), STUCK_PENDING_TIMEOUT_MS);
+    },
     [pathname],
   );
+
+  useEffect(() => () => clearTimeout(stuckTimeoutRef.current), []);
 
   const value = useMemo<SidebarPendingNav>(() => {
     const isStillPending = pending !== null && pending.fromPathname === pathname;

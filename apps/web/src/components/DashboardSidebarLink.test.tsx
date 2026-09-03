@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -90,6 +90,50 @@ describe("DashboardSidebarLink", () => {
 
     expect(link).toHaveClass("nav-active");
     expect(link).toHaveAttribute("aria-current", "page");
+  });
+
+  it("drops committed active styling from the previous page while another link is pending", () => {
+    render(
+      <SidebarPendingNavProvider>
+        <DashboardSidebarLink {...baseProps} href="/wallet" isActive>
+          <span>Wallet</span>
+        </DashboardSidebarLink>
+        <DashboardSidebarLink {...baseProps} href="/chat">
+          <span>Chat</span>
+        </DashboardSidebarLink>
+      </SidebarPendingNavProvider>,
+    );
+
+    const wallet = screen.getByRole("link", { name: "Wallet" });
+    const chat = screen.getByRole("link", { name: "Chat" });
+
+    expect(wallet).toHaveClass("nav-active");
+    expect(chat).toHaveClass("nav-inactive");
+
+    fireEvent.click(chat);
+
+    expect(chat).toHaveClass("nav-active");
+    expect(wallet).toHaveClass("nav-inactive");
+    expect(wallet).not.toHaveAttribute("aria-current");
+  });
+
+  it("auto-clears a stuck pending state after the timeout", () => {
+    vi.useFakeTimers();
+    try {
+      renderLink();
+      const link = screen.getByRole("link", { name: "Earnings" });
+
+      fireEvent.click(link);
+      expect(link).toHaveClass("nav-active");
+
+      act(() => {
+        vi.advanceTimersByTime(3000);
+      });
+
+      expect(link).toHaveClass("nav-inactive");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("clears the optimistic active state once the pathname catches up", () => {
