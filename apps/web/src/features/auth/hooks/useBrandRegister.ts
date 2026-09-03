@@ -22,7 +22,7 @@ export const useBrandRegister = () => {
         payload: { user: data.user, accessToken: data.accessToken },
       });
 
-      router.replace("/profile");
+      router.replace("/overview");
     },
   });
 };

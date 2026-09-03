@@ -39,6 +39,18 @@ export type TicketReport = {
   meanResolutionSeconds: number | null;
 };
 
+export type CrmActivityTrendPoint = {
+  date: string;
+  count: number;
+};
+
+export type CrmOverviewReport = {
+  pipeline: PipelineReport;
+  tickets: TicketReport;
+  openTasksDueTodayCount: number;
+  activityTrend: CrmActivityTrendPoint[];
+};
+
 export type DealSearchResult = {
   id: string;
   title: string;

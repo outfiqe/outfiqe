@@ -68,7 +68,7 @@ describe("useBrandRegister", () => {
     await waitFor(() => expect(result.current.brandRegister.isSuccess).toBe(true));
     expect(result.current.auth.isAuthenticated).toBe(true);
     expect(result.current.auth.state.user).toMatchObject({ id: brandUser.id });
-    expect(replace).toHaveBeenCalledWith("/profile");
+    expect(replace).toHaveBeenCalledWith("/overview");
   });
 
   it("surfaces an invalid-invite error without updating auth state", async () => {

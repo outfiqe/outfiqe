@@ -6,6 +6,7 @@ import { crmRelationshipsService } from "#modules/crm-relationships/crm-relation
 import { DEFAULT_TENANTS_PAGE_SIZE, SPARKLINE_DAYS } from "./platform-metrics.constants.js";
 import { platformMetricsRepository } from "./platform-metrics.repository.js";
 import type {
+  PlatformActivityTrendPoint,
   PlatformOverview,
   TenantMetricDetail,
   TenantMetricListFilters,
@@ -44,6 +45,10 @@ export const platformMetricsService = {
 
   overview(): Promise<PlatformOverview> {
     return platformMetricsRepository.overview();
+  },
+
+  activityTrend(): Promise<PlatformActivityTrendPoint[]> {
+    return platformMetricsRepository.platformActivityTrend(SPARKLINE_DAYS);
   },
 
   async tenantDetail(organizationId: string): Promise<TenantMetricDetail> {
