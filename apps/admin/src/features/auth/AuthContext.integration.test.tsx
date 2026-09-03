@@ -5,8 +5,20 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
 import { AuthProvider, useAuth } from "./AuthContext";
+import type { AdminUser } from "./schemas";
 
 const API_BASE = "http://localhost:3000/api";
+
+const FALLBACK_USER: AdminUser = {
+  id: "user-2",
+  name: "Set Directly",
+  email: "set-directly@outfiqe.test",
+  avatarUrl: null,
+  role: "ADMIN",
+  hasPlatformAccess: false,
+  isCoFounder: false,
+  hiddenPlatformNavKeys: [],
+};
 
 const mockSessionFor = (role: "ADMIN" | "BRAND_OWNER" | "CUSTOMER") => {
   mswServer.use(
@@ -154,5 +166,69 @@ describe("AuthProvider", () => {
     renderAuthProvider();
 
     expect(await screen.findByText("signed-out")).toBeInTheDocument();
+  });
+});
+
+const SessionActionsProbe = () => {
+  const { state, logout, updateUser, setSession } = useAuth();
+  return (
+    <div>
+      <p>status:{state.status}</p>
+      {state.status === "signed-in" && <p>name:{state.user.name}</p>}
+      <button type="button" onClick={() => void logout()}>
+        sign out
+      </button>
+      <button type="button" onClick={() => updateUser({ name: "Renamed Admin" })}>
+        rename
+      </button>
+      <button type="button" onClick={() => setSession(FALLBACK_USER)}>
+        set session
+      </button>
+    </div>
+  );
+};
+
+const renderSessionActions = () =>
+  render(
+    <AuthProvider>
+      <SessionActionsProbe />
+    </AuthProvider>,
+  );
+
+describe("AuthProvider session actions", () => {
+  it("clears the session on logout", async () => {
+    mockSessionFor("ADMIN");
+    mswServer.use(
+      http.post(`${API_BASE}/auth/logout`, () =>
+        HttpResponse.json({ success: true, message: "Signed out.", data: null }),
+      ),
+    );
+    renderSessionActions();
+    expect(await screen.findByText("status:signed-in")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "sign out" }));
+
+    expect(await screen.findByText("status:signed-out")).toBeInTheDocument();
+  });
+
+  it("patches the signed-in user with updateUser", async () => {
+    mockSessionFor("ADMIN");
+    renderSessionActions();
+    expect(await screen.findByText("name:Test User")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "rename" }));
+
+    expect(await screen.findByText("name:Renamed Admin")).toBeInTheDocument();
+  });
+
+  it("establishes a session from a directly provided user with setSession", async () => {
+    mockSessionFor("CUSTOMER");
+    renderSessionActions();
+    expect(await screen.findByText("status:signed-out")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "set session" }));
+
+    expect(await screen.findByText("status:signed-in")).toBeInTheDocument();
+    expect(screen.getByText("name:Set Directly")).toBeInTheDocument();
   });
 });

@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { noIndexMetadata } from "@/shared/seo";
 
-export const metadata: Metadata = { title: "Dashboard" };
+export const metadata: Metadata = noIndexMetadata("Dashboard");
 
 const DashboardComingSoonPage = () => {
   return (

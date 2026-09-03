@@ -88,7 +88,14 @@ export const TeamPage = () => {
             className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
           >
             <div>
-              <h2 className="font-display text-base font-bold text-foreground">{invite.name}</h2>
+              <h2 className="flex flex-wrap items-center gap-2 font-display text-base font-bold text-foreground">
+                {invite.name}
+                {invite.isCoFounder && (
+                  <Badge tone="positive" showDot={false} className="text-[10px]">
+                    Co-founder
+                  </Badge>
+                )}
+              </h2>
               <p className="mt-1 text-sm text-muted-foreground">{invite.email}</p>
             </div>
             <Badge tone={STATUS_TONE[invite.status]} showDot={false}>

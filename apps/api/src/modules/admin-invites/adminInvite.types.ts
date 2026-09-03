@@ -24,6 +24,7 @@ export type AdminInviteSummary = {
   email: string;
   name: string;
   status: AdminInviteStatus;
+  isCoFounder: boolean;
   createdAt: Date;
   expiresAt: Date;
 };
