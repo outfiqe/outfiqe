@@ -9,10 +9,12 @@
 - `app/shop/page.tsx` — a Server Component. `generateMetadata({ searchParams })` reads
   `category`/`type`/`sort`, resolves the category name server-side, and returns a per-filter title,
   description and — importantly — a canonical URL that includes the active filters, so
-  `/shop?category=streetwear` is its own indexable page. The page body renders a server `<h1>` +
-  short intro paragraph (category-aware) above `ShopResults` for a stable, descriptive heading that
-  doesn't depend on client JS.
-- `components/ShopResults.tsx` — the client page body: reads `category`/`type`/`sort` from the URL, resolves `category` against `useCategories()` for its display name, fetches via `useInfiniteProducts`, and renders the same product grid + infinite-scroll sentinel pattern already used by `landing/CategoryResults` and `explore`. Its own heading is an `<h2>` (the active-filter label, e.g. "Trending now" / "In Streetwear") under the server `<h1>`.
+  `/shop?category=streetwear` is its own indexable page. The page body renders a `Shop` eyebrow and
+  a single server `<h1>` that names the active filter — the category name, `Trending now` /
+  `New arrivals` for a sort, or `Everything` with nothing applied — so the heading is stable,
+  descriptive and doesn't depend on client JS. There is no marketing intro paragraph; the results
+  count under it is the only sub-line.
+- `components/ShopResults.tsx` — the client page body: reads `category`/`type`/`sort` from the URL, resolves `category` against `useCategories()` for the type-filter pills, fetches via `useInfiniteProducts`, and renders the results count (`N pieces from M brands`), the `CategoryTypeFilters` row when a category is active, and the same product grid + infinite-scroll sentinel pattern already used by `landing/CategoryResults` and `explore`. It renders no heading of its own — the server `<h1>` is the page's only title.
 
 ## Funnel
 
