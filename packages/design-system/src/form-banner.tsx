@@ -8,6 +8,7 @@ const formBannerVariants = cva("mb-4 rounded-lg border px-3.5 py-3 text-sm", {
     tone: {
       negative: "border-destructive/25 bg-destructive/5 text-destructive",
       positive: "border-primary/25 bg-primary/5 text-primary-strong",
+      success: "border-success/25 bg-success/10 text-success",
       neutral: "border-border bg-muted text-foreground",
     },
   },

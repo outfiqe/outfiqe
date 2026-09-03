@@ -71,7 +71,7 @@ export const LoginForm = () => {
       <h1 className="font-display text-[28px] font-bold text-foreground">Welcome back</h1>
       <p className="mt-2.5 text-sm text-muted-foreground">Sign in to save items and check out.</p>
 
-      {justReset && <FormBanner tone="positive">Password updated. Please sign in.</FormBanner>}
+      {justReset && <FormBanner tone="success">Password updated. Please sign in.</FormBanner>}
 
       {isEmailNotVerified && (
         <FormBanner>

@@ -82,9 +82,9 @@ export const ChangePasswordCard = ({ hasPassword }: { hasPassword: boolean }) =>
     <div className="rounded-xl border border-border bg-card px-4 py-4">
       {rootError && <FormBanner>{rootError}</FormBanner>}
       {justSaved && (
-        <p className="mb-3 text-[13px] font-medium text-primary">
+        <FormBanner tone="success">
           Password updated. Other devices have been signed out.
-        </p>
+        </FormBanner>
       )}
 
       <Form {...form}>
