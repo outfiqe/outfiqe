@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "arial",
+        "createdAt": "2026-09-03T11:55:39.477Z",
+        "reason": "HTML email templates (layout.ts) deliberately use Arial/Helvetica system fonts — email clients have no reliable web-font support; pre-existing, not introduced by this change"
+      }
+    ]
+  }
+}
