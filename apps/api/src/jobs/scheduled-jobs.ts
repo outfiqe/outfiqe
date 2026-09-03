@@ -39,6 +39,8 @@ import { IMPERSONATION_REAP_INTERVAL_MS } from "#modules/platform-impersonation/
 import { platformImpersonationService } from "#modules/platform-impersonation/platform-impersonation.service.js";
 import { PLATFORM_METRICS_SNAPSHOT_INTERVAL_MS } from "#modules/platform-metrics/platform-metrics.constants.js";
 import { platformMetricsService } from "#modules/platform-metrics/platform-metrics.service.js";
+import { SUPPORT_AUTO_CLOSE_JOB_INTERVAL_MS } from "#modules/support/support.constants.js";
+import { runSupportAutoCloseSweep } from "#modules/support/support.lifecycle.js";
 import {
   AGGREGATION_INTERVAL_MS,
   SCORING_INTERVAL_MS,
@@ -71,6 +73,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "crm-billing-reconciliation",
     run: runCrmBillingReconciliationSweep,
     intervalMs: INVOICE_RECONCILE_INTERVAL_MS,
+  },
+  {
+    name: "support-auto-close",
+    run: runSupportAutoCloseSweep,
+    intervalMs: SUPPORT_AUTO_CLOSE_JOB_INTERVAL_MS,
   },
   {
     name: "trending-aggregation",

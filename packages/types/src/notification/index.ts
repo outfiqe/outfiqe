@@ -11,10 +11,14 @@ export type NotificationType =
   | "ORDER_STATUS_CHANGED"
   | "BRAND_APPLICATION_SUBMITTED"
   | "PRODUCT_REVIEWED"
-  | "REVIEW_REQUESTED";
+  | "REVIEW_REQUESTED"
+  | "SUPPORT_TICKET_CREATED"
+  | "SUPPORT_TICKET_ASSIGNED"
+  | "SUPPORT_TICKET_REPLY"
+  | "SUPPORT_TICKET_RESOLVED";
 
 export type NotificationEntityType =
-  "LOOK" | "USER" | "ORDER" | "BRAND_APPLICATION" | "BADGE" | "PRODUCT";
+  "LOOK" | "USER" | "ORDER" | "BRAND_APPLICATION" | "BADGE" | "PRODUCT" | "SUPPORT_TICKET";
 
 export type RecentActor = {
   id: string;
@@ -40,6 +44,7 @@ export type NotificationMetadata = {
   productName?: string;
   productImageUrl?: string | null;
   rating?: number;
+  supportSubject?: string;
 };
 
 export type Notification = {
