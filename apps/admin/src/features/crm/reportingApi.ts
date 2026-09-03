@@ -1,6 +1,8 @@
 import { apiClient } from "@/lib/apiClient";
 
 import {
+  type CrmOverviewReport,
+  crmOverviewReportSchema,
   type CrmSearchResults,
   crmSearchResultsSchema,
   type PipelineReport,
@@ -18,6 +20,11 @@ export const crmReportingApi = {
   async getTicketReport(): Promise<TicketReport> {
     const res = await apiClient.get<TicketReport>("/crm/reports/tickets");
     return ticketReportSchema.parse(res.data);
+  },
+
+  async getOverviewReport(): Promise<CrmOverviewReport> {
+    const res = await apiClient.get<CrmOverviewReport>("/crm/reports/overview");
+    return crmOverviewReportSchema.parse(res.data);
   },
 
   async search(query: string): Promise<CrmSearchResults> {

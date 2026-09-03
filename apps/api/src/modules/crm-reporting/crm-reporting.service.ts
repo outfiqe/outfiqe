@@ -9,7 +9,12 @@ import {
   SEARCH_RESULTS_PER_TYPE,
 } from "./crm-reporting.constants.js";
 import { crmReportingRepository } from "./crm-reporting.repository.js";
-import type { CrmSearchResults, PipelineReport, TicketReport } from "./crm-reporting.types.js";
+import type {
+  CrmOverviewReport,
+  CrmSearchResults,
+  PipelineReport,
+  TicketReport,
+} from "./crm-reporting.types.js";
 
 type SearchEntity = (typeof CRM_SEARCH_ENTITY)[keyof typeof CRM_SEARCH_ENTITY];
 
@@ -50,6 +55,17 @@ export const crmReportingService = {
 
   getTicketReport(organizationId: string): Promise<TicketReport> {
     return crmReportingRepository.ticketReport(organizationId);
+  },
+
+  async getOverviewReport(organizationId: string): Promise<CrmOverviewReport> {
+    const [pipeline, tickets, activityTrend, openTasksDueTodayCount] = await Promise.all([
+      crmReportingService.getPipelineReport(organizationId),
+      crmReportingService.getTicketReport(organizationId),
+      crmReportingRepository.dailyActivityCounts(organizationId),
+      crmReportingRepository.openTasksDueTodayCount(organizationId),
+    ]);
+
+    return { pipeline, tickets, activityTrend, openTasksDueTodayCount };
   },
 
   async search(

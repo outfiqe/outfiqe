@@ -1,7 +1,9 @@
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 
+import { ACTIVITY_TREND_WINDOW_DAYS } from "./crm-reporting.constants.js";
 import type {
+  CrmActivityTrendPoint,
   DealSearchResult,
   PipelineStageReportRow,
   TicketReport,
@@ -40,7 +42,13 @@ type DealSearchRow = {
 
 type TicketSearchRow = { id: string; title: string; type: string; status: string };
 
+type ActivityTrendRow = { date: string; count: number };
+
+type CountRow = { count: number };
+
 const likeContains = (query: string): string => `%${query}%`;
+
+const ACTIVITY_TREND_SPAN_DAYS = ACTIVITY_TREND_WINDOW_DAYS - 1;
 
 export const crmReportingRepository = {
   async pipelineStageBreakdown(organizationId: string): Promise<PipelineStageReportRow[]> {
@@ -107,6 +115,44 @@ export const crmReportingRepository = {
       resolvedCount: resolution?.resolved_count ?? 0,
       meanResolutionSeconds: resolution?.mean_resolution_seconds ?? null,
     };
+  },
+
+  async dailyActivityCounts(organizationId: string): Promise<CrmActivityTrendPoint[]> {
+    const rows = await prisma.$queryRaw<ActivityTrendRow[]>(Prisma.sql`
+      WITH bounds AS (
+        SELECT
+          date_trunc('day', now() AT TIME ZONE 'UTC') AS today,
+          date_trunc('day', now() AT TIME ZONE 'UTC') - make_interval(days => ${ACTIVITY_TREND_SPAN_DAYS}) AS first_day
+      ),
+      days AS (
+        SELECT generate_series((SELECT first_day FROM bounds), (SELECT today FROM bounds), interval '1 day') AS day
+      ),
+      daily AS (
+        SELECT date_trunc('day', occurred_at) AS day, COUNT(*)::int AS count
+          FROM crm_activities
+         WHERE organization_id = ${organizationId}::uuid
+           AND occurred_at >= (SELECT first_day FROM bounds)
+         GROUP BY 1
+      )
+      SELECT to_char(days.day, 'YYYY-MM-DD') AS date, COALESCE(daily.count, 0)::int AS count
+        FROM days
+        LEFT JOIN daily ON daily.day = days.day
+       ORDER BY days.day
+    `);
+
+    return rows.map((row) => ({ date: row.date, count: row.count }));
+  },
+
+  async openTasksDueTodayCount(organizationId: string): Promise<number> {
+    const [row] = await prisma.$queryRaw<CountRow[]>(Prisma.sql`
+      SELECT COUNT(*)::int AS count
+        FROM crm_tasks
+       WHERE organization_id = ${organizationId}::uuid
+         AND status = 'OPEN'
+         AND due_at < date_trunc('day', now() AT TIME ZONE 'UTC') + interval '1 day'
+    `);
+
+    return row?.count ?? 0;
   },
 
   async searchDeals(
