@@ -20,10 +20,9 @@ const isCrossAppHref = (href: string): boolean =>
 const rowClass =
   "flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-[15px] font-medium transition-colors";
 
-const DOCK_HEIGHT = "5rem";
-const CLOSE_BUTTON_LIFT = "2.6rem";
-
-const NOTCH_MASK = "radial-gradient(2.375rem 2.375rem at 50% 0, transparent 2.25rem, #000 2.3rem)";
+const HANDLE_CLOSED_SIZE = { width: 74, height: 34 };
+const HANDLE_OPEN_SIZE = { width: 112, height: 54 };
+const HALF_CIRCLE_RADIUS = "50% 50% 0 0 / 100% 100% 0 0";
 
 const SWIPE_DISMISS_DISTANCE_PX = 96;
 const SWIPE_DISMISS_VELOCITY = 600;
@@ -56,9 +55,9 @@ export const DashboardMobileMenu = () => {
     if (shouldDismissOnSwipe(swipe.offset.y, swipe.velocity.y)) closeMenu();
   };
 
-  const sheetTransition = prefersReducedMotion
+  const spring = prefersReducedMotion
     ? { duration: 0 }
-    : ({ type: "spring", stiffness: 400, damping: 40 } as const);
+    : ({ type: "spring", stiffness: 420, damping: 36 } as const);
 
   return (
     <div className="lg:hidden">
@@ -78,11 +77,11 @@ export const DashboardMobileMenu = () => {
             />
 
             <motion.div
-              className="fixed inset-x-0 bottom-0 z-50"
+              className="fixed inset-x-0 bottom-0 z-40"
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              transition={sheetTransition}
+              transition={spring}
               drag={prefersReducedMotion ? false : "y"}
               dragConstraints={{ top: 0, bottom: 0 }}
               dragElastic={{ top: 0, bottom: 0.6 }}
@@ -90,7 +89,7 @@ export const DashboardMobileMenu = () => {
             >
               <nav
                 aria-label="Dashboard menu"
-                className="max-h-[62vh] overflow-y-auto rounded-t-[28px] bg-card px-3 pb-3 pt-2.5 shadow-[0_-14px_44px_-16px_rgba(0,0,0,0.5)]"
+                className="max-h-[68vh] overflow-y-auto rounded-t-[28px] bg-card px-3 pb-[calc(3.5rem+env(safe-area-inset-bottom))] pt-2.5 shadow-[0_-14px_44px_-16px_rgba(0,0,0,0.5)]"
               >
                 <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-border" />
                 <div className="flex flex-col gap-0.5">
@@ -142,29 +141,6 @@ export const DashboardMobileMenu = () => {
                   {logout.isPending ? "Signing out…" : "Sign out"}
                 </button>
               </nav>
-
-              <div
-                className="border-t border-border bg-muted"
-                style={{
-                  height: `calc(${DOCK_HEIGHT} + env(safe-area-inset-bottom))`,
-                  maskImage: NOTCH_MASK,
-                  WebkitMaskImage: NOTCH_MASK,
-                  maskRepeat: "no-repeat",
-                  WebkitMaskRepeat: "no-repeat",
-                }}
-              />
-
-              <button
-                type="button"
-                aria-label="Close dashboard menu"
-                onClick={closeMenu}
-                className="absolute left-1/2 flex size-14 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-lg"
-                style={{
-                  bottom: `calc(${DOCK_HEIGHT} + env(safe-area-inset-bottom) - ${CLOSE_BUTTON_LIFT})`,
-                }}
-              >
-                <X className="size-5" />
-              </button>
             </motion.div>
           </>
         )}
@@ -172,13 +148,23 @@ export const DashboardMobileMenu = () => {
 
       <motion.button
         type="button"
-        aria-label="Open dashboard menu"
+        aria-label={open ? "Close dashboard menu" : "Open dashboard menu"}
         aria-expanded={open}
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 left-1/2 z-30 flex size-14 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-lg"
-        whileTap={prefersReducedMotion ? undefined : { scale: 0.92 }}
+        onClick={() => setOpen((value) => !value)}
+        className="fixed bottom-0 left-1/2 z-50 flex items-center justify-center bg-primary text-primary-foreground shadow-[0_-6px_22px_-6px_rgba(0,0,0,0.45)]"
+        style={{ x: "-50%", borderRadius: HALF_CIRCLE_RADIUS }}
+        initial={false}
+        animate={open ? HANDLE_OPEN_SIZE : HANDLE_CLOSED_SIZE}
+        transition={spring}
+        whileTap={prefersReducedMotion ? undefined : { scaleX: 0.94 }}
       >
-        <Menu className="size-5" />
+        <motion.span
+          className="flex items-center justify-center pb-1"
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={spring}
+        >
+          {open ? <X className="size-5" /> : <Menu className="size-5" />}
+        </motion.span>
       </motion.button>
     </div>
   );
