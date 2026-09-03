@@ -42,7 +42,7 @@ const MessageBubble = ({ message }: { message: SupportMessage }) => {
     <div
       className={`rounded-xl border p-3.5 ${
         isInternal
-          ? "border-amber-300 bg-amber-50"
+          ? "border-amber-300 bg-amber-50 dark:border-amber-400/25 dark:bg-amber-400/10"
           : isStaff
             ? "border-border bg-muted"
             : "border-border bg-card"
@@ -50,7 +50,9 @@ const MessageBubble = ({ message }: { message: SupportMessage }) => {
     >
       <p className="text-xs font-semibold text-muted-foreground">
         {message.authorName ?? AUTHOR_LABEL[message.authorKind]}
-        {isInternal ? " · internal note" : ""} · {new Date(message.createdAt).toLocaleString()}
+        {isInternal && <span className="text-amber-600 dark:text-amber-400"> · internal note</span>}
+        {" · "}
+        {new Date(message.createdAt).toLocaleString()}
       </p>
       <p className="mt-1.5 whitespace-pre-wrap text-sm text-foreground">{message.body}</p>
       {message.attachmentUrls.length > 0 && (
