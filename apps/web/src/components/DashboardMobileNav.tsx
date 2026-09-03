@@ -28,7 +28,7 @@ export const DashboardMobileNav = () => {
   return (
     <nav
       aria-label="Dashboard"
-      className="sticky top-16 z-20 -mx-4 border-b border-border bg-background/95 px-4 py-2 backdrop-blur lg:hidden"
+      className="sticky top-[var(--site-header-height,4rem)] z-20 -mx-4 mb-4 border-b border-border bg-background/95 px-4 py-2 backdrop-blur lg:hidden"
     >
       <ul className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {navItems.map(({ id, href, label, icon: Icon }) => {
