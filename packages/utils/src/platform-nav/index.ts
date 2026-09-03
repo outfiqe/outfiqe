@@ -7,6 +7,7 @@ export const PLATFORM_NAV_KEYS = [
   "products",
   "collections",
   "categories",
+  "product-types",
   "size-options",
   "hero-slides",
   "orders",

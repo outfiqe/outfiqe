@@ -9,6 +9,7 @@ import { eventBus } from "#events/event-bus.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { seedTenantOrganization } from "#test/integration/crmFixtures.js";
+import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -40,7 +41,13 @@ const seedTicketsTenant = async () => {
     },
   });
   const product = await prisma.product.create({
-    data: { brandId: brand.id, name: "Tee", price: 1500, type: "TOPS", status: "APPROVED" },
+    data: {
+      brandId: brand.id,
+      name: "Tee",
+      price: 1500,
+      productTypeId: await ensureProductType(),
+      status: "APPROVED",
+    },
   });
   const size = await prisma.productSize.create({
     data: { productId: product.id, label: "M", stock: 10 },

@@ -64,6 +64,7 @@ import { platformImpersonationRoutes } from "./modules/platform-impersonation/pl
 import { platformMetricsRoutes } from "./modules/platform-metrics/platform-metrics.routes.js";
 import { platformNavAccessRoutes } from "./modules/platform-nav-access/platform-nav-access.routes.js";
 import { productReviewRoutes } from "./modules/product-reviews/product-review.routes.js";
+import { productTypeRoutes } from "./modules/product-types/product-type.routes.js";
 import { productRoutes } from "./modules/products/product.routes.js";
 import { sizeOptionRoutes } from "./modules/size-options/size-option.routes.js";
 import { supportRoutes } from "./modules/support/support.routes.js";
@@ -166,6 +167,7 @@ export const createApp = () => {
   app.use("/api/admin/invites", adminInviteRoutes);
   app.use("/api/products", productRoutes);
   app.use("/api/products/:productId/reviews", productReviewRoutes);
+  app.use("/api/product-types", productTypeRoutes);
   app.use("/api/size-options", sizeOptionRoutes);
   app.use("/api/cart", cartRoutes);
   app.use("/api/orders", orderRoutes);

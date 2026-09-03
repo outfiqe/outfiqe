@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 
+import { DEFAULT_PRODUCT_TYPES } from "@outfiqe/utils";
+
 import { slugifyHandle } from "#lib/handle.utils.js";
 import { hashPassword } from "#lib/password.utils.js";
 
@@ -16,7 +18,6 @@ import {
   FollowTargetType,
   HeroSlideStatus,
   ProductStatus,
-  ProductType,
   UserRole,
   XpActivityType,
 } from "../src/generated/prisma/enums.js";
@@ -720,7 +721,7 @@ const SEED_PRODUCTS = [
   {
     name: "Oversized Graphic Tee",
     price: 1450,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["streetwear", "casual"],
     brandIndex: 0,
     photoPool: TSHIRT_PHOTOS,
@@ -728,7 +729,7 @@ const SEED_PRODUCTS = [
   {
     name: "Cargo Pants",
     price: 2600,
-    type: ProductType.PANTS,
+    type: "pants",
     categorySlugs: ["streetwear", "casual"],
     brandIndex: 0,
     photoPool: CARGO_PHOTOS,
@@ -736,7 +737,7 @@ const SEED_PRODUCTS = [
   {
     name: "Wool Bomber Jacket",
     price: 5400,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["streetwear", "casual"],
     brandIndex: 0,
     photoPool: BOMBER_PHOTOS,
@@ -744,7 +745,7 @@ const SEED_PRODUCTS = [
   {
     name: "Bucket Hat",
     price: 950,
-    type: ProductType.HEADWEAR,
+    type: "headwear",
     categorySlugs: ["streetwear"],
     brandIndex: 3,
     photoPool: BUCKET_HAT_PHOTOS,
@@ -752,7 +753,7 @@ const SEED_PRODUCTS = [
   {
     name: "Boxy Varsity Jacket",
     price: 4800,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["streetwear", "y2k"],
     brandIndex: 5,
     photoPool: BOMBER_PHOTOS,
@@ -760,7 +761,7 @@ const SEED_PRODUCTS = [
   {
     name: "Baggy Denim Jeans",
     price: 3100,
-    type: ProductType.PANTS,
+    type: "pants",
     categorySlugs: ["streetwear"],
     brandIndex: 5,
     photoPool: CARGO_PHOTOS,
@@ -768,7 +769,7 @@ const SEED_PRODUCTS = [
   {
     name: "Logo Print Hoodie",
     price: 2900,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["streetwear", "casual"],
     brandIndex: 0,
     photoPool: STREETWEAR_PHOTOS,
@@ -776,7 +777,7 @@ const SEED_PRODUCTS = [
   {
     name: "Formal Pants",
     price: 3400,
-    type: ProductType.PANTS,
+    type: "pants",
     categorySlugs: ["formal", "business-casual"],
     brandIndex: 1,
     photoPool: FORMAL_PHOTOS,
@@ -784,7 +785,7 @@ const SEED_PRODUCTS = [
   {
     name: "Pleated Trousers",
     price: 3200,
-    type: ProductType.PANTS,
+    type: "pants",
     categorySlugs: ["formal"],
     brandIndex: 1,
     photoPool: TROUSERS_PHOTOS,
@@ -792,7 +793,7 @@ const SEED_PRODUCTS = [
   {
     name: "Slim Fit Dress Shirt",
     price: 2200,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["formal", "business-casual"],
     brandIndex: 1,
     photoPool: FORMAL_PHOTOS,
@@ -800,7 +801,7 @@ const SEED_PRODUCTS = [
   {
     name: "Tailored Blazer",
     price: 6200,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["formal", "business-casual"],
     brandIndex: 9,
     photoPool: FORMAL_PHOTOS,
@@ -808,7 +809,7 @@ const SEED_PRODUCTS = [
   {
     name: "Charcoal Waistcoat",
     price: 2800,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["formal"],
     brandIndex: 9,
     photoPool: FORMAL_PHOTOS,
@@ -816,7 +817,7 @@ const SEED_PRODUCTS = [
   {
     name: "Double-Breasted Overcoat",
     price: 7800,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["formal", "old-money"],
     brandIndex: 4,
     photoPool: FORMAL_PHOTOS,
@@ -824,7 +825,7 @@ const SEED_PRODUCTS = [
   {
     name: "Linen Kurta",
     price: 2800,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["traditional"],
     brandIndex: 2,
     photoPool: TRADITIONAL_PHOTOS,
@@ -832,7 +833,7 @@ const SEED_PRODUCTS = [
   {
     name: "Daura Suruwal Set",
     price: 6500,
-    type: ProductType.DRESSES,
+    type: "dresses",
     categorySlugs: ["traditional", "formal"],
     brandIndex: 2,
     photoPool: TRADITIONAL_PHOTOS,
@@ -840,7 +841,7 @@ const SEED_PRODUCTS = [
   {
     name: "Dhaka Print Vest",
     price: 1800,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["traditional"],
     brandIndex: 4,
     photoPool: TRADITIONAL_PHOTOS,
@@ -848,7 +849,7 @@ const SEED_PRODUCTS = [
   {
     name: "Hand-Woven Shawl Wrap",
     price: 3600,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["traditional", "old-money"],
     brandIndex: 4,
     photoPool: TRADITIONAL_PHOTOS,
@@ -856,7 +857,7 @@ const SEED_PRODUCTS = [
   {
     name: "Embroidered Silk Kurta",
     price: 4200,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["traditional", "formal"],
     brandIndex: 2,
     photoPool: TRADITIONAL_PHOTOS,
@@ -864,7 +865,7 @@ const SEED_PRODUCTS = [
   {
     name: "Nepali Topi",
     price: 650,
-    type: ProductType.HEADWEAR,
+    type: "headwear",
     categorySlugs: ["traditional"],
     brandIndex: 2,
     photoPool: BUCKET_HAT_PHOTOS,
@@ -872,7 +873,7 @@ const SEED_PRODUCTS = [
   {
     name: "Handloom Cotton Dress",
     price: 3100,
-    type: ProductType.DRESSES,
+    type: "dresses",
     categorySlugs: ["traditional", "minimal"],
     brandIndex: 2,
     photoPool: TRADITIONAL_PHOTOS,
@@ -880,7 +881,7 @@ const SEED_PRODUCTS = [
   {
     name: "Relaxed Fit Chinos",
     price: 2400,
-    type: ProductType.PANTS,
+    type: "pants",
     categorySlugs: ["casual", "business-casual"],
     brandIndex: 6,
     photoPool: CASUAL_PHOTOS,
@@ -888,7 +889,7 @@ const SEED_PRODUCTS = [
   {
     name: "Everyday Crewneck Sweater",
     price: 2100,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["casual", "minimal"],
     brandIndex: 6,
     photoPool: CASUAL_PHOTOS,
@@ -896,7 +897,7 @@ const SEED_PRODUCTS = [
   {
     name: "Denim Overshirt",
     price: 2700,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["casual", "streetwear"],
     brandIndex: 0,
     photoPool: CASUAL_PHOTOS,
@@ -904,7 +905,7 @@ const SEED_PRODUCTS = [
   {
     name: "Cotton Poplin Shirt",
     price: 1900,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["casual", "business-casual"],
     brandIndex: 6,
     photoPool: CASUAL_PHOTOS,
@@ -912,7 +913,7 @@ const SEED_PRODUCTS = [
   {
     name: "Weekend Jogger Pants",
     price: 1750,
-    type: ProductType.PANTS,
+    type: "pants",
     categorySlugs: ["casual", "athleisure"],
     brandIndex: 6,
     photoPool: CASUAL_PHOTOS,
@@ -920,7 +921,7 @@ const SEED_PRODUCTS = [
   {
     name: "Corduroy Trucker Jacket",
     price: 3900,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["casual", "streetwear"],
     brandIndex: 0,
     photoPool: CASUAL_PHOTOS,
@@ -928,7 +929,7 @@ const SEED_PRODUCTS = [
   {
     name: "Floral Wrap Dress",
     price: 2950,
-    type: ProductType.DRESSES,
+    type: "dresses",
     categorySlugs: ["casual", "minimal"],
     brandIndex: 6,
     photoPool: CASUAL_PHOTOS,
@@ -936,7 +937,7 @@ const SEED_PRODUCTS = [
   {
     name: "Boxy Cotton Tee",
     price: 1200,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["minimal", "casual"],
     brandIndex: 6,
     photoPool: MINIMAL_PHOTOS,
@@ -944,7 +945,7 @@ const SEED_PRODUCTS = [
   {
     name: "Straight Leg Trousers",
     price: 2900,
-    type: ProductType.PANTS,
+    type: "pants",
     categorySlugs: ["minimal", "business-casual"],
     brandIndex: 6,
     photoPool: MINIMAL_PHOTOS,
@@ -952,7 +953,7 @@ const SEED_PRODUCTS = [
   {
     name: "Structured Midi Dress",
     price: 3400,
-    type: ProductType.DRESSES,
+    type: "dresses",
     categorySlugs: ["minimal"],
     brandIndex: 6,
     photoPool: MINIMAL_PHOTOS,
@@ -960,7 +961,7 @@ const SEED_PRODUCTS = [
   {
     name: "Seamless Rib Tank",
     price: 950,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["minimal", "loungewear"],
     brandIndex: 6,
     photoPool: MINIMAL_PHOTOS,
@@ -968,7 +969,7 @@ const SEED_PRODUCTS = [
   {
     name: "Wide Leg Linen Pants",
     price: 2600,
-    type: ProductType.PANTS,
+    type: "pants",
     categorySlugs: ["minimal", "loungewear"],
     brandIndex: 6,
     photoPool: MINIMAL_PHOTOS,
@@ -976,7 +977,7 @@ const SEED_PRODUCTS = [
   {
     name: "Chunky Knit Beanie",
     price: 750,
-    type: ProductType.HEADWEAR,
+    type: "headwear",
     categorySlugs: ["minimal", "casual"],
     brandIndex: 6,
     photoPool: MINIMAL_PHOTOS,
@@ -984,7 +985,7 @@ const SEED_PRODUCTS = [
   {
     name: "Low-Rise Cargo Skirt",
     price: 2300,
-    type: ProductType.BOTTOMS,
+    type: "bottoms",
     categorySlugs: ["y2k", "streetwear"],
     brandIndex: 5,
     photoPool: Y2K_PHOTOS,
@@ -992,7 +993,7 @@ const SEED_PRODUCTS = [
   {
     name: "Cropped Baby Tee",
     price: 1100,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["y2k"],
     brandIndex: 5,
     photoPool: Y2K_PHOTOS,
@@ -1000,7 +1001,7 @@ const SEED_PRODUCTS = [
   {
     name: "Butterfly Print Top",
     price: 1350,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["y2k"],
     brandIndex: 5,
     photoPool: Y2K_PHOTOS,
@@ -1008,7 +1009,7 @@ const SEED_PRODUCTS = [
   {
     name: "Denim Mini Skirt",
     price: 1950,
-    type: ProductType.BOTTOMS,
+    type: "bottoms",
     categorySlugs: ["y2k", "streetwear"],
     brandIndex: 5,
     photoPool: Y2K_PHOTOS,
@@ -1016,7 +1017,7 @@ const SEED_PRODUCTS = [
   {
     name: "Rhinestone Trucker Cap",
     price: 850,
-    type: ProductType.HEADWEAR,
+    type: "headwear",
     categorySlugs: ["y2k", "streetwear"],
     brandIndex: 5,
     photoPool: Y2K_PHOTOS,
@@ -1024,7 +1025,7 @@ const SEED_PRODUCTS = [
   {
     name: "Cable Knit Sweater",
     price: 3800,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["old-money", "preppy"],
     brandIndex: 7,
     photoPool: OLD_MONEY_PHOTOS,
@@ -1032,7 +1033,7 @@ const SEED_PRODUCTS = [
   {
     name: "Camel Wool Coat",
     price: 8500,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["old-money", "formal"],
     brandIndex: 4,
     photoPool: OLD_MONEY_PHOTOS,
@@ -1040,7 +1041,7 @@ const SEED_PRODUCTS = [
   {
     name: "Pleated Wool Skirt",
     price: 3200,
-    type: ProductType.BOTTOMS,
+    type: "bottoms",
     categorySlugs: ["old-money", "preppy"],
     brandIndex: 7,
     photoPool: OLD_MONEY_PHOTOS,
@@ -1048,7 +1049,7 @@ const SEED_PRODUCTS = [
   {
     name: "Quilted Vest",
     price: 3600,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["old-money", "preppy"],
     brandIndex: 7,
     photoPool: OLD_MONEY_PHOTOS,
@@ -1056,7 +1057,7 @@ const SEED_PRODUCTS = [
   {
     name: "Oxford Button-Down Shirt",
     price: 2600,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["old-money", "preppy", "business-casual"],
     brandIndex: 7,
     photoPool: OLD_MONEY_PHOTOS,
@@ -1064,7 +1065,7 @@ const SEED_PRODUCTS = [
   {
     name: "Herringbone Blazer",
     price: 6800,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["old-money", "formal"],
     brandIndex: 4,
     photoPool: OLD_MONEY_PHOTOS,
@@ -1072,7 +1073,7 @@ const SEED_PRODUCTS = [
   {
     name: "Silk Slip Dress",
     price: 3800,
-    type: ProductType.DRESSES,
+    type: "dresses",
     categorySlugs: ["old-money", "minimal"],
     brandIndex: 4,
     photoPool: OLD_MONEY_PHOTOS,
@@ -1080,7 +1081,7 @@ const SEED_PRODUCTS = [
   {
     name: "Pinstripe Trousers",
     price: 3500,
-    type: ProductType.PANTS,
+    type: "pants",
     categorySlugs: ["formal", "old-money"],
     brandIndex: 4,
     photoPool: TROUSERS_PHOTOS,
@@ -1088,7 +1089,7 @@ const SEED_PRODUCTS = [
   {
     name: "Performance Track Jacket",
     price: 3300,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["athleisure", "streetwear"],
     brandIndex: 8,
     photoPool: CASUAL_PHOTOS,
@@ -1096,7 +1097,7 @@ const SEED_PRODUCTS = [
   {
     name: "High-Waist Training Leggings",
     price: 1800,
-    type: ProductType.BOTTOMS,
+    type: "bottoms",
     categorySlugs: ["athleisure"],
     brandIndex: 8,
     photoPool: MINIMAL_PHOTOS,
@@ -1104,7 +1105,7 @@ const SEED_PRODUCTS = [
   {
     name: "Ribbed Sports Bra Top",
     price: 1200,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["athleisure"],
     brandIndex: 8,
     photoPool: MINIMAL_PHOTOS,
@@ -1112,7 +1113,7 @@ const SEED_PRODUCTS = [
   {
     name: "Fleece Zip Hoodie",
     price: 2600,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["athleisure", "casual"],
     brandIndex: 8,
     photoPool: CASUAL_PHOTOS,
@@ -1120,7 +1121,7 @@ const SEED_PRODUCTS = [
   {
     name: "Tapered Joggers",
     price: 2000,
-    type: ProductType.PANTS,
+    type: "pants",
     categorySlugs: ["athleisure", "casual"],
     brandIndex: 8,
     photoPool: CASUAL_PHOTOS,
@@ -1128,7 +1129,7 @@ const SEED_PRODUCTS = [
   {
     name: "Puffer Vest",
     price: 2450,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["athleisure", "streetwear"],
     brandIndex: 8,
     photoPool: BOMBER_PHOTOS,
@@ -1136,7 +1137,7 @@ const SEED_PRODUCTS = [
   {
     name: "Merino Half-Zip Sweater",
     price: 3100,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["business-casual", "formal"],
     brandIndex: 9,
     photoPool: FORMAL_PHOTOS,
@@ -1144,7 +1145,7 @@ const SEED_PRODUCTS = [
   {
     name: "Stretch Wool Trousers",
     price: 3300,
-    type: ProductType.PANTS,
+    type: "pants",
     categorySlugs: ["business-casual", "formal"],
     brandIndex: 9,
     photoPool: TROUSERS_PHOTOS,
@@ -1152,7 +1153,7 @@ const SEED_PRODUCTS = [
   {
     name: "Structured Shirt Dress",
     price: 3500,
-    type: ProductType.DRESSES,
+    type: "dresses",
     categorySlugs: ["business-casual", "minimal"],
     brandIndex: 1,
     photoPool: MINIMAL_PHOTOS,
@@ -1160,7 +1161,7 @@ const SEED_PRODUCTS = [
   {
     name: "Soft Blazer Jacket",
     price: 5200,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["business-casual", "formal"],
     brandIndex: 1,
     photoPool: FORMAL_PHOTOS,
@@ -1168,7 +1169,7 @@ const SEED_PRODUCTS = [
   {
     name: "Argyle Knit Vest",
     price: 2600,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["preppy", "old-money"],
     brandIndex: 7,
     photoPool: OLD_MONEY_PHOTOS,
@@ -1176,7 +1177,7 @@ const SEED_PRODUCTS = [
   {
     name: "Pleated Tennis Skirt",
     price: 2100,
-    type: ProductType.BOTTOMS,
+    type: "bottoms",
     categorySlugs: ["preppy"],
     brandIndex: 7,
     photoPool: OLD_MONEY_PHOTOS,
@@ -1184,7 +1185,7 @@ const SEED_PRODUCTS = [
   {
     name: "Collared Polo Shirt",
     price: 1850,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["preppy", "casual"],
     brandIndex: 7,
     photoPool: CASUAL_PHOTOS,
@@ -1192,7 +1193,7 @@ const SEED_PRODUCTS = [
   {
     name: "Varsity Letterman Jacket",
     price: 4600,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["preppy", "streetwear"],
     brandIndex: 7,
     photoPool: BOMBER_PHOTOS,
@@ -1200,7 +1201,7 @@ const SEED_PRODUCTS = [
   {
     name: "Waffle Knit Lounge Set",
     price: 2400,
-    type: ProductType.DRESSES,
+    type: "dresses",
     categorySlugs: ["loungewear", "minimal"],
     brandIndex: 6,
     photoPool: MINIMAL_PHOTOS,
@@ -1208,7 +1209,7 @@ const SEED_PRODUCTS = [
   {
     name: "Brushed Cotton Joggers",
     price: 1650,
-    type: ProductType.PANTS,
+    type: "pants",
     categorySlugs: ["loungewear", "casual"],
     brandIndex: 6,
     photoPool: CASUAL_PHOTOS,
@@ -1216,7 +1217,7 @@ const SEED_PRODUCTS = [
   {
     name: "Oversized Sleep Shirt",
     price: 1400,
-    type: ProductType.TOPS,
+    type: "tops",
     categorySlugs: ["loungewear"],
     brandIndex: 6,
     photoPool: MINIMAL_PHOTOS,
@@ -1224,7 +1225,7 @@ const SEED_PRODUCTS = [
   {
     name: "Terry Cloth Robe Jacket",
     price: 2900,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["loungewear"],
     brandIndex: 6,
     photoPool: MINIMAL_PHOTOS,
@@ -1232,7 +1233,7 @@ const SEED_PRODUCTS = [
   {
     name: "Denim Trucker Jacket",
     price: 2750,
-    type: ProductType.OUTERWEAR,
+    type: "outerwear",
     categorySlugs: ["streetwear", "casual"],
     brandIndex: 5,
     photoPool: CASUAL_PHOTOS,
@@ -1243,7 +1244,43 @@ const PRODUCT_IMAGE_POOLS: Record<string, string[]> = Object.fromEntries(
   SEED_PRODUCTS.map((product) => [product.name, product.photoPool]),
 );
 
-const seedProducts = async (brands: { id: string }[]) => {
+const DEFAULT_SIZES_BY_TYPE: Record<string, string[]> = {
+  tops: ["XS", "S", "M", "L", "XL"],
+  bottoms: ["XS", "S", "M", "L", "XL"],
+  dresses: ["XS", "S", "M", "L", "XL"],
+  outerwear: ["XS", "S", "M", "L", "XL"],
+  pants: ["28", "30", "32", "34", "36"],
+  headwear: ["One size"],
+};
+
+const seedProductTypes = async (): Promise<Map<string, string>> => {
+  await Promise.all(
+    DEFAULT_PRODUCT_TYPES.map((productType, index) =>
+      prisma.productType.upsert({
+        where: { slug: productType.slug },
+        create: { slug: productType.slug, label: productType.label, sortOrder: index },
+        update: {},
+      }),
+    ),
+  );
+
+  const rows = await prisma.productType.findMany({ select: { id: true, slug: true } });
+  const idBySlug = new Map(rows.map((row) => [row.slug, row.id]));
+
+  if ((await prisma.sizeOption.count()) === 0) {
+    for (const [slug, labels] of Object.entries(DEFAULT_SIZES_BY_TYPE)) {
+      const productTypeId = idBySlug.get(slug);
+      if (!productTypeId) continue;
+      await prisma.sizeOption.createMany({
+        data: labels.map((label, sortOrder) => ({ productTypeId, label, sortOrder })),
+      });
+    }
+  }
+
+  return idBySlug;
+};
+
+const seedProducts = async (brands: { id: string }[], productTypeIdBySlug: Map<string, string>) => {
   const existing = await prisma.product.count();
   if (existing > 0) return;
 
@@ -1251,12 +1288,14 @@ const seedProducts = async (brands: { id: string }[]) => {
   const categoryIdBySlug = new Map(categories.map((category) => [category.slug, category.id]));
 
   for (const seedProduct of SEED_PRODUCTS) {
+    const productTypeId = productTypeIdBySlug.get(seedProduct.type);
+    if (!productTypeId) continue;
     await prisma.product.create({
       data: {
         brandId: brands[seedProduct.brandIndex].id,
         name: seedProduct.name,
         price: seedProduct.price,
-        type: seedProduct.type,
+        productTypeId,
         status: ProductStatus.APPROVED,
         categories: {
           connect: seedProduct.categorySlugs
@@ -1278,7 +1317,7 @@ type SeedCollection = {
     id: string;
     categories: { slug: string }[];
     price: number;
-    type: ProductType;
+    type: string;
   }) => boolean;
 };
 
@@ -1333,7 +1372,7 @@ const SEED_COLLECTIONS: SeedCollection[] = [
     slug: "monsoon-layers",
     description: "Jackets, coats and overshirts built for Kathmandu's unpredictable monsoon.",
     imageUrl: unsplashUrl(BOMBER_PHOTOS[0]),
-    pick: (product) => product.type === ProductType.OUTERWEAR,
+    pick: (product) => product.type === "outerwear",
   },
   {
     name: "Athleisure & Lounge",
@@ -1350,10 +1389,19 @@ const seedCollections = async () => {
   const existing = await prisma.collection.count();
   if (existing > 0) return;
 
-  const approvedProducts = await prisma.product.findMany({
+  const approvedProductRows = await prisma.product.findMany({
     where: { status: ProductStatus.APPROVED },
-    select: { id: true, categories: { select: { slug: true } }, price: true, type: true },
+    select: {
+      id: true,
+      categories: { select: { slug: true } },
+      price: true,
+      productType: { select: { slug: true } },
+    },
   });
+  const approvedProducts = approvedProductRows.map(({ productType, ...rest }) => ({
+    ...rest,
+    type: productType.slug,
+  }));
 
   if (approvedProducts.length === 0) return;
 
@@ -1852,8 +1900,9 @@ async function main() {
   }
 
   await seedCategories();
+  const productTypeIdBySlug = await seedProductTypes();
   const brands = await seedBrands();
-  await seedProducts(brands);
+  await seedProducts(brands, productTypeIdBySlug);
   await seedDemoUser();
   const creators = await seedCreators();
   const shoppers = await seedShoppers();

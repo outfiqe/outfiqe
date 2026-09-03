@@ -1,6 +1,6 @@
-import type { ProductStatus, ProductType } from "#generated/prisma/enums.js";
+import type { ProductStatus } from "#generated/prisma/enums.js";
 
-import type { ProductTypeSlug } from "./product.constants.js";
+export type ProductTypeSummary = { slug: string; label: string };
 
 export type ProductRatingSummary = {
   avgRating: number | null;
@@ -17,7 +17,7 @@ export type ProductRecord = {
   brandId: string;
   name: string;
   price: number;
-  type: ProductType;
+  productTypeId: string;
   imageUrl: string | null;
   lowStock: boolean;
   status: ProductStatus;
@@ -48,6 +48,7 @@ export type SeenOnCreator = {
 export type ProductWithBrand = ProductRecord & {
   brand: { name: string };
   categories: { slug: string; name: string }[];
+  productType: ProductTypeSummary;
 };
 
 export type ProductWithStock = ProductWithBrand & { totalStock: number };
@@ -76,7 +77,7 @@ export type ProductBrandSummary = {
   id: string;
   name: string;
   price: number;
-  type: ProductTypeSlug;
+  type: string;
   categories: string[];
   categorySlugs: string[];
   imageUrl: string | null;
@@ -102,7 +103,7 @@ export type CreateProductInput = {
   brandId: string;
   name: string;
   price: number;
-  type: ProductType;
+  productTypeId: string;
   categoryIds: string[];
   imageUrls?: string[];
   lowStock?: boolean;
@@ -116,7 +117,7 @@ export type PublicProduct = {
   brand: string;
   name: string;
   price: number;
-  type: ProductTypeSlug;
+  type: string;
   categorySlugs: string[];
   imageUrl: string | null;
   lowStock: boolean;
@@ -134,7 +135,7 @@ export type PublicProductPage = {
 
 export type ProductSearchFilter = {
   categoryId?: string;
-  type?: ProductType;
+  productTypeId?: string;
   brandId?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -169,9 +170,4 @@ export type PublicProductDetail = Omit<PublicProduct, "brand"> & {
   wornByCount: number;
   seenOnCreators: SeenOnCreator[];
   isSaved: boolean;
-};
-
-export type PublicProductType = {
-  slug: ProductTypeSlug;
-  label: string;
 };

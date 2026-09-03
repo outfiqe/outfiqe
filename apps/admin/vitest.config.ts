@@ -33,6 +33,7 @@ export default defineConfig({
         "src/features/platform-features/**/*.{ts,tsx}",
         "src/features/platform-impersonation/**/*.{ts,tsx}",
         "src/features/platform-nav-access/**/*.{ts,tsx}",
+        "src/features/product-types/**/*.{ts,tsx}",
         "src/features/support/schemas.ts",
         "src/lib/brandsApi.ts",
         "src/features/auth/AuthContext.tsx",

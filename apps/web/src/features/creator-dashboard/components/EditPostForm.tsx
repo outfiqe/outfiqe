@@ -25,6 +25,10 @@ import { useTaggableProducts } from "../hooks/useTaggableProducts";
 import { useUpdateLook } from "../hooks/useUpdateLook";
 import { type EditLookFormInput, editLookFormSchema } from "../schemas/lookForm.schema";
 import {
+  collectTaggedProductSizeErrors,
+  summarizeTaggedProductErrors,
+} from "../utils/taggedProductSizeErrors";
+import {
   CROP_BOX_STYLE,
   DEFAULT_IMAGE_MIME_TYPE,
   MAX_PHOTOS,
@@ -82,6 +86,8 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
   });
 
   const taggedProducts = form.watch("taggedProducts");
+  const taggedProductErrors = form.formState.errors.taggedProducts;
+  const sizeErrors = collectTaggedProductSizeErrors(taggedProductErrors, taggedProducts);
 
   const detailProductCache = useMemo(
     () => Object.fromEntries(detail.taggedProducts.map((tag) => [tag.productId, tag.product])),
@@ -339,13 +345,14 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
           onToggleProduct={toggleProduct}
           onRemoveTag={removeTag}
           onSizeChange={setSizeWorn}
+          sizeErrors={sizeErrors}
           productFilter={productFilter}
           onFilterChange={setProductFilter}
           debouncedFilter={debouncedFilter}
           isSearching={isSearching}
           isSearchLoading={taggableProducts.isLoading}
           searchResults={taggableProducts.data?.products ?? []}
-          error={form.formState.errors.taggedProducts?.message}
+          error={summarizeTaggedProductErrors(taggedProductErrors, sizeErrors)}
         />
       </div>
 

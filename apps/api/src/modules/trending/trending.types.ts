@@ -1,5 +1,3 @@
-import type { ProductType } from "#generated/prisma/enums.js";
-
 export type MetricBucket = {
   productId: string;
   bucketStart: Date;
@@ -13,7 +11,7 @@ export type MetricBucket = {
 export type ProductTrendMeta = {
   id: string;
   brandId: string;
-  type: ProductType;
+  productTypeId: string;
   createdAt: Date;
 };
 

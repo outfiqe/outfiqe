@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, FormBanner, Input, MultiSelect, toast } from "@outfiqe/design-system";
-import type { ProductTypeSlug } from "@outfiqe/utils";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -38,7 +37,7 @@ type EditProductFormProps = {
 };
 
 export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
-  const originalType = product.type as ProductTypeSlug;
+  const originalType = product.type;
   const update = useUpdateProduct();
   const productTypes = useProductTypes();
   const categories = useCategories();

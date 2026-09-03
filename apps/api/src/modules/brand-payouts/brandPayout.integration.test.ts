@@ -10,12 +10,12 @@ import {
   PaymentMethod,
   PlatformFeeType,
   ProductStatus,
-  ProductType,
   UserRole,
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { createAdminSession } from "#test/integration/authHelpers.js";
+import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -75,7 +75,7 @@ const createBrandPayout = async (
       brandId,
       name: "Ledger Item",
       price: netAmount,
-      type: ProductType.TOPS,
+      productTypeId: await ensureProductType(),
       status: ProductStatus.APPROVED,
     },
   });

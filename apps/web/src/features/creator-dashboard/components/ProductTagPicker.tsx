@@ -37,6 +37,7 @@ type ProductTagPickerProps = {
   onToggleProduct: (product: PublicProduct) => void;
   onRemoveTag: (productId: string) => void;
   onSizeChange: (productId: string, sizeWorn: string) => void;
+  sizeErrors?: Record<string, string>;
   productFilter: string;
   onFilterChange: (value: string) => void;
   debouncedFilter: string;
@@ -53,6 +54,7 @@ export const ProductTagPicker = ({
   onToggleProduct,
   onRemoveTag,
   onSizeChange,
+  sizeErrors,
   productFilter,
   onFilterChange,
   debouncedFilter,
@@ -86,36 +88,42 @@ export const ProductTagPicker = ({
             <div className="mb-2 space-y-1.5">
               {taggedProducts.map((tag) => {
                 const product = productCache[tag.productId];
+                const sizeError = sizeErrors?.[tag.productId];
                 return (
                   <div
                     key={tag.productId}
-                    className="flex items-center gap-2.5 rounded-lg border border-foreground bg-muted px-2.5 py-2"
+                    className="rounded-lg border border-foreground bg-muted px-2.5 py-2"
                   >
-                    <ProductThumb url={product?.imageUrl ?? null} className="size-9" />
-                    <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">
-                      {product?.name ?? "Product"}
-                    </span>
-                    <Input
-                      placeholder="Size (e.g. M)"
-                      className="h-8 w-24 shrink-0"
-                      value={tag.sizeWorn}
-                      onChange={(event) => onSizeChange(tag.productId, event.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => onRemoveTag(tag.productId)}
-                      aria-label={`Remove ${product?.name ?? "product"} tag`}
-                      className="shrink-0 text-muted-foreground transition-colors hover:text-destructive"
-                    >
-                      <X className="size-4" />
-                    </button>
+                    <div className="flex items-center gap-2.5">
+                      <ProductThumb url={product?.imageUrl ?? null} className="size-9" />
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">
+                        {product?.name ?? "Product"}
+                      </span>
+                      <Input
+                        placeholder="Size (e.g. M)"
+                        className="h-8 w-24 shrink-0"
+                        value={tag.sizeWorn}
+                        aria-invalid={sizeError ? true : undefined}
+                        aria-label={`Size worn for ${product?.name ?? "product"}`}
+                        onChange={(event) => onSizeChange(tag.productId, event.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => onRemoveTag(tag.productId)}
+                        aria-label={`Remove ${product?.name ?? "product"} tag`}
+                        className="shrink-0 text-muted-foreground transition-colors hover:text-destructive"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    </div>
+                    {sizeError && <p className="mt-1 text-xs text-destructive">{sizeError}</p>}
                   </div>
                 );
               })}
             </div>
           )}
 
-          <Autocomplete closeOnSelect={false}>
+          <Autocomplete>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
               <AutocompleteInput
@@ -152,7 +160,10 @@ export const ProductTagPicker = ({
                     <AutocompleteItem
                       key={product.id}
                       value={product.id}
-                      onSelect={() => onToggleProduct(product)}
+                      onSelect={() => {
+                        onToggleProduct(product);
+                        onFilterChange("");
+                      }}
                     >
                       <ProductThumb url={product.imageUrl} className="size-9" />
                       <span className="min-w-0 flex-1">

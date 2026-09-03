@@ -12,7 +12,6 @@ import {
   CommissionStatus,
   PaymentMethod,
   ProductStatus,
-  ProductType,
   UserRole,
   WithdrawOwnerType,
   WithdrawRequestStatus,
@@ -20,6 +19,7 @@ import {
 } from "#generated/prisma/enums.js";
 import { redis } from "#redis/redis.client.js";
 import { createAdminSession } from "#test/integration/authHelpers.js";
+import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -116,7 +116,7 @@ const grantAvailableCommission = async (creatorId: string, amount: number) => {
       brandId: brand.id,
       name: "Item",
       price: amount,
-      type: ProductType.TOPS,
+      productTypeId: await ensureProductType(),
       status: ProductStatus.APPROVED,
     },
   });
@@ -499,7 +499,7 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
         brandId: brand.id,
         name: "Item",
         price: 1000,
-        type: ProductType.TOPS,
+        productTypeId: await ensureProductType(),
         status: ProductStatus.APPROVED,
       },
     });

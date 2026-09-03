@@ -142,8 +142,9 @@ describe("ProductTagPicker", () => {
     expect(onFilterChange).toHaveBeenCalledWith("d");
   });
 
-  it("shows search results and calls onToggleProduct when one is selected", async () => {
+  it("tags the picked product and clears the search on select", async () => {
     const onToggleProduct = vi.fn();
+    const onFilterChange = vi.fn();
     const user = userEvent.setup();
     render(
       <ProductTagPicker
@@ -152,6 +153,7 @@ describe("ProductTagPicker", () => {
         debouncedFilter="denim"
         searchResults={[buildProduct()]}
         onToggleProduct={onToggleProduct}
+        onFilterChange={onFilterChange}
       />,
     );
 
@@ -159,6 +161,7 @@ describe("ProductTagPicker", () => {
     await user.click(screen.getByRole("option", { name: /Denim Jacket/ }));
 
     expect(onToggleProduct).toHaveBeenCalledWith(buildProduct());
+    expect(onFilterChange).toHaveBeenCalledWith("");
   });
 
   it("marks an already-tagged search result", async () => {

@@ -38,7 +38,6 @@ productRoutes.get(
 );
 productRoutes.get("/trending", productController.listTrending);
 productRoutes.get("/new-arrivals", productController.listNewArrivals);
-productRoutes.get("/types", productController.listTypes);
 productRoutes.get(
   "/autocomplete",
   validate({ query: autocompleteQuerySchema }),

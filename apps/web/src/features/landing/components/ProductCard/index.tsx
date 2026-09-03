@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@outfiqe/design-system";
-import type { ProductTypeSlug } from "@outfiqe/utils";
 import { Heart, Shirt, Star } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -12,7 +11,7 @@ import { useToggleWishlist } from "@/features/wishlist";
 import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { cn } from "@/shared/lib/cn";
 
-export type ProductType = ProductTypeSlug;
+export type ProductType = string;
 
 export interface ExploreProduct {
   id: string;
