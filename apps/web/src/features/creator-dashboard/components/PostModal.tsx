@@ -19,6 +19,10 @@ import { useCreateLook } from "../hooks/useCreateLook";
 import { useTaggableProducts } from "../hooks/useTaggableProducts";
 import { type LookFormInput, lookFormSchema } from "../schemas/lookForm.schema";
 import {
+  collectTaggedProductSizeErrors,
+  summarizeTaggedProductErrors,
+} from "../utils/taggedProductSizeErrors";
+import {
   CROP_BOX_STYLE,
   DEFAULT_IMAGE_MIME_TYPE,
   MAX_PHOTOS,
@@ -48,6 +52,8 @@ export const PostModal = ({ open, onClose }: PostModalProps) => {
   });
 
   const taggedProducts = form.watch("taggedProducts");
+  const taggedProductErrors = form.formState.errors.taggedProducts;
+  const sizeErrors = collectTaggedProductSizeErrors(taggedProductErrors, taggedProducts);
 
   const pending = usePendingPhotos(MAX_PHOTOS);
   const [isProcessingPhotos, setIsProcessingPhotos] = useState(false);
@@ -196,13 +202,14 @@ export const PostModal = ({ open, onClose }: PostModalProps) => {
           onToggleProduct={toggleProduct}
           onRemoveTag={removeTag}
           onSizeChange={setSizeWorn}
+          sizeErrors={sizeErrors}
           productFilter={productFilter}
           onFilterChange={setProductFilter}
           debouncedFilter={debouncedFilter}
           isSearching={isSearching}
           isSearchLoading={taggableProducts.isLoading}
           searchResults={searchResults}
-          error={form.formState.errors.taggedProducts?.message}
+          error={summarizeTaggedProductErrors(taggedProductErrors, sizeErrors)}
         />
       </MediaFormShell>
     </Modal>

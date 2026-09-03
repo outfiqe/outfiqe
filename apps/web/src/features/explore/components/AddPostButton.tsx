@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { CreatorStatus } from "@/features/auth/types";
+import { CreatorStatus, UserRole } from "@/features/auth/types";
 import { ApplyAsCreatorButton } from "@/features/creator-dashboard/components/ApplyAsCreatorButton";
 import { PostModal } from "@/features/creator-dashboard/components/PostModal";
 
@@ -25,7 +25,10 @@ export const AddPostButton = () => {
 
   const creatorStatus = state.user?.creatorStatus ?? CreatorStatus.NONE;
   const isApprovedCreator = creatorStatus === CreatorStatus.APPROVED;
+  const isBrandOwner = state.user?.role === UserRole.BRAND_OWNER;
   const close = () => setTarget(null);
+
+  if (isBrandOwner) return null;
 
   const handleClick = () => {
     if (!isAuthenticated) {
