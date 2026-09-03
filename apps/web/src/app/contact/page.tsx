@@ -16,7 +16,7 @@ const channels = [
   {
     heading: "Order help",
     body: "Have a question about an order, delivery or a return? The help centre covers the common issues. If you still need a hand, raise a request and we'll reply by email.",
-    action: { href: "/settings/support", label: "Raise a support request" },
+    action: { href: "/support", label: "Raise a support request" },
   },
   {
     heading: "Sell on Outfiqe",
