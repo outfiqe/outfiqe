@@ -170,6 +170,32 @@ describe("DashboardSidebar", () => {
     expect(screen.queryByRole("link", { name: "CRM" })).not.toBeInTheDocument();
   });
 
+  it("shows Overview as the first item for a brand owner", () => {
+    mockAuth({});
+
+    render(<DashboardSidebar />);
+
+    const links = screen.getAllByRole("link");
+    expect(links[0]).toHaveAccessibleName("Overview");
+    expect(links[0]).toHaveAttribute("href", "/overview");
+  });
+
+  it("shows Overview to a shopper who is not an approved creator", () => {
+    mockAuth({
+      state: {
+        status: AuthStatus.AUTHENTICATED,
+        user: buildUser({ role: UserRole.CUSTOMER, isCreator: false }),
+        accessToken: "token",
+      },
+      isBrandOwner: false,
+      isCreator: false,
+    });
+
+    render(<DashboardSidebar />);
+
+    expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/overview");
+  });
+
   it("hides Share, Earnings and Withdraw from a shopper who is not an approved creator", () => {
     mockAuth({
       state: {
