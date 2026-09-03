@@ -11,7 +11,7 @@ export const FOOTER_LINK_GROUPS: FooterLinkGroup[] = [
       { label: "Collections", href: "/collections" },
       { label: "Brands", href: "/brands" },
       { label: "Explore looks", href: "/explore" },
-      { label: "Creator leaderboard", href: "/leaderboard" },
+      { label: "Creator leaderboard", href: "/leaderboard/creators" },
     ],
   },
   {

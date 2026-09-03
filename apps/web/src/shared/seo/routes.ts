@@ -11,7 +11,13 @@ export const primaryCommerceRoutes: MarketingRoute[] = [
   { path: "/brands", label: "Brands", changeFrequency: "weekly", priority: 0.8 },
   { path: "/collections", label: "Collections", changeFrequency: "weekly", priority: 0.8 },
   { path: "/explore", label: "Explore looks", changeFrequency: "daily", priority: 0.7 },
-  { path: "/leaderboard", label: "Creator leaderboard", changeFrequency: "daily", priority: 0.5 },
+  { path: "/leaderboard", label: "Brand leaderboard", changeFrequency: "daily", priority: 0.5 },
+  {
+    path: "/leaderboard/creators",
+    label: "Creator leaderboard",
+    changeFrequency: "daily",
+    priority: 0.5,
+  },
 ];
 
 export const companyRoutes: MarketingRoute[] = [
