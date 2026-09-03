@@ -1,13 +1,12 @@
 import {
-  cardClass,
-  railClass,
   Sidebar,
   type SidebarNavItem,
   type SidebarNavSection,
+  SidebarSkeleton,
   sidebarWidthClass,
   useSidebarCollapse,
 } from "@outfiqe/components";
-import { Badge, cn, Skeleton } from "@outfiqe/design-system";
+import { Badge, cn } from "@outfiqe/design-system";
 import { getAvatarColor, initialsFor } from "@outfiqe/utils";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -242,24 +241,6 @@ const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
 
 const SIDEBAR_SKELETON_ROW_COUNT = 8;
 
-const SidebarLoadingRail = ({ collapsed }: { collapsed: boolean }) => (
-  <nav
-    aria-label="Admin"
-    aria-busy="true"
-    className={cn(railClass, "shrink-0", sidebarWidthClass(collapsed))}
-  >
-    <div className={cn(cardClass, "flex shrink-0 items-center gap-2.5")}>
-      <Skeleton className="size-9 shrink-0 rounded-full" />
-      {!collapsed && <Skeleton className="h-4 flex-1" />}
-    </div>
-    <div className={cn(cardClass, "flex min-h-0 flex-1 flex-col gap-1.5")}>
-      {Array.from({ length: SIDEBAR_SKELETON_ROW_COUNT }, (_, rowIndex) => (
-        <Skeleton key={rowIndex} className="h-11 w-full rounded-2xl" />
-      ))}
-    </div>
-  </nav>
-);
-
 export const AdminSidebar = () => {
   const { state } = useAuth();
   const navigation = useTanStackSidebarNavigation();
@@ -273,7 +254,14 @@ export const AdminSidebar = () => {
   });
 
   if (!isAdminNavReady(state.status !== "loading", crmOrganizationStatus)) {
-    return <SidebarLoadingRail collapsed={collapsed} />;
+    return (
+      <SidebarSkeleton
+        ariaLabel="Admin"
+        collapsed={collapsed}
+        rowCount={SIDEBAR_SKELETON_ROW_COUNT}
+        className={cn("shrink-0", sidebarWidthClass(collapsed))}
+      />
+    );
   }
 
   const visibleCrmItems = CRM_SUB_ITEMS.filter((item) =>

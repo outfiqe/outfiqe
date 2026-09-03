@@ -108,6 +108,29 @@ describe("DashboardSidebar", () => {
     vi.mocked(useTenantHost).mockReturnValue(true);
   });
 
+  it("renders a loading skeleton while auth is still resolving", () => {
+    vi.mocked(useAuth).mockReturnValue({
+      state: { status: AuthStatus.LOADING, user: null, accessToken: null },
+      isAuthenticated: false,
+      isAuthResolved: false,
+      isBrandOwner: false,
+      isAdmin: false,
+      isCreator: false,
+      hasCrmAccess: false,
+      dispatch: vi.fn(),
+      logout: vi.fn(),
+      updateUser: vi.fn(),
+    } as ReturnType<typeof useAuth>);
+
+    render(<DashboardSidebar />);
+
+    expect(screen.getByRole("navigation", { name: "Dashboard" })).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  });
+
   it("shows a CRM entry pointing at the admin app for a brand owner with CRM access", () => {
     mockAuth({
       state: {
