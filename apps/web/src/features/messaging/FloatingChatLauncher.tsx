@@ -29,7 +29,7 @@ export const FloatingChatLauncher = () => {
       type="button"
       onClick={openList}
       aria-label={totalUnread > 0 ? `Open chat, ${totalUnread} unread` : "Open chat"}
-      className="fixed bottom-6 right-6 z-30 flex size-11 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105"
+      className="fixed bottom-24 right-4 z-30 flex size-11 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105 sm:bottom-6 sm:right-6"
     >
       <MessageCircle className="size-5" />
       {totalUnread > 0 && (

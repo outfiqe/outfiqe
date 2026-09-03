@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import { DashboardMobileMenu } from "@/components/DashboardMobileMenu";
+import { DashboardMobileNavBar } from "@/components/DashboardMobileNavBar";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { SiteHeader } from "@/components/SiteHeader";
 
@@ -13,11 +13,11 @@ const DashboardLayout = ({ children }: { children: ReactNode }) => {
   return (
     <div>
       <SiteHeader />
-      <div className="mx-auto flex w-full max-w-6xl gap-4 px-4 pb-28 pt-6 sm:gap-6 sm:pt-8 lg:gap-8 lg:px-8 lg:pb-8">
+      <div className="mx-auto flex w-full max-w-6xl gap-4 px-4 pb-32 pt-6 sm:gap-6 sm:pt-8 lg:gap-8 lg:px-8 lg:pb-8">
         <DashboardSidebar />
         <main className="min-w-0 flex-1">{children}</main>
       </div>
-      <DashboardMobileMenu />
+      <DashboardMobileNavBar />
     </div>
   );
 };
