@@ -56,7 +56,7 @@ export const CategoryResults = () => {
     <section className="px-6 pb-10 pt-2 sm:pb-14 sm:pt-3 lg:px-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="font-display text-3xl font-bold uppercase text-foreground sm:text-4xl">
+          <h2 className="font-display text-2xl font-bold uppercase text-foreground sm:text-3xl">
             In {name}
           </h2>
           {firstPage ? (

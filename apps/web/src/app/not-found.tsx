@@ -25,7 +25,7 @@ const NotFound = () => (
     <SiteHeader />
     <main className="mx-auto max-w-2xl px-6 py-20 text-center lg:px-10">
       <p className="text-xs font-bold uppercase tracking-widest text-primary-strong">404</p>
-      <h1 className="mt-3 font-display text-3xl font-bold text-foreground sm:text-4xl">
+      <h1 className="mt-3 font-display text-2xl font-bold text-foreground sm:text-3xl lg:text-4xl">
         We can&apos;t find that page
       </h1>
       <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">

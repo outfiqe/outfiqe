@@ -23,7 +23,7 @@ const BrandsPage = () => {
           <span className="text-xs font-bold uppercase tracking-widest text-primary-strong">
             Directory
           </span>
-          <h1 className="mt-2 font-display text-3xl font-extrabold uppercase tracking-tight text-foreground sm:text-4xl">
+          <h1 className="mt-2 font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl lg:text-4xl">
             Brands
           </h1>
           <p className="mt-2 max-w-xl text-sm text-muted-foreground">

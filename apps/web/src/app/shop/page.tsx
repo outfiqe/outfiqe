@@ -102,7 +102,7 @@ const ShopPage = async ({ searchParams }: ShopPageProps) => {
               <span className="text-xs font-bold uppercase tracking-widest text-primary-strong">
                 Shop
               </span>
-              <h1 className="mt-2 font-display text-3xl font-extrabold uppercase tracking-tight text-foreground sm:text-4xl">
+              <h1 className="mt-2 font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl lg:text-4xl">
                 {heading}
               </h1>
             </header>
