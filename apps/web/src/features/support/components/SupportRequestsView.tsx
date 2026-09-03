@@ -19,8 +19,8 @@ export const SupportRequestsView = () => {
     useMySupportRequests();
   const tickets = data?.pages.flatMap((page) => page.tickets) ?? [];
 
-  const openTicket = (id: string) => router.push(`/settings/support?ticket=${id}`);
-  const closeTicket = () => router.push("/settings/support");
+  const openTicket = (id: string) => router.push(`/support?ticket=${id}`);
+  const closeTicket = () => router.push("/support");
 
   if (activeTicketId) {
     return <SupportThread ticketId={activeTicketId} onBack={closeTicket} />;

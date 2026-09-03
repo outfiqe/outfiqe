@@ -37,9 +37,7 @@ export const resolveNotificationHref = (
         : null;
     case "SUPPORT_TICKET_REPLY":
     case "SUPPORT_TICKET_RESOLVED":
-      return notification.entityId
-        ? `/settings/support?ticket=${notification.entityId}`
-        : "/settings/support";
+      return notification.entityId ? `/support?ticket=${notification.entityId}` : "/support";
     case "SUPPORT_TICKET_CREATED":
     case "SUPPORT_TICKET_ASSIGNED":
       return null;

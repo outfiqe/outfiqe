@@ -95,10 +95,10 @@ const HelpPage = () => (
     <MarketingSection heading="Still need help?">
       <p className="text-sm leading-relaxed text-muted-foreground">
         Raise a support request with your account and we&apos;ll reply by email. You can follow
-        every reply and reopen it if needed under Settings &rsaquo; Support.
+        every reply in one place and reopen it if needed.
       </p>
       <Link
-        href="/settings/support"
+        href="/support"
         className="mt-3 inline-block text-sm font-medium text-foreground underline underline-offset-2"
       >
         Raise a support request

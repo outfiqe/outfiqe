@@ -200,7 +200,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
-      <div className="flex flex-wrap items-center gap-5 pb-8">
+      <div className="flex flex-wrap items-start gap-4 pb-8 sm:items-center sm:gap-5">
         <div className={cn("relative shrink-0", titleBadge && "rounded-full p-1.5")}>
           {titleBadge && (
             <div
@@ -221,7 +221,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
         </div>
 
         <div className="min-w-0 flex-1">
-          <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl">
+          <h1 className="flex items-center gap-2 font-display text-xl font-extrabold uppercase leading-tight tracking-tight text-foreground sm:text-2xl lg:text-3xl">
             {name}
             {creatorStatus === "APPROVED" && (
               <span
@@ -278,7 +278,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
                       <span
                         key={badge.id}
                         title={badge.name}
-                        className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+                        className="flex size-7 shrink-0 items-center justify-center rounded-full border sm:size-9"
                         style={{
                           backgroundColor: `${accentColor}1A`,
                           borderColor: `${accentColor}4D`,
@@ -289,7 +289,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
                           designConfig={badge.designConfig}
                           rarity={badge.rarity}
                           isLocked={false}
-                          className="size-8"
+                          className="size-6 sm:size-8"
                         />
                       </span>
                     );
@@ -299,10 +299,12 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
             )}
           </div>
 
-          <div className="mt-4 flex gap-6">
+          <div className="mt-4 grid grid-cols-4 gap-2 sm:flex sm:gap-6">
             <div>
-              <p className="font-display text-lg font-extrabold text-foreground">{postsCount}</p>
-              <p className="text-[11.5px] text-muted-foreground">Posts</p>
+              <p className="font-display text-base font-extrabold text-foreground sm:text-lg">
+                {postsCount}
+              </p>
+              <p className="text-[11px] text-muted-foreground sm:text-[11.5px]">Posts</p>
             </div>
             <button
               type="button"
@@ -310,10 +312,10 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
               disabled={followerCount === 0}
               className="cursor-pointer text-left disabled:cursor-not-allowed"
             >
-              <p className="font-display text-lg font-extrabold text-foreground">
+              <p className="font-display text-base font-extrabold text-foreground sm:text-lg">
                 {followerCount.toLocaleString()}
               </p>
-              <p className="text-[11.5px] text-muted-foreground">Followers</p>
+              <p className="text-[11px] text-muted-foreground sm:text-[11.5px]">Followers</p>
             </button>
             <button
               type="button"
@@ -321,39 +323,48 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
               disabled={followingCount === 0}
               className="cursor-pointer text-left disabled:cursor-not-allowed"
             >
-              <p className="font-display text-lg font-extrabold text-foreground">
+              <p className="font-display text-base font-extrabold text-foreground sm:text-lg">
                 {followingCount.toLocaleString()}
               </p>
-              <p className="text-[11.5px] text-muted-foreground">Following</p>
+              <p className="text-[11px] text-muted-foreground sm:text-[11.5px]">Following</p>
             </button>
             <div>
-              <p className="font-display text-lg font-extrabold text-foreground">
+              <p className="font-display text-base font-extrabold text-foreground sm:text-lg">
                 {taggedPiecesCount}
               </p>
-              <p className="text-[11.5px] text-muted-foreground">Tagged pieces</p>
+              <p className="text-[11px] leading-tight text-muted-foreground sm:text-[11.5px]">
+                Tagged pieces
+              </p>
             </div>
           </div>
         </div>
 
         {isOwnProfile ? (
-          <Button variant="outline" onClick={openEdit} className="shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={openEdit}
+            className="w-full shrink-0 sm:w-auto"
+          >
             Edit profile
           </Button>
         ) : (
-          <div className="flex shrink-0 gap-2">
+          <div className="flex w-full shrink-0 gap-2 sm:w-auto">
             <Button
               variant="outline"
+              size="sm"
               aria-pressed={isFollowing}
               onClick={toggleFollow}
-              className="shrink-0"
+              className="flex-1 sm:flex-none"
             >
               {isFollowing ? "Following" : "Follow"}
             </Button>
             <Button
               variant="outline"
+              size="sm"
               onClick={messageCreator}
               disabled={isStartingConversation}
-              className="shrink-0"
+              className="flex-1 sm:flex-none"
             >
               Message
             </Button>

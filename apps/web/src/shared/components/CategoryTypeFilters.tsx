@@ -56,7 +56,7 @@ export const CategoryTypeFilters = ({
             size="sm"
             onClick={() => selectType(filter.id)}
             className={cn(
-              "h-auto rounded-full border px-4 py-2 font-medium",
+              "h-auto rounded-full border px-3 py-1.5 font-medium sm:px-4 sm:py-2",
               isActive
                 ? "border-foreground bg-foreground text-background hover:bg-foreground hover:text-background"
                 : "border-border text-muted-foreground hover:border-foreground hover:bg-transparent hover:text-foreground",
