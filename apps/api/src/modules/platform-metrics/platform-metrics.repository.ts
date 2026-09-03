@@ -7,6 +7,7 @@ import type { Prisma } from "#generated/prisma/client.js";
 
 import { ACTIVE_MEMBER_WINDOW_DAYS } from "./platform-metrics.constants.js";
 import type {
+  PlatformActivityTrendPoint,
   PlatformOverview,
   TenantMetricListFilters,
   TenantMetricListPage,
@@ -145,6 +146,29 @@ export const platformMetricsRepository = {
       ticketCount: row.ticketCount,
       activityCount: row.activityCount,
       activeMemberCount: row.activeMemberCount,
+    }));
+  },
+
+  async platformActivityTrend(days: number): Promise<PlatformActivityTrendPoint[]> {
+    const since = startOfDay(subDays(new Date(), days - 1));
+    const rows = await prismaRead.orgActivityRollup.groupBy({
+      by: ["day"],
+      where: { day: { gte: since } },
+      _sum: {
+        activityCount: true,
+        dealCount: true,
+        ticketCount: true,
+        contactCount: true,
+      },
+      orderBy: { day: "asc" },
+    });
+
+    return rows.map((row) => ({
+      date: row.day.toISOString().slice(0, 10),
+      activityCount: row._sum.activityCount ?? 0,
+      dealCount: row._sum.dealCount ?? 0,
+      ticketCount: row._sum.ticketCount ?? 0,
+      contactCount: row._sum.contactCount ?? 0,
     }));
   },
 

@@ -13,21 +13,24 @@ individual record.
   snapshot job interval.
 - `platform-metrics.types.ts` — `TenantMetricRow` (aggregate-only — counts, timestamps, tenant
   identity; no field can hold a record), `TenantMetricListPage`, `PlatformOverview`,
-  `TenantMetricDetail` (adds live partner/customer totals and a rollup series).
+  `TenantMetricDetail` (adds live partner/customer totals and a rollup series),
+  `PlatformActivityTrendPoint` (`{ date, activityCount, dealCount, ticketCount, contactCount }`).
 - `platform-metrics.repository.ts` — **`prismaRead` only, and it imports no `crm-*` repository**
   (enforced by the ESLint boundary in `platform-access`). It reads the denormalised counter
   columns already on `Organization`, groups organizations by plan for the overview, reads
-  `OrgActivityRollup` for the sparkline, and runs one raw `COUNT(DISTINCT …)` for active members.
-  It also writes `OrgActivityRollup` rows for the snapshot job (through the primary `prisma`).
-- `platform-metrics.service.ts` — `listTenants` / `overview` (straight from the repo),
-  `tenantDetail` (adds partner/customer totals by going through `crmRelationshipsService` — a
-  service, not a repository — and reading only its `total`), and `runDailySnapshot` (upserts one
+  `OrgActivityRollup` for the per-tenant sparkline, sums `OrgActivityRollup` across tenants
+  grouped by `day` for `platformActivityTrend`, and runs one raw `COUNT(DISTINCT …)` for active
+  members. It also writes `OrgActivityRollup` rows for the snapshot job (through the primary
+  `prisma`).
+- `platform-metrics.service.ts` — `listTenants` / `overview` / `activityTrend` (straight from the
+  repo), `tenantDetail` (adds partner/customer totals by going through `crmRelationshipsService` —
+  a service, not a repository — and reading only its `total`), and `runDailySnapshot` (upserts one
   `OrgActivityRollup` per org per day from the counters + the active-member count).
 - `platform-metrics.schemas.ts` — Zod for the list query (`plan`, `sort`, `page`, `pageSize`) and
   the `:orgId` param.
 - `platform-metrics.controller.ts` / `platform-metrics.routes.ts` —
-  `GET /api/platform/metrics/overview`, `/metrics/tenants`, `/metrics/tenants/:orgId`, all gated
-  `requirePlatformRole("platform:metrics:read")`.
+  `GET /api/platform/metrics/overview`, `/metrics/activity-trend`, `/metrics/tenants`,
+  `/metrics/tenants/:orgId`, all gated `requirePlatformRole("platform:metrics:read")`.
 - `platform-metrics.integration.test.ts`.
 
 The daily snapshot is wired in `src/jobs/scheduled-jobs.ts` as `platform-metrics-snapshot`.
@@ -40,7 +43,9 @@ activity, and opens one tenant to see its 30-day trend and its partner/customer 
 **Technical:** `routes → requirePlatformRole("platform:metrics:read") → controller → service →
 repository (prismaRead) → Postgres`. The list and overview are point reads / a single `GROUP BY`
 over `organizations` — no scan of the CRM tables — because the per-tenant counts are already
-maintained on `Organization` by the `crm-*` write services and the reconcile job.
+maintained on `Organization` by the `crm-*` write services and the reconcile job. The activity
+trend is a `GROUP BY day` over `org_activity_rollups` (the snapshot table), not a scan of
+`crm_activities`.
 
 ## Non-obvious rationale
 
