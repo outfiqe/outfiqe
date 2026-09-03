@@ -1,22 +1,76 @@
 "use client";
 
 import { Button, useTheme } from "@outfiqe/design-system";
-import { ChevronDown, Heart, Menu, Moon, ShoppingBag, Sun, User, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Heart, Menu, Moon, ShoppingBag, Sun, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { useAuth, useLogout } from "@/features/auth";
-import { AuthStatus } from "@/features/auth/types";
+import { AuthStatus, UserRole } from "@/features/auth/types";
 import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
 import { useCart } from "@/features/cart";
+import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
 import { LEADERBOARD_LINKS, NAV_LINKS } from "./siteNav.constants";
 
+type AccountRowProps = {
+  name: string;
+  avatarUrl: string | null;
+  userId: string;
+  subtitle: string;
+  href: string;
+  isExternal: boolean;
+  onNavigate: () => void;
+};
+
+const AccountRow = ({
+  name,
+  avatarUrl,
+  userId,
+  subtitle,
+  href,
+  isExternal,
+  onNavigate,
+}: AccountRowProps) => {
+  const body = (
+    <>
+      <span
+        className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cover bg-center text-xs font-bold text-white"
+        style={
+          avatarUrl
+            ? { backgroundImage: `url(${avatarUrl})` }
+            : { backgroundColor: getAvatarColor(userId) }
+        }
+      >
+        {!avatarUrl && initialsFor(name)}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-semibold text-foreground">{name}</span>
+        <span className="block text-xs text-muted-foreground">{subtitle}</span>
+      </span>
+      <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+    </>
+  );
+
+  const className =
+    "flex items-center gap-3 rounded-xl border border-border bg-card p-2.5 transition-colors hover:border-foreground";
+
+  return isExternal ? (
+    <a href={href} onClick={onNavigate} className={className}>
+      {body}
+    </a>
+  ) : (
+    <Link href={href} onClick={onNavigate} className={className}>
+      {body}
+    </Link>
+  );
+};
+
 export const MobileNav = () => {
   const [open, setOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
-  const { state, isAuthenticated, isAdmin } = useAuth();
+  const { state, isAuthenticated, isAdmin, isCreator } = useAuth();
   const logout = useLogout();
   const { data: cart } = useCart();
   const cartCount = cart?.itemCount ?? 0;
@@ -117,27 +171,25 @@ export const MobileNav = () => {
 
           <div className="mt-6 flex flex-col gap-2 border-t border-border pt-6">
             {state.status === AuthStatus.IDLE ||
-            state.status === AuthStatus.LOADING ? null : isAuthenticated ? (
+            state.status === AuthStatus.LOADING ? null : isAuthenticated && state.user ? (
               <>
-                {isAdmin ? (
-                  <a
-                    href={ADMIN_URL}
-                    onClick={() => setOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-semibold text-foreground hover:bg-muted"
-                  >
-                    <User className="size-4 shrink-0" />
-                    Dashboard
-                  </a>
-                ) : (
-                  <Link
-                    href="/profile"
-                    onClick={() => setOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-sm font-semibold text-foreground hover:bg-muted"
-                  >
-                    <User className="size-4 shrink-0" />
-                    {state.user?.name}
-                  </Link>
-                )}
+                <AccountRow
+                  name={state.user.name}
+                  avatarUrl={state.user.avatarUrl}
+                  userId={state.user.id}
+                  subtitle={
+                    isAdmin
+                      ? "Admin console"
+                      : state.user.role === UserRole.BRAND_OWNER
+                        ? "Manage your brand"
+                        : isCreator
+                          ? "Your creator space"
+                          : "Your account"
+                  }
+                  href={isAdmin ? ADMIN_URL : "/overview"}
+                  isExternal={isAdmin}
+                  onNavigate={() => setOpen(false)}
+                />
                 <Button
                   variant="outline"
                   onClick={() => {
