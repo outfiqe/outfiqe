@@ -10,8 +10,14 @@ import {
   LeaderboardListSkeleton,
   LeaderboardView,
 } from "@/features/leaderboard";
+import { buildPageMetadata } from "@/shared/seo";
 
-export const metadata: Metadata = { title: "Brand leaderboard" };
+export const metadata: Metadata = buildPageMetadata({
+  title: "Brand leaderboard",
+  description:
+    "The Nepali brands shoppers and creators are responding to most on Outfiqe this week, ranked.",
+  path: "/leaderboard",
+});
 
 const LeaderboardPage = () => {
   return (
