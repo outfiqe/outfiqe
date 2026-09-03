@@ -102,6 +102,8 @@ export default defineConfig({
         "src/features/categories/hooks/useTastePreferences.ts",
         "src/features/categories/lib/visibleTasteCategories.ts",
         "src/features/landing/components/TasteCategories/CustomizeTasteModal.tsx",
+        "src/features/support/schemas/support.schema.ts",
+        "src/features/support/components/SupportRequestForm.tsx",
       ],
       thresholds: {
         lines: 80,
