@@ -89,8 +89,21 @@ const HelpPage = () => (
     <MarketingHero
       eyebrow="Help centre"
       title="How can we help?"
-      lede="The quick answers to the questions we're asked most. For anything not covered here, use the contact page."
+      lede="The quick answers to the questions we're asked most. If your question isn't covered here, raise a request and we'll reply by email."
     />
+
+    <MarketingSection heading="Still need help?">
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        Raise a support request with your account and we&apos;ll reply by email. You can follow
+        every reply and reopen it if needed under Settings &rsaquo; Support.
+      </p>
+      <Link
+        href="/settings/support"
+        className="mt-3 inline-block text-sm font-medium text-foreground underline underline-offset-2"
+      >
+        Raise a support request
+      </Link>
+    </MarketingSection>
 
     <MarketingSection heading="Orders & delivery">
       <FaqAccordion entries={orderFaqs} withSchema schemaId="help-orders-faq" />

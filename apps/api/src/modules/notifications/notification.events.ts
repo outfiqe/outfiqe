@@ -350,4 +350,93 @@ export const registerNotificationEventConsumers = (): void => {
       });
     },
   });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.SUPPORT_TICKET_CREATED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ ticketId, subject }): Promise<void> => {
+      const adminIds = await userRepository.findIdsByRole(UserRole.ADMIN);
+      if (adminIds.length === 0) return;
+
+      await notificationService.notifyManyIndividual(
+        adminIds.map((recipientId) => ({
+          recipientId,
+          type: NotificationType.SUPPORT_TICKET_CREATED,
+          entityType: NotificationEntityType.SUPPORT_TICKET,
+          entityId: ticketId,
+          metadata: { supportSubject: subject },
+        })),
+      );
+    },
+  });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.SUPPORT_TICKET_ASSIGNED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ ticketId, subject, assigneeUserId, assignedByUserId }): Promise<void> => {
+      if (assigneeUserId === assignedByUserId) return;
+
+      await notificationService.notifyIndividual({
+        recipientId: assigneeUserId,
+        actorId: assignedByUserId,
+        type: NotificationType.SUPPORT_TICKET_ASSIGNED,
+        entityType: NotificationEntityType.SUPPORT_TICKET,
+        entityId: ticketId,
+        metadata: { supportSubject: subject },
+      });
+    },
+  });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.SUPPORT_TICKET_STAFF_REPLIED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ ticketId, subject, requesterUserId }): Promise<void> => {
+      if (!requesterUserId) return;
+
+      await notificationService.notifyIndividual({
+        recipientId: requesterUserId,
+        type: NotificationType.SUPPORT_TICKET_REPLY,
+        entityType: NotificationEntityType.SUPPORT_TICKET,
+        entityId: ticketId,
+        metadata: { supportSubject: subject },
+      });
+    },
+  });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.SUPPORT_TICKET_CUSTOMER_REPLIED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ ticketId, subject, assigneeUserId }): Promise<void> => {
+      const recipientIds = assigneeUserId
+        ? [assigneeUserId]
+        : await userRepository.findIdsByRole(UserRole.ADMIN);
+      if (recipientIds.length === 0) return;
+
+      await notificationService.notifyManyIndividual(
+        recipientIds.map((recipientId) => ({
+          recipientId,
+          type: NotificationType.SUPPORT_TICKET_REPLY,
+          entityType: NotificationEntityType.SUPPORT_TICKET,
+          entityId: ticketId,
+          metadata: { supportSubject: subject },
+        })),
+      );
+    },
+  });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.SUPPORT_TICKET_RESOLVED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ ticketId, subject, requesterUserId }): Promise<void> => {
+      if (!requesterUserId) return;
+
+      await notificationService.notifyIndividual({
+        recipientId: requesterUserId,
+        type: NotificationType.SUPPORT_TICKET_RESOLVED,
+        entityType: NotificationEntityType.SUPPORT_TICKET,
+        entityId: ticketId,
+        metadata: { supportSubject: subject },
+      });
+    },
+  });
 };

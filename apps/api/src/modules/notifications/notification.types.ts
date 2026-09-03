@@ -29,6 +29,7 @@ export type NotificationMetadata = {
   messagePreview?: string;
   crmItemKind?: "task" | "ticket";
   crmItemTitle?: string;
+  supportSubject?: string;
 };
 
 export type NotificationRecord = {

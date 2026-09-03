@@ -39,4 +39,24 @@ export const renderEmailLayout = ({
 export const emailButtonHtml = (label: string, url: string): string =>
   `<a href="${url}" style="display:inline-block;margin-top:18px;background:${BRAND_ORANGE};color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 24px;border-radius:999px;">${label}</a>`;
 
+const HTML_ENTITIES: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
+
+export const escapeHtml = (value: string): string =>
+  value.replace(/[&<>"']/g, (c) => HTML_ENTITIES[c] ?? c);
+
+export const paragraphsHtml = (text: string): string =>
+  escapeHtml(text)
+    .split(/\n{2,}/)
+    .map(
+      (block) =>
+        `<p style="margin:0 0 12px;white-space:pre-wrap;">${block.replace(/\n/g, "<br />")}</p>`,
+    )
+    .join("");
+
 export { BRAND_ORANGE, INK, SUB };
