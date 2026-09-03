@@ -1,439 +1,259 @@
-# PWA Plan — Advanced, Offline-Capable, iOS + Android
+# Turning the web app into a PWA
 
-Scope: turn `apps/web` (Next.js 16 App Router, React 19) into an installable, offline-capable
-PWA with push notifications, offline reads, offline queued writes, and platform integration
-(share target, shortcuts, badging). `apps/admin` is out of scope beyond bare installability.
+## What we are building
 
-This is an engineering plan. Product copy, exact toggle placement, and final device list are
-refined per chunk. Nothing here ships without tests in the same commit (repo bar).
+We are turning `apps/web` into a Progressive Web App — an app people can install on their phone
+from the browser, open from their home screen, and keep using when the connection drops.
 
----
+When this is finished, a user will be able to:
 
-## Locked decisions
+- Install Outfiqe on Android, iPhone, iPad, or desktop, and open it from the home screen.
+- Keep browsing looks and products they have already seen, even with no internet.
+- Get push notifications on their phone when someone likes, follows, or messages them.
+- Like, follow, and save things while offline, and have those actions sent once they reconnect.
+- Share a photo from their phone's share sheet straight into Outfiqe.
 
-| Area                 | Decision                                                                        | Why                                                                                                                                                             |
-| -------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Service worker layer | `@serwist/next` + `serwist`                                                     | Actively maintained Workbox successor with first-class Next App Router support. `next-pwa` is abandoned; `@ducanh2912/next-pwa` points new projects to Serwist. |
-| Web app manifest     | Keep Next metadata API (`apps/web/src/app/manifest.ts`), expand it              | Already present; typed; no static file to drift.                                                                                                                |
-| Offline read cache   | `@tanstack/react-query-persist-client` + `idb-keyval`                           | TanStack Query v5 is already the data layer; persist its cache to IndexedDB rather than invent one.                                                             |
-| Offline write queue  | Serwist `BackgroundSyncPlugin` queue **+** an app-side drainer                  | Background Sync API is Chromium-only; iOS needs the same queue drained on `online`/`visibilitychange`. One queue, two drainers.                                 |
-| Push transport (API) | New `apps/api/src/modules/push/` consuming existing Redis Streams domain events | Reuses the event backbone the in-app notifications already run on; independent consumer group so it acks separately.                                            |
-| Push library         | `web-push` (VAPID)                                                              | Standard, no third-party service, no vendor lock.                                                                                                               |
-| Feature home (web)   | `apps/web/src/features/pwa/` with `README.md`                                   | Matches feature-folder convention.                                                                                                                              |
-| Shared types         | `PushSubscription` DTO + PWA capability types in `packages/types`               | Consumed by web + api.                                                                                                                                          |
-| Kill switch          | Reuse platform feature-flag infra to disable SW push / precache in an emergency | Same pattern as other platform-level toggles.                                                                                                                   |
+The admin app is not part of this. At most it becomes installable later; it has no offline needs.
+
+Everything here must work on both **iPhone and Android**. The two platforms do not support the
+same features, so every feature checks first whether the browser can do it. If it cannot, the app
+quietly does without it. Nothing ever breaks because a feature is missing.
 
 ---
 
-## Platform capability matrix (what each chunk must respect)
+## The main choices we made
 
-| Capability                             | Android Chrome               | iOS Safari 16.4+ (installed)                | iOS Safari (browser tab)          | Fallback when absent                          |
-| -------------------------------------- | ---------------------------- | ------------------------------------------- | --------------------------------- | --------------------------------------------- |
-| Install prompt (`beforeinstallprompt`) | Yes                          | No event                                    | No event                          | Custom "Add to Home Screen" instruction sheet |
-| Service worker + precache              | Yes                          | Yes                                         | Yes                               | App runs online-only, no crash                |
-| Web Push (`PushManager`)               | Yes (tab or installed)       | Yes, **installed only**, needs user gesture | No                                | Hide opt-in; show "install to enable"         |
-| Background Sync API                    | Yes                          | No                                          | No                                | Drain queue on `online` + `visibilitychange`  |
-| Periodic Background Sync               | Yes (installed + engagement) | No                                          | No                                | Revalidate on app focus                       |
-| App Badging (`setAppBadge`)            | Yes (installed)              | Yes (installed)                             | No                                | Skip silently                                 |
-| Web Share Target (inbound)             | Yes                          | No                                          | No                                | Document as Android-only                      |
-| Web Share (outbound `navigator.share`) | Yes                          | Yes                                         | Yes                               | Copy-link button                              |
-| Manifest `shortcuts`                   | Yes                          | Ignored                                     | Ignored                           | No-op                                         |
-| `navigator.storage.persist()`          | Grantable                    | Often auto-decided                          | Auto-decided                      | Degrade; handle rejection                     |
-| IndexedDB                              | Yes                          | Yes                                         | Yes (blocked in Lockdown/private) | Catch, run without persistence                |
-
-Every feature is behind a runtime feature-detect. Absence degrades; it never throws (CLAUDE.md
-resilience rules).
+| Topic                    | What we chose                                                            | Why                                                                                                                                                                                                                                                   |
+| ------------------------ | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Service worker tool      | `@serwist/turbopack`                                                     | Next.js 16 builds with Turbopack. The older `@serwist/next` hooks into webpack, which Turbopack does not use. `@serwist/turbopack` avoids the bundler entirely and builds the service worker through a normal route handler. `next-pwa` is abandoned. |
+| App manifest             | The existing `apps/web/src/app/manifest.ts`                              | Already there, already typed, and there is no separate file to fall out of date.                                                                                                                                                                      |
+| Offline reading          | `@tanstack/react-query-persist-client` with `idb-keyval`                 | TanStack Query already holds all the app's data. Saving its cache to the browser's database is far better than inventing a second store.                                                                                                              |
+| Offline actions          | A queue that two different things can empty                              | Android can empty the queue in the background. iPhone cannot, so the app empties the same queue itself when it comes back online. One queue, two ways to drain it.                                                                                    |
+| Push notifications       | A new `apps/api/src/modules/push/` reading the events we already publish | The app already sends likes, follows, and new looks through Redis Streams. Push reads the same stream with its own consumer group, so it cannot interfere with in-app notifications.                                                                  |
+| Push sending             | `web-push` with VAPID keys                                               | The standard way. No third-party service, no lock-in, no per-message cost.                                                                                                                                                                            |
+| Where the web code lives | `apps/web/src/features/pwa/`                                             | Matches how every other feature is organised.                                                                                                                                                                                                         |
+| Emergency off switch     | The existing platform feature-flag system                                | If something goes wrong in production we can turn the service worker and push off without a deploy.                                                                                                                                                   |
 
 ---
 
-## Chunks
+## What each phone can actually do
 
-Commit per chunk. No chunk numbers in PR titles/bodies. Suggested branch:
-`feat/pwa-<slice>` per chunk or one `feat/pwa` with stacked commits.
+This table is the reason the work is shaped the way it is. iPhone is missing several things
+Android has, so we plan around it from the start rather than discovering it late.
 
-### Chunk 1 — Manifest hardening + install assets + iOS head tags
-
-- Expand `manifest.ts`: `id`, `scope`, `lang`, `dir`, `orientation`, `display_override`,
-  light/dark `theme_color`, `categories`, `shortcuts` (Create, Explore, Notifications, Search),
-  `screenshots` (one narrow ~1080x1920, one wide ~1920x1080 — richer Android/desktop install UI).
-- PNG icon set via `pwa-asset-generator`: 192, 512, and maskable variants into `public/icons/`.
-  Keep existing `logo.svg` as an extra `any` entry.
-- iOS: generate `apple-touch-icon` (180) and `apple-touch-startup-image` splash set into
-  `public/splash/`; add the `<link rel="apple-touch-startup-image">` + `apple-mobile-web-app-capable`
-  - `apple-mobile-web-app-status-bar-style` + `apple-mobile-web-app-title` tags in the root layout
-    metadata.
-- Android: `mobile-web-app-capable`, `theme-color` meta synced to manifest.
-- No service worker yet.
-- **Deliverable:** installs on Android (with screenshots dialog) and iOS (correct icon + splash).
-  Lighthouse "installable" passes.
-- **Tests:** `manifest.ts` unit (required fields, icon purposes), head-tag snapshot test.
-
-### Chunk 2 — Serwist service worker: precache + app shell + `/offline`
-
-- Add `@serwist/next`; wrap `next.config.ts`; SW source at `apps/web/src/app/sw.ts`.
-- Precache the Next build output (Serwist injects the manifest).
-- Headers: `Service-Worker-Allowed: /`, `Cache-Control: no-store` on the SW file (via
-  `next.config` headers and/or `proxy.ts`).
-- New `/offline` App Router route — branded, design-system components, precached.
-- Navigation strategy: NetworkFirst → `/offline` fallback on failure.
-- SW registration in a client component mounted from `providers.tsx`, fully feature-detected.
-- Stand up **Playwright** in `apps/web` (config + CI job) — SWs cannot run in jsdom/vitest.
-  First e2e: offline navigation renders `/offline`.
-- iOS: verify registration inside standalone; use a classic (non-module) SW build if Safari
-  module-SW support is shaky on target versions.
-- **Tests:** Playwright — offline nav → `/offline`; SW activates; precached shell loads offline.
-
-### Chunk 3 — Runtime caching strategies
-
-- Serwist runtime rules:
-  - Fonts/static: CacheFirst + expiration.
-  - Images: matched by `request.destination` + uploads path prefix + an **env-configured origin
-    allowlist** (never a hardcoded host — see decision 3). CacheFirst, long `maxAgeSeconds` for
-    content-addressed variants, `maxEntries` tuned lower on iOS, `cacheableResponse` 200 only.
-  - RSC / navigation: NetworkFirst, short timeout, `/offline` fallback.
-  - API GET: StaleWhileRevalidate, short TTL, **explicit allowlist of public/cacheable endpoints
-    only** (feed, product detail, collections, public profiles). Never auth/`/api/auth/*`,
-    never per-user private endpoints, never anything carrying `Authorization`.
-- Logout: app posts a message to the SW to purge runtime caches; SW clears named caches.
-- **Tests:** Playwright — image loads from cache offline; SWR revalidates on reconnect;
-  logout empties runtime caches.
-
-### Chunk 4 — SW update flow + lifecycle UX
-
-- Detect `waiting` worker → design-system banner/`Toast`: "New version available — Reload".
-- Controlled `skipWaiting` via `postMessage`; single reload on `controllerchange`.
-- Suppress the prompt while an upload/checkout is in progress (shared "app busy" flag).
-- Enable Navigation Preload on activate.
-- Surface build id somewhere support can read it.
-- iOS + Android: verify a cold reopen of the installed app picks up the new SW.
-- **Tests:** Playwright — deploy v2 assets → banner → reload → v2 controls the page.
-
-### Chunk 5 — Offline reads: React Query persistence
-
-- Add `@tanstack/react-query-persist-client` + `idb-keyval` persister in `providers.tsx`.
-- `persistQueryClient`: `buster` = build id, `maxAge`, and a **dehydrate allowlist** — only
-  cache-safe queries (feed, explore, product detail, collections, public profiles). Exclude
-  cart, checkout, auth, unread counts.
-- Namespace the persisted store per user id; purge on logout and on user switch.
-- `onlineManager` wired to `navigator.onLine` + `online`/`offline`; global "You're offline —
-  showing saved content" banner (design-system).
-- Request `navigator.storage.persist()` after install or after login; handle rejection.
-- iOS: handle `persist()` auto-decline and IndexedDB-blocked (Lockdown/private) — run without
-  persistence, no error.
-- **Tests:** unit (dehydrate allowlist, logout purge, per-user namespacing); Playwright (load
-  feed online → go offline → feed still renders from IndexedDB).
-
-### Chunk 6 — API: push subscription store + module scaffold
-
-- New `apps/api/src/modules/push/`: routes, controller, service, repository, schemas, types,
-  `README.md`.
-- Prisma `PushSubscription`: `userId`, `endpoint` (unique), `p256dh`, `auth`, `userAgent`,
-  `platform`, `createdAt`, `lastSeenAt`, `failureCount`, `disabledAt`. Migration.
-- Endpoints (all `requireAuth`, Zod-validated, write-rate-limited):
-  - `POST /push/subscriptions` — upsert by `endpoint`.
-  - `DELETE /push/subscriptions` — by `endpoint`.
-  - `GET /push/public-key` — VAPID public key (or ship via build env).
-- Env: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`. Add `web-push` dep.
-- No sending yet.
-- **Tests:** integration (upsert dedupes by endpoint, auth required, rate limit trips);
-  unit (schema).
-
-### Chunk 7 — API: push delivery wired to notification events
-
-- `push` module adds its **own consumer group** on the existing Redis Streams that in-app
-  notifications consume (likes, follows, new looks, order status, CRM assignment, etc.).
-- Event → push payload mapper: `title`, `body`, `icon`, `data.url` deep link, `tag` for
-  coalescing, `renotify`.
-- Send via `web-push` to every active subscription for the user, bounded concurrency.
-  `404`/`410` → delete subscription. Repeated failure → set `disabledAt`. DLQ after retries
-  (matches existing stream-consumer pattern).
-- Preferences: migrate `notificationPreference` from a single `enabled` boolean to per-channel
-  columns (`inAppEnabled`, `pushEnabled`, `emailEnabled`), plus a master push toggle and quiet
-  hours — see decision 2. Suppress or delay a push when the recipient has a live socket.
-- **Tests:** integration (event → `web-push` invoked per subscription; `410` prunes;
-  preference opt-out suppresses); unit (event→payload mapper).
-
-### Chunk 8 — Web: push opt-in UX + SW push handlers
-
-- SW: `push` → `showNotification`; `notificationclick` → focus existing client or `openWindow`
-  to `data.url`; update app badge.
-- `features/pwa` client: permission state machine, `PushManager.subscribe` with the VAPID key,
-  register/unregister with the API, unsubscribe on logout and on toggle-off.
-- **Contextual** opt-in only — a card in the notifications feature + a settings toggle, never a
-  prompt on load. Pre-permission explainer `Modal` before the native dialog.
-- iOS: gate the entire opt-in on `display-mode: standalone` + iOS ≥ 16.4; in a Safari tab show
-  "Add to Home Screen to enable notifications" with the instruction sheet. Require a user
-  gesture for `subscribe()`.
-- Android: standard flow; nudge install first (better push retention).
-- App Badging: unread count → `setAppBadge` on push receipt and on in-app updates;
-  `clearAppBadge` on read. Feature-detected.
-- **Tests:** unit (permission state machine, iOS gating, subscribe/unsubscribe calls);
-  Playwright (Android: grant → subscription POSTed; deny → graceful, no retry loop).
-
-### Chunk 9 — Install experience (both platforms)
-
-- Capture and stash `beforeinstallprompt` (Android/desktop); show a custom "Install Outfiqe"
-  affordance at good moments (return visit, after a positive action); call `prompt()`; record
-  outcome; dismissal cooldown in `localStorage`.
-- iOS: detect iOS Safari non-standalone (incl. iPad) → "Add to Home Screen" instruction sheet
-  with the share-icon visual.
-- `appinstalled` → analytics, hide affordance, trigger `storage.persist()` and the push
-  pre-prompt.
-- `getInstalledRelatedApps` where available to stop nagging.
-- Shared `isRunningStandalone()` util for other features.
-- **Tests:** unit (prompt state machine, cooldown, platform branching); Playwright (Android
-  install flow).
-
-### Chunk 10 — Offline writes: background sync + queued mutations
-
-- Serwist `BackgroundSyncPlugin` queue for an **allowlist of idempotent toggles**: like/unlike,
-  follow/unfollow, save/bookmark, mark-notification-read.
-- **Local look drafts:** persist the compose form + image blobs to IndexedDB so offline
-  composition survives; publish still requires connectivity. This is not a queued mutation.
-- **Deliberately excluded from v1:** checkout, payments, look publish, profile edits — stated
-  exclusion, not an oversight. Those stay online-only. Comments are deferred to v2 (they need
-  their own idempotency + pending-state design), not excluded on principle.
-- **Queue mechanics:** collapse redundant ops by `(actionType, targetId)` keeping the last, and
-  bound the queue (~100 actions / ~7 days, drop-oldest).
-- Server: confirm each allowlisted endpoint is replay-safe (state-based upsert, not increment);
-  add an idempotency key where the write isn't naturally idempotent. Document per endpoint in
-  the module README.
-- App layer: optimistic TanStack Query mutations + a persisted "pending actions" store
-  (IndexedDB) so optimistic state survives reload; reconcile on replay — revert + `Toast` on a
-  permanent 4xx.
-- iOS/Safari drainer: a `syncPendingActions` routine run on `online` and on
-  `visibilitychange` → visible. Same queue the SW drains on Android.
-- Conflict policy: last-write-wins for toggles.
-- **Tests:** integration (replayed like is a no-op, no double count); unit (queue drain,
-  reconcile, revert); Playwright (offline like → reload → still liked → reconnect → server
-  agrees).
-
-### Chunk 11 — Share Target + outbound Share + Shortcuts + deep links
-
-- Manifest `share_target` (Android) → `POST /share` route handler accepting `title`/`text`/
-  `url` + image files → prefill look creation.
-- Outbound `navigator.share` on look / profile / product; copy-link fallback (feature-detect).
-  Reconcile with any existing share buttons.
-- `shortcuts` targets must handle cold start in standalone.
-- `launch_handler.client_mode: "navigate-existing"`.
-- iOS: no `share_target` (documented); outbound share kept; shortcuts no-op.
-- **Tests:** route handler unit (share payload → draft); unit (share fallback);
-  Playwright Android share-target if the harness allows, else a manual checklist entry.
-
-### Chunk 12 — Periodic Background Sync + freshness (progressive enhancement)
-
-- Register `periodicSync` for `feed-refresh` + `notifications-refresh` when the
-  `periodic-background-sync` permission is granted (Chromium, installed, engagement).
-- SW handler revalidates a small critical cache set + updates the badge.
-- No-op everywhere else (iOS, Firefox).
-- Universal fallback: lightweight revalidate on app focus + `online` (partly from Chunk 5).
-- **Tests:** unit (registration guarded by permission + `display-mode`); manual checklist for
-  real periodic behavior.
-
-### Chunk 13 — Storage management, resilience, telemetry, kill switch
-
-- `navigator.storage.estimate()` surfaced; "Clear offline data" action in settings; trim image
-  cache when near quota (Serwist expiration handles LRU; add the manual path).
-- SW-side errors → Sentry (SW Sentry or `postMessage` to client); safe logging only.
-- Every failure path degrades to a plain online app: SW registration failure, quota exceeded,
-  IndexedDB blocked, `persist()` denied — no crash, no unhandled rejection.
-- Kill switch: SW checks a platform feature-flag on activate; when off, it unregisters /
-  skips precache and push.
-- Analytics: `pwa_installed`, `sw_activated`, `offline_view`, `push_opt_in`/`push_opt_out`,
-  `push_delivered` (server), `queued_action_replayed`/`queued_action_failed`.
-- **Tests:** unit (degradation paths, kill-switch branch); integration (flag off suppresses
-  push send).
-
-### Chunk 14 — Cross-platform QA matrix + docs + Lighthouse gate
-
-- `docs/TESTING-PWA.md`: device matrix — iPhone + iPad Safari (16.4 and latest), Android
-  Chrome, Android Firefox, desktop Chrome/Edge/Safari — with a per-feature
-  works / degrades / n-a table and manual scripts.
-- Lighthouse CI (`@lhci/cli`) in CI: installability, offline, best-practices thresholds.
-- Finalize `apps/web/src/features/pwa/README.md` (purpose, structure, user + technical funnel,
-  non-obvious rationale: iOS gating, two-drainer queue, cache-safety allowlist, kill switch).
-- Finalize `apps/api/src/modules/push/README.md`.
-- Add the auto-memory pointer.
+| Feature                                  | Android Chrome | iPhone (installed)                             | iPhone (Safari tab)      | What we do when it is missing                           |
+| ---------------------------------------- | -------------- | ---------------------------------------------- | ------------------------ | ------------------------------------------------------- |
+| "Install app" browser prompt             | Yes            | No                                             | No                       | Show our own "Add to Home Screen" instructions          |
+| Service worker                           | Yes            | Yes                                            | Yes                      | App works online only                                   |
+| Push notifications                       | Yes            | Yes, iOS 16.4+ only, and only after installing | No                       | Hide the setting, explain that installing enables it    |
+| Sending queued actions in the background | Yes            | No                                             | No                       | The app sends them itself when it reopens or reconnects |
+| Background refresh                       | Yes            | No                                             | No                       | Refresh when the user opens the app                     |
+| Unread badge on the app icon             | Yes            | Yes                                            | No                       | Skip it                                                 |
+| Receiving a shared photo                 | Yes            | No                                             | No                       | Android only                                            |
+| Sharing out to other apps                | Yes            | Yes                                            | Yes                      | Show a "copy link" button                               |
+| Home screen icon shortcuts               | Yes            | Ignored                                        | Ignored                  | Nothing happens, which is fine                          |
+| Guaranteed offline storage               | Can be granted | Decided by Safari                              | Decided by Safari        | Keep working without the guarantee                      |
+| Browser database                         | Yes            | Yes                                            | Blocked in Lockdown Mode | Run without saved data                                  |
 
 ---
 
-## Sequencing / parallelism
+## The work, step by step
 
-- **Web track:** 1 → 2 → 3 → 4 → 5 (mostly sequential; 3 and 4 can overlap).
-- **API track:** 6 → 7 can start as soon as Chunk 1 lands, in parallel with the web track.
-- **Chunk 8** needs 2 + 6 + 7. **Chunk 9** can run alongside 8.
-- **Chunk 10** needs 3 + 5. **Chunk 11** needs 2. **Chunk 12** needs 5 + 10.
-- **Chunk 13** after 8/10. **Chunk 14** last.
+Each step below is one pull request. Every one ships with its own tests. Each is written so the
+app still works fully if we stop after it.
 
-## Effort (dev-days, one engineer familiar with the codebase)
+Until the very last step, all of this stays switched off behind `NEXT_PUBLIC_PWA_ENABLED` and the
+platform off switch. That is what makes it safe to merge each piece into `dev` as it is finished
+instead of keeping one huge branch open for weeks.
 
-| Chunk | Days | Chunk | Days |
-| ----- | ---- | ----- | ---- |
-| 1     | 2–3  | 8     | 3–4  |
-| 2     | 3–4  | 9     | 2–3  |
-| 3     | 2–3  | 10    | 4–6  |
-| 4     | 1–2  | 11    | 2–3  |
-| 5     | 3–4  | 12    | 1–2  |
-| 6     | 2–3  | 13    | 2–3  |
-| 7     | 3–4  | 14    | 2–3  |
+### Making the app installable — done
 
-Total ≈ **34–50 dev-days** of focused work ≈ **7–10 weeks calendar** solo, allowing for review
-cycles, the 80% coverage gate, and real-device iOS/Android QA. A meaningful first milestone
-(Chunks 1–5) is ≈ **2–3 weeks** and delivers an installable, offline-reading app on both
-platforms.
+Fill in the app manifest properly, generate the app icons and the iPhone launch images, and add
+the tags iPhone needs to show the right icon and launch screen. No service worker yet. After this
+step, Android offers to install the app and iPhone shows the correct home screen icon.
 
-## Recommended calls on the five open decisions
+### Adding the service worker and an offline page
 
-These are recommendations, pending sign-off. Each states the reasoning so it can be argued with.
+Install `@serwist/turbopack` and add the service worker. It saves a copy of the app itself — the
+JavaScript, the styles, the layout — so the app can open with no connection. Add a proper offline
+page for when someone tries to visit a page we have not saved, instead of the browser's dinosaur.
 
-### 1. Offline-write allowlist
+This step also sets up Playwright, because service workers cannot be tested in the normal test
+runner. They only exist in a real browser.
 
-**Recommendation: agree with the proposal, with one addition and one explicit deferral.**
+### Caching images and data
 
-The rule that decides membership is not "is it a write" — it is: _is this operation
-state-convergent, low-stakes if it lands ten minutes late, and free of a side effect the user
-would be misled about if the replay later failed?_
+Decide what gets saved and for how long. Product and look photos are saved for a long time,
+because they never change once uploaded. Pages and public data are fetched fresh when possible and
+fall back to the saved copy. Private and login-related requests are never saved.
 
-| Operation                            | Call                                              | Why                                                                                                                                                                                                                                                      |
-| ------------------------------------ | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| like / unlike                        | **Queue**                                         | Convergent toggle. Replay is a no-op. Delay is invisible.                                                                                                                                                                                                |
-| follow / unfollow                    | **Queue**                                         | Same.                                                                                                                                                                                                                                                    |
-| save / bookmark                      | **Queue**                                         | Same.                                                                                                                                                                                                                                                    |
-| mark-read, mark-all-read             | **Queue**                                         | Idempotent by construction.                                                                                                                                                                                                                              |
-| **local look drafts**                | **Add** — persist form + image blobs in IndexedDB | Not a queued mutation. Losing a composed look because the subway went dark is the single worst offline failure in a creator app, and it costs far less than queueing the publish itself.                                                                 |
-| comments / replies                   | **Defer to v2, not excluded on principle**        | Genuinely queueable, but needs a client-generated idempotency UUID, a visible "pending" state, and a moderation answer for a comment that lands an hour into a changed thread. That is its own chunk, not a rider on this one.                           |
-| look publish                         | **Online-only**                                   | Multi-asset upload through the image pipeline; Background Sync payload limits make "queue the publish" the wrong abstraction. The draft above covers the real user need.                                                                                 |
-| checkout / payment / order placement | **Online-only, hard**                             | Price, stock, and payment authorization are all time-sensitive. A checkout that "succeeded" offline and fails on replay against sold-out stock is a refund and support problem, not a UX wrinkle. Block the pay button with an explicit offline message. |
-| profile / settings / address edits   | **Online-only**                                   | Low frequency; last-write-wins on free-text fields is confusing rather than convenient.                                                                                                                                                                  |
+Photo caching is matched by the file path and a configurable list of hosts rather than a
+hard-coded address, because photos are already served from the API's own domain today and will
+move to Cloudflare R2 later. Hard-coding today's address would silently break everything on the
+day storage moves.
 
-Two queue mechanics that matter more than the allowlist itself:
+Photo storage limits are set lower on iPhone. Safari gives each site much less room and tends to
+throw away an entire cache at once rather than trimming it, which would take the saved app with it.
 
-- **Collapse redundant ops before replay.** `like → unlike → like` on the same target must drain
-  as one `like`. Dedupe by `(actionType, targetId)`, keep the last. Without this, a flaky
-  connection replays a burst that looks like abuse to your own rate limiter.
-- **Bound the queue.** Max ~100 actions and max ~7 days age, drop-oldest. A device offline for a
-  month should not wake up and flood the API.
+Signing out clears everything that was saved.
 
-### 2. Push categories
+### Handling app updates
 
-**Recommendation: evolve the existing table to per-type × per-channel. Do not reuse the current
-boolean as-is, and do not build a parallel push-only prefs table.**
+When we deploy a new version, the old one can stay loaded on someone's phone. This step shows a
+small "New version available — Reload" message when that happens.
 
-What exists today: `notificationPreference(userId, type, enabled)` — one mute switch per
-`NotificationType`, enforced in the write path via `findMutedRecipientIds`
-(`notification.service.ts`). That boolean currently conflates two different questions: _do I want
-this notification at all_ and _through which channel_. The moment push exists, users want
-"new followers in-app but don't buzz my phone" and "DM replies — push me." One boolean cannot
-express that, and bolting a separate `pushPreference` table alongside it guarantees the two drift.
+It never interrupts someone mid-upload or mid-checkout.
 
-Add channel columns to the existing row:
+### Remembering content for offline reading
 
-```
-notificationPreference(userId, type, inAppEnabled, pushEnabled, emailEnabled)
-```
+Save the data the app has already loaded — the feed, profiles, product pages — into the browser's
+database, so opening the app with no connection shows real content instead of empty spinners.
 
-- Migration backfills from `enabled`: `enabled = false` → all channels off (preserves every
-  existing mute); no row / `enabled = true` → in-app **on**, push **on**, email **off**
-  (email is opt-in; never surprise people into it).
-- The existing in-app path switches to `inAppEnabled`; the new push send path checks
-  `pushEnabled`. One read, one settings screen, one source of truth.
-- A row-per-`(userId, type, channel)` shape is more normalized and better if channels keep
-  growing (SMS, WhatsApp, digests) — but it is more rows and a worse "give me all prefs" read
-  for a channel set this small. Columns now; revisit if a fourth channel appears.
+Only safe-to-save data is kept. The cart, checkout, and anything login-related are excluded. What
+is saved is kept separate per user account and wiped on sign out.
 
-Two global switches that short-circuit before per-type is even consulted:
+Show a clear "You're offline — showing saved content" message so nobody mistakes old data for
+current data.
 
-- **Master push toggle** — app-level, distinct from the OS permission, so a user can pause pushes
-  without revoking permission (and without you having to re-prompt to resume, which on iOS you
-  effectively cannot).
-- **Quiet hours** (start, end, timezone). Optional for in-app, close to mandatory for push.
+### Storing push subscriptions
 
-One delivery-side rule worth building in from day one: **do not push what the user is already
-looking at.** If the recipient has a live socket connection, suppress or delay the push 30–60s and
-cancel it if they acknowledge in-app. Also set a stable `tag` per (type, target) so anything that
-does slip through collapses instead of stacking.
+On the server, add a `push` module and a table to hold each device's notification subscription,
+with endpoints for a device to register and unregister itself. Nothing is sent yet. This is
+purely the plumbing, and it can go to production early because a table nobody writes to is
+harmless.
 
-### 3. Image cache rule
+### Sending push notifications
 
-What exists today: `STORAGE_DRIVER=local` → `LocalDiskStorageAdapter` serving from
-`env.API_PUBLIC_URL`, and `apps/web` proxies `/api/*` to the API — so image URLs are effectively
-**same-origin** right now. `packages/image-pipeline` ships an `R2StorageAdapter` **stub**,
-reserving the seam for a Cloudflare R2 migration that will introduce a **distinct** CDN origin.
+Read the events the app already publishes — likes, follows, new looks, order updates — and send a
+push to each of the user's registered devices. Devices that have uninstalled the app are removed
+automatically when the push service reports them as gone.
 
-**Recommendation: do not key the rule on a hostname at all.**
+Two rules built in from the start:
 
-- Match on `request.destination === "image"` **and** (uploads pathname prefix **or** an origin
-  drawn from an env-configured allowlist). The R2 cutover then adds one env value and changes
-  nothing else in the service worker. Hardcoding today's host guarantees a silent, total
-  cache-miss the day storage moves.
-- **Split immutable from mutable.** The pipeline's `avif`/`webp`/`jpeg` variants and thumbnails
-  are content-addressed (key = checksum), therefore immutable: `CacheFirst`, `maxAge` 30–60 days,
-  `cacheableResponse` 200 only. Never cache an asset still in `pending` state.
-- **Tune `maxEntries` per platform, not globally.** ~300–500 is fine on desktop/Android;
-  **cap iOS nearer 150**. Safari's per-origin quota is far smaller and eviction tends to drop a
-  whole cache rather than trim it — an over-eager image cache there loses the app shell too.
-- LQIP is already inline base64 from the pipeline, so it needs no caching and is what makes the
-  offline feed feel instant. Keep it that way.
+- **Do not notify someone about something they are already looking at.** If the user has the app
+  open, hold the push briefly and cancel it if they see the notification in the app.
+- **Respect quiet hours.** Nobody wants a phone buzzing at 3am about a new follower.
 
-**One thing to confirm before Chunk 3 is written:** are look/product images served as **public
-URLs or signed URLs**? The `StorageAdapter` interface exposes `getSignedUrl`. If images are
-signed, the rule needs `cacheKeyWillBeUsed` to strip the signature query string from the cache
-key — without it every load misses and the cache balloons with near-duplicates. If they are
-public, this is a non-issue.
+This step also changes how notification settings work. Right now each notification type has a
+single on/off switch, which cannot tell the difference between "I don't want this at all" and "I
+want it in the app but not on my phone". We split that one switch into separate switches for
+in-app, push, and email. Existing muted settings stay muted; email stays off unless someone turns
+it on.
 
-### 4. Branch strategy
+### Asking users to turn on notifications
 
-**Recommendation: neither extreme — short-lived stacked branches, one PR per chunk, merged as
-they pass, everything dormant behind a flag until launch.**
+Add the actual permission request, plus the settings toggle. The request only ever appears when
+someone taps something asking for it — never as a popup on page load, which is how people end up
+blocking notifications forever.
 
-- A single long-lived `feat/pwa` with 14 commits becomes a multi-thousand-line PR nobody reviews
-  properly, weeks of drift, and conflicts in exactly the hot files this touches
-  (`providers.tsx`, `next.config.ts`, a Prisma migration, the notifications module).
-- Fully independent per-chunk branches all targeting `main` means constantly rebasing chunk _N+1_
-  on a chunk _N_ that has not merged yet.
-- Stack them instead: `feat/pwa-manifest` → PR → merge; branch `feat/pwa-service-worker` off the
-  new `main`; and so on. Each PR lands at roughly 200–500 reviewable lines.
+On iPhone this is only possible after the app is installed, so Safari users are shown how to
+install first instead of a button that cannot work.
 
-What makes per-chunk merging safe is the gate, not the branching: put everything behind
-`NEXT_PUBLIC_PWA_ENABLED` plus the Chunk 13 platform kill switch, so chunks 2–13 can sit in
-`main`, inert, for weeks before the service worker ever registers for a real user. The API chunks
-(6, 7) are independently shippable early — a `PushSubscription` table and a dormant consumer group
-cost nothing in production.
+Also adds the unread count badge on the app icon.
 
-Do not be dogmatic about the count: fold Chunk 4 into 2 and Chunk 12 into 13 if the standalone PRs
-would be trivial. Ten good PRs beat fourteen ceremonial ones.
+### The install prompt
 
-### 5. Lighthouse CI thresholds
+Add our own "Install Outfiqe" button at sensible moments, rather than letting the browser's
+default prompt appear at a random time. If someone dismisses it, do not ask again for a while.
 
-**Recommendation: hard-fail on the stable, binary things; warn on the noisy ones.** Lighthouse
-performance scores drift ±3–5 points run to run in CI. Gating hard on a performance number
-produces flaky builds, and flaky gates get disabled — at which point you have no gate at all.
+iPhone gives no install prompt at all, so it gets a short illustrated "tap Share, then Add to Home
+Screen" panel instead.
 
-**Hard-fail (`error`):**
+### Saving actions made while offline
 
-| Assertion                                                                                 | Threshold            |
-| ----------------------------------------------------------------------------------------- | -------------------- |
-| `installable-manifest`, `service-worker`, `viewport`, `apple-touch-icon`, `maskable-icon` | pass                 |
-| `is-on-https`, `redirects-http` (prod profile)                                            | pass                 |
-| `errors-in-console`                                                                       | 0                    |
-| `categories:accessibility`                                                                | ≥ 0.95               |
-| `categories:best-practices`                                                               | ≥ 0.95               |
-| `categories:seo`                                                                          | ≥ 0.95               |
-| Total JS (landing route)                                                                  | ≤ 300–350 KB gzipped |
-| Total page weight                                                                         | ≤ 1.6 MB             |
-| `unused-javascript`                                                                       | ≤ 150 KB             |
+Let people like, follow, save, and mark notifications read with no connection. The action shows
+immediately, is stored, and is sent for real once they are back online.
 
-Set the byte budgets from your **current measured values + ~10% headroom**, not from these
-abstract numbers — measure once in Chunk 1, then freeze. Version them in a `budget.json`.
+Only these safe actions are queued. They are all simple on/off toggles, so sending them twice
+changes nothing and a few minutes' delay is invisible.
 
-**Warn only (`warn`), never blocking:** `categories:performance` ≥ 0.85 mobile / ≥ 0.95 desktop;
-LCP ≤ 2500 ms; TBT ≤ 200 ms; CLS ≤ 0.1.
+**Checkout and payment are deliberately never queued.** Prices change, stock sells out, and
+payment approval expires. An order that looked successful offline and then failed hours later
+would be a refund problem, not a small inconvenience. The pay button is disabled with a clear
+message when offline.
 
-**Runner config:** `numberOfRuns: 3` and take the median (this alone removes most of the flake).
-Test three representative public URLs — landing, explore/feed, and a product detail page (the
-heaviest, image-wise) — rather than `/` alone; do not attempt authenticated routes in Lighthouse
-CI. Mobile preset (Moto G4 / slow 4G) is the profile that matters for a PWA; run desktop as a
-secondary, non-gating profile.
+**Publishing a look is also not queued**, but composing one is protected — the form and the chosen
+photos are saved locally, so a creator writing a post in a tunnel does not lose their work. They
+just need a connection to actually publish.
 
-**Ratchet:** keep performance warn-only for the first month, watch the median, then promote it to
-a hard gate at _(observed median − 3)_.
+Two details that matter more than the list itself: repeated actions on the same thing collapse
+into one before sending, so a flaky connection does not fire a burst that looks like an attack;
+and the queue is capped, so a phone offline for a month does not flood the server on reconnect.
+
+Comments are left for later. They could be queued, but they need their own handling for
+duplicates and for a comment arriving into a conversation that has moved on.
+
+### Sharing into and out of the app
+
+Let people share a photo from any app on their phone directly into Outfiqe to start a new look
+(Android only — iPhone does not support this). Add proper share buttons on looks, profiles, and
+products, falling back to "copy link" where the phone's share sheet is unavailable. Add home
+screen icon shortcuts for Shop, Explore, Search, and Wishlist.
+
+### Background refresh
+
+On Android, let the app quietly refresh the feed and notification count in the background so it is
+already up to date when opened. iPhone cannot do this, so there it simply refreshes when the app
+is opened. This is a small bonus, not something the app depends on.
+
+### Storage limits, errors, and the off switch
+
+Make sure every failure is harmless: no storage space, database blocked, service worker refuses to
+install, permission denied. In every case the app falls back to working normally online. None of
+them may ever show an error or a blank screen.
+
+Add a "Clear offline data" button in settings, send service worker errors to Sentry, and wire up
+the emergency off switch so we can disable all of this in production without deploying.
+
+### Testing on real phones
+
+Write down exactly what should happen on each device, and check it: iPhone, iPad, Android Chrome,
+Android Firefox, and desktop. Add automated checks to CI that the app is still installable, still
+works offline, and has not become slower.
+
+At this point we also capture the real screenshots that make the Android install dialog look
+proper, and the feature is turned on for users.
+
+---
+
+## What order this happens in
+
+The website work runs mostly in order: installable, then the service worker, then caching, then
+updates, then offline reading.
+
+The two server steps — storing subscriptions and sending notifications — do not depend on any of
+that and can be built alongside it.
+
+Turning on notifications needs the service worker and both server steps finished. The install
+prompt can be built at the same time. Offline actions need caching and offline reading. Sharing
+needs the service worker. Background refresh comes near the end, then error handling, then the
+device testing that finishes the work.
+
+---
+
+## Checks that run in CI
+
+Automated quality gates are split in two, because performance scores move by a few points between
+runs and a gate that fails at random gets switched off.
+
+**These fail the build:** the app is installable, the service worker registers, the offline page
+works, no console errors, and accessibility, best practices, and SEO all stay at or above their
+current level. Also a size budget for JavaScript and total page weight, set from what the app
+weighs today plus a little room.
+
+**These only warn:** overall performance score and loading speed measurements.
+
+Each page is measured three times and the middle result is used. Three real pages are checked —
+the home page, the explore feed, and a product page — on a simulated mid-range Android phone on a
+slow connection. Once the numbers have settled over a few weeks, performance can be promoted to a
+hard gate too.
+
+---
+
+## Still to confirm
+
+Nothing is blocking. The earlier open questions have been settled:
+
+- Photos are served as plain public URLs, so the cache needs no special handling for signed links.
+- Notification settings will be split per channel rather than duplicated into a second table.
+- Each step is its own pull request into `dev`, with everything switched off until the end.

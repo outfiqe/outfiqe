@@ -58,11 +58,7 @@ const themeBackground = toRgbBackground(LIGHT_THEME_COLOR);
 const renderLogo = (source: Buffer, size: number) =>
   sharp(source, { density: SVG_RENDER_DENSITY }).resize(size, size).png().toBuffer();
 
-const composeOnThemeBackground = async (
-  logo: Buffer,
-  canvasWidth: number,
-  canvasHeight: number,
-) =>
+const composeOnThemeBackground = async (logo: Buffer, canvasWidth: number, canvasHeight: number) =>
   sharp({
     create: {
       width: canvasWidth,
@@ -90,11 +86,7 @@ const generateInstallIcons = async (source: Buffer) => {
 
 const generateAppleTouchIcon = async (source: Buffer) => {
   const logo = await renderLogo(source, APPLE_TOUCH_ICON_SIZE);
-  const icon = await composeOnThemeBackground(
-    logo,
-    APPLE_TOUCH_ICON_SIZE,
-    APPLE_TOUCH_ICON_SIZE,
-  );
+  const icon = await composeOnThemeBackground(logo, APPLE_TOUCH_ICON_SIZE, APPLE_TOUCH_ICON_SIZE);
 
   await writeFile(path.join(iconOutputDirectory, "apple-touch-icon.png"), icon);
 };
