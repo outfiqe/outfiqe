@@ -1052,6 +1052,7 @@ export const creatorLookRepository = {
           include: {
             brand: { select: { name: true } },
             categories: { select: { slug: true, name: true } },
+            productType: { select: { slug: true, label: true } },
           },
         },
       },

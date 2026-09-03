@@ -2,12 +2,12 @@ import { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
 
-import { type ProductTypeSlug, type SizeOption, sizeOptionSchema } from "./schemas";
+import { type SizeOption, sizeOptionSchema } from "./schemas";
 
 const listSchema = z.array(sizeOptionSchema);
 
 export type CreateSizeOptionInput = {
-  type: ProductTypeSlug;
+  type: string;
   label: string;
   sortOrder?: number;
 };

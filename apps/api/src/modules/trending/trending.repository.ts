@@ -94,7 +94,7 @@ export const trendingRepository = {
     if (productIds.length === 0) return [];
     return prisma.product.findMany({
       where: { id: { in: productIds }, status: ProductStatus.APPROVED, deletedAt: null },
-      select: { id: true, brandId: true, type: true, createdAt: true },
+      select: { id: true, brandId: true, productTypeId: true, createdAt: true },
     });
   },
 };

@@ -55,8 +55,8 @@ describe("CategoryTypeFilters", () => {
   it("renders a filter per product type once loaded", () => {
     mockProductTypes({
       data: [
-        { slug: "tshirts", label: "T-shirts" },
-        { slug: "shirts", label: "Shirts" },
+        { id: "pt-tshirts", slug: "tshirts", label: "T-shirts" },
+        { id: "pt-shirts", slug: "shirts", label: "Shirts" },
       ],
     });
 
@@ -68,7 +68,7 @@ describe("CategoryTypeFilters", () => {
 
   it("navigates with the type query param when a non-All filter is picked", async () => {
     const user = userEvent.setup();
-    mockProductTypes({ data: [{ slug: "shirts", label: "Shirts" }] });
+    mockProductTypes({ data: [{ id: "pt-shirts", slug: "shirts", label: "Shirts" }] });
 
     renderFilters();
     await user.click(screen.getByRole("button", { name: "Shirts" }));
@@ -78,7 +78,7 @@ describe("CategoryTypeFilters", () => {
 
   it("omits the type param when the All filter is picked", async () => {
     const user = userEvent.setup();
-    mockProductTypes({ data: [{ slug: "shirts", label: "Shirts" }] });
+    mockProductTypes({ data: [{ id: "pt-shirts", slug: "shirts", label: "Shirts" }] });
 
     render(<CategoryTypeFilters basePath="/shop" categorySlug="tops" activeType="shirts" />);
     await user.click(screen.getByRole("button", { name: "All" }));

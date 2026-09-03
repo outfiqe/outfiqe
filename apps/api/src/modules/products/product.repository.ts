@@ -2,7 +2,6 @@ import { PRODUCT_SORT, type ProductSort } from "@outfiqe/utils";
 
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
-import type { ProductType } from "#generated/prisma/enums.js";
 import { CreatorStatus, ProductStatus } from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
@@ -35,6 +34,7 @@ const SEEN_ON_CREATORS_LIMIT = 5;
 const withBrandAndCategories = {
   brand: { select: { name: true } },
   categories: { select: { slug: true, name: true } },
+  productType: { select: { slug: true, label: true } },
   sizes: { select: { id: true, label: true, stock: true }, orderBy: { sortOrder: "asc" as const } },
 };
 
@@ -44,7 +44,7 @@ const withImages = {
 
 type PublicFilter = {
   categoryId?: string;
-  type?: ProductType;
+  productTypeId?: string;
   brandId?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -56,7 +56,7 @@ const buildPublicWhere = (filter: PublicFilter): Prisma.ProductWhereInput => ({
   status: ProductStatus.APPROVED,
   deletedAt: null,
   categories: filter.categoryId ? { some: { id: filter.categoryId } } : undefined,
-  type: filter.type,
+  productTypeId: filter.productTypeId,
   brandId: filter.brandId,
   price:
     filter.minPrice !== undefined || filter.maxPrice !== undefined
@@ -281,7 +281,7 @@ export const productRepository = {
         ${params.limit},
         ${params.offset},
         ${params.categoryId ?? null}::uuid,
-        ${params.type ?? null}::"ProductType",
+        ${params.productTypeId ?? null}::uuid,
         ${params.brandId ?? null}::uuid,
         ${params.minPrice ?? null}::int,
         ${params.maxPrice ?? null}::int,
@@ -360,6 +360,7 @@ export const productRepository = {
       include: {
         brand: { select: { name: true } },
         categories: { select: { slug: true, name: true } },
+        productType: { select: { slug: true, label: true } },
         sizes: { orderBy: { sortOrder: "asc" }, select: { id: true, label: true, stock: true } },
         images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
       },

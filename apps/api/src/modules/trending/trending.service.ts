@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 
-import type { ProductType } from "#generated/prisma/enums.js";
 import { decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
 import { productRepository } from "#modules/products/product.repository.js";
@@ -45,7 +44,7 @@ const computeAllScoreBreakdowns = async (
 ): Promise<{
   candidates: ProductScoreBreakdown[];
   bucketsByProduct: Map<string, MetricBucket[]>;
-  categoryBaselines: Map<ProductType, number>;
+  categoryBaselines: Map<string, number>;
   globalBaseline: number;
 }> => {
   const buckets = await trendingRepository.listRecentMetricBuckets(BASELINE_WINDOW_DAYS);
@@ -76,7 +75,7 @@ const computeAllScoreBreakdowns = async (
       brandId: productMeta.brandId,
       buckets: productBuckets,
       productCreatedAt: productMeta.createdAt,
-      productType: productMeta.type,
+      productType: productMeta.productTypeId,
       categoryBaselines,
       globalBaseline,
       now,
@@ -238,7 +237,7 @@ export const trendingService = {
       brandId: product.brandId,
       buckets: bucketsByProduct.get(productId) ?? [],
       productCreatedAt: product.createdAt,
-      productType: product.type,
+      productType: product.productTypeId,
       categoryBaselines,
       globalBaseline,
       now,

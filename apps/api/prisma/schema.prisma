@@ -256,23 +256,24 @@ model Brand {
 }
 
 model Product {
-  id           String        @id @default(uuid()) @db.Uuid
-  brandId      String        @map("brand_id") @db.Uuid
-  brand        Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  name         String
-  price        Int
-  type         ProductType
-  categories   Category[]
-  imageUrl     String?       @map("image_url")
-  lowStock     Boolean       @default(false) @map("low_stock")
-  status       ProductStatus @default(PENDING)
-  reviewedAt   DateTime?     @map("reviewed_at")
-  reviewedById String?       @map("reviewed_by_id") @db.Uuid
-  reviewedBy   User?         @relation("ProductReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
-  wornByCount  Int           @default(0) @map("worn_by_count")
-  deletedAt    DateTime?     @map("deleted_at")
+  id            String        @id @default(uuid()) @db.Uuid
+  brandId       String        @map("brand_id") @db.Uuid
+  brand         Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  name          String
+  price         Int
+  productTypeId String        @map("product_type_id") @db.Uuid
+  productType   ProductType   @relation(fields: [productTypeId], references: [id])
+  categories    Category[]
+  imageUrl      String?       @map("image_url")
+  lowStock      Boolean       @default(false) @map("low_stock")
+  status        ProductStatus @default(PENDING)
+  reviewedAt    DateTime?     @map("reviewed_at")
+  reviewedById  String?       @map("reviewed_by_id") @db.Uuid
+  reviewedBy    User?         @relation("ProductReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  wornByCount   Int           @default(0) @map("worn_by_count")
+  deletedAt     DateTime?     @map("deleted_at")
 
   sizes         ProductSize[]
   taggedInLooks CreatorLookProduct[]
@@ -298,6 +299,7 @@ model Product {
 
   @@index([deletedAt])
   @@index([brandId])
+  @@index([productTypeId])
   @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "products_name_trgm_idx")
   @@index([searchVector], type: Gin, map: "products_search_vector_idx")
   @@map("products")
@@ -423,6 +425,22 @@ enum CategoryStatus {
   PUBLISHED
 }
 
+model ProductType {
+  id        String   @id @default(uuid()) @db.Uuid
+  slug      String   @unique
+  label     String
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  products    Product[]
+  sizeOptions SizeOption[]
+
+  @@index([isActive, sortOrder])
+  @@map("product_types")
+}
+
 model TastePreference {
   userId        String   @id @map("user_id") @db.Uuid
   categorySlugs String[] @map("category_slugs")
@@ -484,13 +502,14 @@ model ProductSize {
 }
 
 model SizeOption {
-  id        String      @id @default(uuid()) @db.Uuid
-  type      ProductType
-  label     String
-  sortOrder Int         @default(0) @map("sort_order")
-  createdAt DateTime    @default(now()) @map("created_at")
+  id            String      @id @default(uuid()) @db.Uuid
+  productTypeId String      @map("product_type_id") @db.Uuid
+  productType   ProductType @relation(fields: [productTypeId], references: [id], onDelete: Cascade)
+  label         String
+  sortOrder     Int         @default(0) @map("sort_order")
+  createdAt     DateTime    @default(now()) @map("created_at")
 
-  @@unique([type, label])
+  @@unique([productTypeId, label])
   @@map("size_options")
 }
 
@@ -697,15 +716,6 @@ model SavedProduct {
   @@id([userId, productId])
   @@index([createdAt])
   @@map("saved_products")
-}
-
-enum ProductType {
-  TOPS
-  BOTTOMS
-  PANTS
-  HEADWEAR
-  OUTERWEAR
-  DRESSES
 }
 
 enum ProductStatus {

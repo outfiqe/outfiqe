@@ -1,7 +1,6 @@
-import { PRODUCT_TYPE_SLUGS } from "@outfiqe/utils";
 import { z } from "zod";
 
-export const productTypeSchema = z.enum(PRODUCT_TYPE_SLUGS);
+export const productTypeSchema = z.string();
 
 export const publicProductSchema = z.object({
   id: z.string(),

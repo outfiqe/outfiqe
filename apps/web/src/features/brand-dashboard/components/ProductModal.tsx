@@ -2,12 +2,11 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, FormBanner, Input, Modal, MultiSelect, toast } from "@outfiqe/design-system";
-import { PRODUCT_TYPE_SLUGS } from "@outfiqe/utils";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
-import { useProductTypes } from "@/features/products/hooks/useProductTypes";
+import { useAssignableProductTypes } from "@/features/products/hooks/useProductTypes";
 import { useSizeOptions } from "@/features/products/hooks/useSizeOptions";
 import { MediaFormShell } from "@/shared/components/MediaFormShell";
 import { PendingPhotoThumbnailRail } from "@/shared/components/PendingPhotoThumbnailRail";
@@ -38,7 +37,7 @@ type ProductModalProps = {
 
 export const ProductModal = ({ open, onClose }: ProductModalProps) => {
   const create = useCreateProduct();
-  const productTypes = useProductTypes();
+  const productTypes = useAssignableProductTypes();
   const categories = useCategories();
   const pending = usePendingPhotos(MAX_IMAGES);
   const [isProcessingPhotos, setIsProcessingPhotos] = useState(false);
@@ -49,7 +48,7 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
     defaultValues: {
       name: "",
       price: 0,
-      type: PRODUCT_TYPE_SLUGS[0],
+      type: "",
       categories: [],
       imageUrls: [],
       lowStock: false,
@@ -181,6 +180,9 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
               form.setValue("sizes", []);
             }}
           >
+            <option value="" disabled>
+              Select a type
+            </option>
             {productTypes.data?.map((productType) => (
               <option key={productType.slug} value={productType.slug}>
                 {productType.label}

@@ -1,10 +1,8 @@
-export const PRODUCT_TYPE_SLUGS = [
-  "tops",
-  "bottoms",
-  "pants",
-  "headwear",
-  "outerwear",
-  "dresses",
+export const DEFAULT_PRODUCT_TYPES = [
+  { slug: "tops", label: "Tops" },
+  { slug: "bottoms", label: "Bottoms" },
+  { slug: "pants", label: "Pants" },
+  { slug: "headwear", label: "Headwear" },
+  { slug: "outerwear", label: "Outerwear" },
+  { slug: "dresses", label: "Dresses" },
 ] as const;
-
-export type ProductTypeSlug = (typeof PRODUCT_TYPE_SLUGS)[number];

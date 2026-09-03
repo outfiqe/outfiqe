@@ -1,8 +1,4 @@
-import {
-  LOW_STOCK_THRESHOLD,
-  NEW_ARRIVAL_WINDOW_MS,
-  PRODUCT_TYPE_TO_SLUG,
-} from "./product.constants.js";
+import { LOW_STOCK_THRESHOLD, NEW_ARRIVAL_WINDOW_MS } from "./product.constants.js";
 import type {
   ProductBrandSummary,
   ProductSuggestion,
@@ -31,12 +27,6 @@ export const toSuggestion = ({
 export const isNew = (createdAt: Date): boolean =>
   Date.now() - createdAt.getTime() <= NEW_ARRIVAL_WINDOW_MS;
 
-export const humanizeSlug = (slug: string): string =>
-  slug
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-
 export const sumStock = (sizes: { stock: number }[]): number =>
   sizes.reduce((total, size) => total + size.stock, 0);
 
@@ -49,7 +39,7 @@ export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduc
     brand,
     name,
     price,
-    type,
+    productType,
     categories,
     imageUrl,
     totalStock,
@@ -70,7 +60,7 @@ export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduc
     brand: brand.name,
     name,
     price,
-    type: PRODUCT_TYPE_TO_SLUG[type],
+    type: productType.slug,
     categorySlugs: categories.map((category) => category.slug),
     imageUrl,
     lowStock: totalStock === undefined ? lowStock : isLowStock(totalStock),
@@ -91,13 +81,14 @@ export const toBrandSummary = ({
   categories,
   images,
   brand: _brand,
-  type,
+  productType,
+  productTypeId: _productTypeId,
   totalStock,
   lowStock: _lowStock,
   ...rest
 }: ProductWithStockSizesAndImages): ProductBrandSummary => ({
   ...rest,
-  type: PRODUCT_TYPE_TO_SLUG[type],
+  type: productType.slug,
   categories: categories.map((category) => category.name),
   categorySlugs: categories.map((category) => category.slug),
   imageUrls: images.map((image) => image.url),
