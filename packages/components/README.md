@@ -12,7 +12,10 @@ passed in.
 
 - `header/` — `HeaderBar` and its condense-on-scroll behavior (`useHeaderCondense`).
 - `sidebar/` — `Sidebar`, `SidebarSection`, `SidebarNavItemView`, and their active-trail/expanded-
-  group/collapse state (`activeTrail.ts`, `useExpandedGroups.ts`, `useSidebarCollapse.ts`).
+  group/collapse state (`activeTrail.ts`, `useExpandedGroups.ts`, `useSidebarCollapse.ts`). The
+  `SidebarNavigationAdapter` an app passes carries `pathname` + `isActive` and either lets the
+  widget render a plain `<a>` that calls `navigate(href)` on click, or supplies a `LinkComponent`
+  the widget renders instead (see rationale below).
 - `kanban/` — `KanbanBoard<TCard>`, a generic pipeline board: `columns` + `cards` +
   `renderCard` + `onCardMove(cardId, toColumnId)`. Cards move two ways, both keyboard-accessible —
   native HTML5 drag-and-drop and a "Move to" `<select>` on every card — so it needs **no
@@ -38,3 +41,13 @@ even though both eventually read the same server state. They share a query key
 (`NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY`), so react-query dedupes the actual fetch — the split exists
 so the badge count stays live and correct even while the panel itself is closed or unmounted, not
 just while it's open.
+
+**The sidebar's optional `LinkComponent` exists so an app can hand the widget its framework's own
+link.** The default `<a onClick={navigate}>` path derives the active highlight purely from
+`pathname`, so the highlight only moves once the router commits the new route — on Next's App
+Router that waits for a server round-trip and feels laggy. When an adapter supplies `LinkComponent`,
+`SidebarNavItemView` renders it instead (no `preventDefault`/`navigate`), passing the committed
+active flags plus the resolved class tokens; the app-side component then owns prefetch and an
+optimistic pending highlight. `apps/web`'s `DashboardSidebarLink` does exactly this with a
+`next/link` wrapper plus `useLinkStatus`. `apps/admin` passes no `LinkComponent` and keeps the
+plain-anchor path.

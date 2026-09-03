@@ -8,6 +8,12 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
 }));
 
+vi.mock("next/link", () => ({
+  __esModule: true,
+  default: () => null,
+  useLinkStatus: () => ({ pending: false }),
+}));
+
 import { useNextSidebarNavigation } from "./useNextSidebarNavigation";
 
 const assign = vi.fn();
@@ -47,5 +53,11 @@ describe("useNextSidebarNavigation", () => {
 
     expect(assign).toHaveBeenCalledWith("https://outfiqe.test/somewhere");
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it("supplies a LinkComponent so the sidebar renders framework links", () => {
+    const { result } = renderHook(() => useNextSidebarNavigation());
+
+    expect(result.current.LinkComponent).toBeTypeOf("function");
   });
 });

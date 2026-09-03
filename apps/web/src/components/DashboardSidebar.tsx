@@ -30,6 +30,7 @@ import { useTenantHost } from "@/shared/hooks/useTenantHost";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
+import { SidebarPendingNavProvider } from "./SidebarPendingNavContext";
 import { useNextSidebarNavigation } from "./useNextSidebarNavigation";
 
 const SECURITY_NAV_ITEM: SidebarNavItem = {
@@ -150,15 +151,17 @@ export const DashboardSidebar = () => {
 
   return (
     <aside className={cn("shrink-0", sidebarWidthClass(collapsed))}>
-      <Sidebar
-        sections={sections}
-        navigation={navigation}
-        ariaLabel="Dashboard"
-        collapsed={collapsed}
-        onToggleCollapse={toggle}
-        header={header}
-        footer={footer}
-      />
+      <SidebarPendingNavProvider>
+        <Sidebar
+          sections={sections}
+          navigation={navigation}
+          ariaLabel="Dashboard"
+          collapsed={collapsed}
+          onToggleCollapse={toggle}
+          header={header}
+          footer={footer}
+        />
+      </SidebarPendingNavProvider>
     </aside>
   );
 };
