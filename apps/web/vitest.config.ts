@@ -25,6 +25,8 @@ export default defineConfig({
         "src/features/auth/components/OAuthCallbackScreen/**",
         "src/components/ProductGridSkeleton.tsx",
         "src/components/AccountMenu.tsx",
+        "src/components/DashboardSidebarLink.tsx",
+        "src/components/SidebarPendingNavContext.tsx",
         "src/shared/components/CategoryTypeFilters.tsx",
         "src/features/creator-leaderboard/components/CreatorLeaderboardTabs.tsx",
         "src/features/explore/components/FeedFilterTabs.tsx",

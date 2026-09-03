@@ -4,6 +4,8 @@ import type { SidebarNavigationAdapter } from "@outfiqe/components";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo } from "react";
 
+import { DashboardSidebarLink } from "./DashboardSidebarLink";
+
 const isCrossAppHref = (href: string): boolean =>
   href.startsWith("http://") || href.startsWith("https://") || href.startsWith("/admin");
 
@@ -21,6 +23,7 @@ export const useNextSidebarNavigation = (): SidebarNavigationAdapter => {
         }
         router.push(href);
       },
+      LinkComponent: DashboardSidebarLink,
     }),
     [pathname, router],
   );
