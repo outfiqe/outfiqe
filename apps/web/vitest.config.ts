@@ -27,7 +27,7 @@ export default defineConfig({
         "src/components/ProductGridSkeleton.tsx",
         "src/components/AccountMenu.tsx",
         "src/components/DashboardSidebarLink.tsx",
-        "src/components/DashboardMobileNav.tsx",
+        "src/components/DashboardMobileMenu.tsx",
         "src/components/useDashboardNav.ts",
         "src/components/SidebarPendingNavContext.tsx",
         "src/shared/components/CategoryTypeFilters.tsx",

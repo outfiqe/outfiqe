@@ -108,7 +108,7 @@ export const MobileNav = () => {
             onClick={() => setOpen(false)}
             className="fixed inset-0 z-30 bg-black/25 lg:hidden"
           />
-          <div className="fixed inset-x-0 top-[var(--site-header-height,3.5rem)] z-40 max-h-[calc(100dvh-var(--site-header-height,3.5rem))] overflow-y-auto border-b border-border bg-background px-6 py-4 shadow-lg lg:hidden">
+          <div className="fixed inset-x-3 top-[calc(var(--site-header-height,3.5rem)+0.5rem)] z-40 max-h-[calc(100dvh-var(--site-header-height,3.5rem)-1.5rem)] overflow-y-auto rounded-3xl border border-border bg-background px-5 py-4 shadow-xl lg:hidden">
             <nav className="flex flex-col gap-0.5 text-sm">
               {NAV_LINKS.map(({ href, label }) => (
                 <Link
