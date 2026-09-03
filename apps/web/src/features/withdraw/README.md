@@ -23,6 +23,10 @@ balance formula and admin-review rules this UI reflects.
   ineligibility reason currently applies (no verified account, window closed, cooldown, attempts
   exhausted) rather than a raw disabled button with no explanation.
 - `components/WithdrawRequestRow.tsx` / `WithdrawRequestStatusBadge.tsx` — one history entry.
+- `components/WithdrawSectionSkeleton.tsx` — a presentational skeleton mirroring
+  `WithdrawSection`'s block layout, rendered by the `withdraw` and `wallet` route `loading.tsx`
+  files so the client-side transition shows a shaped placeholder instead of the previous page
+  while the route's server payload loads.
 
 ## Funnel
 

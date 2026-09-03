@@ -11,8 +11,10 @@ passed in.
 ## Structure
 
 - `header/` — `HeaderBar` and its condense-on-scroll behavior (`useHeaderCondense`).
-- `sidebar/` — `Sidebar`, `SidebarSection`, `SidebarNavItemView`, and their active-trail/expanded-
-  group/collapse state (`activeTrail.ts`, `useExpandedGroups.ts`, `useSidebarCollapse.ts`). The
+- `sidebar/` — `Sidebar`, `SidebarSection`, `SidebarNavItemView`, `SidebarSkeleton` (the
+  matching auth/nav-loading placeholder each app renders before its sidebar data is ready), and
+  their active-trail/expanded-group/collapse state (`activeTrail.ts`, `useExpandedGroups.ts`,
+  `useSidebarCollapse.ts`). The
   `SidebarNavigationAdapter` an app passes carries `pathname` + `isActive` and either lets the
   widget render a plain `<a>` that calls `navigate(href)` on click, or supplies a `LinkComponent`
   the widget renders instead (see rationale below).

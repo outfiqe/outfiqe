@@ -4,6 +4,7 @@ import {
   Sidebar,
   type SidebarNavItem,
   type SidebarNavSection,
+  SidebarSkeleton,
   sidebarWidthClass,
   useSidebarCollapse,
 } from "@outfiqe/components";
@@ -85,7 +86,11 @@ export const DashboardSidebar = () => {
   const { collapsed, toggle } = useSidebarCollapse("outfiqe:web-sidebar-collapsed");
 
   if (state.status === AuthStatus.IDLE || state.status === AuthStatus.LOADING) {
-    return <aside className={cn("shrink-0", sidebarWidthClass(collapsed))} aria-hidden />;
+    return (
+      <aside className={cn("shrink-0", sidebarWidthClass(collapsed))}>
+        <SidebarSkeleton ariaLabel="Dashboard" collapsed={collapsed} rowCount={7} hasFooter />
+      </aside>
+    );
   }
 
   const user = state.user;
