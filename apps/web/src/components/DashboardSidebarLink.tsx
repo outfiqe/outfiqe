@@ -52,7 +52,7 @@ export const DashboardSidebarLink = ({
     );
   }
 
-  const active = isActive || pendingHref === href;
+  const active = pendingHref === null ? isActive : pendingHref === href;
 
   return (
     <NextLink
