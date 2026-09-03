@@ -1,7 +1,8 @@
-import { Badge, Button, FormBanner, Input } from "@outfiqe/design-system";
+import { Badge, Button, cn, FormBanner, Input } from "@outfiqe/design-system";
+import { useDragReorder } from "@outfiqe/hooks";
 import { LANDING_TASTE_CATEGORY_COUNT } from "@outfiqe/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
 import { ImageUpload } from "@/components/ImageUpload";
@@ -20,16 +21,6 @@ const slugify = (value: string): string =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-
-const withSwappedNeighbours = (list: Category[], from: number, to: number): Category[] => {
-  const next = [...list];
-  const moved = next[from];
-  const displaced = next[to];
-  if (!moved || !displaced) return list;
-  next[from] = displaced;
-  next[to] = moved;
-  return next;
-};
 
 export const CategoriesPage = () => {
   const queryClient = useQueryClient();
@@ -96,10 +87,11 @@ export const CategoriesPage = () => {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-categories"] }),
   });
 
-  const moveCategory = (from: number, to: number) => {
-    if (!categories || to < 0 || to >= categories.length) return;
-    reorder.mutate(withSwappedNeighbours(categories, from, to).map((category) => category.id));
-  };
+  const { getDragProps, moveEntry, draggingId, dragOverId } = useDragReorder({
+    order: categories ?? [],
+    getId: (category) => category.id,
+    onReorder: (nextOrder) => reorder.mutate(nextOrder.map((category) => category.id)),
+  });
 
   const publishedCount = (categories ?? []).filter(
     (category) => category.status === "PUBLISHED",
@@ -185,7 +177,20 @@ export const CategoriesPage = () => {
 
           return (
             <div key={id}>
-              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4">
+              <div
+                {...getDragProps(id)}
+                className={cn(
+                  "flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4 transition-colors",
+                  draggingId === id && "opacity-50",
+                  dragOverId === id && "border-foreground",
+                )}
+              >
+                <span
+                  aria-hidden
+                  className="cursor-grab text-muted-foreground active:cursor-grabbing"
+                >
+                  <GripVertical className="size-4" />
+                </span>
                 <div className="flex flex-col">
                   <Button
                     variant="ghost"
@@ -193,7 +198,7 @@ export const CategoriesPage = () => {
                     className="size-7"
                     aria-label={`Move ${name} up`}
                     disabled={index === 0 || reorder.isPending}
-                    onClick={() => moveCategory(index, index - 1)}
+                    onClick={() => moveEntry(index, index - 1)}
                   >
                     <ArrowUp />
                   </Button>
@@ -203,7 +208,7 @@ export const CategoriesPage = () => {
                     className="size-7"
                     aria-label={`Move ${name} down`}
                     disabled={index === categories.length - 1 || reorder.isPending}
-                    onClick={() => moveCategory(index, index + 1)}
+                    onClick={() => moveEntry(index, index + 1)}
                   >
                     <ArrowDown />
                   </Button>

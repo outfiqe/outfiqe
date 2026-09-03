@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -54,6 +54,21 @@ describe("CustomizeTasteModal", () => {
 
     expect(onSave).toHaveBeenCalledWith(["streetwear", "old-money", "y2k"]);
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("reorders by drag and saves the new order", async () => {
+    const user = userEvent.setup();
+    const { onSave } = renderModal();
+
+    const rowFor = (name: string) => screen.getByText(name).closest("li") as HTMLElement;
+
+    fireEvent.dragStart(rowFor("Formal"));
+    fireEvent.dragEnter(rowFor("Old Money"));
+    fireEvent.drop(rowFor("Old Money"));
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(onSave).toHaveBeenCalledWith(["formal", "old-money", "streetwear"]);
   });
 
   it("disables Save with an empty selection", async () => {

@@ -133,7 +133,8 @@ support reports, and review the organization's audit log — against the `/api/c
 - `PipelinePage.tsx` — a `KanbanBoard` (`@outfiqe/components`) of stages → deals. `deals:write`
   gets a "New deal" button (`DealFormModal.tsx`, with a partner picker fed by
   `crmRelationshipsApi.listPartners`); `pipeline:configure` gets "Configure stages"
-  (`StageConfigModal.tsx` — add / rename-less delete / up-down reorder). Moving a card patches the
+  (`StageConfigModal.tsx` — add / rename-less delete / drag-or-arrow reorder via
+  `useDragReorder`). Moving a card patches the
   deal's `stageId`.
 - `activitiesApi.ts` / `activitiesSchemas.ts` — `crmActivitiesApi` (timeline, log activity, task
   CRUD) + Zod mirrors of `/api/crm/timeline`, `/api/crm/activities`, `/api/crm/tasks`.

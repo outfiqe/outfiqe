@@ -1,5 +1,7 @@
-import { Badge, Button, FormBanner, Input, Modal } from "@outfiqe/design-system";
+import { Badge, Button, cn, FormBanner, Input, Modal } from "@outfiqe/design-system";
+import { useDragReorder } from "@outfiqe/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { GripVertical } from "lucide-react";
 import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -8,16 +10,6 @@ import { crmPipelineApi } from "./pipelineApi";
 import type { PipelineStage } from "./pipelineSchemas";
 
 const STAGES_QUERY_KEY = ["crm-pipeline-stages"];
-
-const swap = (ids: string[], from: number, to: number): string[] => {
-  const next = [...ids];
-  const moved = next[from];
-  const displaced = next[to];
-  if (moved === undefined || displaced === undefined) return ids;
-  next[from] = displaced;
-  next[to] = moved;
-  return next;
-};
 
 export const StageConfigModal = ({
   open,
@@ -49,7 +41,12 @@ export const StageConfigModal = ({
     onSuccess: invalidate,
   });
 
-  const stageIds = stages.map((stage) => stage.id);
+  const { getDragProps, moveEntry, draggingId, dragOverId } = useDragReorder({
+    order: stages,
+    getId: (stage) => stage.id,
+    onReorder: (nextOrder) => reorder.mutate(nextOrder.map((stage) => stage.id)),
+  });
+
   const anyError = addStage.error ?? removeStage.error ?? reorder.error;
 
   return (
@@ -61,9 +58,20 @@ export const StageConfigModal = ({
           {stages.map((stage, index) => (
             <li
               key={stage.id}
-              className="flex items-center justify-between gap-2 rounded-lg border border-border p-2 text-sm"
+              {...getDragProps(stage.id)}
+              className={cn(
+                "flex items-center justify-between gap-2 rounded-lg border border-border p-2 text-sm transition-colors",
+                draggingId === stage.id && "opacity-50",
+                dragOverId === stage.id && "border-foreground",
+              )}
             >
               <span className="flex items-center gap-2">
+                <span
+                  aria-hidden
+                  className="cursor-grab text-muted-foreground active:cursor-grabbing"
+                >
+                  <GripVertical className="size-4" />
+                </span>
                 {stage.name}
                 {stage.isWon && <Badge tone="positive">won</Badge>}
                 {stage.isLost && <Badge tone="negative">lost</Badge>}
@@ -73,7 +81,7 @@ export const StageConfigModal = ({
                   size="sm"
                   variant="ghost"
                   disabled={index === 0 || reorder.isPending}
-                  onClick={() => reorder.mutate(swap(stageIds, index, index - 1))}
+                  onClick={() => moveEntry(index, index - 1)}
                   aria-label={`Move ${stage.name} up`}
                 >
                   ↑
@@ -82,7 +90,7 @@ export const StageConfigModal = ({
                   size="sm"
                   variant="ghost"
                   disabled={index === stages.length - 1 || reorder.isPending}
-                  onClick={() => reorder.mutate(swap(stageIds, index, index + 1))}
+                  onClick={() => moveEntry(index, index + 1)}
                   aria-label={`Move ${stage.name} down`}
                 >
                   ↓
