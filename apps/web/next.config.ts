@@ -11,6 +11,8 @@ const adminUrl = process.env.ADMIN_ORIGIN_URL ?? "http://localhost:5173";
 
 const isProdEnv = process.env.NEXT_PUBLIC_APP_ENV === "prod";
 
+const isSearchIndexable = process.env.SEO_INDEXABLE === "true";
+
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -22,6 +24,7 @@ const securityHeaders = [
   ...(isProdEnv
     ? [{ key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" }]
     : []),
+  ...(isSearchIndexable ? [] : [{ key: "X-Robots-Tag", value: "noindex, nofollow" }]),
 ];
 
 const nextConfig: NextConfig = {
