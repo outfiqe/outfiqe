@@ -59,6 +59,7 @@ export const PhotoCropPane = ({
   emptyLabel = "Add a photo",
 }: PhotoCropPaneProps) => {
   const { activePhoto } = pending;
+  const visibleError = pending.importError ?? error;
 
   return (
     <>
@@ -110,7 +111,9 @@ export const PhotoCropPane = ({
 
       <HiddenFileInput inputRef={pending.inputRef} onFilesSelected={pending.handleFileSelect} />
 
-      {error && <p className="px-3 py-2 text-center text-xs text-destructive">{error}</p>}
+      {visibleError && (
+        <p className="px-3 py-2 text-center text-xs text-destructive">{visibleError}</p>
+      )}
     </>
   );
 };

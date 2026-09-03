@@ -112,6 +112,9 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
       setIsProcessingPhotos(true);
       try {
         photoFile = await toUploadableImage(selected);
+      } catch (conversionFailure) {
+        setPhotoError(getErrorMessage(conversionFailure));
+        return;
       } finally {
         setIsProcessingPhotos(false);
       }

@@ -84,6 +84,7 @@ export default defineConfig({
         "src/features/explore/components/CommentThread.tsx",
         "src/shared/lib/contentSecurityPolicy.ts",
         "src/shared/lib/apiOrigin.ts",
+        "src/shared/lib/heicImage.ts",
         "src/features/bank-accounts/components/AddBankAccountModal.tsx",
         "src/features/withdraw/components/WithdrawRequestForm.tsx",
         "src/features/withdraw/components/WithdrawRequestStatusBadge.tsx",

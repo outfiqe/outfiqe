@@ -4,6 +4,7 @@ import { getCroppedImageFile, type PixelCrop } from "@outfiqe/design-system";
 import { useRef, useState } from "react";
 
 import { uploadsApi } from "@/shared/api/uploadsApi";
+import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { isHeicImage, toUploadableImage } from "@/shared/lib/heicImage";
 
 export type PendingPhoto = {
@@ -33,6 +34,7 @@ export const usePendingPhotos = (maxPhotos: number, initialUrls: string[] = []) 
   const [photos, setPhotos] = useState<PendingPhoto[]>(() => initialUrls.map(toExistingPhoto));
   const [activeId, setActiveId] = useState<string | null>(() => initialUrls[0] ?? null);
   const [isImportingFile, setIsImportingFile] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const activePhoto = photos.find((photo) => photo.id === activeId) ?? null;
@@ -56,6 +58,8 @@ export const usePendingPhotos = (maxPhotos: number, initialUrls: string[] = []) 
     if (inputRef.current) inputRef.current.value = "";
     if (!selectedFile) return;
 
+    setImportError(null);
+
     if (!isHeicImage(selectedFile)) {
       addFile(selectedFile);
       return;
@@ -64,6 +68,8 @@ export const usePendingPhotos = (maxPhotos: number, initialUrls: string[] = []) 
     setIsImportingFile(true);
     try {
       addFile(await toUploadableImage(selectedFile));
+    } catch (conversionFailure) {
+      setImportError(getErrorMessage(conversionFailure));
     } finally {
       setIsImportingFile(false);
     }
@@ -94,6 +100,7 @@ export const usePendingPhotos = (maxPhotos: number, initialUrls: string[] = []) 
     });
     setPhotos([]);
     setActiveId(null);
+    setImportError(null);
   };
 
   return {
@@ -103,6 +110,7 @@ export const usePendingPhotos = (maxPhotos: number, initialUrls: string[] = []) 
     inputRef,
     handleFileSelect,
     isImportingFile,
+    importError,
     removePhoto,
     updateActivePhoto,
     reset,
