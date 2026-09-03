@@ -91,8 +91,4 @@ export const rootMetadataDefaults: Metadata = {
     title: `${siteName} · ${siteTagline}`,
     description: rootDescription,
   },
-  icons: {
-    icon: [{ url: "/logo.svg", type: "image/svg+xml" }],
-  },
-  manifest: "/manifest.webmanifest",
 };
