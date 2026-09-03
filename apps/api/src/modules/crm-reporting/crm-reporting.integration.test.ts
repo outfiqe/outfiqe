@@ -465,8 +465,8 @@ describe("GET /api/crm/reports/overview", () => {
     await prisma.crmTask.create({
       data: {
         organizationId: organization.id,
-        title: "Due task",
-        dueAt: addHours(new Date(), 3),
+        title: "Open task overdue earlier today",
+        dueAt: subHours(new Date(), 1),
         status: CrmTaskStatus.OPEN,
         assigneeMembershipId: ownerMembership.id,
       },
