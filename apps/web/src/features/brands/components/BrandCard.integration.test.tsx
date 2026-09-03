@@ -93,6 +93,19 @@ describe("BrandCard", () => {
     expect(screen.getByText("products")).toBeInTheDocument();
     expect(screen.getByText("followers")).toBeInTheDocument();
   });
+
+  it("uses the brand's banner and avatar images when it has them", () => {
+    const { container } = renderCard(
+      buildBrand({
+        bannerUrl: "https://cdn.example/banner.jpg",
+        avatarUrl: "https://cdn.example/avatar.jpg",
+      }),
+    );
+
+    const bg = [...container.querySelectorAll<HTMLElement>("[style*='background-image']")];
+    expect(bg.some((el) => el.style.backgroundImage.includes("banner.jpg"))).toBe(true);
+    expect(bg.some((el) => el.style.backgroundImage.includes("avatar.jpg"))).toBe(true);
+  });
 });
 
 describe("BrandCard follow toggle", () => {
@@ -162,6 +175,24 @@ describe("BrandCard follow toggle", () => {
     await user.click(screen.getByRole("button", { name: "Follow" }));
 
     await waitFor(() => expect(screen.getByRole("button", { name: "Follow" })).toBeInTheDocument());
+    expect(screen.getByText("10")).toBeInTheDocument();
+  });
+
+  it("rolls back an optimistic unfollow when the request fails", async () => {
+    mswServer.use(
+      http.delete("/api/follows/brand/brand-9", () =>
+        HttpResponse.json({ success: false, message: "Server error" }, { status: 500 }),
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderCard(buildBrand({ isFollowing: true, followerCount: 10 }));
+
+    await user.click(screen.getByRole("button", { name: "Following" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Following" })).toBeInTheDocument(),
+    );
     expect(screen.getByText("10")).toBeInTheDocument();
   });
 });

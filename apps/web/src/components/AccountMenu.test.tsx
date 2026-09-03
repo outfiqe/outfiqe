@@ -84,6 +84,39 @@ describe("AccountMenu", () => {
     expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
   });
 
+  it("also shows the skeleton before auth has even started resolving", () => {
+    mockAuth({
+      state: { status: AuthStatus.IDLE, user: null, accessToken: null },
+      isAuthResolved: false,
+    });
+
+    const { container } = render(<AccountMenu />);
+
+    expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
+  });
+
+  it("signs the user out from the menu, showing a pending label while it runs", async () => {
+    const mutate = vi.fn();
+    vi.mocked(useLogout).mockReturnValue({ ...buildIdleLogoutMutation(), mutate });
+    mockAuth({
+      state: { status: AuthStatus.AUTHENTICATED, user: buildUser(), accessToken: "token" },
+      isAuthenticated: true,
+    });
+
+    const { rerender } = render(<AccountMenu />);
+    screen.getByRole("button", { name: "Sign out" }).click();
+    expect(mutate).toHaveBeenCalledOnce();
+
+    vi.mocked(useLogout).mockReturnValue({
+      ...buildIdleLogoutMutation(),
+      isPending: true,
+      isIdle: false,
+      status: "pending",
+    } as ReturnType<typeof useLogout>);
+    rerender(<AccountMenu />);
+    expect(screen.getByRole("button", { name: "Signing out…" })).toBeDisabled();
+  });
+
   it("links a signed-in creator's avatar and Dashboard entry to their profile", () => {
     const user = buildUser();
     mockAuth({
