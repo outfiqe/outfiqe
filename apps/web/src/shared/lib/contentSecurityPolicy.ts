@@ -27,11 +27,12 @@ export const buildContentSecurityPolicy = ({
 }: BuildContentSecurityPolicyOptions): string =>
   [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' ${isDev ? "'unsafe-eval'" : "'strict-dynamic'"} ${TURNSTILE_ORIGIN}`,
+    `script-src 'self' 'nonce-${nonce}' ${isDev ? "'unsafe-eval'" : "'strict-dynamic' 'wasm-unsafe-eval'"} ${TURNSTILE_ORIGIN}`,
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: blob: https: ${apiOrigin}`,
     "font-src 'self' data:",
     `connect-src 'self' ${apiOrigin} ${toWebSocketOrigin(apiOrigin)} ${TURNSTILE_ORIGIN}${getSentryConnectSrc()}`,
+    "worker-src 'self' blob:",
     `frame-src 'self' ${TURNSTILE_ORIGIN}`,
     "object-src 'none'",
     "base-uri 'self'",

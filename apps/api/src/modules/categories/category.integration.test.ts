@@ -234,6 +234,63 @@ describe("GET /api/categories/admin", () => {
   });
 });
 
+describe("POST /api/categories/reorder", () => {
+  it("writes sortOrder from the position of each id in the request", async () => {
+    const authHeader = await adminAuthHeader();
+    const alpha = await createCategory("Reorder Alpha", { sortOrder: 0 });
+    const beta = await createCategory("Reorder Beta", { sortOrder: 1 });
+    const gamma = await createCategory("Reorder Gamma", { sortOrder: 2 });
+
+    const response = await request(testApp)
+      .post("/api/categories/reorder")
+      .set("Authorization", authHeader)
+      .send({ orderedIds: [gamma.id, alpha.id, beta.id] });
+
+    expect(response.status).toBe(200);
+
+    const stored = await prisma.category.findMany({
+      where: { id: { in: [alpha.id, beta.id, gamma.id] } },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true },
+    });
+    expect(stored.map((row) => row.id)).toEqual([gamma.id, alpha.id, beta.id]);
+  });
+
+  it("rejects a request with a duplicate id", async () => {
+    const authHeader = await adminAuthHeader();
+    const alpha = await createCategory("Dup Alpha");
+
+    const response = await request(testApp)
+      .post("/api/categories/reorder")
+      .set("Authorization", authHeader)
+      .send({ orderedIds: [alpha.id, alpha.id] });
+
+    expect(response.status).toBe(422);
+    expect(response.body.code).toBe("INVALID_ORDER");
+  });
+
+  it("rejects a request referencing an unknown category", async () => {
+    const response = await request(testApp)
+      .post("/api/categories/reorder")
+      .set("Authorization", await adminAuthHeader())
+      .send({ orderedIds: [randomUUID()] });
+
+    expect(response.status).toBe(422);
+  });
+
+  it("rejects a non-admin caller", async () => {
+    const customer = await createUser(UserRole.CUSTOMER);
+    const alpha = await createCategory("Guard Alpha");
+
+    const response = await request(testApp)
+      .post("/api/categories/reorder")
+      .set("Authorization", authHeaderFor(customer.id, UserRole.CUSTOMER))
+      .send({ orderedIds: [alpha.id] });
+
+    expect(response.status).toBe(403);
+  });
+});
+
 describe("GET /api/categories", () => {
   it("returns only published categories, ordered by sortOrder", async () => {
     await createCategory("Second", { status: CategoryStatus.PUBLISHED, sortOrder: 2 });

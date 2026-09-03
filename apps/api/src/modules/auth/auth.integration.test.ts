@@ -1060,6 +1060,139 @@ describe("POST /api/auth/reset-password", () => {
   });
 });
 
+describe("POST /api/auth/change-password", () => {
+  const loginSession = async (email: string, password: string) => {
+    const login = await request(testApp).post("/api/auth/login").send({ email, password });
+    return {
+      accessToken: login.body.data.accessToken as string,
+      refreshToken: extractCookieValue(login, "refresh_token") ?? "",
+    };
+  };
+
+  const changePassword = (
+    accessToken: string,
+    refreshToken: string,
+    body: Record<string, string>,
+  ) =>
+    request(testApp)
+      .post("/api/auth/change-password")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .set("Cookie", `refresh_token=${refreshToken}`)
+      .send(body);
+
+  it("requires authentication", async () => {
+    const response = await request(testApp).post("/api/auth/change-password").send({
+      currentPassword: DEFAULT_TEST_PASSWORD,
+      newPassword: "brand-new-password",
+      confirmNewPassword: "brand-new-password",
+    });
+
+    expect(response.status).toBe(401);
+  });
+
+  it("changes the password, keeps the current session, and revokes the others", async () => {
+    const { user, password } = await createUser();
+    const { accessToken, refreshToken } = await loginSession(user.email, password);
+    await insertRefreshToken(user.id);
+    const newPassword = "a-fresh-secret-1";
+
+    const response = await changePassword(accessToken, refreshToken, {
+      currentPassword: password,
+      newPassword,
+      confirmNewPassword: newPassword,
+    });
+
+    expect(response.status).toBe(200);
+
+    const remainingTokens = await prisma.refreshToken.findMany({ where: { userId: user.id } });
+    expect(remainingTokens).toHaveLength(1);
+    expect(remainingTokens[0]?.tokenHash).toBe(hashToken(refreshToken));
+
+    const oldLogin = await request(testApp)
+      .post("/api/auth/login")
+      .send({ email: user.email, password });
+    expect(oldLogin.status).toBe(401);
+
+    const newLogin = await request(testApp)
+      .post("/api/auth/login")
+      .send({ email: user.email, password: newPassword });
+    expect(newLogin.status).toBe(200);
+  });
+
+  it("rejects an incorrect current password without changing anything", async () => {
+    const { user, password } = await createUser();
+    const { accessToken, refreshToken } = await loginSession(user.email, password);
+
+    const response = await changePassword(accessToken, refreshToken, {
+      currentPassword: "not-my-password",
+      newPassword: "a-fresh-secret-1",
+      confirmNewPassword: "a-fresh-secret-1",
+    });
+
+    expect(response.status).toBe(401);
+    expect(response.body.code).toBe("INVALID_CURRENT_PASSWORD");
+
+    const stillWorks = await request(testApp)
+      .post("/api/auth/login")
+      .send({ email: user.email, password });
+    expect(stillWorks.status).toBe(200);
+  });
+
+  it("rejects reusing the current password", async () => {
+    const { user, password } = await createUser();
+    const { accessToken, refreshToken } = await loginSession(user.email, password);
+
+    const response = await changePassword(accessToken, refreshToken, {
+      currentPassword: password,
+      newPassword: password,
+      confirmNewPassword: password,
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body.code).toBe("PASSWORD_UNCHANGED");
+  });
+
+  it("rejects a mismatched confirmation", async () => {
+    const { user, password } = await createUser();
+    const { accessToken, refreshToken } = await loginSession(user.email, password);
+
+    const response = await changePassword(accessToken, refreshToken, {
+      currentPassword: password,
+      newPassword: "a-fresh-secret-1",
+      confirmNewPassword: "a-different-secret-2",
+    });
+
+    expect(response.status).toBe(422);
+  });
+
+  it("rejects an account that signs in only through a connected account", async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const oauthOnlyUser = await prisma.user.create({
+      data: {
+        email: `oauth-only-${suffix}@outfiqe.test`,
+        name: "OAuth Only",
+        handle: `oauth-only-${suffix}`,
+        phone: null,
+        passwordHash: null,
+        emailVerified: true,
+      },
+    });
+    const accessToken = generateToken({ sub: oauthOnlyUser.id, role: oauthOnlyUser.role });
+
+    const response = await request(testApp)
+      .post("/api/auth/change-password")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        currentPassword: "anything",
+        newPassword: "a-fresh-secret-1",
+        confirmNewPassword: "a-fresh-secret-1",
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.code).toBe("NO_PASSWORD_SET");
+  });
+});
+
 describe("GET /api/auth/me", () => {
   it("requires authentication", async () => {
     const response = await request(testApp).get("/api/auth/me");

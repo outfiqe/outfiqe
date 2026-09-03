@@ -40,6 +40,13 @@ and sees it move through their request history with a status badge. Admin review
 
 ## Non-obvious rationale
 
+- **The `CREATOR` owner side is gated to approved creators, not every signed-in user.**
+  `resolveOwner` calls `requireApprovedCreator` (`#lib/creator-guard.utils.js`) before returning a
+  `{ ownerType: "CREATOR", creatorId }` context, so `GET /eligibility`, `POST /requests`, and
+  `GET /requests` all `403` (`NOT_A_CREATOR`) for a plain shopper — the affiliate/commission
+  system (this module + `commissions` + `creator-links`) is creator-only end to end. The
+  `BUSINESS` side is unchanged: it still goes through `requireBrandId`. `GET /policy` is not
+  gated — it returns only the public fee/window schedule and takes no user context.
 - **Balance is computed live, never stored**: `available = SUM(ledger rows WHERE status=AVAILABLE
 for this owner) − SUM(amount of this owner's own requests WHERE status IN (PENDING,
 UNDER_REVIEW, APPROVED))`. A `PAID` request doesn't need subtracting separately — its claimed

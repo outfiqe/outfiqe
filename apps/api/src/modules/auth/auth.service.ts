@@ -565,6 +565,74 @@ export const authService = {
     });
   },
 
+  async changePassword(input: {
+    userId: string;
+    currentPassword: string;
+    newPassword: string;
+    currentRefreshToken: string | undefined;
+    remoteIp?: string;
+  }): Promise<void> {
+    const { userId, currentPassword, newPassword, currentRefreshToken, remoteIp } = input;
+
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new AppError("USER_NOT_FOUND", USER_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
+    }
+
+    if (!user.passwordHash) {
+      throw new AppError(
+        "NO_PASSWORD_SET",
+        "Your account signs in with a connected account. Use the 'Forgot password' link to set a password first.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    const isCurrentPasswordValid = await verifyPassword(currentPassword, user.passwordHash);
+    if (!isCurrentPasswordValid) {
+      auditLog("failure", "Password change failed: current password incorrect", {
+        event: "change_password.invalid_current_password",
+        userId,
+        email: user.email,
+        ip: remoteIp,
+      });
+      throw new AppError(
+        "INVALID_CURRENT_PASSWORD",
+        "Your current password is incorrect.",
+        UNAUTHORIZED_STATUS,
+      );
+    }
+
+    if (newPassword === currentPassword) {
+      throw new AppError(
+        "PASSWORD_UNCHANGED",
+        "Your new password must be different from your current password.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    if (await isPasswordBreached(newPassword)) {
+      throw new AppError("PASSWORD_BREACHED", PASSWORD_BREACHED_MESSAGE, BAD_REQUEST_STATUS);
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+    await userRepository.updatePasswordHash(userId, passwordHash);
+
+    if (currentRefreshToken) {
+      await authRepository.deleteRefreshTokensForUserExcept(userId, hashToken(currentRefreshToken));
+    } else {
+      await authRepository.deleteAllRefreshTokensForUser(userId);
+    }
+
+    await eventBus.publish(DomainEvents.USER_PASSWORD_RESET, { userId });
+
+    auditLog("success", "Password changed; other sessions revoked", {
+      event: "change_password.success",
+      userId,
+      email: user.email,
+      ip: remoteIp,
+    });
+  },
+
   async getBrandInvite(inviteToken: string): Promise<BrandInviteInfo> {
     const invite = await authRepository.findBrandInviteByTokenHash(hashToken(inviteToken));
     if (!invite) {

@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
+import { toUploadableImage } from "@/shared/lib/heicImage";
 
 import type { WriteProductReviewInput } from "../api/productReviewsApi";
 import {
@@ -126,6 +127,8 @@ export const ReviewForm = ({
             onChange={setImageUrls}
             onUpload={(files) => uploadsApi.upload(files)}
             maxFiles={MAX_REVIEW_IMAGES}
+            describeUploadError={getErrorMessage}
+            transformFile={toUploadableImage}
           />
         </div>
 

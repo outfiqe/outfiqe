@@ -1,5 +1,6 @@
 export * from "./avatar";
 export * from "./format";
+export * from "./landing";
 export * from "./notifications/formatActorList";
 export * from "./phone";
 export * from "./platform-nav";

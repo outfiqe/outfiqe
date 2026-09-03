@@ -75,7 +75,7 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
       toast.success("Product added");
       close();
     } catch {
-      // surfaced via create.error below
+      return;
     }
   });
 
@@ -86,8 +86,8 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
       const urls = await resolvePendingPhotoUrls(pending.photos, DEFAULT_IMAGE_MIME_TYPE);
       form.setValue("imageUrls", urls, { shouldValidate: true });
       await submitProduct();
-    } catch {
-      setPhotoError("Couldn't process those photos. Try again.");
+    } catch (photoUploadError) {
+      setPhotoError(getErrorMessage(photoUploadError));
     } finally {
       setIsProcessingPhotos(false);
     }

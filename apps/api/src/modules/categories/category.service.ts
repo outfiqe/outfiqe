@@ -8,6 +8,7 @@ import { toPublicCategory } from "./category.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
+const UNPROCESSABLE_STATUS = 422;
 
 const withSlugConflictHandling = async <T>(run: () => Promise<T>): Promise<T> => {
   try {
@@ -42,6 +43,22 @@ export const categoryService = {
 
   async listAll(): Promise<CategoryWithProductCount[]> {
     return categoryRepository.listAll();
+  },
+
+  async reorder(orderedIds: string[]): Promise<void> {
+    const existingIds = new Set(await categoryRepository.listIds());
+    const hasDuplicates = new Set(orderedIds).size !== orderedIds.length;
+    const hasUnknownId = orderedIds.some((id) => !existingIds.has(id));
+
+    if (hasDuplicates || hasUnknownId) {
+      throw new AppError(
+        "INVALID_ORDER",
+        "The reorder request must list each category id once, and only known categories.",
+        UNPROCESSABLE_STATUS,
+      );
+    }
+
+    await categoryRepository.reorder(orderedIds);
   },
 
   async listPublic(): Promise<PublicCategory[]> {

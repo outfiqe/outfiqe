@@ -2,7 +2,6 @@
 
 import { Button, Skeleton } from "@outfiqe/design-system";
 import Link from "next/link";
-import { useState } from "react";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
@@ -10,13 +9,10 @@ import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
 import { useTenantHost } from "@/shared/hooks/useTenantHost";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 
-import { CreatorModeModal } from "./CreatorModeModal";
-
 export const AccountMenu = () => {
   const { state, isAuthenticated, isBrandOwner, isAdmin, isCreator, hasCrmAccess } = useAuth();
   const logout = useLogout();
   const isOnTenantHost = useTenantHost();
-  const [creatorModalOpen, setCreatorModalOpen] = useState(false);
 
   if (state.status === AuthStatus.IDLE || state.status === AuthStatus.LOADING) {
     return <Skeleton aria-hidden className="hidden size-9 rounded-full lg:block" />;
@@ -121,25 +117,15 @@ export const AccountMenu = () => {
             Your orders
           </Link>
 
-          {!isBrandOwner && !isAdmin && (
+          {!isBrandOwner && !isAdmin && !isCreator && (
             <>
               <div className="my-1.5 h-px bg-border" />
-              {isCreator ? (
-                <button
-                  type="button"
-                  onClick={() => setCreatorModalOpen(true)}
-                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
-                >
-                  Switch to creator mode
-                </button>
-              ) : (
-                <Link
-                  href="/profile"
-                  className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
-                >
-                  Become a creator
-                </Link>
-              )}
+              <Link
+                href="/profile"
+                className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
+              >
+                Become a creator
+              </Link>
             </>
           )}
 
@@ -154,8 +140,6 @@ export const AccountMenu = () => {
           </button>
         </div>
       </div>
-
-      <CreatorModeModal open={creatorModalOpen} onClose={() => setCreatorModalOpen(false)} />
     </div>
   );
 };

@@ -28,6 +28,7 @@ import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { formatHeight } from "@/shared/lib/formatHeight";
+import { toUploadableImage } from "@/shared/lib/heicImage";
 
 import type { CreatorProfile as CreatorProfileType } from "../api/creatorProfileSchemas";
 import { useInfiniteCreatorLooks } from "../hooks/useInfiniteCreatorLooks";
@@ -419,6 +420,8 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
                 onChange={setDraftAvatarUrl}
                 onUpload={uploadsApi.upload}
                 fallback={avatarFallback}
+                describeUploadError={getErrorMessage}
+                transformFile={toUploadableImage}
               />
             </div>
             <div>

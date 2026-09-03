@@ -31,8 +31,9 @@ const PhotoPaneOverlay = ({ pending, activeId, maxPhotos }: PhotoPaneOverlayProp
       <button
         type="button"
         onClick={() => pending.inputRef.current?.click()}
+        disabled={pending.isImportingFile}
         aria-label="Add another photo"
-        className="absolute bottom-2.5 right-2.5 flex size-9 items-center justify-center rounded-full bg-foreground text-background shadow-md transition-transform hover:scale-105"
+        className="absolute bottom-2.5 right-2.5 flex size-9 items-center justify-center rounded-full bg-foreground text-background shadow-md transition-transform hover:scale-105 disabled:opacity-60"
       >
         <Plus className="size-4.5" />
       </button>
@@ -58,6 +59,7 @@ export const PhotoCropPane = ({
   emptyLabel = "Add a photo",
 }: PhotoCropPaneProps) => {
   const { activePhoto } = pending;
+  const visibleError = pending.importError ?? error;
 
   return (
     <>
@@ -93,11 +95,14 @@ export const PhotoCropPane = ({
         <button
           type="button"
           onClick={() => pending.inputRef.current?.click()}
+          disabled={pending.isImportingFile}
           style={{ aspectRatio: cropAreaStyle.aspectRatio }}
-          className="relative flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-2 bg-muted text-muted-foreground transition-colors hover:text-foreground"
+          className="relative flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-2 bg-muted text-muted-foreground transition-colors hover:text-foreground disabled:hover:text-muted-foreground"
         >
           <ImagePlus className="size-7" />
-          <span className="text-sm font-medium">{emptyLabel}</span>
+          <span className="text-sm font-medium">
+            {pending.isImportingFile ? "Converting photo…" : emptyLabel}
+          </span>
           <span className="absolute bottom-2.5 left-1/2 -translate-x-1/2 rounded-full bg-black/55 px-2.5 py-1 text-xs font-medium text-white">
             {pending.photos.length}/{maxPhotos} photos
           </span>
@@ -106,7 +111,9 @@ export const PhotoCropPane = ({
 
       <HiddenFileInput inputRef={pending.inputRef} onFilesSelected={pending.handleFileSelect} />
 
-      {error && <p className="px-3 py-2 text-center text-xs text-destructive">{error}</p>}
+      {visibleError && (
+        <p className="px-3 py-2 text-center text-xs text-destructive">{visibleError}</p>
+      )}
     </>
   );
 };

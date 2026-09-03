@@ -2,6 +2,10 @@ export enum AuthErrorCode {
   USER_EXISTS = "USER_EXISTS",
   PHONE_EXISTS = "PHONE_EXISTS",
   INVALID_CREDENTIALS = "INVALID_CREDENTIALS",
+  INVALID_CURRENT_PASSWORD = "INVALID_CURRENT_PASSWORD",
+  PASSWORD_UNCHANGED = "PASSWORD_UNCHANGED",
+  PASSWORD_BREACHED = "PASSWORD_BREACHED",
+  NO_PASSWORD_SET = "NO_PASSWORD_SET",
   EMAIL_NOT_VERIFIED = "EMAIL_NOT_VERIFIED",
   INVALID_TOKEN = "INVALID_TOKEN",
   TOKEN_EXPIRED = "TOKEN_EXPIRED",
@@ -22,6 +26,13 @@ const MESSAGES: Record<AuthErrorCode, string> = {
   [AuthErrorCode.USER_EXISTS]: "An account with this email already exists.",
   [AuthErrorCode.PHONE_EXISTS]: "An account with this phone number already exists.",
   [AuthErrorCode.INVALID_CREDENTIALS]: "Incorrect email or password.",
+  [AuthErrorCode.INVALID_CURRENT_PASSWORD]: "Your current password is incorrect.",
+  [AuthErrorCode.PASSWORD_UNCHANGED]:
+    "Your new password must be different from your current password.",
+  [AuthErrorCode.PASSWORD_BREACHED]:
+    "This password has appeared in a data breach. Please choose another.",
+  [AuthErrorCode.NO_PASSWORD_SET]:
+    "Your account signs in with a connected account. Use the forgot-password link to set a password.",
   [AuthErrorCode.EMAIL_NOT_VERIFIED]: "Please verify your email before signing in.",
   [AuthErrorCode.INVALID_TOKEN]: "This link is invalid or has already been used.",
   [AuthErrorCode.TOKEN_EXPIRED]: "This link has expired. Please request a new one.",

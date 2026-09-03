@@ -2,10 +2,12 @@ import { Router } from "express";
 
 import { requireCsrfHeader } from "#middlewares/csrf.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
-import { requireAuth } from "#middlewares/require-auth.js";
+import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate, validated } from "#middlewares/validate.js";
 
 import {
+  CHANGE_PASSWORD_RATE_LIMIT_MAX_REQUESTS,
+  CHANGE_PASSWORD_RATE_LIMIT_WINDOW_MS,
   FORGOT_PASSWORD_MAX_REQUESTS,
   FORGOT_PASSWORD_WINDOW_MS,
   LOGIN_EMAIL_RATE_LIMIT_MAX_REQUESTS,
@@ -26,6 +28,7 @@ import type { ForgotPasswordBody, LoginBody, ResendVerificationBody } from "./au
 import {
   adminInviteQuerySchema,
   brandInviteQuerySchema,
+  changePasswordSchema,
   crmInviteQuerySchema,
   forgotPasswordSchema,
   loginSchema,
@@ -95,6 +98,14 @@ const resetPasswordIpRateLimit = rateLimit({
   message: "Too many password reset attempts. Please try again in 15 minutes.",
 });
 
+const changePasswordRateLimit = rateLimit({
+  namespace: "change-password",
+  windowMs: CHANGE_PASSWORD_RATE_LIMIT_WINDOW_MS,
+  max: CHANGE_PASSWORD_RATE_LIMIT_MAX_REQUESTS,
+  keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
+  message: "Too many password change attempts. Please try again in 15 minutes.",
+});
+
 export const authRoutes = Router();
 
 authRoutes.post(
@@ -125,6 +136,13 @@ authRoutes.post(
   resetPasswordIpRateLimit,
   validate({ body: resetPasswordSchema }),
   authController.resetPassword,
+);
+authRoutes.post(
+  "/change-password",
+  requireAuth,
+  changePasswordRateLimit,
+  validate({ body: changePasswordSchema }),
+  authController.changePassword,
 );
 authRoutes.post(
   "/register/brand",

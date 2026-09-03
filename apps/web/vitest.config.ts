@@ -84,6 +84,7 @@ export default defineConfig({
         "src/features/explore/components/CommentThread.tsx",
         "src/shared/lib/contentSecurityPolicy.ts",
         "src/shared/lib/apiOrigin.ts",
+        "src/shared/lib/heicImage.ts",
         "src/features/bank-accounts/components/AddBankAccountModal.tsx",
         "src/features/withdraw/components/WithdrawRequestForm.tsx",
         "src/features/withdraw/components/WithdrawRequestStatusBadge.tsx",
@@ -97,6 +98,10 @@ export default defineConfig({
         "src/shared/seo/siteConfig.ts",
         "src/shared/seo/Breadcrumbs.tsx",
         "src/features/marketing/components/FaqAccordion.tsx",
+        "src/features/categories/api/tastePreferencesApi.ts",
+        "src/features/categories/hooks/useTastePreferences.ts",
+        "src/features/categories/lib/visibleTasteCategories.ts",
+        "src/features/landing/components/TasteCategories/CustomizeTasteModal.tsx",
       ],
       thresholds: {
         lines: 80,

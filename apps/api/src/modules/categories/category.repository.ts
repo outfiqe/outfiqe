@@ -58,4 +58,17 @@ export const categoryRepository = {
     });
     return rows.map(({ _count, ...category }) => ({ ...category, productCount: _count.products }));
   },
+
+  async listIds(): Promise<string[]> {
+    const rows = await prisma.category.findMany({ select: { id: true } });
+    return rows.map((row) => row.id);
+  },
+
+  async reorder(orderedIds: string[]): Promise<void> {
+    await prisma.$transaction(
+      orderedIds.map((id, index) =>
+        prisma.category.update({ where: { id }, data: { sortOrder: index } }),
+      ),
+    );
+  },
 };

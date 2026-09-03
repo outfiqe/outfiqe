@@ -81,6 +81,7 @@ model User {
   notificationPreferences                  NotificationPreference[]
   oauthIdentities                          OAuthIdentity[]
   chatSettings                             ChatSettings?
+  tastePreference                          TastePreference?
   chatBlocksInitiated                      ChatBlock[]                 @relation("ChatBlocksInitiated")
   chatBlocksReceived                       ChatBlock[]                 @relation("ChatBlocksReceived")
   conversationParticipants                 ConversationParticipant[]
@@ -416,6 +417,15 @@ model Category {
 enum CategoryStatus {
   DRAFT
   PUBLISHED
+}
+
+model TastePreference {
+  userId        String   @id @map("user_id") @db.Uuid
+  categorySlugs String[] @map("category_slugs")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("taste_preferences")
 }
 
 model HeroSlide {
