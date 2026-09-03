@@ -123,7 +123,7 @@ export const ProductTagPicker = ({
             </div>
           )}
 
-          <Autocomplete closeOnSelect={false}>
+          <Autocomplete>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
               <AutocompleteInput
@@ -160,7 +160,10 @@ export const ProductTagPicker = ({
                     <AutocompleteItem
                       key={product.id}
                       value={product.id}
-                      onSelect={() => onToggleProduct(product)}
+                      onSelect={() => {
+                        onToggleProduct(product);
+                        onFilterChange("");
+                      }}
                     >
                       <ProductThumb url={product.imageUrl} className="size-9" />
                       <span className="min-w-0 flex-1">
