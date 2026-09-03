@@ -46,6 +46,17 @@ export const tenantSparklinePointSchema = z.object({
 });
 export type TenantSparklinePoint = z.infer<typeof tenantSparklinePointSchema>;
 
+export const platformActivityTrendPointSchema = z.object({
+  date: z.string(),
+  activityCount: z.number(),
+  dealCount: z.number(),
+  ticketCount: z.number(),
+  contactCount: z.number(),
+});
+export type PlatformActivityTrendPoint = z.infer<typeof platformActivityTrendPointSchema>;
+
+export const platformActivityTrendSchema = z.array(platformActivityTrendPointSchema);
+
 export const tenantMetricDetailSchema = tenantMetricRowSchema.extend({
   partnerCount: z.number(),
   customerCount: z.number(),

@@ -24,6 +24,7 @@ import {
   KanbanSquare,
   Landmark,
   Layers,
+  LayoutDashboard,
   LayoutGrid,
   LifeBuoy,
   ListChecks,
@@ -145,6 +146,13 @@ const toNavItem = ({
   requiresLinkedBrand: _requiresLinkedBrand,
   ...item
 }: CrmSubItem): SidebarNavItem => item;
+
+const PLATFORM_OVERVIEW_NAV_ITEM: SidebarNavItem = {
+  id: "platform-overview",
+  href: "/platform",
+  label: "Overview",
+  icon: LayoutDashboard,
+};
 
 const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
   { id: "brand-applications", href: "/", label: "Brand applications", icon: ClipboardList },
@@ -270,10 +278,13 @@ export const AdminSidebar = () => {
 
   const user = state.status === "signed-in" ? state.user : null;
   const isCoFounder = user?.isCoFounder ?? false;
-  const platformNavItems = visiblePlatformNavItems(PLATFORM_NAV_ITEMS, {
-    isCoFounder,
-    hiddenNavKeys: user?.hiddenPlatformNavKeys ?? [],
-  });
+  const platformNavItems: SidebarNavItem[] = [
+    PLATFORM_OVERVIEW_NAV_ITEM,
+    ...visiblePlatformNavItems(PLATFORM_NAV_ITEMS, {
+      isCoFounder,
+      hiddenNavKeys: user?.hiddenPlatformNavKeys ?? [],
+    }),
+  ];
   const navSections: SidebarNavSection[] = [
     ...(shouldShowCrmSection(crmOrganization)
       ? [{ id: "crm", label: "CRM", items: visibleCrmItems }]
