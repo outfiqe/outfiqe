@@ -31,8 +31,12 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
   const addToCartMutation = useAddToCart();
 
   const [isSaved, setIsSaved] = useState(product.isSaved);
+
+  const availableSizes = product.sizes.filter((size) => size.inStock);
+  const isSoldOut = availableSizes.length === 0;
+
   const [selectedSizeId, setSelectedSizeId] = useState<string | null>(
-    product.sizes.find((size) => size.inStock)?.id ?? null,
+    availableSizes[0]?.id ?? null,
   );
   const [quantity, setQuantity] = useState(1);
 
@@ -41,7 +45,8 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const activeImage = galleryImages[selectedImageIndex] ?? galleryImages[0];
 
-  const needsSize = product.sizes.length > 0 && !selectedSizeId;
+  const needsSizeChoice = !isSoldOut && !selectedSizeId;
+  const canPurchase = !isSoldOut && Boolean(selectedSizeId);
 
   const goToSignIn = () => router.push(`/login?redirect=/product/${product.id}`);
   const gated = (action: () => void) => (isAuthenticated ? action() : goToSignIn());
@@ -157,12 +162,12 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
             <Button
               variant="outline"
               className="flex-1"
-              disabled={needsSize || addToCartMutation.isPending}
+              disabled={!canPurchase || addToCartMutation.isPending}
               onClick={() => gated(addToCart)}
             >
               {addToCartMutation.isPending ? "Adding…" : "Add to cart"}
             </Button>
-            <Button className="flex-1" disabled={needsSize} onClick={() => gated(buyNow)}>
+            <Button className="flex-1" disabled={!canPurchase} onClick={() => gated(buyNow)}>
               <Zap className="size-4" />
               Buy now
             </Button>
@@ -177,7 +182,11 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
               <Heart className={cn("size-[18px]", isSaved && "fill-primary")} />
             </Button>
           </div>
-          {needsSize && <p className="mt-2 text-xs text-destructive">Select a size to continue.</p>}
+          {isSoldOut ? (
+            <p className="mt-2 text-sm font-semibold text-foreground">Out of stock</p>
+          ) : needsSizeChoice ? (
+            <p className="mt-2 text-xs text-destructive">Select a size to continue.</p>
+          ) : null}
 
           <ShippingInfo />
         </div>
