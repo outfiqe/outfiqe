@@ -60,7 +60,31 @@ export const SidebarNavItemView = ({
     navigation.navigate(href);
   };
 
-  const link = (
+  const linkBody = (
+    <>
+      {Icon && <Icon className="size-[18px] shrink-0" />}
+      <span className={cx("truncate", collapsed && "sr-only")}>{label}</span>
+    </>
+  );
+
+  const { LinkComponent } = navigation;
+
+  const link = LinkComponent ? (
+    <LinkComponent
+      href={href}
+      isActive={isCurrentPage}
+      isAncestorActive={descendantActive}
+      collapsed={collapsed}
+      baseClassName={cx(navLinkBaseClass, collapsed ? navLinkCollapsedClass : navLinkExpandedClass)}
+      activeClassName={navLinkActiveClass}
+      ancestorClassName={navLinkAncestorActiveClass}
+      inactiveClassName={navLinkInactiveClass}
+      title={collapsed ? label : undefined}
+      style={indent}
+    >
+      {linkBody}
+    </LinkComponent>
+  ) : (
     <a
       href={href}
       onClick={handleLinkClick}
@@ -77,8 +101,7 @@ export const SidebarNavItemView = ({
             : navLinkInactiveClass,
       )}
     >
-      {Icon && <Icon className="size-[18px] shrink-0" />}
-      <span className={cx("truncate", collapsed && "sr-only")}>{label}</span>
+      {linkBody}
     </a>
   );
 

@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth, useLogout } from "@/features/auth";
@@ -19,6 +20,27 @@ vi.mock("@/shared/hooks/useTenantHost", () => ({
 vi.mock("next/navigation", () => ({
   usePathname: () => "/profile",
   useRouter: () => ({ push: vi.fn() }),
+}));
+
+vi.mock("next/link", () => ({
+  __esModule: true,
+  default: ({
+    href,
+    children,
+    onNavigate: _onNavigate,
+    prefetch: _prefetch,
+    ...rest
+  }: {
+    href: string | { pathname: string };
+    children: ReactNode;
+    onNavigate?: () => void;
+    prefetch?: boolean;
+  }) => (
+    <a href={typeof href === "string" ? href : href.pathname} {...rest}>
+      {children}
+    </a>
+  ),
+  useLinkStatus: () => ({ pending: false }),
 }));
 
 const buildUser = (overrides: Partial<UserSession> = {}): UserSession => ({
