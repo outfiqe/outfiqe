@@ -54,7 +54,7 @@ const AccountRow = ({
   );
 
   const className =
-    "flex items-center gap-3 rounded-xl border border-border bg-card p-2.5 transition-colors hover:border-foreground";
+    "flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-foreground";
 
   return isExternal ? (
     <a href={href} onClick={onNavigate} className={className}>
@@ -169,7 +169,7 @@ export const MobileNav = () => {
             </Button>
           </div>
 
-          <div className="mt-6 flex flex-col gap-2 border-t border-border pt-6">
+          <div className="mt-6 flex flex-col gap-3 border-t border-border pt-6">
             {state.status === AuthStatus.IDLE ||
             state.status === AuthStatus.LOADING ? null : isAuthenticated && state.user ? (
               <>

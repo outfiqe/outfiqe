@@ -1,7 +1,7 @@
 "use client";
 
 import { isNavItemActive } from "@outfiqe/components";
-import { LogOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -13,6 +13,7 @@ import { cn } from "@/shared/lib/cn";
 import { useDashboardNav } from "./useDashboardNav";
 
 const SCROLL_END_TOLERANCE_PX = 4;
+const SCROLL_STEP_PX = 160;
 
 const chipClass =
   "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors";
@@ -45,6 +46,10 @@ export const DashboardMobileNav = () => {
     return () => window.removeEventListener("resize", updateScrollability);
   }, [navItems.length]);
 
+  const scrollByStep = (direction: 1 | -1) => {
+    scrollerRef.current?.scrollBy({ left: direction * SCROLL_STEP_PX, behavior: "smooth" });
+  };
+
   if (state.status !== AuthStatus.AUTHENTICATED || !state.user) return null;
 
   return (
@@ -56,17 +61,38 @@ export const DashboardMobileNav = () => {
         <span
           aria-hidden
           className={cn(
-            "pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-background to-transparent transition-opacity",
+            "pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-background to-transparent transition-opacity",
             canScrollStart ? "opacity-100" : "opacity-0",
           )}
         />
         <span
           aria-hidden
           className={cn(
-            "pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-background to-transparent transition-opacity",
+            "pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-background to-transparent transition-opacity",
             canScrollEnd ? "opacity-100" : "opacity-0",
           )}
         />
+
+        {canScrollStart && (
+          <button
+            type="button"
+            onClick={() => scrollByStep(-1)}
+            aria-label="Show earlier sections"
+            className="absolute left-1 top-1/2 z-20 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm"
+          >
+            <ChevronLeft className="size-3.5" />
+          </button>
+        )}
+        {canScrollEnd && (
+          <button
+            type="button"
+            onClick={() => scrollByStep(1)}
+            aria-label="Show more sections"
+            className="absolute right-1 top-1/2 z-20 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm"
+          >
+            <ChevronRight className="size-3.5" />
+          </button>
+        )}
 
         <ul
           ref={scrollerRef}
