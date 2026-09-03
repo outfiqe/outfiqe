@@ -18,7 +18,7 @@ const ApplyPage = () => {
         <span className="text-xs font-bold uppercase tracking-widest text-primary-strong">
           For brands
         </span>
-        <h1 className="mt-3 font-display text-4xl font-bold leading-[1.05] text-foreground sm:text-6xl">
+        <h1 className="mt-3 font-display text-3xl font-bold leading-[1.05] text-foreground sm:text-5xl lg:text-6xl">
           Get your
           <br />
           clothes seen.
