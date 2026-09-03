@@ -47,6 +47,13 @@ crmReportingRoutes.get(
 );
 
 crmReportingRoutes.get(
+  "/reports/overview",
+  ...tenantChain,
+  requirePermission(REPORTS_READ),
+  crmReportingController.getOverviewReport,
+);
+
+crmReportingRoutes.get(
   "/search",
   ...tenantChain,
   requireAnyPermission(CRM_SEARCH_READ_PERMISSION_KEYS),

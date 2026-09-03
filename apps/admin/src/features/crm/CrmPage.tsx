@@ -5,6 +5,7 @@ import { ApiClientError } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
+import { CrmOverviewSection } from "./CrmOverviewSection";
 import { InviteSection } from "./InviteSection";
 import { MembersSection } from "./MembersSection";
 import { OwnershipTransferBanner } from "./OwnershipTransferBanner";
@@ -13,6 +14,7 @@ import type { Organization } from "./schemas";
 
 const MEMBERS_READ_PERMISSION_KEY = "members:read";
 const MEMBERS_INVITE_PERMISSION_KEY = "members:invite";
+const REPORTS_READ_PERMISSION_KEY = "reports:read";
 const FORBIDDEN_ERROR_CODE = "FORBIDDEN";
 const NO_ORGANIZATION_ACCESS_MESSAGE =
   "You don't have CRM access on this organization. If you were invited to a different organization, make sure you're on that organization's own subdomain.";
@@ -27,6 +29,10 @@ const canViewMembers = (organization: Organization) =>
 const canInviteMembers = (organization: Organization) =>
   organization.viewerIsSuperAdmin ||
   organization.viewerPermissionKeys.includes(MEMBERS_INVITE_PERMISSION_KEY);
+
+const canViewReports = (organization: Organization) =>
+  organization.viewerIsSuperAdmin ||
+  organization.viewerPermissionKeys.includes(REPORTS_READ_PERMISSION_KEY);
 
 export const CrmPage = () => {
   const {
@@ -61,9 +67,13 @@ export const CrmPage = () => {
       )}
 
       {organization && (
-        <div className="mt-6">
+        <div className="mt-6 space-y-8">
           <PlanGateBanner advancedFeaturesEnabled={organization.advancedFeaturesEnabled} />
           <OwnershipTransferBanner organization={organization} />
+
+          {organization.advancedFeaturesEnabled && canViewReports(organization) && (
+            <CrmOverviewSection />
+          )}
 
           {canViewMembers(organization) || canInviteMembers(organization) ? (
             <div className="space-y-8">

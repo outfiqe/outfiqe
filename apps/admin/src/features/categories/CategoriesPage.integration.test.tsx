@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
@@ -65,6 +65,39 @@ describe("CategoriesPage", () => {
     await user.click(await screen.findByRole("button", { name: "Move Alpha down" }));
 
     await waitFor(() => expect(reorderBody).toEqual({ orderedIds: ["id-b", "id-a", "id-c"] }));
+  });
+
+  it("posts the dragged id order when a category is dropped onto another", async () => {
+    let reorderBody: unknown;
+    mswServer.use(
+      http.get(`${API_BASE}/categories/admin`, () =>
+        HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: [
+            category("id-a", "Alpha", 0),
+            category("id-b", "Beta", 1),
+            category("id-c", "Gamma", 2),
+          ],
+        }),
+      ),
+      http.post(`${API_BASE}/categories/reorder`, async ({ request }) => {
+        reorderBody = await request.json();
+        return HttpResponse.json({ success: true, message: "ok", data: null });
+      }),
+    );
+    stubPopularity();
+
+    renderPage();
+
+    const cardFor = async (name: string) =>
+      (await screen.findByRole("heading", { name })).closest('[draggable="true"]') as HTMLElement;
+
+    fireEvent.dragStart(await cardFor("Gamma"));
+    fireEvent.dragEnter(await cardFor("Alpha"));
+    fireEvent.drop(await cardFor("Alpha"));
+
+    await waitFor(() => expect(reorderBody).toEqual({ orderedIds: ["id-c", "id-a", "id-b"] }));
   });
 
   it("shows how many shoppers have pinned each category", async () => {

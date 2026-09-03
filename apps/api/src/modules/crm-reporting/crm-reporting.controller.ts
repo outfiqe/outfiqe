@@ -23,6 +23,12 @@ export const crmReportingController = {
     sendSuccess(res, report, "CRM ticket report.");
   },
 
+  async getOverviewReport(_req: Request, res: Response) {
+    const organization = getResolvedOrganization(res);
+    const report = await crmReportingService.getOverviewReport(organization.id);
+    sendSuccess(res, report, "CRM overview report.");
+  },
+
   async search(_req: Request, res: Response) {
     const { q } = validated.query<CrmSearchQuery>(res);
     const organization = getResolvedOrganization(res);

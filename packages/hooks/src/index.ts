@@ -9,6 +9,7 @@ export * from "./useConversations";
 export * from "./useConversationSocket";
 export * from "./useConversationThread";
 export * from "./useDebouncedValue";
+export * from "./useDragReorder";
 export * from "./useInfiniteCursorPage";
 export * from "./useMarkConversationRead";
 export * from "./useNotificationPreferences";

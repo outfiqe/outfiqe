@@ -1,10 +1,12 @@
 "use client";
 
 import { Button, Modal } from "@outfiqe/design-system";
-import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
+import { useDragReorder } from "@outfiqe/hooks";
+import { ArrowDown, ArrowUp, GripVertical, Plus, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { PublicCategory } from "@/features/categories/api/categorySchemas";
+import { cn } from "@/shared/lib/cn";
 
 type CustomizeTasteModalProps = {
   allCategories: PublicCategory[];
@@ -12,16 +14,6 @@ type CustomizeTasteModalProps = {
   onSave: (slugs: string[]) => void;
   onReset: () => void;
   onClose: () => void;
-};
-
-const withSwappedNeighbours = (slugs: string[], from: number, to: number): string[] => {
-  const next = [...slugs];
-  const moved = next[from];
-  const displaced = next[to];
-  if (!moved || !displaced) return slugs;
-  next[from] = displaced;
-  next[to] = moved;
-  return next;
 };
 
 export const CustomizeTasteModal = ({
@@ -45,12 +37,14 @@ export const CustomizeTasteModal = ({
     .filter((category): category is PublicCategory => category !== undefined);
   const available = allCategories.filter((category) => !draft.includes(category.slug));
 
+  const { getDragProps, moveEntry, draggingId, dragOverId } = useDragReorder({
+    order: draft,
+    getId: (slug) => slug,
+    onReorder: setDraft,
+  });
+
   const add = (slug: string) => setDraft((current) => [...current, slug]);
   const remove = (slug: string) => setDraft((current) => current.filter((s) => s !== slug));
-  const move = (from: number, to: number) => {
-    if (to < 0 || to >= draft.length) return;
-    setDraft((current) => withSwappedNeighbours(current, from, to));
-  };
 
   const save = () => {
     onSave(draft);
@@ -97,8 +91,19 @@ export const CustomizeTasteModal = ({
               {shown.map((category, index) => (
                 <li
                   key={category.slug}
-                  className="flex items-center gap-2 rounded-lg border border-border bg-background px-2 py-1.5"
+                  {...getDragProps(category.slug)}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg border border-border bg-background px-2 py-1.5 transition-colors",
+                    draggingId === category.slug && "opacity-50",
+                    dragOverId === category.slug && "border-foreground",
+                  )}
                 >
+                  <span
+                    aria-hidden
+                    className="shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
+                  >
+                    <GripVertical className="size-4" />
+                  </span>
                   <div className="flex flex-col">
                     <Button
                       variant="ghost"
@@ -106,7 +111,7 @@ export const CustomizeTasteModal = ({
                       className="size-6"
                       aria-label={`Move ${category.name} up`}
                       disabled={index === 0}
-                      onClick={() => move(index, index - 1)}
+                      onClick={() => moveEntry(index, index - 1)}
                     >
                       <ArrowUp />
                     </Button>
@@ -116,7 +121,7 @@ export const CustomizeTasteModal = ({
                       className="size-6"
                       aria-label={`Move ${category.name} down`}
                       disabled={index === shown.length - 1}
-                      onClick={() => move(index, index + 1)}
+                      onClick={() => moveEntry(index, index + 1)}
                     >
                       <ArrowDown />
                     </Button>

@@ -8,6 +8,11 @@ Shared React hooks reused across `apps/web` and `apps/admin` — generic data-fe
 ## Structure
 
 - `useDebouncedValue.ts` — generic debounced-value hook (search inputs, autocomplete).
+- `useDragReorder.ts` — `arrayMove` plus `useDragReorder`: native HTML5 drag-and-drop reordering
+  for any ordered list. Returns `getDragProps(id)` to spread on each row (drag source + drop
+  target), `moveEntry(fromIndex, toIndex)` for the up/down arrow buttons that stay as the keyboard
+  fallback, and `draggingId`/`dragOverId` for styling. Used by the web taste picker
+  (`CustomizeTasteModal`) and the admin `CategoriesPage` / `StageConfigModal` lists.
 - `useInfiniteCursorPage.ts` — generic cursor-paginated `useInfiniteQuery` wrapper any
   cursor-shaped list endpoint can build on.
 - `useNotifications.ts` — `NOTIFICATIONS_QUERY_KEY`/`NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY`, and
@@ -25,6 +30,12 @@ Shared React hooks reused across `apps/web` and `apps/admin` — generic data-fe
 - `index.ts` — re-exports everything above; both apps only ever import from `@outfiqe/hooks`.
 
 ## Non-obvious rationale
+
+**`useDragReorder` keeps the up/down arrow buttons rather than replacing them.** Native HTML5
+drag has no keyboard or screen-reader story and is unreliable on touch, so `moveEntry` drives the
+same reorder from arrow buttons that stay in every consumer — matching the `KanbanBoard`
+precedent in `@outfiqe/components`, which always pairs its native drag with a non-drag control.
+No drag-and-drop library was added.
 
 **`NotificationSocket` is a narrow `on`/`off`-only interface, not the real `socket.io-client`
 `Socket` type.** The bell only ever registers/unregisters listeners — it never emits to the server

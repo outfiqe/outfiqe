@@ -99,12 +99,21 @@ support reports, and review the organization's audit log — against the `/api/c
   `/crm/customers/$userId`) or the relevant tab (`/crm/pipeline`, `/crm/support`). Renders nothing
   for a viewer holding none of the four per-entity read permissions (the endpoint would 403).
 - `reportingApi.ts` / `reportingSchemas.ts` — `crmReportingApi` (`getPipelineReport`,
-  `getTicketReport`, `search`) + Zod mirrors of `/api/crm/reports/*` and `/api/crm/search`.
-- `ReportsSection.tsx` / `ReportsPage.tsx` — the Reports tab. Pipeline card: open/won/lost stat
-  tiles + a horizontal bar per open stage (single-series `bg-primary` fill, value direct-labelled,
-  per-row `title` tooltip — see the dataviz method). Ticket card: open / resolved / mean-time-to-
-  resolve tiles + a status-breakdown bar list. Each card has its own loading skeleton, error
-  banner, and an explicit "not enough data yet" state for the first-record / no-data case.
+  `getTicketReport`, `getOverviewReport`, `search`) + Zod mirrors of `/api/crm/reports/*` and
+  `/api/crm/search`.
+- `CrmOverviewSection.tsx` — the analytics band at the top of `CrmPage` (`/crm`), shown to a
+  viewer with `reports:read` (or SUPERADMIN) when advanced CRM features are enabled. One
+  `GET /api/crm/reports/overview` call feeds a `StatCard` KPI row (open pipeline value / open
+  deals / won value / open tickets / mean time to resolve / tasks due today) plus two
+  `<ChartCard>`s from `@outfiqe/design-system`: a `<TrendChart>` of activities logged per day
+  over 30 days and a horizontal `<BarSeries>` of open deal value by stage. Loading / empty /
+  error states per the shared `ChartCard`.
+- `ReportsSection.tsx` / `ReportsPage.tsx` — the Reports tab (`/crm/reports`). Pipeline card:
+  open/won/lost stat tiles + a hand-rolled horizontal bar per open stage. Ticket card: open /
+  resolved / mean-time-to-resolve tiles + a status-breakdown bar list. Each card has its own
+  loading skeleton, error banner, and an explicit "not enough data yet" state. (Migrating these
+  hand-rolled bars onto the shared `<BarSeries>` / `<StatCard>` primitives that
+  `CrmOverviewSection` now uses is a deferred follow-up — see "Non-obvious rationale".)
 - `RolesSection.tsx` / `RolesPage.tsx` — the Roles tab: an organization-rename card (shown to a
   viewer with `org:update`) plus the role list. Built-in roles show a badge and no controls;
   custom roles get Edit / Delete for a viewer with `roles:manage`. The role modal is a
@@ -133,7 +142,8 @@ support reports, and review the organization's audit log — against the `/api/c
 - `PipelinePage.tsx` — a `KanbanBoard` (`@outfiqe/components`) of stages → deals. `deals:write`
   gets a "New deal" button (`DealFormModal.tsx`, with a partner picker fed by
   `crmRelationshipsApi.listPartners`); `pipeline:configure` gets "Configure stages"
-  (`StageConfigModal.tsx` — add / rename-less delete / up-down reorder). Moving a card patches the
+  (`StageConfigModal.tsx` — add / rename-less delete / drag-or-arrow reorder via
+  `useDragReorder`). Moving a card patches the
   deal's `stageId`.
 - `activitiesApi.ts` / `activitiesSchemas.ts` — `crmActivitiesApi` (timeline, log activity, task
   CRUD) + Zod mirrors of `/api/crm/timeline`, `/api/crm/activities`, `/api/crm/tasks`.
@@ -202,6 +212,18 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
 
 ## Non-obvious rationale
 
+- **`CrmOverviewSection` is gated on `advancedFeaturesEnabled` client-side, not just on
+  `reports:read`.** `/api/crm/reports/overview` sits behind `requireAdvancedCrmFeatures` (402 when
+  the trial has lapsed with no subscription), so rendering it for a lapsed tenant would just show
+  an error banner under the `PlanGateBanner` that already explains the situation. The Reports tab
+  (`/crm/reports`) has the same backend gate; its route-level handling covers that case there.
+- **`ReportsSection`'s hand-rolled bars weren't migrated to `<BarSeries>` in the same change that
+  added `CrmOverviewSection`.** `ReportsSection.integration.test.tsx` asserts against the current
+  bar-row DOM, and the migration is pure visual refactor with no behaviour change — deferring it
+  keeps the Overview change focused and low-risk. The shared primitives
+  (`@outfiqe/design-system`'s `StatCard` / `BarSeries` / `TrendChart` / `ChartCard`) are proven
+  by `CrmOverviewSection`; the follow-up is to point `ReportsSection` at them and rewrite that
+  test.
 - **`GET /api/crm/organization` returns the viewer's own permission context alongside the
   organization** (`viewerIsSuperAdmin`, `viewerPermissionKeys` —
   `crm-access.utils.ts`'s `toOrganizationWithViewerContext`, populated from the `Membership`

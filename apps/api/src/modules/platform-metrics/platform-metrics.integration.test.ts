@@ -192,4 +192,50 @@ describe("platform metrics", () => {
       .set("Authorization", authHeaderFor(shopper.id));
     expect(res.status).toBe(403);
   });
+
+  it("returns a platform-wide activity trend summed across tenants after a snapshot", async () => {
+    const { auth } = await seedPlatformAdmin();
+    await seedTenantWithCounters("starter", {
+      contactCount: 5,
+      dealCount: 2,
+      ticketCount: 1,
+      activityCount: 4,
+    });
+    await seedTenantWithCounters("pro", {
+      contactCount: 3,
+      dealCount: 1,
+      ticketCount: 0,
+      activityCount: 6,
+    });
+
+    const before = await request(testApp)
+      .get("/api/platform/metrics/activity-trend")
+      .set("Authorization", auth);
+    expect(before.status).toBe(200);
+    expect(before.body.data).toEqual([]);
+
+    await platformMetricsService.runDailySnapshot();
+
+    const after = await request(testApp)
+      .get("/api/platform/metrics/activity-trend")
+      .set("Authorization", auth);
+    expect(after.status).toBe(200);
+    expect(after.body.data).toHaveLength(1);
+    expect(after.body.data[0]).toMatchObject({
+      date: startOfDay(new Date()).toISOString().slice(0, 10),
+      activityCount: 10,
+      dealCount: 3,
+      contactCount: 8,
+    });
+  });
+
+  it("rejects an activity-trend caller without platform:metrics:read", async () => {
+    await seedPlatformAdmin();
+    const shopper = await createUser(UserRole.CUSTOMER);
+
+    const res = await request(testApp)
+      .get("/api/platform/metrics/activity-trend")
+      .set("Authorization", authHeaderFor(shopper.id));
+    expect(res.status).toBe(403);
+  });
 });

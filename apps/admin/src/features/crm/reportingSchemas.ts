@@ -33,6 +33,20 @@ export const ticketReportSchema = z.object({
 });
 export type TicketReport = z.infer<typeof ticketReportSchema>;
 
+export const crmActivityTrendPointSchema = z.object({
+  date: z.string(),
+  count: z.number(),
+});
+export type CrmActivityTrendPoint = z.infer<typeof crmActivityTrendPointSchema>;
+
+export const crmOverviewReportSchema = z.object({
+  pipeline: pipelineReportSchema,
+  tickets: ticketReportSchema,
+  openTasksDueTodayCount: z.number(),
+  activityTrend: z.array(crmActivityTrendPointSchema),
+});
+export type CrmOverviewReport = z.infer<typeof crmOverviewReportSchema>;
+
 export const partnerSearchResultSchema = z.object({
   creatorId: z.string(),
   name: z.string(),
