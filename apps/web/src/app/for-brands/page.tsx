@@ -50,7 +50,7 @@ const value = [
   },
   {
     title: "Creator looks included",
-    body: "Your pieces get styled and posted by Nepali creators who tag them — real-world context that a catalogue photo can't give.",
+    body: "Your pieces get styled and posted by Nepali creators who tag them. That is real-world context a catalogue photo cannot give.",
   },
   {
     title: "One dashboard",
@@ -67,7 +67,7 @@ const faqs = [
   {
     question: "Who handles delivery?",
     answer:
-      "Outfiqe coordinates fulfilment and delivery across Nepal. You prepare and hand over the order; buyer contact details are managed by the platform.",
+      "Outfiqe coordinates fulfilment and delivery across Nepal. You prepare and hand over the order, and the platform manages buyer contact details.",
   },
   {
     question: "How and when am I paid?",
@@ -97,7 +97,7 @@ const ForBrandsPage = () => (
           clothes seen.
         </>
       }
-      lede="Outfiqe is the one place Nepali shoppers go for fashion. List your brand, and get your pieces in front of shoppers and the creators who style them — for real."
+      lede="Outfiqe is the one place Nepali shoppers go for fashion. List your brand, and get your pieces in front of shoppers and the creators who actually wear them."
     />
 
     <MarketingSection heading="How it works">

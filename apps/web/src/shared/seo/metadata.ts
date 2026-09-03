@@ -59,12 +59,12 @@ export const noIndexMetadata = (title: string): Metadata => ({
 });
 
 const rootDescription =
-  "Shop clothing from Nepali brands the way people actually wear it. Every brand paired with real creator looks, one cart, delivered across Nepal.";
+  "Clothing from Nepali brands, shown in real creator looks so you can see the fit before you buy. One cart across every brand, delivered anywhere in Nepal.";
 
 export const rootMetadataDefaults: Metadata = {
   applicationName: siteName,
   title: {
-    default: `${siteName} — ${siteTagline}`,
+    default: `${siteName} · ${siteTagline}`,
     template: `%s · ${siteName}`,
   },
   description: rootDescription,
@@ -82,13 +82,13 @@ export const rootMetadataDefaults: Metadata = {
   openGraph: {
     type: "website",
     siteName,
-    title: `${siteName} — ${siteTagline}`,
+    title: `${siteName} · ${siteTagline}`,
     description: rootDescription,
     locale: "en_NP",
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteName} — ${siteTagline}`,
+    title: `${siteName} · ${siteTagline}`,
     description: rootDescription,
   },
   icons: {

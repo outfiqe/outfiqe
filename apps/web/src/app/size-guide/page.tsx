@@ -31,7 +31,7 @@ const SizeGuidePage = () => (
         <p>
           Outfiqe doesn&apos;t impose one universal size chart. Each product lists the exact sizes
           that brand offers for that piece, and shows which are in stock. If a size is sold out, you
-          can&apos;t add it — no surprises at checkout.
+          can&apos;t add it, so there are no surprises at checkout.
         </p>
         <p>
           For traditional wear, tailoring and made-to-measure pieces, the product page tells you how

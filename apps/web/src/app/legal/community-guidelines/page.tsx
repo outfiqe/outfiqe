@@ -6,7 +6,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Community guidelines",
   description:
-    "The standards for content and behaviour on Outfiqe — for creators posting looks, shoppers writing reviews, and everyone using chat.",
+    "The standards for content and behaviour on Outfiqe, for creators posting looks, shoppers writing reviews, and everyone using chat.",
   path: "/legal/community-guidelines",
 });
 

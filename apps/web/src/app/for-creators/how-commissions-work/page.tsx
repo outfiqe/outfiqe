@@ -29,7 +29,7 @@ const lifecycle = [
   },
   {
     title: "Approved",
-    body: "The order is delivered and clears the return window. Cancelled or refunded orders never reach this stage — their commissions are voided.",
+    body: "The order is delivered and clears the return window. Cancelled or refunded orders never reach this stage. Their commissions are voided.",
   },
   {
     title: "Paid",
@@ -46,7 +46,7 @@ const faqs = [
   {
     question: "Do I earn if I buy through my own link?",
     answer:
-      "No. A purchase where the buyer is the creator is never attributed — self-referrals earn nothing.",
+      "No. A purchase where the buyer is the creator is never attributed. Self-referrals earn nothing.",
   },
   {
     question: "What happens if the order is cancelled or refunded?",
@@ -88,13 +88,13 @@ const HowCommissionsWorkPage = () => (
       <div className="max-w-2xl space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
         <p>
           A sale is credited to you when a shopper takes an action that points at a product you
-          sourced — tapping a product you tagged in a look, or opening one of your shareable product
-          links — and then buys that product within <strong>7 days</strong>.
+          sourced. That is tapping a product you tagged in a look, or opening one of your shareable
+          product links. They then buy that product within <strong>7 days</strong>.
         </p>
         <p>
           If more than one creator&apos;s tap or link qualifies, the most recent one is credited. A
-          general profile link counts for whatever the shopper actually buys; a product-specific
-          link only counts for that product.
+          general profile link counts for whatever the shopper buys. A product-specific link only
+          counts for that product.
         </p>
       </div>
     </MarketingSection>

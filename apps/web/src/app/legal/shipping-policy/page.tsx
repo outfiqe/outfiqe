@@ -30,7 +30,7 @@ const ShippingPolicyPage = () => (
       <h2>Where we deliver</h2>
       <p>
         Outfiqe delivers within Nepal. Coverage is organised into delivery zones. Your
-        address&apos;s zone — and whether we currently deliver there — is confirmed at checkout.
+        address&apos;s zone, and whether we currently deliver there, is confirmed at checkout.
       </p>
 
       <h2>Delivery fees</h2>
@@ -66,7 +66,7 @@ const ShippingPolicyPage = () => (
       <h2>Failed or delayed delivery</h2>
       <ul>
         <li>
-          Keep your phone reachable — our delivery partner will contact you to arrange handover.
+          Keep your phone reachable. Our delivery partner will contact you to arrange handover.
         </li>
         <li>
           If delivery cannot be completed after reasonable attempts, the order may be returned to us
@@ -81,7 +81,7 @@ const ShippingPolicyPage = () => (
       <h2>Risk and inspection</h2>
       <p>
         Risk in the goods passes to you on delivery. Check your order on receipt and report any
-        damage or wrong item promptly — see the{" "}
+        damage or wrong item promptly. See the{" "}
         <Link href="/legal/returns-policy">return &amp; refund policy</Link>.
       </p>
     </LegalDocument>

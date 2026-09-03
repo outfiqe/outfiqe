@@ -22,7 +22,7 @@ const describeCreator = (creator: {
   postsCount: number;
   taggedPiecesCount: number;
 }): string =>
-  `${creator.name} (@${creator.handle}) on Outfiqe — ${creator.postsCount} looks tagging ${creator.taggedPiecesCount} products from Nepali brands. Shop the exact pieces from every look.`;
+  `${creator.postsCount} looks from ${creator.name} (@${creator.handle}), tagging ${creator.taggedPiecesCount} products from Nepali brands. Shop the exact pieces from every look.`;
 
 export const generateMetadata = async ({ params }: CreatorPageProps): Promise<Metadata> => {
   const { handle } = await params;
@@ -38,7 +38,7 @@ export const generateMetadata = async ({ params }: CreatorPageProps): Promise<Me
   }
 
   return buildPageMetadata({
-    title: `${creator.name} (@${creator.handle}) — creator looks on Outfiqe`,
+    title: `${creator.name}'s looks (@${creator.handle})`,
     description: describeCreator(creator),
     path: `/creator/${creator.handle}`,
     ogType: "profile",

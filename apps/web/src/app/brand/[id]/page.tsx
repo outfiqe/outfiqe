@@ -12,7 +12,7 @@ interface BrandPageProps {
 }
 
 const describeBrand = (brand: { name: string; productCount: number }): string =>
-  `${brand.name} on Outfiqe — ${brand.productCount} pieces from this Nepali brand, shown in real creator looks. Follow the brand and shop the full range with one checkout.`;
+  `${brand.productCount} pieces from ${brand.name}, a Nepali brand, each shown in real creator looks. Follow the brand and shop the full range with one checkout.`;
 
 export const generateMetadata = async ({ params }: BrandPageProps): Promise<Metadata> => {
   const { id } = await params;
@@ -28,7 +28,7 @@ export const generateMetadata = async ({ params }: BrandPageProps): Promise<Meta
   }
 
   return buildPageMetadata({
-    title: `${brand.name} — shop this Nepali brand on Outfiqe`,
+    title: `${brand.name} clothing`,
     description: describeBrand(brand),
     path: `/brand/${brand.id}`,
     image: brand.bannerUrl

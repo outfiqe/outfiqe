@@ -7,7 +7,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Terms of service",
   description:
-    "The terms that govern your use of Outfiqe as a shopper — your account, orders, payments, delivery, cancellations and acceptable use.",
+    "The terms that govern your use of Outfiqe as a shopper: your account, orders, payments, delivery, cancellations and acceptable use.",
   path: "/legal/terms",
 });
 

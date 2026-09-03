@@ -12,7 +12,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Help centre",
   description:
-    "Answers to common Outfiqe questions — orders, delivery across Nepal, cash on delivery and wallet payments, cancellations, returns, sizing and accounts.",
+    "Answers to common Outfiqe questions about orders, delivery across Nepal, cash on delivery, wallet payments, cancellations, returns, sizing and accounts.",
   path: "/help",
   keywords: ["Outfiqe help", "Outfiqe FAQ", "Outfiqe order support", "Outfiqe returns"],
 });
@@ -21,17 +21,17 @@ const orderFaqs = [
   {
     question: "How do I track my order?",
     answer:
-      "Sign in and open Your orders. Each order shows its current status — placed, packed, shipped or delivered.",
+      "Sign in and open Your orders. Each order shows its current status: placed, packed, shipped or delivered.",
   },
   {
     question: "Can I cancel my order?",
     answer:
-      "You can cancel an order yourself while it is still placed or packed. Once it ships, it can no longer be cancelled from your account — contact us instead.",
+      "You can cancel an order yourself while it is still placed or packed. Once it ships, it can no longer be cancelled from your account, so contact us instead.",
   },
   {
     question: "How long does delivery take?",
     answer:
-      "Delivery time depends on your area. Kathmandu Valley is usually the fastest; other zones take longer. The delivery estimate for your address is shown at checkout.",
+      "Delivery time depends on your area. Kathmandu Valley is usually the fastest. Other zones take longer. The delivery estimate for your address is shown at checkout.",
   },
 ];
 
@@ -47,7 +47,7 @@ const paymentFaqs = [
       "For wallet payments, you're taken to eSewa or Khalti to authorise the payment. Your order is confirmed once the payment is verified. For cash on delivery, you pay the rider on delivery.",
   },
   {
-    question: "My payment failed but money left my wallet — what now?",
+    question: "My payment failed but money left my wallet. What now?",
     answer:
       "If a wallet payment doesn't confirm within an hour, the order is released and any charge is reconciled. If you were charged and the order didn't confirm, contact us with your order details.",
   },

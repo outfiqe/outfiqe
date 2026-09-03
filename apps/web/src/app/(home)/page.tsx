@@ -21,10 +21,10 @@ import { getQueryClient } from "@/shared/lib/getQueryClient";
 import { buildPageMetadata } from "@/shared/seo";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Outfiqe — Nepali fashion, worn by real creators",
+  title: "Outfiqe: Nepali fashion, worn by real creators",
   absoluteTitle: true,
   description:
-    "Shop clothing from Nepali brands the way people actually wear it. Every brand paired with real creator looks so you see the fit before you buy — one cart, cash on delivery or wallet, delivered across Nepal.",
+    "See how clothes from Nepali brands actually fit before you buy, in real creator looks. One cart across every brand. Pay cash on delivery or by wallet, delivered across Nepal.",
   path: "/",
   keywords: [
     "Nepali fashion",
