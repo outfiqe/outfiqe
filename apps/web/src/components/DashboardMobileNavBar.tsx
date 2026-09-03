@@ -16,8 +16,19 @@ import { isCrossAppNavHref, shouldDismissOnSwipe } from "./dashboardMobileNav";
 import { DashboardNavCustomizeSheet } from "./DashboardNavCustomizeSheet";
 import { useDashboardMobileNav } from "./useDashboardMobileNav";
 
-const CRADLE_NOTCH_MASK =
+const HUB_CENTER_BELOW_PANEL_EDGE = "0.75rem";
+
+const BAR_CRADLE_MASK =
   "radial-gradient(2.25rem 2.25rem at 50% 0, transparent 2.15rem, #000 2.2rem)";
+
+const PANEL_CRADLE_MASK = `radial-gradient(2.25rem 2.25rem at 50% calc(100% + ${HUB_CENTER_BELOW_PANEL_EDGE}), transparent 2.15rem, #000 2.2rem)`;
+
+const maskStyle = (maskImage: string) => ({
+  maskImage,
+  WebkitMaskImage: maskImage,
+  maskRepeat: "no-repeat" as const,
+  WebkitMaskRepeat: "no-repeat" as const,
+});
 
 const NavPendingDot = () => {
   const { pending } = useLinkStatus();
@@ -148,7 +159,7 @@ export const DashboardMobileNavBar = () => {
 
             <motion.nav
               aria-label="Dashboard menu"
-              className="fixed inset-x-3 bottom-[5.5rem] z-40 max-h-[62vh] overflow-y-auto rounded-[28px] border border-border bg-card p-4 shadow-[0_-14px_44px_-16px_rgba(0,0,0,0.4)]"
+              className="fixed inset-x-3 bottom-[5.5rem] z-40"
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
@@ -158,57 +169,67 @@ export const DashboardMobileNavBar = () => {
               dragElastic={{ top: 0, bottom: 0.6 }}
               onDragEnd={dismissOnSwipe}
             >
-              <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {accountLabel}
-              </p>
+              <div
+                aria-hidden
+                className="absolute inset-0 rounded-[28px] border border-border bg-card"
+                style={{
+                  ...maskStyle(PANEL_CRADLE_MASK),
+                  filter: "drop-shadow(0 -12px 40px rgba(0,0,0,0.32))",
+                }}
+              />
+              <div className="relative max-h-[62vh] overflow-y-auto p-4 pb-10">
+                <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {accountLabel}
+                </p>
 
-              {overflowItems.length > 0 && (
-                <ul className="grid grid-cols-2 gap-2">
-                  {overflowItems.map((item) => {
-                    const active = isNavItemActive(item.href, pathname);
-                    const Icon = item.icon;
-                    return (
-                      <li key={item.id}>
-                        <NavTarget
-                          item={item}
-                          active={active}
-                          onNavigate={closeMenu}
-                          className={cn(
-                            "relative flex flex-col items-center gap-1.5 rounded-2xl px-3 py-3.5 text-center text-xs font-medium transition-colors",
-                            active
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-foreground hover:bg-muted/70",
-                          )}
-                        >
-                          {Icon && <Icon className="size-5" />}
-                          {item.label}
-                        </NavTarget>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
+                {overflowItems.length > 0 && (
+                  <ul className="grid grid-cols-2 gap-2">
+                    {overflowItems.map((item) => {
+                      const active = isNavItemActive(item.href, pathname);
+                      const Icon = item.icon;
+                      return (
+                        <li key={item.id}>
+                          <NavTarget
+                            item={item}
+                            active={active}
+                            onNavigate={closeMenu}
+                            className={cn(
+                              "relative flex flex-col items-center gap-1.5 rounded-2xl px-3 py-3.5 text-center text-xs font-medium transition-colors",
+                              active
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-foreground hover:bg-muted/70",
+                            )}
+                          >
+                            {Icon && <Icon className="size-5" />}
+                            {item.label}
+                          </NavTarget>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
 
-              <button
-                type="button"
-                onClick={openCustomize}
-                className="mt-2 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <SlidersHorizontal className="size-[18px] shrink-0" />
-                Customize navigation
-              </button>
+                <button
+                  type="button"
+                  onClick={openCustomize}
+                  className="mt-2 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <SlidersHorizontal className="size-[18px] shrink-0" />
+                  Customize navigation
+                </button>
 
-              <div className="my-1.5 border-t border-border" />
+                <div className="my-1.5 border-t border-border" />
 
-              <button
-                type="button"
-                onClick={() => logout.mutate()}
-                disabled={logout.isPending}
-                className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-60"
-              >
-                <LogOut className="size-[18px] shrink-0" />
-                {logout.isPending ? "Signing out…" : "Sign out"}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => logout.mutate()}
+                  disabled={logout.isPending}
+                  className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-60"
+                >
+                  <LogOut className="size-[18px] shrink-0" />
+                  {logout.isPending ? "Signing out…" : "Sign out"}
+                </button>
+              </div>
             </motion.nav>
           </>
         )}
@@ -216,12 +237,10 @@ export const DashboardMobileNavBar = () => {
 
       <div className="fixed inset-x-3 bottom-3 z-40 h-16">
         <div
+          aria-hidden
           className="absolute inset-0 rounded-[28px] border border-border bg-card"
           style={{
-            maskImage: CRADLE_NOTCH_MASK,
-            WebkitMaskImage: CRADLE_NOTCH_MASK,
-            maskRepeat: "no-repeat",
-            WebkitMaskRepeat: "no-repeat",
+            ...maskStyle(BAR_CRADLE_MASK),
             filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.12))",
           }}
         />
