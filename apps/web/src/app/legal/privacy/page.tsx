@@ -42,7 +42,7 @@ const PrivacyPage = () => (
         </li>
         <li>Order details: delivery name, address, landmark, city and contact phone number.</li>
         <li>
-          Creator and brand details: profile information, and — for withdrawals — bank account
+          Creator and brand details: profile information, and, for withdrawals, bank account
           information, which is encrypted at rest and only decrypted for a payout.
         </li>
         <li>Content you post: looks, photos, reviews, messages and support requests.</li>
@@ -53,7 +53,7 @@ const PrivacyPage = () => (
           Device and usage data: pages viewed, taps on creator tags and links, and session
           identifiers used for attribution.
         </li>
-        <li>Cookies and similar technologies — see our cookie policy.</li>
+        <li>Cookies and similar technologies. See our cookie policy.</li>
         <li>Error and performance diagnostics through our error-reporting provider.</li>
       </ul>
       <h3>Information from third parties</h3>
@@ -81,8 +81,8 @@ const PrivacyPage = () => (
         <li>To detect, prevent and investigate fraud, abuse and security incidents.</li>
         <li>To improve the product and understand how it is used, in aggregate.</li>
         <li>
-          To send marketing communications where you have opted in or where permitted by law — you
-          can opt out at any time.
+          To send marketing communications where you have opted in or where the law permits. You can
+          opt out at any time.
         </li>
       </ul>
 

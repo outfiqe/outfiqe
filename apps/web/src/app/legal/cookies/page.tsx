@@ -35,8 +35,8 @@ const CookiesPage = () => (
       <h2>How we use them</h2>
       <h3>Strictly necessary</h3>
       <ul>
-        <li>Authentication — keeping you signed in and protecting your session.</li>
-        <li>Security — cross-site request protection and abuse prevention.</li>
+        <li>Authentication: keeping you signed in and protecting your session.</li>
+        <li>Security: cross-site request protection and abuse prevention.</li>
         <li>Cart and checkout state.</li>
       </ul>
       <h3>Functional</h3>
@@ -61,7 +61,7 @@ const CookiesPage = () => (
       <h2>Managing cookies</h2>
       <p>
         You can clear or block cookies in your browser settings. Blocking strictly necessary cookies
-        will stop parts of Outfiqe from working — for example, staying signed in or checking out.
+        will stop parts of Outfiqe from working, such as staying signed in or checking out.
       </p>
 
       <h2>Changes</h2>

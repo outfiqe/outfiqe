@@ -13,7 +13,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "About Outfiqe",
   description:
-    "Outfiqe is a Nepali fashion marketplace where local brands are shown the way people actually wear them — through real creator looks. Learn what we're building and why.",
+    "Outfiqe is a Nepali fashion marketplace. Local brands, shown in creator looks so you can see the fit before you buy. What we are building, and why.",
   path: "/about",
   keywords: ["about Outfiqe", "Nepali fashion marketplace", "Outfiqe company"],
 });
@@ -25,11 +25,11 @@ const principles = [
   },
   {
     title: "See the fit before you buy",
-    body: "Photos on a hanger don't tell you how something wears. Every product is paired with real creator looks so you can judge the fit, drape and styling first.",
+    body: "A photo on a hanger tells you almost nothing about how a piece wears. Every product on Outfiqe comes with a creator look, so you can judge the fit and the drape first.",
   },
   {
     title: "One cart, built for Nepal",
-    body: "Shop across brands in a single checkout, pay cash on delivery or by wallet, and get it delivered — no juggling five Instagram DMs.",
+    body: "Shop across brands in a single checkout. Pay cash on delivery or by wallet. It arrives at your door. No juggling five Instagram DMs.",
   },
   {
     title: "Creators earn for taste",
@@ -53,7 +53,7 @@ const AboutPage = () => (
           shoppers go for fashion.
         </>
       }
-      lede="Outfiqe brings Nepal's clothing brands together in one storefront and pairs each one with real creator looks — so shopping starts with an outfit you like, not a search box."
+      lede="Outfiqe brings Nepal's clothing brands together in one storefront and pairs each one with creator looks. Shopping starts with an outfit you like, not a search box."
     />
 
     <MarketingSection heading="Why we started">
@@ -61,7 +61,7 @@ const AboutPage = () => (
         <p>
           Good clothes from Nepali brands were being sold one Instagram post at a time. Shoppers had
           no single place to browse them, no way to see how a piece actually fits before paying, and
-          no reliable checkout. Brands were stuck doing customer service in their DMs.
+          no reliable checkout. Brands were stuck running customer service out of their DMs.
         </p>
         <p>
           Outfiqe fixes the storefront. Brands list their catalogue once. Creators post the looks

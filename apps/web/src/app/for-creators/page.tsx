@@ -35,14 +35,14 @@ const steps = [
   },
   {
     title: "Earn on every sale you source",
-    body: "When a shopper buys a tagged piece after seeing your look or link, you earn a commission — tracked automatically and withdrawn to your bank.",
+    body: "When a shopper buys a tagged piece after seeing your look or link, you earn a commission. It's tracked automatically and you withdraw it to your bank.",
   },
 ];
 
 const perks = [
   {
     title: "Get discovered",
-    body: "Your looks surface on the homepage feed, on product pages, and to shoppers exploring your taste — not just to your existing followers.",
+    body: "Your looks surface on the homepage feed, on product pages, and to shoppers exploring your taste, not only to your existing followers.",
   },
   {
     title: "Transparent earnings",
@@ -89,8 +89,8 @@ const ForCreatorsPage = () => (
       <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
         Commissions are tracked automatically from tag taps and your shareable product links, held
         while the order is fulfilled, and released for withdrawal once it&apos;s delivered and past
-        the return window. The full mechanics — the attribution window, what counts as a sale, and
-        payout timing — are on the{" "}
+        the return window. The full mechanics of the attribution window, what counts as a sale, and
+        payout timing are on the{" "}
         <Link
           href="/for-creators/how-commissions-work"
           className="font-medium text-foreground underline underline-offset-2"

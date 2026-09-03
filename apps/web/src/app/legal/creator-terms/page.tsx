@@ -56,7 +56,7 @@ const CreatorTermsPage = () => (
           shareable link, and buys that product within the attribution window of 7 days. The most
           recent qualifying action is credited.
         </li>
-        <li>Self-referrals — purchases where you are the buyer — are never attributed.</li>
+        <li>Self-referrals, where you are the buyer, are never attributed.</li>
         <li>
           Commission rates are set by Outfiqe&apos;s commission structure and may change. The rate
           recorded on each sale is shown in your earnings dashboard.

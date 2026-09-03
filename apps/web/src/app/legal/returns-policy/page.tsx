@@ -7,7 +7,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Return & refund policy",
   description:
-    "When you can cancel, return or get a refund on an Outfiqe order — the timelines, the conditions, and how refunds are paid.",
+    "When you can cancel, return or get a refund on an Outfiqe order. The timelines, the conditions, and how refunds are paid.",
   path: "/legal/returns-policy",
   keywords: ["Outfiqe returns", "fashion refund policy Nepal", "cancel order Outfiqe"],
 });
@@ -31,7 +31,7 @@ const ReturnsPolicyPage = () => (
       <p>
         You can cancel an order yourself, free of charge, while it is still marked{" "}
         <strong>placed</strong> or <strong>packed</strong>. Do this from Your orders. Once the order
-        is marked shipped, it can no longer be cancelled from your account — contact us.
+        is marked shipped, it can no longer be cancelled from your account. Contact us instead.
       </p>
 
       <h2>Returns after delivery</h2>
@@ -87,7 +87,7 @@ const ReturnsPolicyPage = () => (
       <h2>Items sold by brands</h2>
       <p>
         Products are sold by independent brands. Outfiqe coordinates returns and refunds on your
-        behalf and is your point of contact — you do not need to deal with the brand directly.
+        behalf and is your point of contact. You do not need to deal with the brand directly.
       </p>
 
       <h2>Your statutory rights</h2>

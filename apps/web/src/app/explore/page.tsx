@@ -10,7 +10,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Explore creator looks",
   description:
-    "A feed of real outfits from Nepali creators — every look is shoppable. Tap any piece to see the price, sizes and the brand behind it.",
+    "A feed of real outfits from Nepali creators. Every look is shoppable. Tap any piece to see the price, sizes and the brand behind it.",
   path: "/explore",
   keywords: [
     "outfit inspiration Nepal",

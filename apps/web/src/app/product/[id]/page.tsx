@@ -18,7 +18,7 @@ const describeProduct = (product: {
   brand: { name: string };
   price: number;
 }): string =>
-  `${product.name} by ${product.brand.name} — from a Nepali brand, ${priceLabel(product.price)}. ` +
+  `${product.name} by ${product.brand.name}, a Nepali brand. ${priceLabel(product.price)}. ` +
   "See it worn in real creator looks, pick your size, and check out on Outfiqe.";
 
 export const generateMetadata = async ({ params }: ProductPageProps): Promise<Metadata> => {
@@ -35,7 +35,7 @@ export const generateMetadata = async ({ params }: ProductPageProps): Promise<Me
   }
 
   return buildPageMetadata({
-    title: `${product.name} — ${product.brand.name}`,
+    title: `${product.name} by ${product.brand.name}`,
     description: describeProduct(product),
     path: `/product/${product.id}`,
     ogType: "website",

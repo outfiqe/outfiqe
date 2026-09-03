@@ -14,7 +14,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "How Outfiqe works",
   description:
-    "How to shop on Outfiqe: browse creator looks, pick the exact pieces across Nepali brands, add to one cart, and pay cash on delivery or by wallet. Here's the full flow.",
+    "How to shop on Outfiqe. Browse creator looks, pick the exact pieces from Nepali brands, add to one cart, and pay cash on delivery or by wallet.",
   path: "/how-it-works",
   keywords: [
     "how Outfiqe works",
@@ -48,7 +48,7 @@ const faqs = [
   {
     question: "Can I buy from more than one brand in a single order?",
     answer:
-      "Yes. Outfiqe is a multi-brand marketplace — add pieces from different Nepali brands to one cart and check out once.",
+      "Yes. Outfiqe is a multi-brand marketplace. Add pieces from different Nepali brands to one cart and check out once.",
   },
   {
     question: "How is delivery charged?",
@@ -63,7 +63,7 @@ const faqs = [
   {
     question: "What are the creator looks?",
     answer:
-      "Approved Outfiqe creators photograph and post outfits using real products from our brands, and tag the exact pieces. It's how you see the fit and styling before you buy — and how creators earn a commission when their look sells a product.",
+      "Approved Outfiqe creators photograph and post outfits using products from our brands, and tag the exact pieces. It is how you judge the fit and styling before you buy. Creators earn a commission when a look sells a product.",
   },
 ];
 
@@ -83,7 +83,7 @@ const HowItWorksPage = () => (
           with an outfit.
         </>
       }
-      lede="Outfiqe is built around looks, not listings. You see how a piece is worn by a real person first, then buy it — across every Nepali brand we carry, in one checkout."
+      lede="Outfiqe is built around looks, not listings. You see a piece worn by a real person first, then buy it, across every Nepali brand we carry."
     />
 
     <MarketingSection heading="For shoppers">
@@ -92,10 +92,10 @@ const HowItWorksPage = () => (
 
     <MarketingSection heading="For creators">
       <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-        Approved creators post looks using real products and tag the pieces. When someone taps a
-        tagged product or follows a creator&apos;s link and buys it within the attribution window,
-        the creator earns a commission — tracked automatically and paid out to a verified bank
-        account. See{" "}
+        Approved creators post looks using products from our brands and tag the pieces. When someone
+        taps a tagged product or follows a creator&apos;s link and buys it within the attribution
+        window, the creator earns a commission. It&apos;s tracked automatically and paid out to a
+        verified bank account. See{" "}
         <Link
           href="/for-creators/how-commissions-work"
           className="font-medium text-foreground underline underline-offset-2"
@@ -109,8 +109,8 @@ const HowItWorksPage = () => (
     <MarketingSection heading="For brands">
       <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
         Brands list their catalogue, set stock and pricing, and manage orders from a dashboard.
-        Listing is free — Outfiqe takes a small commission only on completed sales, and a share of
-        that funds the creator who sourced the sale. More on the{" "}
+        Listing is free. Outfiqe takes a small commission on completed sales, and a share of that
+        funds the creator who sourced the sale. More on the{" "}
         <Link
           href="/for-brands"
           className="font-medium text-foreground underline underline-offset-2"
@@ -127,7 +127,7 @@ const HowItWorksPage = () => (
 
     <MarketingCta
       title="Browse the looks"
-      body="Every look on Outfiqe is shoppable — tap a piece to see the price, sizes and the brand behind it."
+      body="Every look on Outfiqe is shoppable. Tap a piece to see its price, sizes and the brand behind it."
       primary={{ href: "/explore", label: "Explore looks" }}
       secondary={{ href: "/shop", label: "Shop everything" }}
     />

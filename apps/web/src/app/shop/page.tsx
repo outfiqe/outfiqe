@@ -52,14 +52,14 @@ export const generateMetadata = async ({ searchParams }: ShopPageProps): Promise
       : "Fashion from Nepali brands";
 
   const title = categoryName
-    ? `${categoryName} — shop the style from Nepali brands`
+    ? `Shop ${categoryName.toLowerCase()} from Nepali brands`
     : sortLabel
       ? `${sortLabel} on Outfiqe`
-      : "Shop all — clothing from Nepali brands";
+      : "Shop all clothing from Nepali brands";
 
   const description = categoryName
-    ? `Shop ${categoryName.toLowerCase()} pieces from Nepali brands on Outfiqe, styled in real creator looks. One cart, cash on delivery or wallet, delivered across Nepal.`
-    : `Browse ${subject.toLowerCase()} across every Nepali brand on Outfiqe. See each piece worn in real creator looks before you buy.`;
+    ? `Shop ${categoryName.toLowerCase()} pieces from Nepali brands on Outfiqe, styled in creator looks so you see the fit first. One cart, delivered across Nepal.`
+    : `Browse ${subject.toLowerCase()} across every Nepali brand on Outfiqe. Each piece is shown worn by a creator before you buy.`;
 
   return buildPageMetadata({
     title,
@@ -83,8 +83,8 @@ const ShopPage = async ({ searchParams }: ShopPageProps) => {
     ? `${categoryName} from Nepali brands`
     : "Shop clothing from Nepali brands";
   const intro = categoryName
-    ? `Every ${categoryName.toLowerCase()} piece below is from a Nepali brand and shown in real creator looks — so you can see the fit before you buy.`
-    : "One storefront for Nepal's clothing brands, each piece styled in real creator looks. Filter by style or type, add across brands to one cart, and check out once.";
+    ? `Every ${categoryName.toLowerCase()} piece below is from a Nepali brand, shown in a creator look so you can judge the fit before you buy.`
+    : "One storefront for Nepal's clothing brands, each piece styled in a real creator look. Filter by style or type, add across brands to one cart, and check out once.";
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

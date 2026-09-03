@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 import { siteName, siteTagline } from "@/shared/seo";
 
 const manifest = (): MetadataRoute.Manifest => ({
-  name: `${siteName} — ${siteTagline}`,
+  name: `${siteName}: ${siteTagline}`,
   short_name: siteName,
   description:
     "Shop clothing from Nepali brands, paired with real creator looks. One cart, delivered across Nepal.",

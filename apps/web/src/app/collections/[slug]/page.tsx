@@ -22,7 +22,7 @@ const describeCollection = (collection: {
   productCount: number;
 }): string =>
   collection.description ??
-  `Shop the ${collection.name} collection on Outfiqe — ${collection.productCount} pieces from Nepali brands, styled in real creator looks.`;
+  `${collection.productCount} pieces from Nepali brands in the ${collection.name} collection, styled in real creator looks.`;
 
 export const generateMetadata = async ({ params }: CollectionPageProps): Promise<Metadata> => {
   const { slug } = await params;
@@ -38,7 +38,7 @@ export const generateMetadata = async ({ params }: CollectionPageProps): Promise
   }
 
   return buildPageMetadata({
-    title: `${collection.name} — a fashion collection on Outfiqe`,
+    title: `${collection.name} collection`,
     description: describeCollection(collection),
     path: `/collections/${collection.slug}`,
     image: collection.imageUrl ? { url: collection.imageUrl, alt: collection.name } : undefined,
