@@ -167,15 +167,15 @@ describe("DashboardMobileMenu", () => {
 });
 
 describe("shouldDismissOnSwipe", () => {
-  it("dismisses on a long downward drag", () => {
+  it("dismisses on a long drag toward the edge", () => {
     expect(shouldDismissOnSwipe(120, 0)).toBe(true);
   });
 
-  it("dismisses on a fast downward fling", () => {
+  it("dismisses on a fast fling toward the edge", () => {
     expect(shouldDismissOnSwipe(10, 900)).toBe(true);
   });
 
-  it("keeps the sheet open for a small, slow drag", () => {
+  it("keeps the drawer open for a small, slow drag", () => {
     expect(shouldDismissOnSwipe(20, 100)).toBe(false);
   });
 });
