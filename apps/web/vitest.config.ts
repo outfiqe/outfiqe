@@ -117,6 +117,8 @@ export default defineConfig({
         "src/features/landing/components/TasteCategories/CustomizeTasteModal.tsx",
         "src/features/support/schemas/support.schema.ts",
         "src/features/support/components/SupportRequestForm.tsx",
+        "src/features/pwa/**",
+        "src/app/manifest.ts",
       ],
       thresholds: {
         lines: 80,
