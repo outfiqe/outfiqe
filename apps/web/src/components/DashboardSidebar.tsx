@@ -11,6 +11,7 @@ import {
 import {
   Award,
   BanknoteArrowUp,
+  LayoutDashboard,
   LayoutGrid,
   LogOut,
   MessageCircleOff,
@@ -48,7 +49,15 @@ const CHAT_SETTINGS_NAV_ITEM: SidebarNavItem = {
   icon: MessageCircleOff,
 };
 
+const OVERVIEW_NAV_ITEM: SidebarNavItem = {
+  id: "overview",
+  href: "/overview",
+  label: "Overview",
+  icon: LayoutDashboard,
+};
+
 const CREATOR_NAV: SidebarNavItem[] = [
+  OVERVIEW_NAV_ITEM,
   { id: "profile", href: "/profile", label: "Profile", icon: User },
   { id: "share", href: "/share", label: "Share", icon: Share2 },
   { id: "earnings", href: "/earnings", label: "Earnings", icon: Wallet },
@@ -63,6 +72,7 @@ const CREATOR_NAV: SidebarNavItem[] = [
 const APPROVED_CREATOR_ONLY_NAV_IDS = new Set(["share", "earnings", "withdraw"]);
 
 const BRAND_NAV: SidebarNavItem[] = [
+  OVERVIEW_NAV_ITEM,
   { id: "profile", href: "/profile", label: "Profile", icon: Store },
   { id: "products", href: "/products", label: "Products", icon: Package },
   { id: "orders", href: "/manage-orders", label: "Orders", icon: ShoppingBag },
