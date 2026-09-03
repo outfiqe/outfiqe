@@ -1,21 +1,77 @@
 import type { MetadataRoute } from "next";
 
-const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
+import { absoluteUrl } from "@/shared/seo";
+import { staticSeoRoutes } from "@/shared/seo/routes";
+import {
+  getSitemapBrands,
+  getSitemapCategories,
+  getSitemapCollections,
+  getSitemapCreators,
+  getSitemapProducts,
+} from "@/shared/seo/sitemapSources";
 
-// Static routes for now. Once product/category pages exist, extend this to
-// fetch their slugs from the API and map them in alongside these — Next
-// regenerates this route on each request (or on a revalidate interval, see
-// https://nextjs.org/docs/app/api-reference/file-conventions/metadata/sitemap),
-// so there's no separate build step to remember.
+export const revalidate = 21600;
 
-const sitemap = (): MetadataRoute.Sitemap => {
+const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
+  const now = new Date();
+
+  const staticEntries: MetadataRoute.Sitemap = staticSeoRoutes.map((route) => ({
+    url: absoluteUrl(route.path),
+    lastModified: now,
+    changeFrequency: route.changeFrequency,
+    priority: route.priority,
+  }));
+
+  const [products, brands, collections, categories, creators] = await Promise.all([
+    getSitemapProducts(),
+    getSitemapBrands(),
+    getSitemapCollections(),
+    getSitemapCategories(),
+    getSitemapCreators(),
+  ]);
+
+  const productEntries: MetadataRoute.Sitemap = products.map((product) => ({
+    url: absoluteUrl(`/product/${product.slug}`),
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.7,
+  }));
+
+  const brandEntries: MetadataRoute.Sitemap = brands.map((brand) => ({
+    url: absoluteUrl(`/brand/${brand.slug}`),
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.6,
+  }));
+
+  const collectionEntries: MetadataRoute.Sitemap = collections.map((collection) => ({
+    url: absoluteUrl(`/collections/${collection.slug}`),
+    lastModified: collection.updatedAt ? new Date(collection.updatedAt) : now,
+    changeFrequency: "weekly",
+    priority: 0.7,
+  }));
+
+  const categoryEntries: MetadataRoute.Sitemap = categories.map((category) => ({
+    url: absoluteUrl(`/shop?category=${category.slug}`),
+    lastModified: now,
+    changeFrequency: "daily",
+    priority: 0.6,
+  }));
+
+  const creatorEntries: MetadataRoute.Sitemap = creators.map((creator) => ({
+    url: absoluteUrl(`/creator/${creator.slug}`),
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.5,
+  }));
+
   return [
-    {
-      url: siteUrl,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 1,
-    },
+    ...staticEntries,
+    ...categoryEntries,
+    ...collectionEntries,
+    ...brandEntries,
+    ...creatorEntries,
+    ...productEntries,
   ];
 };
 

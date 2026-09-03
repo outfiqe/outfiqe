@@ -10,6 +10,7 @@ import {
   BrandRole,
   CommissionSource,
   CommissionStatus,
+  CreatorStatus,
   PaymentMethod,
   ProductStatus,
   ProductType,
@@ -36,7 +37,11 @@ const authHeaderFor = (userId: string, role: UserRole) => {
   return `Bearer ${accessToken}`;
 };
 
-const createUser = async (role: UserRole = UserRole.CUSTOMER, name = "Withdraw Tester") => {
+const createUser = async (
+  role: UserRole = UserRole.CUSTOMER,
+  name = "Withdraw Tester",
+  { approvedCreator = role === UserRole.CUSTOMER }: { approvedCreator?: boolean } = {},
+) => {
   const suffix = randomUUID().slice(0, 8);
   return prisma.user.create({
     data: {
@@ -46,6 +51,8 @@ const createUser = async (role: UserRole = UserRole.CUSTOMER, name = "Withdraw T
       phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
       role,
+      isCreator: approvedCreator,
+      creatorStatus: approvedCreator ? CreatorStatus.APPROVED : CreatorStatus.NONE,
     },
   });
 };
@@ -338,6 +345,31 @@ describe("GET /api/withdraw/eligibility", () => {
 
     expect(response.status).toBe(OK_STATUS);
     expect(response.body.data.windowOpen).toBe(false);
+  });
+
+  it("forbids a shopper who is not an approved creator from the creator withdraw flow", async () => {
+    await createOpenPolicy(WithdrawOwnerType.CREATOR);
+    const shopper = await createUser(UserRole.CUSTOMER, "Shopper", { approvedCreator: false });
+    const authHeader = authHeaderFor(shopper.id, UserRole.CUSTOMER);
+
+    const eligibility = await request(testApp)
+      .get("/api/withdraw/eligibility")
+      .query({ ownerType: "CREATOR" })
+      .set("Authorization", authHeader);
+    expect(eligibility.status).toBe(403);
+    expect(eligibility.body.code).toBe("NOT_A_CREATOR");
+
+    const list = await request(testApp)
+      .get("/api/withdraw/requests")
+      .query({ ownerType: "CREATOR" })
+      .set("Authorization", authHeader);
+    expect(list.status).toBe(403);
+
+    const create = await request(testApp)
+      .post("/api/withdraw/requests")
+      .set("Authorization", authHeader)
+      .send({ ownerType: "CREATOR", bankAccountId: randomUUID(), amount: 1000 });
+    expect(create.status).toBe(403);
   });
 });
 

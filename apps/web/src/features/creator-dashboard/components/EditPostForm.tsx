@@ -18,6 +18,7 @@ import { useForm } from "react-hook-form";
 import type { PublicProduct } from "@/features/products/api/productSchemas";
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
+import { isHeicImage, toUploadableImage } from "@/shared/lib/heicImage";
 
 import type { CreatorLookEditDetail } from "../api/creatorLooksSchemas";
 import { useTaggableProducts } from "../hooks/useTaggableProducts";
@@ -99,16 +100,30 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
     onClose();
   };
 
-  const handleFilesSelected = (fileList: FileList | null) => {
+  const handleFilesSelected = async (fileList: FileList | null) => {
     const selected = fileList?.item(0);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (!selected || !canAddPhoto) return;
 
     setPhotoError(null);
+
+    let photoFile = selected;
+    if (isHeicImage(selected)) {
+      setIsProcessingPhotos(true);
+      try {
+        photoFile = await toUploadableImage(selected);
+      } catch (conversionFailure) {
+        setPhotoError(getErrorMessage(conversionFailure));
+        return;
+      } finally {
+        setIsProcessingPhotos(false);
+      }
+    }
+
     setStagingPhoto({
       id: createPhotoId(),
-      file: selected,
-      objectUrl: URL.createObjectURL(selected),
+      file: photoFile,
+      objectUrl: URL.createObjectURL(photoFile),
       crop: { x: 0, y: 0 },
       zoom: 1,
       croppedAreaPixels: null,

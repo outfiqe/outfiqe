@@ -1,5 +1,14 @@
 # Commissions
 
+## The `/me` read endpoints are creator-only
+
+`GET /commissions/me` and `/me/summary` call `requireApprovedCreator`
+(`#lib/creator-guard.utils.js`) before touching the repository, so a signed-in shopper who isn't
+an approved creator gets `403 NOT_A_CREATOR` rather than an all-zero summary. Commission _rows_
+are still created speculatively for any buyer's order (see below) — the gate is on reading an
+earnings view, which only means anything for a creator. The admin `/commissions/*` endpoints
+keep their own `requirePlatformAccess` gate and are untouched.
+
 ## Commission creation isn't deferred like stock is
 
 `orders`' checkout creates a `PENDING` `CreatorCommission` at order-placement time regardless of payment method, unlike stock (which `payments` defers to verification for eSewa/Khalti — see that module's README). This is intentional, not an inconsistency: stock is a scarce physical resource that must never be double-allocated, so it can't be claimed speculatively. A commission is just an accounting record — it's fine to create it speculatively and void it later if the sale falls through. That's what this module's lifecycle sweep is for: a `PENDING` commission attached to an order whose payment ultimately fails or expires (chunk 8's reconciliation sweep marking it `FAILED`) gets voided here, not left dangling.

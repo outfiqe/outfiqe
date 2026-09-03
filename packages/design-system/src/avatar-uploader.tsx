@@ -15,6 +15,8 @@ type AvatarUploaderProps = {
   onUpload: (files: File[]) => Promise<string[]>;
   fallback: ReactNode;
   className?: string;
+  describeUploadError?: (error: unknown) => string;
+  transformFile?: (file: File) => Promise<File>;
 };
 
 export const AvatarUploader = ({
@@ -23,16 +25,28 @@ export const AvatarUploader = ({
   onUpload,
   fallback,
   className,
+  describeUploadError,
+  transformFile,
 }: AvatarUploaderProps) => {
   const {
     inputRef,
     isUploading,
+    isPreparingFile,
     error,
     pendingCrop,
     handleFileSelect,
     closeCropModal,
     handleCropConfirm,
-  } = useImageCropUpload({ value, onChange, onUpload, applyUrl: (url) => url });
+  } = useImageCropUpload({
+    value,
+    onChange,
+    onUpload,
+    applyUrl: (url) => url,
+    describeUploadError,
+    transformFile,
+  });
+
+  const busy = isUploading || isPreparingFile;
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -48,15 +62,11 @@ export const AvatarUploader = ({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            disabled={isUploading}
+            disabled={busy}
             aria-label={value ? "Change photo" : "Upload photo"}
             className="absolute inset-0 flex items-center justify-center bg-black/0 text-transparent transition-colors group-hover:bg-black/45 group-hover:text-white disabled:cursor-not-allowed"
           >
-            {isUploading ? (
-              <Loader2 className="size-5 animate-spin" />
-            ) : (
-              <Camera className="size-5" />
-            )}
+            {busy ? <Loader2 className="size-5 animate-spin" /> : <Camera className="size-5" />}
           </button>
         </div>
 
@@ -64,10 +74,16 @@ export const AvatarUploader = ({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            disabled={isUploading}
+            disabled={busy}
             className="block text-sm font-medium text-foreground underline-offset-2 hover:underline disabled:opacity-60"
           >
-            {isUploading ? "Uploading…" : value ? "Change photo" : "Upload photo"}
+            {isPreparingFile
+              ? "Converting…"
+              : isUploading
+                ? "Uploading…"
+                : value
+                  ? "Change photo"
+                  : "Upload photo"}
           </button>
           {value && (
             <button

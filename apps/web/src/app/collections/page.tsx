@@ -4,8 +4,15 @@ import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { CollectionsGrid } from "@/features/collections";
+import { buildPageMetadata } from "@/shared/seo";
 
-export const metadata: Metadata = { title: "Collections" };
+export const metadata: Metadata = buildPageMetadata({
+  title: "Fashion collections",
+  description:
+    "Shop Outfiqe's curated collections of seasonal edits, festive looks and occasion picks, pulled from every Nepali brand we carry.",
+  path: "/collections",
+  keywords: ["fashion collections Nepal", "festive wear Nepal", "seasonal fashion Nepal"],
+});
 
 const CollectionsPage = () => {
   return (
@@ -20,7 +27,7 @@ const CollectionsPage = () => {
             Collections
           </h1>
           <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-            Edits built around a season, an occasion, or a way of dressing — not a category tree.
+            Edits built around a season, an occasion, or a way of dressing, not a category tree.
           </p>
 
           <div className="mt-8">

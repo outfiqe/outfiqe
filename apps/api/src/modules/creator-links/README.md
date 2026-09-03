@@ -12,6 +12,14 @@ data: { status: 'CONSUMED' } })`. If it's already consumed (`count === 0`), the 
   `getOrCreateExternal` returns the creator's existing ACTIVE link for a given `(creator, product)`
   pair instead of minting a new one every time, so a creator's bio link stays stable.
 
+## Every authenticated endpoint is approved-creator-only
+
+`POST /internal`, `POST /external`, and `GET /mine` all call `requireApprovedCreator`
+(`#lib/creator-guard.utils.js`) in the service — a shopper who isn't an approved creator can't
+mint or list referral links (`403 NOT_A_CREATOR`). The public `POST /:token/click` endpoint is
+deliberately exempt (`optionalAuth`): the visitor following a link is usually an anonymous
+buyer, not the creator.
+
 ## Session bridging
 
 External-link clicks routinely come from a visitor who isn't logged in yet, so

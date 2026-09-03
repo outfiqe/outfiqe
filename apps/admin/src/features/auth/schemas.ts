@@ -24,6 +24,13 @@ export const updateProfileInputSchema = z
   .partial();
 export type UpdateProfileInput = z.infer<typeof updateProfileInputSchema>;
 
+export const changePasswordInputSchema = z.object({
+  currentPassword: z.string(),
+  newPassword: z.string(),
+  confirmNewPassword: z.string(),
+});
+export type ChangePasswordInput = z.infer<typeof changePasswordInputSchema>;
+
 export const loginResponseSchema = z.object({
   accessToken: z.string(),
   user: adminUserSchema,

@@ -10,6 +10,7 @@ import { categoryController } from "./category.controller.js";
 import {
   categoryIdParamSchema,
   createCategorySchema,
+  reorderCategoriesSchema,
   updateCategorySchema,
 } from "./category.schemas.js";
 import { categoryService } from "./category.service.js";
@@ -42,6 +43,13 @@ categoryRoutes.post(
   validate({ body: createCategorySchema }),
   refreshCategoriesPublicCache,
   categoryController.create,
+);
+categoryRoutes.post(
+  "/reorder",
+  ...requireAdmin,
+  validate({ body: reorderCategoriesSchema }),
+  refreshCategoriesPublicCache,
+  categoryController.reorder,
 );
 categoryRoutes.patch(
   "/:id",

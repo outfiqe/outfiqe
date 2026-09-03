@@ -97,6 +97,35 @@ describe("AccountMenu", () => {
     expect(profileLinks.every((link) => link.getAttribute("href") === "/profile")).toBe(true);
   });
 
+  it("does not offer a creator a way to switch to creator mode", () => {
+    const creator = buildUser({ isCreator: true, creatorStatus: CreatorStatus.APPROVED });
+    mockAuth({
+      state: { status: AuthStatus.AUTHENTICATED, user: creator, accessToken: "token" },
+      isAuthenticated: true,
+      isCreator: true,
+    });
+
+    render(<AccountMenu />);
+
+    expect(screen.queryByText(/switch to creator mode/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Become a creator" })).not.toBeInTheDocument();
+  });
+
+  it("offers a non-creator shopper the Become a creator link", () => {
+    const shopper = buildUser();
+    mockAuth({
+      state: { status: AuthStatus.AUTHENTICATED, user: shopper, accessToken: "token" },
+      isAuthenticated: true,
+    });
+
+    render(<AccountMenu />);
+
+    expect(screen.getByRole("link", { name: "Become a creator" })).toHaveAttribute(
+      "href",
+      "/profile",
+    );
+  });
+
   it("offers a CRM link to a tenant user who has CRM access", () => {
     const brandOwner = buildUser({ role: UserRole.BRAND_OWNER, hasCrmAccess: true });
     mockAuth({

@@ -10,6 +10,7 @@ import {
   WithdrawRequestStatus,
 } from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
+import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { isTransactionConflictError } from "#lib/prisma.utils.js";
@@ -53,7 +54,13 @@ const resolveOwner = async (
   userId: string,
   ownerType: OwnerContext["ownerType"],
 ): Promise<OwnerContext> => {
-  if (ownerType === "CREATOR") return { ownerType, creatorId: userId };
+  if (ownerType === "CREATOR") {
+    await requireApprovedCreator(
+      userId,
+      "Only approved creators can withdraw commission earnings.",
+    );
+    return { ownerType, creatorId: userId };
+  }
   const brandId = await requireBrandId(userId);
   return { ownerType, brandId };
 };

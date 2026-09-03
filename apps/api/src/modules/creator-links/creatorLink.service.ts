@@ -60,6 +60,7 @@ export const creatorLinkService = {
     creatorId: string,
     { cursor, limit }: { cursor?: string; limit: number },
   ): Promise<{ items: CreatorLinkView[]; nextCursor: string | null }> {
+    await requireApprovedCreator(creatorId, "Only approved creators can generate links.");
     const rows = await creatorLinkRepository.listForCreator(creatorId, { cursor, limit });
     const { items: pagedRows, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
 

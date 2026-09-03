@@ -11,6 +11,8 @@ type UseImageCropUploadOptions<T> = {
   onChange: (next: T) => void;
   onUpload: (files: File[]) => Promise<string[]>;
   applyUrl: ApplyUrl<T>;
+  describeUploadError?: (error: unknown) => string;
+  transformFile?: (file: File) => Promise<File>;
 };
 
 export const useImageCropUpload = <T>({
@@ -18,9 +20,12 @@ export const useImageCropUpload = <T>({
   onChange,
   onUpload,
   applyUrl,
+  describeUploadError,
+  transformFile,
 }: UseImageCropUploadOptions<T>) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isPreparingFile, setIsPreparingFile] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingCrop, setPendingCrop] = useState<PendingCrop | null>(null);
 
@@ -30,18 +35,40 @@ export const useImageCropUpload = <T>({
     try {
       const [url] = await onUpload([file]);
       if (url) onChange(applyUrl(url, value));
-    } catch {
-      setError("Upload failed. Try again.");
+    } catch (uploadError) {
+      setError(
+        describeUploadError ? describeUploadError(uploadError) : "Upload failed. Try again.",
+      );
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleFileSelect = (fileList: FileList | null) => {
+  const startCrop = (file: File) => {
+    setPendingCrop({ file, objectUrl: URL.createObjectURL(file) });
+  };
+
+  const handleFileSelect = async (fileList: FileList | null) => {
     const file = fileList?.item(0);
     if (inputRef.current) inputRef.current.value = "";
     if (!file) return;
-    setPendingCrop({ file, objectUrl: URL.createObjectURL(file) });
+
+    if (!transformFile) {
+      startCrop(file);
+      return;
+    }
+
+    setIsPreparingFile(true);
+    setError(null);
+    try {
+      startCrop(await transformFile(file));
+    } catch (transformError) {
+      setError(
+        describeUploadError ? describeUploadError(transformError) : "Upload failed. Try again.",
+      );
+    } finally {
+      setIsPreparingFile(false);
+    }
   };
 
   const closeCropModal = () => {
@@ -57,6 +84,7 @@ export const useImageCropUpload = <T>({
   return {
     inputRef,
     isUploading,
+    isPreparingFile,
     error,
     pendingCrop,
     handleFileSelect,

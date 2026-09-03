@@ -8,6 +8,7 @@ import {
   adminInviteInfoSchema,
   type AdminUser,
   adminUserSchema,
+  type ChangePasswordInput,
   type CrmInviteInfo,
   crmInviteInfoSchema,
   loginResponseSchema,
@@ -34,6 +35,10 @@ export const authApi = {
   async updateProfile(input: UpdateProfileInput): Promise<AdminUser> {
     const res = await apiClient.patch<AdminUser>("/users/me", input);
     return adminUserSchema.parse(res.data);
+  },
+
+  async changePassword(input: ChangePasswordInput): Promise<void> {
+    await apiClient.post("/auth/change-password", input);
   },
 
   async getAdminInvite(token: string): Promise<AdminInviteInfo> {

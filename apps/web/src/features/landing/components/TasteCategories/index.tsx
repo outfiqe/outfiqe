@@ -1,13 +1,17 @@
 "use client";
 
 import { Button, Skeleton } from "@outfiqe/design-system";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
+import { useTastePreferences } from "@/features/categories/hooks/useTastePreferences";
+import { visibleTasteCategories } from "@/features/categories/lib/visibleTasteCategories";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
+
+import { CustomizeTasteModal } from "./CustomizeTasteModal";
 
 const SCROLL_STEP_PX = 320;
 const SCROLL_END_TOLERANCE_PX = 1;
@@ -18,11 +22,27 @@ export const TasteCategories = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const categories = useCategories();
+  const { storedSlugs, isCustomized, save, reset } = useTastePreferences();
   const [pendingCategory, setPendingCategory] = useState<PendingCategory | null>(null);
+  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const searchParamsString = searchParams.toString();
-  const resolvedSlug = searchParams.get("category") ?? categories.data?.[0]?.slug;
+
+  const allCategories = categories.data ?? [];
+  const visibleCategories = visibleTasteCategories(allCategories, storedSlugs);
+  const deepLinkedSlug = searchParams.get("category");
+  const deepLinkedCategory =
+    deepLinkedSlug && !visibleCategories.some((category) => category.slug === deepLinkedSlug)
+      ? allCategories.find((category) => category.slug === deepLinkedSlug)
+      : undefined;
+  const displayCategories = deepLinkedCategory
+    ? [deepLinkedCategory, ...visibleCategories]
+    : visibleCategories;
+
+  const resolvedSlug = deepLinkedSlug ?? displayCategories[0]?.slug;
   const isNavigating = pendingCategory?.fromSearchParams === searchParamsString;
   const activeSlug = isNavigating && pendingCategory ? pendingCategory.slug : resolvedSlug;
+
+  const canCustomize = allCategories.length > visibleCategories.length || isCustomized;
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -42,7 +62,7 @@ export const TasteCategories = () => {
     updateScrollability();
     window.addEventListener("resize", updateScrollability);
     return () => window.removeEventListener("resize", updateScrollability);
-  }, [categories.data]);
+  }, [displayCategories.length, categories.isLoading]);
 
   const scrollByStep = (direction: 1 | -1) => {
     scrollerRef.current?.scrollBy({ left: direction * SCROLL_STEP_PX, behavior: "smooth" });
@@ -53,7 +73,7 @@ export const TasteCategories = () => {
     router.replace(`/?category=${slug}`, { scroll: false });
   };
 
-  const hasNoCategories = !categories.isLoading && categories.data?.length === 0;
+  const hasNoCategories = !categories.isLoading && allCategories.length === 0;
 
   return (
     <section className="px-6 pb-4 pt-4 sm:pb-6 sm:pt-6 lg:px-10">
@@ -88,29 +108,43 @@ export const TasteCategories = () => {
                 <Skeleton key={index} className="size-28 shrink-0 rounded-2xl sm:size-32" />
               ))}
 
-            {categories.data?.map((category) => (
-              <Button
-                key={category.slug}
-                variant="ghost"
-                onClick={() => selectCategory(category.slug)}
-                style={
-                  category.imageUrl
-                    ? {
-                        backgroundImage: `linear-gradient(to top, rgba(20,16,14,0.75), rgba(20,16,14,0.05)), url(${category.imageUrl})`,
-                      }
-                    : { backgroundColor: getAvatarColor(category.slug) }
-                }
-                className={cn(
-                  "relative size-28 shrink-0 items-end justify-start rounded-2xl bg-cover bg-center p-3 text-left font-normal transition-transform hover:-translate-y-0.5 hover:bg-transparent sm:size-32",
-                  category.slug === activeSlug &&
-                    "ring-2 ring-primary ring-offset-2 ring-offset-background",
-                )}
+            {!categories.isLoading &&
+              displayCategories.map((category) => (
+                <Button
+                  key={category.slug}
+                  variant="ghost"
+                  onClick={() => selectCategory(category.slug)}
+                  style={
+                    category.imageUrl
+                      ? {
+                          backgroundImage: `linear-gradient(to top, rgba(20,16,14,0.75), rgba(20,16,14,0.05)), url(${category.imageUrl})`,
+                        }
+                      : { backgroundColor: getAvatarColor(category.slug) }
+                  }
+                  className={cn(
+                    "relative size-28 shrink-0 items-end justify-start rounded-2xl bg-cover bg-center p-3 text-left font-normal transition-transform hover:-translate-y-0.5 hover:bg-transparent sm:size-32",
+                    category.slug === activeSlug &&
+                      "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                  )}
+                >
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-white sm:text-xs">
+                    {category.name}
+                  </span>
+                </Button>
+              ))}
+
+            {!categories.isLoading && canCustomize && (
+              <button
+                type="button"
+                onClick={() => setIsCustomizeOpen(true)}
+                className="flex size-28 shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground sm:size-32"
               >
-                <span className="text-[11px] font-bold uppercase tracking-wide text-white sm:text-xs">
-                  {category.name}
+                <SlidersHorizontal className="size-5" />
+                <span className="text-[11px] font-bold uppercase tracking-wide sm:text-xs">
+                  Customize
                 </span>
-              </Button>
-            ))}
+              </button>
+            )}
           </div>
 
           {canScrollPrev && (
@@ -135,6 +169,16 @@ export const TasteCategories = () => {
             </button>
           )}
         </div>
+      )}
+
+      {isCustomizeOpen && (
+        <CustomizeTasteModal
+          allCategories={allCategories}
+          selectedSlugs={visibleCategories.map((category) => category.slug)}
+          onSave={save}
+          onReset={reset}
+          onClose={() => setIsCustomizeOpen(false)}
+        />
       )}
     </section>
   );

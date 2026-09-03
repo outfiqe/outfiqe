@@ -13,7 +13,12 @@ const isProdEnv = process.env.NEXT_PUBLIC_APP_ENV === "prod";
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "Referrer-Policy", value: "origin-when-cross-origin" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+  },
   ...(isProdEnv
     ? [{ key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" }]
     : []),
@@ -21,6 +26,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  poweredByHeader: false,
   allowedDevOrigins: ["outfiqe.local", "*.outfiqe.local"],
 
   async headers() {

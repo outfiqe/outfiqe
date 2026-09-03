@@ -74,7 +74,7 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
       toast.success("Product updated");
       onClose();
     } catch {
-      // surfaced via update.error below
+      return;
     }
   });
 
@@ -85,8 +85,8 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
       const imageUrls = await resolvePendingPhotoUrls(pending.photos, DEFAULT_IMAGE_MIME_TYPE);
       form.setValue("imageUrls", imageUrls, { shouldValidate: true });
       await submitEdit();
-    } catch {
-      setPhotoError("Couldn't process those photos. Try again.");
+    } catch (photoUploadError) {
+      setPhotoError(getErrorMessage(photoUploadError));
     } finally {
       setIsProcessingPhotos(false);
     }

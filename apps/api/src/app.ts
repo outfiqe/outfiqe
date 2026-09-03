@@ -64,6 +64,7 @@ import { platformNavAccessRoutes } from "./modules/platform-nav-access/platform-
 import { productReviewRoutes } from "./modules/product-reviews/product-review.routes.js";
 import { productRoutes } from "./modules/products/product.routes.js";
 import { sizeOptionRoutes } from "./modules/size-options/size-option.routes.js";
+import { tastePreferenceRoutes } from "./modules/taste-preferences/tastePreference.routes.js";
 import { trendingRoutes } from "./modules/trending/trending.routes.js";
 import { uploadRoutes } from "./modules/uploads/upload.routes.js";
 import { userRoutes } from "./modules/users/user.routes.js";
@@ -188,6 +189,7 @@ export const createApp = () => {
   app.use("/api/wishlist", wishlistRoutes);
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/categories", categoryRoutes);
+  app.use("/api/taste-preferences", tastePreferenceRoutes);
   app.use("/api/hero-slides", heroSlideRoutes);
   app.use("/api/image-processing", imageProcessingRoutes);
   app.use("/api/admin/trending", trendingRoutes);

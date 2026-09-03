@@ -40,10 +40,22 @@ describe("buildContentSecurityPolicy", () => {
     expect(csp).toContain("upgrade-insecure-requests");
   });
 
-  it("allows 'unsafe-eval' only in dev", () => {
-    expect(buildContentSecurityPolicy({ ...baseOptions, isDev: true })).toContain("'unsafe-eval'");
-    expect(buildContentSecurityPolicy({ ...baseOptions, isDev: false })).not.toContain(
-      "'unsafe-eval'",
+  it("allows full 'unsafe-eval' only in dev", () => {
+    expect(buildContentSecurityPolicy({ ...baseOptions, isDev: true })).toMatch(/ 'unsafe-eval'/);
+    expect(buildContentSecurityPolicy({ ...baseOptions, isDev: false })).not.toMatch(
+      / 'unsafe-eval'/,
+    );
+  });
+
+  it("permits wasm image decoders outside dev via 'wasm-unsafe-eval' and blob workers", () => {
+    const csp = buildContentSecurityPolicy({ ...baseOptions, isDev: false });
+    expect(csp).toContain("'wasm-unsafe-eval'");
+    expect(csp).toContain("worker-src 'self' blob:");
+  });
+
+  it("keeps blob workers allowed in dev so HEIC conversion runs there too", () => {
+    expect(buildContentSecurityPolicy({ ...baseOptions, isDev: true })).toContain(
+      "worker-src 'self' blob:",
     );
   });
 

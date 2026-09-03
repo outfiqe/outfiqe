@@ -42,6 +42,12 @@ export const authRepository = {
     await prisma.refreshToken.deleteMany({ where: { userId } });
   },
 
+  async deleteRefreshTokensForUserExcept(userId: string, keepTokenHash: string): Promise<void> {
+    await prisma.refreshToken.deleteMany({
+      where: { userId, tokenHash: { not: keepTokenHash } },
+    });
+  },
+
   async findUsedPurposeToken(jti: string): Promise<{ jti: string } | null> {
     return prisma.usedPurposeToken.findUnique({ where: { jti }, select: { jti: true } });
   },

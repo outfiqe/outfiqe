@@ -28,6 +28,11 @@ export const updateCategorySchema = createCategorySchema.partial();
 
 export const categoryIdParamSchema = z.object({ id: z.uuid() });
 
+export const reorderCategoriesSchema = z.object({
+  orderedIds: z.array(z.uuid()).min(1),
+});
+
 export type CreateCategoryBody = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryBody = z.infer<typeof updateCategorySchema>;
 export type CategoryIdParam = z.infer<typeof categoryIdParamSchema>;
+export type ReorderCategoriesBody = z.infer<typeof reorderCategoriesSchema>;

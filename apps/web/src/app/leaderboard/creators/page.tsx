@@ -7,8 +7,14 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { CreatorLeaderboardView } from "@/features/creator-leaderboard";
 import { LeaderboardListSkeleton } from "@/features/leaderboard";
+import { buildPageMetadata } from "@/shared/seo";
 
-export const metadata: Metadata = { title: "Creator leaderboard" };
+export const metadata: Metadata = buildPageMetadata({
+  title: "Creator leaderboard",
+  description:
+    "The Outfiqe creators driving the most engagement and sales this week, ranked across categories.",
+  path: "/leaderboard/creators",
+});
 
 const CreatorLeaderboardPage = () => {
   return (

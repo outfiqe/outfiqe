@@ -17,6 +17,7 @@ import { uploadsApi } from "@/shared/api/uploadsApi";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
+import { toUploadableImage } from "@/shared/lib/heicImage";
 
 import type { BrandProfile } from "../api/brandDashboardSchemas";
 import { useUpdateBrandProfile } from "../hooks/useUpdateBrandProfile";
@@ -169,6 +170,8 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
               value={draft.bannerUrl}
               onChange={(bannerUrl) => setDraft({ ...draft, bannerUrl })}
               onUpload={uploadsApi.upload}
+              describeUploadError={getErrorMessage}
+              transformFile={toUploadableImage}
             />
           </div>
           <div>
@@ -178,6 +181,8 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
               onChange={(avatarUrl) => setDraft({ ...draft, avatarUrl })}
               onUpload={uploadsApi.upload}
               fallback={initialsBadge}
+              describeUploadError={getErrorMessage}
+              transformFile={toUploadableImage}
             />
           </div>
           <div>

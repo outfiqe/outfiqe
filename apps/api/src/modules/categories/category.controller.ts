@@ -6,6 +6,7 @@ import { validated } from "#middlewares/validate.js";
 import type {
   CategoryIdParam,
   CreateCategoryBody,
+  ReorderCategoriesBody,
   UpdateCategoryBody,
 } from "./category.schemas.js";
 import { categoryService } from "./category.service.js";
@@ -29,6 +30,12 @@ export const categoryController = {
   async listAll(_req: Request, res: Response) {
     const categories = await categoryService.listAll();
     sendSuccess(res, categories, "Categories.");
+  },
+
+  async reorder(_req: Request, res: Response) {
+    const { orderedIds } = validated.body<ReorderCategoriesBody>(res);
+    await categoryService.reorder(orderedIds);
+    sendSuccess(res, null, "Categories reordered.");
   },
 
   async listPublic(_req: Request, res: Response) {

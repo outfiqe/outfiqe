@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { type PendingPhoto, usePendingPhotos } from "@/shared/hooks/usePendingPhotos";
+import { ApiClientError } from "@/shared/lib/apiClient";
 
 import { PostModal } from "./PostModal";
 
@@ -40,6 +41,8 @@ const mockPending = (photos: PendingPhoto[]) => {
     setActiveId,
     inputRef: { current: null },
     handleFileSelect: vi.fn(),
+    isImportingFile: false,
+    importError: null,
     removePhoto,
     updateActivePhoto: vi.fn(),
     reset,
@@ -123,8 +126,10 @@ describe("PostModal", () => {
     expect(reset).toHaveBeenCalledOnce();
   });
 
-  it("shows a photo-processing error and doesn't submit when resolving photos fails", async () => {
-    resolvePendingPhotoUrls.mockRejectedValue(new Error("boom"));
+  it("surfaces the upload error message and doesn't submit when resolving photos fails", async () => {
+    resolvePendingPhotoUrls.mockRejectedValue(
+      new ApiClientError("Each image must be 5 MB or smaller.", "INVALID_FILE"),
+    );
     mockPending([buildExistingPhoto("p1")]);
 
     const user = userEvent.setup();
@@ -132,9 +137,7 @@ describe("PostModal", () => {
 
     await user.click(screen.getByRole("button", { name: "Post look" }));
 
-    expect(
-      await screen.findByText("Couldn't process those photos. Try again."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Each image must be 5 MB or smaller.")).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
   });
 

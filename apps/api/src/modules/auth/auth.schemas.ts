@@ -51,6 +51,17 @@ export const resetPasswordSchema = z
   })
   .refine(passwordsMatch, CONFIRM_PASSWORD_ISSUE);
 
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1),
+    newPassword: passwordField,
+    confirmNewPassword: z.string(),
+  })
+  .refine((fields) => fields.newPassword === fields.confirmNewPassword, {
+    message: "Passwords do not match",
+    path: ["confirmNewPassword"],
+  });
+
 export const registerBrandSchema = z
   .object({
     inviteToken: z.string().min(1),
@@ -106,6 +117,7 @@ export type VerifyEmailBody = z.infer<typeof verifyEmailSchema>;
 export type LoginBody = z.infer<typeof loginSchema>;
 export type ForgotPasswordBody = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordBody = z.infer<typeof resetPasswordSchema>;
+export type ChangePasswordBody = z.infer<typeof changePasswordSchema>;
 export type RegisterBrandBody = z.infer<typeof registerBrandSchema>;
 export type BrandInviteQuery = z.infer<typeof brandInviteQuerySchema>;
 export type RegisterAdminBody = z.infer<typeof registerAdminSchema>;

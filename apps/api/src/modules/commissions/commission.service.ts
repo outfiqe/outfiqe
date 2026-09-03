@@ -1,4 +1,5 @@
 import { CommissionStatus } from "#generated/prisma/enums.js";
+import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { isForeignKeyConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
@@ -30,6 +31,7 @@ const requireTier = async (id: string): Promise<CommissionTierAdminView> => {
 
 export const commissionService = {
   async getEarningsSummary(creatorId: string): Promise<CreatorEarningsSummary> {
+    await requireApprovedCreator(creatorId, "Only approved creators earn commission.");
     const sums = await commissionRepository.sumByStatusForCreator(creatorId);
     const pending = sums[CommissionStatus.PENDING] ?? 0;
     const available = sums[CommissionStatus.AVAILABLE] ?? 0;
@@ -42,6 +44,7 @@ export const commissionService = {
     creatorId: string,
     { cursor, limit }: ListEarningsQuery,
   ): Promise<{ items: CreatorCommissionView[]; nextCursor: string | null }> {
+    await requireApprovedCreator(creatorId, "Only approved creators earn commission.");
     const rows = await commissionRepository.listForCreator(creatorId, { cursor, limit });
     const { items: pagedRows, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
 

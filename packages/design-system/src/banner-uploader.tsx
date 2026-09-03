@@ -15,18 +15,37 @@ type BannerUploaderProps = {
   onChange: (url: string | null) => void;
   onUpload: (files: File[]) => Promise<string[]>;
   className?: string;
+  describeUploadError?: (error: unknown) => string;
+  transformFile?: (file: File) => Promise<File>;
 };
 
-export const BannerUploader = ({ value, onChange, onUpload, className }: BannerUploaderProps) => {
+export const BannerUploader = ({
+  value,
+  onChange,
+  onUpload,
+  className,
+  describeUploadError,
+  transformFile,
+}: BannerUploaderProps) => {
   const {
     inputRef,
     isUploading,
+    isPreparingFile,
     error,
     pendingCrop,
     handleFileSelect,
     closeCropModal,
     handleCropConfirm,
-  } = useImageCropUpload({ value, onChange, onUpload, applyUrl: (url) => url });
+  } = useImageCropUpload({
+    value,
+    onChange,
+    onUpload,
+    applyUrl: (url) => url,
+    describeUploadError,
+    transformFile,
+  });
+
+  const busy = isUploading || isPreparingFile;
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -47,11 +66,11 @@ export const BannerUploader = ({ value, onChange, onUpload, className }: BannerU
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          disabled={isUploading}
+          disabled={busy}
           aria-label={value ? "Change banner" : "Upload banner"}
           className="absolute inset-0 flex items-center justify-center bg-black/0 text-sm font-medium text-transparent transition-colors group-hover:bg-black/45 group-hover:text-white disabled:cursor-not-allowed"
         >
-          {isUploading ? (
+          {busy ? (
             <Loader2 className="size-5 animate-spin text-foreground group-hover:text-white" />
           ) : (
             <span className="opacity-0 transition-opacity group-hover:opacity-100">
@@ -60,7 +79,7 @@ export const BannerUploader = ({ value, onChange, onUpload, className }: BannerU
           )}
         </button>
 
-        {value && !isUploading && (
+        {value && !busy && (
           <button
             type="button"
             onClick={() => onChange(null)}

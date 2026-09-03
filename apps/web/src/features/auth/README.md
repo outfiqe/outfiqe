@@ -9,7 +9,7 @@ client-side session/user context the rest of the app reads.
 ## Structure
 
 - `api/authApi.ts` — the typed client for all auth endpoints (login, register, logout, password
-  reset, email verification, current-user).
+  reset, signed-in password change, email verification, current-user).
 - `api/serverAuth.ts` — server-only session/token helpers used by server components and route
   handlers (e.g. `apps/web/src/features/brand-profile`'s SSR fetch).
 - `api/userSchemas.ts` — Zod schemas for the session/user shape returned by the API.
@@ -21,8 +21,11 @@ client-side session/user context the rest of the app reads.
   Security page's nudge; not a general profile-editing surface).
 - `components/` — the form/screen components: `LoginForm`, `RegisterForm`, `BrandRegisterForm`,
   `ForgotPasswordForm`, `ResetPasswordForm`, `VerifyEmailScreen`, plus their success/loading/
-  expired sub-states; `ConnectedAccounts/` (connect/disconnect Google/Facebook, Account Settings →
-  Security) and `AddPhoneNumberBanner` (the OAuth-only-account phone nudge, same page);
+  expired sub-states; `ChangePasswordCard/` (the signed-in "change your password" form on Account
+  Settings → Security — for a connected-account-only user with no password it instead links to the
+  forgot-password flow to set one); `ConnectedAccounts/` (connect/disconnect Google/Facebook,
+  Account Settings → Security) and `AddPhoneNumberBanner` (the OAuth-only-account phone nudge, same
+  page);
   `ContinueWithOAuthButtons` (the "Google"/"Facebook" row on `LoginForm`/`RegisterForm`) and
   `OAuthCallbackScreen/` (renders at `/auth/oauth-callback`, the page the API redirects a failed or
   link-required OAuth attempt to — a successful sign-in never lands here, it's redirected straight
@@ -37,8 +40,9 @@ client-side session/user context the rest of the app reads.
   Colocated here rather than in the app-wide `src/testing/` infra since it's specific to this
   feature's own context, not something other features need.
 - `hooks/` — one hook per auth action (`useLogin`, `useRegister`, `useBrandRegister`, `useLogout`,
-  `useForgotPassword`, `useResetPassword`, `useResendVerification`, `useCurrentUser`), plus
-  `useLinkedAccounts`, `useUnlinkAccount`, and `useAddPhoneNumber` for the Security page. Each wraps
+  `useForgotPassword`, `useResetPassword`, `useChangePassword`, `useResendVerification`,
+  `useCurrentUser`), plus `useLinkedAccounts`, `useUnlinkAccount`, and `useAddPhoneNumber` for the
+  Security page. Each wraps
   the matching API call in a React Query mutation/query. Every hook has a colocated
   `*.integration.test.tsx` (MSW-mocked requests, matching the pattern in
   `apps/web/src/testing/README.md`); `hooks/**` is in `vitest.config.ts`'s `coverage.include`.
@@ -63,8 +67,10 @@ client-side session/user context the rest of the app reads.
 ## Funnel
 
 **User-facing:** a visitor logs in, registers, or (via a brand invite link) registers as a brand;
-a returning visitor can request a password reset or resend a verification email. On success, the
-app redirects them either to a safe `?redirect=` target or their role's default route. Login and
+a returning visitor can request a password reset or resend a verification email. A signed-in
+visitor can change their password from Account Settings → Security (`ChangePasswordCard`) — this
+signs their other devices out but keeps the current one. On success, the app redirects them either
+to a safe `?redirect=` target or their role's default route. Login and
 register both also offer "Continue with Google/Facebook" — a full-page navigation, not a form
 submission — which either signs the visitor straight in, or (if that provider's email already
 belongs to an existing password account) lands them on `/auth/oauth-callback` to confirm the link
