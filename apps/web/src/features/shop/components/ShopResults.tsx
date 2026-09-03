@@ -15,12 +15,6 @@ import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 
 const SHOP_BASE_PATH = "/shop";
 
-const SORT_HEADING: Record<ProductSort, string> = {
-  [PRODUCT_SORT.NEWEST]: "Shop everything",
-  [PRODUCT_SORT.TRENDING]: "Trending now",
-  [PRODUCT_SORT.NEW_ARRIVALS]: "New arrivals",
-};
-
 const parseSort = (value: string | null): ProductSort | undefined =>
   PRODUCT_SORT_VALUES.find((candidate) => candidate === value);
 
@@ -61,20 +55,16 @@ export const ShopResults = () => {
   const products = productsPages?.pages.flatMap((page) => page.products) ?? [];
   const firstPage = productsPages?.pages[0];
 
-  const heading = category ? `In ${category.name}` : SORT_HEADING[sort ?? PRODUCT_SORT.NEWEST];
   const showTrendingRanks = sort === PRODUCT_SORT.TRENDING;
 
   return (
     <div>
-      <h2 className="font-display text-2xl font-bold uppercase tracking-tight text-foreground sm:text-3xl">
-        {heading}
-      </h2>
       {firstPage ? (
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {firstPage.total} pieces from {firstPage.brandCount} brands
         </p>
       ) : (
-        <Skeleton className="mt-2.5 h-4 w-40" />
+        <Skeleton className="h-4 w-40" />
       )}
 
       {category && (

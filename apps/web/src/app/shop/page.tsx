@@ -21,6 +21,13 @@ const SORT_LABEL: Record<string, string> = {
   newest: "New in",
 };
 
+const SORT_HEADING: Record<string, string> = {
+  trending: "Trending now",
+  "new-arrivals": "New arrivals",
+};
+
+const DEFAULT_HEADING = "Everything";
+
 const resolveCategoryName = async (slug?: string): Promise<string | null> => {
   if (!slug) return null;
   const categories = await getCategoriesServer().catch(() => []);
@@ -54,7 +61,7 @@ export const generateMetadata = async ({ searchParams }: ShopPageProps): Promise
   const title = categoryName
     ? `Shop ${categoryName.toLowerCase()} from Nepali brands`
     : sortLabel
-      ? `${sortLabel} on Outfiqe`
+      ? `${sortLabel} clothing from Nepali brands`
       : "Shop all clothing from Nepali brands";
 
   const description = categoryName
@@ -79,12 +86,11 @@ const ShopPage = async ({ searchParams }: ShopPageProps) => {
   const categoryName = await resolveCategoryName(params.category);
   const canonicalPath = buildCanonicalPath(params);
 
-  const heading = categoryName
-    ? `${categoryName} from Nepali brands`
-    : "Shop clothing from Nepali brands";
-  const intro = categoryName
-    ? `Every ${categoryName.toLowerCase()} piece below is from a Nepali brand, shown in a creator look so you can judge the fit before you buy.`
-    : "One storefront for Nepal's clothing brands, each piece styled in a real creator look. Filter by style or type, add across brands to one cart, and check out once.";
+  const heading =
+    categoryName ?? (params.sort ? SORT_HEADING[params.sort] : undefined) ?? DEFAULT_HEADING;
+  const schemaDescription = categoryName
+    ? `Every ${categoryName.toLowerCase()} piece from a Nepali brand on Outfiqe, shown in a creator look.`
+    : "Every piece from every Nepali brand on Outfiqe, shown in a creator look, in one cart.";
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
@@ -92,15 +98,19 @@ const ShopPage = async ({ searchParams }: ShopPageProps) => {
         <SiteHeader />
         <main>
           <div className="px-6 pb-16 pt-8 sm:pt-10 lg:px-10">
-            <header className="max-w-2xl">
-              <h1 className="font-display text-3xl font-extrabold uppercase tracking-tight text-foreground sm:text-4xl">
+            <header>
+              <span className="text-xs font-bold uppercase tracking-widest text-primary-strong">
+                Shop
+              </span>
+              <h1 className="mt-2 font-display text-3xl font-extrabold uppercase tracking-tight text-foreground sm:text-4xl">
                 {heading}
               </h1>
-              <p className="mt-2 text-sm text-muted-foreground">{intro}</p>
             </header>
-            <Suspense fallback={<ProductGridSkeleton className="mt-8" />}>
-              <ShopResults />
-            </Suspense>
+            <div className="mt-6">
+              <Suspense fallback={<ProductGridSkeleton />}>
+                <ShopResults />
+              </Suspense>
+            </div>
           </div>
         </main>
         <SiteFooter />
@@ -108,7 +118,11 @@ const ShopPage = async ({ searchParams }: ShopPageProps) => {
       </div>
       <JsonLd
         id="shop-jsonld"
-        data={collectionPageSchema({ name: heading, description: intro, path: canonicalPath })}
+        data={collectionPageSchema({
+          name: heading,
+          description: schemaDescription,
+          path: canonicalPath,
+        })}
       />
     </HydrationBoundary>
   );
