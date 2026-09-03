@@ -20,8 +20,8 @@ const isCrossAppHref = (href: string): boolean =>
 const rowClass =
   "flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-[15px] font-medium transition-colors";
 
-const HANDLE_CLOSED_SIZE = { width: 86, height: 46 };
-const HANDLE_OPEN_SIZE = { width: 116, height: 64 };
+const HANDLE_CLOSED_SIZE = { width: 108, height: 58 };
+const HANDLE_OPEN_SIZE = { width: 144, height: 80 };
 const HANDLE_SHAPE_PATH = "M0,68 C4,40 18,16 50,16 C82,16 96,40 100,68 Z";
 
 const SWIPE_DISMISS_DISTANCE_PX = 96;
@@ -89,7 +89,7 @@ export const DashboardMobileMenu = () => {
               onDragEnd={dismissOnSwipe}
             >
               <div className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-border" />
-              <div className="flex-1 overflow-y-auto px-3 pb-[calc(3.75rem+env(safe-area-inset-bottom))] pt-2">
+              <div className="flex-1 overflow-y-auto px-3 pb-[calc(4.5rem+env(safe-area-inset-bottom))] pt-2">
                 <p className="px-4 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {accountLabel}
                 </p>
@@ -170,11 +170,11 @@ export const DashboardMobileMenu = () => {
           <path d={HANDLE_SHAPE_PATH} />
         </svg>
         <motion.span
-          className="relative mb-2 flex items-center justify-center"
+          className="relative mb-2.5 flex items-center justify-center"
           animate={{ rotate: open ? 90 : 0 }}
           transition={spring}
         >
-          {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          {open ? <X className="size-6" /> : <Menu className="size-6" />}
         </motion.span>
       </motion.button>
     </div>
