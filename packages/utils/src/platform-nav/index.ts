@@ -10,6 +10,7 @@ export const PLATFORM_NAV_KEYS = [
   "size-options",
   "hero-slides",
   "orders",
+  "support",
   "product-reviews",
   "trending",
   "creators",

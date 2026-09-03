@@ -4,6 +4,7 @@ import type {
   FulfilmentStatus,
   NotificationEntityType,
   NotificationType,
+  SupportCategory,
   UserRole,
   WithdrawRequestStatus,
 } from "#generated/prisma/enums.js";
@@ -142,6 +143,33 @@ export type DomainEventPayloads = {
     title: string;
     assigneeUserId: string;
     assignedByUserId: string | null;
+  };
+  [DomainEvents.SUPPORT_TICKET_CREATED]: {
+    ticketId: string;
+    ticketNumber: number;
+    subject: string;
+    category: SupportCategory;
+  };
+  [DomainEvents.SUPPORT_TICKET_ASSIGNED]: {
+    ticketId: string;
+    subject: string;
+    assigneeUserId: string;
+    assignedByUserId: string | null;
+  };
+  [DomainEvents.SUPPORT_TICKET_STAFF_REPLIED]: {
+    ticketId: string;
+    subject: string;
+    requesterUserId: string | null;
+  };
+  [DomainEvents.SUPPORT_TICKET_CUSTOMER_REPLIED]: {
+    ticketId: string;
+    subject: string;
+    assigneeUserId: string | null;
+  };
+  [DomainEvents.SUPPORT_TICKET_RESOLVED]: {
+    ticketId: string;
+    subject: string;
+    requesterUserId: string | null;
   };
 };
 

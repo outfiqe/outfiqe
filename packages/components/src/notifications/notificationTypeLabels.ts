@@ -14,4 +14,8 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   BRAND_APPLICATION_SUBMITTED: "New brand applications",
   PRODUCT_REVIEWED: "New product reviews",
   REVIEW_REQUESTED: "Review reminders",
+  SUPPORT_TICKET_CREATED: "New support requests",
+  SUPPORT_TICKET_ASSIGNED: "Support requests assigned to you",
+  SUPPORT_TICKET_REPLY: "Replies on your support requests",
+  SUPPORT_TICKET_RESOLVED: "Support requests resolved",
 };

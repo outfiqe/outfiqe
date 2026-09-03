@@ -1,4 +1,4 @@
-import { emailButtonHtml, renderEmailLayout, SUB } from "./layout.js";
+import { emailButtonHtml, escapeHtml, paragraphsHtml, renderEmailLayout, SUB } from "./layout.js";
 
 export const verifyEmailTemplate = (url: string): { subject: string; html: string } => ({
   subject: "Verify your Outfiqe account",
@@ -329,6 +329,61 @@ export const crmSubscriptionRenewalDueTemplate = (
       <h1 style="font-size:20px;margin:0 0 4px;">Renewal due</h1>
       <p style="color:${SUB};margin:0;">The Outfiqe CRM subscription for "${organizationName}" is up for renewal. Pay Rs. ${amount} to keep pipeline, deals, tickets and reporting available for your team.</p>
       ${emailButtonHtml("Review billing", billingUrl)}
+    `,
+  }),
+});
+
+type SupportEmailInput = {
+  reference: string;
+  subject: string;
+};
+
+export const supportRequestReceivedTemplate = (
+  input: SupportEmailInput & { message: string },
+): { subject: string; html: string } => ({
+  subject: `[${input.reference}] We've got your request`,
+  html: renderEmailLayout({
+    preheader: `We've received your support request ${input.reference}.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">We're on it</h1>
+      <p style="color:${SUB};margin:0 0 16px;">
+        Thanks for reaching out. Your request <strong>${escapeHtml(input.reference)}</strong> is with our
+        team and we'll reply by email. You can also follow it in your account under Settings &rsaquo; Support.
+      </p>
+      <p style="margin:0 0 4px;"><strong>${escapeHtml(input.subject)}</strong></p>
+      ${paragraphsHtml(input.message)}
+    `,
+  }),
+});
+
+export const supportStaffReplyTemplate = (
+  input: SupportEmailInput & { reply: string; threadUrl: string },
+): { subject: string; html: string } => ({
+  subject: `[${input.reference}] ${input.subject}`,
+  html: renderEmailLayout({
+    preheader: `A reply on your support request ${input.reference}.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 12px;">Outfiqe Support replied</h1>
+      ${paragraphsHtml(input.reply)}
+      <p style="color:${SUB};margin:16px 0 0;">Reply to this email or open the thread to respond.</p>
+      ${emailButtonHtml("View the thread", input.threadUrl)}
+    `,
+  }),
+});
+
+export const supportResolvedTemplate = (
+  input: SupportEmailInput & { reopenUrl: string },
+): { subject: string; html: string } => ({
+  subject: `[${input.reference}] Marked resolved`,
+  html: renderEmailLayout({
+    preheader: `Your support request ${input.reference} was marked resolved.`,
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Marked resolved</h1>
+      <p style="color:${SUB};margin:0 0 4px;">
+        We've marked <strong>${escapeHtml(input.reference)}</strong> (&ldquo;${escapeHtml(input.subject)}&rdquo;)
+        resolved. If this didn't fully sort things out, you can reopen it within 14 days.
+      </p>
+      ${emailButtonHtml("Reopen this request", input.reopenUrl)}
     `,
   }),
 });
