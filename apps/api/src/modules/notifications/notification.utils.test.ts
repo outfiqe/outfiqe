@@ -2,8 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { NotificationType } from "#generated/prisma/enums.js";
 
+import { MAX_RECENT_ACTORS } from "./notification.constants.js";
 import type { NotificationActorSnapshot, NotificationRecord } from "./notification.types.js";
-import { mergeRecentActors, removeRecentActor, toBroadcastPayload } from "./notification.utils.js";
+import {
+  mergeRecentActors,
+  removeRecentActor,
+  toBroadcastPayload,
+  toNotificationRecord,
+} from "./notification.utils.js";
 
 const actor = (id: string): NotificationActorSnapshot => ({
   id,
@@ -28,6 +34,13 @@ describe("mergeRecentActors", () => {
     expect(merged).toHaveLength(3);
     expect(merged.map((entry) => entry.id)).toEqual(["a", "b", "c"]);
   });
+
+  it("falls back to MAX_RECENT_ACTORS when no cap is passed", () => {
+    const crowd = Array.from({ length: MAX_RECENT_ACTORS + 3 }, (_, index) => actor(`x${index}`));
+    const merged = mergeRecentActors(crowd, actor("a"));
+    expect(merged).toHaveLength(MAX_RECENT_ACTORS);
+    expect(merged[0]?.id).toBe("a");
+  });
 });
 
 describe("removeRecentActor", () => {
@@ -39,6 +52,34 @@ describe("removeRecentActor", () => {
   it("is a no-op when the actor isn't present", () => {
     const remaining = removeRecentActor([actor("a")], "z");
     expect(remaining.map((entry) => entry.id)).toEqual(["a"]);
+  });
+});
+
+describe("toNotificationRecord", () => {
+  const prismaRow = {
+    id: "n1",
+    recipientId: "r1",
+    actorId: "a1",
+    type: NotificationType.LOOK_LIKED,
+    entityType: null,
+    entityId: null,
+    metadata: null,
+    groupKey: null,
+    actorCount: 1,
+    isRead: false,
+    readAt: null,
+    createdAt: new Date("2026-08-01T00:00:00.000Z"),
+    updatedAt: new Date("2026-08-02T00:00:00.000Z"),
+  };
+
+  it("defaults a null metadata column to an empty object", () => {
+    expect(toNotificationRecord(prismaRow).metadata).toEqual({});
+  });
+
+  it("passes a populated metadata column through untouched", () => {
+    const record = toNotificationRecord({ ...prismaRow, metadata: { lookCaption: "hi" } });
+    expect(record.metadata).toEqual({ lookCaption: "hi" });
+    expect(record.id).toBe("n1");
   });
 });
 
