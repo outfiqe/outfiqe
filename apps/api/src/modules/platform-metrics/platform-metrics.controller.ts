@@ -11,6 +11,10 @@ export const platformMetricsController = {
     sendSuccess(res, await platformMetricsService.overview(), "Platform overview.");
   },
 
+  async activityTrend(_req: Request, res: Response) {
+    sendSuccess(res, await platformMetricsService.activityTrend(), "Platform activity trend.");
+  },
+
   async listTenants(_req: Request, res: Response) {
     const query = validated.query<ListTenantsQuery>(res);
     sendSuccess(res, await platformMetricsService.listTenants(query), "Tenant metrics.");

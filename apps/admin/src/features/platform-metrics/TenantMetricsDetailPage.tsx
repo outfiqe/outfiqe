@@ -1,4 +1,4 @@
-import { FormBanner, Skeleton } from "@outfiqe/design-system";
+import { FormBanner, Skeleton, TrendChart } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 
@@ -7,34 +7,22 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { platformMetricsApi } from "./api";
 import type { TenantSparklinePoint } from "./schemas";
 
-const SPARK_WIDTH = 320;
-const SPARK_HEIGHT = 48;
+const MIN_TREND_POINTS = 2;
 
 const Sparkline = ({ points }: { points: TenantSparklinePoint[] }) => {
-  if (points.length < 2) {
+  if (points.length < MIN_TREND_POINTS) {
     return <p className="text-sm text-muted-foreground">Not enough history yet for a trend.</p>;
   }
 
-  const values = points.map((point) => point.activityCount);
-  const max = Math.max(...values, 1);
-  const step = SPARK_WIDTH / (points.length - 1);
-  const path = values
-    .map((value, index) => {
-      const x = index * step;
-      const y = SPARK_HEIGHT - (value / max) * SPARK_HEIGHT;
-      return `${index === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
-
   return (
-    <svg
-      viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`}
-      className="h-12 w-full max-w-sm"
-      role="img"
-      aria-label="Activity per day over the recorded window"
-    >
-      <path d={path} fill="none" stroke="currentColor" strokeWidth={2} className="text-primary" />
-    </svg>
+    <div className="max-w-sm" role="img" aria-label="Activity per day over the recorded window">
+      <TrendChart
+        data={points}
+        xKey="day"
+        size="mini"
+        series={[{ dataKey: "activityCount", label: "Activity" }]}
+      />
+    </div>
   );
 };
 

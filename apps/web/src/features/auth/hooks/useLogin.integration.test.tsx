@@ -66,7 +66,7 @@ describe("useLogin", () => {
     await waitFor(() => expect(result.current.login.isSuccess).toBe(true));
     expect(result.current.auth.isAuthenticated).toBe(true);
     expect(result.current.auth.state.user).toMatchObject({ id: customerUser.id });
-    expect(replace).toHaveBeenCalledWith("/profile");
+    expect(replace).toHaveBeenCalledWith("/overview");
   });
 
   it("redirects to a safe ?redirect= target when present", async () => {
@@ -195,7 +195,7 @@ describe("useLogin", () => {
 
     await waitFor(() => expect(result.current.login.isSuccess).toBe(true));
     expect(locationReplace).not.toHaveBeenCalled();
-    expect(replace).toHaveBeenCalledWith("/profile");
+    expect(replace).toHaveBeenCalledWith("/overview");
     expect(result.current.auth.isAuthenticated).toBe(true);
 
     Object.defineProperty(window, "location", { configurable: true, value: originalLocation });

@@ -1,6 +1,8 @@
 import { apiClient } from "@/lib/apiClient";
 
 import {
+  type PlatformActivityTrendPoint,
+  platformActivityTrendSchema,
   type PlatformOverview,
   platformOverviewSchema,
   type TenantMetricDetail,
@@ -16,6 +18,13 @@ export const platformMetricsApi = {
   async getOverview(): Promise<PlatformOverview> {
     const res = await apiClient.get<PlatformOverview>("/platform/metrics/overview");
     return platformOverviewSchema.parse(res.data);
+  },
+
+  async getActivityTrend(): Promise<PlatformActivityTrendPoint[]> {
+    const res = await apiClient.get<PlatformActivityTrendPoint[]>(
+      "/platform/metrics/activity-trend",
+    );
+    return platformActivityTrendSchema.parse(res.data);
   },
 
   async listTenants(params: ListParams = {}): Promise<TenantMetricListPage> {

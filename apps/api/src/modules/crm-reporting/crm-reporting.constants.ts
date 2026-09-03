@@ -2,6 +2,8 @@ export const MIN_SEARCH_QUERY_LENGTH = 2;
 export const MAX_SEARCH_QUERY_LENGTH = 100;
 export const SEARCH_RESULTS_PER_TYPE = 5;
 
+export const ACTIVITY_TREND_WINDOW_DAYS = 30;
+
 export const CRM_SEARCH_ENTITY = {
   PARTNER: "partner",
   CUSTOMER: "customer",

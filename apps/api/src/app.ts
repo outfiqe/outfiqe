@@ -20,6 +20,7 @@ import { badgeRoutes } from "./modules/badges/badge.routes.js";
 import { bankAccountRoutes } from "./modules/bank-accounts/bankAccount.routes.js";
 import { brandApplicationRoutes } from "./modules/brand-applications/brandApplication.routes.js";
 import { brandBankAccountRoutes } from "./modules/brand-bank-accounts/brandBankAccount.routes.js";
+import { brandOverviewRoutes } from "./modules/brand-overview/brand-overview.routes.js";
 import { brandPayoutRoutes } from "./modules/brand-payouts/brandPayout.routes.js";
 import { brandRoutes } from "./modules/brands/brand.routes.js";
 import { cartRoutes } from "./modules/cart/cart.routes.js";
@@ -33,6 +34,7 @@ import { creatorCompetitionRoutes } from "./modules/creator-competitions/creator
 import { creatorLeaderboardRoutes } from "./modules/creator-leaderboard/creatorLeaderboard.routes.js";
 import { creatorLinkRoutes } from "./modules/creator-links/creatorLink.routes.js";
 import { creatorLookRoutes } from "./modules/creator-looks/creatorLook.routes.js";
+import { creatorOverviewRoutes } from "./modules/creator-overview/creator-overview.routes.js";
 import { creatorRoutes } from "./modules/creators/creator.routes.js";
 import { crmAccessRoutes } from "./modules/crm-access/crm-access.routes.js";
 import { crmActivitiesRoutes } from "./modules/crm-activities/crm-activities.routes.js";
@@ -159,7 +161,9 @@ export const createApp = () => {
   app.use("/api/webhooks/facebook", facebookWebhookRoutes);
   app.use("/api/brand-applications", brandApplicationRoutes);
   app.use("/api/brands", brandRoutes);
+  app.use("/api/brands", brandOverviewRoutes);
   app.use("/api/creators", creatorRoutes);
+  app.use("/api/creators", creatorOverviewRoutes);
   app.use("/api/admin/invites", adminInviteRoutes);
   app.use("/api/products", productRoutes);
   app.use("/api/products/:productId/reviews", productReviewRoutes);

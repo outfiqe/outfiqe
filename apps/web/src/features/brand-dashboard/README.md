@@ -2,15 +2,17 @@
 
 ## Purpose
 
-The signed-in brand owner's workspace: manage the brand profile, list/create/edit/delete products, manage stock, and view orders containing the brand's items. Four pages — `/profile`, `/products`, `/manage-orders`, `/wallet` — one per concern, each its own `DashboardSidebar` nav item, sharing the same sidebar layout via the `(dashboard)` route group. `/manage-orders` (not `/orders`) since the top-level `/orders` route is already the buyer's own purchase-history page.
+The signed-in brand owner's workspace: an at-a-glance overview, plus manage the brand profile, list/create/edit/delete products, manage stock, and view orders containing the brand's items. Five pages — `/overview`, `/profile`, `/products`, `/manage-orders`, `/wallet` — one per concern, each its own `DashboardSidebar` nav item, sharing the same sidebar layout via the `(dashboard)` route group. `/overview` is the post-login landing (see `features/auth/utils/getDefaultRoute.ts`); `/manage-orders` (not `/orders`) since the top-level `/orders` route is already the buyer's own purchase-history page.
 
 ## Structure
 
+- `components/BrandOverview.tsx` — the `/overview` landing. Three bands: a `StatCard` KPI row (revenue last-30-days with a delta / lifetime, available & pending payout, product count, low-stock count, unfulfilled-item count), an `<ChartCard>`+`<TrendChart>` area chart of revenue per day over 30 days, and the five most recent order items via `BrandOrderRow` (with a "View all" link to `/manage-orders`). `api/brandOverviewApi.ts`/`brandOverviewSchemas.ts` (reusing `brandOrderItemSchema`) and `hooks/useBrandOverview.ts` mirror the other API/hook pairs; the page is one `GET /brands/me/overview` call.
+- `components/BrandOrderRow.tsx` — one order-item row (thumbnail, product/size/qty/price, order id/date, payment + fulfilment status pills). Extracted from `OrdersSection` so `BrandOverview` renders identical rows without duplicating the status-label/colour maps.
 - `components/BrandProfileView.tsx` — the profile page: banner/avatar/contact info and the edit modal only.
 - `components/ProductsSection.tsx` / `ProductModal.tsx` / `EditProductModal.tsx` + `EditProductForm.tsx` / `SizeStockFields.tsx` / `StockModal.tsx` / `ProductActionsMenu.tsx` — the products page: listing, the "Add a product" form, the edit form (same fields, pre-filled), the restock modal, and the per-card 3-dot menu (Edit / Manage stock / Delete).
 - `components/ProductModal.constants.ts` — `PRODUCT_PHOTO_ASPECT` (1:1, matching the square product-grid thumbnails), `PRODUCT_CROP_BOX_STYLE`, `DEFAULT_IMAGE_MIME_TYPE` — the product-specific parameters fed into the shared photo-crop pieces below.
 - Both product forms render their photo side through `@/shared/components/MediaFormShell` + `PhotoCropPane` + `@/shared/hooks/usePendingPhotos` — the same fixed-photo-pane / scrollable-fields / sticky-footer chrome and single-active-photo crop editor as `creator-dashboard`'s `PostModal`. See that feature's README and the rationale below for what's shared vs. product-specific.
-- `components/OrdersSection.tsx` — read-only list of orders containing this brand's items, its own page (`/manage-orders`).
+- `components/OrdersSection.tsx` — read-only, paginated list of orders containing this brand's items, its own page (`/manage-orders`). Renders each row via `BrandOrderRow`.
 - `components/WalletSummaryTiles.tsx` — the settlement-ledger breakdown (total sales, pending,
   available, withdrawn) shown at the top of `/wallet`, mirroring
   `creator-dashboard/EarningsSummaryTiles.tsx`. The wallet page's bank-account management and
@@ -29,6 +31,14 @@ The signed-in brand owner's workspace: manage the brand profile, list/create/edi
 Photos: both forms hold their photos in `usePendingPhotos` (create seeds it empty; edit seeds it from `product.imageUrls`) and only resolve real URLs at submit time, via the shared `resolvePendingPhotoUrls` — it crops+uploads whichever entries have a local `File` and passes already-hosted entries (edit's existing photos) straight through, then both forms send the resulting `imageUrls` list alongside the rest of the field values in the same `create`/`update` mutation call.
 
 ## Non-obvious rationale
+
+**`/overview` "Revenue" is gross merchandise value, not payout.** The KPI and trend sum
+`qty * unit_price` on the brand's order items where the order is paid (`PAID` or COD `DUE`) and
+not cancelled — the same "real sale" filter `products` uses for card social proof. The brand's
+actual settlement figures are the separate "available payout" / "pending payout" KPIs, sourced
+from `brandPayoutService` (net of platform commission and gateway fees). Showing both on one
+screen is intentional: gross sales and net payout answer different questions. See
+`apps/api/src/modules/brand-overview/README.md`.
 
 **Sizes are picked, not typed.** Neither form lets a brand type a size label — it fetches that product type's admin-defined size list and the brand checks off which ones apply, entering a stock count for each.
 

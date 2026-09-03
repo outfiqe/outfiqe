@@ -3,6 +3,7 @@ export { getCreatorProfileServer } from "./api/getCreatorProfileServer";
 export { ApplyAsCreatorButton } from "./components/ApplyAsCreatorButton";
 export { BadgeCollectionSection } from "./components/BadgeCollectionSection";
 export { ChallengesSection } from "./components/ChallengesSection";
+export { CreatorOverview } from "./components/CreatorOverview";
 export { CreatorStatusGate } from "./components/CreatorStatusGate";
 export { EarningsSection } from "./components/EarningsSection";
 export { EditPostModal } from "./components/EditPostModal";

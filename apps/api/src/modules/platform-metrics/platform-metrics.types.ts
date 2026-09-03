@@ -47,6 +47,14 @@ export type TenantSparklinePoint = {
   activeMemberCount: number;
 };
 
+export type PlatformActivityTrendPoint = {
+  date: string;
+  activityCount: number;
+  dealCount: number;
+  ticketCount: number;
+  contactCount: number;
+};
+
 export type TenantMetricDetail = TenantMetricRow & {
   partnerCount: number;
   customerCount: number;
