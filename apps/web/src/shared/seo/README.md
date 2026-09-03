@@ -60,6 +60,14 @@ nodes. `app/sitemap.ts` → `routes.ts` (static) + `sitemapSources.ts` (dynamic)
 - **`sitemapSources` uses `fetch` with `next.revalidate`, not the app's `serverApiRequest`.** That
   helper forces `cache: "no-store"`, which is right for personalised page data but wrong for a
   sitemap that should be cached and rebuilt on an interval.
+- **Site-wide indexing is gated by the `SEO_INDEXABLE` env var, enforced in `next.config.ts`.**
+  Unless `SEO_INDEXABLE=true`, every response carries an `X-Robots-Tag: noindex, nofollow` header,
+  which Google honours identically to the `<meta robots>` tag and covers every route (pages,
+  `sitemap.xml`, `robots.txt`, images), not just pages built through `buildPageMetadata`. Set it to
+  `true` only on the production environment at launch; preview and staging deployments leave it
+  unset so their URLs never enter search results. While it is unset, `buildPageMetadata` still
+  emits a per-page `index` directive — the header's `noindex` is the more restrictive signal and
+  wins, so the site stays out of the index.
 
 ## Follow-ups
 
