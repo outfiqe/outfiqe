@@ -106,4 +106,120 @@ describe("ProductTypesPage", () => {
       "/size-options",
     );
   });
+
+  it("shows an empty state when there are no garment types", async () => {
+    mswServer.use(http.get(`${API_BASE}/product-types/admin`, () => okJson([])));
+
+    renderPage();
+
+    expect(await screen.findByText("No garment types yet.")).toBeInTheDocument();
+  });
+
+  it("creates a garment type from the form, auto-filling the slug, then clears it", async () => {
+    let createBody: unknown;
+    mswServer.use(
+      http.get(`${API_BASE}/product-types/admin`, () => okJson([])),
+      http.post(`${API_BASE}/product-types`, async ({ request }) => {
+        createBody = await request.json();
+        return okJson(productType("id-new", "Party Wear", 0));
+      }),
+    );
+
+    renderPage();
+    const user = userEvent.setup();
+
+    const nameField = await screen.findByLabelText("Name");
+    await user.type(nameField, "Party Wear");
+    expect(await screen.findByLabelText("Slug")).toHaveValue("party-wear");
+
+    await user.click(screen.getByRole("button", { name: "Create type" }));
+
+    await waitFor(() => expect(createBody).toEqual({ label: "Party Wear", slug: "party-wear" }));
+    await waitFor(() => expect(nameField).toHaveValue(""));
+  });
+
+  it("keeps a hand-edited slug when the name changes afterwards", async () => {
+    mswServer.use(http.get(`${API_BASE}/product-types/admin`, () => okJson([])));
+
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.type(await screen.findByLabelText("Slug"), "customslug");
+    await user.type(screen.getByLabelText("Name"), "Totally Different");
+
+    expect(screen.getByLabelText("Slug")).toHaveValue("customslug");
+  });
+
+  it("surfaces a server error when the create fails", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/product-types/admin`, () => okJson([])),
+      http.post(`${API_BASE}/product-types`, () =>
+        HttpResponse.json(
+          { success: false, message: "That slug is already taken." },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.type(await screen.findByLabelText("Name"), "Shoes");
+    await user.click(screen.getByRole("button", { name: "Create type" }));
+
+    expect(await screen.findByText("That slug is already taken.")).toBeInTheDocument();
+  });
+
+  it("reorders with the arrow buttons", async () => {
+    let reorderBody: unknown;
+    mswServer.use(
+      http.get(`${API_BASE}/product-types/admin`, () =>
+        okJson([productType("id-a", "Alpha", 0), productType("id-b", "Beta", 1)]),
+      ),
+      http.post(`${API_BASE}/product-types/reorder`, async ({ request }) => {
+        reorderBody = await request.json();
+        return okJson(null);
+      }),
+    );
+
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Move Beta up" }));
+
+    await waitFor(() => expect(reorderBody).toEqual({ orderedIds: ["id-b", "id-a"] }));
+  });
+
+  it("rolls the list back to its original order when a reorder request fails", async () => {
+    const rows = [productType("id-a", "Alpha", 0), productType("id-b", "Beta", 1)];
+    mswServer.use(
+      http.get(`${API_BASE}/product-types/admin`, () => okJson(rows)),
+      http.post(`${API_BASE}/product-types/reorder`, () =>
+        HttpResponse.json({ success: false, message: "nope" }, { status: 500 }),
+      ),
+    );
+
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Move Alpha down" }));
+
+    await waitFor(() => {
+      const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
+      expect(headings).toEqual(["Alpha", "Beta"]);
+    });
+  });
+
+  it("shows a loading line before the list arrives", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/product-types/admin`, async () => {
+        await new Promise((resolve) => setTimeout(resolve, 40));
+        return okJson([]);
+      }),
+    );
+
+    renderPage();
+
+    expect(await screen.findByText("Loading…")).toBeInTheDocument();
+  });
 });

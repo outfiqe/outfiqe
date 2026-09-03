@@ -6,7 +6,7 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
@@ -125,5 +125,139 @@ describe("ContactsPage", () => {
     await userEvent.selectOptions(screen.getByLabelText("Filter by lifecycle stage"), "CUSTOMER");
 
     await waitFor(() => expect(seenStages).toContain("CUSTOMER"));
+  });
+
+  it("passes the debounced search term to the API", async () => {
+    mockOrganization();
+    const seenQueries: (string | null)[] = [];
+    mswServer.use(
+      http.get(`${API_BASE}/crm/contacts`, ({ request }) => {
+        seenQueries.push(new URL(request.url).searchParams.get("q"));
+        return HttpResponse.json({
+          success: true,
+          data: { items: [contactRow()], total: 1, hasMore: false },
+        });
+      }),
+    );
+
+    renderContactsPage();
+    await screen.findByText("Anisha Gurung");
+
+    await userEvent.type(screen.getByPlaceholderText("Search contacts"), "anisha");
+
+    await waitFor(() => expect(seenQueries).toContain("anisha"));
+  });
+
+  it("tells the user when filters match nothing", async () => {
+    mockOrganization();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/contacts`, () =>
+        HttpResponse.json({ success: true, data: { items: [], total: 0, hasMore: false } }),
+      ),
+    );
+
+    renderContactsPage();
+
+    await userEvent.selectOptions(
+      await screen.findByLabelText("Filter by lifecycle stage"),
+      "PARTNER",
+    );
+
+    expect(await screen.findByText("No contacts match your filters.")).toBeInTheDocument();
+  });
+
+  it("opens the create modal from the New contact button", async () => {
+    mockOrganization();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/contacts`, () =>
+        HttpResponse.json({
+          success: true,
+          data: { items: [contactRow()], total: 1, hasMore: false },
+        }),
+      ),
+    );
+
+    renderContactsPage();
+    await screen.findByText("Anisha Gurung");
+
+    await userEvent.click(screen.getByRole("button", { name: "New contact" }));
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("opens the edit modal when a contact name is clicked", async () => {
+    mockOrganization();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/contacts`, () =>
+        HttpResponse.json({
+          success: true,
+          data: { items: [contactRow()], total: 1, hasMore: false },
+        }),
+      ),
+    );
+
+    renderContactsPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Anisha Gurung" }));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByDisplayValue("Anisha Gurung")).toBeInTheDocument();
+  });
+
+  it("deletes a contact and shows the error banner when the delete fails", async () => {
+    mockOrganization();
+    let attempts = 0;
+    mswServer.use(
+      http.get(`${API_BASE}/crm/contacts`, () =>
+        HttpResponse.json({
+          success: true,
+          data: { items: [contactRow()], total: 1, hasMore: false },
+        }),
+      ),
+      http.delete(`${API_BASE}/crm/contacts/c-1`, () => {
+        attempts += 1;
+        return HttpResponse.json(
+          { success: false, message: "Cannot delete this contact." },
+          { status: 409 },
+        );
+      }),
+    );
+
+    renderContactsPage();
+    await screen.findByText("Anisha Gurung");
+
+    await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    expect(await screen.findByText("Cannot delete this contact.")).toBeInTheDocument();
+    expect(attempts).toBe(1);
+  });
+
+  it("pages forward and back through the results", async () => {
+    mockOrganization();
+    const seenPages: (string | null)[] = [];
+    mswServer.use(
+      http.get(`${API_BASE}/crm/contacts`, ({ request }) => {
+        const page = new URL(request.url).searchParams.get("page");
+        seenPages.push(page);
+        return HttpResponse.json({
+          success: true,
+          data: {
+            items: [contactRow({ name: page === "2" ? "Page Two Person" : "Anisha Gurung" })],
+            total: 40,
+            hasMore: page !== "2",
+          },
+        });
+      }),
+    );
+
+    renderContactsPage();
+    await screen.findByText("Anisha Gurung");
+
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(await screen.findByText("Page Two Person")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+    expect(await screen.findByText("Anisha Gurung")).toBeInTheDocument();
+    expect(seenPages).toContain("2");
   });
 });
