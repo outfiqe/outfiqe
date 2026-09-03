@@ -90,6 +90,7 @@ export default defineConfig({
         "src/features/bank-accounts/components/AddBankAccountModal.tsx",
         "src/features/withdraw/components/WithdrawRequestForm.tsx",
         "src/features/withdraw/components/WithdrawRequestStatusBadge.tsx",
+        "src/features/withdraw/components/WithdrawSectionSkeleton.tsx",
         "src/features/chat-settings/ChatAvailabilitySettings.tsx",
         "src/shared/lib/chatApi.ts",
         "src/features/messaging/ConversationList.tsx",
