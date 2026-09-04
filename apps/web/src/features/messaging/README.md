@@ -26,9 +26,14 @@ that launch a conversation. Everything here is gated by Phase 1's `chatService
   components as the panel rather than duplicating them. Both routes wrap it in the same chrome as
   the rest of the signed-in account area — `SiteHeader` plus `DashboardMobileNavBar`, no
   `SiteFooter` — since `/messages` is reached from the dashboard, not the storefront. Its outer
-  height is `100vh` minus fixed reserves for the sticky header and, below `lg`, the bottom nav's
-  footprint (the hub button sits ~6.5rem above the viewport edge); the `lg` reserve is smaller
-  because the bottom nav is hidden there.
+  height is `100dvh` minus a plain, hardcoded `rem` reserve for the sticky header and, below `lg`,
+  the bottom nav's footprint (the hub button sits ~6.5rem above the viewport edge); the `lg` reserve
+  is smaller because the bottom nav is hidden there. Deliberately a plain constant, not
+  `var(--site-header-height)` (the CSS var `HeaderBar` publishes, used elsewhere by `MobileNav.tsx`)
+  — combining that `var(--x,fallback)` syntax with a responsive prefix (`sm:h-[calc(...)]`) broke
+  Tailwind's class generation for the whole string, silently dropping every other class on the
+  element (`sm:my-6`, `sm:rounded-2xl`, `sm:border`, `lg:h-[...]` all failed to apply). The bare var
+  works fine unprefixed (`MobileNav.tsx`'s usage); avoid pairing it with a breakpoint variant.
 - `ConversationList.tsx` — takes `onSelect`/`activeConversationId` as props rather than reading
   `useChatPanel()` itself, so both the panel and the full page can drive it differently (panel
   switches its internal view; the full page navigates).
