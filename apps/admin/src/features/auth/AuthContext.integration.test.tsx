@@ -231,4 +231,24 @@ describe("AuthProvider session actions", () => {
     expect(await screen.findByText("status:signed-in")).toBeInTheDocument();
     expect(screen.getByText("name:Set Directly")).toBeInTheDocument();
   });
+
+  it("leaves a signed-out state untouched when updateUser is called", async () => {
+    mockSessionFor("CUSTOMER");
+    renderSessionActions();
+    expect(await screen.findByText("status:signed-out")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "rename" }));
+
+    expect(screen.getByText("status:signed-out")).toBeInTheDocument();
+  });
+});
+
+describe("useAuth", () => {
+  it("throws when used outside an AuthProvider", () => {
+    const Consumer = () => {
+      useAuth();
+      return null;
+    };
+    expect(() => render(<Consumer />)).toThrow("useAuth must be used within AuthProvider");
+  });
 });

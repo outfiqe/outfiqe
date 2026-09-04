@@ -83,6 +83,17 @@ describe("productSchema", () => {
     expect(rating.ratingValue).toBe(4.6);
     expect(rating.reviewCount).toBe(12);
   });
+
+  it("drops aggregateRating when a rating exists but the review count is zero or missing", () => {
+    expect(productSchema({ ...base, ratingValue: 4.6, reviewCount: 0 })).not.toHaveProperty(
+      "aggregateRating",
+    );
+    expect(productSchema({ ...base, ratingValue: 4.6 })).not.toHaveProperty("aggregateRating");
+  });
+
+  it("omits the image array when the product has no image", () => {
+    expect(productSchema({ ...base, image: null })).not.toHaveProperty("image");
+  });
 });
 
 describe("itemListSchema", () => {
@@ -93,6 +104,16 @@ describe("itemListSchema", () => {
     ]);
     expect(node.numberOfItems).toBe(2);
     expect((node.itemListElement as Record<string, unknown>[])[1]?.position).toBe(2);
+  });
+
+  it("carries an entry image through when one is given, and omits it otherwise", () => {
+    const node = itemListSchema("Streetwear", [
+      { name: "A", path: "/product/a", image: "https://cdn.example/a.jpg" },
+      { name: "B", path: "/product/b" },
+    ]);
+    const items = node.itemListElement as Record<string, unknown>[];
+    expect(items[0]?.image).toBe("https://cdn.example/a.jpg");
+    expect(items[1]).not.toHaveProperty("image");
   });
 });
 
@@ -113,11 +134,38 @@ describe("collectionPageSchema / brandStoreSchema / profilePageSchema", () => {
     expect(String(node.url)).toMatch(/\/brand\/x$/);
   });
 
+  it("brandStoreSchema adds a logo only when an image is supplied", () => {
+    expect(
+      brandStoreSchema({ name: "Kastha", description: "d", path: "/brand/x" }),
+    ).not.toHaveProperty("logo");
+    const withLogo = brandStoreSchema({
+      name: "Kastha",
+      description: "d",
+      path: "/brand/x",
+      image: "https://cdn.example/logo.png",
+    });
+    expect(withLogo.logo).toBe("https://cdn.example/logo.png");
+  });
+
   it("profilePageSchema wraps a Person with an @handle alternateName", () => {
     const node = profilePageSchema({ name: "Sabin", handle: "sabin", path: "/creator/sabin" });
     const person = node.mainEntity as Record<string, unknown>;
     expect(person["@type"]).toBe("Person");
     expect(person.alternateName).toBe("@sabin");
+  });
+
+  it("profilePageSchema adds the person image only when supplied", () => {
+    const plain = profilePageSchema({ name: "Sabin", handle: "sabin", path: "/creator/sabin" });
+    expect(plain.mainEntity).not.toHaveProperty("image");
+    const withImage = profilePageSchema({
+      name: "Sabin",
+      handle: "sabin",
+      path: "/creator/sabin",
+      image: "https://cdn.example/avatar.png",
+    });
+    expect((withImage.mainEntity as Record<string, unknown>).image).toBe(
+      "https://cdn.example/avatar.png",
+    );
   });
 });
 

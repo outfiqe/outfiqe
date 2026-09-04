@@ -6,10 +6,23 @@ import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 
+import { HeicConversionError } from "@/shared/lib/heicImage";
+
 import type { CreatorLookEditDetail } from "../api/creatorLooksSchemas";
 import { EditPostForm } from "./EditPostForm";
 
 const getCroppedImageFile = vi.fn();
+const isHeicImage = vi.fn<(file: File) => boolean>(() => false);
+const toUploadableImage = vi.fn<(file: File) => Promise<File>>();
+
+vi.mock("@/shared/lib/heicImage", async (importOriginal) => {
+  const actual = (await importOriginal()) as Record<string, unknown>;
+  return {
+    ...actual,
+    isHeicImage: (file: File) => isHeicImage(file),
+    toUploadableImage: (file: File) => toUploadableImage(file),
+  };
+});
 
 vi.mock("@outfiqe/design-system", async (importOriginal) => {
   const actual = await importOriginal<typeof DesignSystemModule>();
@@ -205,6 +218,34 @@ describe("EditPostForm", () => {
 
     expect(screen.getByText("Crop surface")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Use photo" })).toBeInTheDocument();
+  });
+
+  it("converts a HEIC photo before staging it", async () => {
+    isHeicImage.mockReturnValueOnce(true);
+    toUploadableImage.mockResolvedValueOnce(buildImageFile("converted.jpg"));
+    const user = userEvent.setup();
+    const { container } = renderForm(buildDetail());
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+
+    await user.upload(fileInput, buildImageFile("photo.heic"));
+
+    expect(toUploadableImage).toHaveBeenCalled();
+    expect(await screen.findByText("Crop surface")).toBeInTheDocument();
+  });
+
+  it("shows an error and stages nothing when HEIC conversion fails", async () => {
+    isHeicImage.mockReturnValueOnce(true);
+    toUploadableImage.mockRejectedValueOnce(new HeicConversionError("Could not read that image."));
+    const user = userEvent.setup();
+    const { container } = renderForm(buildDetail());
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+
+    await user.upload(fileInput, buildImageFile("photo.heic"));
+
+    await waitFor(() => expect(toUploadableImage).toHaveBeenCalled());
+    await waitFor(() => expect(container.querySelector("p.text-destructive")).toBeInTheDocument());
+    expect(screen.queryByText("Crop surface")).not.toBeInTheDocument();
+    expect(screen.getByText("1/6 photos")).toBeInTheDocument();
   });
 
   it("adds the staged photo to the count once confirmed", async () => {
