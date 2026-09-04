@@ -20,6 +20,7 @@ import {
   BUILT_IN_ROLE_PERMISSIONS,
   PERMISSION_CATALOG,
 } from "./crm-access.constants.js";
+import { crmAccessRepository } from "./crm-access.repository.js";
 
 const createStaffUser = async (name: string) => {
   const slug = name.toLowerCase().replace(/\s+/g, "-");
@@ -679,6 +680,32 @@ describe("CRM invites", () => {
     });
     expect(membership.roleId).toBe(memberRole.id);
     expect(membership.status).toBe("ACTIVE");
+  });
+
+  it("retrying acceptInvite for an already-granted membership returns it instead of failing", async () => {
+    const { organization, memberRole } = await seedOrganization();
+    const invitee = await createStaffUser("Retried Acceptor");
+    const rawToken = generateOpaqueToken();
+    const invite = await prisma.organizationInvite.create({
+      data: {
+        organizationId: organization.id,
+        email: invitee.email,
+        roleId: memberRole.id,
+        tokenHash: hashToken(rawToken),
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        invitedById: invitee.id,
+      },
+    });
+
+    const firstAttempt = await crmAccessRepository.acceptInvite(invite, invitee.id);
+    const retriedAttempt = await crmAccessRepository.acceptInvite(invite, invitee.id);
+
+    expect(retriedAttempt.id).toBe(firstAttempt.id);
+    expect(
+      await prisma.membership.count({
+        where: { userId: invitee.id, organizationId: organization.id },
+      }),
+    ).toBe(1);
   });
 
   it("rejects an already-accepted invite token", async () => {

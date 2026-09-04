@@ -1,11 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { Prisma } from "#generated/prisma/client.js";
 
 import {
+  isDeadlockError,
   isForeignKeyConstraintError,
   isTransactionConflictError,
   isUniqueConstraintError,
+  runWithDeadlockRetry,
   uniqueConstraintTargetIncludes,
 } from "./prisma.utils.js";
 
@@ -25,6 +27,18 @@ const buildDriverAdapterUniqueError = (fields: string[], originalMessage: string
         kind: "UniqueConstraintViolation",
         originalMessage,
         constraint: { fields },
+      },
+    },
+  });
+
+const buildDriverAdapterDeadlockError = () =>
+  buildPrismaError("P2039", {
+    driverAdapterError: {
+      name: "DriverAdapterError",
+      cause: {
+        kind: "postgres",
+        originalCode: "40P01",
+        originalMessage: "deadlock detected",
       },
     },
   });
@@ -59,6 +73,64 @@ describe("isTransactionConflictError", () => {
   it("is false for a different Prisma error code and for non-Prisma errors", () => {
     expect(isTransactionConflictError(buildPrismaError("P2002"))).toBe(false);
     expect(isTransactionConflictError(new Error("boom"))).toBe(false);
+  });
+});
+
+describe("isDeadlockError", () => {
+  it("is true for a raw Postgres deadlock wrapped as P2039", () => {
+    expect(isDeadlockError(buildDriverAdapterDeadlockError())).toBe(true);
+  });
+
+  it("is true for a P2034 write-conflict error", () => {
+    expect(isDeadlockError(buildPrismaError("P2034"))).toBe(true);
+  });
+
+  it("is false for a P2039 error from a different underlying cause", () => {
+    expect(
+      isDeadlockError(
+        buildPrismaError("P2039", {
+          driverAdapterError: { cause: { originalCode: "57014", originalMessage: "timeout" } },
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("is false for a different Prisma error code and for non-Prisma errors", () => {
+    expect(isDeadlockError(buildPrismaError("P2002"))).toBe(false);
+    expect(isDeadlockError(new Error("boom"))).toBe(false);
+  });
+});
+
+describe("runWithDeadlockRetry", () => {
+  it("returns the result on the first success without retrying", async () => {
+    const operation = vi.fn().mockResolvedValue("ok");
+
+    await expect(runWithDeadlockRetry(operation)).resolves.toBe("ok");
+    expect(operation).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries after a deadlock and returns the eventual success", async () => {
+    const operation = vi
+      .fn()
+      .mockRejectedValueOnce(buildDriverAdapterDeadlockError())
+      .mockResolvedValueOnce("ok");
+
+    await expect(runWithDeadlockRetry(operation)).resolves.toBe("ok");
+    expect(operation).toHaveBeenCalledTimes(2);
+  });
+
+  it("gives up and rethrows after exhausting retries on repeated deadlocks", async () => {
+    const operation = vi.fn().mockRejectedValue(buildDriverAdapterDeadlockError());
+
+    await expect(runWithDeadlockRetry(operation)).rejects.toThrow();
+    expect(operation).toHaveBeenCalledTimes(3);
+  });
+
+  it("rethrows immediately for a non-deadlock error without retrying", async () => {
+    const operation = vi.fn().mockRejectedValue(buildPrismaError("P2002"));
+
+    await expect(runWithDeadlockRetry(operation)).rejects.toThrow();
+    expect(operation).toHaveBeenCalledTimes(1);
   });
 });
 

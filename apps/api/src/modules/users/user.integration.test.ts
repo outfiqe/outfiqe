@@ -28,6 +28,14 @@ const createUserWithAccessToken = async (overrides: { phone?: string | null } = 
   return { user, accessToken };
 };
 
+const createAdminToken = async () => {
+  const { user } = await createUserWithAccessToken();
+  await prisma.user.update({ where: { id: user.id }, data: { role: UserRole.ADMIN } });
+  await ensurePlatformOrganizationExists();
+  await crmAccessService.grantPlatformStaffMembership(user.id);
+  return generateToken({ sub: user.id, role: UserRole.ADMIN });
+};
+
 describe("PATCH /api/users/me", () => {
   it("requires authentication", async () => {
     const response = await request(testApp).patch("/api/users/me").send({ name: "New Name" });
@@ -89,14 +97,6 @@ describe("PATCH /api/users/me", () => {
 });
 
 describe("GET /api/users/search (admin)", () => {
-  const createAdminToken = async () => {
-    const { user } = await createUserWithAccessToken();
-    await prisma.user.update({ where: { id: user.id }, data: { role: UserRole.ADMIN } });
-    await ensurePlatformOrganizationExists();
-    await crmAccessService.grantPlatformStaffMembership(user.id);
-    return generateToken({ sub: user.id, role: UserRole.ADMIN });
-  };
-
   it("finds users by a fragment of their name or handle", async () => {
     const adminToken = await createAdminToken();
     const marker = randomUUID().slice(0, 6);
@@ -142,5 +142,128 @@ describe("GET /api/users/search (admin)", () => {
       .set("Authorization", `Bearer ${accessToken}`);
 
     expect(response.status).toBe(403);
+  });
+});
+
+describe("POST /api/users (admin)", () => {
+  const buildCreateBody = () => {
+    const suffix = randomUUID().slice(0, 8);
+    return {
+      email: `created-${suffix}@outfiqe.test`,
+      name: "Newly Created",
+      phone: uniquePhone(),
+      password: "correct-horse-battery",
+    };
+  };
+
+  it("requires authentication", async () => {
+    const response = await request(testApp).post("/api/users").send(buildCreateBody());
+
+    expect(response.status).toBe(401);
+  });
+
+  it("requires an admin", async () => {
+    const { accessToken } = await createUserWithAccessToken();
+
+    const response = await request(testApp)
+      .post("/api/users")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send(buildCreateBody());
+
+    expect(response.status).toBe(403);
+  });
+
+  it("creates a user and never leaks the password hash", async () => {
+    const adminToken = await createAdminToken();
+    const body = buildCreateBody();
+
+    const response = await request(testApp)
+      .post("/api/users")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send(body);
+
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({ email: body.email, name: body.name });
+    expect(response.body.data).not.toHaveProperty("passwordHash");
+
+    const stored = await prisma.user.findUniqueOrThrow({ where: { email: body.email } });
+    expect(stored.phone).toBe(body.phone);
+  });
+
+  it("rejects a duplicate email", async () => {
+    const adminToken = await createAdminToken();
+    const body = buildCreateBody();
+
+    await request(testApp)
+      .post("/api/users")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send(body);
+
+    const response = await request(testApp)
+      .post("/api/users")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ ...body, phone: uniquePhone() });
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("USER_EXISTS");
+  });
+});
+
+describe("GET /api/users/:id (admin)", () => {
+  it("requires an admin", async () => {
+    const { user, accessToken } = await createUserWithAccessToken();
+
+    const response = await request(testApp)
+      .get(`/api/users/${user.id}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(403);
+  });
+
+  it("returns the user for a valid id", async () => {
+    const adminToken = await createAdminToken();
+    const { user } = await createUserWithAccessToken();
+
+    const response = await request(testApp)
+      .get(`/api/users/${user.id}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({ id: user.id, email: user.email });
+  });
+
+  it("returns 404 for an id that doesn't exist", async () => {
+    const adminToken = await createAdminToken();
+
+    const response = await request(testApp)
+      .get(`/api/users/${randomUUID()}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+
+    expect(response.status).toBe(404);
+    expect(response.body.code).toBe("USER_NOT_FOUND");
+  });
+});
+
+describe("GET /api/users (admin)", () => {
+  it("requires an admin", async () => {
+    const { accessToken } = await createUserWithAccessToken();
+
+    const response = await request(testApp)
+      .get("/api/users")
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(403);
+  });
+
+  it("lists users, including one just created", async () => {
+    const adminToken = await createAdminToken();
+    const { user } = await createUserWithAccessToken();
+
+    const response = await request(testApp)
+      .get("/api/users")
+      .set("Authorization", `Bearer ${adminToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.map((entry: { id: string }) => entry.id)).toContain(user.id);
   });
 });

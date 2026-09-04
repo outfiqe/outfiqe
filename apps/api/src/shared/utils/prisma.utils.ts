@@ -1,4 +1,5 @@
 import { Prisma } from "#generated/prisma/client.js";
+import { computeBackoffDelayMs, waitMs } from "#lib/backoff.utils.js";
 
 export const isUniqueConstraintError = (error: unknown): boolean =>
   error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
@@ -40,3 +41,26 @@ export const isForeignKeyConstraintError = (error: unknown): boolean =>
 
 export const isTransactionConflictError = (error: unknown): boolean =>
   error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034";
+
+const POSTGRES_DEADLOCK_SQLSTATE = "40P01";
+
+export const isDeadlockError = (error: unknown): boolean => {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return false;
+  if (isTransactionConflictError(error)) return true;
+
+  const driverCause = asRecord(asRecord(error.meta)?.driverAdapterError)?.cause;
+  return asRecord(driverCause)?.originalCode === POSTGRES_DEADLOCK_SQLSTATE;
+};
+
+const DEADLOCK_RETRY_ATTEMPTS = 3;
+
+export const runWithDeadlockRetry = async <T>(operation: () => Promise<T>): Promise<T> => {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!isDeadlockError(error) || attempt >= DEADLOCK_RETRY_ATTEMPTS) throw error;
+      await waitMs(computeBackoffDelayMs(attempt));
+    }
+  }
+};
