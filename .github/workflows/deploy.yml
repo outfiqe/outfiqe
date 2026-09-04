@@ -61,6 +61,17 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max,ignore-error=true
 
+      - name: Sync compose config to the droplet
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: deploy/docker-compose.prod.yml,deploy/Caddyfile
+          target: /srv/outfiqe
+          strip_components: 1
+          overwrite: true
+
       - name: Migrate and deploy on the droplet
         uses: appleboy/ssh-action@v1
         with:

@@ -98,7 +98,8 @@ Copy `.env.prod.example` and replace every `######`. Notes:
 ## CI/CD
 
 - `ci.yml` runs on push and PRs to `main` and `dev` (lint, typecheck, unit, integration, build). The coverage gate runs on push to `main` only.
-- `deploy.yml` runs after a successful `CI` run on `main` (or manually via `workflow_dispatch`). It builds and pushes the image tagged with the commit SHA and `latest`, then over SSH: reclaims disk, checks free space, pulls, runs `prisma migrate deploy` against the direct URL, `up -d --remove-orphans`, and polls `/ready`.
+- `deploy.yml` runs after a successful `CI` run on `main` (or manually via `workflow_dispatch`). It builds and pushes the image tagged with the commit SHA and `latest`, copies `docker-compose.prod.yml` and `Caddyfile` to `/srv/outfiqe`, then over SSH: reclaims disk, checks free space, pulls, runs `prisma migrate deploy` against the direct URL, `up -d --remove-orphans`, and polls `/ready`.
+- The compose file and `Caddyfile` are shipped by the deploy, so the versions in git are the ones that run. Editing either directly on the droplet is pointless — the next deploy overwrites it. `.env.prod` is deliberately **not** copied: it holds secrets and lives only on the droplet.
 - The `production` GitHub Environment gates the deploy job. Add a required reviewer there for a one-click approval.
 - `keepalive.yml` curls `/ready` every three days so the Supabase free project does not pause.
 
