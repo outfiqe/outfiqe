@@ -146,7 +146,7 @@ describe("PATCH /api/notifications/read-all", () => {
 });
 
 describe("notification preferences", () => {
-  it("defaults every type to enabled", async () => {
+  it("defaults every type to enabled, on both channels", async () => {
     const { authHeader } = await createUserSession();
 
     const response = await request(testApp)
@@ -156,7 +156,12 @@ describe("notification preferences", () => {
     expect(response.status).toBe(200);
     const { preferences } = response.body.data;
     expect(preferences).toHaveLength(Object.keys(NotificationType).length);
-    expect(preferences.every((preference: { enabled: boolean }) => preference.enabled)).toBe(true);
+    expect(
+      preferences.every(
+        (preference: { enabled: boolean; pushEnabled: boolean }) =>
+          preference.enabled && preference.pushEnabled,
+      ),
+    ).toBe(true);
   });
 
   it("mutes and unmutes a single type", async () => {
@@ -183,5 +188,46 @@ describe("notification preferences", () => {
       where: { userId_type: { userId, type: NotificationType.LOOK_LIKED } },
     });
     expect(restored?.enabled).toBe(true);
+  });
+
+  it("turns push off for one type while leaving it in the in-app list", async () => {
+    const { userId, authHeader } = await createUserSession();
+
+    const response = await request(testApp)
+      .patch(`/api/notifications/preferences/${NotificationType.LOOK_LIKED}`)
+      .set("Authorization", authHeader)
+      .send({ pushEnabled: false });
+    expect(response.status).toBe(200);
+
+    const stored = await prisma.notificationPreference.findUnique({
+      where: { userId_type: { userId, type: NotificationType.LOOK_LIKED } },
+    });
+    expect(stored).toMatchObject({ enabled: true, pushEnabled: false });
+  });
+
+  it("changes both channels in one request", async () => {
+    const { userId, authHeader } = await createUserSession();
+
+    const response = await request(testApp)
+      .patch(`/api/notifications/preferences/${NotificationType.LOOK_LIKED}`)
+      .set("Authorization", authHeader)
+      .send({ enabled: false, pushEnabled: false });
+    expect(response.status).toBe(200);
+
+    const stored = await prisma.notificationPreference.findUnique({
+      where: { userId_type: { userId, type: NotificationType.LOOK_LIKED } },
+    });
+    expect(stored).toMatchObject({ enabled: false, pushEnabled: false });
+  });
+
+  it("rejects a request that changes neither channel", async () => {
+    const { authHeader } = await createUserSession();
+
+    const response = await request(testApp)
+      .patch(`/api/notifications/preferences/${NotificationType.LOOK_LIKED}`)
+      .set("Authorization", authHeader)
+      .send({});
+
+    expect(response.status).toBe(422);
   });
 });

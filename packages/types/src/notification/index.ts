@@ -71,4 +71,10 @@ export type NotificationPage = {
 export type NotificationPreference = {
   type: NotificationType;
   enabled: boolean;
+  pushEnabled: boolean;
+};
+
+export type NotificationChannelChanges = {
+  enabled?: boolean;
+  pushEnabled?: boolean;
 };

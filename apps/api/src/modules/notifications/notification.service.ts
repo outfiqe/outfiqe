@@ -10,6 +10,7 @@ import { getIO } from "#socket/socket.server.js";
 import { notificationRepository } from "./notification.repository.js";
 import type {
   CreateIndividualNotificationInput,
+  NotificationChannelChanges,
   NotificationFeedCursor,
   NotificationPage,
   NotificationPreferenceView,
@@ -128,11 +129,16 @@ export const notificationService = {
     const overrides = await notificationRepository.listPreferenceOverrides(userId);
     return Object.values(NotificationType).map((type) => ({
       type,
-      enabled: overrides.get(type) ?? true,
+      enabled: overrides.get(type)?.enabled ?? true,
+      pushEnabled: overrides.get(type)?.pushEnabled ?? true,
     }));
   },
 
-  async setPreference(userId: string, type: NotificationType, enabled: boolean): Promise<void> {
-    await notificationRepository.setPreference(userId, type, enabled);
+  async setPreference(
+    userId: string,
+    type: NotificationType,
+    changes: NotificationChannelChanges,
+  ): Promise<void> {
+    await notificationRepository.setPreference(userId, type, changes);
   },
 };

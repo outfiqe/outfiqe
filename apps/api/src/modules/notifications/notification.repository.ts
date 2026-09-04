@@ -9,6 +9,7 @@ import { describeError } from "#redis/redis.utils.js";
 import type {
   CreateIndividualNotificationInput,
   NotificationActorSnapshot,
+  NotificationChannelChanges,
   NotificationFeedCursor,
   NotificationMetadata,
   NotificationRecord,
@@ -329,19 +330,27 @@ export const notificationRepository = {
     return readAt;
   },
 
-  async listPreferenceOverrides(userId: string): Promise<Map<NotificationType, boolean>> {
+  async listPreferenceOverrides(
+    userId: string,
+  ): Promise<Map<NotificationType, { enabled: boolean; pushEnabled: boolean }>> {
     const rows = await prisma.notificationPreference.findMany({
       where: { userId },
-      select: { type: true, enabled: true },
+      select: { type: true, enabled: true, pushEnabled: true },
     });
-    return new Map(rows.map((row) => [row.type, row.enabled]));
+    return new Map(
+      rows.map((row) => [row.type, { enabled: row.enabled, pushEnabled: row.pushEnabled }]),
+    );
   },
 
-  async setPreference(userId: string, type: NotificationType, enabled: boolean): Promise<void> {
+  async setPreference(
+    userId: string,
+    type: NotificationType,
+    changes: NotificationChannelChanges,
+  ): Promise<void> {
     await prisma.notificationPreference.upsert({
       where: { userId_type: { userId, type } },
-      create: { userId, type, enabled },
-      update: { enabled },
+      create: { userId, type, ...changes },
+      update: changes,
     });
   },
 
