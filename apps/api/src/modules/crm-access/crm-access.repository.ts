@@ -3,6 +3,7 @@ import { addDays } from "date-fns/addDays";
 import { TENANT_ORGANIZATION_SCOPE } from "#constants/organization.constants.js";
 import { prisma } from "#db/prisma.js";
 import type { MembershipStatus } from "#generated/prisma/enums.js";
+import { runWithDeadlockRetry } from "#lib/prisma.utils.js";
 import { DEFAULT_PIPELINE_STAGES } from "#modules/crm-pipeline/crm-pipeline.constants.js";
 import type { DbClient } from "#types/db.types.js";
 
@@ -389,8 +390,10 @@ export const crmAccessRepository = {
     invite: OrganizationInviteRecord,
     acceptingUserId: string,
   ): Promise<MembershipRecord> {
-    return prisma.$transaction((tx) =>
-      crmAccessRepository.acceptInviteWithClient(invite, acceptingUserId, tx),
+    return runWithDeadlockRetry(() =>
+      prisma.$transaction((tx) =>
+        crmAccessRepository.acceptInviteWithClient(invite, acceptingUserId, tx),
+      ),
     );
   },
 
