@@ -8,5 +8,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/app/sw.ts", "src/features/pwa/constants/serviceWorker.ts"]
+  "include": ["src/app/sw.ts"]
 }

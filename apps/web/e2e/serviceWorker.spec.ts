@@ -31,6 +31,33 @@ test.describe("service worker", () => {
     expect(isControlled).toBe(true);
   });
 
+  test("knows which hosts serve uploaded images", async ({ request }) => {
+    const serviceWorkerSource = await (await request.get("/serwist/sw.js")).text();
+
+    expect(serviceWorkerSource).toContain("/uploads/");
+  });
+
+  test("leaves no api response in any cache, because they carry private data", async ({ page }) => {
+    await page.goto("/offline");
+    await waitUntilServiceWorkerControlsPage(page);
+    await page.goto("/about", { waitUntil: "load" });
+
+    await page.evaluate(() => fetch("/api/offline-probe").catch(() => undefined));
+
+    const cachedApiEntries = await page.evaluate(async () => {
+      const cacheNames = await caches.keys();
+      const everyCachedUrl = await Promise.all(
+        cacheNames.map(async (cacheName) => {
+          const cache = await caches.open(cacheName);
+          return (await cache.keys()).map((cachedRequest) => cachedRequest.url);
+        }),
+      );
+      return everyCachedUrl.flat().filter((url) => url.includes("/api/"));
+    });
+
+    expect(cachedApiEntries).toEqual([]);
+  });
+
   test("caches pages it has served so they survive losing the network", async ({ page }) => {
     await page.goto("/offline");
     await waitUntilServiceWorkerControlsPage(page);

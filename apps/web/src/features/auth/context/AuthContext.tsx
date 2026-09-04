@@ -9,6 +9,7 @@ import {
   useReducer,
 } from "react";
 
+import { clearCachedContent } from "@/features/pwa/utils/clearCachedContent";
 import { setAccessToken, setUnauthorizedHandler } from "@/shared/lib/apiClient";
 
 import { authApi } from "../api/authApi";
@@ -49,7 +50,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [state.accessToken]);
 
   useEffect(() => {
-    setUnauthorizedHandler(() => dispatch({ type: AuthActionType.AUTH_LOGOUT }));
+    setUnauthorizedHandler(() => {
+      dispatch({ type: AuthActionType.AUTH_LOGOUT });
+      void clearCachedContent();
+    });
 
     let cancelled = false;
 
@@ -85,6 +89,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await authApi.logout();
     } finally {
       dispatch({ type: AuthActionType.AUTH_LOGOUT });
+      await clearCachedContent();
     }
   };
 
