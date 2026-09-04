@@ -182,13 +182,43 @@ While the installed app is open, the number on its icon is kept in step with the
 service worker also marks the icon when a push arrives while the app is closed, so there is
 something there before the app is next opened.
 
+Once a browser has an active subscription, the bell's own settings panel gains a second column —
+each notification type can be left in the bell but turned off on the phone, or vice versa. That
+column is `showPushChannel` on the shared `NotificationBell`/`NotificationPanel`
+(`packages/components`), which `SiteNotificationBell` only turns on once `usePushSubscription`
+reports `"enabled"`. Admin, and any web session that has not turned push on, still sees the plain
+single-column preferences it always has.
+
+`e2e/pushNotification.spec.ts` delivers a real push through Chrome DevTools Protocol
+(`ServiceWorker.deliverPushMessage`) against the actual built worker, for both a well-formed
+payload and a malformed one, and checks that each one reaches the browser's own
+"no notification permission" rejection inside `showNotification` — proving the `push` listener
+fired and got that far without throwing on its own first. It cannot go further than that here:
+granting the Notifications permission through Playwright — `context.grantPermissions`,
+`Browser.grantPermissions`, and `Browser.setPermission` were all tried — never moves
+`Notification.permission` off its default in this Chromium build, so no automated test in this
+repo can watch a real notification appear. What the notification actually says is covered instead
+by `constants/pushMessage.test.ts` (unit-level, the same `parsePushMessage` the worker runs) and by
+the API's own `push.messages.test.ts` for the title/body/url/tag the server sends in the first
+place. Worth knowing if this ever needs re-verifying by hand: install the app, subscribe, and
+trigger a real notification from a running API with VAPID keys set.
+
 ## Things that are not obvious
 
 **The offline-reading allowlist is a list of what may be saved, never a list of what may not.** A
 "don't save these" list fails open: the day someone adds a query for saved addresses or payout
 details, it is written to disk because nobody remembered to add it. An allowlist fails closed — a
-new query is private until someone deliberately says otherwise. There is a test asserting an unknown
-query is not saved.
+new query is private until someone deliberately says otherwise.
+
+**The allowlist is checked again on the way back out of storage, not only on the way in.**
+`shouldPersistQuery` gates what this app ever writes, but nothing about the persistence library
+stops it from restoring and rendering _whatever happens to already be sitting_ in that IndexedDB
+key — an older build with a wider allowlist, or anything else that landed there. `restoreClient`
+in `queryPersister.ts` filters the restored queries through the same `isPersistableQueryKey` check
+before handing them back, so the guarantee holds in both directions. `e2e/offlineReading.spec.ts`
+proves both halves against a genuinely killed server: a real page render from a save-shaped seed,
+and a seed placed directly in storage — bypassing the app's own write path entirely — that still
+never reaches the screen.
 
 **The saved-data version has to be bumped by hand.** `PERSISTED_CACHE_VERSION` is what tells
 browsers to throw away everything saved. If a saved query's shape changes, bump it, or people

@@ -164,9 +164,15 @@ per-app type usage.
 **`pushEnabled` is a second channel on the same row, read only by the `push` module.** The row
 carries `enabled` (in-app) and `pushEnabled` (phone), both defaulting to true. The in-app path
 still only looks at `enabled`. The push module's `isPushMutedForType` reads `pushEnabled` so
-someone can keep a like showing in the bell but stop it buzzing their phone. The HTTP surface to
-toggle `pushEnabled` per type lands with the push settings UI; until then it is true for
-everyone, so push follows the browser permission alone.
+someone can keep a like showing in the bell but stop it buzzing their phone.
+
+`PATCH /preferences/:type` takes `enabled`, `pushEnabled`, or both in one request — at least one
+is required, enforced by a Zod `refine` rather than leaving an empty body to silently no-op.
+`GET /preferences` now returns both fields per type. `NotificationPreferencesView`
+(`packages/components`) renders the phone column only when the caller passes
+`showPushChannel={true}`, which `apps/web` does once a browser has an active push subscription —
+so admin, and any web session that hasn't turned push on yet, still sees the single in-app
+column it always has, unaffected by this.
 
 **`notification:read`/`notification:read-all` are emitted directly from `notification.service.ts`
 (`getIO().to(userRoom(...)).emit(...)`, wrapped in the same try/catch as every other socket emit

@@ -87,4 +87,10 @@ export type NotificationFeedCursor = {
 export type NotificationPreferenceView = {
   type: NotificationType;
   enabled: boolean;
+  pushEnabled: boolean;
+};
+
+export type NotificationChannelChanges = {
+  enabled?: boolean;
+  pushEnabled?: boolean;
 };

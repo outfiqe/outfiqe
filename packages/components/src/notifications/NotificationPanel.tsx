@@ -13,9 +13,14 @@ const SKELETON_ROW_COUNT = 4;
 type NotificationPanelProps = {
   notificationsApi: NotificationsApi;
   onSelect: (notification: Notification) => void;
+  showPushChannel?: boolean;
 };
 
-export const NotificationPanel = ({ notificationsApi, onSelect }: NotificationPanelProps) => {
+export const NotificationPanel = ({
+  notificationsApi,
+  onSelect,
+  showPushChannel,
+}: NotificationPanelProps) => {
   const [showPreferences, setShowPreferences] = useState(false);
   const { feedQuery, unreadCount, markRead, markAllRead } = useNotifications(notificationsApi);
 
@@ -52,7 +57,10 @@ export const NotificationPanel = ({ notificationsApi, onSelect }: NotificationPa
       </div>
 
       {showPreferences ? (
-        <NotificationPreferencesView notificationsApi={notificationsApi} />
+        <NotificationPreferencesView
+          notificationsApi={notificationsApi}
+          showPushChannel={showPushChannel}
+        />
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto p-2">
           {feedQuery.isLoading && (

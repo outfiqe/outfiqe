@@ -1,3 +1,4 @@
+import type { PersistedClient } from "@tanstack/react-query-persist-client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PERSISTED_QUERY_CACHE_KEY } from "../constants/offlineCache";
@@ -5,13 +6,32 @@ import { clearPersistedQueries, createQueryPersister, shouldPersistQuery } from 
 
 const { del, get, set } = vi.hoisted(() => ({
   del: vi.fn(() => Promise.resolve()),
-  get: vi.fn(() => Promise.resolve(undefined)),
+  get: vi.fn((): Promise<PersistedClient | undefined> => Promise.resolve(undefined)),
   set: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock("idb-keyval", () => ({ del, get, set }));
 
 const asQuery = (queryKey: readonly unknown[], status: string) => ({ queryKey, state: { status } });
+
+const aSuccessfulDehydratedQuery = (queryKey: readonly unknown[]) => ({
+  queryKey,
+  queryHash: JSON.stringify(queryKey),
+  state: {
+    data: null,
+    dataUpdateCount: 1,
+    dataUpdatedAt: Date.now(),
+    error: null,
+    errorUpdateCount: 0,
+    errorUpdatedAt: 0,
+    fetchFailureCount: 0,
+    fetchFailureReason: null,
+    fetchMeta: null,
+    isInvalidated: false,
+    status: "success" as const,
+    fetchStatus: "idle" as const,
+  },
+});
 
 beforeEach(() => {
   del.mockClear().mockResolvedValue(undefined);
@@ -85,6 +105,39 @@ describe("createQueryPersister", () => {
     ).resolves.toBeUndefined();
     await expect(persister.restoreClient()).resolves.toBeUndefined();
     await expect(persister.removeClient()).resolves.toBeUndefined();
+  });
+
+  it("drops a query on restore that is not on the allowlist, even though it made it into storage", async () => {
+    get.mockResolvedValue({
+      buster: "1",
+      timestamp: Date.now(),
+      clientState: {
+        mutations: [],
+        queries: [aSuccessfulDehydratedQuery(["products"]), aSuccessfulDehydratedQuery(["cart"])],
+      },
+    });
+    const persister = createQueryPersister();
+
+    const restored = await persister.restoreClient();
+
+    expect(restored?.clientState.queries).toHaveLength(1);
+    expect(restored?.clientState.queries[0]?.queryKey).toEqual(["products"]);
+  });
+
+  it("checks the allowlist on restore even for a store that was never written by this app's own save path", async () => {
+    get.mockResolvedValue({
+      buster: "1",
+      timestamp: Date.now(),
+      clientState: {
+        mutations: [],
+        queries: [aSuccessfulDehydratedQuery(["orders"])],
+      },
+    });
+    const persister = createQueryPersister();
+
+    const restored = await persister.restoreClient();
+
+    expect(restored?.clientState.queries).toEqual([]);
   });
 });
 
