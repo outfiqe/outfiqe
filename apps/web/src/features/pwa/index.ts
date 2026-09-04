@@ -1,6 +1,10 @@
+export { AppBadgeSync } from "./components/AppBadgeSync";
 export { AppleSplashLinks } from "./components/AppleSplashLinks";
 export { AppUpdatePrompt } from "./components/AppUpdatePrompt";
+export { OfflineBanner } from "./components/OfflineBanner";
 export { OfflineRetryButton } from "./components/OfflineRetryButton";
+export { PersistentStorageRequest } from "./components/PersistentStorageRequest";
+export { PushNotificationPrompt } from "./components/PushNotificationPrompt";
 export { ServiceWorkerProvider } from "./components/ServiceWorkerProvider";
 export type { AppIconDescriptor, AppIconPurpose } from "./constants/appIcons";
 export {
@@ -21,6 +25,12 @@ export {
 export { appleWebAppMetadata, pwaIcons, WEB_MANIFEST_PATH } from "./constants/appMetadata";
 export { appShortcuts } from "./constants/appShortcuts";
 export { DARK_THEME_COLOR, LIGHT_THEME_COLOR } from "./constants/appTheme";
+export {
+  isPersistableQueryKey,
+  PERSISTABLE_QUERY_ROOTS,
+  PERSISTED_CACHE_MAX_AGE_MS,
+  PERSISTED_CACHE_VERSION,
+} from "./constants/offlineCache";
 export { isPrivatePath, PRIVATE_PATH_PREFIXES } from "./constants/privatePaths";
 export { isPwaEnabled } from "./constants/pwaFeatureFlag";
 export {
@@ -34,8 +44,17 @@ export {
   SERVICE_WORKER_SCRIPT_TYPE,
   SERVICE_WORKER_URL,
 } from "./constants/serviceWorker";
+export { showUnreadBadge } from "./utils/appBadge";
 export { toAppleSplashMediaQuery } from "./utils/appleSplashMedia";
 export { pwaViewport } from "./utils/appViewport";
 export { clearCachedContent } from "./utils/clearCachedContent";
 export { toImageHosts } from "./utils/imageHosts";
 export { toManifestIcons } from "./utils/manifestIcons";
+export { subscribeToPush, unsubscribeFromPush } from "./utils/pushClient";
+export {
+  clearPersistedQueries,
+  createQueryPersister,
+  shouldPersistQuery,
+} from "./utils/queryPersister";
+export { requestPersistentStorage } from "./utils/requestPersistentStorage";
+export { isIosBrowser, isRunningStandalone, supportsWebPush } from "./utils/standalone";

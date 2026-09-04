@@ -66,6 +66,7 @@ import { platformNavAccessRoutes } from "./modules/platform-nav-access/platform-
 import { productReviewRoutes } from "./modules/product-reviews/product-review.routes.js";
 import { productTypeRoutes } from "./modules/product-types/product-type.routes.js";
 import { productRoutes } from "./modules/products/product.routes.js";
+import { pushRoutes } from "./modules/push/push.routes.js";
 import { sizeOptionRoutes } from "./modules/size-options/size-option.routes.js";
 import { supportRoutes } from "./modules/support/support.routes.js";
 import { tastePreferenceRoutes } from "./modules/taste-preferences/tastePreference.routes.js";
@@ -217,6 +218,7 @@ export const createApp = () => {
   app.use("/api/chat", chatRoutes);
   app.use("/api/conversations", conversationRoutes);
   app.use("/api/support", supportRoutes);
+  app.use("/api/push", pushRoutes);
 
   Sentry.setupExpressErrorHandler(app);
   app.use(errorHandler);

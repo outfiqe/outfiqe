@@ -1,0 +1,27 @@
+export const MAX_PUSH_SUBSCRIPTIONS_PER_USER = 20;
+
+export const PUSH_WRITE_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+
+export const PUSH_WRITE_RATE_LIMIT_MAX_REQUESTS = 30;
+
+export const MAX_PUSH_ENDPOINT_LENGTH = 2048;
+
+export const MAX_PUSH_KEY_LENGTH = 256;
+
+export const MAX_USER_AGENT_LENGTH = 512;
+
+export const PUSH_DELIVERY_CONSUMER_GROUP = "push-delivery";
+
+export const PUSH_MESSAGE_TIME_TO_LIVE_SECONDS = 60 * 60 * 24;
+
+export const FAILURES_BEFORE_DISABLING_SUBSCRIPTION = 5;
+
+export const NEPAL_UTC_OFFSET_MINUTES = 5 * 60 + 45;
+
+export const QUIET_HOURS_START_HOUR = 22;
+
+export const QUIET_HOURS_END_HOUR = 7;
+
+export const MINUTES_PER_HOUR = 60;
+
+export const MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR;

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
-import { MobileTabBar } from "@/components/MobileTabBar";
-import { SiteFooter } from "@/components/SiteFooter";
+import { DashboardMobileNavBar } from "@/components/DashboardMobileNavBar";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MessagesPageLayout } from "@/features/messaging";
 
@@ -18,13 +17,12 @@ const ConversationRoute = async ({ params }: ConversationPageProps) => {
   await requireDashboardSession(`/messages/${conversationId}`);
 
   return (
-    <div className="pb-20 lg:pb-0">
+    <div>
       <SiteHeader />
       <main>
         <MessagesPageLayout conversationId={conversationId} />
       </main>
-      <SiteFooter />
-      <MobileTabBar />
+      <DashboardMobileNavBar />
     </div>
   );
 };

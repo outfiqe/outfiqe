@@ -61,6 +61,9 @@ const envSchema = z.object({
   BANK_ACCOUNT_ENCRYPTION_KEY: z
     .string()
     .regex(/^[0-9a-f]{64}$/i, "BANK_ACCOUNT_ENCRYPTION_KEY must be exactly 64 hex characters"),
+  VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+  VAPID_PRIVATE_KEY: z.string().min(1).optional(),
+  VAPID_SUBJECT: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

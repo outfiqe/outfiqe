@@ -20,6 +20,7 @@ import {
 } from "#modules/leaderboard/leaderboard.socket.js";
 import { registerNotificationEventConsumers } from "#modules/notifications/notification.events.js";
 import { registerNotificationSocketEventConsumer } from "#modules/notifications/notification.socket.js";
+import { registerPushEventConsumer } from "#modules/push/push.events.js";
 import { registerXpEventConsumers } from "#modules/xp/xp.events.js";
 import { registerXpSocketEventConsumer } from "#modules/xp/xp.socket.js";
 import { registerSocketListeners } from "#socket/socket.listeners.js";
@@ -45,4 +46,5 @@ export const registerBackgroundConsumers = (): void => {
   registerXpEventConsumers();
   registerAchievementEventConsumers();
   registerNotificationEventConsumers();
+  registerPushEventConsumer();
 };
