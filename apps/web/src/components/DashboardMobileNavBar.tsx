@@ -1,7 +1,7 @@
 "use client";
 
 import { isNavItemActive, type SidebarNavItem } from "@outfiqe/components";
-import type { PanInfo } from "framer-motion";
+import { useSwipeToDismiss } from "@outfiqe/design-system";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { LogOut, Menu, SlidersHorizontal, X } from "lucide-react";
 import NextLink, { useLinkStatus } from "next/link";
@@ -10,9 +10,10 @@ import { type ReactNode, useEffect, useState } from "react";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
+import { useChatPanel } from "@/features/messaging";
 import { cn } from "@/shared/lib/cn";
 
-import { isCrossAppNavHref, shouldDismissOnSwipe } from "./dashboardMobileNav";
+import { isCrossAppNavHref } from "./dashboardMobileNav";
 import { DashboardNavCustomizeSheet } from "./DashboardNavCustomizeSheet";
 import { useDashboardMobileNav } from "./useDashboardMobileNav";
 
@@ -103,12 +104,15 @@ export const DashboardMobileNavBar = () => {
   const { state } = useAuth();
   const logout = useLogout();
   const pathname = usePathname();
+  const { isOpen: isChatPanelOpen } = useChatPanel();
   const { pinnedItems, overflowItems, allItems, savePins, resetPins, accountLabel } =
     useDashboardMobileNav();
 
   const [open, setOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const prefersReducedMotion = useReducedMotion() === true;
+  const closeMenu = () => setOpen(false);
+  const swipeToDismiss = useSwipeToDismiss(closeMenu);
 
   useEffect(() => {
     if (!open) return;
@@ -119,13 +123,7 @@ export const DashboardMobileNavBar = () => {
     };
   }, [open]);
 
-  if (state.status !== AuthStatus.AUTHENTICATED || !state.user) return null;
-
-  const closeMenu = () => setOpen(false);
-
-  const dismissOnSwipe = (_event: unknown, swipe: PanInfo) => {
-    if (shouldDismissOnSwipe(swipe.offset.y, swipe.velocity.y)) closeMenu();
-  };
+  if (state.status !== AuthStatus.AUTHENTICATED || !state.user || isChatPanelOpen) return null;
 
   const openCustomize = () => {
     setOpen(false);
@@ -164,10 +162,8 @@ export const DashboardMobileNavBar = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
               transition={spring}
-              drag={prefersReducedMotion ? false : "y"}
-              dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={{ top: 0, bottom: 0.6 }}
-              onDragEnd={dismissOnSwipe}
+              {...swipeToDismiss}
+              drag={prefersReducedMotion ? false : swipeToDismiss.drag}
             >
               <div
                 aria-hidden

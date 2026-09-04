@@ -8,12 +8,15 @@ import {
   usePresenceSocket,
   useStartConversation,
 } from "@outfiqe/hooks";
+import { usePathname } from "next/navigation";
 import {
   createContext,
   type ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -48,6 +51,14 @@ export const ChatPanelProvider = ({ children }: { children: ReactNode }) => {
   const { isAuthenticated, state } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<ChatPanelView>({ kind: "list" });
+
+  const pathname = usePathname();
+  const previousPathnameRef = useRef(pathname);
+  useEffect(() => {
+    if (previousPathnameRef.current === pathname) return;
+    previousPathnameRef.current = pathname;
+    setIsOpen(false);
+  }, [pathname]);
 
   const subscribeToSocket = useCallback(
     (_onStoreChange: () => void): (() => void) => {

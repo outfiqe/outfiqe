@@ -15,7 +15,7 @@ export const MessagesPageLayout = ({ conversationId }: MessagesPageLayoutProps) 
   const router = useRouter();
 
   return (
-    <div className="mx-auto flex h-[calc(100dvh-var(--site-header-height,3.5rem)-7.5rem)] max-w-5xl overflow-hidden border-border sm:my-6 sm:h-[calc(100dvh-var(--site-header-height,3.5rem)-9.5rem)] sm:rounded-2xl sm:border lg:h-[calc(100dvh-var(--site-header-height,3.5rem)-4rem)]">
+    <div className="mx-auto flex h-[calc(100dvh-12.5rem)] max-w-5xl overflow-hidden border-border sm:my-6 sm:h-[calc(100dvh-14.5rem)] sm:rounded-2xl sm:border lg:h-[calc(100dvh-10rem)]">
       <div
         className={cn(
           "w-full shrink-0 border-r border-border sm:w-80",
@@ -27,7 +27,12 @@ export const MessagesPageLayout = ({ conversationId }: MessagesPageLayoutProps) 
           activeConversationId={conversationId}
         />
       </div>
-      <div className={cn("flex-1", !conversationId && "hidden sm:flex")}>
+      <div
+        className={cn(
+          "flex-1",
+          !conversationId && "hidden sm:flex sm:items-center sm:justify-center",
+        )}
+      >
         {conversationId ? (
           <MessageThread conversationId={conversationId} onBack={() => router.push("/messages")} />
         ) : (
