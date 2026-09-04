@@ -110,6 +110,7 @@ model User {
   supportTicketsRequested                  SupportTicket[]             @relation("SupportTicketRequester")
   supportTicketsAssigned                   SupportTicket[]             @relation("SupportTicketAssignee")
   supportMessages                          SupportMessage[]            @relation("SupportMessageAuthor")
+  pushSubscriptions                        PushSubscription[]
 
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
@@ -2556,4 +2557,29 @@ model SupportMessage {
 
   @@index([ticketId, createdAt])
   @@map("support_messages")
+}
+
+model PushSubscription {
+  id           String       @id @default(uuid()) @db.Uuid
+  userId       String       @map("user_id") @db.Uuid
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint     String       @unique
+  p256dhKey    String       @map("p256dh_key")
+  authKey      String       @map("auth_key")
+  platform     PushPlatform  @default(OTHER)
+  userAgent    String?      @map("user_agent")
+  failureCount Int          @default(0) @map("failure_count")
+  disabledAt   DateTime?    @map("disabled_at")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  lastSeenAt   DateTime     @default(now()) @map("last_seen_at")
+
+  @@index([userId, disabledAt])
+  @@map("push_subscriptions")
+}
+
+enum PushPlatform {
+  ANDROID
+  IOS
+  DESKTOP
+  OTHER
 }
