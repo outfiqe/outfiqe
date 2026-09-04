@@ -61,6 +61,17 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max,ignore-error=true
 
+      - name: Sync compose config to the droplet
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: deploy/docker-compose.prod.yml,deploy/Caddyfile
+          target: /srv/outfiqe
+          strip_components: 1
+          overwrite: true
+
       - name: Migrate and deploy on the droplet
         uses: appleboy/ssh-action@v1
         with:
@@ -72,11 +83,23 @@ jobs:
             set -euo pipefail
             cd /srv/outfiqe
             export IMAGE_TAG="${{ steps.target.outputs.sha }}"
+            UNUSED_IMAGE_RETENTION_HOURS=24
+            REQUIRED_FREE_MEGABYTES=3072
             DIRECT_URL="$(grep -E '^DIRECT_DATABASE_URL=' .env.prod | head -n1 | cut -d= -f2-)"
             DIRECT_URL="${DIRECT_URL%\"}"
             DIRECT_URL="${DIRECT_URL#\"}"
             DIRECT_URL="${DIRECT_URL%\'}"
             DIRECT_URL="${DIRECT_URL#\'}"
+
+            docker image prune -af --filter "until=${UNUSED_IMAGE_RETENTION_HOURS}h"
+            docker builder prune -af || true
+
+            FREE_MEGABYTES="$(df --output=avail -m /var/lib | tail -n1 | tr -d ' ')"
+            if [ "$FREE_MEGABYTES" -lt "$REQUIRED_FREE_MEGABYTES" ]; then
+              echo "droplet has ${FREE_MEGABYTES}MB free after cleanup, needs ${REQUIRED_FREE_MEGABYTES}MB to pull the image"
+              docker system df
+              exit 1
+            fi
 
             docker compose -f docker-compose.prod.yml --env-file .env.prod pull
 
@@ -91,7 +114,6 @@ jobs:
               api prisma/bootstrap-platform-crm.ts
 
             docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
-            docker image prune -f
 
       - name: Wait for readiness
         run: |
