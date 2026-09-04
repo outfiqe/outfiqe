@@ -1,6 +1,7 @@
 {
   "name": "outfiqe app",
   "private": true,
+  "license": "UNLICENSED",
   "workspaces": [
     "apps/*",
     "packages/*"

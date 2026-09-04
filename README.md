@@ -222,3 +222,9 @@ thresholds, a handful of seeded example tests (`apps/api/src/shared/utils/*.test
 `apps/web/src/components/ProductGridSkeleton.test.tsx`, `apps/admin/src/components/Logo.test.tsx`,
 among others) — but actual coverage is still thin across the codebase; new/changed code is expected
 to bring its own unit, integration, and (for web/admin) component tests as it lands.
+
+## License
+
+Proprietary. All rights reserved — see [LICENSE](./LICENSE). This is not open-source software;
+no permission is granted to use, copy, modify, or distribute any part of this repository outside
+of an explicit written agreement with Outfiqe.
