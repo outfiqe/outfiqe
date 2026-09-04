@@ -6,7 +6,7 @@ The `User` record itself — creation, lookup, and self-service profile updates.
 
 ## Structure
 
-- `user.controller.ts`, `user.routes.ts` — `POST /` (admin-only user creation), `PATCH /me` (`requireAuth`, self-service profile update), `GET /` and `GET /:id` (admin-only listing/lookup), `GET /search?q=` (admin-only, name/handle typeahead — see rationale below).
+- `user.controller.ts`, `user.routes.ts` — `POST /`, `GET /`, `GET /:id` (all admin-only, `requireAuth` + `requirePlatformAccess`), `PATCH /me` (`requireAuth`, self-service profile update), `GET /search?q=` (admin-only, name/handle typeahead — see rationale below).
 - `user.schemas.ts` — zod validation: `createUserSchema`, `updateOwnProfileSchema` (`name`/`phone`/`avatarUrl`, all optional — a partial patch, not a full replace), `userIdParamSchema`, `searchUsersQuerySchema`.
 - `user.repository.ts` — `userRepository`, the `User` persistence layer: `create`, `createOAuthOnlyUser` (see `../auth/oauth`), `findByEmail`/`findByPhone`/`findById`/`findByHandle`, `list`/`search`/`findManyByIds`/`searchCreatorIds`/`listByCreatorStatus`, `updateProfile`, `markEmailVerified`, `updatePasswordHash`, `updateCreatorStatus`, `updateLastSeenAt`/`findLastSeenAtByIds` (written by `../chat`'s presence tracking on socket disconnect — see `../chat/README.md`, not by this module itself).
 - `user.service.ts` — `userService.createUser`/`getUser`/`listUsers`/`searchUsers`/`updateMe`.
@@ -25,6 +25,6 @@ The `User` record itself — creation, lookup, and self-service profile updates.
 
 `updateOwnProfileSchema`'s `phone` field only ever sets a phone, never clears one — reusing the same `phoneSchema` regex validator registration uses (`#lib/phone.utils.js`), which requires an actual valid number. There's no "remove my phone number" affordance in this endpoint; `UserRecord.phone` being nullable (see `../auth/README.md`) exists to support OAuth-only accounts that never had one, not to let an existing phone be cleared.
 
-## Follow-ups
+## Non-obvious rationale (continued)
 
-- `user.integration.test.ts` covers `updateMe` (the behavior this module's most recent change added) but not `createUser`/`getUser`/`listUsers` — those three predate this test file and were already untested; adding coverage for them is a natural next step, not done here since it's outside what this change touched. `user.service.ts` is in `vitest.config.ts`'s `coverage.include`, so its per-file number in a coverage report reflects that gap honestly — the repo-wide 80% gate is checked in aggregate, not per file, so this doesn't fail the build.
+**`POST /` had no auth guard at all until this pass, despite the README already describing it as admin-only.** `requireAuth`/`requirePlatformAccess` were applied to `GET /`, `GET /:id`, and `GET /search`, but not `POST /` — so any unauthenticated caller could create a `User` row directly, bypassing every safeguard `../auth`'s real registration flow has (captcha, rate limiting, password-breach checking, email verification). `createUserSchema` doesn't accept a `role`, so this wasn't a privilege-escalation path, but it was a live, unrated account-creation endpoint. Fixed by adding the same `requireAdmin` (`requireAuth` + `requirePlatformAccess`) prefix the other admin routes already use — now consistent with the module's own documented intent. `user.integration.test.ts` covers all three previously-untested `POST /`/`GET /`/`GET /:id` routes, including the auth gate itself.
