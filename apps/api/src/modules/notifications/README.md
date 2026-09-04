@@ -154,11 +154,19 @@ true`, so a user who never opens the panel doesn't silently lose activity they h
 
 **Notification preferences are opt-out, not opt-in.** No `NotificationPreference` row for a
 `(userId, type)` pair means that type is enabled — most users will never have any rows here at
-all. `findMutedRecipientIds` is the only read; a missing row is never treated as "muted."
-`GET /preferences` returns every `NotificationType` value (not filtered by the caller's role) —
-toggling a type that could never apply to that user (e.g. a plain customer muting `NEW_ORDER`) is
-harmless, and skipping per-role filtering avoids a second "which types apply to which surface"
-classification that would have to be kept in sync with the frontend's own per-app type usage.
+all. `findMutedRecipientIds` is the only read on the in-app path; a missing row is never treated
+as "muted." `GET /preferences` returns every `NotificationType` value (not filtered by the
+caller's role) — toggling a type that could never apply to that user (e.g. a plain customer
+muting `NEW_ORDER`) is harmless, and skipping per-role filtering avoids a second "which types
+apply to which surface" classification that would have to be kept in sync with the frontend's own
+per-app type usage.
+
+**`pushEnabled` is a second channel on the same row, read only by the `push` module.** The row
+carries `enabled` (in-app) and `pushEnabled` (phone), both defaulting to true. The in-app path
+still only looks at `enabled`. The push module's `isPushMutedForType` reads `pushEnabled` so
+someone can keep a like showing in the bell but stop it buzzing their phone. The HTTP surface to
+toggle `pushEnabled` per type lands with the push settings UI; until then it is true for
+everyone, so push follows the browser permission alone.
 
 **`notification:read`/`notification:read-all` are emitted directly from `notification.service.ts`
 (`getIO().to(userRoom(...)).emit(...)`, wrapped in the same try/catch as every other socket emit
