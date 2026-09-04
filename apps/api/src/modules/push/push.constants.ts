@@ -1,0 +1,11 @@
+export const MAX_PUSH_SUBSCRIPTIONS_PER_USER = 20;
+
+export const PUSH_WRITE_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+
+export const PUSH_WRITE_RATE_LIMIT_MAX_REQUESTS = 30;
+
+export const MAX_PUSH_ENDPOINT_LENGTH = 2048;
+
+export const MAX_PUSH_KEY_LENGTH = 256;
+
+export const MAX_USER_AGENT_LENGTH = 512;
