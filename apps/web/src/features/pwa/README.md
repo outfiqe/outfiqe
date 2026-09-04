@@ -42,6 +42,7 @@ server starts. Setting it only at runtime does nothing.
   kept. iPhone gets lower limits than everything else.
 - `constants/privatePaths.ts` — the pages that must never be saved to disk, and the check for them.
 - `constants/serviceWorkerMessages.ts` — the message the app sends the worker to forget everything.
+- `constants/updatePrompt.ts` — the pages where the "new version" prompt must not appear.
 - `utils/imageHosts.ts` — works out which hosts serve uploaded photos.
 - `utils/clearCachedContent.ts` — asks the worker to forget saved pages and photos. Used on sign
   out.
@@ -52,6 +53,7 @@ server starts. Setting it only at runtime does nothing.
 - `components/ServiceWorkerProvider.tsx` — registers the worker, or does nothing when the flag is
   off.
 - `components/OfflineRetryButton.tsx` — the "Try again" button on the offline page.
+- `components/AppUpdatePrompt.tsx` — the "A new version is ready" bar, and the reload it triggers.
 
 Outside this folder:
 
@@ -110,7 +112,24 @@ comma-separated list) plus the API origin. Nothing is hard-coded, so moving phot
 later is a config change rather than a code change. If neither is set, photos are simply not saved
 and the app carries on.
 
+## How a new version reaches people
+
+Once someone has the app saved, they keep running the version they downloaded until the worker is
+replaced. Without a prompt they could sit on an old version for weeks.
+
+When we deploy, the browser fetches the new worker and parks it as "waiting". The app notices,
+shows a small bar saying a new version is ready, and offers Reload or Later. Reload tells the
+waiting worker to take over, and the page reloads itself once it has.
+
+Nothing reloads on its own. The bar also never appears while someone is on the cart, checkout, or
+payment pages, where a mis-tap costs real money or work.
+
 ## Things that are not obvious
+
+**The update prompt only reloads when the user asked it to.** The worker takes control on a first
+install too, not just on an update, so reloading whenever it takes control would refresh the page
+under everyone's feet the first time they ever open the app. The prompt therefore remembers whether
+the person actually pressed Reload, and ignores the takeover otherwise.
 
 **The service worker deliberately does not cache API responses at all.** Serwist's default rules
 save every same-origin `/api/` GET, which would put one person's cart, orders, and messages on disk
