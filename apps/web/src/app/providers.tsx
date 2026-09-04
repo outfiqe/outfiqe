@@ -9,6 +9,7 @@ import { AuthProvider } from "@/features/auth";
 import { GamificationSocketListener } from "@/features/creator-dashboard/components/GamificationSocketListener";
 import { ChatPanel, ChatPanelProvider, FloatingChatLauncher } from "@/features/messaging";
 import {
+  AppBadgeSync,
   AppUpdatePrompt,
   createQueryPersister,
   isPwaEnabled,
@@ -16,6 +17,7 @@ import {
   PERSISTED_CACHE_MAX_AGE_MS,
   PERSISTED_CACHE_VERSION,
   PersistentStorageRequest,
+  PushNotificationPrompt,
   ServiceWorkerProvider,
   shouldPersistQuery,
 } from "@/features/pwa";
@@ -42,7 +44,9 @@ export const Providers = ({ children }: { children: ReactNode }) => {
         {children}
         <OfflineBanner />
         <AppUpdatePrompt />
+        <PushNotificationPrompt />
         <PersistentStorageRequest />
+        <AppBadgeSync />
         <Toaster />
         <GamificationSocketListener />
         <FloatingChatLauncher />
