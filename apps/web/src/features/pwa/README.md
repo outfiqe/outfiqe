@@ -45,6 +45,21 @@ server starts. Setting it only at runtime does nothing.
 - `constants/updatePrompt.ts` — the pages where the "new version" prompt must not appear.
 - `constants/offlineCache.ts` — which loaded data may be written to the browser database, how long
   it is kept, and the version to bump when a saved shape changes.
+- `constants/pushMessage.ts` — the shape of the payload the server sends with a push, and a safe
+  fallback for anything malformed.
+- `constants/pushOptIn.ts` — remembers, per browser, that someone dismissed the "turn on
+  notifications" bar so it does not come back every visit.
+- `utils/standalone.ts` — whether the app is running as an installed app, whether the browser is
+  on iOS, and whether it can do web push at all.
+- `utils/pushClient.ts` — fetches the push key, subscribes the browser, registers the subscription
+  with the API, and unsubscribes.
+- `utils/appBadge.ts` — sets or clears the number on the installed app icon.
+- `hooks/usePushSubscription.ts` — the small state machine behind the opt-in: not-asked, blocked,
+  needs-install, enabled, and the transient enabling/failed states.
+- `components/PushNotificationPrompt.tsx` — the dismissible bar and the explainer that runs before
+  the browser's own permission prompt.
+- `components/AppBadgeSync.tsx` — keeps the app-icon number in step with the unread count while
+  the installed app is open.
 - `utils/queryPersister.ts` — saves and restores that data, and forgets it on sign out.
 - `utils/requestPersistentStorage.ts` — asks the browser not to throw saved content away.
 - `hooks/useIsOnline.ts` — whether there is a connection right now.
@@ -147,6 +162,26 @@ waiting worker to take over, and the page reloads itself once it has.
 Nothing reloads on its own. The bar also never appears while someone is on the cart, checkout, or
 payment pages, where a mis-tap costs real money or work.
 
+## Turning on push notifications
+
+When a signed-in person has been using the app, a small bar offers to turn on notifications.
+Tapping it opens a short explainer, and only then does the browser's own permission prompt appear.
+Dismissing the bar is remembered per browser, so it does not come back every visit.
+
+On iPhone this is only possible once the app is installed to the Home Screen, so an iPhone user
+still in a Safari tab sees a "install first" message instead of a button that could not work.
+If notifications were blocked earlier, the bar explains where to turn them back on rather than
+showing a dead button.
+
+Turning it on subscribes the browser with `PushManager`, using the key from `GET /api/push/public-key`,
+and registers the subscription with the API. The service worker's `push` handler shows the
+notification; its `notificationclick` handler focuses an open tab (or opens one) at the page the
+notification points to.
+
+While the installed app is open, the number on its icon is kept in step with the unread count. The
+service worker also marks the icon when a push arrives while the app is closed, so there is
+something there before the app is next opened.
+
 ## Things that are not obvious
 
 **The offline-reading allowlist is a list of what may be saved, never a list of what may not.** A
@@ -167,6 +202,21 @@ still works — the data is simply more likely to be discarded when the phone is
 install too, not just on an update, so reloading whenever it takes control would refresh the page
 under everyone's feet the first time they ever open the app. The prompt therefore remembers whether
 the person actually pressed Reload, and ignores the takeover otherwise.
+
+**The push permission state is read through `useSyncExternalStore`, not a `useState` set in an
+effect.** The ESLint config forbids the second pattern, and permission really is an external thing
+that can change out from under the app (someone flips it in browser settings). The store subscribes
+to the Permissions API `change` event where it exists; a separate transient state covers the
+"asking now" and "that failed" moments that the browser's own permission value does not represent.
+
+**The opt-in is a dismissible bar, not a modal on load.** A modal the moment the app opens is how
+people end up blocking notifications forever. The bar only shows to a signed-in user, only after
+the base state says it is worth asking, and only until they dismiss it once.
+
+**The app-icon number is set from two places.** While the app is open, `AppBadgeSync` keeps it
+exact against the unread count. While the app is closed, only the service worker runs, and it
+cannot know the count, so its `push` handler just marks the icon. The next time the app opens,
+`AppBadgeSync` corrects it to the real number.
 
 **The service worker deliberately does not cache API responses at all.** Serwist's default rules
 save every same-origin `/api/` GET, which would put one person's cart, orders, and messages on disk

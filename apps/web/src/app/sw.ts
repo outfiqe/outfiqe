@@ -3,6 +3,7 @@ import type { PrecacheEntry, RuntimeCaching, SerwistGlobalConfig } from "serwist
 import { CacheFirst, ExpirationPlugin, NetworkFirst, NetworkOnly, Serwist } from "serwist";
 
 import { isPrivatePath } from "../features/pwa/constants/privatePaths";
+import { parsePushMessage } from "../features/pwa/constants/pushMessage";
 import {
   API_PATH_PREFIX,
   CACHED_IMAGE_LIFETIME_SECONDS,
@@ -26,6 +27,13 @@ declare global {
 declare const self: ServiceWorkerGlobalScope;
 
 declare const __OUTFIQE_IMAGE_HOSTS__: string[];
+
+type BadgeCapableWorkerNavigator = WorkerNavigator & { setAppBadge?: () => Promise<void> };
+
+const markAppIconWithUnseenPush = (): void => {
+  const badgeNavigator = self.navigator as BadgeCapableWorkerNavigator;
+  badgeNavigator.setAppBadge?.().catch(() => undefined);
+};
 
 const imageHosts = typeof __OUTFIQE_IMAGE_HOSTS__ === "undefined" ? [] : __OUTFIQE_IMAGE_HOSTS__;
 
@@ -105,6 +113,52 @@ const forgetCachedContent = async () => {
 self.addEventListener("message", (event) => {
   if (event.data?.type !== CLEAR_CACHED_CONTENT_MESSAGE) return;
   event.waitUntil(forgetCachedContent());
+});
+
+const APP_ICON_PATH = "/icons/icon-192-any.png";
+
+type RenotifyingNotificationOptions = NotificationOptions & { renotify?: boolean };
+
+const showIncomingPush = async (rawBody: string | undefined): Promise<void> => {
+  const message = parsePushMessage(rawBody);
+
+  const options: RenotifyingNotificationOptions = {
+    body: message.body,
+    tag: message.tag,
+    renotify: true,
+    icon: APP_ICON_PATH,
+    badge: APP_ICON_PATH,
+    data: { url: message.url },
+  };
+
+  await self.registration.showNotification(message.title, options);
+
+  markAppIconWithUnseenPush();
+};
+
+self.addEventListener("push", (event) => {
+  event.waitUntil(showIncomingPush(event.data?.text()));
+});
+
+const openFromNotification = async (targetUrl: string): Promise<void> => {
+  const openClients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  const sameOriginClient = openClients.find((client) =>
+    client.url.startsWith(self.location.origin),
+  );
+
+  if (sameOriginClient) {
+    await sameOriginClient.focus();
+    await sameOriginClient.navigate(targetUrl).catch(() => undefined);
+    return;
+  }
+
+  await self.clients.openWindow(targetUrl);
+};
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data as { url?: string } | null)?.url ?? "/notifications";
+  event.waitUntil(openFromNotification(targetUrl));
 });
 
 serwist.addEventListeners();
