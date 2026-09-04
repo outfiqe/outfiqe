@@ -296,3 +296,20 @@ transfers to Membership B`. Rather than guessing, the person initiating the tran
   above), those tests silently started resolving the wrong organization. Tests must not depend on
   a developer's personal dev-domain choice; `.env.test`/`.env.test.example` pin it explicitly so
   the suite behaves the same on every machine regardless of local `.env` customization.
+- **`acceptInvite`'s transaction retries on a real Postgres deadlock instead of failing the
+  request.** `acceptInviteWithClient` inserts a `Membership` row referencing the invite's
+  `organizationId`/`roleId`, then updates the `OrganizationInvite` row — two concurrent accepts
+  into the _same_ organization (two different invitees, or a retried client request) both take a
+  row lock on that shared `Organization`/`Role` parent for the FK check, which Postgres can
+  legitimately resolve as a deadlock (`40P01`) rather than blocking forever. Prisma 7's
+  driver-adapter path doesn't surface that as the documented `P2034` write-conflict code — it wraps
+  it as a generic `P2039` with the raw SQLSTATE inside `meta.driverAdapterError.cause.originalCode`
+  — so `isDeadlockError`/`runWithDeadlockRetry` (`shared/utils/prisma.utils.ts`) check that raw code
+  directly rather than trusting `P2034` alone. Retrying is the standard, correct response to this
+  class of error (the loser transaction did nothing wrong; it just lost a race), not a workaround
+  for a bug in this function's own logic. Each attempt — including the first — checks
+  `findMembershipByUserAndOrg` before touching the transaction, so a retry after a deadlock (or any
+  other reason the caller re-invokes `acceptInvite` for the same invite/user) finds the
+  already-granted membership and returns it instead of trying to insert a duplicate; a deadlock
+  rollback is always full, never partial, but this makes the operation idempotent on its own terms
+  rather than relying on that guarantee alone.

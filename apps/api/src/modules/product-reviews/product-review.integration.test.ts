@@ -160,6 +160,150 @@ describe("POST /api/products/:productId/reviews", () => {
   });
 });
 
+const postReview = async (
+  productId: string,
+  buyerId: string,
+  overrides: Record<string, unknown> = {},
+) => {
+  const response = await request(testApp)
+    .post(`/api/products/${productId}/reviews`)
+    .set("Authorization", authHeaderFor(buyerId))
+    .send({ rating: 4, body: "A perfectly ordinary review.", ...overrides });
+  return response.body.data.id as string;
+};
+
+describe("PATCH /api/products/:productId/reviews/:reviewId", () => {
+  it("lets the author update their own review and recomputes the rating summary", async () => {
+    const { product, size } = await createProduct("Editable Jacket");
+    const buyer = await createUser("Editing Buyer", "editing-buyer");
+    await createDeliveredOrderItem(buyer.id, product.id, size.id);
+    const reviewId = await postReview(product.id, buyer.id, { rating: 3 });
+
+    const response = await request(testApp)
+      .patch(`/api/products/${product.id}/reviews/${reviewId}`)
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ rating: 5, body: "Actually, on reflection, this is great." });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.rating).toBe(5);
+
+    const updatedProduct = await prisma.product.findUniqueOrThrow({ where: { id: product.id } });
+    expect(updatedProduct.avgRating).toBe(5);
+  });
+
+  it("forbids editing someone else's review", async () => {
+    const { product, size } = await createProduct("Contested Jacket");
+    const buyer = await createUser("Original Author", "original-author");
+    await createDeliveredOrderItem(buyer.id, product.id, size.id);
+    const reviewId = await postReview(product.id, buyer.id);
+    const outsider = await createUser("Outsider", "outsider-editor");
+
+    const response = await request(testApp)
+      .patch(`/api/products/${product.id}/reviews/${reviewId}`)
+      .set("Authorization", authHeaderFor(outsider.id))
+      .send({ rating: 1, body: "Trying to sabotage someone else's review." });
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("FORBIDDEN");
+  });
+
+  it("returns 404 for a review that doesn't exist", async () => {
+    const { product } = await createProduct("Nonexistent Review Jacket");
+    const buyer = await createUser("Confused Buyer", "confused-buyer");
+
+    const response = await request(testApp)
+      .patch(`/api/products/${product.id}/reviews/${randomUUID()}`)
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ rating: 3, body: "Editing a review that was never created." });
+
+    expect(response.status).toBe(404);
+    expect(response.body.code).toBe("REVIEW_NOT_FOUND");
+  });
+});
+
+describe("POST/DELETE /api/products/:productId/reviews/:reviewId/helpful", () => {
+  it("marks another user's review helpful", async () => {
+    const { product, size } = await createProduct("Helpful Jacket");
+    const author = await createUser("Review Author", "review-author");
+    await createDeliveredOrderItem(author.id, product.id, size.id);
+    const reviewId = await postReview(product.id, author.id);
+    const voter = await createUser("Helpful Voter", "helpful-voter");
+
+    const response = await request(testApp)
+      .post(`/api/products/${product.id}/reviews/${reviewId}/helpful`)
+      .set("Authorization", authHeaderFor(voter.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.helpfulCount).toBe(1);
+  });
+
+  it("is idempotent when the same user votes twice", async () => {
+    const { product, size } = await createProduct("Double Vote Jacket");
+    const author = await createUser("Review Author", "review-author-2");
+    await createDeliveredOrderItem(author.id, product.id, size.id);
+    const reviewId = await postReview(product.id, author.id);
+    const voter = await createUser("Repeat Voter", "repeat-voter");
+
+    await request(testApp)
+      .post(`/api/products/${product.id}/reviews/${reviewId}/helpful`)
+      .set("Authorization", authHeaderFor(voter.id));
+    const second = await request(testApp)
+      .post(`/api/products/${product.id}/reviews/${reviewId}/helpful`)
+      .set("Authorization", authHeaderFor(voter.id));
+
+    expect(second.status).toBe(200);
+    expect(second.body.data.helpfulCount).toBe(1);
+  });
+
+  it("rejects marking your own review as helpful", async () => {
+    const { product, size } = await createProduct("Self Vote Jacket");
+    const author = await createUser("Self Voter", "self-voter");
+    await createDeliveredOrderItem(author.id, product.id, size.id);
+    const reviewId = await postReview(product.id, author.id);
+
+    const response = await request(testApp)
+      .post(`/api/products/${product.id}/reviews/${reviewId}/helpful`)
+      .set("Authorization", authHeaderFor(author.id));
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("CANNOT_VOTE_OWN_REVIEW");
+  });
+
+  it("removes a helpful vote", async () => {
+    const { product, size } = await createProduct("Unvote Jacket");
+    const author = await createUser("Review Author", "review-author-3");
+    await createDeliveredOrderItem(author.id, product.id, size.id);
+    const reviewId = await postReview(product.id, author.id);
+    const voter = await createUser("Unvoting Voter", "unvoting-voter");
+
+    await request(testApp)
+      .post(`/api/products/${product.id}/reviews/${reviewId}/helpful`)
+      .set("Authorization", authHeaderFor(voter.id));
+
+    const response = await request(testApp)
+      .delete(`/api/products/${product.id}/reviews/${reviewId}/helpful`)
+      .set("Authorization", authHeaderFor(voter.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.helpfulCount).toBe(0);
+  });
+
+  it("is a no-op when removing a vote that was never cast", async () => {
+    const { product, size } = await createProduct("Never Voted Jacket");
+    const author = await createUser("Review Author", "review-author-4");
+    await createDeliveredOrderItem(author.id, product.id, size.id);
+    const reviewId = await postReview(product.id, author.id);
+    const nonVoter = await createUser("Never Voted", "never-voted");
+
+    const response = await request(testApp)
+      .delete(`/api/products/${product.id}/reviews/${reviewId}/helpful`)
+      .set("Authorization", authHeaderFor(nonVoter.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.helpfulCount).toBe(0);
+  });
+});
+
 describe("GET /api/products/:productId/reviews", () => {
   it("sorts by highest rating and reports hasVotedHelpful for the viewer", async () => {
     const { product, size } = await createProduct("Sorted Reviews Jacket");

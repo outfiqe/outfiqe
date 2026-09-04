@@ -7,6 +7,7 @@ import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
+import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import {
   PLATFORM_PERMISSION_CATALOG,
   PLATFORM_PERMISSION_KEYS,
@@ -117,6 +118,32 @@ describe("POST /api/support/tickets", () => {
     );
   });
 
+  it("resolves the BRAND segment and attaches the requester's brand", async () => {
+    const owner = await createUser(UserRole.BRAND_OWNER);
+    const brand = await prisma.brand.create({
+      data: {
+        name: "Requester Brand",
+        contactName: "Owner",
+        email: `${randomUUID()}@brand.outfiqe.test`,
+        phone: "9800000000",
+        instagram: `@${randomUUID().slice(0, 8)}`,
+      },
+    });
+    await prisma.brandMembership.create({ data: { userId: owner.id, brandId: brand.id } });
+
+    const response = await request(testApp)
+      .post("/api/support/tickets")
+      .set("Authorization", authHeaderFor(owner.id))
+      .send(createBody());
+
+    expect(response.status).toBe(201);
+    const stored = await prisma.supportTicket.findUniqueOrThrow({
+      where: { id: response.body.data.id },
+    });
+    expect(stored.segment).toBe("BRAND");
+    expect(stored.relatedBrandId).toBe(brand.id);
+  });
+
   it("rejects a too-short message", async () => {
     const requester = await createUser();
     const response = await request(testApp)
@@ -151,6 +178,55 @@ describe("requester access", () => {
       .get(`/api/support/tickets/mine/${ticketId}`)
       .set("Authorization", authHeaderFor(other.id));
     expect(notMine.status).toBe(404);
+  });
+
+  it("lists only the caller's own requests", async () => {
+    const requester = await createUser();
+    const other = await createUser();
+    const ownTicketId = await openTicket(authHeaderFor(requester.id));
+    await openTicket(authHeaderFor(other.id));
+
+    const response = await request(testApp)
+      .get("/api/support/tickets/mine")
+      .set("Authorization", authHeaderFor(requester.id));
+
+    expect(response.status).toBe(200);
+    const ids = response.body.data.tickets.map((ticket: { id: string }) => ticket.id);
+    expect(ids).toEqual([ownTicketId]);
+  });
+});
+
+describe("GET /api/support/admin/tickets", () => {
+  it("lists requests for platform staff, filterable by status", async () => {
+    const requester = await createUser();
+    const staff = await seedSupportStaff();
+    const ticketId = await openTicket(authHeaderFor(requester.id));
+
+    const unfiltered = await request(testApp)
+      .get("/api/support/admin/tickets")
+      .set("Authorization", authHeaderFor(staff.id, UserRole.ADMIN));
+    expect(unfiltered.status).toBe(200);
+    expect(unfiltered.body.data.tickets.map((ticket: { id: string }) => ticket.id)).toContain(
+      ticketId,
+    );
+
+    const filtered = await request(testApp)
+      .get("/api/support/admin/tickets?status=RESOLVED")
+      .set("Authorization", authHeaderFor(staff.id, UserRole.ADMIN));
+    expect(filtered.status).toBe(200);
+    expect(filtered.body.data.tickets.map((ticket: { id: string }) => ticket.id)).not.toContain(
+      ticketId,
+    );
+  });
+
+  it("rejects a non-platform admin", async () => {
+    const outsider = await createUser(UserRole.ADMIN);
+
+    const response = await request(testApp)
+      .get("/api/support/admin/tickets")
+      .set("Authorization", authHeaderFor(outsider.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(403);
   });
 });
 
@@ -247,5 +323,104 @@ describe("triage lifecycle", () => {
       DomainEvents.SUPPORT_TICKET_ASSIGNED,
       expect.objectContaining({ ticketId, assigneeUserId: agent.id }),
     );
+  });
+});
+
+const createTicketFixture = (overrides: Record<string, unknown> = {}) =>
+  prisma.supportTicket.create({
+    data: {
+      requesterEmail: `reopen-${randomUUID()}@outfiqe.test`,
+      requesterName: "Reopen Requester",
+      category: "ORDER_ISSUE",
+      subject: "Where is my order?",
+      ...overrides,
+    },
+  });
+
+describe("POST /api/support/reopen/:token", () => {
+  it("reopens a resolved ticket with a valid token", async () => {
+    const rawToken = generateOpaqueToken();
+    const ticket = await createTicketFixture({
+      status: "RESOLVED",
+      resolvedAt: new Date(),
+      reopenTokenHash: hashToken(rawToken),
+    });
+
+    const response = await request(testApp).post(`/api/support/reopen/${rawToken}`);
+
+    expect(response.status).toBe(200);
+    const updated = await prisma.supportTicket.findUniqueOrThrow({ where: { id: ticket.id } });
+    expect(updated.status).toBe("OPEN");
+    expect(updated.reopenTokenHash).toBeNull();
+  });
+
+  it("rejects an unknown token", async () => {
+    const response = await request(testApp).post(`/api/support/reopen/${generateOpaqueToken()}`);
+
+    expect(response.status).toBe(404);
+    expect(response.body.code).toBe("SUPPORT_REOPEN_INVALID");
+  });
+
+  it("rejects a token for a ticket that isn't in a reopenable status", async () => {
+    const rawToken = generateOpaqueToken();
+    await createTicketFixture({ status: "OPEN", reopenTokenHash: hashToken(rawToken) });
+
+    const response = await request(testApp).post(`/api/support/reopen/${rawToken}`);
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("SUPPORT_REOPEN_INVALID");
+  });
+});
+
+describe("admin ticket detail, priority, stats and agents", () => {
+  it("returns a single ticket for platform staff", async () => {
+    const requester = await createUser();
+    const staff = await seedSupportStaff();
+    const ticketId = await openTicket(authHeaderFor(requester.id));
+
+    const response = await request(testApp)
+      .get(`/api/support/admin/tickets/${ticketId}`)
+      .set("Authorization", authHeaderFor(staff.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.id).toBe(ticketId);
+  });
+
+  it("updates a ticket's priority", async () => {
+    const requester = await createUser();
+    const staff = await seedSupportStaff();
+    const ticketId = await openTicket(authHeaderFor(requester.id));
+
+    const response = await request(testApp)
+      .patch(`/api/support/admin/tickets/${ticketId}/priority`)
+      .set("Authorization", authHeaderFor(staff.id, UserRole.ADMIN))
+      .send({ priority: "HIGH" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.priority).toBe("HIGH");
+  });
+
+  it("returns inbox stats", async () => {
+    const requester = await createUser();
+    const staff = await seedSupportStaff();
+    await openTicket(authHeaderFor(requester.id));
+
+    const response = await request(testApp)
+      .get("/api/support/admin/stats")
+      .set("Authorization", authHeaderFor(staff.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.open).toBeGreaterThanOrEqual(1);
+  });
+
+  it("lists support agents", async () => {
+    const staff = await seedSupportStaff();
+
+    const response = await request(testApp)
+      .get("/api/support/admin/agents")
+      .set("Authorization", authHeaderFor(staff.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.map((agent: { userId: string }) => agent.userId)).toContain(staff.id);
   });
 });

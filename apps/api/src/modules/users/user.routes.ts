@@ -16,7 +16,7 @@ const requireAdmin = [requireAuth, requirePlatformAccess];
 
 export const userRoutes = Router();
 
-userRoutes.post("/", validate({ body: createUserSchema }), userController.create);
+userRoutes.post("/", ...requireAdmin, validate({ body: createUserSchema }), userController.create);
 userRoutes.patch(
   "/me",
   requireAuth,
