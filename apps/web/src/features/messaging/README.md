@@ -109,9 +109,24 @@ _recipient's_ live view — `useConversationSocket`'s `toBroadcastMessage` used 
 the thread was refetched (reopening it, or a full refresh). Keep the payload's attachment shape
 matching `MessageAttachment` (`packages/types`) if that type ever changes.
 
+**`ChatPanelProvider` closes the panel whenever the pathname changes.** `isOpen` is plain
+`useState`, global for the whole app, with no lifecycle tied to routing — so without this, opening
+the panel and then navigating away by any means other than the panel's own close button or its
+"expand" action (a browser back/forward, a sidebar link, anything) left it mounted, on top of
+whatever page you landed on, with no way to dismiss it short of a reload. A `usePathname()` +
+previous-pathname ref closes it on any pathname change instead of trying to enumerate every
+navigation trigger.
+
 **No `Switch`/multi-window chat, but a new `Drawer` primitive was added to `packages/design-system`.**
 Neither `Modal` (blocking, unmounts with its page) nor `Popover` (anchored, sized for small
 transient content) fit a non-blocking panel that has to survive route changes — see that
-component's own file for the reasoning. Message bubbles, the typing/date-separator chips, and the
-composer are deliberately kept as local, chat-specific markup rather than forced into generic
-design-system primitives, per the explicit call on this build to keep bespoke chat UI local.
+component's own file for the reasoning. Below `sm`, `Drawer` is a swipeable bottom sheet (`90dvh`,
+rounded top corners, a backdrop, drag-down-to-dismiss via `useSwipeToDismiss` from
+`@outfiqe/design-system`); at `sm` and up it stays the original small floating panel anchored to the
+bottom-right corner, where a full-height sheet and backdrop wouldn't make sense. Its `z-[60]` sits
+above `DashboardMobileNavBar` (`z-50`), and `DashboardMobileNavBar` also just hides itself entirely
+while `useChatPanel().isOpen` is true — with the panel already swipeable and dismissible, letting
+the persistent bottom nav's hub button show through underneath it was confusing, not useful. Message
+bubbles, the typing/date-separator chips, and the composer are deliberately kept as local,
+chat-specific markup rather than forced into generic design-system primitives, per the explicit call
+on this build to keep bespoke chat UI local.
