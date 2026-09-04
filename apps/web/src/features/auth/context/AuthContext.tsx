@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { clearCachedContent } from "@/features/pwa/utils/clearCachedContent";
+import { clearPersistedQueries } from "@/features/pwa/utils/queryPersister";
 import { setAccessToken, setUnauthorizedHandler } from "@/shared/lib/apiClient";
 
 import { authApi } from "../api/authApi";
@@ -53,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUnauthorizedHandler(() => {
       dispatch({ type: AuthActionType.AUTH_LOGOUT });
       void clearCachedContent();
+      void clearPersistedQueries();
     });
 
     let cancelled = false;
@@ -89,7 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await authApi.logout();
     } finally {
       dispatch({ type: AuthActionType.AUTH_LOGOUT });
-      await clearCachedContent();
+      await Promise.all([clearCachedContent(), clearPersistedQueries()]);
     }
   };
 
