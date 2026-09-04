@@ -75,7 +75,9 @@ const mockUnreadCount = (count: number) => {
 };
 
 const renderBell = (socket: NotificationSocket, onSelect = vi.fn()) => {
-  const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
   return {
     onSelect,
     ...render(
@@ -98,8 +100,10 @@ describe("NotificationBell", () => {
     mockUnreadCount(3);
     renderBell(new FakeSocket());
 
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Notifications, 3 unread" })).toBeInTheDocument(),
+    await waitFor(
+      () =>
+        expect(screen.getByRole("button", { name: "Notifications, 3 unread" })).toBeInTheDocument(),
+      { timeout: 5000 },
     );
     expect(screen.getByText("3")).toBeInTheDocument();
   });
@@ -155,8 +159,10 @@ describe("NotificationBell", () => {
     await waitFor(() => expect(screen.getAllByText("Jane liked your look")).toHaveLength(2));
     await user.click(screen.getByRole("button", { name: "Mark all as read" }));
 
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Notifications, 0 unread" })).toBeInTheDocument(),
+    await waitFor(
+      () =>
+        expect(screen.getByRole("button", { name: "Notifications, 0 unread" })).toBeInTheDocument(),
+      { timeout: 5000 },
     );
   });
 

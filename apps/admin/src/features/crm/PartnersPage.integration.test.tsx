@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
@@ -133,5 +134,68 @@ describe("PartnersPage", () => {
     renderPartnersPage();
 
     await waitFor(() => expect(screen.getByText("Trial ended")).toBeInTheDocument());
+  });
+
+  it("passes the search term through and shows a search-specific empty state", async () => {
+    mockOrganization();
+    let lastQuery: string | null = null;
+    mswServer.use(
+      http.get(`${API_BASE}/crm/partners`, ({ request }) => {
+        lastQuery = new URL(request.url).searchParams.get("q");
+        return HttpResponse.json({
+          success: true,
+          data: { items: [], total: 0, hasMore: false, reason: null },
+        });
+      }),
+    );
+
+    renderPartnersPage();
+    await screen.findByText("No partners yet.");
+
+    await userEvent.type(screen.getByPlaceholderText("Search creators"), "aasha");
+
+    await waitFor(() => expect(lastQuery).toBe("aasha"));
+    expect(await screen.findByText("No partners match your search.")).toBeInTheDocument();
+  });
+
+  it("pages forward and back through partners", async () => {
+    mockOrganization();
+    const seenPages: (string | null)[] = [];
+    mswServer.use(
+      http.get(`${API_BASE}/crm/partners`, ({ request }) => {
+        const page = new URL(request.url).searchParams.get("page");
+        seenPages.push(page);
+        return HttpResponse.json({
+          success: true,
+          data: {
+            items: [
+              {
+                creatorId: "c-1",
+                name: page === "2" ? "Page Two Creator" : "Aasha Creator",
+                handle: "aasha",
+                avatarUrl: null,
+                tagClickCount: 1,
+                attributedOrderCount: 1,
+                attributedRevenue: 100,
+                lastActivityAt: "2026-08-20T00:00:00.000Z",
+              },
+            ],
+            total: 40,
+            hasMore: page !== "2",
+            reason: null,
+          },
+        });
+      }),
+    );
+
+    renderPartnersPage();
+    await screen.findByText("Aasha Creator");
+
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(await screen.findByText("Page Two Creator")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+    expect(await screen.findByText("Aasha Creator")).toBeInTheDocument();
+    expect(seenPages).toContain("2");
   });
 });

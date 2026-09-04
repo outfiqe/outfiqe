@@ -23,18 +23,19 @@ follows every reply, backed by `apps/api`'s `support` module. Staff handling hap
 ## Funnel
 
 **User-facing:** from `/help` ("Still need help?"), `/contact` ("Order help"), or directly, a
-signed-in user lands on `/settings/support`, hits "New request", and submits. They get an
-acknowledgement email and see the request in the list. A staff reply arrives by email and appears
-in the thread; replying there reopens the request. A resolved request's email links to
-`/support/reopen?token=…`, a small public page that POSTs the token.
+signed-in user lands on `/support`, hits "New request", and submits. They get an acknowledgement
+email and see the request in the list. A staff reply arrives by email and appears in the thread;
+replying there reopens the request. A resolved request's email links to `/support/reopen?token=…`,
+a small public page that POSTs the token.
 
-**Technical:** page (`app/(dashboard)/settings/support`) &rarr; `SupportRequestsView` &rarr;
-`hooks/useSupportRequests` &rarr; `api/supportApi` &rarr; `/api/support/tickets/mine*`.
+**Technical:** page (`app/support`) &rarr; `SupportRequestsView` &rarr; `hooks/useSupportRequests`
+&rarr; `api/supportApi` &rarr; `/api/support/tickets/mine*`.
 
 ## Non-obvious rationale
 
-- **Entry points link to `/settings/support`, which is auth-gated** (`requireDashboardSession`).
-  Logged-out users get bounced to sign-in and back. Guest (no-account) support is PRD M3 — until
-  then, "raise a request" implies "while signed in", which the help copy reflects.
-- **`/support/reopen` is a separate public route, not part of `(dashboard)`** — the reopen token
-  is the only credential, so the page can't sit behind the session guard.
+- **`/support` is a standalone page (site header + footer, no dashboard nav rail), not part of
+  `(dashboard)`.** It's just a request list and thread view — the dashboard chrome added nothing.
+  It still gates on a session (`getServerSessionWithToken`): logged-out users are bounced to
+  sign-in and back, admins are sent to the admin console. Guest (no-account) support is PRD M3.
+- **`/support/reopen` is a separate public route** — the reopen token is the only credential, so
+  that page can't sit behind the session guard.

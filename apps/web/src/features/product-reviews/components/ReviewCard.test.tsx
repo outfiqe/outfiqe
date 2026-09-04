@@ -82,4 +82,27 @@ describe("ReviewCard", () => {
     fireEvent.click(screen.getByRole("button", { name: /helpful/i }));
     expect(onToggleHelpful).toHaveBeenCalledOnce();
   });
+
+  it("renders photo thumbnails and an avatar image when the review has them", () => {
+    const { container } = renderCard({
+      images: ["https://cdn.example/a.jpg", "https://cdn.example/b.jpg"],
+      author: {
+        id: "author-1",
+        name: "Priya Shah",
+        handle: "priya-shah",
+        avatarUrl: "https://cdn.example/avatar.jpg",
+      },
+    });
+
+    const withBg = [...container.querySelectorAll<HTMLElement>("[style*='background-image']")];
+    expect(withBg.some((el) => el.style.backgroundImage.includes("a.jpg"))).toBe(true);
+    expect(withBg.some((el) => el.style.backgroundImage.includes("avatar.jpg"))).toBe(true);
+  });
+
+  it("omits the title line when the review has no title", () => {
+    renderCard({ title: "" });
+
+    expect(screen.queryByText("Great fit")).not.toBeInTheDocument();
+    expect(screen.getByText("Runs true to size.")).toBeInTheDocument();
+  });
 });

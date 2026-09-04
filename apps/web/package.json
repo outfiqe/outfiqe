@@ -2,12 +2,13 @@
   "name": "@outfiqe/web",
   "version": "0.0.1",
   "private": true,
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.sw.json",
     "lint": "eslint .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -15,7 +16,9 @@
     "test:integration": "vitest run --project integration",
     "test:watch": "vitest",
     "generate:pwa-assets": "tsx scripts/generate-pwa-assets.mts",
-    "db:generate": "echo 'no database in web app'"
+    "db:generate": "echo 'no database in web app'",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install --with-deps chromium"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
@@ -35,6 +38,7 @@
     "date-fns": "^4.4.0",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
+    "framer-motion": "^13.1.0",
     "heic-to": "^1.5.2",
     "lucide-react": "^1.29.0",
     "next": "^16.3.0",
@@ -48,6 +52,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@serwist/turbopack": "9.5.12",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
@@ -58,8 +64,10 @@
     "@vitejs/plugin-react": "^5.0.4",
     "@vitest/coverage-v8": "^4.1.10",
     "babel-plugin-react-compiler": "^1.0.0",
+    "esbuild": "^0.28.2",
     "jsdom": "^27.0.0",
     "msw": "^2.11.6",
+    "serwist": "9.5.12",
     "sharp": "^0.33.5",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.10",

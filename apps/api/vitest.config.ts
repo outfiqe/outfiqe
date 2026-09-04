@@ -37,6 +37,7 @@ export default defineConfig({
   test: {
     coverage: {
       provider: "v8",
+      reportOnFailure: true,
       include: [
         "src/app.ts",
         "src/config/app-env.ts",

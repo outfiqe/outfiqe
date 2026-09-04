@@ -2,6 +2,7 @@
   "name": "@outfiqe/types",
   "version": "0.0.1",
   "private": true,
+  "license": "UNLICENSED",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {

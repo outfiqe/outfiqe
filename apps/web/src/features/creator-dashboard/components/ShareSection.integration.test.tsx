@@ -127,6 +127,32 @@ describe("ShareSection", () => {
     expect(screen.getByText(/reusable link · 2 clicks/)).toBeInTheDocument();
   });
 
+  it("renders singular clicks, an inactive status and the profile fallback label", () => {
+    mockMyCreatorLinks({
+      data: {
+        pages: [
+          {
+            items: [
+              {
+                ...buildLink("l2"),
+                clickCount: 1,
+                status: CreatorLinkStatus.REVOKED,
+                productName: null,
+              },
+            ],
+            nextCursor: null,
+          },
+        ],
+        pageParams: [undefined],
+      },
+    });
+
+    renderSection();
+
+    expect(screen.getByText("Your profile")).toBeInTheDocument();
+    expect(screen.getByText(/· 1 click · revoked$/)).toBeInTheDocument();
+  });
+
   it("shows a load-more button that calls fetchNextPage", async () => {
     mockMyCreatorLinks({
       hasNextPage: true,

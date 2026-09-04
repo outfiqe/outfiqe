@@ -98,4 +98,38 @@ describe("MobileNav", () => {
     const bagLink = screen.getByRole("link", { name: /bag/i });
     expect(bagLink).toHaveTextContent("3");
   });
+
+  it("gives a signed-in creator a labelled account link to their space", async () => {
+    mockAuth({
+      state: {
+        status: AuthStatus.AUTHENTICATED,
+        user: { id: "u1", name: "Sabin Shrestha", avatarUrl: null },
+        accessToken: "t",
+      },
+      isAuthenticated: true,
+      isCreator: true,
+    } as Partial<ReturnType<typeof useAuth>>);
+    render(<MobileNav />);
+    await openMenu();
+
+    const accountLink = screen.getByRole("link", { name: /Sabin Shrestha/ });
+    expect(accountLink).toHaveAttribute("href", "/overview");
+    expect(accountLink).toHaveTextContent("Your creator space");
+  });
+
+  it("sends a signed-in admin to the admin console", async () => {
+    mockAuth({
+      state: {
+        status: AuthStatus.AUTHENTICATED,
+        user: { id: "a1", name: "Platform Admin", avatarUrl: null, role: "ADMIN" },
+        accessToken: "t",
+      },
+      isAuthenticated: true,
+      isAdmin: true,
+    } as Partial<ReturnType<typeof useAuth>>);
+    render(<MobileNav />);
+    await openMenu();
+
+    expect(screen.getByRole("link", { name: /Platform Admin/ })).toHaveTextContent("Admin console");
+  });
 });
