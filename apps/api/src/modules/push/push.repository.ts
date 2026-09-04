@@ -1,7 +1,17 @@
 import { prisma } from "#db/prisma.js";
 import type { PushPlatform } from "#generated/prisma/enums.js";
 
-import { MAX_PUSH_SUBSCRIPTIONS_PER_USER } from "./push.constants.js";
+import {
+  FAILURES_BEFORE_DISABLING_SUBSCRIPTION,
+  MAX_PUSH_SUBSCRIPTIONS_PER_USER,
+} from "./push.constants.js";
+
+export type DeliverablePushSubscription = {
+  id: string;
+  endpoint: string;
+  p256dhKey: string;
+  authKey: string;
+};
 
 type SavePushSubscriptionInput = {
   userId: string;
@@ -50,5 +60,41 @@ export const pushRepository = {
 
   async removeForUser(userId: string, endpoint: string): Promise<void> {
     await prisma.pushSubscription.deleteMany({ where: { userId, endpoint } });
+  },
+
+  async listDeliverableForUser(userId: string): Promise<DeliverablePushSubscription[]> {
+    return prisma.pushSubscription.findMany({
+      where: { userId, disabledAt: null },
+      select: { id: true, endpoint: true, p256dhKey: true, authKey: true },
+    });
+  },
+
+  async recordDelivered(subscriptionId: string): Promise<void> {
+    await prisma.pushSubscription.updateMany({
+      where: { id: subscriptionId },
+      data: { lastSeenAt: new Date(), failureCount: 0 },
+    });
+  },
+
+  async dropSubscription(subscriptionId: string): Promise<void> {
+    await prisma.pushSubscription.deleteMany({ where: { id: subscriptionId } });
+  },
+
+  async recordFailure(subscriptionId: string): Promise<void> {
+    const subscription = await prisma.pushSubscription.update({
+      where: { id: subscriptionId },
+      data: { failureCount: { increment: 1 } },
+      select: { failureCount: true, disabledAt: true },
+    });
+
+    if (
+      !subscription.disabledAt &&
+      subscription.failureCount >= FAILURES_BEFORE_DISABLING_SUBSCRIPTION
+    ) {
+      await prisma.pushSubscription.update({
+        where: { id: subscriptionId },
+        data: { disabledAt: new Date() },
+      });
+    }
   },
 };

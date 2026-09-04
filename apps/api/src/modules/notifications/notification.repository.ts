@@ -203,6 +203,14 @@ export const notificationRepository = {
     return new Set(rows.map((row) => row.userId));
   },
 
+  async isPushMutedForType(userId: string, type: NotificationType): Promise<boolean> {
+    const preference = await prisma.notificationPreference.findUnique({
+      where: { userId_type: { userId, type } },
+      select: { pushEnabled: true },
+    });
+    return preference?.pushEnabled === false;
+  },
+
   async findActorSnapshot(userId: string): Promise<NotificationActorSnapshot | null> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
