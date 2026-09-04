@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
-import { MobileTabBar } from "@/components/MobileTabBar";
-import { SiteFooter } from "@/components/SiteFooter";
+import { DashboardMobileNavBar } from "@/components/DashboardMobileNavBar";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MessagesPageLayout } from "@/features/messaging";
 
@@ -13,13 +12,12 @@ const MessagesRoute = async () => {
   await requireDashboardSession("/messages");
 
   return (
-    <div className="pb-20 lg:pb-0">
+    <div>
       <SiteHeader />
       <main>
         <MessagesPageLayout />
       </main>
-      <SiteFooter />
-      <MobileTabBar />
+      <DashboardMobileNavBar />
     </div>
   );
 };

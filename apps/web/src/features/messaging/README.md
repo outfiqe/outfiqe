@@ -23,7 +23,12 @@ that launch a conversation. Everything here is gated by Phase 1's `chatService
   panel.
 - `MessagesPageLayout.tsx` — the full-page, two-pane equivalent (`apps/web/src/app/messages/page.tsx`
   and `.../[conversationId]/page.tsx`), reusing the exact same `ConversationList`/`MessageThread`
-  components as the panel rather than duplicating them.
+  components as the panel rather than duplicating them. Both routes wrap it in the same chrome as
+  the rest of the signed-in account area — `SiteHeader` plus `DashboardMobileNavBar`, no
+  `SiteFooter` — since `/messages` is reached from the dashboard, not the storefront. Its outer
+  height is `100vh` minus fixed reserves for the sticky header and, below `lg`, the bottom nav's
+  footprint (the hub button sits ~6.5rem above the viewport edge); the `lg` reserve is smaller
+  because the bottom nav is hidden there.
 - `ConversationList.tsx` — takes `onSelect`/`activeConversationId` as props rather than reading
   `useChatPanel()` itself, so both the panel and the full page can drive it differently (panel
   switches its internal view; the full page navigates).
