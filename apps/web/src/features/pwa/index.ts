@@ -20,7 +20,13 @@ export {
 export { appleWebAppMetadata, pwaIcons, WEB_MANIFEST_PATH } from "./constants/appMetadata";
 export { appShortcuts } from "./constants/appShortcuts";
 export { DARK_THEME_COLOR, LIGHT_THEME_COLOR } from "./constants/appTheme";
+export { isPrivatePath, PRIVATE_PATH_PREFIXES } from "./constants/privatePaths";
 export { isPwaEnabled } from "./constants/pwaFeatureFlag";
+export {
+  IMAGE_CACHE_NAME,
+  IMAGE_HOSTS_GLOBAL_NAME,
+  IMAGE_PATH_PREFIX,
+} from "./constants/runtimeCaching";
 export {
   OFFLINE_PATH,
   SERVICE_WORKER_SCOPE,
@@ -29,4 +35,6 @@ export {
 } from "./constants/serviceWorker";
 export { toAppleSplashMediaQuery } from "./utils/appleSplashMedia";
 export { pwaViewport } from "./utils/appViewport";
+export { clearCachedContent } from "./utils/clearCachedContent";
+export { toImageHosts } from "./utils/imageHosts";
 export { toManifestIcons } from "./utils/manifestIcons";

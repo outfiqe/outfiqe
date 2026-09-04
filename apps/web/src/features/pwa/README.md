@@ -38,6 +38,13 @@ server starts. Setting it only at runtime does nothing.
   the worker itself, so the two can never point at different places.
 - `constants/pwaFeatureFlag.ts` — reads `NEXT_PUBLIC_PWA_ENABLED`. Kept separate from
   `serviceWorker.ts` because the worker bundle has no `process.env` and would crash on it.
+- `constants/runtimeCaching.ts` — cache names, how long things are kept, and how many of each are
+  kept. iPhone gets lower limits than everything else.
+- `constants/privatePaths.ts` — the pages that must never be saved to disk, and the check for them.
+- `constants/serviceWorkerMessages.ts` — the message the app sends the worker to forget everything.
+- `utils/imageHosts.ts` — works out which hosts serve uploaded photos.
+- `utils/clearCachedContent.ts` — asks the worker to forget saved pages and photos. Used on sign
+  out.
 - `utils/manifestIcons.ts` — turns the icon list into the manifest's format.
 - `utils/appleSplashMedia.ts` — builds the media query that picks one launch image for one device.
 - `utils/appViewport.ts` — the page's `viewport`, including the theme colour for light and dark.
@@ -85,7 +92,42 @@ plugin-based approach only worked with webpack.
 The worker saves every page it serves into a `visited-pages` cache and tries the network first, so
 people always get fresh content when they have a connection and the saved copy when they don't.
 
+## What gets saved, and what never does
+
+| Request                                                                      | What happens                                                                         |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| The app itself (JavaScript, styles, icons)                                   | Saved when the worker installs                                                       |
+| A public page (home, shop, explore, a product)                               | Fetched fresh, saved as a backup, served from the backup when there is no connection |
+| A private page (cart, checkout, orders, wallet, messages, settings, sign-in) | Fetched fresh, **never saved**. With no connection the offline page is shown instead |
+| An uploaded photo                                                            | Served from disk once seen, kept for 30 days                                         |
+| Anything under `/api/`                                                       | **Never saved**                                                                      |
+| The iPhone launch images                                                     | Never saved — the phone reads them from disk at launch                               |
+
+Signing out, or a session expiring, tells the worker to forget every saved page and photo.
+
+Which hosts count as photo hosts is worked out at build time from `NEXT_PUBLIC_IMAGE_HOSTS` (a
+comma-separated list) plus the API origin. Nothing is hard-coded, so moving photos to Cloudflare R2
+later is a config change rather than a code change. If neither is set, photos are simply not saved
+and the app carries on.
+
 ## Things that are not obvious
+
+**The service worker deliberately does not cache API responses at all.** Serwist's default rules
+save every same-origin `/api/` GET, which would put one person's cart, orders, and messages on disk
+and risk serving them after they sign out. Rather than maintain a list of which endpoints happen to
+be safe — a list that silently rots as endpoints gain personalised fields — nothing under `/api/` is
+saved. Very little is lost, because pages are rendered on the server, so a saved page already
+contains its content. Offline access to data fetched by the browser is a separate piece of work
+that can scope it per account properly.
+
+**Private pages are excluded by path, not by guessing.** `constants/privatePaths.ts` is the single
+list. It looks similar to the "don't index this" list in `shared/seo/routes.ts` but is deliberately
+separate: one is about search engines, the other about what may be written to a user's disk, and
+they should be free to differ.
+
+**iPhone gets smaller limits on purpose.** Safari gives each site far less room and tends to throw
+away a whole cache at once rather than trimming the oldest entries — which would take the saved app
+with it. Fewer saved photos and pages makes hitting that limit much less likely.
 
 **We handle page navigations ourselves instead of using Serwist's `fallbacks` option.** The built-in
 option looked like the obvious fit, but it does not work here: it only attaches its fallback to
