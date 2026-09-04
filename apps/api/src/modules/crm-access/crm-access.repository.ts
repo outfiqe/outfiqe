@@ -390,17 +390,11 @@ export const crmAccessRepository = {
     invite: OrganizationInviteRecord,
     acceptingUserId: string,
   ): Promise<MembershipRecord> {
-    return runWithDeadlockRetry(async () => {
-      const existingMembership = await crmAccessRepository.findMembershipByUserAndOrg(
-        acceptingUserId,
-        invite.organizationId,
-      );
-      if (existingMembership) return existingMembership;
-
-      return prisma.$transaction((tx) =>
+    return runWithDeadlockRetry(() =>
+      prisma.$transaction((tx) =>
         crmAccessRepository.acceptInviteWithClient(invite, acceptingUserId, tx),
-      );
-    });
+      ),
+    );
   },
 
   async createOwnershipTransferRequest(
