@@ -307,9 +307,21 @@ transfers to Membership B`. Rather than guessing, the person initiating the tran
   — so `isDeadlockError`/`runWithDeadlockRetry` (`shared/utils/prisma.utils.ts`) check that raw code
   directly rather than trusting `P2034` alone. Retrying is the standard, correct response to this
   class of error (the loser transaction did nothing wrong; it just lost a race), not a workaround
-  for a bug in this function's own logic. Each attempt — including the first — checks
-  `findMembershipByUserAndOrg` before touching the transaction, so a retry after a deadlock (or any
-  other reason the caller re-invokes `acceptInvite` for the same invite/user) finds the
-  already-granted membership and returns it instead of trying to insert a duplicate; a deadlock
-  rollback is always full, never partial, but this makes the operation idempotent on its own terms
-  rather than relying on that guarantee alone.
+  for a bug in this function's own logic. A genuine deadlock means Postgres rolled the aborted
+  transaction back in full — nothing it did was committed — so blindly redoing the same insert is
+  always safe; there is deliberately no "did I already do this?" check anywhere in `acceptInvite`
+  before it inserts. **An earlier version of this function did add such a check** (looking up an
+  existing membership before every insert attempt, to make retries idempotent) and it introduced a
+  real bug: two truly concurrent accepts of the same invite could both pass that check before
+  either had committed, so the loser found the winner's now-committed membership and returned it as
+  its own success instead of the conflict it actually was — silently handing out `201` to both
+  requests for what should have been `201`/`409`. The insert's own `Membership` unique constraint on
+  `(userId, organizationId)` is the only thing that can adjudicate this correctly, because it is
+  evaluated inside the database at commit time, not read-then-write in application code — the loser
+  always gets a real `P2002`, which `crm-access.service.ts`'s `acceptInvite` already catches and
+  turns into `409 MEMBER_EXISTS`. Calling `crmAccessRepository.acceptInvite` again for an invite it
+  has already granted (whether that is a genuine second race entrant or a direct repeat call) is
+  expected to throw that same `P2002` rather than quietly succeed a second time — the service layer
+  is what owns deciding what a caller-facing retry should see, via its own pre-check
+  (`findAcceptableInvite` rejects an already-accepted invite outright) before ever reaching the
+  repository.
