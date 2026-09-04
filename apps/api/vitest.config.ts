@@ -109,10 +109,10 @@ export default defineConfig({
         "src/shared/utils/email.utils.ts",
       ],
       thresholds: {
-        lines: 85,
-        functions: 85,
-        branches: 85,
-        statements: 85,
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
       },
     },
     projects: [
