@@ -1,4 +1,5 @@
 export { AppleSplashLinks } from "./components/AppleSplashLinks";
+export { AppUpdatePrompt } from "./components/AppUpdatePrompt";
 export { OfflineRetryButton } from "./components/OfflineRetryButton";
 export { ServiceWorkerProvider } from "./components/ServiceWorkerProvider";
 export type { AppIconDescriptor, AppIconPurpose } from "./constants/appIcons";
