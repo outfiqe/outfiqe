@@ -307,4 +307,9 @@ transfers to Membership B`. Rather than guessing, the person initiating the tran
   — so `isDeadlockError`/`runWithDeadlockRetry` (`shared/utils/prisma.utils.ts`) check that raw code
   directly rather than trusting `P2034` alone. Retrying is the standard, correct response to this
   class of error (the loser transaction did nothing wrong; it just lost a race), not a workaround
-  for a bug in this function's own logic.
+  for a bug in this function's own logic. Each attempt — including the first — checks
+  `findMembershipByUserAndOrg` before touching the transaction, so a retry after a deadlock (or any
+  other reason the caller re-invokes `acceptInvite` for the same invite/user) finds the
+  already-granted membership and returns it instead of trying to insert a duplicate; a deadlock
+  rollback is always full, never partial, but this makes the operation idempotent on its own terms
+  rather than relying on that guarantee alone.
