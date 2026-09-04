@@ -43,6 +43,11 @@ server starts. Setting it only at runtime does nothing.
 - `constants/privatePaths.ts` — the pages that must never be saved to disk, and the check for them.
 - `constants/serviceWorkerMessages.ts` — the message the app sends the worker to forget everything.
 - `constants/updatePrompt.ts` — the pages where the "new version" prompt must not appear.
+- `constants/offlineCache.ts` — which loaded data may be written to the browser database, how long
+  it is kept, and the version to bump when a saved shape changes.
+- `utils/queryPersister.ts` — saves and restores that data, and forgets it on sign out.
+- `utils/requestPersistentStorage.ts` — asks the browser not to throw saved content away.
+- `hooks/useIsOnline.ts` — whether there is a connection right now.
 - `utils/imageHosts.ts` — works out which hosts serve uploaded photos.
 - `utils/clearCachedContent.ts` — asks the worker to forget saved pages and photos. Used on sign
   out.
@@ -54,6 +59,9 @@ server starts. Setting it only at runtime does nothing.
   off.
 - `components/OfflineRetryButton.tsx` — the "Try again" button on the offline page.
 - `components/AppUpdatePrompt.tsx` — the "A new version is ready" bar, and the reload it triggers.
+- `components/OfflineBanner.tsx` — the "You're offline" strip, so nobody mistakes saved content for
+  live content.
+- `components/PersistentStorageRequest.tsx` — makes the storage request once, on load.
 
 Outside this folder:
 
@@ -112,6 +120,21 @@ comma-separated list) plus the API origin. Nothing is hard-coded, so moving phot
 later is a config change rather than a code change. If neither is set, photos are simply not saved
 and the app carries on.
 
+## Reading content offline
+
+Saving pages covers anything the server rendered. It does not cover data the browser fetched
+afterwards — scrolling further down a feed, opening a product, and so on. That data lives in
+TanStack Query, so we write its cache to the browser's own database and read it back on start-up.
+Opening the app with no connection then shows real content instead of empty loading skeletons.
+
+Only data on an explicit allowlist is ever written (`constants/offlineCache.ts`): products,
+categories, the explore feed, looks, a brand's products, and the creator leaderboard. Everything
+else is skipped. Failed requests are skipped too, so a page cannot get stuck showing an error it
+saved earlier.
+
+Saved data is kept for a day and thrown away on sign out or when a session expires, at the same
+moment the saved pages and photos are.
+
 ## How a new version reaches people
 
 Once someone has the app saved, they keep running the version they downloaded until the worker is
@@ -125,6 +148,20 @@ Nothing reloads on its own. The bar also never appears while someone is on the c
 payment pages, where a mis-tap costs real money or work.
 
 ## Things that are not obvious
+
+**The offline-reading allowlist is a list of what may be saved, never a list of what may not.** A
+"don't save these" list fails open: the day someone adds a query for saved addresses or payout
+details, it is written to disk because nobody remembered to add it. An allowlist fails closed — a
+new query is private until someone deliberately says otherwise. There is a test asserting an unknown
+query is not saved.
+
+**The saved-data version has to be bumped by hand.** `PERSISTED_CACHE_VERSION` is what tells
+browsers to throw away everything saved. If a saved query's shape changes, bump it, or people
+carrying old data will get it restored into a UI that no longer understands it.
+
+**Asking the browser to keep our data usually fails on iPhone, and that is fine.** Safari decides
+for itself and generally says no. The request is made once, the answer is ignored, and everything
+still works — the data is simply more likely to be discarded when the phone is short of space.
 
 **The update prompt only reloads when the user asked it to.** The worker takes control on a first
 install too, not just on an update, so reloading whenever it takes control would refresh the page
