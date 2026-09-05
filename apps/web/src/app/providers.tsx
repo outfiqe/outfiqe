@@ -23,6 +23,8 @@ import {
   PERSISTED_CACHE_VERSION,
   PersistentStorageRequest,
   PushNotificationPrompt,
+  PwaKillSwitchTeardown,
+  ServiceWorkerErrorReporter,
   ServiceWorkerProvider,
   shouldPersistQuery,
 } from "@/features/pwa";
@@ -55,6 +57,8 @@ export const Providers = ({ children }: { children: ReactNode }) => {
         <AppBadgeSync />
         <OfflineActionSync />
         <BackgroundRefreshRegistration />
+        <ServiceWorkerErrorReporter />
+        <PwaKillSwitchTeardown />
         <Toaster />
         <GamificationSocketListener />
         <FloatingChatLauncher />

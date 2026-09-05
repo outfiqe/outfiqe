@@ -2,12 +2,15 @@ export { AppBadgeSync } from "./components/AppBadgeSync";
 export { AppleSplashLinks } from "./components/AppleSplashLinks";
 export { AppUpdatePrompt } from "./components/AppUpdatePrompt";
 export { BackgroundRefreshRegistration } from "./components/BackgroundRefreshRegistration";
+export { ClearOfflineDataCard } from "./components/ClearOfflineDataCard";
 export { InstallPrompt } from "./components/InstallPrompt";
 export { OfflineActionSync } from "./components/OfflineActionSync";
 export { OfflineBanner } from "./components/OfflineBanner";
 export { OfflineRetryButton } from "./components/OfflineRetryButton";
 export { PersistentStorageRequest } from "./components/PersistentStorageRequest";
 export { PushNotificationPrompt } from "./components/PushNotificationPrompt";
+export { PwaKillSwitchTeardown } from "./components/PwaKillSwitchTeardown";
+export { ServiceWorkerErrorReporter } from "./components/ServiceWorkerErrorReporter";
 export { ServiceWorkerProvider } from "./components/ServiceWorkerProvider";
 export type { AppIconDescriptor, AppIconPurpose } from "./constants/appIcons";
 export {
@@ -53,6 +56,10 @@ export {
 export { isPrivatePath, PRIVATE_PATH_PREFIXES } from "./constants/privatePaths";
 export { isPwaEnabled } from "./constants/pwaFeatureFlag";
 export {
+  isPwaKillSwitchEngagedOnClient,
+  PWA_KILL_SWITCH_ATTRIBUTE,
+} from "./constants/pwaKillSwitch";
+export {
   IMAGE_CACHE_NAME,
   IMAGE_HOSTS_GLOBAL_NAME,
   IMAGE_PATH_PREFIX,
@@ -80,6 +87,7 @@ export { toAppleSplashMediaQuery } from "./utils/appleSplashMedia";
 export { pwaViewport } from "./utils/appViewport";
 export { registerBackgroundRefresh } from "./utils/backgroundRefresh";
 export { clearCachedContent } from "./utils/clearCachedContent";
+export { clearAllOfflineData } from "./utils/clearOfflineData";
 export { toImageHosts } from "./utils/imageHosts";
 export {
   canOfferBrowserInstall,
@@ -106,5 +114,6 @@ export {
 } from "./utils/queryPersister";
 export { requestPersistentStorage } from "./utils/requestPersistentStorage";
 export { isIosBrowser, isRunningStandalone, supportsWebPush } from "./utils/standalone";
+export { teardownServiceWorkerAndCaches } from "./utils/teardownServiceWorkerAndCaches";
 export type { ShareOutcome, SharePayload } from "./utils/webShare";
 export { shareOrCopyLink } from "./utils/webShare";
