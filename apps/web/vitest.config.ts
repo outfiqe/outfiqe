@@ -131,6 +131,10 @@ export default defineConfig({
         "src/features/support/components/SupportRequestForm.tsx",
         "src/features/pwa/**/*.{ts,tsx}",
         "src/app/manifest.ts",
+        "src/features/checkout/components/CheckoutSummary.tsx",
+        "src/features/checkout/components/CheckoutForm.tsx",
+        "src/features/checkout/hooks/useCheckout.ts",
+        "src/features/payments/hooks/useInitiatePayment.ts",
       ],
       thresholds: {
         lines: 80,

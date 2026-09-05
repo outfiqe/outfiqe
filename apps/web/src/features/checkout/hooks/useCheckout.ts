@@ -16,5 +16,6 @@ export const useCheckout = () => {
       idempotencyKey: string;
       buyNow?: BuyNowLine;
     }) => checkoutApi.submit(input, idempotencyKey, buyNow),
+    networkMode: "always",
   });
 };

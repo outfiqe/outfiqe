@@ -54,6 +54,7 @@ export {
 } from "./constants/serviceWorker";
 export type { InstallPromptState } from "./hooks/useInstallPrompt";
 export { useInstallPrompt } from "./hooks/useInstallPrompt";
+export { useIsOnline } from "./hooks/useIsOnline";
 export type { PushOptInState } from "./hooks/usePushSubscription";
 export { usePushSubscription } from "./hooks/usePushSubscription";
 export { showUnreadBadge } from "./utils/appBadge";

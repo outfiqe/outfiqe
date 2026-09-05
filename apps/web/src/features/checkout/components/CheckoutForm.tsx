@@ -19,6 +19,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { type Cart, CART_QUERY_KEY } from "@/features/cart";
 import { CityAutocomplete } from "@/features/delivery-zones";
 import { redirectToPaymentGateway, useInitiatePayment } from "@/features/payments";
+import { useIsOnline } from "@/features/pwa";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { type CheckoutInput, checkoutInputSchema, PaymentMethod } from "../api/checkoutSchemas";
@@ -40,6 +41,7 @@ export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps
   const { state } = useAuth();
   const checkout = useCheckout();
   const initiatePayment = useInitiatePayment();
+  const isOnline = useIsOnline();
 
   const form = useForm<CheckoutInput>({
     resolver: zodResolver(checkoutInputSchema),
@@ -57,6 +59,11 @@ export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps
   const paymentMethod = form.watch("paymentMethod");
 
   const onSubmit = form.handleSubmit(async (values) => {
+    if (!isOnline) {
+      toast.error("Checkout needs a connection. Try again once you're back online.");
+      return;
+    }
+
     try {
       const order = await checkout.mutateAsync({
         input: values,
@@ -191,6 +198,7 @@ export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps
             paymentMethod={paymentMethod}
             codHandlingFee={codHandlingFee}
             isSubmitting={checkout.isPending || initiatePayment.isPending}
+            isOnline={isOnline}
           />
         </div>
       </form>
