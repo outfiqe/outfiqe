@@ -9,7 +9,7 @@ import {
   Modal,
   toast,
 } from "@outfiqe/design-system";
-import { Check } from "lucide-react";
+import { Check, Share2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
@@ -22,6 +22,7 @@ import { useDeleteLook } from "@/features/creator-dashboard/hooks/useDeleteLook"
 import { useUpdateCreatorProfile } from "@/features/creator-dashboard/hooks/useUpdateCreatorProfile";
 import { AddPostButton, PostDetailModal, usePublicLook } from "@/features/explore";
 import { useChatPanel } from "@/features/messaging";
+import { shareOrCopyLink } from "@/features/pwa";
 import { uploadsApi } from "@/shared/api/uploadsApi";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
@@ -129,6 +130,16 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
       return;
     }
     openConversationWith(userId);
+  };
+
+  const shareProfile = async () => {
+    const outcome = await shareOrCopyLink({
+      title: `${name} on Outfiqe`,
+      text: `Check out @${handle}'s looks on Outfiqe`,
+      url: `${window.location.origin}/creator/${handle}`,
+    });
+    if (outcome === "copied") toast.success("Link copied");
+    if (outcome === "failed") toast.error("Couldn't share or copy the link");
   };
 
   const openEdit = () => {
@@ -339,37 +350,43 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
           </div>
         </div>
 
-        {isOwnProfile ? (
+        <div className="flex w-full shrink-0 gap-2 sm:w-auto">
+          {isOwnProfile ? (
+            <Button variant="outline" size="sm" onClick={openEdit} className="flex-1 sm:flex-none">
+              Edit profile
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-pressed={isFollowing}
+                onClick={toggleFollow}
+                className="flex-1 sm:flex-none"
+              >
+                {isFollowing ? "Following" : "Follow"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={messageCreator}
+                disabled={isStartingConversation}
+                className="flex-1 sm:flex-none"
+              >
+                Message
+              </Button>
+            </>
+          )}
           <Button
             variant="outline"
-            size="sm"
-            onClick={openEdit}
-            className="w-full shrink-0 sm:w-auto"
+            size="icon"
+            aria-label="Share profile"
+            onClick={() => void shareProfile()}
+            className="shrink-0"
           >
-            Edit profile
+            <Share2 className="size-[18px]" />
           </Button>
-        ) : (
-          <div className="flex w-full shrink-0 gap-2 sm:w-auto">
-            <Button
-              variant="outline"
-              size="sm"
-              aria-pressed={isFollowing}
-              onClick={toggleFollow}
-              className="flex-1 sm:flex-none"
-            >
-              {isFollowing ? "Following" : "Follow"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={messageCreator}
-              disabled={isStartingConversation}
-              className="flex-1 sm:flex-none"
-            >
-              Message
-            </Button>
-          </div>
-        )}
+        </div>
       </div>
 
       {isLoading ? (

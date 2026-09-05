@@ -34,6 +34,30 @@ export const resolveNotificationMessage = (notification: Notification): string =
       return `${metadata.actor?.name ?? "Someone"} left a ${metadata.rating ?? ""}-star review on ${metadata.productName ?? "your product"}`;
     case "REVIEW_REQUESTED":
       return `How was ${metadata.productName ?? "your order"}? Leave a review.`;
+    case "WITHDRAW_REQUEST_APPROVED":
+      return "Your withdrawal request was approved";
+    case "WITHDRAW_REQUEST_REJECTED":
+      return metadata.rejectionReason
+        ? `Your withdrawal request was rejected: ${metadata.rejectionReason}`
+        : "Your withdrawal request was rejected";
+    case "WITHDRAW_REQUEST_PAID":
+      return "Your withdrawal was paid out";
+    case "NEW_MESSAGE":
+      return metadata.messagePreview ?? "You have a new message";
+    case "CRM_ITEM_ASSIGNED": {
+      const itemKind = metadata.crmItemKind === "ticket" ? "ticket" : "task";
+      return metadata.crmItemTitle
+        ? `You were assigned the ${itemKind} "${metadata.crmItemTitle}"`
+        : `You were assigned a ${itemKind}`;
+    }
+    case "SUPPORT_TICKET_CREATED":
+      return `New support request: ${metadata.supportSubject ?? "Untitled request"}`;
+    case "SUPPORT_TICKET_ASSIGNED":
+      return `You were assigned support request: ${metadata.supportSubject ?? "Untitled request"}`;
+    case "SUPPORT_TICKET_REPLY":
+      return `New reply on your support request${metadata.supportSubject ? `: ${metadata.supportSubject}` : ""}`;
+    case "SUPPORT_TICKET_RESOLVED":
+      return `Your support request was resolved${metadata.supportSubject ? `: ${metadata.supportSubject}` : ""}`;
     default:
       return "You have a new notification";
   }

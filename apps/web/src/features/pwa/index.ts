@@ -57,11 +57,18 @@ export {
   SERVICE_WORKER_SCRIPT_TYPE,
   SERVICE_WORKER_URL,
 } from "./constants/serviceWorker";
+export {
+  SHARE_TARGET_PATH,
+  SHARE_TARGET_PHOTO_FIELD_NAME,
+  SHARED_PHOTO_CACHE_NAME,
+  SHARED_PHOTO_CACHE_URL,
+} from "./constants/shareTarget";
 export type { InstallPromptState } from "./hooks/useInstallPrompt";
 export { useInstallPrompt } from "./hooks/useInstallPrompt";
 export { useIsOnline } from "./hooks/useIsOnline";
 export type { PushOptInState } from "./hooks/usePushSubscription";
 export { usePushSubscription } from "./hooks/usePushSubscription";
+export { useSharedPhoto } from "./hooks/useSharedPhoto";
 export { showUnreadBadge } from "./utils/appBadge";
 export { toAppleSplashMediaQuery } from "./utils/appleSplashMedia";
 export { pwaViewport } from "./utils/appViewport";
@@ -92,3 +99,5 @@ export {
 } from "./utils/queryPersister";
 export { requestPersistentStorage } from "./utils/requestPersistentStorage";
 export { isIosBrowser, isRunningStandalone, supportsWebPush } from "./utils/standalone";
+export type { ShareOutcome, SharePayload } from "./utils/webShare";
+export { shareOrCopyLink } from "./utils/webShare";

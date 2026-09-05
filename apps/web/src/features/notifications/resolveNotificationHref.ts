@@ -1,5 +1,7 @@
 import type { Notification } from "@outfiqe/types";
 
+import { lookPermalinkPath } from "@/features/explore";
+
 export const resolveNotificationHref = (
   notification: Notification,
   ownHandle: string | undefined,
@@ -9,7 +11,7 @@ export const resolveNotificationHref = (
     case "LOOK_COMMENTED":
     case "COMMENT_REPLIED":
       return ownHandle && notification.entityId
-        ? `/creator/${ownHandle}?look=${notification.entityId}`
+        ? lookPermalinkPath(ownHandle, notification.entityId)
         : "/profile";
     case "NEW_FOLLOWER": {
       const actorHandle = notification.metadata.recentActors?.[0]?.handle;
@@ -35,6 +37,14 @@ export const resolveNotificationHref = (
       return notification.entityId
         ? `/product/${notification.entityId}?review=write#reviews`
         : null;
+    case "WITHDRAW_REQUEST_APPROVED":
+    case "WITHDRAW_REQUEST_REJECTED":
+    case "WITHDRAW_REQUEST_PAID":
+      return "/wallet";
+    case "NEW_MESSAGE":
+      return notification.entityId ? `/messages/${notification.entityId}` : "/messages";
+    case "CRM_ITEM_ASSIGNED":
+      return null;
     case "SUPPORT_TICKET_REPLY":
     case "SUPPORT_TICKET_RESOLVED":
       return notification.entityId ? `/support?ticket=${notification.entityId}` : "/support";

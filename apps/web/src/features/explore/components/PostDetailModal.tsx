@@ -49,6 +49,7 @@ export const PostDetailModal = ({
     likeMutation,
     saveMutation,
     followMutation,
+    shareLook,
     setCommentsOpen,
     draft,
     setDraft,
@@ -117,6 +118,7 @@ export const PostDetailModal = ({
               isSaved={isSaved}
               onSave={() => gated(() => toggleSave({ lookId: id, saved: isSaved }))}
               isSaving={isSaving}
+              onShare={() => void shareLook()}
               className="mt-2.5 border-t border-border pt-2.5"
             />
 

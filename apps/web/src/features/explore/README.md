@@ -34,6 +34,9 @@ The public social feed: browsing posts (looks), liking/saving/commenting, follow
 - `offlineActionHandlers.ts` — registers the real API call each queued like/save/follow replays
   through once the connection returns (`apps/web/src/features/pwa`'s generic queue processor calls
   these back by action type; see that module's README for the queue itself).
+- `utils/lookPermalink.ts` — `lookPermalinkPath`, the one place that knows a look's shareable URL is
+  `/creator/:handle?look=:id` — shared with `notifications`' `resolveNotificationHref` so the two can
+  never point at a different shape for the same thing.
 - `socketEvents.ts` — the client-side mirror of the API's `SOCKET_EVENTS`/payload shapes this feature listens for (`look:created`, `feed:sync:*`, `comments:*`, `comment:created`, `comment:reply:created`).
 
 ## Funnel
@@ -69,6 +72,20 @@ once back online; it is imported once, for its side effect, from `app/providers.
 inside the hooks themselves, because a hook's module only loads on a page that actually renders it,
 and the queue needs every handler registered before the very first drain, regardless of which page
 happened to load first this session.
+
+## Sharing a look, a profile, or a product
+
+**User-facing:** every look, creator profile, and product has a Share button. On a phone, it opens
+the same share sheet as any other app — Messages, WhatsApp, whatever's installed. On a browser with
+no share sheet, it copies the link instead and says so.
+
+**Technical:** `usePostCardState`'s `shareLook` builds the payload — a title, the caption as the
+share text (falling back to a generic line when there is none), and an absolute URL built from
+`lookPermalinkPath` — and hands it to `apps/web/src/features/pwa`'s `shareOrCopyLink`, which is the
+one function actually deciding share-sheet-or-clipboard; see that module's README for how. Creator
+profiles and products build the same kind of payload inline in `CreatorProfile.tsx`/`ProductDetail.tsx`
+rather than through a shared hook, since each only needs it in exactly one place — `shareLook` earns
+its own function by being needed identically from both `PostCard` and `PostDetailModal`.
 
 ## Non-obvious rationale
 

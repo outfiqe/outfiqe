@@ -114,4 +114,49 @@ describe("resolveNotificationHref", () => {
     const notification = buildNotification({ type: "REVIEW_REQUESTED", entityId: null });
     expect(resolveNotificationHref(notification, OWN_HANDLE)).toBeNull();
   });
+
+  it("routes withdrawal request updates to the wallet", () => {
+    expect(
+      resolveNotificationHref(buildNotification({ type: "WITHDRAW_REQUEST_APPROVED" }), OWN_HANDLE),
+    ).toBe("/wallet");
+    expect(
+      resolveNotificationHref(buildNotification({ type: "WITHDRAW_REQUEST_REJECTED" }), OWN_HANDLE),
+    ).toBe("/wallet");
+    expect(
+      resolveNotificationHref(buildNotification({ type: "WITHDRAW_REQUEST_PAID" }), OWN_HANDLE),
+    ).toBe("/wallet");
+  });
+
+  it("deep-links a new message to its conversation", () => {
+    const notification = buildNotification({ type: "NEW_MESSAGE", entityId: "conversation-1" });
+    expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/messages/conversation-1");
+  });
+
+  it("falls back to the messages list when a new-message notification has no entityId", () => {
+    const notification = buildNotification({ type: "NEW_MESSAGE", entityId: null });
+    expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/messages");
+  });
+
+  it("returns null for a CRM assignment, which has no page on the web surface", () => {
+    expect(
+      resolveNotificationHref(buildNotification({ type: "CRM_ITEM_ASSIGNED" }), OWN_HANDLE),
+    ).toBeNull();
+  });
+
+  it("deep-links support ticket replies and resolutions to the support page", () => {
+    const replied = buildNotification({ type: "SUPPORT_TICKET_REPLY", entityId: "ticket-1" });
+    expect(resolveNotificationHref(replied, OWN_HANDLE)).toBe("/support?ticket=ticket-1");
+
+    const resolved = buildNotification({ type: "SUPPORT_TICKET_RESOLVED", entityId: null });
+    expect(resolveNotificationHref(resolved, OWN_HANDLE)).toBe("/support");
+  });
+
+  it("returns null for admin-only support types", () => {
+    expect(
+      resolveNotificationHref(buildNotification({ type: "SUPPORT_TICKET_CREATED" }), OWN_HANDLE),
+    ).toBeNull();
+    expect(
+      resolveNotificationHref(buildNotification({ type: "SUPPORT_TICKET_ASSIGNED" }), OWN_HANDLE),
+    ).toBeNull();
+  });
 });

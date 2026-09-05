@@ -1,6 +1,12 @@
 import type { MetadataRoute } from "next";
 
-import { appShortcuts, LIGHT_THEME_COLOR, toManifestIcons } from "@/features/pwa";
+import {
+  appShortcuts,
+  LIGHT_THEME_COLOR,
+  SHARE_TARGET_PATH,
+  SHARE_TARGET_PHOTO_FIELD_NAME,
+  toManifestIcons,
+} from "@/features/pwa";
 import { siteName, siteTagline } from "@/shared/seo";
 
 const PWA_APP_ID = "/";
@@ -27,6 +33,14 @@ const manifest = (): MetadataRoute.Manifest => ({
   categories: ["shopping", "lifestyle", "social"],
   icons: toManifestIcons(),
   shortcuts: appShortcuts,
+  share_target: {
+    action: SHARE_TARGET_PATH,
+    method: "POST",
+    enctype: "multipart/form-data",
+    params: {
+      files: [{ name: SHARE_TARGET_PHOTO_FIELD_NAME, accept: ["image/*"] }],
+    },
+  },
 });
 
 export default manifest;
