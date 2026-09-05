@@ -542,8 +542,12 @@ on older phones, and costs nothing, because the worker is bundled into a single 
 flaky connection that would throw away a half-finished form or interrupt an upload, so it is turned
 off. Handling new versions properly is planned separately.
 
-**Launch images are left out of the saved files.** They are 360 KB the browser would download on
-install and never use — the phone reads them from disk at launch, not through the worker.
+**Launch images and install-dialog screenshots are left out of the saved files.** Both are
+downloaded on the worker's install step by default and neither is ever used through the worker —
+the phone reads a launch image from disk at launch, and the browser fetches a screenshot only
+when it draws the Android install dialog. The screenshots in particular are a few megabytes, so
+`app/serwist/[path]/route.ts` excludes `public/splash` and `public/screenshots` from the precache
+glob.
 
 **`start_url` and `id` are different on purpose.** `start_url` is `/?source=pwa` so we can tell in
 analytics when someone opened the installed app rather than the website. `id` stays as `/`, because
