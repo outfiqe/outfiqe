@@ -42,6 +42,8 @@ export default defineConfig({
         "src/features/creator-leaderboard/components/CreatorLeaderboardTabs.tsx",
         "src/features/explore/components/FeedFilterTabs.tsx",
         "src/features/explore/components/AddPostButton.tsx",
+        "src/features/explore/components/PostCard.tsx",
+        "src/features/explore/components/PostDetailModal.tsx",
         "src/features/product-detail/components/ShippingInfo.tsx",
         "src/features/users/components/UserList.tsx",
         "src/features/notifications/SiteNotificationBell.tsx",
