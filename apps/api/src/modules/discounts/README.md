@@ -3,38 +3,64 @@
 ## Purpose
 
 The pricing kernel for two distinct discount models: a brand-funded sale price on a product, and a
-platform-funded coupon applied at checkout. Owns the pure money math both `cart` and `orders` will
-depend on — resolving a product's brand-funded effective price, valuing a coupon against a cap,
-splitting a cart-level coupon across the order's line items without losing or inventing a rupee,
-and asserting that an order's totals stay internally consistent. No I/O, no schema, no Prisma
-types — every export is a pure function over plain numbers, mirroring how `brand-payouts` isolates
-its fee math (`computeTieredPlatformFee`, `computeGatewayFee`) in `*.utils.ts` ahead of anything
-that calls it.
+platform-funded coupon applied at checkout. Owns the pure money math `products`, `cart` and
+`orders` depend on — resolving a product's brand-funded effective price, checking a brand discount
+against its ceiling, valuing a coupon against a cap, splitting a cart-level coupon across the
+order's line items without losing or inventing a rupee, and asserting that an order's totals stay
+internally consistent. No I/O, no schema, no Prisma types — every export is a pure function over
+plain numbers, mirroring how `brand-payouts` isolates its fee math (`computeTieredPlatformFee`,
+`computeGatewayFee`) in `*.utils.ts` ahead of anything that calls it.
 
 ## Structure
 
-- `discount.utils.ts` — `resolveBrandFundedUnitPrice` (list price minus an active brand discount,
-  floored at the minimum effective price), `computeCouponValue` (percent/fixed valuation with cap
-  and eligible-subtotal ceiling applied), `allocatePlatformDiscountToLines` (largest-remainder
-  split of a cart-level discount across order lines, deterministically tie-broken), and
-  `assertOrderMoneyInvariant` (throws if an order's `total` doesn't reconcile against its subtotal,
-  discount and fees, or if per-line discount allocations don't sum to the order-level total).
-- `discount.constants.ts` — `MAX_BRAND_DISCOUNT_BASIS_POINTS` (the ceiling a future brand-discount
+- `discount.utils.ts` — `toActiveBrandDiscount` (narrows any discount-shaped record — a Prisma
+  `ProductDiscount` row, a batched-lookup Map value, `null`/`undefined` — down to exactly the three
+  fields the functions below need, so `products`, `cart` and `orders` all feed this kernel the same
+  shape without duplicating the pick), `resolveBrandFundedUnitPrice` (list price minus an active
+  brand discount, floored at the minimum effective price), `isBrandDiscountWithinCeiling` (rejects a
+  brand discount worth more than `MAX_BRAND_DISCOUNT_BASIS_POINTS` of the list price, for either
+  discount type — used by `products`' create/update-discount validation), `computeDiscountPercent`
+  (the whole-number percent-off badge shown next to a struck-through price — used by both `products`
+  and `cart`, which is why it lives here rather than in either module's own `*.utils.ts`),
+  `computeCouponValue` (percent/fixed valuation with cap and eligible-subtotal ceiling applied),
+  `allocatePlatformDiscountToLines` (largest-remainder split of a cart-level discount across order
+  lines, deterministically tie-broken), and `assertOrderMoneyInvariant` (throws if an order's
+  `total` doesn't reconcile against its subtotal, discount and fees, or if per-line discount
+  allocations don't sum to the order-level total). `resolveBrandFundedUnitPrice` and
+  `isBrandDiscountWithinCeiling` both derive from the same private `computeBrandDiscountAmount` so
+  the ceiling check and the price actually charged can never disagree about what a given discount is
+  worth.
+- `discount.constants.ts` — `MAX_BRAND_DISCOUNT_BASIS_POINTS` (the ceiling `products`' discount
   write path validates against), `MIN_EFFECTIVE_PRICE` (mirrors `products`' own `PRICE_MIN`).
 - `discount.types.ts` — the plain-object shapes these functions take and return
   (`DiscountableLine`, `AllocatedDiscount`, `ActiveBrandDiscount`, `CouponValueRule`,
-  `OrderMoneyInvariantInput`). Deliberately not Prisma-generated types — this module has no schema
-  yet, and these shapes exist independently of how a future schema names its columns.
+  `OrderMoneyInvariantInput`). Deliberately not Prisma-generated types — `ActiveBrandDiscount`'s
+  three fields are exactly what `resolveBrandFundedUnitPrice`/`isBrandDiscountWithinCeiling` need,
+  so `products` maps its `ProductDiscount` row down to this shape at the call site rather than this
+  module importing a Prisma type.
 
 Basis-point-to-rupee conversion reuses `BASIS_POINTS_PER_PERCENT` from
 `#constants/money.constants.js`, shared with `brand-payouts`.
 
 ## Funnel
 
-This module is not yet wired into any request path. It ships dormant: no route, controller,
-service or repository calls it. `cart` and `orders` will import `discount.utils.ts` directly, the
-same way `orders` already imports `deliveryZoneService` across module boundaries, once the
-brand-funded discount schema (product sale prices) and the coupon/redemption schema exist.
+**Wired in, for brand-funded discounts:**
+
+- `products` calls `resolveBrandFundedUnitPrice` from `product.utils.ts`'s
+  `toPublicProduct`/`toBrandSummary` mappers (every public listing, the product detail page, and a
+  brand's own product list all show the effective price), and `isBrandDiscountWithinCeiling` from
+  `product.service.ts`'s discount create/update methods. See `../products/README.md` for the
+  `ProductDiscount` schema and the create/update/remove flow.
+- `cart` calls the same `resolveBrandFundedUnitPrice`/`computeDiscountPercent` pair from
+  `cart.service.ts`'s `buildCartView`, so a shopper sees the discounted price before checkout, not
+  just at the order confirmation.
+- `orders` calls it a third time, independently, inside `checkoutOnce` — the cart's price is never
+  trusted, checkout always re-resolves from the product row at the moment of purchase. See
+  `../orders/README.md`.
+
+**Not yet wired in:** nothing calls `allocatePlatformDiscountToLines`, `computeCouponValue`, or
+`assertOrderMoneyInvariant` yet — those back the platform-coupon phase, which needs its own schema
+(`Coupon`/`CouponRedemption`) first.
 
 ## Non-obvious rationale
 

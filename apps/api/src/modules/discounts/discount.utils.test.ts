@@ -4,8 +4,48 @@ import {
   allocatePlatformDiscountToLines,
   assertOrderMoneyInvariant,
   computeCouponValue,
+  computeDiscountPercent,
+  isBrandDiscountWithinCeiling,
   resolveBrandFundedUnitPrice,
+  toActiveBrandDiscount,
 } from "./discount.utils.js";
+
+describe("toActiveBrandDiscount", () => {
+  it("returns null for null or undefined", () => {
+    expect(toActiveBrandDiscount(null)).toBeNull();
+    expect(toActiveBrandDiscount(undefined)).toBeNull();
+  });
+
+  it("picks exactly the three pricing-kernel fields off a richer record", () => {
+    const richDiscount = {
+      id: "discount-1",
+      productId: "product-1",
+      discountType: "PERCENT" as const,
+      percentBasisPoints: 1_500,
+      fixedAmount: null,
+      startsAt: new Date(),
+      endsAt: null,
+      isActive: true,
+    };
+    expect(toActiveBrandDiscount(richDiscount)).toEqual({
+      discountType: "PERCENT",
+      percentBasisPoints: 1_500,
+      fixedAmount: null,
+    });
+  });
+});
+
+describe("computeDiscountPercent", () => {
+  it("returns null when the effective price is not lower than list price", () => {
+    expect(computeDiscountPercent(2_000, 2_000)).toBeNull();
+    expect(computeDiscountPercent(2_000, 2_100)).toBeNull();
+  });
+
+  it("rounds the percentage off to the nearest whole number", () => {
+    expect(computeDiscountPercent(2_000, 1_500)).toBe(25);
+    expect(computeDiscountPercent(3_000, 2_000)).toBe(33);
+  });
+});
 
 describe("resolveBrandFundedUnitPrice", () => {
   it("returns the list price unchanged when there is no active discount", () => {
@@ -60,6 +100,48 @@ describe("resolveBrandFundedUnitPrice", () => {
         fixedAmount: null,
       }),
     ).toBe(2_000);
+  });
+});
+
+describe("isBrandDiscountWithinCeiling", () => {
+  it("allows a percent discount at exactly the ceiling", () => {
+    expect(
+      isBrandDiscountWithinCeiling(2_000, {
+        discountType: "PERCENT",
+        percentBasisPoints: 7_000,
+        fixedAmount: null,
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects a percent discount above the ceiling", () => {
+    expect(
+      isBrandDiscountWithinCeiling(2_000, {
+        discountType: "PERCENT",
+        percentBasisPoints: 7_500,
+        fixedAmount: null,
+      }),
+    ).toBe(false);
+  });
+
+  it("rejects a fixed discount whose amount exceeds the ceiling's equivalent rupee value", () => {
+    expect(
+      isBrandDiscountWithinCeiling(2_000, {
+        discountType: "FIXED",
+        percentBasisPoints: null,
+        fixedAmount: 1_401,
+      }),
+    ).toBe(false);
+  });
+
+  it("allows a fixed discount at exactly the ceiling's equivalent rupee value", () => {
+    expect(
+      isBrandDiscountWithinCeiling(2_000, {
+        discountType: "FIXED",
+        percentBasisPoints: null,
+        fixedAmount: 1_400,
+      }),
+    ).toBe(true);
   });
 });
 

@@ -11,6 +11,8 @@ export type CreateOrderItemInput = {
   sizeId: string;
   qty: number;
   unitPrice: number;
+  listUnitPrice: number;
+  brandDiscountAmount: number;
   attributedCreatorId?: string;
   attributedCreatorLookId?: string;
   attributedLinkId?: string;

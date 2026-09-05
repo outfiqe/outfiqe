@@ -7,6 +7,8 @@ export type CartItemView = {
   imageUrl: string | null;
   sizeLabel: string;
   unitPrice: number;
+  listUnitPrice: number;
+  discountPercent: number | null;
   qty: number;
   availableStock: number;
   soldOut: boolean;

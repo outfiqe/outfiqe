@@ -1,4 +1,4 @@
-import type { ProductStatus } from "#generated/prisma/enums.js";
+import type { DiscountType, ProductStatus } from "#generated/prisma/enums.js";
 
 export type ProductTypeSummary = { slug: string; label: string };
 
@@ -45,10 +45,47 @@ export type SeenOnCreator = {
   lookImageUrl: string;
 };
 
+export type ProductDiscountRecord = {
+  id: string;
+  discountType: DiscountType;
+  percentBasisPoints: number | null;
+  fixedAmount: number | null;
+  startsAt: Date;
+  endsAt: Date | null;
+  isActive: boolean;
+};
+
+export type ProductDiscountView = {
+  id: string;
+  discountType: DiscountType;
+  percentBasisPoints: number | null;
+  fixedAmount: number | null;
+  startsAt: string;
+  endsAt: string | null;
+};
+
+export type SetProductDiscountInput = {
+  discountType: DiscountType;
+  percentBasisPoints: number | null;
+  fixedAmount: number | null;
+  startsAt: Date;
+  endsAt: Date | null;
+  createdById: string;
+};
+
+export type UpdateProductDiscountInput = {
+  discountType?: DiscountType;
+  percentBasisPoints?: number | null;
+  fixedAmount?: number | null;
+  startsAt?: Date;
+  endsAt?: Date | null;
+};
+
 export type ProductWithBrand = ProductRecord & {
   brand: { name: string };
   categories: { slug: string; name: string }[];
   productType: ProductTypeSummary;
+  discounts?: ProductDiscountRecord[];
 };
 
 export type ProductWithStock = ProductWithBrand & { totalStock: number };
@@ -77,6 +114,8 @@ export type ProductBrandSummary = {
   id: string;
   name: string;
   price: number;
+  effectivePrice: number;
+  activeDiscount: ProductDiscountView | null;
   type: string;
   categories: string[];
   categorySlugs: string[];
@@ -117,6 +156,8 @@ export type PublicProduct = {
   brand: string;
   name: string;
   price: number;
+  effectivePrice: number;
+  discountPercent: number | null;
   type: string;
   categorySlugs: string[];
   imageUrl: string | null;

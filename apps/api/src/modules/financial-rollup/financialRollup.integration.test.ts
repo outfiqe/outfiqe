@@ -116,7 +116,17 @@ const grantCommission = async (status: CommissionStatus, amount: number, created
       subtotal: amount,
       deliveryFee: 0,
       total: amount,
-      items: { create: [{ productId: product.id, sizeId: size.id, qty: 1, unitPrice: amount }] },
+      items: {
+        create: [
+          {
+            productId: product.id,
+            sizeId: size.id,
+            qty: 1,
+            unitPrice: amount,
+            listUnitPrice: amount,
+          },
+        ],
+      },
     },
     include: { items: true },
   });
@@ -181,7 +191,13 @@ const grantBrandPayout = async (
       total: netAmount + platformFee,
       items: {
         create: [
-          { productId: product.id, sizeId: size.id, qty: 1, unitPrice: netAmount + platformFee },
+          {
+            productId: product.id,
+            sizeId: size.id,
+            qty: 1,
+            unitPrice: netAmount + platformFee,
+            listUnitPrice: netAmount + platformFee,
+          },
         ],
       },
     },

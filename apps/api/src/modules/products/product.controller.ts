@@ -12,7 +12,9 @@ import type {
   ListPublicProductsQuery,
   ListReviewProductsQuery,
   ProductIdParam,
+  SetProductDiscountBody,
   UpdateProductBody,
+  UpdateProductDiscountBody,
 } from "./product.schemas.js";
 import { productService } from "./product.service.js";
 
@@ -51,6 +53,32 @@ export const productController = {
 
     await productService.delete(userId, id);
     sendSuccess(res, null, "Product deleted.");
+  },
+
+  async setDiscount(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { id } = validated.params<ProductIdParam>(res);
+    const body = validated.body<SetProductDiscountBody>(res);
+
+    const discount = await productService.setDiscount(userId, id, body);
+    sendSuccess(res, discount, "Discount created.", CREATED_STATUS);
+  },
+
+  async updateDiscount(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { id } = validated.params<ProductIdParam>(res);
+    const body = validated.body<UpdateProductDiscountBody>(res);
+
+    const discount = await productService.updateDiscount(userId, id, body);
+    sendSuccess(res, discount, "Discount updated.");
+  },
+
+  async removeDiscount(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { id } = validated.params<ProductIdParam>(res);
+
+    await productService.removeDiscount(userId, id);
+    sendSuccess(res, null, "Discount removed.");
   },
 
   async listMine(_req: Request, res: Response) {

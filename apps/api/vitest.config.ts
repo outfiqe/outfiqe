@@ -110,6 +110,7 @@ export default defineConfig({
         "src/modules/admin-invites/adminInvite.utils.ts",
         "src/shared/utils/email.utils.ts",
         "src/modules/discounts/**/*.ts",
+        "src/modules/products/product.utils.ts",
       ],
       thresholds: {
         lines: 80,

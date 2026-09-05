@@ -30,6 +30,10 @@ import { cartRepository } from "#modules/cart/cart.repository.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
 import { creatorLinkRepository } from "#modules/creator-links/creatorLink.repository.js";
 import { deliveryZoneService } from "#modules/delivery-zones/deliveryZone.service.js";
+import {
+  resolveBrandFundedUnitPrice,
+  toActiveBrandDiscount,
+} from "#modules/discounts/discount.utils.js";
 import { paymentRepository } from "#modules/payments/payment.repository.js";
 import { paymentService } from "#modules/payments/payment.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
@@ -116,7 +120,7 @@ const checkoutOnce = async (
     productId: string;
     sizeId: string;
     qty: number;
-    unitPrice: number;
+    listUnitPrice: number;
     brandId: string;
   }[];
 
@@ -136,7 +140,7 @@ const checkoutOnce = async (
         productId: buyNow.productId,
         sizeId: buyNow.sizeId,
         qty: buyNow.qty,
-        unitPrice: product.price,
+        listUnitPrice: product.price,
         brandId: product.brandId,
       },
     ];
@@ -149,7 +153,7 @@ const checkoutOnce = async (
       productId,
       sizeId,
       qty,
-      unitPrice: product.price,
+      listUnitPrice: product.price,
       brandId: product.brandId,
     }));
   }
@@ -167,26 +171,40 @@ const checkoutOnce = async (
     );
   }
 
-  const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0);
+  const orderPlacedAt = new Date();
+  const activeDiscountsByProductId = await productRepository.findActiveDiscountsByProductIds(
+    [...new Set(lines.map((line) => line.productId))],
+    orderPlacedAt,
+  );
+
+  const pricedLines = lines.map((line) => {
+    const activeDiscount = activeDiscountsByProductId.get(line.productId);
+    const unitPrice = resolveBrandFundedUnitPrice(
+      line.listUnitPrice,
+      toActiveBrandDiscount(activeDiscount),
+    );
+    return { ...line, unitPrice, brandDiscountAmount: line.listUnitPrice - unitPrice };
+  });
+
+  const subtotal = pricedLines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0);
   const feeValues = await deliveryZoneService.resolveFeeValuesForCity(city);
   const deliveryFee =
     subtotal >= feeValues.freeDeliveryThreshold ? 0 : feeValues.standardDeliveryFee;
   const codFee = paymentMethod === PaymentMethod.COD ? feeValues.codHandlingFee : 0;
   const total = subtotal + deliveryFee + codFee;
 
-  const orderPlacedAt = new Date();
   const attributions = await Promise.all(
-    lines.map((line) => resolveAttribution(userId, line.productId, orderPlacedAt)),
+    pricedLines.map((line) => resolveAttribution(userId, line.productId, orderPlacedAt)),
   );
   const tiers = await Promise.all(
-    lines.map((line, index) =>
+    pricedLines.map((line, index) =>
       attributions[index]
         ? commissionRepository.findTierForPrice(line.unitPrice)
         : Promise.resolve(null),
     ),
   );
 
-  const items: CreateOrderItemInput[] = lines.map((line, index) => {
+  const items: CreateOrderItemInput[] = pricedLines.map((line, index) => {
     const { brandId: _brandId, ...orderItemLine } = line;
     const attribution = attributions[index];
     if (!attribution) return { ...orderItemLine, attributionSource: undefined };
@@ -267,7 +285,7 @@ const checkoutOnce = async (
     });
 
     for (const [index, orderItem] of createdOrder.items.entries()) {
-      const line = lines[index];
+      const line = pricedLines[index];
       if (line) {
         const grossAmount = line.unitPrice * line.qty;
         const isExemptBrand = exemptBrandIds.has(line.brandId);

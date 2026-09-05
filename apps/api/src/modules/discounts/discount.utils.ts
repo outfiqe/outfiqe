@@ -1,6 +1,6 @@
 import { BASIS_POINTS_PER_PERCENT } from "#constants/money.constants.js";
 
-import { MIN_EFFECTIVE_PRICE } from "./discount.constants.js";
+import { MAX_BRAND_DISCOUNT_BASIS_POINTS, MIN_EFFECTIVE_PRICE } from "./discount.constants.js";
 import type {
   ActiveBrandDiscount,
   AllocatedDiscount,
@@ -12,6 +12,31 @@ import type {
 const BASIS_POINTS_DIVISOR = BASIS_POINTS_PER_PERCENT * 100;
 const NO_ALLOCATION = 0;
 const RUPEE_STEP = 1;
+const DISCOUNT_PERCENT_MULTIPLIER = 100;
+
+export const computeDiscountPercent = (listPrice: number, effectivePrice: number): number | null =>
+  effectivePrice >= listPrice
+    ? null
+    : Math.round(((listPrice - effectivePrice) / listPrice) * DISCOUNT_PERCENT_MULTIPLIER);
+
+export const toActiveBrandDiscount = (
+  discount: ActiveBrandDiscount | null | undefined,
+): ActiveBrandDiscount | null => {
+  if (!discount) return null;
+  return {
+    discountType: discount.discountType,
+    percentBasisPoints: discount.percentBasisPoints,
+    fixedAmount: discount.fixedAmount,
+  };
+};
+
+export const computeBrandDiscountAmount = (
+  listPrice: number,
+  activeDiscount: ActiveBrandDiscount,
+): number =>
+  activeDiscount.discountType === "PERCENT"
+    ? Math.round((listPrice * (activeDiscount.percentBasisPoints ?? 0)) / BASIS_POINTS_DIVISOR)
+    : (activeDiscount.fixedAmount ?? 0);
 
 export const resolveBrandFundedUnitPrice = (
   listPrice: number,
@@ -19,12 +44,19 @@ export const resolveBrandFundedUnitPrice = (
 ): number => {
   if (!activeDiscount) return listPrice;
 
-  const discountAmount =
-    activeDiscount.discountType === "PERCENT"
-      ? Math.round((listPrice * (activeDiscount.percentBasisPoints ?? 0)) / BASIS_POINTS_DIVISOR)
-      : (activeDiscount.fixedAmount ?? 0);
-
+  const discountAmount = computeBrandDiscountAmount(listPrice, activeDiscount);
   return Math.max(listPrice - discountAmount, MIN_EFFECTIVE_PRICE);
+};
+
+export const isBrandDiscountWithinCeiling = (
+  listPrice: number,
+  activeDiscount: ActiveBrandDiscount,
+): boolean => {
+  const discountAmount = computeBrandDiscountAmount(listPrice, activeDiscount);
+  const maxAllowedAmount = Math.floor(
+    (listPrice * MAX_BRAND_DISCOUNT_BASIS_POINTS) / BASIS_POINTS_DIVISOR,
+  );
+  return discountAmount <= maxAllowedAmount;
 };
 
 export const computeCouponValue = (rule: CouponValueRule, eligibleSubtotal: number): number => {

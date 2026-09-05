@@ -2,7 +2,8 @@ import { PRODUCT_SORT, PRODUCT_SORT_VALUES } from "@outfiqe/utils";
 import { z } from "zod";
 
 import { SEARCH_QUERY_MAX_LENGTH } from "#constants/search.constants.js";
-import { ProductStatus } from "#generated/prisma/enums.js";
+import { DiscountType, ProductStatus } from "#generated/prisma/enums.js";
+import { MAX_BRAND_DISCOUNT_BASIS_POINTS } from "#modules/discounts/discount.constants.js";
 
 const NAME_MIN = 2;
 const NAME_MAX = 150;
@@ -15,6 +16,7 @@ const MAX_PAGE_SIZE = 50;
 const MAX_IMAGES = 6;
 const STOCK_MIN = 0;
 const STOCK_MAX = 100_000;
+const DISCOUNT_PERCENT_BASIS_POINTS_MIN = 1;
 
 export const productTypeSlugSchema = z.string().trim().min(1).max(TYPE_SLUG_MAX);
 export const categorySlugFieldSchema = z.string().trim().min(1).max(60);
@@ -55,6 +57,54 @@ export const adjustStockSchema = z.object({
 
 export type ProductSizeInput = z.infer<typeof productSizeInputSchema>;
 export type AdjustStockBody = z.infer<typeof adjustStockSchema>;
+
+const discountAmountFieldsMatchType = (data: {
+  discountType: DiscountType;
+  percentBasisPoints?: number;
+  fixedAmount?: number;
+}): boolean =>
+  data.discountType === DiscountType.PERCENT
+    ? data.percentBasisPoints !== undefined && data.fixedAmount === undefined
+    : data.fixedAmount !== undefined && data.percentBasisPoints === undefined;
+
+const DISCOUNT_AMOUNT_FIELD_MISMATCH_MESSAGE =
+  "Provide percentBasisPoints for a PERCENT discount or fixedAmount for a FIXED discount, not both.";
+
+export const setProductDiscountSchema = z
+  .object({
+    discountType: z.enum(DiscountType),
+    percentBasisPoints: z
+      .number()
+      .int()
+      .min(DISCOUNT_PERCENT_BASIS_POINTS_MIN)
+      .max(MAX_BRAND_DISCOUNT_BASIS_POINTS)
+      .optional(),
+    fixedAmount: z.number().int().min(PRICE_MIN).max(PRICE_MAX).optional(),
+    startsAt: z.coerce.date(),
+    endsAt: z.coerce.date().nullable().optional(),
+  })
+  .refine(discountAmountFieldsMatchType, { message: DISCOUNT_AMOUNT_FIELD_MISMATCH_MESSAGE })
+  .refine((data) => !data.endsAt || data.endsAt > data.startsAt, {
+    message: "endsAt must be after startsAt.",
+    path: ["endsAt"],
+  });
+
+export const updateProductDiscountSchema = z
+  .object({
+    discountType: z.enum(DiscountType).optional(),
+    percentBasisPoints: z
+      .number()
+      .int()
+      .min(DISCOUNT_PERCENT_BASIS_POINTS_MIN)
+      .max(MAX_BRAND_DISCOUNT_BASIS_POINTS)
+      .optional(),
+    fixedAmount: z.number().int().min(PRICE_MIN).max(PRICE_MAX).optional(),
+    startsAt: z.coerce.date().optional(),
+    endsAt: z.coerce.date().nullable().optional(),
+  })
+  .refine((data) => !(data.percentBasisPoints !== undefined && data.fixedAmount !== undefined), {
+    message: "Provide either percentBasisPoints or fixedAmount, not both.",
+  });
 
 export const listReviewProductsQuerySchema = z.object({
   status: productStatusSchema.optional(),
@@ -100,3 +150,5 @@ export type AutocompleteQuery = z.infer<typeof autocompleteQuerySchema>;
 export type ListPublicProductsQuery = z.infer<typeof listPublicProductsQuerySchema>;
 export type ListBrandProductsQuery = z.infer<typeof listBrandProductsQuerySchema>;
 export type ListMineProductsQuery = z.infer<typeof listMineProductsQuerySchema>;
+export type SetProductDiscountBody = z.infer<typeof setProductDiscountSchema>;
+export type UpdateProductDiscountBody = z.infer<typeof updateProductDiscountSchema>;

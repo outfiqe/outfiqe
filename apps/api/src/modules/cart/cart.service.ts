@@ -1,5 +1,10 @@
 import { AppError } from "#middlewares/error-handler.js";
 import { deliveryZoneService } from "#modules/delivery-zones/deliveryZone.service.js";
+import {
+  computeDiscountPercent,
+  resolveBrandFundedUnitPrice,
+  toActiveBrandDiscount,
+} from "#modules/discounts/discount.utils.js";
 import { productRepository } from "#modules/products/product.repository.js";
 
 import { CART_LOW_STOCK_THRESHOLD } from "./cart.constants.js";
@@ -10,12 +15,23 @@ const NOT_FOUND_STATUS = 404;
 
 const buildCartView = async (cartId: string, city: string | null): Promise<CartView> => {
   const rows = await cartRepository.listItems(cartId);
-  const stockBySizeId = await productRepository.getStockBySizeIds(rows.map((row) => row.sizeId));
+  const [stockBySizeId, activeDiscountsByProductId] = await Promise.all([
+    productRepository.getStockBySizeIds(rows.map((row) => row.sizeId)),
+    productRepository.findActiveDiscountsByProductIds(
+      [...new Set(rows.map((row) => row.productId))],
+      new Date(),
+    ),
+  ]);
 
   const items: CartItemView[] = rows.map((row) => {
     const { id, productId, sizeId, qty, product, size } = row;
-    const { name: productName, price: unitPrice, imageUrl, brand } = product;
+    const { name: productName, price: listUnitPrice, imageUrl, brand } = product;
     const availableStock = stockBySizeId.get(sizeId) ?? 0;
+    const activeDiscount = activeDiscountsByProductId.get(productId);
+    const unitPrice = resolveBrandFundedUnitPrice(
+      listUnitPrice,
+      toActiveBrandDiscount(activeDiscount),
+    );
 
     return {
       id,
@@ -26,6 +42,8 @@ const buildCartView = async (cartId: string, city: string | null): Promise<CartV
       imageUrl,
       sizeLabel: size.label,
       unitPrice,
+      listUnitPrice,
+      discountPercent: computeDiscountPercent(listUnitPrice, unitPrice),
       qty,
       availableStock,
       soldOut: availableStock === 0,

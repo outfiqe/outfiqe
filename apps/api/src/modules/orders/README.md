@@ -33,6 +33,38 @@ no `brandId` column). `items` is built by destructuring `brandId` back out of ea
 spreading it into the Prisma create call; this was an actual `PrismaClientValidationError` caught
 by the checkout integration test, not a hypothetical one.
 
+## Brand-funded discounts: `unitPrice` is resolved before anything else runs
+
+`checkoutOnce` builds `lines` with `listUnitPrice` (the product's raw `Product.price`, read
+server-side same as always), then — before computing `subtotal`, resolving attribution, or looking
+up a creator's commission tier — batches a single `productRepository.findActiveDiscountsByProductIds`
+call across every distinct product in the cart/buy-now line set and derives `pricedLines`, each with
+`unitPrice` (`resolveBrandFundedUnitPrice(listUnitPrice, activeDiscount)`,
+from `../discounts/discount.utils.js`) and `brandDiscountAmount` (`listUnitPrice - unitPrice`).
+Every downstream computation — `subtotal`, the commission tier lookup
+(`commissionRepository.findTierForPrice`), and `grossAmount` inside the settlement loop — reads
+`pricedLines`, never the pre-discount `lines`. This is deliberate, not incidental: it's what makes
+`BrandPayout.grossAmount = unitPrice × qty` stay true with **zero changes** to the settlement code
+in the section above — a discounted order's payout math is byte-identical to a full-price order at
+the discounted price, verified in `order.integration.test.ts`.
+
+**Commission currently follows the discounted price, not list price** — `findTierForPrice` is
+called with `pricedLines[index].unitPrice`, so a creator's flat per-band commission reflects what
+was actually sold. This is the discount-architecture spec's own recommended default for "does a
+brand discount reduce creator commission," not an arbitrary implementation choice, but it wasn't a
+question this module could defer: checkout has to compute _some_ commission at write time. Worth
+flagging back to the business rather than treating as silently settled — the spec's fuller
+recommendation (replacing the flat band ladder with a percentage before running large brand sales,
+to remove the "6% price cut drops a whole commission band" cliff) is explicitly a follow-up, not
+built here.
+
+Fetching discounts by `orderPlacedAt` (the same `Date` used for attribution resolution, not a fresh
+`new Date()` per lookup) means a discount whose window starts or ends in the middle of a slow
+checkout request is judged consistently against one instant, not two. A discount created _after_
+`orderPlacedAt` naturally can't match `startsAt <= orderPlacedAt`, so an already-in-flight or
+already-placed checkout is never retroactively affected — proven directly
+(`order.integration.test.ts`, "never retroactively changes an already-placed order").
+
 ## Idempotency is claim-first, not check-then-write
 
 `withIdempotency` inserts a `RequestIdempotency` row with a pending sentinel _before_ running the handler — the unique constraint on `(userId, endpoint, key)` is what makes the claim atomic. A losing concurrent request gets a `DUPLICATE_REQUEST` 409, not a silently-created second order. An earlier check-then-write version of this was tested and proven to let two concurrent requests both create orders; this version was verified to produce exactly one success and one 409 under the same conditions.
