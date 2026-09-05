@@ -10,7 +10,9 @@ import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
 import { ALL_TYPE_ID, CategoryTypeFilters } from "@/shared/components/CategoryTypeFilters";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
+import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
 
+import { useCategorySelection } from "../../lib/CategorySelectionContext";
 import { ProductCard } from "../ProductCard";
 
 export const CategoryResults = () => {
@@ -19,8 +21,16 @@ export const CategoryResults = () => {
   const categorySlug = searchParams.get("category");
   const activeType = searchParams.get("type") ?? ALL_TYPE_ID;
 
+  const { pendingCategorySlug } = useCategorySelection();
+  const { pendingValue: pendingType, markPending: markTypePending } =
+    usePendingSelection<string>(activeType);
+
   const categories = useCategories();
   const category = categories.data?.find((c) => c.slug === categorySlug) ?? categories.data?.[0];
+
+  const isNavigatingCategory = pendingCategorySlug !== null;
+  const isNavigatingType = pendingType !== null;
+  const effectiveActiveType = pendingType ?? activeType;
 
   const {
     data: productsPages,
@@ -30,8 +40,8 @@ export const CategoryResults = () => {
     isLoading,
   } = useInfiniteProducts({
     category: category?.slug,
-    type: activeType === ALL_TYPE_ID ? undefined : activeType,
-    enabled: Boolean(category),
+    type: effectiveActiveType === ALL_TYPE_ID ? undefined : effectiveActiveType,
+    enabled: Boolean(category) && !isNavigatingCategory,
   });
 
   const sentinelRef = useLoadMoreOnVisible(
@@ -47,10 +57,21 @@ export const CategoryResults = () => {
     return null;
   }
 
-  const { name, slug } = category;
+  const displayCategory = pendingCategorySlug
+    ? (categories.data?.find((c) => c.slug === pendingCategorySlug) ?? category)
+    : category;
+  const { name, slug } = displayCategory;
 
+  const selectType = (typeId: string) => {
+    markTypePending(typeId);
+    const params = new URLSearchParams({ category: slug });
+    if (typeId !== ALL_TYPE_ID) params.set("type", typeId);
+    router.replace(`/?${params.toString()}`, { scroll: false });
+  };
+
+  const showLoadingGrid = isLoading || isNavigatingCategory || isNavigatingType;
   const products = productsPages?.pages.flatMap((page) => page.products) ?? [];
-  const firstPage = productsPages?.pages[0];
+  const firstPage = isNavigatingCategory ? undefined : productsPages?.pages[0];
 
   return (
     <section className="px-6 pb-10 pt-2 sm:pb-14 sm:pt-3 lg:px-10">
@@ -72,7 +93,7 @@ export const CategoryResults = () => {
           variant="link"
           onClick={() => {
             const params = new URLSearchParams({ category: slug });
-            if (activeType !== ALL_TYPE_ID) params.set("type", activeType);
+            if (effectiveActiveType !== ALL_TYPE_ID) params.set("type", effectiveActiveType);
             router.push(`/shop?${params.toString()}`);
           }}
           className="h-auto gap-1 p-0"
@@ -83,10 +104,14 @@ export const CategoryResults = () => {
       </div>
 
       <div className="mt-6">
-        <CategoryTypeFilters basePath="/" categorySlug={slug} activeType={activeType} />
+        <CategoryTypeFilters
+          activeType={effectiveActiveType}
+          isNavigating={isNavigatingType}
+          onSelectType={selectType}
+        />
       </div>
 
-      {isLoading ? (
+      {showLoadingGrid ? (
         <ProductGridSkeleton className="mt-8" />
       ) : products.length === 0 ? (
         <p className="mt-12 text-sm text-muted-foreground">No pieces in this filter yet.</p>

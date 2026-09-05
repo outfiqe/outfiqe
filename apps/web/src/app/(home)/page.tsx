@@ -17,8 +17,15 @@ import {
   TasteCategories,
   TrendingNow,
 } from "@/features/landing";
+import { CategorySelectionProvider } from "@/features/landing/lib/CategorySelectionContext";
+import { getProductsFirstPageServer, getProductTypesServer } from "@/features/products";
+import { ALL_TYPE_ID } from "@/shared/components/CategoryTypeFilters";
 import { getQueryClient } from "@/shared/lib/getQueryClient";
 import { buildPageMetadata } from "@/shared/seo";
+
+interface HomePageProps {
+  searchParams: Promise<{ category?: string; type?: string }>;
+}
 
 export const metadata: Metadata = buildPageMetadata({
   title: "Outfiqe: Nepali fashion, worn by real creators",
@@ -35,9 +42,35 @@ export const metadata: Metadata = buildPageMetadata({
   ],
 });
 
-const HomePage = async () => {
+const HomePage = async ({ searchParams }: HomePageProps) => {
+  const params = await searchParams;
   const queryClient = getQueryClient();
+
   await queryClient.prefetchQuery({ queryKey: ["categories"], queryFn: getCategoriesServer });
+  const categories = await getCategoriesServer();
+  const activeCategorySlug = params.category ?? categories[0]?.slug;
+  const activeType = params.type && params.type !== ALL_TYPE_ID ? params.type : undefined;
+
+  await Promise.all([
+    queryClient.prefetchQuery({ queryKey: ["product-types"], queryFn: getProductTypesServer }),
+    activeCategorySlug
+      ? queryClient.prefetchInfiniteQuery({
+          queryKey: [
+            "products",
+            activeCategorySlug,
+            activeType,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+          ],
+          queryFn: () =>
+            getProductsFirstPageServer({ category: activeCategorySlug, type: activeType }),
+          initialPageParam: undefined,
+        })
+      : Promise.resolve(),
+  ]);
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
@@ -46,8 +79,10 @@ const HomePage = async () => {
         <main>
           <Hero />
           <Suspense fallback={null}>
-            <TasteCategories />
-            <CategoryResults />
+            <CategorySelectionProvider>
+              <TasteCategories />
+              <CategoryResults />
+            </CategorySelectionProvider>
           </Suspense>
           <Suspense fallback={null}>
             <CollectionsSection />

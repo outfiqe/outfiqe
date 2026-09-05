@@ -2,7 +2,7 @@
 
 import { Skeleton } from "@outfiqe/design-system";
 import { PRODUCT_SORT, PRODUCT_SORT_VALUES, type ProductSort } from "@outfiqe/utils";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { useCategories } from "@/features/categories/hooks/useCategories";
@@ -12,6 +12,7 @@ import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProduc
 import { ALL_TYPE_ID, CategoryTypeFilters } from "@/shared/components/CategoryTypeFilters";
 import { TRENDING_RANKS } from "@/shared/components/TrendingRankBadge";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
+import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
 
 const SHOP_BASE_PATH = "/shop";
 
@@ -19,16 +20,23 @@ const parseSort = (value: string | null): ProductSort | undefined =>
   PRODUCT_SORT_VALUES.find((candidate) => candidate === value);
 
 export const ShopResults = () => {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const categorySlug = searchParams.get("category");
   const activeType = searchParams.get("type") ?? ALL_TYPE_ID;
   const sort = parseSort(searchParams.get("sort"));
+
+  const { pendingValue: pendingType, markPending: markTypePending } =
+    usePendingSelection<string>(activeType);
 
   const categories = useCategories();
   const category = categorySlug
     ? categories.data?.find((candidate) => candidate.slug === categorySlug)
     : undefined;
   const isResolvingCategory = Boolean(categorySlug) && categories.isLoading;
+
+  const isNavigatingType = pendingType !== null;
+  const effectiveActiveType = pendingType ?? activeType;
 
   const {
     data: productsPages,
@@ -38,7 +46,7 @@ export const ShopResults = () => {
     isLoading,
   } = useInfiniteProducts({
     category: category?.slug,
-    type: activeType === ALL_TYPE_ID ? undefined : activeType,
+    type: effectiveActiveType === ALL_TYPE_ID ? undefined : effectiveActiveType,
     sort,
     enabled: !isResolvingCategory,
   });
@@ -52,6 +60,15 @@ export const ShopResults = () => {
     return <ProductGridSkeleton className="mt-8" />;
   }
 
+  const selectType = (typeId: string) => {
+    if (!category) return;
+    markTypePending(typeId);
+    const params = new URLSearchParams({ category: category.slug });
+    if (typeId !== ALL_TYPE_ID) params.set("type", typeId);
+    router.replace(`${SHOP_BASE_PATH}?${params.toString()}`, { scroll: false });
+  };
+
+  const showLoadingGrid = isLoading || isNavigatingType;
   const products = productsPages?.pages.flatMap((page) => page.products) ?? [];
   const firstPage = productsPages?.pages[0];
 
@@ -70,14 +87,14 @@ export const ShopResults = () => {
       {category && (
         <div className="mt-6">
           <CategoryTypeFilters
-            basePath={SHOP_BASE_PATH}
-            categorySlug={category.slug}
-            activeType={activeType}
+            activeType={effectiveActiveType}
+            isNavigating={isNavigatingType}
+            onSelectType={selectType}
           />
         </div>
       )}
 
-      {isLoading ? (
+      {showLoadingGrid ? (
         <ProductGridSkeleton className="mt-8" />
       ) : products.length === 0 ? (
         <p className="mt-12 text-sm text-muted-foreground">Nothing here yet.</p>
