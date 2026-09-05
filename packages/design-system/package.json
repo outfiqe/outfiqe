@@ -34,7 +34,8 @@
     "react-easy-crop": "^6.2.3",
     "react-hook-form": "^7.84.0",
     "recharts": "^3.10.1",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.6.0",
+    "vaul": "^1.1.2"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

@@ -102,6 +102,12 @@
   .animate-avatar-ring-spin {
     animation: none;
   }
+
+  [data-vaul-drawer],
+  [data-vaul-overlay] {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
 
 .dark {

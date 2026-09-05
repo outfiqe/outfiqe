@@ -126,8 +126,8 @@ navigation trigger.
 Neither `Modal` (blocking, unmounts with its page) nor `Popover` (anchored, sized for small
 transient content) fit a non-blocking panel that has to survive route changes — see that
 component's own file for the reasoning. Below `sm`, `Drawer` is a swipeable bottom sheet (`90dvh`,
-rounded top corners, a backdrop, drag-down-to-dismiss via `useSwipeToDismiss` from
-`@outfiqe/design-system`); at `sm` and up it stays the original small floating panel anchored to the
+rounded top corners, a backdrop, drag-down-to-dismiss via `vaul`, which `Drawer` is built on — see
+`packages/design-system/README.md`'s rationale for why); at `sm` and up it stays the original small floating panel anchored to the
 bottom-right corner, where a full-height sheet and backdrop wouldn't make sense. Its `z-[60]` sits
 above `DashboardMobileNavBar` (`z-50`), and `DashboardMobileNavBar` also just hides itself entirely
 while `useChatPanel().isOpen` is true — with the panel already swipeable and dismissible, letting
