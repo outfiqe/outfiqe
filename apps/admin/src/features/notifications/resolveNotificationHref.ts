@@ -8,6 +8,8 @@ export const resolveNotificationHref = (notification: Notification): string | nu
     case "SUPPORT_TICKET_ASSIGNED":
     case "SUPPORT_TICKET_REPLY":
       return notification.entityId ? `/support/${notification.entityId}` : "/support";
+    case "CRM_ITEM_ASSIGNED":
+      return notification.metadata.crmItemKind === "task" ? "/crm/tasks" : "/crm/support";
     case "LOOK_LIKED":
     case "LOOK_COMMENTED":
     case "COMMENT_REPLIED":
@@ -18,6 +20,10 @@ export const resolveNotificationHref = (notification: Notification): string | nu
     case "COMMISSION_EARNED":
     case "NEW_ORDER":
     case "ORDER_STATUS_CHANGED":
+    case "WITHDRAW_REQUEST_APPROVED":
+    case "WITHDRAW_REQUEST_REJECTED":
+    case "WITHDRAW_REQUEST_PAID":
+    case "NEW_MESSAGE":
     case "SUPPORT_TICKET_RESOLVED":
       return null;
     default:

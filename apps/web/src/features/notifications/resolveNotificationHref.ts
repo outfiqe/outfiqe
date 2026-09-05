@@ -35,6 +35,14 @@ export const resolveNotificationHref = (
       return notification.entityId
         ? `/product/${notification.entityId}?review=write#reviews`
         : null;
+    case "WITHDRAW_REQUEST_APPROVED":
+    case "WITHDRAW_REQUEST_REJECTED":
+    case "WITHDRAW_REQUEST_PAID":
+      return "/wallet";
+    case "NEW_MESSAGE":
+      return notification.entityId ? `/messages/${notification.entityId}` : "/messages";
+    case "CRM_ITEM_ASSIGNED":
+      return null;
     case "SUPPORT_TICKET_REPLY":
     case "SUPPORT_TICKET_RESOLVED":
       return notification.entityId ? `/support?ticket=${notification.entityId}` : "/support";

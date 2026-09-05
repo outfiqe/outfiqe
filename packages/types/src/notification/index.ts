@@ -12,13 +12,28 @@ export type NotificationType =
   | "BRAND_APPLICATION_SUBMITTED"
   | "PRODUCT_REVIEWED"
   | "REVIEW_REQUESTED"
+  | "WITHDRAW_REQUEST_APPROVED"
+  | "WITHDRAW_REQUEST_REJECTED"
+  | "WITHDRAW_REQUEST_PAID"
+  | "NEW_MESSAGE"
+  | "CRM_ITEM_ASSIGNED"
   | "SUPPORT_TICKET_CREATED"
   | "SUPPORT_TICKET_ASSIGNED"
   | "SUPPORT_TICKET_REPLY"
   | "SUPPORT_TICKET_RESOLVED";
 
 export type NotificationEntityType =
-  "LOOK" | "USER" | "ORDER" | "BRAND_APPLICATION" | "BADGE" | "PRODUCT" | "SUPPORT_TICKET";
+  | "LOOK"
+  | "USER"
+  | "ORDER"
+  | "BRAND_APPLICATION"
+  | "BADGE"
+  | "PRODUCT"
+  | "WITHDRAW_REQUEST"
+  | "CONVERSATION"
+  | "CRM_TASK"
+  | "CRM_TICKET"
+  | "SUPPORT_TICKET";
 
 export type RecentActor = {
   id: string;
@@ -44,6 +59,11 @@ export type NotificationMetadata = {
   productName?: string;
   productImageUrl?: string | null;
   rating?: number;
+  withdrawAmount?: number;
+  rejectionReason?: string;
+  messagePreview?: string;
+  crmItemKind?: "task" | "ticket";
+  crmItemTitle?: string;
   supportSubject?: string;
 };
 

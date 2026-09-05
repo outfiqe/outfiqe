@@ -51,8 +51,11 @@ assigneeUserId, assignedByUserId }`) is published on the existing Redis Streams 
 - **`resolveAt` is stamped by the transition, not a separate action.** Moving to `RESOLVED` or
   `CLOSED` sets `resolvedAt`; reopening to `IN_PROGRESS`/`OPEN` clears it — there's no standalone
   "resolve" endpoint to keep in sync with the board state.
-- **The admin notification bell doesn't route `CRM_ITEM_ASSIGNED` to `/crm/support` yet.**
-  `packages/types`' hand-maintained `NotificationType` union (a subset of the Prisma enum — it
-  already omits `WITHDRAW_REQUEST_*`) would need the new value, a shared-package change with
-  web + admin fan-out. The notification is still created and shown; the click-through route is a
-  deferred follow-up.
+- **The admin notification bell routes `CRM_ITEM_ASSIGNED` to `/crm/support` (tickets) or
+  `/crm/tasks` (tasks) based on `metadata.crmItemKind`**, not to the specific ticket/task — neither
+  `TicketsPage` nor `TasksPage` currently supports deep-linking to one row via the URL, so opening
+  the exact item still means finding it on the list page. `packages/types`' hand-maintained
+  `NotificationType`/`NotificationEntityType` unions mirror the full Prisma enums now (see
+  `packages/types/src/notification/index.ts`) so this and the other previously-omitted types
+  (`WITHDRAW_REQUEST_*`, `NEW_MESSAGE`) resolve a real in-app message and link instead of falling
+  back to "You have a new notification" with a dead click.
