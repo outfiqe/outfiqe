@@ -44,6 +44,7 @@ export default defineConfig({
         "src/processes/consumers.ts",
         "src/shared/utils/readiness.utils.ts",
         "src/testing/integration/workerPool.ts",
+        "src/testing/integration/uniqueValues.ts",
         "src/shared/utils/pagination.utils.ts",
         "src/shared/utils/password.utils.ts",
         "src/shared/utils/password-breach.utils.ts",
