@@ -10,7 +10,10 @@ passed in.
 
 ## Structure
 
-- `header/` — `HeaderBar` and its condense-on-scroll behavior (`useHeaderCondense`).
+- `header/` — `HeaderBar` and its condense-on-scroll behavior (`useHeaderCondense`), plus
+  `useHeaderHeightVar` (publishes the rendered header height to the `--site-header-height` custom
+  property so page content can offset itself under the sticky bar). `styles.ts` holds the two class
+  sets the bar swaps between; `HeaderBar` itself is plain `<header>`/`<div>` — see rationale below.
 - `sidebar/` — `Sidebar`, `SidebarSection`, `SidebarNavItemView`, `SidebarSkeleton` (the
   matching auth/nav-loading placeholder each app renders before its sidebar data is ready), and
   their active-trail/expanded-group/collapse state (`activeTrail.ts`, `useExpandedGroups.ts`,
@@ -35,8 +38,53 @@ passed in.
   - `resolveNotificationMessage.ts` / `notificationTypeLabels.ts` / `formatNotificationTimestamp.ts`
     — pure formatting helpers: the row's display text, its type label, and its relative timestamp
     (`"2m"` / `"3h"` / `"Aug 20"`).
+- `testing/setup.tsx` — vitest jsdom setup for this package's own component tests (`jest-dom`
+  matchers, RTL `cleanup`, and a `ResizeObserver` stub). Unlike a plain stub, this one keeps a
+  registry of the observer callbacks so a test can drive them: `triggerResizeObservers()` fires
+  every live observer, `waitForAnimationFrame()` awaits the `requestAnimationFrame` those callbacks
+  are coalesced into, and `stubElementHeight()` gives jsdom (which measures everything as `0`) a
+  real height to report. Wired by `vitest.config.ts` (a single `unit` project); run with
+  `pnpm --filter @outfiqe/components test`.
 
 ## Non-obvious rationale
+
+- **`HeaderBar` no longer uses `framer-motion`, and this package no longer depends on it — the repo
+  now has no `framer-motion` anywhere.** The condense/expand motion used to be two nested
+  `motion.*` elements with `layout` and a spring, i.e. a FLIP animation driven by a per-frame
+  `requestAnimationFrame` loop in JS. Everything that actually changes between the two states is a
+  plain animatable CSS property — `max-width` (`max-w-7xl` ↔ `max-w-5xl`), `padding` on both the
+  wrapper and the bar, plus the background/border/shadow the bar was already transitioning — so the
+  motion is now a CSS `transition` the browser owns, in the same spirit as the `vaul` switch
+  described in `design-system/README.md`. No library, no JS animation loop.
+- **A transform-based FLIP would have been the wrong replacement here, despite being the direct
+  analogue of what `framer-motion` was doing.** FLIP animates geometry with `scale`, which distorts
+  everything inside the box — the logo and nav text would visibly squash during a 64rem ↔ 80rem
+  width change. `framer-motion` hid that by counter-scaling children (which is why both the
+  `<header>` and the inner bar had to be `motion` elements with `layout`). Transitioning the real
+  layout properties avoids the distortion problem entirely rather than correcting for it.
+- **`useHeaderCondense` still uses `useState`, deliberately.** `SiteHeader` doesn't only style on
+  this flag — it _unmounts_ the secondary link nav when condensed and scales the logo, and a
+  subtree cannot be unmounted by toggling a class from a ref. The state is also not a scroll-time
+  cost: the hook writes `window.scrollY > threshold`, so React bails out of re-rendering while the
+  boolean is unchanged and only re-renders on an actual threshold crossing — exactly when the DOM
+  has to change anyway. The `requestAnimationFrame` throttle in that hook keeps the scroll listener
+  itself off the main-thread critical path.
+- **This package owns a vitest project now.** It previously had only a `lint` script and was tested
+  transitively through the apps. Dropping `framer-motion` moved the header's condense motion into
+  this package's own class sets and CSS transitions, and the height-var effect into a hook here, so
+  that behaviour needed colocated tests rather than app-level coverage. Mirrors
+  `packages/design-system`'s setup (same `unit` project shape, same 80% thresholds).
+  `coverage.include` only lists files with colocated tests (`HeaderBar.tsx`,
+  `useHeaderHeightVar.ts`, `NotificationBell.tsx`); widen it as more components get them.
+- **`NotificationBell` sizes its icon from the trigger (`[&_svg]:size-6 lg:[&_svg]:size-5`), not from
+  the `<Bell />` element.** A `size-*` class on an icon inside a design-system `Button` is dead —
+  `Button`'s own `[&_svg]:size-4` is a higher-specificity descendant rule that wins. See
+  `design-system/README.md` for the full explanation. The trigger is also `size-11` below `lg`
+  (44px, the minimum comfortable touch target) and relaxes to the standard `size-10` on desktop.
+- **`useHeaderHeightVar` is ref-only, with no state, on purpose.** It runs a `ResizeObserver` whose
+  callback is `requestAnimationFrame`-coalesced and writes the measured height straight to a CSS
+  custom property on `<html>`. Putting that number in React state would re-render the whole header
+  subtree on every resize frame to produce a value only CSS consumes.
 
 **`NotificationBell`'s `unreadCount` query is independent of `NotificationPanel`'s own feed query**,
 even though both eventually read the same server state. They share a query key
