@@ -1,21 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useRouter } from "next/navigation";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 
 import { CategoryTypeFilters } from "./CategoryTypeFilters";
 
-vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(),
-}));
-
 vi.mock("@/features/products/hooks/useProductTypes", () => ({
   useProductTypes: vi.fn(),
 }));
-
-const replace = vi.fn();
 
 const mockProductTypes = (overrides: Partial<ReturnType<typeof useProductTypes>>) => {
   vi.mocked(useProductTypes).mockReturnValue({
@@ -25,22 +18,16 @@ const mockProductTypes = (overrides: Partial<ReturnType<typeof useProductTypes>>
   } as ReturnType<typeof useProductTypes>);
 };
 
-beforeEach(() => {
-  vi.mocked(useRouter).mockReturnValue({
-    push: vi.fn(),
-    replace,
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-    prefetch: vi.fn(),
-    bfcacheId: "test-bfcache-id",
-  });
-  replace.mockClear();
-  mockProductTypes({ isLoading: true });
-});
-
-const renderFilters = () =>
-  render(<CategoryTypeFilters basePath="/shop" categorySlug="tops" activeType="all" />);
+const renderFilters = (
+  overrides: Partial<{ activeType: string; isNavigating: boolean; onSelectType: () => void }> = {},
+) =>
+  render(
+    <CategoryTypeFilters
+      activeType={overrides.activeType ?? "all"}
+      isNavigating={overrides.isNavigating ?? false}
+      onSelectType={overrides.onSelectType ?? vi.fn()}
+    />,
+  );
 
 describe("CategoryTypeFilters", () => {
   it("keeps the All filter visible and shows placeholders while product types load", () => {
@@ -66,23 +53,22 @@ describe("CategoryTypeFilters", () => {
     expect(container.querySelectorAll(".animate-pulse")).toHaveLength(0);
   });
 
-  it("navigates with the type query param when a non-All filter is picked", async () => {
+  it("calls onSelectType with the picked filter's id", async () => {
     const user = userEvent.setup();
+    const onSelectType = vi.fn();
     mockProductTypes({ data: [{ id: "pt-shirts", slug: "shirts", label: "Shirts" }] });
 
-    renderFilters();
+    renderFilters({ onSelectType });
     await user.click(screen.getByRole("button", { name: "Shirts" }));
 
-    expect(replace).toHaveBeenCalledWith("/shop?category=tops&type=shirts", { scroll: false });
+    expect(onSelectType).toHaveBeenCalledWith("shirts");
   });
 
-  it("omits the type param when the All filter is picked", async () => {
-    const user = userEvent.setup();
+  it("marks the grid busy while a type selection is pending", () => {
     mockProductTypes({ data: [{ id: "pt-shirts", slug: "shirts", label: "Shirts" }] });
 
-    render(<CategoryTypeFilters basePath="/shop" categorySlug="tops" activeType="shirts" />);
-    await user.click(screen.getByRole("button", { name: "All" }));
+    const { container } = renderFilters({ isNavigating: true });
 
-    expect(replace).toHaveBeenCalledWith("/shop?category=tops", { scroll: false });
+    expect(container.querySelector('[aria-busy="true"]')).toBeInTheDocument();
   });
 });

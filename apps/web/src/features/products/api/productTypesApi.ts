@@ -9,7 +9,7 @@ export const publicProductTypeSchema = z.object({
 });
 export type PublicProductType = z.infer<typeof publicProductTypeSchema>;
 
-const productTypeListSchema = z.array(publicProductTypeSchema);
+export const productTypeListSchema = z.array(publicProductTypeSchema);
 
 export const productTypesApi = {
   async list(): Promise<PublicProductType[]> {

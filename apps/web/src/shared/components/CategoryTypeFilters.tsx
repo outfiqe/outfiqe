@@ -1,8 +1,6 @@
 "use client";
 
 import { Button, Skeleton } from "@outfiqe/design-system";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 import { cn } from "@/shared/lib/cn";
@@ -12,49 +10,34 @@ export const ALL_TYPE_ID = "all";
 const TYPE_FILTER_PLACEHOLDER_COUNT = 6;
 
 type CategoryTypeFiltersProps = {
-  basePath: string;
-  categorySlug: string;
   activeType: string;
+  isNavigating: boolean;
+  onSelectType: (typeId: string) => void;
 };
 
-type PendingType = { typeId: string; fromActiveType: string };
-
 export const CategoryTypeFilters = ({
-  basePath,
-  categorySlug,
   activeType,
+  isNavigating,
+  onSelectType,
 }: CategoryTypeFiltersProps) => {
-  const router = useRouter();
   const productTypes = useProductTypes();
-  const [pendingType, setPendingType] = useState<PendingType | null>(null);
 
   const filters = [
     { id: ALL_TYPE_ID, label: "All" },
     ...(productTypes.data ?? []).map((type) => ({ id: type.slug, label: type.label })),
   ];
 
-  const isNavigating = pendingType?.fromActiveType === activeType;
-
-  const selectType = (typeId: string) => {
-    setPendingType({ typeId, fromActiveType: activeType });
-    const params = new URLSearchParams({ category: categorySlug });
-    if (typeId !== ALL_TYPE_ID) params.set("type", typeId);
-    router.replace(`${basePath}?${params.toString()}`, { scroll: false });
-  };
-
-  const effectiveActiveType = isNavigating && pendingType ? pendingType.typeId : activeType;
-
   return (
     <div className="flex flex-wrap gap-2" aria-busy={isNavigating}>
       {filters.map((filter) => {
-        const isActive = filter.id === effectiveActiveType;
+        const isActive = filter.id === activeType;
 
         return (
           <Button
             key={filter.id}
             variant="ghost"
             size="sm"
-            onClick={() => selectType(filter.id)}
+            onClick={() => onSelectType(filter.id)}
             className={cn(
               "h-auto rounded-full border px-3 py-1.5 font-medium sm:px-4 sm:py-2",
               isActive

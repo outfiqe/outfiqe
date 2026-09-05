@@ -11,21 +11,19 @@ import { visibleTasteCategories } from "@/features/categories/lib/visibleTasteCa
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
+import { useCategorySelection } from "../../lib/CategorySelectionContext";
 import { CustomizeTasteModal } from "./CustomizeTasteModal";
 
 const SCROLL_STEP_PX = 320;
 const SCROLL_END_TOLERANCE_PX = 1;
-
-type PendingCategory = { slug: string; fromSearchParams: string };
 
 export const TasteCategories = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const categories = useCategories();
   const { storedSlugs, isCustomized, save, reset } = useTastePreferences();
-  const [pendingCategory, setPendingCategory] = useState<PendingCategory | null>(null);
+  const { pendingCategorySlug, markCategoryPending } = useCategorySelection();
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
-  const searchParamsString = searchParams.toString();
 
   const allCategories = categories.data ?? [];
   const visibleCategories = visibleTasteCategories(allCategories, storedSlugs);
@@ -39,8 +37,8 @@ export const TasteCategories = () => {
     : visibleCategories;
 
   const resolvedSlug = deepLinkedSlug ?? displayCategories[0]?.slug;
-  const isNavigating = pendingCategory?.fromSearchParams === searchParamsString;
-  const activeSlug = isNavigating && pendingCategory ? pendingCategory.slug : resolvedSlug;
+  const isNavigating = pendingCategorySlug !== null;
+  const activeSlug = pendingCategorySlug ?? resolvedSlug;
 
   const canCustomize = allCategories.length > visibleCategories.length || isCustomized;
 
@@ -69,7 +67,7 @@ export const TasteCategories = () => {
   };
 
   const selectCategory = (slug: string) => {
-    setPendingCategory({ slug, fromSearchParams: searchParamsString });
+    markCategoryPending(slug);
     router.replace(`/?category=${slug}`, { scroll: false });
   };
 
@@ -91,49 +89,50 @@ export const TasteCategories = () => {
         <p className="mt-8 text-sm text-muted-foreground">No categories yet — check back soon.</p>
       )}
 
-      {!hasNoCategories && (
+      {categories.isLoading && (
+        <div className="-mx-2 mt-5 flex gap-3 overflow-hidden p-2">
+          {Array.from({ length: 20 }).map((_, index) => (
+            <Skeleton key={index} className="size-28 shrink-0 rounded-2xl sm:size-32" />
+          ))}
+        </div>
+      )}
+
+      {!hasNoCategories && !categories.isLoading && (
         <div className="relative mt-5">
           <div
             ref={scrollerRef}
             onScroll={updateScrollability}
             aria-busy={isNavigating}
             className={cn(
-              "-mx-2 flex gap-3 p-2",
+              "-mx-2 flex gap-3 overflow-x-auto p-2",
               "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-              categories.isLoading ? "overflow-x-hidden" : "overflow-x-auto",
             )}
           >
-            {categories.isLoading &&
-              Array.from({ length: 20 }).map((_, index) => (
-                <Skeleton key={index} className="size-28 shrink-0 rounded-2xl sm:size-32" />
-              ))}
+            {displayCategories.map((category) => (
+              <Button
+                key={category.slug}
+                variant="ghost"
+                onClick={() => selectCategory(category.slug)}
+                style={
+                  category.imageUrl
+                    ? {
+                        backgroundImage: `linear-gradient(to top, rgba(20,16,14,0.75), rgba(20,16,14,0.05)), url(${category.imageUrl})`,
+                      }
+                    : { backgroundColor: getAvatarColor(category.slug) }
+                }
+                className={cn(
+                  "relative size-28 shrink-0 items-end justify-start rounded-2xl bg-cover bg-center p-3 text-left font-normal transition-transform hover:-translate-y-0.5 hover:bg-transparent sm:size-32",
+                  category.slug === activeSlug &&
+                    "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                )}
+              >
+                <span className="text-[11px] font-bold uppercase tracking-wide text-white sm:text-xs">
+                  {category.name}
+                </span>
+              </Button>
+            ))}
 
-            {!categories.isLoading &&
-              displayCategories.map((category) => (
-                <Button
-                  key={category.slug}
-                  variant="ghost"
-                  onClick={() => selectCategory(category.slug)}
-                  style={
-                    category.imageUrl
-                      ? {
-                          backgroundImage: `linear-gradient(to top, rgba(20,16,14,0.75), rgba(20,16,14,0.05)), url(${category.imageUrl})`,
-                        }
-                      : { backgroundColor: getAvatarColor(category.slug) }
-                  }
-                  className={cn(
-                    "relative size-28 shrink-0 items-end justify-start rounded-2xl bg-cover bg-center p-3 text-left font-normal transition-transform hover:-translate-y-0.5 hover:bg-transparent sm:size-32",
-                    category.slug === activeSlug &&
-                      "ring-2 ring-primary ring-offset-2 ring-offset-background",
-                  )}
-                >
-                  <span className="text-[11px] font-bold uppercase tracking-wide text-white sm:text-xs">
-                    {category.name}
-                  </span>
-                </Button>
-              ))}
-
-            {!categories.isLoading && canCustomize && (
+            {canCustomize && (
               <button
                 type="button"
                 onClick={() => setIsCustomizeOpen(true)}
