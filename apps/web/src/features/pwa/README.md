@@ -97,6 +97,11 @@ server starts. Setting it only at runtime does nothing.
 - `utils/clearCachedContent.ts` — asks the worker to forget saved pages and photos. Used on sign
   out.
 - `utils/manifestIcons.ts` — turns the icon list into the manifest's format.
+- `constants/appScreenshots.ts` — the narrow and wide screenshots Android's install dialog shows,
+  their sizes and captions.
+- `utils/manifestScreenshots.ts` — turns that list into the manifest's format, keeping only the
+  files that are actually on disk. Imported straight into `app/manifest.ts`, not via the barrel,
+  because it reads the filesystem.
 - `utils/appleSplashMedia.ts` — builds the media query that picks one launch image for one device.
 - `utils/appViewport.ts` — the page's `viewport`, including the theme colour for light and dark.
 - `components/AppleSplashLinks.tsx` — puts one launch image link in the page head per device.
@@ -113,6 +118,22 @@ server starts. Setting it only at runtime does nothing.
   sync exists and is already permitted before registering it — never asks for the permission itself.
 - `components/BackgroundRefreshRegistration.tsx` — calls that once, on load, the same shape as
   `PersistentStorageRequest`.
+- `constants/serviceWorkerError.ts` — the message the worker sends when something throws inside it,
+  and the check that safely recognises one arriving.
+- `components/ServiceWorkerErrorReporter.tsx` — listens for that message and hands it to Sentry.
+- `utils/clearOfflineData.ts` — `clearAllOfflineData`, the one call that forgets both the worker's
+  saved pages/photos and the persisted query cache together. Used on sign out and by the settings
+  button below.
+- `components/ClearOfflineDataCard.tsx` — the "Clear offline data" button on the security settings
+  page.
+- `constants/pwaKillSwitch.ts` — the name of the attribute the server stamps onto `<html>` when the
+  emergency switch is on, and the client-side check for it.
+- `utils/pwaKillSwitchServer.ts` — reads the actual switch from the server environment. Kept out of
+  this folder's barrel file on purpose — see "Things that are not obvious" below.
+- `utils/teardownServiceWorkerAndCaches.ts` — unregisters every service worker registration and
+  deletes every cache. What actually turns the switch off for someone who already has the app
+  installed.
+- `components/PwaKillSwitchTeardown.tsx` — runs that once, on load, only when the switch is on.
 
 Outside this folder:
 
@@ -321,6 +342,60 @@ they visited themselves. `if (!response.ok || response.redirected) return;` guar
 a signed-out redirect under the feed's own cache key — a session that expired between refreshes
 must not leave a stale, wrong page waiting under the URL people expect their own feed at.
 
+## Storage limits and errors
+
+None of this is allowed to be the reason someone sees a broken page. No storage space, a blocked
+database, a worker that refuses to install, a permission denied — every one of these has to leave
+the app working normally online, never an error screen or a blank one.
+
+The two caches that grow without a fixed shape — visited pages and uploaded photos — are told to
+purge themselves and try again the moment the browser reports they're out of room
+(`purgeOnQuotaError` on both `ExpirationPlugin`s), rather than jamming and refusing every write
+after that point. The one manual cache write outside those two rules, the background refresh's own
+`cache.put`, swallows the same kind of failure itself, since nothing in that path goes through the
+plugin at all. Everywhere else that touches IndexedDB — the persisted query cache, the offline
+action queue — already goes through `utils/browserDatabase.ts`'s do-nothing-don't-throw wrapper.
+
+**Errors inside the worker reach Sentry too, not just errors on the page.** `@sentry/nextjs` is
+already initialised on every page (`instrumentation-client.ts`), and it auto-captures uncaught
+exceptions and unhandled promise rejections there for free — including a service worker
+registration itself failing, since that failure happens in the page's own JavaScript, not the
+worker's. What Sentry's page-level setup cannot see is an error thrown from _inside_ the worker's
+own isolated global scope — a different execution context with no Sentry of its own. `app/sw.ts`
+listens for its own `error`/`unhandledrejection` events and relays a small, safe summary
+(message, stack, and which listener it came from) to every open tab via `postMessage`;
+`components/ServiceWorkerErrorReporter.tsx` is the one thing on the page listening for that
+message, and it hands it straight to `Sentry.captureException`, tagged `source: "service-worker"`
+so it's easy to tell apart from an ordinary page error.
+
+**"Clear offline data"** sits on the security settings page (`/settings/security`) — the one
+account settings page every signed-in person can already reach, regardless of whether they're
+shopping, creating, or selling. It calls the same `clearAllOfflineData` that sign-out already
+called in two places (now just the one shared function).
+
+## The emergency off switch
+
+Everything above is normally controlled by `NEXT_PUBLIC_PWA_ENABLED`, decided once, at build time.
+That's fine for turning the feature on for the first time, but it's the wrong tool for "something's
+wrong in production, turn it off right now" — nobody can wait for a new build and a deploy for that,
+and `NEXT_PUBLIC_` variables can't be changed after the fact anyway; the value is already baked into
+the JavaScript everyone downloaded.
+
+`PWA_KILL_SWITCH` is a second, ordinary server environment variable, read fresh on every request,
+that does the same job without shipping anything. Setting it and restarting the app is all it takes
+— no code change, no build, no pull request.
+
+Flipping it does two things:
+
+- Nobody who visits after it's set gets the worker registered, the install prompt offered, or
+  anything written to the persisted query cache — `isPwaEnabled` folds the switch in alongside the
+  build flag, so every one of its existing callers respects it automatically.
+- Anyone who already has the worker installed from before gets it torn down: every service worker
+  registration unregistered, every cache deleted, the moment they next load the app
+  (`utils/teardownServiceWorkerAndCaches.ts`, run by `components/PwaKillSwitchTeardown.tsx`). This
+  is the part that actually matters for an emergency switch — merely refusing new registrations
+  would leave everyone who already installed the app running the very thing being turned off.
+
 ## Things that are not obvious
 
 **Receiving a shared file needs the service worker, not a plain Next.js route handler.** A route
@@ -502,11 +577,81 @@ knowing if this ever needs re-verifying by hand: install the app on Android Chro
 several days, then check `chrome://serviceworker-internals` or the app's own network log for a
 background fetch to `/explore` with no page open.
 
+**The kill switch reaches client components through a `data-*` attribute on `<html>`, not a
+prop.** `PWA_KILL_SWITCH` is a plain server environment variable, invisible to client code the same
+way any non-`NEXT_PUBLIC_` variable is — but `isPwaEnabled`, and everything built on it
+(`ServiceWorkerProvider`, `AppBadgeSync`, `useInstallPrompt`, `usePushSubscription`, and now
+`ClearOfflineDataCard`), is a plain module-level constant read by client components with no server
+underneath them to pass a prop down from. `app/layout.tsx` is already dynamically rendered on every
+request (it reads `headers()` for the CSP nonce), so it can read the real switch server-side and
+stamp `data-pwa-killed="true"` onto `<html>` before any client code runs.
+`constants/pwaKillSwitch.ts`'s `isPwaKillSwitchEngagedOnClient` just reads that attribute back off
+the root element — reliable, because the browser sets an element's attributes the instant it
+parses that element's opening tag, long before any deferred script executes.
+
+**`utils/pwaKillSwitchServer.ts` is imported directly, never through this folder's own barrel
+file.** It starts with `import "server-only"`, which fails the build the moment ANY client
+component's import chain reaches it — and since `index.ts` is imported by client components
+throughout this app, re-exporting it there would poison the whole barrel for every one of them.
+`app/layout.tsx` imports it by its own path instead, the same way it already imports
+`getServerSessionWithToken` and the other `*Server.ts` API helpers directly rather than through a
+barrel.
+
+**Disabling new registrations was never going to be enough on its own.** `ServiceWorkerProvider`'s
+`disable` prop (via `isPwaEnabled`) only ever stops a _new_ `register()` call — it does nothing for
+someone who already has last week's worker controlling their tab. An emergency switch that only
+worked for people who hadn't installed yet wouldn't be much of an emergency switch.
+`PwaKillSwitchTeardown` exists specifically for that: rather than teach the worker to detect its own
+shutdown from inside (which the switch, being server-only, can't tell it about directly), the page
+just calls `getRegistrations()` and `unregister()`s everything itself, the one place that genuinely
+sees the switch is on.
+
+**Neither the kill switch nor the service-worker-error relay has an end-to-end test, and that's a
+deliberate limitation, not an oversight.** The kill switch only takes effect through
+`app/layout.tsx` reading a real server environment variable — Playwright runs against one already-
+built app with one fixed environment, so exercising the killed path would need a second build with
+`PWA_KILL_SWITCH` set, which isn't worth a whole parallel e2e project for one flag. The error relay
+would need the worker to genuinely throw from inside its own isolated scope during a live test run,
+which none of the existing hooks (`self.addEventListener`) offer a safe way to force from outside.
+Both are covered where it matters instead: the DOM-attribute read, the combined `isPwaEnabled`
+logic, the teardown call, and the Sentry hand-off are each unit-tested with the browser APIs
+stubbed, which is where their actual logic lives.
+
+## Testing
+
+`docs/TESTING-PWA.md` is the by-hand checklist — what should happen on iPhone, iPad, Android
+Chrome, Android Firefox, and desktop, plus the go-live steps. Walk it on at least one real iPhone
+and one real Android before the feature is turned on for anyone.
+
+What's guarded automatically, on every PR:
+
+- The **Browser tests** job runs Playwright against the real compiled worker.
+  `e2e/installable.spec.ts` is the single "would a browser offer to install this?" contract —
+  manifest fields, both required icon sizes actually served, a worker registering and taking
+  control, and every screenshot the manifest advertises resolving. The rest (`manifest`,
+  `serviceWorker`, `offlineFallback`, `offlineReading`, `pushNotification`, `shareTarget`,
+  `backgroundRefresh`) each cover one piece — see that file list in `docs/TESTING-PWA.md`.
+- The **Lighthouse** job (`lighthouserc.cjs`) runs three passes against `/offline` — the app shell
+  with no API in the picture, so a regression there is a regression in the shell's own weight, not
+  backend noise. It fails only on deterministic drops (unminified JS/CSS, an accessibility or
+  best-practices regression); performance score and byte weight are warnings. It is
+  `continue-on-error`, like the coverage job — a signal, not a merge blocker.
+
+## Screenshots for the install dialog
+
+`constants/appScreenshots.ts` is the list Android's install dialog draws its preview from — a
+narrow (phone) and a wide (desktop) set. `scripts/capture-pwa-screenshots.mts`
+(`pnpm --filter @outfiqe/web capture:pwa-screenshots`) drives a headless browser over the running
+app and writes them to `public/screenshots/`. `utils/manifestScreenshots.ts` only lists the ones
+that are actually on disk, so the manifest stays valid whether or not any have been captured yet —
+and the moment real ones are committed they appear in the manifest with no code change.
+
+They are deliberately not committed from a local run: against a dev build with no catalog data
+every page is an empty state, which would make the install dialog look worse, not better. Capture
+them against a deployed environment with real data as a go-live step (see `docs/TESTING-PWA.md`).
+
 ## To do later
 
-- The manifest can include screenshots, which make Android's install dialog show a preview of the
-  app rather than just an icon. These need real pictures of the running app and can be captured
-  with the browser tests now that they exist.
 - One JavaScript chunk is over 3 MB and is too big to be saved for offline use, so the first visit
   to a page needing it will not work offline. It is saved normally once downloaded. The chunk is
   worth splitting up regardless of offline support.

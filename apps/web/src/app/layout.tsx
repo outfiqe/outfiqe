@@ -7,10 +7,12 @@ import { headers } from "next/headers";
 import {
   AppleSplashLinks,
   appleWebAppMetadata,
+  PWA_KILL_SWITCH_ATTRIBUTE,
   pwaIcons,
   pwaViewport,
   WEB_MANIFEST_PATH,
 } from "@/features/pwa";
+import { isPwaKillSwitchEngagedOnServer } from "@/features/pwa/utils/pwaKillSwitchServer";
 import {
   JsonLd,
   organizationSchema,
@@ -33,9 +35,14 @@ export const viewport = pwaViewport;
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   const nonce = (await headers()).get("x-nonce");
+  const pwaKilled = isPwaKillSwitchEngagedOnServer();
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      {...(pwaKilled ? { [PWA_KILL_SWITCH_ATTRIBUTE]: "true" } : {})}
+    >
       <head>
         <AppleSplashLinks />
         <script

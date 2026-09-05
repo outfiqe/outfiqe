@@ -1,3 +1,6 @@
+import { isPwaKillSwitchEngagedOnClient } from "./pwaKillSwitch";
+
 const ENABLED_FLAG_VALUE = "true";
 
-export const isPwaEnabled = process.env.NEXT_PUBLIC_PWA_ENABLED === ENABLED_FLAG_VALUE;
+export const isPwaEnabled =
+  process.env.NEXT_PUBLIC_PWA_ENABLED === ENABLED_FLAG_VALUE && !isPwaKillSwitchEngagedOnClient();

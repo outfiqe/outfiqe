@@ -37,3 +37,6 @@ apps/web/test-results
 apps/web/playwright-report
 apps/web/blob-report
 apps/web/.playwright
+
+# Lighthouse CI report output
+apps/web/.lighthouseci
