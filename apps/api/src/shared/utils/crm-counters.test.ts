@@ -42,7 +42,7 @@ describe("applyCrmCounterDelta", () => {
   it("skips touching last-activity when told not to", async () => {
     await applyCrmCounterDelta("org-1", "contactCount", 1, { touchLastActivity: false });
 
-    const [[{ data }]] = prismaMock.organization.update.mock.calls;
+    const data = prismaMock.organization.update.mock.calls[0]?.[0]?.data;
     expect(data).not.toHaveProperty("lastCrmActivityAt");
   });
 });
