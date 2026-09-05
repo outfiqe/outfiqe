@@ -81,6 +81,10 @@ server starts. Setting it only at runtime does nothing.
 - `components/OfflineActionSync.tsx` — calls that drain on load and every time the connection comes
   back, via `useIsOnline`.
 - `utils/requestPersistentStorage.ts` — asks the browser not to throw saved content away.
+- `utils/webShare.ts` — `shareOrCopyLink`, the one function every "Share" button in the app calls:
+  the browser's own share sheet when it has one, copying the link when it doesn't. See
+  `apps/web/src/features/explore/README.md`'s "Sharing a look, a profile, or a product" for how
+  each surface uses it.
 - `hooks/useIsOnline.ts` — whether there is a connection right now.
 - `utils/imageHosts.ts` — works out which hosts serve uploaded photos.
 - `utils/clearCachedContent.ts` — asks the worker to forget saved pages and photos. Used on sign
@@ -257,6 +261,13 @@ place. Worth knowing if this ever needs re-verifying by hand: install the app, s
 trigger a real notification from a running API with VAPID keys set.
 
 ## Things that are not obvious
+
+**`shareOrCopyLink` falls back to copying on any real share failure, not only when `navigator.share`
+is missing.** The one exception is the user closing the share sheet themselves — that rejects with
+`AbortError`, and the function treats it as a quiet no-op rather than a failure, since it isn't one:
+they saw the sheet and chose not to share. Anything else the share call throws (a share target that
+crashed, for instance) still falls through to the clipboard, on the reasoning that a copied link is
+strictly more useful to hand back than a bare error for something this low-stakes.
 
 **The offline action queue is a plain IndexedDB list, not TanStack Query's own paused-mutation
 persistence.** The library does have a documented mechanism for exactly this — a mutation started

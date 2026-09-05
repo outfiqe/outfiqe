@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, toast } from "@outfiqe/design-system";
-import { ChevronLeft, Heart, Shirt, Zap } from "lucide-react";
+import { ChevronLeft, Heart, Share2, Shirt, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -10,6 +10,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { useAddToCart } from "@/features/cart";
 import { saveBuyNowPayload } from "@/features/checkout";
 import { ReviewsSection } from "@/features/product-reviews";
+import { shareOrCopyLink } from "@/features/pwa";
 import { useToggleWishlist } from "@/features/wishlist";
 import { cn } from "@/shared/lib/cn";
 
@@ -58,6 +59,16 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
       { productId: product.id, saved: isSaved },
       { onError: () => setIsSaved(!next) },
     );
+  };
+
+  const shareProduct = async () => {
+    const outcome = await shareOrCopyLink({
+      title: product.name,
+      text: `${product.name} by ${product.brand.name} on Outfiqe`,
+      url: `${window.location.origin}/product/${product.id}`,
+    });
+    if (outcome === "copied") toast.success("Link copied");
+    if (outcome === "failed") toast.error("Couldn't share or copy the link");
   };
 
   const addToCart = () => {
@@ -180,6 +191,15 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
               className={cn("size-11 shrink-0", isSaved && "border-primary text-primary")}
             >
               <Heart className={cn("size-[18px]", isSaved && "fill-primary")} />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Share"
+              onClick={() => void shareProduct()}
+              className="size-11 shrink-0"
+            >
+              <Share2 className="size-[18px]" />
             </Button>
           </div>
           {isSoldOut ? (

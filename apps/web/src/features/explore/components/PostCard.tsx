@@ -42,6 +42,7 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
     likeMutation,
     saveMutation,
     followMutation,
+    shareLook,
     commentsOpen,
     setCommentsOpen,
     draft,
@@ -103,6 +104,7 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
           isSaved={isSaved}
           onSave={() => gated(() => toggleSave({ lookId: id, saved: isSaved }))}
           isSaving={isSaving}
+          onShare={() => void shareLook()}
           className="mt-2.5 border-t border-border pt-2.5"
         />
 

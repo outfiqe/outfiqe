@@ -141,6 +141,9 @@ export default defineConfig({
         "src/features/explore/utils/offlineActionTypes.ts",
         "src/features/explore/utils/offlineQueueableToggle.ts",
         "src/features/explore/offlineActionHandlers.ts",
+        "src/features/explore/utils/lookPermalink.ts",
+        "src/features/explore/hooks/usePostCardState.ts",
+        "src/features/explore/components/PostActionsRow.tsx",
       ],
       thresholds: {
         lines: 80,

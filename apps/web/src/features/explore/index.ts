@@ -21,3 +21,4 @@ export {
 export { useInfiniteExploreFeed } from "./hooks/useInfiniteExploreFeed";
 export { useInfiniteSavedPosts } from "./hooks/useInfiniteSavedPosts";
 export { usePublicLook } from "./hooks/usePublicLook";
+export { lookPermalinkPath } from "./utils/lookPermalink";

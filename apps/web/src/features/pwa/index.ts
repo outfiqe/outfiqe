@@ -92,3 +92,5 @@ export {
 } from "./utils/queryPersister";
 export { requestPersistentStorage } from "./utils/requestPersistentStorage";
 export { isIosBrowser, isRunningStandalone, supportsWebPush } from "./utils/standalone";
+export type { ShareOutcome, SharePayload } from "./utils/webShare";
+export { shareOrCopyLink } from "./utils/webShare";
