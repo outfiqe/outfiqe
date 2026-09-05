@@ -1,5 +1,7 @@
 import type { Notification } from "@outfiqe/types";
 
+import { lookPermalinkPath } from "@/features/explore";
+
 export const resolveNotificationHref = (
   notification: Notification,
   ownHandle: string | undefined,
@@ -9,7 +11,7 @@ export const resolveNotificationHref = (
     case "LOOK_COMMENTED":
     case "COMMENT_REPLIED":
       return ownHandle && notification.entityId
-        ? `/creator/${ownHandle}?look=${notification.entityId}`
+        ? lookPermalinkPath(ownHandle, notification.entityId)
         : "/profile";
     case "NEW_FOLLOWER": {
       const actorHandle = notification.metadata.recentActors?.[0]?.handle;

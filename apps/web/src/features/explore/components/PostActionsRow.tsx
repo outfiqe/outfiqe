@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, Flame, MessageCircle } from "lucide-react";
+import { Bookmark, Flame, MessageCircle, Share2 } from "lucide-react";
 
 import { cn } from "@/shared/lib/cn";
 
@@ -15,6 +15,7 @@ type PostActionsRowProps = {
   isSaved: boolean;
   onSave: () => void;
   isSaving?: boolean;
+  onShare: () => void;
   className?: string;
 };
 
@@ -29,6 +30,7 @@ export const PostActionsRow = ({
   isSaved,
   onSave,
   isSaving,
+  onShare,
   className,
 }: PostActionsRowProps) => {
   return (
@@ -64,19 +66,30 @@ export const PostActionsRow = ({
         </span>
       )}
 
-      <button
-        type="button"
-        onClick={onSave}
-        disabled={isSaving}
-        aria-pressed={isSaved}
-        aria-label="Save post"
-        className={cn(
-          "ml-auto flex cursor-pointer items-center gap-1.5 text-[12.5px] transition-colors disabled:cursor-default disabled:opacity-60",
-          isSaved ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-        )}
-      >
-        <Bookmark className={cn("size-4", isSaved && "fill-foreground")} />
-      </button>
+      <div className="ml-auto flex items-center gap-3.5">
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={isSaving}
+          aria-pressed={isSaved}
+          aria-label="Save post"
+          className={cn(
+            "flex cursor-pointer items-center gap-1.5 text-[12.5px] transition-colors disabled:cursor-default disabled:opacity-60",
+            isSaved ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Bookmark className={cn("size-4", isSaved && "fill-foreground")} />
+        </button>
+
+        <button
+          type="button"
+          onClick={onShare}
+          aria-label="Share post"
+          className="flex cursor-pointer items-center gap-1.5 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <Share2 className="size-4" />
+        </button>
+      </div>
     </div>
   );
 };
