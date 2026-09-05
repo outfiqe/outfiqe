@@ -69,6 +69,17 @@ server starts. Setting it only at runtime does nothing.
 - `components/AppBadgeSync.tsx` — keeps the app-icon number in step with the unread count while
   the installed app is open.
 - `utils/queryPersister.ts` — saves and restores that data, and forgets it on sign out.
+- `utils/browserDatabase.ts` — the "do nothing, don't throw" wrapper around an IndexedDB read/write,
+  shared by `queryPersister.ts` and `offlineActionQueue.ts` so a blocked or absent database never
+  crashes either one.
+- `constants/offlineActions.ts` — the queue's storage key and how many queued actions it holds.
+- `utils/offlineActionQueue.ts` — the queue itself: add one (collapsing a repeat on the same key
+  into the latest version), list them, remove one. Capped — the oldest queued action is dropped
+  once a new one would push the queue over the limit.
+- `utils/offlineActionProcessor.ts` — where a feature registers the real call one of its queued
+  action types replays through, and the drain that runs them in order once reconnected.
+- `components/OfflineActionSync.tsx` — calls that drain on load and every time the connection comes
+  back, via `useIsOnline`.
 - `utils/requestPersistentStorage.ts` — asks the browser not to throw saved content away.
 - `hooks/useIsOnline.ts` — whether there is a connection right now.
 - `utils/imageHosts.ts` — works out which hosts serve uploaded photos.
@@ -158,6 +169,21 @@ saved earlier.
 Saved data is kept for a day and thrown away on sign out or when a session expires, at the same
 moment the saved pages and photos are.
 
+## Actions taken while offline
+
+A handful of simple on/off actions — liking, saving, or following, for now — are safe to queue:
+sending one twice changes nothing, and a few minutes' delay is invisible. `utils/offlineActionQueue.ts`
+holds them, keyed so a repeat on the same thing collapses into the latest version instead of
+piling up, and capped so a phone that was offline for a month can't flood the server the moment it
+reconnects. `components/OfflineActionSync.tsx` drains the queue on load and every time the
+connection returns; `utils/offlineActionProcessor.ts` is where a feature registers the real API call
+each of its action types replays through — see `apps/web/src/features/explore/README.md`'s "Liking,
+saving, and following work with no connection" for a concrete example end to end.
+
+Checkout and starting a payment are deliberately never queued — see
+`apps/web/src/features/checkout/README.md`'s "Non-obvious rationale" for why that one needs the
+opposite treatment.
+
 ## How a new version reaches people
 
 Once someone has the app saved, they keep running the version they downloaded until the worker is
@@ -231,6 +257,26 @@ place. Worth knowing if this ever needs re-verifying by hand: install the app, s
 trigger a real notification from a running API with VAPID keys set.
 
 ## Things that are not obvious
+
+**The offline action queue is a plain IndexedDB list, not TanStack Query's own paused-mutation
+persistence.** The library does have a documented mechanism for exactly this — a mutation started
+offline pauses automatically, `dehydrate`/`hydrate` can persist it, and `resumePausedMutations`
+replays it later. It was tried and rejected: doing it correctly needs a global
+`shouldDehydrateMutation` allowlist so checkout and payment don't get caught by it too, and the
+resumed mutation must not re-run `onMutate` (it already applied the optimistic patch once, before
+pausing — running it again on resume would double it), which means hand-assembling a second,
+narrower set of mutation options just for resume. A queue this codebase can read, test, and reason
+about directly was judged more trustworthy for something a real purchase-adjacent action depends on
+never duplicating or double-applying, even though it means each queueable mutation opts in itself
+rather than getting it for free.
+
+**A queued action's replay handler is registered once, eagerly, from `app/providers.tsx` — never
+lazily inside the hook that enqueues it.** Next.js code-splits per route, so a hook's own module
+only loads on a page that actually renders it. If registration lived at the top of, say,
+`useLikeLook.ts`, someone who liked a look, closed the tab, and reopened the app on an unrelated
+page could reconnect with nothing registered to replay their queued like — the module holding the
+registration would simply never have been imported yet this session. Registering from the app's
+root composition instead guarantees every handler exists before the very first drain can run.
 
 **The offline-reading allowlist is a list of what may be saved, never a list of what may not.** A
 "don't save these" list fails open: the day someone adds a query for saved addresses or payout

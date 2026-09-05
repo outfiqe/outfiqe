@@ -2,6 +2,7 @@ export { AppBadgeSync } from "./components/AppBadgeSync";
 export { AppleSplashLinks } from "./components/AppleSplashLinks";
 export { AppUpdatePrompt } from "./components/AppUpdatePrompt";
 export { InstallPrompt } from "./components/InstallPrompt";
+export { OfflineActionSync } from "./components/OfflineActionSync";
 export { OfflineBanner } from "./components/OfflineBanner";
 export { OfflineRetryButton } from "./components/OfflineRetryButton";
 export { PersistentStorageRequest } from "./components/PersistentStorageRequest";
@@ -33,6 +34,10 @@ export {
   rememberInstallPromptDismissed,
   VISITS_BEFORE_SUGGESTING_INSTALL,
 } from "./constants/installPrompt";
+export {
+  MAX_QUEUED_OFFLINE_ACTIONS,
+  OFFLINE_ACTION_QUEUE_STORAGE_KEY,
+} from "./constants/offlineActions";
 export {
   isPersistableQueryKey,
   PERSISTABLE_QUERY_ROOTS,
@@ -68,6 +73,17 @@ export {
   subscribeToInstallPrompt,
 } from "./utils/installPromptStore";
 export { toManifestIcons } from "./utils/manifestIcons";
+export {
+  drainQueuedOfflineActions,
+  type OfflineActionHandler,
+  registerOfflineActionHandler,
+} from "./utils/offlineActionProcessor";
+export {
+  enqueueOfflineAction,
+  listQueuedOfflineActions,
+  type QueuedOfflineAction,
+  removeQueuedOfflineAction,
+} from "./utils/offlineActionQueue";
 export { subscribeToPush, unsubscribeFromPush } from "./utils/pushClient";
 export {
   clearPersistedQueries,
