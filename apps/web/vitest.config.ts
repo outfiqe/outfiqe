@@ -55,6 +55,7 @@ export default defineConfig({
         "src/features/brand-dashboard/components/BrandOverview.tsx",
         "src/features/brand-dashboard/components/BrandOrderRow.tsx",
         "src/features/brand-dashboard/hooks/useBrandOverview.ts",
+        "src/features/brand-dashboard/components/DiscountModal.tsx",
         "src/features/brand-profile/hooks/useInfiniteBrandProducts.ts",
         "src/features/brand-profile/api/brandProfileApi.ts",
         "src/features/search/components/ExploreSearchBox.tsx",
