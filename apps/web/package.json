@@ -39,7 +39,6 @@
     "date-fns": "^4.4.0",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
-    "framer-motion": "^13.1.0",
     "heic-to": "^1.5.2",
     "idb-keyval": "^6.3.0",
     "lucide-react": "^1.29.0",
@@ -51,6 +50,7 @@
     "server-only": "^0.0.1",
     "socket.io-client": "^4.8.3",
     "tailwind-merge": "^3.6.0",
+    "vaul": "^1.1.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {

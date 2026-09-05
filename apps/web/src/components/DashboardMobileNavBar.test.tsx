@@ -1,7 +1,5 @@
 import type { SidebarNavItem } from "@outfiqe/components";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { useReducedMotion } from "framer-motion";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { LayoutGrid, User, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -49,10 +47,6 @@ vi.mock("next/link", () => ({
   ),
   useLinkStatus: () => ({ pending: false }),
 }));
-vi.mock("framer-motion", async (importOriginal) => {
-  const actual = (await importOriginal()) as Record<string, unknown>;
-  return { ...actual, useReducedMotion: vi.fn(() => false) };
-});
 
 const navItem = (id: string, label: string, href: string): SidebarNavItem => ({
   id,
@@ -105,7 +99,6 @@ const authenticate = () => {
 };
 
 beforeEach(() => {
-  vi.mocked(useReducedMotion).mockReturnValue(false);
   vi.mocked(useLogout).mockReturnValue(buildIdleLogoutMutation());
   vi.mocked(useChatPanel).mockReturnValue({
     isOpen: false,
@@ -151,11 +144,11 @@ describe("DashboardMobileNavBar", () => {
     expect(screen.queryByRole("link", { name: /Challenges/ })).not.toBeInTheDocument();
   });
 
-  it("opens a panel with the overflow items, customize and sign out", async () => {
+  it("opens a panel with the overflow items, customize and sign out", () => {
     authenticate();
     render(<DashboardMobileNavBar />);
 
-    await userEvent.setup().click(screen.getByRole("button", { name: "Open dashboard menu" }));
+    fireEvent.click(screen.getByRole("button", { name: "Open dashboard menu" }));
 
     expect(screen.getByRole("link", { name: /Challenges/ })).toHaveAttribute("href", "/challenges");
     expect(screen.getByRole("link", { name: /CRM/ })).toHaveAttribute("href", "/admin/crm");
@@ -163,39 +156,37 @@ describe("DashboardMobileNavBar", () => {
     expect(screen.getByRole("button", { name: /Sign out/ })).toBeInTheDocument();
   });
 
-  it("opens the customize sheet from the panel and persists a saved selection", async () => {
+  it("opens the customize sheet from the panel and persists a saved selection", () => {
     authenticate();
     render(<DashboardMobileNavBar />);
-    const user = userEvent.setup();
 
-    await user.click(screen.getByRole("button", { name: "Open dashboard menu" }));
-    await user.click(screen.getByRole("button", { name: /Customize navigation/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Open dashboard menu" }));
+    fireEvent.click(screen.getByRole("button", { name: /Customize navigation/ }));
     expect(screen.getByTestId("customize-sheet")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "mock-save" }));
+    fireEvent.click(screen.getByRole("button", { name: "mock-save" }));
 
     expect(savePins).toHaveBeenCalledWith(["profile", "overview"]);
     expect(screen.queryByTestId("customize-sheet")).not.toBeInTheDocument();
   });
 
-  it("closes the panel when the backdrop is tapped", async () => {
+  it("closes the panel when the backdrop is tapped", () => {
     authenticate();
-    vi.mocked(useReducedMotion).mockReturnValue(true);
     render(<DashboardMobileNavBar />);
-    const user = userEvent.setup();
 
-    await user.click(screen.getByRole("button", { name: "Open dashboard menu" }));
-    await user.click(screen.getByRole("button", { name: "Close menu" }));
+    fireEvent.click(screen.getByRole("button", { name: "Open dashboard menu" }));
+    fireEvent.click(screen.getByTestId("dashboard-menu-backdrop"));
 
     expect(screen.queryByRole("link", { name: /Challenges/ })).not.toBeInTheDocument();
   });
 
-  it("still renders with reduced motion", async () => {
+  it("closes the panel on Escape", () => {
     authenticate();
-    vi.mocked(useReducedMotion).mockReturnValue(true);
     render(<DashboardMobileNavBar />);
 
-    await userEvent.setup().click(screen.getByRole("button", { name: "Open dashboard menu" }));
-    expect(screen.getByRole("link", { name: /Challenges/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open dashboard menu" }));
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(screen.queryByRole("link", { name: /Challenges/ })).not.toBeInTheDocument();
   });
 });

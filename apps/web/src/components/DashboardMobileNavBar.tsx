@@ -1,12 +1,11 @@
 "use client";
 
 import { isNavItemActive, type SidebarNavItem } from "@outfiqe/components";
-import { useSwipeToDismiss } from "@outfiqe/design-system";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { LogOut, Menu, SlidersHorizontal, X } from "lucide-react";
 import NextLink, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useState } from "react";
+import { Drawer as VaulDrawer } from "vaul";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
@@ -110,18 +109,7 @@ export const DashboardMobileNavBar = () => {
 
   const [open, setOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
-  const prefersReducedMotion = useReducedMotion() === true;
   const closeMenu = () => setOpen(false);
-  const swipeToDismiss = useSwipeToDismiss(closeMenu);
-
-  useEffect(() => {
-    if (!open) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open]);
 
   if (state.status !== AuthStatus.AUTHENTICATED || !state.user || isChatPanelOpen) return null;
 
@@ -130,41 +118,30 @@ export const DashboardMobileNavBar = () => {
     setCustomizeOpen(true);
   };
 
-  const spring = prefersReducedMotion
-    ? { duration: 0 }
-    : ({ type: "spring", stiffness: 420, damping: 36 } as const);
-
   const leftPins = pinnedItems.slice(0, 2);
   const rightPins = pinnedItems.slice(2, 4);
   const pinnedIds = pinnedItems.map((item) => item.id);
 
   return (
     <div className="lg:hidden">
-      <AnimatePresence>
-        {open && (
-          <>
-            <motion.button
-              type="button"
-              aria-label="Close menu"
-              tabIndex={-1}
-              onClick={closeMenu}
-              className="fixed inset-0 z-40 bg-black/45 backdrop-blur-[2px]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: prefersReducedMotion ? 0 : 0.18 }}
-            />
+      <VaulDrawer.Root open={open} onOpenChange={(next) => !next && closeMenu()}>
+        <VaulDrawer.Portal>
+          <VaulDrawer.Overlay
+            data-testid="dashboard-menu-backdrop"
+            onClick={closeMenu}
+            className="fixed inset-0 z-40 bg-black/45 backdrop-blur-[2px]"
+          />
 
-            <motion.nav
-              aria-label="Dashboard menu"
-              className="fixed inset-x-3 bottom-[5.5rem] z-40"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 16 }}
-              transition={spring}
-              {...swipeToDismiss}
-              drag={prefersReducedMotion ? false : swipeToDismiss.drag}
-            >
+          <VaulDrawer.Content
+            aria-label="Dashboard menu"
+            className="fixed inset-x-3 bottom-[5.5rem] z-40 outline-none"
+          >
+            <VaulDrawer.Title className="sr-only">Dashboard menu</VaulDrawer.Title>
+            <VaulDrawer.Description className="sr-only">
+              Swipe down, tap outside, or press Escape to close.
+            </VaulDrawer.Description>
+
+            <nav aria-label="Dashboard menu" className="relative">
               <div
                 aria-hidden
                 className="absolute inset-0 rounded-[28px] border border-border bg-card"
@@ -226,10 +203,10 @@ export const DashboardMobileNavBar = () => {
                   {logout.isPending ? "Signing out…" : "Sign out"}
                 </button>
               </div>
-            </motion.nav>
-          </>
-        )}
-      </AnimatePresence>
+            </nav>
+          </VaulDrawer.Content>
+        </VaulDrawer.Portal>
+      </VaulDrawer.Root>
 
       <div className="fixed inset-x-3 bottom-3 z-40 h-16">
         <div
@@ -251,23 +228,22 @@ export const DashboardMobileNavBar = () => {
         </nav>
       </div>
 
-      <motion.button
+      <button
         type="button"
         aria-label={open ? "Close dashboard menu" : "Open dashboard menu"}
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
-        className="fixed bottom-[3rem] left-1/2 z-50 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_6px_20px_-6px_rgba(0,0,0,0.5)]"
-        style={{ x: "-50%" }}
-        whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
+        className="fixed bottom-[3rem] left-1/2 z-50 flex size-14 -translate-x-1/2 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_6px_20px_-6px_rgba(0,0,0,0.5)] transition-transform active:scale-95"
       >
-        <motion.span
-          className="flex items-center justify-center"
-          animate={{ rotate: open ? 90 : 0 }}
-          transition={spring}
+        <span
+          className={cn(
+            "flex items-center justify-center transition-transform duration-200 [transition-timing-function:cubic-bezier(0.32,0.72,0,1)]",
+            open && "rotate-90",
+          )}
         >
           {open ? <X className="size-5" /> : <Menu className="size-5" />}
-        </motion.span>
-      </motion.button>
+        </span>
+      </button>
 
       {customizeOpen && (
         <DashboardNavCustomizeSheet
