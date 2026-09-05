@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AddPhoneNumberBanner, ChangePasswordCard, ConnectedAccounts } from "@/features/auth";
+import { ClearOfflineDataCard } from "@/features/pwa";
 
 import { requireDashboardSession } from "../../requireDashboardSession";
 
@@ -41,6 +42,10 @@ const DashboardSecurityPage = async () => {
         <div className="mt-3">
           <ConnectedAccounts hasPassword={user.hasPassword ?? true} />
         </div>
+      </div>
+
+      <div className="mt-6">
+        <ClearOfflineDataCard />
       </div>
     </div>
   );

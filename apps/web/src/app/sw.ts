@@ -20,6 +20,10 @@ import {
   MAX_CACHED_PAGES,
 } from "../features/pwa/constants/runtimeCaching";
 import { OFFLINE_PATH, VISITED_PAGES_CACHE_NAME } from "../features/pwa/constants/serviceWorker";
+import {
+  SERVICE_WORKER_ERROR_MESSAGE,
+  type ServiceWorkerErrorReport,
+} from "../features/pwa/constants/serviceWorkerError";
 import { CLEAR_CACHED_CONTENT_MESSAGE } from "../features/pwa/constants/serviceWorkerMessages";
 import {
   SHARE_TARGET_PATH,
@@ -80,6 +84,7 @@ const publicPageCaching: RuntimeCaching = {
         maxEntries: maxCachedPages,
         maxAgeSeconds: CACHED_PAGE_LIFETIME_SECONDS,
         maxAgeFrom: "last-used",
+        purgeOnQuotaError: true,
       }),
       serveOfflinePageWhenNavigationFails,
     ],
@@ -209,17 +214,41 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(handleShareTargetSubmission(event.request));
 });
 
+const keepServingWhateverIsAlreadyCached = () => undefined;
+
 const refreshFeedPageInBackground = async (): Promise<void> => {
   const response = await fetch(BACKGROUND_REFRESH_PATH, { credentials: "same-origin" });
   if (!response.ok || response.redirected) return;
 
   const cache = await caches.open(VISITED_PAGES_CACHE_NAME);
-  await cache.put(BACKGROUND_REFRESH_PATH, response);
+  await cache.put(BACKGROUND_REFRESH_PATH, response).catch(keepServingWhateverIsAlreadyCached);
 };
 
 self.addEventListener("periodicsync", (event) => {
   if (event.tag !== BACKGROUND_REFRESH_SYNC_TAG) return;
   event.waitUntil(refreshFeedPageInBackground());
+});
+
+const reportServiceWorkerError = async (context: string, cause: unknown): Promise<void> => {
+  const message = cause instanceof Error ? cause.message : String(cause);
+  const stack = cause instanceof Error ? cause.stack : undefined;
+  const report: ServiceWorkerErrorReport = {
+    type: SERVICE_WORKER_ERROR_MESSAGE,
+    context,
+    message,
+    stack,
+  };
+
+  const openClients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  openClients.forEach((client) => client.postMessage(report));
+};
+
+self.addEventListener("error", (event) => {
+  void reportServiceWorkerError("error", event.error ?? event.message);
+});
+
+self.addEventListener("unhandledrejection", (event) => {
+  void reportServiceWorkerError("unhandledrejection", event.reason);
 });
 
 serwist.addEventListeners();
