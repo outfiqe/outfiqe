@@ -134,7 +134,7 @@ export const DashboardMobileNavBar = () => {
 
           <VaulDrawer.Content
             aria-label="Dashboard menu"
-            className="fixed inset-x-3 bottom-[5.5rem] z-40 outline-none"
+            className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[5.5rem] outline-none"
           >
             <VaulDrawer.Title className="sr-only">Dashboard menu</VaulDrawer.Title>
             <VaulDrawer.Description className="sr-only">
@@ -208,7 +208,7 @@ export const DashboardMobileNavBar = () => {
         </VaulDrawer.Portal>
       </VaulDrawer.Root>
 
-      <div className="fixed inset-x-3 bottom-3 z-40 h-16">
+      <div data-testid="dashboard-nav-bar" className="fixed inset-x-3 bottom-3 z-50 h-16">
         <div
           aria-hidden
           className="absolute inset-0 rounded-[28px] border border-border bg-card"
@@ -234,6 +234,7 @@ export const DashboardMobileNavBar = () => {
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
         className="fixed bottom-[3rem] left-1/2 z-50 flex size-14 -translate-x-1/2 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_6px_20px_-6px_rgba(0,0,0,0.5)] transition-transform active:scale-95"
+        style={{ pointerEvents: "auto" }}
       >
         <span
           className={cn(

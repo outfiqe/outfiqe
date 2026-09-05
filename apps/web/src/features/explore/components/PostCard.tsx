@@ -54,6 +54,7 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
   const { mutate: toggleLike, isPending: isLiking } = likeMutation;
   const { mutate: toggleSave, isPending: isSaving } = saveMutation;
   const cardRef = useRecordLookView(id, !isOwnPost);
+  const hasCaptionContent = taggedProducts.length > 0 || Boolean(caption);
 
   return (
     <article
@@ -105,7 +106,7 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
           onSave={() => gated(() => toggleSave({ lookId: id, saved: isSaved }))}
           isSaving={isSaving}
           onShare={() => void shareLook()}
-          className="mt-2.5 border-t border-border pt-2.5"
+          className={hasCaptionContent ? "mt-2.5 border-t border-border pt-2.5" : undefined}
         />
 
         {commentsOpen && (

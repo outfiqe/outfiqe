@@ -94,9 +94,9 @@ export const MobileNav = () => {
         aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="text-foreground"
+        className="size-11 text-foreground [&_svg]:size-7"
       >
-        {open ? <X className="size-6" /> : <Menu className="size-6" />}
+        {open ? <X /> : <Menu />}
       </Button>
 
       {open && (

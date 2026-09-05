@@ -71,9 +71,9 @@ export const NotificationBell = ({
           variant="ghost"
           size="icon"
           aria-label={`Notifications, ${unreadCount} unread`}
-          className="relative"
+          className="relative size-11 [&_svg]:size-6 lg:size-10 lg:[&_svg]:size-5"
         >
-          <Bell className="size-5" />
+          <Bell />
           {unreadCount > 0 && (
             <span
               aria-hidden
