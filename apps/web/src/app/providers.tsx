@@ -13,6 +13,7 @@ import { ChatPanel, ChatPanelProvider, FloatingChatLauncher } from "@/features/m
 import {
   AppBadgeSync,
   AppUpdatePrompt,
+  BackgroundRefreshRegistration,
   createQueryPersister,
   InstallPrompt,
   isPwaEnabled,
@@ -53,6 +54,7 @@ export const Providers = ({ children }: { children: ReactNode }) => {
         <PersistentStorageRequest />
         <AppBadgeSync />
         <OfflineActionSync />
+        <BackgroundRefreshRegistration />
         <Toaster />
         <GamificationSocketListener />
         <FloatingChatLauncher />

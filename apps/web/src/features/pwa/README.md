@@ -107,6 +107,12 @@ server starts. Setting it only at runtime does nothing.
 - `components/OfflineBanner.tsx` — the "You're offline" strip, so nobody mistakes saved content for
   live content.
 - `components/PersistentStorageRequest.tsx` — makes the storage request once, on load.
+- `constants/backgroundRefresh.ts` — the periodic sync tag, the feed path it refreshes, and the
+  minimum time the browser is asked to wait between runs.
+- `utils/backgroundRefresh.ts` — `registerBackgroundRefresh`, which checks that periodic background
+  sync exists and is already permitted before registering it — never asks for the permission itself.
+- `components/BackgroundRefreshRegistration.tsx` — calls that once, on load, the same shape as
+  `PersistentStorageRequest`.
 
 Outside this folder:
 
@@ -283,6 +289,38 @@ gated page whose client half (`ShareTargetComposer.tsx`) reads the stashed photo
 `creator-dashboard`'s `PostModal` with that photo pre-loaded (`initialPhotoFile`) once everything
 checks out.
 
+## Background refresh
+
+**User-facing (Android only — iPhone has no equivalent API):** once the browser has decided,
+through its own engagement heuristics, that Outfiqe is worth trusting with it, the feed quietly
+refreshes in the background every so often, so opening the app after a while shows something
+already caught up rather than a stale page for a moment. On iPhone the feed simply refreshes
+whenever the app is opened, same as it always has.
+
+**Technical:** `components/BackgroundRefreshRegistration.tsx` calls
+`utils/backgroundRefresh.ts`'s `registerBackgroundRefresh` once, on load. It checks that the
+Periodic Background Sync permission is already `"granted"` and that the browser actually exposes
+a `periodicSync` manager, and only then registers the `refresh-feed` tag. Nothing here ever asks
+for that permission — there is no prompt to ask for. Chrome grants it on its own, to installed
+apps someone visits often enough, the same way it decides whether to offer an install prompt at
+all.
+
+`app/sw.ts` listens for the `periodicsync` event Chrome fires later, on its own schedule, and
+fetches the feed page with `credentials: "same-origin"` rather than any bearer token. The web app
+keeps its API access token in memory only, invisible to the service worker; a signed-in visitor's
+server-rendered pages authenticate through an `httpOnly` refresh-token cookie instead, which rides
+along on any same-origin fetch automatically. Reusing that cookie gets the worker a real,
+personalised page with no new auth code, and avoids ever letting the worker attempt its own token
+refresh — a second, independent refresh racing the one the open tab might already be doing is
+exactly what the refresh-token rotation's reuse detection exists to catch, and would sign the
+whole session out for it.
+
+The fetch is written into the same `visited-pages` cache the page itself already writes into, so a
+person opening the feed to a background-refreshed copy is indistinguishable from opening it to one
+they visited themselves. `if (!response.ok || response.redirected) return;` guards against caching
+a signed-out redirect under the feed's own cache key — a session that expired between refreshes
+must not leave a stale, wrong page waiting under the URL people expect their own feed at.
+
 ## Things that are not obvious
 
 **Receiving a shared file needs the service worker, not a plain Next.js route handler.** A route
@@ -447,6 +485,22 @@ draws the logo smaller on a full square of background colour.
 **Icons moved out of `shared/seo`.** They describe the installed app, not the search result, and
 keeping them next to the icon list is what lets the manifest, the Apple icon, and the generator
 share one list.
+
+**Periodic Background Sync cannot be triggered from an automated test, for a different reason than
+the Notifications permission above.** The permission itself is never directly requestable — Chrome
+grants it on its own, by heuristics nobody outside the browser controls, so no test can put a
+Chromium instance into a "granted" state to exercise the real registration path. And unlike a push
+message, which Chrome DevTools Protocol can inject straight at a service worker
+(`ServiceWorker.deliverPushMessage`, used by `e2e/pushNotification.spec.ts`), there is no CDP
+method that fires a `periodicsync` event at all. `e2e/backgroundRefresh.spec.ts` proves what can
+actually be proven here: that calling the real permission check in a real browser, where the
+experimental `"periodic-background-sync"` permission name is unrecognised, never throws past the
+`try`/`catch` and never crashes the page. The registration logic's branches (granted, not granted,
+no `periodicSync` manager, a throwing Permissions API, no service worker support) are covered at
+the unit level in `utils/backgroundRefresh.test.ts` instead, with the browser APIs stubbed. Worth
+knowing if this ever needs re-verifying by hand: install the app on Android Chrome, use it across
+several days, then check `chrome://serviceworker-internals` or the app's own network log for a
+background fetch to `/explore` with no page open.
 
 ## To do later
 
