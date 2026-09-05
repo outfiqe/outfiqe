@@ -10,6 +10,8 @@ const aCart = (overrides: Partial<Cart> = {}): Cart =>
   ({
     subtotal: 1000,
     deliveryFee: 100,
+    platformDiscountTotal: 0,
+    appliedCoupon: null,
     city: "Kathmandu",
     ...overrides,
   }) as Cart;
@@ -57,5 +59,24 @@ describe("CheckoutSummary", () => {
     );
 
     expect(screen.getByRole("button", { name: "Placing order…" })).toBeDisabled();
+  });
+
+  it("shows the coupon as a named discount line and subtracts it from the total", () => {
+    render(
+      <CheckoutSummary
+        cart={aCart({
+          platformDiscountTotal: 300,
+          appliedCoupon: { code: "WELCOME300", discountAmount: 300 },
+        })}
+        paymentMethod={PaymentMethod.COD}
+        codHandlingFee={50}
+        isSubmitting={false}
+        isOnline={true}
+      />,
+    );
+
+    expect(screen.getByText("WELCOME300")).toBeInTheDocument();
+    expect(screen.getByText("-Rs. 300")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Place order" })).toBeEnabled();
   });
 });

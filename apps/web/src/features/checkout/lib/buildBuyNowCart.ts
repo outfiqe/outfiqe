@@ -18,6 +18,8 @@ export const buildBuyNowCart = (payload: BuyNowPayload, zone: DeliveryZone | und
         imageUrl: payload.imageUrl,
         sizeLabel: payload.sizeLabel,
         unitPrice: payload.unitPrice,
+        listUnitPrice: payload.unitPrice,
+        discountPercent: null,
         qty: payload.qty,
         availableStock: payload.qty,
         soldOut: false,
@@ -27,7 +29,9 @@ export const buildBuyNowCart = (payload: BuyNowPayload, zone: DeliveryZone | und
     itemCount: payload.qty,
     subtotal,
     deliveryFee,
+    platformDiscountTotal: 0,
     total: subtotal + deliveryFee,
     city: null,
+    appliedCoupon: null,
   };
 };

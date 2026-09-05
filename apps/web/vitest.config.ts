@@ -135,6 +135,7 @@ export default defineConfig({
         "src/app/manifest.ts",
         "src/features/checkout/components/CheckoutSummary.tsx",
         "src/features/checkout/components/CheckoutForm.tsx",
+        "src/features/cart/components/CouponForm.tsx",
         "src/features/checkout/hooks/useCheckout.ts",
         "src/features/payments/hooks/useInitiatePayment.ts",
         "src/features/explore/hooks/useLikeLook.ts",
