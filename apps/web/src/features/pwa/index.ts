@@ -1,6 +1,7 @@
 export { AppBadgeSync } from "./components/AppBadgeSync";
 export { AppleSplashLinks } from "./components/AppleSplashLinks";
 export { AppUpdatePrompt } from "./components/AppUpdatePrompt";
+export { BackgroundRefreshRegistration } from "./components/BackgroundRefreshRegistration";
 export { InstallPrompt } from "./components/InstallPrompt";
 export { OfflineActionSync } from "./components/OfflineActionSync";
 export { OfflineBanner } from "./components/OfflineBanner";
@@ -27,6 +28,11 @@ export {
 export { appleWebAppMetadata, pwaIcons, WEB_MANIFEST_PATH } from "./constants/appMetadata";
 export { appShortcuts } from "./constants/appShortcuts";
 export { DARK_THEME_COLOR, LIGHT_THEME_COLOR } from "./constants/appTheme";
+export {
+  BACKGROUND_REFRESH_MIN_INTERVAL_MS,
+  BACKGROUND_REFRESH_PATH,
+  BACKGROUND_REFRESH_SYNC_TAG,
+} from "./constants/backgroundRefresh";
 export {
   hasVisitedOftenEnough,
   isWithinInstallPromptCooldown,
@@ -72,6 +78,7 @@ export { useSharedPhoto } from "./hooks/useSharedPhoto";
 export { showUnreadBadge } from "./utils/appBadge";
 export { toAppleSplashMediaQuery } from "./utils/appleSplashMedia";
 export { pwaViewport } from "./utils/appViewport";
+export { registerBackgroundRefresh } from "./utils/backgroundRefresh";
 export { clearCachedContent } from "./utils/clearCachedContent";
 export { toImageHosts } from "./utils/imageHosts";
 export {

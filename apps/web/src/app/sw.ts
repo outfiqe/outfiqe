@@ -2,6 +2,10 @@ import { defaultCache } from "@serwist/turbopack/worker";
 import type { PrecacheEntry, RuntimeCaching, SerwistGlobalConfig } from "serwist";
 import { CacheFirst, ExpirationPlugin, NetworkFirst, NetworkOnly, Serwist } from "serwist";
 
+import {
+  BACKGROUND_REFRESH_PATH,
+  BACKGROUND_REFRESH_SYNC_TAG,
+} from "../features/pwa/constants/backgroundRefresh";
 import { isPrivatePath } from "../features/pwa/constants/privatePaths";
 import { parsePushMessage } from "../features/pwa/constants/pushMessage";
 import {
@@ -27,6 +31,16 @@ import {
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
     __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
+  }
+}
+
+interface PeriodicSyncEvent extends ExtendableEvent {
+  readonly tag: string;
+}
+
+declare global {
+  interface ServiceWorkerGlobalScopeEventMap {
+    periodicsync: PeriodicSyncEvent;
   }
 }
 
@@ -193,6 +207,19 @@ const handleShareTargetSubmission = async (request: Request): Promise<Response> 
 self.addEventListener("fetch", (event) => {
   if (!isShareTargetSubmission(event.request)) return;
   event.respondWith(handleShareTargetSubmission(event.request));
+});
+
+const refreshFeedPageInBackground = async (): Promise<void> => {
+  const response = await fetch(BACKGROUND_REFRESH_PATH, { credentials: "same-origin" });
+  if (!response.ok || response.redirected) return;
+
+  const cache = await caches.open(VISITED_PAGES_CACHE_NAME);
+  await cache.put(BACKGROUND_REFRESH_PATH, response);
+};
+
+self.addEventListener("periodicsync", (event) => {
+  if (event.tag !== BACKGROUND_REFRESH_SYNC_TAG) return;
+  event.waitUntil(refreshFeedPageInBackground());
 });
 
 serwist.addEventListeners();

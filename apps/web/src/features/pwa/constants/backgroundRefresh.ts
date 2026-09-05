@@ -1,0 +1,7 @@
+export const BACKGROUND_REFRESH_SYNC_TAG = "refresh-feed";
+
+const MILLISECONDS_PER_HOUR = 60 * 60 * 1000;
+
+export const BACKGROUND_REFRESH_MIN_INTERVAL_MS = 12 * MILLISECONDS_PER_HOUR;
+
+export const BACKGROUND_REFRESH_PATH = "/explore";
