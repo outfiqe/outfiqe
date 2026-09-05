@@ -29,6 +29,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "embla-carousel-react": "^8.6.0",
+    "framer-motion": "^13.1.0",
     "lucide-react": "^1.29.0",
     "react-easy-crop": "^6.2.3",
     "react-hook-form": "^7.84.0",

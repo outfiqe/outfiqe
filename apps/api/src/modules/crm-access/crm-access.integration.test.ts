@@ -7,6 +7,7 @@ import { prisma } from "#db/prisma.js";
 import { BrandRole, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
+import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import {
   ensurePlatformOrganizationExists,
@@ -682,7 +683,7 @@ describe("CRM invites", () => {
     expect(membership.status).toBe("ACTIVE");
   });
 
-  it("retrying acceptInvite for an already-granted membership returns it instead of failing", async () => {
+  it("rejects calling acceptInvite again for a membership it already granted", async () => {
     const { organization, memberRole } = await seedOrganization();
     const invitee = await createStaffUser("Retried Acceptor");
     const rawToken = generateOpaqueToken();
@@ -697,10 +698,11 @@ describe("CRM invites", () => {
       },
     });
 
-    const firstAttempt = await crmAccessRepository.acceptInvite(invite, invitee.id);
-    const retriedAttempt = await crmAccessRepository.acceptInvite(invite, invitee.id);
+    await crmAccessRepository.acceptInvite(invite, invitee.id);
 
-    expect(retriedAttempt.id).toBe(firstAttempt.id);
+    await expect(crmAccessRepository.acceptInvite(invite, invitee.id)).rejects.toSatisfy(
+      isUniqueConstraintError,
+    );
     expect(
       await prisma.membership.count({
         where: { userId: invitee.id, organizationId: organization.id },

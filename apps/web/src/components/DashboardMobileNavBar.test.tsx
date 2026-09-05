@@ -8,11 +8,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
+import { useChatPanel } from "@/features/messaging";
 
 import { DashboardMobileNavBar } from "./DashboardMobileNavBar";
 import { useDashboardMobileNav } from "./useDashboardMobileNav";
 
 vi.mock("@/features/auth", () => ({ useAuth: vi.fn(), useLogout: vi.fn() }));
+vi.mock("@/features/messaging", () => ({ useChatPanel: vi.fn() }));
 vi.mock("./useDashboardMobileNav", () => ({ useDashboardMobileNav: vi.fn() }));
 vi.mock("./DashboardNavCustomizeSheet", () => ({
   DashboardNavCustomizeSheet: ({
@@ -105,6 +107,9 @@ const authenticate = () => {
 beforeEach(() => {
   vi.mocked(useReducedMotion).mockReturnValue(false);
   vi.mocked(useLogout).mockReturnValue(buildIdleLogoutMutation());
+  vi.mocked(useChatPanel).mockReturnValue({
+    isOpen: false,
+  } as ReturnType<typeof useChatPanel>);
   vi.mocked(useDashboardMobileNav).mockReturnValue({
     pinnedItems,
     overflowItems,
@@ -120,6 +125,16 @@ describe("DashboardMobileNavBar", () => {
     vi.mocked(useAuth).mockReturnValue({
       state: { status: AuthStatus.LOADING, user: null, accessToken: null },
     } as ReturnType<typeof useAuth>);
+
+    const { container } = render(<DashboardMobileNavBar />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("renders nothing while the chat panel is open", () => {
+    authenticate();
+    vi.mocked(useChatPanel).mockReturnValue({
+      isOpen: true,
+    } as ReturnType<typeof useChatPanel>);
 
     const { container } = render(<DashboardMobileNavBar />);
     expect(container).toBeEmptyDOMElement();

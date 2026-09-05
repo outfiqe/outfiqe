@@ -17,12 +17,28 @@ const runWithoutFailingWhenStorageIsUnavailable = async <T>(
   }
 };
 
+const keepOnlyAllowlistedQueries = (
+  client: PersistedClient | undefined,
+): PersistedClient | undefined => {
+  if (!client) return client;
+
+  return {
+    ...client,
+    clientState: {
+      ...client.clientState,
+      queries: client.clientState.queries.filter((query) => isPersistableQueryKey(query.queryKey)),
+    },
+  };
+};
+
 export const createQueryPersister = (): Persister => ({
   persistClient: (client) =>
     runWithoutFailingWhenStorageIsUnavailable(() => set(PERSISTED_QUERY_CACHE_KEY, client)),
-  restoreClient: () =>
-    runWithoutFailingWhenStorageIsUnavailable(() =>
-      get<PersistedClient>(PERSISTED_QUERY_CACHE_KEY),
+  restoreClient: async () =>
+    keepOnlyAllowlistedQueries(
+      await runWithoutFailingWhenStorageIsUnavailable(() =>
+        get<PersistedClient>(PERSISTED_QUERY_CACHE_KEY),
+      ),
     ),
   removeClient: () =>
     runWithoutFailingWhenStorageIsUnavailable(() => del(PERSISTED_QUERY_CACHE_KEY)),

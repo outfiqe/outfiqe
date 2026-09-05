@@ -81,3 +81,61 @@ response cannot be used to discover that some other account has that endpoint re
 **VAPID keys are optional config.** With any of `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` /
 `VAPID_SUBJECT` missing, the delivery consumer never registers, `GET /public-key` returns `null`,
 the web opt-in stays hidden, and stored subscriptions sit unused until the keys are set.
+
+## Testing this by hand
+
+Nothing in CI can watch a real notification appear — Chromium's Notifications permission cannot
+be granted through browser automation in this environment (see `apps/web/src/features/pwa/README.md`
+for what was actually tried). Everything up to the browser's own permission check has automated
+coverage; a real end-to-end check of "does a notification actually show up" has to be done by hand.
+
+**One-time setup**
+
+1. Generate a key pair: `pnpm --filter @outfiqe/api exec node -e "console.log(require('web-push').generateVAPIDKeys())"`.
+2. Set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` (a `mailto:` address or a
+   `https://` URL) in the API's env. Restart the API — these are read once at startup.
+3. Build the web app with `NEXT_PUBLIC_PWA_ENABLED=true` and run it against that API. `GET /api/push/public-key`
+   should now return the public key instead of `null` — that confirms the config took.
+
+**Turning push on**
+
+4. Sign in on a real device or desktop browser (Chrome/Edge for the quickest loop; see the device
+   notes below for Android and iPhone). Keep using the app normally until the "turn on
+   notifications" bar appears, tap it, then accept the browser's own permission prompt.
+5. Confirm the subscription landed: `SELECT * FROM push_subscriptions WHERE user_id = '<your id>'`.
+
+**Triggering a real push**
+
+Two ways, depending on what you're actually checking:
+
+- **The whole pipeline, most realistic**: from a second account, like or follow the account that
+  turned push on. This exercises the real domain event → notification → dispatch path.
+- **Just the browser side, fastest**: skip the app entirely and send straight to the captured
+  subscription with the `web-push` CLI:
+  ```
+  npx web-push send-notification \
+    --endpoint="<endpoint from the row above>" \
+    --key="<p256dh_key>" --auth="<auth_key>" \
+    --payload='{"title":"Test","body":"Hello","url":"/profile","tag":"test"}' \
+    --vapid-subject="<VAPID_SUBJECT>" --vapid-pubkey="<VAPID_PUBLIC_KEY>" --vapid-pvtkey="<VAPID_PRIVATE_KEY>"
+  ```
+
+**Two things that look like the feature is broken but are the feature working correctly**
+
+- **Nothing arrives while the tab is open and connected.** That is the "app is open" suppression
+  in `push.dispatch.service.ts` — close the tab (or the installed app) before triggering, or check
+  the in-app bell instead.
+- **Nothing arrives between 22:00 and 07:00 Nepal time.** That is the quiet-hours check. Either
+  wait, or temporarily widen `QUIET_HOURS_START_HOUR`/`QUIET_HOURS_END_HOUR` in `push.constants.ts`
+  for the test and revert it.
+
+**What to actually check once something arrives**: the OS notification shows the right title and
+body, clicking it opens the app at the right page (from its `url`), and the number on the app icon
+updates — badging only shows once the app is installed, not in a plain browser tab.
+
+**Device notes**
+
+- **Android Chrome**: works in a plain browser tab, no install required.
+- **iPhone**: only works once the app is added to the Home Screen (Share → Add to Home Screen,
+  iOS 16.4+) — a Safari tab has no way to ask for the permission at all, and the opt-in bar knows
+  this and shows an "install first" message instead of a dead button.

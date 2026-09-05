@@ -32,7 +32,8 @@ type BadgeCapableWorkerNavigator = WorkerNavigator & { setAppBadge?: () => Promi
 
 const markAppIconWithUnseenPush = (): void => {
   const badgeNavigator = self.navigator as BadgeCapableWorkerNavigator;
-  badgeNavigator.setAppBadge?.().catch(() => undefined);
+  if (!badgeNavigator.setAppBadge) return;
+  badgeNavigator.setAppBadge().catch(() => undefined);
 };
 
 const imageHosts = typeof __OUTFIQE_IMAGE_HOSTS__ === "undefined" ? [] : __OUTFIQE_IMAGE_HOSTS__;

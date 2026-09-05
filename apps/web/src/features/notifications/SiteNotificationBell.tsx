@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useSyncExternalStore } from "react";
 
 import { useAuth } from "@/features/auth";
+import { usePushSubscription } from "@/features/pwa";
 import { notificationsApi } from "@/shared/lib/notificationsApi";
 import {
   acquireSocketConnection,
@@ -22,6 +23,7 @@ const getServerSocketSnapshot = (): null => null;
 
 export const SiteNotificationBell = () => {
   const { isAuthenticated, isAuthResolved, state } = useAuth();
+  const { state: pushState } = usePushSubscription();
   const router = useRouter();
 
   const subscribeToSocket = useCallback(
@@ -48,6 +50,11 @@ export const SiteNotificationBell = () => {
   };
 
   return (
-    <NotificationBell notificationsApi={notificationsApi} socket={socket} onSelect={handleSelect} />
+    <NotificationBell
+      notificationsApi={notificationsApi}
+      socket={socket}
+      onSelect={handleSelect}
+      showPushChannel={pushState === "enabled"}
+    />
   );
 };

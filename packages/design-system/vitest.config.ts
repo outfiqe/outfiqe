@@ -14,6 +14,8 @@ export default defineConfig({
         "src/trend-chart.tsx",
         "src/bar-series.tsx",
         "src/stat-card.tsx",
+        "src/use-swipe-to-dismiss.ts",
+        "src/drawer.tsx",
       ],
       exclude: ["src/**/*.test.tsx", "src/testing/**"],
       thresholds: {

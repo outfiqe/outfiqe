@@ -21,12 +21,18 @@ type NotificationBellProps = {
   notificationsApi: NotificationsApi;
   socket?: NotificationSocket | null;
   onSelect: (notification: Notification) => void;
+  showPushChannel?: boolean;
 };
 
 const formatBadgeCount = (count: number): string =>
   count > MAX_DISPLAYED_UNREAD_COUNT ? `${MAX_DISPLAYED_UNREAD_COUNT}+` : `${count}`;
 
-export const NotificationBell = ({ notificationsApi, socket, onSelect }: NotificationBellProps) => {
+export const NotificationBell = ({
+  notificationsApi,
+  socket,
+  onSelect,
+  showPushChannel,
+}: NotificationBellProps) => {
   const [open, setOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
 
@@ -80,7 +86,11 @@ export const NotificationBell = ({ notificationsApi, socket, onSelect }: Notific
       </PopoverTrigger>
 
       <PopoverContent>
-        <NotificationPanel notificationsApi={notificationsApi} onSelect={handleSelect} />
+        <NotificationPanel
+          notificationsApi={notificationsApi}
+          onSelect={handleSelect}
+          showPushChannel={showPushChannel}
+        />
       </PopoverContent>
 
       <span aria-live="polite" className="sr-only">

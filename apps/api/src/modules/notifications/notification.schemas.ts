@@ -18,9 +18,14 @@ export const notificationPreferenceTypeParamSchema = z.object({
   type: z.enum(NotificationType),
 });
 
-export const updateNotificationPreferenceBodySchema = z.object({
-  enabled: z.boolean(),
-});
+export const updateNotificationPreferenceBodySchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    pushEnabled: z.boolean().optional(),
+  })
+  .refine((body) => body.enabled !== undefined || body.pushEnabled !== undefined, {
+    message: "Provide enabled, pushEnabled, or both.",
+  });
 
 export type ListNotificationsQuery = z.infer<typeof listNotificationsQuerySchema>;
 export type NotificationIdParam = z.infer<typeof notificationIdParamSchema>;

@@ -1,5 +1,6 @@
 import type {
   Notification,
+  NotificationChannelChanges,
   NotificationPage,
   NotificationPreference,
   NotificationType,
@@ -33,8 +34,11 @@ export const createNotificationsApi = (client: ApiClient) => ({
     return res.data.preferences;
   },
 
-  setPreference: async (type: NotificationType, enabled: boolean): Promise<void> => {
-    await client.patch<NotificationPreference>(`/notifications/preferences/${type}`, { enabled });
+  setPreference: async (
+    type: NotificationType,
+    changes: NotificationChannelChanges,
+  ): Promise<void> => {
+    await client.patch<NotificationPreference>(`/notifications/preferences/${type}`, changes);
   },
 });
 

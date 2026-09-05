@@ -53,9 +53,9 @@ export const notificationController = {
   async setPreference(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const { type } = validated.params<NotificationPreferenceTypeParam>(res);
-    const { enabled } = validated.body<UpdateNotificationPreferenceBody>(res);
+    const changes = validated.body<UpdateNotificationPreferenceBody>(res);
 
-    await notificationService.setPreference(userId, type, enabled);
-    sendSuccess(res, { type, enabled }, "Notification preference updated.");
+    await notificationService.setPreference(userId, type, changes);
+    sendSuccess(res, { type, ...changes }, "Notification preference updated.");
   },
 };

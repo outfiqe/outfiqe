@@ -37,3 +37,4 @@ export * from "./theme-toggle";
 export * from "./toast";
 export * from "./trend-chart";
 export * from "./use-image-crop-upload";
+export * from "./use-swipe-to-dismiss";

@@ -2,14 +2,8 @@ import type { SidebarNavItem } from "@outfiqe/components";
 
 export const PINNED_SLOT_COUNT = 4;
 
-export const SWIPE_DISMISS_DISTANCE_PX = 96;
-export const SWIPE_DISMISS_VELOCITY = 600;
-
 export const isCrossAppNavHref = (href: string): boolean =>
   href.startsWith("http://") || href.startsWith("https://") || href.startsWith("/admin");
-
-export const shouldDismissOnSwipe = (dragOffset: number, dragVelocity: number): boolean =>
-  dragOffset > SWIPE_DISMISS_DISTANCE_PX || dragVelocity > SWIPE_DISMISS_VELOCITY;
 
 export const resolvePinnedIds = (
   navItems: readonly SidebarNavItem[],

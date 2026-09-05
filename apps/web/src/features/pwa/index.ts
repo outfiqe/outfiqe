@@ -44,6 +44,8 @@ export {
   SERVICE_WORKER_SCRIPT_TYPE,
   SERVICE_WORKER_URL,
 } from "./constants/serviceWorker";
+export type { PushOptInState } from "./hooks/usePushSubscription";
+export { usePushSubscription } from "./hooks/usePushSubscription";
 export { showUnreadBadge } from "./utils/appBadge";
 export { toAppleSplashMediaQuery } from "./utils/appleSplashMedia";
 export { pwaViewport } from "./utils/appViewport";

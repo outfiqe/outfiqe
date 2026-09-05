@@ -1,7 +1,7 @@
 import type { SidebarNavItem } from "@outfiqe/components";
 import { describe, expect, it } from "vitest";
 
-import { isCrossAppNavHref, resolvePinnedIds, shouldDismissOnSwipe } from "./dashboardMobileNav";
+import { isCrossAppNavHref, resolvePinnedIds } from "./dashboardMobileNav";
 
 const navItem = (id: string): SidebarNavItem => ({ id, label: id, href: `/${id}` });
 const navItems = ["overview", "profile", "progress", "badges", "challenges", "security"].map(
@@ -35,20 +35,6 @@ describe("resolvePinnedIds", () => {
     expect(
       resolvePinnedIds(navItems, ["overview", "profile", "progress", "badges", "challenges"]),
     ).toHaveLength(4);
-  });
-});
-
-describe("shouldDismissOnSwipe", () => {
-  it("dismisses on a long drag", () => {
-    expect(shouldDismissOnSwipe(120, 0)).toBe(true);
-  });
-
-  it("dismisses on a fast fling", () => {
-    expect(shouldDismissOnSwipe(10, 900)).toBe(true);
-  });
-
-  it("keeps the panel open for a small, slow drag", () => {
-    expect(shouldDismissOnSwipe(20, 100)).toBe(false);
   });
 });
 
