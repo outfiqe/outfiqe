@@ -29,6 +29,8 @@ export {
   appleSplashScreens,
 } from "./constants/appleSplashScreens";
 export { appleWebAppMetadata, pwaIcons, WEB_MANIFEST_PATH } from "./constants/appMetadata";
+export type { AppScreenshot, AppScreenshotFormFactor } from "./constants/appScreenshots";
+export { appScreenshotPath, appScreenshots } from "./constants/appScreenshots";
 export { appShortcuts } from "./constants/appShortcuts";
 export { DARK_THEME_COLOR, LIGHT_THEME_COLOR } from "./constants/appTheme";
 export {
