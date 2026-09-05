@@ -15,7 +15,7 @@ const screenshotOutputDirectory = path.join(webAppRoot, "public", "screenshots")
 
 const baseUrl = process.env.SCREENSHOT_BASE_URL ?? "http://127.0.0.1:3100";
 
-const SETTLE_AFTER_LOAD_MS = 2_000;
+const SETTLE_AFTER_LOAD_MS = 4_000;
 
 const viewportForScreenshot = ({ formFactor, size }: AppScreenshot) => {
   const [width, height] = size.split("x").map(Number);
@@ -32,7 +32,7 @@ const captureScreenshots = async () => {
       const page = await browser.newPage({ viewport, deviceScaleFactor });
 
       await page.goto(`${baseUrl}${screenshot.route}`, {
-        waitUntil: "networkidle",
+        waitUntil: "load",
         timeout: 30_000,
       });
       await page.waitForTimeout(SETTLE_AFTER_LOAD_MS);
