@@ -36,6 +36,19 @@ describe("verifyCaptcha", () => {
     await expect(verifyCaptcha("a-valid-token")).resolves.toBe(true);
   });
 
+  it("includes the caller's remote IP in the verification payload when provided", async () => {
+    let capturedInit: RequestInit | undefined;
+    const fetchMock = vi.fn((_url: string, init?: RequestInit) => {
+      capturedInit = init;
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true }) });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await verifyCaptcha("a-valid-token", "203.0.113.4");
+
+    expect(JSON.parse(String(capturedInit?.body))).toMatchObject({ remoteip: "203.0.113.4" });
+  });
+
   it("returns false when Turnstile rejects the token", async () => {
     vi.stubGlobal(
       "fetch",
