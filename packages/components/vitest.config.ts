@@ -9,14 +9,9 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: [
-        "src/chart.tsx",
-        "src/chart-card.tsx",
-        "src/trend-chart.tsx",
-        "src/bar-series.tsx",
-        "src/stat-card.tsx",
-        "src/drawer.tsx",
-        "src/modal.tsx",
-        "src/use-media-query.ts",
+        "src/header/HeaderBar.tsx",
+        "src/header/useHeaderHeightVar.ts",
+        "src/notifications/NotificationBell.tsx",
       ],
       exclude: ["src/**/*.test.tsx", "src/testing/**"],
       thresholds: {

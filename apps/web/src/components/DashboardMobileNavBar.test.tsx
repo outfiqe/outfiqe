@@ -1,5 +1,6 @@
 import type { SidebarNavItem } from "@outfiqe/components";
 import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { LayoutGrid, User, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -156,6 +157,16 @@ describe("DashboardMobileNavBar", () => {
     expect(screen.getByRole("button", { name: /Sign out/ })).toBeInTheDocument();
   });
 
+  it("keeps the pinned bar stacked above the backdrop while the panel is open", () => {
+    authenticate();
+    render(<DashboardMobileNavBar />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Open dashboard menu" }));
+
+    expect(screen.getByTestId("dashboard-nav-bar")).toHaveClass("z-50");
+    expect(screen.getByTestId("dashboard-menu-backdrop")).toHaveClass("z-40");
+  });
+
   it("opens the customize sheet from the panel and persists a saved selection", () => {
     authenticate();
     render(<DashboardMobileNavBar />);
@@ -168,6 +179,20 @@ describe("DashboardMobileNavBar", () => {
 
     expect(savePins).toHaveBeenCalledWith(["profile", "overview"]);
     expect(screen.queryByTestId("customize-sheet")).not.toBeInTheDocument();
+  });
+
+  it("closes the panel when the open/close toggle is pressed again", async () => {
+    const user = userEvent.setup();
+    authenticate();
+    render(<DashboardMobileNavBar />);
+
+    const toggle = screen.getByRole("button", { name: "Open dashboard menu" });
+    await user.click(toggle);
+    expect(screen.getByRole("link", { name: /Challenges/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Close dashboard menu", hidden: true }));
+
+    expect(screen.queryByRole("link", { name: /Challenges/ })).not.toBeInTheDocument();
   });
 
   it("closes the panel when the backdrop is tapped", () => {

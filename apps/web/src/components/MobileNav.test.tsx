@@ -71,6 +71,14 @@ describe("MobileNav", () => {
     mockAuth();
   });
 
+  it("gives the menu toggle a touch-sized hit area and an enlarged icon", () => {
+    render(<MobileNav />);
+
+    const toggle = screen.getByRole("button", { name: "Open menu" });
+    expect(toggle).toHaveClass("size-11", "[&_svg]:size-7");
+    expect(toggle).not.toHaveClass("[&_svg]:size-4");
+  });
+
   it("moves wishlist, bag, and the theme toggle into the drawer", async () => {
     render(<MobileNav />);
     await openMenu();

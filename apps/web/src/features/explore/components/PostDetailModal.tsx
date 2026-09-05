@@ -59,6 +59,7 @@ export const PostDetailModal = ({
   const { isLoading: commentsLoading, data: commentsData } = comments;
   const { mutate: toggleLike, isPending: isLiking } = likeMutation;
   const { mutate: toggleSave, isPending: isSaving } = saveMutation;
+  const hasCaptionContent = taggedProducts.length > 0 || Boolean(caption);
 
   useEffect(() => {
     setCommentsOpen(true);
@@ -119,7 +120,7 @@ export const PostDetailModal = ({
               onSave={() => gated(() => toggleSave({ lookId: id, saved: isSaved }))}
               isSaving={isSaving}
               onShare={() => void shareLook()}
-              className="mt-2.5 border-t border-border pt-2.5"
+              className={hasCaptionContent ? "mt-2.5 border-t border-border pt-2.5" : undefined}
             />
 
             <PostCommentsSection
