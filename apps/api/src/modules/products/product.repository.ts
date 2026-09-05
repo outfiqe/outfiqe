@@ -549,6 +549,33 @@ export const productRepository = {
     });
   },
 
+  async findEligibilityAttributesByIds(
+    productIds: string[],
+  ): Promise<Map<string, { brandId: string; productTypeId: string; categoryIds: string[] }>> {
+    if (productIds.length === 0) return new Map();
+
+    const rows = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: {
+        id: true,
+        brandId: true,
+        productTypeId: true,
+        categories: { select: { id: true } },
+      },
+    });
+
+    return new Map(
+      rows.map((row) => [
+        row.id,
+        {
+          brandId: row.brandId,
+          productTypeId: row.productTypeId,
+          categoryIds: row.categories.map((category) => category.id),
+        },
+      ]),
+    );
+  },
+
   async findActiveDiscountsByProductIds(
     productIds: string[],
     at: Date,

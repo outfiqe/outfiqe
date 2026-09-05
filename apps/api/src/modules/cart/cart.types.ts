@@ -15,11 +15,18 @@ export type CartItemView = {
   lowStock: boolean;
 };
 
+export type AppliedCouponView = {
+  code: string;
+  discountAmount: number;
+};
+
 export type CartView = {
   items: CartItemView[];
   itemCount: number;
   subtotal: number;
   deliveryFee: number;
+  platformDiscountTotal: number;
   total: number;
   city: string | null;
+  appliedCoupon: AppliedCouponView | null;
 };

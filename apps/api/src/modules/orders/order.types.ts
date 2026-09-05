@@ -13,6 +13,7 @@ export type CreateOrderItemInput = {
   unitPrice: number;
   listUnitPrice: number;
   brandDiscountAmount: number;
+  platformDiscountAmount: number;
   attributedCreatorId?: string;
   attributedCreatorLookId?: string;
   attributedLinkId?: string;
@@ -33,6 +34,8 @@ export type CreateOrderInput = {
   deliveryFee: number;
   codFee: number;
   total: number;
+  brandDiscountTotal: number;
+  platformDiscountTotal: number;
   items: CreateOrderItemInput[];
 };
 
@@ -54,6 +57,9 @@ export type OrderItemView = {
   sizeLabel: string;
   qty: number;
   unitPrice: number;
+  listUnitPrice: number;
+  brandDiscountAmount: number;
+  platformDiscountAmount: number;
   attributedCreatorName: string | null;
 };
 
@@ -72,6 +78,8 @@ export type OrderView = {
   deliveryFee: number;
   codFee: number;
   total: number;
+  brandDiscountTotal: number;
+  platformDiscountTotal: number;
   items: OrderItemView[];
   transactions: PaymentTransactionView[];
 };

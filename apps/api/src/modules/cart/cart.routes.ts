@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
+import { applyCartCouponSchema } from "#modules/coupons/coupon.schemas.js";
 
 import { cartController } from "./cart.controller.js";
 import {
@@ -42,3 +43,12 @@ cartRoutes.patch(
   validate({ body: updateCartCityBodySchema }),
   cartController.updateCity,
 );
+
+cartRoutes.post(
+  "/coupon",
+  requireAuth,
+  validate({ body: applyCartCouponSchema }),
+  cartController.applyCoupon,
+);
+
+cartRoutes.delete("/coupon", requireAuth, cartController.removeCoupon);

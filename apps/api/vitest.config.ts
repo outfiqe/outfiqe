@@ -111,6 +111,7 @@ export default defineConfig({
         "src/shared/utils/email.utils.ts",
         "src/modules/discounts/**/*.ts",
         "src/modules/products/product.utils.ts",
+        "src/modules/coupons/coupon.utils.ts",
       ],
       thresholds: {
         lines: 80,

@@ -1,0 +1,547 @@
+import { randomUUID } from "node:crypto";
+
+import request from "supertest";
+import { describe, expect, it } from "vitest";
+
+import { prisma } from "#db/prisma.js";
+import { CouponType, PaymentMethod, ProductStatus, UserRole } from "#generated/prisma/enums.js";
+import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
+import { createAdminSession } from "#test/integration/authHelpers.js";
+import { ensureProductType } from "#test/integration/productFixtures.js";
+import { testApp } from "#test/integration/testApp.js";
+import { uniquePhone } from "#test/integration/uniqueValues.js";
+
+const authHeaderFor = (userId: string) => {
+  const { accessToken } = generateTokenpair({ sub: userId, role: UserRole.CUSTOMER });
+  return `Bearer ${accessToken}`;
+};
+
+const createBuyer = async () => {
+  const suffix = randomUUID().slice(0, 8);
+  return prisma.user.create({
+    data: {
+      email: `buyer-${suffix}@outfiqe.test`,
+      name: "Test Buyer",
+      handle: `test-buyer-${suffix}`,
+      phone: uniquePhone(),
+      passwordHash: "not-used-in-tests",
+      role: UserRole.CUSTOMER,
+    },
+  });
+};
+
+const createDefaultDeliveryZone = () =>
+  prisma.deliveryZone.create({
+    data: {
+      name: "Default Zone",
+      isDefault: true,
+      standardDeliveryFee: 100,
+      freeDeliveryThreshold: 100_000,
+      codHandlingFee: 0,
+    },
+  });
+
+const createActiveCommissionRule = async (adminId: string, ratePercentBasisPoints = 1_000) =>
+  prisma.platformCommissionRule.create({
+    data: {
+      isActive: true,
+      updatedById: adminId,
+      tiers: {
+        create: [
+          {
+            minPrice: 0,
+            maxPrice: null,
+            feeType: "PERCENT",
+            ratePercentBasisPoints,
+            sortOrder: 0,
+          },
+        ],
+      },
+    },
+  });
+
+const createPurchasableProduct = async (price: number, stock = 10) => {
+  const brand = await prisma.brand.create({
+    data: {
+      name: `Coupon Brand ${randomUUID().slice(0, 6)}`,
+      contactName: "Brand Contact",
+      email: `${randomUUID()}@brand.outfiqe.test`,
+      phone: uniquePhone(),
+      instagram: `@${randomUUID().slice(0, 8)}`,
+    },
+  });
+  const product = await prisma.product.create({
+    data: {
+      brandId: brand.id,
+      name: "Coupon Jacket",
+      price,
+      productTypeId: await ensureProductType(),
+      status: ProductStatus.APPROVED,
+    },
+  });
+  const size = await prisma.productSize.create({
+    data: { productId: product.id, label: "M", stock },
+  });
+  return { brand, product, size };
+};
+
+const createCoupon = (overrides: {
+  createdById: string;
+  code?: string;
+  fixedAmount?: number;
+  minSubtotal?: number;
+  totalBudgetAmount?: number;
+}) =>
+  prisma.coupon.create({
+    data: {
+      code: `TEST${randomUUID().slice(0, 6).toUpperCase()}`,
+      type: CouponType.FIXED,
+      fixedAmount: 400,
+      startsAt: new Date(Date.now() - 1000),
+      ...overrides,
+    },
+  });
+
+describe("POST /api/admin/coupons", () => {
+  it("creates a coupon", async () => {
+    const { authHeader } = await createAdminSession();
+
+    const response = await request(testApp)
+      .post("/api/admin/coupons")
+      .set("Authorization", authHeader)
+      .send({
+        code: "welcome300",
+        type: "FIXED",
+        fixedAmount: 300,
+        startsAt: new Date().toISOString(),
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.code).toBe("WELCOME300");
+    expect(response.body.data.fixedAmount).toBe(300);
+    expect(response.body.data.status).toBe("ACTIVE");
+  });
+
+  it("rejects a duplicate code", async () => {
+    const { authHeader, userId } = await createAdminSession();
+    await createCoupon({ code: "DUPE1", createdById: userId });
+
+    const response = await request(testApp)
+      .post("/api/admin/coupons")
+      .set("Authorization", authHeader)
+      .send({ code: "dupe1", type: "FIXED", fixedAmount: 100, startsAt: new Date().toISOString() });
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("COUPON_CODE_ALREADY_EXISTS");
+  });
+});
+
+describe("PATCH /api/admin/coupons/:id/status", () => {
+  it("pauses an active coupon", async () => {
+    const { authHeader, userId } = await createAdminSession();
+    const coupon = await createCoupon({ createdById: userId });
+
+    const response = await request(testApp)
+      .patch(`/api/admin/coupons/${coupon.id}/status`)
+      .set("Authorization", authHeader)
+      .send({ status: "PAUSED" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.status).toBe("PAUSED");
+  });
+});
+
+describe("POST /api/cart/coupon", () => {
+  it("applies a valid coupon and repriced the cart", async () => {
+    await createDefaultDeliveryZone();
+    const buyer = await createBuyer();
+    const { userId: adminId } = await createAdminSession();
+    const { product, size } = await createPurchasableProduct(2_000);
+    const coupon = await createCoupon({ createdById: adminId, fixedAmount: 400 });
+
+    await request(testApp)
+      .post("/api/cart/items")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ productId: product.id, sizeId: size.id, qty: 1 });
+
+    const response = await request(testApp)
+      .post("/api/cart/coupon")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ code: coupon.code });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.appliedCoupon.code).toBe(coupon.code);
+    expect(response.body.data.appliedCoupon.discountAmount).toBe(400);
+    expect(response.body.data.platformDiscountTotal).toBe(400);
+    expect(response.body.data.total).toBe(2_000 - 400 + 100);
+  });
+
+  it("refuses an unknown code", async () => {
+    const buyer = await createBuyer();
+
+    const response = await request(testApp)
+      .post("/api/cart/coupon")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ code: "NOPE1234" });
+
+    expect(response.status).toBe(404);
+    expect(response.body.code).toBe("COUPON_NOT_FOUND");
+  });
+
+  it("removes an applied coupon", async () => {
+    await createDefaultDeliveryZone();
+    const buyer = await createBuyer();
+    const { userId: adminId } = await createAdminSession();
+    const { product, size } = await createPurchasableProduct(2_000);
+    const coupon = await createCoupon({ createdById: adminId, fixedAmount: 400 });
+
+    await request(testApp)
+      .post("/api/cart/items")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ productId: product.id, sizeId: size.id, qty: 1 });
+    await request(testApp)
+      .post("/api/cart/coupon")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ code: coupon.code });
+
+    const response = await request(testApp)
+      .delete("/api/cart/coupon")
+      .set("Authorization", authHeaderFor(buyer.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.appliedCoupon).toBeNull();
+    expect(response.body.data.total).toBe(2_000 + 100);
+  });
+});
+
+describe("POST /api/orders/checkout — coupon redemption", () => {
+  it("charges the customer less while paying the brand exactly as though the order were full price", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId, 1_000);
+    await createDefaultDeliveryZone();
+    const { brand, product, size } = await createPurchasableProduct(2_000);
+    const coupon = await createCoupon({ createdById: adminId, fixedAmount: 400 });
+    const buyer = await createBuyer();
+
+    await request(testApp)
+      .post("/api/cart/items")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ productId: product.id, sizeId: size.id, qty: 1 });
+    await request(testApp)
+      .post("/api/cart/coupon")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ code: coupon.code });
+
+    const checkoutResponse = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.COD,
+      });
+
+    expect(checkoutResponse.status).toBe(201);
+
+    const order = await prisma.order.findUniqueOrThrow({
+      where: { id: checkoutResponse.body.data.id },
+      include: { items: true },
+    });
+    expect(order.subtotal).toBe(2_000);
+    expect(order.platformDiscountTotal).toBe(400);
+    expect(order.total).toBe(2_000 - 400 + 100);
+
+    const orderItem = order.items[0];
+    expect(orderItem?.unitPrice).toBe(2_000);
+    expect(orderItem?.platformDiscountAmount).toBe(400);
+
+    const payout = await prisma.brandPayout.findFirstOrThrow({
+      where: { orderItem: { orderId: order.id } },
+    });
+    expect(payout.brandId).toBe(brand.id);
+    expect(payout.grossAmount).toBe(2_000);
+    expect(payout.platformFee).toBe(200);
+    expect(payout.netAmount).toBe(1_800);
+
+    const redemption = await prisma.couponRedemption.findUniqueOrThrow({
+      where: { orderId: order.id },
+    });
+    expect(redemption.couponId).toBe(coupon.id);
+    expect(redemption.platformFundedAmount).toBe(400);
+
+    const updatedCoupon = await prisma.coupon.findUniqueOrThrow({ where: { id: coupon.id } });
+    expect(updatedCoupon.spentAmount).toBe(400);
+    expect(updatedCoupon.redemptionCount).toBe(1);
+  });
+
+  it("refuses to apply a coupon to a second cart once the user has already redeemed it", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const coupon = await createCoupon({ createdById: adminId, fixedAmount: 200 });
+    const buyer = await createBuyer();
+
+    const applyAndCheckout = async () => {
+      const { product, size } = await createPurchasableProduct(2_000);
+      await request(testApp)
+        .post("/api/cart/items")
+        .set("Authorization", authHeaderFor(buyer.id))
+        .send({ productId: product.id, sizeId: size.id, qty: 1 });
+      const apply = await request(testApp)
+        .post("/api/cart/coupon")
+        .set("Authorization", authHeaderFor(buyer.id))
+        .send({ code: coupon.code });
+      const checkout = await request(testApp)
+        .post("/api/orders/checkout")
+        .set("Authorization", authHeaderFor(buyer.id))
+        .send({
+          fullName: "Test Buyer",
+          phone: "9800000000",
+          address: "123 Test Street",
+          city: "Kathmandu",
+          paymentMethod: PaymentMethod.COD,
+        });
+      return { apply, checkout };
+    };
+
+    const first = await applyAndCheckout();
+    expect(first.apply.status).toBe(200);
+    expect(first.checkout.status).toBe(201);
+
+    const second = await applyAndCheckout();
+    expect(second.apply.status).toBe(409);
+    expect(second.apply.body.code).toBe("COUPON_ALREADY_USED");
+    expect(second.checkout.status).toBe(201);
+  });
+
+  it("holds under a race: two concurrent first-time checkouts by the same user produce exactly one success", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const coupon = await createCoupon({ createdById: adminId, fixedAmount: 200 });
+    const buyer = await createBuyer();
+    const { product, size } = await createPurchasableProduct(2_000, 2);
+
+    await request(testApp)
+      .post("/api/cart/items")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ productId: product.id, sizeId: size.id, qty: 1 });
+    await request(testApp)
+      .post("/api/cart/coupon")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ code: coupon.code });
+
+    const checkoutRequest = () =>
+      request(testApp)
+        .post("/api/orders/checkout")
+        .set("Authorization", authHeaderFor(buyer.id))
+        .send({
+          fullName: "Test Buyer",
+          phone: "9800000000",
+          address: "123 Test Street",
+          city: "Kathmandu",
+          paymentMethod: PaymentMethod.COD,
+        });
+
+    const [first, second] = await Promise.all([checkoutRequest(), checkoutRequest()]);
+    const statuses = [first.status, second.status].sort();
+    expect(statuses[0]).toBeLessThan(300);
+    expect(statuses[1]).toBeGreaterThanOrEqual(400);
+
+    const updatedCoupon = await prisma.coupon.findUniqueOrThrow({ where: { id: coupon.id } });
+    expect(updatedCoupon.redemptionCount).toBe(1);
+    expect(updatedCoupon.spentAmount).toBe(200);
+  });
+
+  it("refuses a coupon below its minimum subtotal", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(500);
+    const coupon = await createCoupon({
+      createdById: adminId,
+      fixedAmount: 100,
+      minSubtotal: 3_000,
+    });
+    const buyer = await createBuyer();
+
+    await request(testApp)
+      .post("/api/cart/items")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ productId: product.id, sizeId: size.id, qty: 1 });
+
+    const response = await request(testApp)
+      .post("/api/cart/coupon")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ code: coupon.code });
+
+    expect(response.status).toBe(400);
+    expect(response.body.code).toBe("COUPON_MIN_SUBTOTAL_NOT_MET");
+  });
+
+  it("stops redeeming once the total budget is exhausted", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const coupon = await createCoupon({
+      createdById: adminId,
+      fixedAmount: 300,
+      totalBudgetAmount: 300,
+    });
+
+    const firstBuyer = await createBuyer();
+    const { product: firstProduct, size: firstSize } = await createPurchasableProduct(2_000);
+    await request(testApp)
+      .post("/api/cart/items")
+      .set("Authorization", authHeaderFor(firstBuyer.id))
+      .send({ productId: firstProduct.id, sizeId: firstSize.id, qty: 1 });
+    await request(testApp)
+      .post("/api/cart/coupon")
+      .set("Authorization", authHeaderFor(firstBuyer.id))
+      .send({ code: coupon.code });
+    const firstCheckout = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(firstBuyer.id))
+      .send({
+        fullName: "Buyer One",
+        phone: "9800000001",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.COD,
+      });
+    expect(firstCheckout.status).toBe(201);
+
+    const secondBuyer = await createBuyer();
+    const { product: secondProduct, size: secondSize } = await createPurchasableProduct(2_000);
+    await request(testApp)
+      .post("/api/cart/items")
+      .set("Authorization", authHeaderFor(secondBuyer.id))
+      .send({ productId: secondProduct.id, sizeId: secondSize.id, qty: 1 });
+    await request(testApp)
+      .post("/api/cart/coupon")
+      .set("Authorization", authHeaderFor(secondBuyer.id))
+      .send({ code: coupon.code });
+    const secondCheckout = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(secondBuyer.id))
+      .send({
+        fullName: "Buyer Two",
+        phone: "9800000002",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.COD,
+      });
+
+    expect(secondCheckout.status).toBe(409);
+    expect(secondCheckout.body.code).toBe("COUPON_EXHAUSTED");
+  });
+
+  it("releases the coupon back when the order is cancelled", async () => {
+    const { authHeader: adminAuthHeader, userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const coupon = await createCoupon({ createdById: adminId, fixedAmount: 200 });
+    const buyer = await createBuyer();
+    const { product, size } = await createPurchasableProduct(2_000);
+
+    await request(testApp)
+      .post("/api/cart/items")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ productId: product.id, sizeId: size.id, qty: 1 });
+    await request(testApp)
+      .post("/api/cart/coupon")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ code: coupon.code });
+    const checkout = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.COD,
+      });
+    expect(checkout.status).toBe(201);
+
+    const cancelResponse = await request(testApp)
+      .post(`/api/orders/admin/${checkout.body.data.id}/cancel`)
+      .set("Authorization", adminAuthHeader)
+      .send({ reason: "Out of stock" });
+    expect(cancelResponse.status).toBe(200);
+
+    const redemption = await prisma.couponRedemption.findUniqueOrThrow({
+      where: { orderId: checkout.body.data.id },
+    });
+    expect(redemption.status).toBe("RELEASED");
+
+    const updatedCoupon = await prisma.coupon.findUniqueOrThrow({ where: { id: coupon.id } });
+    expect(updatedCoupon.spentAmount).toBe(0);
+    expect(updatedCoupon.redemptionCount).toBe(0);
+
+    const readdItem = await request(testApp)
+      .post("/api/cart/items")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ productId: product.id, sizeId: size.id, qty: 1 });
+    expect(readdItem.status).toBe(200);
+    const reapply = await request(testApp)
+      .post("/api/cart/coupon")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ code: coupon.code });
+    expect(reapply.status).toBe(200);
+  });
+
+  it("holds under concurrent load: N parallel checkouts on a budget for N-1 produce exactly N-1 successes", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const REDEMPTION_AMOUNT = 100;
+    const BUDGET_UNITS = 4;
+    const PARTICIPANT_COUNT = 5;
+    const coupon = await createCoupon({
+      createdById: adminId,
+      fixedAmount: REDEMPTION_AMOUNT,
+      totalBudgetAmount: REDEMPTION_AMOUNT * BUDGET_UNITS,
+    });
+
+    const participants = await Promise.all(
+      Array.from({ length: PARTICIPANT_COUNT }, async () => {
+        const buyer = await createBuyer();
+        const { product, size } = await createPurchasableProduct(2_000);
+        await request(testApp)
+          .post("/api/cart/items")
+          .set("Authorization", authHeaderFor(buyer.id))
+          .send({ productId: product.id, sizeId: size.id, qty: 1 });
+        await request(testApp)
+          .post("/api/cart/coupon")
+          .set("Authorization", authHeaderFor(buyer.id))
+          .send({ code: coupon.code });
+        return buyer;
+      }),
+    );
+
+    const results = await Promise.all(
+      participants.map((buyer) =>
+        request(testApp)
+          .post("/api/orders/checkout")
+          .set("Authorization", authHeaderFor(buyer.id))
+          .send({
+            fullName: "Test Buyer",
+            phone: "9800000000",
+            address: "123 Test Street",
+            city: "Kathmandu",
+            paymentMethod: PaymentMethod.COD,
+          }),
+      ),
+    );
+
+    const successCount = results.filter((response) => response.status === 201).length;
+    expect(successCount).toBe(BUDGET_UNITS);
+
+    const updatedCoupon = await prisma.coupon.findUniqueOrThrow({ where: { id: coupon.id } });
+    expect(updatedCoupon.spentAmount).toBe(REDEMPTION_AMOUNT * BUDGET_UNITS);
+    expect(updatedCoupon.redemptionCount).toBe(BUDGET_UNITS);
+  });
+});

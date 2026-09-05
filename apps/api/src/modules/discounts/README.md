@@ -58,9 +58,12 @@ Basis-point-to-rupee conversion reuses `BASIS_POINTS_PER_PERCENT` from
   trusted, checkout always re-resolves from the product row at the moment of purchase. See
   `../orders/README.md`.
 
-**Not yet wired in:** nothing calls `allocatePlatformDiscountToLines`, `computeCouponValue`, or
-`assertOrderMoneyInvariant` yet — those back the platform-coupon phase, which needs its own schema
-(`Coupon`/`CouponRedemption`) first.
+**Wired in, for platform-funded coupons:** `../coupons/coupon.utils.ts`'s `valuateCoupon` calls
+`computeCouponValue` and `allocatePlatformDiscountToLines` together — the coupon's rupee value and
+its per-line split are computed in one pass. `orders`' `checkoutOnce` calls
+`assertOrderMoneyInvariant` right before writing the order, checking both that `total` reconciles
+and that the per-line `platformDiscountAmount`s it's about to write sum to `platformDiscountTotal`.
+See `../coupons/README.md` for the full redemption flow.
 
 ## Non-obvious rationale
 
