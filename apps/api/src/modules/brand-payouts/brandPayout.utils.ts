@@ -1,10 +1,10 @@
+import { BASIS_POINTS_PER_PERCENT } from "#constants/money.constants.js";
 import {
   type BrandPayoutStatus,
   type PaymentMethod,
   PlatformFeeType,
 } from "#generated/prisma/enums.js";
 
-import { BASIS_POINTS_PER_PERCENT } from "./brandPayout.constants.js";
 import type {
   BrandCommissionExemptionRecord,
   BrandCommissionExemptionView,

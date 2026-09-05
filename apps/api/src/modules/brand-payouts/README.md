@@ -32,8 +32,8 @@ payable snapshot (`BrandPayout`) that a brand's withdrawable balance is summed f
   `createPlatformCommissionRuleSchema` (see Non-obvious rationale).
 - `brandPayout.types.ts` — DB-shaped and view types.
 - `brandPayout.utils.ts` — `computeTieredPlatformFee` (single-band-match lookup + the FLAT/PERCENT
-  fee math), `computeGatewayFee` (COD always `0`), view mappers.
-- `brandPayout.constants.ts` — `BASIS_POINTS_PER_PERCENT`.
+  fee math), `computeGatewayFee` (COD always `0`), view mappers. Basis-point conversions use the
+  shared `BASIS_POINTS_PER_PERCENT` (`#constants/money.constants.js`), also used by `discounts`.
 
 Shares `settleIds` (the per-id try/settle/log loop both this module's and `commissions`' sweep
 need) with `commissions` via `#lib/lifecycle-sweep.utils.js`.
