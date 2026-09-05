@@ -14,6 +14,7 @@ describe("isPrivatePath", () => {
     "/settings/security",
     "/profile",
     "/login",
+    "/share-target",
   ])("keeps %s out of the offline cache", (pathname) => {
     expect(isPrivatePath(pathname)).toBe(true);
   });

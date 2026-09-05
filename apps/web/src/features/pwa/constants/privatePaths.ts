@@ -23,6 +23,7 @@ export const PRIVATE_PATH_PREFIXES = [
   "/challenges",
   "/progress",
   "/share",
+  "/share-target",
 ];
 
 export const isPrivatePath = (pathname: string): boolean =>

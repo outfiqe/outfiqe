@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, FormBanner, Modal, toast } from "@outfiqe/design-system";
 import { useDebouncedValue } from "@outfiqe/hooks";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -35,9 +35,10 @@ import { ProductTagPicker } from "./ProductTagPicker";
 type PostModalProps = {
   open: boolean;
   onClose: () => void;
+  initialPhotoFile?: File | null;
 };
 
-export const PostModal = ({ open, onClose }: PostModalProps) => {
+export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) => {
   const { state } = useAuth();
   const [productFilter, setProductFilter] = useState("");
   const [productCache, setProductCache] = useState<Record<string, PublicProduct>>({});
@@ -56,8 +57,21 @@ export const PostModal = ({ open, onClose }: PostModalProps) => {
   const sizeErrors = collectTaggedProductSizeErrors(taggedProductErrors, taggedProducts);
 
   const pending = usePendingPhotos(MAX_PHOTOS);
+  const { importFile } = pending;
   const [isProcessingPhotos, setIsProcessingPhotos] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const hasImportedInitialPhotoRef = useRef(false);
+
+  useEffect(() => {
+    if (!open) {
+      hasImportedInitialPhotoRef.current = false;
+      return;
+    }
+    if (!initialPhotoFile || hasImportedInitialPhotoRef.current) return;
+
+    hasImportedInitialPhotoRef.current = true;
+    void importFile(initialPhotoFile);
+  }, [open, initialPhotoFile, importFile]);
 
   const close = () => {
     form.reset();

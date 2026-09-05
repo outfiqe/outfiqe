@@ -85,6 +85,13 @@ server starts. Setting it only at runtime does nothing.
   the browser's own share sheet when it has one, copying the link when it doesn't. See
   `apps/web/src/features/explore/README.md`'s "Sharing a look, a profile, or a product" for how
   each surface uses it.
+- `constants/shareTarget.ts` — the share-target route, the form field the shared photo arrives
+  under, and the Cache Storage name/key it's stashed at in between — read by both `app/sw.ts` and
+  the client page, so the two can never disagree about any of it.
+- `utils/shareTargetPhoto.ts` — reads the stashed photo back out of Cache Storage as a real `File`,
+  and deletes it — a one-time read, not a re-checkable value.
+- `hooks/useSharedPhoto.ts` — the `useQuery` wrapper around that read, so the composing page gets
+  the usual loading/data shape instead of hand-rolling its own effect.
 - `hooks/useIsOnline.ts` — whether there is a connection right now.
 - `utils/imageHosts.ts` — works out which hosts serve uploaded photos.
 - `utils/clearCachedContent.ts` — asks the worker to forget saved pages and photos. Used on sign
@@ -260,7 +267,38 @@ the API's own `push.messages.test.ts` for the title/body/url/tag the server send
 place. Worth knowing if this ever needs re-verifying by hand: install the app, subscribe, and
 trigger a real notification from a running API with VAPID keys set.
 
+## Sharing into the app
+
+**User-facing (Android only — iOS has no Web Share Target support):** once installed, Outfiqe
+shows up in the phone's own share sheet from any other app. Sharing a photo into it opens a "New
+post" screen with that photo already staged, ready to crop, caption, and tag.
+
+**Technical:** the manifest's `share_target` (`app/manifest.ts`) tells Android to `POST` a shared
+photo, as `multipart/form-data`, to `SHARE_TARGET_PATH`. `app/sw.ts` has its own `fetch` listener
+for exactly that one route — reads the submitted `FormData`, stashes the photo in a dedicated Cache
+Storage entry, then answers with a redirect back to the same path, now as a plain `GET`.
+`app/(dashboard)/share-target/page.tsx` is that GET target: an ordinary, `requireDashboardSession`-
+gated page whose client half (`ShareTargetComposer.tsx`) reads the stashed photo via
+`useSharedPhoto`, gates on creator status the same way `explore`'s `AddPostButton` does, and renders
+`creator-dashboard`'s `PostModal` with that photo pre-loaded (`initialPhotoFile`) once everything
+checks out.
+
 ## Things that are not obvious
+
+**Receiving a shared file needs the service worker, not a plain Next.js route handler.** A route
+handler could accept the `POST` and read its `FormData` well enough, but it has no way to hand a
+`File` it received on the server into a client React component's state — there is no shared memory
+between the two. The service worker can, because it sits in the same browser as the page it will
+redirect to: it stashes the photo in Cache Storage, a client-side page then reads it straight back
+out, and nothing ever needs to touch a server at all for a photo that's about to be uploaded through
+the normal photo pipeline anyway once the look is actually posted.
+
+**A malformed or fieldless share submission still redirects cleanly instead of surfacing a raw
+network error.** `request.formData()` can throw for a genuinely empty multipart body — caught live
+by an end-to-end test sending a submission with no photo, which is exactly what an app sharing plain
+text with no image would produce. `handleShareTargetSubmission` treats that failure the same as "no
+photo was found": still redirects to the compose page, just without anything pre-loaded, rather than
+leaving the share sheet showing a failure for something not worth failing the whole flow over.
 
 **`shareOrCopyLink` falls back to copying on any real share failure, not only when `navigator.share`
 is missing.** The one exception is the user closing the share sheet themselves — that rejects with
