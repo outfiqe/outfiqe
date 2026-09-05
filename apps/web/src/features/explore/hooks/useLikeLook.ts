@@ -7,13 +7,24 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { exploreFeedApi } from "../api/exploreFeedApi";
 import { patchPostInFeedCaches } from "../utils/feedCacheUpdate";
+import { LIKE_LOOK_ACTION_TYPE } from "../utils/offlineActionTypes";
+import { toggleWithOfflineQueue } from "../utils/offlineQueueableToggle";
 
 export const useLikeLook = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ lookId, liked }: { lookId: string; liked: boolean }) =>
-      liked ? exploreFeedApi.unlike(lookId) : exploreFeedApi.like(lookId),
+      toggleWithOfflineQueue(
+        LIKE_LOOK_ACTION_TYPE,
+        `${LIKE_LOOK_ACTION_TYPE}:${lookId}`,
+        {
+          lookId,
+          liked,
+        },
+        () => (liked ? exploreFeedApi.unlike(lookId) : exploreFeedApi.like(lookId)),
+      ),
+    networkMode: "always",
 
     onMutate: async ({ lookId, liked }) => {
       await queryClient.cancelQueries({ queryKey: ["explore-feed"] });
@@ -26,7 +37,6 @@ export const useLikeLook = () => {
     },
 
     onError: (error, { lookId, liked }) => {
-      // Revert the optimistic flip — the request failed, so the prior state still holds.
       patchPostInFeedCaches(queryClient, lookId, (post) => ({
         ...post,
         isLiked: liked,
@@ -35,7 +45,9 @@ export const useLikeLook = () => {
       toast.error(getErrorMessage(error));
     },
 
-    onSuccess: ({ liked, likeCount }, { lookId }) => {
+    onSuccess: (result, { lookId }) => {
+      if (!result) return;
+      const { liked, likeCount } = result;
       patchPostInFeedCaches(queryClient, lookId, (post) => ({
         ...post,
         isLiked: liked,

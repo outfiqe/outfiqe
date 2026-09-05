@@ -2,20 +2,7 @@ import type { PersistedClient, Persister } from "@tanstack/react-query-persist-c
 import { del, get, set } from "idb-keyval";
 
 import { isPersistableQueryKey, PERSISTED_QUERY_CACHE_KEY } from "../constants/offlineCache";
-
-const isBrowserDatabaseAvailable = () => typeof indexedDB !== "undefined" && indexedDB !== null;
-
-const runWithoutFailingWhenStorageIsUnavailable = async <T>(
-  storageOperation: () => Promise<T>,
-): Promise<T | undefined> => {
-  if (!isBrowserDatabaseAvailable()) return undefined;
-
-  try {
-    return await storageOperation();
-  } catch {
-    return undefined;
-  }
-};
+import { runWithoutFailingWhenStorageIsUnavailable } from "./browserDatabase";
 
 const keepOnlyAllowlistedQueries = (
   client: PersistedClient | undefined,
