@@ -11,6 +11,7 @@ type CheckoutSummaryProps = {
   paymentMethod: PaymentMethodValue;
   codHandlingFee: number;
   isSubmitting: boolean;
+  isOnline: boolean;
 };
 
 export const CheckoutSummary = ({
@@ -18,6 +19,7 @@ export const CheckoutSummary = ({
   paymentMethod,
   codHandlingFee,
   isSubmitting,
+  isOnline,
 }: CheckoutSummaryProps) => {
   const { subtotal, deliveryFee } = cart;
   const codFee = paymentMethod === PaymentMethod.COD ? codHandlingFee : 0;
@@ -48,12 +50,20 @@ export const CheckoutSummary = ({
         <span>Rs. {total.toLocaleString()}</span>
       </div>
 
-      <Button type="submit" className="mt-4 w-full" disabled={isSubmitting}>
+      {!isOnline && (
+        <p role="status" className="mt-3 text-xs text-destructive">
+          Checkout needs a connection. Try again once you&apos;re back online.
+        </p>
+      )}
+
+      <Button type="submit" className="mt-4 w-full" disabled={isSubmitting || !isOnline}>
         {isSubmitting
           ? "Placing order…"
-          : paymentMethod === PaymentMethod.COD
-            ? "Place order"
-            : `Pay Rs. ${total.toLocaleString()}`}
+          : !isOnline
+            ? "You're offline"
+            : paymentMethod === PaymentMethod.COD
+              ? "Place order"
+              : `Pay Rs. ${total.toLocaleString()}`}
       </Button>
     </div>
   );
