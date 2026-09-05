@@ -15,6 +15,8 @@ export default defineConfig({
         "src/bar-series.tsx",
         "src/stat-card.tsx",
         "src/drawer.tsx",
+        "src/modal.tsx",
+        "src/use-media-query.ts",
       ],
       exclude: ["src/**/*.test.tsx", "src/testing/**"],
       thresholds: {

@@ -18,6 +18,23 @@ if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = ResizeObserverStub;
 }
 
+export const stubMatchMedia = (matches: boolean): void => {
+  window.matchMedia = (query: string): MediaQueryList => ({
+    matches,
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  });
+};
+
+if (!window.matchMedia) {
+  stubMatchMedia(false);
+}
+
 const STUB_CHART_WIDTH = 800;
 const STUB_CHART_HEIGHT = 400;
 
