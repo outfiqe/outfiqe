@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { CreatorStatus, FollowTargetType, UserRole } from "#generated/prisma/enums.js";
+import type { BrandRecord } from "#modules/brands/brand.types.js";
+import type { UserRecord } from "#modules/users/user.types.js";
+
 import type { CandidateSignals, ScoredSuggestionCandidate } from "./follow.types.js";
 import {
   ensureMomentumDiscoveryFloor,
@@ -7,6 +11,10 @@ import {
   isWithinNewCreatorFreshnessWindow,
   scoreSuggestionCandidate,
   suggestionRotationSeed,
+  toBrandFollowTarget,
+  toFollowerView,
+  toFollowTarget,
+  toPrismaTargetType,
 } from "./follow.utils.js";
 
 const NOW = new Date("2026-08-21T00:00:00.000Z");
@@ -30,6 +38,97 @@ const candidateOf = (
   creatorId,
   score,
   signals,
+});
+
+const baseUser: UserRecord = {
+  id: "user-1",
+  email: "ada@example.com",
+  name: "Ada",
+  handle: "ada",
+  phone: null,
+  avatarUrl: null,
+  passwordHash: null,
+  role: UserRole.CUSTOMER,
+  isCreator: true,
+  creatorStatus: CreatorStatus.APPROVED,
+  creatorApprovedAt: null,
+  heightCm: null,
+  showHeight: false,
+  emailVerified: true,
+  followerCount: 12,
+  followingCount: 3,
+  hideFromLeaderboards: false,
+  lastSeenAt: null,
+  createdAt: NOW,
+  updatedAt: NOW,
+};
+
+const baseBrand: BrandRecord = {
+  id: "brand-1",
+  name: "Acme",
+  contactName: "Contact",
+  email: "brand@example.com",
+  phone: "555-0100",
+  instagram: "@acme",
+  avatarUrl: null,
+  bannerUrl: null,
+  madeInNepal: true,
+  applicationId: null,
+  followerCount: 40,
+  rating: 4.5,
+  createdAt: NOW,
+  updatedAt: NOW,
+};
+
+describe("toPrismaTargetType", () => {
+  it("maps the user param to the USER enum value", () => {
+    expect(toPrismaTargetType("user")).toBe(FollowTargetType.USER);
+  });
+
+  it("maps the brand param to the BRAND enum value", () => {
+    expect(toPrismaTargetType("brand")).toBe(FollowTargetType.BRAND);
+  });
+});
+
+describe("toFollowTarget", () => {
+  it("shapes a user record into a followable target", () => {
+    expect(toFollowTarget(baseUser)).toEqual({
+      kind: "user",
+      id: "user-1",
+      name: "Ada",
+      handle: "ada",
+      isCreator: true,
+      creatorStatus: CreatorStatus.APPROVED,
+      followerCount: 12,
+    });
+  });
+});
+
+describe("toFollowerView", () => {
+  it("marks a follower as followed by the viewer", () => {
+    expect(toFollowerView(baseUser, true)).toEqual({
+      id: "user-1",
+      name: "Ada",
+      handle: "ada",
+      isCreator: true,
+      isFollowedByViewer: true,
+    });
+  });
+
+  it("marks a follower as not followed by the viewer", () => {
+    expect(toFollowerView(baseUser, false).isFollowedByViewer).toBe(false);
+  });
+});
+
+describe("toBrandFollowTarget", () => {
+  it("shapes a brand record into a followable target", () => {
+    expect(toBrandFollowTarget(baseBrand)).toEqual({
+      kind: "brand",
+      id: "brand-1",
+      name: "Acme",
+      followerCount: 40,
+    });
+  });
 });
 
 describe("isWithinNewCreatorFreshnessWindow", () => {

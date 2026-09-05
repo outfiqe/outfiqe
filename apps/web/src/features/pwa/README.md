@@ -49,18 +49,37 @@ server starts. Setting it only at runtime does nothing.
   fallback for anything malformed.
 - `constants/pushOptIn.ts` — remembers, per browser, that someone dismissed the "turn on
   notifications" bar so it does not come back every visit.
+- `constants/installPrompt.ts` — how many visits before the install bar is worth showing, and how
+  long it stays quiet after someone dismisses it.
 - `utils/standalone.ts` — whether the app is running as an installed app, whether the browser is
   on iOS, and whether it can do web push at all.
 - `utils/pushClient.ts` — fetches the push key, subscribes the browser, registers the subscription
   with the API, and unsubscribes.
+- `utils/installPromptStore.ts` — captures the browser's own install prompt when it fires,
+  replays it on demand, and counts the visit that just happened.
 - `utils/appBadge.ts` — sets or clears the number on the installed app icon.
 - `hooks/usePushSubscription.ts` — the small state machine behind the opt-in: not-asked, blocked,
   needs-install, enabled, and the transient enabling/failed states.
+- `hooks/useInstallPrompt.ts` — the small state machine behind the install bar: hidden, a real
+  browser install to offer, or the iOS instructions instead.
 - `components/PushNotificationPrompt.tsx` — the dismissible bar and the explainer that runs before
   the browser's own permission prompt.
+- `components/InstallPrompt.tsx` — the "Install Outfiqe" bar, and the Add to Home Screen steps
+  shown in its place on an iOS browser tab.
 - `components/AppBadgeSync.tsx` — keeps the app-icon number in step with the unread count while
   the installed app is open.
 - `utils/queryPersister.ts` — saves and restores that data, and forgets it on sign out.
+- `utils/browserDatabase.ts` — the "do nothing, don't throw" wrapper around an IndexedDB read/write,
+  shared by `queryPersister.ts` and `offlineActionQueue.ts` so a blocked or absent database never
+  crashes either one.
+- `constants/offlineActions.ts` — the queue's storage key and how many queued actions it holds.
+- `utils/offlineActionQueue.ts` — the queue itself: add one (collapsing a repeat on the same key
+  into the latest version), list them, remove one. Capped — the oldest queued action is dropped
+  once a new one would push the queue over the limit.
+- `utils/offlineActionProcessor.ts` — where a feature registers the real call one of its queued
+  action types replays through, and the drain that runs them in order once reconnected.
+- `components/OfflineActionSync.tsx` — calls that drain on load and every time the connection comes
+  back, via `useIsOnline`.
 - `utils/requestPersistentStorage.ts` — asks the browser not to throw saved content away.
 - `hooks/useIsOnline.ts` — whether there is a connection right now.
 - `utils/imageHosts.ts` — works out which hosts serve uploaded photos.
@@ -150,6 +169,21 @@ saved earlier.
 Saved data is kept for a day and thrown away on sign out or when a session expires, at the same
 moment the saved pages and photos are.
 
+## Actions taken while offline
+
+A handful of simple on/off actions — liking, saving, or following, for now — are safe to queue:
+sending one twice changes nothing, and a few minutes' delay is invisible. `utils/offlineActionQueue.ts`
+holds them, keyed so a repeat on the same thing collapses into the latest version instead of
+piling up, and capped so a phone that was offline for a month can't flood the server the moment it
+reconnects. `components/OfflineActionSync.tsx` drains the queue on load and every time the
+connection returns; `utils/offlineActionProcessor.ts` is where a feature registers the real API call
+each of its action types replays through — see `apps/web/src/features/explore/README.md`'s "Liking,
+saving, and following work with no connection" for a concrete example end to end.
+
+Checkout and starting a payment are deliberately never queued — see
+`apps/web/src/features/checkout/README.md`'s "Non-obvious rationale" for why that one needs the
+opposite treatment.
+
 ## How a new version reaches people
 
 Once someone has the app saved, they keep running the version they downloaded until the worker is
@@ -161,6 +195,25 @@ waiting worker to take over, and the page reloads itself once it has.
 
 Nothing reloads on its own. The bar also never appears while someone is on the cart, checkout, or
 payment pages, where a mis-tap costs real money or work.
+
+## The install prompt
+
+Rather than let the browser show its own install banner at a random moment, the app keeps its own
+bar and shows it once someone has visited enough times to make installing worth suggesting.
+Dismissing it is remembered per browser, so it does not come back for two weeks.
+
+On Android and desktop Chrome, the browser fires `beforeinstallprompt` ahead of time and hands over
+an object that can show its own install dialog later; `utils/installPromptStore.ts` captures that
+event the moment it fires (`event.preventDefault()` stops the browser's own banner from also
+appearing) and holds onto it until the bar's "Install" button asks for it. iPhone never fires that
+event at all — Safari has no install API to hand over — so there `hooks/useInstallPrompt.ts` falls
+back to a short "tap Share, then Add to Home Screen" panel instead of a button that could not work.
+
+`e2e/installPrompt.spec.ts` proves both paths for real: dispatching a fake `beforeinstallprompt`
+event with a stubbed `prompt`/`userChoice` (this part of the API is just a normal DOM event our own
+code reacts to, unlike the Notifications permission below, so it genuinely can be driven from a
+test) and confirming the browser's own install call actually runs, plus a real iOS user agent to
+confirm the Add to Home Screen steps appear instead.
 
 ## Turning on push notifications
 
@@ -205,6 +258,26 @@ trigger a real notification from a running API with VAPID keys set.
 
 ## Things that are not obvious
 
+**The offline action queue is a plain IndexedDB list, not TanStack Query's own paused-mutation
+persistence.** The library does have a documented mechanism for exactly this — a mutation started
+offline pauses automatically, `dehydrate`/`hydrate` can persist it, and `resumePausedMutations`
+replays it later. It was tried and rejected: doing it correctly needs a global
+`shouldDehydrateMutation` allowlist so checkout and payment don't get caught by it too, and the
+resumed mutation must not re-run `onMutate` (it already applied the optimistic patch once, before
+pausing — running it again on resume would double it), which means hand-assembling a second,
+narrower set of mutation options just for resume. A queue this codebase can read, test, and reason
+about directly was judged more trustworthy for something a real purchase-adjacent action depends on
+never duplicating or double-applying, even though it means each queueable mutation opts in itself
+rather than getting it for free.
+
+**A queued action's replay handler is registered once, eagerly, from `app/providers.tsx` — never
+lazily inside the hook that enqueues it.** Next.js code-splits per route, so a hook's own module
+only loads on a page that actually renders it. If registration lived at the top of, say,
+`useLikeLook.ts`, someone who liked a look, closed the tab, and reopened the app on an unrelated
+page could reconnect with nothing registered to replay their queued like — the module holding the
+registration would simply never have been imported yet this session. Registering from the app's
+root composition instead guarantees every handler exists before the very first drain can run.
+
 **The offline-reading allowlist is a list of what may be saved, never a list of what may not.** A
 "don't save these" list fails open: the day someone adds a query for saved addresses or payout
 details, it is written to disk because nobody remembered to add it. An allowlist fails closed — a
@@ -242,6 +315,27 @@ to the Permissions API `change` event where it exists; a separate transient stat
 **The opt-in is a dismissible bar, not a modal on load.** A modal the moment the app opens is how
 people end up blocking notifications forever. The bar only shows to a signed-in user, only after
 the base state says it is worth asking, and only until they dismiss it once.
+
+**The install bar sits above the push bar on purpose.** Both are fixed bars pinned to the same
+spot, and on an iPhone Safari tab the two can genuinely want to appear at once — the push bar's own
+"add to Home Screen to turn on notifications" message covers ground the install bar also covers.
+Rather than couple the two features together to suppress one, the install bar is given the higher
+`z-index`, so on the rare overlap it is what is visible — correctly, since installing is what has
+to happen first on iPhone either way, and doing so removes the push bar's needs-install state on
+its own. The same layered-but-uncoordinated approach was already accepted between the update
+prompt and the push bar; this follows it rather than inventing a different fix for one more pair.
+
+**`beforeinstallprompt` is a real DOM event our own code reacts to, not a genuine browser
+capability check.** Unlike the Notifications permission (see below), the browser does not gate
+whether this event can be dispatched from a test — it is just `window.dispatchEvent` with a plain
+object shape. That is what makes `e2e/installPrompt.spec.ts` able to prove the real install button
+end to end, in a way `pushNotification.spec.ts` cannot for the permission prompt.
+
+**A visit is counted once per full page load, not once per feature check.** `installPromptStore.ts`
+records it as a side effect of the module loading, alongside registering the
+`beforeinstallprompt`/`appinstalled` listeners — the same place, because both only need to happen
+once per session and neither belongs in a component effect for something that never changes while
+the page is open.
 
 **The app-icon number is set from two places.** While the app is open, `AppBadgeSync` keeps it
 exact against the unread count. While the app is closed, only the service worker runs, and it

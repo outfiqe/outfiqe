@@ -1,6 +1,8 @@
 export { AppBadgeSync } from "./components/AppBadgeSync";
 export { AppleSplashLinks } from "./components/AppleSplashLinks";
 export { AppUpdatePrompt } from "./components/AppUpdatePrompt";
+export { InstallPrompt } from "./components/InstallPrompt";
+export { OfflineActionSync } from "./components/OfflineActionSync";
 export { OfflineBanner } from "./components/OfflineBanner";
 export { OfflineRetryButton } from "./components/OfflineRetryButton";
 export { PersistentStorageRequest } from "./components/PersistentStorageRequest";
@@ -26,6 +28,17 @@ export { appleWebAppMetadata, pwaIcons, WEB_MANIFEST_PATH } from "./constants/ap
 export { appShortcuts } from "./constants/appShortcuts";
 export { DARK_THEME_COLOR, LIGHT_THEME_COLOR } from "./constants/appTheme";
 export {
+  hasVisitedOftenEnough,
+  isWithinInstallPromptCooldown,
+  recordAppVisit,
+  rememberInstallPromptDismissed,
+  VISITS_BEFORE_SUGGESTING_INSTALL,
+} from "./constants/installPrompt";
+export {
+  MAX_QUEUED_OFFLINE_ACTIONS,
+  OFFLINE_ACTION_QUEUE_STORAGE_KEY,
+} from "./constants/offlineActions";
+export {
   isPersistableQueryKey,
   PERSISTABLE_QUERY_ROOTS,
   PERSISTED_CACHE_MAX_AGE_MS,
@@ -44,6 +57,9 @@ export {
   SERVICE_WORKER_SCRIPT_TYPE,
   SERVICE_WORKER_URL,
 } from "./constants/serviceWorker";
+export type { InstallPromptState } from "./hooks/useInstallPrompt";
+export { useInstallPrompt } from "./hooks/useInstallPrompt";
+export { useIsOnline } from "./hooks/useIsOnline";
 export type { PushOptInState } from "./hooks/usePushSubscription";
 export { usePushSubscription } from "./hooks/usePushSubscription";
 export { showUnreadBadge } from "./utils/appBadge";
@@ -51,7 +67,23 @@ export { toAppleSplashMediaQuery } from "./utils/appleSplashMedia";
 export { pwaViewport } from "./utils/appViewport";
 export { clearCachedContent } from "./utils/clearCachedContent";
 export { toImageHosts } from "./utils/imageHosts";
+export {
+  canOfferBrowserInstall,
+  showBrowserInstallPrompt,
+  subscribeToInstallPrompt,
+} from "./utils/installPromptStore";
 export { toManifestIcons } from "./utils/manifestIcons";
+export {
+  drainQueuedOfflineActions,
+  type OfflineActionHandler,
+  registerOfflineActionHandler,
+} from "./utils/offlineActionProcessor";
+export {
+  enqueueOfflineAction,
+  listQueuedOfflineActions,
+  type QueuedOfflineAction,
+  removeQueuedOfflineAction,
+} from "./utils/offlineActionQueue";
 export { subscribeToPush, unsubscribeFromPush } from "./utils/pushClient";
 export {
   clearPersistedQueries,

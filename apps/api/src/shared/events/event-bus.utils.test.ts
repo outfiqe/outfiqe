@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+import { DEAD_LETTER_SUFFIX, STREAM_MAX_LEN } from "./event-bus.constants.js";
 import {
   extractPayloadField,
   isMissingConsumerGroupError,
   parseEventPayload,
+  publishToDeadLetter,
   serializeEventPayload,
 } from "./event-bus.utils.js";
 
@@ -39,5 +41,30 @@ describe("isMissingConsumerGroupError", () => {
 
   it("returns false for a non-Error value", () => {
     expect(isMissingConsumerGroupError("NOGROUP")).toBe(false);
+  });
+});
+
+describe("publishToDeadLetter", () => {
+  it("writes the original id and payload to the stream's dead-letter suffix", async () => {
+    const redisClient = { xadd: vi.fn() };
+
+    await publishToDeadLetter(
+      redisClient as never,
+      "stream:user.followed",
+      "1234-0",
+      '{"userId":"user-1"}',
+    );
+
+    expect(redisClient.xadd).toHaveBeenCalledWith(
+      `stream:user.followed${DEAD_LETTER_SUFFIX}`,
+      "MAXLEN",
+      "~",
+      STREAM_MAX_LEN,
+      "*",
+      "originalId",
+      "1234-0",
+      "payload",
+      '{"userId":"user-1"}',
+    );
   });
 });

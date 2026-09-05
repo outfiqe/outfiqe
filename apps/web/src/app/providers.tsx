@@ -1,5 +1,7 @@
 "use client";
 
+import "@/features/explore/offlineActionHandlers";
+
 import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
@@ -12,7 +14,9 @@ import {
   AppBadgeSync,
   AppUpdatePrompt,
   createQueryPersister,
+  InstallPrompt,
   isPwaEnabled,
+  OfflineActionSync,
   OfflineBanner,
   PERSISTED_CACHE_MAX_AGE_MS,
   PERSISTED_CACHE_VERSION,
@@ -44,9 +48,11 @@ export const Providers = ({ children }: { children: ReactNode }) => {
         {children}
         <OfflineBanner />
         <AppUpdatePrompt />
+        <InstallPrompt />
         <PushNotificationPrompt />
         <PersistentStorageRequest />
         <AppBadgeSync />
+        <OfflineActionSync />
         <Toaster />
         <GamificationSocketListener />
         <FloatingChatLauncher />

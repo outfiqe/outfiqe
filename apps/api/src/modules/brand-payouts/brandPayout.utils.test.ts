@@ -1,9 +1,22 @@
 import { describe, expect, it } from "vitest";
 
-import { PlatformFeeType } from "#generated/prisma/enums.js";
+import { BrandPayoutStatus, PlatformFeeType } from "#generated/prisma/enums.js";
 
-import type { GatewayFeeRateRecord, PlatformCommissionTierRecord } from "./brandPayout.types.js";
-import { computeGatewayFee, computeTieredPlatformFee } from "./brandPayout.utils.js";
+import type {
+  BrandCommissionExemptionRecord,
+  GatewayFeeRateRecord,
+  PlatformCommissionRuleRecord,
+  PlatformCommissionTierRecord,
+} from "./brandPayout.types.js";
+import {
+  computeGatewayFee,
+  computeTieredPlatformFee,
+  toBrandCommissionExemptionView,
+  toBrandPayoutView,
+  toGatewayFeeRateView,
+  toPlatformCommissionRuleView,
+  toPlatformCommissionTierView,
+} from "./brandPayout.utils.js";
 
 const buildTier = (
   overrides: Partial<PlatformCommissionTierRecord>,
@@ -95,6 +108,22 @@ describe("computeTieredPlatformFee", () => {
     expect(computeTieredPlatformFee(1_000, oddLadder)).toEqual({ fee: 33, tierId: "tier-odd" });
   });
 
+  it("charges 0 when a PERCENT tier has no rate configured", () => {
+    const noRateLadder = [
+      buildTier({
+        id: "tier-empty-percent",
+        minPrice: 0,
+        maxPrice: null,
+        feeType: PlatformFeeType.PERCENT,
+        ratePercentBasisPoints: null,
+      }),
+    ];
+    expect(computeTieredPlatformFee(500, noRateLadder)).toEqual({
+      fee: 0,
+      tierId: "tier-empty-percent",
+    });
+  });
+
   it("throws when no tier covers the price (an unreachable state given validated bands)", () => {
     const gappedLadder = [
       buildTier({
@@ -144,5 +173,89 @@ describe("computeGatewayFee", () => {
 
   it("throws when no active rate is configured for a non-COD method", () => {
     expect(() => computeGatewayFee(1_000, "ESEWA", null)).toThrow();
+  });
+});
+
+describe("toPlatformCommissionTierView", () => {
+  it("converts a percent tier's basis points to a percent", () => {
+    const tier = buildTier({ feeType: PlatformFeeType.PERCENT, ratePercentBasisPoints: 250 });
+    expect(toPlatformCommissionTierView(tier).ratePercent).toBe(2.5);
+  });
+
+  it("leaves ratePercent null for a flat tier with no basis points", () => {
+    const tier = buildTier({ feeType: PlatformFeeType.FLAT, ratePercentBasisPoints: null });
+    expect(toPlatformCommissionTierView(tier).ratePercent).toBeNull();
+  });
+});
+
+describe("toPlatformCommissionRuleView", () => {
+  it("serializes the rule and maps every tier", () => {
+    const rule: PlatformCommissionRuleRecord = {
+      id: "rule-1",
+      isActive: true,
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      tiers: [buildTier({ id: "tier-1" }), buildTier({ id: "tier-2" })],
+    };
+
+    const view = toPlatformCommissionRuleView(rule);
+
+    expect(view.createdAt).toBe("2026-01-01T00:00:00.000Z");
+    expect(view.tiers.map((tier) => tier.id)).toEqual(["tier-1", "tier-2"]);
+  });
+});
+
+describe("toGatewayFeeRateView", () => {
+  it("converts basis points to a percent and serializes the date", () => {
+    const rate = buildRate("ESEWA", 275);
+    expect(toGatewayFeeRateView(rate).ratePercent).toBe(2.75);
+  });
+});
+
+describe("toBrandCommissionExemptionView", () => {
+  const baseExemption: BrandCommissionExemptionRecord = {
+    id: "exemption-1",
+    brandId: "brand-1",
+    brandName: "Acme",
+    startsAt: new Date("2026-01-01T00:00:00.000Z"),
+    endsAt: new Date("2026-02-01T00:00:00.000Z"),
+    reason: "Launch promo",
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    revokedAt: null,
+  };
+
+  it("reports a null revokedAt as still active", () => {
+    expect(toBrandCommissionExemptionView(baseExemption).revokedAt).toBeNull();
+  });
+
+  it("serializes revokedAt once the exemption has been revoked", () => {
+    const revokedAt = new Date("2026-01-15T00:00:00.000Z");
+    expect(toBrandCommissionExemptionView({ ...baseExemption, revokedAt }).revokedAt).toBe(
+      revokedAt.toISOString(),
+    );
+  });
+});
+
+describe("toBrandPayoutView", () => {
+  it("flattens the order item's product into the payout view", () => {
+    const view = toBrandPayoutView({
+      id: "payout-1",
+      grossAmount: 1_000,
+      platformFee: 30,
+      netAmount: 970,
+      status: BrandPayoutStatus.AVAILABLE,
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      orderItem: { product: { name: "Jacket", imageUrl: "jacket.png" } },
+    });
+
+    expect(view).toEqual({
+      id: "payout-1",
+      productName: "Jacket",
+      imageUrl: "jacket.png",
+      grossAmount: 1_000,
+      platformFee: 30,
+      netAmount: 970,
+      status: BrandPayoutStatus.AVAILABLE,
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
   });
 });

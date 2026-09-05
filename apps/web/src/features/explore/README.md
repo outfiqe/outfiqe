@@ -25,6 +25,15 @@ The public social feed: browsing posts (looks), liking/saving/commenting, follow
 - `hooks/useRecordLookView.ts` — fires `POST /creator-looks/:lookId/views` (gamification view-tracking, see `../../creator-looks/README.md`'s "View tracking" section on the API side) the first time a `PostCard` becomes at least half-visible in the viewport, then disconnects — a plain `IntersectionObserver`, same primitive `@/shared/hooks/useLoadMoreOnVisible.ts` uses for infinite scroll, but fire-once rather than fire-on-every-intersection.
 - `utils/feedCacheUpdate.ts` — `patchPostInFeedCaches`, applying an optimistic/server patch to a post across every query cache it might currently be sitting in (feed, saved grid, single-post views).
 - `utils/commentCacheUpdate.ts` — the id-deduped cache operations `useLookComments`/`useCommentReplies` share: appending a new comment/reply exactly once regardless of whether it arrived via the submitter's own optimistic insert, the REST response, or the live socket echo; reverting an optimistic reply on failure.
+- `utils/offlineActionTypes.ts` — the queue-action-type string each of like/save/follow enqueues and
+  replays under, shared between the mutation hook and `offlineActionHandlers.ts` so the two can
+  never drift apart.
+- `utils/offlineQueueableToggle.ts` — `toggleWithOfflineQueue`, the one place that decides whether a
+  like/save/follow runs for real now or gets queued for later — see "Liking, saving, and following
+  work with no connection" below.
+- `offlineActionHandlers.ts` — registers the real API call each queued like/save/follow replays
+  through once the connection returns (`apps/web/src/features/pwa`'s generic queue processor calls
+  these back by action type; see that module's README for the queue itself).
 - `socketEvents.ts` — the client-side mirror of the API's `SOCKET_EVENTS`/payload shapes this feature listens for (`look:created`, `feed:sync:*`, `comments:*`, `comment:created`, `comment:reply:created`).
 
 ## Funnel
@@ -43,7 +52,32 @@ The public social feed: browsing posts (looks), liking/saving/commenting, follow
 
 **Optimistic replies revert precisely, not with a full refetch.** A failed `submitReply` calls `revertReplyOptimisticInsert`, which removes only the temp-id entry from both the parent comment's `previewReplies` and the expanded infinite-replies cache (and decrements `replyCount`, floored at zero) — chosen over invalidating the whole comments query so a failed reply doesn't also discard other live updates that landed in the meantime.
 
+## Liking, saving, and following work with no connection
+
+**User-facing:** tapping like, save, or follow shows the change immediately, whether or not there
+is a connection. Offline, it is remembered and sent for real the moment the connection comes back —
+nobody has to notice, retry, or do anything differently.
+
+**Technical:** each of `useLikeLook`/`useSaveLook`/`useFollowCreator`'s `mutationFn` calls
+`toggleWithOfflineQueue` instead of the real API function directly. Online, it's a pass-through.
+Offline, it calls `enqueueOfflineAction` (`apps/web/src/features/pwa`) with the action's type and a
+key built from the item's id — so liking the same look twice while offline collapses into one
+queued action, not two — and resolves with `null` instead of a real server response, which
+`onSuccess` treats as "nothing to reconcile yet" and leaves the optimistic `onMutate` patch exactly
+as it was. `offlineActionHandlers.ts` registers the real API calls the queue replays these through
+once back online; it is imported once, for its side effect, from `app/providers.tsx` — not from
+inside the hooks themselves, because a hook's module only loads on a page that actually renders it,
+and the queue needs every handler registered before the very first drain, regardless of which page
+happened to load first this session.
+
 ## Non-obvious rationale
+
+**Like/save/follow all set `networkMode: "always"`, and that is what makes queueing them possible
+at all — not an unrelated hardening.** React Query's default `networkMode: "online"` pauses a
+mutation started while offline before ever calling `mutationFn` — so without this, `mutationFn`'s
+own offline check inside `toggleWithOfflineQueue` would simply never run, and the mutation would
+just sit paused instead of being queued. `"always"` hands control to the mutation function itself,
+which is exactly where the decision needs to be made.
 
 **`useSuggestedCreators` and `useInfiniteSuggestedCreators` use query keys `["suggested-creators"]`
 and `["suggested-creators", "infinite"]` on purpose — not two unrelated names.** `useFollowCreator`
