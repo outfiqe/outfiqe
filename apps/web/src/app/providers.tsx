@@ -12,6 +12,7 @@ import {
   AppBadgeSync,
   AppUpdatePrompt,
   createQueryPersister,
+  InstallPrompt,
   isPwaEnabled,
   OfflineBanner,
   PERSISTED_CACHE_MAX_AGE_MS,
@@ -44,6 +45,7 @@ export const Providers = ({ children }: { children: ReactNode }) => {
         {children}
         <OfflineBanner />
         <AppUpdatePrompt />
+        <InstallPrompt />
         <PushNotificationPrompt />
         <PersistentStorageRequest />
         <AppBadgeSync />

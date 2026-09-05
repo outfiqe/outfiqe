@@ -49,15 +49,23 @@ server starts. Setting it only at runtime does nothing.
   fallback for anything malformed.
 - `constants/pushOptIn.ts` — remembers, per browser, that someone dismissed the "turn on
   notifications" bar so it does not come back every visit.
+- `constants/installPrompt.ts` — how many visits before the install bar is worth showing, and how
+  long it stays quiet after someone dismisses it.
 - `utils/standalone.ts` — whether the app is running as an installed app, whether the browser is
   on iOS, and whether it can do web push at all.
 - `utils/pushClient.ts` — fetches the push key, subscribes the browser, registers the subscription
   with the API, and unsubscribes.
+- `utils/installPromptStore.ts` — captures the browser's own install prompt when it fires,
+  replays it on demand, and counts the visit that just happened.
 - `utils/appBadge.ts` — sets or clears the number on the installed app icon.
 - `hooks/usePushSubscription.ts` — the small state machine behind the opt-in: not-asked, blocked,
   needs-install, enabled, and the transient enabling/failed states.
+- `hooks/useInstallPrompt.ts` — the small state machine behind the install bar: hidden, a real
+  browser install to offer, or the iOS instructions instead.
 - `components/PushNotificationPrompt.tsx` — the dismissible bar and the explainer that runs before
   the browser's own permission prompt.
+- `components/InstallPrompt.tsx` — the "Install Outfiqe" bar, and the Add to Home Screen steps
+  shown in its place on an iOS browser tab.
 - `components/AppBadgeSync.tsx` — keeps the app-icon number in step with the unread count while
   the installed app is open.
 - `utils/queryPersister.ts` — saves and restores that data, and forgets it on sign out.
@@ -162,6 +170,25 @@ waiting worker to take over, and the page reloads itself once it has.
 Nothing reloads on its own. The bar also never appears while someone is on the cart, checkout, or
 payment pages, where a mis-tap costs real money or work.
 
+## The install prompt
+
+Rather than let the browser show its own install banner at a random moment, the app keeps its own
+bar and shows it once someone has visited enough times to make installing worth suggesting.
+Dismissing it is remembered per browser, so it does not come back for two weeks.
+
+On Android and desktop Chrome, the browser fires `beforeinstallprompt` ahead of time and hands over
+an object that can show its own install dialog later; `utils/installPromptStore.ts` captures that
+event the moment it fires (`event.preventDefault()` stops the browser's own banner from also
+appearing) and holds onto it until the bar's "Install" button asks for it. iPhone never fires that
+event at all — Safari has no install API to hand over — so there `hooks/useInstallPrompt.ts` falls
+back to a short "tap Share, then Add to Home Screen" panel instead of a button that could not work.
+
+`e2e/installPrompt.spec.ts` proves both paths for real: dispatching a fake `beforeinstallprompt`
+event with a stubbed `prompt`/`userChoice` (this part of the API is just a normal DOM event our own
+code reacts to, unlike the Notifications permission below, so it genuinely can be driven from a
+test) and confirming the browser's own install call actually runs, plus a real iOS user agent to
+confirm the Add to Home Screen steps appear instead.
+
 ## Turning on push notifications
 
 When a signed-in person has been using the app, a small bar offers to turn on notifications.
@@ -242,6 +269,27 @@ to the Permissions API `change` event where it exists; a separate transient stat
 **The opt-in is a dismissible bar, not a modal on load.** A modal the moment the app opens is how
 people end up blocking notifications forever. The bar only shows to a signed-in user, only after
 the base state says it is worth asking, and only until they dismiss it once.
+
+**The install bar sits above the push bar on purpose.** Both are fixed bars pinned to the same
+spot, and on an iPhone Safari tab the two can genuinely want to appear at once — the push bar's own
+"add to Home Screen to turn on notifications" message covers ground the install bar also covers.
+Rather than couple the two features together to suppress one, the install bar is given the higher
+`z-index`, so on the rare overlap it is what is visible — correctly, since installing is what has
+to happen first on iPhone either way, and doing so removes the push bar's needs-install state on
+its own. The same layered-but-uncoordinated approach was already accepted between the update
+prompt and the push bar; this follows it rather than inventing a different fix for one more pair.
+
+**`beforeinstallprompt` is a real DOM event our own code reacts to, not a genuine browser
+capability check.** Unlike the Notifications permission (see below), the browser does not gate
+whether this event can be dispatched from a test — it is just `window.dispatchEvent` with a plain
+object shape. That is what makes `e2e/installPrompt.spec.ts` able to prove the real install button
+end to end, in a way `pushNotification.spec.ts` cannot for the permission prompt.
+
+**A visit is counted once per full page load, not once per feature check.** `installPromptStore.ts`
+records it as a side effect of the module loading, alongside registering the
+`beforeinstallprompt`/`appinstalled` listeners — the same place, because both only need to happen
+once per session and neither belongs in a component effect for something that never changes while
+the page is open.
 
 **The app-icon number is set from two places.** While the app is open, `AppBadgeSync` keeps it
 exact against the unread count. While the app is closed, only the service worker runs, and it
