@@ -35,4 +35,15 @@ describe("manifest", () => {
     expect(iconPurposes).toContain("any");
     expect(iconPurposes).toContain("maskable");
   });
+
+  it("accepts a shared photo at an in-scope, POST route", () => {
+    expect(webManifest.share_target).toMatchObject({
+      action: expect.stringMatching(/^\//),
+      method: "POST",
+      enctype: "multipart/form-data",
+    });
+    expect(webManifest.share_target?.params.files).toMatchObject([
+      { accept: expect.arrayContaining(["image/*"]) },
+    ]);
+  });
 });

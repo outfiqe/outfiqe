@@ -19,6 +19,7 @@ const resolvePendingPhotoUrls = vi.fn();
 const removePhoto = vi.fn();
 const reset = vi.fn();
 const setActiveId = vi.fn();
+const importFile = vi.fn();
 
 vi.mock("@/shared/hooks/usePendingPhotos", () => ({
   usePendingPhotos: vi.fn(),
@@ -41,6 +42,7 @@ const mockPending = (photos: PendingPhoto[]) => {
     setActiveId,
     inputRef: { current: null },
     handleFileSelect: vi.fn(),
+    importFile,
     isImportingFile: false,
     importError: null,
     removePhoto,
@@ -60,20 +62,30 @@ const searchAndSelectProduct = async (
   await user.click(await screen.findByRole("option", { name: optionName }));
 };
 
-const renderModal = () => {
+const renderModal = (initialPhotoFile?: File | null) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  return render(
+  const view = render(
     <QueryClientProvider client={queryClient}>
-      <PostModal open onClose={onClose} />
+      <PostModal open onClose={onClose} initialPhotoFile={initialPhotoFile} />
     </QueryClientProvider>,
   );
+  return {
+    ...view,
+    rerenderWith: (photoFile?: File | null) =>
+      view.rerender(
+        <QueryClientProvider client={queryClient}>
+          <PostModal open onClose={onClose} initialPhotoFile={photoFile} />
+        </QueryClientProvider>,
+      ),
+  };
 };
 
 beforeEach(() => {
   onClose.mockClear();
   reset.mockClear();
+  importFile.mockClear();
   resolvePendingPhotoUrls.mockReset();
   vi.mocked(useAuth).mockReturnValue({
     state: { user: { id: "creator-1", name: "Ava Martinez" } },
@@ -160,6 +172,27 @@ describe("PostModal", () => {
 
     expect(await screen.findByText("Only approved creators can post looks.")).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("imports a shared photo into the pending list as soon as it opens", async () => {
+    mockPending([]);
+    const sharedPhoto = new File(["bytes"], "shared-photo", { type: "image/jpeg" });
+
+    renderModal(sharedPhoto);
+
+    await waitFor(() => expect(importFile).toHaveBeenCalledWith(sharedPhoto));
+  });
+
+  it("never imports a shared photo more than once while the modal stays open", async () => {
+    mockPending([]);
+    const sharedPhoto = new File(["bytes"], "shared-photo", { type: "image/jpeg" });
+
+    const { rerenderWith } = renderModal(sharedPhoto);
+    await waitFor(() => expect(importFile).toHaveBeenCalledTimes(1));
+
+    rerenderWith(sharedPhoto);
+
+    expect(importFile).toHaveBeenCalledTimes(1);
   });
 
   it("resets local state and calls onClose when Cancel is clicked", async () => {

@@ -53,11 +53,7 @@ export const usePendingPhotos = (maxPhotos: number, initialUrls: string[] = []) 
     setActiveId(photo.id);
   };
 
-  const handleFileSelect = async (fileList: FileList | null) => {
-    const selectedFile = fileList?.item(0);
-    if (inputRef.current) inputRef.current.value = "";
-    if (!selectedFile) return;
-
+  const importFile = async (selectedFile: File) => {
     setImportError(null);
 
     if (!isHeicImage(selectedFile)) {
@@ -73,6 +69,14 @@ export const usePendingPhotos = (maxPhotos: number, initialUrls: string[] = []) 
     } finally {
       setIsImportingFile(false);
     }
+  };
+
+  const handleFileSelect = async (fileList: FileList | null) => {
+    const selectedFile = fileList?.item(0);
+    if (inputRef.current) inputRef.current.value = "";
+    if (!selectedFile) return;
+
+    await importFile(selectedFile);
   };
 
   const removePhoto = (id: string) => {
@@ -109,6 +113,7 @@ export const usePendingPhotos = (maxPhotos: number, initialUrls: string[] = []) 
     setActiveId,
     inputRef,
     handleFileSelect,
+    importFile,
     isImportingFile,
     importError,
     removePhoto,

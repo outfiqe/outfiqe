@@ -17,6 +17,12 @@ import {
 } from "../features/pwa/constants/runtimeCaching";
 import { OFFLINE_PATH, VISITED_PAGES_CACHE_NAME } from "../features/pwa/constants/serviceWorker";
 import { CLEAR_CACHED_CONTENT_MESSAGE } from "../features/pwa/constants/serviceWorkerMessages";
+import {
+  SHARE_TARGET_PATH,
+  SHARE_TARGET_PHOTO_FIELD_NAME,
+  SHARED_PHOTO_CACHE_NAME,
+  SHARED_PHOTO_CACHE_URL,
+} from "../features/pwa/constants/shareTarget";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -160,6 +166,33 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const targetUrl = (event.notification.data as { url?: string } | null)?.url ?? "/notifications";
   event.waitUntil(openFromNotification(targetUrl));
+});
+
+const isShareTargetSubmission = (request: Request): boolean =>
+  request.method === "POST" && new URL(request.url).pathname === SHARE_TARGET_PATH;
+
+const storeSharedPhoto = async (formData: FormData): Promise<void> => {
+  const photo = formData.get(SHARE_TARGET_PHOTO_FIELD_NAME);
+  if (!(photo instanceof File)) return;
+
+  const cache = await caches.open(SHARED_PHOTO_CACHE_NAME);
+  await cache.put(
+    SHARED_PHOTO_CACHE_URL,
+    new Response(photo, { headers: { "Content-Type": photo.type } }),
+  );
+};
+
+const goToComposeAnywayWithoutAPhoto = () => undefined;
+
+const handleShareTargetSubmission = async (request: Request): Promise<Response> => {
+  await request.formData().then(storeSharedPhoto).catch(goToComposeAnywayWithoutAPhoto);
+
+  return Response.redirect(SHARE_TARGET_PATH, 303);
+};
+
+self.addEventListener("fetch", (event) => {
+  if (!isShareTargetSubmission(event.request)) return;
+  event.respondWith(handleShareTargetSubmission(event.request));
 });
 
 serwist.addEventListeners();
