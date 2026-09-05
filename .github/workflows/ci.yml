@@ -168,6 +168,34 @@ jobs:
       - name: Run integration tests (no coverage)
         run: pnpm test:integration
 
+  lighthouse:
+    name: Lighthouse
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_PWA_ENABLED: "true"
+      ADMIN_ORIGIN_URL: http://127.0.0.1:5173
+      SITE_URL: http://127.0.0.1:3100
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Install Chromium
+        run: pnpm --filter @outfiqe/web test:e2e:install
+      - name: Build the web app with the service worker switched on
+        run: pnpm exec turbo run build --filter=@outfiqe/web
+      - name: Run Lighthouse against the app shell
+        run: pnpm --filter @outfiqe/web exec lhci autorun
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: apps/web/.lighthouseci
+          retention-days: 7
+
   coverage:
     name: Coverage gate
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

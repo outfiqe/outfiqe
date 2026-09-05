@@ -16,6 +16,7 @@
     "test:integration": "vitest run --project integration",
     "test:watch": "vitest",
     "generate:pwa-assets": "tsx scripts/generate-pwa-assets.mts",
+    "capture:pwa-screenshots": "tsx scripts/capture-pwa-screenshots.mts",
     "db:generate": "echo 'no database in web app'",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install --with-deps chromium"
@@ -54,6 +55,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.62.1",
     "@serwist/turbopack": "9.5.12",
     "@tailwindcss/postcss": "^4.3.3",

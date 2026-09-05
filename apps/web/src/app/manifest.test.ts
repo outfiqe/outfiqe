@@ -36,6 +36,10 @@ describe("manifest", () => {
     expect(iconPurposes).toContain("maskable");
   });
 
+  it("always exposes a screenshots array, empty until real screenshots are captured", () => {
+    expect(Array.isArray(webManifest.screenshots)).toBe(true);
+  });
+
   it("accepts a shared photo at an in-scope, POST route", () => {
     expect(webManifest.share_target).toMatchObject({
       action: expect.stringMatching(/^\//),

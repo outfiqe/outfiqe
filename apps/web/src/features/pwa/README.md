@@ -97,6 +97,11 @@ server starts. Setting it only at runtime does nothing.
 - `utils/clearCachedContent.ts` — asks the worker to forget saved pages and photos. Used on sign
   out.
 - `utils/manifestIcons.ts` — turns the icon list into the manifest's format.
+- `constants/appScreenshots.ts` — the narrow and wide screenshots Android's install dialog shows,
+  their sizes and captions.
+- `utils/manifestScreenshots.ts` — turns that list into the manifest's format, keeping only the
+  files that are actually on disk. Imported straight into `app/manifest.ts`, not via the barrel,
+  because it reads the filesystem.
 - `utils/appleSplashMedia.ts` — builds the media query that picks one launch image for one device.
 - `utils/appViewport.ts` — the page's `viewport`, including the theme colour for light and dark.
 - `components/AppleSplashLinks.tsx` — puts one launch image link in the page head per device.
@@ -612,11 +617,41 @@ Both are covered where it matters instead: the DOM-attribute read, the combined 
 logic, the teardown call, and the Sentry hand-off are each unit-tested with the browser APIs
 stubbed, which is where their actual logic lives.
 
+## Testing
+
+`docs/TESTING-PWA.md` is the by-hand checklist — what should happen on iPhone, iPad, Android
+Chrome, Android Firefox, and desktop, plus the go-live steps. Walk it on at least one real iPhone
+and one real Android before the feature is turned on for anyone.
+
+What's guarded automatically, on every PR:
+
+- The **Browser tests** job runs Playwright against the real compiled worker.
+  `e2e/installable.spec.ts` is the single "would a browser offer to install this?" contract —
+  manifest fields, both required icon sizes actually served, a worker registering and taking
+  control, and every screenshot the manifest advertises resolving. The rest (`manifest`,
+  `serviceWorker`, `offlineFallback`, `offlineReading`, `pushNotification`, `shareTarget`,
+  `backgroundRefresh`) each cover one piece — see that file list in `docs/TESTING-PWA.md`.
+- The **Lighthouse** job (`lighthouserc.cjs`) runs three passes against `/offline` — the app shell
+  with no API in the picture, so a regression there is a regression in the shell's own weight, not
+  backend noise. It fails only on deterministic drops (unminified JS/CSS, an accessibility or
+  best-practices regression); performance score and byte weight are warnings. It is
+  `continue-on-error`, like the coverage job — a signal, not a merge blocker.
+
+## Screenshots for the install dialog
+
+`constants/appScreenshots.ts` is the list Android's install dialog draws its preview from — a
+narrow (phone) and a wide (desktop) set. `scripts/capture-pwa-screenshots.mts`
+(`pnpm --filter @outfiqe/web capture:pwa-screenshots`) drives a headless browser over the running
+app and writes them to `public/screenshots/`. `utils/manifestScreenshots.ts` only lists the ones
+that are actually on disk, so the manifest stays valid whether or not any have been captured yet —
+and the moment real ones are committed they appear in the manifest with no code change.
+
+They are deliberately not committed from a local run: against a dev build with no catalog data
+every page is an empty state, which would make the install dialog look worse, not better. Capture
+them against a deployed environment with real data as a go-live step (see `docs/TESTING-PWA.md`).
+
 ## To do later
 
-- The manifest can include screenshots, which make Android's install dialog show a preview of the
-  app rather than just an icon. These need real pictures of the running app and can be captured
-  with the browser tests now that they exist.
 - One JavaScript chunk is over 3 MB and is too big to be saved for offline use, so the first visit
   to a page needing it will not work offline. It is saved normally once downloaded. The chunk is
   worth splitting up regardless of offline support.
