@@ -17,14 +17,13 @@ ceiling).
 ## Funnel
 
 **Admin-facing:** filter by status, approve/reject/mark-paid a request from its row. Reject and
-mark-paid prompt for a reason/reference via `window.prompt`, matching this app's existing
-`commissions` feature's lightweight action pattern rather than introducing a modal for a single
-text field.
+mark-paid prompt for a reason/reference via the shared `TextPromptModal`
+(`apps/admin/src/components`) rather than a native browser prompt.
 
 ## Non-obvious rationale
 
 **Approving doesn't ask for the identity cross-check confirmation up front — it tries the plain
-approve first, and only asks (`window.confirm`) if the backend responds
+approve first, and only asks (via the shared `ConfirmModal`) if the backend responds
 `IDENTITY_CROSS_CHECK_REQUIRED`.** Most approvals are _not_ a bank account's first payout, so
 asking every time would be a needless extra click for the common case; the backend already knows
 whether this particular account needs it, so the UI defers to that instead of duplicating the

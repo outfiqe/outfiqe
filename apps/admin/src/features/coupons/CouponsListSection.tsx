@@ -2,6 +2,7 @@ import { Badge, Button, ProgressBar, toast } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { TextPromptModal } from "@/components/TextPromptModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { couponsApi } from "./api";
@@ -32,6 +33,7 @@ export const CouponsListSection = () => {
   const [tab, setTab] = useState<CouponStatusValue>("ACTIVE");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [performanceCoupon, setPerformanceCoupon] = useState<Coupon | null>(null);
+  const [budgetEditCoupon, setBudgetEditCoupon] = useState<Coupon | null>(null);
   const queryClient = useQueryClient();
 
   const {
@@ -62,21 +64,20 @@ export const CouponsListSection = () => {
   const updateBudget = useMutation({
     mutationFn: ({ id, totalBudgetAmount }: { id: string; totalBudgetAmount: number | null }) =>
       couponsApi.updateBudget(id, { totalBudgetAmount, maxRedemptions: null }),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      setBudgetEditCoupon(null);
+    },
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const isActing = updateStatus.isPending || approve.isPending || updateBudget.isPending;
 
-  const handleEditBudget = (coupon: Coupon) => {
-    const input = window.prompt(
-      "New total budget in Rs. (leave blank for uncapped):",
-      coupon.totalBudgetAmount?.toString() ?? "",
-    );
-    if (input === null) return;
-    const totalBudgetAmount = input.trim() === "" ? null : Number(input);
+  const submitBudgetEdit = (value: string) => {
+    if (!budgetEditCoupon) return;
+    const totalBudgetAmount = value === "" ? null : Number(value);
     if (totalBudgetAmount !== null && Number.isNaN(totalBudgetAmount)) return;
-    updateBudget.mutate({ id: coupon.id, totalBudgetAmount });
+    updateBudget.mutate({ id: budgetEditCoupon.id, totalBudgetAmount });
   };
 
   return (
@@ -168,7 +169,7 @@ export const CouponsListSection = () => {
                       Archive
                     </Button>
                   )}
-                  <Button size="sm" variant="outline" onClick={() => handleEditBudget(coupon)}>
+                  <Button size="sm" variant="outline" onClick={() => setBudgetEditCoupon(coupon)}>
                     Edit budget
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => setPerformanceCoupon(coupon)}>
@@ -220,6 +221,20 @@ export const CouponsListSection = () => {
       <CouponPerformanceModal
         coupon={performanceCoupon}
         onClose={() => setPerformanceCoupon(null)}
+      />
+      <TextPromptModal
+        open={budgetEditCoupon !== null}
+        title={`Edit budget — ${budgetEditCoupon?.code ?? ""}`}
+        description="Leave blank for an uncapped budget."
+        label="Total budget (Rs.)"
+        inputType="number"
+        required={false}
+        defaultValue={budgetEditCoupon?.totalBudgetAmount?.toString() ?? ""}
+        confirmLabel="Save"
+        pendingLabel="Saving…"
+        isPending={updateBudget.isPending}
+        onConfirm={submitBudgetEdit}
+        onCancel={() => setBudgetEditCoupon(null)}
       />
     </div>
   );
