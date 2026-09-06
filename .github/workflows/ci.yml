@@ -199,3 +199,20 @@ jobs:
           name: lighthouse-reports
           path: apps/web/.lighthouseci
           retention-days: 7
+
+  ci:
+    name: CI
+    if: always()
+    needs: [lint, typecheck, build, unit, integration]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail unless every required job succeeded
+        run: |
+          results="${{ join(needs.*.result, ',') }}"
+          echo "upstream results: $results"
+          case ",$results," in
+            *,failure,* | *,cancelled,* | *,skipped,*)
+              echo "::error::a required CI job did not succeed"
+              exit 1 ;;
+          esac
+          echo "all required jobs passed"
