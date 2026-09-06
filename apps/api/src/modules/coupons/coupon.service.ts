@@ -3,7 +3,11 @@ import { PaymentMethod } from "#generated/prisma/enums.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
-import { COUPON_BUDGET_AUTO_PAUSE_THRESHOLD_PERCENT } from "./coupon.constants.js";
+import {
+  COUPON_BUDGET_AUTO_PAUSE_THRESHOLD_PERCENT,
+  VELOCITY_REDEMPTION_THRESHOLD,
+  VELOCITY_WINDOW_HOURS,
+} from "./coupon.constants.js";
 import { couponRepository } from "./coupon.repository.js";
 import type {
   CreateCouponBody,
@@ -31,6 +35,7 @@ import {
 } from "./coupon.utils.js";
 
 const NOT_FOUND_STATUS = 404;
+const MS_PER_HOUR = 60 * 60 * 1000;
 const BAD_REQUEST_STATUS = 400;
 const CONFLICT_STATUS = 409;
 
@@ -291,31 +296,67 @@ export const couponService = {
     return { redemptions: page, nextCursor: hasMore ? (page.at(-1)?.id ?? null) : null };
   },
 
-  async afterRedemptionCommitted(couponId: string): Promise<void> {
-    const coupon = await couponRepository.findById(couponId);
-    if (!coupon || coupon.totalBudgetAmount === null) return;
-
-    const utilizationPercent = computeBudgetUtilizationPercent(coupon) ?? 0;
-    const crossedThreshold = resolveCrossedBudgetThreshold(
-      utilizationPercent,
-      coupon.lastAlertedBudgetThreshold,
-    );
-
-    if (crossedThreshold !== null) {
-      const claimed = await couponRepository.claimBudgetAlertThreshold(couponId, crossedThreshold);
-      if (claimed) {
-        await eventBus.publish(DomainEvents.COUPON_BUDGET_ALERT, {
-          couponId: coupon.id,
-          code: coupon.code,
-          thresholdPercent: crossedThreshold,
-          spentAmount: coupon.spentAmount,
-          totalBudgetAmount: coupon.totalBudgetAmount,
-        });
-      }
-    }
-
-    if (utilizationPercent >= COUPON_BUDGET_AUTO_PAUSE_THRESHOLD_PERCENT) {
-      await couponRepository.autoPause(couponId);
-    }
+  async afterRedemptionCommitted(context: {
+    couponId: string;
+    orderId: string;
+    phone: string;
+    address: string;
+  }): Promise<void> {
+    await Promise.all([checkBudgetAlerts(context.couponId), checkRedemptionVelocity(context)]);
   },
+};
+
+const checkBudgetAlerts = async (couponId: string): Promise<void> => {
+  const coupon = await couponRepository.findById(couponId);
+  if (!coupon || coupon.totalBudgetAmount === null) return;
+
+  const utilizationPercent = computeBudgetUtilizationPercent(coupon) ?? 0;
+  const crossedThreshold = resolveCrossedBudgetThreshold(
+    utilizationPercent,
+    coupon.lastAlertedBudgetThreshold,
+  );
+
+  if (crossedThreshold !== null) {
+    const claimed = await couponRepository.claimBudgetAlertThreshold(couponId, crossedThreshold);
+    if (claimed) {
+      await eventBus.publish(DomainEvents.COUPON_BUDGET_ALERT, {
+        couponId: coupon.id,
+        code: coupon.code,
+        thresholdPercent: crossedThreshold,
+        spentAmount: coupon.spentAmount,
+        totalBudgetAmount: coupon.totalBudgetAmount,
+      });
+    }
+  }
+
+  if (utilizationPercent >= COUPON_BUDGET_AUTO_PAUSE_THRESHOLD_PERCENT) {
+    await couponRepository.autoPause(couponId);
+  }
+};
+
+const checkRedemptionVelocity = async (context: {
+  orderId: string;
+  phone: string;
+  address: string;
+}): Promise<void> => {
+  const since = new Date(Date.now() - VELOCITY_WINDOW_HOURS * MS_PER_HOUR);
+  const recentCount = await couponRepository.countRecentRedemptionsForContact(
+    context.phone,
+    context.address,
+    since,
+    context.orderId,
+  );
+  if (recentCount < VELOCITY_REDEMPTION_THRESHOLD) return;
+
+  const redemption = await couponRepository.findRedemptionByOrderId(context.orderId);
+  if (!redemption || redemption.flaggedForReview) return;
+
+  const flagReason = `${recentCount} other coupon redemptions shared this phone or delivery address in the last ${VELOCITY_WINDOW_HOURS}h`;
+  await couponRepository.flagRedemptionForReview(redemption.id, flagReason);
+  await eventBus.publish(DomainEvents.COUPON_REDEMPTION_FLAGGED, {
+    redemptionId: redemption.id,
+    couponId: redemption.couponId,
+    orderId: context.orderId,
+    flagReason,
+  });
 };

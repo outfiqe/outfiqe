@@ -155,10 +155,35 @@ export const couponRepository = {
   },
 
   async findRedemptionByOrderId(
-    client: DbClient,
     orderId: string,
+    client: DbClient = prisma,
   ): Promise<CouponRedemptionRecord | null> {
     return client.couponRedemption.findUnique({ where: { orderId } });
+  },
+
+  async countRecentRedemptionsForContact(
+    phone: string,
+    address: string,
+    since: Date,
+    excludeOrderId: string,
+  ): Promise<number> {
+    const rows = await prisma.$queryRaw<{ count: number }[]>(Prisma.sql`
+      SELECT COUNT(DISTINCT cr.id)::int AS count
+      FROM coupon_redemptions cr
+      JOIN orders o ON o.id = cr.order_id
+      WHERE cr.status <> 'RELEASED'
+        AND cr.created_at >= ${since}
+        AND cr.order_id <> ${excludeOrderId}::uuid
+        AND (o.phone = ${phone} OR o.address = ${address})
+    `);
+    return rows[0]?.count ?? 0;
+  },
+
+  async flagRedemptionForReview(id: string, reason: string): Promise<void> {
+    await prisma.couponRedemption.update({
+      where: { id },
+      data: { flaggedForReview: true, flagReason: reason },
+    });
   },
 
   async markRedemptionReleased(

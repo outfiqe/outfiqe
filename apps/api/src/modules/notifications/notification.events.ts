@@ -461,6 +461,25 @@ export const registerNotificationEventConsumers = (): void => {
   });
 
   subscribeToDomainEvent({
+    event: DomainEvents.COUPON_REDEMPTION_FLAGGED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ orderId, flagReason }): Promise<void> => {
+      const adminIds = await userRepository.findIdsByRole(UserRole.ADMIN);
+      if (adminIds.length === 0) return;
+
+      await notificationService.notifyManyIndividual(
+        adminIds.map((recipientId) => ({
+          recipientId,
+          type: NotificationType.COUPON_REDEMPTION_FLAGGED,
+          entityType: NotificationEntityType.ORDER,
+          entityId: orderId,
+          metadata: { flagReason },
+        })),
+      );
+    },
+  });
+
+  subscribeToDomainEvent({
     event: DomainEvents.COUPON_BUDGET_ALERT,
     groupName: NOTIFICATION_CONSUMER_GROUP,
     handler: async ({

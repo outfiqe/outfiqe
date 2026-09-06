@@ -441,7 +441,12 @@ const checkoutOnce = async (
   if (!buyNow) await cartRepository.clearCart(cartId);
 
   if (couponResolution) {
-    await couponService.afterRedemptionCommitted(couponResolution.coupon.id);
+    await couponService.afterRedemptionCommitted({
+      couponId: couponResolution.coupon.id,
+      orderId: order.id,
+      phone,
+      address,
+    });
   }
 
   if (paymentMethod === PaymentMethod.COD) {
@@ -558,19 +563,21 @@ export const orderService = {
       await commissionRepository.voidForOrder(tx, orderId, reason);
       await brandPayoutRepository.voidForOrder(tx, orderId, reason);
 
-      const redemption = await couponRepository.findRedemptionByOrderId(tx, orderId);
+      const redemption = await couponRepository.findRedemptionByOrderId(orderId, tx);
       if (redemption && redemption.status !== CouponRedemptionStatus.RELEASED) {
-        await couponRepository.markRedemptionReleased(
-          tx,
-          redemption.id,
-          CouponRedemptionStatus.RELEASED,
-          reason,
-        );
-        await couponRepository.releaseBudget(
-          tx,
-          redemption.couponId,
-          redemption.platformFundedAmount,
-        );
+        if (actor.type === "ADMIN") {
+          await couponRepository.markRedemptionReleased(
+            tx,
+            redemption.id,
+            CouponRedemptionStatus.RELEASED,
+            reason,
+          );
+          await couponRepository.releaseBudget(
+            tx,
+            redemption.couponId,
+            redemption.platformFundedAmount,
+          );
+        }
       }
 
       if (refundOutcome) {

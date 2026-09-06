@@ -184,6 +184,12 @@ export type DomainEventPayloads = {
     spentAmount: number;
     totalBudgetAmount: number;
   };
+  [DomainEvents.COUPON_REDEMPTION_FLAGGED]: {
+    redemptionId: string;
+    couponId: string;
+    orderId: string;
+    flagReason: string;
+  };
 };
 
 export type DomainEventHandler<E extends DomainEvent> = (

@@ -3,12 +3,14 @@
 ## Purpose
 
 Platform-funded discounts — a code a customer applies at checkout that lowers what they pay while
-the brand is paid in full, exactly as though the order were placed at full price. This is Phase 3
-of the discount-architecture spec: the coupon entity, its eligibility rules, the redemption ledger
-with atomic budget/one-per-user claims, and the cart apply/remove + checkout integration. See
-`../discounts/README.md` for the pure pricing-kernel functions this module calls
-(`computeCouponValue`, `allocatePlatformDiscountToLines`) and `../products/README.md` for the
-brand-funded counterpart (Phase 1) this module deliberately never touches.
+the brand is paid in full, exactly as though the order were placed at full price. This module now
+spans Phases 3–5 of the discount-architecture spec: the coupon entity, its eligibility rules, the
+redemption ledger with atomic budget/one-per-user claims, the cart apply/remove + checkout
+integration (Phase 3), the admin approval/budget-alert control surface and reporting (Phase 4;
+`apps/admin/src/features/coupons`), and the cancellation policy, rate limiting, and velocity-fraud
+flagging that harden it (Phase 5). See `../discounts/README.md` for the pure pricing-kernel functions
+this module calls (`computeCouponValue`, `allocatePlatformDiscountToLines`) and `../products/README.md`
+for the brand-funded counterpart (Phase 1) this module deliberately never touches.
 
 ## Structure
 
@@ -19,7 +21,8 @@ brand-funded counterpart (Phase 1) this module deliberately never touches.
   reporting/support shapes).
 - `coupon.constants.ts` — code length bounds, pagination defaults, `COUPON_APPROVAL_BUDGET_THRESHOLD`
   (Rs 50,000, per the spec's Operating Model table), `COUPON_BUDGET_ALERT_THRESHOLDS_PERCENT`
-  (`[50, 80, 95, 100]`).
+  (`[50, 80, 95, 100]`), `VELOCITY_WINDOW_HOURS`/`VELOCITY_REDEMPTION_THRESHOLD` (24h / 3 — see
+  Funnel).
 - `coupon.schemas.ts` — Zod validation, including the same "exactly one amount field for this type"
   refinement `products`' discount schemas use, and codes normalized to uppercase at the schema layer
   so `WELCOME300`/`welcome300` are the same coupon everywhere.
@@ -36,7 +39,8 @@ brand-funded counterpart (Phase 1) this module deliberately never touches.
   `autoPause` (each its own atomic conditional `UPDATE`, same pattern as `claimBudget`),
   `getPerformanceMetrics` (one raw-SQL query joining redemptions → orders → order items →
   brand payouts for GMV/spend/commission/new-vs-returning/repeat-purchase aggregates),
-  `searchRedemptions` (support lookup by code/user/order).
+  `searchRedemptions` (support lookup by code/user/order), `countRecentRedemptionsForContact`/
+  `flagRedemptionForReview` (the velocity-fraud signal — see Funnel).
 - `coupon.service.ts` — `resolveForContext` is the one function that decides whether a code is
   usable right now for a given set of lines: not-found → window → prepaid-only → first-order-only →
   already-redeemed → minimum subtotal → eligibility → valuation, in that order, each with its own
@@ -89,10 +93,13 @@ against the database: a budget sized for `N−1` redemptions with `N` concurrent
 exactly `N−1` successes, and two concurrent first-time checkouts by the same user produce exactly
 one (`coupon.integration.test.ts`).
 
-**Cancelling an order releases its coupon.** `orderService.cancel`'s existing transaction now also
-looks up the order's `CouponRedemption` (if any) and, if not already released, marks it `RELEASED`
-and decrements the coupon's `spentAmount`/`redemptionCount` — freeing the budget unit and the
-per-user slot for a future order.
+**Cancelling an order releases its coupon only when the platform caused the cancellation.**
+`orderService.cancel`'s existing transaction looks up the order's `CouponRedemption` (if any); when
+`CancelOrderActor.type === "ADMIN"` (out of stock, our error, an admin-initiated cancellation) it
+marks the redemption `RELEASED` and decrements the coupon's `spentAmount`/`redemptionCount`, freeing
+the budget unit and the per-user slot. When the actor is `"BUYER"` (the customer cancelling their own
+order), the redemption stays `CONSUMED` — the coupon shot is spent either way, which is exactly what
+closes the buy-refund-rebuy farming loop per decision 3.
 
 **A large budget needs a second admin's sign-off before it can spend a single rupee.**
 `couponService.create` (and `updateBudget`, on any raise) runs `resolveCouponCreationState`: a
@@ -116,6 +123,20 @@ same threshold can never double-fire the alert. A successful claim publishes
 `DomainEvents.COUPON_BUDGET_ALERT` (consumed by `notifications` to page every admin); reaching 100%
 also atomically flips the coupon to `PAUSED` via `autoPause` — the same instant, no-cache kill-switch
 mechanism `updateStatus` already uses, just triggered by budget instead of an admin click.
+
+**A redemption flagged for review never blocks the order.** The same `afterRedemptionCommitted`
+post-commit slot runs `checkRedemptionVelocity`, which counts other non-`RELEASED` redemptions
+(any coupon, not just this one) sharing the just-placed order's delivery phone or address within the
+last `VELOCITY_WINDOW_HOURS` (24h). At `VELOCITY_REDEMPTION_THRESHOLD` (3) or more, it stamps
+`flaggedForReview`/`flagReason` on the redemption and publishes `DomainEvents.COUPON_REDEMPTION_FLAGGED`
+so every admin gets paged — matching the spec's "flag for review rather than auto-block" call, since a
+false positive on a small user base costs more than the fraud it would have caught. The flag is
+visible in the admin redemption lookup (`apps/admin/src/features/coupons`) alongside the existing
+release reason.
+
+**`POST /api/cart/coupon` is rate-limited per user** (`cartCouponApplyRateLimit`, `cart.routes.ts`) —
+the same `rateLimit` middleware and shape as `orders`' checkout/cancel limiters, closing the
+code-guessing-oracle gap the spec calls out explicitly under "Enforced in policy."
 
 ## Non-obvious rationale
 
@@ -145,25 +166,30 @@ mechanism `updateStatus` already uses, just triggered by budget instead of an ad
   state — a redemption is written already-consumed inside the same transaction as the order, so
   there's no window where a redemption exists but the order doesn't (unlike a multi-step reservation
   flow that would need a distinct in-flight state).
-- **A cancelled order always releases its coupon**, regardless of who or what caused the
-  cancellation — the spec's own recommendation is narrower (release only for a platform-caused
-  cancellation like an out-of-stock item; consume it on a customer-initiated cancellation, to block
-  the buy-refund-rebuy farming loop). This module takes the simpler, more customer-friendly default
-  because `orderService.cancel` doesn't currently distinguish _why_ an order is being cancelled at
-  the call site in a way this module can key off of — building that distinction is Phase 5 hardening
-  work, tracked there, not silently skipped. The tradeoff is explicit: this configuration is more
-  farmable (order, cancel, reorder) than the spec's recommendation until that follow-up lands.
 - **No `FREE_DELIVERY` coupon type** — the spec itself scopes this out of v1 ("delivery and COD fees
   are not discountable in v1; a dedicated `FREE_DELIVERY` coupon type covers that case explicitly
   and prices it separately"), so only `PERCENT`/`FIXED` exist here.
-- **No Buy Now support** — `checkoutOnce` only resolves a coupon for the cart-based path
-  (`appliedCouponCode` lives on `Cart`, which Buy Now bypasses entirely). The spec lists this
-  explicitly as a Phase 5 edge case ("Buy Now path — bypasses the cart entirely and needs its own
-  coupon handling"), not something this phase silently drops.
-- **No velocity/fraud detection** — still explicitly Phase 5 scope in the spec. Phase 4 added the
-  approval gate, budget alerts/auto-pause, per-coupon performance reporting
-  (`getPerformanceMetrics`), and the support redemption lookup (`searchRedemptions`); this module's
-  redemption path itself is unchanged from Phase 3.
+- **No Buy Now coupon support, by design, not by gap** — `checkoutOnce` only resolves a coupon for the
+  cart-based path (`appliedCouponCode` lives on `Cart`, which Buy Now bypasses entirely); a coupon
+  applied to the cart is silently ignored on a Buy Now checkout rather than erroring, and no budget or
+  redemption is consumed (`coupon.integration.test.ts` — "ignores an applied cart coupon on the Buy
+  Now path"). The spec lists Buy Now as a Phase 5 edge needing "its own coupon handling"; building
+  that (letting a code apply to a single Buy Now line) is still deferred — what Phase 5 closed is the
+  silent-failure risk, not the feature gap.
+- **Velocity detection flags by delivery phone/address, not device or IP** — the spec's recommended
+  signals are "device, IP or delivery address," but this codebase doesn't capture a device fingerprint
+  or client IP anywhere in the order path today, and adding that is request-level plumbing well beyond
+  this module's scope. Phone and address are already collected on every `Order`, so
+  `countRecentRedemptionsForContact` reuses them for a real, if narrower, fraud signal; device/IP
+  fingerprinting remains open follow-up work if phone/address prove insufficient in practice.
+- **No verified-phone requirement, no prepaid-above-a-value-threshold enforcement, no code-entropy
+  generator** — the spec recommends all three, but each needs infrastructure this codebase doesn't
+  have yet (phone OTP verification), or would silently override an admin's own explicit configuration
+  (a hard COD-value cutover was tried and reverted here — it broke `prepaidOnly: false` coupons an
+  admin had deliberately allowed on COD; the create-coupon admin UI now shows the Rs 200 recommendation
+  as a note next to the prepaid-only checkbox instead of enforcing it), or is already covered by
+  letting an admin type any code including a long random one (entropy is an admin-authoring choice,
+  not something this module can force). Each remains a real, named gap, not a silent one.
 - **A crossed-threshold jump reports only the highest threshold, not every one it passed** — a single
   redemption large enough to jump straight from 0% to 100% of a small budget fires one alert at 100%,
   not four separate alerts at 50/80/95/100. `resolveCrossedBudgetThreshold` returns the max of the

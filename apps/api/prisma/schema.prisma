@@ -500,6 +500,8 @@ model CouponRedemption {
   status               CouponRedemptionStatus @default(CONSUMED)
   releasedAt           DateTime?              @map("released_at")
   releasedReason       String?                @map("released_reason")
+  flaggedForReview     Boolean                @default(false) @map("flagged_for_review")
+  flagReason           String?                @map("flag_reason")
   createdAt            DateTime               @default(now()) @map("created_at")
 
   @@map("coupon_redemptions")
@@ -1526,6 +1528,7 @@ enum NotificationType {
   SUPPORT_TICKET_RESOLVED
   COUPON_APPROVAL_REQUESTED
   COUPON_BUDGET_ALERT
+  COUPON_REDEMPTION_FLAGGED
 }
 
 enum NotificationEntityType {

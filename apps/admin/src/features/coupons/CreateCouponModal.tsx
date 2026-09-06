@@ -15,6 +15,7 @@ type CreateCouponModalProps = {
 const PERCENT_BASIS_POINTS_PER_PERCENT = 100;
 const DEFAULT_PERCENT_OFF = 10;
 const DEFAULT_FIXED_AMOUNT = 200;
+const COD_COUPON_VALUE_THRESHOLD = 200;
 
 const inputClassName =
   "h-11 w-full rounded-lg border border-border bg-background px-3.5 text-sm text-foreground outline-none transition-colors focus-visible:border-foreground";
@@ -252,6 +253,12 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
             />
             Requires prepaid checkout (eSewa or Khalti)
           </label>
+          {!prepaidOnly && (
+            <p className="pl-6 text-xs text-muted-foreground">
+              Recommended above Rs. {COD_COUPON_VALUE_THRESHOLD} — a refused COD delivery still
+              spends the coupon.
+            </p>
+          )}
           <label className="flex items-center gap-2 text-sm text-foreground">
             <Checkbox
               checked={stacksWithBrandDiscount}

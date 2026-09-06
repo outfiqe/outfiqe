@@ -21,7 +21,8 @@ per-coupon performance report, and look up a redemption for support.
 - `CreateCouponModal.tsx` — the new-coupon form.
 - `CouponPerformanceModal.tsx` — `StatCard` grid over `GET /:id/performance`.
 - `RedemptionLookupSection.tsx` — search by coupon code or order id; a released redemption shows its
-  `releasedReason` inline as the support-facing refusal/reversal reason.
+  `releasedReason` inline as the support-facing refusal/reversal reason, and a velocity-flagged
+  redemption shows a "Flagged for review" badge plus its `flagReason`.
 
 ## Funnel
 
@@ -44,6 +45,11 @@ a coupon.
 - **"Edit budget" is a `window.prompt`, not a form field** — matches this codebase's existing
   admin-action pattern for a single-value edit (`withdraw-requests`' reject-reason/payment-reference
   prompts) rather than introducing a second modal for one number.
+- **The "requires prepaid" note is a static recommendation, not a live calculation** — an earlier
+  version of this feature tried enforcing "coupons over Rs 200 must be prepaid" server-side
+  regardless of the coupon's own `prepaidOnly` flag; it was reverted because it silently overrode an
+  admin's explicit choice to allow a higher-value coupon on COD. The create form now just shows the
+  recommendation as a note next to the checkbox — the admin decides.
 - **The nav key is server-enforced** (`coupons` is in `SERVER_ENFORCED_PLATFORM_NAV_KEYS`,
   `packages/utils/src/platform-nav`) — an admin whose access to this section has been hidden via
   Navigation access loses the API routes too (`requirePlatformNavItem("coupons")`), not just the

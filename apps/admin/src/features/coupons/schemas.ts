@@ -80,6 +80,8 @@ export const couponRedemptionSchema = z.object({
   status: z.enum(couponRedemptionStatusValues),
   releasedAt: z.string().nullable(),
   releasedReason: z.string().nullable(),
+  flaggedForReview: z.boolean(),
+  flagReason: z.string().nullable(),
   createdAt: z.string(),
 });
 export type CouponRedemption = z.infer<typeof couponRedemptionSchema>;

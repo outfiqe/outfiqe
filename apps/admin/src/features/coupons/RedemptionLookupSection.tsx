@@ -83,12 +83,20 @@ export const RedemptionLookupSection = () => {
                   <Badge tone={STATUS_TONE[redemption.status]} showDot={false}>
                     {redemption.status}
                   </Badge>
+                  {redemption.flaggedForReview && (
+                    <Badge tone="negative" showDot={false}>
+                      Flagged for review
+                    </Badge>
+                  )}
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {redemption.userEmail} · Order {redemption.orderId} · Rs.{" "}
                   {redemption.discountAmount.toLocaleString()} discount ·{" "}
                   {new Date(redemption.createdAt).toLocaleDateString()}
                 </p>
+                {redemption.flaggedForReview && redemption.flagReason && (
+                  <p className="mt-1 text-sm text-destructive">Flag: {redemption.flagReason}</p>
+                )}
                 {redemption.status === "RELEASED" && redemption.releasedReason && (
                   <p className="mt-1 text-sm text-destructive">
                     Refusal reason: {redemption.releasedReason}

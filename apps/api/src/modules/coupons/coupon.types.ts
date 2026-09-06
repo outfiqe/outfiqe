@@ -130,6 +130,8 @@ export type CouponRedemptionRecord = {
   status: CouponRedemptionStatus;
   releasedAt: Date | null;
   releasedReason: string | null;
+  flaggedForReview: boolean;
+  flagReason: string | null;
   createdAt: Date;
 };
 

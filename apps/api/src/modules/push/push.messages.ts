@@ -125,6 +125,10 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     body: (payload) =>
       `${couponCodeFrom(payload)} has reached ${thresholdPercentFrom(payload)}% of budget`,
   },
+  [NotificationType.COUPON_REDEMPTION_FLAGGED]: {
+    title: "Coupon redemption flagged",
+    body: () => "A coupon redemption was flagged for review",
+  },
 };
 
 const urlFor = (payload: NotificationBroadcastPayload): string => {

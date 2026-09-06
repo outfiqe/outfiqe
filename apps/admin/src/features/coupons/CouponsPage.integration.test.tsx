@@ -191,6 +191,8 @@ describe("CouponsPage", () => {
                 status: "CONSUMED",
                 releasedAt: null,
                 releasedReason: null,
+                flaggedForReview: false,
+                flagReason: null,
                 createdAt: "2026-01-01T00:00:00.000Z",
               },
             ],

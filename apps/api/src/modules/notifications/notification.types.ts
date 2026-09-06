@@ -34,6 +34,7 @@ export type NotificationMetadata = {
   totalBudgetAmount?: number | null;
   thresholdPercent?: number;
   spentAmount?: number;
+  flagReason?: string;
 };
 
 export type NotificationRecord = {
