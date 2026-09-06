@@ -53,9 +53,17 @@ passed in.
   `motion.*` elements with `layout` and a spring, i.e. a FLIP animation driven by a per-frame
   `requestAnimationFrame` loop in JS. Everything that actually changes between the two states is a
   plain animatable CSS property — `max-width` (`max-w-7xl` ↔ `max-w-5xl`), `padding` on both the
-  wrapper and the bar, plus the background/border/shadow the bar was already transitioning — so the
+  wrapper and the bar, plus the background and border the bar was already transitioning — so the
   motion is now a CSS `transition` the browser owns, in the same spirit as the `vaul` switch
   described in `design-system/README.md`. No library, no JS animation loop.
+- **`box-shadow` is not in the transitioned property list, and the bar carries `[contain:layout]`.**
+  `max-width`/`padding` are layout properties, so the browser re-lays-out the bar's contents on every
+  frame of the 300ms condense regardless; `[contain:layout]` keeps that per-frame work from
+  invalidating the rest of the page below the sticky header. `box-shadow` (`shadow-none` ↔
+  `shadow-lg`) is a per-frame _paint_ of a blurred shadow on top of that, and on a mid device or a
+  high-refresh panel it was the difference between a smooth condense and a stuttering one — so the
+  shadow now snaps at the threshold instead of transitioning, which is imperceptible next to the
+  bar simultaneously pulling in from the edges and rounding.
 - **A transform-based FLIP would have been the wrong replacement here, despite being the direct
   analogue of what `framer-motion` was doing.** FLIP animates geometry with `scale`, which distorts
   everything inside the box — the logo and nav text would visibly squash during a 64rem ↔ 80rem
