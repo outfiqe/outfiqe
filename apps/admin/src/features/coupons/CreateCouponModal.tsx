@@ -13,8 +13,9 @@ type CreateCouponModalProps = {
 };
 
 const PERCENT_BASIS_POINTS_PER_PERCENT = 100;
-const DEFAULT_PERCENT_OFF = 10;
-const DEFAULT_FIXED_AMOUNT = 200;
+const DEFAULT_PERCENT_OFF = "10";
+const DEFAULT_FIXED_AMOUNT = "200";
+const DEFAULT_MIN_SUBTOTAL = "0";
 const COD_COUPON_VALUE_THRESHOLD = 200;
 
 const inputClassName =
@@ -27,7 +28,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
   const [percentOff, setPercentOff] = useState(DEFAULT_PERCENT_OFF);
   const [fixedAmount, setFixedAmount] = useState(DEFAULT_FIXED_AMOUNT);
   const [maxDiscountAmount, setMaxDiscountAmount] = useState("");
-  const [minSubtotal, setMinSubtotal] = useState(0);
+  const [minSubtotal, setMinSubtotal] = useState(DEFAULT_MIN_SUBTOTAL);
   const [endsAt, setEndsAt] = useState("");
   const [totalBudgetAmount, setTotalBudgetAmount] = useState("");
   const [maxRedemptions, setMaxRedemptions] = useState("");
@@ -42,7 +43,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
     setPercentOff(DEFAULT_PERCENT_OFF);
     setFixedAmount(DEFAULT_FIXED_AMOUNT);
     setMaxDiscountAmount("");
-    setMinSubtotal(0);
+    setMinSubtotal(DEFAULT_MIN_SUBTOTAL);
     setEndsAt("");
     setTotalBudgetAmount("");
     setMaxRedemptions("");
@@ -64,11 +65,11 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
         type,
         percentBasisPoints:
           type === "PERCENT"
-            ? Math.round(percentOff * PERCENT_BASIS_POINTS_PER_PERCENT)
+            ? Math.round(Number(percentOff) * PERCENT_BASIS_POINTS_PER_PERCENT)
             : undefined,
-        fixedAmount: type === "FIXED" ? fixedAmount : undefined,
+        fixedAmount: type === "FIXED" ? Number(fixedAmount) : undefined,
         maxDiscountAmount: maxDiscountAmount ? Number(maxDiscountAmount) : undefined,
-        minSubtotal,
+        minSubtotal: Number(minSubtotal || 0),
         startsAt: new Date().toISOString(),
         endsAt: endsAt ? new Date(endsAt).toISOString() : null,
         totalBudgetAmount: totalBudgetAmount ? Number(totalBudgetAmount) : undefined,
@@ -144,7 +145,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
                 min={1}
                 max={100}
                 value={percentOff}
-                onChange={(event) => setPercentOff(Number(event.target.value))}
+                onChange={(event) => setPercentOff(event.target.value)}
                 className={inputClassName}
               />
             </div>
@@ -172,7 +173,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
               type="number"
               min={1}
               value={fixedAmount}
-              onChange={(event) => setFixedAmount(Number(event.target.value))}
+              onChange={(event) => setFixedAmount(event.target.value)}
               className={inputClassName}
             />
           </div>
@@ -188,7 +189,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
               type="number"
               min={0}
               value={minSubtotal}
-              onChange={(event) => setMinSubtotal(Number(event.target.value))}
+              onChange={(event) => setMinSubtotal(event.target.value)}
               className={inputClassName}
             />
           </div>
