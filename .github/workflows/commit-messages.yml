@@ -1,0 +1,26 @@
+name: Commit Messages
+
+on:
+  pull_request:
+    branches: [main, dev]
+
+concurrency:
+  group: commit-messages-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  commitlint:
+    name: Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with full history so commitlint can walk base..head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: "0"
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Validate commit messages
+        run: pnpm exec commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}

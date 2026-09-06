@@ -1,0 +1,54 @@
+name: CI docs fast-path
+
+on:
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - "**/*.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".gitignore"
+      - ".gitattributes"
+
+concurrency:
+  group: ci-docs-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Docs-only change, nothing to lint
+        run: echo "Documentation-only pull request — the full CI gate is skipped."
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Docs-only change, nothing to typecheck
+        run: echo "Documentation-only pull request — the full CI gate is skipped."
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Docs-only change, nothing to build
+        run: echo "Documentation-only pull request — the full CI gate is skipped."
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Docs-only change, no unit tests to run
+        run: echo "Documentation-only pull request — the full CI gate is skipped."
+
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Docs-only change, no integration tests to run
+        run: echo "Documentation-only pull request — the full CI gate is skipped."
