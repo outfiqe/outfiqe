@@ -18,6 +18,7 @@ export type CartItemView = {
 export type AppliedCouponView = {
   code: string;
   discountAmount: number;
+  prepaidOnly: boolean;
 };
 
 export type CartView = {

@@ -87,7 +87,11 @@ const previewCoupon = async (
       lines: couponLines,
       at: new Date(),
     });
-    return { code: coupon.code, discountAmount: valuation.discountAmount };
+    return {
+      code: coupon.code,
+      discountAmount: valuation.discountAmount,
+      prepaidOnly: coupon.prepaidOnly,
+    };
   } catch {
     return null;
   }

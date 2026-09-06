@@ -66,7 +66,7 @@ describe("CheckoutSummary", () => {
       <CheckoutSummary
         cart={aCart({
           platformDiscountTotal: 300,
-          appliedCoupon: { code: "WELCOME300", discountAmount: 300 },
+          appliedCoupon: { code: "WELCOME300", discountAmount: 300, prepaidOnly: false },
         })}
         paymentMethod={PaymentMethod.COD}
         codHandlingFee={50}

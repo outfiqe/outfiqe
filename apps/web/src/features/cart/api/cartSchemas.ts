@@ -21,6 +21,7 @@ export type CartItem = z.infer<typeof cartItemSchema>;
 export const appliedCouponSchema = z.object({
   code: z.string(),
   discountAmount: z.number(),
+  prepaidOnly: z.boolean(),
 });
 export type AppliedCoupon = z.infer<typeof appliedCouponSchema>;
 

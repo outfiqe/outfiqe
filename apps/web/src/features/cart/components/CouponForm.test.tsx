@@ -88,7 +88,11 @@ describe("CouponForm", () => {
   });
 
   it("shows the applied coupon with a way to remove it instead of the input", async () => {
-    render(<CouponForm appliedCoupon={{ code: "WELCOME300", discountAmount: 300 }} />);
+    render(
+      <CouponForm
+        appliedCoupon={{ code: "WELCOME300", discountAmount: 300, prepaidOnly: false }}
+      />,
+    );
 
     expect(screen.getByText("WELCOME300 applied")).toBeInTheDocument();
     expect(screen.queryByLabelText("Coupon code")).not.toBeInTheDocument();

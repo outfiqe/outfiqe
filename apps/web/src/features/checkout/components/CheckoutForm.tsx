@@ -13,6 +13,7 @@ import {
 import { toast } from "@outfiqe/design-system";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -57,6 +58,13 @@ export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps
   });
 
   const paymentMethod = form.watch("paymentMethod");
+  const codRequiresPrepaid = cart.appliedCoupon?.prepaidOnly ?? false;
+
+  useEffect(() => {
+    if (codRequiresPrepaid && paymentMethod === PaymentMethod.COD) {
+      form.setValue("paymentMethod", PaymentMethod.ESEWA);
+    }
+  }, [codRequiresPrepaid, paymentMethod, form]);
 
   const onSubmit = form.handleSubmit(async (values) => {
     if (!isOnline) {
@@ -183,6 +191,7 @@ export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps
             <PaymentMethodField
               value={paymentMethod}
               onChange={(value) => form.setValue("paymentMethod", value)}
+              codRequiresPrepaid={codRequiresPrepaid}
             />
             {paymentMethod === PaymentMethod.COD && (
               <p className="mt-3 text-xs text-muted-foreground">
