@@ -46,7 +46,7 @@ export const Drawer = ({
             aria-hidden
             data-testid="drawer-backdrop"
             onClick={onClose}
-            className="fixed inset-0 z-[60] bg-black/45 backdrop-blur-[2px] sm:hidden"
+            className="fixed inset-0 z-[60] bg-black/55 sm:hidden"
           />
         )}
 

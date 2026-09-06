@@ -41,10 +41,16 @@ describe("HeaderBar", () => {
     render(<HeaderBar>Site nav</HeaderBar>);
 
     const bar = screen.getByRole("banner").firstElementChild;
-    expect(bar).toHaveClass(
-      "transition-[max-width,padding,background-color,border-color,box-shadow]",
-    );
+    expect(bar).toHaveClass("transition-[max-width,padding,background-color,border-color]");
     expect(bar).toHaveClass("motion-reduce:transition-none");
+  });
+
+  it("keeps the condense transition off paint-heavy properties and contains its layout", () => {
+    render(<HeaderBar>Site nav</HeaderBar>);
+
+    const bar = screen.getByRole("banner").firstElementChild;
+    expect(bar?.className).not.toContain("box-shadow");
+    expect(bar).toHaveClass("[contain:layout]");
   });
 
   it("merges a caller className onto the bar", () => {
