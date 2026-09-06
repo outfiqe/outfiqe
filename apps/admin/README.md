@@ -44,9 +44,17 @@ login.
 
 ### Which branches Vercel deploys
 
-`vercel.json` sets `git.deploymentEnabled.dev = false`, so pushes to the long-lived `dev`
-integration branch never create a Vercel deployment -- day-to-day development traffic stays off
-Vercel entirely. `main` still deploys (that is production), and per-branch preview deployments
-for feature-branch PRs are still on, since those previews are useful for review. The Vercel
-project's **Production Branch** must be set to `main` in the dashboard for this to line up; the
-repo file can turn a branch off but cannot override which branch Vercel treats as production.
+Vercel is meant to build **only `main`** -- there is no staging site and feature-branch previews
+are not used here. Two settings in `vercel.json` enforce that, and `apps/web/vercel.json` carries
+the same pair:
+
+- `git.deploymentEnabled.dev = false` -- a push to the long-lived `dev` branch creates no Vercel
+  deployment at all, not even a skipped one.
+- `ignoreCommand` -- `test "$VERCEL_GIT_COMMIT_REF" != "main"` exits `0` (Vercel reads that as
+  "skip the build") for every ref that is not `main`, and exits non-zero on `main` so the build
+  runs. This is the catch-all that also covers feature branches, which can't be enumerated in
+  `deploymentEnabled`.
+
+The Vercel project's **Production Branch** should still be `main` in the dashboard so the
+deployment that does run on `main` is treated as production. If the release branch ever changes,
+update the `main` literal in both `vercel.json` files.
