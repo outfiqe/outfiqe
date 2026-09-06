@@ -13,9 +13,10 @@ export const resolveNotificationHref = (
         ? lookPermalinkPath(ownHandle, notification.entityId)
         : "/profile";
     case "COMMENT_REPLIED": {
-      const { lookOwnerHandle } = notification.metadata;
-      return lookOwnerHandle && notification.entityId
-        ? lookPermalinkPath(lookOwnerHandle, notification.entityId)
+      const { lookOwnerHandle, actor } = notification.metadata;
+      const lookHandle = lookOwnerHandle ?? actor?.handle;
+      return lookHandle && notification.entityId
+        ? lookPermalinkPath(lookHandle, notification.entityId)
         : null;
     }
     case "NEW_FOLLOWER": {

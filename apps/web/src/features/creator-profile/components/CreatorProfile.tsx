@@ -95,14 +95,14 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const openPost = (lookId: string) => {
     const params = new URLSearchParams(searchParams);
     params.set(LOOK_QUERY_PARAM, lookId);
-    router.replace(`/creator/${handle}?${params.toString()}`, { scroll: false });
+    window.history.replaceState(null, "", `/creator/${handle}?${params.toString()}`);
   };
 
   const closePost = () => {
     const params = new URLSearchParams(searchParams);
     params.delete(LOOK_QUERY_PARAM);
     const query = params.toString();
-    router.replace(`/creator/${handle}${query ? `?${query}` : ""}`, { scroll: false });
+    window.history.replaceState(null, "", `/creator/${handle}${query ? `?${query}` : ""}`);
   };
 
   const toggleFollow = () => {

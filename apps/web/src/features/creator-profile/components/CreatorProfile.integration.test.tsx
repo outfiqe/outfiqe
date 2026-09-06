@@ -88,6 +88,7 @@ beforeAll(() => {
 
 const push = vi.fn();
 const replace = vi.fn();
+const replaceState = vi.spyOn(window.history, "replaceState");
 const fetchNextPage = vi.fn();
 
 const mockSearchParams = (params: Record<string, string> = {}) => {
@@ -199,6 +200,7 @@ beforeEach(() => {
   });
   push.mockClear();
   replace.mockClear();
+  replaceState.mockClear();
   mockSearchParams();
   fetchNextPage.mockClear();
   mockLooks();
@@ -501,13 +503,14 @@ describe("CreatorProfile edit flow", () => {
 });
 
 describe("CreatorProfile post detail modal", () => {
-  it("navigates to the post's ?look= url when a thumbnail is clicked", async () => {
+  it("puts the post's ?look= url in place without a router navigation when a thumbnail is clicked", async () => {
     const user = userEvent.setup();
     renderProfile(buildCreator());
 
     await user.click(screen.getByRole("button", { name: "Caption p1" }));
 
-    expect(replace).toHaveBeenCalledWith("/creator/ava?look=p1", { scroll: false });
+    expect(replaceState).toHaveBeenCalledWith(null, "", "/creator/ava?look=p1");
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it("opens the post detail modal when ?look= matches an already-loaded post", () => {
@@ -524,7 +527,8 @@ describe("CreatorProfile post detail modal", () => {
 
     await user.click(screen.getByRole("button", { name: "Close detail" }));
 
-    expect(replace).toHaveBeenCalledWith("/creator/ava", { scroll: false });
+    expect(replaceState).toHaveBeenCalledWith(null, "", "/creator/ava");
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it("fetches and shows a post that isn't already loaded in the grid (e.g. a deep link)", async () => {
