@@ -4,13 +4,14 @@ import { Button } from "@outfiqe/design-system";
 import Link from "next/link";
 
 import type { Cart } from "../api/cartSchemas";
+import { CouponForm } from "./CouponForm";
 
 type CartSummaryProps = {
   cart: Cart;
 };
 
 export const CartSummary = ({ cart }: CartSummaryProps) => {
-  const { subtotal, deliveryFee, total, city } = cart;
+  const { subtotal, deliveryFee, platformDiscountTotal, total, city, appliedCoupon } = cart;
 
   return (
     <div className="rounded-2xl border border-border p-5">
@@ -18,10 +19,20 @@ export const CartSummary = ({ cart }: CartSummaryProps) => {
         Order summary
       </div>
 
+      <div className="mb-3">
+        <CouponForm appliedCoupon={appliedCoupon} />
+      </div>
+
       <div className="flex justify-between py-2 text-sm text-muted-foreground">
         <span>Subtotal</span>
         <span>Rs. {subtotal.toLocaleString()}</span>
       </div>
+      {appliedCoupon && (
+        <div className="flex justify-between py-2 text-sm text-primary">
+          <span>{appliedCoupon.code}</span>
+          <span>-Rs. {platformDiscountTotal.toLocaleString()}</span>
+        </div>
+      )}
       <div className="flex justify-between py-2 text-sm text-muted-foreground">
         <span>{city ? `Delivery to ${city}` : "Delivery"}</span>
         <span>{deliveryFee === 0 ? "Free" : `Rs. ${deliveryFee.toLocaleString()}`}</span>

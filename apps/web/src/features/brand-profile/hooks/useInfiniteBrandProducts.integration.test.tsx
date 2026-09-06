@@ -14,6 +14,8 @@ const buildProduct = (id: string) => ({
   brand: "Test Atelier",
   name: `Product ${id}`,
   price: 1200,
+  effectivePrice: 1200,
+  discountPercent: null,
   type: "tops",
   categorySlugs: ["new-arrivals"],
   imageUrl: null,

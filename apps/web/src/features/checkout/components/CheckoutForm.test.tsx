@@ -10,6 +10,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 import type { Cart } from "@/features/cart";
+import type * as DeliveryZonesModule from "@/features/delivery-zones";
+import type { DeliveryZone } from "@/features/delivery-zones";
 
 import { CheckoutForm } from "./CheckoutForm";
 
@@ -21,11 +23,21 @@ vi.mock("@/features/auth/context/AuthContext", () => ({
   useAuth: () => ({ state: { user: { name: "Ram Shrestha" } } }),
 }));
 
-vi.mock("@/features/delivery-zones", () => ({
-  CityAutocomplete: ({ value, onChange }: { value: string; onChange: (city: string) => void }) => (
-    <input aria-label="City" value={value} onChange={(event) => onChange(event.target.value)} />
-  ),
-}));
+vi.mock("@/features/delivery-zones", async () => {
+  const actual = await vi.importActual<typeof DeliveryZonesModule>("@/features/delivery-zones");
+  return {
+    ...actual,
+    CityAutocomplete: ({
+      value,
+      onChange,
+    }: {
+      value: string;
+      onChange: (city: string) => void;
+    }) => (
+      <input aria-label="City" value={value} onChange={(event) => onChange(event.target.value)} />
+    ),
+  };
+});
 
 vi.mock("@/features/payments", () => ({
   redirectToPaymentGateway: vi.fn(),
@@ -46,16 +58,38 @@ vi.mock("../hooks/useCheckout", () => ({
 const aCart = (): Cart =>
   ({
     subtotal: 1000,
-    deliveryFee: 100,
     city: "",
   }) as Cart;
 
-const renderCheckoutForm = () => {
+const ZONES: DeliveryZone[] = [
+  {
+    id: "zone-default",
+    name: "Default",
+    isDefault: true,
+    cities: [],
+    standardDeliveryFee: 100,
+    freeDeliveryThreshold: 100_000,
+    codHandlingFee: 50,
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "zone-pokhara",
+    name: "Pokhara",
+    isDefault: false,
+    cities: ["Pokhara"],
+    standardDeliveryFee: 250,
+    freeDeliveryThreshold: 100_000,
+    codHandlingFee: 80,
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  },
+];
+
+const renderCheckoutForm = (zones: DeliveryZone[] = ZONES) => {
   const queryClient = new QueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-  return render(<CheckoutForm cart={aCart()} codHandlingFee={50} />, { wrapper });
+  return render(<CheckoutForm cart={aCart()} zones={zones} />, { wrapper });
 };
 
 const fillRequiredFields = async () => {
@@ -96,5 +130,20 @@ describe("CheckoutForm", () => {
       ),
     );
     expect(checkoutMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("shows the default zone's delivery fee before a city is chosen", () => {
+    renderCheckoutForm();
+
+    expect(screen.getByText("Rs. 100")).toBeInTheDocument();
+  });
+
+  it("updates the delivery fee live once a city with its own zone is entered", async () => {
+    renderCheckoutForm();
+
+    await userEvent.type(screen.getByLabelText("City"), "Pokhara");
+
+    expect(screen.getByText("Rs. 250")).toBeInTheDocument();
+    expect(screen.queryByText("Rs. 100")).not.toBeInTheDocument();
   });
 });

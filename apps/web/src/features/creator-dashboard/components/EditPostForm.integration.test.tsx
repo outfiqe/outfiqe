@@ -156,6 +156,8 @@ describe("EditPostForm", () => {
                 brand: "Studio Nine",
                 name: "Wool Scarf",
                 price: 1200,
+                effectivePrice: 1200,
+                discountPercent: null,
                 type: "outerwear",
                 categorySlugs: [],
                 imageUrl: null,

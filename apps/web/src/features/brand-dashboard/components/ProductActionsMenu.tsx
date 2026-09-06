@@ -1,6 +1,6 @@
 "use client";
 
-import { Boxes, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Boxes, MoreVertical, Pencil, Tag, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/shared/lib/cn";
@@ -8,6 +8,7 @@ import { cn } from "@/shared/lib/cn";
 type ProductActionsMenuProps = {
   onEdit: () => void;
   onManageStock: () => void;
+  onManageDiscount: () => void;
   onDelete: () => void;
   className?: string;
 };
@@ -15,6 +16,7 @@ type ProductActionsMenuProps = {
 export const ProductActionsMenu = ({
   onEdit,
   onManageStock,
+  onManageDiscount,
   onDelete,
   className,
 }: ProductActionsMenuProps) => {
@@ -77,6 +79,19 @@ export const ProductActionsMenu = ({
           >
             <Boxes className="size-3.5" />
             Manage stock
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={(event) => {
+              event.stopPropagation();
+              setOpen(false);
+              onManageDiscount();
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
+          >
+            <Tag className="size-3.5" />
+            Sale price
           </button>
           <button
             type="button"

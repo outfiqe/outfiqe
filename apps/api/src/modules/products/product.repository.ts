@@ -14,6 +14,7 @@ import {
 import type {
   BrandProductSize,
   CreateProductInput,
+  ProductDiscountRecord,
   ProductRecord,
   ProductSalesStats,
   ProductSearchParams,
@@ -22,6 +23,8 @@ import type {
   ProductWithStock,
   ProductWithStockSizesAndImages,
   SeenOnCreator,
+  SetProductDiscountInput,
+  UpdateProductDiscountInput,
   UpdateProductInput,
 } from "./product.types.js";
 import { sumStock } from "./product.utils.js";
@@ -30,6 +33,21 @@ export type { DbClient } from "#types/db.types.js";
 
 const NEW_ARRIVALS_LIMIT = 10;
 const SEEN_ON_CREATORS_LIMIT = 5;
+
+const withActiveDiscount = () => {
+  const now = new Date();
+  return {
+    discounts: {
+      where: {
+        isActive: true,
+        startsAt: { lte: now },
+        OR: [{ endsAt: null }, { endsAt: { gte: now } }],
+      },
+      orderBy: { createdAt: "desc" as const },
+      take: 1,
+    },
+  };
+};
 
 const withBrandAndCategories = {
   brand: { select: { name: true } },
@@ -158,7 +176,7 @@ export const productRepository = {
           })),
         },
       },
-      include: { ...withBrandAndCategories, ...withImages },
+      include: { ...withBrandAndCategories, ...withImages, ...withActiveDiscount() },
     });
     return toWithTotalStockAndSizes(product);
   },
@@ -193,7 +211,7 @@ export const productRepository = {
             }
           : {}),
       },
-      include: { ...withBrandAndCategories, ...withImages },
+      include: { ...withBrandAndCategories, ...withImages, ...withActiveDiscount() },
     });
     return toWithTotalStockAndSizes(product);
   },
@@ -232,7 +250,7 @@ export const productRepository = {
   ): Promise<ProductWithStockSizesAndImages[]> {
     const rows = await prisma.product.findMany({
       where: { brandId, deletedAt: null },
-      include: { ...withBrandAndCategories, ...withImages },
+      include: { ...withBrandAndCategories, ...withImages, ...withActiveDiscount() },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
@@ -264,7 +282,7 @@ export const productRepository = {
 
     const rows = await prisma.product.findMany({
       where: buildPublicWhere(filter),
-      include: withBrandAndCategories,
+      include: { ...withBrandAndCategories, ...withActiveDiscount() },
       orderBy,
       take: filter.limit + 1,
       ...(filter.cursor ? { cursor: { id: filter.cursor }, skip: 1 } : {}),
@@ -311,7 +329,7 @@ export const productRepository = {
   async listTrending(): Promise<(ProductWithStock & ProductSalesStats)[]> {
     const rows = await prisma.product.findMany({
       where: { status: ProductStatus.APPROVED, deletedAt: null },
-      include: withBrandAndCategories,
+      include: { ...withBrandAndCategories, ...withActiveDiscount() },
       orderBy: { reviewedAt: "desc" },
       take: TRENDING_LIMIT,
     });
@@ -323,7 +341,7 @@ export const productRepository = {
 
     const rows = await prisma.product.findMany({
       where: { id: { in: ids }, status: ProductStatus.APPROVED, deletedAt: null },
-      include: withBrandAndCategories,
+      include: { ...withBrandAndCategories, ...withActiveDiscount() },
     });
     const withStats = await withSalesStats(withTotalStock(rows));
 
@@ -340,7 +358,7 @@ export const productRepository = {
         deletedAt: null,
         createdAt: { gte: new Date(Date.now() - NEW_ARRIVAL_WINDOW_MS) },
       },
-      include: withBrandAndCategories,
+      include: { ...withBrandAndCategories, ...withActiveDiscount() },
       orderBy: { createdAt: "desc" },
       take: NEW_ARRIVALS_LIMIT,
     });
@@ -363,6 +381,7 @@ export const productRepository = {
         productType: { select: { slug: true, label: true } },
         sizes: { orderBy: { sortOrder: "asc" }, select: { id: true, label: true, stock: true } },
         images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
+        ...withActiveDiscount(),
       },
     });
     if (!product) return null;
@@ -515,5 +534,92 @@ export const productRepository = {
       distinct: ["productId"],
     });
     return rows.map((row) => row.productId);
+  },
+
+  async findActiveDiscount(productId: string): Promise<ProductDiscountRecord | null> {
+    const now = new Date();
+    return prisma.productDiscount.findFirst({
+      where: {
+        productId,
+        isActive: true,
+        startsAt: { lte: now },
+        OR: [{ endsAt: null }, { endsAt: { gte: now } }],
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  },
+
+  async findEligibilityAttributesByIds(
+    productIds: string[],
+  ): Promise<Map<string, { brandId: string; productTypeId: string; categoryIds: string[] }>> {
+    if (productIds.length === 0) return new Map();
+
+    const rows = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: {
+        id: true,
+        brandId: true,
+        productTypeId: true,
+        categories: { select: { id: true } },
+      },
+    });
+
+    return new Map(
+      rows.map((row) => [
+        row.id,
+        {
+          brandId: row.brandId,
+          productTypeId: row.productTypeId,
+          categoryIds: row.categories.map((category) => category.id),
+        },
+      ]),
+    );
+  },
+
+  async findActiveDiscountsByProductIds(
+    productIds: string[],
+    at: Date,
+  ): Promise<Map<string, ProductDiscountRecord & { productId: string }>> {
+    if (productIds.length === 0) return new Map();
+
+    const rows = await prisma.productDiscount.findMany({
+      where: {
+        productId: { in: productIds },
+        isActive: true,
+        startsAt: { lte: at },
+        OR: [{ endsAt: null }, { endsAt: { gte: at } }],
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const byProductId = new Map<string, ProductDiscountRecord & { productId: string }>();
+    for (const row of rows) {
+      if (!byProductId.has(row.productId)) byProductId.set(row.productId, row);
+    }
+    return byProductId;
+  },
+
+  async createDiscount(
+    productId: string,
+    input: SetProductDiscountInput,
+  ): Promise<ProductDiscountRecord> {
+    return prisma.$transaction(async (tx) => {
+      await tx.productDiscount.updateMany({
+        where: { productId, isActive: true },
+        data: { isActive: false },
+      });
+      return tx.productDiscount.create({ data: { productId, ...input } });
+    });
+  },
+
+  async updateDiscount(
+    id: string,
+    input: UpdateProductDiscountInput,
+  ): Promise<ProductDiscountRecord> {
+    return prisma.productDiscount.update({ where: { id }, data: input });
+  },
+
+  async deactivateDiscount(id: string): Promise<void> {
+    await prisma.productDiscount.update({ where: { id }, data: { isActive: false } });
   },
 };

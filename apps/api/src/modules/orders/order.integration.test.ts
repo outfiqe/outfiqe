@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import {
   BrandPayoutStatus,
+  DiscountType,
   FulfilmentStatus,
   PaymentMethod,
   PlatformFeeType,
@@ -63,6 +64,30 @@ const createPurchasableProduct = async (price: number) => {
   });
   return { brand, product, size };
 };
+
+const createProductDiscount = (
+  productId: string,
+  createdById: string,
+  overrides: Partial<{
+    discountType: DiscountType;
+    percentBasisPoints: number | null;
+    fixedAmount: number | null;
+    startsAt: Date;
+    endsAt: Date | null;
+  }> = {},
+) =>
+  prisma.productDiscount.create({
+    data: {
+      productId,
+      createdById,
+      discountType: DiscountType.PERCENT,
+      percentBasisPoints: 2_000,
+      fixedAmount: null,
+      startsAt: new Date(Date.now() - 1000),
+      endsAt: null,
+      ...overrides,
+    },
+  });
 
 const createActiveCommissionRule = async (adminId: string, ratePercentBasisPoints = 1200) =>
   prisma.platformCommissionRule.create({
@@ -344,6 +369,170 @@ describe("POST /api/orders/checkout — settlement ledger", () => {
       where: { orderItem: { orderId: response.body.data.id } },
     });
     expect(payout.platformFee).toBe(75);
+  });
+});
+
+describe("POST /api/orders/checkout — brand-funded discounts", () => {
+  it("computes the BrandPayout from the discounted price, identical to a full-price sale at that price", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId, 1_000);
+    await createDefaultDeliveryZone();
+    const { brand, product, size } = await createPurchasableProduct(2_000);
+    await createProductDiscount(product.id, adminId, {
+      discountType: DiscountType.PERCENT,
+      percentBasisPoints: 2_000,
+    });
+    const buyer = await createBuyer();
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.COD,
+        buyNow: { productId: product.id, sizeId: size.id, qty: 1 },
+      });
+
+    expect(response.status).toBe(201);
+
+    const order = await prisma.order.findUniqueOrThrow({
+      where: { id: response.body.data.id },
+      include: { items: true },
+    });
+    expect(order.subtotal).toBe(1_600);
+
+    const orderItem = order.items[0];
+    expect(orderItem?.unitPrice).toBe(1_600);
+    expect(orderItem?.listUnitPrice).toBe(2_000);
+    expect(orderItem?.brandDiscountAmount).toBe(400);
+
+    const payout = await prisma.brandPayout.findFirstOrThrow({
+      where: { orderItem: { orderId: order.id } },
+    });
+    expect(payout.brandId).toBe(brand.id);
+    expect(payout.grossAmount).toBe(1_600);
+    expect(payout.platformFee).toBe(160);
+    expect(payout.netAmount).toBe(1_440);
+  });
+
+  it("never applies a discount that hasn't started yet", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId, 1_000);
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(2_000);
+    await createProductDiscount(product.id, adminId, {
+      startsAt: new Date(Date.now() + 1000 * 60 * 60),
+    });
+    const buyer = await createBuyer();
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.COD,
+        buyNow: { productId: product.id, sizeId: size.id, qty: 1 },
+      });
+
+    expect(response.status).toBe(201);
+    const orderItem = await prisma.orderItem.findFirstOrThrow({
+      where: { orderId: response.body.data.id },
+    });
+    expect(orderItem.unitPrice).toBe(2_000);
+    expect(orderItem.brandDiscountAmount).toBe(0);
+  });
+
+  it("never applies a discount that has already ended", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId, 1_000);
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(2_000);
+    await createProductDiscount(product.id, adminId, {
+      startsAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
+      endsAt: new Date(Date.now() - 1000 * 60 * 60),
+    });
+    const buyer = await createBuyer();
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.COD,
+        buyNow: { productId: product.id, sizeId: size.id, qty: 1 },
+      });
+
+    expect(response.status).toBe(201);
+    const orderItem = await prisma.orderItem.findFirstOrThrow({
+      where: { orderId: response.body.data.id },
+    });
+    expect(orderItem.unitPrice).toBe(2_000);
+  });
+
+  it("never retroactively changes an already-placed order when a discount is created afterwards", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId, 1_000);
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(2_000);
+    const buyer = await createBuyer();
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.COD,
+        buyNow: { productId: product.id, sizeId: size.id, qty: 1 },
+      });
+    expect(response.status).toBe(201);
+
+    await createProductDiscount(product.id, adminId);
+
+    const orderItem = await prisma.orderItem.findFirstOrThrow({
+      where: { orderId: response.body.data.id },
+    });
+    expect(orderItem.unitPrice).toBe(2_000);
+    expect(orderItem.brandDiscountAmount).toBe(0);
+  });
+
+  it("resolves overlapping active discounts to the most recently created one", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId, 1_000);
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(2_000);
+    await createProductDiscount(product.id, adminId, { percentBasisPoints: 1_000 });
+    await createProductDiscount(product.id, adminId, { percentBasisPoints: 2_500 });
+    const buyer = await createBuyer();
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.COD,
+        buyNow: { productId: product.id, sizeId: size.id, qty: 1 },
+      });
+
+    expect(response.status).toBe(201);
+    const orderItem = await prisma.orderItem.findFirstOrThrow({
+      where: { orderId: response.body.data.id },
+    });
+    expect(orderItem.unitPrice).toBe(1_500);
   });
 });
 

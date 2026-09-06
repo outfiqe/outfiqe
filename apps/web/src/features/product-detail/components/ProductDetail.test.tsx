@@ -46,6 +46,8 @@ const buildProduct = (
   brand: { id: "brand-1", name: "Kastha" },
   name: "Wool Bomber",
   price: 5400,
+  effectivePrice: 5400,
+  discountPercent: null,
   type: "outerwear",
   categorySlugs: ["streetwear"],
   imageUrl: null,

@@ -1,11 +1,14 @@
 import type { Cart } from "@/features/cart";
-import type { DeliveryZone } from "@/features/delivery-zones";
 
+import type { BuyNowCouponPreview } from "../api/checkoutApi";
 import type { BuyNowPayload } from "./buyNowStorage";
 
-export const buildBuyNowCart = (payload: BuyNowPayload, zone: DeliveryZone | undefined): Cart => {
+export const buildBuyNowCart = (
+  payload: BuyNowPayload,
+  appliedCoupon: BuyNowCouponPreview | null = null,
+): Cart => {
   const subtotal = payload.unitPrice * payload.qty;
-  const deliveryFee = zone && subtotal < zone.freeDeliveryThreshold ? zone.standardDeliveryFee : 0;
+  const platformDiscountTotal = appliedCoupon?.discountAmount ?? 0;
 
   return {
     items: [
@@ -18,6 +21,8 @@ export const buildBuyNowCart = (payload: BuyNowPayload, zone: DeliveryZone | und
         imageUrl: payload.imageUrl,
         sizeLabel: payload.sizeLabel,
         unitPrice: payload.unitPrice,
+        listUnitPrice: payload.unitPrice,
+        discountPercent: null,
         qty: payload.qty,
         availableStock: payload.qty,
         soldOut: false,
@@ -26,8 +31,10 @@ export const buildBuyNowCart = (payload: BuyNowPayload, zone: DeliveryZone | und
     ],
     itemCount: payload.qty,
     subtotal,
-    deliveryFee,
-    total: subtotal + deliveryFee,
+    deliveryFee: 0,
+    platformDiscountTotal,
+    total: subtotal - platformDiscountTotal,
     city: null,
+    appliedCoupon,
   };
 };

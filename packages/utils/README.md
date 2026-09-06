@@ -26,9 +26,20 @@ to any one app.
 - `notifications/` — `formatActorList`, the grouped-notification actor-list formatter (`"Jane"` ->
   `"Jane and John"` -> `"Jane, John and 3 others"`), used by `@outfiqe/components`'
   `resolveNotificationMessage.ts`.
+- `uuid/` — `generateUuid`, an RFC 4122 v4 UUID generator that falls back to
+  `crypto.getRandomValues` when `crypto.randomUUID` isn't available.
 - `index.ts` — re-exports everything above; every app only ever imports from `@outfiqe/utils`.
 
 ## Non-obvious rationale
+
+**`generateUuid` doesn't just call `crypto.randomUUID()` directly** — that method requires a
+secure context (HTTPS, or the browser's `localhost` exception), which not every environment this
+app is accessed from satisfies (a LAN IP over plain HTTP during on-device testing, for one).
+`crypto.getRandomValues`, unlike `randomUUID`, has no such restriction, so the fallback path
+constructs an RFC 4122 v4 UUID from it by hand — same randomness quality, no secure-context
+requirement. Every call site across the apps that generates a client-side id (idempotency keys,
+optimistic-update temp ids, the anonymous session id) should use this instead of
+`crypto.randomUUID()` directly.
 
 **`formatActorList` pluralizes off `actorCount`, the notification's true total actor count —
 never `recentActors.length`.** The write path caps `recentActors` at 3 (`MAX_RECENT_ACTORS`, see

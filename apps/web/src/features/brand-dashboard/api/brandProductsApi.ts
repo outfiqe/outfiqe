@@ -8,6 +8,8 @@ import {
   brandProductSchema,
   type BrandProductSize,
   brandProductSizeSchema,
+  type ProductDiscount,
+  productDiscountSchema,
 } from "./brandProductsSchemas";
 
 const brandProductPageSchema = z.object({
@@ -19,6 +21,15 @@ export type BrandProductPage = z.infer<typeof brandProductPageSchema>;
 const brandProductSizeListSchema = z.array(brandProductSizeSchema);
 
 export type StockAdjustment = { sizeId: string; delta: number };
+
+export type SetProductDiscountInput = {
+  discountType: "PERCENT" | "FIXED";
+  percentBasisPoints?: number;
+  fixedAmount?: number;
+  startsAt: string;
+  endsAt?: string | null;
+};
+export type UpdateProductDiscountInput = Partial<SetProductDiscountInput>;
 
 export const brandProductsApi = {
   async list(cursor?: string): Promise<BrandProductPage> {
@@ -49,5 +60,22 @@ export const brandProductsApi = {
 
   async remove(productId: string): Promise<void> {
     await apiClient.del(`/products/${productId}`);
+  },
+
+  async setDiscount(productId: string, input: SetProductDiscountInput): Promise<ProductDiscount> {
+    const res = await apiClient.post<ProductDiscount>(`/products/${productId}/discount`, input);
+    return productDiscountSchema.parse(res.data);
+  },
+
+  async updateDiscount(
+    productId: string,
+    input: UpdateProductDiscountInput,
+  ): Promise<ProductDiscount> {
+    const res = await apiClient.patch<ProductDiscount>(`/products/${productId}/discount`, input);
+    return productDiscountSchema.parse(res.data);
+  },
+
+  async removeDiscount(productId: string): Promise<void> {
+    await apiClient.del(`/products/${productId}/discount`);
   },
 };

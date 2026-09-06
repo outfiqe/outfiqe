@@ -18,6 +18,8 @@ export interface ExploreProduct {
   brand: string;
   name: string;
   price: number;
+  effectivePrice?: number;
+  discountPercent?: number | null;
   creatorBuyerCount: number;
   unitsSold: number;
   categorySlugs?: string[];
@@ -64,6 +66,8 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
     brand,
     name,
     price,
+    effectivePrice,
+    discountPercent,
     creatorBuyerCount,
     unitsSold,
     lowStock,
@@ -145,7 +149,19 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
           </span>
         )}
       </div>
-      <p className="mt-1 text-sm font-bold text-foreground">Rs. {price.toLocaleString()}</p>
+      {discountPercent ? (
+        <div className="mt-1 flex items-center gap-1.5">
+          <p className="text-sm font-bold text-foreground">
+            Rs. {(effectivePrice ?? price).toLocaleString()}
+          </p>
+          <p className="text-xs text-muted-foreground line-through">Rs. {price.toLocaleString()}</p>
+          <span className="rounded bg-destructive/10 px-1 py-0.5 text-[10px] font-bold text-destructive">
+            {discountPercent}% OFF
+          </span>
+        </div>
+      ) : (
+        <p className="mt-1 text-sm font-bold text-foreground">Rs. {price.toLocaleString()}</p>
+      )}
 
       {(creatorBuyerCount > 0 || unitsSold > 0) && (
         <div className="mt-1.5 flex items-center gap-1.5">

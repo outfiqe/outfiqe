@@ -134,7 +134,17 @@ const grantAvailableCommission = async (creatorId: string, amount: number) => {
       subtotal: amount,
       deliveryFee: 0,
       total: amount,
-      items: { create: [{ productId: product.id, sizeId: size.id, qty: 1, unitPrice: amount }] },
+      items: {
+        create: [
+          {
+            productId: product.id,
+            sizeId: size.id,
+            qty: 1,
+            unitPrice: amount,
+            listUnitPrice: amount,
+          },
+        ],
+      },
     },
     include: { items: true },
   });
@@ -517,7 +527,17 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
         subtotal: 1000,
         deliveryFee: 0,
         total: 1000,
-        items: { create: [{ productId: product.id, sizeId: size.id, qty: 1, unitPrice: 1000 }] },
+        items: {
+          create: [
+            {
+              productId: product.id,
+              sizeId: size.id,
+              qty: 1,
+              unitPrice: 1000,
+              listUnitPrice: 1000,
+            },
+          ],
+        },
       },
       include: { items: true },
     });

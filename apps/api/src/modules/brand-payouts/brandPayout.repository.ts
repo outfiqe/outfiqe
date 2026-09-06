@@ -238,7 +238,14 @@ export const brandPayoutRepository = {
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
-      include: { orderItem: { select: { product: { select: { name: true, imageUrl: true } } } } },
+      include: {
+        orderItem: {
+          select: {
+            platformDiscountAmount: true,
+            product: { select: { name: true, imageUrl: true } },
+          },
+        },
+      },
     });
   },
 

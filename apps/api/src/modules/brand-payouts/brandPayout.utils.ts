@@ -1,10 +1,10 @@
+import { BASIS_POINTS_PER_PERCENT } from "#constants/money.constants.js";
 import {
   type BrandPayoutStatus,
   type PaymentMethod,
   PlatformFeeType,
 } from "#generated/prisma/enums.js";
 
-import { BASIS_POINTS_PER_PERCENT } from "./brandPayout.constants.js";
 import type {
   BrandCommissionExemptionRecord,
   BrandCommissionExemptionView,
@@ -105,7 +105,10 @@ type BrandPayoutRow = {
   netAmount: number;
   status: BrandPayoutStatus;
   createdAt: Date;
-  orderItem: { product: { name: string; imageUrl: string | null } };
+  orderItem: {
+    platformDiscountAmount: number;
+    product: { name: string; imageUrl: string | null };
+  };
 };
 
 export const toBrandPayoutView = (row: BrandPayoutRow): BrandPayoutView => ({
@@ -116,5 +119,6 @@ export const toBrandPayoutView = (row: BrandPayoutRow): BrandPayoutView => ({
   platformFee: row.platformFee,
   netAmount: row.netAmount,
   status: row.status,
+  platformFundedDiscountApplied: row.orderItem.platformDiscountAmount > 0,
   createdAt: row.createdAt.toISOString(),
 });

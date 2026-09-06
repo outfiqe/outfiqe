@@ -4,9 +4,10 @@
 
 One admin screen answering "where is our money right now" — reconciling gateway-collected money
 (what eSewa/Khalti/COD actually settled) against what the ledger says is owed to brands and
-creators, and how much platform revenue has actually been realized. No single existing queue
-(orders, commissions, brand-payouts, withdraw) answers this on its own; this module is pure
-read-only aggregation over their tables, owns none of its own.
+creators, how much platform revenue has actually been realized, and now how much of that revenue was
+given back out as platform-funded coupon spend. No single existing queue (orders, commissions,
+brand-payouts, withdraw, coupons) answers this on its own; this module is pure read-only aggregation
+over their tables, owns none of its own.
 
 ## Structure
 
@@ -16,7 +17,7 @@ read-only aggregation over their tables, owns none of its own.
   and composes the gateway/ledger halves of the view.
 - `financialRollup.repository.ts` — the aggregation queries themselves.
 - `financialRollup.schemas.ts` — Zod validation.
-- `financialRollup.types.ts` — the view shape.
+- `financialRollup.types.ts` — the view shape, including `ledger.couponSpend`/`ledger.netPlatformRevenue`.
 
 ## Funnel
 
@@ -44,3 +45,11 @@ numbers, side by side.
   cycle" on both sides) rather than mixing a windowed gateway number against an all-time ledger
   number. `cycle` is interpreted as the current calendar month — the doc doesn't pin this down
   further, so it's easy to revisit if the real intent differs.
+- **`couponSpend` sums `CouponRedemption.platformFundedAmount` for non-`RELEASED` rows** — a
+  cancelled order's coupon is released (`../coupons/README.md`) and its budget/spend given back, so
+  counting it here too would double-count money that was never actually kept by the customer.
+  `netPlatformRevenue` is simply `platformRevenueRealized − couponSpend`: the platform's own realized
+  take-rate revenue, treated as contra-revenue against what was spent funding coupon discounts —
+  matching the spec's framing of a coupon as a marketing spend line, not a discount to platform
+  revenue that was never earned in the first place (a coupon order's `BrandPayout` is untouched, so
+  `platformRevenueRealized` itself already doesn't move because of a coupon).

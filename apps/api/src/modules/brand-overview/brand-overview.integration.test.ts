@@ -101,7 +101,7 @@ const placeOrderForProduct = async (
       paymentStatus,
       fulfilmentStatus,
       createdAt,
-      items: { create: [{ productId, sizeId, qty, unitPrice }] },
+      items: { create: [{ productId, sizeId, qty, unitPrice, listUnitPrice: unitPrice }] },
     },
   });
 };

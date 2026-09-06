@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
+import type { ApplyCartCouponBody } from "#modules/coupons/coupon.schemas.js";
 
 import type {
   AddCartItemBody,
@@ -50,5 +51,19 @@ export const cartController = {
 
     const cart = await cartService.setCity(userId, city);
     sendSuccess(res, cart, "Delivery city updated.");
+  },
+
+  async applyCoupon(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { code } = validated.body<ApplyCartCouponBody>(res);
+
+    const cart = await cartService.applyCoupon(userId, code);
+    sendSuccess(res, cart, "Coupon applied.");
+  },
+
+  async removeCoupon(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const cart = await cartService.removeCoupon(userId);
+    sendSuccess(res, cart, "Coupon removed.");
   },
 };

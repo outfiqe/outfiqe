@@ -16,6 +16,8 @@ import {
   listPublicProductsQuerySchema,
   listReviewProductsQuerySchema,
   productIdParamSchema,
+  setProductDiscountSchema,
+  updateProductDiscountSchema,
   updateProductSchema,
 } from "./product.schemas.js";
 
@@ -79,6 +81,24 @@ productRoutes.delete(
   ...requireBrandOwner,
   validate({ params: productIdParamSchema }),
   productController.delete,
+);
+productRoutes.post(
+  "/:id/discount",
+  ...requireBrandOwner,
+  validate({ params: productIdParamSchema, body: setProductDiscountSchema }),
+  productController.setDiscount,
+);
+productRoutes.patch(
+  "/:id/discount",
+  ...requireBrandOwner,
+  validate({ params: productIdParamSchema, body: updateProductDiscountSchema }),
+  productController.updateDiscount,
+);
+productRoutes.delete(
+  "/:id/discount",
+  ...requireBrandOwner,
+  validate({ params: productIdParamSchema }),
+  productController.removeDiscount,
 );
 productRoutes.post(
   "/:id/approve",

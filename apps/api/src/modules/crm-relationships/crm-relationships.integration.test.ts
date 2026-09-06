@@ -112,6 +112,7 @@ const attachCreatorSignals = async (
             sizeId: (await prisma.productSize.findFirstOrThrow({ where: { productId } })).id,
             qty: 1,
             unitPrice: 1500,
+            listUnitPrice: 1500,
             attributedCreatorId: creatorId,
           },
         },
@@ -138,7 +139,9 @@ const placeCustomerOrder = async (
       subtotal: 3000,
       deliveryFee: 100,
       total: 3100,
-      items: { create: { productId, sizeId: size.id, qty: 2, unitPrice: 1500 } },
+      items: {
+        create: { productId, sizeId: size.id, qty: 2, unitPrice: 1500, listUnitPrice: 1500 },
+      },
     },
   });
 };
