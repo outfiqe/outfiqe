@@ -79,6 +79,13 @@ export const couponIdParamSchema = z.object({ id: z.uuid() });
 
 export const applyCartCouponSchema = z.object({ code: couponCodeSchema });
 
+export const previewBuyNowCouponSchema = z.object({
+  code: couponCodeSchema,
+  productId: z.uuid(),
+  sizeId: z.uuid(),
+  qty: z.number().int().min(1),
+});
+
 export const redemptionSearchQuerySchema = z.object({
   code: z.string().trim().min(1).optional(),
   userId: z.uuid().optional(),
@@ -94,3 +101,4 @@ export type ListCouponsQuery = z.infer<typeof listCouponsQuerySchema>;
 export type CouponIdParam = z.infer<typeof couponIdParamSchema>;
 export type ApplyCartCouponBody = z.infer<typeof applyCartCouponSchema>;
 export type RedemptionSearchQuery = z.infer<typeof redemptionSearchQuerySchema>;
+export type PreviewBuyNowCouponBody = z.infer<typeof previewBuyNowCouponSchema>;

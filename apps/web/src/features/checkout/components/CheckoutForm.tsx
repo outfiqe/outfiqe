@@ -24,10 +24,12 @@ import { redirectToPaymentGateway, useInitiatePayment } from "@/features/payment
 import { useIsOnline } from "@/features/pwa";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
+import type { BuyNowCouponPreview } from "../api/checkoutApi";
 import { type CheckoutInput, checkoutInputSchema, PaymentMethod } from "../api/checkoutSchemas";
 import { useCheckout } from "../hooks/useCheckout";
 import type { BuyNowPayload } from "../lib/buyNowStorage";
 import { clearBuyNowPayload } from "../lib/buyNowStorage";
+import { BuyNowCouponForm } from "./BuyNowCouponForm";
 import { CheckoutSummary } from "./CheckoutSummary";
 import { PaymentMethodField } from "./PaymentMethodField";
 
@@ -35,9 +37,17 @@ type CheckoutFormProps = {
   cart: Cart;
   codHandlingFee: number;
   buyNow?: BuyNowPayload;
+  buyNowCoupon?: BuyNowCouponPreview | null;
+  onBuyNowCouponChange?: (coupon: BuyNowCouponPreview | null) => void;
 };
 
-export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps) => {
+export const CheckoutForm = ({
+  cart,
+  codHandlingFee,
+  buyNow,
+  buyNowCoupon = null,
+  onBuyNowCouponChange,
+}: CheckoutFormProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { state } = useAuth();
@@ -80,6 +90,7 @@ export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps
         buyNow: buyNow
           ? { productId: buyNow.productId, sizeId: buyNow.sizeId, qty: buyNow.qty }
           : undefined,
+        couponCode: buyNow ? (buyNowCoupon?.code ?? undefined) : undefined,
       });
 
       if (buyNow) clearBuyNowPayload();
@@ -210,6 +221,16 @@ export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps
             codHandlingFee={codHandlingFee}
             isSubmitting={checkout.isPending || initiatePayment.isPending}
             isOnline={isOnline}
+            couponSlot={
+              buyNow && onBuyNowCouponChange ? (
+                <BuyNowCouponForm
+                  line={{ productId: buyNow.productId, sizeId: buyNow.sizeId, qty: buyNow.qty }}
+                  appliedCoupon={buyNowCoupon}
+                  onApplied={onBuyNowCouponChange}
+                  onRemoved={() => onBuyNowCouponChange(null)}
+                />
+              ) : undefined
+            }
           />
         </div>
       </form>

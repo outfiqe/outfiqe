@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@outfiqe/design-system";
+import type { ReactNode } from "react";
 
 import type { Cart } from "@/features/cart";
 
@@ -12,6 +13,7 @@ type CheckoutSummaryProps = {
   codHandlingFee: number;
   isSubmitting: boolean;
   isOnline: boolean;
+  couponSlot?: ReactNode;
 };
 
 export const CheckoutSummary = ({
@@ -20,6 +22,7 @@ export const CheckoutSummary = ({
   codHandlingFee,
   isSubmitting,
   isOnline,
+  couponSlot,
 }: CheckoutSummaryProps) => {
   const { subtotal, deliveryFee, platformDiscountTotal, appliedCoupon } = cart;
   const codFee = paymentMethod === PaymentMethod.COD ? codHandlingFee : 0;
@@ -35,11 +38,15 @@ export const CheckoutSummary = ({
         <span>Subtotal</span>
         <span>Rs. {subtotal.toLocaleString()}</span>
       </div>
-      {appliedCoupon && (
-        <div className="flex justify-between py-2 text-sm text-primary">
-          <span>{appliedCoupon.code}</span>
-          <span>-Rs. {appliedCoupon.discountAmount.toLocaleString()}</span>
-        </div>
+      {couponSlot ? (
+        <div className="py-2">{couponSlot}</div>
+      ) : (
+        appliedCoupon && (
+          <div className="flex justify-between py-2 text-sm text-primary">
+            <span>{appliedCoupon.code}</span>
+            <span>-Rs. {appliedCoupon.discountAmount.toLocaleString()}</span>
+          </div>
+        )
       )}
       <div className="flex justify-between py-2 text-sm text-muted-foreground">
         <span>Delivery</span>

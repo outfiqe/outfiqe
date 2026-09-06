@@ -3,11 +3,13 @@
 import { Button, Skeleton } from "@outfiqe/design-system";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCart } from "@/features/cart";
 import { resolveZonePreview, useDeliveryZones } from "@/features/delivery-zones";
 
+import type { BuyNowCouponPreview } from "../api/checkoutApi";
 import { useBuyNowPayload } from "../hooks/useBuyNowPayload";
 import { buildBuyNowCart } from "../lib/buildBuyNowCart";
 import { CheckoutForm } from "./CheckoutForm";
@@ -21,6 +23,7 @@ export const CheckoutBody = () => {
   const cartQuery = useCart();
   const deliveryZonesQuery = useDeliveryZones();
   const buyNow = useBuyNowPayload(isBuyNow);
+  const [buyNowCoupon, setBuyNowCoupon] = useState<BuyNowCouponPreview | null>(null);
 
   if (!isAuthResolved) return null;
 
@@ -74,9 +77,11 @@ export const CheckoutBody = () => {
     return (
       <div className="py-6">
         <CheckoutForm
-          cart={buildBuyNowCart(buyNow.payload, resolvedZone)}
+          cart={buildBuyNowCart(buyNow.payload, resolvedZone, buyNowCoupon)}
           codHandlingFee={codHandlingFee}
           buyNow={buyNow.payload}
+          buyNowCoupon={buyNowCoupon}
+          onBuyNowCouponChange={setBuyNowCoupon}
         />
       </div>
     );

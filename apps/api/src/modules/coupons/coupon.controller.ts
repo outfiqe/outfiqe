@@ -8,6 +8,7 @@ import type {
   CouponIdParam,
   CreateCouponBody,
   ListCouponsQuery,
+  PreviewBuyNowCouponBody,
   RedemptionSearchQuery,
   UpdateCouponBudgetBody,
   UpdateCouponStatusBody,
@@ -71,5 +72,13 @@ export const couponController = {
     const query = validated.query<RedemptionSearchQuery>(res);
     const page = await couponService.searchRedemptions(query);
     sendSuccess(res, page, "Coupon redemptions.");
+  },
+
+  async previewBuyNow(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const body = validated.body<PreviewBuyNowCouponBody>(res);
+
+    const preview = await couponService.previewForBuyNow(userId, body);
+    sendSuccess(res, preview, "Coupon preview.");
   },
 };

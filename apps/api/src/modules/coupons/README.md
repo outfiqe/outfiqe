@@ -53,6 +53,9 @@ for the brand-funded counterpart (Phase 1) this module deliberately never touche
   `searchRedemptions`), mounted at `/api/admin/coupons`, gated by both `requirePlatformAccess` and
   `requirePlatformNavItem("coupons")` (so an admin whose nav access has been narrowed loses API access
   too, not just the sidebar link — same pattern `withdraw`/`financial-rollup` already use).
+- `coupon.customer.routes.ts` — the one customer-facing coupon endpoint that isn't cart-shaped:
+  `POST /api/coupons/preview-buy-now` (`requireAuth` only, its own rate limit), backing
+  `couponService.previewForBuyNow`.
 
 ## Funnel
 
@@ -169,13 +172,15 @@ code-guessing-oracle gap the spec calls out explicitly under "Enforced in policy
 - **No `FREE_DELIVERY` coupon type** — the spec itself scopes this out of v1 ("delivery and COD fees
   are not discountable in v1; a dedicated `FREE_DELIVERY` coupon type covers that case explicitly
   and prices it separately"), so only `PERCENT`/`FIXED` exist here.
-- **No Buy Now coupon support, by design, not by gap** — `checkoutOnce` only resolves a coupon for the
-  cart-based path (`appliedCouponCode` lives on `Cart`, which Buy Now bypasses entirely); a coupon
-  applied to the cart is silently ignored on a Buy Now checkout rather than erroring, and no budget or
-  redemption is consumed (`coupon.integration.test.ts` — "ignores an applied cart coupon on the Buy
-  Now path"). The spec lists Buy Now as a Phase 5 edge needing "its own coupon handling"; building
-  that (letting a code apply to a single Buy Now line) is still deferred — what Phase 5 closed is the
-  silent-failure risk, not the feature gap.
+- **Buy Now takes its coupon from the request body, not the cart** — a coupon applied to the
+  standing cart is still ignored on a Buy Now checkout (`checkoutOnce` never reads
+  `appliedCouponCode` when `buyNow` is set); instead the client sends `couponCode` directly in the
+  checkout body, resolved against the single Buy Now line the exact same way a cart line is. The
+  supporting `POST /api/coupons/preview-buy-now` endpoint (`coupon.customer.routes.ts`) lets the web
+  UI show the discount before the shopper commits to paying, mirroring `POST /cart/coupon`'s preview
+  role for the cart path — both ultimately call `couponService.resolveForContext` with a
+  `CouponLine` built the same way (`buildCouponLinesForPricedLines`, exported from
+  `coupon.service.ts` so both `orders` and this preview path share one implementation).
 - **Velocity detection flags by delivery phone/address, not device or IP** — the spec's recommended
   signals are "device, IP or delivery address," but this codebase doesn't capture a device fingerprint
   or client IP anywhere in the order path today, and adding that is request-level plumbing well beyond

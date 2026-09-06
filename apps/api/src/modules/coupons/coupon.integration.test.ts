@@ -1216,3 +1216,97 @@ describe("Edge cases — revalidation between cart and checkout", () => {
     expect(brandBItem?.platformDiscountAmount).toBe(0);
   });
 });
+
+describe("POST /api/coupons/preview-buy-now", () => {
+  it("previews the discount for a single buy-now line", async () => {
+    const { userId: adminId } = await createAdminSession();
+    const coupon = await createCoupon({ createdById: adminId, fixedAmount: 200 });
+    const buyer = await createBuyer();
+    const { product, size } = await createPurchasableProduct(2_000);
+
+    const response = await request(testApp)
+      .post("/api/coupons/preview-buy-now")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ code: coupon.code, productId: product.id, sizeId: size.id, qty: 1 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual({
+      code: coupon.code,
+      discountAmount: 200,
+      prepaidOnly: false,
+    });
+  });
+
+  it("refuses an unknown code", async () => {
+    const buyer = await createBuyer();
+    const { product, size } = await createPurchasableProduct(2_000);
+
+    const response = await request(testApp)
+      .post("/api/coupons/preview-buy-now")
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ code: "NOPE1234", productId: product.id, sizeId: size.id, qty: 1 });
+
+    expect(response.status).toBe(404);
+    expect(response.body.code).toBe("COUPON_NOT_FOUND");
+  });
+});
+
+describe("POST /api/orders/checkout — Buy Now with a coupon", () => {
+  it("applies the coupon and pays the brand exactly as though the order were full price", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId, 1_000);
+    await createDefaultDeliveryZone();
+    const { brand, product, size } = await createPurchasableProduct(2_000);
+    const coupon = await createCoupon({ createdById: adminId, fixedAmount: 300 });
+    const buyer = await createBuyer();
+
+    const checkout = await checkoutRequest(buyer, {
+      buyNow: { productId: product.id, sizeId: size.id, qty: 1 },
+      couponCode: coupon.code,
+    });
+    expect(checkout.status).toBe(201);
+
+    const order = await prisma.order.findUniqueOrThrow({
+      where: { id: checkout.body.data.id },
+      include: { items: true },
+    });
+    expect(order.subtotal).toBe(2_000);
+    expect(order.platformDiscountTotal).toBe(300);
+    expect(order.total).toBe(2_000 - 300 + 100);
+
+    const payout = await prisma.brandPayout.findFirstOrThrow({
+      where: { orderItem: { orderId: order.id } },
+    });
+    expect(payout.brandId).toBe(brand.id);
+    expect(payout.grossAmount).toBe(2_000);
+
+    const redemption = await prisma.couponRedemption.findUniqueOrThrow({
+      where: { orderId: order.id },
+    });
+    expect(redemption.couponId).toBe(coupon.id);
+    expect(redemption.platformFundedAmount).toBe(300);
+  });
+
+  it("refuses a coupon that's already been used by this customer", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const coupon = await createCoupon({ createdById: adminId, fixedAmount: 200 });
+    const buyer = await createBuyer();
+    const { product: firstProduct, size: firstSize } = await createPurchasableProduct(2_000);
+    const { product: secondProduct, size: secondSize } = await createPurchasableProduct(2_000);
+
+    const first = await checkoutRequest(buyer, {
+      buyNow: { productId: firstProduct.id, sizeId: firstSize.id, qty: 1 },
+      couponCode: coupon.code,
+    });
+    expect(first.status).toBe(201);
+
+    const second = await checkoutRequest(buyer, {
+      buyNow: { productId: secondProduct.id, sizeId: secondSize.id, qty: 1 },
+      couponCode: coupon.code,
+    });
+    expect(second.status).toBe(409);
+    expect(second.body.code).toBe("COUPON_ALREADY_USED");
+  });
+});

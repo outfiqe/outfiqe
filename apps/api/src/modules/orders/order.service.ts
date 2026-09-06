@@ -31,8 +31,7 @@ import {
 import { cartRepository } from "#modules/cart/cart.repository.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
 import { couponRepository } from "#modules/coupons/coupon.repository.js";
-import { couponService } from "#modules/coupons/coupon.service.js";
-import type { CouponLine } from "#modules/coupons/coupon.types.js";
+import { buildCouponLinesForPricedLines, couponService } from "#modules/coupons/coupon.service.js";
 import { creatorLinkRepository } from "#modules/creator-links/creatorLink.repository.js";
 import { deliveryZoneService } from "#modules/delivery-zones/deliveryZone.service.js";
 import {
@@ -111,39 +110,13 @@ const buildOrderConfirmationEmail = (userEmail: string, order: OrderView): void 
   });
 };
 
-const buildCouponLinesForPricedLines = async (
-  pricedLines: {
-    productId: string;
-    brandId: string;
-    unitPrice: number;
-    qty: number;
-    brandDiscountAmount: number;
-  }[],
-): Promise<CouponLine[]> => {
-  const eligibilityAttributesByProductId = await productRepository.findEligibilityAttributesByIds([
-    ...new Set(pricedLines.map((line) => line.productId)),
-  ]);
-
-  return pricedLines.map((line, index) => {
-    const attributes = eligibilityAttributesByProductId.get(line.productId);
-    return {
-      lineId: String(index),
-      productId: line.productId,
-      brandId: line.brandId,
-      productTypeId: attributes?.productTypeId ?? "",
-      categoryIds: attributes?.categoryIds ?? [],
-      eligibleAmount: line.unitPrice * line.qty,
-      hasBrandDiscount: line.brandDiscountAmount > 0,
-    };
-  });
-};
-
 const checkoutOnce = async (
   userId: string,
   userEmail: string,
   body: CheckoutBody,
 ): Promise<OrderView> => {
-  const { fullName, phone, address, city, landmark, paymentMethod, sessionId, buyNow } = body;
+  const { fullName, phone, address, city, landmark, paymentMethod, sessionId, buyNow, couponCode } =
+    body;
 
   if (sessionId) await creatorLinkRepository.bridgeSessionClicks(sessionId, userId);
 
@@ -224,9 +197,9 @@ const checkoutOnce = async (
     };
   });
 
-  const couponCode = buyNow ? undefined : (appliedCouponCode ?? undefined);
-  const couponResolution = couponCode
-    ? await couponService.resolveForContext(couponCode, {
+  const resolvedCouponCode = buyNow ? couponCode : (appliedCouponCode ?? undefined);
+  const couponResolution = resolvedCouponCode
+    ? await couponService.resolveForContext(resolvedCouponCode, {
         userId,
         paymentMethod,
         lines: await buildCouponLinesForPricedLines(pricedLinesWithoutCoupon),

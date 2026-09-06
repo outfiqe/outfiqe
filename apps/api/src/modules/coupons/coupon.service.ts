@@ -1,7 +1,12 @@
 import { DomainEvents, eventBus } from "#events/event-bus.js";
-import { PaymentMethod } from "#generated/prisma/enums.js";
+import { PaymentMethod, ProductStatus } from "#generated/prisma/enums.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import {
+  resolveBrandFundedUnitPrice,
+  toActiveBrandDiscount,
+} from "#modules/discounts/discount.utils.js";
+import { productRepository } from "#modules/products/product.repository.js";
 
 import {
   COUPON_BUDGET_AUTO_PAUSE_THRESHOLD_PERCENT,
@@ -12,6 +17,7 @@ import { couponRepository } from "./coupon.repository.js";
 import type {
   CreateCouponBody,
   ListCouponsQuery,
+  PreviewBuyNowCouponBody,
   RedemptionSearchQuery,
   UpdateCouponBudgetBody,
   UpdateCouponStatusBody,
@@ -38,6 +44,33 @@ const NOT_FOUND_STATUS = 404;
 const MS_PER_HOUR = 60 * 60 * 1000;
 const BAD_REQUEST_STATUS = 400;
 const CONFLICT_STATUS = 409;
+
+export const buildCouponLinesForPricedLines = async (
+  pricedLines: {
+    productId: string;
+    brandId: string;
+    unitPrice: number;
+    qty: number;
+    brandDiscountAmount: number;
+  }[],
+): Promise<CouponLine[]> => {
+  const eligibilityAttributesByProductId = await productRepository.findEligibilityAttributesByIds([
+    ...new Set(pricedLines.map((line) => line.productId)),
+  ]);
+
+  return pricedLines.map((line, index) => {
+    const attributes = eligibilityAttributesByProductId.get(line.productId);
+    return {
+      lineId: String(index),
+      productId: line.productId,
+      brandId: line.brandId,
+      productTypeId: attributes?.productTypeId ?? "",
+      categoryIds: attributes?.categoryIds ?? [],
+      eligibleAmount: line.unitPrice * line.qty,
+      hasBrandDiscount: line.brandDiscountAmount > 0,
+    };
+  });
+};
 
 const REFUSAL_MESSAGES = {
   COUPON_NOT_FOUND: "We couldn't find that coupon code.",
@@ -122,6 +155,49 @@ export const couponService = {
     }
 
     return { coupon, valuation };
+  },
+
+  async previewForBuyNow(
+    userId: string,
+    body: PreviewBuyNowCouponBody,
+  ): Promise<{ code: string; discountAmount: number; prepaidOnly: boolean }> {
+    const product = await productRepository.findById(body.productId);
+    if (!product || product.status !== ProductStatus.APPROVED || product.deletedAt) {
+      throw new AppError("NOT_FOUND", "This product is no longer available.", NOT_FOUND_STATUS);
+    }
+
+    const activeDiscountsByProductId = await productRepository.findActiveDiscountsByProductIds(
+      [body.productId],
+      new Date(),
+    );
+    const activeDiscount = activeDiscountsByProductId.get(body.productId);
+    const unitPrice = resolveBrandFundedUnitPrice(
+      product.price,
+      toActiveBrandDiscount(activeDiscount),
+    );
+
+    const lines = await buildCouponLinesForPricedLines([
+      {
+        productId: body.productId,
+        brandId: product.brandId,
+        unitPrice,
+        qty: body.qty,
+        brandDiscountAmount: product.price - unitPrice,
+      },
+    ]);
+
+    const { coupon, valuation } = await couponService.resolveForContext(body.code, {
+      userId,
+      paymentMethod: undefined,
+      lines,
+      at: new Date(),
+    });
+
+    return {
+      code: coupon.code,
+      discountAmount: valuation.discountAmount,
+      prepaidOnly: coupon.prepaidOnly,
+    };
   },
 
   async create(adminUserId: string, body: CreateCouponBody): Promise<CouponView> {
