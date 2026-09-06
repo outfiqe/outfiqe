@@ -24,7 +24,7 @@ vi.mock("@/features/auth/context/AuthContext", () => ({
 }));
 
 vi.mock("@/features/delivery-zones", async () => {
-  const actual = await vi.importActual<DeliveryZonesModule>("@/features/delivery-zones");
+  const actual = await vi.importActual<typeof DeliveryZonesModule>("@/features/delivery-zones");
   return {
     ...actual,
     CityAutocomplete: ({
