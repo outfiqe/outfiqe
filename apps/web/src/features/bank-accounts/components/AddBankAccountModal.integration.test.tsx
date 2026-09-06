@@ -59,6 +59,23 @@ describe("AddBankAccountModal", () => {
     expect(await screen.findByText("Account numbers do not match.")).toBeInTheDocument();
   });
 
+  it("shows friendly messages for too-short fields instead of raw schema text", async () => {
+    const user = userEvent.setup();
+    renderModal();
+
+    await user.selectOptions(screen.getByLabelText("Bank"), "bank-1");
+    await user.type(screen.getByLabelText("Account holder name"), "A");
+    await user.type(screen.getByLabelText("Account number"), "123");
+    await user.type(screen.getByLabelText("Confirm account number"), "123");
+    await user.type(screen.getByLabelText("Branch"), "K");
+    await user.click(screen.getByRole("button", { name: "Add bank account" }));
+
+    expect(await screen.findByText("Enter the account holder's name.")).toBeInTheDocument();
+    expect(screen.getByText("Account number must be at least 6 digits.")).toBeInTheDocument();
+    expect(screen.getByText("Enter the branch name.")).toBeInTheDocument();
+    expect(screen.queryByText(/expected string to have/)).not.toBeInTheDocument();
+  });
+
   it("adds the account, warns on a name mismatch, and closes", async () => {
     mswServer.use(
       http.post("/api/bank-accounts", () =>

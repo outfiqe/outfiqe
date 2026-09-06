@@ -222,11 +222,13 @@ export const notificationRepository = {
 
   async findLookSnapshot(
     lookId: string,
-  ): Promise<{ imageUrl: string; caption: string | null } | null> {
-    return prisma.creatorLook.findUnique({
+  ): Promise<{ imageUrl: string; caption: string | null; ownerHandle: string } | null> {
+    const look = await prisma.creatorLook.findUnique({
       where: { id: lookId },
-      select: { imageUrl: true, caption: true },
+      select: { imageUrl: true, caption: true, creator: { select: { handle: true } } },
     });
+    if (!look) return null;
+    return { imageUrl: look.imageUrl, caption: look.caption, ownerHandle: look.creator.handle };
   },
 
   async findBrandMemberIds(brandId: string): Promise<string[]> {

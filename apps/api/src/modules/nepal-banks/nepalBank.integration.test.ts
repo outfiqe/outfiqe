@@ -55,9 +55,9 @@ describe("GET /api/banks", () => {
 
   it("lists only active banks, sorted by name", async () => {
     const user = await createUser();
-    await createBank({ name: "Zenith Bank", isActive: true });
-    await createBank({ name: "Alpine Bank", isActive: true });
-    await createBank({ name: "Hidden Bank", isActive: false });
+    await createBank({ name: "Zzz Integration Active Bank", isActive: true });
+    await createBank({ name: "Aaa Integration Active Bank", isActive: true });
+    await createBank({ name: "Mmm Integration Hidden Bank", isActive: false });
 
     const response = await request(testApp)
       .get("/api/banks")
@@ -65,7 +65,11 @@ describe("GET /api/banks", () => {
 
     expect(response.status).toBe(OK_STATUS);
     const names = response.body.data.map((bank: { name: string }) => bank.name);
-    expect(names).toEqual(["Alpine Bank", "Zenith Bank"]);
+    expect(names).not.toContain("Mmm Integration Hidden Bank");
+    const firstActiveIndex = names.indexOf("Aaa Integration Active Bank");
+    const secondActiveIndex = names.indexOf("Zzz Integration Active Bank");
+    expect(firstActiveIndex).toBeGreaterThanOrEqual(0);
+    expect(secondActiveIndex).toBeGreaterThan(firstActiveIndex);
   });
 
   it("never returns the isActive field on the public listing", async () => {

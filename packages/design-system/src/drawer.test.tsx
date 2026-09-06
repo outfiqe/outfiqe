@@ -53,6 +53,18 @@ describe("Drawer", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it("dims the mobile backdrop with a plain scrim and no blur", () => {
+    render(
+      <Drawer open onClose={vi.fn()} title="Messages">
+        Body
+      </Drawer>,
+    );
+
+    const backdrop = screen.getByTestId("drawer-backdrop");
+    expect(backdrop).toHaveClass("bg-black/55");
+    expect(backdrop).not.toHaveClass("backdrop-blur-[2px]");
+  });
+
   it("closes on Escape", () => {
     const onClose = vi.fn();
     render(

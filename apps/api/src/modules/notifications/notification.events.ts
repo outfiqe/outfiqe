@@ -109,7 +109,12 @@ export const registerNotificationEventConsumers = (): void => {
         type: NotificationType.COMMENT_REPLIED,
         entityType: NotificationEntityType.LOOK,
         entityId: lookId,
-        metadata: { actor, lookImageUrl: look?.imageUrl, lookCaption: look?.caption ?? null },
+        metadata: {
+          actor,
+          lookImageUrl: look?.imageUrl,
+          lookCaption: look?.caption ?? null,
+          lookOwnerHandle: look?.ownerHandle,
+        },
       });
     },
   });

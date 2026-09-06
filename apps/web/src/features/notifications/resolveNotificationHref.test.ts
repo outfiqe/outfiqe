@@ -23,7 +23,7 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
 });
 
 describe("resolveNotificationHref", () => {
-  it("deep-links look likes, comments, and comment replies to the exact post on the owner's profile", () => {
+  it("deep-links likes and comments on your own look to that post on your profile", () => {
     const liked = buildNotification({ type: "LOOK_LIKED", entityId: "look-1" });
     expect(resolveNotificationHref(liked, OWN_HANDLE)).toBe(`/creator/${OWN_HANDLE}?look=look-1`);
 
@@ -31,9 +31,29 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(commented, OWN_HANDLE)).toBe(
       `/creator/${OWN_HANDLE}?look=look-2`,
     );
+  });
 
+  it("deep-links a comment reply to the post on the look owner's profile, not the viewer's", () => {
+    const replied = buildNotification({
+      type: "COMMENT_REPLIED",
+      entityId: "look-3",
+      metadata: { lookOwnerHandle: "munkhatiwada" },
+    });
+    expect(resolveNotificationHref(replied, OWN_HANDLE)).toBe("/creator/munkhatiwada?look=look-3");
+  });
+
+  it("falls back to the replier's handle for a comment reply with no stored look owner", () => {
+    const replied = buildNotification({
+      type: "COMMENT_REPLIED",
+      entityId: "look-3",
+      metadata: { actor: { id: "a1", name: "Mun", handle: "mun", avatarUrl: null } },
+    });
+    expect(resolveNotificationHref(replied, OWN_HANDLE)).toBe("/creator/mun?look=look-3");
+  });
+
+  it("leaves a comment reply unclickable when no creator handle is available at all", () => {
     const replied = buildNotification({ type: "COMMENT_REPLIED", entityId: "look-3" });
-    expect(resolveNotificationHref(replied, OWN_HANDLE)).toBe(`/creator/${OWN_HANDLE}?look=look-3`);
+    expect(resolveNotificationHref(replied, OWN_HANDLE)).toBeNull();
   });
 
   it("falls back to the dashboard profile when the own handle or entityId is missing", () => {

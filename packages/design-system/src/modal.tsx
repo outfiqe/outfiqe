@@ -12,7 +12,7 @@ const SHEET_DISMISS_HINT = "Swipe down, tap outside, or press Escape to close.";
 const UNTITLED_DIALOG_LABEL = "Dialog";
 
 const CLOSE_BUTTON_CLASSES =
-  "absolute right-3 z-10 flex size-8 cursor-pointer items-center justify-center rounded-full border border-border/70 bg-background/85 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-muted";
+  "absolute right-3 z-10 flex size-8 cursor-pointer items-center justify-center rounded-full border border-border/70 bg-background/95 text-foreground shadow-sm transition-colors hover:bg-muted";
 
 const SCROLL_AREA_CLASSES = cn(
   "[scrollbar-width:thin] [scrollbar-color:var(--color-border)_transparent]",
@@ -48,7 +48,7 @@ const ModalSheet = ({
   return (
     <VaulDrawer.Root open={open} onOpenChange={handleOpenChange}>
       <VaulDrawer.Portal>
-        <VaulDrawer.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
+        <VaulDrawer.Overlay className="fixed inset-0 z-50 bg-black/60" />
 
         <VaulDrawer.Content
           aria-label={title ? undefined : ariaLabel}
@@ -138,7 +138,7 @@ const ModalDialog = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:px-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:px-4"
       onClick={onClose}
     >
       <div

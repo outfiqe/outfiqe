@@ -12,6 +12,7 @@ export type NotificationMetadata = {
   recentActors?: NotificationActorSnapshot[];
   lookImageUrl?: string;
   lookCaption?: string | null;
+  lookOwnerHandle?: string;
   badgeName?: string;
   badgeIcon?: string;
   xpReward?: number;

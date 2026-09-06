@@ -120,6 +120,7 @@ export default defineConfig({
         "src/shared/lib/chatApi.ts",
         "src/features/messaging/ConversationList.tsx",
         "src/features/messaging/MessageThread.tsx",
+        "src/features/messaging/MessagesPageLayout.tsx",
         "src/shared/seo/jsonLd.tsx",
         "src/shared/seo/metadata.ts",
         "src/shared/seo/routes.ts",
