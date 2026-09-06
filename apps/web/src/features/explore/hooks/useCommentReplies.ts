@@ -2,6 +2,7 @@
 
 import { toast } from "@outfiqe/design-system";
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
+import { generateUuid } from "@outfiqe/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -33,7 +34,7 @@ export const useCommentReplies = (lookId: string, commentId: string, enabled: bo
     const body = draft.trim();
     if (!body || !currentUser) return;
 
-    const tempId = `temp-${crypto.randomUUID()}`;
+    const tempId = `temp-${generateUuid()}`;
     const optimisticReply: FeedCommentReply = {
       id: tempId,
       parentCommentId: commentId,

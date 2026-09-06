@@ -11,6 +11,7 @@ import {
   Input,
 } from "@outfiqe/design-system";
 import { toast } from "@outfiqe/design-system";
+import { generateUuid } from "@outfiqe/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -75,7 +76,7 @@ export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps
     try {
       const order = await checkout.mutateAsync({
         input: values,
-        idempotencyKey: crypto.randomUUID(),
+        idempotencyKey: generateUuid(),
         buyNow: buyNow
           ? { productId: buyNow.productId, sizeId: buyNow.sizeId, qty: buyNow.qty }
           : undefined,
@@ -92,6 +93,7 @@ export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps
       const result = await initiatePayment.mutateAsync(order.id);
       redirectToPaymentGateway(result);
     } catch (error) {
+      console.error("Checkout failed:", error);
       toast.error(getErrorMessage(error));
     }
   });

@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "@outfiqe/design-system";
+import { generateUuid } from "@outfiqe/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
@@ -89,7 +90,7 @@ export const useLookComments = (lookId: string, isOpen: boolean) => {
     const body = draft.trim();
     if (!body || !currentUser) return;
 
-    const tempId = `temp-${crypto.randomUUID()}`;
+    const tempId = `temp-${generateUuid()}`;
     const optimisticComment: FeedComment = {
       id: tempId,
       userId: currentUser.id,
