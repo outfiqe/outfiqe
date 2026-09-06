@@ -7,7 +7,7 @@ import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCart } from "@/features/cart";
-import { resolveZonePreview, useDeliveryZones } from "@/features/delivery-zones";
+import { useDeliveryZones } from "@/features/delivery-zones";
 
 import type { BuyNowCouponPreview } from "../api/checkoutApi";
 import { useBuyNowPayload } from "../hooks/useBuyNowPayload";
@@ -55,10 +55,7 @@ export const CheckoutBody = () => {
     );
   }
 
-  const resolvedZone = deliveryZonesQuery.data
-    ? resolveZonePreview(deliveryZonesQuery.data, isBuyNow ? "" : (cartQuery.data?.city ?? ""))
-    : undefined;
-  const codHandlingFee = resolvedZone?.codHandlingFee ?? 0;
+  const zones = deliveryZonesQuery.data ?? [];
 
   if (isBuyNow) {
     if (!buyNow.payload) {
@@ -77,8 +74,8 @@ export const CheckoutBody = () => {
     return (
       <div className="py-6">
         <CheckoutForm
-          cart={buildBuyNowCart(buyNow.payload, resolvedZone, buyNowCoupon)}
-          codHandlingFee={codHandlingFee}
+          cart={buildBuyNowCart(buyNow.payload, buyNowCoupon)}
+          zones={zones}
           buyNow={buyNow.payload}
           buyNowCoupon={buyNowCoupon}
           onBuyNowCouponChange={setBuyNowCoupon}
@@ -102,7 +99,7 @@ export const CheckoutBody = () => {
 
   return (
     <div className="py-6">
-      <CheckoutForm cart={cart} codHandlingFee={codHandlingFee} />
+      <CheckoutForm cart={cart} zones={zones} />
     </div>
   );
 };

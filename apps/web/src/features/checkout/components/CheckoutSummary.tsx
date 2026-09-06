@@ -9,6 +9,7 @@ import { PaymentMethod, type PaymentMethodValue } from "../api/checkoutSchemas";
 
 type CheckoutSummaryProps = {
   cart: Cart;
+  deliveryFee: number;
   paymentMethod: PaymentMethodValue;
   codHandlingFee: number;
   isSubmitting: boolean;
@@ -18,13 +19,14 @@ type CheckoutSummaryProps = {
 
 export const CheckoutSummary = ({
   cart,
+  deliveryFee,
   paymentMethod,
   codHandlingFee,
   isSubmitting,
   isOnline,
   couponSlot,
 }: CheckoutSummaryProps) => {
-  const { subtotal, deliveryFee, platformDiscountTotal, appliedCoupon } = cart;
+  const { subtotal, platformDiscountTotal, appliedCoupon } = cart;
   const codFee = paymentMethod === PaymentMethod.COD ? codHandlingFee : 0;
   const total = subtotal - platformDiscountTotal + deliveryFee + codFee;
 

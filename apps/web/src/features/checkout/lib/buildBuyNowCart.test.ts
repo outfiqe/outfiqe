@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import type { DeliveryZone } from "@/features/delivery-zones";
-
 import { buildBuyNowCart } from "./buildBuyNowCart";
 import type { BuyNowPayload } from "./buyNowStorage";
 
@@ -16,19 +14,18 @@ const PAYLOAD: BuyNowPayload = {
   unitPrice: 2_000,
 };
 
-const ZONE = { standardDeliveryFee: 100, freeDeliveryThreshold: 100_000 } as DeliveryZone;
-
 describe("buildBuyNowCart", () => {
   it("has no discount when no coupon is applied", () => {
-    const cart = buildBuyNowCart(PAYLOAD, ZONE);
+    const cart = buildBuyNowCart(PAYLOAD);
 
+    expect(cart.subtotal).toBe(2_000);
     expect(cart.platformDiscountTotal).toBe(0);
     expect(cart.appliedCoupon).toBeNull();
-    expect(cart.total).toBe(2_000 + 100);
+    expect(cart.total).toBe(2_000);
   });
 
   it("subtracts the coupon's discount from the total", () => {
-    const cart = buildBuyNowCart(PAYLOAD, ZONE, {
+    const cart = buildBuyNowCart(PAYLOAD, {
       code: "WELCOME300",
       discountAmount: 300,
       prepaidOnly: false,
@@ -36,21 +33,13 @@ describe("buildBuyNowCart", () => {
 
     expect(cart.platformDiscountTotal).toBe(300);
     expect(cart.appliedCoupon?.code).toBe("WELCOME300");
-    expect(cart.total).toBe(2_000 - 300 + 100);
+    expect(cart.total).toBe(2_000 - 300);
   });
 
-  it("computes the free-delivery threshold against the pre-coupon subtotal", () => {
-    const bigTicketZone = {
-      standardDeliveryFee: 100,
-      freeDeliveryThreshold: 1_900,
-    } as DeliveryZone;
-    const cart = buildBuyNowCart(PAYLOAD, bigTicketZone, {
-      code: "WELCOME300",
-      discountAmount: 300,
-      prepaidOnly: false,
-    });
+  it("scales the subtotal with quantity", () => {
+    const cart = buildBuyNowCart({ ...PAYLOAD, qty: 3 });
 
-    expect(cart.deliveryFee).toBe(0);
-    expect(cart.total).toBe(2_000 - 300);
+    expect(cart.subtotal).toBe(6_000);
+    expect(cart.itemCount).toBe(3);
   });
 });

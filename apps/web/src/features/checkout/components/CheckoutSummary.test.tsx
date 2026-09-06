@@ -21,6 +21,7 @@ describe("CheckoutSummary", () => {
     render(
       <CheckoutSummary
         cart={aCart()}
+        deliveryFee={100}
         paymentMethod={PaymentMethod.COD}
         codHandlingFee={50}
         isSubmitting={false}
@@ -36,6 +37,7 @@ describe("CheckoutSummary", () => {
     render(
       <CheckoutSummary
         cart={aCart()}
+        deliveryFee={100}
         paymentMethod={PaymentMethod.COD}
         codHandlingFee={50}
         isSubmitting={false}
@@ -51,6 +53,7 @@ describe("CheckoutSummary", () => {
     render(
       <CheckoutSummary
         cart={aCart()}
+        deliveryFee={100}
         paymentMethod={PaymentMethod.ESEWA}
         codHandlingFee={50}
         isSubmitting={true}
@@ -68,6 +71,7 @@ describe("CheckoutSummary", () => {
           platformDiscountTotal: 300,
           appliedCoupon: { code: "WELCOME300", discountAmount: 300, prepaidOnly: false },
         })}
+        deliveryFee={100}
         paymentMethod={PaymentMethod.COD}
         codHandlingFee={50}
         isSubmitting={false}

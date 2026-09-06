@@ -14,12 +14,12 @@ import { toast } from "@outfiqe/design-system";
 import { generateUuid } from "@outfiqe/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { type Cart, CART_QUERY_KEY } from "@/features/cart";
-import { CityAutocomplete } from "@/features/delivery-zones";
+import { CityAutocomplete, type DeliveryZone, resolveZonePreview } from "@/features/delivery-zones";
 import { redirectToPaymentGateway, useInitiatePayment } from "@/features/payments";
 import { useIsOnline } from "@/features/pwa";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
@@ -35,7 +35,7 @@ import { PaymentMethodField } from "./PaymentMethodField";
 
 type CheckoutFormProps = {
   cart: Cart;
-  codHandlingFee: number;
+  zones: DeliveryZone[];
   buyNow?: BuyNowPayload;
   buyNowCoupon?: BuyNowCouponPreview | null;
   onBuyNowCouponChange?: (coupon: BuyNowCouponPreview | null) => void;
@@ -43,7 +43,7 @@ type CheckoutFormProps = {
 
 export const CheckoutForm = ({
   cart,
-  codHandlingFee,
+  zones,
   buyNow,
   buyNowCoupon = null,
   onBuyNowCouponChange,
@@ -69,7 +69,15 @@ export const CheckoutForm = ({
   });
 
   const paymentMethod = form.watch("paymentMethod");
+  const city = form.watch("city");
   const codRequiresPrepaid = cart.appliedCoupon?.prepaidOnly ?? false;
+
+  const resolvedZone = useMemo(() => resolveZonePreview(zones, city), [zones, city]);
+  const deliveryFee =
+    resolvedZone && cart.subtotal < resolvedZone.freeDeliveryThreshold
+      ? resolvedZone.standardDeliveryFee
+      : 0;
+  const codHandlingFee = resolvedZone?.codHandlingFee ?? 0;
 
   useEffect(() => {
     if (codRequiresPrepaid && paymentMethod === PaymentMethod.COD) {
@@ -217,6 +225,7 @@ export const CheckoutForm = ({
         <div className="lg:sticky lg:top-24 lg:self-start">
           <CheckoutSummary
             cart={cart}
+            deliveryFee={deliveryFee}
             paymentMethod={paymentMethod}
             codHandlingFee={codHandlingFee}
             isSubmitting={checkout.isPending || initiatePayment.isPending}
