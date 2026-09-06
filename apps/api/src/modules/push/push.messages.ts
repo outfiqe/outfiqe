@@ -19,6 +19,14 @@ const withOthers = (payload: NotificationBroadcastPayload, singular: string): st
     ? `${payload.actorCount} people ${singular}`
     : `Someone ${singular}`;
 
+const couponCodeFrom = (payload: NotificationBroadcastPayload): string =>
+  typeof payload.metadata.couponCode === "string" ? payload.metadata.couponCode : "A coupon";
+
+const thresholdPercentFrom = (payload: NotificationBroadcastPayload): string =>
+  typeof payload.metadata.thresholdPercent === "number"
+    ? String(payload.metadata.thresholdPercent)
+    : "its";
+
 const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
   [NotificationType.LOOK_LIKED]: {
     title: "New like",
@@ -107,6 +115,19 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
   [NotificationType.SUPPORT_TICKET_RESOLVED]: {
     title: "Support ticket resolved",
     body: () => "Your support ticket was marked resolved",
+  },
+  [NotificationType.COUPON_APPROVAL_REQUESTED]: {
+    title: "Coupon needs approval",
+    body: (payload) => `${couponCodeFrom(payload)} is waiting on your sign-off`,
+  },
+  [NotificationType.COUPON_BUDGET_ALERT]: {
+    title: "Coupon budget alert",
+    body: (payload) =>
+      `${couponCodeFrom(payload)} has reached ${thresholdPercentFrom(payload)}% of budget`,
+  },
+  [NotificationType.COUPON_REDEMPTION_FLAGGED]: {
+    title: "Coupon redemption flagged",
+    body: () => "A coupon redemption was flagged for review",
   },
 };
 

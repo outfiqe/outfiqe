@@ -1,8 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
 import { PlatformOverviewPage } from "./PlatformOverviewPage";
@@ -40,9 +45,18 @@ const ROLLUP = {
   },
 };
 
-const wrapper = ({ children }: { children: ReactNode }) => {
+const renderPage = () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  const rootRoute = createRootRoute({ component: PlatformOverviewPage });
+  const router = createRouter({
+    routeTree: rootRoute,
+    history: createMemoryHistory({ initialEntries: ["/"] }),
+  });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
 };
 
 describe("PlatformOverviewPage", () => {
@@ -53,7 +67,7 @@ describe("PlatformOverviewPage", () => {
       http.get(ROLLUP_URL, () => HttpResponse.json({ success: true, data: ROLLUP })),
     );
 
-    render(<PlatformOverviewPage />, { wrapper });
+    renderPage();
 
     expect(await screen.findByText("Tenants")).toBeInTheDocument();
     expect(screen.getByText("1,200")).toBeInTheDocument();
@@ -66,6 +80,33 @@ describe("PlatformOverviewPage", () => {
     expect(screen.getByText("Needs review")).toBeInTheDocument();
   });
 
+  it("shows quick-access shortcuts to the most-used admin pages", async () => {
+    mswServer.use(
+      http.get(OVERVIEW_URL, () => HttpResponse.json({ success: true, data: OVERVIEW })),
+      http.get(TREND_URL, () => HttpResponse.json({ success: true, data: TREND })),
+      http.get(ROLLUP_URL, () => HttpResponse.json({ success: true, data: ROLLUP })),
+    );
+
+    renderPage();
+
+    expect(await screen.findByText("Tenants")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Orders" })).toHaveAttribute("href", "/orders");
+    expect(screen.getByRole("link", { name: "Products" })).toHaveAttribute("href", "/products");
+    expect(screen.getByRole("link", { name: "Brand applications" })).toHaveAttribute(
+      "href",
+      "/platform/brand-applications",
+    );
+    expect(screen.getByRole("link", { name: "Coupons" })).toHaveAttribute("href", "/coupons");
+    expect(screen.getByRole("link", { name: "Withdrawal requests" })).toHaveAttribute(
+      "href",
+      "/withdraw-requests",
+    );
+    expect(screen.getByRole("link", { name: "Support requests" })).toHaveAttribute(
+      "href",
+      "/support",
+    );
+  });
+
   it("shows the chart empty state until the snapshot has enough history", async () => {
     mswServer.use(
       http.get(OVERVIEW_URL, () => HttpResponse.json({ success: true, data: OVERVIEW })),
@@ -73,7 +114,7 @@ describe("PlatformOverviewPage", () => {
       http.get(ROLLUP_URL, () => HttpResponse.json({ success: true, data: ROLLUP })),
     );
 
-    render(<PlatformOverviewPage />, { wrapper });
+    renderPage();
 
     expect(
       await screen.findByText(/the daily snapshot builds this trend over time/i),
@@ -93,7 +134,7 @@ describe("PlatformOverviewPage", () => {
       ),
     );
 
-    render(<PlatformOverviewPage />, { wrapper });
+    renderPage();
 
     expect(await screen.findByText("Tenants")).toBeInTheDocument();
     expect(
@@ -114,7 +155,7 @@ describe("PlatformOverviewPage", () => {
       http.get(ROLLUP_URL, () => HttpResponse.json({ success: true, data: ROLLUP })),
     );
 
-    render(<PlatformOverviewPage />, { wrapper });
+    renderPage();
 
     expect(await screen.findByText("Server error")).toBeInTheDocument();
   });

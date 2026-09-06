@@ -109,6 +109,9 @@ export default defineConfig({
         "src/modules/platform-nav-access/**/*.ts",
         "src/modules/admin-invites/adminInvite.utils.ts",
         "src/shared/utils/email.utils.ts",
+        "src/modules/discounts/**/*.ts",
+        "src/modules/products/product.utils.ts",
+        "src/modules/coupons/coupon.utils.ts",
       ],
       thresholds: {
         lines: 80,

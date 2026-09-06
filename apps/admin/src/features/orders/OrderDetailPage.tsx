@@ -2,7 +2,9 @@ import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
 
+import { TextPromptModal } from "@/components/TextPromptModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { ordersApi } from "./api";
@@ -25,6 +27,7 @@ type OrderDetailPageProps = {
 export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
   const queryClient = useQueryClient();
   const { data: order, isLoading, error } = useOrder(orderId);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
@@ -38,14 +41,12 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
 
   const cancel = useMutation({
     mutationFn: (reason: string) => ordersApi.cancel(orderId, reason),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      setIsCancelModalOpen(false);
+    },
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
-
-  const handleCancel = () => {
-    const reason = window.prompt("Reason for cancelling this order:");
-    if (reason) cancel.mutate(reason);
-  };
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (error || !order) return <p className="text-sm text-destructive">Couldn&apos;t load order.</p>;
@@ -114,7 +115,7 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
           </Button>
         )}
         {CANCELLABLE_STATUSES.includes(fulfilmentStatus) && (
-          <Button variant="outline" onClick={handleCancel} disabled={isActing}>
+          <Button variant="outline" onClick={() => setIsCancelModalOpen(true)} disabled={isActing}>
             Cancel order
           </Button>
         )}
@@ -199,6 +200,17 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
           </div>
         </div>
       )}
+
+      <TextPromptModal
+        open={isCancelModalOpen}
+        title="Cancel order"
+        label="Reason for cancelling this order"
+        confirmLabel="Cancel order"
+        pendingLabel="Cancelling…"
+        isPending={cancel.isPending}
+        onConfirm={(reason) => cancel.mutate(reason)}
+        onCancel={() => setIsCancelModalOpen(false)}
+      />
     </div>
   );
 };

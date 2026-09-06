@@ -55,6 +55,25 @@ describe("ProductCard rating display", () => {
   });
 });
 
+describe("ProductCard price display", () => {
+  it("shows a single price with no strikethrough when there is no discount", () => {
+    render(<ProductCard product={buildProduct({ price: 2_000 })} />);
+    expect(screen.getByText("Rs. 2,000")).toBeInTheDocument();
+    expect(screen.queryByText(/OFF/)).not.toBeInTheDocument();
+  });
+
+  it("shows the effective price, a struck-through list price, and a percent badge when discounted", () => {
+    render(
+      <ProductCard
+        product={buildProduct({ price: 2_000, effectivePrice: 1_600, discountPercent: 20 })}
+      />,
+    );
+    expect(screen.getByText("Rs. 1,600")).toBeInTheDocument();
+    expect(screen.getByText("Rs. 2,000")).toBeInTheDocument();
+    expect(screen.getByText("20% OFF")).toBeInTheDocument();
+  });
+});
+
 describe("ProductCard save button", () => {
   it("sends an unauthenticated shopper to login with a redirect back", async () => {
     render(<ProductCard product={buildProduct()} />);

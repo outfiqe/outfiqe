@@ -7,10 +7,18 @@ export type CartItemView = {
   imageUrl: string | null;
   sizeLabel: string;
   unitPrice: number;
+  listUnitPrice: number;
+  discountPercent: number | null;
   qty: number;
   availableStock: number;
   soldOut: boolean;
   lowStock: boolean;
+};
+
+export type AppliedCouponView = {
+  code: string;
+  discountAmount: number;
+  prepaidOnly: boolean;
 };
 
 export type CartView = {
@@ -18,6 +26,8 @@ export type CartView = {
   itemCount: number;
   subtotal: number;
   deliveryFee: number;
+  platformDiscountTotal: number;
   total: number;
   city: string | null;
+  appliedCoupon: AppliedCouponView | null;
 };

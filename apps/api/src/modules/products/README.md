@@ -105,6 +105,72 @@ If `products` grows large enough that a first-time index build becomes a concern
 
 Like `search_products`, the query text goes through `$queryRaw`/`Prisma.sql` bound parameters, not string interpolation — no injection surface, same as the full search path.
 
+## Brand-funded discounts — `ProductDiscount`, effective price, and the discount ceiling
+
+A brand can set, schedule, edit and remove a sale price on its own product, self-serve, no admin
+involvement — `POST/PATCH/DELETE /products/:id/discount`, owned by `product.service.ts`'s
+`setDiscount`/`updateDiscount`/`removeDiscount`. The actual pricing math (what a discount is worth,
+whether it exceeds the ceiling) lives in `../discounts/discount.utils.ts`
+(`resolveBrandFundedUnitPrice`, `isBrandDiscountWithinCeiling`) — this module owns the schema, the
+CRUD, and wiring the result into every product read; it never duplicates the arithmetic.
+
+**At most one active discount per product, enforced by the write path, not a DB constraint.**
+`createDiscount` deactivates any existing `isActive` row for the product and inserts the new one in
+the same transaction. `updateDiscount`/`removeDiscount` operate on "the product's current active
+discount" (`findActiveDiscount`), since the route is `/products/:id/discount`, not
+`/products/:id/discount/:discountId` — there's no discount id in the URL for a brand to target.
+`findActiveDiscountsByProductIds` (the batched read `orders`' checkout uses) still resolves ties by
+most-recently-created if more than one active row is ever found for the same product — a defensive
+fallback for a state the write path shouldn't produce, not the primary mechanism.
+
+**The 70% ceiling is enforced twice, asymmetrically, and that's intentional.** For a `PERCENT`
+discount, `setProductDiscountSchema`/`updateProductDiscountSchema` already bound
+`percentBasisPoints` to `MAX_BRAND_DISCOUNT_BASIS_POINTS` — a percent is price-independent, so the
+schema alone fully enforces the ceiling before the request ever reaches the service, and
+`isBrandDiscountWithinCeiling`'s check is unreachable for that type (verified in
+`product.discount.integration.test.ts` — the same over-ceiling percent value 422s at validation).
+For a `FIXED` discount, `fixedAmount` is just bounded to `[PRICE_MIN, PRICE_MAX]` in the schema
+because the schema has no way to know a specific product's price — whether a given rupee amount is
+"more than 70%" depends on which product it's attached to. That check can only happen in the
+service, against the product row already fetched for the ownership check, which is exactly where
+`setDiscount`/`updateDiscount` call `isBrandDiscountWithinCeiling(product.price, discount)`.
+
+**PATCH merges onto the existing row field-by-field, including a same-request cross-check that
+needs the DB value.** Switching `discountType` mid-edit without also sending the new type's amount
+field would otherwise leave a stale `percentBasisPoints`/`fixedAmount` from the old type sitting on
+the row — `updateDiscount` explicitly nulls out the field that no longer applies when
+`discountType` changes, and requires the new type's amount field to be present (from the request or
+the existing row) before saving. `endsAt > startsAt` is re-validated after merging for the same
+reason: a request that only sends `startsAt` needs it checked against the existing `endsAt`, not
+just against itself.
+
+**Effective price is read via a filtered Prisma `include`, computed at the mapper, never stored.**
+`withActiveDiscount()` (in `product.repository.ts`) is a function, not a static object literal —
+its `startsAt`/`endsAt` window check needs `new Date()` evaluated per request, not frozen at module
+load. It's spread into every public/brand-facing product query (`listPublic`, `listTrending`,
+`listNewArrivals`, `listApprovedByIds`, `findPublicById`, `listByBrandId`, `create`, `update`) —
+deliberately not `listForReview`, the admin moderation queue, which has no customer-facing pricing
+concern. `toPublicProduct`/`toBrandSummary` (`product.utils.ts`) then call
+`resolveBrandFundedUnitPrice` once per row to derive `effectivePrice` (both view types) and
+`discountPercent`/`activeDiscount` (public and brand views respectively) — the same "compute at
+read time from a batched query, never a stored column" shape `totalStock` and the sales-stats
+fields already use in this module, for the same reason: a stored value can drift, a live read
+can't.
+
+**`ProductWithBrand.discounts` is optional, same tolerance this module already accepts for
+`totalStock`.** `collections` and `wishlist` build their own product-shaped objects without a real
+`Product` fetch (see the "Low stock is computed, not stored" section above) and call
+`toPublicProduct` directly; forcing them to also fetch and thread through discount data would push
+a repository concern onto unrelated modules for a rarely-discounted-there surface. Absent
+`discounts`, `toPublicProduct` treats the product as having no active discount — full price, no
+badge — the same graceful-gap behavior already documented for stock and social-proof counts on
+those two callers.
+
+**`brandDiscountAmount`/`listUnitPrice` on `OrderItem` are `orders`' concern, not this module's** —
+see `../orders/README.md` for how checkout resolves each line's discount at the moment of purchase
+and why `BrandPayout.grossAmount` stays computed from the discounted price with zero changes to the
+settlement math itself.
+
 ## `sort` on `GET /products` reuses `listPublic`, not a new endpoint
 
 `listTrending`/`listNewArrivals` (`/products/trending`, `/products/new-arrivals`) are flat, unpaginated top-N reads for the homepage rails — they stayed untouched. When the web app needed real paginated "see more" pages for those rails, the cheaper and more consistent option was to add `sort: "newest" | "trending" | "new-arrivals"` (`PRODUCT_SORT`, shared via `@outfiqe/utils` since the web app needs the same values) to the already-paginated `listPublic`/`GET /products` instead of building separate cursor-paginated endpoints from scratch. `listTrending`'s own query already showed this was viable for `trending`: it's `orderBy: { reviewedAt: "desc" }` with no real popularity score behind it at all, structurally identical to `listPublic`'s default `orderBy: [{ createdAt: "desc" }, { id: "desc" }]` — swapping the sort field and adding the `id` tiebreaker for cursor stability was the only change needed. `new-arrivals` reuses the same default `createdAt desc` ordering as `newest` and only adds `listNewArrivals`'s `createdAt >= now - NEW_ARRIVAL_WINDOW_MS` condition to the `WHERE` clause via the shared `buildPublicWhere` helper — used by both `listPublic` and `countPublic` so the paginated results and the "X pieces from Y brands" count they compute never drift out of sync with each other. `sort` defaults to `"newest"`, so every existing caller of `listPublic`/`GET /products` (category browsing, brand pages) is unaffected.

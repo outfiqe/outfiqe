@@ -2,6 +2,8 @@ import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { ConfirmModal } from "@/components/ConfirmModal";
+import { TextPromptModal } from "@/components/TextPromptModal";
 import { ApiClientError } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -35,6 +37,9 @@ const CROSS_CHECK_CONFIRM_MESSAGE =
 
 export const WithdrawRequestsListSection = () => {
   const [tab, setTab] = useState<WithdrawRequestStatusValue>("PENDING");
+  const [crossCheckTargetId, setCrossCheckTargetId] = useState<string | null>(null);
+  const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
+  const [markPaidTargetId, setMarkPaidTargetId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const {
@@ -57,15 +62,16 @@ export const WithdrawRequestsListSection = () => {
       id: string;
       identityCrossCheckConfirmed?: boolean;
     }) => withdrawRequestsApi.approve(id, identityCrossCheckConfirmed),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      setCrossCheckTargetId(null);
+    },
     onError: (mutationError, variables) => {
       if (
         mutationError instanceof ApiClientError &&
         mutationError.code === "IDENTITY_CROSS_CHECK_REQUIRED"
       ) {
-        if (window.confirm(CROSS_CHECK_CONFIRM_MESSAGE)) {
-          approve.mutate({ id: variables.id, identityCrossCheckConfirmed: true });
-        }
+        setCrossCheckTargetId(variables.id);
         return;
       }
       toast.error(getErrorMessage(mutationError));
@@ -75,28 +81,24 @@ export const WithdrawRequestsListSection = () => {
   const reject = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       withdrawRequestsApi.reject(id, reason),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      setRejectTargetId(null);
+    },
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const markPaid = useMutation({
     mutationFn: ({ id, referenceNote }: { id: string; referenceNote: string }) =>
       withdrawRequestsApi.markPaid(id, referenceNote),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      setMarkPaidTargetId(null);
+    },
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const isActing = approve.isPending || reject.isPending || markPaid.isPending;
-
-  const handleReject = (id: string) => {
-    const reason = window.prompt("Reason for rejecting this request:");
-    if (reason) reject.mutate({ id, reason });
-  };
-
-  const handleMarkPaid = (id: string) => {
-    const referenceNote = window.prompt("Payment reference (transaction id, note):");
-    if (referenceNote) markPaid.mutate({ id, referenceNote });
-  };
 
   return (
     <div>
@@ -180,7 +182,7 @@ export const WithdrawRequestsListSection = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleReject(id)}
+                      onClick={() => setRejectTargetId(id)}
                       disabled={isActing}
                     >
                       Reject
@@ -188,7 +190,7 @@ export const WithdrawRequestsListSection = () => {
                   </>
                 )}
                 {status === "APPROVED" && (
-                  <Button size="sm" onClick={() => handleMarkPaid(id)} disabled={isActing}>
+                  <Button size="sm" onClick={() => setMarkPaidTargetId(id)} disabled={isActing}>
                     Mark paid
                   </Button>
                 )}
@@ -208,6 +210,44 @@ export const WithdrawRequestsListSection = () => {
           </Button>
         )}
       </div>
+
+      <ConfirmModal
+        open={crossCheckTargetId !== null}
+        title="Confirm identity cross-check"
+        description={CROSS_CHECK_CONFIRM_MESSAGE}
+        confirmLabel="Confirm and approve"
+        isPending={approve.isPending}
+        onConfirm={() => {
+          if (crossCheckTargetId) {
+            approve.mutate({ id: crossCheckTargetId, identityCrossCheckConfirmed: true });
+          }
+        }}
+        onCancel={() => setCrossCheckTargetId(null)}
+      />
+      <TextPromptModal
+        open={rejectTargetId !== null}
+        title="Reject withdrawal request"
+        label="Reason for rejecting this request"
+        confirmLabel="Reject"
+        pendingLabel="Rejecting…"
+        isPending={reject.isPending}
+        onConfirm={(reason) => {
+          if (rejectTargetId) reject.mutate({ id: rejectTargetId, reason });
+        }}
+        onCancel={() => setRejectTargetId(null)}
+      />
+      <TextPromptModal
+        open={markPaidTargetId !== null}
+        title="Mark withdrawal request paid"
+        label="Payment reference (transaction id, note)"
+        confirmLabel="Mark paid"
+        pendingLabel="Saving…"
+        isPending={markPaid.isPending}
+        onConfirm={(referenceNote) => {
+          if (markPaidTargetId) markPaid.mutate({ id: markPaidTargetId, referenceNote });
+        }}
+        onCancel={() => setMarkPaidTargetId(null)}
+      />
     </div>
   );
 };

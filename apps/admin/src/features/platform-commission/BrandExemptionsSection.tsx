@@ -13,6 +13,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformCommissionApi } from "./api";
@@ -142,6 +143,7 @@ export const BrandExemptionsSection = () => {
 
   const [form, setForm] = useState<ExemptionFormState>(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<BrandCommissionExemption | null>(null);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: EXEMPTIONS_QUERY_KEY });
 
@@ -165,7 +167,10 @@ export const BrandExemptionsSection = () => {
 
   const revoke = useMutation({
     mutationFn: (id: string) => platformCommissionApi.revokeExemption(id),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      setRevokeTarget(null);
+    },
   });
 
   const handleSubmit = (e: FormEvent) => {
@@ -175,12 +180,6 @@ export const BrandExemptionsSection = () => {
       return;
     }
     create.mutate();
-  };
-
-  const handleRevoke = (exemption: BrandCommissionExemption) => {
-    if (window.confirm(`Revoke ${exemption.brandName}'s commission exemption?`)) {
-      revoke.mutate(exemption.id);
-    }
   };
 
   return (
@@ -265,7 +264,7 @@ export const BrandExemptionsSection = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleRevoke(exemption)}
+                  onClick={() => setRevokeTarget(exemption)}
                   disabled={revoke.isPending}
                 >
                   Revoke
@@ -275,6 +274,21 @@ export const BrandExemptionsSection = () => {
           );
         })}
       </div>
+
+      <ConfirmModal
+        open={revokeTarget !== null}
+        title="Revoke commission exemption"
+        description={
+          revokeTarget ? `Revoke ${revokeTarget.brandName}'s commission exemption?` : undefined
+        }
+        confirmLabel="Revoke"
+        destructive
+        isPending={revoke.isPending}
+        onConfirm={() => {
+          if (revokeTarget) revoke.mutate(revokeTarget.id);
+        }}
+        onCancel={() => setRevokeTarget(null)}
+      />
     </div>
   );
 };

@@ -7,6 +7,8 @@ export const toExploreProduct = (product: PublicProduct): ExploreProduct => ({
   brand: product.brand,
   name: product.name,
   price: product.price,
+  effectivePrice: product.effectivePrice,
+  discountPercent: product.discountPercent,
   creatorBuyerCount: product.creatorBuyerCount,
   unitsSold: product.unitsSold,
   categorySlugs: product.categorySlugs,

@@ -1,8 +1,8 @@
+import { BASIS_POINTS_PER_PERCENT } from "#constants/money.constants.js";
 import { BrandPayoutStatus, PlatformFeeType } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
-import { BASIS_POINTS_PER_PERCENT } from "./brandPayout.constants.js";
 import { brandPayoutRepository } from "./brandPayout.repository.js";
 import type {
   CreateBrandCommissionExemptionBody,

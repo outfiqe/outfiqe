@@ -37,6 +37,8 @@ export const productDetailSchema = z
     brand: z.object({ id: z.string(), name: z.string() }),
     name: z.string(),
     price: z.number(),
+    effectivePrice: z.number(),
+    discountPercent: z.number().nullable(),
     type: productTypeSchema,
     categorySlugs: z.array(z.string()),
     imageUrl: z.string().nullable(),

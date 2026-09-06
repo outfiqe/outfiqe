@@ -244,7 +244,10 @@ describe("toBrandPayoutView", () => {
       netAmount: 970,
       status: BrandPayoutStatus.AVAILABLE,
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
-      orderItem: { product: { name: "Jacket", imageUrl: "jacket.png" } },
+      orderItem: {
+        platformDiscountAmount: 0,
+        product: { name: "Jacket", imageUrl: "jacket.png" },
+      },
     });
 
     expect(view).toEqual({
@@ -255,7 +258,25 @@ describe("toBrandPayoutView", () => {
       platformFee: 30,
       netAmount: 970,
       status: BrandPayoutStatus.AVAILABLE,
+      platformFundedDiscountApplied: false,
       createdAt: "2026-01-01T00:00:00.000Z",
     });
+  });
+
+  it("flags the payout as platform-funded when the order item carried a coupon discount", () => {
+    const view = toBrandPayoutView({
+      id: "payout-2",
+      grossAmount: 1_000,
+      platformFee: 30,
+      netAmount: 970,
+      status: BrandPayoutStatus.AVAILABLE,
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      orderItem: {
+        platformDiscountAmount: 150,
+        product: { name: "Jacket", imageUrl: "jacket.png" },
+      },
+    });
+
+    expect(view.platformFundedDiscountApplied).toBe(true);
   });
 });

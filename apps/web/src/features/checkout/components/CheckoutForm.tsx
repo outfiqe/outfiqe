@@ -11,31 +11,43 @@ import {
   Input,
 } from "@outfiqe/design-system";
 import { toast } from "@outfiqe/design-system";
+import { generateUuid } from "@outfiqe/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { type Cart, CART_QUERY_KEY } from "@/features/cart";
-import { CityAutocomplete } from "@/features/delivery-zones";
+import { CityAutocomplete, type DeliveryZone, resolveZonePreview } from "@/features/delivery-zones";
 import { redirectToPaymentGateway, useInitiatePayment } from "@/features/payments";
 import { useIsOnline } from "@/features/pwa";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
+import type { BuyNowCouponPreview } from "../api/checkoutApi";
 import { type CheckoutInput, checkoutInputSchema, PaymentMethod } from "../api/checkoutSchemas";
 import { useCheckout } from "../hooks/useCheckout";
 import type { BuyNowPayload } from "../lib/buyNowStorage";
 import { clearBuyNowPayload } from "../lib/buyNowStorage";
+import { BuyNowCouponForm } from "./BuyNowCouponForm";
 import { CheckoutSummary } from "./CheckoutSummary";
 import { PaymentMethodField } from "./PaymentMethodField";
 
 type CheckoutFormProps = {
   cart: Cart;
-  codHandlingFee: number;
+  zones: DeliveryZone[];
   buyNow?: BuyNowPayload;
+  buyNowCoupon?: BuyNowCouponPreview | null;
+  onBuyNowCouponChange?: (coupon: BuyNowCouponPreview | null) => void;
 };
 
-export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps) => {
+export const CheckoutForm = ({
+  cart,
+  zones,
+  buyNow,
+  buyNowCoupon = null,
+  onBuyNowCouponChange,
+}: CheckoutFormProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { state } = useAuth();
@@ -57,6 +69,21 @@ export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps
   });
 
   const paymentMethod = form.watch("paymentMethod");
+  const city = form.watch("city");
+  const codRequiresPrepaid = cart.appliedCoupon?.prepaidOnly ?? false;
+
+  const resolvedZone = useMemo(() => resolveZonePreview(zones, city), [zones, city]);
+  const deliveryFee =
+    resolvedZone && cart.subtotal < resolvedZone.freeDeliveryThreshold
+      ? resolvedZone.standardDeliveryFee
+      : 0;
+  const codHandlingFee = resolvedZone?.codHandlingFee ?? 0;
+
+  useEffect(() => {
+    if (codRequiresPrepaid && paymentMethod === PaymentMethod.COD) {
+      form.setValue("paymentMethod", PaymentMethod.ESEWA);
+    }
+  }, [codRequiresPrepaid, paymentMethod, form]);
 
   const onSubmit = form.handleSubmit(async (values) => {
     if (!isOnline) {
@@ -67,10 +94,11 @@ export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps
     try {
       const order = await checkout.mutateAsync({
         input: values,
-        idempotencyKey: crypto.randomUUID(),
+        idempotencyKey: generateUuid(),
         buyNow: buyNow
           ? { productId: buyNow.productId, sizeId: buyNow.sizeId, qty: buyNow.qty }
           : undefined,
+        couponCode: buyNow ? (buyNowCoupon?.code ?? undefined) : undefined,
       });
 
       if (buyNow) clearBuyNowPayload();
@@ -84,6 +112,7 @@ export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps
       const result = await initiatePayment.mutateAsync(order.id);
       redirectToPaymentGateway(result);
     } catch (error) {
+      console.error("Checkout failed:", error);
       toast.error(getErrorMessage(error));
     }
   });
@@ -183,6 +212,7 @@ export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps
             <PaymentMethodField
               value={paymentMethod}
               onChange={(value) => form.setValue("paymentMethod", value)}
+              codRequiresPrepaid={codRequiresPrepaid}
             />
             {paymentMethod === PaymentMethod.COD && (
               <p className="mt-3 text-xs text-muted-foreground">
@@ -195,10 +225,21 @@ export const CheckoutForm = ({ cart, codHandlingFee, buyNow }: CheckoutFormProps
         <div className="lg:sticky lg:top-24 lg:self-start">
           <CheckoutSummary
             cart={cart}
+            deliveryFee={deliveryFee}
             paymentMethod={paymentMethod}
             codHandlingFee={codHandlingFee}
             isSubmitting={checkout.isPending || initiatePayment.isPending}
             isOnline={isOnline}
+            couponSlot={
+              buyNow && onBuyNowCouponChange ? (
+                <BuyNowCouponForm
+                  line={{ productId: buyNow.productId, sizeId: buyNow.sizeId, qty: buyNow.qty }}
+                  appliedCoupon={buyNowCoupon}
+                  onApplied={onBuyNowCouponChange}
+                  onRemoved={() => onBuyNowCouponChange(null)}
+                />
+              ) : undefined
+            }
           />
         </div>
       </form>
