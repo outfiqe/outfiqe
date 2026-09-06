@@ -1,5 +1,15 @@
 import { ChartCard, FormBanner, Skeleton, StatCard, TrendChart } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
+import { Link, type LinkProps } from "@tanstack/react-router";
+import {
+  BanknoteArrowUp,
+  ClipboardList,
+  LifeBuoy,
+  type LucideIcon,
+  Package,
+  ShoppingBag,
+  TicketPercent,
+} from "lucide-react";
 
 import { financialRollupApi } from "@/features/financial-rollup/api";
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -13,6 +23,39 @@ const ROLLUP_KEY = ["platform-metrics-rollup-gap"];
 const KPI_CARD_COUNT = 6;
 const MIN_TREND_POINTS = 2;
 const HEALTHY_GAP_RATIO = 0.02;
+
+type QuickAccessShortcut = {
+  readonly to: LinkProps["to"];
+  readonly label: string;
+  readonly icon: LucideIcon;
+};
+
+const QUICK_ACCESS_SHORTCUTS: QuickAccessShortcut[] = [
+  { to: "/orders", label: "Orders", icon: ShoppingBag },
+  { to: "/products", label: "Products", icon: Package },
+  { to: "/platform/brand-applications", label: "Brand applications", icon: ClipboardList },
+  { to: "/coupons", label: "Coupons", icon: TicketPercent },
+  { to: "/withdraw-requests", label: "Withdrawal requests", icon: BanknoteArrowUp },
+  { to: "/support", label: "Support requests", icon: LifeBuoy },
+];
+
+const QuickAccessShortcuts = () => (
+  <section>
+    <h2 className="font-display text-lg font-bold text-foreground">Quick access</h2>
+    <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {QUICK_ACCESS_SHORTCUTS.map(({ to, label, icon: Icon }) => (
+        <Link
+          key={label}
+          to={to}
+          className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center transition-colors hover:border-foreground"
+        >
+          <Icon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="text-sm font-medium text-foreground">{label}</span>
+        </Link>
+      ))}
+    </div>
+  </section>
+);
 
 const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
 
@@ -124,6 +167,8 @@ export const PlatformOverviewPage = () => {
         ) : (
           <>
             <OverviewKpiRow overview={overview.data} />
+
+            <QuickAccessShortcuts />
 
             <ChartCard
               title="Activity"
