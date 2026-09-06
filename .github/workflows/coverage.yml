@@ -1,0 +1,103 @@
+name: Coverage gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".gitignore"
+      - ".gitattributes"
+
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  API_URL: ${{ vars.CI_API_URL }}
+  SITE_URL: ${{ vars.CI_SITE_URL }}
+  VITE_WEB_URL: ${{ vars.CI_SITE_URL }}
+  NEXT_PUBLIC_ADMIN_URL: ${{ vars.CI_ADMIN_URL }}
+  NEXT_PUBLIC_APP_ENV: ${{ vars.CI_PUBLIC_APP_ENV }}
+  VITE_APP_ENV: ${{ vars.CI_PUBLIC_APP_ENV }}
+
+  APP_ENV: ${{ vars.CI_APP_ENV }}
+  PROCESS_ROLE: ${{ vars.CI_PROCESS_ROLE }}
+  PORT: ${{ vars.CI_PORT }}
+  DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+  DATABASE_POOL_MAX: ${{ vars.CI_DATABASE_POOL_MAX }}
+  JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
+  JWT_ACCESS_TTL: ${{ vars.CI_JWT_ACCESS_TTL }}
+  JWT_REFRESH_TTL: ${{ vars.CI_JWT_REFRESH_TTL }}
+  MAIL_FROM: ${{ vars.CI_MAIL_FROM }}
+  OPS_NOTIFICATION_EMAIL: ${{ vars.CI_OPS_NOTIFICATION_EMAIL }}
+  FRONTEND_URL: ${{ vars.CI_FRONTEND_URL }}
+  ADMIN_URL: ${{ vars.CI_API_ADMIN_URL }}
+  ALLOWED_ORIGINS: ${{ vars.CI_ALLOWED_ORIGINS }}
+  TENANT_BASE_DOMAIN: ${{ vars.CI_TENANT_BASE_DOMAIN }}
+  API_PUBLIC_URL: ${{ vars.CI_API_PUBLIC_URL }}
+  OAUTH_REDIRECT_BASE_URL: ${{ vars.CI_OAUTH_REDIRECT_BASE_URL }}
+  STORAGE_DRIVER: ${{ vars.CI_STORAGE_DRIVER }}
+  UPLOADS_DIR: ${{ vars.CI_UPLOADS_DIR }}
+  REDIS_URL: ${{ vars.CI_REDIS_URL }}
+  ESEWA_PRODUCT_CODE: ${{ vars.CI_ESEWA_PRODUCT_CODE }}
+  ESEWA_SECRET_KEY: ${{ secrets.CI_ESEWA_SECRET_KEY }}
+  ESEWA_BASE_URL: ${{ vars.CI_ESEWA_BASE_URL }}
+  ESEWA_STATUS_URL: ${{ vars.CI_ESEWA_STATUS_URL }}
+  KHALTI_BASE_URL: ${{ vars.CI_KHALTI_BASE_URL }}
+  KHALTI_SECRET_KEY: ${{ secrets.CI_KHALTI_SECRET_KEY }}
+  PASSWORD_BREACH_CHECK_ENABLED: ${{ vars.CI_PASSWORD_BREACH_CHECK_ENABLED }}
+  CAPTCHA_ENABLED: ${{ vars.CI_CAPTCHA_ENABLED }}
+  TURNSTILE_SECRET_KEY: ${{ secrets.CI_TURNSTILE_SECRET_KEY }}
+  GOOGLE_CLIENT_ID: ${{ vars.CI_GOOGLE_CLIENT_ID }}
+  GOOGLE_CLIENT_SECRET: ${{ secrets.CI_GOOGLE_CLIENT_SECRET }}
+  FACEBOOK_APP_ID: ${{ vars.CI_FACEBOOK_APP_ID }}
+  FACEBOOK_APP_SECRET: ${{ secrets.CI_FACEBOOK_APP_SECRET }}
+  BANK_ACCOUNT_ENCRYPTION_KEY: ${{ secrets.CI_BANK_ACCOUNT_ENCRYPTION_KEY }}
+
+jobs:
+  coverage:
+    name: Coverage gate
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: outfiqe
+          POSTGRES_PASSWORD: outfiqe
+          POSTGRES_DB: outfiqe_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U outfiqe -d outfiqe_test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+          --tmpfs /var/lib/postgresql/data:rw
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://outfiqe:outfiqe@localhost:5432/outfiqe_test_db
+      REDIS_URL: redis://localhost:6379
+      INTEGRATION_WORKERS: "2"
+      DATABASE_POOL_MAX: "5"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Run full suite with coverage (fails below the 80% thresholds in vitest.config.ts)
+        run: pnpm test:coverage

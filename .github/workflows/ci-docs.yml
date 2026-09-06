@@ -1,0 +1,26 @@
+name: CI docs fast-path
+
+on:
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - "**/*.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".gitignore"
+      - ".gitattributes"
+
+concurrency:
+  group: ci-docs-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Documentation-only change, the full gate is skipped
+        run: echo "Documentation-only pull request — no build or tests to run."

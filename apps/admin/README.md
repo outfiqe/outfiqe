@@ -41,3 +41,20 @@ same-origin default: **leave `VITE_API_URL` unset in production** (or set it to 
 to the bare API origin (`https://api.<domain>`) drops the `/api` path segment the routes are
 mounted under, so every call 404s and the auth gate falls into a redirect loop with the web
 login.
+
+### Which branches Vercel deploys
+
+Vercel is meant to build **only `main`** -- there is no staging site and feature-branch previews
+are not used here. Two settings in `vercel.json` enforce that, and `apps/web/vercel.json` carries
+the same pair:
+
+- `git.deploymentEnabled.dev = false` -- a push to the long-lived `dev` branch creates no Vercel
+  deployment at all, not even a skipped one.
+- `ignoreCommand` -- `test "$VERCEL_GIT_COMMIT_REF" != "main"` exits `0` (Vercel reads that as
+  "skip the build") for every ref that is not `main`, and exits non-zero on `main` so the build
+  runs. This is the catch-all that also covers feature branches, which can't be enumerated in
+  `deploymentEnabled`.
+
+The Vercel project's **Production Branch** should still be `main` in the dashboard so the
+deployment that does run on `main` is treated as production. If the release branch ever changes,
+update the `main` literal in both `vercel.json` files.
