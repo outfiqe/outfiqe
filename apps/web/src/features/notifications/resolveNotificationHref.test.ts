@@ -42,7 +42,16 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(replied, OWN_HANDLE)).toBe("/creator/munkhatiwada?look=look-3");
   });
 
-  it("leaves a comment reply unclickable when the look owner's handle is missing", () => {
+  it("falls back to the replier's handle for a comment reply with no stored look owner", () => {
+    const replied = buildNotification({
+      type: "COMMENT_REPLIED",
+      entityId: "look-3",
+      metadata: { actor: { id: "a1", name: "Mun", handle: "mun", avatarUrl: null } },
+    });
+    expect(resolveNotificationHref(replied, OWN_HANDLE)).toBe("/creator/mun?look=look-3");
+  });
+
+  it("leaves a comment reply unclickable when no creator handle is available at all", () => {
     const replied = buildNotification({ type: "COMMENT_REPLIED", entityId: "look-3" });
     expect(resolveNotificationHref(replied, OWN_HANDLE)).toBeNull();
   });
