@@ -129,7 +129,7 @@ export const DashboardMobileNavBar = () => {
           <VaulDrawer.Overlay
             data-testid="dashboard-menu-backdrop"
             onClick={closeMenu}
-            className="fixed inset-0 z-40 bg-black/45 backdrop-blur-[2px]"
+            className="fixed inset-0 z-40 bg-black/55"
           />
 
           <VaulDrawer.Content

@@ -167,6 +167,17 @@ describe("DashboardMobileNavBar", () => {
     expect(screen.getByTestId("dashboard-menu-backdrop")).toHaveClass("z-40");
   });
 
+  it("dims behind the panel with a plain scrim and no backdrop blur", () => {
+    authenticate();
+    render(<DashboardMobileNavBar />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Open dashboard menu" }));
+
+    const backdrop = screen.getByTestId("dashboard-menu-backdrop");
+    expect(backdrop).toHaveClass("bg-black/55");
+    expect(backdrop).not.toHaveClass("backdrop-blur-[2px]");
+  });
+
   it("opens the customize sheet from the panel and persists a saved selection", () => {
     authenticate();
     render(<DashboardMobileNavBar />);
