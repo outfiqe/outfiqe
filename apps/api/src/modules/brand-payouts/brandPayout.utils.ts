@@ -105,7 +105,10 @@ type BrandPayoutRow = {
   netAmount: number;
   status: BrandPayoutStatus;
   createdAt: Date;
-  orderItem: { product: { name: string; imageUrl: string | null } };
+  orderItem: {
+    platformDiscountAmount: number;
+    product: { name: string; imageUrl: string | null };
+  };
 };
 
 export const toBrandPayoutView = (row: BrandPayoutRow): BrandPayoutView => ({
@@ -116,5 +119,6 @@ export const toBrandPayoutView = (row: BrandPayoutRow): BrandPayoutView => ({
   platformFee: row.platformFee,
   netAmount: row.netAmount,
   status: row.status,
+  platformFundedDiscountApplied: row.orderItem.platformDiscountAmount > 0,
   createdAt: row.createdAt.toISOString(),
 });

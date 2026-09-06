@@ -1,7 +1,11 @@
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import type { CommissionStatus, PaymentTransactionType } from "#generated/prisma/enums.js";
-import { BrandPayoutStatus, PaymentTransactionStatus } from "#generated/prisma/enums.js";
+import {
+  BrandPayoutStatus,
+  CouponRedemptionStatus,
+  PaymentTransactionStatus,
+} from "#generated/prisma/enums.js";
 
 export const financialRollupRepository = {
   async sumOrderTotalsForTransactionType(
@@ -60,5 +64,16 @@ export const financialRollupRepository = {
       _sum: { platformFee: true },
     });
     return result._sum.platformFee ?? 0;
+  },
+
+  async sumCouponSpend(since: Date | null): Promise<number> {
+    const result = await prisma.couponRedemption.aggregate({
+      where: {
+        status: { not: CouponRedemptionStatus.RELEASED },
+        ...(since ? { createdAt: { gte: since } } : {}),
+      },
+      _sum: { platformFundedAmount: true },
+    });
+    return result._sum.platformFundedAmount ?? 0;
   },
 };

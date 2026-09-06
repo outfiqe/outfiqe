@@ -4,8 +4,11 @@ import { CouponEligibilityScopeType, CouponStatus, CouponType } from "#generated
 
 import type { CouponLine, CouponRecord, CouponWithEligibility } from "./coupon.types.js";
 import {
+  computeBudgetUtilizationPercent,
   isCouponWithinWindow,
   lineMatchesEligibility,
+  resolveCouponCreationState,
+  resolveCrossedBudgetThreshold,
   resolveEligibleLines,
   toCouponView,
   valuateCoupon,
@@ -29,6 +32,10 @@ const buildCoupon = (overrides: Partial<CouponRecord> = {}): CouponRecord => ({
   firstOrderOnly: false,
   prepaidOnly: false,
   stacksWithBrandDiscount: true,
+  requiresApproval: false,
+  approvedById: null,
+  approvedAt: null,
+  lastAlertedBudgetThreshold: null,
   createdById: "admin-1",
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
   updatedAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -184,5 +191,82 @@ describe("toCouponView", () => {
     expect(view.startsAt).toBe(coupon.startsAt.toISOString());
     expect(view.endsAt).toBeNull();
     expect(view.eligibility).toEqual(eligibility);
+  });
+
+  it("computes budgetUtilizationPercent from spend against the budget", () => {
+    const coupon = withEligibility(buildCoupon({ totalBudgetAmount: 1_000, spentAmount: 250 }));
+    expect(toCouponView(coupon).budgetUtilizationPercent).toBe(25);
+  });
+
+  it("leaves budgetUtilizationPercent null for an uncapped coupon", () => {
+    const coupon = withEligibility(buildCoupon({ totalBudgetAmount: null, spentAmount: 250 }));
+    expect(toCouponView(coupon).budgetUtilizationPercent).toBeNull();
+  });
+});
+
+describe("computeBudgetUtilizationPercent", () => {
+  it("returns null when there is no budget cap", () => {
+    expect(
+      computeBudgetUtilizationPercent({ spentAmount: 500, totalBudgetAmount: null }),
+    ).toBeNull();
+  });
+
+  it("rounds down to the nearest whole percent", () => {
+    expect(computeBudgetUtilizationPercent({ spentAmount: 333, totalBudgetAmount: 1_000 })).toBe(
+      33,
+    );
+  });
+
+  it("is 100 once spend reaches the budget", () => {
+    expect(computeBudgetUtilizationPercent({ spentAmount: 1_000, totalBudgetAmount: 1_000 })).toBe(
+      100,
+    );
+  });
+});
+
+describe("resolveCouponCreationState", () => {
+  it("starts active and unapproved when there's no budget cap", () => {
+    expect(resolveCouponCreationState(null)).toEqual({
+      status: CouponStatus.ACTIVE,
+      requiresApproval: false,
+    });
+  });
+
+  it("starts active and unapproved at or below the approval threshold", () => {
+    expect(resolveCouponCreationState(50_000)).toEqual({
+      status: CouponStatus.ACTIVE,
+      requiresApproval: false,
+    });
+  });
+
+  it("starts paused and pending approval above the approval threshold", () => {
+    expect(resolveCouponCreationState(50_001)).toEqual({
+      status: CouponStatus.PAUSED,
+      requiresApproval: true,
+    });
+  });
+});
+
+describe("resolveCrossedBudgetThreshold", () => {
+  it("returns null when no new threshold has been crossed", () => {
+    expect(resolveCrossedBudgetThreshold(40, null)).toBeNull();
+    expect(resolveCrossedBudgetThreshold(60, 80)).toBeNull();
+  });
+
+  it("returns the highest threshold newly crossed", () => {
+    expect(resolveCrossedBudgetThreshold(60, null)).toBe(50);
+    expect(resolveCrossedBudgetThreshold(97, null)).toBe(95);
+  });
+
+  it("jumps straight to the highest crossed threshold when spend leaps past several at once", () => {
+    expect(resolveCrossedBudgetThreshold(100, null)).toBe(100);
+  });
+
+  it("doesn't re-cross a threshold that's already been alerted", () => {
+    expect(resolveCrossedBudgetThreshold(55, 50)).toBeNull();
+  });
+
+  it("crosses the next threshold once utilization moves past it", () => {
+    expect(resolveCrossedBudgetThreshold(81, 50)).toBe(80);
   });
 });

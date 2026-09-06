@@ -5,6 +5,10 @@ import {
   computeCouponValue,
 } from "#modules/discounts/discount.utils.js";
 
+import {
+  COUPON_APPROVAL_BUDGET_THRESHOLD,
+  COUPON_BUDGET_ALERT_THRESHOLDS_PERCENT,
+} from "./coupon.constants.js";
 import type {
   CouponEligibilityRow,
   CouponLine,
@@ -13,6 +17,8 @@ import type {
   CouponView,
   CouponWithEligibility,
 } from "./coupon.types.js";
+
+const FULL_PERCENT = 100;
 
 export const isCouponWithinWindow = (coupon: CouponRecord, at: Date): boolean =>
   coupon.status === CouponStatus.ACTIVE &&
@@ -70,6 +76,31 @@ export const valuateCoupon = (
   return { discountAmount, allocations };
 };
 
+export const computeBudgetUtilizationPercent = (coupon: {
+  spentAmount: number;
+  totalBudgetAmount: number | null;
+}): number | null =>
+  coupon.totalBudgetAmount === null
+    ? null
+    : Math.floor((coupon.spentAmount * FULL_PERCENT) / coupon.totalBudgetAmount);
+
+export const resolveCouponCreationState = (
+  totalBudgetAmount: number | null,
+): { status: CouponStatus; requiresApproval: boolean } =>
+  totalBudgetAmount !== null && totalBudgetAmount > COUPON_APPROVAL_BUDGET_THRESHOLD
+    ? { status: CouponStatus.PAUSED, requiresApproval: true }
+    : { status: CouponStatus.ACTIVE, requiresApproval: false };
+
+export const resolveCrossedBudgetThreshold = (
+  utilizationPercent: number,
+  lastAlertedThreshold: number | null,
+): number | null => {
+  const crossed = COUPON_BUDGET_ALERT_THRESHOLDS_PERCENT.filter(
+    (threshold) => threshold <= utilizationPercent && threshold > (lastAlertedThreshold ?? 0),
+  );
+  return crossed.length > 0 ? Math.max(...crossed) : null;
+};
+
 export const toCouponView = (coupon: CouponWithEligibility): CouponView => ({
   id: coupon.id,
   code: coupon.code,
@@ -83,11 +114,16 @@ export const toCouponView = (coupon: CouponWithEligibility): CouponView => ({
   status: coupon.status,
   totalBudgetAmount: coupon.totalBudgetAmount,
   spentAmount: coupon.spentAmount,
+  budgetUtilizationPercent: computeBudgetUtilizationPercent(coupon),
   maxRedemptions: coupon.maxRedemptions,
   redemptionCount: coupon.redemptionCount,
   firstOrderOnly: coupon.firstOrderOnly,
   prepaidOnly: coupon.prepaidOnly,
   stacksWithBrandDiscount: coupon.stacksWithBrandDiscount,
+  requiresApproval: coupon.requiresApproval,
+  approvedById: coupon.approvedById,
+  approvedAt: coupon.approvedAt?.toISOString() ?? null,
+  lastAlertedBudgetThreshold: coupon.lastAlertedBudgetThreshold,
   createdById: coupon.createdById,
   createdAt: coupon.createdAt.toISOString(),
   updatedAt: coupon.updatedAt.toISOString(),

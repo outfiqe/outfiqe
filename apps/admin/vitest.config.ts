@@ -41,6 +41,7 @@ export default defineConfig({
         "src/components/ProtectedRoute.utils.ts",
         "src/components/AdminSidebar.utils.ts",
         "src/features/notifications/resolveNotificationHref.ts",
+        "src/features/coupons/**/*.{ts,tsx}",
       ],
       thresholds: {
         lines: 80,

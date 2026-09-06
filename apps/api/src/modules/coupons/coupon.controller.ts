@@ -8,6 +8,8 @@ import type {
   CouponIdParam,
   CreateCouponBody,
   ListCouponsQuery,
+  RedemptionSearchQuery,
+  UpdateCouponBudgetBody,
   UpdateCouponStatusBody,
 } from "./coupon.schemas.js";
 import { couponService } from "./coupon.service.js";
@@ -41,5 +43,33 @@ export const couponController = {
 
     const coupon = await couponService.updateStatus(id, body);
     sendSuccess(res, coupon, "Coupon updated.");
+  },
+
+  async approve(_req: Request, res: Response) {
+    const { userId: adminId } = requireAuthPrincipal(res);
+    const { id } = validated.params<CouponIdParam>(res);
+
+    const coupon = await couponService.approve(id, adminId);
+    sendSuccess(res, coupon, "Coupon approved.");
+  },
+
+  async updateBudget(_req: Request, res: Response) {
+    const { id } = validated.params<CouponIdParam>(res);
+    const body = validated.body<UpdateCouponBudgetBody>(res);
+
+    const coupon = await couponService.updateBudget(id, body);
+    sendSuccess(res, coupon, "Coupon budget updated.");
+  },
+
+  async getPerformance(_req: Request, res: Response) {
+    const { id } = validated.params<CouponIdParam>(res);
+    const performance = await couponService.getPerformance(id);
+    sendSuccess(res, performance, "Coupon performance.");
+  },
+
+  async searchRedemptions(_req: Request, res: Response) {
+    const query = validated.query<RedemptionSearchQuery>(res);
+    const page = await couponService.searchRedemptions(query);
+    sendSuccess(res, page, "Coupon redemptions.");
   },
 };

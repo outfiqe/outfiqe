@@ -30,6 +30,10 @@ export type NotificationMetadata = {
   crmItemKind?: "task" | "ticket";
   crmItemTitle?: string;
   supportSubject?: string;
+  couponCode?: string;
+  totalBudgetAmount?: number | null;
+  thresholdPercent?: number;
+  spentAmount?: number;
 };
 
 export type NotificationRecord = {

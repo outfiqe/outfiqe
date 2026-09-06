@@ -23,6 +23,10 @@ export type CouponRecord = {
   firstOrderOnly: boolean;
   prepaidOnly: boolean;
   stacksWithBrandDiscount: boolean;
+  requiresApproval: boolean;
+  approvedById: string | null;
+  approvedAt: Date | null;
+  lastAlertedBudgetThreshold: number | null;
   createdById: string;
   createdAt: Date;
   updatedAt: Date;
@@ -35,11 +39,16 @@ export type CouponEligibilityRow = {
 
 export type CouponWithEligibility = CouponRecord & { eligibility: CouponEligibilityRow[] };
 
-export type CouponView = Omit<CouponRecord, "startsAt" | "endsAt" | "createdAt" | "updatedAt"> & {
+export type CouponView = Omit<
+  CouponRecord,
+  "startsAt" | "endsAt" | "approvedAt" | "createdAt" | "updatedAt"
+> & {
   startsAt: string;
   endsAt: string | null;
+  approvedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  budgetUtilizationPercent: number | null;
   eligibility: CouponEligibilityRow[];
 };
 
@@ -52,13 +61,47 @@ export type CreateCouponInput = {
   minSubtotal: number;
   startsAt: Date;
   endsAt: Date | null;
+  status: CouponStatus;
   totalBudgetAmount: number | null;
   maxRedemptions: number | null;
   firstOrderOnly: boolean;
   prepaidOnly: boolean;
   stacksWithBrandDiscount: boolean;
+  requiresApproval: boolean;
   createdById: string;
   eligibility: CouponEligibilityRow[];
+};
+
+export type UpdateCouponBudgetInput = {
+  totalBudgetAmount: number | null;
+  maxRedemptions: number | null;
+};
+
+export type CouponPerformanceView = {
+  couponId: string;
+  redemptionCount: number;
+  totalDiscountAmount: number;
+  totalPlatformFundedAmount: number;
+  totalGmv: number;
+  totalPlatformFeeCollected: number;
+  netMargin: number;
+  newCustomerCount: number;
+  returningCustomerCount: number;
+  repeatPurchaseWithin30dCount: number;
+  repeatPurchaseWithin90dCount: number;
+};
+
+export type CouponRedemptionSearchFilters = {
+  code?: string;
+  userId?: string;
+  orderId?: string;
+  cursor?: string;
+  limit: number;
+};
+
+export type CouponRedemptionSearchRow = CouponRedemptionRecord & {
+  couponCode: string;
+  userEmail: string;
 };
 
 export type CouponLine = {

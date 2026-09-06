@@ -102,6 +102,9 @@ const createCoupon = (overrides: {
     },
   });
 
+const BUDGET_ABOVE_THRESHOLD = 60_000;
+const BUDGET_BELOW_THRESHOLD = 10_000;
+
 describe("POST /api/admin/coupons", () => {
   it("creates a coupon", async () => {
     const { authHeader } = await createAdminSession();
@@ -133,6 +136,163 @@ describe("POST /api/admin/coupons", () => {
 
     expect(response.status).toBe(409);
     expect(response.body.code).toBe("COUPON_CODE_ALREADY_EXISTS");
+  });
+
+  it("starts paused and pending approval once the budget exceeds the approval threshold", async () => {
+    const { authHeader } = await createAdminSession();
+
+    const response = await request(testApp)
+      .post("/api/admin/coupons")
+      .set("Authorization", authHeader)
+      .send({
+        code: "bigbudget",
+        type: "FIXED",
+        fixedAmount: 300,
+        startsAt: new Date().toISOString(),
+        totalBudgetAmount: BUDGET_ABOVE_THRESHOLD,
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.status).toBe("PAUSED");
+    expect(response.body.data.requiresApproval).toBe(true);
+    expect(response.body.data.approvedById).toBeNull();
+  });
+
+  it("goes straight to active when the budget is under the approval threshold", async () => {
+    const { authHeader } = await createAdminSession();
+
+    const response = await request(testApp)
+      .post("/api/admin/coupons")
+      .set("Authorization", authHeader)
+      .send({
+        code: "smallbudget",
+        type: "FIXED",
+        fixedAmount: 300,
+        startsAt: new Date().toISOString(),
+        totalBudgetAmount: BUDGET_BELOW_THRESHOLD,
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.status).toBe("ACTIVE");
+    expect(response.body.data.requiresApproval).toBe(false);
+  });
+});
+
+describe("PATCH /api/admin/coupons/:id/approve", () => {
+  it("refuses activation before approval", async () => {
+    const { authHeader, userId } = await createAdminSession();
+    const coupon = await createCoupon({
+      createdById: userId,
+      totalBudgetAmount: BUDGET_ABOVE_THRESHOLD,
+    });
+    await prisma.coupon.update({
+      where: { id: coupon.id },
+      data: { status: "PAUSED", requiresApproval: true },
+    });
+
+    const response = await request(testApp)
+      .patch(`/api/admin/coupons/${coupon.id}/status`)
+      .set("Authorization", authHeader)
+      .send({ status: "ACTIVE" });
+
+    expect(response.status).toBe(400);
+    expect(response.body.code).toBe("COUPON_APPROVAL_REQUIRED");
+  });
+
+  it("refuses a same-admin sign-off", async () => {
+    const { authHeader, userId } = await createAdminSession();
+    const coupon = await createCoupon({
+      createdById: userId,
+      totalBudgetAmount: BUDGET_ABOVE_THRESHOLD,
+    });
+    await prisma.coupon.update({
+      where: { id: coupon.id },
+      data: { status: "PAUSED", requiresApproval: true },
+    });
+
+    const response = await request(testApp)
+      .patch(`/api/admin/coupons/${coupon.id}/approve`)
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("SAME_ADMIN_SIGN_OFF");
+  });
+
+  it("activates the coupon once a different admin approves", async () => {
+    const { userId: creatorId } = await createAdminSession();
+    const { authHeader: approverAuthHeader, userId: approverId } = await createAdminSession();
+    const coupon = await createCoupon({
+      createdById: creatorId,
+      totalBudgetAmount: BUDGET_ABOVE_THRESHOLD,
+    });
+    await prisma.coupon.update({
+      where: { id: coupon.id },
+      data: { status: "PAUSED", requiresApproval: true },
+    });
+
+    const response = await request(testApp)
+      .patch(`/api/admin/coupons/${coupon.id}/approve`)
+      .set("Authorization", approverAuthHeader);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.status).toBe("ACTIVE");
+    expect(response.body.data.approvedById).toBe(approverId);
+    expect(response.body.data.approvedAt).not.toBeNull();
+  });
+});
+
+describe("PATCH /api/admin/coupons/:id/budget", () => {
+  it("re-requires approval when a budget raise crosses the threshold", async () => {
+    const { authHeader, userId } = await createAdminSession();
+    const coupon = await createCoupon({
+      createdById: userId,
+      totalBudgetAmount: BUDGET_BELOW_THRESHOLD,
+    });
+
+    const response = await request(testApp)
+      .patch(`/api/admin/coupons/${coupon.id}/budget`)
+      .set("Authorization", authHeader)
+      .send({ totalBudgetAmount: BUDGET_ABOVE_THRESHOLD, maxRedemptions: null });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.status).toBe("PAUSED");
+    expect(response.body.data.requiresApproval).toBe(true);
+    expect(response.body.data.approvedById).toBeNull();
+  });
+
+  it("doesn't require re-approval for a raise that stays under the threshold", async () => {
+    const { authHeader, userId } = await createAdminSession();
+    const coupon = await createCoupon({
+      createdById: userId,
+      totalBudgetAmount: 5_000,
+    });
+
+    const response = await request(testApp)
+      .patch(`/api/admin/coupons/${coupon.id}/budget`)
+      .set("Authorization", authHeader)
+      .send({ totalBudgetAmount: BUDGET_BELOW_THRESHOLD, maxRedemptions: null });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.status).toBe("ACTIVE");
+    expect(response.body.data.requiresApproval).toBe(false);
+  });
+});
+
+describe("GET /api/admin/coupons", () => {
+  it("filters the list by status", async () => {
+    const { authHeader, userId } = await createAdminSession();
+    await createCoupon({ createdById: userId });
+    const paused = await createCoupon({ createdById: userId });
+    await prisma.coupon.update({ where: { id: paused.id }, data: { status: "PAUSED" } });
+
+    const response = await request(testApp)
+      .get("/api/admin/coupons?status=PAUSED")
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.coupons.every((c: { status: string }) => c.status === "PAUSED")).toBe(
+      true,
+    );
   });
 });
 
@@ -413,29 +573,22 @@ describe("POST /api/orders/checkout — coupon redemption", () => {
       });
     expect(firstCheckout.status).toBe(201);
 
+    const exhaustedCoupon = await prisma.coupon.findUniqueOrThrow({ where: { id: coupon.id } });
+    expect(exhaustedCoupon.status).toBe("PAUSED");
+
     const secondBuyer = await createBuyer();
     const { product: secondProduct, size: secondSize } = await createPurchasableProduct(2_000);
     await request(testApp)
       .post("/api/cart/items")
       .set("Authorization", authHeaderFor(secondBuyer.id))
       .send({ productId: secondProduct.id, sizeId: secondSize.id, qty: 1 });
-    await request(testApp)
+    const secondApply = await request(testApp)
       .post("/api/cart/coupon")
       .set("Authorization", authHeaderFor(secondBuyer.id))
       .send({ code: coupon.code });
-    const secondCheckout = await request(testApp)
-      .post("/api/orders/checkout")
-      .set("Authorization", authHeaderFor(secondBuyer.id))
-      .send({
-        fullName: "Buyer Two",
-        phone: "9800000002",
-        address: "123 Test Street",
-        city: "Kathmandu",
-        paymentMethod: PaymentMethod.COD,
-      });
 
-    expect(secondCheckout.status).toBe(409);
-    expect(secondCheckout.body.code).toBe("COUPON_EXHAUSTED");
+    expect(secondApply.status).toBe(400);
+    expect(secondApply.body.code).toBe("COUPON_NOT_ACTIVE");
   });
 
   it("releases the coupon back when the order is cancelled", async () => {
@@ -543,5 +696,139 @@ describe("POST /api/orders/checkout — coupon redemption", () => {
     const updatedCoupon = await prisma.coupon.findUniqueOrThrow({ where: { id: coupon.id } });
     expect(updatedCoupon.spentAmount).toBe(REDEMPTION_AMOUNT * BUDGET_UNITS);
     expect(updatedCoupon.redemptionCount).toBe(BUDGET_UNITS);
+  });
+});
+
+const checkoutOnceWithCoupon = async (couponCode: string, price: number) => {
+  const buyer = await createBuyer();
+  const { product, size } = await createPurchasableProduct(price);
+  await request(testApp)
+    .post("/api/cart/items")
+    .set("Authorization", authHeaderFor(buyer.id))
+    .send({ productId: product.id, sizeId: size.id, qty: 1 });
+  await request(testApp)
+    .post("/api/cart/coupon")
+    .set("Authorization", authHeaderFor(buyer.id))
+    .send({ code: couponCode });
+  const checkout = await request(testApp)
+    .post("/api/orders/checkout")
+    .set("Authorization", authHeaderFor(buyer.id))
+    .send({
+      fullName: "Test Buyer",
+      phone: "9800000000",
+      address: "123 Test Street",
+      city: "Kathmandu",
+      paymentMethod: PaymentMethod.COD,
+    });
+  return { buyer, checkout };
+};
+
+describe("Coupon budget alerts and auto-pause", () => {
+  it("tracks the highest crossed threshold without pausing before 100%", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const coupon = await createCoupon({
+      createdById: adminId,
+      fixedAmount: 500,
+      totalBudgetAmount: 1_000,
+    });
+
+    const { checkout } = await checkoutOnceWithCoupon(coupon.code, 2_000);
+    expect(checkout.status).toBe(201);
+
+    const updatedCoupon = await prisma.coupon.findUniqueOrThrow({ where: { id: coupon.id } });
+    expect(updatedCoupon.lastAlertedBudgetThreshold).toBe(50);
+    expect(updatedCoupon.status).toBe("ACTIVE");
+  });
+
+  it("auto-pauses once spend reaches the full budget", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const coupon = await createCoupon({
+      createdById: adminId,
+      fixedAmount: 500,
+      totalBudgetAmount: 1_000,
+    });
+
+    await checkoutOnceWithCoupon(coupon.code, 2_000);
+    const { checkout: secondCheckout } = await checkoutOnceWithCoupon(coupon.code, 2_000);
+    expect(secondCheckout.status).toBe(201);
+
+    const updatedCoupon = await prisma.coupon.findUniqueOrThrow({ where: { id: coupon.id } });
+    expect(updatedCoupon.lastAlertedBudgetThreshold).toBe(100);
+    expect(updatedCoupon.status).toBe("PAUSED");
+  });
+});
+
+describe("GET /api/admin/coupons/:id/performance", () => {
+  it("reports zeroed metrics for a coupon with no redemptions", async () => {
+    const { authHeader, userId } = await createAdminSession();
+    const coupon = await createCoupon({ createdById: userId });
+
+    const response = await request(testApp)
+      .get(`/api/admin/coupons/${coupon.id}/performance`)
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({
+      redemptionCount: 0,
+      totalDiscountAmount: 0,
+      totalGmv: 0,
+      netMargin: 0,
+    });
+  });
+
+  it("aggregates GMV, spend, and commission across redemptions", async () => {
+    const { authHeader, userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId, 1_000);
+    await createDefaultDeliveryZone();
+    const coupon = await createCoupon({ createdById: adminId, fixedAmount: 500 });
+
+    await checkoutOnceWithCoupon(coupon.code, 2_000);
+    await checkoutOnceWithCoupon(coupon.code, 2_000);
+
+    const response = await request(testApp)
+      .get(`/api/admin/coupons/${coupon.id}/performance`)
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({
+      redemptionCount: 2,
+      totalDiscountAmount: 1_000,
+      totalPlatformFundedAmount: 1_000,
+      totalGmv: 4_000,
+      totalPlatformFeeCollected: 400,
+      netMargin: -600,
+      newCustomerCount: 2,
+      returningCustomerCount: 0,
+    });
+  });
+});
+
+describe("GET /api/admin/coupons/redemptions", () => {
+  it("finds a redemption by coupon code and by order id", async () => {
+    const { authHeader, userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const coupon = await createCoupon({ createdById: adminId, fixedAmount: 300 });
+
+    const { checkout } = await checkoutOnceWithCoupon(coupon.code, 2_000);
+    expect(checkout.status).toBe(201);
+
+    const byCode = await request(testApp)
+      .get(`/api/admin/coupons/redemptions?code=${coupon.code}`)
+      .set("Authorization", authHeader);
+    expect(byCode.status).toBe(200);
+    expect(byCode.body.data.redemptions).toHaveLength(1);
+    expect(byCode.body.data.redemptions[0].couponCode).toBe(coupon.code);
+
+    const byOrder = await request(testApp)
+      .get(`/api/admin/coupons/redemptions?orderId=${checkout.body.data.id}`)
+      .set("Authorization", authHeader);
+    expect(byOrder.status).toBe(200);
+    expect(byOrder.body.data.redemptions).toHaveLength(1);
+    expect(byOrder.body.data.redemptions[0].orderId).toBe(checkout.body.data.id);
   });
 });

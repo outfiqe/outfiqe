@@ -1,21 +1,30 @@
+import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { PaymentMethod } from "#generated/prisma/enums.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
+import { COUPON_BUDGET_AUTO_PAUSE_THRESHOLD_PERCENT } from "./coupon.constants.js";
 import { couponRepository } from "./coupon.repository.js";
 import type {
   CreateCouponBody,
   ListCouponsQuery,
+  RedemptionSearchQuery,
+  UpdateCouponBudgetBody,
   UpdateCouponStatusBody,
 } from "./coupon.schemas.js";
 import type {
   CouponLine,
+  CouponPerformanceView,
+  CouponRedemptionSearchRow,
   CouponValuation,
   CouponView,
   CouponWithEligibility,
 } from "./coupon.types.js";
 import {
+  computeBudgetUtilizationPercent,
   isCouponWithinWindow,
+  resolveCouponCreationState,
+  resolveCrossedBudgetThreshold,
   resolveEligibleLines,
   toCouponView,
   valuateCoupon,
@@ -111,6 +120,9 @@ export const couponService = {
   },
 
   async create(adminUserId: string, body: CreateCouponBody): Promise<CouponView> {
+    const totalBudgetAmount = body.totalBudgetAmount ?? null;
+    const { status, requiresApproval } = resolveCouponCreationState(totalBudgetAmount);
+
     try {
       const coupon = await couponRepository.create({
         code: body.code,
@@ -121,14 +133,26 @@ export const couponService = {
         minSubtotal: body.minSubtotal,
         startsAt: body.startsAt,
         endsAt: body.endsAt ?? null,
-        totalBudgetAmount: body.totalBudgetAmount ?? null,
+        status,
+        totalBudgetAmount,
         maxRedemptions: body.maxRedemptions ?? null,
         firstOrderOnly: body.firstOrderOnly,
         prepaidOnly: body.prepaidOnly,
         stacksWithBrandDiscount: body.stacksWithBrandDiscount,
+        requiresApproval,
         createdById: adminUserId,
         eligibility: body.eligibility,
       });
+
+      if (requiresApproval) {
+        await eventBus.publish(DomainEvents.COUPON_APPROVAL_REQUESTED, {
+          couponId: coupon.id,
+          code: coupon.code,
+          createdById: adminUserId,
+          totalBudgetAmount: coupon.totalBudgetAmount,
+        });
+      }
+
       return toCouponView(coupon);
     } catch (error) {
       if (isUniqueConstraintError(error)) {
@@ -169,8 +193,129 @@ export const couponService = {
     if (!existing) {
       throw new AppError("COUPON_NOT_FOUND", REFUSAL_MESSAGES.COUPON_NOT_FOUND, NOT_FOUND_STATUS);
     }
+    if (existing.requiresApproval && existing.approvedById === null) {
+      throw new AppError(
+        "COUPON_APPROVAL_REQUIRED",
+        "This coupon needs a second admin's approval before it can go active.",
+        BAD_REQUEST_STATUS,
+      );
+    }
     await couponRepository.updateStatus(id, body.status);
     const updated = await couponRepository.findById(id);
     return toCouponView(updated ?? { ...existing, status: body.status });
+  },
+
+  async approve(id: string, adminId: string): Promise<CouponView> {
+    const existing = await couponRepository.findById(id);
+    if (!existing) {
+      throw new AppError("COUPON_NOT_FOUND", REFUSAL_MESSAGES.COUPON_NOT_FOUND, NOT_FOUND_STATUS);
+    }
+    if (!existing.requiresApproval || existing.approvedById !== null) {
+      throw new AppError(
+        "INVALID_TRANSITION",
+        "This coupon doesn't need approval right now.",
+        CONFLICT_STATUS,
+      );
+    }
+    if (existing.createdById === adminId) {
+      throw new AppError(
+        "SAME_ADMIN_SIGN_OFF",
+        "Approval must come from a different admin than the one who created this coupon.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const approved = await couponRepository.approve(id, adminId);
+    if (!approved) {
+      throw new AppError(
+        "INVALID_TRANSITION",
+        "This coupon can no longer be approved from its current state.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const coupon = await couponRepository.findById(id);
+    if (!coupon) {
+      throw new AppError("COUPON_NOT_FOUND", REFUSAL_MESSAGES.COUPON_NOT_FOUND, NOT_FOUND_STATUS);
+    }
+    return toCouponView(coupon);
+  },
+
+  async updateBudget(id: string, body: UpdateCouponBudgetBody): Promise<CouponView> {
+    const existing = await couponRepository.findById(id);
+    if (!existing) {
+      throw new AppError("COUPON_NOT_FOUND", REFUSAL_MESSAGES.COUPON_NOT_FOUND, NOT_FOUND_STATUS);
+    }
+
+    const totalBudgetAmount = body.totalBudgetAmount ?? null;
+    const maxRedemptions = body.maxRedemptions ?? null;
+    const isBudgetRaised =
+      totalBudgetAmount !== null &&
+      (existing.totalBudgetAmount === null || totalBudgetAmount > existing.totalBudgetAmount);
+    const { requiresApproval } = resolveCouponCreationState(totalBudgetAmount);
+
+    await couponRepository.updateBudget(id, { totalBudgetAmount, maxRedemptions });
+
+    if (!isBudgetRaised || !requiresApproval) {
+      const coupon = await couponRepository.findById(id);
+      if (!coupon) {
+        throw new AppError("COUPON_NOT_FOUND", REFUSAL_MESSAGES.COUPON_NOT_FOUND, NOT_FOUND_STATUS);
+      }
+      return toCouponView(coupon);
+    }
+
+    const resetCoupon = await couponRepository.resetToPendingApproval(id);
+    await eventBus.publish(DomainEvents.COUPON_APPROVAL_REQUESTED, {
+      couponId: resetCoupon.id,
+      code: resetCoupon.code,
+      createdById: existing.createdById,
+      totalBudgetAmount: resetCoupon.totalBudgetAmount,
+    });
+    return toCouponView(resetCoupon);
+  },
+
+  async getPerformance(id: string): Promise<CouponPerformanceView> {
+    const coupon = await couponRepository.findById(id);
+    if (!coupon) {
+      throw new AppError("COUPON_NOT_FOUND", REFUSAL_MESSAGES.COUPON_NOT_FOUND, NOT_FOUND_STATUS);
+    }
+    return couponRepository.getPerformanceMetrics(id);
+  },
+
+  async searchRedemptions(
+    query: RedemptionSearchQuery,
+  ): Promise<{ redemptions: CouponRedemptionSearchRow[]; nextCursor: string | null }> {
+    const rows = await couponRepository.searchRedemptions(query);
+    const hasMore = rows.length > query.limit;
+    const page = hasMore ? rows.slice(0, query.limit) : rows;
+    return { redemptions: page, nextCursor: hasMore ? (page.at(-1)?.id ?? null) : null };
+  },
+
+  async afterRedemptionCommitted(couponId: string): Promise<void> {
+    const coupon = await couponRepository.findById(couponId);
+    if (!coupon || coupon.totalBudgetAmount === null) return;
+
+    const utilizationPercent = computeBudgetUtilizationPercent(coupon) ?? 0;
+    const crossedThreshold = resolveCrossedBudgetThreshold(
+      utilizationPercent,
+      coupon.lastAlertedBudgetThreshold,
+    );
+
+    if (crossedThreshold !== null) {
+      const claimed = await couponRepository.claimBudgetAlertThreshold(couponId, crossedThreshold);
+      if (claimed) {
+        await eventBus.publish(DomainEvents.COUPON_BUDGET_ALERT, {
+          couponId: coupon.id,
+          code: coupon.code,
+          thresholdPercent: crossedThreshold,
+          spentAmount: coupon.spentAmount,
+          totalBudgetAmount: coupon.totalBudgetAmount,
+        });
+      }
+    }
+
+    if (utilizationPercent >= COUPON_BUDGET_AUTO_PAUSE_THRESHOLD_PERCENT) {
+      await couponRepository.autoPause(couponId);
+    }
   },
 };

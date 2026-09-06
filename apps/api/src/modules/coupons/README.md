@@ -14,26 +14,41 @@ brand-funded counterpart (Phase 1) this module deliberately never touches.
 
 - `coupon.types.ts` — `CouponRecord`/`CouponWithEligibility`/`CouponView` (DB, DB+relations, and
   API-response shapes), `CouponLine` (the plain-object shape `coupon.utils.ts`'s pure functions take
-  — `products`/`cart`/`orders` each map their own line representation down to this), `CouponValuation`.
-- `coupon.constants.ts` — code length bounds, pagination defaults.
+  — `products`/`cart`/`orders` each map their own line representation down to this), `CouponValuation`,
+  `CouponPerformanceView`/`CouponRedemptionSearchFilters`/`CouponRedemptionSearchRow` (Phase 4
+  reporting/support shapes).
+- `coupon.constants.ts` — code length bounds, pagination defaults, `COUPON_APPROVAL_BUDGET_THRESHOLD`
+  (Rs 50,000, per the spec's Operating Model table), `COUPON_BUDGET_ALERT_THRESHOLDS_PERCENT`
+  (`[50, 80, 95, 100]`).
 - `coupon.schemas.ts` — Zod validation, including the same "exactly one amount field for this type"
   refinement `products`' discount schemas use, and codes normalized to uppercase at the schema layer
   so `WELCOME300`/`welcome300` are the same coupon everywhere.
 - `coupon.utils.ts` — pure functions: `isCouponWithinWindow`, `lineMatchesEligibility`/
   `resolveEligibleLines` (empty eligibility = whole catalogue; a per-coupon
   `stacksWithBrandDiscount` flag excludes already-discounted lines), `valuateCoupon` (wraps
-  `computeCouponValue` + `allocatePlatformDiscountToLines` from `../discounts`), `toCouponView`.
+  `computeCouponValue` + `allocatePlatformDiscountToLines` from `../discounts`), `toCouponView`,
+  `resolveCouponCreationState`/`computeBudgetUtilizationPercent`/`resolveCrossedBudgetThreshold`
+  (Phase 4 approval-gate and budget-alert logic — see Funnel).
 - `coupon.repository.ts` — CRUD, `findActiveRedemptionForUser` (the read-side check), `claimBudget`
   (the atomic conditional `UPDATE`, raw SQL because the `WHERE` clause compares two columns of the
   same row — Prisma's filter API can't express that), `createRedemption`/`releaseBudget`/
-  `markRedemptionReleased` for the cancel-time release path.
+  `markRedemptionReleased` for the cancel-time release path, `approve`/`claimBudgetAlertThreshold`/
+  `autoPause` (each its own atomic conditional `UPDATE`, same pattern as `claimBudget`),
+  `getPerformanceMetrics` (one raw-SQL query joining redemptions → orders → order items →
+  brand payouts for GMV/spend/commission/new-vs-returning/repeat-purchase aggregates),
+  `searchRedemptions` (support lookup by code/user/order).
 - `coupon.service.ts` — `resolveForContext` is the one function that decides whether a code is
   usable right now for a given set of lines: not-found → window → prepaid-only → first-order-only →
   already-redeemed → minimum subtotal → eligibility → valuation, in that order, each with its own
   `AppError` code. Called identically from `cart`'s apply endpoint (preview, nothing committed) and
-  from `orders`' checkout (the real, race-safe attempt) — see Funnel.
-- `coupon.controller.ts`/`coupon.routes.ts` — admin-only CRUD (`create`, `list`, `getById`,
-  `updateStatus`), mounted at `/api/admin/coupons`.
+  from `orders`' checkout (the real, race-safe attempt) — see Funnel. `approve`/`updateBudget` own the
+  second-admin approval workflow; `afterRedemptionCommitted` (called by `orders` after its checkout
+  transaction commits) owns budget-alert firing and 100%-budget auto-pause.
+- `coupon.controller.ts`/`coupon.routes.ts` — admin-only CRUD (`create`, `list` — filterable by
+  `status`, `getById`, `updateStatus`, `approve`, `updateBudget`, `getPerformance`,
+  `searchRedemptions`), mounted at `/api/admin/coupons`, gated by both `requirePlatformAccess` and
+  `requirePlatformNavItem("coupons")` (so an admin whose nav access has been narrowed loses API access
+  too, not just the sidebar link — same pattern `withdraw`/`financial-rollup` already use).
 
 ## Funnel
 
@@ -79,6 +94,29 @@ looks up the order's `CouponRedemption` (if any) and, if not already released, m
 and decrements the coupon's `spentAmount`/`redemptionCount` — freeing the budget unit and the
 per-user slot for a future order.
 
+**A large budget needs a second admin's sign-off before it can spend a single rupee.**
+`couponService.create` (and `updateBudget`, on any raise) runs `resolveCouponCreationState`: a
+`totalBudgetAmount` over `COUPON_APPROVAL_BUDGET_THRESHOLD` (Rs 50,000) forces the coupon to start
+`PAUSED` with `requiresApproval: true` regardless of what status was requested — `isCouponWithinWindow`
+already refuses a non-`ACTIVE` coupon, so this alone is enough to keep it unusable at checkout with no
+extra guard needed. `PATCH /:id/approve` requires a different admin than `createdById` (mirroring
+`withdraw`'s same-admin-rejection pattern, but as a single sign-off rather than withdraw's two-step
+first/second approval, since the spec calls for one different approver, not two), and
+`PATCH /:id/status` itself refuses to activate a still-unapproved coupon
+(`COUPON_APPROVAL_REQUIRED`). Raising an already-approved coupon's budget past the threshold again
+resets `requiresApproval`/`approvedById`/`approvedAt` and re-pauses it — approval doesn't carry over
+to a materially bigger commitment.
+
+**Budget alerts fire once per threshold, race-safely, without a scheduled job.**
+`afterRedemptionCommitted` runs after every coupon checkout commits (same post-commit slot as the
+`PRODUCT_PURCHASED`/`SALE_GENERATED` events), computes the coupon's current spend percentage, and
+claims the highest newly-crossed threshold (50/80/95/100) via `claimBudgetAlertThreshold` — an atomic
+conditional `UPDATE` identical in shape to `claimBudget`, so two concurrent redemptions crossing the
+same threshold can never double-fire the alert. A successful claim publishes
+`DomainEvents.COUPON_BUDGET_ALERT` (consumed by `notifications` to page every admin); reaching 100%
+also atomically flips the coupon to `PAUSED` via `autoPause` — the same instant, no-cache kill-switch
+mechanism `updateStatus` already uses, just triggered by budget instead of an admin click.
+
 ## Non-obvious rationale
 
 - **The invariant this whole module exists to protect: a coupon never touches `unitPrice`,
@@ -122,11 +160,27 @@ per-user slot for a future order.
   (`appliedCouponCode` lives on `Cart`, which Buy Now bypasses entirely). The spec lists this
   explicitly as a Phase 5 edge case ("Buy Now path — bypasses the cart entirely and needs its own
   coupon handling"), not something this phase silently drops.
-- **No second-admin approval, budget alerts, live redemption feed, or velocity/fraud detection** —
-  all explicitly Phase 4/5 scope in the spec (the operational/reporting layer once coupons already
-  work correctly). `POST /api/admin/coupons` is single-admin CRUD, sufficient to create and manage a
-  real coupon end to end; the two-admin sign-off pattern `withdraw` already implements is the
-  natural place to wire in later without changing this module's redemption path at all.
+- **No velocity/fraud detection** — still explicitly Phase 5 scope in the spec. Phase 4 added the
+  approval gate, budget alerts/auto-pause, per-coupon performance reporting
+  (`getPerformanceMetrics`), and the support redemption lookup (`searchRedemptions`); this module's
+  redemption path itself is unchanged from Phase 3.
+- **A crossed-threshold jump reports only the highest threshold, not every one it passed** — a single
+  redemption large enough to jump straight from 0% to 100% of a small budget fires one alert at 100%,
+  not four separate alerts at 50/80/95/100. `resolveCrossedBudgetThreshold` returns the max of the
+  newly-crossed thresholds; the alert's payload still carries the exact `spentAmount`/
+  `totalBudgetAmount`, so nothing about the actual spend is lost, only the intermediate labels.
+- **`getPerformanceMetrics`'s new-vs-returning and repeat-purchase figures are computed live from
+  `orders`, not stored on the redemption** — "new" means no other order by that user exists with an
+  earlier `createdAt` than the coupon order; "repeat within 30/90d" means at least one other order by
+  that user exists after it within that window. Both are correct as of query time but will shift as
+  more orders come in after the fact (a redemption that looked "no repeat yet" can become a repeat
+  once 40 days have passed) — this is expected for a rolling report, not a bug.
+- **The coupon code as a labelled line on brand payouts is now surfaced as a boolean, not the code
+  itself** — `BrandPayoutView.platformFundedDiscountApplied` (`../brand-payouts/README.md`) tells a
+  brand "this payout's order used a platform coupon, your payout was unaffected" without joining
+  `CouponRedemption` from the payout list at all, since the trust signal only needs a yes/no, not
+  which code. The order-level "`WELCOME300` · −Rs 300" labelled line from the spec's web section is
+  still the deferred follow-up noted below.
 - **Order/order-summary views surface `platformDiscountTotal`/`brandDiscountTotal` and each item's
   `platformDiscountAmount`/`brandDiscountAmount`/`listUnitPrice` (`order.types.ts`/`order.utils.ts`),
   but not yet the coupon's code as a labelled line** (`"WELCOME300 · −Rs 300"` from the spec's web

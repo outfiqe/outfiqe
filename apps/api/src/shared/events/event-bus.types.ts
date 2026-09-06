@@ -171,6 +171,19 @@ export type DomainEventPayloads = {
     subject: string;
     requesterUserId: string | null;
   };
+  [DomainEvents.COUPON_APPROVAL_REQUESTED]: {
+    couponId: string;
+    code: string;
+    createdById: string;
+    totalBudgetAmount: number | null;
+  };
+  [DomainEvents.COUPON_BUDGET_ALERT]: {
+    couponId: string;
+    code: string;
+    thresholdPercent: number;
+    spentAmount: number;
+    totalBudgetAmount: number;
+  };
 };
 
 export type DomainEventHandler<E extends DomainEvent> = (

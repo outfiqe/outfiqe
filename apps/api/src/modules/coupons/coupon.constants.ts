@@ -2,3 +2,8 @@ export const COUPON_CODE_MIN_LENGTH = 4;
 export const COUPON_CODE_MAX_LENGTH = 24;
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 50;
+
+export const COUPON_APPROVAL_BUDGET_THRESHOLD = 50_000;
+export const COUPON_BUDGET_ALERT_THRESHOLDS_PERCENT = [50, 80, 95, 100] as const;
+export const COUPON_BUDGET_AUTO_PAUSE_THRESHOLD_PERCENT = 100;
+export const REPEAT_PURCHASE_WINDOW_DAYS = [30, 90] as const;

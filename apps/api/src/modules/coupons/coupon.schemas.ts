@@ -64,7 +64,13 @@ export const updateCouponStatusSchema = z.object({
   status: z.enum(CouponStatus),
 });
 
+export const updateCouponBudgetSchema = z.object({
+  totalBudgetAmount: z.number().int().min(AMOUNT_MIN).max(AMOUNT_MAX).nullable(),
+  maxRedemptions: z.number().int().min(1).nullable(),
+});
+
 export const listCouponsQuerySchema = z.object({
+  status: z.enum(CouponStatus).optional(),
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
@@ -73,8 +79,18 @@ export const couponIdParamSchema = z.object({ id: z.uuid() });
 
 export const applyCartCouponSchema = z.object({ code: couponCodeSchema });
 
+export const redemptionSearchQuerySchema = z.object({
+  code: z.string().trim().min(1).optional(),
+  userId: z.uuid().optional(),
+  orderId: z.uuid().optional(),
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
+});
+
 export type CreateCouponBody = z.infer<typeof createCouponSchema>;
 export type UpdateCouponStatusBody = z.infer<typeof updateCouponStatusSchema>;
+export type UpdateCouponBudgetBody = z.infer<typeof updateCouponBudgetSchema>;
 export type ListCouponsQuery = z.infer<typeof listCouponsQuerySchema>;
 export type CouponIdParam = z.infer<typeof couponIdParamSchema>;
 export type ApplyCartCouponBody = z.infer<typeof applyCartCouponSchema>;
+export type RedemptionSearchQuery = z.infer<typeof redemptionSearchQuerySchema>;

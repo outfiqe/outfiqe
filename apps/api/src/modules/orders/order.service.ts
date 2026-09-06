@@ -440,6 +440,10 @@ const checkoutOnce = async (
 
   if (!buyNow) await cartRepository.clearCart(cartId);
 
+  if (couponResolution) {
+    await couponService.afterRedemptionCommitted(couponResolution.coupon.id);
+  }
+
   if (paymentMethod === PaymentMethod.COD) {
     await eventBus.publish(DomainEvents.PRODUCT_PURCHASED, { orderId: order.id, userId });
   }

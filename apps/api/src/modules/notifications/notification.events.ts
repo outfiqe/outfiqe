@@ -439,4 +439,49 @@ export const registerNotificationEventConsumers = (): void => {
       });
     },
   });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.COUPON_APPROVAL_REQUESTED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ couponId, code, createdById, totalBudgetAmount }): Promise<void> => {
+      const adminIds = await userRepository.findIdsByRole(UserRole.ADMIN);
+      const recipientIds = adminIds.filter((adminId) => adminId !== createdById);
+      if (recipientIds.length === 0) return;
+
+      await notificationService.notifyManyIndividual(
+        recipientIds.map((recipientId) => ({
+          recipientId,
+          type: NotificationType.COUPON_APPROVAL_REQUESTED,
+          entityType: NotificationEntityType.COUPON,
+          entityId: couponId,
+          metadata: { couponCode: code, totalBudgetAmount },
+        })),
+      );
+    },
+  });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.COUPON_BUDGET_ALERT,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({
+      couponId,
+      code,
+      thresholdPercent,
+      spentAmount,
+      totalBudgetAmount,
+    }): Promise<void> => {
+      const adminIds = await userRepository.findIdsByRole(UserRole.ADMIN);
+      if (adminIds.length === 0) return;
+
+      await notificationService.notifyManyIndividual(
+        adminIds.map((recipientId) => ({
+          recipientId,
+          type: NotificationType.COUPON_BUDGET_ALERT,
+          entityType: NotificationEntityType.COUPON,
+          entityId: couponId,
+          metadata: { couponCode: code, thresholdPercent, spentAmount, totalBudgetAmount },
+        })),
+      );
+    },
+  });
 };

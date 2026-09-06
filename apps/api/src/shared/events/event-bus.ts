@@ -48,6 +48,8 @@ export const DomainEvents = {
   SUPPORT_TICKET_STAFF_REPLIED: "support.ticket.staff_replied",
   SUPPORT_TICKET_CUSTOMER_REPLIED: "support.ticket.customer_replied",
   SUPPORT_TICKET_RESOLVED: "support.ticket.resolved",
+  COUPON_APPROVAL_REQUESTED: "coupon.approval.requested",
+  COUPON_BUDGET_ALERT: "coupon.budget.alert",
 } as const;
 
 // A Redis hiccup must never fail the caller's request (like/comment/follow/etc.) — log and move on,

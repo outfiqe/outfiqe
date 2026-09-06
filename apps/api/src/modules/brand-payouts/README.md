@@ -30,7 +30,8 @@ payable snapshot (`BrandPayout`) that a brand's withdrawable balance is summed f
   logic, per this repo's module-boundary convention — just the same schedule).
 - `brandPayout.schemas.ts` — Zod validation, including the whole-ladder contiguity check on
   `createPlatformCommissionRuleSchema` (see Non-obvious rationale).
-- `brandPayout.types.ts` — DB-shaped and view types.
+- `brandPayout.types.ts` — DB-shaped and view types, including `BrandPayoutView.platformFundedDiscountApplied`
+  (the coupon trust-signal flag — see Non-obvious rationale).
 - `brandPayout.utils.ts` — `computeTieredPlatformFee` (single-band-match lookup + the FLAT/PERCENT
   fee math), `computeGatewayFee` (COD always `0`), view mappers. Basis-point conversions use the
   shared `BASIS_POINTS_PER_PERCENT` (`#constants/money.constants.js`), also used by `discounts`.
@@ -91,3 +92,10 @@ the same way it already voids `PENDING` commissions. `runBrandPayoutLifecycleSwe
 - Checkout throws a `503` if no `PlatformCommissionRule` is active — this should never happen in
   practice (one is seeded, see `prisma/seed.ts`), but failing the whole checkout loudly is safer
   than silently creating a payable with an undefined take-rate.
+- **`platformFundedDiscountApplied` reads `OrderItem.platformDiscountAmount`, not the order's coupon
+  code** — `toBrandPayoutView` flags a payout `true` whenever its own order item carried a
+  platform-funded discount, without joining `CouponRedemption`/`Coupon` at all. This is exactly the
+  spec's "your payout was unaffected" trust signal (`../coupons/README.md`) as a boolean a brand's
+  payout list can render inline; it deliberately doesn't surface which coupon code, since the
+  invariant this flag communicates — the brand's `grossAmount`/`platformFee`/`netAmount` are
+  identical to a full-price sale — doesn't depend on which code funded the discount.

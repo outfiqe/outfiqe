@@ -49,6 +49,7 @@ model User {
   reviewedProducts                         Product[]                   @relation("ProductReviewer")
   createdProductDiscounts                  ProductDiscount[]           @relation("ProductDiscountCreatedBy")
   createdCoupons                           Coupon[]                    @relation("CouponCreatedBy")
+  approvedCoupons                          Coupon[]                    @relation("CouponApprovedBy")
   couponRedemptions                        CouponRedemption[]          @relation("CouponRedemptionUser")
   productReviews                           ProductReview[]             @relation("ProductReviewAuthor")
   productReviewHelpfulVotes                ProductReviewHelpfulVote[]
@@ -455,6 +456,12 @@ model Coupon {
   firstOrderOnly          Boolean      @default(false) @map("first_order_only")
   prepaidOnly             Boolean      @default(false) @map("prepaid_only")
   stacksWithBrandDiscount Boolean      @default(true) @map("stacks_with_brand_discount")
+
+  requiresApproval           Boolean   @default(false) @map("requires_approval")
+  approvedById               String?   @map("approved_by_id") @db.Uuid
+  approvedBy                 User?     @relation("CouponApprovedBy", fields: [approvedById], references: [id])
+  approvedAt                 DateTime? @map("approved_at")
+  lastAlertedBudgetThreshold Int?      @map("last_alerted_budget_threshold")
 
   createdById String   @map("created_by_id") @db.Uuid
   createdBy   User     @relation("CouponCreatedBy", fields: [createdById], references: [id])
@@ -875,13 +882,13 @@ model AdminInvite {
 // ---------------------------------------------------------------------------
 
 model Cart {
-  id                 String   @id @default(uuid()) @db.Uuid
-  userId             String   @unique @map("user_id") @db.Uuid
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  city               String?
-  appliedCouponCode  String?  @map("applied_coupon_code")
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @unique @map("user_id") @db.Uuid
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city              String?
+  appliedCouponCode String?  @map("applied_coupon_code")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   items CartItem[]
 
@@ -970,18 +977,18 @@ model Order {
 }
 
 model OrderItem {
-  id        String      @id @default(uuid()) @db.Uuid
-  orderId   String      @map("order_id") @db.Uuid
-  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String      @map("product_id") @db.Uuid
-  product   Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
-  sizeId    String      @map("size_id") @db.Uuid
-  size      ProductSize @relation(fields: [sizeId], references: [id], onDelete: Restrict)
+  id                     String      @id @default(uuid()) @db.Uuid
+  orderId                String      @map("order_id") @db.Uuid
+  order                  Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId              String      @map("product_id") @db.Uuid
+  product                Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  sizeId                 String      @map("size_id") @db.Uuid
+  size                   ProductSize @relation(fields: [sizeId], references: [id], onDelete: Restrict)
   qty                    Int
-  unitPrice              Int @map("unit_price")
-  listUnitPrice          Int @map("list_unit_price")
-  brandDiscountAmount    Int @default(0) @map("brand_discount_amount")
-  platformDiscountAmount Int @default(0) @map("platform_discount_amount")
+  unitPrice              Int         @map("unit_price")
+  listUnitPrice          Int         @map("list_unit_price")
+  brandDiscountAmount    Int         @default(0) @map("brand_discount_amount")
+  platformDiscountAmount Int         @default(0) @map("platform_discount_amount")
 
   /**
    * Attribution — resolved once, at order-creation time, across all three
@@ -1517,6 +1524,8 @@ enum NotificationType {
   SUPPORT_TICKET_ASSIGNED
   SUPPORT_TICKET_REPLY
   SUPPORT_TICKET_RESOLVED
+  COUPON_APPROVAL_REQUESTED
+  COUPON_BUDGET_ALERT
 }
 
 enum NotificationEntityType {
@@ -1527,6 +1536,7 @@ enum NotificationEntityType {
   BADGE
   PRODUCT
   WITHDRAW_REQUEST
+  COUPON
   CONVERSATION
   CRM_TASK
   CRM_TICKET
@@ -2689,7 +2699,7 @@ model PushSubscription {
   endpoint     String       @unique
   p256dhKey    String       @map("p256dh_key")
   authKey      String       @map("auth_key")
-  platform     PushPlatform  @default(OTHER)
+  platform     PushPlatform @default(OTHER)
   userAgent    String?      @map("user_agent")
   failureCount Int          @default(0) @map("failure_count")
   disabledAt   DateTime?    @map("disabled_at")
