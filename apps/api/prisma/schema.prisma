@@ -1590,8 +1590,8 @@ model BrandBankAccountAccessLog {
 model PlatformCommissionRule {
   id          String   @id @default(uuid()) @db.Uuid
   isActive    Boolean  @default(true) @map("is_active")
-  updatedById String   @map("updated_by_id") @db.Uuid
-  updatedBy   User     @relation("PlatformCommissionRuleUpdatedBy", fields: [updatedById], references: [id])
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  updatedBy   User?    @relation("PlatformCommissionRuleUpdatedBy", fields: [updatedById], references: [id])
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -1630,8 +1630,8 @@ model GatewayFeeRate {
   paymentMethod          PaymentMethod @map("payment_method")
   ratePercentBasisPoints Int           @map("rate_percent_basis_points")
   isActive               Boolean       @default(true) @map("is_active")
-  updatedById            String        @map("updated_by_id") @db.Uuid
-  updatedBy              User          @relation("GatewayFeeRateUpdatedBy", fields: [updatedById], references: [id])
+  updatedById            String?       @map("updated_by_id") @db.Uuid
+  updatedBy              User?         @relation("GatewayFeeRateUpdatedBy", fields: [updatedById], references: [id])
   createdAt              DateTime      @default(now()) @map("created_at")
   updatedAt              DateTime      @updatedAt @map("updated_at")
 

@@ -36,7 +36,7 @@ that launch a conversation. Everything here is gated by Phase 1's `chatService
   works fine unprefixed (`MobileNav.tsx`'s usage); avoid pairing it with a breakpoint variant.
 - `ConversationList.tsx` — takes `onSelect`/`activeConversationId` as props rather than reading
   `useChatPanel()` itself, so both the panel and the full page can drive it differently (panel
-  switches its internal view; the full page navigates).
+  switches its internal view; the full page updates the URL in place — see the rationale below).
 - `MessageThread.tsx` — header (avatar, presence/last-seen), the scrollable message list (oldest
   at top; upward infinite scroll via `useLoadMoreOnVisible` for older history, scroll-position
   preserved across a prepend), and per-message sent/delivered/read ticks. Marks the conversation
@@ -113,6 +113,19 @@ _recipient's_ live view — `useConversationSocket`'s `toBroadcastMessage` used 
 `attachments: []`, which meant a live-received photo message rendered with no image at all until
 the thread was refetched (reopening it, or a full refresh). Keep the payload's attachment shape
 matching `MessageAttachment` (`packages/types`) if that type ever changes.
+
+**`MessagesPageLayout` switches threads with `window.history.pushState`, not `router.push`.**
+`/messages/[conversationId]` is an `async` server component that runs `requireDashboardSession`,
+which makes two sequential server-to-API calls (`POST /auth/session` to mint an access token from
+the refresh cookie, then `GET /auth/me`) on every render. Driving thread selection through
+`router.push` therefore paid that full auth handshake, plus a re-render of `SiteHeader` /
+`DashboardMobileNavBar`, on every click in the conversation list — the reason switching felt slow.
+The layout now reads the active id from `usePathname()` and updates the URL in place with
+`window.history.pushState` (App Router keeps `usePathname()` in sync and does not refetch the RSC
+for a manual history update), so switching is a client-only prop change to `MessageThread` — the
+same path the floating `ChatPanel` already uses. The server route still reads the `conversationId`
+param for the initial render, so a hard load or a shared deep link works unchanged; only in-app
+switching skips the round trip. Browser back/forward still resolve through the server route.
 
 **`ChatPanelProvider` closes the panel whenever the pathname changes.** `isOpen` is plain
 `useState`, global for the whole app, with no lifecycle tied to routing — so without this, opening

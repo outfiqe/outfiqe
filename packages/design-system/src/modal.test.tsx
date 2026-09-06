@@ -82,6 +82,18 @@ describe("Modal", () => {
 
       expect(screen.getByRole("dialog")).not.toHaveClass("rounded-t-[28px]");
     });
+
+    it("dims with a plain scrim and no backdrop blur", () => {
+      render(
+        <Modal open onClose={vi.fn()} title="Edit product">
+          Body
+        </Modal>,
+      );
+
+      expect(screen.getByRole("dialog").parentElement).toHaveClass("bg-black/60");
+      expect(screen.getByRole("dialog").parentElement).not.toHaveClass("backdrop-blur-sm");
+      expect(screen.getByRole("button", { name: "Close" })).not.toHaveClass("backdrop-blur-sm");
+    });
   });
 
   describe("on mobile", () => {
@@ -97,6 +109,16 @@ describe("Modal", () => {
       );
 
       expect(screen.getByRole("dialog")).toHaveClass("rounded-t-[28px]", "max-h-[90dvh]");
+    });
+
+    it("keeps the close control free of a backdrop blur", () => {
+      render(
+        <Modal open onClose={vi.fn()} title="Edit product">
+          Body
+        </Modal>,
+      );
+
+      expect(screen.getByRole("button", { name: "Close" })).not.toHaveClass("backdrop-blur-sm");
     });
 
     it("renders the title, children and footer", () => {
