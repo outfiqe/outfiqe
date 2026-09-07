@@ -111,6 +111,7 @@ export default defineConfig({
         "src/features/explore/utils/commentCacheUpdate.ts",
         "src/features/explore/components/CommentThread.tsx",
         "src/shared/lib/contentSecurityPolicy.ts",
+        "src/shared/lib/serverApiClient.ts",
         "src/shared/lib/apiOrigin.ts",
         "src/shared/lib/heicImage.ts",
         "src/features/bank-accounts/components/AddBankAccountModal.tsx",
