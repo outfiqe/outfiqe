@@ -28,10 +28,20 @@ const securityHeaders = [
   ...(isSearchIndexable ? [] : [{ key: "X-Robots-Tag", value: "noindex, nofollow" }]),
 ];
 
+const CLIENT_ROUTER_DYNAMIC_STALE_SECONDS = 30;
+const CLIENT_ROUTER_STATIC_STALE_SECONDS = 180;
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
   allowedDevOrigins: ["outfiqe.local", "*.outfiqe.local"],
+
+  experimental: {
+    staleTimes: {
+      dynamic: CLIENT_ROUTER_DYNAMIC_STALE_SECONDS,
+      static: CLIENT_ROUTER_STATIC_STALE_SECONDS,
+    },
+  },
 
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
