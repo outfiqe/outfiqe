@@ -35,6 +35,7 @@ const imageRemotePatterns = (): NonNullable<NextConfig["images"]>["remotePattern
   const sources = [
     apiUrl,
     process.env.API_PUBLIC_URL,
+    process.env.NEXT_PUBLIC_SOCKET_URL,
     ...(process.env.NEXT_PUBLIC_IMAGE_HOSTS ?? "").split(","),
   ];
 
