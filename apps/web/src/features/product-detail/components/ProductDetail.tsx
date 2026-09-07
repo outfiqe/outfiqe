@@ -12,7 +12,11 @@ import { saveBuyNowPayload } from "@/features/checkout";
 import { ReviewsSection } from "@/features/product-reviews";
 import { shareOrCopyLink } from "@/features/pwa";
 import { useToggleWishlist } from "@/features/wishlist";
+import { AppImage } from "@/shared/components/AppImage";
 import { cn } from "@/shared/lib/cn";
+
+const PRODUCT_IMAGE_SIZES = "(min-width: 1024px) 40vw, 100vw";
+const PRODUCT_THUMBNAIL_SIZE = "64px";
 
 import type { ProductDetail as ProductDetailType } from "../api/productDetailSchemas";
 import { QuantitySelector } from "./QuantitySelector";
@@ -114,11 +118,18 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
       <div className="grid gap-8 pb-10 lg:grid-cols-2 lg:gap-14">
         {/* Zone 1: official product photography — the brand's, never mixed with creator photos. */}
         <div>
-          <div
-            className="flex aspect-4/5 items-center justify-center rounded-2xl bg-muted bg-cover bg-center"
-            style={{ backgroundImage: activeImage ? `url(${activeImage})` : undefined }}
-          >
-            {!activeImage && <Shirt className="size-20 text-foreground/25" strokeWidth={1} />}
+          <div className="relative flex aspect-4/5 items-center justify-center overflow-hidden rounded-2xl bg-muted">
+            {activeImage ? (
+              <AppImage
+                src={activeImage}
+                alt={product.name}
+                fill
+                sizes={PRODUCT_IMAGE_SIZES}
+                eager
+              />
+            ) : (
+              <Shirt className="size-20 text-foreground/25" strokeWidth={1} />
+            )}
           </div>
 
           {galleryImages.length > 1 && (
@@ -131,11 +142,12 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
                   aria-label={`Show photo ${index + 1}`}
                   aria-current={index === selectedImageIndex}
                   className={cn(
-                    "aspect-square w-16 shrink-0 overflow-hidden rounded-lg border bg-muted bg-cover bg-center transition-colors",
+                    "relative aspect-square w-16 shrink-0 overflow-hidden rounded-lg border bg-muted transition-colors",
                     index === selectedImageIndex ? "border-foreground" : "border-transparent",
                   )}
-                  style={{ backgroundImage: `url(${image})` }}
-                />
+                >
+                  <AppImage src={image} alt="" fill sizes={PRODUCT_THUMBNAIL_SIZE} />
+                </button>
               ))}
             </div>
           )}

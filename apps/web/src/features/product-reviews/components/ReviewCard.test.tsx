@@ -94,9 +94,11 @@ describe("ReviewCard", () => {
       },
     });
 
-    const withBg = [...container.querySelectorAll<HTMLElement>("[style*='background-image']")];
-    expect(withBg.some((el) => el.style.backgroundImage.includes("a.jpg"))).toBe(true);
-    expect(withBg.some((el) => el.style.backgroundImage.includes("avatar.jpg"))).toBe(true);
+    const imageSources = [...container.querySelectorAll("img")].map((image) =>
+      decodeURIComponent(image.getAttribute("src") ?? ""),
+    );
+    expect(imageSources.some((src) => src.includes("a.jpg"))).toBe(true);
+    expect(imageSources.some((src) => src.includes("avatar.jpg"))).toBe(true);
   });
 
   it("omits the title line when the review has no title", () => {
