@@ -9,8 +9,11 @@ vi.mock("@/features/auth/AuthContext", () => ({
 
 import { ProtectedRoute } from "./ProtectedRoute";
 
-const authState = (status: "loading" | "signed-out" | "signed-in") => ({
-  state: { status },
+const authState = (
+  status: "loading" | "signed-out" | "signed-in",
+  reason: "session-ended" | "user-signed-out" = "session-ended",
+) => ({
+  state: status === "signed-out" ? { status, reason } : { status },
 });
 
 describe("admin ProtectedRoute", () => {
@@ -52,7 +55,7 @@ describe("admin ProtectedRoute", () => {
     expect(fakeLocation.href).toBe("http://localhost:3000/crm");
   });
 
-  it("redirects a signed-out visitor to the web login with a return path", () => {
+  it("redirects a session that ended unexpectedly to the web login with a return path", () => {
     const fakeLocation = {
       href: "http://admin.outfiqe.local:3000/crm/contacts",
       pathname: "/crm/contacts",
@@ -60,7 +63,7 @@ describe("admin ProtectedRoute", () => {
       hostname: "admin.outfiqe.local",
     };
     vi.stubGlobal("location", fakeLocation);
-    useAuthMock.mockReturnValue(authState("signed-out"));
+    useAuthMock.mockReturnValue(authState("signed-out", "session-ended"));
 
     render(
       <ProtectedRoute>
@@ -72,6 +75,26 @@ describe("admin ProtectedRoute", () => {
     expect(fakeLocation.href).toMatch(
       /^https?:\/\/[^/]+\/login\?redirect=%2Fcrm%2Fcontacts%3Ftab%3Dleads$/,
     );
+    expect(screen.queryByText("Secret dashboard")).not.toBeInTheDocument();
+  });
+
+  it("sends a visitor who chose to sign out to the web login with no return path", () => {
+    const fakeLocation = {
+      href: "http://admin.outfiqe.local:3000/platform/metrics",
+      pathname: "/platform/metrics",
+      search: "",
+      hostname: "admin.outfiqe.local",
+    };
+    vi.stubGlobal("location", fakeLocation);
+    useAuthMock.mockReturnValue(authState("signed-out", "user-signed-out"));
+
+    render(
+      <ProtectedRoute>
+        <p>Secret dashboard</p>
+      </ProtectedRoute>,
+    );
+
+    expect(fakeLocation.href).toMatch(/^https?:\/\/[^/]+\/login$/);
     expect(screen.queryByText("Secret dashboard")).not.toBeInTheDocument();
   });
 });
