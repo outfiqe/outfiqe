@@ -32,13 +32,8 @@ const BrandPickerField = ({
   brandName: string;
   onChange: (brand: { id: string; name: string } | null) => void;
 }) => {
-  const [query, setQuery] = useState(brandName);
-
-  const [syncedName, setSyncedName] = useState(brandName);
-  if (brandName !== syncedName) {
-    setSyncedName(brandName);
-    setQuery(brandName);
-  }
+  const [typedQuery, setTypedQuery] = useState<string | null>(null);
+  const query = typedQuery ?? brandName;
 
   const debouncedQuery = useDebouncedValue(query, BRAND_SEARCH_DEBOUNCE_MS);
   const isSearching = debouncedQuery.trim().length >= MIN_QUERY_LENGTH;
@@ -53,12 +48,12 @@ const BrandPickerField = ({
   const selectBrand = (candidateId: string) => {
     const brand = brands.find((candidate) => candidate.id === candidateId);
     if (!brand) return;
-    setQuery(brand.name);
+    setTypedQuery(null);
     onChange(brand);
   };
 
   const clearBrand = () => {
-    setQuery("");
+    setTypedQuery(null);
     onChange(null);
   };
 
@@ -73,8 +68,8 @@ const BrandPickerField = ({
             id="exemption-brand"
             placeholder="Search brands…"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onBlur={() => setQuery(brandId ? syncedName : "")}
+            onChange={(event) => setTypedQuery(event.target.value)}
+            onBlur={() => setTypedQuery(null)}
             className="w-56 pr-8"
           />
           {brandId && (

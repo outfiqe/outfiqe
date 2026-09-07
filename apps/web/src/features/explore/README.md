@@ -89,6 +89,13 @@ its own function by being needed identically from both `PostCard` and `PostDetai
 
 ## Non-obvious rationale
 
+**`AddPostButton` sits higher on mobile when the user is signed in.** Below `sm` the global
+`FloatingChatLauncher` bubble (`messaging`, mounted in `app/providers.tsx`) is pinned to
+`bottom-24 right-4` — the exact spot this FAB used to occupy, so on `/explore` and creator profiles
+the two overlapped. Signed-in users get `bottom-40` here (clearing the 44px launcher plus a gap);
+signed-out users, who never see the launcher, keep `bottom-24`. At `sm` and up the launcher moves
+to `bottom-6 right-6` and the collision is gone, so the offset is mobile-only.
+
 **Like/save/follow all set `networkMode: "always"`, and that is what makes queueing them possible
 at all — not an unrelated hardening.** React Query's default `networkMode: "online"` pauses a
 mutation started while offline before ever calling `mutationFn` — so without this, `mutationFn`'s

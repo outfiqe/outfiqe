@@ -28,13 +28,8 @@ type UserSearchFieldProps = {
 const describeUser = (user: SelectedUser) => `${user.name} (@${user.handle})`;
 
 export const UserSearchField = ({ id, label, value, onChange }: UserSearchFieldProps) => {
-  const [query, setQuery] = useState(value ? describeUser(value) : "");
-
-  const [syncedValueId, setSyncedValueId] = useState(value?.id ?? null);
-  if ((value?.id ?? null) !== syncedValueId) {
-    setSyncedValueId(value?.id ?? null);
-    setQuery(value ? describeUser(value) : "");
-  }
+  const [typedQuery, setTypedQuery] = useState<string | null>(null);
+  const query = typedQuery ?? (value ? describeUser(value) : "");
 
   const debouncedQuery = useDebouncedValue(query, USER_SEARCH_DEBOUNCE_MS);
   const isSearching = debouncedQuery.trim().length >= MIN_QUERY_LENGTH;
@@ -49,12 +44,12 @@ export const UserSearchField = ({ id, label, value, onChange }: UserSearchFieldP
   const selectUser = (userId: string) => {
     const user = users.find((candidate) => candidate.id === userId);
     if (!user) return;
-    setQuery(describeUser(user));
+    setTypedQuery(null);
     onChange({ id: user.id, name: user.name, handle: user.handle });
   };
 
   const clearUser = () => {
-    setQuery("");
+    setTypedQuery(null);
     onChange(null);
   };
 
@@ -69,8 +64,8 @@ export const UserSearchField = ({ id, label, value, onChange }: UserSearchFieldP
             id={id}
             placeholder="Search by name or @handle…"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onBlur={() => setQuery(value ? describeUser(value) : "")}
+            onChange={(event) => setTypedQuery(event.target.value)}
+            onBlur={() => setTypedQuery(null)}
             className="pr-8"
           />
           {value && (

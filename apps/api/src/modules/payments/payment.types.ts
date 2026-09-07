@@ -21,6 +21,7 @@ export type PaymentVerifyInput = {
   transactionUuid: string;
   providerRef: string | null;
   totalAmount: number;
+  initiatedAt: Date;
 };
 
 export const PaymentVerifyStatus = {

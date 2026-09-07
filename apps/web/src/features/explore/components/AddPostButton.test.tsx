@@ -60,4 +60,28 @@ describe("AddPostButton", () => {
 
     expect(screen.getByRole("button", { name: "Add a post" })).toBeInTheDocument();
   });
+
+  it("lifts the FAB above the chat launcher when the viewer is signed in", () => {
+    mockAuth(UserRole.CUSTOMER, CreatorStatus.APPROVED);
+
+    render(<AddPostButton />);
+
+    expect(screen.getByRole("button", { name: "Add a post" })).toHaveClass("bottom-40");
+  });
+
+  it("keeps the default FAB position when there is no session (no chat launcher on screen)", () => {
+    mockAuth(UserRole.CUSTOMER, CreatorStatus.APPROVED);
+    vi.mocked(useExploreAuthGate).mockReturnValue({
+      isAuthenticated: false,
+      isAuthResolved: true,
+      goToSignIn: vi.fn(),
+      gated: vi.fn(),
+    } as ReturnType<typeof useExploreAuthGate>);
+
+    render(<AddPostButton />);
+
+    const button = screen.getByRole("button", { name: "Add a post" });
+    expect(button).toHaveClass("bottom-24");
+    expect(button).not.toHaveClass("bottom-40");
+  });
 });

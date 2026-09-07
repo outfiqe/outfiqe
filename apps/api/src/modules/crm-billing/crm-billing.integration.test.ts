@@ -136,6 +136,10 @@ describe("POST /api/crm/billing/checkout", () => {
     expect(response.body.data.invoiceId).toBeDefined();
     expect(esewaInitiate).toHaveBeenCalledOnce();
 
+    const { successUrl } = esewaInitiate.mock.calls[0]![0] as { successUrl: string };
+    expect(successUrl).toContain(`/crm/billing/return/${response.body.data.invoiceId}`);
+    expect(successUrl).not.toContain("?invoiceId=");
+
     const subscription = await prisma.subscription.findUniqueOrThrow({
       where: { organizationId: organization.id },
     });

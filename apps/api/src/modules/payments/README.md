@@ -8,13 +8,76 @@ Unlike COD, eSewa/Khalti orders don't touch `ProductSize.stock` when the order i
 
 `settleVerified` publishes it, but only in the successful branch (stock decremented cleanly, `markOrderPlaced` reached) — never when `needsManualRefund` gets set. Money moved either way in that failure case, but the sale is headed for a human refund decision, and this module has no XP-reversal mechanism, so it's safer to simply not award "purchase" XP there rather than award-then-need-to-claw-back. See `orders/README.md` for the COD half of this same event (COD publishes it from checkout instead, since there's no separate settlement step) and `xp/README.md` for what it triggers.
 
-## The redirect is never trusted
+## The callback URLs are path-only, and the redirect is never trusted
 
-`success_url` and `failure_url` point at the same callback URL. Verification never reads which URL eSewa used or trusts any query param it sends back — `POST /api/payments/:orderId/verify` always makes its own server-to-server call to eSewa's status endpoint using our own stored `transaction_uuid`, amount, and product code.
+`success_url` / `failure_url` carry the order id **in the path**
+(`/payments/:provider/callback/:orderId`, and `/…/:orderId/failed` for failure) — not a query
+string. eSewa v2 appends `?data=<base64>` to `success_url` verbatim; when we used
+`…/callback?orderId=X` it produced `…/callback?orderId=X?data=…`, and `orderId` parsed as
+`X?data=…`, so every post-payment `verify` call `POST`ed to a 404 and the callback showed a
+false failure. A path segment survives the append untouched.
+
+Verification still never reads eSewa's `data` param or which route it landed on —
+`POST /api/payments/:orderId/verify` always makes its own server-to-server call to eSewa's status
+endpoint using our own stored `transaction_uuid`, amount, and product code. The `/failed` route
+only lets the web callback screen show the failed/retry state immediately instead of polling
+`verify` for ~30s first (see `apps/web/src/features/payments/README.md`); it never influences the
+order's `paymentStatus`, which still only moves on a verified status check or the reconciliation
+sweep.
 
 ## Env var correction found by actually calling the sandbox
 
 `ESEWA_STATUS_URL` was originally set to `uat.esewa.com.np`, sourced from developer docs during earlier research. That domain doesn't resolve at all (`ENOTFOUND`) — the real sandbox status host is `rc.esewa.com.np` (same host as the payment form). Found by making a live call, not by re-reading docs; verified end-to-end with a real (bogus) `transaction_uuid` against the live sandbox, which correctly returned `NOT_FOUND`.
+
+## eSewa `NOT_FOUND` becomes a failure after a grace window
+
+eSewa's status endpoint returns `status: NOT_FOUND` both for a transaction it has genuinely never
+seen (the shopper cancelled or abandoned the gateway) and, for a few seconds, for one that just
+completed but hasn't propagated to the status service yet. `esewa.provider.verify` treats
+`NOT_FOUND` as `PENDING` while the transaction is younger than
+`NOT_FOUND_SETTLES_TO_FAILURE_AFTER_MS` (3 minutes from `PaymentTransaction.createdAt`, passed in as
+`initiatedAt`), and as `FAILED` past that. Without this, a cancelled payment stays `PENDING` until
+the 60-minute sweep expiry — the shopper watches a "confirming…" spinner that can never resolve.
+
+Tradeoff: if eSewa ever took longer than 3 minutes to propagate a genuinely completed payment, we'd
+mark that transaction `FAILED` and the order would never auto-settle (it'd need manual intervention,
+same as any missed settlement). Propagation is a seconds-scale delay in practice, and 3 minutes is
+well past eSewa's own "`NOT_FOUND` = being initiated" wording, so this is accepted rather than
+guarded further here.
+
+`AMBIGUOUS` is **never** mapped to a hard failure (it used to be, alongside `CANCELED`). eSewa
+returns it transiently right after a successful payment while its status service catches up — and
+its own meaning is "we can't tell, contact eSewa," not "it failed." Mapping it to `FAILED` meant a
+shopper who had just paid was shown "Payment didn't go through" on the callback, then the
+reconciliation sweep quietly settled the order minutes later. Now `AMBIGUOUS` is treated as
+`PENDING` for as long as it lasts; the sweep re-checks for up to 60 minutes and settles on a
+`COMPLETE`, and its 60-minute expiry is the terminal backstop if eSewa never resolves it. Only
+`CANCELED` (and `NOT_FOUND` past the 3-minute grace) is a provider-level `FAILED`.
+
+## Every eSewa attempt gets a fresh `transaction_uuid`
+
+eSewa rejects a `transaction_uuid` it has already seen with `{"error_message":"Duplicate
+transaction UUID."}` — including one the shopper started and then cancelled. So a single
+`PaymentTransaction` can't reuse one id across retries: `esewaProvider.initiate` generates a new
+`crypto.randomUUID()` for every call, signs the form with it, and returns it as `providerRef`;
+`payment.service` stores it on `transactionRef`, and `esewaProvider.verify` does its status lookup
+by `providerRef ?? transactionUuid`. The reused-id scheme worked only because nobody had retried a
+cancelled payment yet.
+
+`paymentService.initiate` retires the previous attempt before starting a new one: if a pending
+`PaymentTransaction` already has a `transactionRef` (so it was handed to the gateway once), it
+first runs a full `runVerify` on it — a shopper who actually completed that attempt in another tab
+gets `ALREADY_SETTLED` and is **not** sent to pay again — then marks it `FAILED` so
+`getOrCreatePendingTransaction` starts a clean row. Each attempt keeps its own `transactionRef` for
+ops to trace a manual refund against.
+
+**Known limitation:** two `initiate` calls that overlap on the server (the retry buttons disable
+on `isPending`, so this needs a same-frame double-fire that a human touch can't really produce, but
+a synthetic event or a render loop could) can create two fresh attempts. `verify` and the sweep
+only ever check the newest pending transaction, so if the shopper then completes the _older_ one,
+the order would expire to `FAILED` with money taken. A DB-level "one pending PAYMENT transaction
+per order" partial-unique constraint would close it fully and is the right follow-up if this is
+ever observed.
 
 ## Reconciliation sweep, and the worker-swap seam
 
@@ -36,19 +99,20 @@ caller's side.
 
 ### Three different identifiers, one field
 
-Unlike eSewa (whose `transaction_uuid` is entirely our own value, used for both initiate and
-status lookup), Khalti generates its own `pidx` at initiate time that we don't control, and
-returns a _third_, separate `transaction_id` once the payment settles (from the lookup response).
-Concretely:
+Both providers now hand us a reference at initiate time that isn't `PaymentTransaction.id`: Khalti
+generates its own `pidx`, and eSewa's provider generates a fresh `transaction_uuid` per attempt (see
+the next section). It also returns a _third_, separate `transaction_id` once a Khalti payment
+settles (from the lookup response). Concretely:
 
 - `PaymentTransaction.id` — our own id, always.
-- `PaymentTransaction.transactionRef` — the provider's own reference, captured once at initiate
-  (`PaymentInitiateResult.providerRef`) via the new `setTransactionRef`. For eSewa this is just
-  its own `transaction_uuid` (= our id) again; for Khalti it's the real `pidx`. **This field used to
-  get overwritten with our own id again at settlement** (`settleTransaction` used to set
-  `transactionRef: transactionId`) — harmless no-op for eSewa, but would have silently destroyed
-  Khalti's real `pidx` the moment a payment settled. Fixed: `settleTransaction` no longer touches
-  `transactionRef` at all.
+- `PaymentTransaction.transactionRef` — the reference the gateway interaction actually uses,
+  captured at initiate (`PaymentInitiateResult.providerRef`) via `setTransactionRef`. For eSewa it's
+  the per-attempt `transaction_uuid` the form was signed with; for Khalti it's the real `pidx`. Both
+  the eSewa status lookup and the Khalti lookup key off this field, not `PaymentTransaction.id`.
+  **This field used to get overwritten with our own id again at settlement** (`settleTransaction`
+  used to set `transactionRef: transactionId`) — harmless when eSewa's ref was our id, but would
+  have silently destroyed Khalti's real `pidx` the moment a payment settled. Fixed: `settleTransaction`
+  no longer touches `transactionRef` at all.
 - Khalti's settlement-time `transaction_id` (from the lookup response body) is **not** given its
   own column — it's already captured for free inside `rawResponse` (stored on settle, same as every
   other provider), since nothing needs it until a refund is triggered.

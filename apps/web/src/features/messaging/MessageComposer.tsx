@@ -85,7 +85,7 @@ export const MessageComposer = ({ conversationId }: MessageComposerProps) => {
   };
 
   return (
-    <div className="border-t border-border p-3">
+    <div className="shrink-0 border-t border-border p-3">
       {pendingAttachments.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2">
           {pendingAttachments.map((attachment) => (

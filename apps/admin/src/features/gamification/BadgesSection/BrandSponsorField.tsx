@@ -28,13 +28,8 @@ export const BrandSponsorField = ({
   sponsorBrandName,
   onChange,
 }: BrandSponsorFieldProps) => {
-  const [query, setQuery] = useState(sponsorBrandName);
-
-  const [syncedName, setSyncedName] = useState(sponsorBrandName);
-  if (sponsorBrandName !== syncedName) {
-    setSyncedName(sponsorBrandName);
-    setQuery(sponsorBrandName);
-  }
+  const [typedQuery, setTypedQuery] = useState<string | null>(null);
+  const query = typedQuery ?? sponsorBrandName;
 
   const debouncedQuery = useDebouncedValue(query, BRAND_SEARCH_DEBOUNCE_MS);
   const isSearching = debouncedQuery.trim().length >= MIN_QUERY_LENGTH;
@@ -49,12 +44,12 @@ export const BrandSponsorField = ({
   const selectBrand = (brandId: string) => {
     const brand = brands.find((candidate) => candidate.id === brandId);
     if (!brand) return;
-    setQuery(brand.name);
+    setTypedQuery(null);
     onChange(brand);
   };
 
   const clearSponsor = () => {
-    setQuery("");
+    setTypedQuery(null);
     onChange(null);
   };
 
@@ -69,8 +64,8 @@ export const BrandSponsorField = ({
             id={`${idPrefix}-sponsor-brand`}
             placeholder="Search brands to credit…"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onBlur={() => setQuery(sponsorBrandId ? syncedName : "")}
+            onChange={(event) => setTypedQuery(event.target.value)}
+            onBlur={() => setTypedQuery(null)}
             className="pr-8"
           />
           {sponsorBrandId && (

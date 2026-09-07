@@ -128,6 +128,13 @@ export const orderRepository = {
     });
   },
 
+  async failUnsettledPayment(client: DbClient, orderId: string): Promise<void> {
+    await client.order.updateMany({
+      where: { id: orderId, paymentStatus: PaymentStatus.INITIATED },
+      data: { paymentStatus: PaymentStatus.FAILED },
+    });
+  },
+
   async markNeedsManualRefund(client: DbClient, orderId: string): Promise<void> {
     await client.order.update({
       where: { id: orderId },

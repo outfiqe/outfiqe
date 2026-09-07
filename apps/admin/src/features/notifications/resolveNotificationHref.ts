@@ -1,15 +1,28 @@
 import type { Notification } from "@outfiqe/types";
 
-export const resolveNotificationHref = (notification: Notification): string | null => {
+export type AdminNotificationTarget =
+  | { to: "/platform/brand-applications" }
+  | { to: "/support" }
+  | { to: "/support/$ticketId"; params: { ticketId: string } }
+  | { to: "/crm/tasks" }
+  | { to: "/crm/support" };
+
+export const resolveNotificationHref = (
+  notification: Notification,
+): AdminNotificationTarget | null => {
   switch (notification.type) {
     case "BRAND_APPLICATION_SUBMITTED":
-      return "/";
+      return { to: "/platform/brand-applications" };
     case "SUPPORT_TICKET_CREATED":
     case "SUPPORT_TICKET_ASSIGNED":
     case "SUPPORT_TICKET_REPLY":
-      return notification.entityId ? `/support/${notification.entityId}` : "/support";
+      return notification.entityId
+        ? { to: "/support/$ticketId", params: { ticketId: notification.entityId } }
+        : { to: "/support" };
     case "CRM_ITEM_ASSIGNED":
-      return notification.metadata.crmItemKind === "task" ? "/crm/tasks" : "/crm/support";
+      return notification.metadata.crmItemKind === "task"
+        ? { to: "/crm/tasks" }
+        : { to: "/crm/support" };
     case "LOOK_LIKED":
     case "LOOK_COMMENTED":
     case "COMMENT_REPLIED":

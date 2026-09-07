@@ -8,6 +8,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { CreatorStatus, UserRole } from "@/features/auth/types";
 import { ApplyAsCreatorButton } from "@/features/creator-dashboard/components/ApplyAsCreatorButton";
 import { PostModal } from "@/features/creator-dashboard/components/PostModal";
+import { cn } from "@/shared/lib/cn";
 
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 
@@ -15,6 +16,9 @@ const COMPOSE_TARGET = {
   LOOK: "look",
   BECOME_CREATOR: "become_creator",
 } as const;
+
+const FAB_POSITION_ABOVE_CHAT_LAUNCHER = "bottom-40 sm:bottom-24 lg:bottom-28";
+const FAB_POSITION_DEFAULT = "bottom-24 lg:bottom-28";
 
 type ComposeTarget = (typeof COMPOSE_TARGET)[keyof typeof COMPOSE_TARGET] | null;
 
@@ -44,7 +48,10 @@ export const AddPostButton = () => {
         type="button"
         onClick={handleClick}
         aria-label="Add a post"
-        className="fixed bottom-24 right-4 z-40 flex h-14 w-14 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground shadow-xl transition-transform hover:scale-105 hover:bg-[#ff6a1f] active:scale-95 sm:w-auto sm:px-6 lg:bottom-28 lg:right-8"
+        className={cn(
+          "fixed right-4 z-40 flex h-14 w-14 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground shadow-xl transition-transform hover:scale-105 hover:bg-[#ff6a1f] active:scale-95 sm:w-auto sm:px-6 lg:right-8",
+          isAuthenticated ? FAB_POSITION_ABOVE_CHAT_LAUNCHER : FAB_POSITION_DEFAULT,
+        )}
       >
         <Plus className="size-6 shrink-0" />
         <span className="hidden text-[15px] font-semibold sm:inline">Post</span>

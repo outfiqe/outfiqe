@@ -18,6 +18,7 @@ export const paymentRepository = {
         userId: true,
         paymentMethod: true,
         paymentStatus: true,
+        fulfilmentStatus: true,
         subtotal: true,
         deliveryFee: true,
         total: true,
@@ -91,6 +92,17 @@ export const paymentRepository = {
     });
   },
 
+  async failPendingTransactions(client: DbClient, orderId: string): Promise<void> {
+    await client.paymentTransaction.updateMany({
+      where: {
+        orderId,
+        type: PaymentTransactionType.PAYMENT,
+        status: PaymentTransactionStatus.INITIATED,
+      },
+      data: { status: PaymentTransactionStatus.FAILED },
+    });
+  },
+
   async markOrderPlaced(client: DbClient, orderId: string): Promise<void> {
     await client.order.update({
       where: { id: orderId },
@@ -127,6 +139,7 @@ export const paymentRepository = {
         id: true,
         userId: true,
         paymentStatus: true,
+        fulfilmentStatus: true,
         subtotal: true,
         deliveryFee: true,
         total: true,

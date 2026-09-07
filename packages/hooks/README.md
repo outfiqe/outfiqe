@@ -14,7 +14,14 @@ Shared React hooks reused across `apps/web` and `apps/admin` — generic data-fe
   fallback, and `draggingId`/`dragOverId` for styling. Used by the web taste picker
   (`CustomizeTasteModal`) and the admin `CategoriesPage` / `StageConfigModal` lists.
 - `useInfiniteCursorPage.ts` — generic cursor-paginated `useInfiniteQuery` wrapper any
-  cursor-shaped list endpoint can build on.
+  cursor-shaped list endpoint can build on. A `select` strips any `null`/`undefined` page out of
+  `data.pages` before consumers see it — a page can be null when an API client resolves a 5xx to
+  `null` instead of throwing (see the `getNextPageParam` `?.`), or when a failed server-side
+  prefetch (a `*Server` fn that `catch`es to `null`) still gets dehydrated into the client cache.
+  Without the filter, every `data.pages.flatMap((page) => page.something)` call site — and there
+  are ~20 — crashes on `Cannot read properties of null`. The `select` is `useCallback`-wrapped so
+  its identity is stable and react-query doesn't re-run it (and re-break `useMemo([data])` in
+  consumers like `BrandProfile`) each render.
 - `useNotifications.ts` — `NOTIFICATIONS_QUERY_KEY`/`NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY`, and
   `useNotifications`: the feed's cursor pagination (via `useInfiniteCursorPage`) plus optimistic
   mark-read/mark-all-read. Owns fetching and mutating only — real-time updates come from

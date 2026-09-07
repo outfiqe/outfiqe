@@ -112,6 +112,7 @@ export default defineConfig({
         "src/modules/discounts/**/*.ts",
         "src/modules/products/product.utils.ts",
         "src/modules/coupons/coupon.utils.ts",
+        "src/modules/payments/providers/esewa.provider.ts",
       ],
       thresholds: {
         lines: 80,
