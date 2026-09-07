@@ -1,5 +1,7 @@
 import { Shirt } from "lucide-react";
 
+import { AppImage } from "@/shared/components/AppImage";
+
 import { CommissionSource, type CreatorCommission } from "../api/commissionSchemas";
 import { CommissionStatusBadge } from "./CommissionStatusBadge";
 
@@ -18,11 +20,12 @@ export const EarningsLedgerRow = ({ commission }: EarningsLedgerRowProps) => {
 
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-border p-4">
-      <div
-        className="flex aspect-3/4 w-14 shrink-0 items-center justify-center rounded-lg bg-muted bg-cover bg-center"
-        style={{ backgroundImage: imageUrl ? `url(${imageUrl})` : undefined }}
-      >
-        {!imageUrl && <Shirt className="size-6 text-foreground/25" strokeWidth={1} />}
+      <div className="relative flex aspect-3/4 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
+        {imageUrl ? (
+          <AppImage src={imageUrl} alt="" fill sizes="56px" />
+        ) : (
+          <Shirt className="size-6 text-foreground/25" strokeWidth={1} />
+        )}
       </div>
 
       <div className="min-w-0 flex-1">

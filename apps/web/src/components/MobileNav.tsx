@@ -9,6 +9,7 @@ import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus, UserRole } from "@/features/auth/types";
 import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
 import { useCart } from "@/features/cart";
+import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
@@ -36,14 +37,10 @@ const AccountRow = ({
   const body = (
     <>
       <span
-        className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cover bg-center text-xs font-bold text-white"
-        style={
-          avatarUrl
-            ? { backgroundImage: `url(${avatarUrl})` }
-            : { backgroundColor: getAvatarColor(userId) }
-        }
+        className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white"
+        style={avatarUrl ? undefined : { backgroundColor: getAvatarColor(userId) }}
       >
-        {!avatarUrl && initialsFor(name)}
+        {avatarUrl ? <AppImage src={avatarUrl} alt="" fill sizes="36px" /> : initialsFor(name)}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-semibold text-foreground">{name}</span>
