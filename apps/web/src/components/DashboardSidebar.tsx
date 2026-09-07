@@ -11,6 +11,7 @@ import { LogOut } from "lucide-react";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
+import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
@@ -42,21 +43,18 @@ export const DashboardSidebar = () => {
 
   const header = (
     <div className={cn("flex min-w-0 items-center gap-2.5", collapsed && "justify-center")}>
-      <div className="size-9 shrink-0 overflow-hidden rounded-full">
-        <div
-          className="flex size-full items-center justify-center bg-cover bg-center"
-          style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
-        >
-          {!avatarUrl && (
-            <span
-              aria-hidden
-              className="flex size-full items-center justify-center text-xs font-bold text-white"
-              style={{ backgroundColor: getAvatarColor(id) }}
-            >
-              {initialsFor(name)}
-            </span>
-          )}
-        </div>
+      <div className="relative size-9 shrink-0 overflow-hidden rounded-full">
+        {avatarUrl ? (
+          <AppImage src={avatarUrl} alt="" fill sizes="36px" />
+        ) : (
+          <span
+            aria-hidden
+            className="flex size-full items-center justify-center text-xs font-bold text-white"
+            style={{ backgroundColor: getAvatarColor(id) }}
+          >
+            {initialsFor(name)}
+          </span>
+        )}
       </div>
       {!collapsed && (
         <div className="min-w-0">
