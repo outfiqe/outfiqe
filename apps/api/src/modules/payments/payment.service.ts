@@ -157,7 +157,7 @@ export const paymentService = {
     );
 
     const providerSlug = order.paymentMethod.toLowerCase();
-    const callbackUrl = `${env.FRONTEND_URL}/payments/${providerSlug}/callback?orderId=${order.id}`;
+    const callbackUrl = `${env.FRONTEND_URL}/payments/${providerSlug}/callback/${order.id}`;
 
     const result = await provider.initiate({
       transactionUuid: transaction.id,
@@ -165,7 +165,7 @@ export const paymentService = {
       deliveryFee: order.deliveryFee,
       totalAmount: order.total,
       successUrl: callbackUrl,
-      failureUrl: `${callbackUrl}&redirectOutcome=failed`,
+      failureUrl: `${callbackUrl}/failed`,
     });
 
     if (result.providerRef) {

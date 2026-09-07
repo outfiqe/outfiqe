@@ -19,9 +19,10 @@ then confirm the outcome when the gateway redirects them back.
   can also show a "this already went through" message instead of a red error.
 - `hooks/useVerifyPayment.ts` — polls `POST /payments/:orderId/verify` every 3s while the server
   says `PENDING`, up to 10 attempts, then exposes `hasTimedOut`.
-- `components/PaymentCallbackScreen.tsx` — the `/payments/[provider]/callback` page body. Picks
-  one of `PaymentSuccess` / `PaymentFailed` / `PaymentStillPending` / `PaymentPending` /
-  `MissingOrder` from the verify result and the redirect marker.
+- `components/PaymentCallbackScreen.tsx` — the callback page body. Takes `orderId` and an optional
+  `gatewayReportedFailure` as props (the route pages under
+  `app/payments/[provider]/callback/[orderId]/` supply them) and picks one of `PaymentSuccess` /
+  `PaymentFailed` / `PaymentStillPending` / `PaymentPending` from the verify result.
 - `api/paymentsApi.ts` / `paymentsSchemas.ts` — the two endpoints and their response shapes.
 
 ## Funnel
@@ -31,15 +32,17 @@ On return they land on a "confirming your payment…" screen that resolves to re
 through (with a Try again button) / still confirming.
 
 **Technical**: `CheckoutForm` → `useInitiatePayment` → `redirectToPaymentGateway` → gateway →
-gateway redirects to `/payments/[provider]/callback?orderId=…` → `PaymentCallbackScreen` →
-`useVerifyPayment` → `POST /payments/:orderId/verify` (see `apps/api/src/modules/payments/README.md`).
+gateway redirects to `/payments/[provider]/callback/[orderId]` (or `/[orderId]/failed`) →
+`PaymentCallbackScreen` → `useVerifyPayment` → `POST /payments/:orderId/verify` (see
+`apps/api/src/modules/payments/README.md`).
 
 ## The gateway redirect is a UI hint, never the source of truth
 
-`verify` is always what decides the order's real state — the callback screen never trusts a query
-param the gateway sent to mean a payment succeeded. But eSewa redirects a cancelled/failed payment
-to a distinct `failure_url` carrying `redirectOutcome=failed` (added by the API in
-`payment.service.ts`), and the screen reads _that one marker_ to jump straight to the
-failed/retry view instead of showing "confirming your payment…" and polling `verify` for ~30s
-before giving up. `verify` still runs in the background the whole time, so a `COMPLETE` result
-always wins and corrects the view if the gateway's redirect was wrong.
+`verify` is always what decides the order's real state — the callback screen never trusts the
+gateway's redirect to mean a payment succeeded. But eSewa redirects a cancelled/failed payment to a
+distinct `…/failed` route (the API builds `failure_url` that way — it can't use a query param
+because eSewa mangles those, see `apps/api/src/modules/payments/README.md`), and the `failed` route
+page passes `gatewayReportedFailure` so the screen jumps straight to the failed/retry view instead
+of showing "confirming your payment…" and polling `verify` for ~30s before giving up. `verify`
+still runs in the background the whole time, so a `COMPLETE` result always wins and corrects the
+view if the gateway's redirect was wrong.

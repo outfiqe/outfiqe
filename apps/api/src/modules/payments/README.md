@@ -8,16 +8,22 @@ Unlike COD, eSewa/Khalti orders don't touch `ProductSize.stock` when the order i
 
 `settleVerified` publishes it, but only in the successful branch (stock decremented cleanly, `markOrderPlaced` reached) — never when `needsManualRefund` gets set. Money moved either way in that failure case, but the sale is headed for a human refund decision, and this module has no XP-reversal mechanism, so it's safer to simply not award "purchase" XP there rather than award-then-need-to-claw-back. See `orders/README.md` for the COD half of this same event (COD publishes it from checkout instead, since there's no separate settlement step) and `xp/README.md` for what it triggers.
 
-## The redirect is never trusted
+## The callback URLs are path-only, and the redirect is never trusted
 
-`success_url` and `failure_url` both point at the same callback route, differing only by a
-`&redirectOutcome=failed` marker on `failure_url`. Verification never reads that marker or any
-query param eSewa sends back — `POST /api/payments/:orderId/verify` always makes its own
-server-to-server call to eSewa's status endpoint using our own stored `transaction_uuid`, amount,
-and product code. The marker exists purely so the web callback screen can show the failed/retry
-state immediately instead of polling `verify` for ~30s first (see
-`apps/web/src/features/payments/README.md`); it never influences the order's actual
-`paymentStatus`, which still only moves on a verified status check or the reconciliation sweep.
+`success_url` / `failure_url` carry the order id **in the path**
+(`/payments/:provider/callback/:orderId`, and `/…/:orderId/failed` for failure) — not a query
+string. eSewa v2 appends `?data=<base64>` to `success_url` verbatim; when we used
+`…/callback?orderId=X` it produced `…/callback?orderId=X?data=…`, and `orderId` parsed as
+`X?data=…`, so every post-payment `verify` call `POST`ed to a 404 and the callback showed a
+false failure. A path segment survives the append untouched.
+
+Verification still never reads eSewa's `data` param or which route it landed on —
+`POST /api/payments/:orderId/verify` always makes its own server-to-server call to eSewa's status
+endpoint using our own stored `transaction_uuid`, amount, and product code. The `/failed` route
+only lets the web callback screen show the failed/retry state immediately instead of polling
+`verify` for ~30s first (see `apps/web/src/features/payments/README.md`); it never influences the
+order's `paymentStatus`, which still only moves on a verified status check or the reconciliation
+sweep.
 
 ## Env var correction found by actually calling the sandbox
 

@@ -5,11 +5,17 @@ import { PaymentCallbackScreen } from "@/features/payments";
 
 export const metadata: Metadata = { title: "Payment" };
 
-const PaymentCallbackPage = () => {
+interface PaymentCallbackPageProps {
+  params: Promise<{ orderId: string }>;
+}
+
+const PaymentCallbackPage = async ({ params }: PaymentCallbackPageProps) => {
+  const { orderId } = await params;
+
   return (
     <div className="mx-auto max-w-md px-6 py-16">
       <Suspense fallback={null}>
-        <PaymentCallbackScreen />
+        <PaymentCallbackScreen orderId={orderId} />
       </Suspense>
     </div>
   );
