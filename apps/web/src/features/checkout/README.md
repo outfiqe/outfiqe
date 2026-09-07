@@ -16,7 +16,7 @@ The delivery-details-and-payment-method form that turns a cart (or, since Buy No
 
 ## Funnel
 
-**User-facing**: fill in delivery address, pick a payment method, submit. COD lands straight on the order confirmation page; eSewa/Khalti redirect to the gateway first.
+**User-facing**: pick a saved address (or fill a new one), pick a payment method, submit. COD lands straight on the order confirmation page; eSewa/Khalti redirect to the gateway first.
 
 **Technical**: `CheckoutBody` reads either the persisted cart (`useCart`) or a Buy Now payload, builds a `Cart`-shaped object either way, and hands it — along with the fetched `DeliveryZone[]` (`useDeliveryZones`) — to `CheckoutForm`, which resolves the delivery fee live from the form's own `city` field and submits via `useCheckout` → `checkoutApi.submit` → `POST /orders/checkout` (see `apps/api/src/modules/orders/README.md`).
 
@@ -27,6 +27,18 @@ The delivery-details-and-payment-method form that turns a cart (or, since Buy No
 This is deliberate: the shopper's persisted cart is never read or written by a Buy Now purchase, so it can't pick up an unwanted item or lose one, and checking out shows only the one item being bought — not whatever else happens to be sitting in the cart.
 
 **Buy Now has its own coupon UI because it has no cart page to apply one on.** `BuyNowCouponForm` (rendered via `CheckoutSummary`'s `couponSlot`, so it sits with the order summary rather than the address/payment column) calls `useBuyNowCouponPreview` → `POST /coupons/preview-buy-now` to validate a code against the single Buy Now line before the shopper commits, and `CheckoutBody` holds the resulting preview in state, feeding it into `buildBuyNowCart` (which subtracts `discountAmount` from `total`) and into `CheckoutForm`'s submit call as `couponCode`. `CheckoutForm` evaluates the free-delivery threshold against `cart.subtotal`, which is always the pre-coupon amount on both paths, matching the backend's own order of operations. The preview is a convenience, not the source of truth — `checkoutOnce` revalidates the code from scratch server-side, same as the cart path's apply-then-checkout double validation (`apps/api/src/modules/coupons/README.md`).
+
+## Saved addresses are a front-end pre-fill, nothing more
+
+When the shopper has saved addresses (`apps/web/src/features/addresses`), `CheckoutForm` shows a
+`SavedAddressPicker` and, on mount, pre-selects the default and `form.reset`s the five delivery
+fields from it. Picking another saved address re-fills them; "Edit these details for this order"
+just unhides the inputs (it never writes back to the saved address); "Use a new address" clears
+them and offers a "Save this address for next time" checkbox that fires `useCreateAddress` after
+the order is placed (best-effort — a failed save toasts but doesn't fail the completed order).
+`POST /orders/checkout` is unchanged — it still receives the raw `fullName/phone/address/city/
+landmark` snapshot, never a `savedAddressId`. The address book is a convenience layer; the order
+still owns its own copy of the address (see `apps/api/src/modules/orders/README.md`).
 
 ## Non-obvious rationale
 
