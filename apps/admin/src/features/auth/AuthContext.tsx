@@ -8,8 +8,12 @@ import type { AdminUser } from "./schemas";
 const canAccessAdminApp = (role: AdminUser["role"]): boolean =>
   role === "ADMIN" || role === "BRAND_OWNER";
 
+export type SignedOutReason = "session-ended" | "user-signed-out";
+
 type AuthState =
-  { status: "loading" } | { status: "signed-out" } | { status: "signed-in"; user: AdminUser };
+  | { status: "loading" }
+  | { status: "signed-out"; reason: SignedOutReason }
+  | { status: "signed-in"; user: AdminUser };
 
 type AuthContextValue = {
   state: AuthState;
@@ -24,7 +28,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<AuthState>({ status: "loading" });
 
   useEffect(() => {
-    setUnauthorizedHandler(() => setState({ status: "signed-out" }));
+    setUnauthorizedHandler(() => setState({ status: "signed-out", reason: "session-ended" }));
 
     const restoreSession = async () => {
       try {
@@ -32,10 +36,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setAccessToken(accessToken);
         const user = await authApi.me();
         setState(
-          canAccessAdminApp(user.role) ? { status: "signed-in", user } : { status: "signed-out" },
+          canAccessAdminApp(user.role)
+            ? { status: "signed-in", user }
+            : { status: "signed-out", reason: "session-ended" },
         );
       } catch {
-        setState({ status: "signed-out" });
+        setState({ status: "signed-out", reason: "session-ended" });
       }
     };
 
@@ -46,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     await authApi.logout().catch(() => {});
     setAccessToken(null);
-    setState({ status: "signed-out" });
+    setState({ status: "signed-out", reason: "user-signed-out" });
   };
 
   const updateUser = useCallback((patch: Partial<AdminUser>) => {
