@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import { cache } from "react";
 import type { z } from "zod";
 
 import { serverApiRequest } from "@/shared/lib/serverApiClient";
@@ -23,7 +24,7 @@ const REFRESH_COOKIE_NAME = "refresh_token";
 
 export type ServerSession = { user: UserSession; accessToken: string };
 
-export const getServerSessionWithToken = async (): Promise<ServerSession | null> => {
+export const getServerSessionWithToken = cache(async (): Promise<ServerSession | null> => {
   const cookieStore = await cookies();
   const refreshToken = cookieStore.get(REFRESH_COOKIE_NAME)?.value;
   if (!refreshToken) return null;
@@ -41,7 +42,7 @@ export const getServerSessionWithToken = async (): Promise<ServerSession | null>
     // No valid session — not an error state for the guard, just "signed out".
     return null;
   }
-};
+});
 
 export const getServerSession = async (): Promise<UserSession | null> => {
   const session = await getServerSessionWithToken();
