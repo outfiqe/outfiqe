@@ -8,7 +8,7 @@ const DEFAULT_CACHE_KEY = "all";
 const SUCCESS_STATUS_MIN = 200;
 const SUCCESS_STATUS_MAX = 300;
 
-const isSuccessStatus = (status: number) =>
+export const isSuccessStatus = (status: number) =>
   status >= SUCCESS_STATUS_MIN && status < SUCCESS_STATUS_MAX;
 
 const isSuccessEnvelope = (body: unknown): body is ApiSuccessEnvelope<unknown> =>

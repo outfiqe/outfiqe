@@ -48,6 +48,7 @@ export default defineConfig({
         "src/shared/utils/pagination.utils.ts",
         "src/shared/utils/password.utils.ts",
         "src/shared/utils/password-breach.utils.ts",
+        "src/shared/utils/web-cache.utils.ts",
         "src/shared/utils/backoff.utils.ts",
         "src/shared/events/event-bus.utils.ts",
         "src/modules/auth/auth.retention.ts",

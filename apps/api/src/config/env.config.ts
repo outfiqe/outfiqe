@@ -31,6 +31,7 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   FRONTEND_URL: z.url(),
+  WEB_REVALIDATE_SECRET: z.string().min(1).optional(),
   ADMIN_URL: z.url(),
   ALLOWED_ORIGINS: z
     .string()
