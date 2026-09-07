@@ -2,11 +2,14 @@
 
 import { Layers } from "lucide-react";
 
+import { AppImage } from "@/shared/components/AppImage";
 import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 
 import type { FeedPost } from "../api/exploreFeedSchemas";
 import { PostCaption } from "./PostCaption";
+
+const POST_GRID_SIZES = "(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw";
 
 type PostGridCardProps = {
   post: FeedPost;
@@ -23,13 +26,11 @@ export const PostGridCard = ({ post, onClick, trendingRank }: PostGridCardProps)
         type="button"
         onClick={onClick}
         aria-label={caption ?? "View post"}
-        className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-2xl border border-border bg-cover bg-center transition-colors hover:border-foreground/30"
-        style={
-          imageUrl
-            ? { backgroundImage: `url(${imageUrl})` }
-            : { backgroundColor: getAvatarColor(id) }
-        }
+        className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30"
+        style={imageUrl ? undefined : { backgroundColor: getAvatarColor(id) }}
       >
+        {imageUrl && <AppImage src={imageUrl} alt="" fill sizes={POST_GRID_SIZES} />}
+
         {trendingRank && <TrendingRankBadge rank={trendingRank} />}
 
         {images.length > 1 && (
