@@ -6,6 +6,7 @@ import {
   BanknoteArrowUp,
   LayoutDashboard,
   LayoutGrid,
+  MapPin,
   MessageCircleOff,
   Package,
   Share2,
@@ -36,6 +37,13 @@ const CHAT_SETTINGS_NAV_ITEM: SidebarNavItem = {
   icon: MessageCircleOff,
 };
 
+const ADDRESSES_NAV_ITEM: SidebarNavItem = {
+  id: "addresses",
+  href: "/settings/addresses",
+  label: "Addresses",
+  icon: MapPin,
+};
+
 const OVERVIEW_NAV_ITEM: SidebarNavItem = {
   id: "overview",
   href: "/overview",
@@ -52,6 +60,7 @@ const CREATOR_NAV: SidebarNavItem[] = [
   { id: "progress", href: "/progress", label: "Progress", icon: Sparkles },
   { id: "badges", href: "/badges", label: "Badges", icon: Award },
   { id: "challenges", href: "/challenges", label: "Challenges", icon: Trophy },
+  ADDRESSES_NAV_ITEM,
   CHAT_SETTINGS_NAV_ITEM,
   SECURITY_NAV_ITEM,
 ];
@@ -64,6 +73,7 @@ const BRAND_NAV: SidebarNavItem[] = [
   { id: "products", href: "/products", label: "Products", icon: Package },
   { id: "orders", href: "/manage-orders", label: "Orders", icon: ShoppingBag },
   { id: "wallet", href: "/wallet", label: "Wallet", icon: Wallet },
+  ADDRESSES_NAV_ITEM,
   CHAT_SETTINGS_NAV_ITEM,
   SECURITY_NAV_ITEM,
 ];

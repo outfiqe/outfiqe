@@ -18,9 +18,61 @@ import { CheckoutForm } from "./CheckoutForm";
 let isOnline = true;
 const checkoutMutateAsync = vi.fn();
 const initiatePaymentMutateAsync = vi.fn();
+const createAddressMutateAsync = vi.fn();
+
+type SavedAddress = {
+  id: string;
+  label: string | null;
+  fullName: string;
+  phone: string;
+  address: string;
+  city: string;
+  landmark: string | null;
+  isDefault: boolean;
+};
+
+let savedAddresses: SavedAddress[] = [];
 
 vi.mock("@/features/auth/context/AuthContext", () => ({
   useAuth: () => ({ state: { user: { name: "Ram Shrestha" } } }),
+}));
+
+vi.mock("@/features/addresses", () => ({
+  NEW_ADDRESS_OPTION: "new",
+  useAddresses: () => ({ data: savedAddresses }),
+  useCreateAddress: () => ({ mutateAsync: createAddressMutateAsync }),
+  SavedAddressPicker: ({
+    addresses,
+    selectedId,
+    onSelect,
+  }: {
+    addresses: SavedAddress[];
+    selectedId: string;
+    onSelect: (value: string) => void;
+  }) => (
+    <div>
+      {addresses.map((address) => (
+        <label key={address.id}>
+          <input
+            type="radio"
+            name="saved-address"
+            checked={selectedId === address.id}
+            onChange={() => onSelect(address.id)}
+          />
+          {address.fullName}
+        </label>
+      ))}
+      <label>
+        <input
+          type="radio"
+          name="saved-address"
+          checked={selectedId === "new"}
+          onChange={() => onSelect("new")}
+        />
+        Use a new address
+      </label>
+    </div>
+  ),
 }));
 
 vi.mock("@/features/delivery-zones", async () => {
@@ -95,14 +147,28 @@ const renderCheckoutForm = (zones: DeliveryZone[] = ZONES) => {
 const fillRequiredFields = async () => {
   await userEvent.type(screen.getByLabelText(/full name/i), "Ram Shrestha");
   await userEvent.type(screen.getByLabelText(/^phone$/i), "9800000000");
-  await userEvent.type(screen.getByLabelText(/address/i), "Baneshwor, Kathmandu");
+  await userEvent.type(screen.getByLabelText(/^address$/i), "Baneshwor, Kathmandu");
   await userEvent.type(screen.getByLabelText("City"), "Kathmandu");
 };
 
+const aSavedAddress = (overrides: Partial<SavedAddress> = {}): SavedAddress => ({
+  id: "addr-1",
+  label: "Home",
+  fullName: "Sita Devi",
+  phone: "9811111111",
+  address: "Jhamsikhel, Ward 3",
+  city: "Lalitpur",
+  landmark: null,
+  isDefault: true,
+  ...overrides,
+});
+
 beforeEach(() => {
   isOnline = true;
+  savedAddresses = [];
   checkoutMutateAsync.mockReset();
   initiatePaymentMutateAsync.mockReset();
+  createAddressMutateAsync.mockReset();
   vi.spyOn(toast, "error").mockImplementation(() => "");
 });
 
@@ -145,5 +211,52 @@ describe("CheckoutForm", () => {
 
     expect(screen.getByText("Rs. 250")).toBeInTheDocument();
     expect(screen.queryByText("Rs. 100")).not.toBeInTheDocument();
+  });
+
+  it("offers to save a new address when the shopper has none saved", async () => {
+    checkoutMutateAsync.mockResolvedValue({ id: "order-2", paymentMethod: "COD" });
+    createAddressMutateAsync.mockResolvedValue({});
+    renderCheckoutForm();
+
+    const saveToggle = screen.getByLabelText(/save this address for next time/i);
+    expect(saveToggle).toBeChecked();
+
+    await fillRequiredFields();
+    fireEvent.submit(screen.getByRole("button", { name: /place order/i }).closest("form")!);
+
+    await vi.waitFor(() => expect(createAddressMutateAsync).toHaveBeenCalledTimes(1));
+    expect(createAddressMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ address: "Baneshwor, Kathmandu", isDefault: true }),
+    );
+  });
+
+  it("pre-selects the default saved address and hides the raw fields", async () => {
+    savedAddresses = [aSavedAddress()];
+    checkoutMutateAsync.mockResolvedValue({ id: "order-3", paymentMethod: "COD" });
+    renderCheckoutForm();
+
+    expect(screen.queryByLabelText(/full name/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Sita Devi")).toBeChecked();
+
+    fireEvent.submit(screen.getByRole("button", { name: /place order/i }).closest("form")!);
+
+    await vi.waitFor(() => expect(checkoutMutateAsync).toHaveBeenCalledTimes(1));
+    expect(checkoutMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.objectContaining({ fullName: "Sita Devi", city: "Lalitpur" }),
+      }),
+    );
+    expect(createAddressMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("reveals a blank form when the shopper picks 'use a new address'", async () => {
+    savedAddresses = [aSavedAddress()];
+    renderCheckoutForm();
+
+    await userEvent.click(screen.getByLabelText(/use a new address/i));
+
+    expect(screen.getByLabelText(/full name/i)).toHaveValue("Ram Shrestha");
+    expect(screen.getByLabelText(/^address$/i)).toHaveValue("");
+    expect(screen.getByLabelText(/save this address for next time/i)).toBeInTheDocument();
   });
 });

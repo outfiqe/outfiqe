@@ -78,6 +78,8 @@ export default defineConfig({
         "src/modules/notifications/notification.retention.ts",
         "src/modules/nepal-banks/**/*.ts",
         "src/modules/bank-accounts/**/*.ts",
+        "src/modules/addresses/**/*.ts",
+        "src/shared/utils/shipping-address.schemas.ts",
         "src/shared/utils/account-number-encryption.utils.ts",
         "src/shared/utils/bank-account-body.schemas.ts",
         "src/shared/utils/name-mismatch.utils.ts",

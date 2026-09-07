@@ -63,6 +63,7 @@ model User {
   savedProducts                            SavedProduct[]
   cart                                     Cart?
   orders                                   Order[]
+  savedAddresses                           SavedAddress[]
   idempotencyRequests                      RequestIdempotency[]
   attributedOrderItems                     OrderItem[]                 @relation("AttributedOrderItems")
   creatorCommissions                       CreatorCommission[]         @relation("CreatorCommissions")
@@ -976,6 +977,26 @@ model Order {
 
   @@index([userId, createdAt])
   @@map("orders")
+}
+
+model SavedAddress {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  label     String?
+  fullName  String  @map("full_name")
+  phone     String
+  address   String
+  city      String
+  landmark  String?
+  isDefault Boolean @default(false) @map("is_default")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, isDefault])
+  @@map("saved_addresses")
 }
 
 model OrderItem {

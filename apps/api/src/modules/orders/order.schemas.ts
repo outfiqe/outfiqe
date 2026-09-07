@@ -2,8 +2,8 @@ import { z } from "zod";
 
 import { SESSION_ID_MAX } from "#constants/commerce.constants.js";
 import { FulfilmentStatus, PaymentMethod } from "#generated/prisma/enums.js";
+import { shippingAddressFields } from "#lib/shipping-address.schemas.js";
 import { COUPON_CODE_MAX_LENGTH } from "#modules/coupons/coupon.constants.js";
-import { citySchema } from "#modules/delivery-zones/deliveryZone.schemas.js";
 
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 30;
@@ -18,11 +18,7 @@ export const buyNowLineSchema = z.object({
 });
 
 export const checkoutBodySchema = z.object({
-  fullName: z.string().trim().min(1).max(120),
-  phone: z.string().trim().min(6).max(20),
-  address: z.string().trim().min(1).max(300),
-  city: citySchema,
-  landmark: z.string().trim().max(200).optional(),
+  ...shippingAddressFields,
   paymentMethod: z.enum(PaymentMethod),
   sessionId: z.string().trim().min(1).max(SESSION_ID_MAX).optional(),
   buyNow: buyNowLineSchema.optional(),

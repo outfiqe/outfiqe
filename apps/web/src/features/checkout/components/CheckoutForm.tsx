@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  Checkbox,
   Form,
   FormControl,
   FormField,
@@ -14,9 +15,16 @@ import { toast } from "@outfiqe/design-system";
 import { generateUuid } from "@outfiqe/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import {
+  type Address,
+  NEW_ADDRESS_OPTION,
+  SavedAddressPicker,
+  useAddresses,
+  useCreateAddress,
+} from "@/features/addresses";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { type Cart, CART_QUERY_KEY } from "@/features/cart";
 import { CityAutocomplete, type DeliveryZone, resolveZonePreview } from "@/features/delivery-zones";
@@ -41,6 +49,16 @@ type CheckoutFormProps = {
   onBuyNowCouponChange?: (coupon: BuyNowCouponPreview | null) => void;
 };
 
+type AddressSelection = string | typeof NEW_ADDRESS_OPTION;
+
+const addressFieldsFrom = (address: Address) => ({
+  fullName: address.fullName,
+  phone: address.phone,
+  address: address.address,
+  city: address.city,
+  landmark: address.landmark ?? "",
+});
+
 export const CheckoutForm = ({
   cart,
   zones,
@@ -53,12 +71,24 @@ export const CheckoutForm = ({
   const { state } = useAuth();
   const checkout = useCheckout();
   const initiatePayment = useInitiatePayment();
+  const createAddress = useCreateAddress();
   const isOnline = useIsOnline();
+
+  const { data: savedAddresses } = useAddresses();
+  const addresses = useMemo(() => savedAddresses ?? [], [savedAddresses]);
+  const hasSavedAddresses = addresses.length > 0;
+
+  const [selectedAddress, setSelectedAddress] = useState<AddressSelection>(NEW_ADDRESS_OPTION);
+  const [isEditingSelectedAddress, setIsEditingSelectedAddress] = useState(false);
+  const [shouldSaveNewAddress, setShouldSaveNewAddress] = useState(true);
+  const hasInitializedFromSavedAddresses = useRef(false);
+
+  const emptyName = state.user?.name ?? "";
 
   const form = useForm<CheckoutInput>({
     resolver: zodResolver(checkoutInputSchema),
     defaultValues: {
-      fullName: state.user?.name ?? "",
+      fullName: emptyName,
       phone: "",
       address: "",
       city: cart.city ?? "",
@@ -85,6 +115,61 @@ export const CheckoutForm = ({
     }
   }, [codRequiresPrepaid, paymentMethod, form]);
 
+  useEffect(() => {
+    if (!savedAddresses || hasInitializedFromSavedAddresses.current) return;
+    hasInitializedFromSavedAddresses.current = true;
+
+    const preferredAddress =
+      savedAddresses.find((address) => address.isDefault) ?? savedAddresses[0];
+    if (!preferredAddress) return;
+
+    setSelectedAddress(preferredAddress.id);
+    form.reset({ ...form.getValues(), ...addressFieldsFrom(preferredAddress) });
+  }, [savedAddresses, form]);
+
+  const applyAddressSelection = (nextSelection: AddressSelection) => {
+    setSelectedAddress(nextSelection);
+    setIsEditingSelectedAddress(false);
+
+    if (nextSelection === NEW_ADDRESS_OPTION) {
+      form.reset({
+        ...form.getValues(),
+        fullName: emptyName,
+        phone: "",
+        address: "",
+        city: cart.city ?? "",
+        landmark: "",
+      });
+      return;
+    }
+
+    const picked = addresses.find((address) => address.id === nextSelection);
+    if (picked) form.reset({ ...form.getValues(), ...addressFieldsFrom(picked) });
+  };
+
+  const isNewAddress = selectedAddress === NEW_ADDRESS_OPTION;
+  const showAddressFields = isNewAddress || isEditingSelectedAddress;
+
+  const persistNewAddressAfterCheckout = async (values: CheckoutInput) => {
+    try {
+      await createAddress.mutateAsync({
+        label: "",
+        fullName: values.fullName,
+        phone: values.phone,
+        address: values.address,
+        city: values.city,
+        landmark: values.landmark ?? "",
+        isDefault: !hasSavedAddresses,
+      });
+    } catch {
+      toast.error("Your order is placed, but we couldn't save this address for next time.");
+    }
+  };
+
+  const revealAddressFieldsOnValidationError = () => {
+    if (!isNewAddress) setIsEditingSelectedAddress(true);
+  };
+
   const onSubmit = form.handleSubmit(async (values) => {
     if (!isOnline) {
       toast.error("Checkout needs a connection. Try again once you're back online.");
@@ -103,6 +188,10 @@ export const CheckoutForm = ({
 
       if (buyNow) clearBuyNowPayload();
 
+      if (isNewAddress && shouldSaveNewAddress) {
+        await persistNewAddressAfterCheckout(values);
+      }
+
       if (order.paymentMethod === PaymentMethod.COD) {
         void queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });
         router.push(`/orders/${order.id}`);
@@ -115,7 +204,7 @@ export const CheckoutForm = ({
       console.error("Checkout failed:", error);
       toast.error(getErrorMessage(error));
     }
-  });
+  }, revealAddressFieldsOnValidationError);
 
   return (
     <Form {...form}>
@@ -126,83 +215,117 @@ export const CheckoutForm = ({
               Delivery address
             </h2>
 
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="fullName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full name</FormLabel>
-                    <FormControl>
-                      <Input autoComplete="name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem className="mt-0">
-                    <FormLabel>Phone</FormLabel>
-                    <FormControl>
-                      <Input type="tel" autoComplete="tel" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {hasSavedAddresses && (
+              <div className="mt-3">
+                <SavedAddressPicker
+                  addresses={addresses}
+                  selectedId={selectedAddress}
+                  onSelect={applyAddressSelection}
+                />
+              </div>
+            )}
 
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Tole, ward, landmark" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {hasSavedAddresses && !isNewAddress && !isEditingSelectedAddress && (
+              <button
+                type="button"
+                onClick={() => setIsEditingSelectedAddress(true)}
+                className="mt-3 text-sm font-semibold text-primary-strong"
+              >
+                Edit these details for this order
+              </button>
+            )}
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field: { ref, name, value, onChange, onBlur } }) => (
-                  <FormItem>
-                    <FormLabel>City</FormLabel>
-                    <FormControl>
-                      <CityAutocomplete
-                        ref={ref}
-                        name={name}
-                        value={value}
-                        onChange={onChange}
-                        onBlur={onBlur}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="landmark"
-                render={({ field }) => (
-                  <FormItem className="mt-0">
-                    <FormLabel>Landmark (optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Near Shankhamul bridge" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {showAddressFields && (
+              <>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="fullName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full name</FormLabel>
+                        <FormControl>
+                          <Input autoComplete="name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem className="mt-0">
+                        <FormLabel>Phone</FormLabel>
+                        <FormControl>
+                          <Input type="tel" autoComplete="tel" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Tole, ward, landmark" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field: { ref, name, value, onChange, onBlur } }) => (
+                      <FormItem>
+                        <FormLabel>City</FormLabel>
+                        <FormControl>
+                          <CityAutocomplete
+                            ref={ref}
+                            name={name}
+                            value={value}
+                            onChange={onChange}
+                            onBlur={onBlur}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="landmark"
+                    render={({ field }) => (
+                      <FormItem className="mt-0">
+                        <FormLabel>Landmark (optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Near Shankhamul bridge" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
+
+            {isNewAddress && (
+              <label className="mt-4 flex items-center gap-2.5 text-sm text-foreground">
+                <Checkbox
+                  checked={shouldSaveNewAddress}
+                  onChange={(event) => setShouldSaveNewAddress(event.target.checked)}
+                />
+                Save this address for next time
+              </label>
+            )}
           </div>
 
           <div className="rounded-2xl border border-border p-5">
