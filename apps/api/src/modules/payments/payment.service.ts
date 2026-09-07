@@ -153,7 +153,7 @@ export const paymentService = {
       deliveryFee: order.deliveryFee,
       totalAmount: order.total,
       successUrl: callbackUrl,
-      failureUrl: callbackUrl,
+      failureUrl: `${callbackUrl}&redirectOutcome=failed`,
     });
 
     if (result.providerRef) {

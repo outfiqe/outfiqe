@@ -10,7 +10,14 @@ Unlike COD, eSewa/Khalti orders don't touch `ProductSize.stock` when the order i
 
 ## The redirect is never trusted
 
-`success_url` and `failure_url` point at the same callback URL. Verification never reads which URL eSewa used or trusts any query param it sends back — `POST /api/payments/:orderId/verify` always makes its own server-to-server call to eSewa's status endpoint using our own stored `transaction_uuid`, amount, and product code.
+`success_url` and `failure_url` both point at the same callback route, differing only by a
+`&redirectOutcome=failed` marker on `failure_url`. Verification never reads that marker or any
+query param eSewa sends back — `POST /api/payments/:orderId/verify` always makes its own
+server-to-server call to eSewa's status endpoint using our own stored `transaction_uuid`, amount,
+and product code. The marker exists purely so the web callback screen can show the failed/retry
+state immediately instead of polling `verify` for ~30s first (see
+`apps/web/src/features/payments/README.md`); it never influences the order's actual
+`paymentStatus`, which still only moves on a verified status check or the reconciliation sweep.
 
 ## Env var correction found by actually calling the sandbox
 

@@ -36,9 +36,12 @@ const MissingOrder = () => {
   );
 };
 
+const GATEWAY_FAILURE_MARKER = "failed";
+
 export const PaymentCallbackScreen = () => {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
+  const gatewayRedirectedToFailure = searchParams.get("redirectOutcome") === GATEWAY_FAILURE_MARKER;
 
   const verify = useVerifyPayment(orderId ?? "");
   const retryPayment = useInitiatePayment();
@@ -49,7 +52,7 @@ export const PaymentCallbackScreen = () => {
 
   if (status === PaymentVerifyStatus.COMPLETE) return <PaymentSuccess orderId={orderId} />;
 
-  if (verify.isError || status === PaymentVerifyStatus.FAILED) {
+  if (verify.isError || status === PaymentVerifyStatus.FAILED || gatewayRedirectedToFailure) {
     return (
       <PaymentFailed
         orderId={orderId}

@@ -143,6 +143,7 @@ export default defineConfig({
         "src/features/checkout/hooks/useCheckout.ts",
         "src/features/checkout/hooks/useBuyNowCouponPreview.ts",
         "src/features/payments/hooks/useInitiatePayment.ts",
+        "src/features/payments/components/PaymentCallbackScreen.tsx",
         "src/features/explore/hooks/useLikeLook.ts",
         "src/features/explore/hooks/useSaveLook.ts",
         "src/features/explore/hooks/useFollowCreator.ts",
