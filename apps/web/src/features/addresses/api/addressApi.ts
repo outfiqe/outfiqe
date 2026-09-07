@@ -9,16 +9,6 @@ import {
 
 const BASE_PATH = "/addresses";
 
-const toRequestBody = (input: AddressFormInput) => ({
-  label: input.label?.trim() ?? "",
-  fullName: input.fullName,
-  phone: input.phone,
-  address: input.address,
-  city: input.city,
-  landmark: input.landmark?.trim() ?? "",
-  isDefault: input.isDefault,
-});
-
 export const addressApi = {
   async list(): Promise<Address[]> {
     const res = await apiClient.get<Address[]>(BASE_PATH);
@@ -26,12 +16,12 @@ export const addressApi = {
   },
 
   async create(input: AddressFormInput): Promise<Address> {
-    const res = await apiClient.post<Address>(BASE_PATH, toRequestBody(input));
+    const res = await apiClient.post<Address>(BASE_PATH, input);
     return savedAddressSchema.parse(res.data);
   },
 
   async update(id: string, input: AddressFormInput): Promise<Address> {
-    const res = await apiClient.patch<Address>(`${BASE_PATH}/${id}`, toRequestBody(input));
+    const res = await apiClient.patch<Address>(`${BASE_PATH}/${id}`, input);
     return savedAddressSchema.parse(res.data);
   },
 

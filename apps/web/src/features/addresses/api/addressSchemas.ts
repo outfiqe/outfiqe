@@ -19,12 +19,12 @@ export type Address = z.infer<typeof savedAddressSchema>;
 export const savedAddressListSchema = z.array(savedAddressSchema);
 
 export const addressFormSchema = z.object({
-  label: z.string().trim().max(ADDRESS_LABEL_MAX).optional().or(z.literal("")),
+  label: z.string().trim().max(ADDRESS_LABEL_MAX),
   fullName: z.string().trim().min(1, "Enter the recipient's full name").max(120),
   phone: z.string().trim().min(6, "Enter a valid phone number").max(20),
   address: z.string().trim().min(1, "Enter the delivery address").max(300),
   city: z.string().trim().min(1, "Select a city").max(120),
-  landmark: z.string().trim().max(200).optional().or(z.literal("")),
+  landmark: z.string().trim().max(200),
   isDefault: z.boolean(),
 });
 export type AddressFormInput = z.infer<typeof addressFormSchema>;

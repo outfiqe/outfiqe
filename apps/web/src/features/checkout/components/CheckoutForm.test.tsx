@@ -259,4 +259,32 @@ describe("CheckoutForm", () => {
     expect(screen.getByLabelText(/^address$/i)).toHaveValue("");
     expect(screen.getByLabelText(/save this address for next time/i)).toBeInTheDocument();
   });
+
+  it("lets the shopper tweak a saved address's details for the order", async () => {
+    savedAddresses = [aSavedAddress()];
+    renderCheckoutForm();
+
+    expect(screen.queryByLabelText(/full name/i)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /edit these details/i }));
+
+    expect(screen.getByLabelText(/full name/i)).toHaveValue("Sita Devi");
+    expect(screen.getByLabelText(/^address$/i)).toHaveValue("Jhamsikhel, Ward 3");
+    expect(screen.queryByLabelText(/save this address for next time/i)).not.toBeInTheDocument();
+  });
+
+  it("still completes the order when saving the new address fails", async () => {
+    checkoutMutateAsync.mockResolvedValue({ id: "order-4", paymentMethod: "COD" });
+    createAddressMutateAsync.mockRejectedValue(new Error("nope"));
+    renderCheckoutForm();
+    await fillRequiredFields();
+
+    fireEvent.submit(screen.getByRole("button", { name: /place order/i }).closest("form")!);
+
+    await vi.waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(
+        "Your order is placed, but we couldn't save this address for next time.",
+      ),
+    );
+    expect(checkoutMutateAsync).toHaveBeenCalledTimes(1);
+  });
 });

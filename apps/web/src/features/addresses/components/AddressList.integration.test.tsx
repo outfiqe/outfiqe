@@ -142,6 +142,38 @@ describe("AddressList", () => {
     );
   });
 
+  it("edits an existing address through the modal", async () => {
+    mswServer.use(http.get("/api/addresses", () => listResponse([anAddress()])));
+    let updated: Record<string, unknown> | undefined;
+    mswServer.use(
+      http.patch("/api/addresses/:id", async ({ request, params }) => {
+        updated = {
+          id: params.id as string,
+          ...((await request.json()) as Record<string, unknown>),
+        };
+        return HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: anAddress({ landmark: "By the pharmacy" }),
+        });
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderList();
+
+    await user.click(await screen.findByRole("button", { name: /^edit$/i }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByLabelText(/full name/i)).toHaveValue("Sita Devi");
+
+    await user.type(within(dialog).getByLabelText(/landmark/i), "By the pharmacy");
+    await user.click(within(dialog).getByRole("button", { name: /save changes/i }));
+
+    await waitFor(() =>
+      expect(updated).toMatchObject({ id: "addr-1", landmark: "By the pharmacy" }),
+    );
+  });
+
   it("sets a non-default address as default from its card", async () => {
     mswServer.use(
       http.get("/api/addresses", () =>
