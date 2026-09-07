@@ -1,7 +1,44 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Drawer } from "./drawer";
+import { stubMatchMedia } from "./testing/setup";
+
+const originalInnerHeight = window.innerHeight;
+
+const setInnerHeight = (value: number): void => {
+  Object.defineProperty(window, "innerHeight", { value, configurable: true, writable: true });
+};
+
+const installFakeVisualViewport = (height: number) => {
+  const listeners = new Set<() => void>();
+  const viewport = {
+    height,
+    offsetTop: 0,
+    addEventListener: vi.fn((_type: string, callback: () => void) => listeners.add(callback)),
+    removeEventListener: vi.fn((_type: string, callback: () => void) => listeners.delete(callback)),
+    resizeTo(nextHeight: number) {
+      this.height = nextHeight;
+      act(() => listeners.forEach((callback) => callback()));
+    },
+  };
+  Object.defineProperty(window, "visualViewport", {
+    value: viewport,
+    configurable: true,
+    writable: true,
+  });
+  return viewport;
+};
+
+afterEach(() => {
+  setInnerHeight(originalInnerHeight);
+  Object.defineProperty(window, "visualViewport", {
+    value: undefined,
+    configurable: true,
+    writable: true,
+  });
+  stubMatchMedia(false);
+});
 
 describe("Drawer", () => {
   it("renders nothing when closed", () => {
@@ -116,5 +153,69 @@ describe("Drawer", () => {
     );
 
     expect(screen.getByRole("dialog")).toHaveClass("h-[90dvh]", "rounded-t-[28px]");
+  });
+
+  describe("mobile soft keyboard", () => {
+    beforeEach(() => {
+      stubMatchMedia(true);
+      setInnerHeight(800);
+    });
+
+    it("pins the sheet above the keyboard when the visual viewport shrinks", () => {
+      installFakeVisualViewport(360);
+
+      render(
+        <Drawer open onClose={vi.fn()} title="Messages">
+          Body
+        </Drawer>,
+      );
+
+      expect(screen.getByRole("dialog")).toHaveStyle({ bottom: "440px", height: "360px" });
+    });
+
+    it("leaves the sheet alone while the keyboard is closed", () => {
+      installFakeVisualViewport(780);
+
+      render(
+        <Drawer open onClose={vi.fn()} title="Messages">
+          Body
+        </Drawer>,
+      );
+
+      const dialog = screen.getByRole("dialog");
+      expect(dialog.style.height).toBe("");
+      expect(dialog.style.bottom).toBe("");
+    });
+
+    it("reacts as the keyboard opens and closes", () => {
+      const viewport = installFakeVisualViewport(780);
+
+      render(
+        <Drawer open onClose={vi.fn()} title="Messages">
+          Body
+        </Drawer>,
+      );
+      const dialog = screen.getByRole("dialog");
+      expect(dialog.style.bottom).toBe("");
+
+      viewport.resizeTo(360);
+      expect(dialog).toHaveStyle({ bottom: "440px", height: "360px" });
+
+      viewport.resizeTo(780);
+      expect(dialog.style.bottom).toBe("");
+    });
+
+    it("does not touch the sheet above the sm breakpoint", () => {
+      stubMatchMedia(false);
+      installFakeVisualViewport(360);
+
+      render(
+        <Drawer open onClose={vi.fn()} title="Messages">
+          Body
+        </Drawer>,
+      );
+
+      expect(screen.getByRole("dialog").style.height).toBe("");
+    });
   });
 });

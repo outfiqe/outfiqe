@@ -1,10 +1,39 @@
 "use client";
 
 import { X } from "lucide-react";
-import type { ReactNode } from "react";
+import { type CSSProperties, type ReactNode, useMemo, useSyncExternalStore } from "react";
 import { Drawer as VaulDrawer } from "vaul";
 
 import { cn } from "./cn";
+import { useMediaQuery } from "./use-media-query";
+
+const MOBILE_SHEET_MEDIA_QUERY = "(max-width: 639.98px)";
+const KEYBOARD_CONSIDERED_OPEN_PX = 120;
+
+const getVisualViewport = (): VisualViewport | null =>
+  typeof window !== "undefined" ? window.visualViewport : null;
+
+const subscribeToVisualViewport = (onChange: () => void): (() => void) => {
+  const viewport = getVisualViewport();
+  if (!viewport) return () => {};
+  viewport.addEventListener("resize", onChange);
+  viewport.addEventListener("scroll", onChange);
+  return () => {
+    viewport.removeEventListener("resize", onChange);
+    viewport.removeEventListener("scroll", onChange);
+  };
+};
+
+const NO_KEYBOARD = "";
+
+const readKeyboardOcclusion = (): string => {
+  const viewport = getVisualViewport();
+  if (!viewport) return NO_KEYBOARD;
+  const occludedHeight = window.innerHeight - viewport.height - viewport.offsetTop;
+  return occludedHeight > KEYBOARD_CONSIDERED_OPEN_PX
+    ? `${occludedHeight}:${viewport.height}`
+    : NO_KEYBOARD;
+};
 
 interface DrawerProps {
   open: boolean;
@@ -29,6 +58,19 @@ export const Drawer = ({
   className,
   snapPoints,
 }: DrawerProps) => {
+  const isMobileSheet = useMediaQuery(MOBILE_SHEET_MEDIA_QUERY);
+  const keyboardOcclusion = useSyncExternalStore(
+    subscribeToVisualViewport,
+    readKeyboardOcclusion,
+    () => NO_KEYBOARD,
+  );
+
+  const keyboardAwareStyle = useMemo<CSSProperties | undefined>(() => {
+    if (!open || !isMobileSheet || keyboardOcclusion === NO_KEYBOARD) return undefined;
+    const [keyboardInset, visibleHeight] = keyboardOcclusion.split(":").map(Number);
+    return { bottom: keyboardInset, height: visibleHeight };
+  }, [open, isMobileSheet, keyboardOcclusion]);
+
   const handleOpenChange = (nextOpen: boolean): void => {
     if (!nextOpen) onClose();
   };
@@ -38,6 +80,7 @@ export const Drawer = ({
       open={open}
       onOpenChange={handleOpenChange}
       modal={false}
+      repositionInputs={false}
       snapPoints={snapPoints}
     >
       <VaulDrawer.Portal>
@@ -52,6 +95,7 @@ export const Drawer = ({
 
         <VaulDrawer.Content
           aria-label={ariaLabel}
+          style={keyboardAwareStyle}
           className={cn(
             "fixed inset-x-0 bottom-0 z-[60] flex h-[90dvh] flex-col overflow-hidden rounded-t-[28px] border-t border-border bg-card shadow-xl outline-none",
             "sm:inset-auto sm:bottom-6 sm:right-6 sm:h-[560px] sm:w-[360px] sm:rounded-2xl sm:border",

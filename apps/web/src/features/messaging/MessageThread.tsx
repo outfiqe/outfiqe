@@ -168,7 +168,10 @@ export const MessageThread = ({ conversationId, onBack }: MessageThreadProps) =>
         </span>
       </div>
 
-      <div ref={scrollRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-3">
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 py-3"
+      >
         <div ref={loadMoreSentinelRef} />
 
         {threadQuery.isLoading &&
