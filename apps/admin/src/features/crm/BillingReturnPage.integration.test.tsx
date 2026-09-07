@@ -20,10 +20,7 @@ const renderReturnPage = (initialPath: string) => {
   const rootRoute = createRootRoute();
   const returnRoute = createRoute({
     getParentRoute: () => rootRoute,
-    path: "/_authenticated/crm/billing/return",
-    validateSearch: (search: Record<string, unknown>) => ({
-      invoiceId: typeof search.invoiceId === "string" ? search.invoiceId : "",
-    }),
+    path: "/_authenticated/crm/billing/return/$invoiceId",
     component: BillingReturnPage,
   });
   const billingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/crm/billing" });
@@ -46,7 +43,7 @@ describe("BillingReturnPage", () => {
       ),
     );
 
-    renderReturnPage("/_authenticated/crm/billing/return?invoiceId=inv-1");
+    renderReturnPage("/_authenticated/crm/billing/return/inv-1");
 
     expect(
       await screen.findByText("Payment received. Your subscription is active."),
@@ -60,16 +57,49 @@ describe("BillingReturnPage", () => {
       ),
     );
 
-    renderReturnPage("/_authenticated/crm/billing/return?invoiceId=inv-2");
+    renderReturnPage("/_authenticated/crm/billing/return/inv-2");
 
     expect(await screen.findByText(/haven't received confirmation/i)).toBeInTheDocument();
   });
 
-  it("shows an error when the link has no invoice reference", async () => {
-    renderReturnPage("/_authenticated/crm/billing/return");
+  it("reports a failed payment", async () => {
+    mswServer.use(
+      http.post(`${API_BASE}/crm/billing/invoices/inv-4/verify`, () =>
+        HttpResponse.json({ success: true, data: { status: "FAILED" } }),
+      ),
+    );
+
+    renderReturnPage("/_authenticated/crm/billing/return/inv-4");
+
+    expect(await screen.findByText(/did not go through/i)).toBeInTheDocument();
+  });
+
+  it("shows an error when verification itself fails", async () => {
+    mswServer.use(
+      http.post(`${API_BASE}/crm/billing/invoices/inv-5/verify`, () =>
+        HttpResponse.json({ success: false, message: "Something went wrong." }, { status: 500 }),
+      ),
+    );
+
+    renderReturnPage("/_authenticated/crm/billing/return/inv-5");
+
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+  });
+
+  it("verifies the invoice id from the path even when the gateway appended its own query", async () => {
+    let verifiedPath = "";
+    mswServer.use(
+      http.post(`${API_BASE}/crm/billing/invoices/:invoiceId/verify`, ({ params }) => {
+        verifiedPath = String(params.invoiceId);
+        return HttpResponse.json({ success: true, data: { status: "COMPLETE" } });
+      }),
+    );
+
+    renderReturnPage("/_authenticated/crm/billing/return/inv-3?data=eyJzdGF0dXMiOiJDT01QTEVURSJ9");
 
     expect(
-      await screen.findByText("This link is missing an invoice reference."),
+      await screen.findByText("Payment received. Your subscription is active."),
     ).toBeInTheDocument();
+    expect(verifiedPath).toBe("inv-3");
   });
 });

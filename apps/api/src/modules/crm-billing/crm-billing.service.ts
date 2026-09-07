@@ -33,6 +33,7 @@ const CONFLICT_STATUS = 409;
 const BAD_GATEWAY_STATUS = 502;
 
 const BILLING_RETURN_PATH = "/crm/billing/return";
+const buildBillingReturnPath = (invoiceId: string): string => `${BILLING_RETURN_PATH}/${invoiceId}`;
 
 type TenantOrganization = AdvancedFeatureGateInput & {
   id: string;
@@ -47,7 +48,7 @@ const billingProviders: Record<CrmBillingProvider, PaymentProvider> = {
 const buildReturnUrl = (organization: TenantOrganization, invoiceId: string): string =>
   buildOrganizationAdminUrl(
     organization,
-    `${BILLING_RETURN_PATH}?invoiceId=${invoiceId}`,
+    buildBillingReturnPath(invoiceId),
     env.ADMIN_URL,
     env.TENANT_BASE_DOMAIN,
   );

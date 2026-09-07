@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { crmBillingApi } from "./billingApi";
 import type { InvoiceVerifyResult } from "./billingSchemas";
 
-const routeApi = getRouteApi("/_authenticated/crm/billing/return");
+const routeApi = getRouteApi("/_authenticated/crm/billing/return/$invoiceId");
 
 type VerifyState =
   | { status: "verifying" }
@@ -19,16 +19,10 @@ const OUTCOME_COPY: Record<InvoiceVerifyResult["status"], string> = {
 };
 
 export const BillingReturnPage = () => {
-  const { invoiceId } = routeApi.useSearch();
-  const [state, setState] = useState<VerifyState>(() =>
-    invoiceId
-      ? { status: "verifying" }
-      : { status: "error", message: "This link is missing an invoice reference." },
-  );
+  const { invoiceId } = routeApi.useParams();
+  const [state, setState] = useState<VerifyState>({ status: "verifying" });
 
   useEffect(() => {
-    if (!invoiceId) return;
-
     crmBillingApi
       .verifyInvoice(invoiceId)
       .then((result) => setState({ status: "resolved", outcome: result.status }))

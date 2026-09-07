@@ -84,11 +84,11 @@ after a grace window, `CANCELED` — at which point advanced CRM features are ga
   `SubscriptionInvoice` and emails a pay link; `POST /billing/invoices/:id/pay` attaches the chosen
   provider and initiates payment against that existing invoice.
 
-- **Known bug — `buildReturnUrl` still uses a query param.** `${BILLING_RETURN_PATH}?invoiceId=…`
-  hits the same eSewa quirk the storefront `payments` module already fixed: eSewa v2 appends
-  `?data=<base64>` to `success_url` verbatim, so `?invoiceId=X` becomes `?invoiceId=X?data=…` and
-  the invoice id parses with the blob attached. The storefront moved the id into the URL path
-  (`/payments/:provider/callback/:orderId`); this flow needs the same treatment — a path-based
-  return route on the admin side — before an eSewa subscription payment can be verified from the
-  redirect. Not fixed here because it also needs an admin-app route and its return page, and this
-  flow hasn't been exercised end-to-end yet.
+- **The return URL carries the invoice id in the path, not a query param.**
+  `buildReturnUrl` → `/crm/billing/return/:invoiceId`, matching the storefront's
+  `/payments/:provider/callback/:orderId`. eSewa v2 appends `?data=<base64>` to `success_url`
+  verbatim; a query param (`?invoiceId=X`) would come back as `?invoiceId=X?data=…` and parse with
+  the blob attached, so the follow-up `POST /crm/billing/invoices/:id/verify` would 404. The admin
+  route is `_authenticated.crm.billing.return.$invoiceId.tsx` and `BillingReturnPage` reads the
+  param, never a search param. `successUrl` and `failureUrl` are the same URL here (no
+  failed-redirect UX like the storefront's `/failed`).
