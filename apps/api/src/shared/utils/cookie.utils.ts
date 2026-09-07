@@ -13,7 +13,7 @@ const MS_PER_SECOND = 1000;
 const baseCookieOptions: CookieOptions = {
   httpOnly: true,
   secure: IS_DEPLOYED,
-  sameSite: "strict",
+  sameSite: "lax",
   path: AUTH_COOKIE_PATH,
   domain: env.TENANT_BASE_DOMAIN,
 };
