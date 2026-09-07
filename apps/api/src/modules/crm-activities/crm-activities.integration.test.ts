@@ -81,7 +81,15 @@ const seedActivitiesTenant = async () => {
       subtotal: 3000,
       deliveryFee: 100,
       total: 3100,
-      items: { create: { productId: product.id, sizeId: size.id, qty: 2, unitPrice: 1500 } },
+      items: {
+        create: {
+          productId: product.id,
+          sizeId: size.id,
+          qty: 2,
+          unitPrice: 1500,
+          listUnitPrice: 1500,
+        },
+      },
     },
   });
 

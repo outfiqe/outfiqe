@@ -9,6 +9,7 @@ import {
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import {
   CommissionSource,
+  CouponRedemptionStatus,
   FulfilmentStatus,
   PaymentMethod,
   PaymentStatus,
@@ -19,6 +20,7 @@ import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { withIdempotency } from "#lib/idempotency.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
+import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandPayoutRepository } from "#modules/brand-payouts/brandPayout.repository.js";
@@ -28,8 +30,15 @@ import {
 } from "#modules/brand-payouts/brandPayout.utils.js";
 import { cartRepository } from "#modules/cart/cart.repository.js";
 import { commissionRepository } from "#modules/commissions/commission.repository.js";
+import { couponRepository } from "#modules/coupons/coupon.repository.js";
+import { buildCouponLinesForPricedLines, couponService } from "#modules/coupons/coupon.service.js";
 import { creatorLinkRepository } from "#modules/creator-links/creatorLink.repository.js";
 import { deliveryZoneService } from "#modules/delivery-zones/deliveryZone.service.js";
+import {
+  assertOrderMoneyInvariant,
+  resolveBrandFundedUnitPrice,
+  toActiveBrandDiscount,
+} from "#modules/discounts/discount.utils.js";
 import { paymentRepository } from "#modules/payments/payment.repository.js";
 import { paymentService } from "#modules/payments/payment.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
@@ -106,17 +115,18 @@ const checkoutOnce = async (
   userEmail: string,
   body: CheckoutBody,
 ): Promise<OrderView> => {
-  const { fullName, phone, address, city, landmark, paymentMethod, sessionId, buyNow } = body;
+  const { fullName, phone, address, city, landmark, paymentMethod, sessionId, buyNow, couponCode } =
+    body;
 
   if (sessionId) await creatorLinkRepository.bridgeSessionClicks(sessionId, userId);
 
-  const { id: cartId } = await cartRepository.getOrCreateCart(userId);
+  const { id: cartId, appliedCouponCode } = await cartRepository.getOrCreateCart(userId);
 
   let lines: {
     productId: string;
     sizeId: string;
     qty: number;
-    unitPrice: number;
+    listUnitPrice: number;
     brandId: string;
   }[];
 
@@ -136,7 +146,7 @@ const checkoutOnce = async (
         productId: buyNow.productId,
         sizeId: buyNow.sizeId,
         qty: buyNow.qty,
-        unitPrice: product.price,
+        listUnitPrice: product.price,
         brandId: product.brandId,
       },
     ];
@@ -149,7 +159,7 @@ const checkoutOnce = async (
       productId,
       sizeId,
       qty,
-      unitPrice: product.price,
+      listUnitPrice: product.price,
       brandId: product.brandId,
     }));
   }
@@ -167,26 +177,81 @@ const checkoutOnce = async (
     );
   }
 
-  const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0);
+  const orderPlacedAt = new Date();
+  const activeDiscountsByProductId = await productRepository.findActiveDiscountsByProductIds(
+    [...new Set(lines.map((line) => line.productId))],
+    orderPlacedAt,
+  );
+
+  const pricedLinesWithoutCoupon = lines.map((line) => {
+    const activeDiscount = activeDiscountsByProductId.get(line.productId);
+    const unitPrice = resolveBrandFundedUnitPrice(
+      line.listUnitPrice,
+      toActiveBrandDiscount(activeDiscount),
+    );
+    return {
+      ...line,
+      unitPrice,
+      brandDiscountAmount: line.listUnitPrice - unitPrice,
+      platformDiscountAmount: 0,
+    };
+  });
+
+  const resolvedCouponCode = buyNow ? couponCode : (appliedCouponCode ?? undefined);
+  const couponResolution = resolvedCouponCode
+    ? await couponService.resolveForContext(resolvedCouponCode, {
+        userId,
+        paymentMethod,
+        lines: await buildCouponLinesForPricedLines(pricedLinesWithoutCoupon),
+        at: orderPlacedAt,
+      })
+    : null;
+
+  const platformDiscountByLineId = new Map(
+    couponResolution?.valuation.allocations.map((allocation) => [
+      allocation.lineId,
+      allocation.discountAmount,
+    ]) ?? [],
+  );
+
+  const pricedLines = pricedLinesWithoutCoupon.map((line, index) => ({
+    ...line,
+    platformDiscountAmount: platformDiscountByLineId.get(String(index)) ?? 0,
+  }));
+
+  const subtotal = pricedLines.reduce((sum, line) => sum + line.unitPrice * line.qty, 0);
+  const brandDiscountTotal = pricedLines.reduce(
+    (sum, line) => sum + line.brandDiscountAmount * line.qty,
+    0,
+  );
+  const platformDiscountTotal = couponResolution?.valuation.discountAmount ?? 0;
   const feeValues = await deliveryZoneService.resolveFeeValuesForCity(city);
   const deliveryFee =
     subtotal >= feeValues.freeDeliveryThreshold ? 0 : feeValues.standardDeliveryFee;
   const codFee = paymentMethod === PaymentMethod.COD ? feeValues.codHandlingFee : 0;
-  const total = subtotal + deliveryFee + codFee;
+  const total = subtotal - platformDiscountTotal + deliveryFee + codFee;
 
-  const orderPlacedAt = new Date();
+  assertOrderMoneyInvariant({
+    subtotal,
+    platformDiscountTotal,
+    deliveryFee,
+    codFee,
+    total,
+    platformDiscountAllocations: pricedLines.map((line) => line.platformDiscountAmount),
+  });
+
   const attributions = await Promise.all(
-    lines.map((line) => resolveAttribution(userId, line.productId, orderPlacedAt)),
+    pricedLines.map((line) => resolveAttribution(userId, line.productId, orderPlacedAt)),
   );
   const tiers = await Promise.all(
-    lines.map((line, index) =>
+    pricedLines.map((line, index) =>
       attributions[index]
         ? commissionRepository.findTierForPrice(line.unitPrice)
         : Promise.resolve(null),
     ),
   );
 
-  const items: CreateOrderItemInput[] = lines.map((line, index) => {
+  const items: CreateOrderItemInput[] = pricedLines.map((line, index) => {
     const { brandId: _brandId, ...orderItemLine } = line;
     const attribution = attributions[index];
     if (!attribution) return { ...orderItemLine, attributionSource: undefined };
@@ -263,11 +328,46 @@ const checkoutOnce = async (
       deliveryFee,
       codFee,
       total,
+      brandDiscountTotal,
+      platformDiscountTotal,
       items,
     });
 
+    if (couponResolution) {
+      const claimed = await couponRepository.claimBudget(
+        tx,
+        couponResolution.coupon.id,
+        platformDiscountTotal,
+      );
+      if (!claimed) {
+        throw new AppError(
+          "COUPON_EXHAUSTED",
+          "This coupon has reached its limit.",
+          CONFLICT_STATUS,
+        );
+      }
+      try {
+        await couponRepository.createRedemption(tx, {
+          couponId: couponResolution.coupon.id,
+          userId,
+          orderId: createdOrder.id,
+          discountAmount: platformDiscountTotal,
+          platformFundedAmount: platformDiscountTotal,
+        });
+      } catch (error) {
+        if (isUniqueConstraintError(error)) {
+          throw new AppError(
+            "COUPON_ALREADY_USED",
+            "You've already used this coupon.",
+            CONFLICT_STATUS,
+          );
+        }
+        throw error;
+      }
+    }
+
     for (const [index, orderItem] of createdOrder.items.entries()) {
-      const line = lines[index];
+      const line = pricedLines[index];
       if (line) {
         const grossAmount = line.unitPrice * line.qty;
         const isExemptBrand = exemptBrandIds.has(line.brandId);
@@ -312,6 +412,15 @@ const checkoutOnce = async (
   });
 
   if (!buyNow) await cartRepository.clearCart(cartId);
+
+  if (couponResolution) {
+    await couponService.afterRedemptionCommitted({
+      couponId: couponResolution.coupon.id,
+      orderId: order.id,
+      phone,
+      address,
+    });
+  }
 
   if (paymentMethod === PaymentMethod.COD) {
     await eventBus.publish(DomainEvents.PRODUCT_PURCHASED, { orderId: order.id, userId });
@@ -426,6 +535,23 @@ export const orderService = {
       await productService.restoreStockForItems(tx, order.items);
       await commissionRepository.voidForOrder(tx, orderId, reason);
       await brandPayoutRepository.voidForOrder(tx, orderId, reason);
+
+      const redemption = await couponRepository.findRedemptionByOrderId(orderId, tx);
+      if (redemption && redemption.status !== CouponRedemptionStatus.RELEASED) {
+        if (actor.type === "ADMIN") {
+          await couponRepository.markRedemptionReleased(
+            tx,
+            redemption.id,
+            CouponRedemptionStatus.RELEASED,
+            reason,
+          );
+          await couponRepository.releaseBudget(
+            tx,
+            redemption.couponId,
+            redemption.platformFundedAmount,
+          );
+        }
+      }
 
       if (refundOutcome) {
         await paymentRepository.recordRefund(

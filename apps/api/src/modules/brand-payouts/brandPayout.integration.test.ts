@@ -94,7 +94,17 @@ const createBrandPayout = async (
       subtotal: netAmount,
       deliveryFee: 0,
       total: netAmount,
-      items: { create: [{ productId: product.id, sizeId: size.id, qty: 1, unitPrice: netAmount }] },
+      items: {
+        create: [
+          {
+            productId: product.id,
+            sizeId: size.id,
+            qty: 1,
+            unitPrice: netAmount,
+            listUnitPrice: netAmount,
+          },
+        ],
+      },
     },
     include: { items: true },
   });

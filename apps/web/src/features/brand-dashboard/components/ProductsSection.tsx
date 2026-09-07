@@ -9,6 +9,7 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 import type { BrandProduct } from "../api/brandProductsSchemas";
 import { useBrandProducts } from "../hooks/useBrandProducts";
 import { useDeleteProduct } from "../hooks/useDeleteProduct";
+import { DiscountModal } from "./DiscountModal";
 import { EditProductModal } from "./EditProductModal";
 import { ProductActionsMenu } from "./ProductActionsMenu";
 import { ProductModal } from "./ProductModal";
@@ -30,6 +31,7 @@ export const ProductsSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<BrandProduct | null>(null);
   const [stockProduct, setStockProduct] = useState<BrandProduct | null>(null);
+  const [discountProduct, setDiscountProduct] = useState<BrandProduct | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<BrandProduct | null>(null);
   const products = useBrandProducts();
   const deleteProduct = useDeleteProduct();
@@ -99,15 +101,27 @@ export const ProductsSection = () => {
                   <ProductActionsMenu
                     onEdit={() => setEditingProduct(product)}
                     onManageStock={() => setStockProduct(product)}
+                    onManageDiscount={() => setDiscountProduct(product)}
                     onDelete={() => setDeletingProduct(product)}
                     className="absolute right-2 top-2"
                   />
                 </div>
                 <div className="p-3">
                   <p className="truncate text-sm font-semibold text-foreground">{name}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Rs. {price.toLocaleString()}
-                  </p>
+                  {product.activeDiscount ? (
+                    <div className="mt-0.5 flex items-center gap-1.5">
+                      <p className="text-xs font-semibold text-primary">
+                        Rs. {product.effectivePrice.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground line-through">
+                        Rs. {price.toLocaleString()}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Rs. {price.toLocaleString()}
+                    </p>
+                  )}
                   <span
                     className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_CLASS[status]}`}
                   >
@@ -135,6 +149,7 @@ export const ProductsSection = () => {
       <ProductModal open={modalOpen} onClose={() => setModalOpen(false)} />
       <EditProductModal product={editingProduct} onClose={() => setEditingProduct(null)} />
       <StockModal product={stockProduct} onClose={() => setStockProduct(null)} />
+      <DiscountModal product={discountProduct} onClose={() => setDiscountProduct(null)} />
 
       <Modal
         open={deletingProduct !== null}

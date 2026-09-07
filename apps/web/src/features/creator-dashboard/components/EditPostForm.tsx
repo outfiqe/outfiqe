@@ -11,6 +11,7 @@ import {
   toast,
 } from "@outfiqe/design-system";
 import { useDebouncedValue } from "@outfiqe/hooks";
+import { generateUuid } from "@outfiqe/utils";
 import { ImagePlus, X } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -47,10 +48,7 @@ type NewLookPhoto = {
   croppedAreaPixels: PixelCrop | null;
 };
 
-const createPhotoId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random()}`;
+const createPhotoId = generateUuid;
 
 type EditPostFormProps = {
   lookId: string;

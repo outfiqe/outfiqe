@@ -13,6 +13,9 @@ type OrderItemRow = {
   productId: string;
   qty: number;
   unitPrice: number;
+  listUnitPrice: number;
+  brandDiscountAmount: number;
+  platformDiscountAmount: number;
   product: { name: string; imageUrl: string | null; brand: { name: string } };
   size: { label: string };
   attributedCreator: { name: string } | null;
@@ -33,6 +36,8 @@ type OrderRow = {
   deliveryFee: number;
   codFee: number;
   total: number;
+  brandDiscountTotal: number;
+  platformDiscountTotal: number;
   items: OrderItemRow[];
   transactions?: PaymentTransactionRow[];
 };
@@ -47,7 +52,18 @@ type PaymentTransactionRow = {
 };
 
 const toOrderItemView = (row: OrderItemRow): OrderItemView => {
-  const { id, productId, qty, unitPrice, product, size, attributedCreator } = row;
+  const {
+    id,
+    productId,
+    qty,
+    unitPrice,
+    listUnitPrice,
+    brandDiscountAmount,
+    platformDiscountAmount,
+    product,
+    size,
+    attributedCreator,
+  } = row;
   const { name: productName, imageUrl, brand } = product;
 
   return {
@@ -59,6 +75,9 @@ const toOrderItemView = (row: OrderItemRow): OrderItemView => {
     sizeLabel: size.label,
     qty,
     unitPrice,
+    listUnitPrice,
+    brandDiscountAmount,
+    platformDiscountAmount,
     attributedCreatorName: attributedCreator?.name ?? null,
   };
 };
@@ -84,6 +103,8 @@ export const toOrderView = (order: OrderRow): OrderView => {
     deliveryFee,
     codFee,
     total,
+    brandDiscountTotal,
+    platformDiscountTotal,
     items,
     transactions,
   } = order;
@@ -103,6 +124,8 @@ export const toOrderView = (order: OrderRow): OrderView => {
     deliveryFee,
     codFee,
     total,
+    brandDiscountTotal,
+    platformDiscountTotal,
     items: items.map(toOrderItemView),
     transactions: (transactions ?? []).map(toPaymentTransactionView),
   };

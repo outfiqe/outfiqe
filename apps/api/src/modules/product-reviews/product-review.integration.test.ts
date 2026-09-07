@@ -70,7 +70,7 @@ const createDeliveredOrderItem = async (
       subtotal: 1000,
       deliveryFee: 100,
       total: 1100,
-      items: { create: [{ productId, sizeId, qty: 1, unitPrice: 1000 }] },
+      items: { create: [{ productId, sizeId, qty: 1, unitPrice: 1000, listUnitPrice: 1000 }] },
     },
   });
 };

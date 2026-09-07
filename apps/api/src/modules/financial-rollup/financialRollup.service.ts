@@ -18,20 +18,27 @@ export const financialRollupService = {
   async getRollup({ range }: FinancialRollupQuery): Promise<FinancialRollupView> {
     const since = resolveRangeStart(range, new Date());
 
-    const [grossCollected, refunded, owedToCreators, owedToBrands, platformRevenueRealized] =
-      await Promise.all([
-        financialRollupRepository.sumOrderTotalsForTransactionType(
-          PaymentTransactionType.PAYMENT,
-          since,
-        ),
-        financialRollupRepository.sumOrderTotalsForTransactionType(
-          PaymentTransactionType.REFUND,
-          since,
-        ),
-        financialRollupRepository.sumCreatorCommissionsByStatus(since),
-        financialRollupRepository.sumBrandPayoutsByStatus(since),
-        financialRollupRepository.sumRealizedPlatformFee(since),
-      ]);
+    const [
+      grossCollected,
+      refunded,
+      owedToCreators,
+      owedToBrands,
+      platformRevenueRealized,
+      couponSpend,
+    ] = await Promise.all([
+      financialRollupRepository.sumOrderTotalsForTransactionType(
+        PaymentTransactionType.PAYMENT,
+        since,
+      ),
+      financialRollupRepository.sumOrderTotalsForTransactionType(
+        PaymentTransactionType.REFUND,
+        since,
+      ),
+      financialRollupRepository.sumCreatorCommissionsByStatus(since),
+      financialRollupRepository.sumBrandPayoutsByStatus(since),
+      financialRollupRepository.sumRealizedPlatformFee(since),
+      financialRollupRepository.sumCouponSpend(since),
+    ]);
 
     return {
       range,
@@ -44,6 +51,8 @@ export const financialRollupService = {
         owedToBrands,
         owedToCreators,
         platformRevenueRealized,
+        couponSpend,
+        netPlatformRevenue: platformRevenueRealized - couponSpend,
       },
     };
   },

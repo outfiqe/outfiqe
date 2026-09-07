@@ -2,6 +2,7 @@ import { Button, FormBanner, Input, Modal, toast } from "@outfiqe/design-system"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { commissionsApi, type CreateTierInput, type UpdateTierInput } from "./api";
@@ -127,6 +128,7 @@ export const CommissionTiersSection = () => {
   const [form, setForm] = useState<TierFormState>(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
   const [editingTier, setEditingTier] = useState<CommissionTier | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CommissionTier | null>(null);
 
   const create = useMutation({
     mutationFn: () => commissionsApi.createTier(toTierInput(form)),
@@ -140,17 +142,16 @@ export const CommissionTiersSection = () => {
 
   const remove = useMutation({
     mutationFn: (id: string) => commissionsApi.deleteTier(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: TIERS_QUERY_KEY }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TIERS_QUERY_KEY });
+      setDeleteTarget(null);
+    },
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     create.mutate();
-  };
-
-  const handleDelete = (tier: CommissionTier) => {
-    if (window.confirm(`Delete the Rs. ${tier.amount} tier?`)) remove.mutate(tier.id);
   };
 
   return (
@@ -193,7 +194,7 @@ export const CommissionTiersSection = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleDelete(tier)}
+                onClick={() => setDeleteTarget(tier)}
                 disabled={remove.isPending}
               >
                 Delete
@@ -210,6 +211,19 @@ export const CommissionTiersSection = () => {
           onClose={() => setEditingTier(null)}
         />
       )}
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="Delete commission tier"
+        description={deleteTarget ? `Delete the Rs. ${deleteTarget.amount} tier?` : undefined}
+        confirmLabel="Delete"
+        destructive
+        isPending={remove.isPending}
+        onConfirm={() => {
+          if (deleteTarget) remove.mutate(deleteTarget.id);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 };

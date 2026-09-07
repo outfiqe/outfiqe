@@ -1,6 +1,14 @@
+import {
+  computeDiscountPercent,
+  resolveBrandFundedUnitPrice,
+  toActiveBrandDiscount,
+} from "#modules/discounts/discount.utils.js";
+
 import { LOW_STOCK_THRESHOLD, NEW_ARRIVAL_WINDOW_MS } from "./product.constants.js";
 import type {
   ProductBrandSummary,
+  ProductDiscountRecord,
+  ProductDiscountView,
   ProductSuggestion,
   ProductWithBrand,
   ProductWithOptionalStock,
@@ -11,6 +19,15 @@ import type {
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const isUuid = (value: string): boolean => UUID_PATTERN.test(value);
+
+export const toDiscountView = (discount: ProductDiscountRecord): ProductDiscountView => ({
+  id: discount.id,
+  discountType: discount.discountType,
+  percentBasisPoints: discount.percentBasisPoints,
+  fixedAmount: discount.fixedAmount,
+  startsAt: discount.startsAt.toISOString(),
+  endsAt: discount.endsAt?.toISOString() ?? null,
+});
 
 export const toSuggestion = ({
   id,
@@ -54,12 +71,16 @@ export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduc
     rating3Count,
     rating4Count,
     rating5Count,
+    discounts,
   } = product;
+  const effectivePrice = resolveBrandFundedUnitPrice(price, toActiveBrandDiscount(discounts?.[0]));
   return {
     id,
     brand: brand.name,
     name,
     price,
+    effectivePrice,
+    discountPercent: computeDiscountPercent(price, effectivePrice),
     type: productType.slug,
     categorySlugs: categories.map((category) => category.slug),
     imageUrl,
@@ -85,12 +106,20 @@ export const toBrandSummary = ({
   productTypeId: _productTypeId,
   totalStock,
   lowStock: _lowStock,
+  discounts,
+  price,
   ...rest
-}: ProductWithStockSizesAndImages): ProductBrandSummary => ({
-  ...rest,
-  type: productType.slug,
-  categories: categories.map((category) => category.name),
-  categorySlugs: categories.map((category) => category.slug),
-  imageUrls: images.map((image) => image.url),
-  lowStock: isLowStock(totalStock),
-});
+}: ProductWithStockSizesAndImages): ProductBrandSummary => {
+  const [activeDiscountRecord] = discounts ?? [];
+  return {
+    ...rest,
+    price,
+    effectivePrice: resolveBrandFundedUnitPrice(price, toActiveBrandDiscount(activeDiscountRecord)),
+    activeDiscount: activeDiscountRecord ? toDiscountView(activeDiscountRecord) : null,
+    type: productType.slug,
+    categories: categories.map((category) => category.name),
+    categorySlugs: categories.map((category) => category.slug),
+    imageUrls: images.map((image) => image.url),
+    lowStock: isLowStock(totalStock),
+  };
+};

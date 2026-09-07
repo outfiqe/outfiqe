@@ -7,3 +7,4 @@ export * from "./platform-nav";
 export * from "./product-sort";
 export * from "./product-type";
 export * from "./tenant";
+export * from "./uuid";

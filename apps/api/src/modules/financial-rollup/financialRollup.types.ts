@@ -13,5 +13,7 @@ export type FinancialRollupView = {
     owedToBrands: Partial<Record<BrandPayoutStatus, number>>;
     owedToCreators: Partial<Record<CommissionStatus, number>>;
     platformRevenueRealized: number;
+    couponSpend: number;
+    netPlatformRevenue: number;
   };
 };

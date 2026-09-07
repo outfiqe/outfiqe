@@ -1,6 +1,7 @@
 "use client";
 
 import { getCroppedImageFile, type PixelCrop } from "@outfiqe/design-system";
+import { generateUuid } from "@outfiqe/utils";
 import { useRef, useState } from "react";
 
 import { uploadsApi } from "@/shared/api/uploadsApi";
@@ -15,11 +16,6 @@ export type PendingPhoto = {
   zoom: number;
   croppedAreaPixels: PixelCrop | null;
 };
-
-const createId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random()}`;
 
 const toExistingPhoto = (url: string): PendingPhoto => ({
   id: url,
@@ -42,7 +38,7 @@ export const usePendingPhotos = (maxPhotos: number, initialUrls: string[] = []) 
   const addFile = (file: File) => {
     if (photos.length >= maxPhotos) return;
     const photo: PendingPhoto = {
-      id: createId(),
+      id: generateUuid(),
       url: URL.createObjectURL(file),
       file,
       crop: { x: 0, y: 0 },

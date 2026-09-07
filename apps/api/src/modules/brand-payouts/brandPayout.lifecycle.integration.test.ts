@@ -86,7 +86,11 @@ const createBrandPayoutFixture = async (order: {
       subtotal: 1000,
       deliveryFee: 0,
       total: 1000,
-      items: { create: [{ productId: product.id, sizeId: size.id, qty: 1, unitPrice: 1000 }] },
+      items: {
+        create: [
+          { productId: product.id, sizeId: size.id, qty: 1, unitPrice: 1000, listUnitPrice: 1000 },
+        ],
+      },
     },
     include: { items: true },
   });

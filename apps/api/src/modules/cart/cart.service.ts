@@ -1,23 +1,47 @@
 import { AppError } from "#middlewares/error-handler.js";
+import { couponService } from "#modules/coupons/coupon.service.js";
+import type { CouponLine } from "#modules/coupons/coupon.types.js";
 import { deliveryZoneService } from "#modules/delivery-zones/deliveryZone.service.js";
+import {
+  computeDiscountPercent,
+  resolveBrandFundedUnitPrice,
+  toActiveBrandDiscount,
+} from "#modules/discounts/discount.utils.js";
 import { productRepository } from "#modules/products/product.repository.js";
 
 import { CART_LOW_STOCK_THRESHOLD } from "./cart.constants.js";
 import { cartRepository } from "./cart.repository.js";
-import type { CartItemView, CartView } from "./cart.types.js";
+import type { AppliedCouponView, CartItemView, CartView } from "./cart.types.js";
 
 const NOT_FOUND_STATUS = 404;
 
-const buildCartView = async (cartId: string, city: string | null): Promise<CartView> => {
+const buildCartLines = async (
+  cartId: string,
+): Promise<{ items: CartItemView[]; couponLines: CouponLine[] }> => {
   const rows = await cartRepository.listItems(cartId);
-  const stockBySizeId = await productRepository.getStockBySizeIds(rows.map((row) => row.sizeId));
+  const productIds = [...new Set(rows.map((row) => row.productId))];
+  const [stockBySizeId, activeDiscountsByProductId, eligibilityAttributesByProductId] =
+    await Promise.all([
+      productRepository.getStockBySizeIds(rows.map((row) => row.sizeId)),
+      productRepository.findActiveDiscountsByProductIds(productIds, new Date()),
+      productRepository.findEligibilityAttributesByIds(productIds),
+    ]);
 
-  const items: CartItemView[] = rows.map((row) => {
+  const items: CartItemView[] = [];
+  const couponLines: CouponLine[] = [];
+
+  for (const row of rows) {
     const { id, productId, sizeId, qty, product, size } = row;
-    const { name: productName, price: unitPrice, imageUrl, brand } = product;
+    const { name: productName, price: listUnitPrice, imageUrl, brand } = product;
     const availableStock = stockBySizeId.get(sizeId) ?? 0;
+    const soldOut = availableStock === 0;
+    const activeDiscount = activeDiscountsByProductId.get(productId);
+    const unitPrice = resolveBrandFundedUnitPrice(
+      listUnitPrice,
+      toActiveBrandDiscount(activeDiscount),
+    );
 
-    return {
+    items.push({
       id,
       productId,
       sizeId,
@@ -26,17 +50,71 @@ const buildCartView = async (cartId: string, city: string | null): Promise<CartV
       imageUrl,
       sizeLabel: size.label,
       unitPrice,
+      listUnitPrice,
+      discountPercent: computeDiscountPercent(listUnitPrice, unitPrice),
       qty,
       availableStock,
-      soldOut: availableStock === 0,
+      soldOut,
       lowStock: availableStock > 0 && availableStock <= CART_LOW_STOCK_THRESHOLD,
+    });
+
+    if (soldOut) continue;
+    const eligibilityAttributes = eligibilityAttributesByProductId.get(productId);
+    if (!eligibilityAttributes) continue;
+    couponLines.push({
+      lineId: id,
+      productId,
+      brandId: eligibilityAttributes.brandId,
+      productTypeId: eligibilityAttributes.productTypeId,
+      categoryIds: eligibilityAttributes.categoryIds,
+      eligibleAmount: unitPrice * qty,
+      hasBrandDiscount: Boolean(activeDiscount),
+    });
+  }
+
+  return { items, couponLines };
+};
+
+const previewCoupon = async (
+  code: string,
+  userId: string,
+  couponLines: CouponLine[],
+): Promise<AppliedCouponView | null> => {
+  try {
+    const { coupon, valuation } = await couponService.resolveForContext(code, {
+      userId,
+      paymentMethod: undefined,
+      lines: couponLines,
+      at: new Date(),
+    });
+    return {
+      code: coupon.code,
+      discountAmount: valuation.discountAmount,
+      prepaidOnly: coupon.prepaidOnly,
     };
-  });
+  } catch {
+    return null;
+  }
+};
+
+const buildCartView = async (
+  cartId: string,
+  city: string | null,
+  appliedCouponCode: string | null,
+  userId: string,
+): Promise<CartView> => {
+  const { items, couponLines } = await buildCartLines(cartId);
 
   const subtotal = items.reduce(
     (sum, item) => (item.soldOut ? sum : sum + item.unitPrice * item.qty),
     0,
   );
+
+  const appliedCoupon = appliedCouponCode
+    ? await previewCoupon(appliedCouponCode, userId, couponLines)
+    : null;
+  const platformDiscountTotal = appliedCoupon?.discountAmount ?? 0;
+
   const feeValues = await deliveryZoneService.resolveFeeValuesForCity(city);
   const deliveryFee =
     subtotal === 0 || subtotal >= feeValues.freeDeliveryThreshold
@@ -48,19 +126,21 @@ const buildCartView = async (cartId: string, city: string | null): Promise<CartV
     itemCount: items.reduce((sum, item) => (item.soldOut ? sum : sum + item.qty), 0),
     subtotal,
     deliveryFee,
-    total: subtotal + deliveryFee,
+    platformDiscountTotal,
+    total: subtotal - platformDiscountTotal + deliveryFee,
     city,
+    appliedCoupon,
   };
 };
 
 export const cartService = {
   async getCart(userId: string): Promise<CartView> {
-    const { id: cartId, city } = await cartRepository.getOrCreateCart(userId);
-    return buildCartView(cartId, city);
+    const { id: cartId, city, appliedCouponCode } = await cartRepository.getOrCreateCart(userId);
+    return buildCartView(cartId, city, appliedCouponCode, userId);
   },
 
   async addItem(userId: string, productId: string, sizeId: string, qty: number): Promise<CartView> {
-    const { id: cartId, city } = await cartRepository.getOrCreateCart(userId);
+    const { id: cartId, city, appliedCouponCode } = await cartRepository.getOrCreateCart(userId);
     const [existing, stockBySizeId] = await Promise.all([
       cartRepository.findItemBySizeId(cartId, sizeId),
       productRepository.getStockBySizeIds([sizeId]),
@@ -75,15 +155,15 @@ export const cartService = {
       await cartRepository.upsertItem(cartId, productId, sizeId, clampedQty);
     }
 
-    return buildCartView(cartId, city);
+    return buildCartView(cartId, city, appliedCouponCode, userId);
   },
 
   async updateItemQty(userId: string, cartItemId: string, qty: number): Promise<CartView> {
-    const { id: cartId, city } = await cartRepository.getOrCreateCart(userId);
+    const { id: cartId, city, appliedCouponCode } = await cartRepository.getOrCreateCart(userId);
 
     if (qty <= 0) {
       await cartRepository.removeItem(cartId, cartItemId);
-      return buildCartView(cartId, city);
+      return buildCartView(cartId, city, appliedCouponCode, userId);
     }
 
     const item = await cartRepository.findItemById(cartId, cartItemId);
@@ -99,18 +179,40 @@ export const cartService = {
       await cartRepository.updateItemQty(cartId, cartItemId, clampedQty);
     }
 
-    return buildCartView(cartId, city);
+    return buildCartView(cartId, city, appliedCouponCode, userId);
   },
 
   async removeItem(userId: string, cartItemId: string): Promise<CartView> {
-    const { id: cartId, city } = await cartRepository.getOrCreateCart(userId);
+    const { id: cartId, city, appliedCouponCode } = await cartRepository.getOrCreateCart(userId);
     await cartRepository.removeItem(cartId, cartItemId);
-    return buildCartView(cartId, city);
+    return buildCartView(cartId, city, appliedCouponCode, userId);
   },
 
   async setCity(userId: string, city: string): Promise<CartView> {
-    const { id: cartId } = await cartRepository.getOrCreateCart(userId);
+    const { id: cartId, appliedCouponCode } = await cartRepository.getOrCreateCart(userId);
     await cartRepository.updateCity(cartId, city);
-    return buildCartView(cartId, city);
+    return buildCartView(cartId, city, appliedCouponCode, userId);
+  },
+
+  async applyCoupon(userId: string, code: string): Promise<CartView> {
+    const { id: cartId, city } = await cartRepository.getOrCreateCart(userId);
+    const { couponLines } = await buildCartLines(cartId);
+
+    await couponService.resolveForContext(code, {
+      userId,
+      paymentMethod: undefined,
+      lines: couponLines,
+      at: new Date(),
+    });
+
+    const normalizedCode = code.trim().toUpperCase();
+    await cartRepository.updateAppliedCouponCode(cartId, normalizedCode);
+    return buildCartView(cartId, city, normalizedCode, userId);
+  },
+
+  async removeCoupon(userId: string): Promise<CartView> {
+    const { id: cartId, city } = await cartRepository.getOrCreateCart(userId);
+    await cartRepository.updateAppliedCouponCode(cartId, null);
+    return buildCartView(cartId, city, null, userId);
   },
 };

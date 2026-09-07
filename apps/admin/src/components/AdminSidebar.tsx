@@ -40,6 +40,7 @@ import {
   SlidersHorizontal,
   Star,
   Tags,
+  TicketPercent,
   TrendingUp,
   Trophy,
   UserCog,
@@ -217,6 +218,12 @@ const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     href: "/financial-rollup",
     label: "Financial rollup",
     icon: PiggyBank,
+  },
+  {
+    id: "coupons",
+    href: "/coupons",
+    label: "Coupons",
+    icon: TicketPercent,
   },
   {
     id: "gamification",

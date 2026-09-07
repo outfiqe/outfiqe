@@ -47,6 +47,10 @@ model User {
   approvedInvites                          BrandInvite[]               @relation("BrandInviteApprover")
   sentAdminInvites                         AdminInvite[]               @relation("AdminInviteSender")
   reviewedProducts                         Product[]                   @relation("ProductReviewer")
+  createdProductDiscounts                  ProductDiscount[]           @relation("ProductDiscountCreatedBy")
+  createdCoupons                           Coupon[]                    @relation("CouponCreatedBy")
+  approvedCoupons                          Coupon[]                    @relation("CouponApprovedBy")
+  couponRedemptions                        CouponRedemption[]          @relation("CouponRedemptionUser")
   productReviews                           ProductReview[]             @relation("ProductReviewAuthor")
   productReviewHelpfulVotes                ProductReviewHelpfulVote[]
   creatorLooks                             CreatorLook[]               @relation("CreatorLooks")
@@ -287,6 +291,7 @@ model Product {
   creatorLinks  CreatorLink[]
   trendMetrics  ProductTrendMetric[]
   reviews       ProductReview[]
+  discounts     ProductDiscount[]
 
   searchVector Unsupported("tsvector")? @map("search_vector")
 
@@ -381,6 +386,125 @@ model ProductTrendMetric {
   @@unique([productId, bucketStart])
   @@index([bucketStart])
   @@map("product_trend_metrics")
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+model ProductDiscount {
+  id        String  @id @default(uuid()) @db.Uuid
+  productId String  @map("product_id") @db.Uuid
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  discountType       DiscountType @map("discount_type")
+  percentBasisPoints Int?         @map("percent_basis_points")
+  fixedAmount        Int?         @map("fixed_amount")
+
+  startsAt DateTime  @map("starts_at")
+  endsAt   DateTime? @map("ends_at")
+  isActive Boolean   @default(true) @map("is_active")
+
+  createdById String   @map("created_by_id") @db.Uuid
+  createdBy   User     @relation("ProductDiscountCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([productId, isActive, startsAt, endsAt])
+  @@map("product_discounts")
+}
+
+enum CouponType {
+  PERCENT
+  FIXED
+}
+
+enum CouponStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum CouponEligibilityScopeType {
+  BRAND
+  CATEGORY
+  PRODUCT
+  PRODUCT_TYPE
+}
+
+enum CouponRedemptionStatus {
+  CONSUMED
+  RELEASED
+}
+
+model Coupon {
+  id                      String       @id @default(uuid()) @db.Uuid
+  code                    String       @unique
+  type                    CouponType
+  percentBasisPoints      Int?         @map("percent_basis_points")
+  fixedAmount             Int?         @map("fixed_amount")
+  maxDiscountAmount       Int?         @map("max_discount_amount")
+  minSubtotal             Int          @default(0) @map("min_subtotal")
+  startsAt                DateTime     @map("starts_at")
+  endsAt                  DateTime?    @map("ends_at")
+  status                  CouponStatus @default(ACTIVE)
+  totalBudgetAmount       Int?         @map("total_budget_amount")
+  spentAmount             Int          @default(0) @map("spent_amount")
+  maxRedemptions          Int?         @map("max_redemptions")
+  redemptionCount         Int          @default(0) @map("redemption_count")
+  firstOrderOnly          Boolean      @default(false) @map("first_order_only")
+  prepaidOnly             Boolean      @default(false) @map("prepaid_only")
+  stacksWithBrandDiscount Boolean      @default(true) @map("stacks_with_brand_discount")
+
+  requiresApproval           Boolean   @default(false) @map("requires_approval")
+  approvedById               String?   @map("approved_by_id") @db.Uuid
+  approvedBy                 User?     @relation("CouponApprovedBy", fields: [approvedById], references: [id])
+  approvedAt                 DateTime? @map("approved_at")
+  lastAlertedBudgetThreshold Int?      @map("last_alerted_budget_threshold")
+
+  createdById String   @map("created_by_id") @db.Uuid
+  createdBy   User     @relation("CouponCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  eligibility CouponEligibility[]
+  redemptions CouponRedemption[]
+
+  @@index([status, startsAt, endsAt])
+  @@map("coupons")
+}
+
+model CouponEligibility {
+  id        String                     @id @default(uuid()) @db.Uuid
+  couponId  String                     @map("coupon_id") @db.Uuid
+  coupon    Coupon                     @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  scopeType CouponEligibilityScopeType @map("scope_type")
+  scopeId   String                     @map("scope_id") @db.Uuid
+
+  @@unique([couponId, scopeType, scopeId])
+  @@map("coupon_eligibilities")
+}
+
+model CouponRedemption {
+  id                   String                 @id @default(uuid()) @db.Uuid
+  couponId             String                 @map("coupon_id") @db.Uuid
+  coupon               Coupon                 @relation(fields: [couponId], references: [id])
+  userId               String                 @map("user_id") @db.Uuid
+  user                 User                   @relation("CouponRedemptionUser", fields: [userId], references: [id])
+  orderId              String                 @unique @map("order_id") @db.Uuid
+  order                Order                  @relation(fields: [orderId], references: [id])
+  discountAmount       Int                    @map("discount_amount")
+  platformFundedAmount Int                    @map("platform_funded_amount")
+  brandFundedAmount    Int                    @default(0) @map("brand_funded_amount")
+  status               CouponRedemptionStatus @default(CONSUMED)
+  releasedAt           DateTime?              @map("released_at")
+  releasedReason       String?                @map("released_reason")
+  flaggedForReview     Boolean                @default(false) @map("flagged_for_review")
+  flagReason           String?                @map("flag_reason")
+  createdAt            DateTime               @default(now()) @map("created_at")
+
+  @@map("coupon_redemptions")
 }
 
 model Collection {
@@ -760,12 +884,13 @@ model AdminInvite {
 // ---------------------------------------------------------------------------
 
 model Cart {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @unique @map("user_id") @db.Uuid
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  city      String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @unique @map("user_id") @db.Uuid
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city              String?
+  appliedCouponCode String?  @map("applied_coupon_code")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   items CartItem[]
 
@@ -825,10 +950,12 @@ model Order {
   paymentStatus    PaymentStatus    @default(INITIATED) @map("payment_status")
   fulfilmentStatus FulfilmentStatus @default(PLACED) @map("fulfilment_status")
 
-  subtotal    Int
-  deliveryFee Int @map("delivery_fee")
-  codFee      Int @default(0) @map("cod_fee")
-  total       Int
+  subtotal              Int
+  deliveryFee           Int @map("delivery_fee")
+  codFee                Int @default(0) @map("cod_fee")
+  total                 Int
+  platformDiscountTotal Int @default(0) @map("platform_discount_total")
+  brandDiscountTotal    Int @default(0) @map("brand_discount_total")
 
   /**
    * Set when a gateway payment settles as PAID but the atomic stock
@@ -842,24 +969,28 @@ model Order {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  items          OrderItem[]
-  transactions   PaymentTransaction[]
-  supportTickets SupportTicket[]
+  items            OrderItem[]
+  transactions     PaymentTransaction[]
+  supportTickets   SupportTicket[]
+  couponRedemption CouponRedemption?
 
   @@index([userId, createdAt])
   @@map("orders")
 }
 
 model OrderItem {
-  id        String      @id @default(uuid()) @db.Uuid
-  orderId   String      @map("order_id") @db.Uuid
-  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String      @map("product_id") @db.Uuid
-  product   Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
-  sizeId    String      @map("size_id") @db.Uuid
-  size      ProductSize @relation(fields: [sizeId], references: [id], onDelete: Restrict)
-  qty       Int
-  unitPrice Int         @map("unit_price")
+  id                     String      @id @default(uuid()) @db.Uuid
+  orderId                String      @map("order_id") @db.Uuid
+  order                  Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId              String      @map("product_id") @db.Uuid
+  product                Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  sizeId                 String      @map("size_id") @db.Uuid
+  size                   ProductSize @relation(fields: [sizeId], references: [id], onDelete: Restrict)
+  qty                    Int
+  unitPrice              Int         @map("unit_price")
+  listUnitPrice          Int         @map("list_unit_price")
+  brandDiscountAmount    Int         @default(0) @map("brand_discount_amount")
+  platformDiscountAmount Int         @default(0) @map("platform_discount_amount")
 
   /**
    * Attribution — resolved once, at order-creation time, across all three
@@ -1395,6 +1526,9 @@ enum NotificationType {
   SUPPORT_TICKET_ASSIGNED
   SUPPORT_TICKET_REPLY
   SUPPORT_TICKET_RESOLVED
+  COUPON_APPROVAL_REQUESTED
+  COUPON_BUDGET_ALERT
+  COUPON_REDEMPTION_FLAGGED
 }
 
 enum NotificationEntityType {
@@ -1405,6 +1539,7 @@ enum NotificationEntityType {
   BADGE
   PRODUCT
   WITHDRAW_REQUEST
+  COUPON
   CONVERSATION
   CRM_TASK
   CRM_TICKET
@@ -2567,7 +2702,7 @@ model PushSubscription {
   endpoint     String       @unique
   p256dhKey    String       @map("p256dh_key")
   authKey      String       @map("auth_key")
-  platform     PushPlatform  @default(OTHER)
+  platform     PushPlatform @default(OTHER)
   userAgent    String?      @map("user_agent")
   failureCount Int          @default(0) @map("failure_count")
   disabledAt   DateTime?    @map("disabled_at")

@@ -23,6 +23,8 @@ export const CartItemRow = ({ item }: CartItemRowProps) => {
     imageUrl,
     sizeLabel,
     unitPrice,
+    listUnitPrice,
+    discountPercent,
     qty,
     availableStock,
     soldOut,
@@ -107,9 +109,16 @@ export const CartItemRow = ({ item }: CartItemRowProps) => {
           <X className="size-4" />
         </Button>
         {!soldOut && (
-          <p className="font-display text-sm font-semibold text-foreground">
-            Rs. {(unitPrice * qty).toLocaleString()}
-          </p>
+          <div className="text-right">
+            <p className="font-display text-sm font-semibold text-foreground">
+              Rs. {(unitPrice * qty).toLocaleString()}
+            </p>
+            {discountPercent ? (
+              <p className="text-xs text-muted-foreground line-through">
+                Rs. {(listUnitPrice * qty).toLocaleString()}
+              </p>
+            ) : null}
+          </div>
         )}
       </div>
     </div>

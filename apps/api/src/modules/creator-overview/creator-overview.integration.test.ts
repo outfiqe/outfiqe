@@ -93,7 +93,17 @@ const seedCommission = async (
       subtotal: amount,
       deliveryFee: 0,
       total: amount,
-      items: { create: [{ productId: product.id, sizeId: size.id, qty: 1, unitPrice: amount }] },
+      items: {
+        create: [
+          {
+            productId: product.id,
+            sizeId: size.id,
+            qty: 1,
+            unitPrice: amount,
+            listUnitPrice: amount,
+          },
+        ],
+      },
     },
     include: { items: true },
   });

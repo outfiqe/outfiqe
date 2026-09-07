@@ -1,17 +1,23 @@
 import { prisma } from "#db/prisma.js";
 
 export const cartRepository = {
-  async getOrCreateCart(userId: string): Promise<{ id: string; city: string | null }> {
+  async getOrCreateCart(
+    userId: string,
+  ): Promise<{ id: string; city: string | null; appliedCouponCode: string | null }> {
     return prisma.cart.upsert({
       where: { userId },
       update: {},
       create: { userId },
-      select: { id: true, city: true },
+      select: { id: true, city: true, appliedCouponCode: true },
     });
   },
 
   async updateCity(cartId: string, city: string | null): Promise<void> {
     await prisma.cart.update({ where: { id: cartId }, data: { city } });
+  },
+
+  async updateAppliedCouponCode(cartId: string, code: string | null): Promise<void> {
+    await prisma.cart.update({ where: { id: cartId }, data: { appliedCouponCode: code } });
   },
 
   async findItemById(cartId: string, cartItemId: string) {
@@ -45,6 +51,7 @@ export const cartRepository = {
 
   async clearCart(cartId: string): Promise<void> {
     await prisma.cartItem.deleteMany({ where: { cartId } });
+    await prisma.cart.update({ where: { id: cartId }, data: { appliedCouponCode: null } });
   },
 
   async listItems(cartId: string) {

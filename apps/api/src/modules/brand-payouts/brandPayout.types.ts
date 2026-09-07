@@ -105,5 +105,6 @@ export type BrandPayoutView = {
   platformFee: number;
   netAmount: number;
   status: BrandPayoutStatus;
+  platformFundedDiscountApplied: boolean;
   createdAt: string;
 };

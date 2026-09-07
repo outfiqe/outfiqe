@@ -42,6 +42,8 @@ vi.mock("./ShareProductPicker", () => ({
                 brand: "Studio Nine",
                 name: "Denim Jacket",
                 price: 4500,
+                effectivePrice: 4500,
+                discountPercent: null,
                 type: "tops",
                 categorySlugs: [],
                 imageUrl: null,

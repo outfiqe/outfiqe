@@ -2,6 +2,7 @@ import { Badge, Button } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { TextPromptModal } from "@/components/TextPromptModal";
 import { ApiClientError } from "@/lib/apiClient";
 
 import { brandApplicationsApi } from "./api";
@@ -27,6 +28,7 @@ const reviewFailureMessage = (mutationError: unknown, fallback: string): string 
 
 export const BrandApplicationsPage = () => {
   const [tab, setTab] = useState<BrandApplicationStatusValue>("PENDING");
+  const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const {
@@ -47,13 +49,11 @@ export const BrandApplicationsPage = () => {
   const reject = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       brandApplicationsApi.reject(id, reason),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["brand-applications"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brand-applications"] });
+      setRejectTargetId(null);
+    },
   });
-
-  const handleReject = (id: string) => {
-    const reason = window.prompt("Reason for rejecting (optional):") ?? undefined;
-    reject.mutate({ id, reason: reason || undefined });
-  };
 
   const actionErrorFor = (applicationId: string): string | null => {
     if (approve.isError && approve.variables === applicationId) {
@@ -127,7 +127,7 @@ export const BrandApplicationsPage = () => {
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => handleReject(id)}
+                      onClick={() => setRejectTargetId(id)}
                       disabled={approve.isPending || reject.isPending}
                     >
                       Reject
@@ -152,6 +152,20 @@ export const BrandApplicationsPage = () => {
           </Button>
         )}
       </div>
+
+      <TextPromptModal
+        open={rejectTargetId !== null}
+        title="Reject brand application"
+        label="Reason for rejecting (optional)"
+        required={false}
+        confirmLabel="Reject"
+        pendingLabel="Rejecting…"
+        isPending={reject.isPending}
+        onConfirm={(reason) => {
+          if (rejectTargetId) reject.mutate({ id: rejectTargetId, reason: reason || undefined });
+        }}
+        onCancel={() => setRejectTargetId(null)}
+      />
     </div>
   );
 };

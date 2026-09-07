@@ -2,6 +2,7 @@ import { Badge, Button, FormBanner, Input, Modal, Skeleton, toast } from "@outfi
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { type DeliveryZoneInput, deliveryZonesApi, type UpdateDeliveryZoneInput } from "./api";
@@ -154,6 +155,7 @@ export const DeliveryZonesSection = () => {
   const [form, setForm] = useState<ZoneFormState>(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
   const [editingZone, setEditingZone] = useState<DeliveryZone | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeliveryZone | null>(null);
 
   const create = useMutation({
     mutationFn: () => deliveryZonesApi.create(toZoneInput(form)),
@@ -176,17 +178,16 @@ export const DeliveryZonesSection = () => {
 
   const remove = useMutation({
     mutationFn: (id: string) => deliveryZonesApi.remove(id),
-    onSuccess: (_data, zoneId) => removeZoneFromCache(queryClient, zoneId),
+    onSuccess: (_data, zoneId) => {
+      removeZoneFromCache(queryClient, zoneId);
+      setDeleteTarget(null);
+    },
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     create.mutate();
-  };
-
-  const handleDelete = (zone: DeliveryZone) => {
-    if (window.confirm(`Delete the "${zone.name}" zone?`)) remove.mutate(zone.id);
   };
 
   return (
@@ -269,7 +270,7 @@ export const DeliveryZonesSection = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleDelete(zone)}
+                    onClick={() => setDeleteTarget(zone)}
                     disabled={remove.isPending}
                   >
                     Delete
@@ -288,6 +289,19 @@ export const DeliveryZonesSection = () => {
           onClose={() => setEditingZone(null)}
         />
       )}
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="Delete delivery zone"
+        description={deleteTarget ? `Delete the "${deleteTarget.name}" zone?` : undefined}
+        confirmLabel="Delete"
+        destructive
+        isPending={remove.isPending}
+        onConfirm={() => {
+          if (deleteTarget) remove.mutate(deleteTarget.id);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 };

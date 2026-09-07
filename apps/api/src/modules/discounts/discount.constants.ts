@@ -1,0 +1,2 @@
+export const MAX_BRAND_DISCOUNT_BASIS_POINTS = 7_000;
+export const MIN_EFFECTIVE_PRICE = 1;

@@ -13,6 +13,7 @@ import { getRouteApi, Link, useBlocker, useNavigate } from "@tanstack/react-rout
 import { ArrowLeft } from "lucide-react";
 import { type FormEvent, useMemo, useRef, useState } from "react";
 
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import type { UpdateBadgeFormInput } from "../api";
@@ -90,10 +91,10 @@ const BadgeForm = ({
   );
   const isDirty = JSON.stringify({ form, isActive }) !== initialSnapshot;
 
-  useBlocker({
-    shouldBlockFn: () =>
-      isDirty && !hasSavedRef.current && !window.confirm("Discard unsaved changes to this badge?"),
+  const blocker = useBlocker({
+    shouldBlockFn: () => isDirty && !hasSavedRef.current,
     enableBeforeUnload: () => isDirty && !hasSavedRef.current,
+    withResolver: true,
   });
 
   const designIssue = describeDesignIncompleteness(form);
@@ -177,6 +178,16 @@ const BadgeForm = ({
           </Button>
         </div>
       </div>
+
+      <ConfirmModal
+        open={blocker.status === "blocked"}
+        title="Discard unsaved changes?"
+        description="Your changes to this badge haven't been saved."
+        confirmLabel="Discard changes"
+        destructive
+        onConfirm={() => blocker.proceed?.()}
+        onCancel={() => blocker.reset?.()}
+      />
     </form>
   );
 };

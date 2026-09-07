@@ -11,11 +11,13 @@ export const useCheckout = () => {
       input,
       idempotencyKey,
       buyNow,
+      couponCode,
     }: {
       input: CheckoutInput;
       idempotencyKey: string;
       buyNow?: BuyNowLine;
-    }) => checkoutApi.submit(input, idempotencyKey, buyNow),
+      couponCode?: string;
+    }) => checkoutApi.submit(input, idempotencyKey, buyNow, couponCode),
     networkMode: "always",
   });
 };

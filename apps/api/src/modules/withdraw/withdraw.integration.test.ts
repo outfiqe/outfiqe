@@ -185,7 +185,17 @@ const grantAvailableCommission = async (creatorId: string, amount: number) => {
       subtotal: amount,
       deliveryFee: 0,
       total: amount,
-      items: { create: [{ productId: product.id, sizeId: size.id, qty: 1, unitPrice: amount }] },
+      items: {
+        create: [
+          {
+            productId: product.id,
+            sizeId: size.id,
+            qty: 1,
+            unitPrice: amount,
+            listUnitPrice: amount,
+          },
+        ],
+      },
     },
     include: { items: true },
   });
@@ -233,7 +243,17 @@ const grantAvailableBrandPayout = async (brandId: string, netAmount: number) => 
       subtotal: netAmount,
       deliveryFee: 0,
       total: netAmount,
-      items: { create: [{ productId: product.id, sizeId: size.id, qty: 1, unitPrice: netAmount }] },
+      items: {
+        create: [
+          {
+            productId: product.id,
+            sizeId: size.id,
+            qty: 1,
+            unitPrice: netAmount,
+            listUnitPrice: netAmount,
+          },
+        ],
+      },
     },
     include: { items: true },
   });

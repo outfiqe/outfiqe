@@ -2,6 +2,7 @@ import { Button, FormBanner, Input, Select, toast } from "@outfiqe/design-system
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { TextPromptModal } from "@/components/TextPromptModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { gamificationApi } from "./api";
@@ -174,21 +175,20 @@ const ManualAwardsList = () => {
     queryFn: gamificationApi.listManualAwards,
   });
 
+  const [removeTarget, setRemoveTarget] = useState<{ userBadgeId: string; label: string } | null>(
+    null,
+  );
+
   const remove = useMutation({
     mutationFn: ({ userBadgeId, reason }: { userBadgeId: string; reason: string }) =>
       gamificationApi.removeUserBadge(userBadgeId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MANUAL_AWARDS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["admin-badge-stats"] });
+      setRemoveTarget(null);
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   });
-
-  const handleRemove = (userBadgeId: string, label: string) => {
-    const reason = window.prompt(`Reason for removing "${label}"?`);
-    if (!reason) return;
-    remove.mutate({ userBadgeId, reason });
-  };
 
   return (
     <div className="mt-4 space-y-2">
@@ -212,12 +212,30 @@ const ManualAwardsList = () => {
             variant="ghost"
             size="sm"
             disabled={remove.isPending}
-            onClick={() => handleRemove(award.id, `${award.badgeName} → ${award.userName}`)}
+            onClick={() =>
+              setRemoveTarget({
+                userBadgeId: award.id,
+                label: `${award.badgeName} → ${award.userName}`,
+              })
+            }
           >
             Remove
           </Button>
         </div>
       ))}
+
+      <TextPromptModal
+        open={removeTarget !== null}
+        title="Remove manual award"
+        label={removeTarget ? `Reason for removing "${removeTarget.label}"` : ""}
+        confirmLabel="Remove"
+        pendingLabel="Removing…"
+        isPending={remove.isPending}
+        onConfirm={(reason) => {
+          if (removeTarget) remove.mutate({ userBadgeId: removeTarget.userBadgeId, reason });
+        }}
+        onCancel={() => setRemoveTarget(null)}
+      />
     </div>
   );
 };

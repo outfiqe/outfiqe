@@ -11,6 +11,8 @@ const buildProduct = (overrides: Partial<PublicProduct> = {}): PublicProduct => 
   brand: "Studio Nine",
   name: "Denim Jacket",
   price: 4500,
+  effectivePrice: 4500,
+  discountPercent: null,
   type: "tops",
   categorySlugs: [],
   imageUrl: null,

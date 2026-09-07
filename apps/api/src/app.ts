@@ -30,6 +30,8 @@ import { chatRoutes } from "./modules/chat/chat.routes.js";
 import { conversationRoutes } from "./modules/chat/conversation.routes.js";
 import { collectionRoutes } from "./modules/collections/collection.routes.js";
 import { commissionRoutes } from "./modules/commissions/commission.routes.js";
+import { couponCustomerRoutes } from "./modules/coupons/coupon.customer.routes.js";
+import { couponRoutes } from "./modules/coupons/coupon.routes.js";
 import { creatorCompetitionRoutes } from "./modules/creator-competitions/creatorCompetition.routes.js";
 import { creatorLeaderboardRoutes } from "./modules/creator-leaderboard/creatorLeaderboard.routes.js";
 import { creatorLinkRoutes } from "./modules/creator-links/creatorLink.routes.js";
@@ -215,6 +217,8 @@ export const createApp = () => {
   app.use("/api/brand-payouts", brandPayoutRoutes);
   app.use("/api/withdraw", withdrawRoutes);
   app.use("/api/admin/financial-rollup", financialRollupRoutes);
+  app.use("/api/admin/coupons", couponRoutes);
+  app.use("/api/coupons", couponCustomerRoutes);
   app.use("/api/chat", chatRoutes);
   app.use("/api/conversations", conversationRoutes);
   app.use("/api/support", supportRoutes);

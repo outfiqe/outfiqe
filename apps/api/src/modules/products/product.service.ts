@@ -1,9 +1,10 @@
 import { PRODUCT_SORT } from "@outfiqe/utils";
 import { LRUCache } from "lru-cache";
 
+import { BASIS_POINTS_PER_PERCENT } from "#constants/money.constants.js";
 import { prisma } from "#db/prisma.js";
 import { productApprovedTemplate, productRejectedTemplate } from "#email-templates/templates.js";
-import { ProductStatus } from "#generated/prisma/enums.js";
+import { DiscountType, ProductStatus } from "#generated/prisma/enums.js";
 import { requireBrandId } from "#lib/brand-guard.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
@@ -12,6 +13,9 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
 import { categoryService } from "#modules/categories/category.service.js";
+import { MAX_BRAND_DISCOUNT_BASIS_POINTS } from "#modules/discounts/discount.constants.js";
+import type { ActiveBrandDiscount } from "#modules/discounts/discount.types.js";
+import { isBrandDiscountWithinCeiling } from "#modules/discounts/discount.utils.js";
 import { productTypeService } from "#modules/product-types/product-type.service.js";
 import { sizeOptionService } from "#modules/size-options/size-option.service.js";
 import { trendingService } from "#modules/trending/trending.service.js";
@@ -31,13 +35,16 @@ import type {
   ListMineProductsQuery,
   ListPublicProductsQuery,
   ListReviewProductsQuery,
+  SetProductDiscountBody,
   UpdateProductBody,
+  UpdateProductDiscountBody,
 } from "./product.schemas.js";
 import type {
   BrandProductSize,
   CreateProductSizeInput,
   ProductBrandSummary,
   ProductBrandSummaryPage,
+  ProductDiscountView,
   ProductRecord,
   ProductReviewPage,
   ProductSearchCursor,
@@ -46,11 +53,20 @@ import type {
   PublicProductDetail,
   PublicProductPage,
 } from "./product.types.js";
-import { isUuid, toBrandSummary, toPublicProduct, toSuggestion } from "./product.utils.js";
+import {
+  isUuid,
+  toBrandSummary,
+  toDiscountView,
+  toPublicProduct,
+  toSuggestion,
+} from "./product.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
 const BAD_REQUEST_STATUS = 400;
+
+const DISCOUNT_CEILING_PERCENT = MAX_BRAND_DISCOUNT_BASIS_POINTS / BASIS_POINTS_PER_PERCENT;
+const DISCOUNT_EXCEEDS_CEILING_MESSAGE = `A brand discount can't be worth more than ${DISCOUNT_CEILING_PERCENT}% of the product's price.`;
 
 const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
 const AUTOCOMPLETE_CACHE_NAMESPACE = "product-autocomplete";
@@ -206,6 +222,136 @@ export const productService = {
     const brandId = await requireBrandId(userId);
     await requireOwnedProduct(productId, brandId);
     await productRepository.softDelete(productId);
+  },
+
+  async setDiscount(
+    userId: string,
+    productId: string,
+    input: SetProductDiscountBody,
+  ): Promise<ProductDiscountView> {
+    const brandId = await requireBrandId(userId);
+    const product = await requireOwnedProduct(productId, brandId);
+
+    const discount: ActiveBrandDiscount = {
+      discountType: input.discountType,
+      percentBasisPoints: input.percentBasisPoints ?? null,
+      fixedAmount: input.fixedAmount ?? null,
+    };
+    if (!isBrandDiscountWithinCeiling(product.price, discount)) {
+      throw new AppError(
+        "DISCOUNT_EXCEEDS_CEILING",
+        DISCOUNT_EXCEEDS_CEILING_MESSAGE,
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    const created = await productRepository.createDiscount(productId, {
+      discountType: input.discountType,
+      percentBasisPoints: discount.percentBasisPoints,
+      fixedAmount: discount.fixedAmount,
+      startsAt: input.startsAt,
+      endsAt: input.endsAt ?? null,
+      createdById: userId,
+    });
+
+    return toDiscountView(created);
+  },
+
+  async updateDiscount(
+    userId: string,
+    productId: string,
+    input: UpdateProductDiscountBody,
+  ): Promise<ProductDiscountView> {
+    const brandId = await requireBrandId(userId);
+    const product = await requireOwnedProduct(productId, brandId);
+
+    const existing = await productRepository.findActiveDiscount(productId);
+    if (!existing) {
+      throw new AppError(
+        "DISCOUNT_NOT_FOUND",
+        "This product has no active discount to edit.",
+        NOT_FOUND_STATUS,
+      );
+    }
+
+    const discountTypeChanged =
+      input.discountType !== undefined && input.discountType !== existing.discountType;
+    const nextDiscountType = input.discountType ?? existing.discountType;
+
+    const nextPercentBasisPoints = discountTypeChanged
+      ? nextDiscountType === DiscountType.PERCENT
+        ? (input.percentBasisPoints ?? null)
+        : null
+      : (input.percentBasisPoints ?? existing.percentBasisPoints);
+
+    const nextFixedAmount = discountTypeChanged
+      ? nextDiscountType === DiscountType.FIXED
+        ? (input.fixedAmount ?? null)
+        : null
+      : (input.fixedAmount ?? existing.fixedAmount);
+
+    if (nextDiscountType === DiscountType.PERCENT && nextPercentBasisPoints === null) {
+      throw new AppError(
+        "DISCOUNT_AMOUNT_REQUIRED",
+        "Switching to a percent discount needs percentBasisPoints.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+    if (nextDiscountType === DiscountType.FIXED && nextFixedAmount === null) {
+      throw new AppError(
+        "DISCOUNT_AMOUNT_REQUIRED",
+        "Switching to a fixed discount needs fixedAmount.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    const nextStartsAt = input.startsAt ?? existing.startsAt;
+    const nextEndsAt = input.endsAt !== undefined ? input.endsAt : existing.endsAt;
+    if (nextEndsAt && nextEndsAt <= nextStartsAt) {
+      throw new AppError(
+        "INVALID_DISCOUNT_WINDOW",
+        "endsAt must be after startsAt.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    const nextDiscount: ActiveBrandDiscount = {
+      discountType: nextDiscountType,
+      percentBasisPoints: nextPercentBasisPoints,
+      fixedAmount: nextFixedAmount,
+    };
+    if (!isBrandDiscountWithinCeiling(product.price, nextDiscount)) {
+      throw new AppError(
+        "DISCOUNT_EXCEEDS_CEILING",
+        DISCOUNT_EXCEEDS_CEILING_MESSAGE,
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    const updated = await productRepository.updateDiscount(existing.id, {
+      discountType: nextDiscountType,
+      percentBasisPoints: nextPercentBasisPoints,
+      fixedAmount: nextFixedAmount,
+      startsAt: nextStartsAt,
+      endsAt: nextEndsAt,
+    });
+
+    return toDiscountView(updated);
+  },
+
+  async removeDiscount(userId: string, productId: string): Promise<void> {
+    const brandId = await requireBrandId(userId);
+    await requireOwnedProduct(productId, brandId);
+
+    const existing = await productRepository.findActiveDiscount(productId);
+    if (!existing) {
+      throw new AppError(
+        "DISCOUNT_NOT_FOUND",
+        "This product has no active discount to remove.",
+        NOT_FOUND_STATUS,
+      );
+    }
+    await productRepository.deactivateDiscount(existing.id);
   },
 
   async listMine(

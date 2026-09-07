@@ -2,6 +2,7 @@ import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { TextPromptModal } from "@/components/TextPromptModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { commissionsApi } from "./api";
@@ -26,6 +27,7 @@ const SOURCE_LABEL: Record<string, string> = {
 
 export const CommissionsListSection = () => {
   const [tab, setTab] = useState<CommissionStatusValue>("PENDING");
+  const [voidTargetId, setVoidTargetId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const {
@@ -48,7 +50,10 @@ export const CommissionsListSection = () => {
 
   const voidCommission = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) => commissionsApi.void(id, reason),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      setVoidTargetId(null);
+    },
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
@@ -59,11 +64,6 @@ export const CommissionsListSection = () => {
   });
 
   const isActing = approve.isPending || voidCommission.isPending || markPaid.isPending;
-
-  const handleVoid = (id: string) => {
-    const reason = window.prompt("Reason for voiding this commission:");
-    if (reason) voidCommission.mutate({ id, reason });
-  };
 
   return (
     <div>
@@ -133,7 +133,7 @@ export const CommissionsListSection = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleVoid(id)}
+                    onClick={() => setVoidTargetId(id)}
                     disabled={isActing}
                   >
                     Void
@@ -155,6 +155,19 @@ export const CommissionsListSection = () => {
           </Button>
         )}
       </div>
+
+      <TextPromptModal
+        open={voidTargetId !== null}
+        title="Void commission"
+        label="Reason for voiding this commission"
+        confirmLabel="Void"
+        pendingLabel="Voiding…"
+        isPending={voidCommission.isPending}
+        onConfirm={(reason) => {
+          if (voidTargetId) voidCommission.mutate({ id: voidTargetId, reason });
+        }}
+        onCancel={() => setVoidTargetId(null)}
+      />
     </div>
   );
 };

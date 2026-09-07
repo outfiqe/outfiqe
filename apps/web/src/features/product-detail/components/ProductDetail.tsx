@@ -91,7 +91,7 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
       brandName: product.brand.name,
       imageUrl: activeImage ?? product.imageUrl,
       sizeLabel: selectedSize.label,
-      unitPrice: product.price,
+      unitPrice: product.effectivePrice,
     });
     router.push("/checkout?buyNow=1");
   };
@@ -151,9 +151,23 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
           <h1 className="mt-2 font-display text-2xl font-extrabold uppercase leading-tight tracking-tight text-foreground sm:text-3xl">
             {product.name}
           </h1>
-          <p className="mt-3 font-display text-xl font-semibold text-foreground">
-            Rs. {product.price.toLocaleString()}
-          </p>
+          {product.discountPercent ? (
+            <div className="mt-3 flex items-center gap-2">
+              <p className="font-display text-xl font-semibold text-foreground">
+                Rs. {product.effectivePrice.toLocaleString()}
+              </p>
+              <p className="text-sm text-muted-foreground line-through">
+                Rs. {product.price.toLocaleString()}
+              </p>
+              <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[11px] font-bold text-destructive">
+                {product.discountPercent}% OFF
+              </span>
+            </div>
+          ) : (
+            <p className="mt-3 font-display text-xl font-semibold text-foreground">
+              Rs. {product.price.toLocaleString()}
+            </p>
+          )}
 
           <TrustLine
             wornByCount={product.wornByCount}
