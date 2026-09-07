@@ -1,6 +1,8 @@
-﻿import { Router } from "express";
+﻿import { WEB_REVALIDATE_TAGS } from "@outfiqe/utils";
+import { Router } from "express";
 
 import { requireAuth } from "#middlewares/require-auth.js";
+import { revalidateWebCacheOnWrite } from "#middlewares/revalidate-web-cache.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 
@@ -16,6 +18,8 @@ import {
 } from "./collection.schemas.js";
 
 const requireAdmin = [requireAuth, requirePlatformAccess];
+
+const revalidateCollectionsWebCache = revalidateWebCacheOnWrite(WEB_REVALIDATE_TAGS.collections);
 
 export const collectionRoutes = Router();
 
@@ -47,17 +51,20 @@ collectionRoutes.post(
   "/",
   ...requireAdmin,
   validate({ body: createCollectionSchema }),
+  revalidateCollectionsWebCache,
   collectionController.create,
 );
 collectionRoutes.patch(
   "/:id",
   ...requireAdmin,
   validate({ params: collectionIdParamSchema, body: updateCollectionSchema }),
+  revalidateCollectionsWebCache,
   collectionController.update,
 );
 collectionRoutes.patch(
   "/:id/products",
   ...requireAdmin,
   validate({ params: collectionIdParamSchema, body: setCollectionProductsSchema }),
+  revalidateCollectionsWebCache,
   collectionController.setProducts,
 );

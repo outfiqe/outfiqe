@@ -1,9 +1,11 @@
+import { WEB_REVALIDATE_TAGS } from "@outfiqe/utils";
 import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
 import { cache, refreshCacheOnWrite } from "#middlewares/cache.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { requireRole } from "#middlewares/require-role.js";
+import { revalidateWebCacheOnWrite } from "#middlewares/revalidate-web-cache.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 import { CACHE_TTL } from "#redis/redis.keys.js";
@@ -34,6 +36,8 @@ const refreshProductTypesPublicCache = refreshCacheOnWrite({
   load: () => productTypeService.listForStorefront(),
 });
 
+const revalidateProductTypesWebCache = revalidateWebCacheOnWrite(WEB_REVALIDATE_TAGS.productTypes);
+
 export const productTypeRoutes = Router();
 
 productTypeRoutes.get("/admin", ...requireAdmin, productTypeController.listAll);
@@ -47,6 +51,7 @@ productTypeRoutes.post(
   ...requireAdmin,
   validate({ body: createProductTypeSchema }),
   refreshProductTypesPublicCache,
+  revalidateProductTypesWebCache,
   productTypeController.create,
 );
 productTypeRoutes.post(
@@ -54,6 +59,7 @@ productTypeRoutes.post(
   ...requireAdmin,
   validate({ body: reorderProductTypesSchema }),
   refreshProductTypesPublicCache,
+  revalidateProductTypesWebCache,
   productTypeController.reorder,
 );
 productTypeRoutes.patch(
@@ -61,5 +67,6 @@ productTypeRoutes.patch(
   ...requireAdmin,
   validate({ params: productTypeIdParamSchema, body: updateProductTypeSchema }),
   refreshProductTypesPublicCache,
+  revalidateProductTypesWebCache,
   productTypeController.update,
 );

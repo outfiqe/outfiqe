@@ -1,7 +1,9 @@
-﻿import { Router } from "express";
+﻿import { WEB_REVALIDATE_TAGS } from "@outfiqe/utils";
+import { Router } from "express";
 
 import { cache, refreshCacheOnWrite } from "#middlewares/cache.js";
 import { requireAuth } from "#middlewares/require-auth.js";
+import { revalidateWebCacheOnWrite } from "#middlewares/revalidate-web-cache.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 import { CACHE_TTL } from "#redis/redis.keys.js";
@@ -30,6 +32,8 @@ const refreshHeroSlidesPublicCache = refreshCacheOnWrite({
   load: () => heroSlideService.listPublic(),
 });
 
+const revalidateHeroSlidesWebCache = revalidateWebCacheOnWrite(WEB_REVALIDATE_TAGS.heroSlides);
+
 export const heroSlideRoutes = Router();
 
 heroSlideRoutes.get("/admin", ...requireAdmin, heroSlideController.listAll);
@@ -41,6 +45,7 @@ heroSlideRoutes.post(
   ...requireAdmin,
   validate({ body: createHeroSlideSchema }),
   refreshHeroSlidesPublicCache,
+  revalidateHeroSlidesWebCache,
   heroSlideController.create,
 );
 heroSlideRoutes.patch(
@@ -48,5 +53,6 @@ heroSlideRoutes.patch(
   ...requireAdmin,
   validate({ params: heroSlideIdParamSchema, body: updateHeroSlideSchema }),
   refreshHeroSlidesPublicCache,
+  revalidateHeroSlidesWebCache,
   heroSlideController.update,
 );
