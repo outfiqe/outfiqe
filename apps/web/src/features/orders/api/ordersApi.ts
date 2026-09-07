@@ -15,4 +15,8 @@ export const ordersApi = {
     const res = await apiClient.get<OrderListPage>(`/orders?${params.toString()}`);
     return orderListPageSchema.parse(res.data);
   },
+
+  async cancel(orderId: string, reason?: string): Promise<void> {
+    await apiClient.post(`/orders/${orderId}/cancel`, reason ? { reason } : {});
+  },
 };

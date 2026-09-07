@@ -1,11 +1,15 @@
 "use client";
 
 import { Button, Skeleton } from "@outfiqe/design-system";
+import { Clock } from "lucide-react";
 import Link from "next/link";
 
-import { PaymentMethod } from "../api/orderSchemas";
+import { cn } from "@/shared/lib/cn";
+
+import { PaymentMethod, PaymentStatus } from "../api/orderSchemas";
 import { useOrder } from "../hooks/useOrder";
 import { OrderTracker } from "./OrderTracker";
+import { PendingPaymentPanel } from "./PendingPaymentPanel";
 import { StatusBadge } from "./StatusBadge";
 import { TransactionLedger } from "./TransactionLedger";
 
@@ -48,35 +52,60 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
     transactions,
   } = order;
 
+  const awaitingPayment =
+    paymentMethod !== PaymentMethod.COD && paymentStatus === PaymentStatus.INITIATED;
+
   return (
     <div className="mx-auto max-w-lg py-10">
       <div className="text-center">
-        <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary">
-          <svg
-            viewBox="0 0 24 24"
-            className="size-7 stroke-primary-foreground"
-            fill="none"
-            strokeWidth={2.6}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M5 13l4 4L19 7" />
-          </svg>
+        <div
+          className={cn(
+            "mx-auto flex size-16 items-center justify-center rounded-full",
+            awaitingPayment ? "bg-muted" : "bg-primary",
+          )}
+        >
+          {awaitingPayment ? (
+            <Clock className="size-7 text-muted-foreground" strokeWidth={2} />
+          ) : (
+            <svg
+              viewBox="0 0 24 24"
+              className="size-7 stroke-primary-foreground"
+              fill="none"
+              strokeWidth={2.6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+          )}
         </div>
         <h1 className="mt-5 font-display text-2xl font-extrabold uppercase tracking-tight text-foreground">
           Order {id}
         </h1>
         <p className="mt-4 text-sm text-muted-foreground">
-          {paymentMethod === PaymentMethod.COD
-            ? `Keep Rs. ${total.toLocaleString()} ready for the rider — you pay when it arrives.`
-            : `Payment of Rs. ${total.toLocaleString()} via ${paymentMethod}.`}
+          {awaitingPayment
+            ? `Rs. ${total.toLocaleString()} via ${paymentMethod} — payment still pending.`
+            : paymentMethod === PaymentMethod.COD
+              ? `Keep Rs. ${total.toLocaleString()} ready for the rider — you pay when it arrives.`
+              : `Payment of Rs. ${total.toLocaleString()} via ${paymentMethod}.`}
         </p>
       </div>
 
-      <div className="mt-6 rounded-2xl border border-border p-5">
-        <OrderTracker fulfilmentStatus={fulfilmentStatus} />
+      {awaitingPayment && (
+        <div className="mt-6">
+          <PendingPaymentPanel orderId={id} total={total} paymentMethod={paymentMethod} />
+        </div>
+      )}
 
-        <div className="mt-5 flex justify-between border-t border-border pt-4 text-sm text-muted-foreground">
+      <div className="mt-6 rounded-2xl border border-border p-5">
+        {!awaitingPayment && <OrderTracker fulfilmentStatus={fulfilmentStatus} />}
+
+        <div
+          className={cn(
+            "flex justify-between text-sm text-muted-foreground",
+            !awaitingPayment && "mt-5 border-t border-border pt-4",
+          )}
+        >
           <span>Payment</span>
           <StatusBadge status={paymentStatus} />
         </div>

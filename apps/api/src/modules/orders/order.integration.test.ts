@@ -615,6 +615,52 @@ describe("POST /api/orders/:orderId/cancel — buyer self-service", () => {
     expect(payout.voidedReason).toBe("Cancelled by buyer");
   });
 
+  it("does not credit stock when cancelling a wallet order that never settled", async () => {
+    const { userId: adminId } = await createAdminSession();
+    const buyer = await createBuyer();
+    await createActiveCommissionRule(adminId);
+    await prisma.gatewayFeeRate.deleteMany({ where: { paymentMethod: PaymentMethod.ESEWA } });
+    await prisma.gatewayFeeRate.create({
+      data: {
+        paymentMethod: PaymentMethod.ESEWA,
+        ratePercentBasisPoints: 200,
+        isActive: true,
+        updatedById: adminId,
+      },
+    });
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(1000);
+
+    const checkout = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.ESEWA,
+        buyNow: { productId: product.id, sizeId: size.id, qty: 1 },
+      });
+    const orderId = checkout.body.data.id;
+
+    const beforeCancel = await prisma.productSize.findUniqueOrThrow({ where: { id: size.id } });
+    expect(beforeCancel.stock).toBe(10);
+
+    const response = await request(testApp)
+      .post(`/api/orders/${orderId}/cancel`)
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({});
+
+    expect(response.status).toBe(200);
+
+    const order = await prisma.order.findUniqueOrThrow({ where: { id: orderId } });
+    expect(order.fulfilmentStatus).toBe(FulfilmentStatus.CANCELLED);
+
+    const afterCancel = await prisma.productSize.findUniqueOrThrow({ where: { id: size.id } });
+    expect(afterCancel.stock).toBe(10);
+  });
+
   it("404s when cancelling someone else's order", async () => {
     const { userId: adminId } = await createAdminSession();
     const buyer = await createBuyer();

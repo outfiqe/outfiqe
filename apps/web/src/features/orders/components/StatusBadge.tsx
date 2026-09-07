@@ -1,7 +1,7 @@
 import { cn } from "@/shared/lib/cn";
 
 const GOOD_STATUSES = new Set(["PAID", "DELIVERED"]);
-const WARN_STATUSES = new Set(["DUE", "PLACED", "PACKED"]);
+const WARN_STATUSES = new Set(["DUE", "INITIATED", "PLACED", "PACKED"]);
 const INFO_STATUSES = new Set(["SHIPPED"]);
 const BAD_STATUSES = new Set(["FAILED", "CANCELLED"]);
 
