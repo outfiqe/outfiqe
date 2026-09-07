@@ -2,7 +2,7 @@ import { env } from "#config/env.config.js";
 import { prisma } from "#db/prisma.js";
 import { manualRefundNeededTemplate, paymentSettledTemplate } from "#email-templates/templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
-import { PaymentMethod, PaymentStatus } from "#generated/prisma/enums.js";
+import { FulfilmentStatus, PaymentMethod, PaymentStatus } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { productService } from "#modules/products/product.service.js";
@@ -111,6 +111,7 @@ const runVerify = async (
     transactionUuid: transaction.id,
     providerRef: transaction.transactionRef,
     totalAmount: order.total,
+    initiatedAt: transaction.createdAt,
   });
 
   if (status === PaymentVerifyStatus.COMPLETE) {
@@ -133,8 +134,20 @@ export const paymentService = {
         CONFLICT_STATUS,
       );
     }
+    if (order.fulfilmentStatus === FulfilmentStatus.CANCELLED) {
+      throw new AppError("ORDER_CANCELLED", "This order was cancelled.", CONFLICT_STATUS);
+    }
     if (order.paymentStatus !== PaymentStatus.INITIATED) {
       throw new AppError("ALREADY_SETTLED", "This order has already been paid.", CONFLICT_STATUS);
+    }
+
+    const priorAttempt = await paymentRepository.findPendingTransaction(order.id);
+    if (priorAttempt?.transactionRef) {
+      const priorAttemptStatus = await runVerify(order);
+      if (priorAttemptStatus === PaymentVerifyStatus.COMPLETE) {
+        throw new AppError("ALREADY_SETTLED", "This order has already been paid.", CONFLICT_STATUS);
+      }
+      await paymentRepository.failTransaction(priorAttempt.id, { supersededByRetry: true });
     }
 
     const provider = requireProvider(order.paymentMethod);
@@ -144,7 +157,7 @@ export const paymentService = {
     );
 
     const providerSlug = order.paymentMethod.toLowerCase();
-    const callbackUrl = `${env.FRONTEND_URL}/payments/${providerSlug}/callback?orderId=${order.id}`;
+    const callbackUrl = `${env.FRONTEND_URL}/payments/${providerSlug}/callback/${order.id}`;
 
     const result = await provider.initiate({
       transactionUuid: transaction.id,
@@ -152,7 +165,7 @@ export const paymentService = {
       deliveryFee: order.deliveryFee,
       totalAmount: order.total,
       successUrl: callbackUrl,
-      failureUrl: callbackUrl,
+      failureUrl: `${callbackUrl}/failed`,
     });
 
     if (result.providerRef) {

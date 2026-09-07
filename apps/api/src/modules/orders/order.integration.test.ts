@@ -9,6 +9,8 @@ import {
   DiscountType,
   FulfilmentStatus,
   PaymentMethod,
+  PaymentStatus,
+  PaymentTransactionStatus,
   PlatformFeeType,
   ProductStatus,
   UserRole,
@@ -613,6 +615,64 @@ describe("POST /api/orders/:orderId/cancel — buyer self-service", () => {
     const payout = await prisma.brandPayout.findFirstOrThrow({ where: { orderItem: { orderId } } });
     expect(payout.status).toBe(BrandPayoutStatus.VOIDED);
     expect(payout.voidedReason).toBe("Cancelled by buyer");
+  });
+
+  it("does not credit stock when cancelling a wallet order that never settled", async () => {
+    const { userId: adminId } = await createAdminSession();
+    const buyer = await createBuyer();
+    await createActiveCommissionRule(adminId);
+    await prisma.gatewayFeeRate.deleteMany({ where: { paymentMethod: PaymentMethod.ESEWA } });
+    await prisma.gatewayFeeRate.create({
+      data: {
+        paymentMethod: PaymentMethod.ESEWA,
+        ratePercentBasisPoints: 200,
+        isActive: true,
+        updatedById: adminId,
+      },
+    });
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(1000);
+
+    const checkout = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.ESEWA,
+        buyNow: { productId: product.id, sizeId: size.id, qty: 1 },
+      });
+    const orderId = checkout.body.data.id;
+
+    const beforeCancel = await prisma.productSize.findUniqueOrThrow({ where: { id: size.id } });
+    expect(beforeCancel.stock).toBe(10);
+
+    const response = await request(testApp)
+      .post(`/api/orders/${orderId}/cancel`)
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({});
+
+    expect(response.status).toBe(200);
+
+    const order = await prisma.order.findUniqueOrThrow({ where: { id: orderId } });
+    expect(order.fulfilmentStatus).toBe(FulfilmentStatus.CANCELLED);
+    expect(order.paymentStatus).toBe(PaymentStatus.FAILED);
+
+    const pendingTransactions = await prisma.paymentTransaction.count({
+      where: { orderId, status: PaymentTransactionStatus.INITIATED },
+    });
+    expect(pendingTransactions).toBe(0);
+
+    const afterCancel = await prisma.productSize.findUniqueOrThrow({ where: { id: size.id } });
+    expect(afterCancel.stock).toBe(10);
+
+    const retry = await request(testApp)
+      .post(`/api/payments/${orderId}/initiate`)
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER));
+    expect(retry.status).toBe(409);
+    expect(retry.body.code).toBe("ORDER_CANCELLED");
   });
 
   it("404s when cancelling someone else's order", async () => {

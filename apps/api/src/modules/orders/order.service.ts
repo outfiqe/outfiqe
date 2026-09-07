@@ -528,11 +528,21 @@ export const orderService = {
         ? await paymentService.refund(orderId, order.paymentMethod, order.phone)
         : null;
 
+    const stockWasCommitted =
+      order.paymentMethod === PaymentMethod.COD || order.paymentStatus === PaymentStatus.PAID;
+
     const cancelled = await prisma.$transaction(async (tx) => {
       const ok = await orderRepository.markCancelled(tx, orderId, CANCELLABLE_FULFILMENT_STATUSES);
       if (!ok) return false;
 
-      await productService.restoreStockForItems(tx, order.items);
+      if (order.paymentStatus === PaymentStatus.INITIATED) {
+        await orderRepository.failUnsettledPayment(tx, orderId);
+        await paymentRepository.failPendingTransactions(tx, orderId);
+      }
+
+      if (stockWasCommitted) {
+        await productService.restoreStockForItems(tx, order.items);
+      }
       await commissionRepository.voidForOrder(tx, orderId, reason);
       await brandPayoutRepository.voidForOrder(tx, orderId, reason);
 

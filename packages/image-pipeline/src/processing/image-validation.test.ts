@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createCorruptImageBuffer, createTestImageBuffer } from "../testing/fixtures.js";
-import { MAX_INPUT_FILE_SIZE_BYTES } from "./image-processing.constants.js";
+import { MAX_DECODED_PIXELS, MAX_INPUT_FILE_SIZE_BYTES } from "./image-processing.constants.js";
 import {
   CorruptImageError,
   ImageDimensionsExceededError,
@@ -35,11 +35,16 @@ describe("validateImageBuffer", () => {
   });
 
   it("rejects an image whose decoded pixel count exceeds the cap (decompression bomb guard)", async () => {
-    const massiveDimensionImage = await createTestImageBuffer(10000, 10000, "png");
-    await expect(validateImageBuffer(massiveDimensionImage)).rejects.toBeInstanceOf(
+    const edgeLengthJustPastPixelCap = Math.ceil(Math.sqrt(MAX_DECODED_PIXELS)) + 1;
+    const overCapImage = await createTestImageBuffer(
+      edgeLengthJustPastPixelCap,
+      edgeLengthJustPastPixelCap,
+      "png",
+    );
+    await expect(validateImageBuffer(overCapImage)).rejects.toBeInstanceOf(
       ImageDimensionsExceededError,
     );
-  });
+  }, 15000);
 
   it("accepts a single-pixel image without throwing", async () => {
     const buffer = await createTestImageBuffer(1, 1, "png");

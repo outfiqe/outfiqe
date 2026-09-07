@@ -115,6 +115,24 @@ itself (`productService.restoreStockForItems` + `commissionRepository.voidForOrd
 proven atomic patterns from earlier chunks) — one atomic unit, not three separate writes that
 could partially apply.
 
+**Stock is only restored if it was ever decremented.** A COD order decrements at checkout; a
+wallet order decrements only at settlement (`paymentStatus: PAID`). Cancelling a wallet order that
+never got past `INITIATED`/`FAILED` (an abandoned or failed gateway hand-off, which the buyer can
+now do from the order page — see `apps/web/src/features/orders/README.md`) held no stock, so
+`restoreStockForItems` is skipped for it — running it unconditionally would credit inventory that
+was never taken. Commission/payout voiding stays unconditional: those rows are created
+speculatively at checkout for every payment method and a `PENDING`-guarded void is a safe no-op
+when there's nothing to void.
+
+**Cancelling an unpaid wallet order also fails the payment side.** `cancel` leaves `paymentStatus`
+alone for a COD (`DUE`) or paid (`REFUNDED`/`needsManualRefund`) order, but for one still
+`INITIATED` it sets `paymentStatus: FAILED` and flips every pending `PaymentTransaction` to
+`FAILED` in the same transaction (`failUnsettledPayment` + `failPendingTransactions`). Without
+this, `fulfilmentStatus` went `CANCELLED` while `paymentStatus` stayed `INITIATED`, so the web
+order page still treated it as "awaiting payment" and offered Resume/Cancel buttons that then
+409'd. `paymentService.initiate` also refuses outright once `fulfilmentStatus === CANCELLED`
+(`ORDER_CANCELLED`), so a stale client can't start a new attempt on a cancelled order.
+
 **Scope cut, not a gap**: only pre-shipment cancellation is handled. A post-delivery return/refund
 (order stays `DELIVERED`, only the payment side changes) isn't covered — the plan described this
 chunk as "manual refund/cancel recording" as one combined feature, and a standalone return flow

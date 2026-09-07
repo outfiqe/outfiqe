@@ -34,8 +34,14 @@ export const TasteResultsSlot = async ({ categorySlug, typeId }: TasteResultsSlo
             undefined,
             undefined,
           ],
-          queryFn: () =>
-            getProductsFirstPageServer({ category: activeCategorySlug, type: activeType }),
+          queryFn: async () => {
+            const firstPage = await getProductsFirstPageServer({
+              category: activeCategorySlug,
+              type: activeType,
+            });
+            if (!firstPage) throw new Error("Products first page unavailable during prefetch");
+            return firstPage;
+          },
           initialPageParam: undefined,
         })
       : Promise.resolve(),

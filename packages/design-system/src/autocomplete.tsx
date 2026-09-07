@@ -280,6 +280,7 @@ export const AutocompleteItem = ({
       data-value={value}
       data-disabled={disabled ? "true" : undefined}
       onMouseEnter={() => !disabled && setActiveValue(value)}
+      onMouseDown={(event) => event.preventDefault()}
       onClick={() => !disabled && runSelectHandler(value)}
       className={cn(
         "flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1.5 text-left transition-colors",
