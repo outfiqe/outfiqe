@@ -133,12 +133,16 @@ describe("esewaProvider.verify", () => {
     expect(result.status).toBe(PaymentVerifyStatus.FAILED);
   });
 
-  it("maps AMBIGUOUS to FAILED", async () => {
+  it("keeps AMBIGUOUS as PENDING — never a hard failure, even past the grace window", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(statusResponse({ status: "AMBIGUOUS" })));
 
-    const result = await esewaProvider.verify(verifyInput());
+    const fresh = await esewaProvider.verify(verifyInput());
+    const stale = await esewaProvider.verify(
+      verifyInput({ initiatedAt: new Date(Date.now() - THREE_MINUTES_MS - 1000) }),
+    );
 
-    expect(result.status).toBe(PaymentVerifyStatus.FAILED);
+    expect(fresh.status).toBe(PaymentVerifyStatus.PENDING);
+    expect(stale.status).toBe(PaymentVerifyStatus.PENDING);
   });
 
   it("keeps NOT_FOUND as PENDING while the transaction is inside the grace window", async () => {

@@ -30,7 +30,7 @@ const EsewaStatusLookup = {
   AMBIGUOUS: "AMBIGUOUS",
 } as const;
 
-const FAILED_STATUSES = new Set<string>([EsewaStatusLookup.CANCELED, EsewaStatusLookup.AMBIGUOUS]);
+const FAILED_STATUSES = new Set<string>([EsewaStatusLookup.CANCELED]);
 
 export const esewaProvider: PaymentProvider = {
   async initiate({

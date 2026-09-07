@@ -39,6 +39,15 @@ same as any missed settlement). Propagation is a seconds-scale delay in practice
 well past eSewa's own "`NOT_FOUND` = being initiated" wording, so this is accepted rather than
 guarded further here.
 
+`AMBIGUOUS` is **never** mapped to a hard failure (it used to be, alongside `CANCELED`). eSewa
+returns it transiently right after a successful payment while its status service catches up — and
+its own meaning is "we can't tell, contact eSewa," not "it failed." Mapping it to `FAILED` meant a
+shopper who had just paid was shown "Payment didn't go through" on the callback, then the
+reconciliation sweep quietly settled the order minutes later. Now `AMBIGUOUS` is treated as
+`PENDING` for as long as it lasts; the sweep re-checks for up to 60 minutes and settles on a
+`COMPLETE`, and its 60-minute expiry is the terminal backstop if eSewa never resolves it. Only
+`CANCELED` (and `NOT_FOUND` past the 3-minute grace) is a provider-level `FAILED`.
+
 ## Every eSewa attempt gets a fresh `transaction_uuid`
 
 eSewa rejects a `transaction_uuid` it has already seen with `{"error_message":"Duplicate
