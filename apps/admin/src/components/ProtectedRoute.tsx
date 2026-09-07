@@ -9,13 +9,17 @@ const CONFIGURED_WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:300
 export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { state } = useAuth();
   const { status } = state;
+  const signedOutReason = state.status === "signed-out" ? state.reason : null;
 
   useEffect(() => {
     if (status !== "signed-out") return;
-    const redirect = encodeURIComponent(window.location.pathname + window.location.search);
     const loginOrigin = resolveLoginOrigin(CONFIGURED_WEB_URL, window.location.hostname);
-    window.location.href = `${loginOrigin}/login?redirect=${redirect}`;
-  }, [status]);
+    const returnQuery =
+      signedOutReason === "user-signed-out"
+        ? ""
+        : `?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+    window.location.href = `${loginOrigin}/login${returnQuery}`;
+  }, [status, signedOutReason]);
 
   if (status === "signed-in") return <>{children}</>;
 
