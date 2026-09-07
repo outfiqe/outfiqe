@@ -16,6 +16,22 @@ Unlike COD, eSewa/Khalti orders don't touch `ProductSize.stock` when the order i
 
 `ESEWA_STATUS_URL` was originally set to `uat.esewa.com.np`, sourced from developer docs during earlier research. That domain doesn't resolve at all (`ENOTFOUND`) — the real sandbox status host is `rc.esewa.com.np` (same host as the payment form). Found by making a live call, not by re-reading docs; verified end-to-end with a real (bogus) `transaction_uuid` against the live sandbox, which correctly returned `NOT_FOUND`.
 
+## eSewa `NOT_FOUND` becomes a failure after a grace window
+
+eSewa's status endpoint returns `status: NOT_FOUND` both for a transaction it has genuinely never
+seen (the shopper cancelled or abandoned the gateway) and, for a few seconds, for one that just
+completed but hasn't propagated to the status service yet. `esewa.provider.verify` treats
+`NOT_FOUND` as `PENDING` while the transaction is younger than
+`NOT_FOUND_SETTLES_TO_FAILURE_AFTER_MS` (3 minutes from `PaymentTransaction.createdAt`, passed in as
+`initiatedAt`), and as `FAILED` past that. Without this, a cancelled payment stays `PENDING` until
+the 60-minute sweep expiry — the shopper watches a "confirming…" spinner that can never resolve.
+
+Tradeoff: if eSewa ever took longer than 3 minutes to propagate a genuinely completed payment, we'd
+mark that transaction `FAILED` and the order would never auto-settle (it'd need manual intervention,
+same as any missed settlement). Propagation is a seconds-scale delay in practice, and 3 minutes is
+well past eSewa's own "`NOT_FOUND` = being initiated" wording, so this is accepted rather than
+guarded further here.
+
 ## Reconciliation sweep, and the worker-swap seam
 
 `runPaymentReconciliationSweep` (in `payment.reconciliation.ts`) is a plain async function with no knowledge of how it's triggered. It's registered with `shared/scheduling`'s `startIntervalScheduler`, which wraps it in a Redis mutex so multiple API instances don't double-process the same batch. Swapping to a real worker later means writing one new scheduler implementation that calls this same function — nothing in `payments` needs to change.

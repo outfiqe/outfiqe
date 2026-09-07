@@ -13,6 +13,11 @@ import { PaymentVerifyStatus } from "../payment.types.js";
 
 const SIGNED_FIELD_NAMES = "total_amount,transaction_uuid,product_code";
 
+const NOT_FOUND_SETTLES_TO_FAILURE_AFTER_MS = 3 * 60 * 1000;
+
+const isBeyondNotFoundGrace = (initiatedAt: Date): boolean =>
+  Date.now() - initiatedAt.getTime() > NOT_FOUND_SETTLES_TO_FAILURE_AFTER_MS;
+
 const buildSignature = (totalAmount: number, transactionUuid: string): string => {
   const message = `total_amount=${totalAmount},transaction_uuid=${transactionUuid},product_code=${env.ESEWA_PRODUCT_CODE}`;
   return crypto.createHmac("sha256", env.ESEWA_SECRET_KEY).update(message).digest("base64");
@@ -56,7 +61,11 @@ export const esewaProvider: PaymentProvider = {
     };
   },
 
-  async verify({ transactionUuid, totalAmount }: PaymentVerifyInput): Promise<PaymentVerifyResult> {
+  async verify({
+    transactionUuid,
+    totalAmount,
+    initiatedAt,
+  }: PaymentVerifyInput): Promise<PaymentVerifyResult> {
     const url = new URL(env.ESEWA_STATUS_URL);
     url.searchParams.set("product_code", env.ESEWA_PRODUCT_CODE);
     url.searchParams.set("total_amount", String(totalAmount));
@@ -93,6 +102,9 @@ export const esewaProvider: PaymentProvider = {
       return { status: PaymentVerifyStatus.COMPLETE, rawResponse: body };
     }
     if (typeof status === "string" && FAILED_STATUSES.has(status)) {
+      return { status: PaymentVerifyStatus.FAILED, rawResponse: body };
+    }
+    if (status === EsewaStatusLookup.NOT_FOUND && isBeyondNotFoundGrace(initiatedAt)) {
       return { status: PaymentVerifyStatus.FAILED, rawResponse: body };
     }
     return { status: PaymentVerifyStatus.PENDING, rawResponse: body };

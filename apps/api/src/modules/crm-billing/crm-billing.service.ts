@@ -104,6 +104,7 @@ const verifyOpenInvoiceAgainstProvider = async (
     transactionUuid: invoice.id,
     providerRef: invoice.providerRef,
     totalAmount: invoice.amount,
+    initiatedAt: invoice.initiatedAt ?? invoice.createdAt,
   });
 
   if (verification.status === PaymentVerifyStatus.COMPLETE) {

@@ -111,6 +111,7 @@ const runVerify = async (
     transactionUuid: transaction.id,
     providerRef: transaction.transactionRef,
     totalAmount: order.total,
+    initiatedAt: transaction.createdAt,
   });
 
   if (status === PaymentVerifyStatus.COMPLETE) {
