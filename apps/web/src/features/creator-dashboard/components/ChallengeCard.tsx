@@ -1,5 +1,7 @@
 import { AchievementBadgeIcon, Badge, ProgressBar } from "@outfiqe/design-system";
 
+import { AppImage } from "@/shared/components/AppImage";
+
 import type { PublicChallenge } from "../api/challengeSchemas";
 import { METRIC_LABEL, RARITY_LABEL } from "../utils/badgeLabels";
 
@@ -36,12 +38,14 @@ export const ChallengeCard = ({ challenge }: { challenge: PublicChallenge }) => 
   return (
     <div className="overflow-hidden rounded-2xl border border-border">
       {bannerImageUrl && (
-        <div
-          className="h-28 w-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${bannerImageUrl})` }}
-          role="img"
-          aria-label={`${name} banner`}
-        />
+        <div className="relative h-28 w-full overflow-hidden">
+          <AppImage
+            src={bannerImageUrl}
+            alt={`${name} banner`}
+            fill
+            sizes="(min-width: 640px) 50vw, 100vw"
+          />
+        </div>
       )}
 
       <div className="flex gap-3 p-4">

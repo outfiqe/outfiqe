@@ -6,6 +6,7 @@ import type { Message } from "@outfiqe/types";
 import { ArrowLeft, Check, CheckCheck } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef } from "react";
 
+import { AppImage } from "@/shared/components/AppImage";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
@@ -140,14 +141,18 @@ export const MessageThread = ({ conversationId, onBack }: MessageThreadProps) =>
         <span className="relative shrink-0">
           <span
             aria-hidden
-            className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-cover bg-center text-xs font-bold text-white"
+            className="relative flex size-9 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white"
             style={
               participant?.avatarUrl
-                ? { backgroundImage: `url(${participant.avatarUrl})` }
+                ? undefined
                 : { backgroundColor: getAvatarColor(participant?.id ?? conversationId) }
             }
           >
-            {!participant?.avatarUrl && initialsFor(participant?.name ?? "?")}
+            {participant?.avatarUrl ? (
+              <AppImage src={participant.avatarUrl} alt="" fill sizes="36px" />
+            ) : (
+              initialsFor(participant?.name ?? "?")
+            )}
           </span>
           {participant?.isOnline && (
             <span

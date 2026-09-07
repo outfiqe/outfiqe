@@ -2,6 +2,7 @@ import { getAvatarColor } from "@outfiqe/utils";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
+import { AppImage } from "@/shared/components/AppImage";
 import { cn } from "@/shared/lib/cn";
 
 import type { CreatorLeaderboardEntry } from "../api/creatorLeaderboardSchemas";
@@ -23,14 +24,14 @@ export const CreatorLeaderboardRow = ({ entry }: CreatorLeaderboardRowProps) => 
       </span>
 
       <span
-        className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cover bg-center text-xs font-bold text-white"
-        style={
-          avatarUrl
-            ? { backgroundImage: `url(${avatarUrl})` }
-            : { backgroundColor: getAvatarColor(entry.creatorId) }
-        }
+        className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white"
+        style={avatarUrl ? undefined : { backgroundColor: getAvatarColor(entry.creatorId) }}
       >
-        {!avatarUrl && creatorName.charAt(0).toUpperCase()}
+        {avatarUrl ? (
+          <AppImage src={avatarUrl} alt="" fill sizes="36px" />
+        ) : (
+          creatorName.charAt(0).toUpperCase()
+        )}
       </span>
 
       <span className="min-w-0 flex-1">

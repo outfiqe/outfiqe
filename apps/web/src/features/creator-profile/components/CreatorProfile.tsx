@@ -24,6 +24,7 @@ import { AddPostButton, PostDetailModal, usePublicLook } from "@/features/explor
 import { useChatPanel } from "@/features/messaging";
 import { shareOrCopyLink } from "@/features/pwa";
 import { uploadsApi } from "@/shared/api/uploadsApi";
+import { AppImage } from "@/shared/components/AppImage";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
@@ -223,11 +224,8 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
               }}
             />
           )}
-          <div
-            className="relative size-20 overflow-hidden rounded-full bg-cover bg-center"
-            style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
-          >
-            {!avatarUrl && avatarFallback}
+          <div className="relative size-20 overflow-hidden rounded-full">
+            {avatarUrl ? <AppImage src={avatarUrl} alt="" fill sizes="80px" /> : avatarFallback}
           </div>
         </div>
 

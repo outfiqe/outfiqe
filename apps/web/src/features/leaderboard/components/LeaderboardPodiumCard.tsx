@@ -1,6 +1,7 @@
 import { getAvatarColor } from "@outfiqe/utils";
 import Link from "next/link";
 
+import { AppImage } from "@/shared/components/AppImage";
 import { cn } from "@/shared/lib/cn";
 
 import type { LeaderboardEntry } from "../api/leaderboardSchemas";
@@ -28,10 +29,10 @@ export const LeaderboardPodiumCard = ({ entry }: LeaderboardPodiumCardProps) => 
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border">
-      <div
-        className={cn("relative h-20 bg-cover bg-center", !bannerUrl && RANK_BANNER_STYLE[rank])}
-        style={bannerUrl ? { backgroundImage: `url(${bannerUrl})` } : undefined}
-      >
+      <div className={cn("relative h-20 overflow-hidden", !bannerUrl && RANK_BANNER_STYLE[rank])}>
+        {bannerUrl && (
+          <AppImage src={bannerUrl} alt="" fill sizes="(min-width: 640px) 33vw, 100vw" />
+        )}
         <span
           className={cn(
             "absolute right-3 top-3 rounded-full px-2.5 py-1 font-display text-xs font-extrabold",
@@ -44,14 +45,14 @@ export const LeaderboardPodiumCard = ({ entry }: LeaderboardPodiumCardProps) => 
 
       <div className="flex flex-col items-center px-5 pb-5 text-center">
         <span
-          className="relative z-10 -mt-8 flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cover bg-center text-lg font-bold text-white ring-4 ring-card"
-          style={
-            avatarUrl
-              ? { backgroundImage: `url(${avatarUrl})` }
-              : { backgroundColor: getAvatarColor(brandId) }
-          }
+          className="relative z-10 -mt-8 flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full text-lg font-bold text-white ring-4 ring-card"
+          style={avatarUrl ? undefined : { backgroundColor: getAvatarColor(brandId) }}
         >
-          {!avatarUrl && brandName.charAt(0).toUpperCase()}
+          {avatarUrl ? (
+            <AppImage src={avatarUrl} alt="" fill sizes="64px" />
+          ) : (
+            brandName.charAt(0).toUpperCase()
+          )}
         </span>
 
         <p className="mt-3 truncate font-display text-base font-extrabold uppercase tracking-tight text-foreground">

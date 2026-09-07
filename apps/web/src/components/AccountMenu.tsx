@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
 import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
+import { AppImage } from "@/shared/components/AppImage";
 import { useTenantHost } from "@/shared/hooks/useTenantHost";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 
@@ -35,11 +36,10 @@ export const AccountMenu = () => {
   const { avatarUrl, id, name } = user ?? {};
 
   const avatar = (
-    <div
-      className="flex size-full items-center justify-center bg-cover bg-center"
-      style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
-    >
-      {!avatarUrl && (
+    <div className="relative flex size-full items-center justify-center overflow-hidden">
+      {avatarUrl ? (
+        <AppImage src={avatarUrl} alt="" fill sizes="36px" />
+      ) : (
         <span
           aria-hidden
           className="flex size-full items-center justify-center text-xs font-bold text-white"

@@ -4,9 +4,12 @@ import { Button } from "@outfiqe/design-system";
 import { Minus, Plus, Shirt, X } from "lucide-react";
 import Link from "next/link";
 
+import { AppImage } from "@/shared/components/AppImage";
 import { cn } from "@/shared/lib/cn";
 
 import type { CartItem } from "../api/cartSchemas";
+
+const CART_THUMBNAIL_SIZE = "80px";
 import { useRemoveCartItem } from "../hooks/useRemoveCartItem";
 import { useUpdateCartItem } from "../hooks/useUpdateCartItem";
 
@@ -38,10 +41,13 @@ export const CartItemRow = ({ item }: CartItemRowProps) => {
     <div className={cn("flex gap-4 border-b border-border py-5", soldOut && "opacity-60")}>
       <Link
         href={`/product/${productId}`}
-        className="flex aspect-3/4 w-20 shrink-0 items-center justify-center rounded-lg bg-muted bg-cover bg-center"
-        style={{ backgroundImage: imageUrl ? `url(${imageUrl})` : undefined }}
+        className="relative flex aspect-3/4 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted"
       >
-        {!imageUrl && <Shirt className="size-8 text-foreground/25" strokeWidth={1} />}
+        {imageUrl ? (
+          <AppImage src={imageUrl} alt={productName} fill sizes={CART_THUMBNAIL_SIZE} />
+        ) : (
+          <Shirt className="size-8 text-foreground/25" strokeWidth={1} />
+        )}
       </Link>
 
       <div className="min-w-0 flex-1">

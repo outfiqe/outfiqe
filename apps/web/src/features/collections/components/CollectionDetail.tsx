@@ -3,7 +3,10 @@
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
+import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
+
+const COLLECTION_HERO_SIZES = "(min-width: 1152px) 1088px, 100vw";
 
 import type { PublicCollection } from "../api/collectionSchemas";
 import { useInfiniteCollectionProducts } from "../hooks/useInfiniteCollectionProducts";
@@ -22,12 +25,10 @@ export const CollectionDetail = ({ collection }: CollectionDetailProps) => {
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
       <div
-        className="relative flex min-h-40 items-end overflow-hidden rounded-2xl bg-cover bg-center p-6 sm:p-10"
-        style={{
-          backgroundColor: imageUrl ? undefined : getAvatarColor(id),
-          backgroundImage: imageUrl ? `url(${imageUrl})` : undefined,
-        }}
+        className="relative flex min-h-40 items-end overflow-hidden rounded-2xl p-6 sm:p-10"
+        style={imageUrl ? undefined : { backgroundColor: getAvatarColor(id) }}
       >
+        {imageUrl && <AppImage src={imageUrl} alt="" fill sizes={COLLECTION_HERO_SIZES} eager />}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
         <div className="relative z-10">
           <h1 className="font-display text-2xl font-extrabold uppercase tracking-tight text-white sm:text-4xl">

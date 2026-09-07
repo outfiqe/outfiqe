@@ -2,6 +2,7 @@ import { getAvatarColor } from "@outfiqe/utils";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
+import { AppImage } from "@/shared/components/AppImage";
 import { cn } from "@/shared/lib/cn";
 
 import type { LeaderboardEntry } from "../api/leaderboardSchemas";
@@ -23,14 +24,14 @@ export const LeaderboardRow = ({ entry }: LeaderboardRowProps) => {
       </span>
 
       <span
-        className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cover bg-center text-xs font-bold text-white"
-        style={
-          avatarUrl
-            ? { backgroundImage: `url(${avatarUrl})` }
-            : { backgroundColor: getAvatarColor(brandId) }
-        }
+        className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white"
+        style={avatarUrl ? undefined : { backgroundColor: getAvatarColor(brandId) }}
       >
-        {!avatarUrl && brandName.charAt(0).toUpperCase()}
+        {avatarUrl ? (
+          <AppImage src={avatarUrl} alt="" fill sizes="36px" />
+        ) : (
+          brandName.charAt(0).toUpperCase()
+        )}
       </span>
 
       <span className="min-w-0 flex-1">

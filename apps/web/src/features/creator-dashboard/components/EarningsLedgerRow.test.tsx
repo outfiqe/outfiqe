@@ -29,13 +29,20 @@ describe("EarningsLedgerRow", () => {
     expect(screen.getByText("Rs. 500")).toBeInTheDocument();
   });
 
-  it("shows a fallback icon instead of a background image when imageUrl is null", () => {
+  it("shows a fallback icon instead of an image when imageUrl is null", () => {
     const { container } = render(
       <EarningsLedgerRow commission={buildCommission({ imageUrl: null })} />,
     );
 
-    const thumbnail = container.querySelector(".bg-cover");
-    expect(thumbnail).toHaveStyle({ backgroundImage: "" });
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector("svg")).not.toBeNull();
+  });
+
+  it("renders the product image when imageUrl is set", () => {
+    const { container } = render(<EarningsLedgerRow commission={buildCommission()} />);
+
+    const image = container.querySelector("img");
+    expect(decodeURIComponent(image?.getAttribute("src") ?? "")).toContain("jacket.jpg");
   });
 
   it.each([
