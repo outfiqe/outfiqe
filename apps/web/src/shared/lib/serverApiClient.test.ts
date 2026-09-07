@@ -9,10 +9,20 @@ const okEnvelope = (data: unknown) => ({
   json: async () => ({ success: true, data }),
 });
 
+type FetchInit = RequestInit & { next?: { revalidate?: number; tags?: string[] } };
+
 const stubFetch = (response: unknown) => {
-  const fetchMock = vi.fn(async () => response as Response);
+  const fetchMock = vi.fn<(url: string, init?: FetchInit) => Promise<Response>>(
+    async () => response as Response,
+  );
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
+};
+
+const initOf = (fetchMock: ReturnType<typeof stubFetch>): FetchInit => {
+  const init = fetchMock.mock.calls[0]?.[1];
+  if (!init) throw new Error("fetch was not called with a request init");
+  return init;
 };
 
 afterEach(() => {
@@ -26,7 +36,7 @@ describe("serverApiRequest", () => {
 
     await serverApiRequest("/categories");
 
-    const init = fetchMock.mock.calls[0]![1] as RequestInit & { next?: unknown };
+    const init = initOf(fetchMock);
     expect(init.cache).toBe("no-store");
     expect(init.next).toBeUndefined();
   });
@@ -39,9 +49,7 @@ describe("serverApiRequest", () => {
       cacheTags: ["categories"],
     });
 
-    const init = fetchMock.mock.calls[0]![1] as RequestInit & {
-      next?: { revalidate?: number; tags?: string[] };
-    };
+    const init = initOf(fetchMock);
     expect(init.cache).toBeUndefined();
     expect(init.next).toEqual({ revalidate: 120, tags: ["categories"] });
   });
