@@ -22,16 +22,16 @@ const PrivacyPage = () => (
     <LegalDocument
       title="Privacy policy"
       summary="This policy explains what personal information Outfiqe collects, why we collect it, how we use and share it, and the choices you have."
-      lastReviewed="[NEEDS INPUT: effective date]"
-      status="draft"
+      lastReviewed="7 September 2026"
+      status="published"
     >
       <h2>Who we are</h2>
       <p>
         Outfiqe operates a fashion marketplace connecting shoppers, creators and clothing brands in
-        Nepal. In this policy, &ldquo;Outfiqe&rdquo;, &ldquo;we&rdquo; and &ldquo;us&rdquo; refer to{" "}
-        <strong>[NEEDS INPUT: registered legal entity name and registration number]</strong>,
-        registered at <strong>[NEEDS INPUT: registered address]</strong>. For any privacy question
-        or request, contact <strong>[NEEDS INPUT: privacy / grievance contact email]</strong>.
+        Nepal. In this policy, &ldquo;Outfiqe&rdquo;, &ldquo;we&rdquo; and &ldquo;us&rdquo; refer to
+        the Outfiqe team operating the outfiqe.com platform from Nepal. For any privacy question,
+        request or complaint, contact us at{" "}
+        <a href="mailto:support@outfiqe.com">support@outfiqe.com</a>.
       </p>
 
       <h2>Information we collect</h2>
@@ -90,12 +90,10 @@ const PrivacyPage = () => (
       <p>
         We process your information to perform our contract with you (orders, payouts), for our
         legitimate interests (security, fraud prevention, product improvement), to comply with legal
-        obligations, and with your consent where required (for example, non-essential cookies and
-        opt-in marketing).{" "}
-        <strong>
-          [NEEDS INPUT: confirm the applicable data-protection framework and legal bases for Nepal
-          and any other market served.]
-        </strong>
+        obligations under the laws of Nepal, including the Individual Privacy Act and the Consumer
+        Protection Act, and with your consent where required (for example, non-essential cookies and
+        opt-in marketing). Where we serve users outside Nepal, we process their information on the
+        same bases and honour the rights their local law provides.
       </p>
 
       <h2>How we share information</h2>
@@ -131,12 +129,11 @@ const PrivacyPage = () => (
       <h2>Retention</h2>
       <p>
         We keep personal information for as long as your account is active and as needed to provide
-        the service, then for the period required to meet legal, accounting, tax and dispute-
-        resolution obligations.{" "}
-        <strong>
-          [NEEDS INPUT: confirm retention periods, especially for financial and bank-account
-          records.]
-        </strong>
+        the service. After an account is closed, we retain order, payment and payout records, and
+        the bank-account details tied to them, for as long as required by applicable Nepal tax,
+        accounting and anti-fraud law, and to resolve any open dispute. Content you posted publicly
+        may remain visible until you delete it or your account. We then delete or irreversibly
+        anonymise the information.
       </p>
 
       <h2>Security</h2>
@@ -161,15 +158,17 @@ const PrivacyPage = () => (
         </li>
       </ul>
       <p>
-        <strong>
-          [NEEDS INPUT: describe the complaint route and supervisory authority, if any.]
-        </strong>
+        To exercise any of these rights, email us at{" "}
+        <a href="mailto:support@outfiqe.com">support@outfiqe.com</a>. If we have not resolved your
+        concern, you may also have the right to complain to a data-protection, privacy or consumer
+        authority in your jurisdiction.
       </p>
 
       <h2>Children</h2>
       <p>
-        Outfiqe is not directed at children under <strong>[NEEDS INPUT: minimum age]</strong>. We do
-        not knowingly collect their information.
+        Outfiqe is not directed at children under 13, and you must be at least 13 to create an
+        account. We do not knowingly collect information from children under 13; if we learn that we
+        have, we delete it.
       </p>
 
       <h2>Changes to this policy</h2>

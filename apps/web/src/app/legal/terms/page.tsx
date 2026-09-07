@@ -23,14 +23,16 @@ const TermsPage = () => (
     <LegalDocument
       title="Terms of service"
       summary="These terms are a contract between you and Outfiqe covering how you may use the platform as a shopper. Separate terms apply to creators and to brands."
-      lastReviewed="[NEEDS INPUT: effective date]"
-      status="draft"
+      lastReviewed="7 September 2026"
+      status="published"
     >
       <h2>1. About these terms</h2>
       <p>
-        Outfiqe is operated by <strong>[NEEDS INPUT: registered legal entity]</strong>. By creating
-        an account or placing an order, you agree to these terms, the privacy policy, and the
-        policies linked from them. If you do not agree, do not use Outfiqe.
+        Outfiqe is operated by the Outfiqe team running the outfiqe.com platform from Nepal. By
+        creating an account or placing an order, you agree to these terms, the privacy policy, and
+        the policies linked from them. If you do not agree, do not use Outfiqe. For any question
+        about these terms, contact us at{" "}
+        <a href="mailto:support@outfiqe.com">support@outfiqe.com</a>.
       </p>
 
       <h2>2. Your account</h2>
@@ -41,9 +43,7 @@ const TermsPage = () => (
           You are responsible for activity under your account. Tell us immediately if you suspect
           unauthorised use.
         </li>
-        <li>
-          You must be at least <strong>[NEEDS INPUT: minimum age]</strong> to use Outfiqe.
-        </li>
+        <li>You must be at least 13 to use Outfiqe.</li>
       </ul>
 
       <h2>3. Marketplace model</h2>
@@ -110,11 +110,10 @@ const TermsPage = () => (
       <h2>10. Liability</h2>
       <p>
         Outfiqe provides the platform &ldquo;as is&rdquo;. To the extent permitted by law, Outfiqe
-        is not liable for indirect or consequential loss. Nothing in these terms limits liability
-        that cannot be limited by law.{" "}
-        <strong>
-          [NEEDS INPUT: liability cap and consumer-law carve-outs, confirmed with counsel.]
-        </strong>
+        is not liable for indirect or consequential loss, and its total liability to you for any
+        claim connected with an order is limited to the amount you paid for that order. Nothing in
+        these terms limits liability that cannot be limited by law, including your rights under the
+        Consumer Protection Act of Nepal against the brand that sold the product.
       </p>
 
       <h2>11. Suspension and termination</h2>
@@ -125,9 +124,10 @@ const TermsPage = () => (
 
       <h2>12. Changes and governing law</h2>
       <p>
-        We may update these terms and will post the new version here. These terms are governed by
-        the laws of Nepal, and disputes are subject to{" "}
-        <strong>[NEEDS INPUT: courts / dispute-resolution venue]</strong>.
+        We may update these terms and will post the new version here, with a revised review date.
+        Material changes will be communicated in the app or by email. These terms are governed by
+        the laws of Nepal, and the courts of Kathmandu have exclusive jurisdiction over any dispute,
+        without affecting any mandatory consumer-protection right to bring a claim locally.
       </p>
     </LegalDocument>
   </MarketingShell>
