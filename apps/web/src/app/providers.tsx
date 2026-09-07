@@ -30,6 +30,7 @@ import {
 } from "@/features/pwa";
 
 const DEFAULT_STALE_TIME_MS = 30 * 1000;
+const INACTIVE_CACHE_RETENTION_MS = 30 * 60 * 1000;
 
 export const Providers = ({ children }: { children: ReactNode }) => {
   const [queryClient] = useState(
@@ -38,6 +39,7 @@ export const Providers = ({ children }: { children: ReactNode }) => {
         defaultOptions: {
           queries: {
             staleTime: DEFAULT_STALE_TIME_MS,
+            gcTime: INACTIVE_CACHE_RETENTION_MS,
             refetchOnWindowFocus: false,
           },
         },
