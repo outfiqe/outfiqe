@@ -21,21 +21,27 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
 });
 
 describe("resolveNotificationHref", () => {
-  it("routes a new brand application to the applications page", () => {
+  it("routes a new brand application to the brand applications page", () => {
     expect(
       resolveNotificationHref(buildNotification({ type: "BRAND_APPLICATION_SUBMITTED" })),
-    ).toBe("/");
+    ).toEqual({ to: "/platform/brand-applications" });
   });
 
-  it("deep-links support ticket events to the ticket, falling back to the list", () => {
+  it("deep-links support ticket events to the ticket route with its params", () => {
     const created = buildNotification({ type: "SUPPORT_TICKET_CREATED", entityId: "ticket-1" });
-    expect(resolveNotificationHref(created)).toBe("/support/ticket-1");
+    expect(resolveNotificationHref(created)).toEqual({
+      to: "/support/$ticketId",
+      params: { ticketId: "ticket-1" },
+    });
 
     const assigned = buildNotification({ type: "SUPPORT_TICKET_ASSIGNED", entityId: null });
-    expect(resolveNotificationHref(assigned)).toBe("/support");
+    expect(resolveNotificationHref(assigned)).toEqual({ to: "/support" });
 
     const replied = buildNotification({ type: "SUPPORT_TICKET_REPLY", entityId: "ticket-2" });
-    expect(resolveNotificationHref(replied)).toBe("/support/ticket-2");
+    expect(resolveNotificationHref(replied)).toEqual({
+      to: "/support/$ticketId",
+      params: { ticketId: "ticket-2" },
+    });
   });
 
   it("returns null for a resolved support ticket, since the admin already closed it", () => {
@@ -49,7 +55,7 @@ describe("resolveNotificationHref", () => {
       type: "CRM_ITEM_ASSIGNED",
       metadata: { crmItemKind: "ticket", crmItemTitle: "Billing question" },
     });
-    expect(resolveNotificationHref(notification)).toBe("/crm/support");
+    expect(resolveNotificationHref(notification)).toEqual({ to: "/crm/support" });
   });
 
   it("routes a CRM task assignment to the CRM tasks tab", () => {
@@ -57,7 +63,7 @@ describe("resolveNotificationHref", () => {
       type: "CRM_ITEM_ASSIGNED",
       metadata: { crmItemKind: "task", crmItemTitle: "Follow up with partner" },
     });
-    expect(resolveNotificationHref(notification)).toBe("/crm/tasks");
+    expect(resolveNotificationHref(notification)).toEqual({ to: "/crm/tasks" });
   });
 
   it("returns null for customer/creator-facing types that never reach admin", () => {

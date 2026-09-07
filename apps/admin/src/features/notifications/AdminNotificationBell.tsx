@@ -26,8 +26,8 @@ export const AdminNotificationBell = () => {
   );
 
   const handleSelect = (notification: Notification): void => {
-    const href = resolveNotificationHref(notification);
-    if (href) void navigate({ to: href });
+    const target = resolveNotificationHref(notification);
+    if (target) void navigate(target);
   };
 
   return (
