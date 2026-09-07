@@ -111,6 +111,7 @@ export default defineConfig({
         "src/features/explore/utils/commentCacheUpdate.ts",
         "src/features/explore/components/CommentThread.tsx",
         "src/app/internal/revalidate/route.ts",
+        "src/shared/components/DeferredMount.tsx",
         "src/shared/lib/contentSecurityPolicy.ts",
         "src/shared/lib/serverApiClient.ts",
         "src/shared/lib/apiOrigin.ts",
