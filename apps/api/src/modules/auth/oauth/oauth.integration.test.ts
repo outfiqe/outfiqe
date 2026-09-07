@@ -47,10 +47,14 @@ const mockGoogleProfile = (
   ...overrides,
 });
 
-const extractCookieValue = (response: request.Response, cookieName: string): string | undefined => {
+const findSetCookie = (response: request.Response, cookieName: string): string | undefined => {
   const rawCookies = response.headers["set-cookie"];
   const cookies = Array.isArray(rawCookies) ? rawCookies : rawCookies ? [rawCookies] : [];
-  const match = cookies.find((cookie) => cookie.startsWith(`${cookieName}=`));
+  return cookies.find((cookie) => cookie.startsWith(`${cookieName}=`));
+};
+
+const extractCookieValue = (response: request.Response, cookieName: string): string | undefined => {
+  const match = findSetCookie(response, cookieName);
   if (!match) return undefined;
 
   return match.slice(cookieName.length + 1).split(";")[0];
@@ -196,6 +200,17 @@ describe("GET /api/auth/oauth/:provider/callback", () => {
     expect(extractCookieValue(response, "has_session")).toBe("1");
     expect(extractCookieValue(response, "csrf_token")).toBeTruthy();
     expect(response.headers.location).not.toContain("accessToken");
+  });
+
+  it("issues the refresh cookie as SameSite=Lax so it survives the cross-site redirect back from the provider", async () => {
+    const profile = mockGoogleProfile();
+    googleExchangeMock.mockResolvedValue(profile);
+
+    const { state } = await startGoogleFlow("/dashboard");
+    const response = await callGoogleCallback({ code: "test-code", state });
+
+    expect(response.status).toBe(302);
+    expect(findSetCookie(response, "refresh_token")).toMatch(/SameSite=Lax/i);
   });
 
   it("auto-creates a new account and oauth identity when no user or identity matches", async () => {
