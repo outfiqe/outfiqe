@@ -13,7 +13,7 @@ const PaymentCallbackPage = async ({ params }: PaymentCallbackPageProps) => {
   const { orderId } = await params;
 
   return (
-    <div className="mx-auto max-w-md px-6 py-16">
+    <div className="mx-auto flex min-h-[70svh] max-w-md items-center justify-center px-6 py-16">
       <Suspense fallback={null}>
         <PaymentCallbackScreen orderId={orderId} />
       </Suspense>

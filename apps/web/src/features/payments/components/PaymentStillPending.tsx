@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 
 import { useFocusOnMount } from "@/shared/hooks/useFocusOnMount";
@@ -10,11 +11,12 @@ export const PaymentStillPending = ({ orderId }: PaymentStillPendingProps) => {
   const headingRef = useFocusOnMount<HTMLHeadingElement>();
 
   return (
-    <div>
+    <div className="flex flex-col items-center text-center">
+      <Loader2 className="size-10 animate-spin text-muted-foreground" aria-hidden />
       <h1
         ref={headingRef}
         tabIndex={-1}
-        className="font-display text-[28px] font-bold text-foreground outline-none"
+        className="mt-6 font-display text-[28px] font-bold text-foreground outline-none"
       >
         Still confirming…
       </h1>
@@ -23,7 +25,7 @@ export const PaymentStillPending = ({ orderId }: PaymentStillPendingProps) => {
       </p>
       <Link
         href={`/orders/${orderId}`}
-        className="mt-5 inline-block text-sm font-semibold text-primary-strong"
+        className="mt-6 inline-block text-sm font-semibold text-primary-strong"
       >
         View order
       </Link>
