@@ -31,6 +31,37 @@ const securityHeaders = [
 const CLIENT_ROUTER_DYNAMIC_STALE_SECONDS = 30;
 const CLIENT_ROUTER_STATIC_STALE_SECONDS = 180;
 
+const imageRemotePatterns = (): NonNullable<NextConfig["images"]>["remotePatterns"] => {
+  const sources = [
+    apiUrl,
+    process.env.API_PUBLIC_URL,
+    ...(process.env.NEXT_PUBLIC_IMAGE_HOSTS ?? "").split(","),
+  ];
+
+  const patterns = new Map<
+    string,
+    { protocol: "http" | "https"; hostname: string; port?: string }
+  >();
+
+  for (const source of sources) {
+    const trimmed = source?.trim();
+    if (!trimmed) continue;
+    try {
+      const url = new URL(trimmed.includes("://") ? trimmed : `https://${trimmed}`);
+      const protocol = url.protocol === "http:" ? "http" : "https";
+      patterns.set(`${protocol}//${url.host}`, {
+        protocol,
+        hostname: url.hostname,
+        ...(url.port ? { port: url.port } : {}),
+      });
+    } catch {
+      continue;
+    }
+  }
+
+  return [...patterns.values()];
+};
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
@@ -41,6 +72,11 @@ const nextConfig: NextConfig = {
       dynamic: CLIENT_ROUTER_DYNAMIC_STALE_SECONDS,
       static: CLIENT_ROUTER_STATIC_STALE_SECONDS,
     },
+  },
+
+  images: {
+    formats: ["image/avif", "image/webp"],
+    remotePatterns: imageRemotePatterns(),
   },
 
   async headers() {
