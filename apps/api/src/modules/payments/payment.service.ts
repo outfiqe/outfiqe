@@ -138,6 +138,15 @@ export const paymentService = {
       throw new AppError("ALREADY_SETTLED", "This order has already been paid.", CONFLICT_STATUS);
     }
 
+    const priorAttempt = await paymentRepository.findPendingTransaction(order.id);
+    if (priorAttempt?.transactionRef) {
+      const priorAttemptStatus = await runVerify(order);
+      if (priorAttemptStatus === PaymentVerifyStatus.COMPLETE) {
+        throw new AppError("ALREADY_SETTLED", "This order has already been paid.", CONFLICT_STATUS);
+      }
+      await paymentRepository.failTransaction(priorAttempt.id, { supersededByRetry: true });
+    }
+
     const provider = requireProvider(order.paymentMethod);
     const transaction = await paymentRepository.getOrCreatePendingTransaction(
       order.id,

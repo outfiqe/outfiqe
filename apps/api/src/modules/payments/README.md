@@ -39,6 +39,31 @@ same as any missed settlement). Propagation is a seconds-scale delay in practice
 well past eSewa's own "`NOT_FOUND` = being initiated" wording, so this is accepted rather than
 guarded further here.
 
+## Every eSewa attempt gets a fresh `transaction_uuid`
+
+eSewa rejects a `transaction_uuid` it has already seen with `{"error_message":"Duplicate
+transaction UUID."}` — including one the shopper started and then cancelled. So a single
+`PaymentTransaction` can't reuse one id across retries: `esewaProvider.initiate` generates a new
+`crypto.randomUUID()` for every call, signs the form with it, and returns it as `providerRef`;
+`payment.service` stores it on `transactionRef`, and `esewaProvider.verify` does its status lookup
+by `providerRef ?? transactionUuid`. The reused-id scheme worked only because nobody had retried a
+cancelled payment yet.
+
+`paymentService.initiate` retires the previous attempt before starting a new one: if a pending
+`PaymentTransaction` already has a `transactionRef` (so it was handed to the gateway once), it
+first runs a full `runVerify` on it — a shopper who actually completed that attempt in another tab
+gets `ALREADY_SETTLED` and is **not** sent to pay again — then marks it `FAILED` so
+`getOrCreatePendingTransaction` starts a clean row. Each attempt keeps its own `transactionRef` for
+ops to trace a manual refund against.
+
+**Known limitation:** two `initiate` calls that overlap on the server (the retry buttons disable
+on `isPending`, so this needs a same-frame double-fire that a human touch can't really produce, but
+a synthetic event or a render loop could) can create two fresh attempts. `verify` and the sweep
+only ever check the newest pending transaction, so if the shopper then completes the _older_ one,
+the order would expire to `FAILED` with money taken. A DB-level "one pending PAYMENT transaction
+per order" partial-unique constraint would close it fully and is the right follow-up if this is
+ever observed.
+
 ## Reconciliation sweep, and the worker-swap seam
 
 `runPaymentReconciliationSweep` (in `payment.reconciliation.ts`) is a plain async function with no knowledge of how it's triggered. It's registered with `shared/scheduling`'s `startIntervalScheduler`, which wraps it in a Redis mutex so multiple API instances don't double-process the same batch. Swapping to a real worker later means writing one new scheduler implementation that calls this same function — nothing in `payments` needs to change.
@@ -59,19 +84,20 @@ caller's side.
 
 ### Three different identifiers, one field
 
-Unlike eSewa (whose `transaction_uuid` is entirely our own value, used for both initiate and
-status lookup), Khalti generates its own `pidx` at initiate time that we don't control, and
-returns a _third_, separate `transaction_id` once the payment settles (from the lookup response).
-Concretely:
+Both providers now hand us a reference at initiate time that isn't `PaymentTransaction.id`: Khalti
+generates its own `pidx`, and eSewa's provider generates a fresh `transaction_uuid` per attempt (see
+the next section). It also returns a _third_, separate `transaction_id` once a Khalti payment
+settles (from the lookup response). Concretely:
 
 - `PaymentTransaction.id` — our own id, always.
-- `PaymentTransaction.transactionRef` — the provider's own reference, captured once at initiate
-  (`PaymentInitiateResult.providerRef`) via the new `setTransactionRef`. For eSewa this is just
-  its own `transaction_uuid` (= our id) again; for Khalti it's the real `pidx`. **This field used to
-  get overwritten with our own id again at settlement** (`settleTransaction` used to set
-  `transactionRef: transactionId`) — harmless no-op for eSewa, but would have silently destroyed
-  Khalti's real `pidx` the moment a payment settled. Fixed: `settleTransaction` no longer touches
-  `transactionRef` at all.
+- `PaymentTransaction.transactionRef` — the reference the gateway interaction actually uses,
+  captured at initiate (`PaymentInitiateResult.providerRef`) via `setTransactionRef`. For eSewa it's
+  the per-attempt `transaction_uuid` the form was signed with; for Khalti it's the real `pidx`. Both
+  the eSewa status lookup and the Khalti lookup key off this field, not `PaymentTransaction.id`.
+  **This field used to get overwritten with our own id again at settlement** (`settleTransaction`
+  used to set `transactionRef: transactionId`) — harmless when eSewa's ref was our id, but would
+  have silently destroyed Khalti's real `pidx` the moment a payment settled. Fixed: `settleTransaction`
+  no longer touches `transactionRef` at all.
 - Khalti's settlement-time `transaction_id` (from the lookup response body) is **not** given its
   own column — it's already captured for free inside `rawResponse` (stored on settle, same as every
   other provider), since nothing needs it until a refund is triggered.

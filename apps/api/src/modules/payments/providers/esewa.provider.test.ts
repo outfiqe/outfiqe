@@ -30,46 +30,73 @@ const unparseableResponse = (): Response => new Response("<<not json>>", { statu
 
 const verifyInput = (overrides: Partial<Parameters<typeof esewaProvider.verify>[0]> = {}) => ({
   transactionUuid: "txn-1",
-  providerRef: "txn-1",
+  providerRef: "esewa-ref-1",
   totalAmount: 2760,
   initiatedAt: new Date(),
   ...overrides,
 });
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+const stubFetchReturning = (response: Response) => {
+  const fetchMock = vi.fn().mockResolvedValue(response);
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+};
+
+const requestedTransactionUuid = (fetchMock: ReturnType<typeof vi.fn>): string | null => {
+  const requestedUrl = new URL(String(fetchMock.mock.calls[0]?.[0]));
+  return requestedUrl.searchParams.get("transaction_uuid");
+};
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+const initiateInput = {
+  transactionUuid: "txn-1",
+  subtotal: 2500,
+  deliveryFee: 260,
+  totalAmount: 2760,
+  successUrl: "https://outfiqe.test/payments/esewa/callback?orderId=order-1",
+  failureUrl: "https://outfiqe.test/payments/esewa/callback?orderId=order-1&redirectOutcome=failed",
+};
+
 describe("esewaProvider.initiate", () => {
-  it("builds a FORM_POST payload with a base64 HMAC-SHA256 signature over the signed fields", async () => {
-    const result = await esewaProvider.initiate({
-      transactionUuid: "txn-1",
-      subtotal: 2500,
-      deliveryFee: 260,
-      totalAmount: 2760,
-      successUrl: "https://outfiqe.test/payments/esewa/callback?orderId=order-1",
-      failureUrl: "https://outfiqe.test/payments/esewa/callback?orderId=order-1",
-    });
+  it("mints a fresh transaction_uuid per attempt and signs the form with it", async () => {
+    const result = await esewaProvider.initiate(initiateInput);
+
+    if (result.mode !== "FORM_POST") throw new Error("expected a FORM_POST result");
+    const esewaTransactionUuid = result.fields.transaction_uuid;
+
+    expect(esewaTransactionUuid).toMatch(UUID_PATTERN);
+    expect(esewaTransactionUuid).not.toBe(initiateInput.transactionUuid);
+    expect(result.providerRef).toBe(esewaTransactionUuid);
 
     const expectedSignature = crypto
       .createHmac("sha256", envMock.env.ESEWA_SECRET_KEY)
-      .update("total_amount=2760,transaction_uuid=txn-1,product_code=EPAYTEST")
+      .update(`total_amount=2760,transaction_uuid=${esewaTransactionUuid},product_code=EPAYTEST`)
       .digest("base64");
 
     expect(result).toMatchObject({
       mode: "FORM_POST",
       formUrl: envMock.env.ESEWA_BASE_URL,
-      providerRef: "txn-1",
       fields: {
         amount: "2500",
         total_amount: "2760",
-        transaction_uuid: "txn-1",
         product_code: "EPAYTEST",
         product_delivery_charge: "260",
         signed_field_names: "total_amount,transaction_uuid,product_code",
         signature: expectedSignature,
       },
     });
+  });
+
+  it("uses a different transaction_uuid each time it is called", async () => {
+    const first = await esewaProvider.initiate(initiateInput);
+    const second = await esewaProvider.initiate(initiateInput);
+
+    expect(first.providerRef).not.toBe(second.providerRef);
   });
 });
 
@@ -80,6 +107,22 @@ describe("esewaProvider.verify", () => {
     const result = await esewaProvider.verify(verifyInput());
 
     expect(result.status).toBe(PaymentVerifyStatus.COMPLETE);
+  });
+
+  it("looks the status up by the stored provider ref, not our transaction id", async () => {
+    const fetchMock = stubFetchReturning(statusResponse({ status: "COMPLETE" }));
+
+    await esewaProvider.verify(verifyInput({ providerRef: "esewa-ref-42" }));
+
+    expect(requestedTransactionUuid(fetchMock)).toBe("esewa-ref-42");
+  });
+
+  it("falls back to our transaction id when there is no provider ref", async () => {
+    const fetchMock = stubFetchReturning(statusResponse({ status: "COMPLETE" }));
+
+    await esewaProvider.verify(verifyInput({ providerRef: null }));
+
+    expect(requestedTransactionUuid(fetchMock)).toBe("txn-1");
   });
 
   it("maps CANCELED to FAILED", async () => {

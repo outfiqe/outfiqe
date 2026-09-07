@@ -34,42 +34,44 @@ const FAILED_STATUSES = new Set<string>([EsewaStatusLookup.CANCELED, EsewaStatus
 
 export const esewaProvider: PaymentProvider = {
   async initiate({
-    transactionUuid,
     subtotal,
     deliveryFee,
     totalAmount,
     successUrl,
     failureUrl,
   }: PaymentInitiateInput): Promise<PaymentInitiateResult> {
+    const esewaTransactionUuid = crypto.randomUUID();
+
     return {
       mode: "FORM_POST",
       formUrl: env.ESEWA_BASE_URL,
-      providerRef: transactionUuid,
+      providerRef: esewaTransactionUuid,
       fields: {
         amount: String(subtotal),
         tax_amount: "0",
         total_amount: String(totalAmount),
-        transaction_uuid: transactionUuid,
+        transaction_uuid: esewaTransactionUuid,
         product_code: env.ESEWA_PRODUCT_CODE,
         product_service_charge: "0",
         product_delivery_charge: String(deliveryFee),
         success_url: successUrl,
         failure_url: failureUrl,
         signed_field_names: SIGNED_FIELD_NAMES,
-        signature: buildSignature(totalAmount, transactionUuid),
+        signature: buildSignature(totalAmount, esewaTransactionUuid),
       },
     };
   },
 
   async verify({
     transactionUuid,
+    providerRef,
     totalAmount,
     initiatedAt,
   }: PaymentVerifyInput): Promise<PaymentVerifyResult> {
     const url = new URL(env.ESEWA_STATUS_URL);
     url.searchParams.set("product_code", env.ESEWA_PRODUCT_CODE);
     url.searchParams.set("total_amount", String(totalAmount));
-    url.searchParams.set("transaction_uuid", transactionUuid);
+    url.searchParams.set("transaction_uuid", providerRef ?? transactionUuid);
 
     let res: Response;
     try {
