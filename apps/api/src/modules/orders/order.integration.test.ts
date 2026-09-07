@@ -9,6 +9,8 @@ import {
   DiscountType,
   FulfilmentStatus,
   PaymentMethod,
+  PaymentStatus,
+  PaymentTransactionStatus,
   PlatformFeeType,
   ProductStatus,
   UserRole,
@@ -656,9 +658,21 @@ describe("POST /api/orders/:orderId/cancel — buyer self-service", () => {
 
     const order = await prisma.order.findUniqueOrThrow({ where: { id: orderId } });
     expect(order.fulfilmentStatus).toBe(FulfilmentStatus.CANCELLED);
+    expect(order.paymentStatus).toBe(PaymentStatus.FAILED);
+
+    const pendingTransactions = await prisma.paymentTransaction.count({
+      where: { orderId, status: PaymentTransactionStatus.INITIATED },
+    });
+    expect(pendingTransactions).toBe(0);
 
     const afterCancel = await prisma.productSize.findUniqueOrThrow({ where: { id: size.id } });
     expect(afterCancel.stock).toBe(10);
+
+    const retry = await request(testApp)
+      .post(`/api/payments/${orderId}/initiate`)
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER));
+    expect(retry.status).toBe(409);
+    expect(retry.body.code).toBe("ORDER_CANCELLED");
   });
 
   it("404s when cancelling someone else's order", async () => {

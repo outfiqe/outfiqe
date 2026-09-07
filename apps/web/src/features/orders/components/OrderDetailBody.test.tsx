@@ -29,6 +29,10 @@ vi.mock("../hooks/useOrder", () => ({
 vi.mock("@/features/payments", () => ({
   redirectToPaymentGateway: mocks.redirectToPaymentGateway,
   useInitiatePayment: () => mocks.initiate,
+  isAlreadyPaidError: (error: unknown) =>
+    typeof error === "object" && error !== null && "code" in error
+      ? (error as { code: unknown }).code === "ALREADY_SETTLED"
+      : false,
 }));
 
 vi.mock("../api/ordersApi", () => ({
@@ -130,6 +134,34 @@ describe("OrderDetailBody", () => {
     expect(screen.queryByText("Order placed")).not.toBeInTheDocument();
   });
 
+  it("shows a cancelled state with no payment panel once the order is cancelled", () => {
+    orderResult.data = buildOrder({
+      paymentMethod: "ESEWA",
+      paymentStatus: "FAILED",
+      fulfilmentStatus: "CANCELLED",
+    });
+
+    renderOrderDetail();
+
+    expect(screen.getByText("This order was cancelled.")).toBeInTheDocument();
+    expect(screen.queryByText(/payment not completed/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /resume payment/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/payment of rs/i)).not.toBeInTheDocument();
+  });
+
+  it("hides the payment panel for a cancelled order even if its payment row is still INITIATED", () => {
+    orderResult.data = buildOrder({
+      paymentMethod: "ESEWA",
+      paymentStatus: "INITIATED",
+      fulfilmentStatus: "CANCELLED",
+    });
+
+    renderOrderDetail();
+
+    expect(screen.getByText("This order was cancelled.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /resume payment/i })).not.toBeInTheDocument();
+  });
+
   it("re-initiates payment for the order when Resume payment is clicked", async () => {
     const user = userEvent.setup();
     orderResult.data = buildOrder({ paymentMethod: "ESEWA", paymentStatus: "INITIATED" });
@@ -181,6 +213,18 @@ describe("OrderDetailBody", () => {
 
     expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: /starting/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /cancel order/i })).toBeDisabled();
+  });
+
+  it("shows a positive note and locks the buttons when resume reports the order is already paid", () => {
+    orderResult.data = buildOrder({ paymentMethod: "ESEWA", paymentStatus: "INITIATED" });
+    mocks.initiate.isError = true;
+    mocks.initiate.error = { code: "ALREADY_SETTLED" };
+
+    renderOrderDetail();
+
+    expect(screen.getByText(/already went through/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /resume payment/i })).toBeDisabled();
     expect(screen.getByRole("button", { name: /cancel order/i })).toBeDisabled();
   });
 

@@ -535,6 +535,11 @@ export const orderService = {
       const ok = await orderRepository.markCancelled(tx, orderId, CANCELLABLE_FULFILMENT_STATUSES);
       if (!ok) return false;
 
+      if (order.paymentStatus === PaymentStatus.INITIATED) {
+        await orderRepository.failUnsettledPayment(tx, orderId);
+        await paymentRepository.failPendingTransactions(tx, orderId);
+      }
+
       if (stockWasCommitted) {
         await productService.restoreStockForItems(tx, order.items);
       }

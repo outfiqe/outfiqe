@@ -42,3 +42,10 @@ moves. So `OrderDetailBody` keys the "is this actually a live order" decision of
 not the tracker: while `paymentMethod !== COD && paymentStatus === INITIATED` it swaps the success
 check-mark and the `OrderTracker` for `PendingPaymentPanel`. Once payment settles (or the API's
 60-minute reconciliation sweep expires it) the normal view returns on the next refetch.
+
+**Resume payment self-heals a stale "pending" view.** If the shopper actually completed an earlier
+attempt (closed the tab before the callback fired, say), `POST /payments/:id/initiate` re-verifies
+it, settles the order, and returns `ALREADY_SETTLED`. `useInitiatePayment` invalidates `["orders"]`
+on that error, so `OrderDetailBody` refetches and the panel is replaced by the normal placed-order
+view; `PendingPaymentPanel` shows a positive "already went through — refreshing" note and disables
+its buttons in the meantime rather than a red error.

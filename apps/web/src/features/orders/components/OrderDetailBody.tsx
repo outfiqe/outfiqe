@@ -1,12 +1,12 @@
 "use client";
 
 import { Button, Skeleton } from "@outfiqe/design-system";
-import { Clock } from "lucide-react";
+import { Ban, Clock } from "lucide-react";
 import Link from "next/link";
 
 import { cn } from "@/shared/lib/cn";
 
-import { PaymentMethod, PaymentStatus } from "../api/orderSchemas";
+import { FulfilmentStatus, PaymentMethod, PaymentStatus } from "../api/orderSchemas";
 import { useOrder } from "../hooks/useOrder";
 import { OrderTracker } from "./OrderTracker";
 import { PendingPaymentPanel } from "./PendingPaymentPanel";
@@ -52,8 +52,11 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
     transactions,
   } = order;
 
+  const orderCancelled = fulfilmentStatus === FulfilmentStatus.CANCELLED;
   const awaitingPayment =
-    paymentMethod !== PaymentMethod.COD && paymentStatus === PaymentStatus.INITIATED;
+    !orderCancelled &&
+    paymentMethod !== PaymentMethod.COD &&
+    paymentStatus === PaymentStatus.INITIATED;
 
   return (
     <div className="mx-auto max-w-lg py-10">
@@ -61,11 +64,13 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
         <div
           className={cn(
             "mx-auto flex size-16 items-center justify-center rounded-full",
-            awaitingPayment ? "bg-muted" : "bg-primary",
+            awaitingPayment || orderCancelled ? "bg-muted" : "bg-primary",
           )}
         >
           {awaitingPayment ? (
             <Clock className="size-7 text-muted-foreground" strokeWidth={2} />
+          ) : orderCancelled ? (
+            <Ban className="size-7 text-muted-foreground" strokeWidth={2} />
           ) : (
             <svg
               viewBox="0 0 24 24"
@@ -82,13 +87,15 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
         <h1 className="mt-5 font-display text-2xl font-extrabold uppercase tracking-tight text-foreground">
           Order {id}
         </h1>
-        <p className="mt-4 text-sm text-muted-foreground">
-          {awaitingPayment
-            ? `Rs. ${total.toLocaleString()} via ${paymentMethod} — payment still pending.`
-            : paymentMethod === PaymentMethod.COD
-              ? `Keep Rs. ${total.toLocaleString()} ready for the rider — you pay when it arrives.`
-              : `Payment of Rs. ${total.toLocaleString()} via ${paymentMethod}.`}
-        </p>
+        {!orderCancelled && (
+          <p className="mt-4 text-sm text-muted-foreground">
+            {awaitingPayment
+              ? `Rs. ${total.toLocaleString()} via ${paymentMethod} — payment still pending.`
+              : paymentMethod === PaymentMethod.COD
+                ? `Keep Rs. ${total.toLocaleString()} ready for the rider — you pay when it arrives.`
+                : `Payment of Rs. ${total.toLocaleString()} via ${paymentMethod}.`}
+          </p>
+        )}
       </div>
 
       {awaitingPayment && (

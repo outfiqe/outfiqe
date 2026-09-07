@@ -2,7 +2,7 @@ import { env } from "#config/env.config.js";
 import { prisma } from "#db/prisma.js";
 import { manualRefundNeededTemplate, paymentSettledTemplate } from "#email-templates/templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
-import { PaymentMethod, PaymentStatus } from "#generated/prisma/enums.js";
+import { FulfilmentStatus, PaymentMethod, PaymentStatus } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { productService } from "#modules/products/product.service.js";
@@ -133,6 +133,9 @@ export const paymentService = {
         "This order is cash on delivery.",
         CONFLICT_STATUS,
       );
+    }
+    if (order.fulfilmentStatus === FulfilmentStatus.CANCELLED) {
+      throw new AppError("ORDER_CANCELLED", "This order was cancelled.", CONFLICT_STATUS);
     }
     if (order.paymentStatus !== PaymentStatus.INITIATED) {
       throw new AppError("ALREADY_SETTLED", "This order has already been paid.", CONFLICT_STATUS);

@@ -3,7 +3,11 @@
 import { Button, FormBanner, Modal } from "@outfiqe/design-system";
 import { useState } from "react";
 
-import { redirectToPaymentGateway, useInitiatePayment } from "@/features/payments";
+import {
+  isAlreadyPaidError,
+  redirectToPaymentGateway,
+  useInitiatePayment,
+} from "@/features/payments";
 import { useDelayedPending } from "@/shared/hooks/useDelayedPending";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
@@ -29,6 +33,8 @@ export const PendingPaymentPanel = ({
 
   const startResume = () => resumePayment.mutate(orderId, { onSuccess: redirectToPaymentGateway });
 
+  const resumeAlreadyPaid = isAlreadyPaidError(resumePayment.error);
+
   const confirmCancelOrder = () =>
     cancelOrder.mutate(undefined, { onSuccess: () => setIsConfirmingCancel(false) });
 
@@ -45,18 +51,24 @@ export const PendingPaymentPanel = ({
 
       {resumePayment.isError && (
         <div className="mt-3">
-          <FormBanner>{getErrorMessage(resumePayment.error)}</FormBanner>
+          {resumeAlreadyPaid ? (
+            <FormBanner tone="positive">
+              This payment already went through — refreshing your order…
+            </FormBanner>
+          ) : (
+            <FormBanner>{getErrorMessage(resumePayment.error)}</FormBanner>
+          )}
         </div>
       )}
 
       <div className="mt-4 flex flex-wrap gap-2.5">
-        <Button onClick={startResume} disabled={resumePayment.isPending}>
+        <Button onClick={startResume} disabled={resumePayment.isPending || resumeAlreadyPaid}>
           {showResuming ? "Starting…" : "Resume payment"}
         </Button>
         <Button
           variant="outline"
           onClick={() => setIsConfirmingCancel(true)}
-          disabled={resumePayment.isPending}
+          disabled={resumePayment.isPending || resumeAlreadyPaid}
         >
           Cancel order
         </Button>

@@ -12,7 +12,11 @@ then confirm the outcome when the gateway redirects them back.
   (eSewa's `FORM_POST` mode).
 - `hooks/useInitiatePayment.ts` — the `POST /payments/:orderId/initiate` mutation. `networkMode:
 "always"` so an offline attempt fails fast instead of queueing invisibly (same reasoning as
-  `checkout/README.md`).
+  `checkout/README.md`). On an `ALREADY_SETTLED` error it invalidates `["orders"]` and
+  `["payment-verify"]` — that response means the server settled the payment (the API re-verifies a
+  prior attempt before starting a new one, see `apps/api/src/modules/payments/README.md`), so the
+  order/callback views are stale and need to refetch. `isAlreadyPaidError` is exported so a caller
+  can also show a "this already went through" message instead of a red error.
 - `hooks/useVerifyPayment.ts` — polls `POST /payments/:orderId/verify` every 3s while the server
   says `PENDING`, up to 10 attempts, then exposes `hasTimedOut`.
 - `components/PaymentCallbackScreen.tsx` — the `/payments/[provider]/callback` page body. Picks
