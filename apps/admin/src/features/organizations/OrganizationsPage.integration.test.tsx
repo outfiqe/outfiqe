@@ -170,6 +170,29 @@ describe("OrganizationsPage", () => {
     await waitFor(() => expect(screen.getByLabelText("Business")).toHaveValue(""));
   });
 
+  it("snaps the business field back to the picked name when an uncommitted edit is abandoned", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/crm/organizations`, () =>
+        HttpResponse.json({ success: true, data: [] }),
+      ),
+    );
+    mockBrandSearch();
+    mockSuggestion();
+
+    renderOrganizationsPage();
+    await screen.findByText("No organizations yet.");
+
+    const user = userEvent.setup();
+    await selectAcme(user);
+
+    const businessField = screen.getByLabelText("Business");
+    await user.type(businessField, " Corp");
+    expect(businessField).toHaveValue("Acme Corp");
+
+    await user.click(screen.getByLabelText("Subdomain"));
+    await waitFor(() => expect(businessField).toHaveValue("Acme"));
+  });
+
   it("shows the backend error message when creation fails", async () => {
     mswServer.use(
       http.get(`${API_BASE}/crm/organizations`, () =>

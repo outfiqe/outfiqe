@@ -26,13 +26,8 @@ export const BusinessOwnerField = ({
   selectedBrandName,
   onSelect,
 }: BusinessOwnerFieldProps) => {
-  const [query, setQuery] = useState(selectedBrandName);
-
-  const [syncedName, setSyncedName] = useState(selectedBrandName);
-  if (selectedBrandName !== syncedName) {
-    setSyncedName(selectedBrandName);
-    setQuery(selectedBrandName);
-  }
+  const [typedQuery, setTypedQuery] = useState<string | null>(null);
+  const query = typedQuery ?? selectedBrandName;
 
   const debouncedQuery = useDebouncedValue(query, BRAND_SEARCH_DEBOUNCE_MS);
   const isSearching = debouncedQuery.trim().length >= MIN_QUERY_LENGTH;
@@ -47,12 +42,12 @@ export const BusinessOwnerField = ({
   const selectBrand = (brandId: string) => {
     const brand = brands.find((candidate) => candidate.id === brandId);
     if (!brand) return;
-    setQuery(brand.name);
+    setTypedQuery(null);
     onSelect(brand);
   };
 
   const clearSelection = () => {
-    setQuery("");
+    setTypedQuery(null);
     onSelect(null);
   };
 
@@ -67,8 +62,8 @@ export const BusinessOwnerField = ({
             id="organization-owner-brand"
             placeholder="Search businesses already on Outfiqe…"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onBlur={() => setQuery(selectedBrandId ? syncedName : "")}
+            onChange={(event) => setTypedQuery(event.target.value)}
+            onBlur={() => setTypedQuery(null)}
             className="w-64 pr-8"
           />
           {selectedBrandId && (
