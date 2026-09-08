@@ -6,9 +6,9 @@ The public social feed: browsing posts (looks), liking/saving/commenting, follow
 
 ## Structure
 
-- `components/ExploreFeed.tsx` — the `/explore` page: filter tabs (For You / Following / a trending tag), infinite-scroll feed, sidebar, and live updates via socket. Supports two layouts — List renders `PostCard`; Grid renders the lighter `PostGridCard` in a Pinterest-style masonry.
+- `components/ExploreFeed.tsx` — the `/explore` page: filter tabs (For You / Following / a trending tag), infinite-scroll feed, sidebar, and live updates via socket. Supports two layouts — List renders `PostCard`; Grid (the default) renders the lighter `PostGridCard` in a Pinterest-style CSS multi-column grid. Its first page is server-rendered — see "First feed page is server-rendered" below.
 - `components/PostCard.tsx` — one feed card (List layout): header, photo carousel, tagged-product pills, caption, like/comment/save row, and an inline expandable comments section.
-- `components/PostGridCard.tsx` — one grid tile (Grid layout): just the image (with a stack icon if the post has multiple photos) and a truncated caption below it via `PostCaption` — no header/actions/comments, since tapping it opens the full `PostDetailModal`. Deliberately lighter than `PostCard` so two columns fit comfortably on a phone screen; `EXPLORE_GRID_BREAKPOINT_COLUMNS` (`explore.constants.ts`) never drops below 2 columns, unlike the richer-card masonry `MASONRY_BREAKPOINT_COLUMNS` used by `SavedPostsGrid`, which still collapses to 1 column on mobile because it renders full `PostCard`s.
+- `components/PostGridCard.tsx` — one grid tile (Grid layout): just the image (with a stack icon if the post has multiple photos) and a static two-line clamped caption below it — no header/actions/comments and no interactive "see more", since tapping the tile opens the full `PostDetailModal` with the whole caption. The caption area holds a fixed two-line height so a short or missing caption never shifts the tiles below it. Deliberately lighter than `PostCard` so two columns fit comfortably on a phone screen; the grid uses plain CSS `columns` (`columns-2 xl:columns-3`), no JS layout pass, unlike the richer-card `react-masonry-css` grid `MASONRY_BREAKPOINT_COLUMNS` used by `SavedPostsGrid`, which still collapses to 1 column on mobile because it renders full `PostCard`s. `EXPLORE_GRID_BREAKPOINT_COLUMNS` (`explore.constants.ts`) now only feeds `search`'s masonry.
 - `components/PostDetailModal.tsx` — the modal opened when a post's image is clicked (from the feed, saved posts, or a creator's profile grid). Two-pane layout: a fixed photo pane on the left, and a scrollable pane on the right (creator header, tags, caption, actions, comments) — same shape as `PostCard`'s content, just side-by-side with the image instead of stacked below it.
 - `components/PostCardHeader.tsx`, `PostCarousel.tsx`, `PostCarouselControls.tsx`, `PostCaption.tsx`, `PostActionsRow.tsx`, `PostTagPill.tsx`, `PostCommentsSection.tsx` — the building blocks shared by `PostCard` and `PostDetailModal`.
 - `components/CommentThread.tsx` — one top-level comment plus its replies: the inline reply preview, "View N replies"/"Load more replies" expansion, the Reply toggle, and the reply composer. One instance per comment, each owning its own expand/collapse and pagination state via `useCommentReplies` — see "Real-time comments and replies" below.
@@ -88,6 +88,29 @@ rather than through a shared hook, since each only needs it in exactly one place
 its own function by being needed identically from both `PostCard` and `PostDetailModal`.
 
 ## Non-obvious rationale
+
+**First feed page is server-rendered.** `ExploreFeed` is a client component (URL-driven tabs, infinite
+scroll, socket, optimistic mutations), so the feed — including the LCP image — used to paint only
+after the JS bundle downloaded, hydrated, and the feed query resolved. `app/explore/page.tsx` now
+`prefetchInfiniteQuery`s page one of the default/`for_you` (or `trending`) tab on the server via
+`api/serverExploreFeed.ts` and hands it down through a `HydrationBoundary`, so the grid renders in
+the initial HTML and the first few images carry `eager`. The server fetch is anonymous and cached
+(`revalidateSeconds: 30`) — every visitor's first paint shares it; a signed-in client still hydrates
+and refetches its personalised feed. `/creator-looks/feed` is `optionalAuth`, so the anonymous fetch
+is a valid feed rather than an error. Reading `searchParams` makes the page dynamic (it is no longer
+in the prerendered browse-shell set), but the 30s fetch cache keeps origin load flat.
+
+**The feed's skeleton gate no longer waits on client auth.** It previously showed a skeleton until
+`useAuth` resolved, which threw away the server-rendered feed on every load. It now renders whatever
+posts are in cache immediately; the skeleton only shows for a genuinely empty, still-loading feed
+(or the `following` tab before auth resolves). `following` stays client-only — its feed is
+per-user and not worth server-rendering for a tab most first-time visitors never open.
+
+**`PostDetailModal`, `AddPostButton`, `Sidebar` and the List-layout `PostCard` are `next/dynamic`
+imports.** None of them is on the first-paint path for the default Grid feed — the modal only mounts
+on a tile click, the FAB opens `creator-dashboard`'s heavy `PostModal`, the right rail is
+client-only data, and `PostCard` only renders in the non-default List layout — so keeping them out
+of the route's initial chunk is worth the extra request when they are actually needed.
 
 **`AddPostButton` sits higher on mobile when the user is signed in.** Below `sm` the global
 `FloatingChatLauncher` bubble (`messaging`, mounted in `app/providers.tsx`) is pinned to
