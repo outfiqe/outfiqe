@@ -3,12 +3,12 @@ import type { Metadata } from "next";
 import { AddPhoneNumberBanner, ChangePasswordCard, ConnectedAccounts } from "@/features/auth";
 import { ClearOfflineDataCard } from "@/features/pwa";
 
-import { requireDashboardSession } from "../../requireDashboardSession";
+import { requireAuthedSession } from "../../requireDashboardSession";
 
 export const metadata: Metadata = { title: "Security" };
 
 const DashboardSecurityPage = async () => {
-  const { user } = await requireDashboardSession("/settings/security");
+  const { user } = await requireAuthedSession("/settings/security");
 
   return (
     <div className="max-w-xl">

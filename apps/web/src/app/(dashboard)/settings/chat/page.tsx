@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 import { SiteChatAvailabilitySettings } from "@/features/chat-settings";
 
-import { requireDashboardSession } from "../../requireDashboardSession";
+import { requireAuthedSession } from "../../requireDashboardSession";
 
 export const metadata: Metadata = { title: "Chat" };
 
 const DashboardChatSettingsPage = async () => {
-  await requireDashboardSession("/settings/chat");
+  await requireAuthedSession("/settings/chat");
 
   return (
     <div className="max-w-xl">

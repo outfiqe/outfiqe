@@ -10,6 +10,8 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
   type: "COUPON_APPROVAL_REQUESTED",
   entityType: null,
   entityId: null,
+  targetSurface: null,
+  targetPath: null,
   metadata: {},
   groupKey: null,
   actorCount: 1,
