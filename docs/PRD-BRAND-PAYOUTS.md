@@ -123,8 +123,10 @@ BrandPayout
   orderItemId   uuid  @unique -> OrderItem     // 1:1, same shape as CreatorCommission
   grossAmount   Int    // unitPrice * qty, snapshotted
   platformFee   Int    // snapshotted from PlatformCommissionRule at order time
-  gatewayFee    Int    // snapshotted estimate at order time (0 for COD — see §8 open Q)
-  netAmount     Int    // grossAmount - platformFee - gatewayFee
+  gatewayFee    Int    // snapshotted estimate at order time (0 for COD — see §8 open Q);
+                        // recorded for platform-margin reporting only, never subtracted
+                        // from the brand's own payout — see the note below the table
+  netAmount     Int    // grossAmount - platformFee (identical for COD and wallet orders)
   status        BrandPayoutStatus @default(PENDING)  // PENDING | AVAILABLE | WITHDRAWN | VOIDED
   approvedAt    DateTime?
   availableAt   DateTime?
@@ -132,6 +134,15 @@ BrandPayout
   voidedReason  String?
   createdAt
 ```
+
+**A brand's payout never varies by payment method.** `gatewayFee` is estimated and
+stored on every row (COD included, always `0`) purely so it's visible for platform-
+margin reporting — it is deliberately never subtracted from `netAmount`. The gateway's
+cut is a cost Outfiqe absorbs out of its own `platformFee`, not a pass-through onto the
+brand: a brand selling the same item nets the same amount whether the customer paid
+COD, eSewa, or Khalti. This is a locked decision, not an open question — see §6.5's
+"Platform revenue realized" for how the gateway cost surfaces instead (as a hit to
+Outfiqe's own margin, computed at reporting time, not at payout-creation time).
 
 `WITHDRAWN` is the terminal "paid" state — reached only via a `WithdrawRequest`
 (defined in `PRD-BANK-WITHDRAW.md` §3) moving to `PAID`, which atomically claims and
@@ -239,10 +250,17 @@ existing tables plus the new ones — no new source-of-truth data, purely aggreg
 - **Owed to brands** (`BrandPayout` sum by status) and **owed to creators**
   (`CreatorCommission` sum by status, already exists via `sumByStatusForCreator` —
   extend to an all-creators admin variant).
-- **Platform revenue realized** = sum of `platformFee` on `PAID` `BrandPayout` rows
-  (i.e., don't count it as "earned" until the underlying sale is actually settled with
-  the brand, matching the same conservative recognition already implied by the
-  Pending/Available/Paid states elsewhere).
+- **Platform revenue realized** = sum of (`platformFee` − `gatewayFee`) on `WITHDRAWN`
+  `BrandPayout` rows — not `platformFee` alone. Since the gateway's cut now comes out of
+  Outfiqe's own margin rather than the brand's payout (see §5's note), counting raw
+  `platformFee` as "revenue" would overstate real earnings on every wallet-paid order by
+  exactly its gateway fee. Recognized only once `WITHDRAWN` (i.e., don't count it as
+  "earned" until the underlying sale is actually settled with the brand), matching the
+  same conservative recognition already implied by the Pending/Available/Withdrawn
+  states elsewhere.
+- **Gateway cost** — sum of `gatewayFee` across brand payouts in the window, shown as
+  its own line rather than left implicit inside the platform-revenue figure above. This
+  is genuinely new: nothing in the admin today rolls this up anywhere.
 - Time-boxed (this cycle / last 30 days / all-time) — reuse existing pagination/
   date-range patterns already established in `apps/admin`.
 
