@@ -8,3 +8,4 @@ export * from "./product-sort";
 export * from "./product-type";
 export * from "./tenant";
 export * from "./uuid";
+export * from "./web-cache";

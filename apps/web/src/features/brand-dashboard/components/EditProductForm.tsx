@@ -11,7 +11,7 @@ import { useSizeOptions } from "@/features/products/hooks/useSizeOptions";
 import { MediaFormShell } from "@/shared/components/MediaFormShell";
 import { PendingPhotoThumbnailRail } from "@/shared/components/PendingPhotoThumbnailRail";
 import { PhotoCropPane } from "@/shared/components/PhotoCropPane";
-import { resolvePendingPhotoUrls, usePendingPhotos } from "@/shared/hooks/usePendingPhotos";
+import { resolvePendingPhotoAssets, usePendingPhotos } from "@/shared/hooks/usePendingPhotos";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { BrandProduct } from "../api/brandProductsSchemas";
@@ -53,6 +53,7 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
       type: originalType,
       categories: product.categorySlugs,
       imageUrls: product.imageUrls,
+      imageAssetIds: product.imageUrls.map(() => null),
       lowStock: product.lowStock,
       sizes: [],
     },
@@ -81,8 +82,9 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
     setIsProcessingPhotos(true);
     setPhotoError(null);
     try {
-      const imageUrls = await resolvePendingPhotoUrls(pending.photos, DEFAULT_IMAGE_MIME_TYPE);
-      form.setValue("imageUrls", imageUrls, { shouldValidate: true });
+      const resolved = await resolvePendingPhotoAssets(pending.photos, DEFAULT_IMAGE_MIME_TYPE);
+      form.setValue("imageUrls", resolved.urls, { shouldValidate: true });
+      form.setValue("imageAssetIds", resolved.imageAssetIds, { shouldValidate: true });
       await submitEdit();
     } catch (photoUploadError) {
       setPhotoError(getErrorMessage(photoUploadError));

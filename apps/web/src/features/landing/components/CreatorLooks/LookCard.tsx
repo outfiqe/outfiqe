@@ -6,7 +6,11 @@ import type { ReactNode } from "react";
 
 import type { FeedPost } from "@/features/explore/api/exploreFeedSchemas";
 import { PostCaption } from "@/features/explore/components/PostCaption";
+import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+import type { ResponsiveImage } from "@/shared/lib/responsiveImage";
+
+const LOOK_CARD_SIZES = "(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw";
 
 type LookCardProps = {
   look: FeedPost;
@@ -15,37 +19,47 @@ type LookCardProps = {
 const LookImageFrame = ({
   productId,
   imageUrl,
+  image,
+  alt,
   children,
 }: {
   productId: string | undefined;
   imageUrl: string;
+  image: ResponsiveImage | null | undefined;
+  alt: string;
   children: ReactNode;
 }) => {
-  const className = "relative block aspect-4/5 overflow-hidden rounded-2xl bg-cover bg-center";
-  const style = { backgroundImage: `url(${imageUrl})` };
+  const className = "relative block aspect-4/5 overflow-hidden rounded-2xl bg-muted";
+  const content = (
+    <>
+      <AppImage src={imageUrl} image={image} alt={alt} fill sizes={LOOK_CARD_SIZES} />
+      {children}
+    </>
+  );
 
   if (!productId) {
-    return (
-      <div className={className} style={style}>
-        {children}
-      </div>
-    );
+    return <div className={className}>{content}</div>;
   }
 
   return (
-    <Link href={`/product/${productId}`} className={className} style={style}>
-      {children}
+    <Link href={`/product/${productId}`} className={className}>
+      {content}
     </Link>
   );
 };
 
 export const LookCard = ({ look }: LookCardProps) => {
-  const { creator, imageUrl, caption, likeCount, taggedProducts } = look;
+  const { creator, imageUrl, image, caption, likeCount, taggedProducts } = look;
   const [primaryProduct, ...restProducts] = taggedProducts;
 
   return (
     <div>
-      <LookImageFrame productId={primaryProduct?.id} imageUrl={imageUrl}>
+      <LookImageFrame
+        productId={primaryProduct?.id}
+        imageUrl={imageUrl}
+        image={image}
+        alt={`Look by ${creator.name}`}
+      >
         <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-xs font-semibold text-white">
           <Heart className="size-3.5 fill-white" />
           {likeCount.toLocaleString()}

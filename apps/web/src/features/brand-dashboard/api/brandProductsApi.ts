@@ -5,18 +5,14 @@ import { apiClient } from "@/shared/lib/apiClient";
 import type { EditProductFormInput, ProductFormInput } from "../schemas/productForm.schema";
 import {
   type BrandProduct,
+  type BrandProductPage,
+  brandProductPageSchema,
   brandProductSchema,
   type BrandProductSize,
   brandProductSizeSchema,
   type ProductDiscount,
   productDiscountSchema,
 } from "./brandProductsSchemas";
-
-const brandProductPageSchema = z.object({
-  products: z.array(brandProductSchema),
-  nextCursor: z.string().nullable(),
-});
-export type BrandProductPage = z.infer<typeof brandProductPageSchema>;
 
 const brandProductSizeListSchema = z.array(brandProductSizeSchema);
 

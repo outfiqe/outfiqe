@@ -1,9 +1,13 @@
 import { Shirt } from "lucide-react";
 import Link from "next/link";
 
+import { AppImage } from "@/shared/components/AppImage";
+
 import type { OrderSummary } from "../api/orderSchemas";
 import { PaymentStatus } from "../api/orderSchemas";
 import { StatusBadge } from "./StatusBadge";
+
+const ORDER_THUMBNAIL_SIZE = "56px";
 
 type OrderRowProps = {
   order: OrderSummary;
@@ -27,11 +31,17 @@ export const OrderRow = ({ order }: OrderRowProps) => {
       href={`/orders/${id}`}
       className="flex items-center gap-4 rounded-2xl border border-border p-4 transition-colors hover:border-foreground"
     >
-      <div
-        className="flex aspect-3/4 w-14 shrink-0 items-center justify-center rounded-lg bg-muted bg-cover bg-center"
-        style={{ backgroundImage: firstItemImageUrl ? `url(${firstItemImageUrl})` : undefined }}
-      >
-        {!firstItemImageUrl && <Shirt className="size-6 text-foreground/25" strokeWidth={1} />}
+      <div className="relative flex aspect-3/4 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
+        {firstItemImageUrl ? (
+          <AppImage
+            src={firstItemImageUrl}
+            alt={firstItemProductName}
+            fill
+            sizes={ORDER_THUMBNAIL_SIZE}
+          />
+        ) : (
+          <Shirt className="size-6 text-foreground/25" strokeWidth={1} />
+        )}
       </div>
 
       <div className="min-w-0 flex-1">

@@ -16,6 +16,7 @@ export const productFormSchema = z.object({
   type: z.string().min(1, "Select a type"),
   categories: z.array(z.string()).min(1, "Select at least one category"),
   imageUrls: z.array(z.url()).max(MAX_IMAGES).optional(),
+  imageAssetIds: z.array(z.uuid().nullable()).max(MAX_IMAGES).optional(),
   lowStock: z.boolean().optional(),
   sizes: z.array(productSizeFormSchema).min(1, "Add at least one size"),
 });
@@ -30,6 +31,7 @@ export const buildEditProductFormSchema = (originalType: string) =>
       type: z.string().min(1, "Select a type"),
       categories: z.array(z.string()).min(1, "Select at least one category"),
       imageUrls: z.array(z.url()).max(MAX_IMAGES).optional(),
+      imageAssetIds: z.array(z.uuid().nullable()).max(MAX_IMAGES).optional(),
       lowStock: z.boolean().optional(),
       sizes: z.array(productSizeFormSchema).optional(),
     })

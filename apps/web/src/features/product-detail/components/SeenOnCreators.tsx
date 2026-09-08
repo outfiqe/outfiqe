@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 
+import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { formatHeight } from "@/shared/lib/formatHeight";
+
+const SEEN_ON_SIZES = "(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw";
 
 import type { SeenOnCreator } from "../api/productDetailSchemas";
 import { useRecordSeenOnClick } from "../hooks/useRecordSeenOnClick";
@@ -34,10 +37,14 @@ export const SeenOnCreators = ({ productId, creators }: SeenOnCreatorsProps) => 
             onClick={() => recordClick(creator.lookId, productId)}
             className="group block"
           >
-            <div
-              className="aspect-4/5 rounded-xl bg-cover bg-center transition-transform group-hover:-translate-y-0.5"
-              style={{ backgroundImage: `url(${creator.lookImageUrl})` }}
-            />
+            <div className="relative aspect-4/5 overflow-hidden rounded-xl transition-transform group-hover:-translate-y-0.5">
+              <AppImage
+                src={creator.lookImageUrl}
+                alt={`${creator.name} wearing this piece`}
+                fill
+                sizes={SEEN_ON_SIZES}
+              />
+            </div>
             <div className="mt-2 flex items-center gap-1.5">
               <span
                 aria-hidden

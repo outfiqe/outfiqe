@@ -17,12 +17,23 @@ export const reviewSortSchema = z.enum(REVIEW_SORT_VALUES);
 export const productIdParamSchema = z.object({ productId: z.uuid() });
 export const reviewIdParamSchema = productIdParamSchema.extend({ reviewId: z.uuid() });
 
-export const writeProductReviewSchema = z.object({
-  rating: z.number().int().min(PRODUCT_RATING_MIN).max(PRODUCT_RATING_MAX),
-  title: z.string().trim().max(REVIEW_TITLE_MAX).optional(),
-  body: z.string().trim().min(REVIEW_BODY_MIN).max(REVIEW_BODY_MAX),
-  imageUrls: z.array(z.url()).max(MAX_REVIEW_IMAGES).optional(),
-});
+export const writeProductReviewSchema = z
+  .object({
+    rating: z.number().int().min(PRODUCT_RATING_MIN).max(PRODUCT_RATING_MAX),
+    title: z.string().trim().max(REVIEW_TITLE_MAX).optional(),
+    body: z.string().trim().min(REVIEW_BODY_MIN).max(REVIEW_BODY_MAX),
+    imageUrls: z.array(z.url()).max(MAX_REVIEW_IMAGES).optional(),
+    imageAssetIds: z.array(z.uuid().nullable()).max(MAX_REVIEW_IMAGES).optional(),
+  })
+  .refine(
+    (data) =>
+      data.imageAssetIds === undefined ||
+      data.imageAssetIds.length === (data.imageUrls?.length ?? 0),
+    {
+      message: "imageAssetIds must line up one-to-one with imageUrls when provided.",
+      path: ["imageAssetIds"],
+    },
+  );
 
 export const listProductReviewsQuerySchema = z.object({
   rating: z.coerce.number().int().min(PRODUCT_RATING_MIN).max(PRODUCT_RATING_MAX).optional(),

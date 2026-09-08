@@ -6,6 +6,8 @@ import { OAuthCallbackScreen } from "@/features/auth";
 
 export const metadata: Metadata = { title: "Signing you in" };
 
+export const dynamic = "force-dynamic";
+
 const OAuthCallbackPage = () => {
   return (
     <AuthLayout>

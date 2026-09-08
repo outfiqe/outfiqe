@@ -203,6 +203,7 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
     setPhotoError(null);
     try {
       let uploadedNewUrls: string[] = [];
+      let uploadedNewAssetIds: (string | null)[] = [];
       if (newPhotos.length > 0) {
         const files = await Promise.all(
           newPhotos.map((photo) =>
@@ -216,12 +217,18 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
               : photo.file,
           ),
         );
-        uploadedNewUrls = await uploadsApi.upload(files);
+        const uploaded = await uploadsApi.uploadWithPipeline(files);
+        uploadedNewUrls = uploaded.map((file) => file.url);
+        uploadedNewAssetIds = uploaded.map((file) => file.assetId);
       }
 
       await update.mutateAsync({
         lookId,
-        input: { ...values, imageUrls: [...existingUrls, ...uploadedNewUrls] },
+        input: {
+          ...values,
+          imageUrls: [...existingUrls, ...uploadedNewUrls],
+          imageAssetIds: [...existingUrls.map(() => null), ...uploadedNewAssetIds],
+        },
       });
       toast.success("Post updated");
       close();

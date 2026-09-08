@@ -28,8 +28,10 @@ import {
   ServiceWorkerProvider,
   shouldPersistQuery,
 } from "@/features/pwa";
+import { DeferredMount } from "@/shared/components/DeferredMount";
 
 const DEFAULT_STALE_TIME_MS = 30 * 1000;
+const INACTIVE_CACHE_RETENTION_MS = 30 * 60 * 1000;
 
 export const Providers = ({ children }: { children: ReactNode }) => {
   const [queryClient] = useState(
@@ -38,6 +40,7 @@ export const Providers = ({ children }: { children: ReactNode }) => {
         defaultOptions: {
           queries: {
             staleTime: DEFAULT_STALE_TIME_MS,
+            gcTime: INACTIVE_CACHE_RETENTION_MS,
             refetchOnWindowFocus: false,
           },
         },
@@ -50,19 +53,21 @@ export const Providers = ({ children }: { children: ReactNode }) => {
       <ChatPanelProvider>
         {children}
         <OfflineBanner />
-        <AppUpdatePrompt />
-        <InstallPrompt />
-        <PushNotificationPrompt />
-        <PersistentStorageRequest />
-        <AppBadgeSync />
         <OfflineActionSync />
-        <BackgroundRefreshRegistration />
         <ServiceWorkerErrorReporter />
         <PwaKillSwitchTeardown />
         <Toaster />
         <GamificationSocketListener />
-        <FloatingChatLauncher />
-        <ChatPanel />
+        <DeferredMount>
+          <AppUpdatePrompt />
+          <InstallPrompt />
+          <PushNotificationPrompt />
+          <PersistentStorageRequest />
+          <AppBadgeSync />
+          <BackgroundRefreshRegistration />
+          <FloatingChatLauncher />
+          <ChatPanel />
+        </DeferredMount>
       </ChatPanelProvider>
     </AuthProvider>
   );

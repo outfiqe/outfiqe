@@ -1,3 +1,5 @@
+import { toResponsiveImage } from "#lib/responsive-image.utils.js";
+
 import type { ProductReviewRecord, ProductReviewRow } from "./product-review.types.js";
 
 export const toReviewRecord = (
@@ -24,6 +26,6 @@ export const toReviewRecord = (
   createdAt,
   updatedAt,
   author: user,
-  images: images.map((image) => image.url),
+  images: images.map((image) => toResponsiveImage(image.url, image.imageAsset)),
   hasVotedHelpful: votedReviewIds.has(id),
 });

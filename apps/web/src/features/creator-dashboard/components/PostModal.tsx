@@ -11,7 +11,7 @@ import type { PublicProduct } from "@/features/products/api/productSchemas";
 import { MediaFormShell } from "@/shared/components/MediaFormShell";
 import { PendingPhotoThumbnailRail } from "@/shared/components/PendingPhotoThumbnailRail";
 import { PhotoCropPane } from "@/shared/components/PhotoCropPane";
-import { resolvePendingPhotoUrls, usePendingPhotos } from "@/shared/hooks/usePendingPhotos";
+import { resolvePendingPhotoAssets, usePendingPhotos } from "@/shared/hooks/usePendingPhotos";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
@@ -49,7 +49,7 @@ export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) =
 
   const form = useForm<LookFormInput>({
     resolver: zodResolver(lookFormSchema),
-    defaultValues: { imageUrls: [], caption: "", taggedProducts: [] },
+    defaultValues: { imageUrls: [], imageAssetIds: [], caption: "", taggedProducts: [] },
   });
 
   const taggedProducts = form.watch("taggedProducts");
@@ -97,9 +97,9 @@ export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) =
     setIsProcessingPhotos(true);
     setPhotoError(null);
 
-    let urls: string[];
+    let resolved: Awaited<ReturnType<typeof resolvePendingPhotoAssets>>;
     try {
-      urls = await resolvePendingPhotoUrls(pending.photos, DEFAULT_IMAGE_MIME_TYPE);
+      resolved = await resolvePendingPhotoAssets(pending.photos, DEFAULT_IMAGE_MIME_TYPE);
     } catch (photoUploadError) {
       setPhotoError(getErrorMessage(photoUploadError));
       setIsProcessingPhotos(false);
@@ -107,7 +107,8 @@ export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) =
     }
 
     setIsProcessingPhotos(false);
-    form.setValue("imageUrls", urls, { shouldValidate: true });
+    form.setValue("imageUrls", resolved.urls, { shouldValidate: true });
+    form.setValue("imageAssetIds", resolved.imageAssetIds, { shouldValidate: true });
     await submitLook();
   };
 

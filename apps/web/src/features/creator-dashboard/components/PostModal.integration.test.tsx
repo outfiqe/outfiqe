@@ -15,7 +15,7 @@ vi.mock("@/features/auth/context/AuthContext", () => ({
   useAuth: vi.fn(),
 }));
 
-const resolvePendingPhotoUrls = vi.fn();
+const resolvePendingPhotoAssets = vi.fn();
 const removePhoto = vi.fn();
 const reset = vi.fn();
 const setActiveId = vi.fn();
@@ -23,7 +23,7 @@ const importFile = vi.fn();
 
 vi.mock("@/shared/hooks/usePendingPhotos", () => ({
   usePendingPhotos: vi.fn(),
-  resolvePendingPhotoUrls: (...args: unknown[]) => resolvePendingPhotoUrls(...args),
+  resolvePendingPhotoAssets: (...args: unknown[]) => resolvePendingPhotoAssets(...args),
 }));
 
 const buildExistingPhoto = (id: string): PendingPhoto => ({
@@ -86,7 +86,7 @@ beforeEach(() => {
   onClose.mockClear();
   reset.mockClear();
   importFile.mockClear();
-  resolvePendingPhotoUrls.mockReset();
+  resolvePendingPhotoAssets.mockReset();
   vi.mocked(useAuth).mockReturnValue({
     state: { user: { id: "creator-1", name: "Ava Martinez" } },
   } as ReturnType<typeof useAuth>);
@@ -109,7 +109,10 @@ describe("PostModal", () => {
   });
 
   it("posts the look through the real API and closes on success", async () => {
-    resolvePendingPhotoUrls.mockResolvedValue(["https://cdn.outfiqe.test/p1.jpg"]);
+    resolvePendingPhotoAssets.mockResolvedValue({
+      urls: ["https://cdn.outfiqe.test/p1.jpg"],
+      imageAssetIds: [null],
+    });
     mockPending([buildExistingPhoto("p1")]);
     mswServer.use(
       http.post("/api/creator-looks", async ({ request }) => {
@@ -139,7 +142,7 @@ describe("PostModal", () => {
   });
 
   it("surfaces the upload error message and doesn't submit when resolving photos fails", async () => {
-    resolvePendingPhotoUrls.mockRejectedValue(
+    resolvePendingPhotoAssets.mockRejectedValue(
       new ApiClientError("Each image must be 5 MB or smaller.", "INVALID_FILE"),
     );
     mockPending([buildExistingPhoto("p1")]);
@@ -154,7 +157,10 @@ describe("PostModal", () => {
   });
 
   it("shows the API error banner when the create request fails", async () => {
-    resolvePendingPhotoUrls.mockResolvedValue(["https://cdn.outfiqe.test/p1.jpg"]);
+    resolvePendingPhotoAssets.mockResolvedValue({
+      urls: ["https://cdn.outfiqe.test/p1.jpg"],
+      imageAssetIds: [null],
+    });
     mockPending([buildExistingPhoto("p1")]);
     mswServer.use(
       http.post("/api/creator-looks", () =>
@@ -359,7 +365,10 @@ describe("PostModal", () => {
   });
 
   it("shows a posting state while the create request is in flight", async () => {
-    resolvePendingPhotoUrls.mockResolvedValue(["https://cdn.outfiqe.test/p1.jpg"]);
+    resolvePendingPhotoAssets.mockResolvedValue({
+      urls: ["https://cdn.outfiqe.test/p1.jpg"],
+      imageAssetIds: [null],
+    });
     mockPending([buildExistingPhoto("p1")]);
     mswServer.use(
       http.post("/api/creator-looks", async () => {
@@ -387,10 +396,13 @@ describe("PostModal", () => {
   });
 
   it("shows a processing state while photos are being resolved", async () => {
-    resolvePendingPhotoUrls.mockImplementation(
+    resolvePendingPhotoAssets.mockImplementation(
       () =>
         new Promise((resolve) =>
-          setTimeout(() => resolve(["https://cdn.outfiqe.test/p1.jpg"]), 200),
+          setTimeout(
+            () => resolve({ urls: ["https://cdn.outfiqe.test/p1.jpg"], imageAssetIds: [null] }),
+            200,
+          ),
         ),
     );
     mockPending([buildExistingPhoto("p1")]);

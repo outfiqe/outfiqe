@@ -8,6 +8,7 @@ import { truncateToHour } from "#lib/trend-scoring.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
+import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 import { cacheService } from "#redis/cache.service.js";
@@ -106,11 +107,14 @@ const requireApprovedProducts = async (productIds: string[]): Promise<void> => {
 export const creatorLookService = {
   async create(
     userId: string,
-    { taggedProducts, imageUrls, caption }: CreateCreatorLookBody,
+    { taggedProducts, imageUrls, imageAssetIds, caption }: CreateCreatorLookBody,
   ): Promise<CreatorLookSummary> {
     await requireApprovedCreator(userId, "Only approved creators can post looks.");
     const productIds = taggedProducts.map((tag) => tag.productId);
     await requireApprovedProducts(productIds);
+    if (imageAssetIds?.length) {
+      await imageProcessingService.assertAssetsOwnedBy(imageAssetIds, userId);
+    }
 
     const [coverImageUrl, ...restImageUrls] = imageUrls;
     if (!coverImageUrl) {
@@ -120,6 +124,7 @@ export const creatorLookService = {
     const look = await creatorLookRepository.create({
       creatorId: userId,
       imageUrls: [coverImageUrl, ...restImageUrls],
+      imageAssetIds,
       caption,
       taggedProducts,
       hashtags: extractHashtags(caption ?? ""),
@@ -155,6 +160,9 @@ export const creatorLookService = {
     const existing = await requireOwnedLook(lookId, userId);
     const newProductIds = body.taggedProducts.map((tag) => tag.productId);
     await requireApprovedProducts(newProductIds);
+    if (body.imageAssetIds?.length) {
+      await imageProcessingService.assertAssetsOwnedBy(body.imageAssetIds, userId);
+    }
 
     const [coverImageUrl, ...restImageUrls] = body.imageUrls;
     if (!coverImageUrl) {
@@ -163,6 +171,7 @@ export const creatorLookService = {
 
     const updated = await creatorLookRepository.update(lookId, {
       imageUrls: [coverImageUrl, ...restImageUrls],
+      imageAssetIds: body.imageAssetIds,
       caption: body.caption,
       taggedProducts: body.taggedProducts,
       hashtags: extractHashtags(body.caption ?? ""),

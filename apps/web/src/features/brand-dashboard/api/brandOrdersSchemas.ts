@@ -16,3 +16,9 @@ export const brandOrderItemSchema = z.object({
   fulfilmentStatus: z.enum(FulfilmentStatus),
 });
 export type BrandOrderItem = z.infer<typeof brandOrderItemSchema>;
+
+export const brandOrdersPageSchema = z.object({
+  items: z.array(brandOrderItemSchema),
+  nextCursor: z.string().nullable(),
+});
+export type BrandOrdersPage = z.infer<typeof brandOrdersPageSchema>;

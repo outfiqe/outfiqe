@@ -7,6 +7,9 @@ import { prisma } from "#db/prisma.js";
 import {
   CreatorStatus,
   FollowTargetType,
+  ImageProcessingPriorityTier,
+  ImageProcessingQualityTier,
+  ImageProcessingStatus,
   ProductStatus,
   UserRole,
 } from "#generated/prisma/enums.js";
@@ -92,6 +95,18 @@ const createPendingProduct = async (name: string, price = 1000) => {
     },
   });
 };
+
+const createImageAsset = async (ownerId: string) =>
+  prisma.imageProcessingAsset.create({
+    data: {
+      ownerId,
+      checksum: randomUUID().replace(/-/g, ""),
+      priorityTier: ImageProcessingPriorityTier.STANDARD,
+      qualityTier: ImageProcessingQualityTier.STANDARD,
+      status: ImageProcessingStatus.PENDING,
+      tempStorageKey: `temp/${randomUUID()}.jpg`,
+    },
+  });
 
 const tagProduct = async (lookId: string, productId: string, sizeWorn = "M") =>
   prisma.creatorLookProduct.create({ data: { creatorLookId: lookId, productId, sizeWorn } });
@@ -240,6 +255,59 @@ describe("POST /api/creator-looks", () => {
       where: { creatorLookId: response.body.data.id },
     });
     expect(hashtags).toEqual([]);
+  });
+
+  it("links the caller's uploaded image assets to the look's images by position", async () => {
+    const creator = await createCreator("Asset Link Creator", "asset-link-creator");
+    const asset = await createImageAsset(creator.id);
+
+    const response = await request(testApp)
+      .post("/api/creator-looks")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({
+        imageUrls: ["https://cdn.outfiqe.test/cover.jpg", "https://cdn.outfiqe.test/second.jpg"],
+        imageAssetIds: [asset.id, null],
+        taggedProducts: [],
+      });
+
+    expect(response.status).toBe(201);
+    const images = await prisma.creatorLookImage.findMany({
+      where: { creatorLookId: response.body.data.id },
+      orderBy: { sortOrder: "asc" },
+    });
+    expect(images.map((image) => image.imageAssetId)).toEqual([asset.id, null]);
+  });
+
+  it("rejects image assets owned by another user", async () => {
+    const creator = await createCreator("Asset Owner Creator", "asset-owner-creator");
+    const stranger = await createPlainUser("Stranger", "asset-stranger");
+    const strangersAsset = await createImageAsset(stranger.id);
+
+    const response = await request(testApp)
+      .post("/api/creator-looks")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({
+        imageUrls: ["https://cdn.outfiqe.test/cover.jpg"],
+        imageAssetIds: [strangersAsset.id],
+        taggedProducts: [],
+      });
+
+    expect(response.status).toBe(404);
+  });
+
+  it("rejects an imageAssetIds list that does not line up with imageUrls", async () => {
+    const creator = await createCreator("Asset Mismatch Creator", "asset-mismatch-creator");
+
+    const response = await request(testApp)
+      .post("/api/creator-looks")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({
+        imageUrls: ["https://cdn.outfiqe.test/cover.jpg", "https://cdn.outfiqe.test/second.jpg"],
+        imageAssetIds: [randomUUID()],
+        taggedProducts: [],
+      });
+
+    expect(response.status).toBe(422);
   });
 
   it("rejects a non-approved creator", async () => {

@@ -11,9 +11,12 @@ import { ProductCard } from "@/features/landing/components/ProductCard";
 import { useChatPanel } from "@/features/messaging";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
+import { AppImage } from "@/shared/components/AppImage";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
+
+const BRAND_PROFILE_BANNER_SIZES = "(min-width: 1152px) 1088px, 100vw";
 
 import type { BrandProfile as BrandProfileType } from "../api/brandProfileSchemas";
 import { useInfiniteBrandProducts } from "../hooks/useInfiniteBrandProducts";
@@ -32,8 +35,18 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
   const productTypes = useProductTypes();
   const { openConversationWith, isStartingConversation } = useChatPanel();
 
-  const { id, bannerUrl, avatarUrl, name, madeInNepal, productCount, rating, contactUserId } =
-    brand;
+  const {
+    id,
+    bannerUrl,
+    bannerImage,
+    avatarUrl,
+    avatarImage,
+    name,
+    madeInNepal,
+    productCount,
+    rating,
+    contactUserId,
+  } = brand;
   const isOwnBrand = state.user?.brandId === id;
 
   const [isFollowing, setIsFollowing] = useState(brand.isFollowing);
@@ -103,18 +116,27 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
       <div className="overflow-hidden rounded-3xl border border-border bg-card">
         <div
           className={cn(
-            "h-36 w-full bg-cover bg-center sm:h-52",
+            "relative h-36 w-full overflow-hidden sm:h-52",
             !bannerUrl && "bg-gradient-to-br from-primary/80 via-primary to-primary-strong",
           )}
-          style={bannerUrl ? { backgroundImage: `url(${bannerUrl})` } : undefined}
-        />
+        >
+          {bannerUrl && (
+            <AppImage
+              src={bannerUrl}
+              image={bannerImage}
+              alt=""
+              fill
+              sizes={BRAND_PROFILE_BANNER_SIZES}
+              eager
+            />
+          )}
+        </div>
 
         <div className="flex flex-col items-center px-6 pb-8 text-center">
-          <div
-            className="-mt-12 flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cover bg-center ring-4 ring-card sm:-mt-14 sm:size-28"
-            style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
-          >
-            {!avatarUrl && (
+          <div className="relative -mt-12 flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full ring-4 ring-card sm:-mt-14 sm:size-28">
+            {avatarUrl ? (
+              <AppImage src={avatarUrl} image={avatarImage} alt="" fill sizes="112px" />
+            ) : (
               <span
                 aria-hidden
                 className="flex size-full items-center justify-center text-2xl font-bold text-white"

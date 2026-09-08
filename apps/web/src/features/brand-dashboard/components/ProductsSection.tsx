@@ -4,9 +4,12 @@ import { Button, Modal, Skeleton, toast } from "@outfiqe/design-system";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
+import { AppImage } from "@/shared/components/AppImage";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { BrandProduct } from "../api/brandProductsSchemas";
+
+const BRAND_PRODUCT_TILE_SIZES = "(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw";
 import { useBrandProducts } from "../hooks/useBrandProducts";
 import { useDeleteProduct } from "../hooks/useDeleteProduct";
 import { DiscountModal } from "./DiscountModal";
@@ -94,10 +97,10 @@ export const ProductsSection = () => {
                 key={id}
                 className="overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30"
               >
-                <div
-                  className="relative aspect-square w-full bg-muted bg-cover bg-center"
-                  style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
-                >
+                <div className="relative aspect-square w-full overflow-hidden bg-muted">
+                  {imageUrl && (
+                    <AppImage src={imageUrl} alt="" fill sizes={BRAND_PRODUCT_TILE_SIZES} />
+                  )}
                   <ProductActionsMenu
                     onEdit={() => setEditingProduct(product)}
                     onManageStock={() => setStockProduct(product)}

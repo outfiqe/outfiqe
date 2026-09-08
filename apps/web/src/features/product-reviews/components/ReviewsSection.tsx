@@ -98,7 +98,12 @@ export const ReviewsSection = ({ productId, initialRatingSummary }: ReviewsSecti
   let reviewFormInitialValues: WriteProductReviewInput | undefined;
   if (editingReview) {
     const { rating, title, body, images } = editingReview;
-    reviewFormInitialValues = { rating, title: title ?? "", body, imageUrls: images };
+    reviewFormInitialValues = {
+      rating,
+      title: title ?? "",
+      body,
+      imageUrls: images.map((image) => image.url),
+    };
   }
 
   const confirmDelete = () => {

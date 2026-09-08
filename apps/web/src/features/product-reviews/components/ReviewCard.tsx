@@ -3,8 +3,12 @@
 import { Rating } from "@outfiqe/design-system";
 import { BadgeCheck, ThumbsUp } from "lucide-react";
 
+import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
+
+const REVIEW_AVATAR_SIZE = "36px";
+const REVIEW_IMAGE_SIZE = "64px";
 
 import type { ProductReview } from "../api/productReviewSchemas";
 
@@ -34,14 +38,14 @@ export const ReviewCard = ({
       <div className="flex items-start gap-3">
         <span
           aria-hidden
-          className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cover bg-center text-xs font-bold text-white"
-          style={
-            author.avatarUrl
-              ? { backgroundImage: `url(${author.avatarUrl})` }
-              : { backgroundColor: getAvatarColor(author.id) }
-          }
+          className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white"
+          style={author.avatarUrl ? undefined : { backgroundColor: getAvatarColor(author.id) }}
         >
-          {!author.avatarUrl && initialsFor(author.name)}
+          {author.avatarUrl ? (
+            <AppImage src={author.avatarUrl} alt="" fill sizes={REVIEW_AVATAR_SIZE} />
+          ) : (
+            initialsFor(author.name)
+          )}
         </span>
 
         <div className="min-w-0 flex-1">
@@ -68,12 +72,13 @@ export const ReviewCard = ({
 
           {images.length > 0 && (
             <div className="mt-3 flex gap-2">
-              {images.map((url) => (
+              {images.map((image) => (
                 <div
-                  key={url}
-                  className="aspect-square w-16 shrink-0 rounded-lg border border-border bg-cover bg-center"
-                  style={{ backgroundImage: `url(${url})` }}
-                />
+                  key={image.url}
+                  className="relative aspect-square w-16 shrink-0 overflow-hidden rounded-lg border border-border"
+                >
+                  <AppImage src={image.url} image={image} alt="" fill sizes={REVIEW_IMAGE_SIZE} />
+                </div>
               ))}
             </div>
           )}

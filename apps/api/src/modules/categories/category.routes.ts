@@ -1,7 +1,9 @@
-﻿import { Router } from "express";
+﻿import { WEB_REVALIDATE_TAGS } from "@outfiqe/utils";
+import { Router } from "express";
 
 import { cache, refreshCacheOnWrite } from "#middlewares/cache.js";
 import { requireAuth } from "#middlewares/require-auth.js";
+import { revalidateWebCacheOnWrite } from "#middlewares/revalidate-web-cache.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 import { CACHE_TTL } from "#redis/redis.keys.js";
@@ -31,6 +33,8 @@ const refreshCategoriesPublicCache = refreshCacheOnWrite({
   load: () => categoryService.listPublic(),
 });
 
+const revalidateCategoriesWebCache = revalidateWebCacheOnWrite(WEB_REVALIDATE_TAGS.categories);
+
 export const categoryRoutes = Router();
 
 categoryRoutes.get("/admin", ...requireAdmin, categoryController.listAll);
@@ -42,6 +46,7 @@ categoryRoutes.post(
   ...requireAdmin,
   validate({ body: createCategorySchema }),
   refreshCategoriesPublicCache,
+  revalidateCategoriesWebCache,
   categoryController.create,
 );
 categoryRoutes.post(
@@ -49,6 +54,7 @@ categoryRoutes.post(
   ...requireAdmin,
   validate({ body: reorderCategoriesSchema }),
   refreshCategoriesPublicCache,
+  revalidateCategoriesWebCache,
   categoryController.reorder,
 );
 categoryRoutes.patch(
@@ -56,5 +62,6 @@ categoryRoutes.patch(
   ...requireAdmin,
   validate({ params: categoryIdParamSchema, body: updateCategorySchema }),
   refreshCategoriesPublicCache,
+  revalidateCategoriesWebCache,
   categoryController.update,
 );

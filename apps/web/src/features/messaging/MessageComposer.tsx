@@ -7,6 +7,7 @@ import { ImagePlus, Send, X } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { uploadsApi } from "@/shared/api/uploadsApi";
+import { AppImage } from "@/shared/components/AppImage";
 import { conversationsApi } from "@/shared/lib/conversationsApi";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { toUploadableImage } from "@/shared/lib/heicImage";
@@ -93,7 +94,14 @@ export const MessageComposer = ({ conversationId }: MessageComposerProps) => {
               key={attachment.url}
               className="relative size-14 shrink-0 overflow-hidden rounded-lg border border-border"
             >
-              <img src={attachment.previewUrl} alt="" className="size-full object-cover" />
+              <AppImage
+                src={attachment.previewUrl}
+                alt=""
+                fill
+                sizes="56px"
+                unoptimized
+                className="object-cover"
+              />
               <button
                 type="button"
                 onClick={() => removeAttachment(attachment.url)}

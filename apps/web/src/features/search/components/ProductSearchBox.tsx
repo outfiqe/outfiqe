@@ -14,6 +14,7 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 
 import { useProductAutocomplete } from "@/features/products/hooks/useProductAutocomplete";
+import { AppImage } from "@/shared/components/AppImage";
 import { cn } from "@/shared/lib/cn";
 import { SHOP_SEARCH_PATH } from "@/shared/lib/exploreMode";
 
@@ -100,13 +101,12 @@ export const ProductSearchBox = ({
               value={product.id}
               onSelect={() => goToProduct(product.id)}
             >
-              <div
-                className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted bg-cover bg-center"
-                style={
-                  product.imageUrl ? { backgroundImage: `url(${product.imageUrl})` } : undefined
-                }
-              >
-                {!product.imageUrl && <ImageOff className="size-4 text-muted-foreground" />}
+              <div className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+                {product.imageUrl ? (
+                  <AppImage src={product.imageUrl} alt="" fill sizes="36px" />
+                ) : (
+                  <ImageOff className="size-4 text-muted-foreground" />
+                )}
               </div>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[13px] text-foreground">{product.name}</span>

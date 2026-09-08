@@ -21,12 +21,27 @@ type ServerRequestOptions = {
   body?: unknown;
   cookie?: string;
   accessToken?: string;
+  revalidateSeconds?: number;
+  cacheTags?: string[];
 };
 
 export const serverApiRequest = async <T>(
   path: string,
-  { method, body, cookie, accessToken }: ServerRequestOptions = {},
+  { method, body, cookie, accessToken, revalidateSeconds, cacheTags }: ServerRequestOptions = {},
 ): Promise<T> => {
+  const isCacheable = revalidateSeconds !== undefined;
+
+  if (isCacheable && (cookie || accessToken)) {
+    throw new ServerApiError(
+      "A per-user request must not be shared in the data cache.",
+      "UNCACHEABLE_AUTHENTICATED_REQUEST",
+    );
+  }
+
+  const cacheInit = isCacheable
+    ? { next: { revalidate: revalidateSeconds, ...(cacheTags?.length ? { tags: cacheTags } : {}) } }
+    : { cache: "no-store" as const };
+
   const response = await fetch(`${API_URL}/api${path}`, {
     method: method ?? "GET",
     headers: {
@@ -35,7 +50,7 @@ export const serverApiRequest = async <T>(
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
-    cache: "no-store",
+    ...cacheInit,
   });
 
   const json = await response.json().catch(() => null);

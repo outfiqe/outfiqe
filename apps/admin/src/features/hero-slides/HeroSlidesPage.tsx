@@ -25,6 +25,7 @@ export const HeroSlidesPage = () => {
   const [ctaLabel, setCtaLabel] = useState("");
   const [ctaHref, setCtaHref] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageAssetId, setImageAssetId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const create = useMutation({
@@ -36,6 +37,7 @@ export const HeroSlidesPage = () => {
         ctaLabel,
         ctaHref,
         imageUrl: imageUrl ?? undefined,
+        imageAssetId: imageAssetId ?? undefined,
       }),
     onSuccess: () => {
       setTag("");
@@ -44,6 +46,7 @@ export const HeroSlidesPage = () => {
       setCtaLabel("");
       setCtaHref("");
       setImageUrl(null);
+      setImageAssetId(null);
       setError(null);
       queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] });
     },
@@ -57,8 +60,15 @@ export const HeroSlidesPage = () => {
   });
 
   const setSlideImage = useMutation({
-    mutationFn: ({ id, imageUrl: url }: { id: string; imageUrl: string }) =>
-      heroSlidesApi.setImage(id, url),
+    mutationFn: ({
+      id,
+      imageUrl: url,
+      imageAssetId: assetId,
+    }: {
+      id: string;
+      imageUrl: string;
+      imageAssetId: string;
+    }) => heroSlidesApi.setImage(id, url, assetId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] }),
   });
 
@@ -142,7 +152,13 @@ export const HeroSlidesPage = () => {
         </div>
         <div className="space-y-1.5">
           <span className="block text-xs text-muted-foreground">Image</span>
-          <ImageUpload value={imageUrl} onChange={setImageUrl} />
+          <ImageUpload
+            value={imageUrl}
+            onUploaded={({ url, imageAssetId: assetId }) => {
+              setImageUrl(url);
+              setImageAssetId(assetId);
+            }}
+          />
         </div>
 
         <Button type="submit" disabled={create.isPending}>
@@ -168,7 +184,9 @@ export const HeroSlidesPage = () => {
             >
               <ImageUpload
                 value={imageUrl}
-                onChange={(url) => setSlideImage.mutate({ id, imageUrl: url })}
+                onUploaded={({ url, imageAssetId: assetId }) =>
+                  setSlideImage.mutate({ id, imageUrl: url, imageAssetId: assetId })
+                }
               />
 
               <div className="min-w-0 flex-1">

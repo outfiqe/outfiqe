@@ -102,9 +102,11 @@ describe("BrandCard", () => {
       }),
     );
 
-    const bg = [...container.querySelectorAll<HTMLElement>("[style*='background-image']")];
-    expect(bg.some((el) => el.style.backgroundImage.includes("banner.jpg"))).toBe(true);
-    expect(bg.some((el) => el.style.backgroundImage.includes("avatar.jpg"))).toBe(true);
+    const imageSources = [...container.querySelectorAll("img")].map((image) =>
+      decodeURIComponent(image.getAttribute("src") ?? ""),
+    );
+    expect(imageSources.some((src) => src.includes("banner.jpg"))).toBe(true);
+    expect(imageSources.some((src) => src.includes("avatar.jpg"))).toBe(true);
   });
 });
 

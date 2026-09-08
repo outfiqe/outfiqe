@@ -5,9 +5,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { AppImage } from "@/shared/components/AppImage";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
+
+const BRAND_BANNER_SIZES = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw";
+const BRAND_AVATAR_SIZE = "56px";
 
 import type { BrandSummary } from "../api/brandsSchemas";
 import {
@@ -58,18 +62,18 @@ export const BrandCard = ({ brand }: BrandCardProps) => {
 
       <div
         className={cn(
-          "h-20 w-full bg-cover bg-center",
+          "relative h-20 w-full overflow-hidden",
           !bannerUrl && "bg-gradient-to-br from-primary/80 via-primary to-primary-strong",
         )}
-        style={bannerUrl ? { backgroundImage: `url(${bannerUrl})` } : undefined}
-      />
+      >
+        {bannerUrl && <AppImage src={bannerUrl} alt="" fill sizes={BRAND_BANNER_SIZES} />}
+      </div>
 
       <div className="px-4 pb-4">
-        <div
-          className="-mt-7 flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cover bg-center ring-4 ring-card"
-          style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
-        >
-          {!avatarUrl && (
+        <div className="relative -mt-7 flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full ring-4 ring-card">
+          {avatarUrl ? (
+            <AppImage src={avatarUrl} alt="" fill sizes={BRAND_AVATAR_SIZE} />
+          ) : (
             <span
               aria-hidden
               className="flex size-full items-center justify-center text-lg font-bold text-white"

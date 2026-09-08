@@ -3,8 +3,11 @@
 import { Skeleton } from "@outfiqe/design-system";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
+
+const COMMENT_AVATAR_SIZE = "32px";
 
 import type { FeedComment } from "../api/exploreFeedSchemas";
 import { CommentThread } from "./CommentThread";
@@ -29,14 +32,14 @@ export type CommentAvatarProps = {
 export const CommentAvatar = ({ userId, name, avatarUrl }: CommentAvatarProps) => (
   <span
     aria-hidden
-    className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cover bg-center text-[11px] font-bold text-white"
-    style={
-      avatarUrl
-        ? { backgroundImage: `url(${avatarUrl})` }
-        : { backgroundColor: getAvatarColor(userId) }
-    }
+    className="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-[11px] font-bold text-white"
+    style={avatarUrl ? undefined : { backgroundColor: getAvatarColor(userId) }}
   >
-    {!avatarUrl && initialsFor(name)}
+    {avatarUrl ? (
+      <AppImage src={avatarUrl} alt="" fill sizes={COMMENT_AVATAR_SIZE} />
+    ) : (
+      initialsFor(name)
+    )}
   </span>
 );
 

@@ -6,10 +6,14 @@ type PendingCrop = { file: File; objectUrl: string };
 
 type ApplyUrl<T> = (url: string, current: T) => T;
 
+type PipelineUpload = { url: string; imageAssetId: string };
+
 type UseImageCropUploadOptions<T> = {
   value: T;
   onChange: (next: T) => void;
   onUpload: (files: File[]) => Promise<string[]>;
+  onUploadWithAsset?: (files: File[]) => Promise<PipelineUpload[]>;
+  onAssetIdChange?: (imageAssetId: string | null) => void;
   applyUrl: ApplyUrl<T>;
   describeUploadError?: (error: unknown) => string;
   transformFile?: (file: File) => Promise<File>;
@@ -19,6 +23,8 @@ export const useImageCropUpload = <T>({
   value,
   onChange,
   onUpload,
+  onUploadWithAsset,
+  onAssetIdChange,
   applyUrl,
   describeUploadError,
   transformFile,
@@ -33,8 +39,19 @@ export const useImageCropUpload = <T>({
     setIsUploading(true);
     setError(null);
     try {
-      const [url] = await onUpload([file]);
-      if (url) onChange(applyUrl(url, value));
+      if (onUploadWithAsset) {
+        const [uploaded] = await onUploadWithAsset([file]);
+        if (uploaded) {
+          onChange(applyUrl(uploaded.url, value));
+          onAssetIdChange?.(uploaded.imageAssetId);
+        }
+      } else {
+        const [url] = await onUpload([file]);
+        if (url) {
+          onChange(applyUrl(url, value));
+          onAssetIdChange?.(null);
+        }
+      }
     } catch (uploadError) {
       setError(
         describeUploadError ? describeUploadError(uploadError) : "Upload failed. Try again.",

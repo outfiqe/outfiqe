@@ -9,10 +9,14 @@ import { HiddenFileInput } from "./hidden-file-input";
 import { ImageCropModal } from "./image-crop-modal";
 import { useImageCropUpload } from "./use-image-crop-upload";
 
+type PipelineUpload = { url: string; imageAssetId: string };
+
 type AvatarUploaderProps = {
   value: string | null;
   onChange: (url: string | null) => void;
   onUpload: (files: File[]) => Promise<string[]>;
+  onUploadWithAsset?: (files: File[]) => Promise<PipelineUpload[]>;
+  onAssetIdChange?: (imageAssetId: string | null) => void;
   fallback: ReactNode;
   className?: string;
   describeUploadError?: (error: unknown) => string;
@@ -23,6 +27,8 @@ export const AvatarUploader = ({
   value,
   onChange,
   onUpload,
+  onUploadWithAsset,
+  onAssetIdChange,
   fallback,
   className,
   describeUploadError,
@@ -41,10 +47,17 @@ export const AvatarUploader = ({
     value,
     onChange,
     onUpload,
+    onUploadWithAsset,
+    onAssetIdChange,
     applyUrl: (url) => url,
     describeUploadError,
     transformFile,
   });
+
+  const clearAvatar = () => {
+    onChange(null);
+    onAssetIdChange?.(null);
+  };
 
   const busy = isUploading || isPreparingFile;
 
@@ -88,7 +101,7 @@ export const AvatarUploader = ({
           {value && (
             <button
               type="button"
-              onClick={() => onChange(null)}
+              onClick={clearAvatar}
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
             >
               <X className="size-3" />

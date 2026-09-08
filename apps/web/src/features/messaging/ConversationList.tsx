@@ -5,6 +5,7 @@ import { useConversations, useDebouncedValue } from "@outfiqe/hooks";
 import { Search } from "lucide-react";
 import { useState } from "react";
 
+import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 import { conversationsApi } from "@/shared/lib/conversationsApi";
@@ -127,14 +128,18 @@ export const ConversationList = ({ onSelect, activeConversationId }: Conversatio
                 <span className="relative shrink-0">
                   <span
                     aria-hidden
-                    className="flex size-11 items-center justify-center overflow-hidden rounded-full bg-cover bg-center text-sm font-bold text-white"
+                    className="relative flex size-11 items-center justify-center overflow-hidden rounded-full text-sm font-bold text-white"
                     style={
                       participant?.avatarUrl
-                        ? { backgroundImage: `url(${participant.avatarUrl})` }
+                        ? undefined
                         : { backgroundColor: getAvatarColor(participant?.id ?? conversation.id) }
                     }
                   >
-                    {!participant?.avatarUrl && initialsFor(participant?.name ?? "?")}
+                    {participant?.avatarUrl ? (
+                      <AppImage src={participant.avatarUrl} alt="" fill sizes="44px" />
+                    ) : (
+                      initialsFor(participant?.name ?? "?")
+                    )}
                   </span>
                   {participant?.isOnline && (
                     <span

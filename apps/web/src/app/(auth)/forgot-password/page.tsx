@@ -5,6 +5,8 @@ import { ForgotPasswordForm } from "@/features/auth";
 
 export const metadata: Metadata = { title: "Reset your password" };
 
+export const dynamic = "force-dynamic";
+
 const ForgotPasswordPage = () => {
   return (
     <Suspense fallback={null}>

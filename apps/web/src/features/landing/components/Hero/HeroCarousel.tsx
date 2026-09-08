@@ -12,6 +12,7 @@ import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { AppImage } from "@/shared/components/AppImage";
 import { cn } from "@/shared/lib/cn";
 
 import type { PublicHeroSlide } from "./heroSlideSchemas";
@@ -46,40 +47,52 @@ export const HeroCarousel = ({ slides }: HeroCarouselProps) => {
         <CarouselContent className="ml-0">
           {slides.map((slide, i) => (
             <CarouselItem key={slide.id} inert={i !== selectedIndex} className="pl-0">
-              <div
-                className={cn(
-                  "flex h-48 flex-col justify-center bg-cover bg-center px-4 py-4 sm:h-105 sm:px-12 sm:py-10 lg:px-16",
-                  !slide.imageUrl && "bg-linear-to-r from-[#241006] via-[#7a3010] to-primary",
+              <div className="relative flex h-48 flex-col justify-center overflow-hidden px-4 py-4 sm:h-105 sm:px-12 sm:py-10 lg:px-16">
+                {slide.imageUrl ? (
+                  <>
+                    <AppImage
+                      src={slide.imageUrl}
+                      image={slide.image}
+                      alt=""
+                      fill
+                      sizes="100vw"
+                      eager={i === 0}
+                    />
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/25"
+                    />
+                  </>
+                ) : (
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 bg-linear-to-r from-[#241006] via-[#7a3010] to-primary"
+                  />
                 )}
-                style={
-                  slide.imageUrl
-                    ? {
-                        backgroundImage: `linear-gradient(to right, rgba(20,16,14,0.8), rgba(20,16,14,0.25)), url(${slide.imageUrl})`,
-                      }
-                    : undefined
-                }
-              >
-                <span className="text-[10px] font-bold uppercase tracking-widest text-white/70 sm:text-xs">
-                  {slide.tag}
-                </span>
-                <h1 className="mt-1.5 max-w-xl whitespace-pre-line font-display text-xl font-extrabold uppercase leading-[0.95] text-white sm:mt-3 sm:text-5xl lg:text-6xl">
-                  {slide.title}
-                </h1>
-                <p className="mt-2 max-w-md text-xs text-white/80 sm:mt-4 sm:text-base">
-                  {slide.description}
-                </p>
 
-                <div className="mt-3 sm:mt-6">
-                  <Button
-                    size="default"
-                    className="h-9 px-4 text-xs sm:h-11 sm:px-7 sm:text-base"
-                    asChild
-                  >
-                    <Link href={slide.ctaHref}>
-                      {slide.ctaLabel}
-                      <ArrowRight className="size-4" />
-                    </Link>
-                  </Button>
+                <div className="relative z-10">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/70 sm:text-xs">
+                    {slide.tag}
+                  </span>
+                  <h1 className="mt-1.5 max-w-xl whitespace-pre-line font-display text-xl font-extrabold uppercase leading-[0.95] text-white sm:mt-3 sm:text-5xl lg:text-6xl">
+                    {slide.title}
+                  </h1>
+                  <p className="mt-2 max-w-md text-xs text-white/80 sm:mt-4 sm:text-base">
+                    {slide.description}
+                  </p>
+
+                  <div className="mt-3 sm:mt-6">
+                    <Button
+                      size="default"
+                      className="h-9 px-4 text-xs sm:h-11 sm:px-7 sm:text-base"
+                      asChild
+                    >
+                      <Link href={slide.ctaHref}>
+                        {slide.ctaLabel}
+                        <ArrowRight className="size-4" />
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CarouselItem>

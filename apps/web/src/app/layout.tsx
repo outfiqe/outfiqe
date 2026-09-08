@@ -2,7 +2,6 @@ import "./globals.css";
 
 import { THEME_INIT_SCRIPT } from "@outfiqe/design-system";
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 
 import {
   AppleSplashLinks,
@@ -33,8 +32,7 @@ export const metadata: Metadata = {
 
 export const viewport = pwaViewport;
 
-const RootLayout = async ({ children }: { children: React.ReactNode }) => {
-  const nonce = (await headers()).get("x-nonce");
+const RootLayout = ({ children }: { children: React.ReactNode }) => {
   const pwaKilled = isPwaKillSwitchEngagedOnServer();
 
   return (
@@ -45,10 +43,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
     >
       <head>
         <AppleSplashLinks />
-        <script
-          nonce={nonce ?? undefined}
-          dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body>
         <JsonLd id="organization-jsonld" data={organizationSchema()} />

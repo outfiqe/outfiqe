@@ -1,126 +1,80 @@
-import { isTenantHost } from "@outfiqe/utils";
-import { type NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-import { UserRole } from "@/features/auth/types";
-import { getDefaultRouteForUser } from "@/features/auth/utils/getDefaultRoute";
-import { getSafeRedirect, resolveLoginDestination } from "@/features/auth/utils/safeRedirect";
+import { getPublicApiOrigin } from "@/shared/lib/apiOrigin";
+import { buildContentSecurityPolicy } from "@/shared/lib/contentSecurityPolicy";
 
-/* 
- Deliberately not going through serverApiClient/serverAuth here — those are
- marked "server-only" for the RSC render graph, and proxy is a separate
- runtime boundary. Kept minimal on purpose: this only decides whether a
- role-gated segment can render at all, before any React tree (or client
- Router Cache entry) for it exists — the page-level requireDashboardSession
- checks stay in place as the real data-fetching/defense-in-depth layer.
- */
-
-const API_URL = process.env.API_URL ?? "http://localhost:4000";
-const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "/admin";
-const TENANT_BASE_DOMAIN = process.env.NEXT_PUBLIC_TENANT_BASE_DOMAIN ?? "localhost";
-const REFRESH_COOKIE_NAME = "refresh_token";
-
-type ProxyUser = { role: UserRole };
-
-const fetchSessionUser = async (refreshToken: string): Promise<ProxyUser | null> => {
-  try {
-    const sessionRes = await fetch(`${API_URL}/api/auth/session`, {
-      method: "POST",
-      headers: { Cookie: `${REFRESH_COOKIE_NAME}=${refreshToken}` },
-      cache: "no-store",
-    });
-    const sessionJson = await sessionRes.json().catch(() => null);
-    if (!sessionRes.ok || !sessionJson?.success) return null;
-
-    const meRes = await fetch(`${API_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${sessionJson.data.accessToken}` },
-      cache: "no-store",
-    });
-    const meJson = await meRes.json().catch(() => null);
-    if (!meRes.ok || !meJson?.success) return null;
-
-    return meJson.data as ProxyUser;
-  } catch {
-    return null;
-  }
-};
-
-const DASHBOARD_PATHS = new Set([
+const DYNAMIC_POLICY_PATH_PREFIXES = [
+  "/shop",
+  "/product",
+  "/creator",
+  "/brand",
   "/profile",
-  "/share",
-  "/earnings",
-  "/withdraw",
-  "/progress",
+  "/messages",
+  "/settings",
+  "/overview",
   "/badges",
   "/challenges",
-  "/settings/chat",
-  "/settings/security",
+  "/earnings",
+  "/progress",
+  "/wallet",
+  "/withdraw",
   "/products",
   "/manage-orders",
-  "/wallet",
-]);
+  "/orders",
+  "/dashboard",
+  "/login",
+  "/register",
+  "/reset-password",
+  "/forgot-password",
+  "/verify-email",
+  "/auth",
+  "/checkout",
+  "/apply",
+  "/payments",
+  "/support",
+  "/share",
+  "/r",
+  "/internal",
+];
 
-// role gate per dashboard path: who may render it, and where non-holders bounce
-const DASHBOARD_ROLE_RULES: Record<
-  string,
-  { allow: (role: UserRole) => boolean; fallback: string }
-> = {};
+const needsDynamicPolicy = (pathname: string): boolean =>
+  pathname === "/" ||
+  DYNAMIC_POLICY_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
 
-export const proxy = async (request: NextRequest) => {
-  const { pathname } = request.nextUrl;
-  const refreshToken = request.cookies.get(REFRESH_COOKIE_NAME)?.value;
+export const proxy = (request: NextRequest) => {
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const isDev = process.env.NODE_ENV === "development";
+  const isProduction = process.env.NODE_ENV === "production";
+  const apiOrigin = getPublicApiOrigin();
+  const contentSecurityPolicy = buildContentSecurityPolicy({
+    nonce,
+    isDev,
+    isProduction,
+    apiOrigin,
+    renderMode: needsDynamicPolicy(request.nextUrl.pathname) ? "dynamic" : "static",
+  });
 
-  if (DASHBOARD_PATHS.has(pathname)) {
-    if (!refreshToken) {
-      const loginUrl = new URL(`/login?redirect=${encodeURIComponent(pathname)}`, request.url);
-      return NextResponse.redirect(loginUrl);
-    }
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
 
-    const user = await fetchSessionUser(refreshToken);
-    if (!user) {
-      const loginUrl = new URL(`/login?redirect=${encodeURIComponent(pathname)}`, request.url);
-      return NextResponse.redirect(loginUrl);
-    }
-    if (user.role === UserRole.ADMIN) {
-      return NextResponse.redirect(new URL(ADMIN_URL, request.url));
-    }
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set("Content-Security-Policy", contentSecurityPolicy);
 
-    const rule = DASHBOARD_ROLE_RULES[pathname];
-    if (rule && !rule.allow(user.role)) {
-      return NextResponse.redirect(new URL(rule.fallback, request.url));
-    }
-    return NextResponse.next();
-  }
-
-  if (pathname === "/login" && refreshToken) {
-    const user = await fetchSessionUser(refreshToken);
-    if (user) {
-      const target = resolveLoginDestination(
-        getSafeRedirect(request.nextUrl.searchParams.get("redirect")),
-        getDefaultRouteForUser(user),
-        isTenantHost(request.nextUrl.hostname, TENANT_BASE_DOMAIN),
-      );
-      const destination = target.startsWith("http") ? target : new URL(target, request.url);
-      return NextResponse.redirect(destination);
-    }
-  }
-
-  return NextResponse.next();
+  return response;
 };
 
 export const config = {
   matcher: [
-    "/profile",
-    "/share",
-    "/earnings",
-    "/withdraw",
-    "/progress",
-    "/badges",
-    "/challenges",
-    "/settings/chat",
-    "/settings/security",
-    "/products",
-    "/manage-orders",
-    "/wallet",
-    "/login",
+    {
+      source: "/((?!api|_next/static|_next/image|favicon.ico).*)",
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
   ],
 };

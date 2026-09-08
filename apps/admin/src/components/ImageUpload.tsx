@@ -3,12 +3,15 @@ import { useRef, useState } from "react";
 
 import { uploadsApi } from "@/lib/uploadsApi";
 
+type PipelineUpload = { url: string; imageAssetId: string };
+
 type ImageUploadProps = {
   value: string | null;
-  onChange: (url: string) => void;
+  onChange?: (url: string) => void;
+  onUploaded?: (result: PipelineUpload) => void;
 };
 
-export const ImageUpload = ({ value, onChange }: ImageUploadProps) => {
+export const ImageUpload = ({ value, onChange, onUploaded }: ImageUploadProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,8 +23,13 @@ export const ImageUpload = ({ value, onChange }: ImageUploadProps) => {
     setIsUploading(true);
     setError(null);
     try {
-      const [url] = await uploadsApi.upload([file]);
-      if (url) onChange(url);
+      if (onUploaded) {
+        const [uploaded] = await uploadsApi.uploadWithPipeline([file]);
+        if (uploaded) onUploaded({ url: uploaded.url, imageAssetId: uploaded.assetId });
+      } else {
+        const [url] = await uploadsApi.upload([file]);
+        if (url) onChange?.(url);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
     } finally {

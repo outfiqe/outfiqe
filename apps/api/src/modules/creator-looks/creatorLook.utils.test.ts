@@ -96,6 +96,7 @@ describe("toSuggestion", () => {
           isApproved: true,
         },
         images: [],
+        image: { url: "https://cdn.example.com/look.png", lqip: null, sources: [] },
         likeCount: 0,
         commentCount: 0,
         saveCount: 0,

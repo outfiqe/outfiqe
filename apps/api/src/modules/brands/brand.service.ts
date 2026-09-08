@@ -2,6 +2,7 @@ import { FollowTargetType } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
+import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 
 import { brandRepository } from "./brand.repository.js";
 import type { ListBrandsQuery, UpdateBrandProfileBody } from "./brand.schemas.js";
@@ -34,6 +35,13 @@ export const brandService = {
         "No brand is linked to this account.",
         NOT_FOUND_STATUS,
       );
+    }
+
+    const linkedAssetIds = [input.bannerImageAssetId, input.avatarImageAssetId].filter(
+      (assetId): assetId is string => Boolean(assetId),
+    );
+    if (linkedAssetIds.length > 0) {
+      await imageProcessingService.assertAssetsOwnedBy(linkedAssetIds, userId);
     }
 
     const brand = await brandRepository.update(profile.brand.id, input);

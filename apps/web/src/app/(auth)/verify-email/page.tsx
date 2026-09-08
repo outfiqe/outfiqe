@@ -5,6 +5,8 @@ import { VerifyEmailScreen } from "@/features/auth";
 
 export const metadata: Metadata = { title: "Verify your email" };
 
+export const dynamic = "force-dynamic";
+
 const VerifyEmailPage = () => {
   return (
     <Suspense fallback={null}>

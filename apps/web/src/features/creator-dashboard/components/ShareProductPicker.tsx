@@ -12,16 +12,18 @@ import { ImageOff, Search, X } from "lucide-react";
 import { useState } from "react";
 
 import type { PublicProduct } from "@/features/products/api/productSchemas";
+import { AppImage } from "@/shared/components/AppImage";
 
 import { useTaggableProducts } from "../hooks/useTaggableProducts";
 import { SEARCH_DEBOUNCE_MS } from "./PostModal.constants";
 
 const ProductThumb = ({ url }: { url: string | null }) => (
-  <div
-    className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted bg-cover bg-center"
-    style={url ? { backgroundImage: `url(${url})` } : undefined}
-  >
-    {!url && <ImageOff className="size-4 text-muted-foreground" />}
+  <div className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+    {url ? (
+      <AppImage src={url} alt="" fill sizes="36px" />
+    ) : (
+      <ImageOff className="size-4 text-muted-foreground" />
+    )}
   </div>
 );
 

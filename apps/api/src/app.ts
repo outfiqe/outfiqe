@@ -12,6 +12,7 @@ import logger from "#lib/winston.utils.js";
 import { describeError } from "#redis/redis.utils.js";
 
 import { achievementRoutes } from "./modules/achievements/achievement.routes.js";
+import { addressRoutes } from "./modules/addresses/address.routes.js";
 import { adminInviteRoutes } from "./modules/admin-invites/adminInvite.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { facebookWebhookRoutes } from "./modules/auth/oauth/facebook.webhooks.routes.js";
@@ -173,6 +174,7 @@ export const createApp = () => {
   app.use("/api/product-types", productTypeRoutes);
   app.use("/api/size-options", sizeOptionRoutes);
   app.use("/api/cart", cartRoutes);
+  app.use("/api/addresses", addressRoutes);
   app.use("/api/orders", orderRoutes);
   app.use("/api/delivery-zones", deliveryZoneRoutes);
   app.use("/api/payments", paymentRoutes);

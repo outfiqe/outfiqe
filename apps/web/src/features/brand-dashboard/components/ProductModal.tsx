@@ -11,7 +11,7 @@ import { useSizeOptions } from "@/features/products/hooks/useSizeOptions";
 import { MediaFormShell } from "@/shared/components/MediaFormShell";
 import { PendingPhotoThumbnailRail } from "@/shared/components/PendingPhotoThumbnailRail";
 import { PhotoCropPane } from "@/shared/components/PhotoCropPane";
-import { resolvePendingPhotoUrls, usePendingPhotos } from "@/shared/hooks/usePendingPhotos";
+import { resolvePendingPhotoAssets, usePendingPhotos } from "@/shared/hooks/usePendingPhotos";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { useCreateProduct } from "../hooks/useCreateProduct";
@@ -51,6 +51,7 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
       type: "",
       categories: [],
       imageUrls: [],
+      imageAssetIds: [],
       lowStock: false,
       sizes: [],
     },
@@ -82,8 +83,9 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
     setIsProcessingPhotos(true);
     setPhotoError(null);
     try {
-      const urls = await resolvePendingPhotoUrls(pending.photos, DEFAULT_IMAGE_MIME_TYPE);
-      form.setValue("imageUrls", urls, { shouldValidate: true });
+      const resolved = await resolvePendingPhotoAssets(pending.photos, DEFAULT_IMAGE_MIME_TYPE);
+      form.setValue("imageUrls", resolved.urls, { shouldValidate: true });
+      form.setValue("imageAssetIds", resolved.imageAssetIds, { shouldValidate: true });
       await submitProduct();
     } catch (photoUploadError) {
       setPhotoError(getErrorMessage(photoUploadError));

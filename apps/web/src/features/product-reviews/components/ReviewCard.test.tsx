@@ -85,7 +85,10 @@ describe("ReviewCard", () => {
 
   it("renders photo thumbnails and an avatar image when the review has them", () => {
     const { container } = renderCard({
-      images: ["https://cdn.example/a.jpg", "https://cdn.example/b.jpg"],
+      images: [
+        { url: "https://cdn.example/a.jpg", lqip: null, sources: [] },
+        { url: "https://cdn.example/b.jpg", lqip: null, sources: [] },
+      ],
       author: {
         id: "author-1",
         name: "Priya Shah",
@@ -94,9 +97,11 @@ describe("ReviewCard", () => {
       },
     });
 
-    const withBg = [...container.querySelectorAll<HTMLElement>("[style*='background-image']")];
-    expect(withBg.some((el) => el.style.backgroundImage.includes("a.jpg"))).toBe(true);
-    expect(withBg.some((el) => el.style.backgroundImage.includes("avatar.jpg"))).toBe(true);
+    const imageSources = [...container.querySelectorAll("img")].map((image) =>
+      decodeURIComponent(image.getAttribute("src") ?? ""),
+    );
+    expect(imageSources.some((src) => src.includes("a.jpg"))).toBe(true);
+    expect(imageSources.some((src) => src.includes("avatar.jpg"))).toBe(true);
   });
 
   it("omits the title line when the review has no title", () => {

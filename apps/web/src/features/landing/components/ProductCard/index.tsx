@@ -8,8 +8,12 @@ import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useToggleWishlist } from "@/features/wishlist";
+import { AppImage } from "@/shared/components/AppImage";
 import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { cn } from "@/shared/lib/cn";
+import type { ResponsiveImage } from "@/shared/lib/responsiveImage";
+
+const PRODUCT_CARD_SIZES = "(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw";
 
 export type ProductType = string;
 
@@ -27,6 +31,7 @@ export interface ExploreProduct {
   lowStock?: boolean;
   isNew?: boolean;
   image?: string;
+  responsiveImage?: ResponsiveImage | null;
   isSaved?: boolean;
   avgRating?: number | null;
   reviewCount?: number;
@@ -73,6 +78,7 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
     lowStock,
     isNew,
     image,
+    responsiveImage,
     isSaved,
     avgRating,
     reviewCount,
@@ -104,12 +110,19 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
   return (
     <Link href={`/product/${id}`} className="group block">
       <div
-        className="relative flex aspect-4/5 items-center justify-center rounded-2xl bg-cover bg-center"
-        style={{
-          backgroundColor: image ? undefined : getSwatchColor(id),
-          backgroundImage: image ? `url(${image})` : undefined,
-        }}
+        className="relative flex aspect-4/5 items-center justify-center overflow-hidden rounded-2xl bg-muted"
+        style={image ? undefined : { backgroundColor: getSwatchColor(id) }}
       >
+        {image && (
+          <AppImage
+            src={image}
+            image={responsiveImage}
+            alt={name}
+            fill
+            sizes={PRODUCT_CARD_SIZES}
+          />
+        )}
+
         {trendingRank ? (
           <TrendingRankBadge rank={trendingRank} />
         ) : (
