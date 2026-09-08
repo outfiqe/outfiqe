@@ -34,3 +34,9 @@ export const brandProductSchema = z.object({
   sizes: z.array(brandProductSizeSchema),
 });
 export type BrandProduct = z.infer<typeof brandProductSchema>;
+
+export const brandProductPageSchema = z.object({
+  products: z.array(brandProductSchema),
+  nextCursor: z.string().nullable(),
+});
+export type BrandProductPage = z.infer<typeof brandProductPageSchema>;

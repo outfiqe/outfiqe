@@ -1,5 +1,9 @@
 export type { BrandProfile, UpdateBrandProfileInput } from "./api/brandDashboardSchemas";
-export { getBrandPayoutSummaryServer } from "./api/dashboardServer";
+export {
+  getBrandOrdersFirstPageServer,
+  getBrandPayoutSummaryServer,
+  getBrandProductsFirstPageServer,
+} from "./api/dashboardServer";
 export { getBrandOverviewServer } from "./api/getBrandOverviewServer";
 export { getBrandProfileServer } from "./api/getBrandProfileServer";
 export { BrandOverview } from "./components/BrandOverview";

@@ -1,14 +1,6 @@
-import { z } from "zod";
-
 import { apiClient } from "@/shared/lib/apiClient";
 
-import { brandOrderItemSchema } from "./brandOrdersSchemas";
-
-const brandOrdersPageSchema = z.object({
-  items: z.array(brandOrderItemSchema),
-  nextCursor: z.string().nullable(),
-});
-export type BrandOrdersPage = z.infer<typeof brandOrdersPageSchema>;
+import { type BrandOrdersPage, brandOrdersPageSchema } from "./brandOrdersSchemas";
 
 export const brandOrdersApi = {
   async list(cursor?: string): Promise<BrandOrdersPage> {
