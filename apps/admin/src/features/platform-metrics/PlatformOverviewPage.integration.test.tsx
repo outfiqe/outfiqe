@@ -39,8 +39,10 @@ const ROLLUP = {
   range: "30d",
   gateway: { grossCollected: 100000, refunded: 0, netHeld: 100000 },
   ledger: {
-    owedToBrands: { PENDING: 30000, AVAILABLE: 15000 },
-    owedToCreators: { PENDING: 10000, AVAILABLE: 5000 },
+    owedToBrands: 45000,
+    owedToCreators: 15000,
+    brandPayoutsByStatus: { PENDING: 30000, AVAILABLE: 15000, WITHDRAWN: 200000, VOIDED: 8000 },
+    creatorCommissionsByStatus: { PENDING: 10000, AVAILABLE: 5000, PAID: 90000, VOIDED: 3000 },
     platformRevenueRealized: 0,
   },
 };
@@ -77,6 +79,8 @@ describe("PlatformOverviewPage", () => {
 
     expect(await screen.findByText("Gateway net held (30d)")).toBeInTheDocument();
     expect(screen.getByText("Rs. 100,000")).toBeInTheDocument();
+    expect(screen.getByText("Ledger owed (30d)")).toBeInTheDocument();
+    expect(screen.getByText("Rs. 60,000")).toBeInTheDocument();
     expect(screen.getByText("Needs review")).toBeInTheDocument();
   });
 

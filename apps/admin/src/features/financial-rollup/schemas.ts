@@ -26,8 +26,10 @@ export const financialRollupSchema = z.object({
     netHeld: z.number(),
   }),
   ledger: z.object({
-    owedToBrands: z.partialRecord(z.enum(brandPayoutStatusValues), z.number()),
-    owedToCreators: z.partialRecord(z.enum(commissionStatusValues), z.number()),
+    owedToBrands: z.number(),
+    owedToCreators: z.number(),
+    brandPayoutsByStatus: z.partialRecord(z.enum(brandPayoutStatusValues), z.number()),
+    creatorCommissionsByStatus: z.partialRecord(z.enum(commissionStatusValues), z.number()),
     platformRevenueRealized: z.number(),
   }),
 });
