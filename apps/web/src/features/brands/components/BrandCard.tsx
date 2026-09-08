@@ -56,7 +56,7 @@ export const BrandCard = ({ brand }: BrandCardProps) => {
 
   return (
     <article className="relative overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30">
-      <Link href={`/brand/${id}`} className="absolute inset-0 z-0">
+      <Link href={`/brand/${id}`} prefetch={false} className="absolute inset-0 z-0">
         <span className="sr-only">{name}</span>
       </Link>
 

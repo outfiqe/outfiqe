@@ -56,6 +56,7 @@ const FollowerRow = ({ follower, viewerId }: FollowerRowProps) => {
       {follower.isCreator ? (
         <Link
           href={`/creator/${follower.handle}`}
+          prefetch={false}
           className="flex min-w-0 flex-1 items-center gap-3"
         >
           {identity}

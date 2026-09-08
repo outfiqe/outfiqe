@@ -98,6 +98,7 @@ export const SiteHeader = () => {
                   <Link
                     key={label}
                     href={href}
+                    prefetch={false}
                     className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
                   >
                     {label}

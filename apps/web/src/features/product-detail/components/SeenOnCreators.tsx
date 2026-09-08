@@ -34,6 +34,7 @@ export const SeenOnCreators = ({ productId, creators }: SeenOnCreatorsProps) => 
           <Link
             key={creator.creatorId}
             href={`/creator/${creator.handle}`}
+            prefetch={false}
             onClick={() => recordClick(creator.lookId, productId)}
             className="group block"
           >

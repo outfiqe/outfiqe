@@ -29,6 +29,7 @@ export const OrderRow = ({ order }: OrderRowProps) => {
   return (
     <Link
       href={`/orders/${id}`}
+      prefetch={false}
       className="flex items-center gap-4 rounded-2xl border border-border p-4 transition-colors hover:border-foreground"
     >
       <div className="relative flex aspect-3/4 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">

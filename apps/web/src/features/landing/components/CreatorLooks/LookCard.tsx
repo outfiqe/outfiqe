@@ -42,7 +42,7 @@ const LookImageFrame = ({
   }
 
   return (
-    <Link href={`/product/${productId}`} className={className}>
+    <Link href={`/product/${productId}`} prefetch={false} className={className}>
       {content}
     </Link>
   );
@@ -76,6 +76,7 @@ export const LookCard = ({ look }: LookCardProps) => {
         </span>
         <Link
           href={`/creator/${creator.handle}`}
+          prefetch={false}
           className="truncate text-[11px] font-bold uppercase tracking-wide text-muted-foreground hover:underline"
         >
           {creator.name}
@@ -87,6 +88,7 @@ export const LookCard = ({ look }: LookCardProps) => {
       {primaryProduct && (
         <Link
           href={`/product/${primaryProduct.id}`}
+          prefetch={false}
           className="mt-1 block text-sm font-bold text-foreground hover:underline"
         >
           {primaryProduct.name} · Rs. {primaryProduct.price.toLocaleString()}

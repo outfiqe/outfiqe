@@ -48,6 +48,7 @@ const baseProps: SidebarLinkRenderProps = {
   isActive: false,
   isAncestorActive: false,
   collapsed: false,
+  prefetch: false,
   baseClassName: "nav-base",
   activeClassName: "nav-active",
   ancestorClassName: "nav-ancestor",

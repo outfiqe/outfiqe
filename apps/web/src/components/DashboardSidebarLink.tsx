@@ -28,6 +28,7 @@ export const DashboardSidebarLink = ({
   isActive,
   isAncestorActive,
   collapsed,
+  prefetch,
   baseClassName,
   activeClassName,
   ancestorClassName,
@@ -57,6 +58,7 @@ export const DashboardSidebarLink = ({
   return (
     <NextLink
       href={href}
+      prefetch={prefetch}
       onNavigate={() => markPending(href)}
       aria-current={active ? "page" : undefined}
       title={title}

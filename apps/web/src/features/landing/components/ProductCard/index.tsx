@@ -108,7 +108,7 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
   };
 
   return (
-    <Link href={`/product/${id}`} className="group block">
+    <Link href={`/product/${id}`} prefetch={false} className="group block">
       <div
         className="relative flex aspect-4/5 items-center justify-center overflow-hidden rounded-2xl bg-muted"
         style={image ? undefined : { backgroundColor: getSwatchColor(id) }}

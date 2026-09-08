@@ -27,7 +27,7 @@ export const SuggestedCreatorRow = ({ creator, onFollow }: SuggestedCreatorRowPr
 
   return (
     <div className="flex items-center gap-2.5 border-b border-border py-2.5 last:border-b-0">
-      <Link href={`/creator/${handle}`} className="shrink-0">
+      <Link href={`/creator/${handle}`} prefetch={false} className="shrink-0">
         <span
           aria-hidden
           className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-white"
@@ -36,7 +36,7 @@ export const SuggestedCreatorRow = ({ creator, onFollow }: SuggestedCreatorRowPr
           {initialsFor(name)}
         </span>
       </Link>
-      <Link href={`/creator/${handle}`} className="min-w-0 leading-tight">
+      <Link href={`/creator/${handle}`} prefetch={false} className="min-w-0 leading-tight">
         <p className="truncate text-[13px] font-medium text-foreground">{name}</p>
         <p className="text-[11.5px] text-muted-foreground">
           {followerCount.toLocaleString()} followers

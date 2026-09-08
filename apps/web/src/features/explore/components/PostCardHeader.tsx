@@ -26,7 +26,7 @@ export const PostCardHeader = ({
 }: PostCardHeaderProps) => {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <Link href={`/creator/${creatorHandle}`} className="shrink-0">
+      <Link href={`/creator/${creatorHandle}`} prefetch={false} className="shrink-0">
         <span
           aria-hidden
           className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-white"
@@ -35,7 +35,7 @@ export const PostCardHeader = ({
           {initialsFor(creatorName)}
         </span>
       </Link>
-      <Link href={`/creator/${creatorHandle}`} className="min-w-0 leading-tight">
+      <Link href={`/creator/${creatorHandle}`} prefetch={false} className="min-w-0 leading-tight">
         <p className="truncate text-[13px] font-semibold text-foreground">{creatorName}</p>
         <p className="truncate text-[11px] text-muted-foreground">@{creatorHandle}</p>
       </Link>

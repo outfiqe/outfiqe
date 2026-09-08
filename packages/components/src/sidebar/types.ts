@@ -21,6 +21,7 @@ export type SidebarLinkRenderProps = {
   readonly isActive: boolean;
   readonly isAncestorActive: boolean;
   readonly collapsed: boolean;
+  readonly prefetch: boolean;
   readonly baseClassName: string;
   readonly activeClassName: string;
   readonly ancestorClassName: string;

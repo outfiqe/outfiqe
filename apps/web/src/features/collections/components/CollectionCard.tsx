@@ -13,7 +13,7 @@ type CollectionCardProps = {
 
 export const CollectionCard = ({ collection }: CollectionCardProps) => {
   return (
-    <Link href={`/collections/${collection.slug}`} className="group block">
+    <Link href={`/collections/${collection.slug}`} prefetch={false} className="group block">
       <div
         className="relative flex aspect-4/3 items-end overflow-hidden rounded-2xl p-4 transition-transform group-hover:-translate-y-0.5"
         style={collection.imageUrl ? undefined : { backgroundColor: getAvatarColor(collection.id) }}

@@ -86,6 +86,7 @@ export const ExploreSearchResults = () => {
                   <Link
                     key={userId}
                     href={`/creator/${handle}`}
+                    prefetch={false}
                     className="flex items-center gap-3 border-b border-border py-3 last:border-b-0"
                   >
                     <div

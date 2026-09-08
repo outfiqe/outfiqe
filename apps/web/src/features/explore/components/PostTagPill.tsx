@@ -17,6 +17,7 @@ export const PostTagPill = ({ lookId, tag, className }: PostTagPillProps) => {
   return (
     <Link
       href={`/product/${tag.id}`}
+      prefetch={false}
       onClick={() => void exploreFeedApi.recordTagClick(lookId, tag.id)}
       className={cn(
         "inline-flex max-w-full items-center gap-2 rounded-full border border-border py-1 pl-2 pr-3 text-[12px] font-medium text-foreground transition-colors hover:border-foreground",

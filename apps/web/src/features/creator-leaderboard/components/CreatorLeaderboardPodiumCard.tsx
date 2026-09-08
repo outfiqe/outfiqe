@@ -59,6 +59,7 @@ export const CreatorLeaderboardPodiumCard = ({ entry }: CreatorLeaderboardPodium
 
         <Link
           href={`/creator/${creatorHandle}`}
+          prefetch={false}
           className="mt-4 w-full rounded-full border border-foreground px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background"
         >
           View creator

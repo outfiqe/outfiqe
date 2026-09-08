@@ -58,6 +58,7 @@ export const AchievementBadgeCard = ({
         {sponsorBrand && (
           <Link
             href={`/brand/${sponsorBrand.id}`}
+            prefetch={false}
             className="mt-1 inline-block text-[11px] font-medium text-primary-strong hover:underline"
           >
             Sponsored by {sponsorBrand.name}

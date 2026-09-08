@@ -43,7 +43,7 @@ const FollowingRow = ({ item }: { item: FollowingItem }) => {
   return (
     <div className="flex items-center gap-3 py-2">
       {href ? (
-        <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
+        <Link href={href} prefetch={false} className="flex min-w-0 flex-1 items-center gap-3">
           {identity}
         </Link>
       ) : (

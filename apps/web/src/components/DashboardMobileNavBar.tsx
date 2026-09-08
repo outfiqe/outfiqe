@@ -62,6 +62,7 @@ const NavTarget = ({ item, active, onNavigate, className, children }: NavTargetP
   return (
     <NextLink
       href={item.href}
+      prefetch={false}
       aria-current={active ? "page" : undefined}
       onClick={onNavigate}
       className={className}
