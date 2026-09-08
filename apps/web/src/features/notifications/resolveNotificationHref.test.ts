@@ -1,7 +1,11 @@
 import type { Notification } from "@outfiqe/types";
 import { describe, expect, it } from "vitest";
 
-import { isFullPageNavHref, resolveNotificationHref } from "./resolveNotificationHref";
+import {
+  isFullPageNavHref,
+  resolveNotificationHref,
+  resolveNotificationNavigation,
+} from "./resolveNotificationHref";
 
 const OWN_HANDLE = "sabinshrestha0";
 
@@ -12,6 +16,8 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
   type: "LOOK_LIKED",
   entityType: null,
   entityId: null,
+  targetSurface: null,
+  targetPath: null,
   metadata: {},
   groupKey: null,
   actorCount: 1,
@@ -224,6 +230,54 @@ describe("resolveNotificationHref", () => {
 
     const resolved = buildNotification({ type: "SUPPORT_TICKET_RESOLVED", entityId: null });
     expect(resolveNotificationHref(resolved, OWN_HANDLE, true)).toBe("/admin/support");
+  });
+});
+
+describe("resolveNotificationNavigation", () => {
+  it("uses the server-authored target path for a web-surface notification (client nav)", () => {
+    const notification = buildNotification({
+      type: "NEW_MESSAGE",
+      targetSurface: "WEB",
+      targetPath: "/messages/conversation-1",
+    });
+    expect(resolveNotificationNavigation(notification, OWN_HANDLE, true)).toEqual({
+      href: "/messages/conversation-1",
+      fullPage: false,
+    });
+  });
+
+  it("prefixes an admin-surface target with the admin origin and forces a full page nav", () => {
+    const notification = buildNotification({
+      type: "BRAND_APPLICATION_SUBMITTED",
+      targetSurface: "ADMIN",
+      targetPath: "/platform/brand-applications",
+    });
+    expect(resolveNotificationNavigation(notification, OWN_HANDLE, true)).toEqual({
+      href: "/admin/platform/brand-applications",
+      fullPage: true,
+    });
+  });
+
+  it("falls back to the legacy type resolver when no target path is stored", () => {
+    const legacy = buildNotification({ type: "ACHIEVEMENT_UNLOCKED" });
+    expect(resolveNotificationNavigation(legacy, OWN_HANDLE, false)).toEqual({
+      href: "/badges",
+      fullPage: false,
+    });
+
+    const staffLegacy = buildNotification({
+      type: "SUPPORT_TICKET_CREATED",
+      entityId: "ticket-1",
+    });
+    expect(resolveNotificationNavigation(staffLegacy, OWN_HANDLE, true)).toEqual({
+      href: "/admin/support/ticket-1",
+      fullPage: true,
+    });
+  });
+
+  it("returns null when neither a target path nor a legacy route resolves", () => {
+    const notification = buildNotification({ type: "REVIEW_REQUESTED", entityId: null });
+    expect(resolveNotificationNavigation(notification, OWN_HANDLE, false)).toBeNull();
   });
 });
 

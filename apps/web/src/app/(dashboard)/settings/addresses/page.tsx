@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 import { AddressList } from "@/features/addresses";
 
-import { requireDashboardSession } from "../../requireDashboardSession";
+import { requireAuthedSession } from "../../requireDashboardSession";
 
 export const metadata: Metadata = { title: "Addresses" };
 
 const DashboardAddressesPage = async () => {
-  await requireDashboardSession("/settings/addresses");
+  await requireAuthedSession("/settings/addresses");
 
   return (
     <div className="max-w-xl">

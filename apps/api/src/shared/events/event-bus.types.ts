@@ -3,6 +3,7 @@ import type {
   CreatorLeaderboardCategory,
   FulfilmentStatus,
   NotificationEntityType,
+  NotificationSurface,
   NotificationType,
   SupportCategory,
   UserRole,
@@ -22,6 +23,8 @@ export type NotificationBroadcastPayload = {
   type: NotificationType;
   entityType: NotificationEntityType | null;
   entityId: string | null;
+  targetSurface: NotificationSurface | null;
+  targetPath: string | null;
   metadata: Record<string, unknown>;
   groupKey: string | null;
   actorCount: number;
