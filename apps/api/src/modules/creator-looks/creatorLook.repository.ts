@@ -6,6 +6,7 @@ import type { CreatorLookTagClickSource } from "#generated/prisma/enums.js";
 import { CreatorStatus, ProductStatus } from "#generated/prisma/enums.js";
 import { computeViewerEngagementAffinity } from "#lib/creator-engagement-affinity.utils.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
+import { RESPONSIVE_IMAGE_ASSET_SELECT, toResponsiveImage } from "#lib/responsive-image.utils.js";
 import { ageHoursOf, applyDiversity } from "#lib/trend-scoring.utils.js";
 import logger from "#lib/winston.utils.js";
 import type { ProductWithBrand } from "#modules/products/product.types.js";
@@ -93,7 +94,10 @@ const editDetailInclude = {
 
 const feedRelationsInclude = {
   creator: { select: { id: true, name: true, handle: true, creatorStatus: true } },
-  images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
+  images: {
+    orderBy: { sortOrder: "asc" },
+    select: { url: true, imageAsset: { select: RESPONSIVE_IMAGE_ASSET_SELECT } },
+  },
   taggedProducts: {
     include: {
       product: {
@@ -135,6 +139,7 @@ const toFeedPost = (
   },
   imageUrl,
   images: images.length > 0 ? images.map((image) => image.url) : [imageUrl],
+  image: toResponsiveImage(imageUrl, images[0]?.imageAsset ?? null),
   caption,
   likeCount,
   commentCount,

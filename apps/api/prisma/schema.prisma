@@ -313,13 +313,16 @@ model Product {
 }
 
 model ProductImage {
-  id        String   @id @default(uuid()) @db.Uuid
-  productId String   @map("product_id") @db.Uuid
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  url       String
-  sortOrder Int      @default(0) @map("sort_order")
-  createdAt DateTime @default(now()) @map("created_at")
+  id           String                @id @default(uuid()) @db.Uuid
+  productId    String                @map("product_id") @db.Uuid
+  product      Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url          String
+  sortOrder    Int                   @default(0) @map("sort_order")
+  imageAssetId String?               @map("image_asset_id") @db.Uuid
+  imageAsset   ImageProcessingAsset? @relation(fields: [imageAssetId], references: [id], onDelete: SetNull)
+  createdAt    DateTime              @default(now()) @map("created_at")
 
+  @@index([imageAssetId])
   @@map("product_images")
 }
 
@@ -689,13 +692,16 @@ model CreatorLookTrendMetric {
 }
 
 model CreatorLookImage {
-  id            String      @id @default(uuid()) @db.Uuid
-  creatorLookId String      @map("creator_look_id") @db.Uuid
-  creatorLook   CreatorLook @relation(fields: [creatorLookId], references: [id], onDelete: Cascade)
+  id            String                @id @default(uuid()) @db.Uuid
+  creatorLookId String                @map("creator_look_id") @db.Uuid
+  creatorLook   CreatorLook           @relation(fields: [creatorLookId], references: [id], onDelete: Cascade)
   url           String
-  sortOrder     Int         @default(0) @map("sort_order")
-  createdAt     DateTime    @default(now()) @map("created_at")
+  sortOrder     Int                   @default(0) @map("sort_order")
+  imageAssetId  String?               @map("image_asset_id") @db.Uuid
+  imageAsset    ImageProcessingAsset? @relation(fields: [imageAssetId], references: [id], onDelete: SetNull)
+  createdAt     DateTime              @default(now()) @map("created_at")
 
+  @@index([imageAssetId])
   @@map("creator_look_images")
 }
 
@@ -2591,6 +2597,9 @@ model ImageProcessingAsset {
   errorMessage         String?                     @map("error_message")
   createdAt            DateTime                    @default(now()) @map("created_at")
   updatedAt            DateTime                    @updatedAt @map("updated_at")
+
+  productImages     ProductImage[]
+  creatorLookImages CreatorLookImage[]
 
   @@unique([ownerId, checksum])
   @@index([status])

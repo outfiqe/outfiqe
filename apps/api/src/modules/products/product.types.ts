@@ -1,6 +1,11 @@
+import type { ResponsiveImage } from "@outfiqe/types";
+
 import type { DiscountType, ProductStatus } from "#generated/prisma/enums.js";
+import type { ImageAssetForResponsiveImage } from "#lib/responsive-image.utils.js";
 
 export type ProductTypeSummary = { slug: string; label: string };
+
+export type ProductFirstImageAsset = { imageAsset?: ImageAssetForResponsiveImage | null };
 
 export type ProductRatingSummary = {
   avgRating: number | null;
@@ -101,7 +106,7 @@ export type ProductWithStockSizesAndImages = ProductWithStockAndSizes & {
 export type ProductSalesStats = { creatorBuyerCount: number; unitsSold: number };
 
 export type ProductWithOptionalStock = ProductWithBrand &
-  Partial<ProductSalesStats> & { totalStock?: number };
+  Partial<ProductSalesStats> & { totalStock?: number; images?: ProductFirstImageAsset[] };
 
 export type ProductReviewSummary = Omit<ProductWithBrand, "categories"> & { categories: string[] };
 
@@ -161,6 +166,7 @@ export type PublicProduct = {
   type: string;
   categorySlugs: string[];
   imageUrl: string | null;
+  image: ResponsiveImage | null;
   lowStock: boolean;
   isNew: boolean;
   creatorBuyerCount: number;

@@ -1,3 +1,5 @@
+import type { ResponsiveImage } from "@outfiqe/types";
+
 export type TaggedProduct = {
   id: string;
   name: string;
@@ -78,6 +80,7 @@ export type CreatorLookFeedPost = {
   creator: FeedCreator;
   imageUrl: string;
   images: string[];
+  image: ResponsiveImage;
   caption: string | null;
   likeCount: number;
   commentCount: number;

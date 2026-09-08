@@ -62,12 +62,16 @@ persisting progress back to the same `ImageProcessingAsset` row via `prismaImage
 **This is a new, parallel upload path — it does not replace `modules/uploads`.** The existing
 `POST /api/uploads` (Multer memory storage, synchronous `storage.upload()`, used for avatars/simple
 image attachments today) is untouched. This module is for the high-concurrency, multi-variant,
-async pipeline use case the spec asked for; wiring product/creator-look/review photo uploads over
-to it (replacing their current synchronous `url`-only flow) is a distinct, larger integration task
-explicitly out of scope here — the existing `ProductImage`/`CreatorLookImage`/`ProductReviewImage`
-models only ever store a single `url`, and migrating them to async multi-variant output would
-change those features' upload UX (immediate vs. eventually-consistent), which needs its own
-decision, not a silent side effect of building this pipeline.
+async pipeline use case the spec asked for.
+
+**Integrating the pipeline into domain images is happening in steps.** `ProductImage` and
+`CreatorLookImage` now carry an optional `imageAssetId` FK to `ImageProcessingAsset`
+(`onDelete: SetNull`), and the public product/look read paths resolve it into a `ResponsiveImage`
+(`image` field, per-format `srcSet` + `lqip`) via `#lib/responsive-image.utils.js` — see the
+`products` and `creator-looks` module READMEs. The write side (an upload flow that runs a domain
+image through this pipeline and stores the resulting `imageAssetId`, plus a backfill for existing
+rows) is not built yet, so `imageAssetId` is null on every row today and `image` is a
+fallback-only shape carrying the same URL as `imageUrl`. `ProductReviewImage` is not linked yet.
 
 **Why a new `ImageProcessingAsset` Prisma model instead of reusing `shared/storage`'s
 `StorageProvider`.** `shared/storage`'s `StorageProvider` (`upload`/`delete` only) is shaped for
@@ -97,6 +101,11 @@ auth-gated the same way every other admin-only surface in this codebase is.
 
 ## Not yet built (known gaps)
 
+- **Domain-image write path + backfill.** `ProductImage`/`CreatorLookImage` can now _reference_ an
+  `ImageProcessingAsset` and public reads render its variants, but nothing yet routes a product or
+  look photo upload through this pipeline or sets `imageAssetId` on create/update, and there is no
+  one-off backfill for the images already stored as bare URLs. Avatars, brand banners, hero slides
+  and collections are not linked at all.
 - **Reprocessing a failed asset.** Today, if `(ownerId, checksum)` already has a row, a duplicate
   upload always returns the existing row as-is — including a `failed` one. There is no "retry this
   failed upload" endpoint yet; the dead-letter queue (Bull Board, `/internal/queues`) is where a

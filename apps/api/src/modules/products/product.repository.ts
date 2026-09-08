@@ -3,6 +3,7 @@ import { PRODUCT_SORT, type ProductSort } from "@outfiqe/utils";
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import { CreatorStatus, ProductStatus } from "#generated/prisma/enums.js";
+import { RESPONSIVE_IMAGE_ASSET_SELECT } from "#lib/responsive-image.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
 import {
@@ -15,6 +16,7 @@ import type {
   BrandProductSize,
   CreateProductInput,
   ProductDiscountRecord,
+  ProductFirstImageAsset,
   ProductRecord,
   ProductSalesStats,
   ProductSearchParams,
@@ -58,6 +60,23 @@ const withBrandAndCategories = {
 
 const withImages = {
   images: { orderBy: { sortOrder: "asc" as const }, select: { url: true } },
+};
+
+const imageAssetSelect = { select: RESPONSIVE_IMAGE_ASSET_SELECT } as const;
+
+const withFirstImageAsset = {
+  images: {
+    orderBy: { sortOrder: "asc" as const },
+    take: 1,
+    select: { imageAsset: imageAssetSelect },
+  },
+};
+
+const withGalleryImageAssets = {
+  images: {
+    orderBy: { sortOrder: "asc" as const },
+    select: { url: true, imageAsset: imageAssetSelect },
+  },
 };
 
 type PublicFilter = {
@@ -282,7 +301,7 @@ export const productRepository = {
 
     const rows = await prisma.product.findMany({
       where: buildPublicWhere(filter),
-      include: { ...withBrandAndCategories, ...withActiveDiscount() },
+      include: { ...withBrandAndCategories, ...withFirstImageAsset, ...withActiveDiscount() },
       orderBy,
       take: filter.limit + 1,
       ...(filter.cursor ? { cursor: { id: filter.cursor }, skip: 1 } : {}),
@@ -329,7 +348,7 @@ export const productRepository = {
   async listTrending(): Promise<(ProductWithStock & ProductSalesStats)[]> {
     const rows = await prisma.product.findMany({
       where: { status: ProductStatus.APPROVED, deletedAt: null },
-      include: { ...withBrandAndCategories, ...withActiveDiscount() },
+      include: { ...withBrandAndCategories, ...withFirstImageAsset, ...withActiveDiscount() },
       orderBy: { reviewedAt: "desc" },
       take: TRENDING_LIMIT,
     });
@@ -341,7 +360,7 @@ export const productRepository = {
 
     const rows = await prisma.product.findMany({
       where: { id: { in: ids }, status: ProductStatus.APPROVED, deletedAt: null },
-      include: { ...withBrandAndCategories, ...withActiveDiscount() },
+      include: { ...withBrandAndCategories, ...withFirstImageAsset, ...withActiveDiscount() },
     });
     const withStats = await withSalesStats(withTotalStock(rows));
 
@@ -358,7 +377,7 @@ export const productRepository = {
         deletedAt: null,
         createdAt: { gte: new Date(Date.now() - NEW_ARRIVAL_WINDOW_MS) },
       },
-      include: { ...withBrandAndCategories, ...withActiveDiscount() },
+      include: { ...withBrandAndCategories, ...withFirstImageAsset, ...withActiveDiscount() },
       orderBy: { createdAt: "desc" },
       take: NEW_ARRIVALS_LIMIT,
     });
@@ -369,7 +388,7 @@ export const productRepository = {
     | (ProductWithStock & {
         brandId: string;
         sizes: ProductSizeRecord[];
-        images: { url: string }[];
+        images: (ProductFirstImageAsset & { url: string })[];
       })
     | null
   > {
@@ -380,7 +399,7 @@ export const productRepository = {
         categories: { select: { slug: true, name: true } },
         productType: { select: { slug: true, label: true } },
         sizes: { orderBy: { sortOrder: "asc" }, select: { id: true, label: true, stock: true } },
-        images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
+        ...withGalleryImageAssets,
         ...withActiveDiscount(),
       },
     });

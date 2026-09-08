@@ -9,6 +9,7 @@ export * from "./chat";
 export * from "./collection";
 export * from "./commission";
 export * from "./hero-slide";
+export * from "./image";
 export * from "./leaderboard";
 export * from "./notification";
 export * from "./order";
