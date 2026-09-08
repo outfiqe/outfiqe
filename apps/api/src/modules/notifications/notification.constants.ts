@@ -27,4 +27,5 @@ export const NOTIFICATION_GROUP_KEYS = {
   newFollower: (): string => "new-follower",
   newBrandFollower: (): string => "new-brand-follower",
   tagReviewQueue: (brandId: string): string => `tag-review-queue:${brandId}`,
+  tagReviewReminder: (brandId: string): string => `tag-review-reminder:${brandId}`,
 } as const;

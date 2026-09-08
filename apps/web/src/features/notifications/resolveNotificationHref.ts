@@ -64,6 +64,7 @@ export const resolveNotificationHref = (
         ? lookPermalinkPath(ownHandle, notification.entityId)
         : "/profile";
     case "PRODUCT_TAG_SUBMITTED":
+    case "PRODUCT_TAG_REVIEW_REMINDER":
       return null;
     default:
       return null;

@@ -42,6 +42,14 @@ import { platformMetricsService } from "#modules/platform-metrics/platform-metri
 import { SUPPORT_AUTO_CLOSE_JOB_INTERVAL_MS } from "#modules/support/support.constants.js";
 import { runSupportAutoCloseSweep } from "#modules/support/support.lifecycle.js";
 import {
+  TAG_REVIEW_REMINDER_INTERVAL_MS,
+  TAG_REVIEW_SLA_SWEEP_INTERVAL_MS,
+} from "#modules/tag-reviews/tagReview.constants.js";
+import {
+  runTagReviewReminderDigest,
+  runTagReviewSlaSweep,
+} from "#modules/tag-reviews/tagReview.jobs.js";
+import {
   AGGREGATION_INTERVAL_MS,
   SCORING_INTERVAL_MS,
 } from "#modules/trending/trending.constants.js";
@@ -158,6 +166,16 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "impersonation-session-reap",
     run: platformImpersonationService.reapExpiredSessions,
     intervalMs: IMPERSONATION_REAP_INTERVAL_MS,
+  },
+  {
+    name: "tag-review-sla-sweep",
+    run: runTagReviewSlaSweep,
+    intervalMs: TAG_REVIEW_SLA_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "tag-review-reminder-digest",
+    run: runTagReviewReminderDigest,
+    intervalMs: TAG_REVIEW_REMINDER_INTERVAL_MS,
   },
 ];
 

@@ -34,6 +34,36 @@ const requireTransition = (from: TagReviewStatus, to: TagReviewStatus): void => 
   }
 };
 
+type ApprovableTag = { id: string; lookId: string; creatorId: string; productId: string };
+
+export const applyTagApproval = async (
+  tag: ApprovableTag,
+  { source, reviewedById }: { source: TagApprovalSource; reviewedById: string | null },
+): Promise<void> => {
+  await tagReviewRepository.transitionTag(tag.id, {
+    reviewStatus: TagReviewStatus.APPROVED,
+    approvalSource: source,
+    reviewedById,
+    reviewedAt: new Date(),
+    rejectionReason: null,
+    rejectionNote: null,
+  });
+
+  await productService.recountWornBy(tag.productId);
+  await eventBus.publish(DomainEvents.PRODUCT_TAGGED, {
+    lookId: tag.lookId,
+    creatorId: tag.creatorId,
+    productId: tag.productId,
+  });
+  await eventBus.publish(DomainEvents.PRODUCT_TAG_APPROVED, {
+    tagId: tag.id,
+    lookId: tag.lookId,
+    creatorId: tag.creatorId,
+    productId: tag.productId,
+    auto: source !== TagApprovalSource.BRAND,
+  });
+};
+
 export const tagReviewService = {
   async listQueue(userId: string, query: ListTagReviewsQuery): Promise<TagReviewQueuePage> {
     const brandIds = await tagReviewRepository.listMemberBrandIds(userId);
@@ -44,32 +74,11 @@ export const tagReviewService = {
     const tag = await requireReviewableTag(userId, tagId);
     requireTransition(tag.reviewStatus, TagReviewStatus.APPROVED);
 
-    await tagReviewRepository.transitionTag(tagId, {
-      reviewStatus: TagReviewStatus.APPROVED,
-      approvalSource: TagApprovalSource.BRAND,
-      reviewedById: userId,
-      reviewedAt: new Date(),
-      rejectionReason: null,
-      rejectionNote: null,
-    });
-
     if (trustCreator) {
       await tagReviewRepository.trustCreator(tag.brandId, tag.creatorId, userId);
     }
 
-    await productService.recountWornBy(tag.productId);
-    await eventBus.publish(DomainEvents.PRODUCT_TAGGED, {
-      lookId: tag.lookId,
-      creatorId: tag.creatorId,
-      productId: tag.productId,
-    });
-    await eventBus.publish(DomainEvents.PRODUCT_TAG_APPROVED, {
-      tagId: tag.id,
-      lookId: tag.lookId,
-      creatorId: tag.creatorId,
-      productId: tag.productId,
-      auto: false,
-    });
+    await applyTagApproval(tag, { source: TagApprovalSource.BRAND, reviewedById: userId });
   },
 
   async rejectTag(userId: string, tagId: string, { reason, note }: RejectTagBody): Promise<void> {

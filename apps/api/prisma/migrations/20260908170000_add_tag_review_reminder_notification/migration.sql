@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "NotificationType" ADD VALUE 'PRODUCT_TAG_REVIEW_REMINDER';

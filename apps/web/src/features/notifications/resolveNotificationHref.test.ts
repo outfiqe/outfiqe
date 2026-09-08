@@ -91,6 +91,12 @@ describe("resolveNotificationHref", () => {
     expect(
       resolveNotificationHref(buildNotification({ type: "PRODUCT_TAG_SUBMITTED" }), OWN_HANDLE),
     ).toBeNull();
+    expect(
+      resolveNotificationHref(
+        buildNotification({ type: "PRODUCT_TAG_REVIEW_REMINDER" }),
+        OWN_HANDLE,
+      ),
+    ).toBeNull();
   });
 
   it("routes gamification types to their dashboard pages", () => {

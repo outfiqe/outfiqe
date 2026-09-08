@@ -24,6 +24,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   SUPPORT_TICKET_REPLY: "Replies on your support requests",
   SUPPORT_TICKET_RESOLVED: "Support requests resolved",
   PRODUCT_TAG_SUBMITTED: "Creator tags waiting for review",
+  PRODUCT_TAG_REVIEW_REMINDER: "Reminders about tags waiting for review",
   PRODUCT_TAG_APPROVED: "Your tags approved by brands",
   PRODUCT_TAG_REJECTED: "Your tags declined by brands",
   PRODUCT_TAG_REVOKED: "Your live tags removed by brands",

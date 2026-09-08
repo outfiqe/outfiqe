@@ -1640,6 +1640,7 @@ enum NotificationType {
   PRODUCT_TAG_APPROVED
   PRODUCT_TAG_REJECTED
   PRODUCT_TAG_REVOKED
+  PRODUCT_TAG_REVIEW_REMINDER
 }
 
 enum NotificationEntityType {

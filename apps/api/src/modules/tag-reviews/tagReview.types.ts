@@ -33,3 +33,15 @@ export type ReviewableTag = {
   brandId: string;
   reviewStatus: TagReviewStatus;
 };
+
+export type SlaEligibleTag = {
+  id: string;
+  lookId: string;
+  creatorId: string;
+  productId: string;
+};
+
+export type BrandReviewBacklog = {
+  brandId: string;
+  pendingCount: number;
+};

@@ -133,6 +133,15 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     title: "Tag waiting for review",
     body: (payload) => withOthers(payload, "tagged one of your products"),
   },
+  [NotificationType.PRODUCT_TAG_REVIEW_REMINDER]: {
+    title: "Tags waiting for review",
+    body: (payload) => {
+      const count = payload.metadata.pendingTagReviewCount;
+      return typeof count === "number"
+        ? `${count} creator tag${count === 1 ? "" : "s"} still need your review`
+        : "You have creator tags waiting for review";
+    },
+  },
   [NotificationType.PRODUCT_TAG_APPROVED]: {
     title: "Product tag approved",
     body: () => "A brand approved a product tag on your look",

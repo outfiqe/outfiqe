@@ -192,6 +192,55 @@ export const notificationRepository = {
     });
   },
 
+  async upsertSystemReminder(input: {
+    recipientId: string;
+    type: NotificationType;
+    entityType?: NotificationEntityType | null;
+    entityId?: string | null;
+    groupKey: string;
+    metadata: NotificationMetadata;
+  }): Promise<{ record: NotificationRecord; wasCreated: boolean } | null> {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const existing = await tx.notification.findFirst({
+          where: {
+            recipientId: input.recipientId,
+            groupKey: input.groupKey,
+            isRead: false,
+          },
+        });
+
+        if (existing) {
+          const merged = {
+            ...(existing.metadata as NotificationMetadata),
+            ...input.metadata,
+          };
+          const updated = await tx.notification.update({
+            where: { id: existing.id },
+            data: { metadata: merged as Prisma.InputJsonValue },
+          });
+          return { record: toNotificationRecord(updated), wasCreated: false };
+        }
+
+        const created = await tx.notification.create({
+          data: {
+            recipientId: input.recipientId,
+            type: input.type,
+            entityType: input.entityType ?? undefined,
+            entityId: input.entityId ?? undefined,
+            groupKey: input.groupKey,
+            metadata: input.metadata as Prisma.InputJsonValue,
+          },
+        });
+        return { record: toNotificationRecord(created), wasCreated: true };
+      });
+    } catch (error) {
+      if (!isForeignKeyConstraintError(error)) throw error;
+      logger.warn(`Skipped system reminder for a since-deleted recipient: ${input.recipientId}`);
+      return null;
+    }
+  },
+
   async findMutedRecipientIds(
     recipientIds: string[],
     type: NotificationType,

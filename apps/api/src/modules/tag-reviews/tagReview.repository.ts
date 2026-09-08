@@ -1,13 +1,15 @@
 import { prisma } from "#db/prisma.js";
-import type { Prisma } from "#generated/prisma/client.js";
-import type {
-  TagApprovalSource,
-  TagRejectionReason,
-  TagReviewStatus,
-} from "#generated/prisma/enums.js";
+import { Prisma } from "#generated/prisma/client.js";
+import type { TagApprovalSource, TagRejectionReason } from "#generated/prisma/enums.js";
+import { BrandTagReviewPolicy, TagReviewStatus } from "#generated/prisma/enums.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 
-import type { ReviewableTag, TagReviewQueuePage } from "./tagReview.types.js";
+import type {
+  BrandReviewBacklog,
+  ReviewableTag,
+  SlaEligibleTag,
+  TagReviewQueuePage,
+} from "./tagReview.types.js";
 
 type QueueCursor = { s: string; i: string };
 
@@ -125,5 +127,48 @@ export const tagReviewRepository = {
       select: { brandId: true },
     });
     return memberships.map((membership) => membership.brandId);
+  },
+
+  async listSlaEligibleTags(submittedBefore: Date): Promise<SlaEligibleTag[]> {
+    const rows = await prisma.creatorLookProduct.findMany({
+      where: {
+        reviewStatus: TagReviewStatus.PENDING,
+        submittedAt: { lt: submittedBefore },
+        creatorLook: { deletedAt: null },
+        product: {
+          brand: {
+            tagReviewPolicy: {
+              in: [BrandTagReviewPolicy.OPEN, BrandTagReviewPolicy.TRUSTED_ONLY],
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        productId: true,
+        creatorLookId: true,
+        creatorLook: { select: { creatorId: true } },
+      },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      lookId: row.creatorLookId,
+      creatorId: row.creatorLook.creatorId,
+      productId: row.productId,
+    }));
+  },
+
+  async listBrandBacklogs(submittedBefore: Date): Promise<BrandReviewBacklog[]> {
+    const rows = await prisma.$queryRaw<{ brand_id: string; pending_count: number }[]>(Prisma.sql`
+      SELECT p.brand_id, COUNT(*)::int AS pending_count
+      FROM creator_look_products clp
+      JOIN products p ON p.id = clp.product_id
+      JOIN creator_looks cl ON cl.id = clp.creator_look_id
+      WHERE clp.review_status = 'PENDING'
+        AND clp.submitted_at < ${submittedBefore}
+        AND cl.deleted_at IS NULL
+      GROUP BY p.brand_id
+    `);
+    return rows.map((row) => ({ brandId: row.brand_id, pendingCount: row.pending_count }));
   },
 };

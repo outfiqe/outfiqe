@@ -33,6 +33,7 @@ export const DomainEvents = {
   PRODUCT_TAG_APPROVED: "product.tag.approved",
   PRODUCT_TAG_REJECTED: "product.tag.rejected",
   PRODUCT_TAG_REVOKED: "product.tag.revoked",
+  TAG_REVIEW_REMINDER_DUE: "tag.review.reminder.due",
   SALE_GENERATED: "sale.generated",
   ACHIEVEMENT_UNLOCKED: "achievement.unlocked",
   LEVEL_UP: "user.leveled_up",

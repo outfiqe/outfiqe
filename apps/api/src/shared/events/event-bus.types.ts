@@ -118,6 +118,7 @@ export type DomainEventPayloads = {
     reason: TagRejectionReason;
     note: string | null;
   };
+  [DomainEvents.TAG_REVIEW_REMINDER_DUE]: { brandId: string; pendingCount: number };
   [DomainEvents.SALE_GENERATED]: {
     orderItemId: string;
     creatorId: string;

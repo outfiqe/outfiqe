@@ -24,7 +24,8 @@ export type NotificationType =
   | "PRODUCT_TAG_SUBMITTED"
   | "PRODUCT_TAG_APPROVED"
   | "PRODUCT_TAG_REJECTED"
-  | "PRODUCT_TAG_REVOKED";
+  | "PRODUCT_TAG_REVOKED"
+  | "PRODUCT_TAG_REVIEW_REMINDER";
 
 export type NotificationEntityType =
   | "LOOK"

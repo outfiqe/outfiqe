@@ -33,9 +33,14 @@ activity to an open bell/panel live.
   `findOrderNotificationContext`, `findProductReviewSnapshot`, `findDeliveredOrderProducts`) —
   kept here rather than added to each producing module's own repository, since "who should this
   notification go to and what should it show" is this module's concern, not theirs.
+  `upsertSystemReminder` is the actor-less counterpart of `upsertGroup` — a recipient-keyed
+  grouped row (find-unread-by-`groupKey` then update-or-create in one transaction) for
+  system-generated digests that have no acting user, with `metadata` merged so a repeated sweep
+  refreshes a count in place.
 - `notification.service.ts` — `notifyIndividual`/`notifyManyIndividual`/`notifyGroup`/
-  `retractGroupActor`: the mute-check + write + realtime-handoff orchestration every event handler
-  calls into. Never called directly by another module — only by `notification.events.ts`.
+  `retractGroupActor`/`notifySystemReminder`: the mute-check + write + realtime-handoff
+  orchestration every event handler calls into. Never called directly by another module — only by
+  `notification.events.ts`. `notifySystemReminder` is the digest path (see `PRODUCT_TAG_REVIEW_REMINDER`).
 - `notification.events.ts` — `registerNotificationEventConsumers()`: one domain-event handler per
   row in plan §5's event catalog, each resolving the right recipient(s), building the denormalized
   `metadata` snapshot, and calling into `notification.service.ts`. A second, independent consumer
@@ -131,8 +136,12 @@ waiting" row with an avatar-stack, not one row per pending tag. The creator is t
 individual notifications; reject/revoke carry the brand's `reason` + `note` in `metadata`
 (`tagRejectionReason`/`tagRejectionNote`) so the bell text shows the brand's own words. Approve
 carries `tagAutoApproved` so the copy can say "auto-approved" for an SLA/policy approval vs "a
-brand approved" for a manual one. `PRODUCT_TAG_REVIEW_REMINDER` (the digest) is not an event —
-`../tag-reviews`' scheduled job writes it directly.
+brand approved" for a manual one. `PRODUCT_TAG_REVIEW_REMINDER` is the digest row: `../tag-reviews`'
+scheduled job publishes `TAG_REVIEW_REMINDER_DUE` per brand with a standing backlog, and this
+consumer fans it out to brand members via `notifySystemReminder` — an actor-less grouped upsert
+(`upsertSystemReminder`) keyed on `NOTIFICATION_GROUP_KEYS.tagReviewReminder(brandId)`, so a brand
+carries one "N tags still waiting for your review" row whose `pendingTagReviewCount` is refreshed
+in place on each sweep rather than stacking a new row per run.
 
 **Self-actions never notify.** Every handler that has both an actor and a recipient skips the
 write when they're the same user (liking/commenting/following your own content, or — impossible

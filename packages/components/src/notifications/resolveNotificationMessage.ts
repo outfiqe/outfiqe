@@ -60,6 +60,12 @@ export const resolveNotificationMessage = (notification: Notification): string =
       return `Your support request was resolved${metadata.supportSubject ? `: ${metadata.supportSubject}` : ""}`;
     case "PRODUCT_TAG_SUBMITTED":
       return `${actorList(notification)} tagged one of your products — review it in your queue`;
+    case "PRODUCT_TAG_REVIEW_REMINDER": {
+      const count = metadata.pendingTagReviewCount ?? 0;
+      return count === 1
+        ? "1 creator tag is still waiting for your review"
+        : `${count} creator tags are still waiting for your review`;
+    }
     case "PRODUCT_TAG_APPROVED":
       return metadata.tagAutoApproved
         ? "A product tag on your look was auto-approved"

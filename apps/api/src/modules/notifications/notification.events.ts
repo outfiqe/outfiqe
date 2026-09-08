@@ -586,4 +586,22 @@ export const registerNotificationEventConsumers = (): void => {
     DomainEvents.PRODUCT_TAG_REVOKED,
     NotificationType.PRODUCT_TAG_REVOKED,
   );
+
+  subscribeToDomainEvent({
+    event: DomainEvents.TAG_REVIEW_REMINDER_DUE,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ brandId, pendingCount }): Promise<void> => {
+      const memberIds = await notificationRepository.findBrandMemberIds(brandId);
+
+      for (const recipientId of memberIds) {
+        await notificationService.notifySystemReminder({
+          recipientId,
+          type: NotificationType.PRODUCT_TAG_REVIEW_REMINDER,
+          entityId: brandId,
+          groupKey: NOTIFICATION_GROUP_KEYS.tagReviewReminder(brandId),
+          metadata: { pendingTagReviewCount: pendingCount },
+        });
+      }
+    },
+  });
 };
