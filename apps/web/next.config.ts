@@ -73,6 +73,9 @@ const nextConfig: NextConfig = {
       dynamic: CLIENT_ROUTER_DYNAMIC_STALE_SECONDS,
       static: CLIENT_ROUTER_STATIC_STALE_SECONDS,
     },
+    sri: {
+      algorithm: "sha256",
+    },
   },
 
   images: {

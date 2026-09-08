@@ -8,6 +8,8 @@ import { OrdersListBody } from "@/features/orders";
 
 export const metadata: Metadata = { title: "Your orders" };
 
+export const dynamic = "force-dynamic";
+
 const OrdersPage = () => {
   return (
     <div className="pb-20 lg:pb-0">

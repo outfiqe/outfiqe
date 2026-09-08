@@ -4,6 +4,46 @@ import { NextResponse } from "next/server";
 import { getPublicApiOrigin } from "@/shared/lib/apiOrigin";
 import { buildContentSecurityPolicy } from "@/shared/lib/contentSecurityPolicy";
 
+const DYNAMIC_POLICY_PATH_PREFIXES = [
+  "/shop",
+  "/product",
+  "/creator",
+  "/brand",
+  "/profile",
+  "/messages",
+  "/settings",
+  "/overview",
+  "/badges",
+  "/challenges",
+  "/earnings",
+  "/progress",
+  "/wallet",
+  "/withdraw",
+  "/products",
+  "/manage-orders",
+  "/orders",
+  "/dashboard",
+  "/login",
+  "/register",
+  "/reset-password",
+  "/forgot-password",
+  "/verify-email",
+  "/auth",
+  "/checkout",
+  "/apply",
+  "/payments",
+  "/support",
+  "/share",
+  "/r",
+  "/internal",
+];
+
+const needsDynamicPolicy = (pathname: string): boolean =>
+  pathname === "/" ||
+  DYNAMIC_POLICY_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+
 export const proxy = (request: NextRequest) => {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDev = process.env.NODE_ENV === "development";
@@ -14,6 +54,7 @@ export const proxy = (request: NextRequest) => {
     isDev,
     isProduction,
     apiOrigin,
+    renderMode: needsDynamicPolicy(request.nextUrl.pathname) ? "dynamic" : "static",
   });
 
   const requestHeaders = new Headers(request.headers);

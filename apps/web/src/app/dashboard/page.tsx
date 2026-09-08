@@ -6,6 +6,8 @@ import { noIndexMetadata } from "@/shared/seo";
 
 export const metadata: Metadata = noIndexMetadata("Dashboard");
 
+export const dynamic = "force-dynamic";
+
 const DashboardComingSoonPage = () => {
   return (
     <div>

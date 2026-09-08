@@ -8,6 +8,8 @@ import { CheckoutBody } from "@/features/checkout";
 
 export const metadata: Metadata = { title: "Checkout" };
 
+export const dynamic = "force-dynamic";
+
 const CheckoutPage = () => {
   return (
     <div className="pb-20 lg:pb-0">
