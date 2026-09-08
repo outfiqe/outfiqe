@@ -1,7 +1,8 @@
 import { LRUCache } from "lru-cache";
 
+import { env } from "#config/env.config.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
-import { FollowTargetType } from "#generated/prisma/enums.js";
+import { FollowTargetType, TagReviewStatus } from "#generated/prisma/enums.js";
 import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
 import { extractHashtags } from "#lib/hashtags.utils.js";
 import { truncateToHour } from "#lib/trend-scoring.utils.js";
@@ -9,8 +10,10 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
 import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
+import { orderRepository } from "#modules/orders/order.repository.js";
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
+import type { ProductRecord } from "#modules/products/product.types.js";
 import { cacheService } from "#redis/cache.service.js";
 import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
 import { describeError } from "#redis/redis.utils.js";
@@ -30,6 +33,7 @@ import type {
   SearchCreatorLooksQuery,
   TagClickBody,
 } from "./creatorLook.schemas.js";
+import { resolveTagReviewStatus } from "./creatorLook.tagReview.js";
 import type {
   CommentPage,
   CommentReplyPage,
@@ -41,6 +45,7 @@ import type {
   LookSearchPage,
   PostSuggestion,
   PostTrendingEntry,
+  ResolvedTagReview,
   TagScoreBreakdown,
   TrendingTag,
 } from "./creatorLook.types.js";
@@ -93,7 +98,9 @@ const requireTopLevelComment = async (
   return comment;
 };
 
-const requireApprovedProducts = async (productIds: string[]): Promise<void> => {
+const requireApprovedProducts = async (
+  productIds: string[],
+): Promise<Map<string, ProductRecord>> => {
   const products = await productRepository.findApprovedByIds(productIds);
   if (products.length !== productIds.length) {
     throw new AppError(
@@ -102,6 +109,53 @@ const requireApprovedProducts = async (productIds: string[]): Promise<void> => {
       NOT_FOUND_STATUS,
     );
   }
+  return new Map(products.map((product) => [product.id, product]));
+};
+
+type ResolvedTag = ResolvedTagReview & { productId: string; brandId: string };
+
+const resolveTagReviewForProducts = async (
+  creatorId: string,
+  productIds: string[],
+  productsById: Map<string, ProductRecord>,
+): Promise<Map<string, ResolvedTag>> => {
+  const resolved = new Map<string, ResolvedTag>();
+  if (productIds.length === 0) return resolved;
+
+  const brandIds: string[] = [];
+  for (const productId of productIds) {
+    const brandId = productsById.get(productId)?.brandId;
+    if (brandId && !brandIds.includes(brandId)) brandIds.push(brandId);
+  }
+
+  const [policies, settledPurchasedProductIds, trustedBrandIds] = await Promise.all([
+    creatorLookRepository.listBrandTagPolicies(brandIds),
+    orderRepository.listSettledPurchasedProductIds(creatorId, productIds),
+    creatorLookRepository.listTrustedBrandIds(creatorId, brandIds),
+  ]);
+  const policyByBrandId = new Map(policies.map((policy) => [policy.id, policy]));
+  const verifiedBuyerProductIds = new Set(settledPurchasedProductIds);
+
+  for (const productId of productIds) {
+    const brandId = productsById.get(productId)?.brandId;
+    if (!brandId) continue;
+    const policy = policyByBrandId.get(brandId);
+    if (!policy) continue;
+
+    resolved.set(productId, {
+      productId,
+      brandId,
+      ...resolveTagReviewStatus({
+        featureEnabled: env.TAG_REVIEW_ENABLED,
+        brandPolicy: policy.tagReviewPolicy,
+        autoApproveVerifiedBuyers: policy.autoApproveVerifiedBuyers,
+        isVerifiedBuyer: verifiedBuyerProductIds.has(productId),
+        isTrustedCreator: trustedBrandIds.has(brandId),
+      }),
+    });
+  }
+
+  return resolved;
 };
 
 export const creatorLookService = {
@@ -111,7 +165,7 @@ export const creatorLookService = {
   ): Promise<CreatorLookSummary> {
     await requireApprovedCreator(userId, "Only approved creators can post looks.");
     const productIds = taggedProducts.map((tag) => tag.productId);
-    await requireApprovedProducts(productIds);
+    const productsById = await requireApprovedProducts(productIds);
     if (imageAssetIds?.length) {
       await imageProcessingService.assertAssetsOwnedBy(imageAssetIds, userId);
     }
@@ -121,27 +175,55 @@ export const creatorLookService = {
       throw new AppError("VALIDATION_ERROR", "At least one image is required.", VALIDATION_STATUS);
     }
 
+    const resolvedTags = await resolveTagReviewForProducts(userId, productIds, productsById);
+
     const look = await creatorLookRepository.create({
       creatorId: userId,
       imageUrls: [coverImageUrl, ...restImageUrls],
       imageAssetIds,
       caption,
-      taggedProducts,
+      taggedProducts: taggedProducts.map((tag) => {
+        const resolved = resolvedTags.get(tag.productId);
+        return {
+          ...tag,
+          reviewStatus: resolved?.reviewStatus ?? TagReviewStatus.PENDING,
+          approvalSource: resolved?.approvalSource ?? null,
+        };
+      }),
       hashtags: extractHashtags(caption ?? ""),
     });
 
-    await Promise.all(productIds.map((productId) => productService.recountWornBy(productId)));
+    const approvedProductIds = productIds.filter(
+      (productId) => resolvedTags.get(productId)?.reviewStatus === TagReviewStatus.APPROVED,
+    );
+    const pendingProductIds = productIds.filter(
+      (productId) => !approvedProductIds.includes(productId),
+    );
+
+    await Promise.all(
+      approvedProductIds.map((productId) => productService.recountWornBy(productId)),
+    );
 
     await eventBus.publish(DomainEvents.LOOK_CREATED, {
       lookId: look.id,
       creatorId: userId,
       createdAt: look.createdAt.toISOString(),
     });
-    for (const productId of productIds) {
+    for (const productId of approvedProductIds) {
       await eventBus.publish(DomainEvents.PRODUCT_TAGGED, {
         lookId: look.id,
         creatorId: userId,
         productId,
+      });
+    }
+    for (const productId of pendingProductIds) {
+      const brandId = resolvedTags.get(productId)?.brandId;
+      if (!brandId) continue;
+      await eventBus.publish(DomainEvents.PRODUCT_TAG_SUBMITTED, {
+        lookId: look.id,
+        creatorId: userId,
+        productId,
+        brandId,
       });
     }
 
@@ -158,8 +240,8 @@ export const creatorLookService = {
     body: CreateCreatorLookBody,
   ): Promise<CreatorLookSummary> {
     const existing = await requireOwnedLook(lookId, userId);
-    const newProductIds = body.taggedProducts.map((tag) => tag.productId);
-    await requireApprovedProducts(newProductIds);
+    const incomingProductIds = body.taggedProducts.map((tag) => tag.productId);
+    const productsById = await requireApprovedProducts(incomingProductIds);
     if (body.imageAssetIds?.length) {
       await imageProcessingService.assertAssetsOwnedBy(body.imageAssetIds, userId);
     }
@@ -169,26 +251,58 @@ export const creatorLookService = {
       throw new AppError("VALIDATION_ERROR", "At least one image is required.", VALIDATION_STATUS);
     }
 
-    const updated = await creatorLookRepository.update(lookId, {
-      imageUrls: [coverImageUrl, ...restImageUrls],
-      imageAssetIds: body.imageAssetIds,
-      caption: body.caption,
-      taggedProducts: body.taggedProducts,
-      hashtags: extractHashtags(body.caption ?? ""),
-    });
-
-    const oldProductIds = existing.taggedProducts.map((tag) => tag.productId);
-    const affectedProductIds = [...new Set([...oldProductIds, ...newProductIds])];
-    await Promise.all(
-      affectedProductIds.map((productId) => productService.recountWornBy(productId)),
+    const previousProductIds = new Set(existing.taggedProducts.map((tag) => tag.productId));
+    const addedProductIds = incomingProductIds.filter(
+      (productId) => !previousProductIds.has(productId),
+    );
+    const resolvedAddedTags = await resolveTagReviewForProducts(
+      userId,
+      addedProductIds,
+      productsById,
+    );
+    const newTagStatuses = new Map<string, ResolvedTagReview>(
+      addedProductIds.map((productId) => {
+        const resolved = resolvedAddedTags.get(productId);
+        return [
+          productId,
+          {
+            reviewStatus: resolved?.reviewStatus ?? TagReviewStatus.PENDING,
+            approvalSource: resolved?.approvalSource ?? null,
+          },
+        ];
+      }),
     );
 
-    const addedProductIds = newProductIds.filter((productId) => !oldProductIds.includes(productId));
-    for (const productId of addedProductIds) {
+    const { summary, newlyApprovedProductIds, submittedProductIds, removedProductIds } =
+      await creatorLookRepository.update(lookId, {
+        imageUrls: [coverImageUrl, ...restImageUrls],
+        imageAssetIds: body.imageAssetIds,
+        caption: body.caption,
+        taggedProducts: body.taggedProducts,
+        newTagStatuses,
+        hashtags: extractHashtags(body.caption ?? ""),
+      });
+
+    const recountProductIds = [...new Set([...removedProductIds, ...newlyApprovedProductIds])];
+    await Promise.all(
+      recountProductIds.map((productId) => productService.recountWornBy(productId)),
+    );
+
+    for (const productId of newlyApprovedProductIds) {
       await eventBus.publish(DomainEvents.PRODUCT_TAGGED, { lookId, creatorId: userId, productId });
     }
+    for (const productId of submittedProductIds) {
+      const brandId = productsById.get(productId)?.brandId;
+      if (!brandId) continue;
+      await eventBus.publish(DomainEvents.PRODUCT_TAG_SUBMITTED, {
+        lookId,
+        creatorId: userId,
+        productId,
+        brandId,
+      });
+    }
 
-    return updated;
+    return summary;
   },
 
   async remove(lookId: string, userId: string): Promise<void> {

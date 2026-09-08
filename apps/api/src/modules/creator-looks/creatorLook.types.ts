@@ -1,5 +1,11 @@
 import type { ResponsiveImage } from "@outfiqe/types";
 
+import type {
+  BrandTagReviewPolicy,
+  TagApprovalSource,
+  TagReviewStatus,
+} from "#generated/prisma/enums.js";
+
 export type TaggedProduct = {
   id: string;
   name: string;
@@ -23,12 +29,19 @@ export type TaggedProductInput = {
   sizeWorn: string;
 };
 
+export type ResolvedTagReview = {
+  reviewStatus: TagReviewStatus;
+  approvalSource: TagApprovalSource | null;
+};
+
+export type TaggedProductCreateInput = TaggedProductInput & ResolvedTagReview;
+
 export type CreateCreatorLookInput = {
   creatorId: string;
   imageUrls: [string, ...string[]];
   imageAssetIds?: (string | null)[];
   caption?: string;
-  taggedProducts: TaggedProductInput[];
+  taggedProducts: TaggedProductCreateInput[];
   hashtags: string[];
 };
 
@@ -37,7 +50,21 @@ export type UpdateCreatorLookInput = {
   imageAssetIds?: (string | null)[];
   caption?: string;
   taggedProducts: TaggedProductInput[];
+  newTagStatuses: Map<string, ResolvedTagReview>;
   hashtags: string[];
+};
+
+export type CreatorLookUpdateOutcome = {
+  summary: CreatorLookSummary;
+  newlyApprovedProductIds: string[];
+  submittedProductIds: string[];
+  removedProductIds: string[];
+};
+
+export type BrandTagPolicy = {
+  id: string;
+  tagReviewPolicy: BrandTagReviewPolicy;
+  autoApproveVerifiedBuyers: boolean;
 };
 
 export type CreatorLookEditTaggedProduct = TaggedProductInput & {
