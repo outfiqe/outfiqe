@@ -79,6 +79,8 @@ const baseBrand: BrandRecord = {
   applicationId: null,
   followerCount: 40,
   rating: 4.5,
+  tagReviewPolicy: "TRUSTED_ONLY",
+  autoApproveVerifiedBuyers: true,
   createdAt: NOW,
   updatedAt: NOW,
 };

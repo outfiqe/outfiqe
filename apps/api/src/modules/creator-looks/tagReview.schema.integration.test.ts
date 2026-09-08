@@ -103,9 +103,15 @@ describe("brand tag-review schema", () => {
 
   it("grandfathers pre-existing tags to APPROVED without touching submitted_at ordering", async () => {
     const { tag } = await createTaggedLook();
+    const wrongSubmittedAt = new Date("2000-01-01T00:00:00.000Z");
     await prisma.creatorLookProduct.update({
       where: { id: tag.id },
-      data: { reviewStatus: "PENDING", approvalSource: null, reviewedAt: null },
+      data: {
+        reviewStatus: "PENDING",
+        approvalSource: null,
+        reviewedAt: null,
+        submittedAt: wrongSubmittedAt,
+      },
     });
 
     await prisma.$executeRaw`
@@ -121,6 +127,7 @@ describe("brand tag-review schema", () => {
     expect(after.reviewStatus).toBe("APPROVED");
     expect(after.approvalSource).toBe("GRANDFATHERED");
     expect(after.reviewedAt).toBeInstanceOf(Date);
+    expect(after.submittedAt.getTime()).not.toBe(wrongSubmittedAt.getTime());
     expect(after.submittedAt.getTime()).toBe(after.createdAt.getTime());
   });
 

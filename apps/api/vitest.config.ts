@@ -68,6 +68,8 @@ export default defineConfig({
         "src/modules/creator-competitions/creatorCompetition.utils.ts",
         "src/modules/creators/**/*.ts",
         "src/modules/creator-looks/**/*.ts",
+        "src/modules/tag-reviews/**/*.ts",
+        "src/shared/utils/tag-review.utils.ts",
         "src/modules/product-reviews/**/*.ts",
         "src/modules/brands/**/*.ts",
         "src/modules/categories/**/*.ts",

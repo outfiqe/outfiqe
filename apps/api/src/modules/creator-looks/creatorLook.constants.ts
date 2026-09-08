@@ -1,5 +1,3 @@
-import type { TagReviewStatus } from "#generated/prisma/enums.js";
-
 export const TRENDING_AGGREGATION_INTERVAL_MS = 15 * 60 * 1000;
 export const TRENDING_SCORING_INTERVAL_MS = 30 * 60 * 1000;
 
@@ -90,9 +88,3 @@ export const COMMENT_RATE_LIMIT_MAX_REQUESTS = 20;
 export const COMMENT_REPLY_PREVIEW_COUNT = 2;
 
 export const MAX_TAG_RE_REQUESTS = 3;
-
-export const TAG_REVIEW_TRANSITIONS: Record<TagReviewStatus, readonly TagReviewStatus[]> = {
-  PENDING: ["APPROVED", "REJECTED"],
-  APPROVED: ["REJECTED"],
-  REJECTED: ["PENDING"],
-};

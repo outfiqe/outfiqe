@@ -4,8 +4,6 @@ import {
   TagReviewStatus,
 } from "#generated/prisma/enums.js";
 
-import { TAG_REVIEW_TRANSITIONS } from "./creatorLook.constants.js";
-
 export type ResolvedTagReviewStatus = {
   reviewStatus: TagReviewStatus;
   approvalSource: TagApprovalSource | null;
@@ -45,6 +43,3 @@ export const resolveTagReviewStatus = ({
 
   return { reviewStatus: TagReviewStatus.PENDING, approvalSource: null };
 };
-
-export const canTransitionTagReview = (from: TagReviewStatus, to: TagReviewStatus): boolean =>
-  TAG_REVIEW_TRANSITIONS[from].includes(to);
