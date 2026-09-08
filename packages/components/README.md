@@ -105,7 +105,12 @@ link.** The default `<a onClick={navigate}>` path derives the active highlight p
 `pathname`, so the highlight only moves once the router commits the new route — on Next's App
 Router that waits for a server round-trip and feels laggy. When an adapter supplies `LinkComponent`,
 `SidebarNavItemView` renders it instead (no `preventDefault`/`navigate`), passing the committed
-active flags plus the resolved class tokens; the app-side component then owns prefetch and an
-optimistic pending highlight. `apps/web`'s `DashboardSidebarLink` does exactly this with a
-`next/link` wrapper plus `useLinkStatus`. `apps/admin` passes no `LinkComponent` and keeps the
-plain-anchor path.
+active flags plus the resolved class tokens; the app-side component then owns an optimistic pending
+highlight. `apps/web`'s `DashboardSidebarLink` does exactly this with a `next/link` wrapper plus
+`useLinkStatus`. `apps/admin` passes no `LinkComponent` and keeps the plain-anchor path.
+
+`SidebarNavItemView` passes `prefetch={false}` to `LinkComponent`. A dashboard sidebar holds every
+tab of a section at once and each tab is a dynamic, auth-gated route, so the default viewport
+prefetch fires a full server render for every tab the moment the shell mounts. `prefetch={false}`
+drops that on-mount stampede while `next/link` still warms a route on hover/touch, so an intended
+tab switch stays instant.
