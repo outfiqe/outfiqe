@@ -1,4 +1,10 @@
 export type { CreatorProfile, UpdateCreatorProfileInput } from "./api/creatorDashboardSchemas";
+export {
+  getBadgeCollectionServer,
+  getChallengesServer,
+  getEarningsSummaryServer,
+  getXpProgressServer,
+} from "./api/dashboardServer";
 export { getCreatorOverviewServer } from "./api/getCreatorOverviewServer";
 export { getCreatorProfileServer } from "./api/getCreatorProfileServer";
 export { ApplyAsCreatorButton } from "./components/ApplyAsCreatorButton";
