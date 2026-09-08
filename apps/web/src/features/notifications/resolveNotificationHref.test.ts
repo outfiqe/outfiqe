@@ -91,15 +91,9 @@ describe("resolveNotificationHref", () => {
         `/creator/${OWN_HANDLE}?edit=look-9`,
       );
     }
-    expect(
-      resolveNotificationHref(buildNotification({ type: "PRODUCT_TAG_SUBMITTED" }), OWN_HANDLE),
-    ).toBeNull();
-    expect(
-      resolveNotificationHref(
-        buildNotification({ type: "PRODUCT_TAG_REVIEW_REMINDER" }),
-        OWN_HANDLE,
-      ),
-    ).toBeNull();
+    for (const type of ["PRODUCT_TAG_SUBMITTED", "PRODUCT_TAG_REVIEW_REMINDER"] as const) {
+      expect(resolveNotificationHref(buildNotification({ type }), OWN_HANDLE)).toBe("/tag-reviews");
+    }
   });
 
   it("routes gamification types to their dashboard pages", () => {

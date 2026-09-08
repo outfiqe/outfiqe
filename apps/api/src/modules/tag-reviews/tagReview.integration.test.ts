@@ -5,7 +5,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
-import { BrandRole, CreatorStatus, ProductStatus, UserRole } from "#generated/prisma/enums.js";
+import {
+  BrandRole,
+  CreatorStatus,
+  FulfilmentStatus,
+  PaymentMethod,
+  PaymentStatus,
+  ProductStatus,
+  UserRole,
+} from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
@@ -102,6 +110,30 @@ const seedPendingTag = async () => {
   return { brand, owner, creator, product, look, tag };
 };
 
+const recordSettledPurchase = async (buyerId: string, productId: string) => {
+  const size = await prisma.productSize.create({
+    data: { productId, label: "M", stock: 5 },
+  });
+  await prisma.order.create({
+    data: {
+      userId: buyerId,
+      fullName: "Buyer",
+      phone: uniquePhone(),
+      address: "1 Test Rd",
+      city: "Kathmandu",
+      paymentMethod: PaymentMethod.COD,
+      paymentStatus: PaymentStatus.PAID,
+      fulfilmentStatus: FulfilmentStatus.DELIVERED,
+      subtotal: 1200,
+      deliveryFee: 0,
+      total: 1200,
+      items: {
+        create: { productId, sizeId: size.id, qty: 1, unitPrice: 1200, listUnitPrice: 1200 },
+      },
+    },
+  });
+};
+
 describe("GET /api/tag-reviews", () => {
   it("lists the brand's pending tags and hides other brands'", async () => {
     const mine = await seedPendingTag();
@@ -123,6 +155,47 @@ describe("GET /api/tag-reviews", () => {
       .get("/api/tag-reviews")
       .set("Authorization", `Bearer ${accessToken}`);
     expect(response.status).toBe(403);
+  });
+
+  it("flags a queue item when the creator bought the product or the brand trusts them", async () => {
+    const { brand, owner, creator, product, tag } = await seedPendingTag();
+    await recordSettledPurchase(creator.id, product.id);
+    await prisma.brandTrustedCreator.create({
+      data: { brandId: brand.id, creatorId: creator.id, grantedById: owner.id },
+    });
+
+    const response = await request(testApp)
+      .get("/api/tag-reviews")
+      .set("Authorization", brandOwnerHeader(owner.id));
+
+    const item = response.body.data.items.find((row: { id: string }) => row.id === tag.id);
+    expect(item).toMatchObject({ isVerifiedBuyer: true, isTrustedCreator: true });
+  });
+
+  it("leaves the signals false for an ordinary pending tag", async () => {
+    const { owner, tag } = await seedPendingTag();
+
+    const response = await request(testApp)
+      .get("/api/tag-reviews")
+      .set("Authorization", brandOwnerHeader(owner.id));
+
+    const item = response.body.data.items.find((row: { id: string }) => row.id === tag.id);
+    expect(item).toMatchObject({ isVerifiedBuyer: false, isTrustedCreator: false });
+  });
+});
+
+describe("GET /api/tag-reviews/pending-count", () => {
+  it("counts only this brand's pending tags", async () => {
+    const mine = await seedPendingTag();
+    await createTag(mine.creator.id, (await createProduct(mine.brand.id)).id);
+    await seedPendingTag();
+
+    const response = await request(testApp)
+      .get("/api/tag-reviews/pending-count")
+      .set("Authorization", brandOwnerHeader(mine.owner.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.pendingCount).toBe(2);
   });
 });
 

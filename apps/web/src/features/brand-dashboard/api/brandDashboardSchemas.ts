@@ -1,4 +1,13 @@
+import type { BrandTagReviewPolicy as BrandTagReviewPolicyType } from "@outfiqe/types";
 import { z } from "zod";
+
+export const BrandTagReviewPolicy = {
+  OPEN: "OPEN",
+  TRUSTED_ONLY: "TRUSTED_ONLY",
+  APPROVAL_REQUIRED: "APPROVAL_REQUIRED",
+} as const satisfies Record<string, BrandTagReviewPolicyType>;
+export type BrandTagReviewPolicyValue =
+  (typeof BrandTagReviewPolicy)[keyof typeof BrandTagReviewPolicy];
 
 export const brandProfileSchema = z.object({
   brand: z.object({
@@ -11,6 +20,8 @@ export const brandProfileSchema = z.object({
     avatarUrl: z.url().nullable(),
     bannerUrl: z.url().nullable(),
     madeInNepal: z.boolean(),
+    tagReviewPolicy: z.enum(BrandTagReviewPolicy),
+    autoApproveVerifiedBuyers: z.boolean(),
     createdAt: z.string(),
   }),
   membershipRole: z.enum(["OWNER", "STAFF"]),
@@ -27,6 +38,8 @@ export const updateBrandProfileInputSchema = z
     avatarImageAssetId: z.uuid().nullable(),
     bannerUrl: z.url().nullable(),
     bannerImageAssetId: z.uuid().nullable(),
+    tagReviewPolicy: z.enum(BrandTagReviewPolicy),
+    autoApproveVerifiedBuyers: z.boolean(),
   })
   .partial();
 

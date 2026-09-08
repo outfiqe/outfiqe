@@ -68,7 +68,7 @@ export const resolveNotificationHref = (
         : "/profile";
     case "PRODUCT_TAG_SUBMITTED":
     case "PRODUCT_TAG_REVIEW_REMINDER":
-      return null;
+      return "/tag-reviews";
     default:
       return null;
   }

@@ -70,6 +70,11 @@ export const tagReviewService = {
     return tagReviewRepository.listQueue(brandIds, query);
   },
 
+  async countPending(userId: string): Promise<{ pendingCount: number }> {
+    const brandIds = await tagReviewRepository.listMemberBrandIds(userId);
+    return { pendingCount: await tagReviewRepository.countPending(brandIds) };
+  },
+
   async approveTag(userId: string, tagId: string, { trustCreator }: ApproveTagBody): Promise<void> {
     const tag = await requireReviewableTag(userId, tagId);
     requireTransition(tag.reviewStatus, TagReviewStatus.APPROVED);

@@ -16,6 +16,8 @@ export type TagReviewQueueItem = {
   rejectionNote: string | null;
   reRequestCount: number;
   sizeWorn: string | null;
+  isVerifiedBuyer: boolean;
+  isTrustedCreator: boolean;
   creator: { id: string; name: string; handle: string };
   product: { id: string; name: string; imageUrl: string | null; brandId: string };
 };

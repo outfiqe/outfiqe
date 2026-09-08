@@ -20,6 +20,12 @@ export const tagReviewController = {
     sendSuccess(res, page, "Tag review queue.");
   },
 
+  async pendingCount(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const count = await tagReviewService.countPending(userId);
+    sendSuccess(res, count, "Pending tag review count.");
+  },
+
   async approve(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const { id } = validated.params<TagReviewIdParam>(res);

@@ -29,6 +29,8 @@ const requireBrandOwner = [requireAuth, requireRole(UserRole.BRAND_OWNER)];
 
 export const tagReviewRoutes = Router();
 
+tagReviewRoutes.get("/pending-count", ...requireBrandOwner, tagReviewController.pendingCount);
+
 tagReviewRoutes.get(
   "/",
   ...requireBrandOwner,
