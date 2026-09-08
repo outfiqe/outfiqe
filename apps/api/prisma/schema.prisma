@@ -110,7 +110,9 @@ model User {
   revokedBrandCommissionExemptions         BrandCommissionExemption[]  @relation("BrandCommissionExemptionRevokedBy")
   crmMemberships                           Membership[]
   sentOrganizationInvites                  OrganizationInvite[]        @relation("OrganizationInviteSender")
-  imageProcessingAssets                    ImageProcessingAsset[]
+  imageProcessingAssets                    ImageProcessingAsset[]      @relation("ImageProcessingAssetOwner")
+  avatarImageAssetId                       String?                     @map("avatar_image_asset_id") @db.Uuid
+  avatarImageAsset                         ImageProcessingAsset?       @relation("UserAvatarImage", fields: [avatarImageAssetId], references: [id], onDelete: SetNull)
   crmLinkedContacts                        Contact[]                   @relation("ContactLinkedUser")
   supportTicketsRequested                  SupportTicket[]             @relation("SupportTicketRequester")
   supportTicketsAssigned                   SupportTicket[]             @relation("SupportTicketAssignee")
@@ -231,21 +233,25 @@ enum MakesOwnPieces {
 }
 
 model Brand {
-  id            String            @id @default(uuid()) @db.Uuid
-  name          String
-  contactName   String            @map("contact_name")
-  email         String
-  phone         String
-  instagram     String
-  avatarUrl     String?           @map("avatar_url")
-  bannerUrl     String?           @map("banner_url")
-  madeInNepal   Boolean           @default(true) @map("made_in_nepal")
-  applicationId String?           @unique @map("application_id") @db.Uuid
-  application   BrandApplication? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
-  followerCount Int               @default(0) @map("follower_count")
-  rating        Float?
-  createdAt     DateTime          @default(now()) @map("created_at")
-  updatedAt     DateTime          @updatedAt @map("updated_at")
+  id                 String                @id @default(uuid()) @db.Uuid
+  name               String
+  contactName        String                @map("contact_name")
+  email              String
+  phone              String
+  instagram          String
+  avatarUrl          String?               @map("avatar_url")
+  bannerUrl          String?               @map("banner_url")
+  bannerImageAssetId String?               @map("banner_image_asset_id") @db.Uuid
+  bannerImageAsset   ImageProcessingAsset? @relation("BrandBannerImage", fields: [bannerImageAssetId], references: [id], onDelete: SetNull)
+  avatarImageAssetId String?               @map("avatar_image_asset_id") @db.Uuid
+  avatarImageAsset   ImageProcessingAsset? @relation("BrandAvatarImage", fields: [avatarImageAssetId], references: [id], onDelete: SetNull)
+  madeInNepal        Boolean               @default(true) @map("made_in_nepal")
+  applicationId      String?               @unique @map("application_id") @db.Uuid
+  application        BrandApplication?     @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  followerCount      Int                   @default(0) @map("follower_count")
+  rating             Float?
+  createdAt          DateTime              @default(now()) @map("created_at")
+  updatedAt          DateTime              @updatedAt @map("updated_at")
 
   invites              BrandInvite[]
   memberships          BrandMembership[]
@@ -258,6 +264,8 @@ model Brand {
   linkedOrganization   Organization?
   supportTickets       SupportTicket[]
 
+  @@index([bannerImageAssetId])
+  @@index([avatarImageAssetId])
   @@map("brands")
 }
 
@@ -313,13 +321,16 @@ model Product {
 }
 
 model ProductImage {
-  id        String   @id @default(uuid()) @db.Uuid
-  productId String   @map("product_id") @db.Uuid
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  url       String
-  sortOrder Int      @default(0) @map("sort_order")
-  createdAt DateTime @default(now()) @map("created_at")
+  id           String                @id @default(uuid()) @db.Uuid
+  productId    String                @map("product_id") @db.Uuid
+  product      Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url          String
+  sortOrder    Int                   @default(0) @map("sort_order")
+  imageAssetId String?               @map("image_asset_id") @db.Uuid
+  imageAsset   ImageProcessingAsset? @relation(fields: [imageAssetId], references: [id], onDelete: SetNull)
+  createdAt    DateTime              @default(now()) @map("created_at")
 
+  @@index([imageAssetId])
   @@map("product_images")
 }
 
@@ -348,13 +359,16 @@ model ProductReview {
 }
 
 model ProductReviewImage {
-  id        String        @id @default(uuid()) @db.Uuid
-  reviewId  String        @map("review_id") @db.Uuid
-  review    ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  url       String
-  sortOrder Int           @default(0) @map("sort_order")
-  createdAt DateTime      @default(now()) @map("created_at")
+  id           String                @id @default(uuid()) @db.Uuid
+  reviewId     String                @map("review_id") @db.Uuid
+  review       ProductReview         @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  url          String
+  sortOrder    Int                   @default(0) @map("sort_order")
+  imageAssetId String?               @map("image_asset_id") @db.Uuid
+  imageAsset   ImageProcessingAsset? @relation(fields: [imageAssetId], references: [id], onDelete: SetNull)
+  createdAt    DateTime              @default(now()) @map("created_at")
 
+  @@index([imageAssetId])
   @@map("product_review_images")
 }
 
@@ -509,19 +523,22 @@ model CouponRedemption {
 }
 
 model Collection {
-  id          String           @id @default(uuid()) @db.Uuid
-  name        String
-  slug        String           @unique
-  description String?
-  imageUrl    String?          @map("image_url")
-  status      CollectionStatus @default(DRAFT)
-  sortOrder   Int              @default(0) @map("sort_order")
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
+  id           String                @id @default(uuid()) @db.Uuid
+  name         String
+  slug         String                @unique
+  description  String?
+  imageUrl     String?               @map("image_url")
+  imageAssetId String?               @map("image_asset_id") @db.Uuid
+  imageAsset   ImageProcessingAsset? @relation(fields: [imageAssetId], references: [id], onDelete: SetNull)
+  status       CollectionStatus      @default(DRAFT)
+  sortOrder    Int                   @default(0) @map("sort_order")
+  createdAt    DateTime              @default(now()) @map("created_at")
+  updatedAt    DateTime              @updatedAt @map("updated_at")
 
   products CollectionProduct[]
 
   @@index([status, sortOrder])
+  @@index([imageAssetId])
   @@map("collections")
 }
 
@@ -577,19 +594,22 @@ model TastePreference {
 }
 
 model HeroSlide {
-  id          String          @id @default(uuid()) @db.Uuid
-  tag         String
-  title       String
-  description String
-  imageUrl    String?         @map("image_url")
-  ctaLabel    String          @map("cta_label")
-  ctaHref     String          @map("cta_href")
-  status      HeroSlideStatus @default(DRAFT)
-  sortOrder   Int             @default(0) @map("sort_order")
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
+  id           String                @id @default(uuid()) @db.Uuid
+  tag          String
+  title        String
+  description  String
+  imageUrl     String?               @map("image_url")
+  imageAssetId String?               @map("image_asset_id") @db.Uuid
+  imageAsset   ImageProcessingAsset? @relation(fields: [imageAssetId], references: [id], onDelete: SetNull)
+  ctaLabel     String                @map("cta_label")
+  ctaHref      String                @map("cta_href")
+  status       HeroSlideStatus       @default(DRAFT)
+  sortOrder    Int                   @default(0) @map("sort_order")
+  createdAt    DateTime              @default(now()) @map("created_at")
+  updatedAt    DateTime              @updatedAt @map("updated_at")
 
   @@index([status, sortOrder])
+  @@index([imageAssetId])
   @@map("hero_slides")
 }
 
@@ -689,13 +709,16 @@ model CreatorLookTrendMetric {
 }
 
 model CreatorLookImage {
-  id            String      @id @default(uuid()) @db.Uuid
-  creatorLookId String      @map("creator_look_id") @db.Uuid
-  creatorLook   CreatorLook @relation(fields: [creatorLookId], references: [id], onDelete: Cascade)
+  id            String                @id @default(uuid()) @db.Uuid
+  creatorLookId String                @map("creator_look_id") @db.Uuid
+  creatorLook   CreatorLook           @relation(fields: [creatorLookId], references: [id], onDelete: Cascade)
   url           String
-  sortOrder     Int         @default(0) @map("sort_order")
-  createdAt     DateTime    @default(now()) @map("created_at")
+  sortOrder     Int                   @default(0) @map("sort_order")
+  imageAssetId  String?               @map("image_asset_id") @db.Uuid
+  imageAsset    ImageProcessingAsset? @relation(fields: [imageAssetId], references: [id], onDelete: SetNull)
+  createdAt     DateTime              @default(now()) @map("created_at")
 
+  @@index([imageAssetId])
   @@map("creator_look_images")
 }
 
@@ -2574,7 +2597,7 @@ model OwnershipTransferRequest {
 model ImageProcessingAsset {
   id                   String                      @id @default(uuid()) @db.Uuid
   ownerId              String                      @map("owner_id") @db.Uuid
-  owner                User                        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner                User                        @relation("ImageProcessingAssetOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   checksum             String
   priorityTier         ImageProcessingPriorityTier @map("priority_tier")
   qualityTier          ImageProcessingQualityTier  @map("quality_tier")
@@ -2591,6 +2614,15 @@ model ImageProcessingAsset {
   errorMessage         String?                     @map("error_message")
   createdAt            DateTime                    @default(now()) @map("created_at")
   updatedAt            DateTime                    @updatedAt @map("updated_at")
+
+  productImages       ProductImage[]
+  creatorLookImages   CreatorLookImage[]
+  heroSlides          HeroSlide[]
+  collections         Collection[]
+  bannerForBrands     Brand[]              @relation("BrandBannerImage")
+  avatarForBrands     Brand[]              @relation("BrandAvatarImage")
+  avatarForUsers      User[]               @relation("UserAvatarImage")
+  productReviewImages ProductReviewImage[]
 
   @@unique([ownerId, checksum])
   @@index([status])

@@ -28,12 +28,12 @@ const MessageBubble = ({ message }: { message: Message }) => (
     {message.attachments.length > 0 && (
       <div className="mb-1 flex flex-wrap gap-1.5">
         {message.attachments.map((attachment) => (
-          <img
+          <div
             key={attachment.id}
-            src={attachment.url}
-            alt=""
-            className="max-h-52 max-w-[200px] rounded-2xl object-cover"
-          />
+            className="relative h-52 w-[200px] overflow-hidden rounded-2xl bg-muted"
+          >
+            <AppImage src={attachment.url} alt="" fill sizes="200px" className="object-cover" />
+          </div>
         ))}
       </div>
     )}

@@ -9,6 +9,7 @@ import {
   ImageProcessingStatus,
   UserRole,
 } from "#generated/prisma/enums.js";
+import { encodedImageVariantsSchema } from "#lib/responsive-image.utils.js";
 
 export type UploaderProfile = {
   role: UserRole;
@@ -27,14 +28,6 @@ export const resolvePriorityTier = (uploader: UploaderProfile): ImageJobPriority
 };
 
 const resizedVariantsSchema = z.array(z.object({ width: z.number(), storageKey: z.string() }));
-const encodedVariantsSchema = z.array(
-  z.object({
-    width: z.number(),
-    format: z.enum(["avif", "webp", "jpeg"]),
-    storageKey: z.string(),
-    bytes: z.number(),
-  }),
-);
 
 const toResizedVariants = (value: unknown): ImageAssetRecord["resizedVariants"] => {
   if (value === null || value === undefined) return null;
@@ -43,7 +36,7 @@ const toResizedVariants = (value: unknown): ImageAssetRecord["resizedVariants"] 
 
 const toEncodedVariants = (value: unknown): ImageAssetRecord["encodedVariants"] => {
   if (value === null || value === undefined) return null;
-  return encodedVariantsSchema.parse(value);
+  return encodedImageVariantsSchema.parse(value);
 };
 
 const toPriorityTier = (value: ImageProcessingAsset["priorityTier"]): ImageJobPriorityTier => {

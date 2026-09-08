@@ -9,7 +9,12 @@ import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
 import { ImageProcessingStatus } from "#generated/prisma/enums.js";
 
-import { fromPriorityTier, fromQualityTier, toImageAssetRecord } from "./image-processing.utils.js";
+import {
+  fromPriorityTier,
+  fromQualityTier,
+  toImageAssetRecord,
+  type UploaderProfile,
+} from "./image-processing.utils.js";
 
 export type CreateImageProcessingAssetInput = {
   ownerId: string;
@@ -33,6 +38,17 @@ export const imageProcessingRepository = {
   async findByIdForOwner(assetId: string, ownerId: string): Promise<ImageAssetRecord | null> {
     const row = await prisma.imageProcessingAsset.findFirst({ where: { id: assetId, ownerId } });
     return row ? toImageAssetRecord(row) : null;
+  },
+
+  async findUploaderProfile(userId: string): Promise<UploaderProfile> {
+    return prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { role: true, isCreator: true, creatorStatus: true },
+    });
+  },
+
+  async countOwnedByIds(assetIds: string[], ownerId: string): Promise<number> {
+    return prisma.imageProcessingAsset.count({ where: { id: { in: assetIds }, ownerId } });
   },
 
   async create(input: CreateImageProcessingAssetInput): Promise<ImageAssetRecord> {

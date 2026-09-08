@@ -18,14 +18,24 @@ export const taggedProductInputSchema = z.object({
   sizeWorn: z.string().min(1).max(SIZE_WORN_MAX),
 });
 
-export const createCreatorLookSchema = z.object({
-  imageUrls: z.array(z.url()).min(MIN_IMAGES).max(MAX_IMAGES),
-  caption: z.string().max(CAPTION_MAX).optional(),
-  taggedProducts: z
-    .array(taggedProductInputSchema)
-    .min(MIN_TAGGED_PRODUCTS)
-    .max(MAX_TAGGED_PRODUCTS),
-});
+export const createCreatorLookSchema = z
+  .object({
+    imageUrls: z.array(z.url()).min(MIN_IMAGES).max(MAX_IMAGES),
+    imageAssetIds: z.array(z.uuid().nullable()).max(MAX_IMAGES).optional(),
+    caption: z.string().max(CAPTION_MAX).optional(),
+    taggedProducts: z
+      .array(taggedProductInputSchema)
+      .min(MIN_TAGGED_PRODUCTS)
+      .max(MAX_TAGGED_PRODUCTS),
+  })
+  .refine(
+    (data) =>
+      data.imageAssetIds === undefined || data.imageAssetIds.length === data.imageUrls.length,
+    {
+      message: "imageAssetIds must line up one-to-one with imageUrls when provided.",
+      path: ["imageAssetIds"],
+    },
+  );
 
 export const listCreatorLooksQuerySchema = z.object({
   cursor: z.string().optional(),

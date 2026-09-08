@@ -14,6 +14,7 @@ export const createHeroSlideSchema = z.object({
   title: z.string().trim().min(1).max(TITLE_MAX),
   description: z.string().trim().min(1).max(DESCRIPTION_MAX),
   imageUrl: z.url().optional(),
+  imageAssetId: z.uuid().nullable().optional(),
   ctaLabel: z.string().trim().min(1).max(CTA_LABEL_MAX),
   ctaHref: z.string().trim().min(1),
   status: heroSlideStatusSchema.optional(),

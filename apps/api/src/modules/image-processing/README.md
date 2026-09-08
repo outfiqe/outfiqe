@@ -62,12 +62,36 @@ persisting progress back to the same `ImageProcessingAsset` row via `prismaImage
 **This is a new, parallel upload path — it does not replace `modules/uploads`.** The existing
 `POST /api/uploads` (Multer memory storage, synchronous `storage.upload()`, used for avatars/simple
 image attachments today) is untouched. This module is for the high-concurrency, multi-variant,
-async pipeline use case the spec asked for; wiring product/creator-look/review photo uploads over
-to it (replacing their current synchronous `url`-only flow) is a distinct, larger integration task
-explicitly out of scope here — the existing `ProductImage`/`CreatorLookImage`/`ProductReviewImage`
-models only ever store a single `url`, and migrating them to async multi-variant output would
-change those features' upload UX (immediate vs. eventually-consistent), which needs its own
-decision, not a silent side effect of building this pipeline.
+async pipeline use case the spec asked for.
+
+**Every domain image now flows through this pipeline.** These models carry an optional
+`imageAssetId` (or a purpose-named FK) to `ImageProcessingAsset` (`onDelete: SetNull`), the public
+read paths resolve it into a `ResponsiveImage` (`image` / `avatarImage` / `bannerImage` field,
+per-format `srcSet` + `lqip`) via `#lib/responsive-image.utils.js`, and every create/update
+endpoint that sets the URL also accepts the matching `*ImageAssetId`:
+
+- `ProductImage`, `CreatorLookImage`, `ProductReviewImage` (gallery rows — `imageAssetId` per row)
+- `HeroSlide`, `Collection` (`imageAssetId`)
+- `Brand.bannerImageAssetId`, `Brand.avatarImageAssetId`, `User.avatarImageAssetId`
+
+The web/admin uploaders (`resolvePendingPhotoAssets`, `AvatarUploader`/`BannerUploader`'s
+`onUploadWithAsset`, admin `ImageUpload`'s `onUploaded`, `ImageUploader`'s `onUploadWithAsset`) all
+upload through `POST /uploads/pipeline`, which returns `{ url, assetId }`. See the `uploads`,
+`products`, `creator-looks`, `product-reviews`, `brands` and `creators` module READMEs.
+
+**ADMIN-only endpoints (`hero-slides`, `collections`) skip the per-caller asset-ownership check**
+that products / looks / reviews / brand-profile / creator-profile do (`assertAssetsOwnedBy`): every
+caller is a trusted admin, the asset was still produced by an authenticated `/uploads/pipeline`
+call, and its variant URLs are public either way, so a cross-admin asset id is not a privilege or
+data concern.
+
+**Backfill.** `prisma/backfill-image-assets.ts` (`pnpm db:backfill:image-assets`, `--dry-run` /
+`--limit=N`) walks every one of those tables for rows that have a URL but no linked asset,
+downloads each URL, and submits it through this pipeline (owner = the row's natural owner — brand
+owner / creator / reviewer / the user — falling back to the oldest admin for hero slides and
+collections). Idempotent and resumable via the `NULL` FK filter, batched with a pause and an
+ingest back-pressure wait. Run it once per environment after deploy against a running API (it
+enqueues; the API's workers process).
 
 **Why a new `ImageProcessingAsset` Prisma model instead of reusing `shared/storage`'s
 `StorageProvider`.** `shared/storage`'s `StorageProvider` (`upload`/`delete` only) is shaped for
@@ -97,6 +121,15 @@ auth-gated the same way every other admin-only surface in this codebase is.
 
 ## Not yet built (known gaps)
 
+- **Small-image waste.** Avatars render at 18–112px but the pipeline's smallest variant is 320px,
+  so linking them produces four oversized variants each for a barely-visible LQIP win. They're
+  wired for consistency (one code path for every image) and because content-addressed dedup +
+  avif/webp conversion still help a little, but a future `qualityTier` with a smaller breakpoint
+  set for avatar-shaped images would be the right optimisation.
+- **`PostCarousel` and `SeenOnCreators`** still render plain `<img src>` — the feed post and
+  seen-on-creators responses only expose `image` for the first photo, not the full `images[]`
+  array. Cart / order line-item thumbnails likewise use the stored URL snapshot rather than
+  resolving the product's current asset.
 - **Reprocessing a failed asset.** Today, if `(ownerId, checksum)` already has a row, a duplicate
   upload always returns the existing row as-is — including a `failed` one. There is no "retry this
   failed upload" endpoint yet; the dead-letter queue (Bull Board, `/internal/queues`) is where a

@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { LocalDiskStorageAdapter, pipelineConfig } from "@outfiqe/image-pipeline";
 
-import { env } from "#config/env.config.js";
+import { imageAssetPublicBaseUrl } from "#lib/responsive-image.utils.js";
 
 const { tempUploadDir, rootDir } = pipelineConfig.storage;
 
@@ -16,5 +16,5 @@ mkdirSync(resolvedImageStorageRootDir, { recursive: true });
 export const imageTempStorageAdapter = new LocalDiskStorageAdapter(resolvedTempUploadDir);
 export const imageOutputStorageAdapter = new LocalDiskStorageAdapter(
   resolvedImageStorageRootDir,
-  `${env.API_PUBLIC_URL}/image-processing-assets`,
+  imageAssetPublicBaseUrl(),
 );

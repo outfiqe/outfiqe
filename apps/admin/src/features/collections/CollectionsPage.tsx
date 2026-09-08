@@ -32,6 +32,7 @@ export const CollectionsPage = () => {
   const [slugTouched, setSlugTouched] = useState(false);
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageAssetId, setImageAssetId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [managingId, setManagingId] = useState<string | null>(null);
 
@@ -42,6 +43,7 @@ export const CollectionsPage = () => {
         slug,
         description: description || undefined,
         imageUrl: imageUrl ?? undefined,
+        imageAssetId: imageAssetId ?? undefined,
       }),
     onSuccess: () => {
       setName("");
@@ -49,6 +51,7 @@ export const CollectionsPage = () => {
       setSlugTouched(false);
       setDescription("");
       setImageUrl(null);
+      setImageAssetId(null);
       setError(null);
       queryClient.invalidateQueries({ queryKey: ["admin-collections"] });
     },
@@ -65,8 +68,15 @@ export const CollectionsPage = () => {
   });
 
   const setCollectionImage = useMutation({
-    mutationFn: ({ id, imageUrl: url }: { id: string; imageUrl: string }) =>
-      collectionsApi.setImage(id, url),
+    mutationFn: ({
+      id,
+      imageUrl: url,
+      imageAssetId: assetId,
+    }: {
+      id: string;
+      imageUrl: string;
+      imageAssetId: string;
+    }) => collectionsApi.setImage(id, url, assetId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-collections"] }),
   });
 
@@ -129,7 +139,13 @@ export const CollectionsPage = () => {
         </div>
         <div className="space-y-1.5">
           <span className="block text-xs text-muted-foreground">Image</span>
-          <ImageUpload value={imageUrl} onChange={setImageUrl} />
+          <ImageUpload
+            value={imageUrl}
+            onUploaded={({ url, imageAssetId: assetId }) => {
+              setImageUrl(url);
+              setImageAssetId(assetId);
+            }}
+          />
         </div>
 
         <Button type="submit" disabled={create.isPending}>
@@ -153,7 +169,9 @@ export const CollectionsPage = () => {
               <div className="flex flex-wrap items-center gap-3">
                 <ImageUpload
                   value={imageUrl}
-                  onChange={(url) => setCollectionImage.mutate({ id, imageUrl: url })}
+                  onUploaded={({ url, imageAssetId: assetId }) =>
+                    setCollectionImage.mutate({ id, imageUrl: url, imageAssetId: assetId })
+                  }
                 />
 
                 <div className="min-w-0 flex-1">

@@ -27,17 +27,37 @@ export const productSizeInputSchema = z.object({
   stock: z.number().int().min(STOCK_MIN).max(STOCK_MAX),
 });
 
-export const createProductSchema = z.object({
+const IMAGE_ASSET_IDS_MISMATCH_MESSAGE =
+  "imageAssetIds must line up one-to-one with imageUrls when both are provided.";
+
+const imageAssetIdsMatchImageUrls = (data: {
+  imageUrls?: string[];
+  imageAssetIds?: (string | null)[];
+}): boolean =>
+  data.imageAssetIds === undefined || data.imageAssetIds.length === (data.imageUrls?.length ?? 0);
+
+const productFieldsSchema = z.object({
   name: z.string().min(NAME_MIN).max(NAME_MAX),
   price: z.number().int().min(PRICE_MIN).max(PRICE_MAX),
   type: productTypeSlugSchema,
   categories: z.array(categorySlugFieldSchema).min(1),
   imageUrls: z.array(z.url()).max(MAX_IMAGES).optional(),
+  imageAssetIds: z.array(z.uuid().nullable()).max(MAX_IMAGES).optional(),
   lowStock: z.boolean().optional(),
   sizes: z.array(productSizeInputSchema).min(1, "Add at least one size"),
 });
 
-export const updateProductSchema = createProductSchema.partial();
+export const createProductSchema = productFieldsSchema.refine(imageAssetIdsMatchImageUrls, {
+  message: IMAGE_ASSET_IDS_MISMATCH_MESSAGE,
+  path: ["imageAssetIds"],
+});
+
+export const updateProductSchema = productFieldsSchema
+  .partial()
+  .refine(imageAssetIdsMatchImageUrls, {
+    message: IMAGE_ASSET_IDS_MISMATCH_MESSAGE,
+    path: ["imageAssetIds"],
+  });
 
 export const productIdParamSchema = z.object({ id: z.uuid() });
 

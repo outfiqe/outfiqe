@@ -113,6 +113,7 @@ export default defineConfig({
         "src/app/internal/revalidate/route.ts",
         "src/shared/components/DeferredMount.tsx",
         "src/shared/components/AppImage.tsx",
+        "src/shared/lib/responsiveImage.ts",
         "src/shared/lib/contentSecurityPolicy.ts",
         "src/shared/lib/serverApiClient.ts",
         "src/shared/lib/apiOrigin.ts",

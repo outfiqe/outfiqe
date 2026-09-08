@@ -1,15 +1,23 @@
 import { prisma } from "#db/prisma.js";
 import { BrandRole, ProductStatus } from "#generated/prisma/enums.js";
+import { RESPONSIVE_IMAGE_ASSET_SELECT } from "#lib/responsive-image.utils.js";
 
 import type {
   BrandProfile,
   BrandRecord,
+  BrandWithImageAssets,
   BrandWithProductCount,
   UpdateBrandInput,
 } from "./brand.types.js";
 
+const withImageAssets = {
+  bannerImageAsset: { select: RESPONSIVE_IMAGE_ASSET_SELECT },
+  avatarImageAsset: { select: RESPONSIVE_IMAGE_ASSET_SELECT },
+};
+
 const withApprovedProductCount = {
   _count: { select: { products: { where: { status: ProductStatus.APPROVED } } } },
+  ...withImageAssets,
 };
 
 export const brandRepository = {
@@ -24,8 +32,8 @@ export const brandRepository = {
     return { brand: membership.brand, membershipRole: membership.role };
   },
 
-  async findById(id: string): Promise<BrandRecord | null> {
-    return prisma.brand.findUnique({ where: { id } });
+  async findById(id: string): Promise<BrandWithImageAssets | null> {
+    return prisma.brand.findUnique({ where: { id }, include: withImageAssets });
   },
 
   async findOwnerUserId(brandId: string): Promise<string | null> {

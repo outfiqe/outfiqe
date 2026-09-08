@@ -1,3 +1,4 @@
+import { toResponsiveImage } from "#lib/responsive-image.utils.js";
 import {
   computeDiscountPercent,
   resolveBrandFundedUnitPrice,
@@ -72,6 +73,7 @@ export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduc
     rating4Count,
     rating5Count,
     discounts,
+    images,
   } = product;
   const effectivePrice = resolveBrandFundedUnitPrice(price, toActiveBrandDiscount(discounts?.[0]));
   return {
@@ -84,6 +86,7 @@ export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduc
     type: productType.slug,
     categorySlugs: categories.map((category) => category.slug),
     imageUrl,
+    image: imageUrl ? toResponsiveImage(imageUrl, images?.[0]?.imageAsset ?? null) : null,
     lowStock: totalStock === undefined ? lowStock : isLowStock(totalStock),
     isNew: isNew(createdAt),
     creatorBuyerCount: creatorBuyerCount ?? 0,

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { responsiveImageSchema } from "@/shared/lib/responsiveImage";
+
 export const reviewSortSchema = z.enum([
   "newest",
   "oldest",
@@ -26,7 +28,7 @@ export const productReviewSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   author: reviewAuthorSchema,
-  images: z.array(z.string()),
+  images: z.array(responsiveImageSchema),
   hasVotedHelpful: z.boolean(),
 });
 export type ProductReview = z.infer<typeof productReviewSchema>;

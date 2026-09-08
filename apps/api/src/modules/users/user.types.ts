@@ -7,6 +7,7 @@ export interface UserRecord {
   handle: string;
   phone: string | null;
   avatarUrl: string | null;
+  avatarImageAssetId: string | null;
   passwordHash: string | null;
   role: UserRole;
   isCreator: boolean;
@@ -35,7 +36,13 @@ export interface CreateUserInput {
 export type UpdateUserProfileInput = Partial<
   Pick<
     UserRecord,
-    "name" | "phone" | "avatarUrl" | "heightCm" | "showHeight" | "hideFromLeaderboards"
+    | "name"
+    | "phone"
+    | "avatarUrl"
+    | "avatarImageAssetId"
+    | "heightCm"
+    | "showHeight"
+    | "hideFromLeaderboards"
   >
 >;
 

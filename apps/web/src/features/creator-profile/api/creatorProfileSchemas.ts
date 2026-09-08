@@ -1,12 +1,14 @@
 import { z } from "zod";
 
 import { featuredBadgeSchema } from "@/features/creator-dashboard/api/badgeSchemas";
+import { responsiveImageSchema } from "@/shared/lib/responsiveImage";
 
 export const creatorProfileSchema = z.object({
   userId: z.string(),
   name: z.string(),
   handle: z.string(),
   avatarUrl: z.url().nullable(),
+  avatarImage: responsiveImageSchema.nullish(),
   heightCm: z.number().nullable(),
   showHeight: z.boolean(),
   hideFromLeaderboards: z.boolean(),

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { responsiveImageSchema } from "@/shared/lib/responsiveImage";
+
 export const feedTaggedProductSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -22,6 +24,7 @@ export const feedPostSchema = z.object({
   creator: feedCreatorSchema,
   imageUrl: z.string(),
   images: z.array(z.string()),
+  image: responsiveImageSchema.nullish(),
   caption: z.string().nullable(),
   likeCount: z.number(),
   commentCount: z.number(),

@@ -23,7 +23,7 @@ import { useUpdateCreatorProfile } from "@/features/creator-dashboard/hooks/useU
 import { AddPostButton, PostDetailModal, usePublicLook } from "@/features/explore";
 import { useChatPanel } from "@/features/messaging";
 import { shareOrCopyLink } from "@/features/pwa";
-import { uploadsApi } from "@/shared/api/uploadsApi";
+import { uploadImagesThroughPipeline, uploadsApi } from "@/shared/api/uploadsApi";
 import { AppImage } from "@/shared/components/AppImage";
 import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
@@ -84,6 +84,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const [editOpen, setEditOpen] = useState(false);
   const [draftName, setDraftName] = useState(name);
   const [draftAvatarUrl, setDraftAvatarUrl] = useState(avatarUrl);
+  const [draftAvatarImageAssetId, setDraftAvatarImageAssetId] = useState<string | null>(null);
   const [draftHeightCm, setDraftHeightCm] = useState(heightCm);
   const [draftShowHeight, setDraftShowHeight] = useState(showHeight);
   const [draftHideFromLeaderboards, setDraftHideFromLeaderboards] = useState(hideFromLeaderboards);
@@ -146,6 +147,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const openEdit = () => {
     setDraftName(name);
     setDraftAvatarUrl(avatarUrl);
+    setDraftAvatarImageAssetId(null);
     setDraftHeightCm(heightCm);
     setDraftShowHeight(showHeight);
     setDraftHideFromLeaderboards(hideFromLeaderboards);
@@ -156,13 +158,17 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
     const trimmed = draftName.trim();
     if (!trimmed) return;
 
+    const avatarChanged = draftAvatarUrl !== avatarUrl;
+
     updateProfile.mutate(
       {
         name: trimmed,
-        avatarUrl: draftAvatarUrl,
         heightCm: draftHeightCm,
         showHeight: draftShowHeight,
         hideFromLeaderboards: draftHideFromLeaderboards,
+        ...(avatarChanged
+          ? { avatarUrl: draftAvatarUrl, avatarImageAssetId: draftAvatarImageAssetId }
+          : {}),
       },
       {
         onSuccess: (updated) => {
@@ -225,7 +231,17 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
             />
           )}
           <div className="relative size-20 overflow-hidden rounded-full">
-            {avatarUrl ? <AppImage src={avatarUrl} alt="" fill sizes="80px" /> : avatarFallback}
+            {avatarUrl ? (
+              <AppImage
+                src={avatarUrl}
+                image={avatarUrl === creator.avatarUrl ? creator.avatarImage : undefined}
+                alt=""
+                fill
+                sizes="80px"
+              />
+            ) : (
+              avatarFallback
+            )}
           </div>
         </div>
 
@@ -445,6 +461,8 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
                 value={draftAvatarUrl}
                 onChange={setDraftAvatarUrl}
                 onUpload={uploadsApi.upload}
+                onUploadWithAsset={uploadImagesThroughPipeline}
+                onAssetIdChange={setDraftAvatarImageAssetId}
                 fallback={avatarFallback}
                 describeUploadError={getErrorMessage}
                 transformFile={toUploadableImage}

@@ -13,12 +13,12 @@ const buildRow = (overrides: Partial<ProductReviewRow> = {}): ProductReviewRow =
   createdAt: new Date("2026-08-01T00:00:00.000Z"),
   updatedAt: new Date("2026-08-01T00:00:00.000Z"),
   user: { id: "user-1", name: "Priya Shah", handle: "priya-shah", avatarUrl: null },
-  images: [{ url: "https://cdn.outfiqe.test/review-1.jpg" }],
+  images: [{ url: "https://cdn.outfiqe.test/review-1.jpg", imageAsset: null }],
   ...overrides,
 });
 
 describe("toReviewRecord", () => {
-  it("flattens the images relation to a plain url array and the user relation to author", () => {
+  it("resolves the images relation to responsive images and the user relation to author", () => {
     const record = toReviewRecord(buildRow(), new Set());
 
     expect(record.author).toEqual({
@@ -27,7 +27,9 @@ describe("toReviewRecord", () => {
       handle: "priya-shah",
       avatarUrl: null,
     });
-    expect(record.images).toEqual(["https://cdn.outfiqe.test/review-1.jpg"]);
+    expect(record.images).toEqual([
+      { url: "https://cdn.outfiqe.test/review-1.jpg", lqip: null, sources: [] },
+    ]);
   });
 
   it("marks hasVotedHelpful true only when the viewer's vote set contains this review's id", () => {

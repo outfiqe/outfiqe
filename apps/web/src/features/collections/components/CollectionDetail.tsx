@@ -16,7 +16,7 @@ type CollectionDetailProps = {
 };
 
 export const CollectionDetail = ({ collection }: CollectionDetailProps) => {
-  const { slug, imageUrl, id, name, description, productCount } = collection;
+  const { slug, imageUrl, image, id, name, description, productCount } = collection;
 
   const products = useInfiniteCollectionProducts(slug);
   const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = products;
@@ -28,7 +28,9 @@ export const CollectionDetail = ({ collection }: CollectionDetailProps) => {
         className="relative flex min-h-40 items-end overflow-hidden rounded-2xl p-6 sm:p-10"
         style={imageUrl ? undefined : { backgroundColor: getAvatarColor(id) }}
       >
-        {imageUrl && <AppImage src={imageUrl} alt="" fill sizes={COLLECTION_HERO_SIZES} eager />}
+        {imageUrl && (
+          <AppImage src={imageUrl} image={image} alt="" fill sizes={COLLECTION_HERO_SIZES} eager />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
         <div className="relative z-10">
           <h1 className="font-display text-2xl font-extrabold uppercase tracking-tight text-white sm:text-4xl">

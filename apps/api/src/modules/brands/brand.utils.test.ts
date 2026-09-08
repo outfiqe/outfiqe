@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import type { BrandRecord } from "./brand.types.js";
+import type { BrandWithImageAssets } from "./brand.types.js";
 import { toPublicBrandProfile } from "./brand.utils.js";
 
-const baseBrand: BrandRecord = {
+const baseBrand: BrandWithImageAssets = {
   id: "11111111-1111-1111-1111-111111111111",
   name: "Studio Nine",
   contactName: "Contact Person",
@@ -11,7 +11,11 @@ const baseBrand: BrandRecord = {
   phone: "9811111111",
   instagram: "@studionine",
   avatarUrl: "https://cdn.outfiqe.test/avatar.jpg",
+  avatarImageAssetId: null,
+  avatarImageAsset: null,
   bannerUrl: "https://cdn.outfiqe.test/banner.jpg",
+  bannerImageAssetId: null,
+  bannerImageAsset: null,
   madeInNepal: true,
   applicationId: null,
   followerCount: 42,
@@ -28,7 +32,9 @@ describe("toPublicBrandProfile", () => {
       id: baseBrand.id,
       name: baseBrand.name,
       avatarUrl: baseBrand.avatarUrl,
+      avatarImage: { url: baseBrand.avatarUrl, lqip: null, sources: [] },
       bannerUrl: baseBrand.bannerUrl,
+      bannerImage: { url: baseBrand.bannerUrl, lqip: null, sources: [] },
       madeInNepal: baseBrand.madeInNepal,
       rating: baseBrand.rating,
       productCount: 7,

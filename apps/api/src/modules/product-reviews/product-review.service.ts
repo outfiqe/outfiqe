@@ -3,6 +3,7 @@ import { UserRole } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 
@@ -68,9 +69,12 @@ export const productReviewService = {
   async create(
     productId: string,
     userId: string,
-    { rating, title, body, imageUrls }: WriteProductReviewBody,
+    { rating, title, body, imageUrls, imageAssetIds }: WriteProductReviewBody,
   ): Promise<ProductReviewRecord> {
     await requireActiveProduct(productId);
+    if (imageAssetIds?.length) {
+      await imageProcessingService.assertAssetsOwnedBy(imageAssetIds, userId);
+    }
 
     const hasPurchased = await productReviewRepository.hasDeliveredPurchase(userId, productId);
     if (!hasPurchased) {
@@ -93,6 +97,7 @@ export const productReviewService = {
         title,
         body,
         imageUrls: imageUrls ?? [],
+        imageAssetIds,
       });
     } catch (error) {
       if (isUniqueConstraintError(error)) throwReviewAlreadyExists();
@@ -114,15 +119,19 @@ export const productReviewService = {
     productId: string,
     reviewId: string,
     userId: string,
-    { rating, title, body, imageUrls }: WriteProductReviewBody,
+    { rating, title, body, imageUrls, imageAssetIds }: WriteProductReviewBody,
   ): Promise<ProductReviewRecord> {
     await requireOwnedReview(productId, reviewId, userId);
+    if (imageAssetIds?.length) {
+      await imageProcessingService.assertAssetsOwnedBy(imageAssetIds, userId);
+    }
 
     const review = await productReviewRepository.update(reviewId, {
       rating,
       title,
       body,
       imageUrls,
+      imageAssetIds,
     });
     await productService.recomputeRatingSummary(productId);
 

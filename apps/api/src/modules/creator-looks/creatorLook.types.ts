@@ -1,3 +1,5 @@
+import type { ResponsiveImage } from "@outfiqe/types";
+
 export type TaggedProduct = {
   id: string;
   name: string;
@@ -24,6 +26,7 @@ export type TaggedProductInput = {
 export type CreateCreatorLookInput = {
   creatorId: string;
   imageUrls: [string, ...string[]];
+  imageAssetIds?: (string | null)[];
   caption?: string;
   taggedProducts: TaggedProductInput[];
   hashtags: string[];
@@ -31,6 +34,7 @@ export type CreateCreatorLookInput = {
 
 export type UpdateCreatorLookInput = {
   imageUrls: [string, ...string[]];
+  imageAssetIds?: (string | null)[];
   caption?: string;
   taggedProducts: TaggedProductInput[];
   hashtags: string[];
@@ -78,6 +82,7 @@ export type CreatorLookFeedPost = {
   creator: FeedCreator;
   imageUrl: string;
   images: string[];
+  image: ResponsiveImage;
   caption: string | null;
   likeCount: number;
   commentCount: number;

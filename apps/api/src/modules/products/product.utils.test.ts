@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { DiscountType, ProductStatus } from "#generated/prisma/enums.js";
+import { DiscountType, ImageProcessingStatus, ProductStatus } from "#generated/prisma/enums.js";
 
-import type { ProductDiscountRecord, ProductWithStockSizesAndImages } from "./product.types.js";
+import type {
+  ProductDiscountRecord,
+  ProductFirstImageAsset,
+  ProductWithStockSizesAndImages,
+} from "./product.types.js";
+
+type ProductFixture = Omit<ProductWithStockSizesAndImages, "images"> & {
+  images: (ProductFirstImageAsset & { url: string })[];
+};
 import {
   isLowStock,
   isNew,
@@ -25,9 +33,7 @@ const buildDiscount = (overrides: Partial<ProductDiscountRecord> = {}): ProductD
   ...overrides,
 });
 
-const buildProduct = (
-  overrides: Partial<ProductWithStockSizesAndImages> = {},
-): ProductWithStockSizesAndImages => ({
+const buildProduct = (overrides: Partial<ProductFixture> = {}): ProductFixture => ({
   id: "product-1",
   brandId: "brand-1",
   name: "Jacket",
@@ -164,6 +170,42 @@ describe("toPublicProduct", () => {
     const view = toPublicProduct(buildProduct());
     expect(view.creatorBuyerCount).toBe(0);
     expect(view.unitsSold).toBe(0);
+  });
+
+  it("exposes a fallback-only responsive image when the first image has no processed asset", () => {
+    const view = toPublicProduct(buildProduct());
+    expect(view.image).toEqual({ url: "jacket.png", lqip: null, sources: [] });
+  });
+
+  it("returns a null responsive image when the product has no imageUrl", () => {
+    const view = toPublicProduct(buildProduct({ imageUrl: null, images: [] }));
+    expect(view.image).toBeNull();
+  });
+
+  it("builds per-format srcSet and lqip from a completed image asset", () => {
+    const view = toPublicProduct(
+      buildProduct({
+        images: [
+          {
+            url: "jacket.png",
+            imageAsset: {
+              status: ImageProcessingStatus.COMPLETED,
+              lqip: "data:image/webp;base64,lqip",
+              encodedVariants: [
+                { width: 320, format: "avif", storageKey: "variants/abc/320w.avif", bytes: 10 },
+                { width: 640, format: "avif", storageKey: "variants/abc/640w.avif", bytes: 20 },
+                { width: 320, format: "webp", storageKey: "variants/abc/320w.webp", bytes: 12 },
+              ],
+            },
+          },
+        ],
+      }),
+    );
+    expect(view.image?.lqip).toBe("data:image/webp;base64,lqip");
+    expect(view.image?.sources.map((source) => source.format)).toEqual(["avif", "webp"]);
+    const avifSource = view.image?.sources.find((source) => source.format === "avif");
+    expect(avifSource?.srcSet).toContain("320w");
+    expect(avifSource?.srcSet).toContain("640w");
   });
 });
 

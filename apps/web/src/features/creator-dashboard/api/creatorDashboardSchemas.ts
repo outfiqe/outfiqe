@@ -21,6 +21,7 @@ export const updateCreatorProfileInputSchema = z
   .object({
     name: z.string().trim().min(1).max(100),
     avatarUrl: z.url().nullable(),
+    avatarImageAssetId: z.uuid().nullable(),
     heightCm: z.number().nullable(),
     showHeight: z.boolean(),
     hideFromLeaderboards: z.boolean(),

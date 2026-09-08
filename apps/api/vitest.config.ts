@@ -114,6 +114,7 @@ export default defineConfig({
         "src/shared/utils/email.utils.ts",
         "src/modules/discounts/**/*.ts",
         "src/modules/products/product.utils.ts",
+        "src/shared/utils/responsive-image.utils.ts",
         "src/modules/coupons/coupon.utils.ts",
         "src/modules/payments/providers/esewa.provider.ts",
       ],

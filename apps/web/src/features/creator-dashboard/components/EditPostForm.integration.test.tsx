@@ -293,11 +293,19 @@ describe("EditPostForm", () => {
   it("crops the confirmed photo through getCroppedImageFile before uploading on save", async () => {
     getCroppedImageFile.mockResolvedValue(buildImageFile("cropped.jpg"));
     mswServer.use(
-      http.post("/api/uploads", () =>
+      http.post("/api/uploads/pipeline", () =>
         HttpResponse.json({
           success: true,
           message: "Uploaded.",
-          data: { files: [{ url: "https://cdn.outfiqe.test/cropped.jpg", key: "cropped" }] },
+          data: {
+            files: [
+              {
+                url: "https://cdn.outfiqe.test/cropped.jpg",
+                key: "cropped",
+                assetId: "11111111-1111-1111-1111-111111111111",
+              },
+            ],
+          },
         }),
       ),
       http.patch("/api/creator-looks/look-1", async ({ request }) => {
@@ -355,11 +363,19 @@ describe("EditPostForm", () => {
 
   it("saves through the real update and upload APIs, then closes", async () => {
     mswServer.use(
-      http.post("/api/uploads", () =>
+      http.post("/api/uploads/pipeline", () =>
         HttpResponse.json({
           success: true,
           message: "Uploaded.",
-          data: { files: [{ url: "https://cdn.outfiqe.test/new.jpg", key: "new" }] },
+          data: {
+            files: [
+              {
+                url: "https://cdn.outfiqe.test/new.jpg",
+                key: "new",
+                assetId: "22222222-2222-2222-2222-222222222222",
+              },
+            ],
+          },
         }),
       ),
       http.patch("/api/creator-looks/look-1", async ({ request }) => {

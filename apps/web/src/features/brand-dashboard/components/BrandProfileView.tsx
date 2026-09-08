@@ -13,7 +13,7 @@ import { AtSign, Mail, Phone, User } from "lucide-react";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth";
-import { uploadsApi } from "@/shared/api/uploadsApi";
+import { uploadImagesThroughPipeline, uploadsApi } from "@/shared/api/uploadsApi";
 import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
@@ -28,7 +28,9 @@ type EditableFields = {
   phone: string;
   instagram: string;
   avatarUrl: string | null;
+  avatarImageAssetId: string | null;
   bannerUrl: string | null;
+  bannerImageAssetId: string | null;
 };
 
 export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
@@ -41,7 +43,9 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
     phone: brand.phone,
     instagram: brand.instagram,
     avatarUrl: brand.avatarUrl,
+    avatarImageAssetId: null,
     bannerUrl: brand.bannerUrl,
+    bannerImageAssetId: null,
   });
   const [draft, setDraft] = useState<EditableFields>(fields);
   const [editOpen, setEditOpen] = useState(false);
@@ -52,15 +56,28 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
   };
 
   const save = () => {
-    updateProfile.mutate(draft, {
+    const payload = {
+      contactName: draft.contactName,
+      phone: draft.phone,
+      instagram: draft.instagram,
+      ...(draft.bannerUrl !== fields.bannerUrl
+        ? { bannerUrl: draft.bannerUrl, bannerImageAssetId: draft.bannerImageAssetId }
+        : {}),
+      ...(draft.avatarUrl !== fields.avatarUrl
+        ? { avatarUrl: draft.avatarUrl, avatarImageAssetId: draft.avatarImageAssetId }
+        : {}),
+    };
+
+    updateProfile.mutate(payload, {
       onSuccess: (updated) => {
-        setFields({
+        setFields((current) => ({
+          ...current,
           contactName: updated.brand.contactName,
           phone: updated.brand.phone,
           instagram: updated.brand.instagram,
           avatarUrl: updated.brand.avatarUrl,
           bannerUrl: updated.brand.bannerUrl,
-        });
+        }));
         updateUser({ avatarUrl: updated.brand.avatarUrl });
         setEditOpen(false);
         toast.success("Profile updated");
@@ -167,8 +184,12 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
             <label className="mb-1.5 block text-sm font-medium text-foreground">Banner</label>
             <BannerUploader
               value={draft.bannerUrl}
-              onChange={(bannerUrl) => setDraft({ ...draft, bannerUrl })}
+              onChange={(bannerUrl) => setDraft((current) => ({ ...current, bannerUrl }))}
               onUpload={uploadsApi.upload}
+              onUploadWithAsset={uploadImagesThroughPipeline}
+              onAssetIdChange={(bannerImageAssetId) =>
+                setDraft((current) => ({ ...current, bannerImageAssetId }))
+              }
               describeUploadError={getErrorMessage}
               transformFile={toUploadableImage}
             />
@@ -177,8 +198,12 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
             <label className="mb-1.5 block text-sm font-medium text-foreground">Logo</label>
             <AvatarUploader
               value={draft.avatarUrl}
-              onChange={(avatarUrl) => setDraft({ ...draft, avatarUrl })}
+              onChange={(avatarUrl) => setDraft((current) => ({ ...current, avatarUrl }))}
               onUpload={uploadsApi.upload}
+              onUploadWithAsset={uploadImagesThroughPipeline}
+              onAssetIdChange={(avatarImageAssetId) =>
+                setDraft((current) => ({ ...current, avatarImageAssetId }))
+              }
               fallback={initialsBadge}
               describeUploadError={getErrorMessage}
               transformFile={toUploadableImage}

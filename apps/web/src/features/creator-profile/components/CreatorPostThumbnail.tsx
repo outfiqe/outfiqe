@@ -29,7 +29,9 @@ export const CreatorPostThumbnail = ({
       className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-border transition-colors group-hover:border-foreground/30"
       style={post.imageUrl ? undefined : { backgroundColor: getAvatarColor(post.id) }}
     >
-      {post.imageUrl && <AppImage src={post.imageUrl} alt="" fill sizes={CREATOR_POST_SIZES} />}
+      {post.imageUrl && (
+        <AppImage src={post.imageUrl} image={post.image} alt="" fill sizes={CREATOR_POST_SIZES} />
+      )}
 
       <button
         type="button"

@@ -24,7 +24,9 @@ export const updateBrandProfileInputSchema = z
     phone: z.string().trim().min(1),
     instagram: z.string().trim().min(1).max(100),
     avatarUrl: z.url().nullable(),
+    avatarImageAssetId: z.uuid().nullable(),
     bannerUrl: z.url().nullable(),
+    bannerImageAssetId: z.uuid().nullable(),
   })
   .partial();
 

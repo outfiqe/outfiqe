@@ -19,6 +19,7 @@ export type CreateCollectionInput = {
   slug: string;
   description?: string;
   imageUrl?: string;
+  imageAssetId?: string;
 };
 
 export const collectionsApi = {
@@ -37,8 +38,8 @@ export const collectionsApi = {
     return collectionSchema.parse(res.data);
   },
 
-  async setImage(id: string, imageUrl: string): Promise<Collection> {
-    const res = await apiClient.patch<Collection>(`/collections/${id}`, { imageUrl });
+  async setImage(id: string, imageUrl: string, imageAssetId?: string): Promise<Collection> {
+    const res = await apiClient.patch<Collection>(`/collections/${id}`, { imageUrl, imageAssetId });
     return collectionSchema.parse(res.data);
   },
 

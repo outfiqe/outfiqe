@@ -4,11 +4,13 @@ import { creatorApprovedTemplate, creatorRejectedTemplate } from "#email-templat
 import { CreatorStatus, FollowTargetType } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
+import { toResponsiveImage } from "#lib/responsive-image.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { badgeService } from "#modules/badges/badge.service.js";
 import { creatorLookRepository } from "#modules/creator-looks/creatorLook.repository.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
+import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
@@ -93,12 +95,15 @@ export const creatorService = {
 
   async updateMe(userId: string, input: UpdateCreatorProfileBody): Promise<CreatorProfile> {
     await requireUser(userId);
+    if (input.avatarImageAssetId) {
+      await imageProcessingService.assertAssetsOwnedBy([input.avatarImageAssetId], userId);
+    }
     const updated = await userRepository.updateProfile(userId, input);
     return toProfile(updated);
   },
 
   async getPublicProfile(handle: string, viewerId?: string): Promise<PublicCreatorProfile> {
-    const user = await userRepository.findByHandle(handle);
+    const user = await userRepository.findWithAvatarAssetByHandle(handle);
     if (!user || !user.isCreator) {
       throw new AppError("NOT_FOUND", "Creator not found.", NOT_FOUND_STATUS);
     }
@@ -108,6 +113,7 @@ export const creatorService = {
       name,
       handle: userHandle,
       avatarUrl,
+      avatarImageAsset,
       heightCm,
       showHeight,
       hideFromLeaderboards,
@@ -132,6 +138,7 @@ export const creatorService = {
       name,
       handle: userHandle,
       avatarUrl,
+      avatarImage: avatarUrl ? toResponsiveImage(avatarUrl, avatarImageAsset) : null,
       heightCm: showHeight || isOwnProfile ? heightCm : null,
       showHeight,
       hideFromLeaderboards,

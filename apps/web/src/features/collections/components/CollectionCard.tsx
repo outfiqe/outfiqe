@@ -19,7 +19,13 @@ export const CollectionCard = ({ collection }: CollectionCardProps) => {
         style={collection.imageUrl ? undefined : { backgroundColor: getAvatarColor(collection.id) }}
       >
         {collection.imageUrl && (
-          <AppImage src={collection.imageUrl} alt="" fill sizes={COLLECTION_CARD_SIZES} />
+          <AppImage
+            src={collection.imageUrl}
+            image={collection.image}
+            alt=""
+            fill
+            sizes={COLLECTION_CARD_SIZES}
+          />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
         <div className="relative z-10">

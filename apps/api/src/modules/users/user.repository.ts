@@ -2,6 +2,10 @@ import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import type { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
+import {
+  type ImageAssetForResponsiveImage,
+  RESPONSIVE_IMAGE_ASSET_SELECT,
+} from "#lib/responsive-image.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
 import type {
@@ -15,7 +19,7 @@ const MAX_HANDLE_ATTEMPTS = 5;
 
 const createWithUniqueHandle = async (
   client: DbClient,
-  userData: Omit<Parameters<typeof prisma.user.create>[0]["data"], "handle">,
+  userData: Omit<Prisma.UserUncheckedCreateInput, "handle">,
   name: string,
 ): Promise<UserRecord> => {
   const base = slugifyHandle(name);
@@ -84,6 +88,15 @@ export const userRepository = {
 
   async findByHandle(handle: string): Promise<UserRecord | null> {
     return prisma.user.findUnique({ where: { handle } });
+  },
+
+  async findWithAvatarAssetByHandle(
+    handle: string,
+  ): Promise<(UserRecord & { avatarImageAsset: ImageAssetForResponsiveImage | null }) | null> {
+    return prisma.user.findUnique({
+      where: { handle },
+      include: { avatarImageAsset: { select: RESPONSIVE_IMAGE_ASSET_SELECT } },
+    });
   },
 
   async findManyByIds(ids: string[], q?: string): Promise<UserRecord[]> {

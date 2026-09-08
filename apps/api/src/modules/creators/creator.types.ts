@@ -1,3 +1,5 @@
+import type { ResponsiveImage } from "@outfiqe/types";
+
 import type { CreatorStatus } from "#generated/prisma/enums.js";
 import type { FeaturedBadgeView } from "#modules/badges/badge.types.js";
 
@@ -24,6 +26,7 @@ export type PublicCreatorProfile = {
   name: string;
   handle: string;
   avatarUrl: string | null;
+  avatarImage: ResponsiveImage | null;
   heightCm: number | null;
   showHeight: boolean;
   hideFromLeaderboards: boolean;

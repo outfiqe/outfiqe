@@ -10,10 +10,14 @@ import { useImageCropUpload } from "./use-image-crop-upload";
 
 const BANNER_ASPECT = 3.5;
 
+type PipelineUpload = { url: string; imageAssetId: string };
+
 type BannerUploaderProps = {
   value: string | null;
   onChange: (url: string | null) => void;
   onUpload: (files: File[]) => Promise<string[]>;
+  onUploadWithAsset?: (files: File[]) => Promise<PipelineUpload[]>;
+  onAssetIdChange?: (imageAssetId: string | null) => void;
   className?: string;
   describeUploadError?: (error: unknown) => string;
   transformFile?: (file: File) => Promise<File>;
@@ -23,6 +27,8 @@ export const BannerUploader = ({
   value,
   onChange,
   onUpload,
+  onUploadWithAsset,
+  onAssetIdChange,
   className,
   describeUploadError,
   transformFile,
@@ -40,10 +46,17 @@ export const BannerUploader = ({
     value,
     onChange,
     onUpload,
+    onUploadWithAsset,
+    onAssetIdChange,
     applyUrl: (url) => url,
     describeUploadError,
     transformFile,
   });
+
+  const clearBanner = () => {
+    onChange(null);
+    onAssetIdChange?.(null);
+  };
 
   const busy = isUploading || isPreparingFile;
 
@@ -82,7 +95,7 @@ export const BannerUploader = ({
         {value && !busy && (
           <button
             type="button"
-            onClick={() => onChange(null)}
+            onClick={clearBanner}
             aria-label="Remove banner"
             className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100"
           >

@@ -6,10 +6,15 @@ import { useRef, useState } from "react";
 import { cn } from "./cn";
 import { ACCEPTED_IMAGE_TYPES } from "./hidden-file-input";
 
+type PipelineUpload = { url: string; imageAssetId: string };
+
 type ImageUploaderProps = {
   value: string[];
   onChange: (urls: string[]) => void;
   onUpload: (files: File[]) => Promise<string[]>;
+  onUploadWithAsset?: (files: File[]) => Promise<PipelineUpload[]>;
+  assetIds?: (string | null)[];
+  onAssetIdsChange?: (assetIds: (string | null)[]) => void;
   maxFiles?: number;
   className?: string;
   describeUploadError?: (error: unknown) => string;
@@ -22,6 +27,9 @@ export const ImageUploader = ({
   value,
   onChange,
   onUpload,
+  onUploadWithAsset,
+  assetIds,
+  onAssetIdsChange,
   maxFiles = DEFAULT_MAX_FILES,
   className,
   describeUploadError,
@@ -41,8 +49,19 @@ export const ImageUploader = ({
     setError(null);
     try {
       const files = transformFile ? await Promise.all(selected.map(transformFile)) : selected;
-      const urls = await onUpload(files);
-      if (urls.length > 0) onChange([...value, ...urls]);
+      if (onUploadWithAsset) {
+        const uploaded = await onUploadWithAsset(files);
+        if (uploaded.length > 0) {
+          onChange([...value, ...uploaded.map((upload) => upload.url)]);
+          onAssetIdsChange?.([
+            ...(assetIds ?? []),
+            ...uploaded.map((upload) => upload.imageAssetId),
+          ]);
+        }
+      } else {
+        const urls = await onUpload(files);
+        if (urls.length > 0) onChange([...value, ...urls]);
+      }
     } catch (uploadError) {
       setError(
         describeUploadError ? describeUploadError(uploadError) : "Upload failed. Try again.",
@@ -53,20 +72,23 @@ export const ImageUploader = ({
     }
   };
 
-  const remove = (url: string) => onChange(value.filter((existing) => existing !== url));
+  const remove = (index: number) => {
+    onChange(value.filter((_, existingIndex) => existingIndex !== index));
+    onAssetIdsChange?.((assetIds ?? []).filter((_, existingIndex) => existingIndex !== index));
+  };
 
   return (
     <div className={cn("space-y-2", className)}>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-        {value.map((url) => (
+        {value.map((url, index) => (
           <div
-            key={url}
+            key={`${url}-${index}`}
             className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-cover bg-center"
             style={{ backgroundImage: `url(${url})` }}
           >
             <button
               type="button"
-              onClick={() => remove(url)}
+              onClick={() => remove(index)}
               aria-label="Remove image"
               className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-background/90 text-foreground opacity-0 transition-opacity group-hover:opacity-100"
             >

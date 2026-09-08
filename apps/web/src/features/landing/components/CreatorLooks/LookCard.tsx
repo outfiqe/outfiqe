@@ -8,6 +8,7 @@ import type { FeedPost } from "@/features/explore/api/exploreFeedSchemas";
 import { PostCaption } from "@/features/explore/components/PostCaption";
 import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
+import type { ResponsiveImage } from "@/shared/lib/responsiveImage";
 
 const LOOK_CARD_SIZES = "(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw";
 
@@ -18,18 +19,20 @@ type LookCardProps = {
 const LookImageFrame = ({
   productId,
   imageUrl,
+  image,
   alt,
   children,
 }: {
   productId: string | undefined;
   imageUrl: string;
+  image: ResponsiveImage | null | undefined;
   alt: string;
   children: ReactNode;
 }) => {
   const className = "relative block aspect-4/5 overflow-hidden rounded-2xl bg-muted";
   const content = (
     <>
-      <AppImage src={imageUrl} alt={alt} fill sizes={LOOK_CARD_SIZES} />
+      <AppImage src={imageUrl} image={image} alt={alt} fill sizes={LOOK_CARD_SIZES} />
       {children}
     </>
   );
@@ -46,7 +49,7 @@ const LookImageFrame = ({
 };
 
 export const LookCard = ({ look }: LookCardProps) => {
-  const { creator, imageUrl, caption, likeCount, taggedProducts } = look;
+  const { creator, imageUrl, image, caption, likeCount, taggedProducts } = look;
   const [primaryProduct, ...restProducts] = taggedProducts;
 
   return (
@@ -54,6 +57,7 @@ export const LookCard = ({ look }: LookCardProps) => {
       <LookImageFrame
         productId={primaryProduct?.id}
         imageUrl={imageUrl}
+        image={image}
         alt={`Look by ${creator.name}`}
       >
         <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-xs font-semibold text-white">

@@ -69,13 +69,33 @@ Do highest-traffic first, check the visual result, then sweep the long tail.
   `explore/PostCommentsSection`, `landing/TasteCategories`, `shared/PendingPhotoThumbnailRail`,
   `shared/PhotoCropPane` (crop UI — may be fine to leave as `background-image`).
 
-### Images — pipeline output (bigger, second pass)
+### Images — pipeline output (in progress on `feat/image-pipeline-integration`)
 
-`@outfiqe/image-pipeline` already produces per-width variants + a base64 LQIP, but public API
-types only expose one `imageUrl`. Plumb `variants` + `lqip` through the API for products, looks,
-avatars, hero slides and collections, then have `AppImage` take a real `blurDataURL` and (via a
-custom `next/image` loader) the pipeline's own variant URLs, removing the self-hosted optimizer
-cost.
+`@outfiqe/image-pipeline` produces per-width variants (avif/webp/jpeg) plus a base64 LQIP. Done so
+far:
+
+- `ProductImage` / `CreatorLookImage` link to an `ImageProcessingAsset` (`imageAssetId`, nullable
+  FK, `onDelete: SetNull`). Public product and creator-look responses carry `image`
+  (`{ url, lqip, sources: [{ format, srcSet }] }`) next to the unchanged `imageUrl`;
+  `image.url === imageUrl` always. See `apps/api/src/modules/{products,creator-looks,image-processing}/README.md`.
+- `POST /uploads/pipeline` runs a domain photo through the pipeline; product / look create+update
+  take `imageAssetIds` and persist the link. The web product and look forms upload through it.
+- `AppImage` renders a `<picture>` (avif + webp `<source>` from the pipeline's own URLs, jpeg
+  `<img>` fallback, LQIP as the backdrop) when it gets an `image` with `sources`; otherwise it
+  stays on `next/image`, adding `placeholder="blur"` when an `lqip` is present. This bypasses the
+  self-hosted optimizer for processed images. `ProductCard`, `ProductDetail` (main image),
+  `LookCard`, `PostGridCard`, `CreatorPostThumbnail` pass `image` through.
+
+Every domain image now runs through the pipeline: products, looks, review photos, hero slides,
+collections, brand banners, brand logos, and user avatars each have an `imageAssetId` FK, an
+`image` (/`avatarImage`/`bannerImage`) field on their public response, an upload path through
+`/uploads/pipeline`, and an `AppImage` `<picture>` at the render site. `prisma/backfill-image-assets.ts`
+(`pnpm db:backfill:image-assets`, `--dry-run` / `--limit=N`) walks all of those tables — run it
+once per environment after deploy, against a running API.
+
+Not done: `PostCarousel` and `SeenOnCreators` (responses only carry `image` for the first photo),
+and cart / order line-item thumbnails (use the stored URL snapshot). Avatars are wired but the
+320px minimum variant is oversized for a ≤112px avatar — see the `image-processing` README.
 
 ### Dashboards — extend the prefetch pattern
 

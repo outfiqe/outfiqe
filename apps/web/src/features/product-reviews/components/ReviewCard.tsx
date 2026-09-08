@@ -72,12 +72,12 @@ export const ReviewCard = ({
 
           {images.length > 0 && (
             <div className="mt-3 flex gap-2">
-              {images.map((url) => (
+              {images.map((image) => (
                 <div
-                  key={url}
+                  key={image.url}
                   className="relative aspect-square w-16 shrink-0 overflow-hidden rounded-lg border border-border"
                 >
-                  <AppImage src={url} alt="" fill sizes={REVIEW_IMAGE_SIZE} />
+                  <AppImage src={image.url} image={image} alt="" fill sizes={REVIEW_IMAGE_SIZE} />
                 </div>
               ))}
             </div>

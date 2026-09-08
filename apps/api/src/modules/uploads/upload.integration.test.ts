@@ -70,3 +70,37 @@ describe("POST /api/uploads", () => {
     expect(response.body.message).toBe("Only JPEG, PNG or WebP images are allowed.");
   });
 });
+
+describe("POST /api/uploads/pipeline", () => {
+  it("stores each file, queues it for processing, and returns its image asset id", async () => {
+    const user = await createUser();
+
+    const response = await request(testApp)
+      .post("/api/uploads/pipeline")
+      .set("Authorization", authHeaderFor(user.id))
+      .attach("files", Buffer.from(TINY_PNG_BASE64, "base64"), {
+        filename: "photo.png",
+        contentType: "image/png",
+      });
+
+    expect(response.status).toBe(200);
+    const [uploaded] = response.body.data.files;
+    expect(uploaded.url).toMatch(/^https?:\/\//);
+    expect(uploaded.assetId).toMatch(/^[0-9a-f-]{36}$/);
+
+    const asset = await prisma.imageProcessingAsset.findUnique({ where: { id: uploaded.assetId } });
+    expect(asset?.ownerId).toBe(user.id);
+    expect(asset?.status).toBe("PENDING");
+  });
+
+  it("rejects an unauthenticated pipeline upload", async () => {
+    const response = await request(testApp)
+      .post("/api/uploads/pipeline")
+      .attach("files", Buffer.from(TINY_PNG_BASE64, "base64"), {
+        filename: "photo.png",
+        contentType: "image/png",
+      });
+
+    expect(response.status).toBe(401);
+  });
+});
