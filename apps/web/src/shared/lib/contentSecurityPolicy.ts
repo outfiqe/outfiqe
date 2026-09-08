@@ -2,6 +2,8 @@ import { THEME_INIT_SCRIPT_SHA256 } from "@outfiqe/design-system";
 
 export const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
 
+const ESEWA_FORM_POST_ORIGINS = "https://epay.esewa.com.np https://rc-epay.esewa.com.np";
+
 export const getSentryConnectSrc = (): string => {
   const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
   if (!dsn) return "";
@@ -54,7 +56,7 @@ export const buildContentSecurityPolicy = ({
     `frame-src 'self' ${TURNSTILE_ORIGIN}`,
     "object-src 'none'",
     "base-uri 'self'",
-    "form-action 'self'",
+    `form-action 'self' ${ESEWA_FORM_POST_ORIGINS}`,
     "frame-ancestors 'self'",
     ...(isProduction ? ["upgrade-insecure-requests"] : []),
   ].join("; ");

@@ -9,7 +9,11 @@ then confirm the outcome when the gateway redirects them back.
 
 - `paymentRedirect.utils.ts` — `redirectToPaymentGateway`: takes the API's initiate result and
   either sets `window.location` (Khalti's `REDIRECT` mode) or auto-submits a hidden form
-  (eSewa's `FORM_POST` mode).
+  (eSewa's `FORM_POST` mode). The eSewa form posts cross-origin to `epay.esewa.com.np` /
+  `rc-epay.esewa.com.np`, so those hosts are allowlisted in the site CSP's `form-action`
+  (`shared/lib/contentSecurityPolicy.ts`) — without that the browser blocks the submit and the
+  shopper never reaches the gateway. Khalti needs nothing there because a `window.location` change
+  is a navigation, not a form submission.
 - `hooks/useInitiatePayment.ts` — the `POST /payments/:orderId/initiate` mutation. `networkMode:
 "always"` so an offline attempt fails fast instead of queueing invisibly (same reasoning as
   `checkout/README.md`). On an `ALREADY_SETTLED` error it invalidates `["orders"]` and
