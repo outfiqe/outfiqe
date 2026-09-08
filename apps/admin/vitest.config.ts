@@ -19,6 +19,7 @@ export default defineConfig({
         "src/features/brand-applications/api.ts",
         "src/features/brand-applications/hooks/useInfiniteBrandApplications.ts",
         "src/features/tag-reports/**/*.{ts,tsx}",
+        "src/features/tag-reviews/**/*.{ts,tsx}",
         "src/components/Logo.tsx",
         "src/features/gamification/designConfig.utils.ts",
         "src/features/gamification/BadgesSection/badgeForm.utils.ts",

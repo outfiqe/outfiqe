@@ -1,4 +1,5 @@
 import type {
+  BrandTagReviewPolicy,
   TagApprovalSource,
   TagRejectionReason,
   TagReviewStatus,
@@ -46,4 +47,24 @@ export type SlaEligibleTag = {
 export type BrandReviewBacklog = {
   brandId: string;
   pendingCount: number;
+};
+
+export type ReviewLatencyByPolicy = {
+  policy: BrandTagReviewPolicy;
+  decidedCount: number;
+  p50Hours: number | null;
+  p90Hours: number | null;
+};
+
+export type TagReviewMetrics = {
+  reviewLatencyByPolicy: ReviewLatencyByPolicy[];
+  approvalSourceMix: { source: TagApprovalSource; count: number }[];
+  rejectionReasonMix: { reason: TagRejectionReason; count: number }[];
+  timeToFirstShoppable: {
+    looksWithApprovedTag: number;
+    p50Hours: number | null;
+    p90Hours: number | null;
+  };
+  stuckApprovalRequiredCount: number;
+  reports: { open: number; last30Days: number };
 };

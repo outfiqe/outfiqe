@@ -12,9 +12,14 @@ import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.uti
 import type {
   BrandReviewBacklog,
   ReviewableTag,
+  ReviewLatencyByPolicy,
   SlaEligibleTag,
+  TagReviewMetrics,
   TagReviewQueuePage,
 } from "./tagReview.types.js";
+
+const SLA_DECISION_WINDOW_DAYS = 7;
+const REPORT_RECENT_WINDOW_DAYS = 30;
 
 type QueueCursor = { s: string; i: string };
 
@@ -158,6 +163,114 @@ export const tagReviewRepository = {
         creatorLook: { deletedAt: null },
       },
     });
+  },
+
+  async getMetrics(): Promise<TagReviewMetrics> {
+    const dayMs = 24 * 60 * 60 * 1000;
+    const slaCutoff = new Date(Date.now() - SLA_DECISION_WINDOW_DAYS * dayMs);
+    const reportRecentCutoff = new Date(Date.now() - REPORT_RECENT_WINDOW_DAYS * dayMs);
+
+    const [latencyRows, sourceRows, reasonRows, firstShoppableRows, stuckRows, reportRows] =
+      await Promise.all([
+        prisma.$queryRaw<
+          {
+            policy: BrandTagReviewPolicy;
+            decided_count: number;
+            p50: number | null;
+            p90: number | null;
+          }[]
+        >(Prisma.sql`
+          SELECT b.tag_review_policy AS policy,
+                 COUNT(*)::int AS decided_count,
+                 percentile_cont(0.5) WITHIN GROUP (
+                   ORDER BY EXTRACT(EPOCH FROM (clp.reviewed_at - clp.submitted_at))
+                 ) AS p50,
+                 percentile_cont(0.9) WITHIN GROUP (
+                   ORDER BY EXTRACT(EPOCH FROM (clp.reviewed_at - clp.submitted_at))
+                 ) AS p90
+          FROM creator_look_products clp
+          JOIN products p ON p.id = clp.product_id
+          JOIN brands b ON b.id = p.brand_id
+          WHERE clp.reviewed_by_id IS NOT NULL AND clp.reviewed_at IS NOT NULL
+          GROUP BY b.tag_review_policy
+        `),
+        prisma.$queryRaw<{ approval_source: TagApprovalSource; count: number }[]>(Prisma.sql`
+          SELECT approval_source, COUNT(*)::int AS count
+          FROM creator_look_products
+          WHERE review_status = 'APPROVED' AND approval_source IS NOT NULL
+          GROUP BY approval_source
+        `),
+        prisma.$queryRaw<{ rejection_reason: TagRejectionReason; count: number }[]>(Prisma.sql`
+          SELECT rejection_reason, COUNT(*)::int AS count
+          FROM creator_look_products
+          WHERE review_status = 'REJECTED' AND rejection_reason IS NOT NULL
+          GROUP BY rejection_reason
+        `),
+        prisma.$queryRaw<{ looks: number; p50: number | null; p90: number | null }[]>(Prisma.sql`
+          WITH first_approved AS (
+            SELECT clp.creator_look_id,
+                   MIN(COALESCE(clp.reviewed_at, clp.submitted_at)) AS approved_at
+            FROM creator_look_products clp
+            WHERE clp.review_status = 'APPROVED'
+            GROUP BY clp.creator_look_id
+          )
+          SELECT COUNT(*)::int AS looks,
+                 percentile_cont(0.5) WITHIN GROUP (
+                   ORDER BY EXTRACT(EPOCH FROM (fa.approved_at - cl.created_at))
+                 ) AS p50,
+                 percentile_cont(0.9) WITHIN GROUP (
+                   ORDER BY EXTRACT(EPOCH FROM (fa.approved_at - cl.created_at))
+                 ) AS p90
+          FROM first_approved fa
+          JOIN creator_looks cl ON cl.id = fa.creator_look_id
+          WHERE cl.deleted_at IS NULL
+        `),
+        prisma.creatorLookProduct.count({
+          where: {
+            reviewStatus: TagReviewStatus.PENDING,
+            submittedAt: { lt: slaCutoff },
+            creatorLook: { deletedAt: null },
+            product: { brand: { tagReviewPolicy: BrandTagReviewPolicy.APPROVAL_REQUIRED } },
+          },
+        }),
+        prisma.$queryRaw<{ open: number; last30: number }[]>(Prisma.sql`
+          SELECT COUNT(*) FILTER (WHERE status = 'OPEN')::int AS open,
+                 COUNT(*) FILTER (WHERE created_at >= ${reportRecentCutoff})::int AS last30
+          FROM tag_review_reports
+        `),
+      ]);
+
+    const toHours = (seconds: number | null): number | null =>
+      seconds === null ? null : Math.round((Number(seconds) / 3600) * 10) / 10;
+
+    const latencyByPolicy: ReviewLatencyByPolicy[] = latencyRows.map((row) => ({
+      policy: row.policy,
+      decidedCount: row.decided_count,
+      p50Hours: toHours(row.p50),
+      p90Hours: toHours(row.p90),
+    }));
+
+    const firstShoppable = firstShoppableRows[0] ?? { looks: 0, p50: null, p90: null };
+    const reportTotals = reportRows[0] ?? { open: 0, last30: 0 };
+
+    return {
+      reviewLatencyByPolicy: latencyByPolicy,
+      approvalSourceMix: sourceRows.map((row) => ({
+        source: row.approval_source,
+        count: row.count,
+      })),
+      rejectionReasonMix: reasonRows.map((row) => ({
+        reason: row.rejection_reason,
+        count: row.count,
+      })),
+      timeToFirstShoppable: {
+        looksWithApprovedTag: firstShoppable.looks,
+        p50Hours: toHours(firstShoppable.p50),
+        p90Hours: toHours(firstShoppable.p90),
+      },
+      stuckApprovalRequiredCount: stuckRows,
+      reports: { open: reportTotals.open, last30Days: reportTotals.last30 },
+    };
   },
 
   async findReviewableTag(tagId: string, brandIds: string[]): Promise<ReviewableTag | null> {

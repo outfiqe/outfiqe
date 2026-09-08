@@ -26,6 +26,10 @@ export const tagReviewController = {
     sendSuccess(res, count, "Pending tag review count.");
   },
 
+  async metrics(_req: Request, res: Response) {
+    sendSuccess(res, await tagReviewService.getMetrics(), "Tag review metrics.");
+  },
+
   async approve(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const { id } = validated.params<TagReviewIdParam>(res);

@@ -7,7 +7,7 @@ import { productService } from "#modules/products/product.service.js";
 
 import { tagReviewRepository } from "./tagReview.repository.js";
 import type { ApproveTagBody, ListTagReviewsQuery, RejectTagBody } from "./tagReview.schemas.js";
-import type { ReviewableTag, TagReviewQueuePage } from "./tagReview.types.js";
+import type { ReviewableTag, TagReviewMetrics, TagReviewQueuePage } from "./tagReview.types.js";
 
 const NOT_FOUND_STATUS = 404;
 const INVALID_TRANSITION_STATUS = 422;
@@ -112,6 +112,10 @@ export const tagReviewService = {
   async countPending(userId: string): Promise<{ pendingCount: number }> {
     const brandIds = await tagReviewRepository.listMemberBrandIds(userId);
     return { pendingCount: await tagReviewRepository.countPending(brandIds) };
+  },
+
+  getMetrics(): Promise<TagReviewMetrics> {
+    return tagReviewRepository.getMetrics();
   },
 
   async approveTag(userId: string, tagId: string, { trustCreator }: ApproveTagBody): Promise<void> {

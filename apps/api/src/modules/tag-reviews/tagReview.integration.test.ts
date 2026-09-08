@@ -16,6 +16,7 @@ import {
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
+import { createAdminSession } from "#test/integration/authHelpers.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -341,5 +342,80 @@ describe("PATCH /api/brands/me tag review policy", () => {
     expect(
       (await prisma.creatorLookProduct.findUniqueOrThrow({ where: { id: tag.id } })).reviewStatus,
     ).toBe("PENDING");
+  });
+});
+
+describe("GET /api/tag-reviews/metrics", () => {
+  it("403s a non-platform user", async () => {
+    const response = await request(testApp)
+      .get("/api/tag-reviews/metrics")
+      .set("Authorization", brandOwnerHeader(randomUUID()));
+    expect(response.status).toBe(403);
+  });
+
+  it("rolls up latency, source mix, rejection mix, stuck queue and reports", async () => {
+    const { authHeader } = await createAdminSession();
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    const { brand, creator } = await seedPendingTag();
+    await prisma.brand.update({
+      where: { id: brand.id },
+      data: { tagReviewPolicy: "APPROVAL_REQUIRED" },
+    });
+
+    const decided = await createTag(creator.id, (await createProduct(brand.id)).id);
+    await prisma.creatorLookProduct.update({
+      where: { id: decided.tag.id },
+      data: {
+        reviewStatus: "APPROVED",
+        approvalSource: "BRAND",
+        reviewedById: creator.id,
+        submittedAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
+        reviewedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      },
+    });
+
+    const rejected = await createTag(creator.id, (await createProduct(brand.id)).id);
+    await prisma.creatorLookProduct.update({
+      where: { id: rejected.tag.id },
+      data: {
+        reviewStatus: "REJECTED",
+        rejectionReason: "COUNTERFEIT_SUSPECTED",
+        reviewedById: creator.id,
+        submittedAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
+        reviewedAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+      },
+    });
+
+    const stale = await createTag(creator.id, (await createProduct(brand.id)).id);
+    await prisma.creatorLookProduct.update({
+      where: { id: stale.tag.id },
+      data: { reviewStatus: "PENDING", submittedAt: new Date(Date.now() - 9 * dayMs) },
+    });
+
+    await prisma.tagReviewReport.create({
+      data: {
+        creatorLookProductId: decided.tag.id,
+        source: "PUBLIC_REPORT",
+        reason: "MISLEADING",
+        status: "OPEN",
+      },
+    });
+
+    const response = await request(testApp)
+      .get("/api/tag-reviews/metrics")
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(200);
+    const { data } = response.body;
+    const approvalRequired = data.reviewLatencyByPolicy.find(
+      (row: { policy: string }) => row.policy === "APPROVAL_REQUIRED",
+    );
+    expect(approvalRequired.decidedCount).toBe(2);
+    expect(approvalRequired.p50Hours).toBeGreaterThan(0);
+    expect(data.approvalSourceMix).toContainEqual({ source: "BRAND", count: 1 });
+    expect(data.rejectionReasonMix).toContainEqual({ reason: "COUNTERFEIT_SUSPECTED", count: 1 });
+    expect(data.stuckApprovalRequiredCount).toBe(1);
+    expect(data.reports.open).toBe(1);
   });
 });

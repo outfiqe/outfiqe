@@ -18,11 +18,14 @@ import {
   FollowTargetType,
   HeroSlideStatus,
   ProductStatus,
+  TagApprovalSource,
+  TagReviewStatus,
   UserRole,
   XpActivityType,
 } from "../src/generated/prisma/enums.js";
 import { prisma } from "../src/shared/db/prisma.js";
 import { seedCrmAccess } from "./seed-crm.js";
+import { seedTagReview } from "./seed-tag-review.js";
 
 type NepalBankSeedRow = { code: string; name: string; type: keyof typeof BankType };
 
@@ -227,7 +230,14 @@ async function seedCreatorLooks(creators: { id: string }[]) {
         creatorId: creator.id,
         imageUrl: lookPhotoUrl(i),
         caption: LOOK_CAPTIONS[i % LOOK_CAPTIONS.length],
-        taggedProducts: { create: productIds.map((productId) => ({ productId, sizeWorn })) },
+        taggedProducts: {
+          create: productIds.map((productId) => ({
+            productId,
+            sizeWorn,
+            reviewStatus: TagReviewStatus.APPROVED,
+            approvalSource: TagApprovalSource.GRANDFATHERED,
+          })),
+        },
       },
     });
   }
@@ -1931,6 +1941,7 @@ async function main() {
   await seedGamificationBadges();
   await seedUserBadges(creators);
   await seedCrmAccess();
+  await seedTagReview();
 }
 
 main()

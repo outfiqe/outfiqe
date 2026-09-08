@@ -193,6 +193,7 @@ const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
   { id: "orders", href: "/orders", label: "Orders", icon: ShoppingBag },
   { id: "support", href: "/support", label: "Support requests", icon: LifeBuoy },
   { id: "product-reviews", href: "/product-reviews", label: "Product Reviews", icon: Star },
+  { id: "tag-reviews", href: "/tag-reviews", label: "Tag reviews", icon: ListChecks },
   { id: "tag-reports", href: "/tag-reports", label: "Tag reports", icon: Flag },
   { id: "trending", href: "/trending", label: "Trending debug", icon: TrendingUp },
   { id: "creators", href: "/creators", label: "Creators", icon: Users },

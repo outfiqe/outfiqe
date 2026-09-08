@@ -5,6 +5,7 @@ import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
+import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 
 import { tagReviewController } from "./tagReview.controller.js";
 import {
@@ -28,6 +29,8 @@ const reviewRateLimit = rateLimit({
 const requireBrandOwner = [requireAuth, requireRole(UserRole.BRAND_OWNER)];
 
 export const tagReviewRoutes = Router();
+
+tagReviewRoutes.get("/metrics", requireAuth, requirePlatformAccess, tagReviewController.metrics);
 
 tagReviewRoutes.get("/pending-count", ...requireBrandOwner, tagReviewController.pendingCount);
 
