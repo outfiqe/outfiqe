@@ -122,6 +122,7 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
             {activeImage ? (
               <AppImage
                 src={activeImage}
+                image={selectedImageIndex === 0 ? product.image : undefined}
                 alt={product.name}
                 fill
                 sizes={PRODUCT_IMAGE_SIZES}

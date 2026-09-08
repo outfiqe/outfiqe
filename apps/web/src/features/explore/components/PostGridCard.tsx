@@ -18,7 +18,7 @@ type PostGridCardProps = {
 };
 
 export const PostGridCard = ({ post, onClick, trendingRank }: PostGridCardProps) => {
-  const { id, imageUrl, images, caption } = post;
+  const { id, imageUrl, image, images, caption } = post;
 
   return (
     <div className="mb-4">
@@ -29,7 +29,7 @@ export const PostGridCard = ({ post, onClick, trendingRank }: PostGridCardProps)
         className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30"
         style={imageUrl ? undefined : { backgroundColor: getAvatarColor(id) }}
       >
-        {imageUrl && <AppImage src={imageUrl} alt="" fill sizes={POST_GRID_SIZES} />}
+        {imageUrl && <AppImage src={imageUrl} image={image} alt="" fill sizes={POST_GRID_SIZES} />}
 
         {trendingRank && <TrendingRankBadge rank={trendingRank} />}
 

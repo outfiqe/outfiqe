@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { responsiveImageSchema } from "@/shared/lib/responsiveImage";
+
 export const productTypeSchema = z.string();
 
 export const publicProductSchema = z.object({
@@ -12,6 +14,7 @@ export const publicProductSchema = z.object({
   type: productTypeSchema,
   categorySlugs: z.array(z.string()),
   imageUrl: z.string().nullable(),
+  image: responsiveImageSchema.nullish(),
   lowStock: z.boolean(),
   isNew: z.boolean(),
   creatorBuyerCount: z.number(),
