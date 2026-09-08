@@ -35,11 +35,17 @@ export const SiteFooter = () => {
         ))}
       </div>
 
-      <div className="mt-10 flex flex-col gap-2 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-10 border-t border-border pt-6">
         <p className="text-xs text-muted-foreground">
-          &copy; {new Date().getFullYear()} Outfiqe. All rights reserved.
+          Creators may earn a commission when you shop the pieces they&apos;ve tagged in their
+          looks.
         </p>
-        <p className="text-xs text-muted-foreground">Made for Nepal.</p>
+        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground">
+            &copy; {new Date().getFullYear()} Outfiqe. All rights reserved.
+          </p>
+          <p className="text-xs text-muted-foreground">Made for Nepal.</p>
+        </div>
       </div>
     </footer>
   );

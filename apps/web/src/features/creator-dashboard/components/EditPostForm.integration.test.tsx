@@ -69,6 +69,10 @@ const buildDetail = (overrides: Partial<CreatorLookEditDetail> = {}): CreatorLoo
     {
       productId: "product-1",
       sizeWorn: "M",
+      reviewStatus: "APPROVED",
+      rejectionReason: null,
+      rejectionNote: null,
+      canReRequest: false,
       product: {
         id: "product-1",
         name: "Denim Jacket",
@@ -78,6 +82,25 @@ const buildDetail = (overrides: Partial<CreatorLookEditDetail> = {}): CreatorLoo
       },
     },
   ],
+  ...overrides,
+});
+
+const buildTaggedProduct = (
+  overrides: Partial<CreatorLookEditDetail["taggedProducts"][number]> = {},
+): CreatorLookEditDetail["taggedProducts"][number] => ({
+  productId: "product-1",
+  sizeWorn: "M",
+  reviewStatus: "APPROVED",
+  rejectionReason: null,
+  rejectionNote: null,
+  canReRequest: false,
+  product: {
+    id: "product-1",
+    name: "Denim Jacket",
+    brand: "Studio Nine",
+    price: 4500,
+    imageUrl: null,
+  },
   ...overrides,
 });
 
@@ -461,5 +484,82 @@ describe("EditPostForm", () => {
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("opens the tag list and explains the model when a tag is still in review", () => {
+    renderForm(
+      buildDetail({
+        taggedProducts: [buildTaggedProduct({ reviewStatus: "PENDING" })],
+      }),
+    );
+
+    expect(
+      screen.getByText(/stay hidden on the post until the brand approves/i),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("In review").length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(/hidden on your post until the brand approves it/i),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the brand's reason and note on a declined tag and lets the creator request again", async () => {
+    let patchBody: unknown;
+    mswServer.use(
+      http.patch("/api/creator-looks/look-1", async ({ request }) => {
+        patchBody = await request.json();
+        return HttpResponse.json({
+          success: true,
+          message: "Post updated.",
+          data: {
+            id: "look-1",
+            imageUrl: "https://cdn.outfiqe.test/existing.jpg",
+            caption: null,
+            createdAt: "2026-01-01T00:00:00.000Z",
+            taggedProducts: [],
+          },
+        });
+      }),
+    );
+
+    const user = userEvent.setup();
+    const { onClose } = renderForm(
+      buildDetail({
+        taggedProducts: [
+          buildTaggedProduct({
+            reviewStatus: "REJECTED",
+            rejectionReason: "MISREPRESENTS_PRODUCT",
+            rejectionNote: "Wrong colourway for this piece.",
+            canReRequest: true,
+          }),
+        ],
+      }),
+    );
+
+    expect(screen.getByText(/misrepresents the product/i)).toBeInTheDocument();
+    expect(screen.getByText(/Wrong colourway for this piece\./)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Request again" }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect((patchBody as { taggedProducts: { productId: string }[] }).taggedProducts).toEqual([
+      { productId: "product-1", sizeWorn: "M" },
+    ]);
+  });
+
+  it("locks re-request on a declined tag that hit the cap", () => {
+    renderForm(
+      buildDetail({
+        taggedProducts: [
+          buildTaggedProduct({
+            reviewStatus: "REJECTED",
+            rejectionReason: "NOT_OUR_PRODUCT",
+            canReRequest: false,
+          }),
+        ],
+      }),
+    );
+
+    expect(screen.queryByRole("button", { name: "Request again" })).not.toBeInTheDocument();
+    expect(screen.getByText(/used all your re-requests/i)).toBeInTheDocument();
   });
 });

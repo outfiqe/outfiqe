@@ -3,6 +3,7 @@ import type { ResponsiveImage } from "@outfiqe/types";
 import type {
   BrandTagReviewPolicy,
   TagApprovalSource,
+  TagRejectionReason,
   TagReviewStatus,
 } from "#generated/prisma/enums.js";
 
@@ -68,6 +69,10 @@ export type BrandTagPolicy = {
 };
 
 export type CreatorLookEditTaggedProduct = TaggedProductInput & {
+  reviewStatus: TagReviewStatus;
+  rejectionReason: TagRejectionReason | null;
+  rejectionNote: string | null;
+  canReRequest: boolean;
   product: {
     id: string;
     name: string;

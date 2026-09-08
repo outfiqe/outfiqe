@@ -1,3 +1,5 @@
+import type { TagRejectionReason } from "#generated/prisma/enums.js";
+import { TagReviewStatus } from "#generated/prisma/enums.js";
 import {
   ageHoursOf,
   computeOwnBaseline,
@@ -7,6 +9,7 @@ import {
 
 import {
   BOT_USER_AGENT_PATTERNS,
+  MAX_TAG_RE_REQUESTS,
   TAG_TREND_BASELINE_WINDOW_DAYS,
   TAG_TREND_BASELINE_WINDOW_HOURS,
   TAG_TREND_CURRENT_WINDOW_END_HOURS,
@@ -102,6 +105,10 @@ export const toEditDetail = ({
   taggedProducts: {
     productId: string;
     sizeWorn: string | null;
+    reviewStatus: TagReviewStatus;
+    rejectionReason: TagRejectionReason | null;
+    rejectionNote: string | null;
+    reRequestCount: number;
     product: {
       id: string;
       name: string;
@@ -114,17 +121,32 @@ export const toEditDetail = ({
   id,
   imageUrls: images.length > 0 ? images.map((image) => image.url) : [imageUrl],
   caption,
-  taggedProducts: taggedProducts.map(({ productId, sizeWorn, product }) => ({
-    productId,
-    sizeWorn: sizeWorn ?? "",
-    product: {
-      id: product.id,
-      name: product.name,
-      brand: product.brand.name,
-      price: product.price,
-      imageUrl: product.imageUrl,
-    },
-  })),
+  taggedProducts: taggedProducts.map(
+    ({
+      productId,
+      sizeWorn,
+      reviewStatus,
+      rejectionReason,
+      rejectionNote,
+      reRequestCount,
+      product,
+    }) => ({
+      productId,
+      sizeWorn: sizeWorn ?? "",
+      reviewStatus,
+      rejectionReason,
+      rejectionNote,
+      canReRequest:
+        reviewStatus === TagReviewStatus.REJECTED && reRequestCount < MAX_TAG_RE_REQUESTS,
+      product: {
+        id: product.id,
+        name: product.name,
+        brand: product.brand.name,
+        price: product.price,
+        imageUrl: product.imageUrl,
+      },
+    }),
+  ),
 });
 
 export type SimpleCursor = { c: string; i: string };

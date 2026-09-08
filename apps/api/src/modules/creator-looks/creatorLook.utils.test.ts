@@ -160,6 +160,11 @@ describe("toSummary", () => {
 describe("toEditDetail", () => {
   const baseTaggedProduct = {
     productId: "product-1",
+    sizeWorn: "M" as string | null,
+    reviewStatus: "APPROVED" as const,
+    rejectionReason: null,
+    rejectionNote: null,
+    reRequestCount: 0,
     product: {
       id: "product-1",
       name: "Jacket",
@@ -186,6 +191,10 @@ describe("toEditDetail", () => {
       {
         productId: "product-1",
         sizeWorn: "M",
+        reviewStatus: "APPROVED",
+        rejectionReason: null,
+        rejectionNote: null,
+        canReRequest: false,
         product: {
           id: "product-1",
           name: "Jacket",
@@ -208,6 +217,41 @@ describe("toEditDetail", () => {
 
     expect(detail.imageUrls).toEqual(["https://cdn.example.com/cover.png"]);
     expect(detail.taggedProducts[0]?.sizeWorn).toBe("");
+  });
+
+  it("lets a creator re-request a rejected tag until the cap is reached", () => {
+    const detail = toEditDetail({
+      id: "look-1",
+      imageUrl: "https://cdn.example.com/cover.png",
+      images: [],
+      caption: null,
+      taggedProducts: [
+        {
+          ...baseTaggedProduct,
+          productId: "retry-ok",
+          reviewStatus: "REJECTED",
+          rejectionReason: "MISREPRESENTS_PRODUCT",
+          rejectionNote: "Wrong colourway",
+          reRequestCount: 2,
+        },
+        {
+          ...baseTaggedProduct,
+          productId: "retry-locked",
+          reviewStatus: "REJECTED",
+          rejectionReason: "NOT_OUR_PRODUCT",
+          rejectionNote: null,
+          reRequestCount: 3,
+        },
+      ],
+    });
+
+    expect(detail.taggedProducts[0]).toMatchObject({
+      reviewStatus: "REJECTED",
+      rejectionReason: "MISREPRESENTS_PRODUCT",
+      rejectionNote: "Wrong colourway",
+      canReRequest: true,
+    });
+    expect(detail.taggedProducts[1]).toMatchObject({ canReRequest: false });
   });
 });
 

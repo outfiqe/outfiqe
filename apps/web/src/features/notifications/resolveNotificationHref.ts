@@ -58,10 +58,13 @@ export const resolveNotificationHref = (
     case "SUPPORT_TICKET_ASSIGNED":
       return null;
     case "PRODUCT_TAG_APPROVED":
+      return ownHandle && notification.entityId
+        ? lookPermalinkPath(ownHandle, notification.entityId)
+        : "/profile";
     case "PRODUCT_TAG_REJECTED":
     case "PRODUCT_TAG_REVOKED":
       return ownHandle && notification.entityId
-        ? lookPermalinkPath(ownHandle, notification.entityId)
+        ? `/creator/${ownHandle}?edit=${notification.entityId}`
         : "/profile";
     case "PRODUCT_TAG_SUBMITTED":
     case "PRODUCT_TAG_REVIEW_REMINDER":
