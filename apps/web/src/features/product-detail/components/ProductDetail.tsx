@@ -157,6 +157,7 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
         <div>
           <Link
             href={`/brand/${product.brand.id}`}
+            prefetch={false}
             className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary-strong"
           >
             {product.brand.name} →

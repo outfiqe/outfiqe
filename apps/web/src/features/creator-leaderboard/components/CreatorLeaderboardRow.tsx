@@ -17,6 +17,7 @@ export const CreatorLeaderboardRow = ({ entry }: CreatorLeaderboardRowProps) => 
   return (
     <Link
       href={`/creator/${creatorHandle}`}
+      prefetch={false}
       className="flex items-center gap-4 border-b border-border px-4 py-4 transition-colors last:border-b-0 hover:bg-muted"
     >
       <span className="w-8 shrink-0 text-center font-display text-lg font-extrabold text-muted-foreground">

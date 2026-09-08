@@ -140,6 +140,7 @@ export const MobileNav = () => {
                     <Link
                       key={label}
                       href={href}
+                      prefetch={false}
                       onClick={() => setOpen(false)}
                       className="rounded-lg px-2 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
                     >

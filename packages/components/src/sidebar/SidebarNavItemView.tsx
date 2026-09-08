@@ -75,6 +75,7 @@ export const SidebarNavItemView = ({
       isActive={isCurrentPage}
       isAncestorActive={descendantActive}
       collapsed={collapsed}
+      prefetch={false}
       baseClassName={cx(navLinkBaseClass, collapsed ? navLinkCollapsedClass : navLinkExpandedClass)}
       activeClassName={navLinkActiveClass}
       ancestorClassName={navLinkAncestorActiveClass}
