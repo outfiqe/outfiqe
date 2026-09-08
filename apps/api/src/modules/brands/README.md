@@ -29,4 +29,6 @@ It's `null` if no owner membership exists yet, and it's only fetched for the sin
 endpoint (`getPublicProfile`), not `listPublic`, to avoid an extra query per row on the browse grid
 where nothing needs it.
 
+**`Brand.tagReviewPolicy` and `Brand.autoApproveVerifiedBuyers` exist but are not exposed or read yet.** Added in migration `20260908150000_add_brand_tag_review` ahead of the Brand Tag Review feature; every existing brand was defaulted to `TRUSTED_ONLY` / verified-buyer auto-approve on. `PATCH /brands/me` does not accept them and no code branches on them until the tag-review chunks land.
+
 **`q` on the public list endpoint doubles as the admin gamification sponsor-brand picker's search** (`apps/admin/src/features/gamification/BadgesSection/BrandSponsorField.tsx`, `apps/api/src/modules/badges`) rather than a second, admin-only "search brands" endpoint. The picker only ever needs a small set of public-safe fields (id/name/avatarUrl) to let an admin attach a sponsor to a badge, and this endpoint already returns exactly that, already paginated, already tested — a parallel lite endpoint would just be the same query with less code reuse. `countAll` takes the same `q` so a future caller that reads `.total` against a filtered list gets a consistent number, even though today's only consumers (the browse page, the sponsor picker) don't read it.
