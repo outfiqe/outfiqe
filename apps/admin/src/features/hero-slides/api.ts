@@ -13,6 +13,7 @@ export type CreateHeroSlideInput = {
   ctaLabel: string;
   ctaHref: string;
   imageUrl?: string;
+  imageAssetId?: string;
 };
 
 export const heroSlidesApi = {
@@ -31,8 +32,8 @@ export const heroSlidesApi = {
     return heroSlideSchema.parse(res.data);
   },
 
-  async setImage(id: string, imageUrl: string): Promise<HeroSlide> {
-    const res = await apiClient.patch<HeroSlide>(`/hero-slides/${id}`, { imageUrl });
+  async setImage(id: string, imageUrl: string, imageAssetId?: string): Promise<HeroSlide> {
+    const res = await apiClient.patch<HeroSlide>(`/hero-slides/${id}`, { imageUrl, imageAssetId });
     return heroSlideSchema.parse(res.data);
   },
 };

@@ -50,7 +50,14 @@ export const HeroCarousel = ({ slides }: HeroCarouselProps) => {
               <div className="relative flex h-48 flex-col justify-center overflow-hidden px-4 py-4 sm:h-105 sm:px-12 sm:py-10 lg:px-16">
                 {slide.imageUrl ? (
                   <>
-                    <AppImage src={slide.imageUrl} alt="" fill sizes="100vw" eager={i === 0} />
+                    <AppImage
+                      src={slide.imageUrl}
+                      image={slide.image}
+                      alt=""
+                      fill
+                      sizes="100vw"
+                      eager={i === 0}
+                    />
                     <div
                       aria-hidden
                       className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/25"

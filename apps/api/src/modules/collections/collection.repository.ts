@@ -1,5 +1,6 @@
 import { prisma } from "#db/prisma.js";
 import { CollectionStatus, ProductStatus } from "#generated/prisma/enums.js";
+import { RESPONSIVE_IMAGE_ASSET_SELECT } from "#lib/responsive-image.utils.js";
 import type { ProductWithBrand } from "#modules/products/product.types.js";
 
 import type {
@@ -9,8 +10,9 @@ import type {
   UpdateCollectionInput,
 } from "./collection.types.js";
 
-const withProductCount = {
+const withCountAndImageAsset = {
   _count: { select: { products: { where: { product: { status: ProductStatus.APPROVED } } } } },
+  imageAsset: { select: RESPONSIVE_IMAGE_ASSET_SELECT },
 };
 
 const withProductAndBrand = {
@@ -27,7 +29,7 @@ export const collectionRepository = {
   async create(input: CreateCollectionInput): Promise<CollectionWithProductCount> {
     const { _count, ...collection } = await prisma.collection.create({
       data: input,
-      include: withProductCount,
+      include: withCountAndImageAsset,
     });
     return { ...collection, productCount: _count.products };
   },
@@ -36,7 +38,7 @@ export const collectionRepository = {
     const { _count, ...collection } = await prisma.collection.update({
       where: { id },
       data: input,
-      include: withProductCount,
+      include: withCountAndImageAsset,
     });
     return { ...collection, productCount: _count.products };
   },
@@ -47,7 +49,7 @@ export const collectionRepository = {
 
   async listAll(): Promise<CollectionWithProductCount[]> {
     const rows = await prisma.collection.findMany({
-      include: withProductCount,
+      include: withCountAndImageAsset,
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
     });
     return rows.map(({ _count, ...collection }) => ({
@@ -62,7 +64,7 @@ export const collectionRepository = {
   }): Promise<CollectionWithProductCount[]> {
     const rows = await prisma.collection.findMany({
       where: { status: CollectionStatus.PUBLISHED },
-      include: withProductCount,
+      include: withCountAndImageAsset,
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
@@ -80,7 +82,7 @@ export const collectionRepository = {
   async findPublicBySlug(slug: string): Promise<CollectionWithProductCount | null> {
     const row = await prisma.collection.findFirst({
       where: { slug, status: CollectionStatus.PUBLISHED },
-      include: withProductCount,
+      include: withCountAndImageAsset,
     });
     if (!row) return null;
 

@@ -86,9 +86,15 @@ far:
   self-hosted optimizer for processed images. `ProductCard`, `ProductDetail` (main image),
   `LookCard`, `PostGridCard`, `CreatorPostThumbnail` pass `image` through.
 
-Not done: a one-off backfill for images already stored as bare URLs (so `sources` is empty in
-prod until then), and the same treatment for avatars, brand banners, hero slides, collections,
-`ProductReviewImage`, `PostCarousel`, `SeenOnCreators`, and cart/order line-item thumbnails.
+Hero slides and collections got the same treatment: `imageAssetId` FK, `image` on the public
+response, admin `ImageUpload` uploads through `/uploads/pipeline`, and `HeroCarousel` /
+`CollectionCard` / `CollectionDetail` consume `image`. `prisma/backfill-image-assets.ts`
+(`pnpm db:backfill:image-assets`) links existing product/look gallery rows — run it once per
+environment after deploy.
+
+Not done: the same treatment for avatars, brand banners (schema column exists, no code yet),
+`ProductReviewImage`, `PostCarousel`, `SeenOnCreators`, and cart/order line-item thumbnails; a
+backfill for hero slides / collections.
 
 ### Dashboards — extend the prefetch pattern
 

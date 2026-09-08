@@ -24,6 +24,7 @@ export const createCollectionSchema = z.object({
   slug: collectionSlugSchema,
   description: z.string().trim().max(DESCRIPTION_MAX).optional(),
   imageUrl: z.url().optional(),
+  imageAssetId: z.uuid().nullable().optional(),
   status: collectionStatusSchema.optional(),
   sortOrder: z.number().int().optional(),
 });
