@@ -16,6 +16,8 @@ const aNotification = (
   type: NotificationType.LOOK_LIKED,
   entityType: NotificationEntityType.LOOK,
   entityId: randomUUID(),
+  targetSurface: null,
+  targetPath: null,
   metadata: {},
   groupKey: null,
   actorCount: 1,

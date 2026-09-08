@@ -49,7 +49,11 @@ export const registerNotificationEventConsumers = (): void => {
         entityType: NotificationEntityType.LOOK,
         entityId: lookId,
         groupKey: NOTIFICATION_GROUP_KEYS.lookLiked(lookId),
-        metadata: { lookImageUrl: look?.imageUrl, lookCaption: look?.caption ?? null },
+        metadata: {
+          lookImageUrl: look?.imageUrl,
+          lookCaption: look?.caption ?? null,
+          lookOwnerHandle: look?.ownerHandle,
+        },
       });
     },
   });
@@ -86,7 +90,12 @@ export const registerNotificationEventConsumers = (): void => {
         type: NotificationType.LOOK_COMMENTED,
         entityType: NotificationEntityType.LOOK,
         entityId: lookId,
-        metadata: { actor, lookImageUrl: look?.imageUrl, lookCaption: look?.caption ?? null },
+        metadata: {
+          actor,
+          lookImageUrl: look?.imageUrl,
+          lookCaption: look?.caption ?? null,
+          lookOwnerHandle: look?.ownerHandle,
+        },
       });
     },
   });
@@ -424,6 +433,7 @@ export const registerNotificationEventConsumers = (): void => {
           entityType: NotificationEntityType.SUPPORT_TICKET,
           entityId: ticketId,
           metadata: { supportSubject: subject },
+          recipientIsStaff: true,
         })),
       );
     },
