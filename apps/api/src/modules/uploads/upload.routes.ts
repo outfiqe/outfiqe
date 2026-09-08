@@ -3,7 +3,13 @@ import { Router } from "express";
 import multer from "multer";
 
 import { AppError } from "#middlewares/error-handler.js";
-import { requireAuth } from "#middlewares/require-auth.js";
+import { rateLimit } from "#middlewares/rate-limit.js";
+import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
+import {
+  IMAGE_PROCESSING_UPLOAD_RATE_LIMIT_MAX,
+  IMAGE_PROCESSING_UPLOAD_RATE_LIMIT_WINDOW_MS,
+} from "#modules/image-processing/image-processing.constants.js";
+import { checkImageIngestBackPressure } from "#modules/image-processing/image-processing.queue.js";
 
 import { uploadController } from "./upload.controller.js";
 
@@ -43,6 +49,24 @@ const upload = multer({
   },
 });
 
+const TOO_MANY_REQUESTS_STATUS = 429;
+
+const checkImagePipelineBackPressure = async (_req: Request, res: Response, next: NextFunction) => {
+  const decision = await checkImageIngestBackPressure();
+  if (decision.allowed) {
+    next();
+    return;
+  }
+  res.setHeader("Retry-After", decision.retryAfterSeconds);
+  next(
+    new AppError(
+      "IMAGE_QUEUE_SATURATED",
+      "The image processing queue is at capacity. Please try again shortly.",
+      TOO_MANY_REQUESTS_STATUS,
+    ),
+  );
+};
+
 const handleUpload = (req: Request, res: Response, next: NextFunction) => {
   upload.array("files", MAX_FILES)(req, res, (err: unknown) => {
     if (!err) {
@@ -64,3 +88,17 @@ const handleUpload = (req: Request, res: Response, next: NextFunction) => {
 export const uploadRoutes = Router();
 
 uploadRoutes.post("/", requireAuth, handleUpload, uploadController.upload);
+
+uploadRoutes.post(
+  "/pipeline",
+  requireAuth,
+  rateLimit({
+    namespace: "uploads-pipeline",
+    windowMs: IMAGE_PROCESSING_UPLOAD_RATE_LIMIT_WINDOW_MS,
+    max: IMAGE_PROCESSING_UPLOAD_RATE_LIMIT_MAX,
+    keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
+  }),
+  checkImagePipelineBackPressure,
+  handleUpload,
+  uploadController.uploadThroughPipeline,
+);

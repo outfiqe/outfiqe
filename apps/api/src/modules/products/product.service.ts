@@ -16,6 +16,7 @@ import { categoryService } from "#modules/categories/category.service.js";
 import { MAX_BRAND_DISCOUNT_BASIS_POINTS } from "#modules/discounts/discount.constants.js";
 import type { ActiveBrandDiscount } from "#modules/discounts/discount.types.js";
 import { isBrandDiscountWithinCeiling } from "#modules/discounts/discount.utils.js";
+import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 import { productTypeService } from "#modules/product-types/product-type.service.js";
 import { sizeOptionService } from "#modules/size-options/size-option.service.js";
 import { trendingService } from "#modules/trending/trending.service.js";
@@ -115,9 +116,21 @@ const notifyBrand = async (
 export const productService = {
   async create(
     userId: string,
-    { categories: categorySlugs, name, price, type, imageUrls, lowStock, sizes }: CreateProductBody,
+    {
+      categories: categorySlugs,
+      name,
+      price,
+      type,
+      imageUrls,
+      imageAssetIds,
+      lowStock,
+      sizes,
+    }: CreateProductBody,
   ): Promise<ProductBrandSummary> {
     const brandId = await requireBrandId(userId);
+    if (imageAssetIds?.length) {
+      await imageProcessingService.assertAssetsOwnedBy(imageAssetIds, userId);
+    }
     const productType = await productTypeService.getActiveBySlug(type);
     const categories = await categoryService.getManyBySlugs(categorySlugs);
     const sizeOptions = await sizeOptionService.getManyByIds(
@@ -133,6 +146,7 @@ export const productService = {
       productTypeId: productType.id,
       categoryIds: categories.map((category) => category.id),
       imageUrls,
+      imageAssetIds,
       lowStock,
       sizes: sizes.map(({ sizeOptionId, stock }, sortOrder) => {
         const sizeOption = sizeOptionById.get(sizeOptionId);
@@ -153,10 +167,13 @@ export const productService = {
   async update(
     userId: string,
     productId: string,
-    { categories, name, price, type, imageUrls, lowStock, sizes }: UpdateProductBody,
+    { categories, name, price, type, imageUrls, imageAssetIds, lowStock, sizes }: UpdateProductBody,
   ): Promise<ProductBrandSummary> {
     const brandId = await requireBrandId(userId);
     const product = await requireOwnedProduct(productId, brandId);
+    if (imageAssetIds?.length) {
+      await imageProcessingService.assertAssetsOwnedBy(imageAssetIds, userId);
+    }
 
     const categoryIds = categories
       ? (await categoryService.getManyBySlugs(categories)).map((category) => category.id)
@@ -202,6 +219,7 @@ export const productService = {
         productTypeId: targetProductType?.id,
         categoryIds,
         imageUrls,
+        imageAssetIds,
         lowStock,
         sizes: sizeChanges,
       });

@@ -177,14 +177,20 @@ const withTotalStockAndSizes = <T extends { sizes: BrandProductSize[] }>(
 
 export const productRepository = {
   async create(input: CreateProductInput): Promise<ProductWithStockSizesAndImages> {
-    const { imageUrls, categoryIds, sizes: sizeInputs, ...rest } = input;
+    const { imageUrls, imageAssetIds, categoryIds, sizes: sizeInputs, ...rest } = input;
     const product = await prisma.product.create({
       data: {
         ...rest,
         categories: { connect: categoryIds.map((id) => ({ id })) },
         imageUrl: imageUrls?.[0],
         images: imageUrls?.length
-          ? { create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })) }
+          ? {
+              create: imageUrls.map((url, sortOrder) => ({
+                url,
+                sortOrder,
+                imageAssetId: imageAssetIds?.[sortOrder] ?? null,
+              })),
+            }
           : undefined,
         sizes: {
           create: sizeInputs.map(({ label, stock, sortOrder }) => ({
@@ -201,7 +207,7 @@ export const productRepository = {
   },
 
   async update(id: string, input: UpdateProductInput): Promise<ProductWithStockSizesAndImages> {
-    const { imageUrls, categoryIds, sizes, ...rest } = input;
+    const { imageUrls, imageAssetIds, categoryIds, sizes, ...rest } = input;
     const product = await prisma.product.update({
       where: { id },
       data: {
@@ -212,7 +218,11 @@ export const productRepository = {
               imageUrl: imageUrls[0],
               images: {
                 deleteMany: {},
-                create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })),
+                create: imageUrls.map((url, sortOrder) => ({
+                  url,
+                  sortOrder,
+                  imageAssetId: imageAssetIds?.[sortOrder] ?? null,
+                })),
               },
             }
           : {}),

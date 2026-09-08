@@ -26,6 +26,7 @@ export type TaggedProductInput = {
 export type CreateCreatorLookInput = {
   creatorId: string;
   imageUrls: [string, ...string[]];
+  imageAssetIds?: (string | null)[];
   caption?: string;
   taggedProducts: TaggedProductInput[];
   hashtags: string[];
@@ -33,6 +34,7 @@ export type CreateCreatorLookInput = {
 
 export type UpdateCreatorLookInput = {
   imageUrls: [string, ...string[]];
+  imageAssetIds?: (string | null)[];
   caption?: string;
   taggedProducts: TaggedProductInput[];
   hashtags: string[];

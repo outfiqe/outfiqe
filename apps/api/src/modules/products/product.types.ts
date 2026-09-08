@@ -150,6 +150,7 @@ export type CreateProductInput = {
   productTypeId: string;
   categoryIds: string[];
   imageUrls?: string[];
+  imageAssetIds?: (string | null)[];
   lowStock?: boolean;
   sizes: CreateProductSizeInput[];
 };

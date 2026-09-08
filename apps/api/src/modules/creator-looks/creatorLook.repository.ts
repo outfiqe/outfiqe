@@ -914,6 +914,7 @@ export const creatorLookRepository = {
   async create({
     creatorId,
     imageUrls,
+    imageAssetIds,
     caption,
     taggedProducts,
     hashtags,
@@ -925,7 +926,11 @@ export const creatorLookRepository = {
           imageUrl: imageUrls[0],
           caption,
           images: {
-            create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })),
+            create: imageUrls.map((url, sortOrder) => ({
+              url,
+              sortOrder,
+              imageAssetId: imageAssetIds?.[sortOrder] ?? null,
+            })),
           },
           taggedProducts: {
             create: taggedProducts.map(({ productId, sizeWorn }) => ({
@@ -959,7 +964,7 @@ export const creatorLookRepository = {
 
   async update(
     lookId: string,
-    { imageUrls, caption, taggedProducts, hashtags }: UpdateCreatorLookInput,
+    { imageUrls, imageAssetIds, caption, taggedProducts, hashtags }: UpdateCreatorLookInput,
   ): Promise<CreatorLookSummary> {
     const look = await prisma.$transaction(async (tx) => {
       await tx.creatorLookProduct.deleteMany({ where: { creatorLookId: lookId } });
@@ -972,7 +977,11 @@ export const creatorLookRepository = {
           imageUrl: imageUrls[0],
           caption,
           images: {
-            create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })),
+            create: imageUrls.map((url, sortOrder) => ({
+              url,
+              sortOrder,
+              imageAssetId: imageAssetIds?.[sortOrder] ?? null,
+            })),
           },
           taggedProducts: {
             create: taggedProducts.map(({ productId, sizeWorn }) => ({ productId, sizeWorn })),

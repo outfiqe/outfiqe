@@ -22,6 +22,12 @@ export type SubmitUploadInput = {
   qualityTier: QualityTier;
 };
 
+export type SubmitUploadForOwnerInput = {
+  ownerId: string;
+  tempStorageKey: string;
+  qualityTier: QualityTier;
+};
+
 export const imageProcessingService = {
   async submitUpload(input: SubmitUploadInput): Promise<PublicImageAsset> {
     const { ownerId, uploader, tempStorageKey, qualityTier } = input;
@@ -54,6 +60,20 @@ export const imageProcessingService = {
     });
 
     return toPublicImageAsset(asset);
+  },
+
+  async submitUploadForOwner(input: SubmitUploadForOwnerInput): Promise<PublicImageAsset> {
+    const uploader = await imageProcessingRepository.findUploaderProfile(input.ownerId);
+    return imageProcessingService.submitUpload({ ...input, uploader });
+  },
+
+  async assertAssetsOwnedBy(assetIds: (string | null)[], ownerId: string): Promise<void> {
+    const uniqueAssetIds = [...new Set(assetIds.filter((id): id is string => id !== null))];
+    if (uniqueAssetIds.length === 0) return;
+    const ownedCount = await imageProcessingRepository.countOwnedByIds(uniqueAssetIds, ownerId);
+    if (ownedCount !== uniqueAssetIds.length) {
+      throw new AppError("IMAGE_ASSET_NOT_FOUND", "Image asset not found.", NOT_FOUND_STATUS);
+    }
   },
 
   async getStatus(assetId: string, ownerId: string): Promise<PublicImageAsset> {
