@@ -12,6 +12,7 @@ import { Check, ImageOff, Search, Tags, X } from "lucide-react";
 import { useState } from "react";
 
 import type { PublicProduct } from "@/features/products/api/productSchemas";
+import { AppImage } from "@/shared/components/AppImage";
 import { cn } from "@/shared/lib/cn";
 
 import type { LookFormInput } from "../schemas/lookForm.schema";
@@ -19,12 +20,15 @@ import type { LookFormInput } from "../schemas/lookForm.schema";
 const ProductThumb = ({ url, className }: { url: string | null; className?: string }) => (
   <div
     className={cn(
-      "flex shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted bg-cover bg-center",
+      "relative flex shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted",
       className,
     )}
-    style={url ? { backgroundImage: `url(${url})` } : undefined}
   >
-    {!url && <ImageOff className="size-4 text-muted-foreground" />}
+    {url ? (
+      <AppImage src={url} alt="" fill sizes="64px" />
+    ) : (
+      <ImageOff className="size-4 text-muted-foreground" />
+    )}
   </div>
 );
 

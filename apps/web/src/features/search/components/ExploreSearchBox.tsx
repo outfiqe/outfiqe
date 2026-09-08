@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
 
+import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 import { EXPLORE_SEARCH_PATH } from "@/shared/lib/exploreMode";
@@ -115,14 +116,12 @@ export const ExploreSearchBox = ({
                   onSelect={() => goToCreatorProfile(handle)}
                 >
                   <div
-                    className="flex size-9 shrink-0 items-center justify-center rounded-full bg-cover bg-center"
-                    style={
-                      avatarUrl
-                        ? { backgroundImage: `url(${avatarUrl})` }
-                        : { backgroundColor: getAvatarColor(userId) }
-                    }
+                    className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full"
+                    style={avatarUrl ? undefined : { backgroundColor: getAvatarColor(userId) }}
                   >
-                    {!avatarUrl && (
+                    {avatarUrl ? (
+                      <AppImage src={avatarUrl} alt="" fill sizes="36px" />
+                    ) : (
                       <span aria-hidden className="text-xs font-bold text-white">
                         {initialsFor(name)}
                       </span>
@@ -147,10 +146,9 @@ export const ExploreSearchBox = ({
                   value={postSuggestionValue(post.id)}
                   onSelect={() => goToCreatorProfile(post.creator.handle)}
                 >
-                  <div
-                    className="size-9 shrink-0 rounded-md bg-muted bg-cover bg-center"
-                    style={{ backgroundImage: `url(${post.imageUrl})` }}
-                  />
+                  <div className="relative size-9 shrink-0 overflow-hidden rounded-md bg-muted">
+                    <AppImage src={post.imageUrl} alt="" fill sizes="36px" />
+                  </div>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] text-foreground">
                       {post.caption ?? `@${post.creator.handle}`}
