@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import { describe, expect, it } from "vitest";
 
-import { THEME_INIT_SCRIPT, THEME_INIT_SCRIPT_SHA256 } from "./theme";
+import { THEME_INIT_SCRIPT, THEME_INIT_SCRIPT_SHA256 } from "./theme-init";
 
 describe("THEME_INIT_SCRIPT_SHA256", () => {
   it("matches the current theme init script so a CSP hash can allow it", () => {

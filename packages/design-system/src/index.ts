@@ -33,6 +33,7 @@ export * from "./stat-card";
 export * from "./switch";
 export * from "./tabs";
 export * from "./theme";
+export * from "./theme-init";
 export * from "./theme-toggle";
 export * from "./toast";
 export * from "./trend-chart";
