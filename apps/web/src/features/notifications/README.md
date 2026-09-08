@@ -3,7 +3,7 @@
 ## Purpose
 
 Wires the shared `NotificationBell` (`@outfiqe/components`) into `apps/web`: the notifications API
-client, the socket connection it listens on, and web's own `type -> route` redirect resolver. The
+client, the socket connection it listens on, and the navigation the bell performs on a click. The
 bell, panel, pagination, mute preferences, and cache logic all live in the shared packages — this
 feature only owns what's genuinely app-local (see the root `CLAUDE.md`'s Turborepo section).
 
@@ -13,35 +13,27 @@ feature only owns what's genuinely app-local (see the root `CLAUDE.md`'s Turbore
   for an unauthenticated visitor. Subscribes to the app's own `shared/lib/socketClient` connection
   via `useSyncExternalStore` (not `useState` + `useEffect` — see rationale below) and passes the
   wrapped socket, `notificationsApi`, and a select handler down to `NotificationBell`. The select
-  handler resolves the href, then routes it with `window.location.assign` when
-  `isFullPageNavHref` says it points at the admin app (a cross-origin URL, or the `ADMIN_URL`
-  path prefix) and `router.push` otherwise.
-- `resolveNotificationHref.ts` — the `type -> route` resolver for the web surface (creator,
-  business, and any authenticated customer — `ORDER_STATUS_CHANGED` reaches all three). Takes the
-  signed-in user's own `handle` (from `auth`'s session — see rationale below) since
-  `LOOK_LIKED`/`LOOK_COMMENTED` need it to link into that user's own profile, and an `isAdmin`
-  flag as its third argument. Staff-only types (`BRAND_APPLICATION_SUBMITTED`,
-  `SUPPORT_TICKET_CREATED`/`_ASSIGNED`, `CRM_ITEM_ASSIGNED`, `COUPON_*`) resolve to an absolute
-  `${ADMIN_URL}/…` deep link — they have no page on this app and the dashboard/support guards
-  would bounce an admin to the admin root and drop the path. `SUPPORT_TICKET_REPLY`/`_RESOLVED`
-  reach both a customer and staff, so they branch on `isAdmin`: the admin ticket view vs. the
-  customer `/support?ticket=` thread.
-- `notificationRoutes.ts` — the route path literals and small path builders used by the resolver,
-  kept out of the switch so a mistyped path is a change in one named place rather than a bare
-  string buried in a `case`.
+  handler calls `resolveNotificationNavigation` and then `router.push` for a same-app path or
+  `window.location.assign` for one the resolver flags as `fullPage` (a cross-origin URL, or an
+  `${ADMIN_URL}/…` path into the admin app).
+- `resolveNotificationHref.ts` — `resolveNotificationNavigation(notification, ownHandle, isAdmin)`
+  returns `{ href, fullPage }`. When the API stored a `targetPath` on the notification (the normal
+  case — see `apps/api/src/modules/notifications/README.md`), it just prefixes an `ADMIN`-surface
+  path with `ADMIN_URL` and marks it `fullPage`. `resolveNotificationHref` (the old per-`type`
+  resolver) and `notificationRoutes.ts` are kept only as the fallback for notifications created
+  before server-authored targets shipped, and go away once the backfill has run everywhere.
 
 ## Funnel
 
 **User-facing:** any signed-in user sees the bell in the site header. Opening it shows their feed;
-clicking a row marks it read and navigates to `resolveNotificationHref`'s target for that
-notification's type.
+clicking a row marks it read and navigates to the destination the API stored on the notification.
 
 **Technical:** `SiteNotificationBell` acquires the shared socket connection on mount (only once
 authenticated), passes it to `NotificationBell`, which uses `useNotificationSocket` (`@outfiqe/hooks`)
 to keep the react-query cache in sync with live `notification:created`/`updated`/`read`/`read-all`
-events. `resolveNotificationHref` is pure — everything it needs is already denormalized onto the
-notification by the write path (see `apps/api/src/modules/notifications/README.md`), plus the
-`handle`/`isAdmin` the bell reads from `useAuth`.
+events. The navigation is pure — everything it needs (`targetSurface`/`targetPath`, or the
+denormalized `metadata` the legacy fallback reads) is already on the notification, plus the
+`handle`/`isAdmin` the bell reads from `useAuth` for the fallback path.
 
 ## Non-obvious rationale
 
@@ -69,11 +61,15 @@ second API round-trip just to resolve one's own profile URL.
 
 **Why some notifications leave this app.** An admin or support agent gets the same bell on
 `outfiqe.com` as everyone else, but the admin console is a separate app under `ADMIN_URL`. The
-staff-only notification types have no page here, and `requireDashboardSession` /
-`app/support/page.tsx` redirect an admin to the admin root (dropping any `?ticket=`/path) if they
-land on a dashboard or support route. So the resolver returns an absolute `${ADMIN_URL}/…` link
-for those types and `SiteNotificationBell` does a real page navigation (`window.location.assign`)
-instead of `router.push`, matching how `AccountMenu`/`MobileNav` already link across to the admin
-app. `NotificationType`/`NotificationEntityType` in `@outfiqe/types` must stay in sync with the
-Prisma enum in `apps/api` (the `COUPON_*` types were missing, which made those notifications fall
-through to `default: null` and show the generic panel message).
+API stamps `targetSurface: "ADMIN"` on staff-only notifications; the bell prefixes those with
+`ADMIN_URL` and does a real page navigation (`window.location.assign`), matching how
+`AccountMenu`/`MobileNav` already link across. `NotificationType`/`NotificationEntityType`/
+`NotificationSurface` in `@outfiqe/types` must stay in sync with the Prisma enums in `apps/api`.
+
+**`/messages` and `/settings/*` use `requireAuthedSession`, not `requireDashboardSession`.**
+`requireDashboardSession` sends an admin with no creator/brand dashboard of their own to the admin
+console. Direct messages and a person's own account settings are platform-wide — an admin can
+receive a DM and must be able to open it — so those routes only require a session. The creator/
+brand dashboard routes keep `requireDashboardSession`, which now bounces on _capability_
+(`isApprovedCreator || isBrandMember`), so an admin who is also a creator reaches `/earnings`
+instead of being bounced by their role.

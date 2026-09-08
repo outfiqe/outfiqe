@@ -53,6 +53,13 @@ export const CrmItemKind = {
 
 export type CrmItemKind = (typeof CrmItemKind)[keyof typeof CrmItemKind];
 
+export const NotificationSurface = {
+  WEB: "WEB",
+  ADMIN: "ADMIN",
+} as const;
+
+export type NotificationSurface = (typeof NotificationSurface)[keyof typeof NotificationSurface];
+
 export type RecentActor = {
   id: string;
   name: string;
@@ -98,6 +105,8 @@ export type Notification = {
   type: NotificationType;
   entityType: NotificationEntityType | null;
   entityId: string | null;
+  targetSurface: NotificationSurface | null;
+  targetPath: string | null;
   metadata: NotificationMetadata;
   groupKey: string | null;
   actorCount: number;

@@ -4,7 +4,7 @@ import { DashboardMobileNavBar } from "@/components/DashboardMobileNavBar";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MessagesPageLayout } from "@/features/messaging";
 
-import { requireDashboardSession } from "../../(dashboard)/requireDashboardSession";
+import { requireAuthedSession } from "../../(dashboard)/requireDashboardSession";
 
 export const metadata: Metadata = { title: "Messages" };
 
@@ -14,7 +14,7 @@ interface ConversationPageProps {
 
 const ConversationRoute = async ({ params }: ConversationPageProps) => {
   const { conversationId } = await params;
-  await requireDashboardSession(`/messages/${conversationId}`);
+  await requireAuthedSession(`/messages/${conversationId}`);
 
   return (
     <div>

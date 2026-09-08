@@ -1,4 +1,9 @@
-import { CrmItemKind, type Notification, NotificationType } from "@outfiqe/types";
+import {
+  CrmItemKind,
+  type Notification,
+  NotificationSurface,
+  NotificationType,
+} from "@outfiqe/types";
 
 import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
 import { lookPermalinkPath } from "@/features/explore";
@@ -95,3 +100,21 @@ export const resolveNotificationHref = (
 
 export const isFullPageNavHref = (href: string): boolean =>
   /^https?:\/\//.test(href) || href === ADMIN_URL || href.startsWith(`${ADMIN_URL}/`);
+
+export type NotificationNavigation = { href: string; fullPage: boolean };
+
+export const resolveNotificationNavigation = (
+  notification: Notification,
+  ownHandle: string | undefined,
+  isAdmin: boolean,
+): NotificationNavigation | null => {
+  if (notification.targetPath) {
+    return notification.targetSurface === NotificationSurface.WEB
+      ? { href: notification.targetPath, fullPage: false }
+      : { href: `${ADMIN_URL}${notification.targetPath}`, fullPage: true };
+  }
+
+  const legacyHref = resolveNotificationHref(notification, ownHandle, isAdmin);
+  if (!legacyHref) return null;
+  return { href: legacyHref, fullPage: isFullPageNavHref(legacyHref) };
+};
