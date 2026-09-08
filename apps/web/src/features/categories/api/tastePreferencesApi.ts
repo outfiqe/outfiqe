@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { apiClient } from "@/shared/lib/apiClient";
 
-const tastePreferenceSchema = z.object({
+export const tastePreferenceSchema = z.object({
   categorySlugs: z.array(z.string()).nullable(),
 });
 

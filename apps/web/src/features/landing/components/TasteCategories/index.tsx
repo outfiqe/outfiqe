@@ -6,12 +6,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
-import { useTastePreferences } from "@/features/categories/hooks/useTastePreferences";
 import { visibleTasteCategories } from "@/features/categories/lib/visibleTasteCategories";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
 import { useCategorySelection } from "../../lib/CategorySelectionContext";
+import {
+  resolveActiveCategorySlug,
+  resolveDisplayCategories,
+} from "../../lib/resolveTasteCategories";
 import { CustomizeTasteModal } from "./CustomizeTasteModal";
 
 const SCROLL_STEP_PX = 320;
@@ -21,26 +24,30 @@ export const TasteCategories = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const categories = useCategories();
-  const { storedSlugs, isCustomized, save, reset } = useTastePreferences();
-  const { pendingCategorySlug, markCategoryPending } = useCategorySelection();
+  const {
+    storedTasteSlugs,
+    isTasteCustomized,
+    saveTasteSlugs,
+    resetTasteSlugs,
+    pendingCategorySlug,
+    markCategoryPending,
+  } = useCategorySelection();
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
 
   const allCategories = categories.data ?? [];
-  const visibleCategories = visibleTasteCategories(allCategories, storedSlugs);
   const deepLinkedSlug = searchParams.get("category");
-  const deepLinkedCategory =
-    deepLinkedSlug && !visibleCategories.some((category) => category.slug === deepLinkedSlug)
-      ? allCategories.find((category) => category.slug === deepLinkedSlug)
-      : undefined;
-  const displayCategories = deepLinkedCategory
-    ? [deepLinkedCategory, ...visibleCategories]
-    : visibleCategories;
+  const visibleCategories = visibleTasteCategories(allCategories, storedTasteSlugs);
+  const displayCategories = resolveDisplayCategories(
+    allCategories,
+    storedTasteSlugs,
+    deepLinkedSlug,
+  );
 
-  const resolvedSlug = deepLinkedSlug ?? displayCategories[0]?.slug;
+  const resolvedSlug = resolveActiveCategorySlug(displayCategories, deepLinkedSlug);
   const isNavigating = pendingCategorySlug !== null;
   const activeSlug = pendingCategorySlug ?? resolvedSlug;
 
-  const canCustomize = allCategories.length > visibleCategories.length || isCustomized;
+  const canCustomize = allCategories.length > visibleCategories.length || isTasteCustomized;
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -174,8 +181,8 @@ export const TasteCategories = () => {
         <CustomizeTasteModal
           allCategories={allCategories}
           selectedSlugs={visibleCategories.map((category) => category.slug)}
-          onSave={save}
-          onReset={reset}
+          onSave={saveTasteSlugs}
+          onReset={resetTasteSlugs}
           onClose={() => setIsCustomizeOpen(false)}
         />
       )}

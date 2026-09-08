@@ -29,7 +29,11 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("@/features/auth/context/AuthContext", () => ({
-  useAuth: () => ({ isAuthenticated: false }),
+  useAuth: () => ({ isAuthenticated: false, isAuthResolved: true }),
+}));
+
+vi.mock("@/features/auth", () => ({
+  useAuth: () => ({ isAuthenticated: false, isAuthResolved: true }),
 }));
 
 vi.mock("@/features/wishlist", () => ({
@@ -46,6 +50,19 @@ vi.mock("@/features/products/hooks/useInfiniteProducts", () => ({
 
 vi.mock("@/features/products/hooks/useProductTypes", () => ({
   useProductTypes: vi.fn(),
+}));
+
+vi.mock("@/features/categories/hooks/useTastePreferences", () => ({
+  useTastePreferences: () => ({
+    storedSlugs: null,
+    isCustomized: false,
+    save: vi.fn(),
+    reset: vi.fn(),
+  }),
+}));
+
+vi.mock("@/shared/hooks/useIsHydrated", () => ({
+  useIsHydrated: () => true,
 }));
 
 const CATEGORIES = [
