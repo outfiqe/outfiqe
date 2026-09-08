@@ -16,13 +16,13 @@ import {
   releaseSocketConnection,
 } from "@/shared/lib/socketClient";
 
-import { resolveNotificationHref } from "./resolveNotificationHref";
+import { isFullPageNavHref, resolveNotificationHref } from "./resolveNotificationHref";
 
 const getSocketSnapshot = (): NotificationSocket => toNotificationSocket(getSocket());
 const getServerSocketSnapshot = (): null => null;
 
 export const SiteNotificationBell = () => {
-  const { isAuthenticated, isAuthResolved, state } = useAuth();
+  const { isAuthenticated, isAuthResolved, isAdmin, state } = useAuth();
   const { state: pushState } = usePushSubscription();
   const router = useRouter();
 
@@ -45,8 +45,10 @@ export const SiteNotificationBell = () => {
   if (!isAuthenticated) return null;
 
   const handleSelect = (notification: Notification): void => {
-    const href = resolveNotificationHref(notification, state.user?.handle);
-    if (href) router.push(href);
+    const href = resolveNotificationHref(notification, state.user?.handle, isAdmin);
+    if (!href) return;
+    if (isFullPageNavHref(href)) window.location.assign(href);
+    else router.push(href);
   };
 
   return (
