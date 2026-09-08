@@ -1,4 +1,5 @@
 import { DomainEvents, eventBus } from "#events/event-bus.js";
+import type { TagRejectionReason } from "#generated/prisma/enums.js";
 import { TagApprovalSource, TagReviewStatus } from "#generated/prisma/enums.js";
 import { canTransitionTagReview } from "#lib/tag-review.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -35,6 +36,44 @@ const requireTransition = (from: TagReviewStatus, to: TagReviewStatus): void => 
 };
 
 type ApprovableTag = { id: string; lookId: string; creatorId: string; productId: string };
+
+type TransitionableTag = ApprovableTag & { reviewStatus: TagReviewStatus };
+
+export const applyTagRejection = async (
+  tag: TransitionableTag,
+  {
+    reason,
+    note,
+    reviewedById,
+  }: { reason: TagRejectionReason; note: string | null; reviewedById: string },
+): Promise<void> => {
+  const wasApproved = tag.reviewStatus === TagReviewStatus.APPROVED;
+
+  await tagReviewRepository.transitionTag(tag.id, {
+    reviewStatus: TagReviewStatus.REJECTED,
+    approvalSource: null,
+    reviewedById,
+    reviewedAt: new Date(),
+    rejectionReason: reason,
+    rejectionNote: note,
+  });
+
+  if (wasApproved) {
+    await productService.recountWornBy(tag.productId);
+  }
+
+  await eventBus.publish(
+    wasApproved ? DomainEvents.PRODUCT_TAG_REVOKED : DomainEvents.PRODUCT_TAG_REJECTED,
+    {
+      tagId: tag.id,
+      lookId: tag.lookId,
+      creatorId: tag.creatorId,
+      productId: tag.productId,
+      reason,
+      note,
+    },
+  );
+};
 
 export const applyTagApproval = async (
   tag: ApprovableTag,
@@ -89,31 +128,20 @@ export const tagReviewService = {
   async rejectTag(userId: string, tagId: string, { reason, note }: RejectTagBody): Promise<void> {
     const tag = await requireReviewableTag(userId, tagId);
     requireTransition(tag.reviewStatus, TagReviewStatus.REJECTED);
-    const wasApproved = tag.reviewStatus === TagReviewStatus.APPROVED;
 
-    await tagReviewRepository.transitionTag(tagId, {
-      reviewStatus: TagReviewStatus.REJECTED,
-      approvalSource: null,
-      reviewedById: userId,
-      reviewedAt: new Date(),
-      rejectionReason: reason,
-      rejectionNote: note ?? null,
-    });
+    await applyTagRejection(tag, { reason, note: note ?? null, reviewedById: userId });
+  },
 
-    if (wasApproved) {
-      await productService.recountWornBy(tag.productId);
+  async takeDownTagAsPlatform(
+    tagId: string,
+    reviewedById: string,
+    { reason, note }: { reason: TagRejectionReason; note: string | null },
+  ): Promise<boolean> {
+    const tag = await tagReviewRepository.findTagForTransition(tagId);
+    if (!tag || !canTransitionTagReview(tag.reviewStatus, TagReviewStatus.REJECTED)) {
+      return false;
     }
-
-    await eventBus.publish(
-      wasApproved ? DomainEvents.PRODUCT_TAG_REVOKED : DomainEvents.PRODUCT_TAG_REJECTED,
-      {
-        tagId: tag.id,
-        lookId: tag.lookId,
-        creatorId: tag.creatorId,
-        productId: tag.productId,
-        reason,
-        note: note ?? null,
-      },
-    );
+    await applyTagRejection(tag, { reason, note, reviewedById });
+    return true;
   },
 };

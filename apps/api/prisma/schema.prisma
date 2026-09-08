@@ -36,6 +36,7 @@ model User {
   emailVerified        Boolean       @default(false) @map("email_verified")
   followerCount        Int           @default(0) @map("follower_count")
   followingCount       Int           @default(0) @map("following_count")
+  tagCounterfeitFlagCount Int        @default(0) @map("tag_counterfeit_flag_count")
   hideFromLeaderboards Boolean       @default(false) @map("hide_from_leaderboards")
   lastSeenAt           DateTime?     @map("last_seen_at")
   createdAt            DateTime      @default(now()) @map("created_at")
@@ -62,6 +63,8 @@ model User {
   reviewedLookProductTags                  CreatorLookProduct[]        @relation("CreatorLookProductReviewer")
   brandTrustReceived                       BrandTrustedCreator[]       @relation("BrandTrustedCreatorCreator")
   brandTrustGranted                        BrandTrustedCreator[]       @relation("BrandTrustedCreatorGrantedBy")
+  tagReportsMade                           TagReviewReport[]           @relation("TagReviewReportReporter")
+  tagReportsReviewed                       TagReviewReport[]           @relation("TagReviewReportReviewer")
   following                                Follow[]                    @relation("FollowerEdges")
   savedProducts                            SavedProduct[]
   cart                                     Cart?
@@ -748,7 +751,8 @@ model CreatorLookProduct {
   rejectionNote   String?             @map("rejection_note")
   reRequestCount  Int                 @default(0) @map("re_request_count")
 
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime          @default(now()) @map("created_at")
+  reports   TagReviewReport[]
 
   @@unique([creatorLookId, productId])
   @@index([productId, reviewStatus])
@@ -783,6 +787,47 @@ enum BrandTagReviewPolicy {
   OPEN
   TRUSTED_ONLY
   APPROVAL_REQUIRED
+}
+
+enum TagReportSource {
+  PUBLIC_REPORT
+  BRAND_COUNTERFEIT_REJECTION
+}
+
+enum TagReportReason {
+  COUNTERFEIT
+  NOT_GENUINELY_WORN
+  MISLEADING
+  OFFENSIVE
+  OTHER
+}
+
+enum TagReportStatus {
+  OPEN
+  ACTIONED
+  DISMISSED
+}
+
+model TagReviewReport {
+  id                   String             @id @default(uuid()) @db.Uuid
+  creatorLookProductId String             @map("creator_look_product_id") @db.Uuid
+  creatorLookProduct   CreatorLookProduct @relation(fields: [creatorLookProductId], references: [id], onDelete: Cascade)
+  source               TagReportSource
+  reason               TagReportReason
+  note                 String?
+  reportedById         String?            @map("reported_by_id") @db.Uuid
+  reportedBy           User?              @relation("TagReviewReportReporter", fields: [reportedById], references: [id], onDelete: SetNull)
+  reporterIpHash       String?            @map("reporter_ip_hash")
+  status               TagReportStatus    @default(OPEN)
+  reviewedById         String?            @map("reviewed_by_id") @db.Uuid
+  reviewedBy           User?              @relation("TagReviewReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt           DateTime?          @map("reviewed_at")
+  resolutionNote       String?            @map("resolution_note")
+  createdAt            DateTime           @default(now()) @map("created_at")
+
+  @@index([status, createdAt])
+  @@index([creatorLookProductId])
+  @@map("tag_review_reports")
 }
 
 model BrandTrustedCreator {

@@ -187,6 +187,33 @@ export const tagReviewRepository = {
     await prisma.creatorLookProduct.update({ where: { id: tagId }, data });
   },
 
+  async findTagForTransition(tagId: string): Promise<{
+    id: string;
+    lookId: string;
+    creatorId: string;
+    productId: string;
+    reviewStatus: TagReviewStatus;
+  } | null> {
+    const row = await prisma.creatorLookProduct.findUnique({
+      where: { id: tagId },
+      select: {
+        id: true,
+        creatorLookId: true,
+        productId: true,
+        reviewStatus: true,
+        creatorLook: { select: { creatorId: true } },
+      },
+    });
+    if (!row) return null;
+    return {
+      id: row.id,
+      lookId: row.creatorLookId,
+      creatorId: row.creatorLook.creatorId,
+      productId: row.productId,
+      reviewStatus: row.reviewStatus,
+    };
+  },
+
   async trustCreator(brandId: string, creatorId: string, grantedById: string): Promise<void> {
     await prisma.brandTrustedCreator.upsert({
       where: { brandId_creatorId: { brandId, creatorId } },

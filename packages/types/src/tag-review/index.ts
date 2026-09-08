@@ -11,3 +11,10 @@ export type TagRejectionReason =
   | "OTHER";
 
 export type BrandTagReviewPolicy = "OPEN" | "TRUSTED_ONLY" | "APPROVAL_REQUIRED";
+
+export type TagReportSource = "PUBLIC_REPORT" | "BRAND_COUNTERFEIT_REJECTION";
+
+export type TagReportReason =
+  "COUNTERFEIT" | "NOT_GENUINELY_WORN" | "MISLEADING" | "OFFENSIVE" | "OTHER";
+
+export type TagReportStatus = "OPEN" | "ACTIONED" | "DISMISSED";

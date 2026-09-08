@@ -13,6 +13,7 @@ export const PLATFORM_NAV_KEYS = [
   "orders",
   "support",
   "product-reviews",
+  "tag-reports",
   "trending",
   "creators",
   "commissions",

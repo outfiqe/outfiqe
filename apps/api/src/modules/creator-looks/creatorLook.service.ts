@@ -6,6 +6,7 @@ import { FollowTargetType, TagReviewStatus } from "#generated/prisma/enums.js";
 import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
 import { extractHashtags } from "#lib/hashtags.utils.js";
 import { truncateToHour } from "#lib/trend-scoring.utils.js";
+import { isLikelyBotUserAgent } from "#lib/user-agent.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
@@ -49,7 +50,7 @@ import type {
   TagScoreBreakdown,
   TrendingTag,
 } from "./creatorLook.types.js";
-import { isLikelyBotUserAgent, toSuggestion } from "./creatorLook.utils.js";
+import { toSuggestion } from "./creatorLook.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const UNAUTHORIZED_STATUS = 401;

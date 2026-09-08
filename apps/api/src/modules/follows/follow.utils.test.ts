@@ -58,6 +58,7 @@ const baseUser: UserRecord = {
   emailVerified: true,
   followerCount: 12,
   followingCount: 3,
+  tagCounterfeitFlagCount: 0,
   hideFromLeaderboards: false,
   lastSeenAt: null,
   createdAt: NOW,
