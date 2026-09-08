@@ -41,6 +41,7 @@ export const CartItemRow = ({ item }: CartItemRowProps) => {
     <div className={cn("flex gap-4 border-b border-border py-5", soldOut && "opacity-60")}>
       <Link
         href={`/product/${productId}`}
+        prefetch={false}
         className="relative flex aspect-3/4 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted"
       >
         {imageUrl ? (
@@ -56,6 +57,7 @@ export const CartItemRow = ({ item }: CartItemRowProps) => {
         </p>
         <Link
           href={`/product/${productId}`}
+          prefetch={false}
           className="mt-0.5 block text-sm font-medium text-foreground hover:underline"
         >
           {productName}

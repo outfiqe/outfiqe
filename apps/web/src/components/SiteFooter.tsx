@@ -23,6 +23,7 @@ export const SiteFooter = () => {
                 <li key={label}>
                   <Link
                     href={href}
+                    prefetch={false}
                     className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {label}
