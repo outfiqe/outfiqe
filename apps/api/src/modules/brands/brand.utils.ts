@@ -1,7 +1,9 @@
-import type { BrandRecord, PublicBrandProfile } from "./brand.types.js";
+import { toResponsiveImage } from "#lib/responsive-image.utils.js";
+
+import type { BrandWithImageAssets, PublicBrandProfile } from "./brand.types.js";
 
 export const toPublicBrandProfile = (
-  brand: BrandRecord,
+  brand: BrandWithImageAssets,
   productCount: number,
   isFollowing: boolean,
   contactUserId: string | null = null,
@@ -9,7 +11,9 @@ export const toPublicBrandProfile = (
   id: brand.id,
   name: brand.name,
   avatarUrl: brand.avatarUrl,
+  avatarImage: brand.avatarUrl ? toResponsiveImage(brand.avatarUrl, brand.avatarImageAsset) : null,
   bannerUrl: brand.bannerUrl,
+  bannerImage: brand.bannerUrl ? toResponsiveImage(brand.bannerUrl, brand.bannerImageAsset) : null,
   madeInNepal: brand.madeInNepal,
   rating: brand.rating,
   productCount,

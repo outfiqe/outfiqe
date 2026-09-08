@@ -15,6 +15,7 @@ export type WriteProductReviewInput = {
   title?: string;
   body: string;
   imageUrls?: string[];
+  imageAssetIds?: (string | null)[];
 };
 
 type ListProductReviewsParams = {

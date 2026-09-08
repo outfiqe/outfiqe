@@ -85,7 +85,10 @@ describe("ReviewCard", () => {
 
   it("renders photo thumbnails and an avatar image when the review has them", () => {
     const { container } = renderCard({
-      images: ["https://cdn.example/a.jpg", "https://cdn.example/b.jpg"],
+      images: [
+        { url: "https://cdn.example/a.jpg", lqip: null, sources: [] },
+        { url: "https://cdn.example/b.jpg", lqip: null, sources: [] },
+      ],
       author: {
         id: "author-1",
         name: "Priya Shah",

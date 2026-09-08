@@ -35,8 +35,18 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
   const productTypes = useProductTypes();
   const { openConversationWith, isStartingConversation } = useChatPanel();
 
-  const { id, bannerUrl, avatarUrl, name, madeInNepal, productCount, rating, contactUserId } =
-    brand;
+  const {
+    id,
+    bannerUrl,
+    bannerImage,
+    avatarUrl,
+    avatarImage,
+    name,
+    madeInNepal,
+    productCount,
+    rating,
+    contactUserId,
+  } = brand;
   const isOwnBrand = state.user?.brandId === id;
 
   const [isFollowing, setIsFollowing] = useState(brand.isFollowing);
@@ -111,14 +121,21 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
           )}
         >
           {bannerUrl && (
-            <AppImage src={bannerUrl} alt="" fill sizes={BRAND_PROFILE_BANNER_SIZES} eager />
+            <AppImage
+              src={bannerUrl}
+              image={bannerImage}
+              alt=""
+              fill
+              sizes={BRAND_PROFILE_BANNER_SIZES}
+              eager
+            />
           )}
         </div>
 
         <div className="flex flex-col items-center px-6 pb-8 text-center">
           <div className="relative -mt-12 flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full ring-4 ring-card sm:-mt-14 sm:size-28">
             {avatarUrl ? (
-              <AppImage src={avatarUrl} alt="" fill sizes="112px" />
+              <AppImage src={avatarUrl} image={avatarImage} alt="" fill sizes="112px" />
             ) : (
               <span
                 aria-hidden

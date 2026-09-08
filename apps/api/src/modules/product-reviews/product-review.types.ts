@@ -1,3 +1,7 @@
+import type { ResponsiveImage } from "@outfiqe/types";
+
+import type { ImageAssetForResponsiveImage } from "#lib/responsive-image.utils.js";
+
 import type { REVIEW_SORT_VALUES } from "./product-review.constants.js";
 
 export type ReviewSort = (typeof REVIEW_SORT_VALUES)[number];
@@ -19,7 +23,7 @@ export type ProductReviewRow = {
   createdAt: Date;
   updatedAt: Date;
   user: ReviewAuthor;
-  images: { url: string }[];
+  images: { url: string; imageAsset: ImageAssetForResponsiveImage | null }[];
 };
 
 export type ProductReviewRecord = {
@@ -32,7 +36,7 @@ export type ProductReviewRecord = {
   createdAt: Date;
   updatedAt: Date;
   author: ReviewAuthor;
-  images: string[];
+  images: ResponsiveImage[];
   hasVotedHelpful: boolean;
 };
 
@@ -55,6 +59,7 @@ export type CreateProductReviewInput = {
   title?: string;
   body: string;
   imageUrls: string[];
+  imageAssetIds?: (string | null)[];
 };
 
 export type UpdateProductReviewInput = {
@@ -62,4 +67,5 @@ export type UpdateProductReviewInput = {
   title?: string;
   body: string;
   imageUrls?: string[];
+  imageAssetIds?: (string | null)[];
 };

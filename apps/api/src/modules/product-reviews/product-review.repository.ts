@@ -1,6 +1,7 @@
 import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
 import { FulfilmentStatus } from "#generated/prisma/enums.js";
+import { RESPONSIVE_IMAGE_ASSET_SELECT } from "#lib/responsive-image.utils.js";
 
 import type {
   CreateProductReviewInput,
@@ -12,7 +13,10 @@ import type {
 
 const withAuthorAndImages = {
   user: { select: { id: true, name: true, handle: true, avatarUrl: true } },
-  images: { orderBy: { sortOrder: "asc" as const }, select: { url: true } },
+  images: {
+    orderBy: { sortOrder: "asc" as const },
+    select: { url: true, imageAsset: { select: RESPONSIVE_IMAGE_ASSET_SELECT } },
+  },
 };
 
 const SORT_ORDER_BY: Record<ReviewSort, Prisma.ProductReviewOrderByWithRelationInput[]> = {
@@ -69,12 +73,18 @@ export const productReviewRepository = {
   },
 
   async create(input: CreateProductReviewInput): Promise<ProductReviewRow> {
-    const { imageUrls, ...rest } = input;
+    const { imageUrls, imageAssetIds, ...rest } = input;
     return prisma.productReview.create({
       data: {
         ...rest,
         images: imageUrls.length
-          ? { create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })) }
+          ? {
+              create: imageUrls.map((url, sortOrder) => ({
+                url,
+                sortOrder,
+                imageAssetId: imageAssetIds?.[sortOrder] ?? null,
+              })),
+            }
           : undefined,
       },
       include: withAuthorAndImages,
@@ -82,7 +92,7 @@ export const productReviewRepository = {
   },
 
   async update(reviewId: string, input: UpdateProductReviewInput): Promise<ProductReviewRow> {
-    const { imageUrls, ...rest } = input;
+    const { imageUrls, imageAssetIds, ...rest } = input;
     return prisma.productReview.update({
       where: { id: reviewId },
       data: {
@@ -91,7 +101,11 @@ export const productReviewRepository = {
           ? {
               images: {
                 deleteMany: {},
-                create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })),
+                create: imageUrls.map((url, sortOrder) => ({
+                  url,
+                  sortOrder,
+                  imageAssetId: imageAssetIds?.[sortOrder] ?? null,
+                })),
               },
             }
           : {}),

@@ -3,7 +3,7 @@
 import { Button, FormBanner, ImageUploader, Input, Modal, Rating } from "@outfiqe/design-system";
 import { useState } from "react";
 
-import { uploadsApi } from "@/shared/api/uploadsApi";
+import { uploadImagesThroughPipeline, uploadsApi } from "@/shared/api/uploadsApi";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 import { toUploadableImage } from "@/shared/lib/heicImage";
 
@@ -42,6 +42,9 @@ export const ReviewForm = ({
   const [title, setTitle] = useState(initialTitle ?? "");
   const [body, setBody] = useState(initialBody);
   const [imageUrls, setImageUrls] = useState(initialImageUrls ?? []);
+  const [imageAssetIds, setImageAssetIds] = useState<(string | null)[]>(
+    (initialImageUrls ?? []).map(() => null),
+  );
   const [error, setError] = useState<string | null>(null);
 
   const isEditing = initialValues !== EMPTY_VALUES;
@@ -51,7 +54,13 @@ export const ReviewForm = ({
     if (!canSubmit) return;
     setError(null);
     try {
-      await onSubmit({ rating, title: title.trim() || undefined, body: body.trim(), imageUrls });
+      await onSubmit({
+        rating,
+        title: title.trim() || undefined,
+        body: body.trim(),
+        imageUrls,
+        imageAssetIds: imageUrls.length > 0 ? imageAssetIds : undefined,
+      });
       onClose();
     } catch (submitError) {
       setError(getErrorMessage(submitError));
@@ -126,6 +135,9 @@ export const ReviewForm = ({
             value={imageUrls}
             onChange={setImageUrls}
             onUpload={(files) => uploadsApi.upload(files)}
+            onUploadWithAsset={uploadImagesThroughPipeline}
+            assetIds={imageAssetIds}
+            onAssetIdsChange={setImageAssetIds}
             maxFiles={MAX_REVIEW_IMAGES}
             describeUploadError={getErrorMessage}
             transformFile={toUploadableImage}

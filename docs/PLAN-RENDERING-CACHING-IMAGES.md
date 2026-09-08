@@ -86,15 +86,16 @@ far:
   self-hosted optimizer for processed images. `ProductCard`, `ProductDetail` (main image),
   `LookCard`, `PostGridCard`, `CreatorPostThumbnail` pass `image` through.
 
-Hero slides and collections got the same treatment: `imageAssetId` FK, `image` on the public
-response, admin `ImageUpload` uploads through `/uploads/pipeline`, and `HeroCarousel` /
-`CollectionCard` / `CollectionDetail` consume `image`. `prisma/backfill-image-assets.ts`
-(`pnpm db:backfill:image-assets`) links existing product/look gallery rows — run it once per
-environment after deploy.
+Every domain image now runs through the pipeline: products, looks, review photos, hero slides,
+collections, brand banners, brand logos, and user avatars each have an `imageAssetId` FK, an
+`image` (/`avatarImage`/`bannerImage`) field on their public response, an upload path through
+`/uploads/pipeline`, and an `AppImage` `<picture>` at the render site. `prisma/backfill-image-assets.ts`
+(`pnpm db:backfill:image-assets`, `--dry-run` / `--limit=N`) walks all of those tables — run it
+once per environment after deploy, against a running API.
 
-Not done: the same treatment for avatars, brand banners (schema column exists, no code yet),
-`ProductReviewImage`, `PostCarousel`, `SeenOnCreators`, and cart/order line-item thumbnails; a
-backfill for hero slides / collections.
+Not done: `PostCarousel` and `SeenOnCreators` (responses only carry `image` for the first photo),
+and cart / order line-item thumbnails (use the stored URL snapshot). Avatars are wired but the
+320px minimum variant is oversized for a ≤112px avatar — see the `image-processing` README.
 
 ### Dashboards — extend the prefetch pattern
 
