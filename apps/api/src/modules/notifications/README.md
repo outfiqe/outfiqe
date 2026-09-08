@@ -98,11 +98,11 @@ should land depends on their role/capabilities and which app they're in — cont
 path has. So `resolveNotificationTarget` runs on every write and `target_surface`/`target_path`
 are stored on the row (grouped rows re-resolve on each `upsertGroup` update, since a
 `NEW_FOLLOWER` target follows the latest follower). Clients navigate to the stored path and
-delete their own type→route guessing. Rows written before this shipped have null targets; the web
-and admin bells keep a legacy per-type resolver as a one-release fallback, and
-`prisma/backfill-notification-targets.ts` (`pnpm db:backfill:notification-targets`) fills the
-columns in for old rows. `push.messages.ts` uses `target_path` for a web-surface notification and
-falls back to its own `urlFor` otherwise.
+delete their own type→route guessing. Rows written before this shipped had null targets and were
+backfilled once in prod; the web and admin bells still keep a legacy per-type resolver as a
+one-release fallback, to be removed together with that column check next release.
+`push.messages.ts` uses `target_path` for a web-surface notification and falls back to its own
+`urlFor` otherwise.
 
 **`createIndividual`/`upsertGroup` return `null` instead of throwing on a foreign-key
 violation.** A domain-event consumer group replays its entire stream history from the
