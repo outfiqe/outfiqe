@@ -1,5 +1,7 @@
 export const OFFLINE_PATH = "/offline";
 
+export const HOME_PATH = "/";
+
 export const SERVICE_WORKER_URL = "/serwist/sw.js";
 
 export const SERVICE_WORKER_SCOPE = "/";

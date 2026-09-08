@@ -179,7 +179,8 @@ people always get fresh content when they have a connection and the saved copy w
 | Request                                                                      | What happens                                                                         |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | The app itself (JavaScript, styles, icons)                                   | Saved when the worker installs                                                       |
-| A public page (home, shop, explore, a product)                               | Fetched fresh, saved as a backup, served from the backup when there is no connection |
+| A public page (shop, explore, a product, a creator)                          | Fetched fresh, saved as a backup, served from the backup when there is no connection |
+| The home page (`/`)                                                          | Fetched fresh, **never saved**. With no connection the offline page is shown instead |
 | A private page (cart, checkout, orders, wallet, messages, settings, sign-in) | Fetched fresh, **never saved**. With no connection the offline page is shown instead |
 | An uploaded photo                                                            | Served from disk once seen, kept for 30 days                                         |
 | Anything under `/api/`                                                       | **Never saved**                                                                      |
@@ -516,6 +517,13 @@ that can scope it per account properly.
 list. It looks similar to the "don't index this" list in `shared/seo/routes.ts` but is deliberately
 separate: one is about search engines, the other about what may be written to a user's disk, and
 they should be free to differ.
+
+**The home page is never saved either — `homePageAlwaysFresh` runs before the public-page rule.**
+`/` streams six independent parallel-route sections. A copy saved mid-stream, or saved while the API
+was degraded and the sections rendered empty, is a broken home page; `NetworkFirst` would then flash
+that broken copy on any network blip before the real page arrived. It is a live discovery feed, so a
+week-old saved copy is worth little regardless. It is fetched `NetworkOnly` with the same offline-page
+fallback as a private page. `publicPageCaching` also excludes `/` so a stale copy can never linger.
 
 **iPhone gets smaller limits on purpose.** Safari gives each site far less room and tends to throw
 away a whole cache at once rather than trimming the oldest entries — which would take the saved app

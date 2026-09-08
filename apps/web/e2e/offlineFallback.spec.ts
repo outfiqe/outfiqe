@@ -72,6 +72,7 @@ test.describe("offline fallback", () => {
       });
 
       await page.goto(`${OFFLINE_PREVIEW_URL}/about`, { waitUntil: "load" });
+      await page.goto(`${OFFLINE_PREVIEW_URL}/`, { waitUntil: "load" });
 
       previewServer.kill();
       killWhateverListensOnPreviewPort();
@@ -84,6 +85,9 @@ test.describe("offline fallback", () => {
 
       await page.goto(`${OFFLINE_PREVIEW_URL}/about`, { waitUntil: "commit" });
       await expect(page.getByRole("heading", { name: /you're offline/i })).toHaveCount(0);
+
+      await page.goto(`${OFFLINE_PREVIEW_URL}/`, { waitUntil: "commit" });
+      await expect(page.getByRole("heading", { name: /you're offline/i })).toBeVisible();
     } finally {
       previewServer.kill();
       killWhateverListensOnPreviewPort();

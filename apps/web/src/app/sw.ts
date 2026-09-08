@@ -19,7 +19,11 @@ import {
   MAX_CACHED_IMAGES,
   MAX_CACHED_PAGES,
 } from "../features/pwa/constants/runtimeCaching";
-import { OFFLINE_PATH, VISITED_PAGES_CACHE_NAME } from "../features/pwa/constants/serviceWorker";
+import {
+  HOME_PATH,
+  OFFLINE_PATH,
+  VISITED_PAGES_CACHE_NAME,
+} from "../features/pwa/constants/serviceWorker";
 import {
   SERVICE_WORKER_ERROR_MESSAGE,
   type ServiceWorkerErrorReport,
@@ -74,9 +78,18 @@ const serveOfflinePageWhenNavigationFails = {
 
 const isNavigation = ({ request }: { request: Request }) => request.mode === "navigate";
 
+const homePageAlwaysFresh: RuntimeCaching = {
+  matcher: ({ request, url, sameOrigin }) =>
+    sameOrigin && isNavigation({ request }) && url.pathname === HOME_PATH,
+  handler: new NetworkOnly({ plugins: [serveOfflinePageWhenNavigationFails] }),
+};
+
 const publicPageCaching: RuntimeCaching = {
   matcher: ({ request, url, sameOrigin }) =>
-    sameOrigin && isNavigation({ request }) && !isPrivatePath(url.pathname),
+    sameOrigin &&
+    isNavigation({ request }) &&
+    url.pathname !== HOME_PATH &&
+    !isPrivatePath(url.pathname),
   handler: new NetworkFirst({
     cacheName: VISITED_PAGES_CACHE_NAME,
     plugins: [
@@ -126,6 +139,7 @@ const serwist = new Serwist({
   runtimeCaching: [
     apiResponsesNeverStored,
     privatePageNeverStored,
+    homePageAlwaysFresh,
     publicPageCaching,
     uploadedImageCaching,
     ...defaultCache,
