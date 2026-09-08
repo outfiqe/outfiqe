@@ -121,12 +121,16 @@ export const usePendingPhotos = (maxPhotos: number, initialUrls: string[] = []) 
 const isNewPhoto = (photo: PendingPhoto): photo is PendingPhoto & { file: File } =>
   photo.file !== null;
 
-export const resolvePendingPhotoUrls = async (
+export type ResolvedPendingPhotos = { urls: string[]; imageAssetIds: (string | null)[] };
+
+export const resolvePendingPhotoAssets = async (
   photos: PendingPhoto[],
   defaultMimeType: string,
-): Promise<string[]> => {
+): Promise<ResolvedPendingPhotos> => {
   const newPhotos = photos.filter(isNewPhoto);
-  if (newPhotos.length === 0) return photos.map((photo) => photo.url);
+  if (newPhotos.length === 0) {
+    return { urls: photos.map((photo) => photo.url), imageAssetIds: photos.map(() => null) };
+  }
 
   const files = await Promise.all(
     newPhotos.map((photo) =>
@@ -140,13 +144,21 @@ export const resolvePendingPhotoUrls = async (
         : photo.file,
     ),
   );
-  const uploadedUrls = await uploadsApi.upload(files);
-  const remainingUploadedUrls = [...uploadedUrls];
+  const uploadedFiles = await uploadsApi.uploadWithPipeline(files);
+  const remainingUploadedFiles = [...uploadedFiles];
 
-  return photos.map((photo) => {
-    if (!photo.file) return photo.url;
-    const uploadedUrl = remainingUploadedUrls.shift();
-    if (!uploadedUrl) throw new Error("Photo upload returned fewer URLs than expected");
-    return uploadedUrl;
-  });
+  const urls: string[] = [];
+  const imageAssetIds: (string | null)[] = [];
+  for (const photo of photos) {
+    if (!photo.file) {
+      urls.push(photo.url);
+      imageAssetIds.push(null);
+      continue;
+    }
+    const uploaded = remainingUploadedFiles.shift();
+    if (!uploaded) throw new Error("Photo upload returned fewer results than expected");
+    urls.push(uploaded.url);
+    imageAssetIds.push(uploaded.assetId);
+  }
+  return { urls, imageAssetIds };
 };
