@@ -25,6 +25,13 @@ describe("buildContentSecurityPolicy", () => {
     expect(csp).toContain("img-src 'self' data: blob: https: http://localhost:4000");
   });
 
+  it("lets checkout POST its payment form to eSewa (sandbox and production hosts)", () => {
+    const csp = buildContentSecurityPolicy(baseOptions);
+    expect(csp).toContain(
+      "form-action 'self' https://epay.esewa.com.np https://rc-epay.esewa.com.np",
+    );
+  });
+
   it("allows the api origin and its websocket equivalent in connect-src", () => {
     const csp = buildContentSecurityPolicy(baseOptions);
     expect(csp).toContain("connect-src 'self' http://localhost:4000 ws://localhost:4000");
