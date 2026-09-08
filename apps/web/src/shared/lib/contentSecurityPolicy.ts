@@ -1,3 +1,5 @@
+import { THEME_INIT_SCRIPT_SHA256 } from "@outfiqe/design-system";
+
 export const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
 
 export const getSentryConnectSrc = (): string => {
@@ -12,11 +14,26 @@ export const getSentryConnectSrc = (): string => {
 
 export const toWebSocketOrigin = (origin: string): string => origin.replace(/^http/, "ws");
 
+type CspRenderMode = "dynamic" | "static";
+
 type BuildContentSecurityPolicyOptions = {
   nonce: string;
   isDev: boolean;
   isProduction: boolean;
   apiOrigin: string;
+  renderMode?: CspRenderMode;
+};
+
+const scriptSrc = (nonce: string, isDev: boolean, renderMode: CspRenderMode): string => {
+  if (renderMode === "static") {
+    return `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' ${TURNSTILE_ORIGIN}`;
+  }
+
+  const trustAnchor = isDev
+    ? "'unsafe-eval'"
+    : `'strict-dynamic' 'wasm-unsafe-eval' '${THEME_INIT_SCRIPT_SHA256}'`;
+
+  return `script-src 'self' 'nonce-${nonce}' ${trustAnchor} ${TURNSTILE_ORIGIN}`;
 };
 
 export const buildContentSecurityPolicy = ({
@@ -24,10 +41,11 @@ export const buildContentSecurityPolicy = ({
   isDev,
   isProduction,
   apiOrigin,
+  renderMode = "dynamic",
 }: BuildContentSecurityPolicyOptions): string =>
   [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' ${isDev ? "'unsafe-eval'" : "'strict-dynamic' 'wasm-unsafe-eval'"} ${TURNSTILE_ORIGIN}`,
+    scriptSrc(nonce, isDev, renderMode),
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: blob: https: ${apiOrigin}`,
     "font-src 'self' data:",

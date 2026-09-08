@@ -84,14 +84,30 @@ Same server-prefetch + `HydrationBoundary` as `/overview`, one tab at a time: `p
 with `prefetchInfiniteQuery` or leave client-side), `progress`, `badges`, `challenges`, `wallet`,
 `withdraw`, `manage-orders`. Each needs a small server API variant that takes the access token.
 
-### Static rendering (needs a browser on a preview deploy)
+### Static rendering — groundwork done, the flip needs a decision + a browser
 
-Every route is dynamic because the root layout reads `headers()` for the CSP nonce. Plan:
-`headers()` moves out of the root layout into a nested layout that wraps only the interactive /
-authenticated route groups; marketing, legal and help pages get a static layout, and the proxy
-emits a hash-based CSP (theme init script by hash) for those paths and the nonce CSP for the app
-paths. This can silently break all client JS if the CSP is wrong for statically rendered pages,
-so verify on a preview deploy in a real browser before merging.
+Every route is dynamic only because the root layout reads `headers()` for the CSP nonce.
+
+Landed: `THEME_INIT_SCRIPT_SHA256` (with a drift test), and `buildContentSecurityPolicy` now
+takes `renderMode: "dynamic" | "static"` — `"static"` emits `script-src 'self' 'unsafe-inline'
+'wasm-unsafe-eval'` (no nonce, no `strict-dynamic`), and the `"dynamic"` policy also allows the
+theme script by hash so it no longer needs the layout's nonce.
+
+Not landed (reverted after testing): removing `await headers()` from the root layout. Doing that
+flips ~35 routes to `○` — not just the 8 marketing pages but `/cart`, `/explore`, `/brands`,
+`/leaderboard`, `/wishlist`, `/collections`, `/forgot-password`, … because the layout was their
+only dynamic input. The problem: those pages were pre-rendered without a nonce, so the strict
+`dynamic` CSP the proxy serves them (`nonce` + `strict-dynamic`) would block their inline
+flight/bootstrap scripts. The proxy would have to serve the `"static"` CSP to every statically
+rendered path, which drops most of the site from a `strict-dynamic` nonce policy to
+`'self' 'unsafe-inline'` for scripts — a real, deliberate weakening.
+
+Decision needed: (a) accept `'unsafe-inline'` script CSP for the static pages (they carry no
+user/auth data) and keep `strict-dynamic` only on the authenticated app routes, or (b) wire
+Next's experimental build-time script hashing (`experimental.sri`) so a nonce CSP works on static
+pages, or (c) leave marketing pages dynamic. Whichever — verify on a Vercel preview with
+DevTools open (watch the console for CSP violations on `/`, `/help`, `/legal/privacy`, `/shop`,
+`/product/[id]`, a dashboard page) before it reaches `dev`.
 
 ### Follow-ups noted along the way
 
