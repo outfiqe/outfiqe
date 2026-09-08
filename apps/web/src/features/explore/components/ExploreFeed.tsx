@@ -1,14 +1,13 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import Masonry from "react-masonry-css";
 
 import { TRENDING_RANKS, type TrendingRank } from "@/shared/components/TrendingRankBadge";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 
 import {
-  EXPLORE_GRID_BREAKPOINT_COLUMNS,
   EXPLORE_QUERY_PARAM,
   EXPLORE_TAB,
   type ExploreQueryParamKey,
@@ -18,15 +17,24 @@ import {
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 import { useExploreFeedSocket } from "../hooks/useExploreFeedSocket";
 import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";
-import { AddPostButton } from "./AddPostButton";
 import { ExploreSidebarNav } from "./ExploreSidebarNav";
 import { FeedFilterTabs } from "./FeedFilterTabs";
 import { HeaderBackdrop } from "./HeaderBackdrop";
-import { PostCard } from "./PostCard";
 import { ExploreFeedSkeleton } from "./PostCardSkeleton";
-import { PostDetailModal } from "./PostDetailModal";
 import { PostGridCard } from "./PostGridCard";
-import { Sidebar } from "./Sidebar";
+
+const EAGER_IMAGE_COUNT = 4;
+
+const AddPostButton = dynamic(() => import("./AddPostButton").then((m) => m.AddPostButton), {
+  ssr: false,
+});
+const PostCard = dynamic(() => import("./PostCard").then((m) => m.PostCard), {
+  loading: () => <ExploreFeedSkeleton layout={FEED_LAYOUT.LIST} />,
+});
+const PostDetailModal = dynamic(() => import("./PostDetailModal").then((m) => m.PostDetailModal), {
+  ssr: false,
+});
+const Sidebar = dynamic(() => import("./Sidebar").then((m) => m.Sidebar), { ssr: false });
 
 export const ExploreFeed = () => {
   const { isAuthenticated, isAuthResolved, goToSignIn } = useExploreAuthGate();
@@ -53,6 +61,8 @@ export const ExploreFeed = () => {
     updateExploreParams({ [EXPLORE_QUERY_PARAM.LAYOUT]: value });
 
   const followingGated = isAuthResolved && tab === EXPLORE_TAB.FOLLOWING && !isAuthenticated;
+  const isFollowingTab = tab === EXPLORE_TAB.FOLLOWING;
+  const feedEnabled = !isFollowingTab || (isAuthResolved && isAuthenticated);
 
   const {
     data: exploreFeedPages,
@@ -61,7 +71,7 @@ export const ExploreFeed = () => {
     isFetchingNextPage,
     isLoading,
     refetch,
-  } = useInfiniteExploreFeed(tab, isAuthResolved && !followingGated);
+  } = useInfiniteExploreFeed(tab, feedEnabled);
 
   const { newLookCount, dismiss } = useExploreFeedSocket(tab);
 
@@ -121,18 +131,14 @@ export const ExploreFeed = () => {
                 Log in or sign up
               </button>
             </div>
-          ) : !isAuthResolved || isLoading ? (
+          ) : posts.length === 0 && (isLoading || (isFollowingTab && !isAuthResolved)) ? (
             <ExploreFeedSkeleton layout={layout} compactGrid />
           ) : posts.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
               Nothing here yet — try a different tab.
             </p>
           ) : layout === FEED_LAYOUT.GRID ? (
-            <Masonry
-              breakpointCols={EXPLORE_GRID_BREAKPOINT_COLUMNS}
-              className="-ml-4 flex w-auto"
-              columnClassName="pl-4"
-            >
+            <div className="columns-2 gap-4 xl:columns-3">
               {posts.map((post, index) => {
                 const { id } = post;
                 return (
@@ -141,10 +147,11 @@ export const ExploreFeed = () => {
                     post={post}
                     onClick={() => setDetailPostId(id)}
                     trendingRank={trendingRankOf(index)}
+                    eager={index < EAGER_IMAGE_COUNT}
                   />
                 );
               })}
-            </Masonry>
+            </div>
           ) : (
             <div className="mx-auto flex max-w-xl flex-col">
               {posts.map((post, index) => (
