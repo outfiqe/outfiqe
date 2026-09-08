@@ -84,30 +84,32 @@ Same server-prefetch + `HydrationBoundary` as `/overview`, one tab at a time: `p
 with `prefetchInfiniteQuery` or leave client-side), `progress`, `badges`, `challenges`, `wallet`,
 `withdraw`, `manage-orders`. Each needs a small server API variant that takes the access token.
 
-### Static rendering — groundwork done, the flip needs a decision + a browser
+### Static rendering — done (#261)
 
-Every route is dynamic only because the root layout reads `headers()` for the CSP nonce.
+Option (a) shipped, plus a fix nobody was looking for.
 
-Landed: `THEME_INIT_SCRIPT_SHA256` (with a drift test), and `buildContentSecurityPolicy` now
-takes `renderMode: "dynamic" | "static"` — `"static"` emits `script-src 'self' 'unsafe-inline'
-'wasm-unsafe-eval'` (no nonce, no `strict-dynamic`), and the `"dynamic"` policy also allows the
-theme script by hash so it no longer needs the layout's nonce.
+- The root layout no longer reads `headers()`. `THEME_INIT_SCRIPT` and its hash moved to a
+  directive-free `theme-init.ts`; the theme script is allowed by CSP hash on dynamic pages and by
+  `'unsafe-inline'` on static ones.
+- **The proxy was never running.** Next resolves the proxy from `src/` for a `src/` app, but the
+  file was at `apps/web/proxy.ts`, so production served **no CSP at all** (`curl -sI
+https://outfiqe.com/` had none of the middleware headers). Moved to `apps/web/src/proxy.ts`,
+  which activates it.
+- Two policies by route: `nonce` + `strict-dynamic` for per-user / server-rendered-UGC routes,
+  `'self' 'unsafe-inline'` for the static and client-only shells.
+- `export const dynamic` on the handful of routes that must keep the strict policy but would
+  otherwise prerender (checkout, apply, verify-email, forgot-password, oauth-callback,
+  support/reopen, the dashboard/orders shells).
+- `experimental.sri` adds `integrity` to script tags.
 
-Not landed (reverted after testing): removing `await headers()` from the root layout. Doing that
-flips ~35 routes to `○` — not just the 8 marketing pages but `/cart`, `/explore`, `/brands`,
-`/leaderboard`, `/wishlist`, `/collections`, `/forgot-password`, … because the layout was their
-only dynamic input. The problem: those pages were pre-rendered without a nonce, so the strict
-`dynamic` CSP the proxy serves them (`nonce` + `strict-dynamic`) would block their inline
-flight/bootstrap scripts. The proxy would have to serve the `"static"` CSP to every statically
-rendered path, which drops most of the site from a `strict-dynamic` nonce policy to
-`'self' 'unsafe-inline'` for scripts — a real, deliberate weakening.
+`/about`, `/contact`, `/help`, `/how-it-works`, `/size-guide`, `/for-brands`, `/for-creators`,
+`/legal/*` and the public browse shells (`/explore`, `/brands`, `/collections`, `/leaderboard`,
+`/cart`, `/wishlist`, `/search`) are now prerendered + `Cache-Control: s-maxage=31536000`.
 
-Decision needed: (a) accept `'unsafe-inline'` script CSP for the static pages (they carry no
-user/auth data) and keep `strict-dynamic` only on the authenticated app routes, or (b) wire
-Next's experimental build-time script hashing (`experimental.sri`) so a nonce CSP works on static
-pages, or (c) leave marketing pages dynamic. Whichever — verify on a Vercel preview with
-DevTools open (watch the console for CSP violations on `/`, `/help`, `/legal/privacy`, `/shop`,
-`/product/[id]`, a dashboard page) before it reaches `dev`.
+CI Browser tests + Lighthouse passed with the CSP active. Still smoke-test the Vercel preview
+(DevTools console on `/`, `/shop`, `/product/[id]`, `/checkout`, a dashboard page) before
+`dev` → `main`, since this is the first time prod has a CSP. If anything is blocked, reverting
+just the `src/proxy.ts` move restores the current no-CSP behaviour and keeps the static win.
 
 ### Follow-ups noted along the way
 
