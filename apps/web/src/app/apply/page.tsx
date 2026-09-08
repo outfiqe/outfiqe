@@ -10,6 +10,8 @@ import { ApplyExpiredBanner } from "./ApplyExpiredBanner";
 
 export const metadata: Metadata = { title: "List your brand" };
 
+export const dynamic = "force-dynamic";
+
 const ApplyPage = () => {
   return (
     <div className="pb-20 lg:pb-0">
