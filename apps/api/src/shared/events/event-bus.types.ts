@@ -88,6 +88,12 @@ export type DomainEventPayloads = {
   };
   [DomainEvents.PRODUCT_PURCHASED]: { orderId: string; userId: string };
   [DomainEvents.PRODUCT_TAGGED]: { lookId: string; creatorId: string; productId: string };
+  [DomainEvents.PRODUCT_TAG_SUBMITTED]: {
+    lookId: string;
+    creatorId: string;
+    productId: string;
+    brandId: string;
+  };
   [DomainEvents.SALE_GENERATED]: {
     orderItemId: string;
     creatorId: string;

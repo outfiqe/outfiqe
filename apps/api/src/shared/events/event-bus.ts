@@ -29,6 +29,7 @@ export const DomainEvents = {
   LEADERBOARD_CREATOR_UPDATED: "leaderboard.creator.updated",
   PRODUCT_PURCHASED: "product.purchased",
   PRODUCT_TAGGED: "product.tagged",
+  PRODUCT_TAG_SUBMITTED: "product.tag.submitted",
   SALE_GENERATED: "sale.generated",
   ACHIEVEMENT_UNLOCKED: "achievement.unlocked",
   LEVEL_UP: "user.leveled_up",

@@ -2,7 +2,7 @@ import { PRODUCT_SORT, type ProductSort } from "@outfiqe/utils";
 
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
-import { CreatorStatus, ProductStatus } from "#generated/prisma/enums.js";
+import { CreatorStatus, ProductStatus, TagReviewStatus } from "#generated/prisma/enums.js";
 import { RESPONSIVE_IMAGE_ASSET_SELECT } from "#lib/responsive-image.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
@@ -467,7 +467,7 @@ export const productRepository = {
       where: {
         deletedAt: null,
         creator: { creatorStatus: CreatorStatus.APPROVED },
-        taggedProducts: { some: { productId } },
+        taggedProducts: { some: { productId, reviewStatus: TagReviewStatus.APPROVED } },
       },
       select: { creatorId: true },
       distinct: ["creatorId"],
