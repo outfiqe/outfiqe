@@ -12,6 +12,19 @@ import { useTastePreferences } from "./useTastePreferences";
 vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
 
 const STORAGE_KEY = "outfiqe:taste-categories";
+const COOKIE_NAME = "outfiqe_taste_categories";
+
+const readTasteCookie = (): string[] | null => {
+  const entry = document.cookie.split("; ").find((pair) => pair.startsWith(`${COOKIE_NAME}=`));
+  if (!entry) return null;
+  const value = entry.slice(COOKIE_NAME.length + 1);
+  if (!value) return null;
+  return JSON.parse(decodeURIComponent(value)) as string[];
+};
+
+const clearTasteCookie = () => {
+  document.cookie = `${COOKIE_NAME}=; Path=/; Max-Age=0`;
+};
 
 const wrapper = ({ children }: { children: ReactNode }) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -28,10 +41,11 @@ const mockAuth = (signedIn: boolean) => {
 describe("useTastePreferences — anonymous", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    clearTasteCookie();
     mockAuth(false);
   });
 
-  it("reads and writes only localStorage", async () => {
+  it("mirrors the pick into localStorage and a server-readable cookie", async () => {
     const { result } = renderHook(() => useTastePreferences(), { wrapper });
     expect(result.current.isCustomized).toBe(false);
 
@@ -39,9 +53,11 @@ describe("useTastePreferences — anonymous", () => {
 
     expect(result.current.storedSlugs).toEqual(["b", "a"]);
     expect(JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "null")).toEqual(["b", "a"]);
+    expect(readTasteCookie()).toEqual(["b", "a"]);
 
     act(() => result.current.reset());
     expect(result.current.storedSlugs).toBeNull();
+    expect(readTasteCookie()).toBeNull();
   });
 
   it("ignores a malformed stored value", () => {

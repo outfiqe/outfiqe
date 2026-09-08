@@ -6,30 +6,24 @@ import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { useAuth } from "@/features/auth";
 
 import { tastePreferencesApi } from "../api/tastePreferencesApi";
+import {
+  parseTasteSlugs,
+  serializeTasteSlugs,
+  TASTE_CATEGORIES_COOKIE_MAX_AGE_SECONDS,
+  TASTE_CATEGORIES_COOKIE_NAME,
+  TASTE_CATEGORIES_STORAGE_KEY,
+  TASTE_PREFERENCES_QUERY_KEY,
+} from "../lib/tasteSlugs";
 
-const STORAGE_KEY = "outfiqe:taste-categories";
 const CHANGE_EVENT = "outfiqe:taste-categories-changed";
 const SERVER_STALE_TIME_MS = 5 * 60 * 1000;
-
-const TASTE_PREFERENCES_QUERY_KEY = ["taste-preferences", "me"] as const;
-
-const parseSlugs = (raw: string | null): string[] | null => {
-  if (!raw) return null;
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.every((slug) => typeof slug === "string")) return parsed;
-  } catch {
-    return null;
-  }
-  return null;
-};
 
 let snapshotRaw: string | null | undefined;
 let snapshotSlugs: string[] | null = null;
 
 const readRaw = (): string | null => {
   try {
-    return window.localStorage.getItem(STORAGE_KEY);
+    return window.localStorage.getItem(TASTE_CATEGORIES_STORAGE_KEY);
   } catch {
     return null;
   }
@@ -39,7 +33,7 @@ const getSnapshot = (): string[] | null => {
   const raw = readRaw();
   if (raw !== snapshotRaw) {
     snapshotRaw = raw;
-    snapshotSlugs = parseSlugs(raw);
+    snapshotSlugs = parseTasteSlugs(raw);
   }
   return snapshotSlugs;
 };
@@ -55,10 +49,22 @@ const subscribe = (onChange: () => void): (() => void) => {
   };
 };
 
+const writeTasteCookie = (slugs: string[] | null): void => {
+  try {
+    const secureFlag = window.location.protocol === "https:" ? "; Secure" : "";
+    const value = slugs ? encodeURIComponent(serializeTasteSlugs(slugs)) : "";
+    const maxAge = slugs ? TASTE_CATEGORIES_COOKIE_MAX_AGE_SECONDS : 0;
+    document.cookie = `${TASTE_CATEGORIES_COOKIE_NAME}=${value}; Path=/; Max-Age=${maxAge}; SameSite=Lax${secureFlag}`;
+  } catch {
+    return;
+  }
+};
+
 const writeLocal = (slugs: string[] | null): void => {
   try {
-    if (slugs) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(slugs));
-    else window.localStorage.removeItem(STORAGE_KEY);
+    if (slugs) window.localStorage.setItem(TASTE_CATEGORIES_STORAGE_KEY, JSON.stringify(slugs));
+    else window.localStorage.removeItem(TASTE_CATEGORIES_STORAGE_KEY);
+    writeTasteCookie(slugs);
     window.dispatchEvent(new Event(CHANGE_EVENT));
   } catch {
     return;
@@ -120,6 +126,12 @@ export const useTastePreferences = (): TastePreferences => {
     }
   }, [isSignedIn, isServerLoaded, serverSlugs, localSlugs, isMutating, mutate]);
 
+  const storedSlugs = isSignedIn ? (serverSlugs ?? localSlugs) : localSlugs;
+
+  useEffect(() => {
+    if (storedSlugs) writeTasteCookie(storedSlugs);
+  }, [storedSlugs]);
+
   const save = useCallback(
     (slugs: string[]) => {
       saveLocal(slugs);
@@ -132,8 +144,6 @@ export const useTastePreferences = (): TastePreferences => {
     resetLocal();
     if (isSignedIn) mutate([]);
   }, [resetLocal, isSignedIn, mutate]);
-
-  const storedSlugs = isSignedIn ? (serverSlugs ?? localSlugs) : localSlugs;
 
   return { storedSlugs, isCustomized: storedSlugs !== null, save, reset };
 };

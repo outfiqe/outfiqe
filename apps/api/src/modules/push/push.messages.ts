@@ -1,5 +1,5 @@
 import type { NotificationBroadcastPayload } from "#events/event-bus.types.js";
-import { NotificationType } from "#generated/prisma/enums.js";
+import { NotificationSurface, NotificationType } from "#generated/prisma/enums.js";
 
 export type PushMessage = {
   title: string;
@@ -198,12 +198,17 @@ const urlFor = (payload: NotificationBroadcastPayload): string => {
   }
 };
 
+const webPushUrl = (payload: NotificationBroadcastPayload): string =>
+  payload.targetSurface === NotificationSurface.WEB && payload.targetPath
+    ? payload.targetPath
+    : urlFor(payload);
+
 export const toPushMessage = (payload: NotificationBroadcastPayload): PushMessage => {
   const copy = COPY_BY_TYPE[payload.type];
   return {
     title: copy.title,
     body: copy.body(payload),
-    url: urlFor(payload),
+    url: webPushUrl(payload),
     tag: `${payload.type}:${payload.groupKey ?? payload.entityId ?? payload.id}`,
   };
 };

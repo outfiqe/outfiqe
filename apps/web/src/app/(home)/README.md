@@ -22,10 +22,15 @@ section only, while every other section — and the header, footer and nav — k
   `page.tsx`).
 - `@taste` — the taste explorer + category results. These two components share
   `CategorySelectionContext` and a single React Query `HydrationBoundary`, so they live in one
-  slot. `TasteResultsSlot.tsx` owns the server-side prefetch (`categories`, `product-types`,
-  first page of `products`) and the hydration boundary. `page.tsx` reads `?category` / `?type`
-  from `searchParams` and passes them in; `default.tsx` renders the slot with no params (first
-  category, no type filter) for soft-navigation states where `searchParams` is unavailable.
+  slot. `TasteResultsSlot.tsx` resolves the visitor's stored taste pick server-side — the
+  `outfiqe_taste_categories` cookie, plus the DB record for a signed-in visitor
+  (`getTastePreferencesServer`, which wins) — then derives the visible categories and the active
+  category from it (`resolveDisplayCategories` / `resolveActiveCategorySlug`, the same helpers the
+  client components use) before prefetching `categories`, `product-types` and the first page of
+  `products` for that category. It seeds the resolved pick into `CategorySelectionProvider`
+  (`serverResolvedTasteSlugs`) and, when signed in, into the `taste-preferences` query cache.
+  `page.tsx` reads `?category` / `?type` from `searchParams` and passes them in; `default.tsx`
+  renders the slot with no params for soft-navigation states where `searchParams` is unavailable.
 - `HomeSectionError` lives in `@/components` (not here) because it is a reusable presentational
   component, not route glue.
 
@@ -61,3 +66,13 @@ in its own Suspense (`loading.tsx`) and error boundary (`error.tsx`).
   `product-types` / `products` queries are consumed only by `TasteCategories` and
   `CategoryResults`. `SiteHeader`, `MobileNav` and `MobileTabBar` do not read them, so nothing
   in the shell regresses by scoping the boundary to this slot.
+- **Why the taste pick is resolved server-side (and mirrored to a cookie):** the picker's
+  content depends on a per-visitor preference. That preference lives in `localStorage` for an
+  anonymous visitor, which the server cannot read — so without help the server rendered the
+  default first-six categories and the client corrected it after hydration, a visible flash of
+  the wrong section. `useTastePreferences` now also writes the pick to the
+  `outfiqe_taste_categories` cookie (`SameSite=Lax`, a plain display preference — no `httpOnly`,
+  no CSRF surface), which SSR reads; a signed-in visitor's DB record is fetched server-side and
+  takes precedence. `CategorySelectionProvider` renders the server value on the hydration pass
+  (`useIsHydrated` gate) and only switches to the live client value afterward, so a returning
+  visitor sees their real set on first paint with no reshuffle.

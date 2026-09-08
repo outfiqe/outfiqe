@@ -10,6 +10,8 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
   type: "BRAND_APPLICATION_SUBMITTED",
   entityType: null,
   entityId: null,
+  targetSurface: null,
+  targetPath: null,
   metadata: {},
   groupKey: null,
   actorCount: 1,
@@ -44,10 +46,26 @@ describe("resolveNotificationHref", () => {
     });
   });
 
-  it("returns null for a resolved support ticket, since the admin already closed it", () => {
+  it("deep-links a resolved support ticket to its thread so the admin can reopen it", () => {
     expect(
-      resolveNotificationHref(buildNotification({ type: "SUPPORT_TICKET_RESOLVED" })),
-    ).toBeNull();
+      resolveNotificationHref(
+        buildNotification({ type: "SUPPORT_TICKET_RESOLVED", entityId: "ticket-3" }),
+      ),
+    ).toEqual({ to: "/support/$ticketId", params: { ticketId: "ticket-3" } });
+  });
+
+  it("routes coupon alerts to the coupons page, and a flagged redemption to its order", () => {
+    expect(
+      resolveNotificationHref(buildNotification({ type: "COUPON_APPROVAL_REQUESTED" })),
+    ).toEqual({ to: "/coupons" });
+    expect(resolveNotificationHref(buildNotification({ type: "COUPON_BUDGET_ALERT" }))).toEqual({
+      to: "/coupons",
+    });
+    expect(
+      resolveNotificationHref(
+        buildNotification({ type: "COUPON_REDEMPTION_FLAGGED", entityId: "order-7" }),
+      ),
+    ).toEqual({ to: "/orders/$orderId", params: { orderId: "order-7" } });
   });
 
   it("routes a CRM ticket assignment to the CRM support tab", () => {

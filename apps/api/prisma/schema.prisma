@@ -1658,17 +1658,24 @@ enum NotificationEntityType {
   SUPPORT_TICKET
 }
 
+enum NotificationSurface {
+  WEB
+  ADMIN
+}
+
 model Notification {
   id          String                  @id @default(uuid()) @db.Uuid
   recipientId String                  @map("recipient_id") @db.Uuid
   recipient   User                    @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
   actorId     String?                 @map("actor_id") @db.Uuid
   actor       User?                   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
-  type        NotificationType
-  entityType  NotificationEntityType? @map("entity_type")
-  entityId    String?                 @map("entity_id")
-  metadata    Json                    @default("{}")
-  groupKey    String?                 @map("group_key")
+  type          NotificationType
+  entityType    NotificationEntityType? @map("entity_type")
+  entityId      String?                 @map("entity_id")
+  targetSurface NotificationSurface?    @map("target_surface")
+  targetPath    String?                 @map("target_path")
+  metadata      Json                    @default("{}")
+  groupKey      String?                 @map("group_key")
   actorCount  Int                     @default(1) @map("actor_count")
   isRead      Boolean                 @default(false) @map("is_read")
   readAt      DateTime?               @map("read_at")

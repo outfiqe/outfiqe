@@ -77,6 +77,7 @@ export default defineConfig({
         "src/modules/taste-preferences/**/*.ts",
         "src/modules/follows/**/*.ts",
         "src/modules/notifications/notification.utils.ts",
+        "src/modules/notifications/notification.targets.ts",
         "src/modules/notifications/notification.retention.ts",
         "src/modules/nepal-banks/**/*.ts",
         "src/modules/bank-accounts/**/*.ts",

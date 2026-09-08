@@ -24,6 +24,14 @@ activity to an open bell/panel live.
 - `notification.utils.ts` — pure functions only, no DB access: `toNotificationRecord`/
   `toBroadcastPayload` (row ↔ record ↔ socket-payload mapping), `mergeRecentActors`/
   `removeRecentActor` (the capped, deduped, most-recent-first actor list join/leave a group).
+- `notification.targets.ts` — `resolveNotificationTarget({ type, entityId, metadata,
+recipientIsStaff })`: pure, the single place that decides where a notification click lands.
+  Returns `{ surface: "WEB" | "ADMIN", path }` or `null`. The repository calls it on every write
+  and persists the result onto the row (`target_surface` / `target_path`), so the destination is
+  computed once — where the recipient's context is known — instead of re-guessed by each client.
+  Clients read those two fields and just navigate; each app treats the other surface's target as a
+  cross-origin full-page navigation. `recipientIsStaff` is passed by the two support-reply
+  handlers whose recipient can be either the customer or an agent.
 - `notification.repository.ts` — Prisma queries only. `createIndividual` (plain insert, ungrouped
   types) and `upsertGroup`/`retractGroupActor` (the race-safe grouped write/retraction — see
   rationale below) own the `notifications` table's write side; `findMutedRecipientIds` reads
@@ -88,6 +96,18 @@ path — pagination, initial load, and the safety net when a socket event is mis
 primary delivery mechanism.
 
 ## Non-obvious rationale
+
+**The click destination is authored server-side, not by the client.** A notification stream
+mixes platform-wide (`NEW_MESSAGE`), creator, brand, and staff events, and where a recipient
+should land depends on their role/capabilities and which app they're in — context only the write
+path has. So `resolveNotificationTarget` runs on every write and `target_surface`/`target_path`
+are stored on the row (grouped rows re-resolve on each `upsertGroup` update, since a
+`NEW_FOLLOWER` target follows the latest follower). Clients navigate to the stored path and
+delete their own type→route guessing. Rows written before this shipped had null targets and were
+backfilled once in prod; the web and admin bells still keep a legacy per-type resolver as a
+one-release fallback, to be removed together with that column check next release.
+`push.messages.ts` uses `target_path` for a web-surface notification and falls back to its own
+`urlFor` otherwise.
 
 **`createIndividual`/`upsertGroup` return `null` instead of throwing on a foreign-key
 violation.** A domain-event consumer group replays its entire stream history from the
