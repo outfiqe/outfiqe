@@ -1,63 +1,97 @@
-import type { Notification } from "@outfiqe/types";
+import { CrmItemKind, type Notification, NotificationType } from "@outfiqe/types";
 
+import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
 import { lookPermalinkPath } from "@/features/explore";
+
+import {
+  ADMIN_APP_ROUTES,
+  adminSupportTicketPath,
+  conversationPath,
+  creatorProfilePath,
+  customerSupportTicketPath,
+  orderDetailPath,
+  productReviewPath,
+  WEB_NOTIFICATION_ROUTES,
+} from "./notificationRoutes";
+
+const adminAppPath = (path: string): string => `${ADMIN_URL}${path}`;
 
 export const resolveNotificationHref = (
   notification: Notification,
   ownHandle: string | undefined,
+  isAdmin = false,
 ): string | null => {
+  const { metadata, entityId } = notification;
+
   switch (notification.type) {
-    case "LOOK_LIKED":
-    case "LOOK_COMMENTED":
-      return ownHandle && notification.entityId
-        ? lookPermalinkPath(ownHandle, notification.entityId)
-        : "/profile";
-    case "COMMENT_REPLIED": {
-      const { lookOwnerHandle, actor } = notification.metadata;
-      const lookHandle = lookOwnerHandle ?? actor?.handle;
-      return lookHandle && notification.entityId
-        ? lookPermalinkPath(lookHandle, notification.entityId)
-        : null;
+    case NotificationType.LOOK_LIKED:
+    case NotificationType.LOOK_COMMENTED:
+      return ownHandle && entityId
+        ? lookPermalinkPath(ownHandle, entityId)
+        : WEB_NOTIFICATION_ROUTES.dashboardProfile;
+    case NotificationType.COMMENT_REPLIED: {
+      const lookHandle = metadata.lookOwnerHandle ?? metadata.actor?.handle;
+      return lookHandle && entityId
+        ? lookPermalinkPath(lookHandle, entityId)
+        : WEB_NOTIFICATION_ROUTES.dashboardProfile;
     }
-    case "NEW_FOLLOWER": {
-      const actorHandle = notification.metadata.recentActors?.[0]?.handle;
-      return actorHandle ? `/creator/${actorHandle}` : "/profile";
+    case NotificationType.NEW_FOLLOWER: {
+      const followerHandle = metadata.recentActors?.[0]?.handle;
+      return followerHandle
+        ? creatorProfilePath(followerHandle)
+        : WEB_NOTIFICATION_ROUTES.dashboardProfile;
     }
-    case "ACHIEVEMENT_UNLOCKED":
-      return "/badges";
-    case "LEVEL_UP":
-      return "/progress";
-    case "COMMISSION_EARNED":
-      return "/earnings";
-    case "NEW_ORDER":
-      return "/manage-orders";
-    case "ORDER_STATUS_CHANGED":
-      return notification.entityId ? `/orders/${notification.entityId}` : "/orders";
-    case "NEW_BRAND_FOLLOWER":
-      return "/profile";
-    case "BRAND_APPLICATION_SUBMITTED":
-      return null;
-    case "PRODUCT_REVIEWED":
-      return "/products";
-    case "REVIEW_REQUESTED":
-      return notification.entityId
-        ? `/product/${notification.entityId}?review=write#reviews`
-        : null;
-    case "WITHDRAW_REQUEST_APPROVED":
-    case "WITHDRAW_REQUEST_REJECTED":
-    case "WITHDRAW_REQUEST_PAID":
-      return "/wallet";
-    case "NEW_MESSAGE":
-      return notification.entityId ? `/messages/${notification.entityId}` : "/messages";
-    case "CRM_ITEM_ASSIGNED":
-      return null;
-    case "SUPPORT_TICKET_REPLY":
-    case "SUPPORT_TICKET_RESOLVED":
-      return notification.entityId ? `/support?ticket=${notification.entityId}` : "/support";
-    case "SUPPORT_TICKET_CREATED":
-    case "SUPPORT_TICKET_ASSIGNED":
-      return null;
+    case NotificationType.ACHIEVEMENT_UNLOCKED:
+      return WEB_NOTIFICATION_ROUTES.badges;
+    case NotificationType.LEVEL_UP:
+      return WEB_NOTIFICATION_ROUTES.progress;
+    case NotificationType.COMMISSION_EARNED:
+      return WEB_NOTIFICATION_ROUTES.earnings;
+    case NotificationType.NEW_ORDER:
+      return WEB_NOTIFICATION_ROUTES.manageOrders;
+    case NotificationType.ORDER_STATUS_CHANGED:
+      return entityId
+        ? orderDetailPath(WEB_NOTIFICATION_ROUTES.ordersList, entityId)
+        : WEB_NOTIFICATION_ROUTES.ordersList;
+    case NotificationType.NEW_BRAND_FOLLOWER:
+      return WEB_NOTIFICATION_ROUTES.dashboardProfile;
+    case NotificationType.PRODUCT_REVIEWED:
+      return WEB_NOTIFICATION_ROUTES.brandProducts;
+    case NotificationType.REVIEW_REQUESTED:
+      return entityId ? productReviewPath(entityId) : null;
+    case NotificationType.WITHDRAW_REQUEST_APPROVED:
+    case NotificationType.WITHDRAW_REQUEST_REJECTED:
+    case NotificationType.WITHDRAW_REQUEST_PAID:
+      return WEB_NOTIFICATION_ROUTES.wallet;
+    case NotificationType.NEW_MESSAGE:
+      return entityId ? conversationPath(entityId) : WEB_NOTIFICATION_ROUTES.messagesList;
+    case NotificationType.SUPPORT_TICKET_REPLY:
+    case NotificationType.SUPPORT_TICKET_RESOLVED:
+      return isAdmin
+        ? adminSupportTicketPath(ADMIN_URL, entityId)
+        : customerSupportTicketPath(entityId);
+    case NotificationType.BRAND_APPLICATION_SUBMITTED:
+      return adminAppPath(ADMIN_APP_ROUTES.brandApplications);
+    case NotificationType.SUPPORT_TICKET_CREATED:
+    case NotificationType.SUPPORT_TICKET_ASSIGNED:
+      return adminSupportTicketPath(ADMIN_URL, entityId);
+    case NotificationType.CRM_ITEM_ASSIGNED:
+      return adminAppPath(
+        metadata.crmItemKind === CrmItemKind.TASK
+          ? ADMIN_APP_ROUTES.crmTasks
+          : ADMIN_APP_ROUTES.crmSupport,
+      );
+    case NotificationType.COUPON_APPROVAL_REQUESTED:
+    case NotificationType.COUPON_BUDGET_ALERT:
+      return adminAppPath(ADMIN_APP_ROUTES.coupons);
+    case NotificationType.COUPON_REDEMPTION_FLAGGED:
+      return entityId
+        ? adminAppPath(orderDetailPath(ADMIN_APP_ROUTES.ordersList, entityId))
+        : adminAppPath(ADMIN_APP_ROUTES.coupons);
     default:
       return null;
   }
 };
+
+export const isFullPageNavHref = (href: string): boolean =>
+  /^https?:\/\//.test(href) || href === ADMIN_URL || href.startsWith(`${ADMIN_URL}/`);
