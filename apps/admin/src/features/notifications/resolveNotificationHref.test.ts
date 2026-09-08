@@ -10,6 +10,8 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
   type: "BRAND_APPLICATION_SUBMITTED",
   entityType: null,
   entityId: null,
+  targetSurface: null,
+  targetPath: null,
   metadata: {},
   groupKey: null,
   actorCount: 1,
