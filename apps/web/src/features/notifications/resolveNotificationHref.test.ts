@@ -77,6 +77,22 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/profile");
   });
 
+  it("deep-links a brand's tag-review decision to that look on your profile", () => {
+    for (const type of [
+      "PRODUCT_TAG_APPROVED",
+      "PRODUCT_TAG_REJECTED",
+      "PRODUCT_TAG_REVOKED",
+    ] as const) {
+      const notification = buildNotification({ type, entityId: "look-9" });
+      expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe(
+        `/creator/${OWN_HANDLE}?look=look-9`,
+      );
+    }
+    expect(
+      resolveNotificationHref(buildNotification({ type: "PRODUCT_TAG_SUBMITTED" }), OWN_HANDLE),
+    ).toBeNull();
+  });
+
   it("routes gamification types to their dashboard pages", () => {
     expect(
       resolveNotificationHref(buildNotification({ type: "ACHIEVEMENT_UNLOCKED" }), OWN_HANDLE),

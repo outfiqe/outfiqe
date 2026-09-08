@@ -58,6 +58,20 @@ export const resolveNotificationMessage = (notification: Notification): string =
       return `New reply on your support request${metadata.supportSubject ? `: ${metadata.supportSubject}` : ""}`;
     case "SUPPORT_TICKET_RESOLVED":
       return `Your support request was resolved${metadata.supportSubject ? `: ${metadata.supportSubject}` : ""}`;
+    case "PRODUCT_TAG_SUBMITTED":
+      return `${actorList(notification)} tagged one of your products — review it in your queue`;
+    case "PRODUCT_TAG_APPROVED":
+      return metadata.tagAutoApproved
+        ? "A product tag on your look was auto-approved"
+        : "A brand approved a product tag on your look";
+    case "PRODUCT_TAG_REJECTED":
+      return metadata.tagRejectionNote
+        ? `A brand declined a product tag on your look: ${metadata.tagRejectionNote}`
+        : "A brand declined a product tag on your look";
+    case "PRODUCT_TAG_REVOKED":
+      return metadata.tagRejectionNote
+        ? `A brand removed a live product tag from your look: ${metadata.tagRejectionNote}`
+        : "A brand removed a live product tag from your look";
     default:
       return "You have a new notification";
   }

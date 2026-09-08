@@ -20,7 +20,11 @@ export type NotificationType =
   | "SUPPORT_TICKET_CREATED"
   | "SUPPORT_TICKET_ASSIGNED"
   | "SUPPORT_TICKET_REPLY"
-  | "SUPPORT_TICKET_RESOLVED";
+  | "SUPPORT_TICKET_RESOLVED"
+  | "PRODUCT_TAG_SUBMITTED"
+  | "PRODUCT_TAG_APPROVED"
+  | "PRODUCT_TAG_REJECTED"
+  | "PRODUCT_TAG_REVOKED";
 
 export type NotificationEntityType =
   | "LOOK"
@@ -66,6 +70,10 @@ export type NotificationMetadata = {
   crmItemKind?: "task" | "ticket";
   crmItemTitle?: string;
   supportSubject?: string;
+  tagRejectionReason?: string;
+  tagRejectionNote?: string | null;
+  tagAutoApproved?: boolean;
+  pendingTagReviewCount?: number;
 };
 
 export type Notification = {

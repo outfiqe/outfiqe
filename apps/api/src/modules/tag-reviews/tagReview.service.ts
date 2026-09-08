@@ -98,6 +98,7 @@ export const tagReviewService = {
         creatorId: tag.creatorId,
         productId: tag.productId,
         reason,
+        note: note ?? null,
       },
     );
   },

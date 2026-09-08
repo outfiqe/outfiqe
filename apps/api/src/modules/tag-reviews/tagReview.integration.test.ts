@@ -201,16 +201,21 @@ describe("POST /api/tag-reviews/:id/reject", () => {
     const response = await request(testApp)
       .post(`/api/tag-reviews/${tag.id}/reject`)
       .set("Authorization", brandOwnerHeader(owner.id))
-      .send({ reason: "NOT_OUR_PRODUCT" });
+      .send({ reason: "NOT_OUR_PRODUCT", note: "This isn't from our catalogue." });
 
     expect(response.status).toBe(200);
     const stored = await prisma.creatorLookProduct.findUniqueOrThrow({ where: { id: tag.id } });
     expect(stored.reviewStatus).toBe("REJECTED");
     expect(stored.rejectionReason).toBe("NOT_OUR_PRODUCT");
+    expect(stored.rejectionNote).toBe("This isn't from our catalogue.");
     expect(stored.reviewedById).toBe(owner.id);
     expect(publishSpy).toHaveBeenCalledWith(
       DomainEvents.PRODUCT_TAG_REJECTED,
-      expect.objectContaining({ tagId: tag.id, reason: "NOT_OUR_PRODUCT" }),
+      expect.objectContaining({
+        tagId: tag.id,
+        reason: "NOT_OUR_PRODUCT",
+        note: "This isn't from our catalogue.",
+      }),
     );
   });
 
@@ -243,7 +248,7 @@ describe("POST /api/tag-reviews/:id/reject", () => {
     ).toBe(0);
     expect(publishSpy).toHaveBeenCalledWith(
       DomainEvents.PRODUCT_TAG_REVOKED,
-      expect.objectContaining({ tagId: tag.id, reason: "COUNTERFEIT_SUSPECTED" }),
+      expect.objectContaining({ tagId: tag.id, reason: "COUNTERFEIT_SUSPECTED", note: null }),
     );
   });
 });

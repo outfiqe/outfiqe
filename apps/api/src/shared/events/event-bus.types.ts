@@ -108,6 +108,7 @@ export type DomainEventPayloads = {
     creatorId: string;
     productId: string;
     reason: TagRejectionReason;
+    note: string | null;
   };
   [DomainEvents.PRODUCT_TAG_REVOKED]: {
     tagId: string;
@@ -115,6 +116,7 @@ export type DomainEventPayloads = {
     creatorId: string;
     productId: string;
     reason: TagRejectionReason;
+    note: string | null;
   };
   [DomainEvents.SALE_GENERATED]: {
     orderItemId: string;

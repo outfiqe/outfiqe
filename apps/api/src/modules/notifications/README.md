@@ -123,6 +123,17 @@ genuine new domain event, `DomainEvents.PRODUCT_REVIEWED`, published by `product
 after a review is created — resolved to every `BrandMembership` row for that product's brand, same
 fan-out `PRODUCT_PURCHASED` → `NEW_ORDER` already does.
 
+**`PRODUCT_TAG_SUBMITTED` fans out to brand members and groups per brand**, same shape as
+`BRAND_FOLLOWED` → `NEW_BRAND_FOLLOWER`: `findBrandMemberIds` + a `notifyGroup` per member keyed on
+`NOTIFICATION_GROUP_KEYS.tagReviewQueue(brandId)`, so a brand sees one "N creators have tags
+waiting" row with an avatar-stack, not one row per pending tag. The creator is the actor.
+`PRODUCT_TAG_APPROVED` / `PRODUCT_TAG_REJECTED` / `PRODUCT_TAG_REVOKED` go to the creator as plain
+individual notifications; reject/revoke carry the brand's `reason` + `note` in `metadata`
+(`tagRejectionReason`/`tagRejectionNote`) so the bell text shows the brand's own words. Approve
+carries `tagAutoApproved` so the copy can say "auto-approved" for an SLA/policy approval vs "a
+brand approved" for a manual one. `PRODUCT_TAG_REVIEW_REMINDER` (the digest) is not an event —
+`../tag-reviews`' scheduled job writes it directly.
+
 **Self-actions never notify.** Every handler that has both an actor and a recipient skips the
 write when they're the same user (liking/commenting/following your own content, or — impossible
 today, but guarded anyway — a brand owner "following" their own brand). Matches the same
