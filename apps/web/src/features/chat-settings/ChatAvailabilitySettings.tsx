@@ -12,6 +12,7 @@ import {
 import type { ChatContact } from "@outfiqe/types";
 import { useState } from "react";
 
+import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { chatApi } from "@/shared/lib/chatApi";
 
@@ -29,12 +30,10 @@ const ContactAvatar = ({
 }) => (
   <span
     aria-hidden
-    className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cover bg-center text-xs font-bold text-white"
-    style={
-      avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : { backgroundColor: getAvatarColor(id) }
-    }
+    className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white"
+    style={avatarUrl ? undefined : { backgroundColor: getAvatarColor(id) }}
   >
-    {!avatarUrl && initialsFor(name)}
+    {avatarUrl ? <AppImage src={avatarUrl} alt="" fill sizes="36px" /> : initialsFor(name)}
   </span>
 );
 

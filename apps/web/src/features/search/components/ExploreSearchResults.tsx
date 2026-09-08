@@ -9,6 +9,7 @@ import Masonry from "react-masonry-css";
 import { PostDetailModal } from "@/features/explore/components/PostDetailModal";
 import { PostGridCard } from "@/features/explore/components/PostGridCard";
 import { EXPLORE_GRID_BREAKPOINT_COLUMNS } from "@/features/explore/explore.constants";
+import { AppImage } from "@/shared/components/AppImage";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 
@@ -88,14 +89,12 @@ export const ExploreSearchResults = () => {
                     className="flex items-center gap-3 border-b border-border py-3 last:border-b-0"
                   >
                     <div
-                      className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cover bg-center"
-                      style={
-                        avatarUrl
-                          ? { backgroundImage: `url(${avatarUrl})` }
-                          : { backgroundColor: getAvatarColor(userId) }
-                      }
+                      className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full"
+                      style={avatarUrl ? undefined : { backgroundColor: getAvatarColor(userId) }}
                     >
-                      {!avatarUrl && (
+                      {avatarUrl ? (
+                        <AppImage src={avatarUrl} alt="" fill sizes="40px" />
+                      ) : (
                         <span aria-hidden className="text-sm font-bold text-white">
                           {initialsFor(name)}
                         </span>

@@ -14,6 +14,7 @@ import { useState } from "react";
 
 import { useAuth } from "@/features/auth";
 import { uploadsApi } from "@/shared/api/uploadsApi";
+import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
@@ -86,22 +87,20 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
     <div className="space-y-6">
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         {bannerUrl && (
-          <div
-            className="h-28 w-full bg-cover bg-center sm:h-36"
-            style={{ backgroundImage: `url(${bannerUrl})` }}
-          />
+          <div className="relative h-28 w-full overflow-hidden sm:h-36">
+            <AppImage src={bannerUrl} alt="" fill sizes="(min-width: 640px) 66vw, 100vw" />
+          </div>
         )}
         <div className="p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-center gap-4">
               <div
                 className={cn(
-                  "size-14 shrink-0 overflow-hidden rounded-full bg-cover bg-center",
+                  "relative size-14 shrink-0 overflow-hidden rounded-full",
                   bannerUrl && "-mt-10 ring-4 ring-card",
                 )}
-                style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
               >
-                {!avatarUrl && initialsBadge}
+                {avatarUrl ? <AppImage src={avatarUrl} alt="" fill sizes="56px" /> : initialsBadge}
               </div>
               <div>
                 <h1 className="font-display text-2xl font-bold text-foreground">{brand.name}</h1>
