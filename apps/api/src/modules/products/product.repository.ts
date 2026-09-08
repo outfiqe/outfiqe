@@ -479,6 +479,7 @@ export const productRepository = {
     const rows = await prisma.creatorLookProduct.findMany({
       where: {
         productId,
+        reviewStatus: TagReviewStatus.APPROVED,
         creatorLook: { deletedAt: null, creator: { creatorStatus: CreatorStatus.APPROVED } },
       },
       select: {
@@ -558,7 +559,7 @@ export const productRepository = {
 
   async listProductIdsTaggedByCreator(creatorId: string): Promise<string[]> {
     const rows = await prisma.creatorLookProduct.findMany({
-      where: { creatorLook: { creatorId } },
+      where: { reviewStatus: TagReviewStatus.APPROVED, creatorLook: { creatorId } },
       select: { productId: true },
       distinct: ["productId"],
     });

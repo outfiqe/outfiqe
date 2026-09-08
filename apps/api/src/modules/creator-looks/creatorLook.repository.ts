@@ -102,6 +102,7 @@ const feedRelationsInclude = {
     select: { url: true, imageAsset: { select: RESPONSIVE_IMAGE_ASSET_SELECT } },
   },
   taggedProducts: {
+    where: { reviewStatus: TagReviewStatus.APPROVED },
     include: {
       product: {
         include: {
@@ -716,6 +717,7 @@ const listFeaturedLookIds = async ({
       JOIN products p ON p.id = clp.product_id
       JOIN users u ON u.id = cl.creator_id
       WHERE cl.deleted_at IS NULL
+        AND clp.review_status = 'APPROVED'
         AND p.status = 'APPROVED'
         AND p.deleted_at IS NULL
         AND u.creator_status = 'APPROVED'
@@ -1190,6 +1192,7 @@ export const creatorLookRepository = {
   ): Promise<TaggedProductPage<ProductWithBrand>> {
     const rows = await prisma.creatorLookProduct.findMany({
       where: {
+        reviewStatus: TagReviewStatus.APPROVED,
         product: { status: ProductStatus.APPROVED },
         creatorLook: { creatorId, deletedAt: null },
       },
@@ -1642,8 +1645,13 @@ export const creatorLookRepository = {
   },
 
   async tagExists(lookId: string, productId: string): Promise<boolean> {
-    const tag = await prisma.creatorLookProduct.findUnique({
-      where: { creatorLookId_productId: { creatorLookId: lookId, productId } },
+    const tag = await prisma.creatorLookProduct.findFirst({
+      where: {
+        creatorLookId: lookId,
+        productId,
+        reviewStatus: TagReviewStatus.APPROVED,
+      },
+      select: { id: true },
     });
     return Boolean(tag);
   },

@@ -11,6 +11,7 @@ import {
   ImageProcessingQualityTier,
   ImageProcessingStatus,
   ProductStatus,
+  TagReviewStatus,
   UserRole,
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
@@ -109,7 +110,9 @@ const createImageAsset = async (ownerId: string) =>
   });
 
 const tagProduct = async (lookId: string, productId: string, sizeWorn = "M") =>
-  prisma.creatorLookProduct.create({ data: { creatorLookId: lookId, productId, sizeWorn } });
+  prisma.creatorLookProduct.create({
+    data: { creatorLookId: lookId, productId, sizeWorn, reviewStatus: TagReviewStatus.APPROVED },
+  });
 
 const followCreator = async (followerId: string, creatorId: string) =>
   prisma.follow.create({
