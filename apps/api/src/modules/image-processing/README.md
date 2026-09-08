@@ -70,8 +70,11 @@ async pipeline use case the spec asked for.
 (`image` field, per-format `srcSet` + `lqip`) via `#lib/responsive-image.utils.js`, and
 `POST /uploads/pipeline` + the product/look create/update endpoints let the web app run a domain
 image through this pipeline and persist the link — see the `uploads`, `products` and
-`creator-looks` module READMEs. Still not done: a backfill for images already stored as bare URLs,
-avatars/brand banners/hero slides/collections, and `ProductReviewImage`.
+`creator-looks` module READMEs. `prisma/backfill-image-assets.ts` (`pnpm db:backfill:image-assets`,
+`--dry-run` / `--limit=N` supported) walks existing `ProductImage` / `CreatorLookImage` rows that
+have no `imageAssetId`, downloads each `url`, and submits it through this pipeline — run it once per
+environment after deploy against a running API (it enqueues; the API's workers process). Still not
+linked: avatars, brand banners, hero slides, collections, and `ProductReviewImage`.
 
 **Why a new `ImageProcessingAsset` Prisma model instead of reusing `shared/storage`'s
 `StorageProvider`.** `shared/storage`'s `StorageProvider` (`upload`/`delete` only) is shaped for
@@ -101,10 +104,9 @@ auth-gated the same way every other admin-only surface in this codebase is.
 
 ## Not yet built (known gaps)
 
-- **Backfill + the rest of the domain images.** Product and look photo uploads now route through
-  this pipeline (`POST /uploads/pipeline`, then `imageAssetIds` on product/look create/update), but
-  there is no one-off backfill for the images already stored as bare URLs, and avatars, brand
-  banners, hero slides, collections and `ProductReviewImage` are not linked at all.
+- **The rest of the domain images.** Product and look photos route through this pipeline on upload
+  (`POST /uploads/pipeline`) and via `prisma/backfill-image-assets.ts` for existing rows. Avatars,
+  brand banners, hero slides, collections and `ProductReviewImage` are not linked at all yet.
 - **Reprocessing a failed asset.** Today, if `(ownerId, checksum)` already has a row, a duplicate
   upload always returns the existing row as-is — including a `failed` one. There is no "retry this
   failed upload" endpoint yet; the dead-letter queue (Bull Board, `/internal/queues`) is where a
