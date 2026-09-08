@@ -4,6 +4,14 @@
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
+  "browserslist": [
+    "chrome >= 107",
+    "edge >= 107",
+    "firefox >= 104",
+    "safari >= 15.4",
+    "ios >= 15.4",
+    "not dead"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",

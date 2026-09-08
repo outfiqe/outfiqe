@@ -7,7 +7,6 @@ import { type TrendingRank, TrendingRankBadge } from "@/shared/components/Trendi
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 
 import type { FeedPost } from "../api/exploreFeedSchemas";
-import { PostCaption } from "./PostCaption";
 
 const POST_GRID_SIZES = "(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw";
 
@@ -15,13 +14,14 @@ type PostGridCardProps = {
   post: FeedPost;
   onClick: () => void;
   trendingRank?: TrendingRank;
+  eager?: boolean;
 };
 
-export const PostGridCard = ({ post, onClick, trendingRank }: PostGridCardProps) => {
+export const PostGridCard = ({ post, onClick, trendingRank, eager }: PostGridCardProps) => {
   const { id, imageUrl, image, images, caption } = post;
 
   return (
-    <div className="mb-4">
+    <div className="mb-4 break-inside-avoid">
       <button
         type="button"
         onClick={onClick}
@@ -29,7 +29,16 @@ export const PostGridCard = ({ post, onClick, trendingRank }: PostGridCardProps)
         className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30"
         style={imageUrl ? undefined : { backgroundColor: getAvatarColor(id) }}
       >
-        {imageUrl && <AppImage src={imageUrl} image={image} alt="" fill sizes={POST_GRID_SIZES} />}
+        {imageUrl && (
+          <AppImage
+            src={imageUrl}
+            image={image}
+            alt=""
+            fill
+            sizes={POST_GRID_SIZES}
+            eager={eager}
+          />
+        )}
 
         {trendingRank && <TrendingRankBadge rank={trendingRank} />}
 
@@ -43,12 +52,9 @@ export const PostGridCard = ({ post, onClick, trendingRank }: PostGridCardProps)
         )}
       </button>
 
-      {caption && (
-        <PostCaption
-          text={caption}
-          className="mt-2 text-[12.5px] leading-snug text-muted-foreground"
-        />
-      )}
+      <p className="mt-2 line-clamp-2 min-h-[2.25rem] text-[12.5px] leading-snug text-muted-foreground">
+        {caption}
+      </p>
     </div>
   );
 };

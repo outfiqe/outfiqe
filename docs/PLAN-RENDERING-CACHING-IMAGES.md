@@ -123,8 +123,13 @@ https://outfiqe.com/` had none of the middleware headers). Moved to `apps/web/sr
 - `experimental.sri` adds `integrity` to script tags.
 
 `/about`, `/contact`, `/help`, `/how-it-works`, `/size-guide`, `/for-brands`, `/for-creators`,
-`/legal/*` and the public browse shells (`/explore`, `/brands`, `/collections`, `/leaderboard`,
+`/legal/*` and the public browse shells (`/brands`, `/collections`, `/leaderboard`,
 `/cart`, `/wishlist`, `/search`) are now prerendered + `Cache-Control: s-maxage=31536000`.
+
+`/explore` was in that set but is now dynamic (server-rendered on demand): its first feed page is
+prefetched on the server and hydrated so the LCP image is in the initial HTML instead of waiting on
+the client bundle. The feed fetch itself is `revalidateSeconds: 30`, so the origin still only
+recomputes the anonymous feed a couple of times a minute. See `features/explore/README.md`.
 
 CI Browser tests + Lighthouse passed with the CSP active. Still smoke-test the Vercel preview
 (DevTools console on `/`, `/shop`, `/product/[id]`, `/checkout`, a dashboard page) before
