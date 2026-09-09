@@ -31,11 +31,9 @@ const scriptSrc = (nonce: string, isDev: boolean, renderMode: CspRenderMode): st
     return `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' ${TURNSTILE_ORIGIN}`;
   }
 
-  const trustAnchor = isDev
-    ? "'unsafe-eval'"
-    : `'strict-dynamic' 'wasm-unsafe-eval' '${THEME_INIT_SCRIPT_SHA256}'`;
+  const trustAnchor = isDev ? "'unsafe-eval'" : "'strict-dynamic' 'wasm-unsafe-eval'";
 
-  return `script-src 'self' 'nonce-${nonce}' ${trustAnchor} ${TURNSTILE_ORIGIN}`;
+  return `script-src 'self' 'nonce-${nonce}' '${THEME_INIT_SCRIPT_SHA256}' ${trustAnchor} ${TURNSTILE_ORIGIN}`;
 };
 
 export const buildContentSecurityPolicy = ({
