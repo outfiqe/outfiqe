@@ -5,17 +5,24 @@ import {
   AutocompleteContent,
   AutocompleteInput,
   AutocompleteItem,
+  Button,
   Input,
   Skeleton,
 } from "@outfiqe/design-system";
-import { Check, ImageOff, Search, Tags, X } from "lucide-react";
+import { Check, Clock, ImageOff, Search, Tags, X } from "lucide-react";
 import { useState } from "react";
 
 import type { PublicProduct } from "@/features/products/api/productSchemas";
 import { AppImage } from "@/shared/components/AppImage";
 import { cn } from "@/shared/lib/cn";
 
+import type { EditTaggedProduct } from "../api/creatorLooksSchemas";
 import type { LookFormInput } from "../schemas/lookForm.schema";
+import {
+  TAG_IN_REVIEW_HINT,
+  TAG_REJECTION_REASON_LABELS,
+  TAG_REVIEW_STATUS_LABELS,
+} from "../utils/tagReviewLabels";
 
 const ProductThumb = ({ url, className }: { url: string | null; className?: string }) => (
   <div
@@ -34,13 +41,84 @@ const ProductThumb = ({ url, className }: { url: string | null; className?: stri
 
 type CachedTagProduct = { name: string; imageUrl: string | null };
 
+type TagReviewState = Pick<
+  EditTaggedProduct,
+  "reviewStatus" | "rejectionReason" | "rejectionNote" | "canReRequest"
+>;
+
+const TagReviewStatusChip = ({
+  reviewStatus,
+}: {
+  reviewStatus: TagReviewState["reviewStatus"];
+}) => {
+  if (reviewStatus === "APPROVED") return null;
+  const isPending = reviewStatus === "PENDING";
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide",
+        isPending ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-800",
+      )}
+    >
+      {isPending && <Clock className="size-3" />}
+      {TAG_REVIEW_STATUS_LABELS[reviewStatus]}
+    </span>
+  );
+};
+
+const TagReviewNote = ({
+  review,
+  productName,
+  onReRequest,
+}: {
+  review: TagReviewState;
+  productName: string;
+  onReRequest: () => void;
+}) => {
+  if (review.reviewStatus === "APPROVED") return null;
+
+  if (review.reviewStatus === "PENDING") {
+    return <p className="mt-1.5 text-xs text-amber-700">{TAG_IN_REVIEW_HINT}</p>;
+  }
+
+  return (
+    <div className="mt-1.5 rounded-md bg-red-50 px-2 py-1.5 text-xs text-red-800">
+      <p className="font-medium">
+        {review.rejectionReason
+          ? TAG_REJECTION_REASON_LABELS[review.rejectionReason]
+          : TAG_REJECTION_REASON_LABELS.OTHER}
+      </p>
+      {review.rejectionNote && <p className="mt-0.5 text-red-700">“{review.rejectionNote}”</p>}
+      {review.canReRequest ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onReRequest}
+          className="mt-1.5 h-7 border-red-300 text-red-800 hover:bg-red-800 hover:text-white"
+        >
+          Request again
+        </Button>
+      ) : (
+        <p className="mt-1 text-red-700">
+          You&apos;ve used all your re-requests for {productName}. Ask the brand to take another
+          look.
+        </p>
+      )}
+    </div>
+  );
+};
+
 type ProductTagPickerProps = {
   taggedProducts: LookFormInput["taggedProducts"];
   maxTaggedProducts: number;
   productCache: Record<string, CachedTagProduct>;
+  reviewByProductId?: Record<string, TagReviewState>;
   onToggleProduct: (product: PublicProduct) => void;
   onRemoveTag: (productId: string) => void;
   onSizeChange: (productId: string, sizeWorn: string) => void;
+  onReRequestTag?: (productId: string) => void;
+  initialExpanded?: boolean;
   sizeErrors?: Record<string, string>;
   productFilter: string;
   onFilterChange: (value: string) => void;
@@ -55,9 +133,12 @@ export const ProductTagPicker = ({
   taggedProducts,
   maxTaggedProducts,
   productCache,
+  reviewByProductId,
   onToggleProduct,
   onRemoveTag,
   onSizeChange,
+  onReRequestTag,
+  initialExpanded = false,
   sizeErrors,
   productFilter,
   onFilterChange,
@@ -67,7 +148,7 @@ export const ProductTagPicker = ({
   searchResults,
   error,
 }: ProductTagPickerProps) => {
-  const [showPicker, setShowPicker] = useState(false);
+  const [showPicker, setShowPicker] = useState(initialExpanded);
 
   return (
     <div className="border-t border-border pt-4">
@@ -93,6 +174,8 @@ export const ProductTagPicker = ({
               {taggedProducts.map((tag) => {
                 const product = productCache[tag.productId];
                 const sizeError = sizeErrors?.[tag.productId];
+                const review = reviewByProductId?.[tag.productId];
+                const productName = product?.name ?? "this product";
                 return (
                   <div
                     key={tag.productId}
@@ -103,6 +186,7 @@ export const ProductTagPicker = ({
                       <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">
                         {product?.name ?? "Product"}
                       </span>
+                      {review && <TagReviewStatusChip reviewStatus={review.reviewStatus} />}
                       <Input
                         placeholder="Size (e.g. M)"
                         className="h-8 w-24 shrink-0"
@@ -121,6 +205,13 @@ export const ProductTagPicker = ({
                       </button>
                     </div>
                     {sizeError && <p className="mt-1 text-xs text-destructive">{sizeError}</p>}
+                    {review && (
+                      <TagReviewNote
+                        review={review}
+                        productName={productName}
+                        onReRequest={() => onReRequestTag?.(tag.productId)}
+                      />
+                    )}
                   </div>
                 );
               })}

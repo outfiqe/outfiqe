@@ -1,4 +1,5 @@
 import { DomainEvents, eventBus } from "#events/event-bus.js";
+import type { NotificationEntityType } from "#generated/prisma/enums.js";
 import { NotificationType } from "#generated/prisma/enums.js";
 import { buildCursorPage, encodeCursor } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
@@ -12,6 +13,7 @@ import type {
   CreateIndividualNotificationInput,
   NotificationChannelChanges,
   NotificationFeedCursor,
+  NotificationMetadata,
   NotificationPage,
   NotificationPreferenceView,
   NotificationRecord,
@@ -71,6 +73,26 @@ export const notificationService = {
     if (mutedRecipientIds.has(input.recipientId)) return;
 
     const result = await notificationRepository.upsertGroup(input);
+    if (!result) return;
+
+    await (result.wasCreated ? broadcastCreated(result.record) : broadcastUpdated(result.record));
+  },
+
+  async notifySystemReminder(input: {
+    recipientId: string;
+    type: NotificationType;
+    entityType?: NotificationEntityType | null;
+    entityId?: string | null;
+    groupKey: string;
+    metadata: NotificationMetadata;
+  }): Promise<void> {
+    const mutedRecipientIds = await notificationRepository.findMutedRecipientIds(
+      [input.recipientId],
+      input.type,
+    );
+    if (mutedRecipientIds.has(input.recipientId)) return;
+
+    const result = await notificationRepository.upsertSystemReminder(input);
     if (!result) return;
 
     await (result.wasCreated ? broadcastCreated(result.record) : broadcastUpdated(result.record));

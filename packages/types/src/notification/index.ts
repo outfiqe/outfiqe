@@ -24,6 +24,11 @@ export const NotificationType = {
   COUPON_APPROVAL_REQUESTED: "COUPON_APPROVAL_REQUESTED",
   COUPON_BUDGET_ALERT: "COUPON_BUDGET_ALERT",
   COUPON_REDEMPTION_FLAGGED: "COUPON_REDEMPTION_FLAGGED",
+  PRODUCT_TAG_SUBMITTED: "PRODUCT_TAG_SUBMITTED",
+  PRODUCT_TAG_APPROVED: "PRODUCT_TAG_APPROVED",
+  PRODUCT_TAG_REJECTED: "PRODUCT_TAG_REJECTED",
+  PRODUCT_TAG_REVOKED: "PRODUCT_TAG_REVOKED",
+  PRODUCT_TAG_REVIEW_REMINDER: "PRODUCT_TAG_REVIEW_REMINDER",
 } as const;
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
@@ -98,6 +103,10 @@ export type NotificationMetadata = {
   spentAmount?: number;
   thresholdPercent?: number;
   flagReason?: string;
+  tagRejectionReason?: string;
+  tagRejectionNote?: string | null;
+  tagAutoApproved?: boolean;
+  pendingTagReviewCount?: number;
 };
 
 export type Notification = {

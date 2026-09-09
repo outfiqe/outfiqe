@@ -13,6 +13,7 @@ import {
   adminSupportTicketPath,
   brandProfilePath,
   conversationPath,
+  creatorLookEditPath,
   creatorProfilePath,
   customerSupportTicketPath,
   orderDetailPath,
@@ -93,6 +94,18 @@ export const resolveNotificationHref = (
       return entityId
         ? adminAppPath(orderDetailPath(ADMIN_APP_ROUTES.ordersList, entityId))
         : adminAppPath(ADMIN_APP_ROUTES.coupons);
+    case NotificationType.PRODUCT_TAG_APPROVED:
+      return ownHandle && entityId
+        ? lookPermalinkPath(ownHandle, entityId)
+        : WEB_NOTIFICATION_ROUTES.dashboardProfile;
+    case NotificationType.PRODUCT_TAG_REJECTED:
+    case NotificationType.PRODUCT_TAG_REVOKED:
+      return ownHandle && entityId
+        ? creatorLookEditPath(ownHandle, entityId)
+        : WEB_NOTIFICATION_ROUTES.dashboardProfile;
+    case NotificationType.PRODUCT_TAG_SUBMITTED:
+    case NotificationType.PRODUCT_TAG_REVIEW_REMINDER:
+      return WEB_NOTIFICATION_ROUTES.tagReviews;
     default:
       return null;
   }

@@ -65,9 +65,13 @@ the same way it already voids `PENDING` commissions. `runBrandPayoutLifecycleSwe
   bands (an income-tax-style marginal ladder). Matches the pre-existing `CommissionTier` model this
   module's ladder is modeled after, and was explicitly confirmed against a real example (a Rs 1500
   item in a "5%, 1000–2000" band pays flat Rs 75, not a blend with the 0–1000 band).
-- **A brand exemption waives the platform fee only, never the gateway fee estimate** — the gateway
-  fee is a pass-through cost the platform actually incurs with the payment processor, not part of
-  the platform's own take; an exempt brand still nets `grossAmount − gatewayFee`.
+- **`gatewayFee` is recorded on every `BrandPayout` row but never subtracted from `netAmount`** —
+  a brand's payout is always `grossAmount − platformFee`, identical whether the order was paid by
+  COD or through a wallet. The gateway's cut is a cost the platform itself absorbs out of its own
+  commission, not a pass-through onto the brand; `gatewayFee` stays on the row purely so it's
+  visible for platform-margin reporting (see `financial-rollup`). This applies the same way to an
+  exempt brand: with `platformFee` zeroed, an exempt brand nets the full `grossAmount` regardless
+  of payment method too.
 - **Submitting a new tier ladder replaces the whole set atomically, not per-tier CRUD** — matches
   this codebase's existing versioned-config pattern (`WithdrawPolicy`,
   `createActiveRuleVersion`/`createActiveGatewayFeeRateVersion`): the previous

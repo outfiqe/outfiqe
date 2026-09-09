@@ -129,6 +129,31 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     title: "Coupon redemption flagged",
     body: () => "A coupon redemption was flagged for review",
   },
+  [NotificationType.PRODUCT_TAG_SUBMITTED]: {
+    title: "Tag waiting for review",
+    body: (payload) => withOthers(payload, "tagged one of your products"),
+  },
+  [NotificationType.PRODUCT_TAG_REVIEW_REMINDER]: {
+    title: "Tags waiting for review",
+    body: (payload) => {
+      const count = payload.metadata.pendingTagReviewCount;
+      return typeof count === "number"
+        ? `${count} creator tag${count === 1 ? "" : "s"} still need your review`
+        : "You have creator tags waiting for review";
+    },
+  },
+  [NotificationType.PRODUCT_TAG_APPROVED]: {
+    title: "Product tag approved",
+    body: () => "A brand approved a product tag on your look",
+  },
+  [NotificationType.PRODUCT_TAG_REJECTED]: {
+    title: "Product tag declined",
+    body: () => "A brand declined a product tag on your look",
+  },
+  [NotificationType.PRODUCT_TAG_REVOKED]: {
+    title: "Product tag removed",
+    body: () => "A brand removed a live product tag from your look",
+  },
 };
 
 const urlFor = (payload: NotificationBroadcastPayload): string => {
@@ -164,6 +189,10 @@ const urlFor = (payload: NotificationBroadcastPayload): string => {
     case NotificationType.SUPPORT_TICKET_REPLY:
     case NotificationType.SUPPORT_TICKET_RESOLVED:
       return payload.entityId ? `/support?ticket=${payload.entityId}` : "/support";
+    case NotificationType.PRODUCT_TAG_APPROVED:
+    case NotificationType.PRODUCT_TAG_REJECTED:
+    case NotificationType.PRODUCT_TAG_REVOKED:
+      return "/profile";
     default:
       return NOTIFICATIONS_PATH;
   }
