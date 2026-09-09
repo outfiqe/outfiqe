@@ -1,4 +1,4 @@
-export const sumStatusBuckets = <Status extends string>(
-  amountByStatus: Partial<Record<Status, number>>,
-  statuses: readonly Status[],
+export const sumStatusBuckets = (
+  amountByStatus: Partial<Record<string, number>>,
+  statuses: readonly string[],
 ): number => statuses.reduce((total, status) => total + (amountByStatus[status] ?? 0), 0);
