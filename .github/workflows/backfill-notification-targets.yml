@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Run the backfill against the deployed image
+      - name: Run the backfill inside the running api container
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -31,15 +31,13 @@ jobs:
           script: |
             set -euo pipefail
             cd /srv/outfiqe
-            export IMAGE_TAG="${{ github.sha }}"
             DIRECT_URL="$(grep -E '^DIRECT_DATABASE_URL=' .env.prod | head -n1 | cut -d= -f2-)"
             DIRECT_URL="${DIRECT_URL%\"}"
             DIRECT_URL="${DIRECT_URL#\"}"
             DIRECT_URL="${DIRECT_URL%\'}"
             DIRECT_URL="${DIRECT_URL#\'}"
 
-            docker compose -f docker-compose.prod.yml --env-file .env.prod pull api
-            docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm \
+            docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T \
               -e DATABASE_URL="$DIRECT_URL" \
-              --entrypoint node_modules/.bin/tsx \
-              api prisma/backfill-notification-targets.ts ${{ inputs.dry_run && '--dry-run' || '' }}
+              api node_modules/.bin/tsx prisma/backfill-notification-targets.ts \
+              ${{ inputs.dry_run && '--dry-run' || '' }}
