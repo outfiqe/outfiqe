@@ -245,6 +245,23 @@ describe("EditPostForm", () => {
     expect(screen.getByRole("button", { name: "Use photo" })).toBeInTheDocument();
   });
 
+  it("keeps Use photo disabled until the crop tool reports a cropped area, so an unconfirmed crop can't be confirmed with the uncropped original", async () => {
+    const user = userEvent.setup();
+    const { container } = renderForm(buildDetail());
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    await user.upload(fileInput, buildImageFile());
+
+    const usePhotoButton = screen.getByRole("button", { name: "Use photo" });
+    expect(usePhotoButton).toBeDisabled();
+
+    await user.click(usePhotoButton);
+    expect(screen.getByText("Crop surface")).toBeInTheDocument();
+    expect(screen.getByText("1/6 photos")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Finish crop" }));
+    expect(usePhotoButton).toBeEnabled();
+  });
+
   it("converts a HEIC photo before staging it", async () => {
     isHeicImage.mockReturnValueOnce(true);
     toUploadableImage.mockResolvedValueOnce(buildImageFile("converted.jpg"));
@@ -279,6 +296,7 @@ describe("EditPostForm", () => {
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
     await user.upload(fileInput, buildImageFile());
 
+    await user.click(screen.getByRole("button", { name: "Finish crop" }));
     await user.click(screen.getByRole("button", { name: "Use photo" }));
 
     expect(screen.getByText("2/6 photos")).toBeInTheDocument();
@@ -290,6 +308,7 @@ describe("EditPostForm", () => {
     const { container } = renderForm(buildDetail());
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
     await user.upload(fileInput, buildImageFile());
+    await user.click(screen.getByRole("button", { name: "Finish crop" }));
     await user.click(screen.getByRole("button", { name: "Use photo" }));
     expect(screen.getByText("2/6 photos")).toBeInTheDocument();
 
@@ -425,6 +444,7 @@ describe("EditPostForm", () => {
     const { container, onClose } = renderForm(buildDetail());
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
     await user.upload(fileInput, buildImageFile());
+    await user.click(screen.getByRole("button", { name: "Finish crop" }));
     await user.click(screen.getByRole("button", { name: "Use photo" }));
 
     await user.click(screen.getByRole("button", { name: "Save changes" }));

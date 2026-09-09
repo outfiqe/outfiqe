@@ -34,6 +34,9 @@ export const usePendingPhotos = (maxPhotos: number, initialUrls: string[] = []) 
   const inputRef = useRef<HTMLInputElement>(null);
 
   const activePhoto = photos.find((photo) => photo.id === activeId) ?? null;
+  const hasUnresolvedCrop = photos.some(
+    (photo) => photo.file !== null && photo.croppedAreaPixels === null,
+  );
 
   const addFile = (file: File) => {
     if (photos.length >= maxPhotos) return;
@@ -106,6 +109,7 @@ export const usePendingPhotos = (maxPhotos: number, initialUrls: string[] = []) 
   return {
     photos,
     activePhoto,
+    hasUnresolvedCrop,
     setActiveId,
     inputRef,
     handleFileSelect,
@@ -133,16 +137,17 @@ export const resolvePendingPhotoAssets = async (
   }
 
   const files = await Promise.all(
-    newPhotos.map((photo) =>
-      photo.croppedAreaPixels
-        ? getCroppedImageFile(
-            photo.url,
-            photo.croppedAreaPixels,
-            photo.file.name,
-            photo.file.type || defaultMimeType,
-          )
-        : photo.file,
-    ),
+    newPhotos.map((photo) => {
+      if (!photo.croppedAreaPixels) {
+        throw new Error("That photo isn't cropped yet — reselect it and try again.");
+      }
+      return getCroppedImageFile(
+        photo.url,
+        photo.croppedAreaPixels,
+        photo.file.name,
+        photo.file.type || defaultMimeType,
+      );
+    }),
   );
   const uploadedFiles = await uploadsApi.uploadWithPipeline(files);
   const remainingUploadedFiles = [...uploadedFiles];
