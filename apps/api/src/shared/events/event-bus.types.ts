@@ -6,6 +6,7 @@ import type {
   NotificationSurface,
   NotificationType,
   SupportCategory,
+  TagRejectionReason,
   UserRole,
   WithdrawRequestStatus,
 } from "#generated/prisma/enums.js";
@@ -91,6 +92,36 @@ export type DomainEventPayloads = {
   };
   [DomainEvents.PRODUCT_PURCHASED]: { orderId: string; userId: string };
   [DomainEvents.PRODUCT_TAGGED]: { lookId: string; creatorId: string; productId: string };
+  [DomainEvents.PRODUCT_TAG_SUBMITTED]: {
+    lookId: string;
+    creatorId: string;
+    productId: string;
+    brandId: string;
+  };
+  [DomainEvents.PRODUCT_TAG_APPROVED]: {
+    tagId: string;
+    lookId: string;
+    creatorId: string;
+    productId: string;
+    auto: boolean;
+  };
+  [DomainEvents.PRODUCT_TAG_REJECTED]: {
+    tagId: string;
+    lookId: string;
+    creatorId: string;
+    productId: string;
+    reason: TagRejectionReason;
+    note: string | null;
+  };
+  [DomainEvents.PRODUCT_TAG_REVOKED]: {
+    tagId: string;
+    lookId: string;
+    creatorId: string;
+    productId: string;
+    reason: TagRejectionReason;
+    note: string | null;
+  };
+  [DomainEvents.TAG_REVIEW_REMINDER_DUE]: { brandId: string; pendingCount: number };
   [DomainEvents.SALE_GENERATED]: {
     orderItemId: string;
     creatorId: string;

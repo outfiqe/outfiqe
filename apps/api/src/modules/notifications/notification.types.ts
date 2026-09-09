@@ -42,6 +42,10 @@ export type NotificationMetadata = {
   thresholdPercent?: number;
   spentAmount?: number;
   flagReason?: string;
+  tagRejectionReason?: string;
+  tagRejectionNote?: string | null;
+  tagAutoApproved?: boolean;
+  pendingTagReviewCount?: number;
 };
 
 export type NotificationRecord = {

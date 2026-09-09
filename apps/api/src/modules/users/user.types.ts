@@ -18,6 +18,7 @@ export interface UserRecord {
   emailVerified: boolean;
   followerCount: number;
   followingCount: number;
+  tagCounterfeitFlagCount: number;
   hideFromLeaderboards: boolean;
   lastSeenAt: Date | null;
   createdAt: Date;

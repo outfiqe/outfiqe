@@ -66,6 +66,26 @@ export const resolveNotificationMessage = (notification: Notification): string =
         : `${metadata.couponCode ?? "A coupon"} is close to its budget limit`;
     case NotificationType.COUPON_REDEMPTION_FLAGGED:
       return "A coupon redemption was flagged for review";
+    case NotificationType.PRODUCT_TAG_SUBMITTED:
+      return `${actorList(notification)} tagged one of your products — review it in your queue`;
+    case NotificationType.PRODUCT_TAG_REVIEW_REMINDER: {
+      const count = metadata.pendingTagReviewCount ?? 0;
+      return count === 1
+        ? "1 creator tag is still waiting for your review"
+        : `${count} creator tags are still waiting for your review`;
+    }
+    case NotificationType.PRODUCT_TAG_APPROVED:
+      return metadata.tagAutoApproved
+        ? "A product tag on your look was auto-approved"
+        : "A brand approved a product tag on your look";
+    case NotificationType.PRODUCT_TAG_REJECTED:
+      return metadata.tagRejectionNote
+        ? `A brand declined a product tag on your look: ${metadata.tagRejectionNote}`
+        : "A brand declined a product tag on your look";
+    case NotificationType.PRODUCT_TAG_REVOKED:
+      return metadata.tagRejectionNote
+        ? `A brand removed a live product tag from your look: ${metadata.tagRejectionNote}`
+        : "A brand removed a live product tag from your look";
     default:
       return "You have a new notification";
   }

@@ -406,7 +406,7 @@ const checkoutOnce = async (
           grossAmount,
           platformFee,
           gatewayFee,
-          netAmount: grossAmount - platformFee - gatewayFee,
+          netAmount: grossAmount - platformFee,
         });
       }
 

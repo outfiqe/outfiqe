@@ -16,7 +16,6 @@ import {
   computeOwnTagBaseline,
   groupPostBucketsByLook,
   groupTagBucketsByTag,
-  isLikelyBotUserAgent,
   isWithinPostFreshnessWindow,
   postBucketActivity,
   scoreCreatorMomentum,
@@ -53,33 +52,6 @@ const tagBucketAgeHoursAgo = (
   tag,
   bucketStart: new Date(NOW.getTime() - ageHours * HOUR_MS),
   postCount,
-});
-
-describe("isLikelyBotUserAgent", () => {
-  it("treats a missing User-Agent as a bot", () => {
-    expect(isLikelyBotUserAgent(undefined)).toBe(true);
-  });
-
-  it.each([
-    "Googlebot/2.1 (+http://www.google.com/bot.html)",
-    "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
-    "curl/8.0.1",
-    "Wget/1.21",
-    "python-requests/2.31.0",
-    "axios/1.6.0",
-    "Mozilla/5.0 (compatible; DiscordBot/2.0; +https://discordapp.com)",
-    "facebookexternalhit/1.1",
-  ])("flags a known crawler User-Agent: %s", (userAgent) => {
-    expect(isLikelyBotUserAgent(userAgent)).toBe(true);
-  });
-
-  it.each([
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
-  ])("allows a real browser User-Agent: %s", (userAgent) => {
-    expect(isLikelyBotUserAgent(userAgent)).toBe(false);
-  });
 });
 
 describe("toSuggestion", () => {
@@ -160,6 +132,11 @@ describe("toSummary", () => {
 describe("toEditDetail", () => {
   const baseTaggedProduct = {
     productId: "product-1",
+    sizeWorn: "M" as string | null,
+    reviewStatus: "APPROVED" as const,
+    rejectionReason: null,
+    rejectionNote: null,
+    reRequestCount: 0,
     product: {
       id: "product-1",
       name: "Jacket",
@@ -186,6 +163,10 @@ describe("toEditDetail", () => {
       {
         productId: "product-1",
         sizeWorn: "M",
+        reviewStatus: "APPROVED",
+        rejectionReason: null,
+        rejectionNote: null,
+        canReRequest: false,
         product: {
           id: "product-1",
           name: "Jacket",
@@ -208,6 +189,41 @@ describe("toEditDetail", () => {
 
     expect(detail.imageUrls).toEqual(["https://cdn.example.com/cover.png"]);
     expect(detail.taggedProducts[0]?.sizeWorn).toBe("");
+  });
+
+  it("lets a creator re-request a rejected tag until the cap is reached", () => {
+    const detail = toEditDetail({
+      id: "look-1",
+      imageUrl: "https://cdn.example.com/cover.png",
+      images: [],
+      caption: null,
+      taggedProducts: [
+        {
+          ...baseTaggedProduct,
+          productId: "retry-ok",
+          reviewStatus: "REJECTED",
+          rejectionReason: "MISREPRESENTS_PRODUCT",
+          rejectionNote: "Wrong colourway",
+          reRequestCount: 2,
+        },
+        {
+          ...baseTaggedProduct,
+          productId: "retry-locked",
+          reviewStatus: "REJECTED",
+          rejectionReason: "NOT_OUR_PRODUCT",
+          rejectionNote: null,
+          reRequestCount: 3,
+        },
+      ],
+    });
+
+    expect(detail.taggedProducts[0]).toMatchObject({
+      reviewStatus: "REJECTED",
+      rejectionReason: "MISREPRESENTS_PRODUCT",
+      rejectionNote: "Wrong colourway",
+      canReRequest: true,
+    });
+    expect(detail.taggedProducts[1]).toMatchObject({ canReRequest: false });
   });
 });
 

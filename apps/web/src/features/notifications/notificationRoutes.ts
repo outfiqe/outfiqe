@@ -7,6 +7,7 @@ export const WEB_NOTIFICATION_ROUTES = {
   manageOrders: "/manage-orders",
   ordersList: "/orders",
   brandProducts: "/products",
+  tagReviews: "/tag-reviews",
   messagesList: "/messages",
   supportList: "/support",
 } as const;
@@ -25,6 +26,9 @@ const BRAND_PROFILE_PREFIX = "/brand";
 const PRODUCT_DETAIL_PREFIX = "/product";
 
 export const creatorProfilePath = (handle: string): string => `${CREATOR_PROFILE_PREFIX}/${handle}`;
+
+export const creatorLookEditPath = (handle: string, lookId: string): string =>
+  `${CREATOR_PROFILE_PREFIX}/${handle}?edit=${lookId}`;
 
 export const brandProfilePath = (brandId: string): string => `${BRAND_PROFILE_PREFIX}/${brandId}`;
 

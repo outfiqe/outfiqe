@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { BrandTagReviewPolicy } from "#generated/prisma/enums.js";
 import { phoneSchema } from "#lib/phone.utils.js";
 
 const CONTACT_NAME_MIN = 2;
@@ -27,6 +28,8 @@ export const updateBrandProfileSchema = z
     avatarImageAssetId: z.uuid().nullable(),
     bannerUrl: z.url().nullable(),
     bannerImageAssetId: z.uuid().nullable(),
+    tagReviewPolicy: z.enum(BrandTagReviewPolicy),
+    autoApproveVerifiedBuyers: z.boolean(),
   })
   .partial();
 

@@ -344,4 +344,21 @@ export const orderRepository = {
     });
     return updated.count > 0;
   },
+
+  async listSettledPurchasedProductIds(userId: string, productIds: string[]): Promise<string[]> {
+    if (productIds.length === 0) return [];
+    const rows = await prisma.orderItem.findMany({
+      where: {
+        productId: { in: productIds },
+        order: {
+          userId,
+          paymentStatus: PaymentStatus.PAID,
+          fulfilmentStatus: { not: FulfilmentStatus.CANCELLED },
+        },
+      },
+      select: { productId: true },
+      distinct: ["productId"],
+    });
+    return rows.map((row) => row.productId);
+  },
 };

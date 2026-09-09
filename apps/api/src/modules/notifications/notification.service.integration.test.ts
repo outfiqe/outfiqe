@@ -260,6 +260,87 @@ describe("notificationService.retractGroupActor", () => {
   });
 });
 
+describe("notificationService.notifySystemReminder", () => {
+  it("creates one unread row, then refreshes its count in place on the next sweep", async () => {
+    const recipient = await createUser();
+    const brandId = randomUUID();
+    const groupKey = `tag-review-reminder:${brandId}`;
+
+    await notificationService.notifySystemReminder({
+      recipientId: recipient.id,
+      type: NotificationType.PRODUCT_TAG_REVIEW_REMINDER,
+      entityId: brandId,
+      groupKey,
+      metadata: { pendingTagReviewCount: 3 },
+    });
+    await notificationService.notifySystemReminder({
+      recipientId: recipient.id,
+      type: NotificationType.PRODUCT_TAG_REVIEW_REMINDER,
+      entityId: brandId,
+      groupKey,
+      metadata: { pendingTagReviewCount: 5 },
+    });
+
+    const rows = await prisma.notification.findMany({
+      where: { recipientId: recipient.id, groupKey },
+    });
+    expect(rows).toHaveLength(1);
+    expect((rows[0]?.metadata as { pendingTagReviewCount?: number }).pendingTagReviewCount).toBe(5);
+  });
+
+  it("starts a fresh row once the previous reminder is read", async () => {
+    const recipient = await createUser();
+    const brandId = randomUUID();
+    const groupKey = `tag-review-reminder:${brandId}`;
+
+    await notificationService.notifySystemReminder({
+      recipientId: recipient.id,
+      type: NotificationType.PRODUCT_TAG_REVIEW_REMINDER,
+      entityId: brandId,
+      groupKey,
+      metadata: { pendingTagReviewCount: 2 },
+    });
+    await prisma.notification.updateMany({
+      where: { recipientId: recipient.id, groupKey },
+      data: { isRead: true, readAt: new Date() },
+    });
+    await notificationService.notifySystemReminder({
+      recipientId: recipient.id,
+      type: NotificationType.PRODUCT_TAG_REVIEW_REMINDER,
+      entityId: brandId,
+      groupKey,
+      metadata: { pendingTagReviewCount: 4 },
+    });
+
+    const rows = await prisma.notification.findMany({
+      where: { recipientId: recipient.id, groupKey },
+    });
+    expect(rows).toHaveLength(2);
+  });
+
+  it("skips a recipient who muted the reminder type", async () => {
+    const recipient = await createUser();
+    await prisma.notificationPreference.create({
+      data: {
+        userId: recipient.id,
+        type: NotificationType.PRODUCT_TAG_REVIEW_REMINDER,
+        enabled: false,
+      },
+    });
+
+    await notificationService.notifySystemReminder({
+      recipientId: recipient.id,
+      type: NotificationType.PRODUCT_TAG_REVIEW_REMINDER,
+      entityId: randomUUID(),
+      groupKey: `tag-review-reminder:${randomUUID()}`,
+      metadata: { pendingTagReviewCount: 9 },
+    });
+
+    const rows = await prisma.notification.findMany({ where: { recipientId: recipient.id } });
+    expect(rows).toHaveLength(0);
+  });
+});
+
 describe("notificationService.notifyManyIndividual", () => {
   it("writes a row per recipient and skips muted recipients", async () => {
     const [recipientA, recipientB] = await Promise.all([createUser(), createUser()]);

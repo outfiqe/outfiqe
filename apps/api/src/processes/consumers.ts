@@ -21,6 +21,7 @@ import {
 import { registerNotificationEventConsumers } from "#modules/notifications/notification.events.js";
 import { registerNotificationSocketEventConsumer } from "#modules/notifications/notification.socket.js";
 import { registerPushEventConsumer } from "#modules/push/push.events.js";
+import { registerTagReportEventConsumers } from "#modules/tag-reports/tagReport.events.js";
 import { registerXpEventConsumers } from "#modules/xp/xp.events.js";
 import { registerXpSocketEventConsumer } from "#modules/xp/xp.socket.js";
 import { registerSocketListeners } from "#socket/socket.listeners.js";
@@ -47,4 +48,5 @@ export const registerBackgroundConsumers = (): void => {
   registerAchievementEventConsumers();
   registerNotificationEventConsumers();
   registerPushEventConsumer();
+  registerTagReportEventConsumers();
 };
