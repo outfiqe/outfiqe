@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       (async () => {
         try {
-          const { accessToken } = await authApi.refresh();
+          const { accessToken } = await authApi.session();
           setAccessToken(accessToken);
           const user = await authApi.getCurrentUser();
           if (cancelled) return;
