@@ -1,0 +1,43 @@
+name: Backfill order fulfilment groups
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Report counts only, write nothing"
+        type: boolean
+        default: false
+
+concurrency:
+  group: backfill-order-fulfilment-groups
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backfill:
+    name: Backfill on the droplet
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Run the backfill inside the running api container
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          command_timeout: 30m
+          script: |
+            set -euo pipefail
+            cd /srv/outfiqe
+            DIRECT_URL="$(grep -E '^DIRECT_DATABASE_URL=' .env.prod | head -n1 | cut -d= -f2-)"
+            DIRECT_URL="${DIRECT_URL%\"}"
+            DIRECT_URL="${DIRECT_URL#\"}"
+            DIRECT_URL="${DIRECT_URL%\'}"
+            DIRECT_URL="${DIRECT_URL#\'}"
+
+            docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T \
+              -e DATABASE_URL="$DIRECT_URL" \
+              api node_modules/.bin/tsx prisma/backfill-order-fulfilment-groups.ts \
+              ${{ inputs.dry_run && '--dry-run' || '' }}
