@@ -11,6 +11,7 @@ import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 import { chatService } from "./chat.service.js";
+import { ChatUnavailableReason } from "./chat.types.js";
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -197,5 +198,64 @@ describe("chatService.isChatAvailableBetween", () => {
     await chatService.setGlobalChatEnabled(user.id, user.role, false);
 
     expect(await chatService.isChatAvailableBetween(user.id, admin.id)).toBe(true);
+  });
+});
+
+describe("chatService.resolveChatAvailability", () => {
+  it("tells the caller when they are the one who turned chat off with this person", async () => {
+    const caller = await createUser("Reason Caller Off", "reason-caller-off");
+    const target = await createUser("Reason Target A", "reason-target-a");
+
+    await chatService.blockUser(caller.id, target.id);
+
+    expect(await chatService.resolveChatAvailability(caller.id, target.id)).toEqual({
+      isAvailable: false,
+      reason: ChatUnavailableReason.YOU_TURNED_OFF_THIS_PERSON,
+    });
+  });
+
+  it("does not reveal that the other person is the one who turned chat off", async () => {
+    const caller = await createUser("Reason Caller B", "reason-caller-b");
+    const target = await createUser("Reason Target Off", "reason-target-off");
+
+    await chatService.blockUser(target.id, caller.id);
+
+    expect(await chatService.resolveChatAvailability(caller.id, target.id)).toEqual({
+      isAvailable: false,
+      reason: ChatUnavailableReason.RECIPIENT_UNREACHABLE,
+    });
+  });
+
+  it("tells the caller when their own chat is turned off globally", async () => {
+    const caller = await createUser("Reason Caller Global", "reason-caller-global");
+    const target = await createUser("Reason Target C", "reason-target-c");
+
+    await chatService.setGlobalChatEnabled(caller.id, caller.role, false);
+
+    expect(await chatService.resolveChatAvailability(caller.id, target.id)).toEqual({
+      isAvailable: false,
+      reason: ChatUnavailableReason.YOUR_CHAT_DISABLED,
+    });
+  });
+
+  it("reports a generic unreachable reason when the recipient has chat off globally", async () => {
+    const caller = await createUser("Reason Caller D", "reason-caller-d");
+    const target = await createUser("Reason Target Global", "reason-target-global");
+
+    await chatService.setGlobalChatEnabled(target.id, target.role, false);
+
+    expect(await chatService.resolveChatAvailability(caller.id, target.id)).toEqual({
+      isAvailable: false,
+      reason: ChatUnavailableReason.RECIPIENT_UNREACHABLE,
+    });
+  });
+
+  it("is available when neither side has turned anything off", async () => {
+    const caller = await createUser("Reason Caller E", "reason-caller-e");
+    const target = await createUser("Reason Target E", "reason-target-e");
+
+    expect(await chatService.resolveChatAvailability(caller.id, target.id)).toEqual({
+      isAvailable: true,
+    });
   });
 });

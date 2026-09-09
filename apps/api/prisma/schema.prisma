@@ -274,6 +274,7 @@ model Brand {
   commissionExemptions BrandCommissionExemption[]
   linkedOrganization   Organization?
   supportTickets       SupportTicket[]
+  fulfilmentGroups     OrderFulfilmentGroup[]
 
   @@index([bannerImageAssetId])
   @@index([avatarImageAssetId])
@@ -1067,6 +1068,14 @@ enum FulfilmentStatus {
   CANCELLED
 }
 
+enum OrderFulfilmentSummary {
+  UNFULFILLED
+  PARTIALLY_SHIPPED
+  SHIPPED
+  FULFILLED
+  CANCELLED
+}
+
 model Order {
   id     String @id @default(uuid()) @db.Uuid
   userId String @map("user_id") @db.Uuid
@@ -1078,9 +1087,10 @@ model Order {
   city     String
   landmark String?
 
-  paymentMethod    PaymentMethod    @map("payment_method")
-  paymentStatus    PaymentStatus    @default(INITIATED) @map("payment_status")
-  fulfilmentStatus FulfilmentStatus @default(PLACED) @map("fulfilment_status")
+  paymentMethod     PaymentMethod          @map("payment_method")
+  paymentStatus     PaymentStatus          @default(INITIATED) @map("payment_status")
+  fulfilmentStatus  FulfilmentStatus       @default(PLACED) @map("fulfilment_status")
+  fulfilmentSummary OrderFulfilmentSummary @default(UNFULFILLED) @map("fulfilment_summary")
 
   subtotal              Int
   deliveryFee           Int @map("delivery_fee")
@@ -1105,9 +1115,40 @@ model Order {
   transactions     PaymentTransaction[]
   supportTickets   SupportTicket[]
   couponRedemption CouponRedemption?
+  fulfilmentGroups OrderFulfilmentGroup[]
 
   @@index([userId, createdAt])
   @@map("orders")
+}
+
+model OrderFulfilmentGroup {
+  id      String @id @default(uuid()) @db.Uuid
+  orderId String @map("order_id") @db.Uuid
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  brandId String @map("brand_id") @db.Uuid
+  brand   Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  status FulfilmentStatus @default(PLACED)
+
+  carrier        String?
+  trackingNumber String? @map("tracking_number")
+
+  packedAt    DateTime? @map("packed_at")
+  shippedAt   DateTime? @map("shipped_at")
+  deliveredAt DateTime? @map("delivered_at")
+  cancelledAt DateTime? @map("cancelled_at")
+
+  cancellationRequestedAt DateTime? @map("cancellation_requested_at")
+  cancellationReason      String?   @map("cancellation_reason")
+
+  items OrderItem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([orderId, brandId])
+  @@index([brandId, status])
+  @@map("order_fulfilment_groups")
 }
 
 model SavedAddress {
@@ -1162,10 +1203,14 @@ model OrderItem {
   commission  CreatorCommission?
   brandPayout BrandPayout?
 
+  fulfilmentGroupId String?               @map("fulfilment_group_id") @db.Uuid
+  fulfilmentGroup   OrderFulfilmentGroup? @relation(fields: [fulfilmentGroupId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([productId])
   @@index([attributedCreatorId])
+  @@index([fulfilmentGroupId])
   @@map("order_items")
 }
 
@@ -1709,11 +1754,11 @@ enum NotificationSurface {
 }
 
 model Notification {
-  id          String                  @id @default(uuid()) @db.Uuid
-  recipientId String                  @map("recipient_id") @db.Uuid
-  recipient   User                    @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
-  actorId     String?                 @map("actor_id") @db.Uuid
-  actor       User?                   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  id            String                  @id @default(uuid()) @db.Uuid
+  recipientId   String                  @map("recipient_id") @db.Uuid
+  recipient     User                    @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actorId       String?                 @map("actor_id") @db.Uuid
+  actor         User?                   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
   type          NotificationType
   entityType    NotificationEntityType? @map("entity_type")
   entityId      String?                 @map("entity_id")
@@ -1721,11 +1766,11 @@ model Notification {
   targetPath    String?                 @map("target_path")
   metadata      Json                    @default("{}")
   groupKey      String?                 @map("group_key")
-  actorCount  Int                     @default(1) @map("actor_count")
-  isRead      Boolean                 @default(false) @map("is_read")
-  readAt      DateTime?               @map("read_at")
-  createdAt   DateTime                @default(now()) @map("created_at")
-  updatedAt   DateTime                @updatedAt @map("updated_at")
+  actorCount    Int                     @default(1) @map("actor_count")
+  isRead        Boolean                 @default(false) @map("is_read")
+  readAt        DateTime?               @map("read_at")
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
 
   @@index([recipientId, updatedAt])
   @@index([recipientId, isRead])

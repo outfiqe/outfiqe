@@ -94,7 +94,11 @@ Express would otherwise match `/admin` against `/:orderId` and treat "admin" as 
 transition an atomic conditional `updateMany` guarded by the specific status it must be leaving
 (no skipping straight to `DELIVERED`, no re-doing a step). Moving to `DELIVERED` stamps
 `deliveredAt` — this is the field chunk 10's commission-approval sweep has been waiting on since
-nothing set it before this chunk.
+nothing set it before this chunk. The admin advance is order-global: it moves **every** active
+fulfilment group to the new status, stamps the matching timestamp, and recomputes the order rollup
+(`fulfilmentStatus` + `fulfilmentSummary`) from the group statuses. `getOrderAdmin` returns
+`fulfilmentGroups[]` (brand name, per-group status, tracking, and any brand cancellation request)
+so an admin can see and act on each brand's shipment — see "Per-brand fulfilment groups".
 
 **Cancel is cancel-and-refund-if-paid as one action**, not two separate admin clicks — matches how
 an ops person actually thinks about it. Only orders that haven't shipped yet (`PLACED`/`PACKED`)
@@ -152,25 +156,72 @@ route (defaults to `"Cancelled by buyer"`, filled in by the controller) — requ
 admin-authored on the admin route, same schema-per-route split `cancelOrderSchema`/
 `cancelMyOrderSchema` already follows for other admin-vs-buyer field differences in this module.
 
-Deliberately **not** extended to brands (per the design doc): a single order can hold items from
-multiple brands, and `fulfilmentStatus` lives on the order as a whole, not per item — a brand
-cancelling "its" item could strand or wrongly affect another brand's item on the same order.
-Cancelling on a brand's behalf stays an admin action, unchanged.
+Brands don't cancel directly — a brand can only **request** cancellation of its own fulfilment
+group (`POST /orders/brand/fulfilment-groups/:groupId/request-cancellation`), which flags the group
+for an admin. The actual cancel + refund stays this `orderService.cancel` transaction, run by an
+admin, because a single order can hold items from multiple brands and the refund/stock/coupon math
+is whole-order today. See "Per-brand fulfilment groups" below.
 
-## Brand visibility (chunk 16)
+## Per-brand fulfilment groups
 
-`GET /orders/brand` — `requireAuth`+`BRAND_OWNER`, resolves the caller's brand via the shared
-`requireBrandId` (extracted from `products` in this same chunk, now used by both modules instead
-of two copies of the identical membership lookup). Paginates over `OrderItem` rows filtered by
-`product: { brandId }`, **not** whole orders — a single order can contain items from multiple
-brands (one shopper checking out products from two different brands in the same cart), so an
-order-level list would either leak another brand's line items or need per-brand filtering
-downstream. Item-level pagination sidesteps that entirely: each brand only ever sees its own rows,
-proven directly against the DB with a real two-brand order (brand A's list contained exactly its
-own item, not the other brand's).
+An order is split into one **`OrderFulfilmentGroup`** per `(order, brand)` — the unit a brand
+actually fulfils. `checkoutOnce` creates the groups inside the same transaction as the order,
+payouts and commissions, and points each `OrderItem` at its group. Every existing order was
+backfilled the same way (`prisma/backfill-order-fulfilment-groups.ts`, idempotent on the
+`orderId + brandId` unique key).
 
-Deliberately visibility-only, no actions — fulfilment updates and cancellation stay admin-only
-(chunk 15), since `fulfilmentStatus` lives on `Order`, not per-item, so there's nothing a single
-brand could independently mark "shipped" in a multi-brand order without stepping on another
-brand's item. Buyer PII (name/phone/address) is also deliberately left out of the response shape —
-a brand doesn't ship directly, so it has no legitimate need for it.
+**Two status fields, deliberately separate** (the Shopify model):
+
+- `OrderFulfilmentGroup.status` — the per-shipment lifecycle (`PLACED → PACKED → SHIPPED →
+DELIVERED`, or `CANCELLED`), reusing the existing `FulfilmentStatus` enum. This is what a brand
+  advances.
+- `Order.fulfilmentSummary` — a new coarse enum (`UNFULFILLED | PARTIALLY_SHIPPED | SHIPPED |
+FULFILLED | CANCELLED`) derived from the groups. This is the order-level truth for UI.
+- `Order.fulfilmentStatus` (the old enum) is **kept and recomputed as the least-progressed
+  non-cancelled group**, purely so every pre-existing filter/badge/query keeps working untouched.
+  The nuance lives in `fulfilmentSummary`, not here.
+
+`deriveOrderFulfilment(groupStatuses)` (`order.utils.ts`, unit-tested against the full matrix) owns
+both. **Cancelled groups are ignored for progress** unless every group is cancelled — one brand
+cancelling its shipment on a two-brand order must not hold the order back from `FULFILLED`.
+
+**Brand endpoints** — `GET /orders/brand/fulfilment-groups`, `GET
+/orders/brand/fulfilment-groups/:groupId`, `PATCH /orders/brand/fulfilment-groups/:groupId`, `POST
+/orders/brand/fulfilment-groups/:groupId/request-cancellation`. All `requireAuth`+`BRAND_OWNER`,
+resolve the caller's brand via the shared `requireBrandId`, and scope every query to that brand —
+another brand's group is a `404`, never a `403` (same "don't reveal it exists" reasoning as buyer
+order access). The `PATCH`/`POST` writes carry `brandFulfilmentRateLimit`.
+
+The **brand-safe detail** returns this brand's line items with their full price/discount breakdown,
+the buyer ship-to **name, phone and address** (a brand hands the parcel to a courier — the phone is
+operationally required, especially for COD in Nepal), this brand's `BrandPayout` figures for the
+group (gross / platform fee / gateway fee / net), and the order-level `fulfilmentSummary`. It does
+**not** expose other brands' line items, the buyer's email, or the payment/transaction log. (This
+reverses the earlier "brands see item-level rows, no PII" decision — see the git log — because
+brands now self-fulfil, which is what a single-order detail page is for.)
+
+`advanceBrandFulfilmentGroup` uses the same forward-only, one-step transition guard as the admin
+path (`FULFILMENT_ADVANCE_FROM`), scoped by the group's current status in the `updateMany` `where`.
+Marking a group `SHIPPED` requires `carrier` + `trackingNumber` (Zod `.refine`). After a successful
+advance it recomputes the order rollup in a transaction and publishes `ORDER_STATUS_CHANGED`
+**only when the order-level status actually moved** (so a partial advance on a multi-brand order
+doesn't fire a premature "delivered" notification). Orders with no groups (legacy rows before the
+backfill ran) fall back to deriving the rollup from the incoming status.
+
+`requestBrandFulfilmentGroupCancellation` only flags the group (`cancellationRequestedAt` +
+`cancellationReason`) and logs for ops — the actual cancel + refund stays `orderService.cancel`, an
+admin action. `getOrderAdmin` surfaces the request (and every group's status/tracking) so an admin
+can act on it.
+
+**Deferred, on purpose:**
+
+- **Per-group cancel with per-group refund math.** `orderService.cancel` is whole-order: full
+  refund, all stock restored, all payouts/commissions voided, whole coupon budget released,
+  `assertOrderMoneyInvariant` over the whole order. A partial cancel needs partial gateway refunds
+  (eSewa/Khalti support unknown), proportional coupon-budget release, a new partial money
+  invariant, and product calls (refund the delivery fee on a partial cancel? a COD order where
+  nothing was captured?). That's its own project; the brand request + admin visibility is the 80%
+  that unblocks the workflow.
+- **Phone-number masking / relay.** The brand sees the real number today. A masked relay needs a
+  telephony provider, a rented number pool, per-shipment assignment and call/SMS webhooks — a
+  privacy enhancement on a working system, worth doing when volume justifies the cost.

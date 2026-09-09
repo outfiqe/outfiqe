@@ -4,9 +4,9 @@
 
 Real-time chat: availability controls (global "turn off chat" + per-person mutual block, Phase 1),
 1:1 direct messaging with image attachments, real-time delivery, presence/last-seen, and
-sent/delivered/read receipts (Phase 2). `chatService.isChatAvailableBetween` (Phase 1) gates every
-message send, so nothing here has to re-derive the block/settings rule. Group chats and the
-Admin/Support conversation type are not built yet — see Follow-ups.
+sent/delivered/read receipts (Phase 2). `chatService.resolveChatAvailability` (Phase 1) gates every
+message send and conversation start, so nothing here has to re-derive the block/settings rule.
+Group chats and the Admin/Support conversation type are not built yet — see Follow-ups.
 
 ## Structure
 
@@ -15,12 +15,19 @@ Admin/Support conversation type are not built yet — see Follow-ups.
 - `chat.routes.ts`, `chat.controller.ts` — settings/block route table and thin request/response
   glue.
 - `chat.service.ts` — `getSettings`/`setGlobalChatEnabled`, `blockUser`/`unblockUser`,
-  `listBlockedUsers`, `searchContacts`, and `isChatAvailableBetween` — the enforcement rule the
-  messaging path below calls before every send.
+  `listBlockedUsers`, `searchContacts`, and the enforcement rule the messaging path below calls
+  before every send: `resolveChatAvailability` returns `{ isAvailable: true }` or `{ isAvailable:
+false, reason }` — one of `YOU_TURNED_OFF_THIS_PERSON` (the caller owns the block),
+  `YOUR_CHAT_DISABLED` (the caller's own global toggle), or `RECIPIENT_UNREACHABLE` (the other
+  side's block or global toggle — deliberately not distinguished, so the caller can't tell whether
+  the other person blocked them specifically or just has chat off). `isChatAvailableBetween` is the
+  boolean projection of that, kept for callers that only need yes/no.
 - `chat.repository.ts` — `ChatSettings` read/upsert, `ChatBlock` create/delete/lookup (a single row
   represents a mutual block, looked up with an `OR` on both directions), `searchContacts`.
 - `chat.schemas.ts`, `chat.types.ts`, `chat.constants.ts`, `chat.utils.ts` — settings/block
-  validation, DTOs, tuning constants, `toBlockedChatContact`.
+  validation, DTOs (incl. `ChatUnavailableReason`/`ChatAvailability`), tuning constants,
+  `toBlockedChatContact`, and `chatUnavailableError` (maps a `ChatUnavailableReason` to the
+  `CHAT_UNAVAILABLE` `AppError` with the reason-specific user-facing message).
 - `chat.socket.ts` — consumes `CHAT_SETTINGS_UPDATED`/`CHAT_BLOCK_LIST_UPDATED`, re-emits to the
   acting user's own `userRoom` for cross-tab/device sync.
 
@@ -91,7 +98,17 @@ domain write.
 ## Non-obvious rationale
 
 **A single `ChatBlock` row represents a mutual block, not two** (Phase 1) — see `findBlockBetween`'s
-`OR` lookup; unchanged by Phase 2, `isChatAvailableBetween` is called as-is from `sendMessage`.
+`OR` lookup; unchanged by Phase 2, the availability check is called as-is from `sendMessage`.
+
+**The send/start error names three cases but only distinguishes the two the caller can act on.**
+`resolveChatAvailability` returns `YOU_TURNED_OFF_THIS_PERSON` and `YOUR_CHAT_DISABLED` because the
+caller can fix both (unblock the person, or flip their own global toggle), so the message points
+them at the fix. Every other case — the recipient blocked the caller, or the recipient has chat off
+globally — collapses to `RECIPIENT_UNREACHABLE` with one generic message: telling a caller "this
+person blocked you specifically" versus "this person has chat off" leaks the other user's private
+moderation choice for no actionable benefit. The block-direction check keys on `block.blockerId ===
+callerId`, which is why `ChatBlock` keeping `blockerId`/`blockedId` (rather than a symmetric pair)
+matters even though the block itself is mutual.
 
 **Why `Conversation`/`Message` didn't exist until Phase 2, and why they're shaped the way they are
 now that they do.** Phase 1 deliberately shipped nothing here — see the git history on this file.

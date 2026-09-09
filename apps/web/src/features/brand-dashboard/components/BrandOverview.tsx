@@ -9,10 +9,26 @@ import type {
   BrandOverviewTrendPoint,
 } from "../api/brandOverviewSchemas";
 import { useBrandOverview } from "../hooks/useBrandOverview";
-import { BrandOrderRow } from "./BrandOrderRow";
+import { BrandShipmentRow } from "./BrandShipmentRow";
 
 const KPI_CARD_COUNT = 7;
 const RECENT_ROW_COUNT = 5;
+
+const KPI_HINT = {
+  last30DaysRevenue:
+    "Total value of items sold from your products in the last 30 days, before platform and payment fees. Cash-on-delivery orders count; cancelled and failed orders do not.",
+  lifetimeRevenue:
+    "Total value of every item ever sold from your products, before platform and payment fees. Cancelled and failed orders are not counted.",
+  availablePayout:
+    "Your earnings that have cleared and can be withdrawn now, after platform and payment fees are taken out.",
+  pendingPayout:
+    "Earnings from recent sales that are still maturing. They move to available once they clear.",
+  productCount: "Live products in your catalogue. Deleted products are not counted.",
+  lowStockCount:
+    "Live products with only a few items left in stock, added up across all their sizes. Products that are fully out of stock are not shown here.",
+  unfulfilledItemCount:
+    "Paid and cash-on-delivery items that have not been delivered or cancelled yet.",
+} as const;
 
 const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
 
@@ -41,17 +57,41 @@ const BrandKpiRow = ({ overview }: { overview: BrandOverviewData }) => {
         value={formatRupees(kpis.last30DaysRevenue)}
         icon={Wallet}
         delta={revenueDeltaFor(overview)}
+        hint={KPI_HINT.last30DaysRevenue}
       />
-      <StatCard label="Lifetime revenue" value={formatRupees(kpis.lifetimeRevenue)} />
-      <StatCard label="Available payout" value={formatRupees(kpis.availablePayout)} />
-      <StatCard label="Pending payout" value={formatRupees(kpis.pendingPayout)} />
-      <StatCard label="Products" value={kpis.productCount.toLocaleString()} icon={Package} />
+      <StatCard
+        label="Lifetime revenue"
+        value={formatRupees(kpis.lifetimeRevenue)}
+        hint={KPI_HINT.lifetimeRevenue}
+      />
+      <StatCard
+        label="Available payout"
+        value={formatRupees(kpis.availablePayout)}
+        hint={KPI_HINT.availablePayout}
+      />
+      <StatCard
+        label="Pending payout"
+        value={formatRupees(kpis.pendingPayout)}
+        hint={KPI_HINT.pendingPayout}
+      />
+      <StatCard
+        label="Products"
+        value={kpis.productCount.toLocaleString()}
+        icon={Package}
+        hint={KPI_HINT.productCount}
+      />
       <StatCard
         label="Low stock"
         value={kpis.lowStockCount.toLocaleString()}
         icon={AlertTriangle}
+        hint={KPI_HINT.lowStockCount}
       />
-      <StatCard label="To fulfil" value={kpis.unfulfilledItemCount.toLocaleString()} icon={Clock} />
+      <StatCard
+        label="To fulfil"
+        value={kpis.unfulfilledItemCount.toLocaleString()}
+        icon={Clock}
+        hint={KPI_HINT.unfulfilledItemCount}
+      />
     </div>
   );
 };
@@ -118,8 +158,8 @@ const RecentOrders = ({ overview }: { overview: BrandOverviewData }) => (
       </p>
     ) : (
       <div className="mt-4 space-y-3">
-        {overview.recentOrders.map((item) => (
-          <BrandOrderRow key={item.id} item={item} />
+        {overview.recentOrders.map((shipment) => (
+          <BrandShipmentRow key={shipment.id} shipment={shipment} />
         ))}
       </div>
     )}

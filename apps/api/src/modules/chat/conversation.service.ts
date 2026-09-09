@@ -4,6 +4,7 @@ import { userRepository } from "#modules/users/user.repository.js";
 import { isUserOnline } from "#socket/socket.presence.js";
 
 import { chatService } from "./chat.service.js";
+import { chatUnavailableError } from "./chat.utils.js";
 import { conversationRepository } from "./conversation.repository.js";
 import type {
   ConversationParticipantPresence,
@@ -68,13 +69,9 @@ export const conversationService = {
       throw new AppError("NOT_FOUND", "User not found.", NOT_FOUND_STATUS);
     }
 
-    const available = await chatService.isChatAvailableBetween(callerId, targetUserId);
-    if (!available) {
-      throw new AppError(
-        "CHAT_UNAVAILABLE",
-        "You can't message this person right now.",
-        FORBIDDEN_STATUS,
-      );
+    const availability = await chatService.resolveChatAvailability(callerId, targetUserId);
+    if (!availability.isAvailable) {
+      throw chatUnavailableError(availability.reason);
     }
 
     const conversation = await conversationRepository.findOrCreateDirect(callerId, targetUserId);

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { UserRole } from "@/features/auth/types";
-import { getBrandOrdersFirstPageServer, OrdersSection } from "@/features/brand-dashboard";
+import { getBrandShipmentsFirstPageServer, OrdersSection } from "@/features/brand-dashboard";
 import { getQueryClient } from "@/shared/lib/getQueryClient";
 
 import { requireDashboardSession } from "../requireDashboardSession";
@@ -16,8 +16,8 @@ const DashboardOrdersPage = async () => {
 
   const queryClient = getQueryClient();
   await queryClient.prefetchInfiniteQuery({
-    queryKey: ["brand-orders"],
-    queryFn: () => getBrandOrdersFirstPageServer(accessToken),
+    queryKey: ["brand-shipments"],
+    queryFn: () => getBrandShipmentsFirstPageServer(accessToken),
     initialPageParam: undefined,
   });
 

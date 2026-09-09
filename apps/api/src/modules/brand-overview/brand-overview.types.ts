@@ -1,4 +1,4 @@
-import type { BrandOrderItemView } from "#modules/orders/order.types.js";
+import type { BrandFulfilmentGroupSummaryView } from "#modules/orders/order.types.js";
 
 export type BrandOverviewKpis = {
   lifetimeRevenue: number;
@@ -20,7 +20,7 @@ export type BrandOverviewTrendPoint = {
 export type BrandOverview = {
   kpis: BrandOverviewKpis;
   trend: BrandOverviewTrendPoint[];
-  recentOrders: BrandOrderItemView[];
+  recentOrders: BrandFulfilmentGroupSummaryView[];
 };
 
 export type RevenueWindows = {

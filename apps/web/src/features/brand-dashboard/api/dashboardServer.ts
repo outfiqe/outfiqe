@@ -2,7 +2,12 @@ import "server-only";
 
 import { serverApiRequest } from "@/shared/lib/serverApiClient";
 
-import { type BrandOrdersPage, brandOrdersPageSchema } from "./brandOrdersSchemas";
+import {
+  type BrandShipmentDetail,
+  brandShipmentDetailSchema,
+  type BrandShipmentsPage,
+  brandShipmentsPageSchema,
+} from "./brandFulfilmentSchemas";
 import { type BrandPayoutSummary, brandPayoutSummarySchema } from "./brandPayoutSchemas";
 import { type BrandProductPage, brandProductPageSchema } from "./brandProductsSchemas";
 
@@ -22,9 +27,22 @@ export const getBrandProductsFirstPageServer = async (
   return brandProductPageSchema.parse(raw);
 };
 
-export const getBrandOrdersFirstPageServer = async (
+export const getBrandShipmentsFirstPageServer = async (
   accessToken: string,
-): Promise<BrandOrdersPage> => {
-  const raw = await serverApiRequest<BrandOrdersPage>("/orders/brand", { accessToken });
-  return brandOrdersPageSchema.parse(raw);
+): Promise<BrandShipmentsPage> => {
+  const raw = await serverApiRequest<BrandShipmentsPage>("/orders/brand/fulfilment-groups", {
+    accessToken,
+  });
+  return brandShipmentsPageSchema.parse(raw);
+};
+
+export const getBrandShipmentServer = async (
+  accessToken: string,
+  groupId: string,
+): Promise<BrandShipmentDetail> => {
+  const raw = await serverApiRequest<BrandShipmentDetail>(
+    `/orders/brand/fulfilment-groups/${groupId}`,
+    { accessToken },
+  );
+  return brandShipmentDetailSchema.parse(raw);
 };

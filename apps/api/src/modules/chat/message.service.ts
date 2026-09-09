@@ -5,6 +5,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { isUserOnline } from "#socket/socket.presence.js";
 
 import { chatService } from "./chat.service.js";
+import { chatUnavailableError } from "./chat.utils.js";
 import { conversationRepository } from "./conversation.repository.js";
 import { requireParticipant } from "./conversation.service.js";
 import { messageRepository } from "./message.repository.js";
@@ -12,7 +13,6 @@ import type { MessageRecord, MessagesPage, NewMessageAttachmentInput } from "./m
 import { toMessageRecord } from "./message.utils.js";
 
 const NOT_FOUND_STATUS = 404;
-const FORBIDDEN_STATUS = 403;
 const BAD_REQUEST_STATUS = 400;
 
 export const messageService = {
@@ -44,16 +44,12 @@ export const messageService = {
         callerId,
       );
       if (otherParticipant) {
-        const available = await chatService.isChatAvailableBetween(
+        const availability = await chatService.resolveChatAvailability(
           callerId,
           otherParticipant.userId,
         );
-        if (!available) {
-          throw new AppError(
-            "CHAT_UNAVAILABLE",
-            "You can't message this person right now.",
-            FORBIDDEN_STATUS,
-          );
+        if (!availability.isAvailable) {
+          throw chatUnavailableError(availability.reason);
         }
       }
     }
