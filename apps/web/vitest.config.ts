@@ -37,6 +37,7 @@ export default defineConfig({
         "src/components/SidebarPendingNavContext.tsx",
         "src/shared/components/CategoryTypeFilters.tsx",
         "src/shared/hooks/usePendingSelection.ts",
+        "src/shared/hooks/useOptimisticFollow.ts",
         "src/features/landing/lib/CategorySelectionContext.tsx",
         "src/features/landing/components/CategoryResults/index.tsx",
         "src/features/shop/components/ShopResults.tsx",

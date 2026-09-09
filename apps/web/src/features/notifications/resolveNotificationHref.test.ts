@@ -70,15 +70,37 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(noEntity, OWN_HANDLE)).toBe("/profile");
   });
 
-  it("routes a new follower to the follower's own profile when a handle is known", () => {
+  it("routes a new follower who is a creator to their creator profile", () => {
     const notification = buildNotification({
       type: "NEW_FOLLOWER",
-      metadata: { recentActors: [{ id: "a1", name: "Jane", handle: "jane", avatarUrl: null }] },
+      metadata: {
+        recentActors: [
+          { id: "a1", name: "Jane", handle: "jane", avatarUrl: null, isCreator: true },
+        ],
+      },
     });
     expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/creator/jane");
   });
 
-  it("falls back to the dashboard profile for a new follower with no denormalized handle", () => {
+  it("falls back to the dashboard profile for a new follower without a creator profile", () => {
+    const notification = buildNotification({
+      type: "NEW_FOLLOWER",
+      metadata: {
+        recentActors: [
+          {
+            id: "a1",
+            name: "Peak Studio",
+            handle: "peak-studio",
+            avatarUrl: null,
+            isCreator: false,
+          },
+        ],
+      },
+    });
+    expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/profile");
+  });
+
+  it("falls back to the dashboard profile for a new follower with no denormalized actor", () => {
     const notification = buildNotification({ type: "NEW_FOLLOWER", metadata: {} });
     expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/profile");
   });

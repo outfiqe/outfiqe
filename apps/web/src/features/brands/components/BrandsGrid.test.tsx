@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { createRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 
 import type { BrandSummary } from "../api/brandsSchemas";
@@ -15,6 +16,14 @@ vi.mock("../hooks/useInfiniteBrands", () => ({
 vi.mock("@/shared/hooks/useLoadMoreOnVisible", () => ({
   useLoadMoreOnVisible: vi.fn(),
 }));
+
+vi.mock("@/features/auth/context/AuthContext", () => ({
+  useAuth: vi.fn(),
+}));
+
+const mockAuthResolved = (isAuthResolved: boolean) => {
+  vi.mocked(useAuth).mockReturnValue({ isAuthResolved } as ReturnType<typeof useAuth>);
+};
 
 vi.mock("./BrandCard", () => ({
   BrandCard: ({ brand }: { brand: BrandSummary }) => (
@@ -49,6 +58,7 @@ const mockInfiniteBrands = (overrides: Partial<ReturnType<typeof useInfiniteBran
 
 beforeEach(() => {
   vi.mocked(useLoadMoreOnVisible).mockReturnValue(createRef<HTMLDivElement>());
+  mockAuthResolved(true);
 });
 
 describe("BrandsGrid", () => {
@@ -58,6 +68,29 @@ describe("BrandsGrid", () => {
     render(<BrandsGrid />);
 
     expect(screen.getByRole("status", { name: "Loading brands" })).toBeInTheDocument();
+  });
+
+  it("shows the loading skeleton until auth resolves, before any brands arrive", () => {
+    mockAuthResolved(false);
+    mockInfiniteBrands({ data: undefined });
+
+    render(<BrandsGrid />);
+
+    expect(screen.getByRole("status", { name: "Loading brands" })).toBeInTheDocument();
+  });
+
+  it("renders server-hydrated brands even before auth resolves", () => {
+    mockAuthResolved(false);
+    mockInfiniteBrands({
+      data: {
+        pages: [{ brands: [buildBrand("b1")], nextCursor: null, total: 1 }],
+        pageParams: [undefined],
+      },
+    });
+
+    render(<BrandsGrid />);
+
+    expect(screen.getByTestId("brand-card")).toBeInTheDocument();
   });
 
   it("shows an error message when the request fails", () => {

@@ -1,12 +1,12 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { AppImage } from "@/shared/components/AppImage";
-import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
+import { useOptimisticFollow } from "@/shared/hooks/useOptimisticFollow";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
@@ -17,6 +17,7 @@ import type { BrandSummary } from "../api/brandsSchemas";
 import {
   BRAND_STAT_LABEL,
   BRANDS_LOGIN_REDIRECT_PATH,
+  BRANDS_QUERY_KEY,
   FOLLOW_BUTTON_LABEL,
   MADE_IN_NEPAL_LABEL,
 } from "../brands.constants";
@@ -27,31 +28,23 @@ type BrandCardProps = {
 
 export const BrandCard = ({ brand }: BrandCardProps) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
-  const followMutation = useToggleFollow("brand");
 
   const { id, name, avatarUrl, bannerUrl, madeInNepal, productCount } = brand;
-  const [isFollowing, setIsFollowing] = useState(brand.isFollowing);
-  const [followerCount, setFollowerCount] = useState(brand.followerCount);
+  const { isFollowing, followerCount, isTogglingFollow, toggleFollow } = useOptimisticFollow(
+    "brand",
+    { isFollowing: brand.isFollowing, followerCount: brand.followerCount },
+  );
 
-  const toggleFollow = () => {
+  const followBrand = () => {
     if (!isAuthenticated) {
       router.push(`/login?redirect=${BRANDS_LOGIN_REDIRECT_PATH}`);
       return;
     }
-
-    const wasFollowing = isFollowing;
-    setIsFollowing(!wasFollowing);
-    setFollowerCount((count) => count + (wasFollowing ? -1 : 1));
-    followMutation.mutate(
-      { targetId: id, following: wasFollowing },
-      {
-        onError: () => {
-          setIsFollowing(wasFollowing);
-          setFollowerCount((count) => count + (wasFollowing ? 1 : -1));
-        },
-      },
-    );
+    toggleFollow(id, () => {
+      void queryClient.invalidateQueries({ queryKey: BRANDS_QUERY_KEY });
+    });
   };
 
   return (
@@ -98,10 +91,11 @@ export const BrandCard = ({ brand }: BrandCardProps) => {
 
           <button
             type="button"
-            onClick={toggleFollow}
+            onClick={followBrand}
             aria-pressed={isFollowing}
+            disabled={isTogglingFollow}
             className={cn(
-              "relative z-10 shrink-0 rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
+              "relative z-10 shrink-0 cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition-colors disabled:opacity-60",
               isFollowing
                 ? "border-foreground bg-foreground text-background"
                 : "border-foreground text-foreground hover:bg-foreground hover:text-background",

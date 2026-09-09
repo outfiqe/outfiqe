@@ -41,9 +41,9 @@ export const resolveNotificationHref = (
         : WEB_NOTIFICATION_ROUTES.dashboardProfile;
     }
     case NotificationType.NEW_FOLLOWER: {
-      const followerHandle = metadata.recentActors?.[0]?.handle;
-      return followerHandle
-        ? creatorProfilePath(followerHandle)
+      const follower = metadata.recentActors?.[0];
+      return follower?.isCreator && follower.handle
+        ? creatorProfilePath(follower.handle)
         : WEB_NOTIFICATION_ROUTES.dashboardProfile;
     }
     case NotificationType.ACHIEVEMENT_UNLOCKED:

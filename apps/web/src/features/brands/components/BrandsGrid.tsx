@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 
 import { BRAND_GRID_CLASS } from "../brands.constants";
@@ -8,6 +9,7 @@ import { BrandCard } from "./BrandCard";
 import { BrandGridSkeleton } from "./BrandGridSkeleton";
 
 export const BrandsGrid = () => {
+  const { isAuthResolved } = useAuth();
   const {
     data: brandPages,
     fetchNextPage,
@@ -15,7 +17,7 @@ export const BrandsGrid = () => {
     isFetchingNextPage,
     isLoading,
     isError,
-  } = useInfiniteBrands();
+  } = useInfiniteBrands(isAuthResolved);
 
   const sentinelRef = useLoadMoreOnVisible(
     () => fetchNextPage(),
@@ -24,7 +26,7 @@ export const BrandsGrid = () => {
 
   const brands = brandPages?.pages.flatMap((page) => page.brands) ?? [];
 
-  if (isLoading) return <BrandGridSkeleton />;
+  if (isLoading || (!isAuthResolved && brands.length === 0)) return <BrandGridSkeleton />;
 
   if (isError) {
     return <p className="py-12 text-sm text-muted-foreground">Couldn&apos;t load brands.</p>;

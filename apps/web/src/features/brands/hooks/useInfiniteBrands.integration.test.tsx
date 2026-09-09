@@ -3,7 +3,7 @@ import { mswServer } from "@test/integration/msw/server";
 import { renderHook, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { useInfiniteBrands } from "@/features/brands/hooks/useInfiniteBrands";
 
@@ -97,5 +97,32 @@ describe("useInfiniteBrands", () => {
     const { result } = renderHook(() => useInfiniteBrands(), { wrapper });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+
+  it("does not request brands until it is enabled", async () => {
+    const requestSpy = vi.fn();
+    mswServer.use(
+      http.get("/api/brands", () => {
+        requestSpy();
+        return HttpResponse.json({
+          success: true,
+          message: "Brands.",
+          data: { brands: [buildBrand("b1")], nextCursor: null, total: 1 },
+        });
+      }),
+    );
+
+    const { result, rerender } = renderHook(({ enabled }) => useInfiniteBrands(enabled), {
+      wrapper,
+      initialProps: { enabled: false },
+    });
+
+    expect(result.current.fetchStatus).toBe("idle");
+    expect(requestSpy).not.toHaveBeenCalled();
+
+    rerender({ enabled: true });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(requestSpy).toHaveBeenCalledTimes(1);
   });
 });

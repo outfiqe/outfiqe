@@ -1,9 +1,13 @@
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
 
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BrandsGrid } from "@/features/brands";
+import { getBrandsFirstPageServer } from "@/features/brands/api/serverBrands";
+import { BRANDS_QUERY_KEY } from "@/features/brands/brands.constants";
+import { getQueryClient } from "@/shared/lib/getQueryClient";
 import { buildPageMetadata } from "@/shared/seo";
 
 export const metadata: Metadata = buildPageMetadata({
@@ -14,7 +18,16 @@ export const metadata: Metadata = buildPageMetadata({
   keywords: ["Nepali clothing brands", "Nepali fashion labels", "made in Nepal clothing"],
 });
 
-const BrandsPage = () => {
+const BrandsPage = async () => {
+  const queryClient = getQueryClient();
+  await queryClient
+    .prefetchInfiniteQuery({
+      queryKey: BRANDS_QUERY_KEY,
+      queryFn: () => getBrandsFirstPageServer(),
+      initialPageParam: undefined,
+    })
+    .catch(() => undefined);
+
   return (
     <div className="pb-20 lg:pb-0">
       <SiteHeader />
@@ -31,7 +44,9 @@ const BrandsPage = () => {
           </p>
 
           <div className="mt-8">
-            <BrandsGrid />
+            <HydrationBoundary state={dehydrate(queryClient)}>
+              <BrandsGrid />
+            </HydrationBoundary>
           </div>
         </div>
       </main>
