@@ -138,9 +138,7 @@ export const tagReportRepository = {
     };
   },
 
-  async findResolvableReport(
-    id: string,
-  ): Promise<{
+  async findResolvableReport(id: string): Promise<{
     id: string;
     status: TagReportStatus;
     tagId: string;
