@@ -8,13 +8,13 @@ import { cn } from "./cn";
 
 const buttonVariants = cva(
   "inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold " +
-    "transition-colors disabled:pointer-events-none disabled:opacity-50 " +
+    "transition disabled:pointer-events-none disabled:opacity-50 " +
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring " +
     "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-[#ff6a1f]",
+        default: "bg-primary text-primary-foreground hover:bg-primary-hover",
         outline:
           "border border-foreground bg-transparent text-foreground hover:bg-foreground hover:text-background",
         ghost: "text-foreground hover:bg-muted",

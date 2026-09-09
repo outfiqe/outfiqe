@@ -19,6 +19,7 @@
 
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-hover: hsl(var(--primary-hover));
   --color-primary-strong: hsl(var(--primary-strong));
 
   --color-secondary: hsl(var(--secondary));

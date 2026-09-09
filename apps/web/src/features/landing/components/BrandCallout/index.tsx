@@ -4,7 +4,7 @@ import Link from "next/link";
 export const BrandCallout = () => {
   return (
     <section className="px-6 py-16 sm:py-24 lg:px-10">
-      <div className="rounded-3xl bg-linear-to-br from-[#241006] via-[#7a3010] to-primary px-6 py-10 sm:px-10 sm:py-14">
+      <div className="rounded-3xl bg-linear-to-br from-[#0a2b30] via-[#125e6b] to-primary px-6 py-10 sm:px-10 sm:py-14">
         <span className="text-xs font-bold uppercase tracking-widest text-white/70">
           For brands
         </span>
@@ -12,7 +12,7 @@ export const BrandCallout = () => {
           Free to list. We build your storefront for you.
         </h2>
         <div className="mt-6">
-          <Button size="lg" asChild className="bg-white text-[#241006] hover:bg-white/90">
+          <Button size="lg" asChild className="bg-white text-[#0a2b30] hover:bg-white/90">
             <Link href="/apply">Apply now</Link>
           </Button>
         </div>

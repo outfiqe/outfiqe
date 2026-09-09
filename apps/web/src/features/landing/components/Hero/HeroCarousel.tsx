@@ -66,7 +66,7 @@ export const HeroCarousel = ({ slides }: HeroCarouselProps) => {
                 ) : (
                   <div
                     aria-hidden
-                    className="absolute inset-0 bg-linear-to-r from-[#241006] via-[#7a3010] to-primary"
+                    className="absolute inset-0 bg-linear-to-r from-[#0a2b30] via-[#125e6b] to-primary"
                   />
                 )}
 
