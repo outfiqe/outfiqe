@@ -1,6 +1,8 @@
+import { Info } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
 
 import { cn } from "./cn";
+import { Tooltip } from "./tooltip";
 
 const DELTA_TONE_CLASS = {
   positive: "text-success",
@@ -19,14 +21,28 @@ type StatCardProps = {
   readonly value: ReactNode;
   readonly icon?: ComponentType<{ className?: string }>;
   readonly delta?: StatCardDelta;
+  readonly hint?: ReactNode;
   readonly className?: string;
 };
 
-export const StatCard = ({ label, value, icon: Icon, delta, className }: StatCardProps) => {
+export const StatCard = ({ label, value, icon: Icon, delta, hint, className }: StatCardProps) => {
   return (
     <div className={cn("rounded-xl border border-border bg-card p-4", className)}>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+        <div className="flex items-center gap-1">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+          {hint && (
+            <Tooltip content={hint}>
+              <button
+                type="button"
+                aria-label={`How ${label} is calculated`}
+                className="inline-flex cursor-help text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                <Info className="size-3.5" aria-hidden />
+              </button>
+            </Tooltip>
+          )}
+        </div>
         {Icon && <Icon className="size-4 shrink-0 text-muted-foreground" />}
       </div>
       <p className="mt-1 font-display text-2xl font-bold text-foreground">{value}</p>
