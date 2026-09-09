@@ -27,6 +27,7 @@ const actorSnapshotFor = (user: { id: string; name: string; handle: string }) =>
   handle: user.handle,
   avatarUrl: null,
   isCreator: false,
+  brandId: null,
 });
 
 describe("notificationService.notifyIndividual", () => {

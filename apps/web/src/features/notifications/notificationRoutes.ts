@@ -21,9 +21,12 @@ export const ADMIN_APP_ROUTES = {
 } as const;
 
 const CREATOR_PROFILE_PREFIX = "/creator";
+const BRAND_PROFILE_PREFIX = "/brand";
 const PRODUCT_DETAIL_PREFIX = "/product";
 
 export const creatorProfilePath = (handle: string): string => `${CREATOR_PROFILE_PREFIX}/${handle}`;
+
+export const brandProfilePath = (brandId: string): string => `${BRAND_PROFILE_PREFIX}/${brandId}`;
 
 export const orderDetailPath = (basePath: string, orderId: string): string =>
   `${basePath}/${orderId}`;
