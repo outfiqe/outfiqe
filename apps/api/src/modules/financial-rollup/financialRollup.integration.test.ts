@@ -221,6 +221,94 @@ const grantBrandPayout = async (
   });
 };
 
+const createSettledOrder = async (
+  paymentMethod: PaymentMethod,
+  platformFee: number,
+  gatewayFee: number,
+  createdAt: Date,
+) => {
+  const admin = await createUser(UserRole.ADMIN);
+  const rule = await prisma.platformCommissionRule.create({
+    data: { isActive: false, updatedById: admin.id },
+  });
+  const brand = await prisma.brand.create({
+    data: {
+      name: `Rollup Settled Brand ${randomUUID().slice(0, 6)}`,
+      contactName: "Contact",
+      email: `${randomUUID()}@brand.outfiqe.test`,
+      phone: uniquePhone(),
+      instagram: `@${randomUUID().slice(0, 8)}`,
+    },
+  });
+  const buyer = await createUser();
+  const netAmount = 1000;
+  const total = netAmount + platformFee;
+  const product = await prisma.product.create({
+    data: {
+      brandId: brand.id,
+      name: "Item",
+      price: total,
+      productTypeId: await ensureProductType(),
+      status: ProductStatus.APPROVED,
+    },
+  });
+  const size = await prisma.productSize.create({
+    data: { productId: product.id, label: "M", stock: 5 },
+  });
+  const order = await prisma.order.create({
+    data: {
+      userId: buyer.id,
+      fullName: "Buyer",
+      phone: uniquePhone(),
+      address: "Somewhere",
+      city: "Kathmandu",
+      paymentMethod,
+      subtotal: total,
+      deliveryFee: 0,
+      total,
+      items: {
+        create: [
+          {
+            productId: product.id,
+            sizeId: size.id,
+            qty: 1,
+            unitPrice: total,
+            listUnitPrice: total,
+          },
+        ],
+      },
+    },
+    include: { items: true },
+  });
+  const orderItemId = order.items[0]?.id;
+  if (!orderItemId) throw new Error("order item not created");
+
+  await prisma.paymentTransaction.create({
+    data: {
+      orderId: order.id,
+      provider: paymentMethod,
+      type: PaymentTransactionType.PAYMENT,
+      status: PaymentTransactionStatus.SUCCEEDED,
+      createdAt,
+    },
+  });
+  await prisma.brandPayout.create({
+    data: {
+      orderItemId,
+      brandId: brand.id,
+      commissionRuleId: rule.id,
+      grossAmount: total,
+      platformFee,
+      gatewayFee,
+      netAmount,
+      status: BrandPayoutStatus.WITHDRAWN,
+      createdAt,
+    },
+  });
+
+  return { total };
+};
+
 describe("GET /api/admin/financial-rollup", () => {
   it("requires admin", async () => {
     const user = await createUser();
@@ -300,5 +388,41 @@ describe("GET /api/admin/financial-rollup", () => {
 
     expect(response.status).toBe(OK_STATUS);
     expect(response.body.data.gateway.grossCollected).toBe(500);
+  });
+
+  it("breaks GMV, order count, and realized take rate down by payment method", async () => {
+    const { authHeader } = await createAdminSession();
+    const now = new Date();
+
+    const codPlatformFee = 50;
+    const cod = await createSettledOrder(PaymentMethod.COD, codPlatformFee, 0, now);
+    const esewaPlatformFee = 100;
+    const esewaGatewayFee = 30;
+    const esewa = await createSettledOrder(
+      PaymentMethod.ESEWA,
+      esewaPlatformFee,
+      esewaGatewayFee,
+      now,
+    );
+
+    const response = await request(testApp)
+      .get("/api/admin/financial-rollup")
+      .query({ range: "all" })
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(OK_STATUS);
+    const { byPaymentMethod } = response.body.data;
+
+    expect(byPaymentMethod.COD).toEqual({
+      gmv: cod.total,
+      orderCount: 1,
+      realizedTakeRate: codPlatformFee / cod.total,
+    });
+    expect(byPaymentMethod.ESEWA).toEqual({
+      gmv: esewa.total,
+      orderCount: 1,
+      realizedTakeRate: (esewaPlatformFee - esewaGatewayFee) / esewa.total,
+    });
+    expect(byPaymentMethod.KHALTI).toBeUndefined();
   });
 });

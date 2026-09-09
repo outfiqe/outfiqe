@@ -1,6 +1,28 @@
-import type { BrandPayoutStatus, CommissionStatus } from "#generated/prisma/enums.js";
+import type {
+  BrandPayoutStatus,
+  CommissionStatus,
+  PaymentMethod,
+} from "#generated/prisma/enums.js";
 
 export type FinancialRollupRange = "cycle" | "30d" | "all";
+
+export type PaymentMethodOrderTotals = {
+  paymentMethod: PaymentMethod;
+  total: number;
+  orderCount: number;
+};
+
+export type PaymentMethodPayoutFees = {
+  paymentMethod: PaymentMethod;
+  platformFee: number;
+  gatewayFee: number;
+};
+
+export type PaymentMethodBreakdown = {
+  gmv: number;
+  orderCount: number;
+  realizedTakeRate: number;
+};
 
 export type FinancialRollupView = {
   range: FinancialRollupRange;
@@ -18,4 +40,5 @@ export type FinancialRollupView = {
     couponSpend: number;
     netPlatformRevenue: number;
   };
+  byPaymentMethod: Partial<Record<PaymentMethod, PaymentMethodBreakdown>>;
 };

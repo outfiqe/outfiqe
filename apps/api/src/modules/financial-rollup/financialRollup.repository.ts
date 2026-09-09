@@ -7,6 +7,8 @@ import {
   PaymentTransactionStatus,
 } from "#generated/prisma/enums.js";
 
+import type { PaymentMethodOrderTotals, PaymentMethodPayoutFees } from "./financialRollup.types.js";
+
 export const financialRollupRepository = {
   async sumOrderTotalsForTransactionType(
     type: PaymentTransactionType,
@@ -21,6 +23,41 @@ export const financialRollupRepository = {
         ${since ? Prisma.sql`AND pt.created_at >= ${since}` : Prisma.empty}
     `);
     return rows[0]?.total ?? 0;
+  },
+
+  async sumOrderTotalsByPaymentMethod(
+    type: PaymentTransactionType,
+    since: Date | null,
+  ): Promise<PaymentMethodOrderTotals[]> {
+    return prisma.$queryRaw<PaymentMethodOrderTotals[]>(Prisma.sql`
+      SELECT
+        o.payment_method AS "paymentMethod",
+        COALESCE(SUM(o.total), 0)::int AS total,
+        COUNT(*)::int AS "orderCount"
+      FROM payment_transactions pt
+      JOIN orders o ON o.id = pt.order_id
+      WHERE pt.type = ${type}
+        AND pt.status = ${PaymentTransactionStatus.SUCCEEDED}
+        ${since ? Prisma.sql`AND pt.created_at >= ${since}` : Prisma.empty}
+      GROUP BY o.payment_method
+    `);
+  },
+
+  async sumRealizedBrandPayoutFeesByPaymentMethod(
+    since: Date | null,
+  ): Promise<PaymentMethodPayoutFees[]> {
+    return prisma.$queryRaw<PaymentMethodPayoutFees[]>(Prisma.sql`
+      SELECT
+        o.payment_method AS "paymentMethod",
+        COALESCE(SUM(bp.platform_fee), 0)::int AS "platformFee",
+        COALESCE(SUM(bp.gateway_fee), 0)::int AS "gatewayFee"
+      FROM brand_payouts bp
+      JOIN order_items oi ON oi.id = bp.order_item_id
+      JOIN orders o ON o.id = oi.order_id
+      WHERE bp.status = ${BrandPayoutStatus.WITHDRAWN}
+        ${since ? Prisma.sql`AND bp.created_at >= ${since}` : Prisma.empty}
+      GROUP BY o.payment_method
+    `);
   },
 
   async sumCreatorCommissionsByStatus(

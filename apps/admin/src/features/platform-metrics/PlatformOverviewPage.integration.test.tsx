@@ -45,6 +45,7 @@ const ROLLUP = {
     creatorCommissionsByStatus: { PENDING: 10000, AVAILABLE: 5000, PAID: 90000, VOIDED: 3000 },
     platformRevenueRealized: 0,
   },
+  byPaymentMethod: {},
 };
 
 const renderPage = () => {

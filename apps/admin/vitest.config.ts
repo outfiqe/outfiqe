@@ -32,6 +32,7 @@ export default defineConfig({
         "src/features/crm/**/*.{ts,tsx}",
         "src/features/organizations/**/*.{ts,tsx}",
         "src/features/platform-metrics/**/*.{ts,tsx}",
+        "src/features/financial-rollup/**/*.{ts,tsx}",
         "src/features/platform-features/**/*.{ts,tsx}",
         "src/features/platform-impersonation/**/*.{ts,tsx}",
         "src/features/platform-nav-access/**/*.{ts,tsx}",

@@ -9,7 +9,7 @@ import {
 import { financialRollupRepository } from "./financialRollup.repository.js";
 import type { FinancialRollupQuery } from "./financialRollup.schemas.js";
 import type { FinancialRollupRange, FinancialRollupView } from "./financialRollup.types.js";
-import { sumStatusBuckets } from "./financialRollup.utils.js";
+import { buildPaymentMethodBreakdown, sumStatusBuckets } from "./financialRollup.utils.js";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -30,6 +30,8 @@ export const financialRollupService = {
       brandPayoutsByStatus,
       platformRevenueRealized,
       couponSpend,
+      paymentMethodOrderTotals,
+      paymentMethodPayoutFees,
     ] = await Promise.all([
       financialRollupRepository.sumOrderTotalsForTransactionType(
         PaymentTransactionType.PAYMENT,
@@ -43,6 +45,11 @@ export const financialRollupService = {
       financialRollupRepository.sumBrandPayoutsByStatus(since),
       financialRollupRepository.sumRealizedPlatformFee(since),
       financialRollupRepository.sumCouponSpend(since),
+      financialRollupRepository.sumOrderTotalsByPaymentMethod(
+        PaymentTransactionType.PAYMENT,
+        since,
+      ),
+      financialRollupRepository.sumRealizedBrandPayoutFeesByPaymentMethod(since),
     ]);
 
     return {
@@ -64,6 +71,10 @@ export const financialRollupService = {
         couponSpend,
         netPlatformRevenue: platformRevenueRealized - couponSpend,
       },
+      byPaymentMethod: buildPaymentMethodBreakdown(
+        paymentMethodOrderTotals,
+        paymentMethodPayoutFees,
+      ),
     };
   },
 };
