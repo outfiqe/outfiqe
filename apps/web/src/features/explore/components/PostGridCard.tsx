@@ -21,7 +21,7 @@ export const PostGridCard = ({ post, onClick, trendingRank, eager }: PostGridCar
   const { id, imageUrl, image, images, caption } = post;
 
   return (
-    <div className="mb-4 break-inside-avoid">
+    <div>
       <button
         type="button"
         onClick={onClick}
