@@ -1,5 +1,5 @@
 import type * as DesignSystem from "@outfiqe/design-system";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -87,6 +87,52 @@ describe("BrandOverview", () => {
       "href",
       "/manage-orders",
     );
+  });
+
+  it("shows a positive revenue delta when the last 30 days beat the previous 30", () => {
+    mockOverview({
+      data: buildOverview({
+        kpis: { ...buildOverview().kpis, last30DaysRevenue: 12000, previous30DaysRevenue: 9000 },
+      }),
+    });
+
+    render(<BrandOverview />);
+
+    const delta = screen.getByText("+Rs. 3,000");
+    expect(delta).toHaveClass("text-success");
+    expect(screen.getByText("vs previous 30 days")).toBeInTheDocument();
+  });
+
+  it("shows a negative revenue delta with a minus sign when sales fell", () => {
+    mockOverview({
+      data: buildOverview({
+        kpis: { ...buildOverview().kpis, last30DaysRevenue: 8000, previous30DaysRevenue: 12000 },
+      }),
+    });
+
+    render(<BrandOverview />);
+
+    expect(screen.getByText("−Rs. 4,000")).toHaveClass("text-destructive");
+  });
+
+  it("hides the revenue delta when the two windows are equal", () => {
+    mockOverview({
+      data: buildOverview({
+        kpis: { ...buildOverview().kpis, last30DaysRevenue: 9000, previous30DaysRevenue: 9000 },
+      }),
+    });
+
+    render(<BrandOverview />);
+
+    expect(screen.queryByText("vs previous 30 days")).not.toBeInTheDocument();
+  });
+
+  it("explains how the pending payout is calculated on its hint", async () => {
+    render(<BrandOverview />);
+
+    fireEvent.focus(screen.getByRole("button", { name: "How Pending payout is calculated" }));
+
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(/still maturing/i);
   });
 
   it("shows the chart and orders empty states when the brand has no sales", () => {
