@@ -103,6 +103,7 @@ describe("FinancialRollupPage attributed order share", () => {
 
     expect(await screen.findByText("Attributed order share")).toBeInTheDocument();
     expect(screen.getByText("75.0%")).toBeInTheDocument();
+    expect(screen.getByText(/3 of 4 order items this cycle/)).toBeInTheDocument();
   });
 
   it("shows 0.0% rather than a broken percentage when there are no order items yet", async () => {

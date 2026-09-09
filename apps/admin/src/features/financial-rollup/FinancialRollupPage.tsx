@@ -92,10 +92,17 @@ export const FinancialRollupPage = () => {
       {rollup && (
         <StatCard
           label="Attributed order share"
-          value={percent(rollup.attribution.attributedShare)}
-          hint={`${rollup.attribution.attributedItems} of ${rollup.attribution.totalItems} order item${
-            rollup.attribution.totalItems === 1 ? "" : "s"
-          } in this range came through a creator's tag or link.`}
+          value={
+            <>
+              {percent(rollup.attribution.attributedShare)}
+              <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                {`${rollup.attribution.attributedItems} of ${rollup.attribution.totalItems} order item${
+                  rollup.attribution.totalItems === 1 ? "" : "s"
+                } ${RANGE_LABEL[range].toLowerCase()}`}
+              </span>
+            </>
+          }
+          hint="Order items whose attributedCreatorId is set — came through a creator's tag or link."
         />
       )}
 
