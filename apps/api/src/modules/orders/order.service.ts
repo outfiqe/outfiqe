@@ -11,6 +11,7 @@ import {
   CommissionSource,
   CouponRedemptionStatus,
   FulfilmentStatus,
+  OrderFulfilmentSummary,
   PaymentMethod,
   PaymentStatus,
   PaymentTransactionStatus,
@@ -63,6 +64,7 @@ import type {
 } from "./order.types.js";
 import { type OrderSummaryView, type OrderView } from "./order.types.js";
 import {
+  deriveOrderFulfilment,
   toBrandOrderItemView,
   toOrderAdminSummaryView,
   toOrderAdminView,
@@ -366,6 +368,23 @@ const checkoutOnce = async (
       }
     }
 
+    const fulfilmentGroups = await orderRepository.createFulfilmentGroups(
+      tx,
+      createdOrder.id,
+      distinctBrandIds,
+    );
+    const fulfilmentGroupIdByBrandId = new Map(
+      fulfilmentGroups.map((group) => [group.brandId, group.id]),
+    );
+    for (const brandId of distinctBrandIds) {
+      const fulfilmentGroupId = fulfilmentGroupIdByBrandId.get(brandId);
+      if (!fulfilmentGroupId) continue;
+      const itemIdsForBrand = createdOrder.items
+        .filter((_, index) => pricedLines[index]?.brandId === brandId)
+        .map((orderItem) => orderItem.id);
+      await orderRepository.assignItemsToFulfilmentGroup(tx, fulfilmentGroupId, itemIdsForBrand);
+    }
+
     for (const [index, orderItem] of createdOrder.items.entries()) {
       const line = pricedLines[index];
       if (line) {
@@ -502,6 +521,22 @@ export const orderService = {
       );
     }
 
+    await prisma.$transaction(async (tx) => {
+      await orderRepository.advanceActiveFulfilmentGroupsForOrder(
+        tx,
+        orderId,
+        status,
+        deliveredAt ?? new Date(),
+      );
+      const groupStatuses = await orderRepository.listFulfilmentGroupStatuses(tx, orderId);
+      const rollupStatuses = groupStatuses.length > 0 ? groupStatuses : [status];
+      await orderRepository.setOrderFulfilmentRollup(
+        tx,
+        orderId,
+        deriveOrderFulfilment(rollupStatuses),
+      );
+    });
+
     await eventBus.publish(DomainEvents.ORDER_STATUS_CHANGED, {
       orderId,
       userId: order.userId,
@@ -534,6 +569,12 @@ export const orderService = {
     const cancelled = await prisma.$transaction(async (tx) => {
       const ok = await orderRepository.markCancelled(tx, orderId, CANCELLABLE_FULFILMENT_STATUSES);
       if (!ok) return false;
+
+      await orderRepository.cancelFulfilmentGroupsForOrder(tx, orderId, new Date());
+      await orderRepository.setOrderFulfilmentRollup(tx, orderId, {
+        fulfilmentStatus: FulfilmentStatus.CANCELLED,
+        fulfilmentSummary: OrderFulfilmentSummary.CANCELLED,
+      });
 
       if (order.paymentStatus === PaymentStatus.INITIATED) {
         await orderRepository.failUnsettledPayment(tx, orderId);
