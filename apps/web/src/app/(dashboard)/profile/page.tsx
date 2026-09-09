@@ -1,28 +1,35 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import { CreatorStatus, UserRole } from "@/features/auth/types";
-import { BrandProfileView, getBrandProfileServer } from "@/features/brand-dashboard";
+import {
+  BrandProfileView,
+  BrandProfileViewSkeleton,
+  getBrandProfileServer,
+} from "@/features/brand-dashboard";
 import { CreatorStatusGate, getCreatorProfileServer } from "@/features/creator-dashboard";
-import { CreatorProfile, getCreatorProfileServerPublic } from "@/features/creator-profile";
+import {
+  CreatorProfile,
+  CreatorProfilePageSkeleton,
+  getCreatorProfileServerPublic,
+} from "@/features/creator-profile";
 
 import { requireDashboardSession } from "../requireDashboardSession";
 
 export const metadata: Metadata = { title: "Profile" };
 
-const DashboardProfilePage = async () => {
-  const { user, accessToken } = await requireDashboardSession("/profile");
-
-  if (user.role === UserRole.BRAND_OWNER) {
-    const profile = await getBrandProfileServer(accessToken);
-    if (!profile) {
-      return (
-        <p className="text-sm text-muted-foreground">We couldn&apos;t load your brand right now.</p>
-      );
-    }
-    return <BrandProfileView profile={profile} />;
+const BrandProfileSection = async ({ accessToken }: { accessToken: string }) => {
+  const profile = await getBrandProfileServer(accessToken);
+  if (!profile) {
+    return (
+      <p className="text-sm text-muted-foreground">We couldn&apos;t load your brand right now.</p>
+    );
   }
+  return <BrandProfileView profile={profile} />;
+};
 
+const CreatorProfileSection = async ({ accessToken }: { accessToken: string }) => {
   const profile = await getCreatorProfileServer(accessToken);
   if (!profile) notFound();
 
@@ -39,6 +46,24 @@ const DashboardProfilePage = async () => {
   if (!creator) notFound();
 
   return <CreatorProfile creator={creator} />;
+};
+
+const DashboardProfilePage = async () => {
+  const { user, accessToken } = await requireDashboardSession("/profile");
+
+  if (user.role === UserRole.BRAND_OWNER) {
+    return (
+      <Suspense fallback={<BrandProfileViewSkeleton />}>
+        <BrandProfileSection accessToken={accessToken} />
+      </Suspense>
+    );
+  }
+
+  return (
+    <Suspense fallback={<CreatorProfilePageSkeleton />}>
+      <CreatorProfileSection accessToken={accessToken} />
+    </Suspense>
+  );
 };
 
 export default DashboardProfilePage;
