@@ -241,9 +241,12 @@ describe("GET /api/admin/financial-rollup", () => {
 
     await grantCommission(CommissionStatus.AVAILABLE, 200, now);
     await grantCommission(CommissionStatus.PENDING, 100, now);
+    await grantCommission(CommissionStatus.PAID, 5000, now);
+    await grantCommission(CommissionStatus.VOIDED, 700, now);
 
     await grantBrandPayout(BrandPayoutStatus.WITHDRAWN, 800, 120, now);
     await grantBrandPayout(BrandPayoutStatus.AVAILABLE, 400, 60, now);
+    await grantBrandPayout(BrandPayoutStatus.VOIDED, 900, 0, now);
 
     const response = await request(testApp)
       .get("/api/admin/financial-rollup")
@@ -255,8 +258,13 @@ describe("GET /api/admin/financial-rollup", () => {
     expect(gateway.grossCollected).toBeGreaterThanOrEqual(1500);
     expect(gateway.refunded).toBeGreaterThanOrEqual(300);
     expect(gateway.netHeld).toBe(gateway.grossCollected - gateway.refunded);
-    expect(ledger.owedToCreators.AVAILABLE).toBeGreaterThanOrEqual(200);
-    expect(ledger.owedToBrands.AVAILABLE).toBeGreaterThanOrEqual(400);
+
+    expect(ledger.owedToCreators).toBe(300);
+    expect(ledger.owedToBrands).toBe(400);
+    expect(ledger.creatorCommissionsByStatus.PAID).toBe(5000);
+    expect(ledger.creatorCommissionsByStatus.VOIDED).toBe(700);
+    expect(ledger.brandPayoutsByStatus.WITHDRAWN).toBe(800);
+    expect(ledger.brandPayoutsByStatus.VOIDED).toBe(900);
     expect(ledger.platformRevenueRealized).toBeGreaterThanOrEqual(120);
   });
 
