@@ -10,6 +10,7 @@ import { FulfilmentStatus, PaymentMethod, PaymentStatus } from "../api/orderSche
 import { useOrder } from "../hooks/useOrder";
 import { OrderTracker } from "./OrderTracker";
 import { PendingPaymentPanel } from "./PendingPaymentPanel";
+import { ShipmentTrackers } from "./ShipmentTrackers";
 import { StatusBadge } from "./StatusBadge";
 import { TransactionLedger } from "./TransactionLedger";
 
@@ -49,8 +50,10 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
     address,
     city,
     items,
+    shipments,
     transactions,
   } = order;
+  const hasMultipleShipments = shipments.length > 1;
 
   const orderCancelled = fulfilmentStatus === FulfilmentStatus.CANCELLED;
   const awaitingPayment =
@@ -105,7 +108,12 @@ export const OrderDetailBody = ({ orderId }: OrderDetailBodyProps) => {
       )}
 
       <div className="mt-6 rounded-2xl border border-border p-5">
-        {!awaitingPayment && <OrderTracker fulfilmentStatus={fulfilmentStatus} />}
+        {!awaitingPayment &&
+          (hasMultipleShipments ? (
+            <ShipmentTrackers shipments={shipments} />
+          ) : (
+            <OrderTracker fulfilmentStatus={fulfilmentStatus} />
+          ))}
 
         <div
           className={cn(
