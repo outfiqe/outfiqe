@@ -76,6 +76,13 @@ export const orderRepository = {
         items: { include: withOrderItemDetails },
         transactions: { orderBy: { createdAt: "asc" } },
         user: { select: { name: true, email: true } },
+        fulfilmentGroups: {
+          orderBy: { createdAt: "asc" },
+          include: {
+            brand: { select: { name: true } },
+            items: { select: { product: { select: { name: true } } } },
+          },
+        },
       },
     });
   },

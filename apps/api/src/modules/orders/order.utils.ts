@@ -6,6 +6,7 @@ import {
 } from "#generated/prisma/enums.js";
 
 import type {
+  AdminFulfilmentGroupView,
   BrandFulfilmentGroupDetailView,
   BrandFulfilmentGroupItemView,
   BrandFulfilmentGroupPayoutView,
@@ -211,27 +212,74 @@ export const toOrderSummaryView = (order: OrderRow): OrderSummaryView => {
   };
 };
 
-type OrderAdminRow = OrderRow & {
-  needsManualRefund: boolean;
-  user: { name: string; email: string };
+type AdminFulfilmentGroupRow = {
+  id: string;
+  brandId: string;
+  status: FulfilmentStatus;
+  carrier: string | null;
+  trackingNumber: string | null;
+  packedAt: Date | null;
+  shippedAt: Date | null;
+  deliveredAt: Date | null;
+  cancelledAt: Date | null;
+  cancellationRequestedAt: Date | null;
+  cancellationReason: string | null;
+  brand: { name: string };
+  items: { product: { name: string } }[];
 };
 
+type OrderAdminRow = OrderRow & {
+  needsManualRefund: boolean;
+  fulfilmentSummary: OrderFulfilmentSummary;
+  user: { name: string; email: string };
+  fulfilmentGroups: AdminFulfilmentGroupRow[];
+};
+
+const toAdminFulfilmentGroupView = (group: AdminFulfilmentGroupRow): AdminFulfilmentGroupView => ({
+  id: group.id,
+  brandId: group.brandId,
+  brandName: group.brand.name,
+  status: group.status,
+  carrier: group.carrier,
+  trackingNumber: group.trackingNumber,
+  packedAt: group.packedAt?.toISOString() ?? null,
+  shippedAt: group.shippedAt?.toISOString() ?? null,
+  deliveredAt: group.deliveredAt?.toISOString() ?? null,
+  cancelledAt: group.cancelledAt?.toISOString() ?? null,
+  cancellationRequestedAt: group.cancellationRequestedAt?.toISOString() ?? null,
+  cancellationReason: group.cancellationReason,
+  itemCount: group.items.length,
+  productNames: group.items.map((item) => item.product.name),
+});
+
 export const toOrderAdminView = (order: OrderAdminRow): OrderAdminView => {
-  const { needsManualRefund, user } = order;
+  const { needsManualRefund, fulfilmentSummary, user, fulfilmentGroups } = order;
   return {
     ...toOrderView(order),
     needsManualRefund,
     buyerName: user.name,
     buyerEmail: user.email,
+    fulfilmentSummary,
+    fulfilmentGroups: fulfilmentGroups.map(toAdminFulfilmentGroupView),
   };
 };
 
-export const toOrderAdminSummaryView = (order: OrderAdminRow): OrderAdminSummaryView => {
-  const { items, ...rest } = toOrderAdminView(order);
+type OrderAdminSummaryRow = OrderRow & {
+  needsManualRefund: boolean;
+  fulfilmentSummary: OrderFulfilmentSummary;
+  user: { name: string; email: string };
+};
+
+export const toOrderAdminSummaryView = (order: OrderAdminSummaryRow): OrderAdminSummaryView => {
+  const { items, transactions: _transactions, ...orderRest } = toOrderView(order);
   const [firstItem] = items;
 
   return {
-    ...rest,
+    ...orderRest,
+    needsManualRefund: order.needsManualRefund,
+    buyerName: order.user.name,
+    buyerEmail: order.user.email,
+    fulfilmentSummary: order.fulfilmentSummary,
     itemCount: order.items.length,
     firstItemImageUrl: firstItem?.imageUrl ?? null,
     firstItemProductName: firstItem?.productName ?? "",

@@ -638,6 +638,29 @@ describe("order fulfilment groups", () => {
     expect(order.fulfilmentSummary).toBe(OrderFulfilmentSummary.CANCELLED);
   });
 
+  it("exposes the fulfilment groups and summary on the admin order view", async () => {
+    const { userId: adminId, authHeader } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const { brand, product, size } = await createPurchasableProduct(1000);
+    const buyer = await createBuyer();
+    const orderId = await checkoutBuyNow(buyer.id, product.id, size.id);
+
+    const response = await request(testApp)
+      .get(`/api/orders/admin/${orderId}`)
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.fulfilmentSummary).toBe(OrderFulfilmentSummary.UNFULFILLED);
+    expect(response.body.data.fulfilmentGroups).toHaveLength(1);
+    expect(response.body.data.fulfilmentGroups[0]).toMatchObject({
+      brandId: brand.id,
+      brandName: brand.name,
+      status: FulfilmentStatus.PLACED,
+    });
+    expect(response.body.data.fulfilmentGroups[0].productNames.length).toBeGreaterThan(0);
+  });
+
   it("moves the group and the order summary forward when an admin advances fulfilment", async () => {
     const { userId: adminId, authHeader } = await createAdminSession();
     await createActiveCommissionRule(adminId);

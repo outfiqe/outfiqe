@@ -100,13 +100,35 @@ export type OrderSummaryView = Omit<
   firstItemProductName: string;
 };
 
+export type AdminFulfilmentGroupView = {
+  id: string;
+  brandId: string;
+  brandName: string;
+  status: FulfilmentStatus;
+  carrier: string | null;
+  trackingNumber: string | null;
+  packedAt: string | null;
+  shippedAt: string | null;
+  deliveredAt: string | null;
+  cancelledAt: string | null;
+  cancellationRequestedAt: string | null;
+  cancellationReason: string | null;
+  itemCount: number;
+  productNames: string[];
+};
+
 export type OrderAdminView = OrderView & {
   buyerName: string;
   buyerEmail: string;
   needsManualRefund: boolean;
+  fulfilmentSummary: OrderFulfilmentSummary;
+  fulfilmentGroups: AdminFulfilmentGroupView[];
 };
 
-export type OrderAdminSummaryView = Omit<OrderAdminView, "items" | "transactions"> & {
+export type OrderAdminSummaryView = Omit<
+  OrderAdminView,
+  "items" | "transactions" | "fulfilmentGroups"
+> & {
   itemCount: number;
   firstItemImageUrl: string | null;
   firstItemProductName: string;
