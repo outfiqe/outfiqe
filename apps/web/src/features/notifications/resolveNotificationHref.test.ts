@@ -82,17 +82,49 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/creator/jane");
   });
 
-  it("falls back to the dashboard profile for a new follower without a creator profile", () => {
+  it("routes a new follower who owns a brand to that brand's page", () => {
     const notification = buildNotification({
       type: "NEW_FOLLOWER",
       metadata: {
         recentActors: [
           {
             id: "a1",
-            name: "Peak Studio",
-            handle: "peak-studio",
+            name: "John Rai",
+            handle: "johnrai",
             avatarUrl: null,
             isCreator: false,
+            brandId: "brand-7",
+          },
+        ],
+      },
+    });
+    expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/brand/brand-7");
+  });
+
+  it("routes a new brand follower who is a creator to their creator profile", () => {
+    const notification = buildNotification({
+      type: "NEW_BRAND_FOLLOWER",
+      metadata: {
+        recentActors: [
+          { id: "a1", name: "Anjesh", handle: "anjeshghimire", avatarUrl: null, isCreator: true },
+        ],
+      },
+    });
+    expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/creator/anjeshghimire");
+  });
+
+  it("falls back to the dashboard profile for a follower with no creator profile or brand", () => {
+    const notification = buildNotification({
+      type: "NEW_FOLLOWER",
+      metadata: {
+        recentActors: [
+          {
+            id: "a1",
+            name: "Shopper",
+            handle: "shopper",
+            avatarUrl: null,
+            isCreator: false,
+            brandId: null,
           },
         ],
       },
@@ -328,6 +360,27 @@ describe("resolveNotificationNavigation", () => {
     });
     expect(resolveNotificationNavigation(creatorFollow, OWN_HANDLE, false)).toEqual({
       href: "/creator/jane",
+      fullPage: false,
+    });
+
+    const staleBrandFollowerOfBrand = buildNotification({
+      type: "NEW_BRAND_FOLLOWER",
+      targetSurface: "WEB",
+      targetPath: "/profile",
+      metadata: {
+        recentActors: [
+          {
+            id: "c2",
+            name: "Anjesh",
+            handle: "anjeshghimire",
+            avatarUrl: null,
+            isCreator: true,
+          },
+        ],
+      },
+    });
+    expect(resolveNotificationNavigation(staleBrandFollowerOfBrand, OWN_HANDLE, false)).toEqual({
+      href: "/creator/anjeshghimire",
       fullPage: false,
     });
   });

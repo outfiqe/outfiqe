@@ -42,6 +42,12 @@ const admin = (path: string): NotificationTarget => ({ surface: NotificationSurf
 const lookPermalink = (creatorHandle: string, lookId: string): string =>
   `/creator/${creatorHandle}?look=${lookId}`;
 
+const followerProfileTarget = (follower: NotificationMetadata["actor"]): NotificationTarget => {
+  if (follower?.isCreator && follower.handle) return web(`/creator/${follower.handle}`);
+  if (follower?.brandId) return web(`/brand/${follower.brandId}`);
+  return web(WEB_ROUTES.dashboardProfile);
+};
+
 const ownLookTarget = (
   metadata: NotificationMetadata,
   entityId: string | null,
@@ -86,14 +92,9 @@ export const resolveNotificationTarget = ({
       return ownLookTarget(metadata, entityId);
     case NotificationType.COMMENT_REPLIED:
       return commentReplyTarget(metadata, entityId);
-    case NotificationType.NEW_FOLLOWER: {
-      const follower = metadata.recentActors?.[0] ?? metadata.actor;
-      return follower?.isCreator && follower.handle
-        ? web(`/creator/${follower.handle}`)
-        : web(WEB_ROUTES.dashboardProfile);
-    }
+    case NotificationType.NEW_FOLLOWER:
     case NotificationType.NEW_BRAND_FOLLOWER:
-      return web(WEB_ROUTES.dashboardProfile);
+      return followerProfileTarget(metadata.recentActors?.[0] ?? metadata.actor);
     case NotificationType.ACHIEVEMENT_UNLOCKED:
       return web(WEB_ROUTES.badges);
     case NotificationType.LEVEL_UP:

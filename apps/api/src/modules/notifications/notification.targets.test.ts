@@ -63,16 +63,44 @@ describe("resolveNotificationTarget", () => {
     ).toEqual({ surface: NotificationSurface.WEB, path: "/creator/jane" });
   });
 
-  it("routes a new follower who has no creator profile to the dashboard profile", () => {
+  it("routes a new follower who owns a brand to that brand's page", () => {
     expect(
       resolve(NotificationType.NEW_FOLLOWER, "u1", {
         recentActors: [
           {
             id: "u1",
-            name: "Peak Studio",
-            handle: "peak-studio",
+            name: "John Rai",
+            handle: "johnrai",
             avatarUrl: null,
             isCreator: false,
+            brandId: "brand-7",
+          },
+        ],
+      }),
+    ).toEqual({ surface: NotificationSurface.WEB, path: "/brand/brand-7" });
+  });
+
+  it("routes a new brand follower who is a creator to their creator profile", () => {
+    expect(
+      resolve(NotificationType.NEW_BRAND_FOLLOWER, "u1", {
+        recentActors: [
+          { id: "u1", name: "Anjesh", handle: "anjeshghimire", avatarUrl: null, isCreator: true },
+        ],
+      }),
+    ).toEqual({ surface: NotificationSurface.WEB, path: "/creator/anjeshghimire" });
+  });
+
+  it("routes a follower with neither a creator profile nor a brand to the dashboard profile", () => {
+    expect(
+      resolve(NotificationType.NEW_FOLLOWER, "u1", {
+        recentActors: [
+          {
+            id: "u1",
+            name: "Shopper",
+            handle: "shopper",
+            avatarUrl: null,
+            isCreator: false,
+            brandId: null,
           },
         ],
       }),

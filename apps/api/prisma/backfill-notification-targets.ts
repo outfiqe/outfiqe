@@ -25,7 +25,7 @@ const LOOK_NOTIFICATION_TYPES = new Set<NotificationType>([
   NotificationType.COMMENT_REPLIED,
 ]);
 
-const hydrateActorCreatorFlags = async (
+const hydrateFollowerActorContext = async (
   metadata: NotificationMetadata,
 ): Promise<NotificationMetadata> => {
   const actors = [...(metadata.recentActors ?? []), ...(metadata.actor ? [metadata.actor] : [])];
@@ -34,21 +34,33 @@ const hydrateActorCreatorFlags = async (
 
   const users = await prisma.user.findMany({
     where: { id: { in: actorIds } },
-    select: { id: true, isCreator: true, creatorStatus: true },
+    select: {
+      id: true,
+      isCreator: true,
+      creatorStatus: true,
+      memberships: { select: { brandId: true }, take: 1 },
+    },
   });
-  const isApprovedCreatorById = new Map(
-    users.map((user) => [user.id, user.isCreator && user.creatorStatus === CreatorStatus.APPROVED]),
+  const contextByUserId = new Map(
+    users.map((user) => [
+      user.id,
+      {
+        isCreator: user.isCreator && user.creatorStatus === CreatorStatus.APPROVED,
+        brandId: user.memberships[0]?.brandId ?? null,
+      },
+    ]),
   );
 
-  const withFlag = (actor: NotificationActorSnapshot): NotificationActorSnapshot => ({
+  const withContext = (actor: NotificationActorSnapshot): NotificationActorSnapshot => ({
     ...actor,
-    isCreator: isApprovedCreatorById.get(actor.id) ?? false,
+    isCreator: contextByUserId.get(actor.id)?.isCreator ?? false,
+    brandId: contextByUserId.get(actor.id)?.brandId ?? null,
   });
 
   return {
     ...metadata,
-    ...(metadata.recentActors ? { recentActors: metadata.recentActors.map(withFlag) } : {}),
-    ...(metadata.actor ? { actor: withFlag(metadata.actor) } : {}),
+    ...(metadata.recentActors ? { recentActors: metadata.recentActors.map(withContext) } : {}),
+    ...(metadata.actor ? { actor: withContext(metadata.actor) } : {}),
   };
 };
 
@@ -70,7 +82,7 @@ const rehydrateMetadata = async (
   entityId: string | null,
   metadata: NotificationMetadata,
 ): Promise<NotificationMetadata> => {
-  if (FOLLOWER_NOTIFICATION_TYPES.has(type)) return hydrateActorCreatorFlags(metadata);
+  if (FOLLOWER_NOTIFICATION_TYPES.has(type)) return hydrateFollowerActorContext(metadata);
   if (LOOK_NOTIFICATION_TYPES.has(type)) return hydrateLookOwnerHandle(metadata, entityId);
   return metadata;
 };

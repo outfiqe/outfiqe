@@ -97,26 +97,28 @@ mixes platform-wide (`NEW_MESSAGE`), creator, brand, and staff events, and where
 should land depends on their role/capabilities and which app they're in — context only the write
 path has. So `resolveNotificationTarget` runs on every write and `target_surface`/`target_path`
 are stored on the row (grouped rows re-resolve on each `upsertGroup` update, since a
-`NEW_FOLLOWER` target follows the latest follower). A `NEW_FOLLOWER` only deep-links to
-`/creator/<handle>` when that follower actually has an approved public creator profile —
-`findActorSnapshot` denormalizes an `isCreator` flag onto the actor for exactly this check;
-anyone else (a plain shopper, a brand-owner account) routes to the recipient's own `/profile`,
-since `/creator/<handle>` 404s for a non-creator. Clients navigate to the stored path and
-delete their own type→route guessing.
+follow target follows the latest follower). Both `NEW_FOLLOWER` and `NEW_BRAND_FOLLOWER` point
+at the follower's own page: `/creator/<handle>` if the follower has an approved public creator
+profile, else `/brand/<brandId>` if they own a brand, else the recipient's own `/profile` —
+`findActorSnapshot` denormalizes an `isCreator` flag and a `brandId` onto the actor for exactly
+this three-way check (`/creator/<handle>` 404s for a non-creator, so a plain shopper who owns no
+brand is the only case that falls through to `/profile`). Clients navigate to the stored path
+and delete their own type→route guessing.
 
 `target_path` is a cache, and it goes stale when the resolver or the denormalized metadata it
-reads changes — a row written before `isCreator`/`lookOwnerHandle` were added keeps whatever
-path was computed at write time (e.g. a brand-owner follow frozen at `/creator/<handle>` →
-404, or a comment reply frozen at `/profile`). Two mitigations: (1) the web bell recomputes
-`NEW_FOLLOWER` and `COMMENT_REPLIED` from the current client resolver instead of trusting the
-stored path — those two targets are role-free and fully client-computable, and an old row with
-no `isCreator`/`lookOwnerHandle` in metadata degrades to `/profile` rather than a 404; (2)
+reads changes — a row written before `isCreator`/`brandId`/`lookOwnerHandle` were added keeps
+whatever path was computed at write time (e.g. a brand-owner follow frozen at `/creator/<handle>`
+→ 404, a "followed your brand" frozen at `/profile`, or a comment reply frozen at `/profile`).
+Two mitigations: (1) the web bell recomputes `NEW_FOLLOWER`, `NEW_BRAND_FOLLOWER` and
+`COMMENT_REPLIED` from the current client resolver instead of trusting the stored path — those
+targets are role-free and fully client-computable, and an old row with no `isCreator`/`brandId`/
+`lookOwnerHandle` in metadata degrades to `/profile` rather than a 404; (2)
 `prisma/backfill-notification-targets.ts` (`pnpm db:backfill:notification-targets`, or the
-`Backfill notification targets` workflow) re-hydrates the actor `isCreator` flags / the look
-owner handle from the live tables and recomputes `target_surface`/`target_path` for every row —
-run it once after any release that changes target resolution, so push URLs (which have no
-client recompute) are corrected too. `push.messages.ts` uses `target_path` for a web-surface
-notification and falls back to its own `urlFor` otherwise.
+`Backfill notification targets` workflow) re-hydrates the actor `isCreator`/`brandId` flags and
+the look owner handle from the live tables and recomputes `target_surface`/`target_path` for
+every row — run it once after any release that changes target resolution, so push URLs (which
+have no client recompute) are corrected too. `push.messages.ts` uses `target_path` for a
+web-surface notification and falls back to its own `urlFor` otherwise.
 
 **`createIndividual`/`upsertGroup` return `null` instead of throwing on a foreign-key
 violation.** A domain-event consumer group replays its entire stream history from the

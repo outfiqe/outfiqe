@@ -11,6 +11,7 @@ import { lookPermalinkPath } from "@/features/explore";
 import {
   ADMIN_APP_ROUTES,
   adminSupportTicketPath,
+  brandProfilePath,
   conversationPath,
   creatorProfilePath,
   customerSupportTicketPath,
@@ -40,11 +41,12 @@ export const resolveNotificationHref = (
         ? lookPermalinkPath(lookHandle, entityId)
         : WEB_NOTIFICATION_ROUTES.dashboardProfile;
     }
-    case NotificationType.NEW_FOLLOWER: {
-      const follower = metadata.recentActors?.[0];
-      return follower?.isCreator && follower.handle
-        ? creatorProfilePath(follower.handle)
-        : WEB_NOTIFICATION_ROUTES.dashboardProfile;
+    case NotificationType.NEW_FOLLOWER:
+    case NotificationType.NEW_BRAND_FOLLOWER: {
+      const follower = metadata.recentActors?.[0] ?? metadata.actor;
+      if (follower?.isCreator && follower.handle) return creatorProfilePath(follower.handle);
+      if (follower?.brandId) return brandProfilePath(follower.brandId);
+      return WEB_NOTIFICATION_ROUTES.dashboardProfile;
     }
     case NotificationType.ACHIEVEMENT_UNLOCKED:
       return WEB_NOTIFICATION_ROUTES.badges;
@@ -58,8 +60,6 @@ export const resolveNotificationHref = (
       return entityId
         ? orderDetailPath(WEB_NOTIFICATION_ROUTES.ordersList, entityId)
         : WEB_NOTIFICATION_ROUTES.ordersList;
-    case NotificationType.NEW_BRAND_FOLLOWER:
-      return WEB_NOTIFICATION_ROUTES.dashboardProfile;
     case NotificationType.PRODUCT_REVIEWED:
       return WEB_NOTIFICATION_ROUTES.brandProducts;
     case NotificationType.REVIEW_REQUESTED:
@@ -105,6 +105,7 @@ export type NotificationNavigation = { href: string; fullPage: boolean };
 
 const TYPES_RESOLVED_FROM_CURRENT_LOGIC = new Set<NotificationType>([
   NotificationType.NEW_FOLLOWER,
+  NotificationType.NEW_BRAND_FOLLOWER,
   NotificationType.COMMENT_REPLIED,
 ]);
 
