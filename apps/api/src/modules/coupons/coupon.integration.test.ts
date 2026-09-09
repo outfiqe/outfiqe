@@ -41,8 +41,12 @@ const createDefaultDeliveryZone = () =>
     },
   });
 
-const createActiveCommissionRule = async (adminId: string, ratePercentBasisPoints = 1_000) =>
-  prisma.platformCommissionRule.create({
+const createActiveCommissionRule = async (adminId: string, ratePercentBasisPoints = 1_000) => {
+  await prisma.platformCommissionRule.updateMany({
+    where: { isActive: true },
+    data: { isActive: false },
+  });
+  return prisma.platformCommissionRule.create({
     data: {
       isActive: true,
       updatedById: adminId,
@@ -59,6 +63,7 @@ const createActiveCommissionRule = async (adminId: string, ratePercentBasisPoint
       },
     },
   });
+};
 
 const createPurchasableProduct = async (price: number, stock = 10) => {
   const brand = await prisma.brand.create({

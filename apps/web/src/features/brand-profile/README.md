@@ -8,7 +8,9 @@ rating), a follow toggle, and its product catalog filterable by product type wit
 ## Structure
 
 - `components/BrandProfile.tsx` — the page's client component: header, follow toggle, type filters,
-  and the product grid.
+  and the product grid. The follow toggle runs through the shared `useOptimisticFollow("brand")`
+  hook (`apps/web/src/shared/hooks`) and calls `router.refresh()` once the request settles so the
+  server component re-renders with the corrected `isFollowing` / `followerCount`.
 - `api/brandProfileApi.ts` — client-side API calls used by the infinite-products hook.
 - `api/brandProfileSchemas.ts` — Zod schema for a brand profile record.
 - `api/getBrandProfileServerPublic.ts` — server-only fetch used for the initial SSR render; returns
@@ -32,3 +34,12 @@ render (server-only, uses the visitor's session if present for a personalized `i
 `followerCount`), then hands off to the client `BrandProfile` component, which drives further
 product pages through `useInfiniteBrandProducts` → `brandProfileApi` → the API client →
 `apps/api`'s brand/product endpoints.
+
+## Non-obvious rationale
+
+- **The follow state is derived from the `brand` prop, not copied into `useState`.** The prop is the
+  only source of `isFollowing` on this page (there is no client query for the profile itself), and a
+  one-shot `useState(brand.isFollowing)` would ignore the fresh value that `router.refresh()`
+  delivers after a toggle or when the client navigates in from a stale router-cache entry.
+  `useOptimisticFollow` keeps only a transient override during the request and adopts the prop again
+  as soon as it changes.

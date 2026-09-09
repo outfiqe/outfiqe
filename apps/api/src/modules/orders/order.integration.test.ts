@@ -91,8 +91,12 @@ const createProductDiscount = (
     },
   });
 
-const createActiveCommissionRule = async (adminId: string, ratePercentBasisPoints = 1200) =>
-  prisma.platformCommissionRule.create({
+const createActiveCommissionRule = async (adminId: string, ratePercentBasisPoints = 1200) => {
+  await prisma.platformCommissionRule.updateMany({
+    where: { isActive: true },
+    data: { isActive: false },
+  });
+  return prisma.platformCommissionRule.create({
     data: {
       isActive: true,
       updatedById: adminId,
@@ -110,6 +114,19 @@ const createActiveCommissionRule = async (adminId: string, ratePercentBasisPoint
     },
     include: { tiers: true },
   });
+};
+
+const createActiveEsewaGatewayFeeRate = async (adminId: string, ratePercentBasisPoints = 200) => {
+  await prisma.gatewayFeeRate.deleteMany({ where: { paymentMethod: PaymentMethod.ESEWA } });
+  return prisma.gatewayFeeRate.create({
+    data: {
+      paymentMethod: PaymentMethod.ESEWA,
+      ratePercentBasisPoints,
+      isActive: true,
+      updatedById: adminId,
+    },
+  });
+};
 
 const createBuyer = async () => {
   const suffix = randomUUID().slice(0, 8);
@@ -217,17 +234,10 @@ describe("POST /api/orders/checkout — settlement ledger", () => {
     expect(payout.status).toBe(BrandPayoutStatus.PENDING);
   });
 
-  it("deducts the gateway fee estimate for a non-COD payment method but never for COD", async () => {
+  it("records the gateway fee estimate for a non-COD payment method but never deducts it from the brand's payout", async () => {
     const { userId: adminId } = await createAdminSession();
     await createActiveCommissionRule(adminId);
-    await prisma.gatewayFeeRate.create({
-      data: {
-        paymentMethod: PaymentMethod.ESEWA,
-        ratePercentBasisPoints: 200,
-        isActive: true,
-        updatedById: adminId,
-      },
-    });
+    await createActiveEsewaGatewayFeeRate(adminId);
     await createDefaultDeliveryZone();
     const { product, size } = await createPurchasableProduct(1000);
     const buyer = await createBuyer();
@@ -251,20 +261,13 @@ describe("POST /api/orders/checkout — settlement ledger", () => {
     });
     expect(payout.platformFee).toBe(120);
     expect(payout.gatewayFee).toBe(20);
-    expect(payout.netAmount).toBe(860);
+    expect(payout.netAmount).toBe(880);
   });
 
-  it("zeroes the platform fee for an exempt brand but still deducts the gateway fee", async () => {
+  it("zeroes the platform fee for an exempt brand; the gateway fee is still recorded but never deducted from the payout", async () => {
     const { userId: adminId } = await createAdminSession();
     await createActiveCommissionRule(adminId);
-    await prisma.gatewayFeeRate.create({
-      data: {
-        paymentMethod: PaymentMethod.ESEWA,
-        ratePercentBasisPoints: 200,
-        isActive: true,
-        updatedById: adminId,
-      },
-    });
+    await createActiveEsewaGatewayFeeRate(adminId);
     await createDefaultDeliveryZone();
     const { brand, product, size } = await createPurchasableProduct(1000);
     await prisma.brandCommissionExemption.create({
@@ -298,7 +301,7 @@ describe("POST /api/orders/checkout — settlement ledger", () => {
     expect(payout.platformFee).toBe(0);
     expect(payout.platformCommissionTierId).toBeNull();
     expect(payout.gatewayFee).toBe(20);
-    expect(payout.netAmount).toBe(980);
+    expect(payout.netAmount).toBe(1000);
   });
 
   it("charges the normal commission once a brand's exemption has expired", async () => {
@@ -622,14 +625,7 @@ describe("POST /api/orders/:orderId/cancel — buyer self-service", () => {
     const buyer = await createBuyer();
     await createActiveCommissionRule(adminId);
     await prisma.gatewayFeeRate.deleteMany({ where: { paymentMethod: PaymentMethod.ESEWA } });
-    await prisma.gatewayFeeRate.create({
-      data: {
-        paymentMethod: PaymentMethod.ESEWA,
-        ratePercentBasisPoints: 200,
-        isActive: true,
-        updatedById: adminId,
-      },
-    });
+    await createActiveEsewaGatewayFeeRate(adminId);
     await createDefaultDeliveryZone();
     const { product, size } = await createPurchasableProduct(1000);
 

@@ -3,10 +3,25 @@ import userEvent from "@testing-library/user-event";
 import { useSearchParams } from "next/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { useTastePreferences } from "@/features/categories/hooks/useTastePreferences";
+import { useIsHydrated } from "@/shared/hooks/useIsHydrated";
+
 import { CategorySelectionProvider, useCategorySelection } from "./CategorySelectionContext";
 
 vi.mock("next/navigation", () => ({
   useSearchParams: vi.fn(),
+}));
+
+vi.mock("@/features/auth", () => ({
+  useAuth: () => ({ isAuthResolved: true }),
+}));
+
+vi.mock("@/features/categories/hooks/useTastePreferences", () => ({
+  useTastePreferences: vi.fn(),
+}));
+
+vi.mock("@/shared/hooks/useIsHydrated", () => ({
+  useIsHydrated: vi.fn(),
 }));
 
 const mockSearchParams = (params: Record<string, string>) => {
@@ -15,11 +30,23 @@ const mockSearchParams = (params: Record<string, string>) => {
   );
 };
 
+const mockTastePreferences = (storedSlugs: string[] | null) => {
+  vi.mocked(useTastePreferences).mockReturnValue({
+    storedSlugs,
+    isCustomized: storedSlugs !== null,
+    save: vi.fn(),
+    reset: vi.fn(),
+  });
+};
+
 const Consumer = () => {
-  const { pendingCategorySlug, markCategoryPending } = useCategorySelection();
+  const { pendingCategorySlug, markCategoryPending, storedTasteSlugs, isTasteCustomized } =
+    useCategorySelection();
   return (
     <div>
       <span>{pendingCategorySlug ? `pending:${pendingCategorySlug}` : "pending:none"}</span>
+      <span>stored:{storedTasteSlugs ? storedTasteSlugs.join(",") : "none"}</span>
+      <span>customized:{String(isTasteCustomized)}</span>
       <button type="button" onClick={() => markCategoryPending("dresses")}>
         select-dresses
       </button>
@@ -29,6 +56,8 @@ const Consumer = () => {
 
 beforeEach(() => {
   mockSearchParams({ category: "tops" });
+  mockTastePreferences(["client-a", "client-b"]);
+  vi.mocked(useIsHydrated).mockReturnValue(true);
 });
 
 describe("CategorySelectionContext", () => {
@@ -75,5 +104,30 @@ describe("CategorySelectionContext", () => {
     );
 
     expect(screen.getByText("pending:none")).toBeInTheDocument();
+  });
+
+  it("serves the server-resolved taste slugs until the client has hydrated", () => {
+    vi.mocked(useIsHydrated).mockReturnValue(false);
+
+    render(
+      <CategorySelectionProvider serverResolvedTasteSlugs={["server-x", "server-y"]}>
+        <Consumer />
+      </CategorySelectionProvider>,
+    );
+
+    expect(screen.getByText("stored:server-x,server-y")).toBeInTheDocument();
+    expect(screen.getByText("customized:true")).toBeInTheDocument();
+  });
+
+  it("switches to the live client taste slugs once hydrated", () => {
+    vi.mocked(useIsHydrated).mockReturnValue(true);
+
+    render(
+      <CategorySelectionProvider serverResolvedTasteSlugs={["server-x"]}>
+        <Consumer />
+      </CategorySelectionProvider>,
+    );
+
+    expect(screen.getByText("stored:client-a,client-b")).toBeInTheDocument();
   });
 });

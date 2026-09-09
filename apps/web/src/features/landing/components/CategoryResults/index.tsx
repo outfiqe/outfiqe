@@ -13,6 +13,7 @@ import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
 
 import { useCategorySelection } from "../../lib/CategorySelectionContext";
+import { resolveDisplayCategories } from "../../lib/resolveTasteCategories";
 import { ProductCard } from "../ProductCard";
 
 export const CategoryResults = () => {
@@ -21,12 +22,17 @@ export const CategoryResults = () => {
   const categorySlug = searchParams.get("category");
   const activeType = searchParams.get("type") ?? ALL_TYPE_ID;
 
-  const { pendingCategorySlug } = useCategorySelection();
+  const { pendingCategorySlug, storedTasteSlugs } = useCategorySelection();
   const { pendingValue: pendingType, markPending: markTypePending } =
     usePendingSelection<string>(activeType);
 
   const categories = useCategories();
-  const category = categories.data?.find((c) => c.slug === categorySlug) ?? categories.data?.[0];
+  const displayCategories = resolveDisplayCategories(
+    categories.data ?? [],
+    storedTasteSlugs,
+    categorySlug,
+  );
+  const category = categories.data?.find((c) => c.slug === categorySlug) ?? displayCategories[0];
 
   const isNavigatingCategory = pendingCategorySlug !== null;
   const isNavigatingType = pendingType !== null;

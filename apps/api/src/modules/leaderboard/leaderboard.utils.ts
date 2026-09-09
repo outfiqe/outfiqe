@@ -3,6 +3,8 @@ import {
   type LeaderboardCategory,
 } from "#constants/leaderboard.constants.js";
 
+import { FASTEST_GROWING_SURGE_SCORE } from "./leaderboard.constants.js";
+
 export {
   currentIsoWeekKey,
   currentIsoWeekStart,
@@ -19,6 +21,8 @@ export const formatScoreLabel = (category: LeaderboardCategory, score: number): 
     case LEADERBOARD_CATEGORY.MOST_LOVED:
       return `${Math.round(score)} new followers`;
     case LEADERBOARD_CATEGORY.FASTEST_GROWING:
-      return `${score >= 0 ? "+" : ""}${Math.round(score)}%`;
+      return score === FASTEST_GROWING_SURGE_SCORE
+        ? "New"
+        : `${score >= 0 ? "+" : ""}${Math.round(score)}%`;
   }
 };

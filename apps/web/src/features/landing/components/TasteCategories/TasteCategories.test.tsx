@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
-import { useTastePreferences } from "@/features/categories/hooks/useTastePreferences";
 
 import { TasteCategories } from "./index";
 
@@ -12,9 +11,6 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/features/categories/hooks/useCategories", () => ({ useCategories: vi.fn() }));
-vi.mock("@/features/categories/hooks/useTastePreferences", () => ({
-  useTastePreferences: vi.fn(),
-}));
 
 const buildCategory = (slug: string, name: string) => ({
   id: slug,
@@ -82,18 +78,8 @@ const buildQueryLoadingResult = () => ({
   promise: new Promise(() => {}),
 });
 
-const mockTastePreferences = () => {
-  vi.mocked(useTastePreferences).mockReturnValue({
-    storedSlugs: null,
-    isCustomized: false,
-    save: vi.fn(),
-    reset: vi.fn(),
-  });
-};
-
 describe("TasteCategories", () => {
   it("clips the loading skeleton so it never becomes a scrollable, scrollbar-showing row", () => {
-    mockTastePreferences();
     vi.mocked(useCategories).mockReturnValue(
       buildQueryLoadingResult() as ReturnType<typeof useCategories>,
     );
@@ -107,7 +93,6 @@ describe("TasteCategories", () => {
   });
 
   it("shows the loaded, scrollable categories once data arrives", () => {
-    mockTastePreferences();
     vi.mocked(useCategories).mockReturnValue(
       buildQuerySuccessResult([
         buildCategory("formal", "Formal"),
@@ -122,7 +107,6 @@ describe("TasteCategories", () => {
   });
 
   it("shows an empty state when there are no categories", () => {
-    mockTastePreferences();
     vi.mocked(useCategories).mockReturnValue(
       buildQuerySuccessResult([]) as ReturnType<typeof useCategories>,
     );

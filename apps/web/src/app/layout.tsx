@@ -32,6 +32,16 @@ export const metadata: Metadata = {
 
 export const viewport = pwaViewport;
 
+const apiOrigin = (() => {
+  const configured = process.env.API_PUBLIC_URL ?? process.env.API_URL;
+  if (!configured) return null;
+  try {
+    return new URL(configured).origin;
+  } catch {
+    return null;
+  }
+})();
+
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   const pwaKilled = isPwaKillSwitchEngagedOnServer();
 
@@ -42,6 +52,12 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
       {...(pwaKilled ? { [PWA_KILL_SWITCH_ATTRIBUTE]: "true" } : {})}
     >
       <head>
+        {apiOrigin && (
+          <>
+            <link rel="preconnect" href={apiOrigin} crossOrigin="anonymous" />
+            <link rel="dns-prefetch" href={apiOrigin} />
+          </>
+        )}
         <AppleSplashLinks />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>

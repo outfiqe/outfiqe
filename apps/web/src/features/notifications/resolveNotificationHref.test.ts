@@ -1,7 +1,11 @@
 import type { Notification } from "@outfiqe/types";
 import { describe, expect, it } from "vitest";
 
-import { resolveNotificationHref } from "./resolveNotificationHref";
+import {
+  isFullPageNavHref,
+  resolveNotificationHref,
+  resolveNotificationNavigation,
+} from "./resolveNotificationHref";
 
 const OWN_HANDLE = "sabinshrestha0";
 
@@ -12,6 +16,8 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
   type: "LOOK_LIKED",
   entityType: null,
   entityId: null,
+  targetSurface: null,
+  targetPath: null,
   metadata: {},
   groupKey: null,
   actorCount: 1,
@@ -51,9 +57,9 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(replied, OWN_HANDLE)).toBe("/creator/mun?look=look-3");
   });
 
-  it("leaves a comment reply unclickable when no creator handle is available at all", () => {
+  it("falls back to the dashboard profile for a comment reply with no creator handle at all", () => {
     const replied = buildNotification({ type: "COMMENT_REPLIED", entityId: "look-3" });
-    expect(resolveNotificationHref(replied, OWN_HANDLE)).toBeNull();
+    expect(resolveNotificationHref(replied, OWN_HANDLE)).toBe("/profile");
   });
 
   it("falls back to the dashboard profile when the own handle or entityId is missing", () => {
@@ -64,17 +70,90 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(noEntity, OWN_HANDLE)).toBe("/profile");
   });
 
-  it("routes a new follower to the follower's own profile when a handle is known", () => {
+  it("routes a new follower who is a creator to their creator profile", () => {
     const notification = buildNotification({
       type: "NEW_FOLLOWER",
-      metadata: { recentActors: [{ id: "a1", name: "Jane", handle: "jane", avatarUrl: null }] },
+      metadata: {
+        recentActors: [
+          { id: "a1", name: "Jane", handle: "jane", avatarUrl: null, isCreator: true },
+        ],
+      },
     });
     expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/creator/jane");
   });
 
-  it("falls back to the dashboard profile for a new follower with no denormalized handle", () => {
+  it("routes a new follower who owns a brand to that brand's page", () => {
+    const notification = buildNotification({
+      type: "NEW_FOLLOWER",
+      metadata: {
+        recentActors: [
+          {
+            id: "a1",
+            name: "John Rai",
+            handle: "johnrai",
+            avatarUrl: null,
+            isCreator: false,
+            brandId: "brand-7",
+          },
+        ],
+      },
+    });
+    expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/brand/brand-7");
+  });
+
+  it("routes a new brand follower who is a creator to their creator profile", () => {
+    const notification = buildNotification({
+      type: "NEW_BRAND_FOLLOWER",
+      metadata: {
+        recentActors: [
+          { id: "a1", name: "Anjesh", handle: "anjeshghimire", avatarUrl: null, isCreator: true },
+        ],
+      },
+    });
+    expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/creator/anjeshghimire");
+  });
+
+  it("falls back to the dashboard profile for a follower with no creator profile or brand", () => {
+    const notification = buildNotification({
+      type: "NEW_FOLLOWER",
+      metadata: {
+        recentActors: [
+          {
+            id: "a1",
+            name: "Shopper",
+            handle: "shopper",
+            avatarUrl: null,
+            isCreator: false,
+            brandId: null,
+          },
+        ],
+      },
+    });
+    expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/profile");
+  });
+
+  it("falls back to the dashboard profile for a new follower with no denormalized actor", () => {
     const notification = buildNotification({ type: "NEW_FOLLOWER", metadata: {} });
     expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/profile");
+  });
+
+  it("deep-links an approved tag to that look, and a declined one to its edit view", () => {
+    expect(
+      resolveNotificationHref(
+        buildNotification({ type: "PRODUCT_TAG_APPROVED", entityId: "look-9" }),
+        OWN_HANDLE,
+      ),
+    ).toBe(`/creator/${OWN_HANDLE}?look=look-9`);
+
+    for (const type of ["PRODUCT_TAG_REJECTED", "PRODUCT_TAG_REVOKED"] as const) {
+      const notification = buildNotification({ type, entityId: "look-9" });
+      expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe(
+        `/creator/${OWN_HANDLE}?edit=look-9`,
+      );
+    }
+    for (const type of ["PRODUCT_TAG_SUBMITTED", "PRODUCT_TAG_REVIEW_REMINDER"] as const) {
+      expect(resolveNotificationHref(buildNotification({ type }), OWN_HANDLE)).toBe("/tag-reviews");
+    }
   });
 
   it("routes gamification types to their dashboard pages", () => {
@@ -108,13 +187,66 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/orders");
   });
 
-  it("returns null for admin-only types", () => {
+  it("routes staff-only types into the admin app", () => {
     expect(
       resolveNotificationHref(
         buildNotification({ type: "BRAND_APPLICATION_SUBMITTED" }),
         OWN_HANDLE,
       ),
-    ).toBeNull();
+    ).toBe("/admin/platform/brand-applications");
+
+    expect(
+      resolveNotificationHref(
+        buildNotification({ type: "SUPPORT_TICKET_CREATED", entityId: "ticket-9" }),
+        OWN_HANDLE,
+      ),
+    ).toBe("/admin/support/ticket-9");
+
+    expect(
+      resolveNotificationHref(
+        buildNotification({ type: "SUPPORT_TICKET_ASSIGNED", entityId: null }),
+        OWN_HANDLE,
+      ),
+    ).toBe("/admin/support");
+  });
+
+  it("routes a CRM assignment into the admin app by item kind", () => {
+    expect(
+      resolveNotificationHref(
+        buildNotification({ type: "CRM_ITEM_ASSIGNED", metadata: { crmItemKind: "task" } }),
+        OWN_HANDLE,
+      ),
+    ).toBe("/admin/crm/tasks");
+
+    expect(
+      resolveNotificationHref(
+        buildNotification({ type: "CRM_ITEM_ASSIGNED", metadata: { crmItemKind: "ticket" } }),
+        OWN_HANDLE,
+      ),
+    ).toBe("/admin/crm/support");
+  });
+
+  it("routes coupon alerts into the admin app", () => {
+    expect(
+      resolveNotificationHref(
+        buildNotification({
+          type: "COUPON_APPROVAL_REQUESTED",
+          metadata: { couponCode: "SAVE10" },
+        }),
+        OWN_HANDLE,
+      ),
+    ).toBe("/admin/coupons");
+
+    expect(
+      resolveNotificationHref(buildNotification({ type: "COUPON_BUDGET_ALERT" }), OWN_HANDLE),
+    ).toBe("/admin/coupons");
+
+    expect(
+      resolveNotificationHref(
+        buildNotification({ type: "COUPON_REDEMPTION_FLAGGED", entityId: "order-4" }),
+        OWN_HANDLE,
+      ),
+    ).toBe("/admin/orders/order-4");
   });
 
   it("routes a new product review to the brand's product dashboard", () => {
@@ -157,13 +289,7 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(notification, OWN_HANDLE)).toBe("/messages");
   });
 
-  it("returns null for a CRM assignment, which has no page on the web surface", () => {
-    expect(
-      resolveNotificationHref(buildNotification({ type: "CRM_ITEM_ASSIGNED" }), OWN_HANDLE),
-    ).toBeNull();
-  });
-
-  it("deep-links support ticket replies and resolutions to the support page", () => {
+  it("sends a customer's support ticket reply or resolution to the customer support page", () => {
     const replied = buildNotification({ type: "SUPPORT_TICKET_REPLY", entityId: "ticket-1" });
     expect(resolveNotificationHref(replied, OWN_HANDLE)).toBe("/support?ticket=ticket-1");
 
@@ -171,12 +297,138 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(resolved, OWN_HANDLE)).toBe("/support");
   });
 
-  it("returns null for admin-only support types", () => {
-    expect(
-      resolveNotificationHref(buildNotification({ type: "SUPPORT_TICKET_CREATED" }), OWN_HANDLE),
-    ).toBeNull();
-    expect(
-      resolveNotificationHref(buildNotification({ type: "SUPPORT_TICKET_ASSIGNED" }), OWN_HANDLE),
-    ).toBeNull();
+  it("sends an admin's support ticket reply or resolution to the admin ticket view", () => {
+    const replied = buildNotification({ type: "SUPPORT_TICKET_REPLY", entityId: "ticket-1" });
+    expect(resolveNotificationHref(replied, OWN_HANDLE, true)).toBe("/admin/support/ticket-1");
+
+    const resolved = buildNotification({ type: "SUPPORT_TICKET_RESOLVED", entityId: null });
+    expect(resolveNotificationHref(resolved, OWN_HANDLE, true)).toBe("/admin/support");
+  });
+});
+
+describe("resolveNotificationNavigation", () => {
+  it("uses the server-authored target path for a web-surface notification (client nav)", () => {
+    const notification = buildNotification({
+      type: "NEW_MESSAGE",
+      targetSurface: "WEB",
+      targetPath: "/messages/conversation-1",
+    });
+    expect(resolveNotificationNavigation(notification, OWN_HANDLE, true)).toEqual({
+      href: "/messages/conversation-1",
+      fullPage: false,
+    });
+  });
+
+  it("prefixes an admin-surface target with the admin origin and forces a full page nav", () => {
+    const notification = buildNotification({
+      type: "BRAND_APPLICATION_SUBMITTED",
+      targetSurface: "ADMIN",
+      targetPath: "/platform/brand-applications",
+    });
+    expect(resolveNotificationNavigation(notification, OWN_HANDLE, true)).toEqual({
+      href: "/admin/platform/brand-applications",
+      fullPage: true,
+    });
+  });
+
+  it("falls back to the legacy type resolver when no target path is stored", () => {
+    const legacy = buildNotification({ type: "ACHIEVEMENT_UNLOCKED" });
+    expect(resolveNotificationNavigation(legacy, OWN_HANDLE, false)).toEqual({
+      href: "/badges",
+      fullPage: false,
+    });
+
+    const staffLegacy = buildNotification({
+      type: "SUPPORT_TICKET_CREATED",
+      entityId: "ticket-1",
+    });
+    expect(resolveNotificationNavigation(staffLegacy, OWN_HANDLE, true)).toEqual({
+      href: "/admin/support/ticket-1",
+      fullPage: true,
+    });
+  });
+
+  it("returns null when neither a target path nor a legacy route resolves", () => {
+    const notification = buildNotification({ type: "REVIEW_REQUESTED", entityId: null });
+    expect(resolveNotificationNavigation(notification, OWN_HANDLE, false)).toBeNull();
+  });
+
+  it("ignores a stale stored follower target and recomputes from current logic", () => {
+    const staleBrandFollow = buildNotification({
+      type: "NEW_FOLLOWER",
+      targetSurface: "WEB",
+      targetPath: "/creator/johnrai",
+      metadata: {
+        recentActors: [{ id: "b1", name: "John Rai", handle: "johnrai", avatarUrl: null }],
+      },
+    });
+    expect(resolveNotificationNavigation(staleBrandFollow, OWN_HANDLE, false)).toEqual({
+      href: "/profile",
+      fullPage: false,
+    });
+
+    const creatorFollow = buildNotification({
+      type: "NEW_FOLLOWER",
+      targetSurface: "WEB",
+      targetPath: "/profile",
+      metadata: {
+        recentActors: [
+          { id: "c1", name: "Jane", handle: "jane", avatarUrl: null, isCreator: true },
+        ],
+      },
+    });
+    expect(resolveNotificationNavigation(creatorFollow, OWN_HANDLE, false)).toEqual({
+      href: "/creator/jane",
+      fullPage: false,
+    });
+
+    const staleBrandFollowerOfBrand = buildNotification({
+      type: "NEW_BRAND_FOLLOWER",
+      targetSurface: "WEB",
+      targetPath: "/profile",
+      metadata: {
+        recentActors: [
+          {
+            id: "c2",
+            name: "Anjesh",
+            handle: "anjeshghimire",
+            avatarUrl: null,
+            isCreator: true,
+          },
+        ],
+      },
+    });
+    expect(resolveNotificationNavigation(staleBrandFollowerOfBrand, OWN_HANDLE, false)).toEqual({
+      href: "/creator/anjeshghimire",
+      fullPage: false,
+    });
+  });
+
+  it("ignores a stale stored comment-reply target and recomputes from current logic", () => {
+    const staleReply = buildNotification({
+      type: "COMMENT_REPLIED",
+      entityId: "look-3",
+      targetSurface: "WEB",
+      targetPath: "/profile",
+      metadata: { lookOwnerHandle: "mun" },
+    });
+    expect(resolveNotificationNavigation(staleReply, OWN_HANDLE, false)).toEqual({
+      href: "/creator/mun?look=look-3",
+      fullPage: false,
+    });
+  });
+});
+
+describe("isFullPageNavHref", () => {
+  it("flags cross-origin and admin-app hrefs for a full page navigation", () => {
+    expect(isFullPageNavHref("https://admin.outfiqe.com/support/ticket-1")).toBe(true);
+    expect(isFullPageNavHref("/admin/coupons")).toBe(true);
+    expect(isFullPageNavHref("/admin")).toBe(true);
+  });
+
+  it("leaves in-app router paths for a client-side navigation", () => {
+    expect(isFullPageNavHref("/profile")).toBe(false);
+    expect(isFullPageNavHref("/orders/order-9")).toBe(false);
+    expect(isFullPageNavHref("/support?ticket=ticket-1")).toBe(false);
   });
 });

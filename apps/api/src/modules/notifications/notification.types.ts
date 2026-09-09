@@ -1,10 +1,16 @@
-import type { NotificationEntityType, NotificationType } from "#generated/prisma/enums.js";
+import type {
+  NotificationEntityType,
+  NotificationSurface,
+  NotificationType,
+} from "#generated/prisma/enums.js";
 
 export type NotificationActorSnapshot = {
   id: string;
   name: string;
   handle: string;
   avatarUrl: string | null;
+  isCreator: boolean;
+  brandId?: string | null;
 };
 
 export type NotificationMetadata = {
@@ -36,6 +42,10 @@ export type NotificationMetadata = {
   thresholdPercent?: number;
   spentAmount?: number;
   flagReason?: string;
+  tagRejectionReason?: string;
+  tagRejectionNote?: string | null;
+  tagAutoApproved?: boolean;
+  pendingTagReviewCount?: number;
 };
 
 export type NotificationRecord = {
@@ -45,6 +55,8 @@ export type NotificationRecord = {
   type: NotificationType;
   entityType: NotificationEntityType | null;
   entityId: string | null;
+  targetSurface: NotificationSurface | null;
+  targetPath: string | null;
   metadata: NotificationMetadata;
   groupKey: string | null;
   actorCount: number;
@@ -61,6 +73,12 @@ export type CreateIndividualNotificationInput = {
   entityType?: NotificationEntityType | null;
   entityId?: string | null;
   metadata: NotificationMetadata;
+  recipientIsStaff?: boolean;
+};
+
+export type PersistNotificationTarget = {
+  targetSurface: NotificationSurface | null;
+  targetPath: string | null;
 };
 
 export type UpsertGroupInput = {

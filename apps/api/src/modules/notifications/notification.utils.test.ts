@@ -16,6 +16,8 @@ const actor = (id: string): NotificationActorSnapshot => ({
   name: `Actor ${id}`,
   handle: `actor-${id}`,
   avatarUrl: null,
+  isCreator: false,
+  brandId: null,
 });
 
 describe("mergeRecentActors", () => {
@@ -63,6 +65,8 @@ describe("toNotificationRecord", () => {
     type: NotificationType.LOOK_LIKED,
     entityType: null,
     entityId: null,
+    targetSurface: null,
+    targetPath: null,
     metadata: null,
     groupKey: null,
     actorCount: 1,
@@ -92,6 +96,8 @@ describe("toBroadcastPayload", () => {
       type: NotificationType.LOOK_LIKED,
       entityType: null,
       entityId: null,
+      targetSurface: null,
+      targetPath: null,
       metadata: { lookCaption: null },
       groupKey: "look-liked:l1",
       actorCount: 2,

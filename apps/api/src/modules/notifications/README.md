@@ -24,6 +24,14 @@ activity to an open bell/panel live.
 - `notification.utils.ts` — pure functions only, no DB access: `toNotificationRecord`/
   `toBroadcastPayload` (row ↔ record ↔ socket-payload mapping), `mergeRecentActors`/
   `removeRecentActor` (the capped, deduped, most-recent-first actor list join/leave a group).
+- `notification.targets.ts` — `resolveNotificationTarget({ type, entityId, metadata,
+recipientIsStaff })`: pure, the single place that decides where a notification click lands.
+  Returns `{ surface: "WEB" | "ADMIN", path }` or `null`. The repository calls it on every write
+  and persists the result onto the row (`target_surface` / `target_path`), so the destination is
+  computed once — where the recipient's context is known — instead of re-guessed by each client.
+  Clients read those two fields and just navigate; each app treats the other surface's target as a
+  cross-origin full-page navigation. `recipientIsStaff` is passed by the two support-reply
+  handlers whose recipient can be either the customer or an agent.
 - `notification.repository.ts` — Prisma queries only. `createIndividual` (plain insert, ungrouped
   types) and `upsertGroup`/`retractGroupActor` (the race-safe grouped write/retraction — see
   rationale below) own the `notifications` table's write side; `findMutedRecipientIds` reads
@@ -33,9 +41,14 @@ activity to an open bell/panel live.
   `findOrderNotificationContext`, `findProductReviewSnapshot`, `findDeliveredOrderProducts`) —
   kept here rather than added to each producing module's own repository, since "who should this
   notification go to and what should it show" is this module's concern, not theirs.
+  `upsertSystemReminder` is the actor-less counterpart of `upsertGroup` — a recipient-keyed
+  grouped row (find-unread-by-`groupKey` then update-or-create in one transaction) for
+  system-generated digests that have no acting user, with `metadata` merged so a repeated sweep
+  refreshes a count in place.
 - `notification.service.ts` — `notifyIndividual`/`notifyManyIndividual`/`notifyGroup`/
-  `retractGroupActor`: the mute-check + write + realtime-handoff orchestration every event handler
-  calls into. Never called directly by another module — only by `notification.events.ts`.
+  `retractGroupActor`/`notifySystemReminder`: the mute-check + write + realtime-handoff
+  orchestration every event handler calls into. Never called directly by another module — only by
+  `notification.events.ts`. `notifySystemReminder` is the digest path (see `PRODUCT_TAG_REVIEW_REMINDER`).
 - `notification.events.ts` — `registerNotificationEventConsumers()`: one domain-event handler per
   row in plan §5's event catalog, each resolving the right recipient(s), building the denormalized
   `metadata` snapshot, and calling into `notification.service.ts`. A second, independent consumer
@@ -84,6 +97,34 @@ primary delivery mechanism.
 
 ## Non-obvious rationale
 
+**The click destination is authored server-side, not by the client.** A notification stream
+mixes platform-wide (`NEW_MESSAGE`), creator, brand, and staff events, and where a recipient
+should land depends on their role/capabilities and which app they're in — context only the write
+path has. So `resolveNotificationTarget` runs on every write and `target_surface`/`target_path`
+are stored on the row (grouped rows re-resolve on each `upsertGroup` update, since a
+follow target follows the latest follower). Both `NEW_FOLLOWER` and `NEW_BRAND_FOLLOWER` point
+at the follower's own page: `/creator/<handle>` if the follower has an approved public creator
+profile, else `/brand/<brandId>` if they own a brand, else the recipient's own `/profile` —
+`findActorSnapshot` denormalizes an `isCreator` flag and a `brandId` onto the actor for exactly
+this three-way check (`/creator/<handle>` 404s for a non-creator, so a plain shopper who owns no
+brand is the only case that falls through to `/profile`). Clients navigate to the stored path
+and delete their own type→route guessing.
+
+`target_path` is a cache, and it goes stale when the resolver or the denormalized metadata it
+reads changes — a row written before `isCreator`/`brandId`/`lookOwnerHandle` were added keeps
+whatever path was computed at write time (e.g. a brand-owner follow frozen at `/creator/<handle>`
+→ 404, a "followed your brand" frozen at `/profile`, or a comment reply frozen at `/profile`).
+Two mitigations: (1) the web bell recomputes `NEW_FOLLOWER`, `NEW_BRAND_FOLLOWER` and
+`COMMENT_REPLIED` from the current client resolver instead of trusting the stored path — those
+targets are role-free and fully client-computable, and an old row with no `isCreator`/`brandId`/
+`lookOwnerHandle` in metadata degrades to `/profile` rather than a 404; (2)
+`prisma/backfill-notification-targets.ts` (`pnpm db:backfill:notification-targets`, or the
+`Backfill notification targets` workflow) re-hydrates the actor `isCreator`/`brandId` flags and
+the look owner handle from the live tables and recomputes `target_surface`/`target_path` for
+every row — run it once after any release that changes target resolution, so push URLs (which
+have no client recompute) are corrected too. `push.messages.ts` uses `target_path` for a
+web-surface notification and falls back to its own `urlFor` otherwise.
+
 **`createIndividual`/`upsertGroup` return `null` instead of throwing on a foreign-key
 violation.** A domain-event consumer group replays its entire stream history from the
 beginning the first time it's created (`XGROUP CREATE ... "0"`), which can hand this module a
@@ -122,6 +163,21 @@ on the web product page. `PRODUCT_REVIEWED` (a review's target product owner bei
 genuine new domain event, `DomainEvents.PRODUCT_REVIEWED`, published by `product-reviews.service.ts`
 after a review is created — resolved to every `BrandMembership` row for that product's brand, same
 fan-out `PRODUCT_PURCHASED` → `NEW_ORDER` already does.
+
+**`PRODUCT_TAG_SUBMITTED` fans out to brand members and groups per brand**, same shape as
+`BRAND_FOLLOWED` → `NEW_BRAND_FOLLOWER`: `findBrandMemberIds` + a `notifyGroup` per member keyed on
+`NOTIFICATION_GROUP_KEYS.tagReviewQueue(brandId)`, so a brand sees one "N creators have tags
+waiting" row with an avatar-stack, not one row per pending tag. The creator is the actor.
+`PRODUCT_TAG_APPROVED` / `PRODUCT_TAG_REJECTED` / `PRODUCT_TAG_REVOKED` go to the creator as plain
+individual notifications; reject/revoke carry the brand's `reason` + `note` in `metadata`
+(`tagRejectionReason`/`tagRejectionNote`) so the bell text shows the brand's own words. Approve
+carries `tagAutoApproved` so the copy can say "auto-approved" for an SLA/policy approval vs "a
+brand approved" for a manual one. `PRODUCT_TAG_REVIEW_REMINDER` is the digest row: `../tag-reviews`'
+scheduled job publishes `TAG_REVIEW_REMINDER_DUE` per brand with a standing backlog, and this
+consumer fans it out to brand members via `notifySystemReminder` — an actor-less grouped upsert
+(`upsertSystemReminder`) keyed on `NOTIFICATION_GROUP_KEYS.tagReviewReminder(brandId)`, so a brand
+carries one "N tags still waiting for your review" row whose `pendingTagReviewCount` is refreshed
+in place on each sweep rather than stacking a new row per run.
 
 **Self-actions never notify.** Every handler that has both an actor and a recipient skips the
 write when they're the same user (liking/commenting/following your own content, or — impossible

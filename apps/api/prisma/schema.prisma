@@ -36,6 +36,7 @@ model User {
   emailVerified        Boolean       @default(false) @map("email_verified")
   followerCount        Int           @default(0) @map("follower_count")
   followingCount       Int           @default(0) @map("following_count")
+  tagCounterfeitFlagCount Int        @default(0) @map("tag_counterfeit_flag_count")
   hideFromLeaderboards Boolean       @default(false) @map("hide_from_leaderboards")
   lastSeenAt           DateTime?     @map("last_seen_at")
   createdAt            DateTime      @default(now()) @map("created_at")
@@ -59,6 +60,11 @@ model User {
   lookComments                             CreatorLookComment[]
   tagClicks                                CreatorLookTagClick[]
   lookViews                                CreatorLookView[]
+  reviewedLookProductTags                  CreatorLookProduct[]        @relation("CreatorLookProductReviewer")
+  brandTrustReceived                       BrandTrustedCreator[]       @relation("BrandTrustedCreatorCreator")
+  brandTrustGranted                        BrandTrustedCreator[]       @relation("BrandTrustedCreatorGrantedBy")
+  tagReportsMade                           TagReviewReport[]           @relation("TagReviewReportReporter")
+  tagReportsReviewed                       TagReviewReport[]           @relation("TagReviewReportReviewer")
   following                                Follow[]                    @relation("FollowerEdges")
   savedProducts                            SavedProduct[]
   cart                                     Cart?
@@ -250,11 +256,16 @@ model Brand {
   application        BrandApplication?     @relation(fields: [applicationId], references: [id], onDelete: SetNull)
   followerCount      Int                   @default(0) @map("follower_count")
   rating             Float?
-  createdAt          DateTime              @default(now()) @map("created_at")
-  updatedAt          DateTime              @updatedAt @map("updated_at")
+
+  tagReviewPolicy           BrandTagReviewPolicy @default(TRUSTED_ONLY) @map("tag_review_policy")
+  autoApproveVerifiedBuyers Boolean              @default(true) @map("auto_approve_verified_buyers")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   invites              BrandInvite[]
   memberships          BrandMembership[]
+  trustedCreators      BrandTrustedCreator[]
   products             Product[]
   sponsoredBadges      Badge[]
   bankAccounts         BrandBankAccount[]
@@ -729,11 +740,108 @@ model CreatorLookProduct {
   productId     String      @map("product_id") @db.Uuid
   product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   sizeWorn      String?     @map("size_worn")
-  createdAt     DateTime    @default(now()) @map("created_at")
+
+  reviewStatus    TagReviewStatus     @default(PENDING) @map("review_status")
+  approvalSource  TagApprovalSource?  @map("approval_source")
+  submittedAt     DateTime            @default(now()) @map("submitted_at")
+  reviewedAt      DateTime?           @map("reviewed_at")
+  reviewedById    String?             @map("reviewed_by_id") @db.Uuid
+  reviewedBy      User?               @relation("CreatorLookProductReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  rejectionReason TagRejectionReason? @map("rejection_reason")
+  rejectionNote   String?             @map("rejection_note")
+  reRequestCount  Int                 @default(0) @map("re_request_count")
+
+  createdAt DateTime          @default(now()) @map("created_at")
+  reports   TagReviewReport[]
 
   @@unique([creatorLookId, productId])
-  @@index([productId])
+  @@index([productId, reviewStatus])
+  @@index([reviewStatus, submittedAt])
   @@map("creator_look_products")
+}
+
+enum TagReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TagApprovalSource {
+  BRAND
+  POLICY_OPEN
+  TRUSTED_CREATOR
+  VERIFIED_BUYER
+  SLA
+  GRANDFATHERED
+}
+
+enum TagRejectionReason {
+  NOT_OUR_PRODUCT
+  COUNTERFEIT_SUSPECTED
+  MISREPRESENTS_PRODUCT
+  POLICY_VIOLATION
+  OTHER
+}
+
+enum BrandTagReviewPolicy {
+  OPEN
+  TRUSTED_ONLY
+  APPROVAL_REQUIRED
+}
+
+enum TagReportSource {
+  PUBLIC_REPORT
+  BRAND_COUNTERFEIT_REJECTION
+}
+
+enum TagReportReason {
+  COUNTERFEIT
+  NOT_GENUINELY_WORN
+  MISLEADING
+  OFFENSIVE
+  OTHER
+}
+
+enum TagReportStatus {
+  OPEN
+  ACTIONED
+  DISMISSED
+}
+
+model TagReviewReport {
+  id                   String             @id @default(uuid()) @db.Uuid
+  creatorLookProductId String             @map("creator_look_product_id") @db.Uuid
+  creatorLookProduct   CreatorLookProduct @relation(fields: [creatorLookProductId], references: [id], onDelete: Cascade)
+  source               TagReportSource
+  reason               TagReportReason
+  note                 String?
+  reportedById         String?            @map("reported_by_id") @db.Uuid
+  reportedBy           User?              @relation("TagReviewReportReporter", fields: [reportedById], references: [id], onDelete: SetNull)
+  reporterIpHash       String?            @map("reporter_ip_hash")
+  status               TagReportStatus    @default(OPEN)
+  reviewedById         String?            @map("reviewed_by_id") @db.Uuid
+  reviewedBy           User?              @relation("TagReviewReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt           DateTime?          @map("reviewed_at")
+  resolutionNote       String?            @map("resolution_note")
+  createdAt            DateTime           @default(now()) @map("created_at")
+
+  @@index([status, createdAt])
+  @@index([creatorLookProductId])
+  @@map("tag_review_reports")
+}
+
+model BrandTrustedCreator {
+  brandId     String   @map("brand_id") @db.Uuid
+  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  creatorId   String   @map("creator_id") @db.Uuid
+  creator     User     @relation("BrandTrustedCreatorCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  grantedById String?  @map("granted_by_id") @db.Uuid
+  grantedBy   User?    @relation("BrandTrustedCreatorGrantedBy", fields: [grantedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@id([brandId, creatorId])
+  @@index([creatorId])
+  @@map("brand_trusted_creators")
 }
 
 model CreatorLookLike {
@@ -1573,6 +1681,11 @@ enum NotificationType {
   COUPON_APPROVAL_REQUESTED
   COUPON_BUDGET_ALERT
   COUPON_REDEMPTION_FLAGGED
+  PRODUCT_TAG_SUBMITTED
+  PRODUCT_TAG_APPROVED
+  PRODUCT_TAG_REJECTED
+  PRODUCT_TAG_REVOKED
+  PRODUCT_TAG_REVIEW_REMINDER
 }
 
 enum NotificationEntityType {
@@ -1590,17 +1703,24 @@ enum NotificationEntityType {
   SUPPORT_TICKET
 }
 
+enum NotificationSurface {
+  WEB
+  ADMIN
+}
+
 model Notification {
   id          String                  @id @default(uuid()) @db.Uuid
   recipientId String                  @map("recipient_id") @db.Uuid
   recipient   User                    @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
   actorId     String?                 @map("actor_id") @db.Uuid
   actor       User?                   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
-  type        NotificationType
-  entityType  NotificationEntityType? @map("entity_type")
-  entityId    String?                 @map("entity_id")
-  metadata    Json                    @default("{}")
-  groupKey    String?                 @map("group_key")
+  type          NotificationType
+  entityType    NotificationEntityType? @map("entity_type")
+  entityId      String?                 @map("entity_id")
+  targetSurface NotificationSurface?    @map("target_surface")
+  targetPath    String?                 @map("target_path")
+  metadata      Json                    @default("{}")
+  groupKey      String?                 @map("group_key")
   actorCount  Int                     @default(1) @map("actor_count")
   isRead      Boolean                 @default(false) @map("is_read")
   readAt      DateTime?               @map("read_at")

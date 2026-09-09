@@ -22,6 +22,7 @@ import { toUploadableImage } from "@/shared/lib/heicImage";
 
 import type { BrandProfile } from "../api/brandDashboardSchemas";
 import { useUpdateBrandProfile } from "../hooks/useUpdateBrandProfile";
+import { BrandTagPolicyCard } from "./BrandTagPolicyCard";
 
 type EditableFields = {
   contactName: string;
@@ -163,6 +164,8 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
           </dl>
         </div>
       </div>
+
+      <BrandTagPolicyCard profile={profile} />
 
       <Modal
         open={editOpen}

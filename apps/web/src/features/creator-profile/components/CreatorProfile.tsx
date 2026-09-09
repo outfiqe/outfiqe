@@ -46,6 +46,7 @@ const MAX_HEIGHT_CM = 251;
 const MAX_PROFILE_FEATURED_BADGES = 3;
 const TITLE_BADGE_FALLBACK_COLOR = "#f97316";
 const LOOK_QUERY_PARAM = "look";
+const EDIT_QUERY_PARAM = "edit";
 
 const badgeAccentColor = (designConfig: FeaturedBadge["designConfig"]): string =>
   "primaryColor" in designConfig ? designConfig.primaryColor : TITLE_BADGE_FALLBACK_COLOR;
@@ -93,6 +94,18 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const isOwnProfile = state.user?.id === userId;
 
   const detailPostId = searchParams.get(LOOK_QUERY_PARAM);
+  const editParamLookId = isOwnProfile ? searchParams.get(EDIT_QUERY_PARAM) : null;
+  const activeEditLookId = editingLookId ?? editParamLookId;
+
+  const closeEdit = () => {
+    setEditingLookId(null);
+    if (searchParams.has(EDIT_QUERY_PARAM)) {
+      const params = new URLSearchParams(searchParams);
+      params.delete(EDIT_QUERY_PARAM);
+      const query = params.toString();
+      window.history.replaceState(null, "", `/creator/${handle}${query ? `?${query}` : ""}`);
+    }
+  };
 
   const openPost = (lookId: string) => {
     const params = new URLSearchParams(searchParams);
@@ -524,7 +537,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
       {isOwnProfile && (
         <>
           <AddPostButton />
-          <EditPostModal lookId={editingLookId} onClose={() => setEditingLookId(null)} />
+          <EditPostModal lookId={activeEditLookId} onClose={closeEdit} />
           <Modal
             open={deletingLookId !== null}
             onClose={() => setDeletingLookId(null)}

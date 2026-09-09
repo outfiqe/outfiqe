@@ -1,5 +1,9 @@
 import type { NotificationBroadcastPayload } from "#events/event-bus.types.js";
-import type { NotificationEntityType, NotificationType } from "#generated/prisma/enums.js";
+import type {
+  NotificationEntityType,
+  NotificationSurface,
+  NotificationType,
+} from "#generated/prisma/enums.js";
 
 import { MAX_RECENT_ACTORS } from "./notification.constants.js";
 import type {
@@ -15,6 +19,8 @@ type PrismaNotificationRow = {
   type: NotificationType;
   entityType: NotificationEntityType | null;
   entityId: string | null;
+  targetSurface: NotificationSurface | null;
+  targetPath: string | null;
   metadata: unknown;
   groupKey: string | null;
   actorCount: number;
@@ -31,6 +37,8 @@ export const toNotificationRecord = (row: PrismaNotificationRow): NotificationRe
   type: row.type,
   entityType: row.entityType,
   entityId: row.entityId,
+  targetSurface: row.targetSurface,
+  targetPath: row.targetPath,
   metadata: (row.metadata ?? {}) as NotificationMetadata,
   groupKey: row.groupKey,
   actorCount: row.actorCount,
@@ -61,6 +69,8 @@ export const toBroadcastPayload = (record: NotificationRecord): NotificationBroa
   type: record.type,
   entityType: record.entityType,
   entityId: record.entityId,
+  targetSurface: record.targetSurface,
+  targetPath: record.targetPath,
   metadata: record.metadata,
   groupKey: record.groupKey,
   actorCount: record.actorCount,

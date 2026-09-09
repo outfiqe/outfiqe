@@ -12,15 +12,24 @@ the landing page's _Explore your taste_ picker.
 - `api/getCategoriesServer.ts` — the same fetch for server components (returns `[]` on failure).
 - `api/tastePreferencesApi.ts` — `GET/PUT/DELETE /taste-preferences/me` for the signed-in
   visitor's server-stored pick.
+- `api/getTastePreferencesServer.ts` — the `GET /taste-preferences/me` read for server
+  components (takes the access token, returns `null` on failure).
 - `hooks/useCategories.ts` — React Query wrapper, 10-minute stale time.
 - `hooks/useTastePreferences.ts` — the visitor's stored pick as an ordered slug array. Anonymous:
-  `localStorage["outfiqe:taste-categories"]` only (`useSyncExternalStore`, real SSR snapshot,
+  `localStorage["outfiqe:taste-categories"]` (`useSyncExternalStore`, real SSR snapshot,
   cross-tab). Signed in: the server record is the source of truth (React Query), localStorage is
   kept as a mirror, and a local-only choice is pushed up once on first sign-in (only when no server
-  record exists yet). Returns `{ storedSlugs, isCustomized, save, reset }` either way.
+  record exists yet). Either way it also mirrors the resolved pick into the
+  `outfiqe_taste_categories` cookie so server components can read it at request time. Returns
+  `{ storedSlugs, isCustomized, save, reset }`.
 - `lib/visibleTasteCategories.ts` — pure: given the full list and the stored slugs, returns the
   categories to render (stored order, stale slugs dropped, falls back to the first
   `LANDING_TASTE_CATEGORY_COUNT` when nothing valid is stored).
+- `lib/tasteSlugs.ts` — pure: the `localStorage` key, cookie name, `taste-preferences` query key,
+  and the parse/serialize helpers shared by the hook (localStorage) and server components
+  (`parseTasteCookie`, which URL-decodes first).
+- `lib/resolveStoredTasteSlugs.ts` — pure: given a signed-in visitor's server record and the
+  cookie value, returns the pick to use (server record wins, else the cookie, else `null`).
 
 ## Funnel
 
@@ -31,17 +40,28 @@ full list, or _Reset to default_. Signed out, the choice is per-device. Signed i
 account across devices, and a choice made while signed out is carried up to the account once on the
 next sign-in (only if the account has no saved set yet).
 
-**Technical:** `TasteCategories` → `useCategories` (full list) + `useTastePreferences` (stored
-slugs) → `visibleTasteCategories` → rendered tiles. `CustomizeTasteModal` edits a draft slug array
-and calls `save()` on confirm. `useTastePreferences` writes `localStorage` for everyone and, when
-signed in, also `PUT`s `/taste-preferences/me`; that endpoint's aggregate feeds the "N shoppers
-pinned this" counts on the admin Categories page.
+**Technical:** the `@taste` slot resolves the pick server-side (cookie + signed-in DB record →
+`resolveStoredTasteSlugs`) and seeds it into `CategorySelectionProvider`. `TasteCategories` and
+`CategoryResults` read `storedTasteSlugs` from that context (not `useTastePreferences` directly) →
+`visibleTasteCategories` / `resolveDisplayCategories` → rendered tiles and product grid, which now
+always agree on the active category. `CustomizeTasteModal` edits a draft slug array and calls the
+context's `saveTasteSlugs()` on confirm. `useTastePreferences` (called once, inside the provider)
+writes `localStorage` + the `outfiqe_taste_categories` cookie for everyone and, when signed in,
+also `PUT`s `/taste-preferences/me`; that endpoint's aggregate feeds the "N shoppers pinned this"
+counts on the admin Categories page.
 
 ## Non-obvious rationale
 
-- **Only `useTastePreferences` knows where the pick is stored.** Components read the resolved list,
-  never `localStorage` or the API directly — so the anonymous-vs-signed-in split, the server sync,
-  and the first-sign-in merge all stay inside that one hook.
+- **Only `useTastePreferences` knows where the pick is stored.** Components read the resolved list
+  (via `CategorySelectionContext`), never `localStorage`, the cookie, or the API directly — so the
+  anonymous-vs-signed-in split, the server sync, and the first-sign-in merge all stay inside that
+  one hook.
+- **The cookie mirror exists for SSR, not persistence.** `localStorage` stays the client store;
+  the `outfiqe_taste_categories` cookie is written alongside it purely so a server component can
+  render the customized picker on the first paint instead of the default set (which the client
+  would then visibly correct). A signed-in visitor's server record still wins over the cookie. An
+  effect also backfills the cookie from an existing `localStorage` value for visitors who
+  customized before the cookie existed.
 - **The first-sign-in merge is one-directional and one-shot.** A local set is pushed to the server
   only when the account has no record yet; once the server has a set it wins, and a stale
   localStorage mirror is never sent back up. This keeps a shared computer from overwriting an
