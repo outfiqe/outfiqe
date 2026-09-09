@@ -38,12 +38,30 @@ describe("resolveNotificationTarget", () => {
     });
   });
 
-  it("routes a new follower to the latest follower's profile", () => {
+  it("routes a new follower who is a creator to their creator profile", () => {
     expect(
       resolve(NotificationType.NEW_FOLLOWER, "u1", {
-        recentActors: [{ id: "u1", name: "Jane", handle: "jane", avatarUrl: null }],
+        recentActors: [
+          { id: "u1", name: "Jane", handle: "jane", avatarUrl: null, isCreator: true },
+        ],
       }),
     ).toEqual({ surface: NotificationSurface.WEB, path: "/creator/jane" });
+  });
+
+  it("routes a new follower who has no creator profile to the dashboard profile", () => {
+    expect(
+      resolve(NotificationType.NEW_FOLLOWER, "u1", {
+        recentActors: [
+          {
+            id: "u1",
+            name: "Peak Studio",
+            handle: "peak-studio",
+            avatarUrl: null,
+            isCreator: false,
+          },
+        ],
+      }),
+    ).toEqual({ surface: NotificationSurface.WEB, path: "/profile" });
   });
 
   it("routes gamification, commission and order types to their web dashboard pages", () => {

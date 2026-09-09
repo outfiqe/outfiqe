@@ -76,8 +76,10 @@ export const resolveNotificationTarget = ({
     case NotificationType.COMMENT_REPLIED:
       return ownLookTarget(metadata, entityId);
     case NotificationType.NEW_FOLLOWER: {
-      const followerHandle = metadata.recentActors?.[0]?.handle ?? metadata.actor?.handle;
-      return followerHandle ? web(`/creator/${followerHandle}`) : web(WEB_ROUTES.dashboardProfile);
+      const follower = metadata.recentActors?.[0] ?? metadata.actor;
+      return follower?.isCreator && follower.handle
+        ? web(`/creator/${follower.handle}`)
+        : web(WEB_ROUTES.dashboardProfile);
     }
     case NotificationType.NEW_BRAND_FOLLOWER:
       return web(WEB_ROUTES.dashboardProfile);

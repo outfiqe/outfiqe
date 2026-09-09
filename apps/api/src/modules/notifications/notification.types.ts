@@ -9,6 +9,7 @@ export type NotificationActorSnapshot = {
   name: string;
   handle: string;
   avatarUrl: string | null;
+  isCreator: boolean;
 };
 
 export type NotificationMetadata = {

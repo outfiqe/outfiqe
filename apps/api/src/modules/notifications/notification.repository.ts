@@ -5,6 +5,7 @@ import type {
   NotificationSurface,
   NotificationType,
 } from "#generated/prisma/enums.js";
+import { CreatorStatus } from "#generated/prisma/enums.js";
 import { decodeCursor } from "#lib/pagination.utils.js";
 import { isForeignKeyConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
@@ -245,9 +246,19 @@ export const notificationRepository = {
   async findActorSnapshot(userId: string): Promise<NotificationActorSnapshot | null> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, handle: true, avatarUrl: true },
+      select: {
+        id: true,
+        name: true,
+        handle: true,
+        avatarUrl: true,
+        isCreator: true,
+        creatorStatus: true,
+      },
     });
-    return user;
+    if (!user) return null;
+
+    const { creatorStatus, isCreator, ...actor } = user;
+    return { ...actor, isCreator: isCreator && creatorStatus === CreatorStatus.APPROVED };
   },
 
   async findLookSnapshot(
