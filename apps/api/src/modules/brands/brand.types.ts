@@ -1,6 +1,6 @@
 import type { ResponsiveImage } from "@outfiqe/types";
 
-import type { BrandRole } from "#generated/prisma/enums.js";
+import type { BrandRole, BrandTagReviewPolicy } from "#generated/prisma/enums.js";
 import type { ImageAssetForResponsiveImage } from "#lib/responsive-image.utils.js";
 
 export type BrandRecord = {
@@ -18,6 +18,8 @@ export type BrandRecord = {
   applicationId: string | null;
   followerCount: number;
   rating: number | null;
+  tagReviewPolicy: BrandTagReviewPolicy;
+  autoApproveVerifiedBuyers: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -33,7 +35,16 @@ export type BrandProfile = {
 };
 
 export type UpdateBrandInput = Partial<
-  Pick<BrandRecord, "contactName" | "phone" | "instagram" | "avatarUrl" | "bannerUrl"> & {
+  Pick<
+    BrandRecord,
+    | "contactName"
+    | "phone"
+    | "instagram"
+    | "avatarUrl"
+    | "bannerUrl"
+    | "tagReviewPolicy"
+    | "autoApproveVerifiedBuyers"
+  > & {
     bannerImageAssetId: string | null;
     avatarImageAssetId: string | null;
   }

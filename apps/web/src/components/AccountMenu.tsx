@@ -84,10 +84,10 @@ export const AccountMenu = () => {
             </a>
           ) : (
             <Link
-              href="/profile"
+              href={isBrandOwner ? "/overview" : "/profile"}
               className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
             >
-              {isBrandOwner ? "Brand dashboard" : "Dashboard"}
+              Dashboard
             </Link>
           )}
           {hasCrmAccess && !isAdmin && isOnTenantHost && (
@@ -108,13 +108,13 @@ export const AccountMenu = () => {
             href="/cart"
             className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
           >
-            Your bag
+            Bag
           </Link>
           <Link
             href="/orders"
             className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
           >
-            Your orders
+            Orders
           </Link>
 
           {!isBrandOwner && !isAdmin && !isCreator && (

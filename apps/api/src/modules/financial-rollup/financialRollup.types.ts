@@ -10,8 +10,10 @@ export type FinancialRollupView = {
     netHeld: number;
   };
   ledger: {
-    owedToBrands: Partial<Record<BrandPayoutStatus, number>>;
-    owedToCreators: Partial<Record<CommissionStatus, number>>;
+    owedToBrands: number;
+    owedToCreators: number;
+    brandPayoutsByStatus: Partial<Record<BrandPayoutStatus, number>>;
+    creatorCommissionsByStatus: Partial<Record<CommissionStatus, number>>;
     platformRevenueRealized: number;
     couponSpend: number;
     netPlatformRevenue: number;

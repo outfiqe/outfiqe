@@ -20,6 +20,8 @@ const baseBrand: BrandWithImageAssets = {
   applicationId: null,
   followerCount: 42,
   rating: 4.5,
+  tagReviewPolicy: "TRUSTED_ONLY",
+  autoApproveVerifiedBuyers: true,
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
   updatedAt: new Date("2026-01-01T00:00:00.000Z"),
 };

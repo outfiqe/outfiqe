@@ -11,9 +11,15 @@ The buyer's view of their own orders — the list at `/orders` and the single-or
   an infinite list of `OrderRow`s.
 - `components/OrderRow.tsx` — one summary row in that list.
 - `components/OrderDetailBody.tsx` — the `/orders/[id]` page body. Picks the header treatment from
-  payment state and composes `OrderTracker` / `PendingPaymentPanel` / `TransactionLedger`.
+  payment state and composes `OrderTracker` (or `ShipmentTrackers` for a multi-brand order) /
+  `PendingPaymentPanel` / `TransactionLedger`.
 - `components/OrderTracker.tsx` — the PLACED→PACKED→SHIPPED→DELIVERED stepper (or a "cancelled"
   line).
+- `components/ShipmentTrackers.tsx` — when the order has more than one shipment (`order.shipments`,
+  one per brand fulfilment group), renders a per-brand block: the brand name, that shipment's own
+  `OrderTracker`, and its carrier + tracking number. A single-shipment order keeps the plain
+  order-level `OrderTracker`. `order.fulfilmentSummary` (`UNFULFILLED`/`PARTIALLY_SHIPPED`/
+  `SHIPPED`/`FULFILLED`/`CANCELLED`) is the coarse order-level status behind the scenes.
 - `components/PendingPaymentPanel.tsx` — shown on the detail page for an unpaid wallet order:
   Resume payment (re-initiate + redirect to the gateway) and Cancel order (with a confirm modal).
 - `components/StatusBadge.tsx` / `components/TransactionLedger.tsx` — payment/fulfilment badge and

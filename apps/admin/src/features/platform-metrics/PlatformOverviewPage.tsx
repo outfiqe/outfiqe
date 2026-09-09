@@ -62,9 +62,6 @@ const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
 const formatShortDate = (isoDate: string) =>
   new Date(isoDate).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
-const sumRecord = (record: Partial<Record<string, number>>): number =>
-  Object.values(record).reduce<number>((total, value) => total + (value ?? 0), 0);
-
 const OverviewKpiRow = ({ overview }: { overview: PlatformOverview }) => (
   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
     <StatCard label="Tenants" value={overview.tenantCount.toLocaleString()} />
@@ -113,8 +110,7 @@ const SettlementGap = () => {
   }
 
   const netHeld = rollup.data.gateway.netHeld;
-  const ledgerOwed =
-    sumRecord(rollup.data.ledger.owedToBrands) + sumRecord(rollup.data.ledger.owedToCreators);
+  const ledgerOwed = rollup.data.ledger.owedToBrands + rollup.data.ledger.owedToCreators;
   const gap = netHeld - ledgerOwed;
   const isHealthy = Math.abs(gap) <= Math.max(netHeld, ledgerOwed) * HEALTHY_GAP_RATIO;
 

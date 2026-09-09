@@ -1,0 +1,8 @@
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+
+export const TAG_REVIEW_SLA_DAYS = 7;
+export const TAG_REVIEW_SLA_SWEEP_INTERVAL_MS = DAY_MS;
+
+export const TAG_REVIEW_REMINDER_MIN_AGE_HOURS = 24;
+export const TAG_REVIEW_REMINDER_INTERVAL_MS = 3 * DAY_MS;

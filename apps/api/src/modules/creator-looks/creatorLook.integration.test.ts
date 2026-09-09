@@ -11,6 +11,7 @@ import {
   ImageProcessingQualityTier,
   ImageProcessingStatus,
   ProductStatus,
+  TagReviewStatus,
   UserRole,
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
@@ -109,7 +110,9 @@ const createImageAsset = async (ownerId: string) =>
   });
 
 const tagProduct = async (lookId: string, productId: string, sizeWorn = "M") =>
-  prisma.creatorLookProduct.create({ data: { creatorLookId: lookId, productId, sizeWorn } });
+  prisma.creatorLookProduct.create({
+    data: { creatorLookId: lookId, productId, sizeWorn, reviewStatus: TagReviewStatus.APPROVED },
+  });
 
 const followCreator = async (followerId: string, creatorId: string) =>
   prisma.follow.create({
@@ -387,6 +390,41 @@ describe("GET /api/creator-looks/:lookId", () => {
     expect(response.status).toBe(200);
     expect(response.body.data.id).toBe(look.id);
     expect(response.body.data.taggedProducts).toHaveLength(1);
+    expect(response.body.data.taggedProducts[0]).toMatchObject({
+      reviewStatus: "APPROVED",
+      rejectionReason: null,
+      rejectionNote: null,
+      canReRequest: false,
+    });
+  });
+
+  it("surfaces a rejected tag's reason, note, and remaining re-request budget to the owner", async () => {
+    const creator = await createCreator("Rejected Tag Owner", "rejected-tag-owner");
+    const product = await createApprovedProduct("Contested Coat");
+    const look = await createLook(creator.id, "Still up, tag under review");
+    await prisma.creatorLookProduct.create({
+      data: {
+        creatorLookId: look.id,
+        productId: product.id,
+        sizeWorn: "M",
+        reviewStatus: TagReviewStatus.REJECTED,
+        rejectionReason: "MISREPRESENTS_PRODUCT",
+        rejectionNote: "This isn't a current-season colourway.",
+        reRequestCount: 3,
+      },
+    });
+
+    const response = await request(testApp)
+      .get(`/api/creator-looks/${look.id}`)
+      .set("Authorization", authHeaderFor(creator.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.taggedProducts[0]).toMatchObject({
+      reviewStatus: "REJECTED",
+      rejectionReason: "MISREPRESENTS_PRODUCT",
+      rejectionNote: "This isn't a current-season colourway.",
+      canReRequest: false,
+    });
   });
 
   it("returns 404 for a post owned by someone else", async () => {

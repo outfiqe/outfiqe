@@ -93,6 +93,23 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
   );
   const productCache = { ...detailProductCache, ...searchProductCache };
 
+  const reviewByProductId = useMemo(
+    () =>
+      Object.fromEntries(
+        detail.taggedProducts.map((tag) => [
+          tag.productId,
+          {
+            reviewStatus: tag.reviewStatus,
+            rejectionReason: tag.rejectionReason,
+            rejectionNote: tag.rejectionNote,
+            canReRequest: tag.canReRequest,
+          },
+        ]),
+      ),
+    [detail.taggedProducts],
+  );
+  const hasUnresolvedTag = detail.taggedProducts.some((tag) => tag.reviewStatus !== "APPROVED");
+
   const totalPhotoCount = existingUrls.length + newPhotos.length + (stagingPhoto ? 1 : 0);
   const canAddPhoto = totalPhotoCount < MAX_PHOTOS;
 
@@ -343,13 +360,24 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
           {...form.register("caption")}
         />
 
+        {hasUnresolvedTag && (
+          <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+            Your post is live. Tags marked <span className="font-medium">In review</span> or{" "}
+            <span className="font-medium">Declined</span> stay hidden on the post until the brand
+            approves them — everything else about the post is unaffected.
+          </p>
+        )}
+
         <ProductTagPicker
           taggedProducts={taggedProducts}
           maxTaggedProducts={MAX_TAGGED_PRODUCTS}
           productCache={productCache}
+          reviewByProductId={reviewByProductId}
+          initialExpanded={hasUnresolvedTag}
           onToggleProduct={toggleProduct}
           onRemoveTag={removeTag}
           onSizeChange={setSizeWorn}
+          onReRequestTag={() => void submitEdit()}
           sizeErrors={sizeErrors}
           productFilter={productFilter}
           onFilterChange={setProductFilter}

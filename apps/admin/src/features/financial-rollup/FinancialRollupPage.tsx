@@ -83,10 +83,18 @@ export const FinancialRollupPage = () => {
                 label="Platform revenue realized"
                 value={money(rollup.ledger.platformRevenueRealized)}
               />
-              {Object.entries(rollup.ledger.owedToCreators).map(([status, amount]) => (
+              <StatRow
+                label="Owed to creators (outstanding)"
+                value={money(rollup.ledger.owedToCreators)}
+              />
+              <StatRow
+                label="Owed to brands (outstanding)"
+                value={money(rollup.ledger.owedToBrands)}
+              />
+              {Object.entries(rollup.ledger.creatorCommissionsByStatus).map(([status, amount]) => (
                 <StatRow key={status} label={`Creators — ${status}`} value={money(amount)} />
               ))}
-              {Object.entries(rollup.ledger.owedToBrands).map(([status, amount]) => (
+              {Object.entries(rollup.ledger.brandPayoutsByStatus).map(([status, amount]) => (
                 <StatRow key={status} label={`Brands — ${status}`} value={money(amount)} />
               ))}
             </div>

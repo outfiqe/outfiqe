@@ -53,6 +53,7 @@ const envSchema = z.object({
   KHALTI_SECRET_KEY: z.string().min(1),
   PASSWORD_BREACH_CHECK_ENABLED: z.stringbool(),
   CAPTCHA_ENABLED: z.stringbool(),
+  TAG_REVIEW_ENABLED: z.stringbool().default(false),
   TURNSTILE_SECRET_KEY: z.string().min(1),
   OAUTH_REDIRECT_BASE_URL: z.url(),
   GOOGLE_CLIENT_ID: z.string().min(1),

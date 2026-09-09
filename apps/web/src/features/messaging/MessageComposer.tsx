@@ -81,6 +81,7 @@ export const MessageComposer = ({ conversationId }: MessageComposerProps) => {
           setBody("");
           setPendingAttachments([]);
         },
+        onError: (sendError) => toast.error(getErrorMessage(sendError)),
       },
     );
   };

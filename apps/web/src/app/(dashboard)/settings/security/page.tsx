@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AddPhoneNumberBanner, ChangePasswordCard, ConnectedAccounts } from "@/features/auth";
+import { UserRole } from "@/features/auth/types";
 import { ClearOfflineDataCard } from "@/features/pwa";
 
 import { requireAuthedSession } from "../../requireDashboardSession";
@@ -9,6 +10,7 @@ export const metadata: Metadata = { title: "Security" };
 
 const DashboardSecurityPage = async () => {
   const { user } = await requireAuthedSession("/settings/security");
+  const canConnectSocialAccounts = user.role !== UserRole.BRAND_OWNER;
 
   return (
     <div className="max-w-xl">
@@ -34,15 +36,17 @@ const DashboardSecurityPage = async () => {
         </div>
       </div>
 
-      <div className="mt-6">
-        <h2 className="text-sm font-semibold text-foreground">Connected accounts</h2>
-        <p className="mt-1 text-[13px] text-muted-foreground">
-          Sign in faster by connecting Google or Facebook.
-        </p>
-        <div className="mt-3">
-          <ConnectedAccounts hasPassword={user.hasPassword ?? true} />
+      {canConnectSocialAccounts && (
+        <div className="mt-6">
+          <h2 className="text-sm font-semibold text-foreground">Connected accounts</h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Sign in faster by connecting Google or Facebook.
+          </p>
+          <div className="mt-3">
+            <ConnectedAccounts hasPassword={user.hasPassword ?? true} />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="mt-6">
         <ClearOfflineDataCard />

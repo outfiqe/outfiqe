@@ -8,6 +8,7 @@ import {
   BrandPayoutStatus,
   DiscountType,
   FulfilmentStatus,
+  OrderFulfilmentSummary,
   PaymentMethod,
   PaymentStatus,
   PaymentTransactionStatus,
@@ -91,8 +92,12 @@ const createProductDiscount = (
     },
   });
 
-const createActiveCommissionRule = async (adminId: string, ratePercentBasisPoints = 1200) =>
-  prisma.platformCommissionRule.create({
+const createActiveCommissionRule = async (adminId: string, ratePercentBasisPoints = 1200) => {
+  await prisma.platformCommissionRule.updateMany({
+    where: { isActive: true },
+    data: { isActive: false },
+  });
+  return prisma.platformCommissionRule.create({
     data: {
       isActive: true,
       updatedById: adminId,
@@ -110,6 +115,19 @@ const createActiveCommissionRule = async (adminId: string, ratePercentBasisPoint
     },
     include: { tiers: true },
   });
+};
+
+const createActiveEsewaGatewayFeeRate = async (adminId: string, ratePercentBasisPoints = 200) => {
+  await prisma.gatewayFeeRate.deleteMany({ where: { paymentMethod: PaymentMethod.ESEWA } });
+  return prisma.gatewayFeeRate.create({
+    data: {
+      paymentMethod: PaymentMethod.ESEWA,
+      ratePercentBasisPoints,
+      isActive: true,
+      updatedById: adminId,
+    },
+  });
+};
 
 const createBuyer = async () => {
   const suffix = randomUUID().slice(0, 8);
@@ -217,17 +235,10 @@ describe("POST /api/orders/checkout — settlement ledger", () => {
     expect(payout.status).toBe(BrandPayoutStatus.PENDING);
   });
 
-  it("deducts the gateway fee estimate for a non-COD payment method but never for COD", async () => {
+  it("records the gateway fee estimate for a non-COD payment method but never deducts it from the brand's payout", async () => {
     const { userId: adminId } = await createAdminSession();
     await createActiveCommissionRule(adminId);
-    await prisma.gatewayFeeRate.create({
-      data: {
-        paymentMethod: PaymentMethod.ESEWA,
-        ratePercentBasisPoints: 200,
-        isActive: true,
-        updatedById: adminId,
-      },
-    });
+    await createActiveEsewaGatewayFeeRate(adminId);
     await createDefaultDeliveryZone();
     const { product, size } = await createPurchasableProduct(1000);
     const buyer = await createBuyer();
@@ -251,20 +262,13 @@ describe("POST /api/orders/checkout — settlement ledger", () => {
     });
     expect(payout.platformFee).toBe(120);
     expect(payout.gatewayFee).toBe(20);
-    expect(payout.netAmount).toBe(860);
+    expect(payout.netAmount).toBe(880);
   });
 
-  it("zeroes the platform fee for an exempt brand but still deducts the gateway fee", async () => {
+  it("zeroes the platform fee for an exempt brand; the gateway fee is still recorded but never deducted from the payout", async () => {
     const { userId: adminId } = await createAdminSession();
     await createActiveCommissionRule(adminId);
-    await prisma.gatewayFeeRate.create({
-      data: {
-        paymentMethod: PaymentMethod.ESEWA,
-        ratePercentBasisPoints: 200,
-        isActive: true,
-        updatedById: adminId,
-      },
-    });
+    await createActiveEsewaGatewayFeeRate(adminId);
     await createDefaultDeliveryZone();
     const { brand, product, size } = await createPurchasableProduct(1000);
     await prisma.brandCommissionExemption.create({
@@ -298,7 +302,7 @@ describe("POST /api/orders/checkout — settlement ledger", () => {
     expect(payout.platformFee).toBe(0);
     expect(payout.platformCommissionTierId).toBeNull();
     expect(payout.gatewayFee).toBe(20);
-    expect(payout.netAmount).toBe(980);
+    expect(payout.netAmount).toBe(1000);
   });
 
   it("charges the normal commission once a brand's exemption has expired", async () => {
@@ -538,6 +542,188 @@ describe("POST /api/orders/checkout — brand-funded discounts", () => {
   });
 });
 
+describe("order fulfilment groups", () => {
+  const checkoutBuyNow = async (buyerId: string, productId: string, sizeId: string) => {
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyerId, UserRole.CUSTOMER))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.COD,
+        buyNow: { productId, sizeId, qty: 1 },
+      });
+    expect(response.status).toBe(201);
+    return response.body.data.id as string;
+  };
+
+  it("creates one group per brand at checkout and links every item to its group", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const { brand, product, size } = await createPurchasableProduct(1000);
+    const buyer = await createBuyer();
+
+    const orderId = await checkoutBuyNow(buyer.id, product.id, size.id);
+
+    const groups = await prisma.orderFulfilmentGroup.findMany({
+      where: { orderId },
+      include: { items: { select: { id: true } } },
+    });
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toMatchObject({ brandId: brand.id, status: FulfilmentStatus.PLACED });
+    expect(groups[0]!.items).toHaveLength(1);
+
+    const order = await prisma.order.findUniqueOrThrow({ where: { id: orderId } });
+    expect(order.fulfilmentSummary).toBe(OrderFulfilmentSummary.UNFULFILLED);
+  });
+
+  it("splits a multi-brand cart into a group per brand, each holding only that brand's item", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const first = await createPurchasableProduct(1000);
+    const second = await createPurchasableProduct(2000);
+    const buyer = await createBuyer();
+
+    const cart = await prisma.cart.create({ data: { userId: buyer.id } });
+    await prisma.cartItem.createMany({
+      data: [
+        { cartId: cart.id, productId: first.product.id, sizeId: first.size.id, qty: 1 },
+        { cartId: cart.id, productId: second.product.id, sizeId: second.size.id, qty: 1 },
+      ],
+    });
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({
+        fullName: "Test Buyer",
+        phone: "9800000000",
+        address: "123 Test Street",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.COD,
+      });
+    expect(response.status).toBe(201);
+
+    const groups = await prisma.orderFulfilmentGroup.findMany({
+      where: { orderId: response.body.data.id },
+      include: { items: { include: { product: { select: { brandId: true } } } } },
+    });
+    expect(groups).toHaveLength(2);
+    for (const group of groups) {
+      expect(group.items).toHaveLength(1);
+      expect(group.items[0]!.product.brandId).toBe(group.brandId);
+    }
+  });
+
+  it("cancels every group and marks the order cancelled when the order is cancelled", async () => {
+    const { userId: adminId, authHeader } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(1000);
+    const buyer = await createBuyer();
+    const orderId = await checkoutBuyNow(buyer.id, product.id, size.id);
+
+    const cancel = await request(testApp)
+      .post(`/api/orders/admin/${orderId}/cancel`)
+      .set("Authorization", authHeader)
+      .send({ reason: "Test cancellation" });
+    expect(cancel.status).toBe(200);
+
+    const groups = await prisma.orderFulfilmentGroup.findMany({ where: { orderId } });
+    expect(groups.every((group) => group.status === FulfilmentStatus.CANCELLED)).toBe(true);
+    expect(groups.every((group) => group.cancelledAt !== null)).toBe(true);
+
+    const order = await prisma.order.findUniqueOrThrow({ where: { id: orderId } });
+    expect(order.fulfilmentSummary).toBe(OrderFulfilmentSummary.CANCELLED);
+  });
+
+  it("gives the buyer a per-shipment view of their own order", async () => {
+    const { userId: adminId, authHeader } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const { brand, product, size } = await createPurchasableProduct(1000);
+    const buyer = await createBuyer();
+    const orderId = await checkoutBuyNow(buyer.id, product.id, size.id);
+    const group = await prisma.orderFulfilmentGroup.findFirstOrThrow({ where: { orderId } });
+
+    await request(testApp)
+      .patch(`/api/orders/admin/${orderId}/fulfilment`)
+      .set("Authorization", authHeader)
+      .send({ status: FulfilmentStatus.PACKED });
+    await request(testApp)
+      .patch(`/api/orders/admin/${orderId}/fulfilment`)
+      .set("Authorization", authHeader)
+      .send({ status: FulfilmentStatus.SHIPPED });
+
+    const response = await request(testApp)
+      .get(`/api/orders/${orderId}`)
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.fulfilmentSummary).toBe(OrderFulfilmentSummary.SHIPPED);
+    expect(response.body.data.shipments).toHaveLength(1);
+    expect(response.body.data.shipments[0]).toMatchObject({
+      id: group.id,
+      brandName: brand.name,
+      status: FulfilmentStatus.SHIPPED,
+    });
+    expect(response.body.data.shipments[0].shippedAt).not.toBeNull();
+  });
+
+  it("exposes the fulfilment groups and summary on the admin order view", async () => {
+    const { userId: adminId, authHeader } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const { brand, product, size } = await createPurchasableProduct(1000);
+    const buyer = await createBuyer();
+    const orderId = await checkoutBuyNow(buyer.id, product.id, size.id);
+
+    const response = await request(testApp)
+      .get(`/api/orders/admin/${orderId}`)
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.fulfilmentSummary).toBe(OrderFulfilmentSummary.UNFULFILLED);
+    expect(response.body.data.fulfilmentGroups).toHaveLength(1);
+    expect(response.body.data.fulfilmentGroups[0]).toMatchObject({
+      brandId: brand.id,
+      brandName: brand.name,
+      status: FulfilmentStatus.PLACED,
+    });
+    expect(response.body.data.fulfilmentGroups[0].productNames.length).toBeGreaterThan(0);
+  });
+
+  it("moves the group and the order summary forward when an admin advances fulfilment", async () => {
+    const { userId: adminId, authHeader } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(1000);
+    const buyer = await createBuyer();
+    const orderId = await checkoutBuyNow(buyer.id, product.id, size.id);
+
+    await request(testApp)
+      .patch(`/api/orders/admin/${orderId}/fulfilment`)
+      .set("Authorization", authHeader)
+      .send({ status: FulfilmentStatus.PACKED });
+    await request(testApp)
+      .patch(`/api/orders/admin/${orderId}/fulfilment`)
+      .set("Authorization", authHeader)
+      .send({ status: FulfilmentStatus.SHIPPED });
+
+    const group = await prisma.orderFulfilmentGroup.findFirstOrThrow({ where: { orderId } });
+    expect(group.status).toBe(FulfilmentStatus.SHIPPED);
+    expect(group.shippedAt).not.toBeNull();
+
+    const order = await prisma.order.findUniqueOrThrow({ where: { id: orderId } });
+    expect(order.fulfilmentStatus).toBe(FulfilmentStatus.SHIPPED);
+    expect(order.fulfilmentSummary).toBe(OrderFulfilmentSummary.SHIPPED);
+  });
+});
+
 describe("POST /api/orders/admin/:orderId/cancel — settlement ledger", () => {
   it("voids the order's PENDING BrandPayout in the cancel transaction", async () => {
     const { userId: adminId, authHeader } = await createAdminSession();
@@ -622,14 +808,7 @@ describe("POST /api/orders/:orderId/cancel — buyer self-service", () => {
     const buyer = await createBuyer();
     await createActiveCommissionRule(adminId);
     await prisma.gatewayFeeRate.deleteMany({ where: { paymentMethod: PaymentMethod.ESEWA } });
-    await prisma.gatewayFeeRate.create({
-      data: {
-        paymentMethod: PaymentMethod.ESEWA,
-        ratePercentBasisPoints: 200,
-        isActive: true,
-        updatedById: adminId,
-      },
-    });
+    await createActiveEsewaGatewayFeeRate(adminId);
     await createDefaultDeliveryZone();
     const { product, size } = await createPurchasableProduct(1000);
 

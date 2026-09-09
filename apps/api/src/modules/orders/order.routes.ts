@@ -9,14 +9,17 @@ import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware
 
 import { orderController } from "./order.controller.js";
 import {
+  advanceBrandFulfilmentGroupSchema,
   advanceFulfilmentSchema,
   cancelMyOrderSchema,
   cancelOrderSchema,
   checkoutBodySchema,
+  fulfilmentGroupIdParamSchema,
   listAdminOrdersQuerySchema,
-  listBrandOrdersQuerySchema,
+  listBrandFulfilmentGroupsQuerySchema,
   listOrdersQuerySchema,
   orderIdParamSchema,
+  requestGroupCancellationSchema,
 } from "./order.schemas.js";
 
 const CHECKOUT_WINDOW_MS = 5 * 60 * 1000;
@@ -39,6 +42,17 @@ const cancelMyOrderRateLimit = rateLimit({
   max: CANCEL_MAX_REQUESTS,
   keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
   message: "Too many cancellation attempts. Please wait a moment and try again.",
+});
+
+const BRAND_FULFILMENT_WINDOW_MS = 60 * 1000;
+const BRAND_FULFILMENT_MAX_REQUESTS = 30;
+
+const brandFulfilmentRateLimit = rateLimit({
+  namespace: "order-brand-fulfilment",
+  windowMs: BRAND_FULFILMENT_WINDOW_MS,
+  max: BRAND_FULFILMENT_MAX_REQUESTS,
+  keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
+  message: "Too many shipment updates. Please wait a moment and try again.",
 });
 
 const requireAdmin = [requireAuth, requirePlatformAccess];
@@ -79,10 +93,33 @@ orderRoutes.post(
 );
 
 orderRoutes.get(
-  "/brand",
+  "/brand/fulfilment-groups",
   ...requireBrandOwner,
-  validate({ query: listBrandOrdersQuerySchema }),
-  orderController.listMineAsBrand,
+  validate({ query: listBrandFulfilmentGroupsQuerySchema }),
+  orderController.listMyBrandFulfilmentGroups,
+);
+
+orderRoutes.get(
+  "/brand/fulfilment-groups/:groupId",
+  ...requireBrandOwner,
+  validate({ params: fulfilmentGroupIdParamSchema }),
+  orderController.getMyBrandFulfilmentGroup,
+);
+
+orderRoutes.patch(
+  "/brand/fulfilment-groups/:groupId",
+  ...requireBrandOwner,
+  brandFulfilmentRateLimit,
+  validate({ params: fulfilmentGroupIdParamSchema, body: advanceBrandFulfilmentGroupSchema }),
+  orderController.advanceMyBrandFulfilmentGroup,
+);
+
+orderRoutes.post(
+  "/brand/fulfilment-groups/:groupId/request-cancellation",
+  ...requireBrandOwner,
+  brandFulfilmentRateLimit,
+  validate({ params: fulfilmentGroupIdParamSchema, body: requestGroupCancellationSchema }),
+  orderController.requestMyBrandFulfilmentGroupCancellation,
 );
 
 orderRoutes.post(

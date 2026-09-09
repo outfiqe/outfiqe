@@ -26,4 +26,9 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   [NotificationType.COUPON_APPROVAL_REQUESTED]: "Coupons awaiting approval",
   [NotificationType.COUPON_BUDGET_ALERT]: "Coupon budget alerts",
   [NotificationType.COUPON_REDEMPTION_FLAGGED]: "Flagged coupon redemptions",
+  [NotificationType.PRODUCT_TAG_SUBMITTED]: "Creator tags waiting for review",
+  [NotificationType.PRODUCT_TAG_REVIEW_REMINDER]: "Reminders about tags waiting for review",
+  [NotificationType.PRODUCT_TAG_APPROVED]: "Your tags approved by brands",
+  [NotificationType.PRODUCT_TAG_REJECTED]: "Your tags declined by brands",
+  [NotificationType.PRODUCT_TAG_REVOKED]: "Your live tags removed by brands",
 };

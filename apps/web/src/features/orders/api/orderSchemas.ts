@@ -44,9 +44,30 @@ export const PaymentTransactionStatus = {
   CANCELLED: "CANCELLED",
 } as const satisfies Record<string, PaymentTransactionStatusType>;
 
+export const ORDER_FULFILMENT_SUMMARY = [
+  "UNFULFILLED",
+  "PARTIALLY_SHIPPED",
+  "SHIPPED",
+  "FULFILLED",
+  "CANCELLED",
+] as const;
+
 export const paymentMethodSchema = z.enum(PaymentMethod);
 const paymentStatusSchema = z.enum(PaymentStatus);
 const fulfilmentStatusSchema = z.enum(FulfilmentStatus);
+export const orderFulfilmentSummarySchema = z.enum(ORDER_FULFILMENT_SUMMARY);
+export type OrderFulfilmentSummaryValue = z.infer<typeof orderFulfilmentSummarySchema>;
+
+export const orderShipmentSchema = z.object({
+  id: z.string(),
+  brandName: z.string(),
+  status: fulfilmentStatusSchema,
+  carrier: z.string().nullable(),
+  trackingNumber: z.string().nullable(),
+  shippedAt: z.string().nullable(),
+  deliveredAt: z.string().nullable(),
+});
+export type OrderShipment = z.infer<typeof orderShipmentSchema>;
 
 export const orderItemSchema = z.object({
   id: z.string(),
@@ -82,17 +103,27 @@ export const orderSchema = z.object({
   paymentMethod: paymentMethodSchema,
   paymentStatus: paymentStatusSchema,
   fulfilmentStatus: fulfilmentStatusSchema,
+  fulfilmentSummary: orderFulfilmentSummarySchema.default("UNFULFILLED"),
   subtotal: z.number(),
   deliveryFee: z.number(),
   codFee: z.number(),
   total: z.number(),
   items: z.array(orderItemSchema),
+  shipments: z.array(orderShipmentSchema).default([]),
   transactions: z.array(paymentTransactionSchema),
 });
 export type Order = z.infer<typeof orderSchema>;
 
 export const orderSummarySchema = orderSchema
-  .omit({ items: true, transactions: true, phone: true, address: true, city: true, landmark: true })
+  .omit({
+    items: true,
+    shipments: true,
+    transactions: true,
+    phone: true,
+    address: true,
+    city: true,
+    landmark: true,
+  })
   .extend({
     itemCount: z.number(),
     firstItemImageUrl: z.string().nullable(),

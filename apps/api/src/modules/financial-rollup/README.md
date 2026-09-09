@@ -16,8 +16,10 @@ over their tables, owns none of its own.
 - `financialRollup.service.ts` — resolves `range` to a `since` cutoff date (or `null` for `all`)
   and composes the gateway/ledger halves of the view.
 - `financialRollup.repository.ts` — the aggregation queries themselves.
+- `financialRollup.constants.ts` — which `BrandPayoutStatus` / `CommissionStatus` values count as still-owed (see rationale).
+- `financialRollup.utils.ts` — `sumStatusBuckets`, the pure helper that adds up a status→amount record over a chosen subset of statuses.
 - `financialRollup.schemas.ts` — Zod validation.
-- `financialRollup.types.ts` — the view shape, including `ledger.couponSpend`/`ledger.netPlatformRevenue`.
+- `financialRollup.types.ts` — the view shape, including the scalar `ledger.owedToBrands`/`owedToCreators`, the per-status breakdowns, and `ledger.couponSpend`/`ledger.netPlatformRevenue`.
 
 ## Funnel
 
@@ -37,8 +39,19 @@ numbers, side by side.
   it → raw SQL" case this codebase's query-preference order already documents (see
   `creatorLook.repository.ts` for other precedent). A real `SUM()` also avoids pulling every
   matching row into memory for the `all` range, which could be the whole table.
-- **Ledger-side sums (`owedToBrands`/`owedToCreators`) use `groupBy` directly** — no join needed
-  there, so the ORM query builder is sufficient and preferred.
+- **Ledger-side sums use `groupBy` directly** — no join needed there, so the ORM query builder is
+  sufficient and preferred.
+- **`owedToBrands`/`owedToCreators` count only the genuinely-outstanding statuses, not every
+  bucket.** The per-status breakdown (`brandPayoutsByStatus`/`creatorCommissionsByStatus`) carries
+  every `groupBy` bucket for the detail table on `FinancialRollupPage`, but a `WITHDRAWN`/`PAID`
+  payout is money that has already left the platform and a `VOIDED` one was never owed — summing
+  those into "owed" (as the frontend used to, adding up the whole record) overstated the liability
+  and manufactured a settlement gap against `gateway.netHeld`. So the two scalar `owed*` numbers
+  are computed here from `OUTSTANDING_BRAND_PAYOUT_STATUSES` (`PENDING`, `AVAILABLE`) and
+  `OUTSTANDING_COMMISSION_STATUSES` (`PENDING`, `APPROVED`, `AVAILABLE`) — `PENDING` is included
+  because that money is currently held and will most likely be paid, which is exactly what the gap
+  check against `netHeld` is meant to reflect. Business logic for "which statuses count as owed"
+  lives here, not in the admin app.
 - **`range` filters every sum by `createdAt`, uniformly** — the design doc time-boxes the gateway
   side (a flow, naturally time-boxed) but is less explicit about the ledger side (more of a
   snapshot). Applying the same cutoff to both keeps the numbers comparable ("what happened this

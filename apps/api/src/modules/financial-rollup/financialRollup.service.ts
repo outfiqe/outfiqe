@@ -2,9 +2,14 @@ import { startOfMonth } from "date-fns/startOfMonth";
 
 import { PaymentTransactionType } from "#generated/prisma/enums.js";
 
+import {
+  OUTSTANDING_BRAND_PAYOUT_STATUSES,
+  OUTSTANDING_COMMISSION_STATUSES,
+} from "./financialRollup.constants.js";
 import { financialRollupRepository } from "./financialRollup.repository.js";
 import type { FinancialRollupQuery } from "./financialRollup.schemas.js";
 import type { FinancialRollupRange, FinancialRollupView } from "./financialRollup.types.js";
+import { sumStatusBuckets } from "./financialRollup.utils.js";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -21,8 +26,8 @@ export const financialRollupService = {
     const [
       grossCollected,
       refunded,
-      owedToCreators,
-      owedToBrands,
+      creatorCommissionsByStatus,
+      brandPayoutsByStatus,
       platformRevenueRealized,
       couponSpend,
     ] = await Promise.all([
@@ -48,8 +53,13 @@ export const financialRollupService = {
         netHeld: grossCollected - refunded,
       },
       ledger: {
-        owedToBrands,
-        owedToCreators,
+        owedToBrands: sumStatusBuckets(brandPayoutsByStatus, OUTSTANDING_BRAND_PAYOUT_STATUSES),
+        owedToCreators: sumStatusBuckets(
+          creatorCommissionsByStatus,
+          OUTSTANDING_COMMISSION_STATUSES,
+        ),
+        brandPayoutsByStatus,
+        creatorCommissionsByStatus,
         platformRevenueRealized,
         couponSpend,
         netPlatformRevenue: platformRevenueRealized - couponSpend,

@@ -606,6 +606,33 @@ describe("CreatorProfile delete post flow", () => {
     await user.click(screen.getByRole("button", { name: "Close edit" }));
     expect(screen.queryByRole("dialog", { name: "Edit post" })).not.toBeInTheDocument();
   });
+
+  it("opens the edit-post modal from a ?edit= deep link on the owner's own profile", () => {
+    mockAuth("creator-9");
+    mockSearchParams({ edit: "p1" });
+    renderProfile(buildCreator());
+
+    expect(screen.getByRole("dialog", { name: "Edit post" })).toBeInTheDocument();
+  });
+
+  it("ignores a ?edit= deep link on someone else's profile", () => {
+    mockAuth("someone-else");
+    mockSearchParams({ edit: "p1" });
+    renderProfile(buildCreator());
+
+    expect(screen.queryByRole("dialog", { name: "Edit post" })).not.toBeInTheDocument();
+  });
+
+  it("clears the ?edit= param when the edit modal is closed", async () => {
+    mockAuth("creator-9");
+    mockSearchParams({ edit: "p1" });
+    const user = userEvent.setup();
+    renderProfile(buildCreator());
+
+    await user.click(screen.getByRole("button", { name: "Close edit" }));
+
+    expect(replaceState).toHaveBeenCalledWith(null, "", "/creator/ava");
+  });
 });
 
 describe("CreatorProfile pagination", () => {

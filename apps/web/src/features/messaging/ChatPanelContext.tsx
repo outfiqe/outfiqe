@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@outfiqe/design-system";
 import {
   type EventSocket,
   toEventSocket,
@@ -23,6 +24,7 @@ import {
 
 import { useAuth } from "@/features/auth";
 import { conversationsApi } from "@/shared/lib/conversationsApi";
+import { getErrorMessage } from "@/shared/lib/errorMessages";
 import {
   acquireSocketConnection,
   getSocket,
@@ -88,6 +90,7 @@ export const ChatPanelProvider = ({ children }: { children: ReactNode }) => {
       setView({ kind: "list" });
       startConversation.mutate(userId, {
         onSuccess: (conversation) => setView({ kind: "thread", conversationId: conversation.id }),
+        onError: (startError) => toast.error(getErrorMessage(startError)),
       });
     },
     [startConversation],

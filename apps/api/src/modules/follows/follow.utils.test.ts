@@ -58,6 +58,7 @@ const baseUser: UserRecord = {
   emailVerified: true,
   followerCount: 12,
   followingCount: 3,
+  tagCounterfeitFlagCount: 0,
   hideFromLeaderboards: false,
   lastSeenAt: null,
   createdAt: NOW,
@@ -79,6 +80,8 @@ const baseBrand: BrandRecord = {
   applicationId: null,
   followerCount: 40,
   rating: 4.5,
+  tagReviewPolicy: "TRUSTED_ONLY",
+  autoApproveVerifiedBuyers: true,
   createdAt: NOW,
   updatedAt: NOW,
 };
