@@ -130,6 +130,19 @@ describe("AccountMenu", () => {
     expect(profileLinks.every((link) => link.getAttribute("href") === "/profile")).toBe(true);
   });
 
+  it("sends a brand owner's Dashboard entry to the overview page", () => {
+    const brandOwner = buildUser({ role: UserRole.BRAND_OWNER });
+    mockAuth({
+      state: { status: AuthStatus.AUTHENTICATED, user: brandOwner, accessToken: "token" },
+      isAuthenticated: true,
+      isBrandOwner: true,
+    });
+
+    render(<AccountMenu />);
+
+    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/overview");
+  });
+
   it("does not offer a creator a way to switch to creator mode", () => {
     const creator = buildUser({ isCreator: true, creatorStatus: CreatorStatus.APPROVED });
     mockAuth({
@@ -211,7 +224,6 @@ describe("AccountMenu", () => {
 
     render(<AccountMenu />);
 
-    expect(screen.queryByRole("link", { name: "Brand dashboard" })).not.toBeInTheDocument();
     const adminLinks = screen.getAllByRole("link", { name: "Dashboard" });
     expect(adminLinks).toHaveLength(2);
     for (const link of adminLinks) {
