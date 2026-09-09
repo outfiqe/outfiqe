@@ -1,17 +1,15 @@
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
-import type {
-  CommissionStatus,
-  PaymentMethod,
-  PaymentTransactionType,
-} from "#generated/prisma/enums.js";
+import type { CommissionStatus, PaymentMethod } from "#generated/prisma/enums.js";
 import {
   BrandPayoutStatus,
   CouponRedemptionStatus,
   PaymentTransactionStatus,
+  PaymentTransactionType,
 } from "#generated/prisma/enums.js";
 
 import type {
+  AttributionCounts,
   LedgerRow,
   PaymentMethodOrderTotals,
   PaymentMethodPayoutFees,
@@ -158,6 +156,24 @@ export const financialRollupRepository = {
       ORDER BY oi.created_at DESC, oi.id DESC
       LIMIT ${limit + 1}
     `);
+  },
+
+  async sumAttributionCounts(since: Date | null): Promise<AttributionCounts> {
+    const rows = await prisma.$queryRaw<AttributionCounts[]>(Prisma.sql`
+      SELECT
+        COUNT(*)::int AS "totalItems",
+        COUNT(oi.attributed_creator_id)::int AS "attributedItems"
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
+      WHERE EXISTS (
+        SELECT 1 FROM payment_transactions pt
+        WHERE pt.order_id = o.id
+          AND pt.type = ${PaymentTransactionType.PAYMENT}
+          AND pt.status = ${PaymentTransactionStatus.SUCCEEDED}
+      )
+      ${since ? Prisma.sql`AND oi.created_at >= ${since}` : Prisma.empty}
+    `);
+    return rows[0] ?? { totalItems: 0, attributedItems: 0 };
   },
 
   async sumCouponSpend(since: Date | null): Promise<number> {

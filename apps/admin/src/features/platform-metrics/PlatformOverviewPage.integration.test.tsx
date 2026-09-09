@@ -46,6 +46,7 @@ const ROLLUP = {
     platformRevenueRealized: 0,
   },
   byPaymentMethod: {},
+  attribution: { totalItems: 0, attributedItems: 0, attributedShare: 0 },
 };
 
 const renderPage = () => {

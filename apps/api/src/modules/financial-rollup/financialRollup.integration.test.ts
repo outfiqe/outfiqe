@@ -625,6 +625,104 @@ describe("GET /api/admin/financial-rollup/ledger/export", () => {
   });
 });
 
+const createOrderItemForAttribution = async (attributed: boolean, createdAt: Date) => {
+  const buyer = await createUser();
+  const brand = await prisma.brand.create({
+    data: {
+      name: `Attribution Brand ${randomUUID().slice(0, 6)}`,
+      contactName: "Contact",
+      email: `${randomUUID()}@brand.outfiqe.test`,
+      phone: uniquePhone(),
+      instagram: `@${randomUUID().slice(0, 8)}`,
+    },
+  });
+  const product = await prisma.product.create({
+    data: {
+      brandId: brand.id,
+      name: "Item",
+      price: 1000,
+      productTypeId: await ensureProductType(),
+      status: ProductStatus.APPROVED,
+    },
+  });
+  const size = await prisma.productSize.create({
+    data: { productId: product.id, label: "M", stock: 5 },
+  });
+  const creator = attributed ? await createUser() : null;
+
+  const order = await prisma.order.create({
+    data: {
+      userId: buyer.id,
+      fullName: "Buyer",
+      phone: uniquePhone(),
+      address: "Somewhere",
+      city: "Kathmandu",
+      paymentMethod: PaymentMethod.COD,
+      subtotal: 1000,
+      deliveryFee: 0,
+      total: 1000,
+      items: {
+        create: [
+          {
+            productId: product.id,
+            sizeId: size.id,
+            qty: 1,
+            unitPrice: 1000,
+            listUnitPrice: 1000,
+            createdAt,
+            ...(creator
+              ? { attributedCreatorId: creator.id, attributionSource: CommissionSource.TAG_CLICK }
+              : {}),
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.paymentTransaction.create({
+    data: {
+      orderId: order.id,
+      provider: PaymentMethod.COD,
+      type: PaymentTransactionType.PAYMENT,
+      status: PaymentTransactionStatus.SUCCEEDED,
+      createdAt,
+    },
+  });
+};
+
+describe("GET /api/admin/financial-rollup attribution", () => {
+  it("counts the attributed-vs-total order items added since the last read", async () => {
+    const { authHeader } = await createAdminSession();
+    const now = new Date();
+
+    const before = await request(testApp)
+      .get("/api/admin/financial-rollup")
+      .query({ range: "all" })
+      .set("Authorization", authHeader);
+
+    await createOrderItemForAttribution(true, now);
+    await createOrderItemForAttribution(true, now);
+    await createOrderItemForAttribution(false, now);
+
+    const after = await request(testApp)
+      .get("/api/admin/financial-rollup")
+      .query({ range: "all" })
+      .set("Authorization", authHeader);
+
+    expect(after.status).toBe(OK_STATUS);
+    const totalDelta =
+      after.body.data.attribution.totalItems - before.body.data.attribution.totalItems;
+    const attributedDelta =
+      after.body.data.attribution.attributedItems - before.body.data.attribution.attributedItems;
+
+    expect(totalDelta).toBe(3);
+    expect(attributedDelta).toBe(2);
+    expect(after.body.data.attribution.attributedShare).toBeCloseTo(
+      after.body.data.attribution.attributedItems / after.body.data.attribution.totalItems,
+    );
+  });
+});
+
 describe("GET /api/admin/financial-rollup", () => {
   it("requires admin", async () => {
     const user = await createUser();

@@ -24,6 +24,17 @@ export type PaymentMethodBreakdown = {
   realizedTakeRate: number;
 };
 
+export type AttributionCounts = {
+  totalItems: number;
+  attributedItems: number;
+};
+
+export type AttributionView = {
+  totalItems: number;
+  attributedItems: number;
+  attributedShare: number;
+};
+
 export type FinancialRollupView = {
   range: FinancialRollupRange;
   gateway: {
@@ -41,6 +52,7 @@ export type FinancialRollupView = {
     netPlatformRevenue: number;
   };
   byPaymentMethod: Partial<Record<PaymentMethod, PaymentMethodBreakdown>>;
+  attribution: AttributionView;
 };
 
 export type LedgerRow = {

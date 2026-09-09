@@ -4,6 +4,7 @@ import { PaymentMethod } from "#generated/prisma/enums.js";
 
 import type { LedgerRow } from "./financialRollup.types.js";
 import {
+  buildAttributionView,
   buildPaymentMethodBreakdown,
   decodeLedgerCursor,
   encodeLedgerCursor,
@@ -141,5 +142,31 @@ describe("toLedgerCsv", () => {
 
   it("returns just the header row for an empty ledger", () => {
     expect(toLedgerCsv([]).split("\r\n")).toHaveLength(1);
+  });
+});
+
+describe("buildAttributionView", () => {
+  it("computes the attributed share", () => {
+    expect(buildAttributionView({ totalItems: 4, attributedItems: 3 })).toEqual({
+      totalItems: 4,
+      attributedItems: 3,
+      attributedShare: 0.75,
+    });
+  });
+
+  it("never divides by zero when there are no order items yet", () => {
+    expect(buildAttributionView({ totalItems: 0, attributedItems: 0 })).toEqual({
+      totalItems: 0,
+      attributedItems: 0,
+      attributedShare: 0,
+    });
+  });
+
+  it("is zero when there are orders but none are attributed", () => {
+    expect(buildAttributionView({ totalItems: 5, attributedItems: 0 }).attributedShare).toBe(0);
+  });
+
+  it("is one when every order item is attributed", () => {
+    expect(buildAttributionView({ totalItems: 5, attributedItems: 5 }).attributedShare).toBe(1);
   });
 });

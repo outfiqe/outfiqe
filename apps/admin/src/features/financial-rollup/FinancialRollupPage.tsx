@@ -1,3 +1,4 @@
+import { StatCard } from "@outfiqe/design-system";
 import type { PaymentMethod } from "@outfiqe/types";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -87,6 +88,16 @@ export const FinancialRollupPage = () => {
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
       {error && <p className="text-sm text-destructive">Couldn&apos;t load the rollup.</p>}
+
+      {rollup && (
+        <StatCard
+          label="Attributed order share"
+          value={percent(rollup.attribution.attributedShare)}
+          hint={`${rollup.attribution.attributedItems} of ${rollup.attribution.totalItems} order item${
+            rollup.attribution.totalItems === 1 ? "" : "s"
+          } in this range came through a creator's tag or link.`}
+        />
+      )}
 
       {rollup && (
         <div className="grid gap-4 lg:grid-cols-2">

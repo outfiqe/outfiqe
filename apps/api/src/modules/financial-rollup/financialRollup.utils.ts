@@ -2,6 +2,8 @@ import type { PaymentMethod } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import type {
+  AttributionCounts,
+  AttributionView,
   LedgerRow,
   PaymentMethodBreakdown,
   PaymentMethodOrderTotals,
@@ -100,3 +102,12 @@ export const buildPaymentMethodBreakdown = (
 
   return breakdown;
 };
+
+export const buildAttributionView = ({
+  totalItems,
+  attributedItems,
+}: AttributionCounts): AttributionView => ({
+  totalItems,
+  attributedItems,
+  attributedShare: totalItems > 0 ? attributedItems / totalItems : 0,
+});

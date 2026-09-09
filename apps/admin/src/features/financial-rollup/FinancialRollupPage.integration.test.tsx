@@ -28,6 +28,7 @@ const BASE_ROLLUP = {
     platformRevenueRealized: 0,
   },
   byPaymentMethod: {},
+  attribution: { totalItems: 0, attributedItems: 0, attributedShare: 0 },
 };
 
 const renderPage = () => {
@@ -81,5 +82,37 @@ describe("FinancialRollupPage payment method breakdown", () => {
     expect(panel.getByText("5.0% realized take rate")).toBeInTheDocument();
     expect(panel.getByText("3.5% realized take rate")).toBeInTheDocument();
     expect(panel.queryByText("Khalti")).not.toBeInTheDocument();
+  });
+});
+
+describe("FinancialRollupPage attributed order share", () => {
+  it("shows the attributed share as a percentage", async () => {
+    mswServer.use(
+      http.get(ROLLUP_URL, () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            ...BASE_ROLLUP,
+            attribution: { totalItems: 4, attributedItems: 3, attributedShare: 0.75 },
+          },
+        }),
+      ),
+    );
+
+    renderPage();
+
+    expect(await screen.findByText("Attributed order share")).toBeInTheDocument();
+    expect(screen.getByText("75.0%")).toBeInTheDocument();
+  });
+
+  it("shows 0.0% rather than a broken percentage when there are no order items yet", async () => {
+    mswServer.use(
+      http.get(ROLLUP_URL, () => HttpResponse.json({ success: true, data: BASE_ROLLUP })),
+    );
+
+    renderPage();
+
+    expect(await screen.findByText("Attributed order share")).toBeInTheDocument();
+    expect(screen.getByText("0.0%")).toBeInTheDocument();
   });
 });

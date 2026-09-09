@@ -20,6 +20,7 @@ import type {
   LedgerPage,
 } from "./financialRollup.types.js";
 import {
+  buildAttributionView,
   buildPaymentMethodBreakdown,
   decodeLedgerCursor,
   encodeLedgerCursor,
@@ -48,6 +49,7 @@ export const financialRollupService = {
       couponSpend,
       paymentMethodOrderTotals,
       paymentMethodPayoutFees,
+      attributionCounts,
     ] = await Promise.all([
       financialRollupRepository.sumOrderTotalsForTransactionType(
         PaymentTransactionType.PAYMENT,
@@ -66,6 +68,7 @@ export const financialRollupService = {
         since,
       ),
       financialRollupRepository.sumRealizedBrandPayoutFeesByPaymentMethod(since),
+      financialRollupRepository.sumAttributionCounts(since),
     ]);
 
     return {
@@ -91,6 +94,7 @@ export const financialRollupService = {
         paymentMethodOrderTotals,
         paymentMethodPayoutFees,
       ),
+      attribution: buildAttributionView(attributionCounts),
     };
   },
 

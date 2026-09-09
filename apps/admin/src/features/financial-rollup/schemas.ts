@@ -26,6 +26,13 @@ export const paymentMethodBreakdownSchema = z.object({
 });
 export type PaymentMethodBreakdown = z.infer<typeof paymentMethodBreakdownSchema>;
 
+export const attributionSchema = z.object({
+  totalItems: z.number(),
+  attributedItems: z.number(),
+  attributedShare: z.number(),
+});
+export type Attribution = z.infer<typeof attributionSchema>;
+
 export const financialRollupSchema = z.object({
   range: rollupRangeSchema,
   gateway: z.object({
@@ -41,6 +48,7 @@ export const financialRollupSchema = z.object({
     platformRevenueRealized: z.number(),
   }),
   byPaymentMethod: z.partialRecord(z.enum(paymentMethodValues), paymentMethodBreakdownSchema),
+  attribution: attributionSchema,
 });
 export type FinancialRollup = z.infer<typeof financialRollupSchema>;
 
