@@ -44,7 +44,7 @@ interface CreatorProfileProps {
 const MIN_HEIGHT_CM = 90;
 const MAX_HEIGHT_CM = 251;
 const MAX_PROFILE_FEATURED_BADGES = 3;
-const TITLE_BADGE_FALLBACK_COLOR = "#f97316";
+const TITLE_BADGE_FALLBACK_COLOR = "#146c78";
 const LOOK_QUERY_PARAM = "look";
 const EDIT_QUERY_PARAM = "edit";
 

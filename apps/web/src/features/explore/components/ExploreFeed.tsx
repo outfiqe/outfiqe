@@ -138,7 +138,7 @@ export const ExploreFeed = () => {
               Nothing here yet — try a different tab.
             </p>
           ) : layout === FEED_LAYOUT.GRID ? (
-            <div className="columns-2 gap-4 xl:columns-3">
+            <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
               {posts.map((post, index) => {
                 const { id } = post;
                 return (

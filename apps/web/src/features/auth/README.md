@@ -9,7 +9,8 @@ client-side session/user context the rest of the app reads.
 ## Structure
 
 - `api/authApi.ts` — the typed client for all auth endpoints (login, register, logout, password
-  reset, signed-in password change, email verification, current-user).
+  reset, signed-in password change, email verification, current-user, and `session()` — the
+  read-only session check the mount bootstrap runs).
 - `api/serverAuth.ts` — server-only session/token helpers used by server components and route
   handlers (e.g. `apps/web/src/features/brand-profile`'s SSR fetch).
 - `api/userSchemas.ts` — Zod schemas for the session/user shape returned by the API.
@@ -88,6 +89,18 @@ feature only picks back up if that redirect instead lands on `/auth/oauth-callba
 
 ## Non-obvious rationale
 
+- The mount bootstrap in `AuthContext` calls `authApi.session()` (`POST /auth/session`), **not**
+  `/auth/refresh`, and it is the same endpoint `api/serverAuth.ts` uses server-side. `/auth/refresh`
+  rotates the refresh token and is gated by a CSRF header check and a per-IP rate limit
+  (`apps/api/src/modules/auth/auth.routes.ts`); `/auth/session` is a read-only validate with none of
+  that. Using `/auth/refresh` for the bootstrap meant a rate-limit (easy to trip in dev — React
+  Strict Mode double-mounts the provider, and every Fast Refresh remounts it), a stale CSRF cookie,
+  or a rotation race would fail the client check while the server still saw a valid session — the
+  header showed "Log in / Sign up" and `DashboardSidebar` rendered nothing, on a page the server had
+  already let through. The bootstrap passes `skipAuthRetry` so a genuine 401 there resolves straight
+  to signed-out instead of bouncing through the interceptor's `/auth/refresh` retry. Token rotation
+  still happens on the interceptor's on-401 refresh during an active session — just not on the
+  cold-start check.
 - `safeRedirect` exists because `?redirect=` is attacker-controlled input: it only allows a
   same-app, single-leading-slash path (rejecting protocol-relative URLs like `//evil.com` and
   backslash tricks like `/\evil.com`) and refuses to redirect back into an auth screen, which would

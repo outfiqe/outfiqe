@@ -49,7 +49,7 @@ export const AddPostButton = () => {
         onClick={handleClick}
         aria-label="Add a post"
         className={cn(
-          "fixed right-4 z-40 flex h-14 w-14 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground shadow-xl transition-transform hover:scale-105 hover:bg-[#ff6a1f] active:scale-95 sm:w-auto sm:px-6 lg:right-8",
+          "fixed right-4 z-40 flex h-14 w-14 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground shadow-xl transition hover:scale-105 hover:bg-primary-hover active:scale-95 sm:w-auto sm:px-6 lg:right-8",
           isAuthenticated ? FAB_POSITION_ABOVE_CHAT_LAUNCHER : FAB_POSITION_DEFAULT,
         )}
       >
