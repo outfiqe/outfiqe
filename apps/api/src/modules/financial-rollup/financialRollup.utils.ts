@@ -2,6 +2,7 @@ import type { PaymentMethod } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import type {
+  LedgerRow,
   PaymentMethodBreakdown,
   PaymentMethodOrderTotals,
   PaymentMethodPayoutFees,
@@ -33,6 +34,49 @@ export const decodeLedgerCursor = (cursor: string): LedgerCursor => {
   } catch {
     throw new AppError("INVALID_LEDGER_CURSOR", "That page reference is invalid.", 400);
   }
+};
+
+const LEDGER_CSV_HEADERS = [
+  "Order ID",
+  "Order Item ID",
+  "Date",
+  "Payment Method",
+  "Gross",
+  "Platform Fee",
+  "Gateway Fee",
+  "Creator Commission",
+  "Brand Net",
+  "Brand Payout Status",
+];
+
+const csvField = (value: string | number | null): string => {
+  const text = value === null ? "" : String(value);
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+};
+
+export const toLedgerCsv = (rows: LedgerRow[]): string => {
+  const lines = [LEDGER_CSV_HEADERS.map(csvField).join(",")];
+
+  for (const row of rows) {
+    lines.push(
+      [
+        row.orderId,
+        row.orderItemId,
+        row.createdAt.toISOString(),
+        row.paymentMethod,
+        row.grossAmount,
+        row.platformFee,
+        row.gatewayFee,
+        row.creatorCommissionAmount,
+        row.brandNetAmount,
+        row.brandPayoutStatus,
+      ]
+        .map(csvField)
+        .join(","),
+    );
+  }
+
+  return lines.join("\r\n");
 };
 
 export const buildPaymentMethodBreakdown = (

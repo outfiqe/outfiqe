@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { PaymentMethod } from "#generated/prisma/enums.js";
 
+import type { LedgerRow } from "./financialRollup.types.js";
 import {
   buildPaymentMethodBreakdown,
   decodeLedgerCursor,
   encodeLedgerCursor,
   sumStatusBuckets,
+  toLedgerCsv,
 } from "./financialRollup.utils.js";
 
 describe("sumStatusBuckets", () => {
@@ -83,5 +85,61 @@ describe("encodeLedgerCursor / decodeLedgerCursor", () => {
       "base64url",
     );
     expect(() => decodeLedgerCursor(malformed)).toThrow(expect.objectContaining({ status: 400 }));
+  });
+});
+
+const buildLedgerRow = (overrides: Partial<LedgerRow> = {}): LedgerRow => ({
+  orderId: "order-1",
+  orderItemId: "item-1",
+  createdAt: new Date("2026-01-05T10:00:00.000Z"),
+  paymentMethod: PaymentMethod.COD,
+  grossAmount: 1000,
+  platformFee: 50,
+  gatewayFee: 0,
+  brandNetAmount: 950,
+  brandPayoutStatus: "WITHDRAWN",
+  creatorCommissionAmount: 100,
+  creatorCommissionStatus: "AVAILABLE",
+  ...overrides,
+});
+
+describe("toLedgerCsv", () => {
+  it("writes a header row plus one row per entry", () => {
+    const csv = toLedgerCsv([buildLedgerRow()]);
+    const lines = csv.split("\r\n");
+
+    expect(lines[0]).toBe(
+      "Order ID,Order Item ID,Date,Payment Method,Gross,Platform Fee,Gateway Fee,Creator Commission,Brand Net,Brand Payout Status",
+    );
+    expect(lines[1]).toBe(
+      "order-1,item-1,2026-01-05T10:00:00.000Z,COD,1000,50,0,100,950,WITHDRAWN",
+    );
+  });
+
+  it("renders null fields as empty, not the literal word null", () => {
+    const csv = toLedgerCsv([
+      buildLedgerRow({
+        grossAmount: null,
+        platformFee: null,
+        gatewayFee: null,
+        brandNetAmount: null,
+        brandPayoutStatus: null,
+        creatorCommissionAmount: null,
+      }),
+    ]);
+
+    expect(csv.split("\r\n")[1]).toBe("order-1,item-1,2026-01-05T10:00:00.000Z,COD,,,,,,");
+  });
+
+  it("quotes and escapes fields containing commas, quotes, or newlines", () => {
+    const csv = toLedgerCsv([
+      buildLedgerRow({ brandPayoutStatus: 'weird, "status"\nvalue' as never }),
+    ]);
+
+    expect(csv.split("\r\n").at(-1)).toContain('"weird, ""status""');
+  });
+
+  it("returns just the header row for an empty ledger", () => {
+    expect(toLedgerCsv([]).split("\r\n")).toHaveLength(1);
   });
 });

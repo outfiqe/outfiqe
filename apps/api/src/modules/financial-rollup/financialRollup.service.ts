@@ -1,13 +1,19 @@
 import { startOfMonth } from "date-fns/startOfMonth";
 
 import { PaymentTransactionType } from "#generated/prisma/enums.js";
+import { AppError } from "#middlewares/error-handler.js";
 
 import {
+  MAX_LEDGER_EXPORT_ROWS,
   OUTSTANDING_BRAND_PAYOUT_STATUSES,
   OUTSTANDING_COMMISSION_STATUSES,
 } from "./financialRollup.constants.js";
 import { financialRollupRepository } from "./financialRollup.repository.js";
-import type { FinancialLedgerQuery, FinancialRollupQuery } from "./financialRollup.schemas.js";
+import type {
+  FinancialLedgerExportQuery,
+  FinancialLedgerQuery,
+  FinancialRollupQuery,
+} from "./financialRollup.schemas.js";
 import type {
   FinancialRollupRange,
   FinancialRollupView,
@@ -18,6 +24,7 @@ import {
   decodeLedgerCursor,
   encodeLedgerCursor,
   sumStatusBuckets,
+  toLedgerCsv,
 } from "./financialRollup.utils.js";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -108,5 +115,28 @@ export const financialRollupService = {
         : null;
 
     return { entries, nextCursor };
+  },
+
+  async exportLedgerCsv(query: FinancialLedgerExportQuery): Promise<{
+    csv: string;
+    rowCount: number;
+  }> {
+    const rows = await financialRollupRepository.listLedger({
+      paymentMethod: query.paymentMethod,
+      brandPayoutStatus: query.brandPayoutStatus,
+      dateFrom: query.dateFrom,
+      dateTo: query.dateTo,
+      limit: MAX_LEDGER_EXPORT_ROWS,
+    });
+
+    if (rows.length > MAX_LEDGER_EXPORT_ROWS) {
+      throw new AppError(
+        "LEDGER_EXPORT_TOO_LARGE",
+        `This filter matches more than ${MAX_LEDGER_EXPORT_ROWS} rows — narrow the date range or filters before exporting.`,
+        400,
+      );
+    }
+
+    return { csv: toLedgerCsv(rows), rowCount: rows.length };
   },
 };

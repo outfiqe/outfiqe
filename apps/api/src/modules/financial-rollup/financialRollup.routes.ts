@@ -7,6 +7,7 @@ import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-na
 
 import { financialRollupController } from "./financialRollup.controller.js";
 import {
+  financialLedgerExportQuerySchema,
   financialLedgerQuerySchema,
   financialRollupQuerySchema,
 } from "./financialRollup.schemas.js";
@@ -29,4 +30,13 @@ financialRollupRoutes.get(
   requirePlatformNavItem("financial-rollup"),
   validate({ query: financialLedgerQuerySchema }),
   financialRollupController.ledger,
+);
+
+financialRollupRoutes.get(
+  "/ledger/export",
+  requireAuth,
+  requirePlatformAccess,
+  requirePlatformNavItem("financial-rollup"),
+  validate({ query: financialLedgerExportQuerySchema }),
+  financialRollupController.exportLedger,
 );

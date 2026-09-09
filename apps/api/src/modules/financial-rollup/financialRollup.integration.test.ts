@@ -582,6 +582,49 @@ describe("GET /api/admin/financial-rollup/ledger", () => {
   });
 });
 
+describe("GET /api/admin/financial-rollup/ledger/export", () => {
+  it("requires admin", async () => {
+    const user = await createUser();
+    const response = await request(testApp)
+      .get("/api/admin/financial-rollup/ledger/export")
+      .set("Authorization", authHeaderFor(user.id, UserRole.CUSTOMER));
+
+    expect(response.status).toBe(FORBIDDEN_STATUS);
+  });
+
+  it("streams a CSV matching the filtered ledger rows, with the right headers", async () => {
+    const { authHeader } = await createAdminSession();
+    const now = new Date();
+    const { orderId, orderItemId } = await createLedgerItem({
+      paymentMethod: PaymentMethod.COD,
+      brandPayoutStatus: BrandPayoutStatus.WITHDRAWN,
+      createdAt: now,
+    });
+    await createLedgerItem({ paymentMethod: PaymentMethod.ESEWA, createdAt: now });
+
+    const response = await request(testApp)
+      .get("/api/admin/financial-rollup/ledger/export")
+      .query({ paymentMethod: "COD" })
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(OK_STATUS);
+    expect(response.headers["content-type"]).toMatch(/text\/csv/);
+    expect(response.headers["content-disposition"]).toMatch(
+      /attachment; filename="financial-ledger-/,
+    );
+
+    const lines = (response.text as string).split("\r\n");
+    expect(lines[0]).toBe(
+      "Order ID,Order Item ID,Date,Payment Method,Gross,Platform Fee,Gateway Fee,Creator Commission,Brand Net,Brand Payout Status",
+    );
+    expect(lines).toHaveLength(2);
+    expect(lines[1]).toContain(orderId);
+    expect(lines[1]).toContain(orderItemId);
+    expect(lines[1]).toContain("COD");
+    expect(lines[1]).not.toContain("ESEWA");
+  });
+});
+
 describe("GET /api/admin/financial-rollup", () => {
   it("requires admin", async () => {
     const user = await createUser();

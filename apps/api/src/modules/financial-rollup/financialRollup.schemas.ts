@@ -9,12 +9,23 @@ export const financialRollupQuerySchema = z.object({
 });
 export type FinancialRollupQuery = z.infer<typeof financialRollupQuerySchema>;
 
+const ledgerFilterFields = {
+  paymentMethod: z.enum(PaymentMethod).optional(),
+  brandPayoutStatus: z.enum(BrandPayoutStatus).optional(),
+  dateFrom: z.coerce.date().optional(),
+  dateTo: z.coerce.date().optional(),
+};
+
+const validDateRange = (query: { dateFrom?: Date; dateTo?: Date }) =>
+  !query.dateFrom || !query.dateTo || query.dateFrom <= query.dateTo;
+const DATE_RANGE_REFINEMENT = {
+  message: "dateFrom must be on or before dateTo",
+  path: ["dateFrom"] as PropertyKey[],
+};
+
 export const financialLedgerQuerySchema = z
   .object({
-    paymentMethod: z.enum(PaymentMethod).optional(),
-    brandPayoutStatus: z.enum(BrandPayoutStatus).optional(),
-    dateFrom: z.coerce.date().optional(),
-    dateTo: z.coerce.date().optional(),
+    ...ledgerFilterFields,
     cursor: z.string().optional(),
     limit: z.coerce
       .number()
@@ -23,8 +34,10 @@ export const financialLedgerQuerySchema = z
       .max(MAX_LEDGER_PAGE_SIZE)
       .default(DEFAULT_LEDGER_PAGE_SIZE),
   })
-  .refine((query) => !query.dateFrom || !query.dateTo || query.dateFrom <= query.dateTo, {
-    message: "dateFrom must be on or before dateTo",
-    path: ["dateFrom"],
-  });
+  .refine(validDateRange, DATE_RANGE_REFINEMENT);
 export type FinancialLedgerQuery = z.infer<typeof financialLedgerQuerySchema>;
+
+export const financialLedgerExportQuerySchema = z
+  .object({ ...ledgerFilterFields })
+  .refine(validDateRange, DATE_RANGE_REFINEMENT);
+export type FinancialLedgerExportQuery = z.infer<typeof financialLedgerExportQuerySchema>;
