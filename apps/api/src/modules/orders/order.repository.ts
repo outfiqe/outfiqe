@@ -42,6 +42,10 @@ export const orderRepository = {
       include: {
         items: { include: withOrderItemDetails },
         transactions: { orderBy: { createdAt: "asc" } },
+        fulfilmentGroups: {
+          orderBy: { createdAt: "asc" },
+          include: { brand: { select: { name: true } } },
+        },
       },
     });
   },

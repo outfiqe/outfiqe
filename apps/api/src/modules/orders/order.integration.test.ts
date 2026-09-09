@@ -638,6 +638,39 @@ describe("order fulfilment groups", () => {
     expect(order.fulfilmentSummary).toBe(OrderFulfilmentSummary.CANCELLED);
   });
 
+  it("gives the buyer a per-shipment view of their own order", async () => {
+    const { userId: adminId, authHeader } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const { brand, product, size } = await createPurchasableProduct(1000);
+    const buyer = await createBuyer();
+    const orderId = await checkoutBuyNow(buyer.id, product.id, size.id);
+    const group = await prisma.orderFulfilmentGroup.findFirstOrThrow({ where: { orderId } });
+
+    await request(testApp)
+      .patch(`/api/orders/admin/${orderId}/fulfilment`)
+      .set("Authorization", authHeader)
+      .send({ status: FulfilmentStatus.PACKED });
+    await request(testApp)
+      .patch(`/api/orders/admin/${orderId}/fulfilment`)
+      .set("Authorization", authHeader)
+      .send({ status: FulfilmentStatus.SHIPPED });
+
+    const response = await request(testApp)
+      .get(`/api/orders/${orderId}`)
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.fulfilmentSummary).toBe(OrderFulfilmentSummary.SHIPPED);
+    expect(response.body.data.shipments).toHaveLength(1);
+    expect(response.body.data.shipments[0]).toMatchObject({
+      id: group.id,
+      brandName: brand.name,
+      status: FulfilmentStatus.SHIPPED,
+    });
+    expect(response.body.data.shipments[0].shippedAt).not.toBeNull();
+  });
+
   it("exposes the fulfilment groups and summary on the admin order view", async () => {
     const { userId: adminId, authHeader } = await createAdminSession();
     await createActiveCommissionRule(adminId);

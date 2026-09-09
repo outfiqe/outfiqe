@@ -16,6 +16,7 @@ import type {
   OrderAdminView,
   OrderFulfilmentRollup,
   OrderItemView,
+  OrderShipmentView,
   OrderSummaryView,
   OrderView,
   PaymentTransactionView,
@@ -90,6 +91,16 @@ type OrderItemRow = {
   attributedCreator: { name: string } | null;
 };
 
+type OrderShipmentRow = {
+  id: string;
+  status: FulfilmentStatus;
+  carrier: string | null;
+  trackingNumber: string | null;
+  shippedAt: Date | null;
+  deliveredAt: Date | null;
+  brand: { name: string };
+};
+
 type OrderRow = {
   id: string;
   createdAt: Date;
@@ -101,6 +112,7 @@ type OrderRow = {
   paymentMethod: OrderView["paymentMethod"];
   paymentStatus: OrderView["paymentStatus"];
   fulfilmentStatus: OrderView["fulfilmentStatus"];
+  fulfilmentSummary: OrderFulfilmentSummary;
   subtotal: number;
   deliveryFee: number;
   codFee: number;
@@ -108,8 +120,19 @@ type OrderRow = {
   brandDiscountTotal: number;
   platformDiscountTotal: number;
   items: OrderItemRow[];
+  fulfilmentGroups?: OrderShipmentRow[];
   transactions?: PaymentTransactionRow[];
 };
+
+const toOrderShipmentView = (group: OrderShipmentRow): OrderShipmentView => ({
+  id: group.id,
+  brandName: group.brand.name,
+  status: group.status,
+  carrier: group.carrier,
+  trackingNumber: group.trackingNumber,
+  shippedAt: group.shippedAt?.toISOString() ?? null,
+  deliveredAt: group.deliveredAt?.toISOString() ?? null,
+});
 
 type PaymentTransactionRow = {
   id: string;
@@ -175,6 +198,7 @@ export const toOrderView = (order: OrderRow): OrderView => {
     brandDiscountTotal,
     platformDiscountTotal,
     items,
+    fulfilmentGroups,
     transactions,
   } = order;
 
@@ -189,6 +213,7 @@ export const toOrderView = (order: OrderRow): OrderView => {
     paymentMethod,
     paymentStatus,
     fulfilmentStatus,
+    fulfilmentSummary: order.fulfilmentSummary,
     subtotal,
     deliveryFee,
     codFee,
@@ -196,12 +221,13 @@ export const toOrderView = (order: OrderRow): OrderView => {
     brandDiscountTotal,
     platformDiscountTotal,
     items: items.map(toOrderItemView),
+    shipments: (fulfilmentGroups ?? []).map(toOrderShipmentView),
     transactions: (transactions ?? []).map(toPaymentTransactionView),
   };
 };
 
 export const toOrderSummaryView = (order: OrderRow): OrderSummaryView => {
-  const { items, ...rest } = toOrderView(order);
+  const { items, shipments: _shipments, ...rest } = toOrderView(order);
   const [firstItem] = items;
 
   return {
@@ -271,7 +297,12 @@ type OrderAdminSummaryRow = OrderRow & {
 };
 
 export const toOrderAdminSummaryView = (order: OrderAdminSummaryRow): OrderAdminSummaryView => {
-  const { items, transactions: _transactions, ...orderRest } = toOrderView(order);
+  const {
+    items,
+    shipments: _shipments,
+    transactions: _transactions,
+    ...orderRest
+  } = toOrderView(order);
   const [firstItem] = items;
 
   return {

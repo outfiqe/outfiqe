@@ -70,6 +70,16 @@ export type OrderItemView = {
   attributedCreatorName: string | null;
 };
 
+export type OrderShipmentView = {
+  id: string;
+  brandName: string;
+  status: FulfilmentStatus;
+  carrier: string | null;
+  trackingNumber: string | null;
+  shippedAt: string | null;
+  deliveredAt: string | null;
+};
+
 export type OrderView = {
   id: string;
   createdAt: string;
@@ -81,6 +91,7 @@ export type OrderView = {
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   fulfilmentStatus: FulfilmentStatus;
+  fulfilmentSummary: OrderFulfilmentSummary;
   subtotal: number;
   deliveryFee: number;
   codFee: number;
@@ -88,12 +99,13 @@ export type OrderView = {
   brandDiscountTotal: number;
   platformDiscountTotal: number;
   items: OrderItemView[];
+  shipments: OrderShipmentView[];
   transactions: PaymentTransactionView[];
 };
 
 export type OrderSummaryView = Omit<
   OrderView,
-  "items" | "transactions" | "phone" | "address" | "city" | "landmark"
+  "items" | "shipments" | "transactions" | "phone" | "address" | "city" | "landmark"
 > & {
   itemCount: number;
   firstItemImageUrl: string | null;
@@ -121,13 +133,12 @@ export type OrderAdminView = OrderView & {
   buyerName: string;
   buyerEmail: string;
   needsManualRefund: boolean;
-  fulfilmentSummary: OrderFulfilmentSummary;
   fulfilmentGroups: AdminFulfilmentGroupView[];
 };
 
 export type OrderAdminSummaryView = Omit<
   OrderAdminView,
-  "items" | "transactions" | "fulfilmentGroups"
+  "items" | "shipments" | "transactions" | "fulfilmentGroups"
 > & {
   itemCount: number;
   firstItemImageUrl: string | null;
