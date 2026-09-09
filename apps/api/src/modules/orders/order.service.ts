@@ -11,6 +11,7 @@ import {
   CommissionSource,
   CouponRedemptionStatus,
   FulfilmentStatus,
+  OrderFulfilmentSummary,
   PaymentMethod,
   PaymentStatus,
   PaymentTransactionStatus,
@@ -48,14 +49,16 @@ import { userRepository } from "#modules/users/user.repository.js";
 import { resolveAttribution } from "./order.attribution.utils.js";
 import { orderRepository } from "./order.repository.js";
 import type {
+  AdvanceBrandFulfilmentGroupBody,
   AdvanceFulfilmentBody,
   CheckoutBody,
   ListAdminOrdersQuery,
-  ListBrandOrdersQuery,
+  ListBrandFulfilmentGroupsQuery,
   ListOrdersQuery,
 } from "./order.schemas.js";
 import type {
-  BrandOrderItemView,
+  BrandFulfilmentGroupDetailView,
+  BrandFulfilmentGroupSummaryView,
   CancelOrderActor,
   CreateOrderItemInput,
   OrderAdminSummaryView,
@@ -63,7 +66,9 @@ import type {
 } from "./order.types.js";
 import { type OrderSummaryView, type OrderView } from "./order.types.js";
 import {
-  toBrandOrderItemView,
+  deriveOrderFulfilment,
+  toBrandFulfilmentGroupDetailView,
+  toBrandFulfilmentGroupSummaryView,
   toOrderAdminSummaryView,
   toOrderAdminView,
   toOrderSummaryView,
@@ -366,6 +371,23 @@ const checkoutOnce = async (
       }
     }
 
+    const fulfilmentGroups = await orderRepository.createFulfilmentGroups(
+      tx,
+      createdOrder.id,
+      distinctBrandIds,
+    );
+    const fulfilmentGroupIdByBrandId = new Map(
+      fulfilmentGroups.map((group) => [group.brandId, group.id]),
+    );
+    for (const brandId of distinctBrandIds) {
+      const fulfilmentGroupId = fulfilmentGroupIdByBrandId.get(brandId);
+      if (!fulfilmentGroupId) continue;
+      const itemIdsForBrand = createdOrder.items
+        .filter((_, index) => pricedLines[index]?.brandId === brandId)
+        .map((orderItem) => orderItem.id);
+      await orderRepository.assignItemsToFulfilmentGroup(tx, fulfilmentGroupId, itemIdsForBrand);
+    }
+
     for (const [index, orderItem] of createdOrder.items.entries()) {
       const line = pricedLines[index];
       if (line) {
@@ -502,6 +524,22 @@ export const orderService = {
       );
     }
 
+    await prisma.$transaction(async (tx) => {
+      await orderRepository.advanceActiveFulfilmentGroupsForOrder(
+        tx,
+        orderId,
+        status,
+        deliveredAt ?? new Date(),
+      );
+      const groupStatuses = await orderRepository.listFulfilmentGroupStatuses(tx, orderId);
+      const rollupStatuses = groupStatuses.length > 0 ? groupStatuses : [status];
+      await orderRepository.setOrderFulfilmentRollup(
+        tx,
+        orderId,
+        deriveOrderFulfilment(rollupStatuses),
+      );
+    });
+
     await eventBus.publish(DomainEvents.ORDER_STATUS_CHANGED, {
       orderId,
       userId: order.userId,
@@ -534,6 +572,12 @@ export const orderService = {
     const cancelled = await prisma.$transaction(async (tx) => {
       const ok = await orderRepository.markCancelled(tx, orderId, CANCELLABLE_FULFILMENT_STATUSES);
       if (!ok) return false;
+
+      await orderRepository.cancelFulfilmentGroupsForOrder(tx, orderId, new Date());
+      await orderRepository.setOrderFulfilmentRollup(tx, orderId, {
+        fulfilmentStatus: FulfilmentStatus.CANCELLED,
+        fulfilmentSummary: OrderFulfilmentSummary.CANCELLED,
+      });
 
       if (order.paymentStatus === PaymentStatus.INITIATED) {
         await orderRepository.failUnsettledPayment(tx, orderId);
@@ -618,14 +662,104 @@ export const orderService = {
     logger.info(`Order ${orderId} cancelled by ${actorDescription}: ${reason}`);
   },
 
-  async listMineAsBrand(
+  async listBrandFulfilmentGroups(
     userId: string,
-    { cursor, limit }: ListBrandOrdersQuery,
-  ): Promise<{ items: BrandOrderItemView[]; nextCursor: string | null }> {
+    { status, cursor, limit }: ListBrandFulfilmentGroupsQuery,
+  ): Promise<{ items: BrandFulfilmentGroupSummaryView[]; nextCursor: string | null }> {
     const brandId = await requireBrandId(userId);
-    const rows = await orderRepository.listItemsForBrand(brandId, { cursor, limit });
+    const rows = await orderRepository.listFulfilmentGroupsForBrand(brandId, {
+      status,
+      cursor,
+      limit,
+    });
 
     const { items: pagedRows, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
-    return { items: pagedRows.map(toBrandOrderItemView), nextCursor };
+    return { items: pagedRows.map(toBrandFulfilmentGroupSummaryView), nextCursor };
+  },
+
+  async getBrandFulfilmentGroup(
+    userId: string,
+    groupId: string,
+  ): Promise<BrandFulfilmentGroupDetailView> {
+    const brandId = await requireBrandId(userId);
+    const group = await orderRepository.findFulfilmentGroupForBrand(groupId, brandId);
+    if (!group) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    return toBrandFulfilmentGroupDetailView(group);
+  },
+
+  async advanceBrandFulfilmentGroup(
+    userId: string,
+    groupId: string,
+    { status, carrier, trackingNumber }: AdvanceBrandFulfilmentGroupBody,
+  ): Promise<BrandFulfilmentGroupDetailView> {
+    const brandId = await requireBrandId(userId);
+    const existing = await orderRepository.findFulfilmentGroupStatusForBrand(groupId, brandId);
+    if (!existing) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+
+    const fromStatuses = FULFILMENT_ADVANCE_FROM[status] ?? [];
+    const advanced = await orderRepository.advanceFulfilmentGroup(
+      groupId,
+      brandId,
+      fromStatuses,
+      status,
+      { carrier, trackingNumber, at: new Date() },
+    );
+    if (!advanced) {
+      throw new AppError(
+        "INVALID_TRANSITION",
+        "This shipment can't move to that status from where it is.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const rollupStatusBefore = existing.order.fulfilmentStatus;
+    let rollupStatusAfter = rollupStatusBefore;
+    await prisma.$transaction(async (tx) => {
+      const groupStatuses = await orderRepository.listFulfilmentGroupStatuses(tx, advanced.orderId);
+      const rollup = deriveOrderFulfilment(groupStatuses);
+      rollupStatusAfter = rollup.fulfilmentStatus;
+      await orderRepository.setOrderFulfilmentRollup(tx, advanced.orderId, rollup);
+    });
+
+    if (rollupStatusAfter !== rollupStatusBefore) {
+      await eventBus.publish(DomainEvents.ORDER_STATUS_CHANGED, {
+        orderId: advanced.orderId,
+        userId: existing.order.userId,
+        status: rollupStatusAfter,
+      });
+    }
+
+    const updatedGroup = await orderRepository.findFulfilmentGroupForBrand(groupId, brandId);
+    if (!updatedGroup) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+    return toBrandFulfilmentGroupDetailView(updatedGroup);
+  },
+
+  async requestBrandFulfilmentGroupCancellation(
+    userId: string,
+    groupId: string,
+    reason: string,
+  ): Promise<void> {
+    const brandId = await requireBrandId(userId);
+    const existing = await orderRepository.findFulfilmentGroupStatusForBrand(groupId, brandId);
+    if (!existing) throw new AppError("NOT_FOUND", "Order not found.", NOT_FOUND_STATUS);
+
+    const flagged = await orderRepository.flagFulfilmentGroupCancellationRequest(
+      groupId,
+      brandId,
+      reason,
+      new Date(),
+    );
+    if (!flagged) {
+      throw new AppError(
+        "INVALID_STATE",
+        "This shipment already has a cancellation request, or is already cancelled.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    logger.info(
+      `Brand ${brandId} requested cancellation of fulfilment group ${groupId} ` +
+        `on order ${existing.order.id}: ${reason}`,
+    );
   },
 };

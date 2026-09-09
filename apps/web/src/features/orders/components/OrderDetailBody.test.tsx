@@ -50,6 +50,7 @@ const buildOrder = (overrides: Partial<Order> = {}): Order => ({
   paymentMethod: "COD",
   paymentStatus: "DUE",
   fulfilmentStatus: "PLACED",
+  fulfilmentSummary: "UNFULFILLED",
   subtotal: 2500,
   deliveryFee: 260,
   codFee: 0,
@@ -67,6 +68,7 @@ const buildOrder = (overrides: Partial<Order> = {}): Order => ({
       attributedCreatorName: null,
     },
   ],
+  shipments: [],
   transactions: [],
   ...overrides,
 });
@@ -121,6 +123,42 @@ describe("OrderDetailBody", () => {
     expect(screen.getByText("Order placed")).toBeInTheDocument();
     expect(screen.queryByText(/payment not completed/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /resume payment/i })).not.toBeInTheDocument();
+  });
+
+  it("shows a per-shipment tracker for a multi-brand order", () => {
+    orderResult.data = buildOrder({
+      paymentMethod: "ESEWA",
+      paymentStatus: "PAID",
+      fulfilmentStatus: "PLACED",
+      fulfilmentSummary: "PARTIALLY_SHIPPED",
+      shipments: [
+        {
+          id: "ship-1",
+          brandName: "Aurora Label",
+          status: "SHIPPED",
+          carrier: "Pathao",
+          trackingNumber: "PA-123",
+          shippedAt: "2026-09-03T00:00:00.000Z",
+          deliveredAt: null,
+        },
+        {
+          id: "ship-2",
+          brandName: "Beacon Studio",
+          status: "PLACED",
+          carrier: null,
+          trackingNumber: null,
+          shippedAt: null,
+          deliveredAt: null,
+        },
+      ],
+    });
+
+    renderOrderDetail();
+
+    expect(screen.getByText("2 shipments in this order")).toBeInTheDocument();
+    expect(screen.getByText("Aurora Label")).toBeInTheDocument();
+    expect(screen.getByText("Beacon Studio")).toBeInTheDocument();
+    expect(screen.getByText(/Pathao · PA-123/)).toBeInTheDocument();
   });
 
   it("swaps the tracker for a pending-payment panel on an unpaid wallet order", () => {

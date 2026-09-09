@@ -44,6 +44,7 @@
     "db:backfill:crm-counters": "tsx prisma/backfill-crm-counters.ts",
     "db:backfill:image-assets": "tsx prisma/backfill-image-assets.ts",
     "db:backfill:notification-targets": "tsx prisma/backfill-notification-targets.ts",
+    "db:backfill:order-fulfilment-groups": "tsx prisma/backfill-order-fulfilment-groups.ts",
     "db:seed:suggestions": "tsx prisma/seedSuggestions.ts",
     "db:seed:reviews": "tsx prisma/seedProductReviews.ts",
     "db:prune": "tsx prisma/prune.ts",

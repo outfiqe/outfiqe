@@ -150,7 +150,11 @@ const placeOrderForProduct = async (
   createdAt: Date,
 ) => {
   const buyer = await createUser(UserRole.CUSTOMER);
-  await prisma.order.create({
+  const product = await prisma.product.findUniqueOrThrow({
+    where: { id: productId },
+    select: { brandId: true },
+  });
+  const order = await prisma.order.create({
     data: {
       userId: buyer.id,
       fullName: "Buyer",
@@ -166,6 +170,14 @@ const placeOrderForProduct = async (
       createdAt,
       items: { create: [{ productId, sizeId, qty, unitPrice, listUnitPrice: unitPrice }] },
     },
+    include: { items: { select: { id: true } } },
+  });
+  const fulfilmentGroup = await prisma.orderFulfilmentGroup.create({
+    data: { orderId: order.id, brandId: product.brandId, status: fulfilmentStatus },
+  });
+  await prisma.orderItem.update({
+    where: { id: order.items[0]!.id },
+    data: { fulfilmentGroupId: fulfilmentGroup.id },
   });
 };
 
@@ -270,7 +282,11 @@ describe("GET /api/brands/me/overview", () => {
     expect(trendOrders).toBe(2);
 
     expect(recentOrders).toHaveLength(4);
-    expect(recentOrders[0]).toMatchObject({ qty: 2, unitPrice: 1000 });
+    expect(recentOrders[0]).toMatchObject({
+      totalQty: 2,
+      itemCount: 1,
+      status: FulfilmentStatus.PLACED,
+    });
   });
 
   it("sums brand payouts into available and pending, ignoring withdrawn ones", async () => {

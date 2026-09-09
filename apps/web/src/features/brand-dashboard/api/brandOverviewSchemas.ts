@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { brandOrderItemSchema } from "./brandOrdersSchemas";
+import { brandShipmentSummarySchema } from "./brandFulfilmentSchemas";
 
 export const brandOverviewKpisSchema = z.object({
   lifetimeRevenue: z.number(),
@@ -24,6 +24,6 @@ export type BrandOverviewTrendPoint = z.infer<typeof brandOverviewTrendPointSche
 export const brandOverviewSchema = z.object({
   kpis: brandOverviewKpisSchema,
   trend: z.array(brandOverviewTrendPointSchema),
-  recentOrders: z.array(brandOrderItemSchema),
+  recentOrders: z.array(brandShipmentSummarySchema),
 });
 export type BrandOverview = z.infer<typeof brandOverviewSchema>;
