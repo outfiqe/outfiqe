@@ -18,6 +18,8 @@ export default defineConfig({
         "src/drawer.tsx",
         "src/modal.tsx",
         "src/use-media-query.ts",
+        "src/theme.ts",
+        "src/theme-init.ts",
       ],
       exclude: ["src/**/*.test.tsx", "src/testing/**"],
       thresholds: {

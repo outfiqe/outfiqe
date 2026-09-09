@@ -80,9 +80,13 @@ describe("buildContentSecurityPolicy", () => {
     expect(csp).toContain("'nonce-abc123'");
   });
 
-  it("allows the theme init script by hash outside dev so it needs no nonce", () => {
-    const csp = buildContentSecurityPolicy({ ...baseOptions, isDev: false });
-    expect(csp).toMatch(/script-src[^;]*'sha256-[A-Za-z0-9+/=]+'/);
+  it("allows the theme init script by hash in dev and prod so it needs no nonce", () => {
+    expect(buildContentSecurityPolicy({ ...baseOptions, isDev: false })).toMatch(
+      /script-src[^;]*'sha256-[A-Za-z0-9+/=]+'/,
+    );
+    expect(buildContentSecurityPolicy({ ...baseOptions, isDev: true })).toMatch(
+      /script-src[^;]*'sha256-[A-Za-z0-9+/=]+'/,
+    );
   });
 
   it("uses an inline-friendly script-src with no nonce or strict-dynamic for static pages", () => {

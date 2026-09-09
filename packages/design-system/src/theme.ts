@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 import { DARK_CLASS, THEME_STORAGE_KEY } from "./theme-init";
 
@@ -25,8 +25,12 @@ const resolveCurrentTheme = (): Theme => {
 
 const getServerTheme = (): Theme => "light";
 
-const applyTheme = (theme: Theme) => {
+const applyThemeClass = (theme: Theme) => {
   document.documentElement.classList.toggle(DARK_CLASS, theme === "dark");
+};
+
+const applyTheme = (theme: Theme) => {
+  applyThemeClass(theme);
   window.localStorage.setItem(THEME_STORAGE_KEY, theme);
 };
 
@@ -44,6 +48,10 @@ const setTheme = (theme: Theme) => {
 
 export const useTheme = () => {
   const theme = useSyncExternalStore(subscribeToTheme, resolveCurrentTheme, getServerTheme);
+
+  useEffect(() => {
+    applyThemeClass(theme);
+  }, [theme]);
 
   const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
