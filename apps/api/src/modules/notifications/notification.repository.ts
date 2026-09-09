@@ -253,12 +253,17 @@ export const notificationRepository = {
         avatarUrl: true,
         isCreator: true,
         creatorStatus: true,
+        memberships: { select: { brandId: true }, take: 1 },
       },
     });
     if (!user) return null;
 
-    const { creatorStatus, isCreator, ...actor } = user;
-    return { ...actor, isCreator: isCreator && creatorStatus === CreatorStatus.APPROVED };
+    const { creatorStatus, isCreator, memberships, ...actor } = user;
+    return {
+      ...actor,
+      isCreator: isCreator && creatorStatus === CreatorStatus.APPROVED,
+      brandId: memberships[0]?.brandId ?? null,
+    };
   },
 
   async findLookSnapshot(
