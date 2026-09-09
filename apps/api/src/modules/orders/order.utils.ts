@@ -1,12 +1,71 @@
+import { FulfilmentStatus, OrderFulfilmentSummary } from "#generated/prisma/enums.js";
+
 import type {
   BrandOrderItemView,
   OrderAdminSummaryView,
   OrderAdminView,
+  OrderFulfilmentRollup,
   OrderItemView,
   OrderSummaryView,
   OrderView,
   PaymentTransactionView,
 } from "./order.types.js";
+
+const FULFILMENT_PROGRESS: Record<FulfilmentStatus, number> = {
+  [FulfilmentStatus.PLACED]: 0,
+  [FulfilmentStatus.PACKED]: 1,
+  [FulfilmentStatus.SHIPPED]: 2,
+  [FulfilmentStatus.DELIVERED]: 3,
+  [FulfilmentStatus.CANCELLED]: -1,
+};
+
+const isShippedOrLater = (status: FulfilmentStatus): boolean =>
+  FULFILMENT_PROGRESS[status] >= FULFILMENT_PROGRESS[FulfilmentStatus.SHIPPED];
+
+const resolveFulfilmentSummary = (
+  activeGroupStatuses: readonly FulfilmentStatus[],
+): OrderFulfilmentSummary => {
+  if (activeGroupStatuses.every((status) => status === FulfilmentStatus.DELIVERED)) {
+    return OrderFulfilmentSummary.FULFILLED;
+  }
+  if (activeGroupStatuses.every(isShippedOrLater)) {
+    return OrderFulfilmentSummary.SHIPPED;
+  }
+  if (activeGroupStatuses.some(isShippedOrLater)) {
+    return OrderFulfilmentSummary.PARTIALLY_SHIPPED;
+  }
+  return OrderFulfilmentSummary.UNFULFILLED;
+};
+
+export const deriveOrderFulfilment = (
+  groupStatuses: readonly FulfilmentStatus[],
+): OrderFulfilmentRollup => {
+  if (groupStatuses.length === 0) {
+    return {
+      fulfilmentStatus: FulfilmentStatus.PLACED,
+      fulfilmentSummary: OrderFulfilmentSummary.UNFULFILLED,
+    };
+  }
+
+  const activeGroupStatuses = groupStatuses.filter(
+    (status) => status !== FulfilmentStatus.CANCELLED,
+  );
+  if (activeGroupStatuses.length === 0) {
+    return {
+      fulfilmentStatus: FulfilmentStatus.CANCELLED,
+      fulfilmentSummary: OrderFulfilmentSummary.CANCELLED,
+    };
+  }
+
+  const leastProgressedStatus = activeGroupStatuses.reduce((slowest, status) =>
+    FULFILMENT_PROGRESS[status] < FULFILMENT_PROGRESS[slowest] ? status : slowest,
+  );
+
+  return {
+    fulfilmentStatus: leastProgressedStatus,
+    fulfilmentSummary: resolveFulfilmentSummary(activeGroupStatuses),
+  };
+};
 
 type OrderItemRow = {
   id: string;

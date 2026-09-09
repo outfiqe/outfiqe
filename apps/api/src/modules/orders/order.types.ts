@@ -1,10 +1,16 @@
 import type {
   CommissionSource,
   FulfilmentStatus,
+  OrderFulfilmentSummary,
   PaymentMethod,
   PaymentStatus,
   PaymentTransactionStatus,
 } from "#generated/prisma/enums.js";
+
+export type OrderFulfilmentRollup = {
+  fulfilmentStatus: FulfilmentStatus;
+  fulfilmentSummary: OrderFulfilmentSummary;
+};
 
 export type CreateOrderItemInput = {
   productId: string;
