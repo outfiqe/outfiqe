@@ -1,6 +1,6 @@
 import { brandPayoutService } from "#modules/brand-payouts/brandPayout.service.js";
 import { orderRepository } from "#modules/orders/order.repository.js";
-import { toBrandOrderItemView } from "#modules/orders/order.utils.js";
+import { toBrandFulfilmentGroupSummaryView } from "#modules/orders/order.utils.js";
 
 import { RECENT_ORDER_LIMIT } from "./brand-overview.constants.js";
 import { brandOverviewRepository } from "./brand-overview.repository.js";
@@ -15,7 +15,7 @@ export const brandOverviewService = {
         brandOverviewRepository.getCatalogCounts(brandId),
         brandOverviewRepository.getUnfulfilledItemCount(brandId),
         brandPayoutService.getSummary(brandId),
-        orderRepository.listItemsForBrand(brandId, { limit: RECENT_ORDER_LIMIT }),
+        orderRepository.listFulfilmentGroupsForBrand(brandId, { limit: RECENT_ORDER_LIMIT }),
       ]);
 
     return {
@@ -30,7 +30,7 @@ export const brandOverviewService = {
         unfulfilledItemCount,
       },
       trend,
-      recentOrders: recentRows.slice(0, RECENT_ORDER_LIMIT).map(toBrandOrderItemView),
+      recentOrders: recentRows.slice(0, RECENT_ORDER_LIMIT).map(toBrandFulfilmentGroupSummaryView),
     };
   },
 };

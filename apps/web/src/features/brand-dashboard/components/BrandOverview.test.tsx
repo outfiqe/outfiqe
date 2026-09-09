@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BrandOrderItem } from "../api/brandOrdersSchemas";
+import type { BrandShipmentSummary } from "../api/brandFulfilmentSchemas";
 import type { BrandOverview as BrandOverviewData } from "../api/brandOverviewSchemas";
 import { useBrandOverview } from "../hooks/useBrandOverview";
 import { BrandOverview } from "./BrandOverview";
@@ -24,18 +24,23 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const buildOrderItem = (id: string): BrandOrderItem => ({
+const buildShipment = (id: string): BrandShipmentSummary => ({
   id,
-  productId: `p-${id}`,
-  productName: `Product ${id}`,
-  imageUrl: null,
-  sizeLabel: "M",
-  qty: 1,
-  unitPrice: 1000,
   orderId: `order-${id}`,
   orderCreatedAt: "2026-08-01T00:00:00.000Z",
-  paymentStatus: "PAID",
-  fulfilmentStatus: "PLACED",
+  status: "PLACED",
+  carrier: null,
+  trackingNumber: null,
+  shippedAt: null,
+  deliveredAt: null,
+  cancellationRequestedAt: null,
+  itemCount: 1,
+  totalQty: 1,
+  firstItemImageUrl: null,
+  firstItemProductName: `Product ${id}`,
+  shipToCity: "Kathmandu",
+  orderPaymentStatus: "PAID",
+  orderFulfilmentSummary: "UNFULFILLED",
 });
 
 const buildOverview = (overrides: Partial<BrandOverviewData> = {}): BrandOverviewData => ({
@@ -54,7 +59,7 @@ const buildOverview = (overrides: Partial<BrandOverviewData> = {}): BrandOvervie
     revenue: index === 29 ? 7777 : 0,
     orderCount: index === 29 ? 4 : 0,
   })),
-  recentOrders: [buildOrderItem("a"), buildOrderItem("b")],
+  recentOrders: [buildShipment("a"), buildShipment("b")],
   ...overrides,
 });
 

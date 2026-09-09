@@ -13,7 +13,6 @@ import type {
   FulfilmentGroupIdParam,
   ListAdminOrdersQuery,
   ListBrandFulfilmentGroupsQuery,
-  ListBrandOrdersQuery,
   ListOrdersQuery,
   OrderIdParam,
   RequestGroupCancellationBody,
@@ -89,14 +88,6 @@ export const orderController = {
       reason ?? BUYER_CANCEL_DEFAULT_REASON,
     );
     sendSuccess(res, null, "Order cancelled.");
-  },
-
-  async listMineAsBrand(_req: Request, res: Response) {
-    const { userId } = requireAuthPrincipal(res);
-    const query = validated.query<ListBrandOrdersQuery>(res);
-
-    const page = await orderService.listMineAsBrand(userId, query);
-    sendSuccess(res, page, "Your brand's orders.");
   },
 
   async listMyBrandFulfilmentGroups(_req: Request, res: Response) {

@@ -40,11 +40,6 @@ export const listAdminOrdersQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_LIST_PAGE_SIZE).default(DEFAULT_LIST_PAGE_SIZE),
 });
 
-export const listBrandOrdersQuerySchema = z.object({
-  cursor: z.uuid().optional(),
-  limit: z.coerce.number().int().min(1).max(MAX_LIST_PAGE_SIZE).default(DEFAULT_LIST_PAGE_SIZE),
-});
-
 const CARRIER_MAX = 80;
 const TRACKING_NUMBER_MAX = 120;
 
@@ -105,7 +100,6 @@ export type CheckoutBody = z.infer<typeof checkoutBodySchema>;
 export type OrderIdParam = z.infer<typeof orderIdParamSchema>;
 export type ListOrdersQuery = z.infer<typeof listOrdersQuerySchema>;
 export type ListAdminOrdersQuery = z.infer<typeof listAdminOrdersQuerySchema>;
-export type ListBrandOrdersQuery = z.infer<typeof listBrandOrdersQuerySchema>;
 export type ListBrandFulfilmentGroupsQuery = z.infer<typeof listBrandFulfilmentGroupsQuerySchema>;
 export type FulfilmentGroupIdParam = z.infer<typeof fulfilmentGroupIdParamSchema>;
 export type AdvanceFulfilmentBody = z.infer<typeof advanceFulfilmentSchema>;

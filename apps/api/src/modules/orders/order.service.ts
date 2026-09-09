@@ -54,13 +54,11 @@ import type {
   CheckoutBody,
   ListAdminOrdersQuery,
   ListBrandFulfilmentGroupsQuery,
-  ListBrandOrdersQuery,
   ListOrdersQuery,
 } from "./order.schemas.js";
 import type {
   BrandFulfilmentGroupDetailView,
   BrandFulfilmentGroupSummaryView,
-  BrandOrderItemView,
   CancelOrderActor,
   CreateOrderItemInput,
   OrderAdminSummaryView,
@@ -71,7 +69,6 @@ import {
   deriveOrderFulfilment,
   toBrandFulfilmentGroupDetailView,
   toBrandFulfilmentGroupSummaryView,
-  toBrandOrderItemView,
   toOrderAdminSummaryView,
   toOrderAdminView,
   toOrderSummaryView,
@@ -663,17 +660,6 @@ export const orderService = {
     const actorDescription =
       actor.type === "ADMIN" ? `admin ${actor.adminUserId}` : `buyer ${actor.userId}`;
     logger.info(`Order ${orderId} cancelled by ${actorDescription}: ${reason}`);
-  },
-
-  async listMineAsBrand(
-    userId: string,
-    { cursor, limit }: ListBrandOrdersQuery,
-  ): Promise<{ items: BrandOrderItemView[]; nextCursor: string | null }> {
-    const brandId = await requireBrandId(userId);
-    const rows = await orderRepository.listItemsForBrand(brandId, { cursor, limit });
-
-    const { items: pagedRows, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
-    return { items: pagedRows.map(toBrandOrderItemView), nextCursor };
   },
 
   async listBrandFulfilmentGroups(

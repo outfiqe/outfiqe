@@ -145,20 +145,6 @@ export type OrderAdminSummaryView = Omit<
   firstItemProductName: string;
 };
 
-export type BrandOrderItemView = {
-  id: string;
-  orderId: string;
-  orderCreatedAt: string;
-  productId: string;
-  productName: string;
-  imageUrl: string | null;
-  sizeLabel: string;
-  qty: number;
-  unitPrice: number;
-  paymentStatus: PaymentStatus;
-  fulfilmentStatus: FulfilmentStatus;
-};
-
 export type CancelOrderActor =
   { type: "ADMIN"; adminUserId: string } | { type: "BUYER"; userId: string };
 

@@ -17,7 +17,6 @@ import {
   fulfilmentGroupIdParamSchema,
   listAdminOrdersQuerySchema,
   listBrandFulfilmentGroupsQuerySchema,
-  listBrandOrdersQuerySchema,
   listOrdersQuerySchema,
   orderIdParamSchema,
   requestGroupCancellationSchema,
@@ -91,13 +90,6 @@ orderRoutes.post(
   ...requireAdmin,
   validate({ params: orderIdParamSchema, body: cancelOrderSchema }),
   orderController.cancel,
-);
-
-orderRoutes.get(
-  "/brand",
-  ...requireBrandOwner,
-  validate({ query: listBrandOrdersQuerySchema }),
-  orderController.listMineAsBrand,
 );
 
 orderRoutes.get(

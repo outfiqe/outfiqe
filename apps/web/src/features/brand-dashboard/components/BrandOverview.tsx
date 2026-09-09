@@ -9,7 +9,7 @@ import type {
   BrandOverviewTrendPoint,
 } from "../api/brandOverviewSchemas";
 import { useBrandOverview } from "../hooks/useBrandOverview";
-import { BrandOrderRow } from "./BrandOrderRow";
+import { BrandShipmentRow } from "./BrandShipmentRow";
 
 const KPI_CARD_COUNT = 7;
 const RECENT_ROW_COUNT = 5;
@@ -118,8 +118,8 @@ const RecentOrders = ({ overview }: { overview: BrandOverviewData }) => (
       </p>
     ) : (
       <div className="mt-4 space-y-3">
-        {overview.recentOrders.map((item) => (
-          <BrandOrderRow key={item.id} item={item} />
+        {overview.recentOrders.map((shipment) => (
+          <BrandShipmentRow key={shipment.id} shipment={shipment} />
         ))}
       </div>
     )}
