@@ -31,6 +31,21 @@ describe("resolveNotificationTarget", () => {
     ).toEqual({ surface: NotificationSurface.WEB, path: "/creator/jane?look=look-3" });
   });
 
+  it("deep-links a comment reply to the replier's post when the look owner handle is missing", () => {
+    expect(
+      resolve(NotificationType.COMMENT_REPLIED, "look-3", {
+        actor: { id: "u2", name: "Jane", handle: "jane", avatarUrl: null, isCreator: true },
+      }),
+    ).toEqual({ surface: NotificationSurface.WEB, path: "/creator/jane?look=look-3" });
+  });
+
+  it("falls back to the dashboard profile for a comment reply with no handle at all", () => {
+    expect(resolve(NotificationType.COMMENT_REPLIED, "look-3")).toEqual({
+      surface: NotificationSurface.WEB,
+      path: "/profile",
+    });
+  });
+
   it("falls back to the dashboard profile for a look notification with no owner handle", () => {
     expect(resolve(NotificationType.LOOK_LIKED, "look-1")).toEqual({
       surface: NotificationSurface.WEB,

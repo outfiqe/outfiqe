@@ -301,6 +301,50 @@ describe("resolveNotificationNavigation", () => {
     const notification = buildNotification({ type: "REVIEW_REQUESTED", entityId: null });
     expect(resolveNotificationNavigation(notification, OWN_HANDLE, false)).toBeNull();
   });
+
+  it("ignores a stale stored follower target and recomputes from current logic", () => {
+    const staleBrandFollow = buildNotification({
+      type: "NEW_FOLLOWER",
+      targetSurface: "WEB",
+      targetPath: "/creator/johnrai",
+      metadata: {
+        recentActors: [{ id: "b1", name: "John Rai", handle: "johnrai", avatarUrl: null }],
+      },
+    });
+    expect(resolveNotificationNavigation(staleBrandFollow, OWN_HANDLE, false)).toEqual({
+      href: "/profile",
+      fullPage: false,
+    });
+
+    const creatorFollow = buildNotification({
+      type: "NEW_FOLLOWER",
+      targetSurface: "WEB",
+      targetPath: "/profile",
+      metadata: {
+        recentActors: [
+          { id: "c1", name: "Jane", handle: "jane", avatarUrl: null, isCreator: true },
+        ],
+      },
+    });
+    expect(resolveNotificationNavigation(creatorFollow, OWN_HANDLE, false)).toEqual({
+      href: "/creator/jane",
+      fullPage: false,
+    });
+  });
+
+  it("ignores a stale stored comment-reply target and recomputes from current logic", () => {
+    const staleReply = buildNotification({
+      type: "COMMENT_REPLIED",
+      entityId: "look-3",
+      targetSurface: "WEB",
+      targetPath: "/profile",
+      metadata: { lookOwnerHandle: "mun" },
+    });
+    expect(resolveNotificationNavigation(staleReply, OWN_HANDLE, false)).toEqual({
+      href: "/creator/mun?look=look-3",
+      fullPage: false,
+    });
+  });
 });
 
 describe("isFullPageNavHref", () => {

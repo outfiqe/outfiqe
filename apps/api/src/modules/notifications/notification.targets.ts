@@ -50,6 +50,16 @@ const ownLookTarget = (
     ? web(lookPermalink(metadata.lookOwnerHandle, entityId))
     : web(WEB_ROUTES.dashboardProfile);
 
+const commentReplyTarget = (
+  metadata: NotificationMetadata,
+  entityId: string | null,
+): NotificationTarget => {
+  const lookHandle = metadata.lookOwnerHandle ?? metadata.actor?.handle;
+  return lookHandle && entityId
+    ? web(lookPermalink(lookHandle, entityId))
+    : web(WEB_ROUTES.dashboardProfile);
+};
+
 const supportTicketTarget = (
   entityId: string | null,
   recipientIsStaff: boolean,
@@ -73,8 +83,9 @@ export const resolveNotificationTarget = ({
   switch (type) {
     case NotificationType.LOOK_LIKED:
     case NotificationType.LOOK_COMMENTED:
-    case NotificationType.COMMENT_REPLIED:
       return ownLookTarget(metadata, entityId);
+    case NotificationType.COMMENT_REPLIED:
+      return commentReplyTarget(metadata, entityId);
     case NotificationType.NEW_FOLLOWER: {
       const follower = metadata.recentActors?.[0] ?? metadata.actor;
       return follower?.isCreator && follower.handle

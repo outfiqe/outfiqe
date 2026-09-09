@@ -103,12 +103,19 @@ export const isFullPageNavHref = (href: string): boolean =>
 
 export type NotificationNavigation = { href: string; fullPage: boolean };
 
+const TYPES_RESOLVED_FROM_CURRENT_LOGIC = new Set<NotificationType>([
+  NotificationType.NEW_FOLLOWER,
+  NotificationType.COMMENT_REPLIED,
+]);
+
 export const resolveNotificationNavigation = (
   notification: Notification,
   ownHandle: string | undefined,
   isAdmin: boolean,
 ): NotificationNavigation | null => {
-  if (notification.targetPath) {
+  const ignoreStoredTarget = TYPES_RESOLVED_FROM_CURRENT_LOGIC.has(notification.type);
+
+  if (notification.targetPath && !ignoreStoredTarget) {
     return notification.targetSurface === NotificationSurface.WEB
       ? { href: notification.targetPath, fullPage: false }
       : { href: `${ADMIN_URL}${notification.targetPath}`, fullPage: true };
