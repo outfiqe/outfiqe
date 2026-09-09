@@ -213,6 +213,127 @@ export const orderRepository = {
     });
   },
 
+  async listFulfilmentGroupsForBrand(
+    brandId: string,
+    params: { status?: FulfilmentStatus; cursor?: string; limit: number },
+  ) {
+    return prisma.orderFulfilmentGroup.findMany({
+      where: { brandId, ...(params.status ? { status: params.status } : {}) },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: params.limit + 1,
+      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
+      include: {
+        items: {
+          select: { qty: true, product: { select: { name: true, imageUrl: true } } },
+          orderBy: { createdAt: "asc" },
+        },
+        order: {
+          select: {
+            createdAt: true,
+            city: true,
+            paymentStatus: true,
+            fulfilmentSummary: true,
+          },
+        },
+      },
+    });
+  },
+
+  async findFulfilmentGroupForBrand(groupId: string, brandId: string) {
+    return prisma.orderFulfilmentGroup.findFirst({
+      where: { id: groupId, brandId },
+      include: {
+        items: {
+          orderBy: { createdAt: "asc" },
+          include: {
+            product: { select: { name: true, imageUrl: true } },
+            size: { select: { label: true } },
+            brandPayout: {
+              select: {
+                orderItemId: true,
+                grossAmount: true,
+                platformFee: true,
+                gatewayFee: true,
+                netAmount: true,
+                status: true,
+              },
+            },
+          },
+        },
+        order: {
+          select: {
+            createdAt: true,
+            fullName: true,
+            phone: true,
+            address: true,
+            city: true,
+            landmark: true,
+            paymentStatus: true,
+            fulfilmentSummary: true,
+          },
+        },
+      },
+    });
+  },
+
+  async findFulfilmentGroupStatusForBrand(groupId: string, brandId: string) {
+    return prisma.orderFulfilmentGroup.findFirst({
+      where: { id: groupId, brandId },
+      select: {
+        status: true,
+        order: { select: { id: true, userId: true, fulfilmentStatus: true } },
+      },
+    });
+  },
+
+  async advanceFulfilmentGroup(
+    groupId: string,
+    brandId: string,
+    fromStatuses: FulfilmentStatus[],
+    toStatus: FulfilmentStatus,
+    patch: { carrier?: string; trackingNumber?: string; at: Date },
+  ): Promise<{ orderId: string } | null> {
+    const reachedTimestamp: Partial<Record<"packedAt" | "shippedAt" | "deliveredAt", Date>> = {};
+    if (toStatus === FulfilmentStatus.PACKED) reachedTimestamp.packedAt = patch.at;
+    if (toStatus === FulfilmentStatus.SHIPPED) reachedTimestamp.shippedAt = patch.at;
+    if (toStatus === FulfilmentStatus.DELIVERED) reachedTimestamp.deliveredAt = patch.at;
+
+    const updated = await prisma.orderFulfilmentGroup.updateMany({
+      where: { id: groupId, brandId, status: { in: fromStatuses } },
+      data: {
+        status: toStatus,
+        ...reachedTimestamp,
+        ...(patch.carrier ? { carrier: patch.carrier } : {}),
+        ...(patch.trackingNumber ? { trackingNumber: patch.trackingNumber } : {}),
+      },
+    });
+    if (updated.count === 0) return null;
+
+    const group = await prisma.orderFulfilmentGroup.findUniqueOrThrow({
+      where: { id: groupId },
+      select: { orderId: true },
+    });
+    return { orderId: group.orderId };
+  },
+
+  async flagFulfilmentGroupCancellationRequest(
+    groupId: string,
+    brandId: string,
+    reason: string,
+    requestedAt: Date,
+  ): Promise<boolean> {
+    const updated = await prisma.orderFulfilmentGroup.updateMany({
+      where: {
+        id: groupId,
+        brandId,
+        status: { not: FulfilmentStatus.CANCELLED },
+        cancellationRequestedAt: null,
+      },
+      data: { cancellationRequestedAt: requestedAt, cancellationReason: reason },
+    });
+    return updated.count > 0;
+  },
+
   async listItemsForBrand(brandId: string, params: { cursor?: string; limit: number }) {
     return prisma.orderItem.findMany({
       where: { product: { brandId } },

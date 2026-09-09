@@ -5,14 +5,18 @@ import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 
 import type {
+  AdvanceBrandFulfilmentGroupBody,
   AdvanceFulfilmentBody,
   CancelMyOrderBody,
   CancelOrderBody,
   CheckoutBody,
+  FulfilmentGroupIdParam,
   ListAdminOrdersQuery,
+  ListBrandFulfilmentGroupsQuery,
   ListBrandOrdersQuery,
   ListOrdersQuery,
   OrderIdParam,
+  RequestGroupCancellationBody,
 } from "./order.schemas.js";
 import { orderService } from "./order.service.js";
 
@@ -93,5 +97,39 @@ export const orderController = {
 
     const page = await orderService.listMineAsBrand(userId, query);
     sendSuccess(res, page, "Your brand's orders.");
+  },
+
+  async listMyBrandFulfilmentGroups(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const query = validated.query<ListBrandFulfilmentGroupsQuery>(res);
+
+    const page = await orderService.listBrandFulfilmentGroups(userId, query);
+    sendSuccess(res, page, "Your brand's shipments.");
+  },
+
+  async getMyBrandFulfilmentGroup(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { groupId } = validated.params<FulfilmentGroupIdParam>(res);
+
+    const group = await orderService.getBrandFulfilmentGroup(userId, groupId);
+    sendSuccess(res, group, "Shipment.");
+  },
+
+  async advanceMyBrandFulfilmentGroup(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { groupId } = validated.params<FulfilmentGroupIdParam>(res);
+    const body = validated.body<AdvanceBrandFulfilmentGroupBody>(res);
+
+    const group = await orderService.advanceBrandFulfilmentGroup(userId, groupId, body);
+    sendSuccess(res, group, "Shipment updated.");
+  },
+
+  async requestMyBrandFulfilmentGroupCancellation(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { groupId } = validated.params<FulfilmentGroupIdParam>(res);
+    const { reason } = validated.body<RequestGroupCancellationBody>(res);
+
+    await orderService.requestBrandFulfilmentGroupCancellation(userId, groupId, reason);
+    sendSuccess(res, null, "Cancellation requested.");
   },
 };
