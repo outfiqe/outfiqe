@@ -16,6 +16,8 @@ const actor = (id: string): NotificationActorSnapshot => ({
   name: `Actor ${id}`,
   handle: `actor-${id}`,
   avatarUrl: null,
+  isCreator: false,
+  brandId: null,
 });
 
 describe("mergeRecentActors", () => {

@@ -42,6 +42,12 @@ const admin = (path: string): NotificationTarget => ({ surface: NotificationSurf
 const lookPermalink = (creatorHandle: string, lookId: string): string =>
   `/creator/${creatorHandle}?look=${lookId}`;
 
+const followerProfileTarget = (follower: NotificationMetadata["actor"]): NotificationTarget => {
+  if (follower?.isCreator && follower.handle) return web(`/creator/${follower.handle}`);
+  if (follower?.brandId) return web(`/brand/${follower.brandId}`);
+  return web(WEB_ROUTES.dashboardProfile);
+};
+
 const ownLookTarget = (
   metadata: NotificationMetadata,
   entityId: string | null,
@@ -49,6 +55,16 @@ const ownLookTarget = (
   metadata.lookOwnerHandle && entityId
     ? web(lookPermalink(metadata.lookOwnerHandle, entityId))
     : web(WEB_ROUTES.dashboardProfile);
+
+const commentReplyTarget = (
+  metadata: NotificationMetadata,
+  entityId: string | null,
+): NotificationTarget => {
+  const lookHandle = metadata.lookOwnerHandle ?? metadata.actor?.handle;
+  return lookHandle && entityId
+    ? web(lookPermalink(lookHandle, entityId))
+    : web(WEB_ROUTES.dashboardProfile);
+};
 
 const supportTicketTarget = (
   entityId: string | null,
@@ -73,14 +89,12 @@ export const resolveNotificationTarget = ({
   switch (type) {
     case NotificationType.LOOK_LIKED:
     case NotificationType.LOOK_COMMENTED:
-    case NotificationType.COMMENT_REPLIED:
       return ownLookTarget(metadata, entityId);
-    case NotificationType.NEW_FOLLOWER: {
-      const followerHandle = metadata.recentActors?.[0]?.handle ?? metadata.actor?.handle;
-      return followerHandle ? web(`/creator/${followerHandle}`) : web(WEB_ROUTES.dashboardProfile);
-    }
+    case NotificationType.COMMENT_REPLIED:
+      return commentReplyTarget(metadata, entityId);
+    case NotificationType.NEW_FOLLOWER:
     case NotificationType.NEW_BRAND_FOLLOWER:
-      return web(WEB_ROUTES.dashboardProfile);
+      return followerProfileTarget(metadata.recentActors?.[0] ?? metadata.actor);
     case NotificationType.ACHIEVEMENT_UNLOCKED:
       return web(WEB_ROUTES.badges);
     case NotificationType.LEVEL_UP:

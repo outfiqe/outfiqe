@@ -70,6 +70,8 @@ export type RecentActor = {
   name: string;
   handle: string;
   avatarUrl: string | null;
+  isCreator?: boolean;
+  brandId?: string | null;
 };
 
 export type NotificationMetadata = {

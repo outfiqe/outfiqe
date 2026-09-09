@@ -12,7 +12,7 @@ import { useChatPanel } from "@/features/messaging";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
 import { AppImage } from "@/shared/components/AppImage";
-import { useToggleFollow } from "@/shared/hooks/useToggleFollow";
+import { useOptimisticFollow } from "@/shared/hooks/useOptimisticFollow";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
@@ -31,7 +31,6 @@ type BrandProfileProps = {
 export const BrandProfile = ({ brand }: BrandProfileProps) => {
   const router = useRouter();
   const { isAuthenticated, state } = useAuth();
-  const followMutation = useToggleFollow("brand");
   const productTypes = useProductTypes();
   const { openConversationWith, isStartingConversation } = useChatPanel();
 
@@ -49,8 +48,10 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
   } = brand;
   const isOwnBrand = state.user?.brandId === id;
 
-  const [isFollowing, setIsFollowing] = useState(brand.isFollowing);
-  const [followerCount, setFollowerCount] = useState(brand.followerCount);
+  const { isFollowing, followerCount, isTogglingFollow, toggleFollow } = useOptimisticFollow(
+    "brand",
+    { isFollowing: brand.isFollowing, followerCount: brand.followerCount },
+  );
   const [activeType, setActiveType] = useState(ALL_PRODUCT_TYPE);
   const [followersModalOpen, setFollowersModalOpen] = useState(false);
 
@@ -59,23 +60,12 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
     activeType === ALL_PRODUCT_TYPE ? undefined : activeType,
   );
 
-  const toggleFollow = () => {
+  const followBrand = () => {
     if (!isAuthenticated) {
       router.push(`/login?redirect=/brand/${id}`);
       return;
     }
-    const wasFollowing = isFollowing;
-    setIsFollowing(!wasFollowing);
-    setFollowerCount((count) => count + (wasFollowing ? -1 : 1));
-    followMutation.mutate(
-      { targetId: id, following: wasFollowing },
-      {
-        onError: () => {
-          setIsFollowing(wasFollowing);
-          setFollowerCount((count) => count + (wasFollowing ? 1 : -1));
-        },
-      },
-    );
+    toggleFollow(id, () => router.refresh());
   };
 
   const messageBrand = () => {
@@ -180,7 +170,12 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
           </div>
 
           <div className="mt-5 flex gap-2">
-            <Button variant="outline" aria-pressed={isFollowing} onClick={toggleFollow}>
+            <Button
+              variant="outline"
+              aria-pressed={isFollowing}
+              onClick={followBrand}
+              disabled={isTogglingFollow}
+            >
               {isFollowing ? "Following" : "Follow brand"}
             </Button>
             {!isOwnBrand && contactUserId && (

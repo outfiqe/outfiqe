@@ -11,6 +11,7 @@ import { lookPermalinkPath } from "@/features/explore";
 import {
   ADMIN_APP_ROUTES,
   adminSupportTicketPath,
+  brandProfilePath,
   conversationPath,
   creatorLookEditPath,
   creatorProfilePath,
@@ -41,11 +42,12 @@ export const resolveNotificationHref = (
         ? lookPermalinkPath(lookHandle, entityId)
         : WEB_NOTIFICATION_ROUTES.dashboardProfile;
     }
-    case NotificationType.NEW_FOLLOWER: {
-      const followerHandle = metadata.recentActors?.[0]?.handle;
-      return followerHandle
-        ? creatorProfilePath(followerHandle)
-        : WEB_NOTIFICATION_ROUTES.dashboardProfile;
+    case NotificationType.NEW_FOLLOWER:
+    case NotificationType.NEW_BRAND_FOLLOWER: {
+      const follower = metadata.recentActors?.[0] ?? metadata.actor;
+      if (follower?.isCreator && follower.handle) return creatorProfilePath(follower.handle);
+      if (follower?.brandId) return brandProfilePath(follower.brandId);
+      return WEB_NOTIFICATION_ROUTES.dashboardProfile;
     }
     case NotificationType.ACHIEVEMENT_UNLOCKED:
       return WEB_NOTIFICATION_ROUTES.badges;
@@ -59,8 +61,6 @@ export const resolveNotificationHref = (
       return entityId
         ? orderDetailPath(WEB_NOTIFICATION_ROUTES.ordersList, entityId)
         : WEB_NOTIFICATION_ROUTES.ordersList;
-    case NotificationType.NEW_BRAND_FOLLOWER:
-      return WEB_NOTIFICATION_ROUTES.dashboardProfile;
     case NotificationType.PRODUCT_REVIEWED:
       return WEB_NOTIFICATION_ROUTES.brandProducts;
     case NotificationType.REVIEW_REQUESTED:
@@ -116,12 +116,20 @@ export const isFullPageNavHref = (href: string): boolean =>
 
 export type NotificationNavigation = { href: string; fullPage: boolean };
 
+const TYPES_RESOLVED_FROM_CURRENT_LOGIC = new Set<NotificationType>([
+  NotificationType.NEW_FOLLOWER,
+  NotificationType.NEW_BRAND_FOLLOWER,
+  NotificationType.COMMENT_REPLIED,
+]);
+
 export const resolveNotificationNavigation = (
   notification: Notification,
   ownHandle: string | undefined,
   isAdmin: boolean,
 ): NotificationNavigation | null => {
-  if (notification.targetPath) {
+  const ignoreStoredTarget = TYPES_RESOLVED_FROM_CURRENT_LOGIC.has(notification.type);
+
+  if (notification.targetPath && !ignoreStoredTarget) {
     return notification.targetSurface === NotificationSurface.WEB
       ? { href: notification.targetPath, fullPage: false }
       : { href: `${ADMIN_URL}${notification.targetPath}`, fullPage: true };

@@ -31,6 +31,21 @@ describe("resolveNotificationTarget", () => {
     ).toEqual({ surface: NotificationSurface.WEB, path: "/creator/jane?look=look-3" });
   });
 
+  it("deep-links a comment reply to the replier's post when the look owner handle is missing", () => {
+    expect(
+      resolve(NotificationType.COMMENT_REPLIED, "look-3", {
+        actor: { id: "u2", name: "Jane", handle: "jane", avatarUrl: null, isCreator: true },
+      }),
+    ).toEqual({ surface: NotificationSurface.WEB, path: "/creator/jane?look=look-3" });
+  });
+
+  it("falls back to the dashboard profile for a comment reply with no handle at all", () => {
+    expect(resolve(NotificationType.COMMENT_REPLIED, "look-3")).toEqual({
+      surface: NotificationSurface.WEB,
+      path: "/profile",
+    });
+  });
+
   it("falls back to the dashboard profile for a look notification with no owner handle", () => {
     expect(resolve(NotificationType.LOOK_LIKED, "look-1")).toEqual({
       surface: NotificationSurface.WEB,
@@ -38,12 +53,58 @@ describe("resolveNotificationTarget", () => {
     });
   });
 
-  it("routes a new follower to the latest follower's profile", () => {
+  it("routes a new follower who is a creator to their creator profile", () => {
     expect(
       resolve(NotificationType.NEW_FOLLOWER, "u1", {
-        recentActors: [{ id: "u1", name: "Jane", handle: "jane", avatarUrl: null }],
+        recentActors: [
+          { id: "u1", name: "Jane", handle: "jane", avatarUrl: null, isCreator: true },
+        ],
       }),
     ).toEqual({ surface: NotificationSurface.WEB, path: "/creator/jane" });
+  });
+
+  it("routes a new follower who owns a brand to that brand's page", () => {
+    expect(
+      resolve(NotificationType.NEW_FOLLOWER, "u1", {
+        recentActors: [
+          {
+            id: "u1",
+            name: "John Rai",
+            handle: "johnrai",
+            avatarUrl: null,
+            isCreator: false,
+            brandId: "brand-7",
+          },
+        ],
+      }),
+    ).toEqual({ surface: NotificationSurface.WEB, path: "/brand/brand-7" });
+  });
+
+  it("routes a new brand follower who is a creator to their creator profile", () => {
+    expect(
+      resolve(NotificationType.NEW_BRAND_FOLLOWER, "u1", {
+        recentActors: [
+          { id: "u1", name: "Anjesh", handle: "anjeshghimire", avatarUrl: null, isCreator: true },
+        ],
+      }),
+    ).toEqual({ surface: NotificationSurface.WEB, path: "/creator/anjeshghimire" });
+  });
+
+  it("routes a follower with neither a creator profile nor a brand to the dashboard profile", () => {
+    expect(
+      resolve(NotificationType.NEW_FOLLOWER, "u1", {
+        recentActors: [
+          {
+            id: "u1",
+            name: "Shopper",
+            handle: "shopper",
+            avatarUrl: null,
+            isCreator: false,
+            brandId: null,
+          },
+        ],
+      }),
+    ).toEqual({ surface: NotificationSurface.WEB, path: "/profile" });
   });
 
   it("routes gamification, commission and order types to their web dashboard pages", () => {
