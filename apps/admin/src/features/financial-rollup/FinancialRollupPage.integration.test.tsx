@@ -1,12 +1,21 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { FinancialRollupPage } from "./FinancialRollupPage";
 
 const ROLLUP_URL = "http://localhost:3000/api/admin/financial-rollup";
+const LEDGER_URL = "http://localhost:3000/api/admin/financial-rollup/ledger";
+
+beforeEach(() => {
+  mswServer.use(
+    http.get(LEDGER_URL, () =>
+      HttpResponse.json({ success: true, data: { entries: [], nextCursor: null } }),
+    ),
+  );
+});
 
 const BASE_ROLLUP = {
   range: "cycle",
@@ -60,14 +69,17 @@ describe("FinancialRollupPage payment method breakdown", () => {
 
     renderPage();
 
-    expect(await screen.findByText("COD")).toBeInTheDocument();
-    expect(screen.getByText("eSewa")).toBeInTheDocument();
-    expect(screen.getByText("3 orders")).toBeInTheDocument();
-    expect(screen.getByText("1 order")).toBeInTheDocument();
-    expect(screen.getByText(/75\.0% of GMV/)).toBeInTheDocument();
-    expect(screen.getByText(/25\.0% of GMV/)).toBeInTheDocument();
-    expect(screen.getByText("5.0% realized take rate")).toBeInTheDocument();
-    expect(screen.getByText("3.5% realized take rate")).toBeInTheDocument();
-    expect(screen.queryByText("Khalti")).not.toBeInTheDocument();
+    const heading = await screen.findByText("GMV by payment method");
+    const panel = within(heading.closest("div") as HTMLElement);
+
+    expect(panel.getByText("COD")).toBeInTheDocument();
+    expect(panel.getByText("eSewa")).toBeInTheDocument();
+    expect(panel.getByText("3 orders")).toBeInTheDocument();
+    expect(panel.getByText("1 order")).toBeInTheDocument();
+    expect(panel.getByText(/75\.0% of GMV/)).toBeInTheDocument();
+    expect(panel.getByText(/25\.0% of GMV/)).toBeInTheDocument();
+    expect(panel.getByText("5.0% realized take rate")).toBeInTheDocument();
+    expect(panel.getByText("3.5% realized take rate")).toBeInTheDocument();
+    expect(panel.queryByText("Khalti")).not.toBeInTheDocument();
   });
 });

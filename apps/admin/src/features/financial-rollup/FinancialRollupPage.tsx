@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { financialRollupApi } from "./api";
+import { money, PAYMENT_METHOD_LABEL, PAYMENT_METHOD_ORDER, percent } from "./constants";
+import { LedgerTable } from "./LedgerTable";
 import type { PaymentMethodBreakdown, RollupRange } from "./schemas";
 
 const RANGE_TABS: RollupRange[] = ["cycle", "30d", "all"];
@@ -11,16 +13,6 @@ const RANGE_LABEL: Record<RollupRange, string> = {
   "30d": "Last 30 days",
   all: "All time",
 };
-
-const PAYMENT_METHOD_ORDER: PaymentMethod[] = ["COD", "ESEWA", "KHALTI"];
-const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
-  COD: "COD",
-  ESEWA: "eSewa",
-  KHALTI: "Khalti",
-};
-
-const money = (amount: number) => `Rs. ${amount.toLocaleString()}`;
-const percent = (fraction: number) => `${(fraction * 100).toFixed(1)}%`;
 
 const StatRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex items-center justify-between gap-3 border-b border-border/60 py-2 text-sm last:border-0">
@@ -180,6 +172,8 @@ export const FinancialRollupPage = () => {
           </div>
         </div>
       )}
+
+      <LedgerTable />
     </div>
   );
 };

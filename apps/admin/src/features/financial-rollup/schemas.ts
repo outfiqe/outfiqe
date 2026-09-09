@@ -43,3 +43,31 @@ export const financialRollupSchema = z.object({
   byPaymentMethod: z.partialRecord(z.enum(paymentMethodValues), paymentMethodBreakdownSchema),
 });
 export type FinancialRollup = z.infer<typeof financialRollupSchema>;
+
+export const ledgerRowSchema = z.object({
+  orderId: z.string(),
+  orderItemId: z.string(),
+  createdAt: z.string(),
+  paymentMethod: z.enum(paymentMethodValues),
+  grossAmount: z.number().nullable(),
+  platformFee: z.number().nullable(),
+  gatewayFee: z.number().nullable(),
+  brandNetAmount: z.number().nullable(),
+  brandPayoutStatus: z.enum(brandPayoutStatusValues).nullable(),
+  creatorCommissionAmount: z.number().nullable(),
+  creatorCommissionStatus: z.enum(commissionStatusValues).nullable(),
+});
+export type LedgerRow = z.infer<typeof ledgerRowSchema>;
+
+export const ledgerPageSchema = z.object({
+  entries: z.array(ledgerRowSchema),
+  nextCursor: z.string().nullable(),
+});
+export type LedgerPage = z.infer<typeof ledgerPageSchema>;
+
+export type LedgerFilters = {
+  paymentMethod?: PaymentMethod;
+  brandPayoutStatus?: BrandPayoutStatus;
+  dateFrom?: string;
+  dateTo?: string;
+};
