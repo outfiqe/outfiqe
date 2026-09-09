@@ -6,7 +6,13 @@ import { userRepository } from "#modules/users/user.repository.js";
 
 import { CHAT_CONTACT_SEARCH_RESULT_LIMIT } from "./chat.constants.js";
 import { chatRepository } from "./chat.repository.js";
-import type { ChatBlocksPage, ChatContact, ChatSettingsView } from "./chat.types.js";
+import {
+  type ChatAvailability,
+  type ChatBlocksPage,
+  type ChatContact,
+  type ChatSettingsView,
+  ChatUnavailableReason,
+} from "./chat.types.js";
 import { toBlockedChatContact } from "./chat.utils.js";
 
 const BAD_REQUEST_STATUS = 400;
@@ -26,6 +32,47 @@ const requireBlockableTarget = async (targetId: string) => {
     );
   }
   return target;
+};
+
+const computeChatAvailability = async (
+  callerId: string,
+  recipientId: string,
+): Promise<ChatAvailability> => {
+  if (callerId === recipientId) return { isAvailable: true };
+
+  const [caller, recipient, block] = await Promise.all([
+    userRepository.findById(callerId),
+    userRepository.findById(recipientId),
+    chatRepository.findBlockBetween(callerId, recipientId),
+  ]);
+  if (!caller || !recipient) {
+    return { isAvailable: false, reason: ChatUnavailableReason.RECIPIENT_UNREACHABLE };
+  }
+  if (caller.role === UserRole.ADMIN || recipient.role === UserRole.ADMIN) {
+    return { isAvailable: true };
+  }
+
+  if (block) {
+    return {
+      isAvailable: false,
+      reason:
+        block.blockerId === callerId
+          ? ChatUnavailableReason.YOU_TURNED_OFF_THIS_PERSON
+          : ChatUnavailableReason.RECIPIENT_UNREACHABLE,
+    };
+  }
+
+  const [callerSettings, recipientSettings] = await Promise.all([
+    chatRepository.getSettings(callerId),
+    chatRepository.getSettings(recipientId),
+  ]);
+  if (!(callerSettings?.isChatEnabled ?? true)) {
+    return { isAvailable: false, reason: ChatUnavailableReason.YOUR_CHAT_DISABLED };
+  }
+  if (!(recipientSettings?.isChatEnabled ?? true)) {
+    return { isAvailable: false, reason: ChatUnavailableReason.RECIPIENT_UNREACHABLE };
+  }
+  return { isAvailable: true };
 };
 
 export const chatService = {
@@ -95,22 +142,9 @@ export const chatService = {
     return chatRepository.searchContacts(userId, query, CHAT_CONTACT_SEARCH_RESULT_LIMIT);
   },
 
+  resolveChatAvailability: computeChatAvailability,
+
   async isChatAvailableBetween(userAId: string, userBId: string): Promise<boolean> {
-    if (userAId === userBId) return true;
-
-    const [userA, userB, block] = await Promise.all([
-      userRepository.findById(userAId),
-      userRepository.findById(userBId),
-      chatRepository.findBlockBetween(userAId, userBId),
-    ]);
-    if (!userA || !userB) return false;
-    if (userA.role === UserRole.ADMIN || userB.role === UserRole.ADMIN) return true;
-    if (block) return false;
-
-    const [settingsA, settingsB] = await Promise.all([
-      chatRepository.getSettings(userAId),
-      chatRepository.getSettings(userBId),
-    ]);
-    return (settingsA?.isChatEnabled ?? true) && (settingsB?.isChatEnabled ?? true);
+    return (await computeChatAvailability(userAId, userBId)).isAvailable;
   },
 };
