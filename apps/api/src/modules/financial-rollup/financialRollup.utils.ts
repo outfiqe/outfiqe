@@ -1,4 +1,5 @@
 import type { PaymentMethod } from "#generated/prisma/enums.js";
+import { AppError } from "#middlewares/error-handler.js";
 
 import type {
   PaymentMethodBreakdown,
@@ -10,6 +11,29 @@ export const sumStatusBuckets = (
   amountByStatus: Partial<Record<string, number>>,
   statuses: readonly string[],
 ): number => statuses.reduce((total, status) => total + (amountByStatus[status] ?? 0), 0);
+
+export type LedgerCursor = { createdAt: Date; orderItemId: string };
+
+export const encodeLedgerCursor = ({ createdAt, orderItemId }: LedgerCursor): string =>
+  Buffer.from(JSON.stringify({ createdAt: createdAt.toISOString(), orderItemId })).toString(
+    "base64url",
+  );
+
+export const decodeLedgerCursor = (cursor: string): LedgerCursor => {
+  try {
+    const decoded = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as {
+      createdAt: string;
+      orderItemId: string;
+    };
+    const createdAt = new Date(decoded.createdAt);
+    if (!decoded.orderItemId || Number.isNaN(createdAt.getTime())) {
+      throw new Error("malformed cursor payload");
+    }
+    return { createdAt, orderItemId: decoded.orderItemId };
+  } catch {
+    throw new AppError("INVALID_LEDGER_CURSOR", "That page reference is invalid.", 400);
+  }
+};
 
 export const buildPaymentMethodBreakdown = (
   orderTotals: PaymentMethodOrderTotals[],

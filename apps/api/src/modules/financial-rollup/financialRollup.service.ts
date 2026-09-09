@@ -7,9 +7,18 @@ import {
   OUTSTANDING_COMMISSION_STATUSES,
 } from "./financialRollup.constants.js";
 import { financialRollupRepository } from "./financialRollup.repository.js";
-import type { FinancialRollupQuery } from "./financialRollup.schemas.js";
-import type { FinancialRollupRange, FinancialRollupView } from "./financialRollup.types.js";
-import { buildPaymentMethodBreakdown, sumStatusBuckets } from "./financialRollup.utils.js";
+import type { FinancialLedgerQuery, FinancialRollupQuery } from "./financialRollup.schemas.js";
+import type {
+  FinancialRollupRange,
+  FinancialRollupView,
+  LedgerPage,
+} from "./financialRollup.types.js";
+import {
+  buildPaymentMethodBreakdown,
+  decodeLedgerCursor,
+  encodeLedgerCursor,
+  sumStatusBuckets,
+} from "./financialRollup.utils.js";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -76,5 +85,28 @@ export const financialRollupService = {
         paymentMethodPayoutFees,
       ),
     };
+  },
+
+  async getLedger(query: FinancialLedgerQuery): Promise<LedgerPage> {
+    const cursor = query.cursor ? decodeLedgerCursor(query.cursor) : undefined;
+
+    const rows = await financialRollupRepository.listLedger({
+      paymentMethod: query.paymentMethod,
+      brandPayoutStatus: query.brandPayoutStatus,
+      dateFrom: query.dateFrom,
+      dateTo: query.dateTo,
+      cursor,
+      limit: query.limit,
+    });
+
+    const hasMore = rows.length > query.limit;
+    const entries = hasMore ? rows.slice(0, query.limit) : rows;
+    const lastEntry = entries.at(-1);
+    const nextCursor =
+      hasMore && lastEntry
+        ? encodeLedgerCursor({ createdAt: lastEntry.createdAt, orderItemId: lastEntry.orderItemId })
+        : null;
+
+    return { entries, nextCursor };
   },
 };

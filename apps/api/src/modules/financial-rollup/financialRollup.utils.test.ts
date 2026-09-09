@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { PaymentMethod } from "#generated/prisma/enums.js";
 
-import { buildPaymentMethodBreakdown, sumStatusBuckets } from "./financialRollup.utils.js";
+import {
+  buildPaymentMethodBreakdown,
+  decodeLedgerCursor,
+  encodeLedgerCursor,
+  sumStatusBuckets,
+} from "./financialRollup.utils.js";
 
 describe("sumStatusBuckets", () => {
   it("adds up only the requested statuses and treats a missing bucket as zero", () => {
@@ -56,5 +61,27 @@ describe("buildPaymentMethodBreakdown", () => {
   it("omits methods with no orders in the range", () => {
     const breakdown = buildPaymentMethodBreakdown([], []);
     expect(breakdown).toEqual({});
+  });
+});
+
+describe("encodeLedgerCursor / decodeLedgerCursor", () => {
+  it("round-trips a cursor", () => {
+    const createdAt = new Date("2026-01-05T10:00:00.000Z");
+    const cursor = encodeLedgerCursor({ createdAt, orderItemId: "item-1" });
+
+    expect(decodeLedgerCursor(cursor)).toEqual({ createdAt, orderItemId: "item-1" });
+  });
+
+  it("throws a 400 AppError for a cursor that isn't valid base64url JSON", () => {
+    expect(() => decodeLedgerCursor("not-a-real-cursor")).toThrow(
+      expect.objectContaining({ status: 400, code: "INVALID_LEDGER_CURSOR" }),
+    );
+  });
+
+  it("throws for a cursor missing required fields", () => {
+    const malformed = Buffer.from(JSON.stringify({ createdAt: "2026-01-05" })).toString(
+      "base64url",
+    );
+    expect(() => decodeLedgerCursor(malformed)).toThrow(expect.objectContaining({ status: 400 }));
   });
 });

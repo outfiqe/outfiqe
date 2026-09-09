@@ -42,3 +42,22 @@ export type FinancialRollupView = {
   };
   byPaymentMethod: Partial<Record<PaymentMethod, PaymentMethodBreakdown>>;
 };
+
+export type LedgerRow = {
+  orderId: string;
+  orderItemId: string;
+  createdAt: Date;
+  paymentMethod: PaymentMethod;
+  grossAmount: number | null;
+  platformFee: number | null;
+  gatewayFee: number | null;
+  brandNetAmount: number | null;
+  brandPayoutStatus: BrandPayoutStatus | null;
+  creatorCommissionAmount: number | null;
+  creatorCommissionStatus: CommissionStatus | null;
+};
+
+export type LedgerPage = {
+  entries: LedgerRow[];
+  nextCursor: string | null;
+};

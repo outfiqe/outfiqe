@@ -1,13 +1,30 @@
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
-import type { CommissionStatus, PaymentTransactionType } from "#generated/prisma/enums.js";
+import type {
+  CommissionStatus,
+  PaymentMethod,
+  PaymentTransactionType,
+} from "#generated/prisma/enums.js";
 import {
   BrandPayoutStatus,
   CouponRedemptionStatus,
   PaymentTransactionStatus,
 } from "#generated/prisma/enums.js";
 
-import type { PaymentMethodOrderTotals, PaymentMethodPayoutFees } from "./financialRollup.types.js";
+import type {
+  LedgerRow,
+  PaymentMethodOrderTotals,
+  PaymentMethodPayoutFees,
+} from "./financialRollup.types.js";
+
+export type LedgerFilters = {
+  paymentMethod?: PaymentMethod;
+  brandPayoutStatus?: BrandPayoutStatus;
+  dateFrom?: Date;
+  dateTo?: Date;
+  cursor?: { createdAt: Date; orderItemId: string };
+  limit: number;
+};
 
 export const financialRollupRepository = {
   async sumOrderTotalsForTransactionType(
@@ -101,6 +118,46 @@ export const financialRollupRepository = {
       _sum: { platformFee: true },
     });
     return result._sum.platformFee ?? 0;
+  },
+
+  async listLedger({
+    paymentMethod,
+    brandPayoutStatus,
+    dateFrom,
+    dateTo,
+    cursor,
+    limit,
+  }: LedgerFilters): Promise<LedgerRow[]> {
+    return prisma.$queryRaw<LedgerRow[]>(Prisma.sql`
+      SELECT
+        o.id AS "orderId",
+        oi.id AS "orderItemId",
+        oi.created_at AS "createdAt",
+        o.payment_method AS "paymentMethod",
+        bp.gross_amount AS "grossAmount",
+        bp.platform_fee AS "platformFee",
+        bp.gateway_fee AS "gatewayFee",
+        bp.net_amount AS "brandNetAmount",
+        bp.status AS "brandPayoutStatus",
+        cc.amount AS "creatorCommissionAmount",
+        cc.status AS "creatorCommissionStatus"
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
+      LEFT JOIN brand_payouts bp ON bp.order_item_id = oi.id
+      LEFT JOIN creator_commissions cc ON cc.order_item_id = oi.id
+      WHERE 1 = 1
+        ${paymentMethod ? Prisma.sql`AND o.payment_method = ${paymentMethod}` : Prisma.empty}
+        ${brandPayoutStatus ? Prisma.sql`AND bp.status = ${brandPayoutStatus}` : Prisma.empty}
+        ${dateFrom ? Prisma.sql`AND oi.created_at >= ${dateFrom}` : Prisma.empty}
+        ${dateTo ? Prisma.sql`AND oi.created_at <= ${dateTo}` : Prisma.empty}
+        ${
+          cursor
+            ? Prisma.sql`AND (oi.created_at, oi.id) < (${cursor.createdAt}, ${cursor.orderItemId})`
+            : Prisma.empty
+        }
+      ORDER BY oi.created_at DESC, oi.id DESC
+      LIMIT ${limit + 1}
+    `);
   },
 
   async sumCouponSpend(since: Date | null): Promise<number> {
