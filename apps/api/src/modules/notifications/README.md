@@ -97,7 +97,11 @@ mixes platform-wide (`NEW_MESSAGE`), creator, brand, and staff events, and where
 should land depends on their role/capabilities and which app they're in — context only the write
 path has. So `resolveNotificationTarget` runs on every write and `target_surface`/`target_path`
 are stored on the row (grouped rows re-resolve on each `upsertGroup` update, since a
-`NEW_FOLLOWER` target follows the latest follower). Clients navigate to the stored path and
+`NEW_FOLLOWER` target follows the latest follower). A `NEW_FOLLOWER` only deep-links to
+`/creator/<handle>` when that follower actually has an approved public creator profile —
+`findActorSnapshot` denormalizes an `isCreator` flag onto the actor for exactly this check;
+anyone else (a plain shopper, a brand-owner account) routes to the recipient's own `/profile`,
+since `/creator/<handle>` 404s for a non-creator. Clients navigate to the stored path and
 delete their own type→route guessing. Rows written before this shipped had null targets and were
 backfilled once in prod; the web and admin bells still keep a legacy per-type resolver as a
 one-release fallback, to be removed together with that column check next release.

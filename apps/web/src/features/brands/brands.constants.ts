@@ -1,3 +1,5 @@
+export const BRANDS_QUERY_KEY = ["brands"] as const;
+
 export const BRAND_GRID_CLASS = "grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 lg:grid-cols-4";
 
 export const BRAND_GRID_SKELETON_COUNT = 8;
