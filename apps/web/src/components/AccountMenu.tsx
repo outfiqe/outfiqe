@@ -11,7 +11,8 @@ import { useTenantHost } from "@/shared/hooks/useTenantHost";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 
 export const AccountMenu = () => {
-  const { state, isAuthenticated, isBrandOwner, isAdmin, isCreator, hasCrmAccess } = useAuth();
+  const { state, isAuthenticated, isBrandOwner, isAdmin, isCreator, isShopper, hasCrmAccess } =
+    useAuth();
   const logout = useLogout();
   const isOnTenantHost = useTenantHost();
 
@@ -104,18 +105,22 @@ export const AccountMenu = () => {
           >
             Saved items
           </Link>
-          <Link
-            href="/cart"
-            className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
-          >
-            Bag
-          </Link>
-          <Link
-            href="/orders"
-            className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
-          >
-            Orders
-          </Link>
+          {isShopper && (
+            <>
+              <Link
+                href="/cart"
+                className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
+              >
+                Bag
+              </Link>
+              <Link
+                href="/orders"
+                className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
+              >
+                Orders
+              </Link>
+            </>
+          )}
 
           {!isBrandOwner && !isAdmin && !isCreator && (
             <>

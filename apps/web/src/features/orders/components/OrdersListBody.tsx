@@ -4,6 +4,7 @@ import { Button, Skeleton } from "@outfiqe/design-system";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { NotAShopperNotice } from "@/features/auth";
 import { useAuth } from "@/features/auth/context/AuthContext";
 
 import { useInfiniteOrders } from "../hooks/useInfiniteOrders";
@@ -11,10 +12,12 @@ import { OrderRow } from "./OrderRow";
 
 export const OrdersListBody = () => {
   const router = useRouter();
-  const { isAuthenticated, isAuthResolved } = useAuth();
+  const { isAuthenticated, isAuthResolved, isBrandOwner, isAdmin } = useAuth();
   const ordersQuery = useInfiniteOrders();
 
   if (!isAuthResolved) return null;
+
+  if (isBrandOwner || isAdmin) return <NotAShopperNotice />;
 
   if (!isAuthenticated) {
     return (

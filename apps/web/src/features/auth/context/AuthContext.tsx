@@ -35,6 +35,7 @@ type AuthContextValue = {
   isBrandOwner: boolean;
   isAdmin: boolean;
   isCreator: boolean;
+  isShopper: boolean;
   hasCrmAccess: boolean;
   logout: () => Promise<void>;
   updateUser: (patch: Partial<UserSession>) => void;
@@ -106,6 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isBrandOwner: state.user?.role === UserRole.BRAND_OWNER,
     isAdmin: state.user?.role === UserRole.ADMIN,
     isCreator: state.user?.isCreator === true,
+    isShopper: state.user?.role === UserRole.CUSTOMER,
     hasCrmAccess: state.user?.hasCrmAccess === true,
     logout,
     updateUser,

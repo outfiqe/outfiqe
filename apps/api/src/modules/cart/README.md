@@ -20,7 +20,10 @@ to give the shopper an accurate preview before they get there.
 - `cart.types.ts` — `CartItemView` (per-item, includes `listUnitPrice`/`discountPercent` for the
   struck-through price), `CartView` (adds `platformDiscountTotal`/`appliedCoupon`).
 - `cart.controller.ts`/`cart.routes.ts` — `GET /`, item CRUD, `PATCH /city`, and
-  `POST`/`DELETE /coupon`.
+  `POST`/`DELETE /coupon`. Every route is gated by `requireShopper`
+  (`[requireAuth, requireRole(UserRole.CUSTOMER)]`) — a cart is a checkout precursor, and only
+  `CUSTOMER`-role accounts (regular shoppers and creators) buy; `BRAND_OWNER`/`ADMIN` get 403.
+  See `../orders/README.md` "Only shoppers can buy".
 
 ## Funnel
 

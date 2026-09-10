@@ -165,6 +165,7 @@ const mockAuth = (userId: string | null, isAuthenticated = true) => {
     isBrandOwner: false,
     isAdmin: false,
     isCreator: false,
+    isShopper: true,
     hasCrmAccess: false,
     state: {
       user: userId ? buildUserSession(userId) : null,

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+import { NotAShopperNotice } from "@/features/auth";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCart } from "@/features/cart";
 import { useDeliveryZones } from "@/features/delivery-zones";
@@ -19,13 +20,15 @@ export const CheckoutBody = () => {
   const searchParams = useSearchParams();
   const isBuyNow = searchParams.get("buyNow") === "1";
 
-  const { isAuthenticated, isAuthResolved } = useAuth();
+  const { isAuthenticated, isAuthResolved, isBrandOwner, isAdmin } = useAuth();
   const cartQuery = useCart();
   const deliveryZonesQuery = useDeliveryZones();
   const buyNow = useBuyNowPayload(isBuyNow);
   const [buyNowCoupon, setBuyNowCoupon] = useState<BuyNowCouponPreview | null>(null);
 
   if (!isAuthResolved) return null;
+
+  if (isBrandOwner || isAdmin) return <NotAShopperNotice />;
 
   if (!isAuthenticated) {
     return (

@@ -67,7 +67,7 @@ const AccountRow = ({
 export const MobileNav = () => {
   const [open, setOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
-  const { state, isAuthenticated, isAdmin, isCreator } = useAuth();
+  const { state, isAuthenticated, isAdmin, isCreator, isShopper } = useAuth();
   const logout = useLogout();
   const { data: cart } = useCart();
   const cartCount = cart?.itemCount ?? 0;
@@ -160,19 +160,21 @@ export const MobileNav = () => {
                 <Heart className="size-4 shrink-0" />
                 Wishlist
               </Link>
-              <Link
-                href="/cart"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <ShoppingBag className="size-4 shrink-0" />
-                Bag
-                {cartCount > 0 && (
-                  <span className="ml-auto flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-primary-foreground">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
+              {isShopper && (
+                <Link
+                  href="/cart"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <ShoppingBag className="size-4 shrink-0" />
+                  Bag
+                  {cartCount > 0 && (
+                    <span className="ml-auto flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-primary-foreground">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
+              )}
               <Button
                 variant="ghost"
                 onClick={toggleTheme}

@@ -44,6 +44,7 @@ const mockAuth = (overrides: Partial<ReturnType<typeof useAuth>> = {}) => {
     isAdmin: false,
     isBrandOwner: false,
     isCreator: false,
+    isShopper: true,
     hasCrmAccess: false,
     dispatch: vi.fn(),
     logout: vi.fn(),
