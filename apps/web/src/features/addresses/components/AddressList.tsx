@@ -3,6 +3,8 @@
 import { Button, Skeleton } from "@outfiqe/design-system";
 import { useState } from "react";
 
+import { NotAShopperNotice, useAuth } from "@/features/auth";
+
 import { useAddresses } from "../hooks/useAddresses";
 import { AddressCard } from "./AddressCard";
 import { AddressFormModal } from "./AddressFormModal";
@@ -10,8 +12,13 @@ import { AddressFormModal } from "./AddressFormModal";
 const SKELETON_ROW_COUNT = 2;
 
 export const AddressList = () => {
+  const { isAuthResolved, isBrandOwner, isAdmin } = useAuth();
   const { data: addresses, isPending, isError } = useAddresses();
   const [isAddOpen, setIsAddOpen] = useState(false);
+
+  if (!isAuthResolved) return null;
+
+  if (isBrandOwner || isAdmin) return <NotAShopperNotice />;
 
   return (
     <div className="rounded-2xl border border-border p-5">

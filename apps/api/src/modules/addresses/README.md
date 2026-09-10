@@ -10,8 +10,10 @@ every time. The `Order` row still snapshots the delivery fields it always did (s
 ## Structure
 
 - `address.routes.ts` — `GET /`, `POST /`, `PATCH /:id`, `DELETE /:id`, `PATCH /:id/default`.
-  All `requireAuth`; every write is behind a per-user `rateLimit` (`saved-address-write`,
-  30/hour).
+  Every route is `requireShopper` (`[requireAuth, requireRole(UserRole.CUSTOMER)]`) — the
+  address book only feeds checkout, which is itself shopper-only (`../orders/README.md`), so a
+  `BRAND_OWNER` / `ADMIN` has no use for it and gets a 403. Every write is also behind a
+  per-user `rateLimit` (`saved-address-write`, 30/hour).
 - `address.controller.ts` — thin: `requireAuthPrincipal` + `validated.*` + `sendSuccess`.
 - `address.schemas.ts` — `createAddressSchema` (spreads the shared `shippingAddressFields` from
   `#lib/shipping-address.schemas.js` + `label` + `isDefault`), `updateAddressSchema` (all
