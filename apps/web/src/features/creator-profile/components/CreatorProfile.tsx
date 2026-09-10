@@ -223,7 +223,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const avatarFallback = (
     <span
       aria-hidden
-      className="flex size-full items-center justify-center text-2xl font-bold text-white"
+      className="flex size-full items-center justify-center text-xl font-bold text-white sm:text-2xl"
       style={{ backgroundColor: getAvatarColor(userId) }}
     >
       {initialsFor(name)}
@@ -231,9 +231,9 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   );
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
-      <div className="flex flex-wrap items-start gap-4 pb-8 sm:items-center sm:gap-5">
-        <div className={cn("relative shrink-0", showsAvatarRing && "rounded-full p-1.5")}>
+    <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8">
+      <div className="flex flex-wrap items-start gap-3 pb-6 sm:items-center sm:gap-5 sm:pb-8">
+        <div className={cn("relative shrink-0", showsAvatarRing && "rounded-full p-1 sm:p-1.5")}>
           {showsAvatarRing && (
             <div
               aria-hidden
@@ -244,14 +244,14 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
               }}
             />
           )}
-          <div className="relative size-20 overflow-hidden rounded-full">
+          <div className="relative size-16 overflow-hidden rounded-full sm:size-20">
             {avatarUrl ? (
               <AppImage
                 src={avatarUrl}
                 image={avatarUrl === creator.avatarUrl ? creator.avatarImage : undefined}
                 alt=""
                 fill
-                sizes="80px"
+                sizes="(min-width: 640px) 80px, 64px"
               />
             ) : (
               avatarFallback
@@ -260,23 +260,23 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
         </div>
 
         <div className="min-w-0 flex-1">
-          <h1 className="flex items-center gap-2 font-display text-xl font-extrabold uppercase leading-tight tracking-tight text-foreground sm:text-2xl lg:text-3xl">
+          <h1 className="flex items-center gap-2 font-display text-lg font-extrabold uppercase leading-tight tracking-tight text-foreground sm:text-2xl lg:text-3xl">
             {name}
             {creatorStatus === "APPROVED" && (
               <span
                 role="img"
                 aria-label="Approved creator"
-                className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground sm:size-6"
+                className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground sm:size-6"
               >
-                <Check className="size-3 sm:size-3.5" strokeWidth={3} />
+                <Check className="size-2.5 sm:size-3.5" strokeWidth={3} />
               </span>
             )}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">@{handle}</p>
+          <p className="mt-0.5 text-[13px] text-muted-foreground sm:mt-1 sm:text-sm">@{handle}</p>
 
           {titleBadge && (
             <div
-              className="mt-2 inline-flex items-center gap-2 rounded-full border py-1 pl-1 pr-3"
+              className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border py-0.5 pl-0.5 pr-2.5 sm:mt-2 sm:gap-2 sm:py-1 sm:pl-1 sm:pr-3"
               style={{
                 backgroundColor: `${titleBadgeAccentColor}1A`,
                 borderColor: `${titleBadgeAccentColor}4D`,
@@ -287,10 +287,10 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
                 designConfig={titleBadge.designConfig}
                 rarity={titleBadge.rarity}
                 isLocked={false}
-                className="size-6"
+                className="size-5 sm:size-6"
               />
               <span
-                className="text-xs font-bold uppercase tracking-wide"
+                className="text-[11px] font-bold uppercase tracking-wide sm:text-xs"
                 style={{ color: titleBadgeAccentColor ?? undefined }}
               >
                 {titleBadge.name}
@@ -298,7 +298,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
             </div>
           )}
 
-          <div className="mt-2 flex flex-wrap items-center gap-2">
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 sm:mt-2">
             {heightCm && (
               <Badge variant="outline" showDot={false}>
                 {formatHeight(heightCm)}
@@ -338,7 +338,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
             )}
           </div>
 
-          <div className="mt-4 grid grid-cols-4 gap-2 sm:flex sm:gap-6">
+          <div className="mt-3 grid grid-cols-4 gap-2 sm:mt-4 sm:flex sm:gap-6">
             <div>
               <p className="font-display text-base font-extrabold text-foreground sm:text-lg">
                 {postsCount}
