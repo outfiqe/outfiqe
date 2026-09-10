@@ -16,7 +16,10 @@ that launch a conversation. Everything here is gated by Phase 1's `chatService
   `apps/web/src/app/providers.tsx`, alongside `AuthProvider` — the only place in this app that's
   genuinely global across every route.
 - `FloatingChatLauncher.tsx` — the persistent bottom-right bubble (authenticated users only),
-  showing a total-unread badge, hidden while the panel itself is open.
+  showing a total-unread badge, hidden while the panel itself is open. On mobile it sits just
+  above the `MobileTabBar` (`bottom-[calc(5.5rem+env(safe-area-inset-bottom))]`, matching the
+  tab bar's own safe-area handling); `explore`'s `AddPostButton` stacks directly on top of it —
+  see that feature's README.
 - `ChatPanel.tsx` — the `Drawer`-wrapped (`@outfiqe/design-system`) panel: swaps between
   `ConversationList` and `MessageThread` depending on `useChatPanel().view`, with an "expand to
   full page" action that navigates to `/messages` (or `/messages/:conversationId`) and closes the

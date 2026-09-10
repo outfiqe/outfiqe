@@ -17,8 +17,9 @@ const COMPOSE_TARGET = {
   BECOME_CREATOR: "become_creator",
 } as const;
 
-const FAB_POSITION_ABOVE_CHAT_LAUNCHER = "bottom-40 sm:bottom-24 lg:bottom-28";
-const FAB_POSITION_DEFAULT = "bottom-24 lg:bottom-28";
+const FAB_POSITION_ABOVE_CHAT_LAUNCHER =
+  "bottom-[calc(9rem+env(safe-area-inset-bottom))] sm:bottom-24 lg:bottom-28";
+const FAB_POSITION_DEFAULT = "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] lg:bottom-28";
 
 type ComposeTarget = (typeof COMPOSE_TARGET)[keyof typeof COMPOSE_TARGET] | null;
 
@@ -49,11 +50,11 @@ export const AddPostButton = () => {
         onClick={handleClick}
         aria-label="Add a post"
         className={cn(
-          "fixed right-4 z-40 flex h-14 w-14 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground shadow-xl transition hover:scale-105 hover:bg-primary-hover active:scale-95 sm:w-auto sm:px-6 lg:right-8",
+          "fixed right-4 z-40 flex size-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground shadow-xl transition hover:scale-105 hover:bg-primary-hover active:scale-95 sm:h-14 sm:w-auto sm:px-6 lg:right-8",
           isAuthenticated ? FAB_POSITION_ABOVE_CHAT_LAUNCHER : FAB_POSITION_DEFAULT,
         )}
       >
-        <Plus className="size-6 shrink-0" />
+        <Plus className="size-5 shrink-0 sm:size-6" />
         <span className="hidden text-[15px] font-semibold sm:inline">Post</span>
       </button>
 

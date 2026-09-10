@@ -144,11 +144,15 @@ client-only data, and `PostCard` only renders in the non-default List layout —
 of the route's initial chunk is worth the extra request when they are actually needed.
 
 **`AddPostButton` sits higher on mobile when the user is signed in.** Below `sm` the global
-`FloatingChatLauncher` bubble (`messaging`, mounted in `app/providers.tsx`) is pinned to
-`bottom-24 right-4` — the exact spot this FAB used to occupy, so on `/explore` and creator profiles
-the two overlapped. Signed-in users get `bottom-40` here (clearing the 44px launcher plus a gap);
-signed-out users, who never see the launcher, keep `bottom-24`. At `sm` and up the launcher moves
-to `bottom-6 right-6` and the collision is gone, so the offset is mobile-only.
+`FloatingChatLauncher` bubble (`messaging`, mounted in `app/providers.tsx`) sits just above the
+`MobileTabBar` at `bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4`, so on `/explore`
+and creator profiles this FAB stacks on top of it at
+`bottom-[calc(9rem+env(safe-area-inset-bottom))]` (a 48px launcher plus an ~8px gap); signed-out
+users, who never see the launcher, take the launcher's own slot. Both offsets add
+`env(safe-area-inset-bottom)` so the pair clears the tab bar (which does the same) on a notched
+phone. On mobile both buttons are `size-12` circles for a tidy cluster; at `sm` and up the
+launcher moves to `bottom-6` and this FAB becomes the `Post` pill, so the stacking only matters
+below `sm`.
 
 **Like/save/follow all set `networkMode: "always"`, and that is what makes queueing them possible
 at all — not an unrelated hardening.** React Query's default `networkMode: "online"` pauses a
