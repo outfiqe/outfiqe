@@ -33,7 +33,14 @@ support reports, and review the organization's audit log — against the `/api/c
   themselves is the SUPERADMIN and no transfer is already pending — takes `viewerIsSuperAdmin`/
   `hasPendingOwnershipTransfer` as props from `CrmPage`, since it otherwise only fetches the
   member/role lists itself). Disables the role `Select` and deactivate/reactivate button on the
-  SUPERADMIN's own row rather than letting the user hit the API's `SUPERADMIN_MEMBERSHIP_LOCKED` 403.
+  SUPERADMIN's own row rather than letting the user hit the API's `SUPERADMIN_MEMBERSHIP_LOCKED`
+  403, and on **the viewer's own row** (matched on `useAuth()`'s user id against `member.userId`)
+  rather than letting them hit `MEMBERSHIP_SELF_UPDATE_FORBIDDEN` — the row also carries a short
+  "you can't change your own role" note. Every other role change routes through a `ConfirmModal`
+  first (the raw `Select` change only stages `{ member, nextRoleId }`; the controlled `value` snaps
+  back until the mutation succeeds). A successful role or status change invalidates both
+  `["crm-members"]` and `["crm-organization"]` so the sidebar's viewer context/nav can't lag a
+  member's own permission change.
 - `OwnershipTransferBanner.tsx` — renders from `organization.pendingOwnershipTransfer`: Accept/
   Decline for the recipient (matched against `useAuth()`'s current user id), a Cancel option for
   the SUPERADMIN who sent it, nothing for anyone else.
@@ -225,7 +232,7 @@ success and surfaces the API's error message via `getErrorMessage`/`toast.error`
   by `CrmOverviewSection`; the follow-up is to point `ReportsSection` at them and rewrite that
   test.
 - **`GET /api/crm/organization` returns the viewer's own permission context alongside the
-  organization** (`viewerIsSuperAdmin`, `viewerPermissionKeys` —
+  organization** (`viewerIsSuperAdmin`, `viewerRoleName`, `viewerPermissionKeys` —
   `crm-access.utils.ts`'s `toOrganizationWithViewerContext`, populated from the `Membership`
   `requirePermission("org:read")` already resolved onto `res.locals.crmMembership`, no extra
   query). `CrmPage` uses it to hide `MembersSection`/`InviteSection` entirely for a role that
