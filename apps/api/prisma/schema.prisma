@@ -1118,6 +1118,7 @@ model Order {
   fulfilmentGroups OrderFulfilmentGroup[]
 
   @@index([userId, createdAt])
+  @@index([paymentMethod, createdAt])
   @@map("orders")
 }
 
@@ -1211,6 +1212,7 @@ model OrderItem {
   @@index([productId])
   @@index([attributedCreatorId])
   @@index([fulfilmentGroupId])
+  @@index([orderId])
   @@map("order_items")
 }
 
@@ -1334,6 +1336,7 @@ model CreatorCommission {
   ledgerEntry WithdrawRequestLedgerEntry?
 
   @@index([creatorId, status])
+  @@index([status, createdAt])
   @@map("creator_commissions")
 }
 
@@ -2041,6 +2044,7 @@ model BrandPayout {
   ledgerEntry WithdrawRequestLedgerEntry?
 
   @@index([brandId, status])
+  @@index([status, createdAt])
   @@map("brand_payouts")
 }
 

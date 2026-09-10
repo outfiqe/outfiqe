@@ -1,15 +1,32 @@
 import { startOfMonth } from "date-fns/startOfMonth";
 
 import { PaymentTransactionType } from "#generated/prisma/enums.js";
+import { AppError } from "#middlewares/error-handler.js";
 
 import {
+  MAX_LEDGER_EXPORT_ROWS,
   OUTSTANDING_BRAND_PAYOUT_STATUSES,
   OUTSTANDING_COMMISSION_STATUSES,
 } from "./financialRollup.constants.js";
 import { financialRollupRepository } from "./financialRollup.repository.js";
-import type { FinancialRollupQuery } from "./financialRollup.schemas.js";
-import type { FinancialRollupRange, FinancialRollupView } from "./financialRollup.types.js";
-import { sumStatusBuckets } from "./financialRollup.utils.js";
+import type {
+  FinancialLedgerExportQuery,
+  FinancialLedgerQuery,
+  FinancialRollupQuery,
+} from "./financialRollup.schemas.js";
+import type {
+  FinancialRollupRange,
+  FinancialRollupView,
+  LedgerPage,
+} from "./financialRollup.types.js";
+import {
+  buildAttributionView,
+  buildPaymentMethodBreakdown,
+  decodeLedgerCursor,
+  encodeLedgerCursor,
+  sumStatusBuckets,
+  toLedgerCsv,
+} from "./financialRollup.utils.js";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -30,6 +47,9 @@ export const financialRollupService = {
       brandPayoutsByStatus,
       platformRevenueRealized,
       couponSpend,
+      paymentMethodOrderTotals,
+      paymentMethodPayoutFees,
+      attributionCounts,
     ] = await Promise.all([
       financialRollupRepository.sumOrderTotalsForTransactionType(
         PaymentTransactionType.PAYMENT,
@@ -43,6 +63,12 @@ export const financialRollupService = {
       financialRollupRepository.sumBrandPayoutsByStatus(since),
       financialRollupRepository.sumRealizedPlatformFee(since),
       financialRollupRepository.sumCouponSpend(since),
+      financialRollupRepository.sumOrderTotalsByPaymentMethod(
+        PaymentTransactionType.PAYMENT,
+        since,
+      ),
+      financialRollupRepository.sumRealizedBrandPayoutFeesByPaymentMethod(since),
+      financialRollupRepository.sumAttributionCounts(since),
     ]);
 
     return {
@@ -64,6 +90,57 @@ export const financialRollupService = {
         couponSpend,
         netPlatformRevenue: platformRevenueRealized - couponSpend,
       },
+      byPaymentMethod: buildPaymentMethodBreakdown(
+        paymentMethodOrderTotals,
+        paymentMethodPayoutFees,
+      ),
+      attribution: buildAttributionView(attributionCounts),
     };
+  },
+
+  async getLedger(query: FinancialLedgerQuery): Promise<LedgerPage> {
+    const cursor = query.cursor ? decodeLedgerCursor(query.cursor) : undefined;
+
+    const rows = await financialRollupRepository.listLedger({
+      paymentMethod: query.paymentMethod,
+      brandPayoutStatus: query.brandPayoutStatus,
+      dateFrom: query.dateFrom,
+      dateTo: query.dateTo,
+      cursor,
+      limit: query.limit,
+    });
+
+    const hasMore = rows.length > query.limit;
+    const entries = hasMore ? rows.slice(0, query.limit) : rows;
+    const lastEntry = entries.at(-1);
+    const nextCursor =
+      hasMore && lastEntry
+        ? encodeLedgerCursor({ createdAt: lastEntry.createdAt, orderItemId: lastEntry.orderItemId })
+        : null;
+
+    return { entries, nextCursor };
+  },
+
+  async exportLedgerCsv(query: FinancialLedgerExportQuery): Promise<{
+    csv: string;
+    rowCount: number;
+  }> {
+    const rows = await financialRollupRepository.listLedger({
+      paymentMethod: query.paymentMethod,
+      brandPayoutStatus: query.brandPayoutStatus,
+      dateFrom: query.dateFrom,
+      dateTo: query.dateTo,
+      limit: MAX_LEDGER_EXPORT_ROWS,
+    });
+
+    if (rows.length > MAX_LEDGER_EXPORT_ROWS) {
+      throw new AppError(
+        "LEDGER_EXPORT_TOO_LARGE",
+        `This filter matches more than ${MAX_LEDGER_EXPORT_ROWS} rows — narrow the date range or filters before exporting.`,
+        400,
+      );
+    }
+
+    return { csv: toLedgerCsv(rows), rowCount: rows.length };
   },
 };

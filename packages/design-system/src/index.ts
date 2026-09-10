@@ -31,6 +31,7 @@ export * from "./select";
 export * from "./skeleton";
 export * from "./stat-card";
 export * from "./switch";
+export * from "./table";
 export * from "./tabs";
 export * from "./theme";
 export * from "./theme-init";

@@ -17,6 +17,7 @@ export default defineConfig({
         "src/stat-card.tsx",
         "src/drawer.tsx",
         "src/modal.tsx",
+        "src/table.tsx",
         "src/use-media-query.ts",
         "src/theme.ts",
         "src/theme-init.ts",
