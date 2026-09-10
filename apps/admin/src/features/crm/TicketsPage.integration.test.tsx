@@ -74,9 +74,12 @@ const mockCommon = () => {
   );
 };
 
-const renderTicketsPage = () => {
+const renderTicketsPage = (initialEntry = "/crm/support") => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const rootRoute = createRootRoute({ component: TicketsPage });
+  const rootRoute = createRootRoute({
+    validateSearch: (search: Record<string, unknown>) => search,
+    component: TicketsPage,
+  });
   const children = [
     "/crm",
     "/crm/partners",
@@ -91,13 +94,14 @@ const renderTicketsPage = () => {
   ].map((path) => createRoute({ getParentRoute: () => rootRoute, path }));
   const router = createRouter({
     routeTree: rootRoute.addChildren(children),
-    history: createMemoryHistory({ initialEntries: ["/crm/support"] }),
+    history: createMemoryHistory({ initialEntries: [initialEntry] }),
   });
   render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );
+  return router;
 };
 
 describe("TicketsPage", () => {
@@ -228,7 +232,7 @@ describe("TicketsPage", () => {
     );
   });
 
-  it("filters the ticket list by status", async () => {
+  it("filters the ticket list by status and reflects it in the URL", async () => {
     mockCommon();
     let lastStatusParam: string | null = "unset";
     mswServer.use(
@@ -238,12 +242,29 @@ describe("TicketsPage", () => {
       }),
     );
 
-    renderTicketsPage();
+    const router = renderTicketsPage();
     const user = userEvent.setup({ delay: null });
 
     await screen.findByRole("button", { name: /Damaged package/ });
     await user.selectOptions(screen.getByLabelText("Filter by status"), "RESOLVED");
 
     await waitFor(() => expect(lastStatusParam).toBe("RESOLVED"));
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ status: "RESOLVED" }));
+  });
+
+  it("reads the status filter from the URL on load", async () => {
+    mockCommon();
+    let lastStatusParam: string | null = "unset";
+    mswServer.use(
+      http.get(`${API_BASE}/crm/tickets`, ({ request }) => {
+        lastStatusParam = new URL(request.url).searchParams.get("status");
+        return HttpResponse.json({ success: true, data: [TICKET] });
+      }),
+    );
+
+    renderTicketsPage("/crm/support?status=CLOSED");
+
+    await screen.findByRole("button", { name: /Damaged package/ });
+    await waitFor(() => expect(lastStatusParam).toBe("CLOSED"));
   });
 });

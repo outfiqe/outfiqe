@@ -163,7 +163,9 @@ support reports, and review the organization's audit log — against the `/api/c
   status change, assign, comment) + Zod mirrors of `/api/crm/tickets*`.
 - `TicketsPage.tsx` — the Support tab: a status-filtered ticket list; clicking a row expands
   `TicketDetail.tsx` inline (description, forward-only status buttons, assignee `<Select>`,
-  internal comment thread). "New ticket" modal collects type / title / description / customer.
+  internal comment thread). "New ticket" modal collects type / title / description / customer. The
+  status filter is URL-bound via `@/lib/useSearchFilter` (`?status=`, default "all" omitted;
+  `_authenticated.crm.support.index.tsx` declares the `validateSearch`).
 - `format.utils.ts` — `formatRupees` / `formatDate` / `formatDateTime` / `formatDuration`
   (seconds → `2h 15m` / `3d 4h` / `—`), shared by every CRM screen instead of a per-file copy.
 

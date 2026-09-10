@@ -34,9 +34,13 @@ A close-to-zero gap between gateway net held and total ledger amounts owed is th
 persistent gap is what the gateway/ledger cards exist to surface.
 
 **Technical:** `FinancialRollupPage` fetches the rollup once per range via `financialRollupApi.get`
-and renders its own panels plus `<LedgerTable />`; `LedgerTable` owns its own filter state and
-fetches the ledger independently via `financialRollupApi.getLedger`, so changing a ledger filter
-never refetches the rollup tiles above it (and vice versa).
+and renders its own panels plus `<LedgerTable />`; `LedgerTable` fetches the ledger independently
+via `financialRollupApi.getLedger`, so changing a ledger filter never refetches the rollup tiles
+above it (and vice versa). Both the range tabs and every ledger filter live in the URL —
+`FinancialRollupPage` binds `range` and `LedgerTable` binds `method` / `payout` / `from` / `to`,
+all through `@/lib/useSearchFilter` (`_authenticated.financial-rollup.tsx` declares the matching
+`validateSearch`). A filtered/ranged view survives a refresh and is a shareable link; the default
+`range=cycle` and empty filters are omitted from the URL.
 
 ## Non-obvious rationale
 

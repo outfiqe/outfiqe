@@ -1,6 +1,6 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, within } from "@testing-library/react";
+import { renderWithRouter } from "@test/renderWithRouter";
+import { screen, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -31,14 +31,7 @@ const BASE_ROLLUP = {
   attribution: { totalItems: 0, attributedItems: 0, attributedShare: 0 },
 };
 
-const renderPage = () => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
-    <QueryClientProvider client={queryClient}>
-      <FinancialRollupPage />
-    </QueryClientProvider>,
-  );
-};
+const renderPage = () => renderWithRouter(<FinancialRollupPage />, { path: "/financial-rollup" });
 
 describe("FinancialRollupPage payment method breakdown", () => {
   it("shows an empty state when no orders exist in the range yet", async () => {

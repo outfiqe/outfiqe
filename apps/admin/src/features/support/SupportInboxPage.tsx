@@ -3,9 +3,10 @@ import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { useAuth } from "@/features/auth/AuthContext";
+import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { useSupportAgents, useSupportInbox, useSupportStats } from "./hooks";
-import type { SupportInboxFilters } from "./schemas";
+import type { SupportCategoryValue, SupportInboxFilters, SupportStatusValue } from "./schemas";
 import {
   CATEGORY_FILTER_VALUES,
   CATEGORY_LABELS,
@@ -14,6 +15,19 @@ import {
   STATUS_LABELS,
   STATUS_TONE,
 } from "./support.constants";
+
+const NO_FILTER = "";
+type AssigneeMode = "all" | "me" | "unassigned";
+const ASSIGNEE_MODES: AssigneeMode[] = ["all", "me", "unassigned"];
+const ASSIGNEE_MODE_FILTER = oneOfFilter<AssigneeMode>(ASSIGNEE_MODES, "all");
+const SUPPORT_STATUS_FILTER = oneOfFilter<SupportStatusValue | typeof NO_FILTER>(
+  STATUS_FILTER_VALUES,
+  NO_FILTER,
+);
+const SUPPORT_CATEGORY_FILTER = oneOfFilter<SupportCategoryValue | typeof NO_FILTER>(
+  CATEGORY_FILTER_VALUES,
+  NO_FILTER,
+);
 
 const relativeTime = (iso: string): string => {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -35,15 +49,15 @@ export const SupportInboxPage = () => {
   const { state } = useAuth();
   const meId = state.status === "signed-in" ? state.user.id : undefined;
 
-  const [assigneeMode, setAssigneeMode] = useState<"all" | "me" | "unassigned">("all");
-  const [status, setStatus] = useState<string>("");
-  const [category, setCategory] = useState<string>("");
+  const [assigneeMode, setAssigneeMode] = useSearchFilter("assignee", ASSIGNEE_MODE_FILTER);
+  const [status, setStatus] = useSearchFilter("status", SUPPORT_STATUS_FILTER);
+  const [category, setCategory] = useSearchFilter("category", SUPPORT_CATEGORY_FILTER);
   const [search, setSearch] = useState("");
 
   const filters: SupportInboxFilters = useMemo(
     () => ({
-      status: status ? (status as SupportInboxFilters["status"]) : undefined,
-      category: category ? (category as SupportInboxFilters["category"]) : undefined,
+      status: status || undefined,
+      category: category || undefined,
       assigneeUserId: assigneeMode === "me" ? meId : undefined,
       unassigned: assigneeMode === "unassigned" ? true : undefined,
       search: search.trim() || undefined,
@@ -93,7 +107,7 @@ export const SupportInboxPage = () => {
         </Select>
         <Select
           value={status}
-          onChange={(event) => setStatus(event.target.value)}
+          onChange={(event) => setStatus(event.target.value as SupportStatusValue | "")}
           className="w-44"
           aria-label="Filter by status"
         >
@@ -106,7 +120,7 @@ export const SupportInboxPage = () => {
         </Select>
         <Select
           value={category}
-          onChange={(event) => setCategory(event.target.value)}
+          onChange={(event) => setCategory(event.target.value as SupportCategoryValue | "")}
           className="w-44"
           aria-label="Filter by category"
         >

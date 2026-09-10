@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { couponsApi } from "./api";
 import { CouponPerformanceModal } from "./CouponPerformanceModal";
@@ -11,7 +12,9 @@ import { CreateCouponModal } from "./CreateCouponModal";
 import { useInfiniteCoupons } from "./hooks/useInfiniteCoupons";
 import type { Coupon, CouponStatusValue } from "./schemas";
 
-const TABS: CouponStatusValue[] = ["ACTIVE", "PAUSED", "ARCHIVED"];
+const DEFAULT_COUPON_STATUS: CouponStatusValue = "ACTIVE";
+const TABS: CouponStatusValue[] = [DEFAULT_COUPON_STATUS, "PAUSED", "ARCHIVED"];
+const COUPON_STATUS_FILTER = oneOfFilter<CouponStatusValue>(TABS, DEFAULT_COUPON_STATUS);
 
 const STATUS_TONE: Record<CouponStatusValue, "neutral" | "positive" | "negative"> = {
   ACTIVE: "positive",
@@ -30,7 +33,7 @@ const describeAmount = (coupon: Coupon): string => {
 };
 
 export const CouponsListSection = () => {
-  const [tab, setTab] = useState<CouponStatusValue>("ACTIVE");
+  const [tab, setTab] = useSearchFilter("status", COUPON_STATUS_FILTER);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [performanceCoupon, setPerformanceCoupon] = useState<Coupon | null>(null);
   const [budgetEditCoupon, setBudgetEditCoupon] = useState<Coupon | null>(null);
