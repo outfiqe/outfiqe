@@ -69,6 +69,8 @@ const listCollectionForUser = async (userId: string): Promise<BadgeCollectionEnt
       unlockedAt: state ? state.unlockedAt.toISOString() : null,
       isDisplayed: state?.isDisplayed ?? null,
       isFeatured: state?.isFeatured ?? null,
+      isTitle: state?.isTitle ?? null,
+      isTitleEligible: badge.isTitleEligible,
       displayOrder: state?.displayOrder ?? null,
       isDynamicallyActive: state && badge.isDynamic ? state.isDynamicallyEligible : null,
       progress: state ? null : (progressByBadgeId.get(badge.id) ?? null),

@@ -7,6 +7,7 @@ import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { BadgeCollectionEntry } from "../api/badgeSchemas";
 import { useUpdateBadgeDisplay } from "../hooks/useUpdateBadgeDisplay";
+import { useUpdateBadgeTitle } from "../hooks/useUpdateBadgeTitle";
 import { isRankMetric, METRIC_LABEL, RARITY_LABEL } from "../utils/badgeLabels";
 
 type AchievementBadgeCardProps = {
@@ -21,6 +22,7 @@ export const AchievementBadgeCard = ({
   onToggleFeatured,
 }: AchievementBadgeCardProps) => {
   const updateDisplay = useUpdateBadgeDisplay();
+  const updateTitle = useUpdateBadgeTitle();
   const {
     id,
     name,
@@ -32,6 +34,8 @@ export const AchievementBadgeCard = ({
     unlockedAt,
     isDisplayed,
     isFeatured,
+    isTitle,
+    isTitleEligible,
     isDynamicallyActive,
     progress,
     sponsorBrand,
@@ -134,6 +138,20 @@ export const AchievementBadgeCard = ({
             >
               {isFeatured ? "Unfeature" : "Feature"}
             </Button>
+            {isTitleEligible && (isDisplayed || isTitle) && (
+              <Button
+                variant="outline"
+                className="h-7 px-2.5 text-xs"
+                disabled={updateTitle.isPending}
+                onClick={() =>
+                  updateTitle.mutate(isTitle ? null : id, {
+                    onError: (error) => toast.error(getErrorMessage(error)),
+                  })
+                }
+              >
+                {isTitle ? "Remove title" : "Set as title"}
+              </Button>
+            )}
           </div>
         )}
       </div>

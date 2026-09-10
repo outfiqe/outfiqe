@@ -24,6 +24,7 @@ export type BadgeCatalogRecord = {
   isPermanent: boolean;
   isDynamic: boolean;
   isPublic: boolean;
+  isTitleEligible: boolean;
   sponsorBrand: SponsorBrandRecord | null;
 };
 
@@ -31,6 +32,7 @@ export type UserBadgeStateRecord = {
   badgeId: string;
   isDisplayed: boolean;
   isFeatured: boolean;
+  isTitle: boolean;
   displayOrder: number;
   unlockedAt: Date;
   isDynamicallyEligible: boolean;
@@ -62,6 +64,8 @@ export type BadgeCollectionEntry = {
   unlockedAt: string | null;
   isDisplayed: boolean | null;
   isFeatured: boolean | null;
+  isTitle: boolean | null;
+  isTitleEligible: boolean;
   displayOrder: number | null;
   isDynamicallyActive: boolean | null;
   progress: AchievementConditionProgress[] | null;

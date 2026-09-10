@@ -15,4 +15,8 @@ export const badgeApi = {
   async updateFeatured(badgeIds: string[]): Promise<void> {
     await apiClient.patch("/badges/featured", { badgeIds });
   },
+
+  async updateTitle(badgeId: string | null): Promise<void> {
+    await apiClient.patch("/badges/title", { badgeId });
+  },
 };

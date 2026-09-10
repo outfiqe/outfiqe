@@ -47,6 +47,7 @@ export const badgeRepository = {
         badgeId: true,
         isDisplayed: true,
         isFeatured: true,
+        isTitle: true,
         displayOrder: true,
         unlockedAt: true,
         isDynamicallyEligible: true,

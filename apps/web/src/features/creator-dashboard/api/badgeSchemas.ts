@@ -159,6 +159,8 @@ export const badgeCollectionEntrySchema = z.object({
   unlockedAt: z.string().nullable(),
   isDisplayed: z.boolean().nullable(),
   isFeatured: z.boolean().nullable(),
+  isTitle: z.boolean().nullable(),
+  isTitleEligible: z.boolean(),
   displayOrder: z.number().nullable(),
   isDynamicallyActive: z.boolean().nullable(),
   progress: z.array(badgeConditionProgressSchema).nullable(),
