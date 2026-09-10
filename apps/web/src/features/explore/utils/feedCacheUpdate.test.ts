@@ -28,7 +28,11 @@ const asInfinitePage = (posts: FeedPost[]): InfiniteData<FeedPage> => ({
   pageParams: [undefined],
 });
 
-const firstPost = (data: InfiniteData<FeedPage>) => data.pages[0].posts[0];
+const postFromInfinite = (
+  data: InfiniteData<FeedPage> | undefined,
+  lookId: string,
+): FeedPost | undefined =>
+  data?.pages.flatMap((page) => page.posts).find((post) => post.id === lookId);
 
 describe("patchPostInFeedCaches", () => {
   it("patches the post across the explore feed, saved grid, creator grid and look search caches", () => {
@@ -50,9 +54,12 @@ describe("patchPostInFeedCaches", () => {
       ["creator-looks", "asha"],
       ["look-search", "linen"],
     ]) {
-      const patched = firstPost(queryClient.getQueryData(key) as InfiniteData<FeedPage>);
-      expect(patched.isLiked).toBe(true);
-      expect(patched.likeCount).toBe(4);
+      const patched = postFromInfinite(
+        queryClient.getQueryData<InfiniteData<FeedPage>>(key),
+        "look-1",
+      );
+      expect(patched?.isLiked).toBe(true);
+      expect(patched?.likeCount).toBe(4);
     }
   });
 
@@ -62,9 +69,9 @@ describe("patchPostInFeedCaches", () => {
 
     patchPostInFeedCaches(queryClient, "look-1", (post) => ({ ...post, isLiked: true }));
 
-    expect(
-      (queryClient.getQueryData(["creator-looks", "public", "look-1"]) as FeedPost).isLiked,
-    ).toBe(true);
+    expect(queryClient.getQueryData<FeedPost>(["creator-looks", "public", "look-1"])?.isLiked).toBe(
+      true,
+    );
   });
 
   it("leaves unrelated posts and non-feed caches under the same key prefix untouched", () => {
@@ -77,9 +84,9 @@ describe("patchPostInFeedCaches", () => {
 
     patchPostInFeedCaches(queryClient, "look-1", (post) => ({ ...post, isLiked: true }));
 
-    const grid = queryClient.getQueryData(["creator-looks", "asha"]) as InfiniteData<FeedPage>;
-    expect(grid.pages[0].posts[0].isLiked).toBe(true);
-    expect(grid.pages[0].posts[1].isLiked).toBe(false);
+    const grid = queryClient.getQueryData<InfiniteData<FeedPage>>(["creator-looks", "asha"]);
+    expect(postFromInfinite(grid, "look-1")?.isLiked).toBe(true);
+    expect(postFromInfinite(grid, "look-2")?.isLiked).toBe(false);
     expect(queryClient.getQueryData(["creator-looks", "detail", "look-1"])).toEqual({
       id: "look-1",
       draft: true,
@@ -99,14 +106,16 @@ describe("patchCreatorInFeedCaches", () => {
 
     patchCreatorInFeedCaches(queryClient, "creator-1", true);
 
-    const feed = queryClient.getQueryData(["explore-feed", "for_you"]) as InfiniteData<FeedPage>;
-    expect(feed.pages[0].posts.every((post) => post.isFollowingCreator)).toBe(true);
+    const feed = queryClient.getQueryData<InfiniteData<FeedPage>>(["explore-feed", "for_you"]);
+    expect(feed?.pages.flatMap((page) => page.posts).every((post) => post.isFollowingCreator)).toBe(
+      true,
+    );
     expect(
-      firstPost(queryClient.getQueryData(["creator-looks", "asha"]) as InfiniteData<FeedPage>)
-        .isFollowingCreator,
+      postFromInfinite(queryClient.getQueryData(["creator-looks", "asha"]), "c")
+        ?.isFollowingCreator,
     ).toBe(true);
     expect(
-      (queryClient.getQueryData(["creator-looks", "public", "d"]) as FeedPost).isFollowingCreator,
+      queryClient.getQueryData<FeedPost>(["creator-looks", "public", "d"])?.isFollowingCreator,
     ).toBe(true);
   });
 });

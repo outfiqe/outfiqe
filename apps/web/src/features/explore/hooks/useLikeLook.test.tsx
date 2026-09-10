@@ -93,13 +93,15 @@ describe("useLikeLook", () => {
 
     await waitFor(() => expect(exploreFeedApi.unlike).toHaveBeenCalledWith("1"));
 
-    const gridPost = (queryClient.getQueryData(["creator-looks", "asha"]) as InfiniteData<FeedPage>)
-      .pages[0].posts[0];
-    const publicPost = queryClient.getQueryData(["creator-looks", "public", "1"]) as FeedPost;
+    const gridPost = queryClient
+      .getQueryData<InfiniteData<FeedPage>>(["creator-looks", "asha"])
+      ?.pages.flatMap((page) => page.posts)
+      .find((post) => post.id === "1");
+    const publicPost = queryClient.getQueryData<FeedPost>(["creator-looks", "public", "1"]);
 
-    expect(gridPost.isLiked).toBe(false);
-    expect(gridPost.likeCount).toBe(1);
-    expect(publicPost.isLiked).toBe(false);
+    expect(gridPost?.isLiked).toBe(false);
+    expect(gridPost?.likeCount).toBe(1);
+    expect(publicPost?.isLiked).toBe(false);
   });
 
   it("queues the like instead of calling the api while offline", async () => {
