@@ -194,6 +194,13 @@ export const orderRepository = {
         fulfilmentSummary: rollup.fulfilmentSummary,
       },
     });
+
+    if (rollup.fulfilmentStatus === FulfilmentStatus.DELIVERED) {
+      await client.order.updateMany({
+        where: { id: orderId, deliveredAt: null },
+        data: { deliveredAt: new Date() },
+      });
+    }
   },
 
   async cancelFulfilmentGroupsForOrder(
