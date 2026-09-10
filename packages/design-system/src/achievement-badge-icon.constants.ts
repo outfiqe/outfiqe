@@ -7,6 +7,13 @@ export const SHAPE_CLIP_PATH: Record<BadgeShape, string | undefined> = {
   shield: "polygon(50% 0%, 100% 20%, 100% 60%, 50% 100%, 0% 60%, 0% 20%)",
   star: "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)",
   hexagon: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)",
+  triangle: "polygon(50% 0%, 100% 100%, 0% 100%)",
+  gem: "polygon(35% 0%, 65% 0%, 100% 38%, 50% 100%, 0% 38%)",
+  octagon: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
+  capsule: "inset(22% 0% 22% 0% round 999px)",
+  heart: "polygon(50% 88%, 8% 46%, 8% 24%, 26% 8%, 50% 24%, 74% 8%, 92% 24%, 92% 46%)",
+  crescent:
+    "polygon(50% 0%, 68% 8%, 80% 28%, 82% 50%, 80% 72%, 68% 92%, 50% 100%, 62% 84%, 68% 66%, 70% 50%, 68% 34%, 62% 16%)",
 };
 
 export const RARITY_RING: Record<BadgeRarity, string> = {

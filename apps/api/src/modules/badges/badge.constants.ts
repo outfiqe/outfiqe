@@ -24,6 +24,12 @@ export const BADGE_SHAPE = {
   STAR: "star",
   DIAMOND: "diamond",
   HEXAGON: "hexagon",
+  TRIANGLE: "triangle",
+  GEM: "gem",
+  OCTAGON: "octagon",
+  CAPSULE: "capsule",
+  HEART: "heart",
+  CRESCENT: "crescent",
 } as const;
 
 export const BADGE_ANIMATION = {

@@ -32,6 +32,12 @@ export const BadgeShape = {
   STAR: "star",
   DIAMOND: "diamond",
   HEXAGON: "hexagon",
+  TRIANGLE: "triangle",
+  GEM: "gem",
+  OCTAGON: "octagon",
+  CAPSULE: "capsule",
+  HEART: "heart",
+  CRESCENT: "crescent",
 } as const satisfies Record<string, BadgeShapeType>;
 export type BadgeShapeValue = (typeof BadgeShape)[keyof typeof BadgeShape];
 

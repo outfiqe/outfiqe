@@ -89,6 +89,17 @@ describe("AchievementBadgeIcon", () => {
     expect(surface.style.clipPath).toBe(SHAPE_CLIP_PATH.diamond);
   });
 
+  it.each(["triangle", "gem", "octagon", "capsule", "heart", "crescent"] as const)(
+    "clips the badge surface to the %s shape",
+    (shape) => {
+      const { container } = renderIcon({ designConfig: { shape, primaryColor: "#f97316" } });
+
+      const surface = (container.firstElementChild as HTMLElement).firstElementChild as HTMLElement;
+      expect(surface.style.clipPath).toBe(SHAPE_CLIP_PATH[shape]);
+      expect(SHAPE_CLIP_PATH[shape]).toBeTruthy();
+    },
+  );
+
   const studioLayers: BadgeLayer[] = [
     {
       id: "bg",
