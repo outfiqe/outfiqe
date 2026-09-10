@@ -24,6 +24,7 @@ export const toOrganizationWithViewerContext = (
 ): OrganizationWithViewerContext => ({
   ...organization,
   viewerIsSuperAdmin: organization.superAdminMembershipId === viewerMembership.id,
+  viewerRoleName: viewerMembership.role.name,
   viewerPermissionKeys: viewerMembership.role.permissionKeys,
   pendingOwnershipTransfer,
   advancedFeaturesEnabled,

@@ -188,8 +188,14 @@ export const crmAccessController = {
     const { membershipId } = validated.params<MembershipIdParams>(res);
     const body = validated.body<UpdateMembershipBody>(res);
     const organization = getResolvedOrganization(res);
+    const actingMembership = getCrmMembership(res);
 
-    const membership = await crmAccessService.updateMembership(organization, membershipId, body);
+    const membership = await crmAccessService.updateMembership(
+      organization,
+      actingMembership.id,
+      membershipId,
+      body,
+    );
     await crmAudit.record({
       organizationId: organization.id,
       action:
