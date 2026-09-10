@@ -6,6 +6,7 @@ import {
   ANIMATION_CLASS,
   LOCKED_SIZE_CLASS,
   RARITY_DEFAULT_ANIMATION,
+  RARITY_ELEVATION,
   RARITY_RING,
   SHAPE_CLIP_PATH,
   SHIMMER_OVERLAY_STYLE,
@@ -49,14 +50,17 @@ export const AchievementBadgeIcon = ({
   const clipPath = isStudio ? undefined : SHAPE_CLIP_PATH[designConfig.shape];
   const hasImage = !isStudio && Boolean(designConfig.imageUrl) && !isLocked;
 
+  const showRarityRing = !isLocked && !isStudio && !clipPath;
+
   return (
     <div
       aria-hidden
       className={cn(
         LOCKED_SIZE_CLASS,
         "relative flex shrink-0 items-center justify-center",
-        isLocked ? "rounded-full bg-muted grayscale" : RARITY_RING[rarity],
+        isLocked && "rounded-full bg-muted grayscale",
         !isLocked && !clipPath && "rounded-full",
+        showRarityRing && RARITY_RING[rarity],
         !isLocked && animationClass,
         className,
       )}
@@ -65,7 +69,9 @@ export const AchievementBadgeIcon = ({
           ? undefined
           : ({
               "--badge-glow-color": glowColor,
-              "--tw-ring-color": isStudio ? undefined : designConfig.primaryColor,
+              "--tw-ring-color": showRarityRing ? designConfig.primaryColor : undefined,
+              "--badge-rest-shadow": showRarityRing ? undefined : RARITY_ELEVATION[rarity],
+              filter: showRarityRing ? undefined : RARITY_ELEVATION[rarity],
             } as CSSProperties)
       }
     >

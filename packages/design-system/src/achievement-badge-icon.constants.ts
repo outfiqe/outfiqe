@@ -25,6 +25,15 @@ export const RARITY_RING: Record<BadgeRarity, string> = {
   EXCLUSIVE: "ring-[3px] ring-offset-2 ring-offset-background shadow-xl",
 };
 
+export const RARITY_ELEVATION: Record<BadgeRarity, string> = {
+  COMMON: "drop-shadow(0 1px 1px rgb(0 0 0 / 0.25))",
+  UNCOMMON: "drop-shadow(0 1px 2px rgb(0 0 0 / 0.28))",
+  RARE: "drop-shadow(0 1px 3px rgb(0 0 0 / 0.24))",
+  EPIC: "drop-shadow(0 2px 5px rgb(0 0 0 / 0.26))",
+  LEGENDARY: "drop-shadow(0 3px 7px rgb(0 0 0 / 0.28))",
+  EXCLUSIVE: "drop-shadow(0 4px 10px rgb(0 0 0 / 0.32))",
+};
+
 export const RARITY_DEFAULT_ANIMATION: Record<BadgeRarity, BadgeAnimation> = {
   COMMON: "none",
   UNCOMMON: "none",

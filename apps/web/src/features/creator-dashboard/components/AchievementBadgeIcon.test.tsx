@@ -89,6 +89,28 @@ describe("AchievementBadgeIcon", () => {
     expect(surface.style.clipPath).toBe(SHAPE_CLIP_PATH.diamond);
   });
 
+  it("elevates a non-circle badge with a shape-following drop-shadow, not a rectangular ring", () => {
+    const { container } = renderIcon({
+      rarity: "EPIC",
+      designConfig: { shape: "star", primaryColor: "#f97316" },
+    });
+
+    const wrapper = container.firstElementChild as HTMLElement;
+    expect(wrapper.className).not.toMatch(/\bring-/);
+    expect(wrapper.style.filter).toContain("drop-shadow");
+  });
+
+  it("keeps the rectangular ring utility for a plain circle badge", () => {
+    const { container } = renderIcon({
+      rarity: "EPIC",
+      designConfig: { shape: "circle", primaryColor: "#f97316" },
+    });
+
+    const wrapper = container.firstElementChild as HTMLElement;
+    expect(wrapper.className).toMatch(/\bring-/);
+    expect(wrapper.style.filter).toBe("");
+  });
+
   it.each(["triangle", "gem", "octagon", "capsule", "heart", "crescent"] as const)(
     "clips the badge surface to the %s shape",
     (shape) => {
