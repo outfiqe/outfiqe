@@ -44,6 +44,7 @@ export default defineConfig({
         "src/features/shop/components/ShopResults.tsx",
         "src/features/creator-leaderboard/components/CreatorLeaderboardTabs.tsx",
         "src/features/explore/components/FeedFilterTabs.tsx",
+        "src/features/explore/components/ExploreSidebarNav.tsx",
         "src/features/explore/components/AddPostButton.tsx",
         "src/features/explore/components/PostCard.tsx",
         "src/features/explore/components/PostDetailModal.tsx",

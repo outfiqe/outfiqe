@@ -6,7 +6,7 @@ The public social feed: browsing posts (looks), liking/saving/commenting, follow
 
 ## Structure
 
-- `components/ExploreFeed.tsx` — the `/explore` page: filter tabs (For You / Following / a trending tag), infinite-scroll feed, sidebar, and live updates via socket. Supports two layouts — List renders `PostCard`; Grid (the default) renders the lighter `PostGridCard` in a plain CSS grid (`grid-cols-2 xl:grid-cols-3`) — see "Grid layout is CSS grid, not multi-column" below. Its first page is server-rendered — see "First feed page is server-rendered" below.
+- `components/ExploreFeed.tsx` — the `/explore` page: filter tabs (For You / Following / a trending tag), infinite-scroll feed, sidebar, and live updates via socket. Tab/layout state lives in the URL but is highlighted optimistically via `usePendingSelection` — see "Tab and layout switches highlight optimistically" below. Supports two layouts — List renders `PostCard`; Grid (the default) renders the lighter `PostGridCard` in a plain CSS grid (`grid-cols-2 xl:grid-cols-3`) — see "Grid layout is CSS grid, not multi-column" below. Its first page is server-rendered — see "First feed page is server-rendered" below.
 - `components/PostCard.tsx` — one feed card (List layout): header, photo carousel, tagged-product pills, caption, like/comment/save row, and an inline expandable comments section.
 - `components/PostGridCard.tsx` — one grid tile (Grid layout): just the image (with a stack icon if the post has multiple photos) and a static two-line clamped caption below it — no header/actions/comments and no interactive "see more", since tapping the tile opens the full `PostDetailModal` with the whole caption. The caption area holds a fixed two-line height so a short or missing caption never shifts the tiles below it. Deliberately lighter than `PostCard` so two columns fit comfortably on a phone screen; the tiles are laid out by a plain CSS `grid` (`ExploreFeed`), no JS layout pass and no `react-masonry-css`, unlike the richer-card masonry grid `MASONRY_BREAKPOINT_COLUMNS` used by `SavedPostsGrid`, which still collapses to 1 column on mobile because it renders full `PostCard`s. `EXPLORE_GRID_BREAKPOINT_COLUMNS` (`explore.constants.ts`) now only feeds `search`'s masonry.
 - `components/PostDetailModal.tsx` — the modal opened when a post's image is clicked (from the feed, saved posts, or a creator's profile grid). Two-pane layout: a fixed photo pane on the left, and a scrollable pane on the right (creator header, tags, caption, actions, comments) — same shape as `PostCard`'s content, just side-by-side with the image instead of stacked below it.
@@ -14,7 +14,7 @@ The public social feed: browsing posts (looks), liking/saving/commenting, follow
 - `components/CommentThread.tsx` — one top-level comment plus its replies: the inline reply preview, "View N replies"/"Load more replies" expansion, the Reply toggle, and the reply composer. One instance per comment, each owning its own expand/collapse and pagination state via `useCommentReplies` — see "Real-time comments and replies" below.
 - `components/SavedPostsGrid.tsx` — the saved-posts view: a masonry grid of `PostCard`s that also opens `PostDetailModal` on click.
 - `components/AddPostButton.tsx` — floating action button that opens `creator-dashboard`'s `PostModal` (cross-feature import — this feature displays posts, `creator-dashboard` owns creating/editing them).
-- `components/Sidebar.tsx`, `ExploreSidebarNav.tsx`, `HeaderBackdrop.tsx`, `FeedFilterTabs.tsx`, `PostCardSkeleton.tsx` — the rest of the feed page's chrome and loading states. `Sidebar`'s "Creators to follow" rail is a fixed-size slice (`SUGGESTED_CREATORS_LIMIT`, `apps/api/src/modules/follows/follow.constants.ts`) of the ranked suggestion pool (see `apps/api/src/modules/follows/README.md`); its "Find more" button opens `SuggestedCreatorsModal`.
+- `components/Sidebar.tsx`, `ExploreSidebarNav.tsx`, `HeaderBackdrop.tsx`, `FeedFilterTabs.tsx`, `PostCardSkeleton.tsx` — the rest of the feed page's chrome and loading states. `ExploreSidebarNav` is the desktop rail: the For You / Following / Trending tab buttons and the Grid / List view buttons (both prop-driven, highlighted from `ExploreFeed`'s optimistic `tab`/`layout`), plus a "Saved" `<Link>` to `/wishlist` that shows its own `useLinkStatus` pending state — see "Tab and layout switches highlight optimistically" below. `Sidebar`'s "Creators to follow" rail is a fixed-size slice (`SUGGESTED_CREATORS_LIMIT`, `apps/api/src/modules/follows/follow.constants.ts`) of the ranked suggestion pool (see `apps/api/src/modules/follows/README.md`); its "Find more" button opens `SuggestedCreatorsModal`.
 - `components/SuggestedCreatorRow.tsx` — one suggested-creator row (avatar, name, follower count, Follow button), shared by the sidebar rail and `SuggestedCreatorsModal` so the two surfaces never drift in markup.
 - `components/SuggestedCreatorsModal.tsx` — the expanded, scrollable "Creators to follow" modal opened from the sidebar's "Find more" button. Infinite-scrolls the same ranked pool the rail's first page comes from, via `useInfiniteSuggestedCreators` + the shared `useLoadMoreOnVisible` sentinel (same pattern as `BrandsGrid`/`ExploreFeed`).
 - `api/exploreFeedApi.ts`, `exploreFeedSchemas.ts` — feed/comment/reply fetches and the `FeedPost`/`FeedComment`/`FeedCommentReply` shapes everything above is built on.
@@ -101,6 +101,20 @@ the initial HTML and the first few images carry `eager`. The server fetch is ano
 and refetches its personalised feed. `/creator-looks/feed` is `optionalAuth`, so the anonymous fetch
 is a valid feed rather than an error. Reading `searchParams` makes the page dynamic (it is no longer
 in the prerendered browse-shell set), but the 30s fetch cache keeps origin load flat.
+
+**Tab and layout switches highlight optimistically, via `usePendingSelection`.** `tab`/`layout` live
+in the URL (`?tab=`/`?layout=`), and `app/explore/page.tsx` reads `searchParams`, so a `router.replace`
+to a new tab is a full RSC round-trip — the highlight (derived from `useSearchParams`) would otherwise
+only move once that commits, ~half a second of dead click on a slow connection. `ExploreFeed` wraps
+each of `committedTab`/`committedLayout` in `@/shared/hooks/usePendingSelection` (keyed on the
+committed value), so `markPending(next)` immediately makes `next` the effective value everywhere —
+the sidebar/tab-strip highlight, the feed query key, the socket sync, the auth gate — and it
+reconciles the moment `useSearchParams` catches up (or after the hook's 3s stuck-timeout). This is
+the same hook and pattern `features/shop/components/ShopResults.tsx` uses for its type filter. The
+sidebar's "Saved" item is a real `<Link>` to `/wishlist`, not a same-page toggle, so it can't use
+`usePendingSelection`; it takes the `<Link>`-native route: a `useLinkStatus()` child that highlights
+the row and pulses a dot while the navigation is in flight, matching `ShopExploreToggle` and
+`DashboardSidebarLink`.
 
 **The feed's skeleton gate no longer waits on client auth.** It previously showed a skeleton until
 `useAuth` resolved, which threw away the server-rendered feed on every load. It now renders whatever

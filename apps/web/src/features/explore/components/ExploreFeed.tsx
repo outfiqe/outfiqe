@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { TRENDING_RANKS, type TrendingRank } from "@/shared/components/TrendingRankBadge";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
+import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
 
 import {
   EXPLORE_QUERY_PARAM,
@@ -42,11 +43,19 @@ export const ExploreFeed = () => {
   const searchParams = useSearchParams();
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
 
-  const tab = searchParams.get(EXPLORE_QUERY_PARAM.TAB) ?? EXPLORE_TAB.FOR_YOU;
-  const layout: FeedLayout =
+  const committedTab = searchParams.get(EXPLORE_QUERY_PARAM.TAB) ?? EXPLORE_TAB.FOR_YOU;
+  const committedLayout: FeedLayout =
     searchParams.get(EXPLORE_QUERY_PARAM.LAYOUT) === FEED_LAYOUT.LIST
       ? FEED_LAYOUT.LIST
       : FEED_LAYOUT.GRID;
+
+  const { pendingValue: pendingTab, markPending: markTabPending } =
+    usePendingSelection<string>(committedTab);
+  const { pendingValue: pendingLayout, markPending: markLayoutPending } =
+    usePendingSelection<FeedLayout>(committedLayout);
+
+  const tab = pendingTab ?? committedTab;
+  const layout = pendingLayout ?? committedLayout;
 
   const updateExploreParams = (updates: Partial<Record<ExploreQueryParamKey, string>>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -56,9 +65,14 @@ export const ExploreFeed = () => {
     router.replace(`/explore?${params.toString()}`, { scroll: false });
   };
 
-  const setTab = (value: string) => updateExploreParams({ [EXPLORE_QUERY_PARAM.TAB]: value });
-  const setLayout = (value: FeedLayout) =>
+  const setTab = (value: string) => {
+    markTabPending(value);
+    updateExploreParams({ [EXPLORE_QUERY_PARAM.TAB]: value });
+  };
+  const setLayout = (value: FeedLayout) => {
+    markLayoutPending(value);
     updateExploreParams({ [EXPLORE_QUERY_PARAM.LAYOUT]: value });
+  };
 
   const followingGated = isAuthResolved && tab === EXPLORE_TAB.FOLLOWING && !isAuthenticated;
   const isFollowingTab = tab === EXPLORE_TAB.FOLLOWING;
