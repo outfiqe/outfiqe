@@ -204,6 +204,7 @@ export const BadgeDesignSection = ({
             {selectedLayer && (
               <StudioSection title="Layer properties">
                 <LayerPropertiesPanel
+                  key={selectedLayer.id}
                   layer={selectedLayer}
                   onChange={(updates) => updateLayer(selectedLayer.id, updates)}
                 />

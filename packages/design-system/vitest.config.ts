@@ -9,6 +9,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: [
+        "src/studio-badge-visual.utils.ts",
         "src/autocomplete.tsx",
         "src/chart.tsx",
         "src/chart-card.tsx",

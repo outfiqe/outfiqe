@@ -1,4 +1,4 @@
-import { AchievementBadgeIcon } from "@outfiqe/design-system";
+import { AchievementBadgeIcon, SHAPE_CLIP_PATH } from "@outfiqe/design-system";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -73,6 +73,20 @@ describe("AchievementBadgeIcon", () => {
 
     const style = (container.firstElementChild as HTMLElement).style;
     expect(style.getPropertyValue("--badge-glow-color")).toBe("#f97316");
+  });
+
+  it("keeps the clip-path off the animated wrapper so the glow can trace the shape", () => {
+    const { container } = renderIcon({
+      rarity: "RARE",
+      designConfig: { shape: "diamond", primaryColor: "#f97316" },
+    });
+
+    const wrapper = container.firstElementChild as HTMLElement;
+    const surface = wrapper.firstElementChild as HTMLElement;
+
+    expect(wrapper.className).toContain("animate-badge-glow");
+    expect(wrapper.style.clipPath).toBe("");
+    expect(surface.style.clipPath).toBe(SHAPE_CLIP_PATH.diamond);
   });
 
   const studioLayers: BadgeLayer[] = [

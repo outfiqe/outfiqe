@@ -6,7 +6,11 @@ import {
   SHIMMER_OVERLAY_STYLE,
 } from "./achievement-badge-icon.constants";
 import { cn } from "./cn";
-import { layerFontSizePx, layerPositionStyle } from "./studio-badge-visual.utils";
+import {
+  layerBorderWidthPx,
+  layerFontSizePx,
+  layerPositionStyle,
+} from "./studio-badge-visual.utils";
 
 export const StudioBadgeVisual = ({
   layers,
@@ -28,9 +32,10 @@ export const StudioBadgeVisual = ({
               clipPath,
               backgroundColor: layer.fill,
               borderColor: layer.borderColor,
-              borderWidth: layer.borderWidth ? `${layer.borderWidth}px` : undefined,
+              borderWidth: layer.borderWidth
+                ? `${layerBorderWidthPx(layer.borderWidth)}px`
+                : undefined,
               borderStyle: layer.borderWidth ? "solid" : undefined,
-              ...(isShimmering ? SHIMMER_OVERLAY_STYLE : undefined),
             }}
           />
         );
@@ -81,5 +86,12 @@ export const StudioBadgeVisual = ({
         </div>
       );
     })}
+    {isShimmering && (
+      <span
+        aria-hidden
+        className="animate-badge-shimmer pointer-events-none absolute inset-0"
+        style={SHIMMER_OVERLAY_STYLE}
+      />
+    )}
   </div>
 );

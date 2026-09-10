@@ -26,6 +26,7 @@ export default defineConfig({
         "src/features/gamification/BadgesSection/BadgeFormPage.tsx",
         "src/features/gamification/BadgesSection/DesignStudio/studioLayer.utils.ts",
         "src/features/gamification/BadgesSection/DesignStudio/BadgeDesignSection.tsx",
+        "src/features/gamification/BadgesSection/DesignStudio/LayerNumberInput.tsx",
         "src/features/gamification/StatsSection.tsx",
         "src/features/gamification/LeaderboardSection.tsx",
         "src/features/platform-commission/GatewayFeeRatesSection.tsx",
