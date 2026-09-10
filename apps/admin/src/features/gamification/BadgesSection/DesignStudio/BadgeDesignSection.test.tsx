@@ -89,9 +89,9 @@ describe("BadgeDesignSection", () => {
     expect(colourInput.value).toBe("#123456");
   });
 
-  it("hides the colour picker once a custom image is set in simple mode", () => {
+  it("keeps the colour picker in simple mode even when a custom image is set", () => {
     render(<Harness initialForm={{ ...EMPTY_FORM, iconImageUrl: "https://cdn.test/i.png" }} />);
-    expect(screen.queryByLabelText("Color")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Color")).toBeInTheDocument();
   });
 
   it("selects a layer in studio mode and shows its properties, then removes it", async () => {
