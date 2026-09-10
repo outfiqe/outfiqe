@@ -126,7 +126,14 @@ const listFeaturedForUser = async (userId: string): Promise<FeaturedBadgeView[]>
       );
       continue;
     }
-    featured.push({ id: row.id, name: row.name, icon: row.icon, designConfig, rarity: row.rarity });
+    featured.push({
+      id: row.id,
+      name: row.name,
+      icon: row.icon,
+      designConfig,
+      rarity: row.rarity,
+      showProfileRing: row.showProfileRing,
+    });
   }
   return featured;
 };
@@ -169,7 +176,14 @@ const getTitleBadgeForUser = async (userId: string): Promise<FeaturedBadgeView |
     logger.error(`Badge ${row.id} has an invalid designConfig — excluded from the title view.`);
     return null;
   }
-  return { id: row.id, name: row.name, icon: row.icon, designConfig, rarity: row.rarity };
+  return {
+    id: row.id,
+    name: row.name,
+    icon: row.icon,
+    designConfig,
+    rarity: row.rarity,
+    showProfileRing: row.showProfileRing,
+  };
 };
 
 const updateTitle = async (userId: string, badgeId: string | null): Promise<void> => {

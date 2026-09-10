@@ -60,6 +60,7 @@ const validBadgePayload = (overrides: Record<string, unknown> = {}) => ({
   isDynamic: false,
   isPublic: true,
   isTitleEligible: false,
+  showProfileRing: false,
   assignmentLimit: null,
   sponsorBrandId: null,
   requirementType: "ENGAGEMENT",
@@ -286,6 +287,33 @@ describe("POST /api/badges (admin)", () => {
     expect(response.status).toBe(201);
     expect(response.body.data.achievement.requirementType).toBe("ENGAGEMENT");
     expect(response.body.data.achievement.requirementConfig.conditions).toHaveLength(1);
+  });
+
+  it("persists showProfileRing and returns it on the badge", async () => {
+    const admin = await createAdmin();
+
+    const created = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(validBadgePayload({ isTitleEligible: true, showProfileRing: true }));
+
+    expect(created.status).toBe(201);
+    expect(created.body.data.showProfileRing).toBe(true);
+
+    const updated = await request(testApp)
+      .patch(`/api/badges/${created.body.data.id}`)
+      .set("Authorization", admin.header)
+      .send(
+        validBadgePayload({
+          isTitleEligible: true,
+          showProfileRing: false,
+          isActive: true,
+          achievementIsActive: true,
+        }),
+      );
+
+    expect(updated.status).toBe(200);
+    expect(updated.body.data.showProfileRing).toBe(false);
   });
 
   it("creates an admin-award badge with an assignment limit and empty conditions", async () => {

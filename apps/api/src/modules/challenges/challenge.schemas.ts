@@ -19,6 +19,7 @@ const {
   assignmentLimit: _assignmentLimit,
   isDynamic: _isDynamic,
   sponsorBrandId: _sponsorBrandId,
+  showProfileRing: _showProfileRing,
   ...challengeBadgeFields
 } = badgeCoreFields;
 

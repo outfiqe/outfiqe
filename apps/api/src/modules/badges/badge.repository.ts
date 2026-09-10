@@ -108,6 +108,7 @@ export const badgeRepository = {
       icon: badge.icon,
       designConfig: badge.designConfig,
       rarity: badge.rarity,
+      showProfileRing: badge.showProfileRing,
     }));
   },
 
@@ -131,6 +132,7 @@ export const badgeRepository = {
       icon: badge.icon,
       designConfig: badge.designConfig,
       rarity: badge.rarity,
+      showProfileRing: badge.showProfileRing,
     };
   },
 
@@ -257,6 +259,7 @@ export const badgeRepository = {
         isDynamic: input.isDynamic,
         isPublic: input.isPublic,
         isTitleEligible: input.isTitleEligible,
+        showProfileRing: input.showProfileRing,
         assignmentLimit: input.assignmentLimit,
         sponsorBrandId: input.sponsorBrandId,
         achievement: {
@@ -292,6 +295,7 @@ export const badgeRepository = {
           isDynamic: input.isDynamic,
           isPublic: input.isPublic,
           isTitleEligible: input.isTitleEligible,
+          showProfileRing: input.showProfileRing,
           assignmentLimit: input.assignmentLimit,
           isActive: input.isActive,
           sponsorBrandId: input.sponsorBrandId,

@@ -227,6 +227,7 @@ describe("GET /api/creators/by-handle/:handle", () => {
         icon: "🎖️",
         designConfig: { shape: "hexagon", primaryColor: "#0ea5e9" },
         isTitleEligible: true,
+        showProfileRing: true,
       },
     });
     const otherFeatured = await prisma.badge.create({
@@ -249,7 +250,10 @@ describe("GET /api/creators/by-handle/:handle", () => {
     const response = await request(testApp).get(`/api/creators/by-handle/${creator.handle}`);
 
     expect(response.status).toBe(200);
-    expect(response.body.data.titleBadge.id).toBe(titleBadge.id);
+    expect(response.body.data.titleBadge).toMatchObject({
+      id: titleBadge.id,
+      showProfileRing: true,
+    });
     const featuredIds = response.body.data.featuredBadges.map((badge: { id: string }) => badge.id);
     expect(featuredIds).toEqual([otherFeatured.id]);
   });

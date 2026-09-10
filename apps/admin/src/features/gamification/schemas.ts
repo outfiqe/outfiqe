@@ -226,6 +226,7 @@ export const badgeAdminSchema = z.object({
   assignmentLimit: z.number().nullable(),
   assignmentCount: z.number(),
   isTitleEligible: z.boolean(),
+  showProfileRing: z.boolean(),
   sponsorBrand: sponsorBrandSchema.nullable(),
   achievement: z
     .object({

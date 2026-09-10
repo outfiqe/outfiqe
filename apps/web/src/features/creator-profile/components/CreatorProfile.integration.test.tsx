@@ -415,6 +415,33 @@ describe("CreatorProfile followers/following stats", () => {
   });
 });
 
+describe("CreatorProfile title badge", () => {
+  const titleBadge = {
+    id: "badge-og",
+    name: "Outfiqe OG",
+    icon: "🎖️",
+    designConfig: { shape: "hexagon" as const, primaryColor: "#0ea5e9" },
+    rarity: "EXCLUSIVE" as const,
+    showProfileRing: true,
+  };
+
+  it("shows the title pill and the avatar ring when showProfileRing is on", () => {
+    const { container } = renderProfile(buildCreator({ titleBadge }));
+
+    expect(screen.getByText("Outfiqe OG")).toBeInTheDocument();
+    expect(container.querySelector(".animate-avatar-ring-spin")).toBeInTheDocument();
+  });
+
+  it("shows the title pill but no avatar ring when showProfileRing is off", () => {
+    const { container } = renderProfile(
+      buildCreator({ titleBadge: { ...titleBadge, showProfileRing: false } }),
+    );
+
+    expect(screen.getByText("Outfiqe OG")).toBeInTheDocument();
+    expect(container.querySelector(".animate-avatar-ring-spin")).not.toBeInTheDocument();
+  });
+});
+
 describe("CreatorProfile edit flow", () => {
   it("updates the profile through the real API and reflects the new name", async () => {
     mswServer.use(

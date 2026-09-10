@@ -49,6 +49,7 @@ export type FeaturedBadgeRecord = {
   icon: string;
   designConfig: unknown;
   rarity: BadgeRarity;
+  showProfileRing: boolean;
 };
 
 export type BadgeCollectionEntry = {
@@ -78,6 +79,7 @@ export type FeaturedBadgeView = {
   icon: string;
   designConfig: BadgeDesignConfig;
   rarity: BadgeRarity;
+  showProfileRing: boolean;
 };
 
 export type AwardBadgeInput = {
@@ -117,6 +119,7 @@ export type BadgeAdminRecord = {
   assignmentLimit: number | null;
   assignmentCount: number;
   isTitleEligible: boolean;
+  showProfileRing: boolean;
   sponsorBrand: SponsorBrandRecord | null;
   createdAt: Date;
   achievement: {

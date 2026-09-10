@@ -69,6 +69,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
     titleBadge,
   } = creator;
   const titleBadgeAccentColor = titleBadge ? badgeAccentColor(titleBadge.designConfig) : null;
+  const showsAvatarRing = titleBadge?.showProfileRing ?? false;
   const looks = useInfiniteCreatorLooks(handle);
   const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = looks;
 
@@ -232,8 +233,8 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
       <div className="flex flex-wrap items-start gap-4 pb-8 sm:items-center sm:gap-5">
-        <div className={cn("relative shrink-0", titleBadge && "rounded-full p-1.5")}>
-          {titleBadge && (
+        <div className={cn("relative shrink-0", showsAvatarRing && "rounded-full p-1.5")}>
+          {showsAvatarRing && (
             <div
               aria-hidden
               className="absolute inset-0 rounded-full animate-avatar-ring-spin"

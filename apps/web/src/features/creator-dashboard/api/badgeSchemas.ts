@@ -176,5 +176,6 @@ export const featuredBadgeSchema = z.object({
   icon: z.string(),
   designConfig: badgeDesignConfigSchema,
   rarity: z.enum(BadgeRarity),
+  showProfileRing: z.boolean(),
 });
 export type FeaturedBadge = z.infer<typeof featuredBadgeSchema>;
