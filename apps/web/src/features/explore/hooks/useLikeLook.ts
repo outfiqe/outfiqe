@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { exploreFeedApi } from "../api/exploreFeedApi";
-import { patchPostInFeedCaches } from "../utils/feedCacheUpdate";
+import { cancelFeedPostQueries, patchPostInFeedCaches } from "../utils/feedCacheUpdate";
 import { LIKE_LOOK_ACTION_TYPE } from "../utils/offlineActionTypes";
 import { toggleWithOfflineQueue } from "../utils/offlineQueueableToggle";
 
@@ -27,7 +27,7 @@ export const useLikeLook = () => {
     networkMode: "always",
 
     onMutate: async ({ lookId, liked }) => {
-      await queryClient.cancelQueries({ queryKey: ["explore-feed"] });
+      await cancelFeedPostQueries(queryClient);
 
       patchPostInFeedCaches(queryClient, lookId, (post) => ({
         ...post,
