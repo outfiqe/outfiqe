@@ -1,15 +1,15 @@
 import "server-only";
 
-import { getServerSessionWithToken } from "@/features/auth/api/serverAuth";
+import { getServerAccessToken } from "@/features/auth/api/serverAuth";
 import { serverApiRequest } from "@/shared/lib/serverApiClient";
 
 import { type BrandProfile, brandProfileSchema } from "./brandProfileSchemas";
 
 export const getBrandProfileServerPublic = async (id: string): Promise<BrandProfile | null> => {
   try {
-    const session = await getServerSessionWithToken();
+    const accessToken = await getServerAccessToken();
     const raw = await serverApiRequest<BrandProfile>(`/brands/${id}`, {
-      accessToken: session?.accessToken,
+      accessToken: accessToken ?? undefined,
     });
     return brandProfileSchema.parse(raw);
   } catch {

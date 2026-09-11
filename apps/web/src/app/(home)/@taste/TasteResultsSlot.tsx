@@ -1,7 +1,7 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { cookies } from "next/headers";
 
-import { getServerSessionWithToken } from "@/features/auth/api/serverAuth";
+import { getServerAccessToken } from "@/features/auth/api/serverAuth";
 import {
   getCategoriesServer,
   getTastePreferencesServer,
@@ -29,9 +29,9 @@ interface TasteResultsSlotProps {
 export const TasteResultsSlot = async ({ categorySlug, typeId }: TasteResultsSlotProps) => {
   const queryClient = getQueryClient();
 
-  const [cookieStore, session] = await Promise.all([cookies(), getServerSessionWithToken()]);
+  const [cookieStore, accessToken] = await Promise.all([cookies(), getServerAccessToken()]);
   const cookieTasteSlugs = parseTasteCookie(cookieStore.get(TASTE_CATEGORIES_COOKIE_NAME)?.value);
-  const signedInTasteSlugs = session ? await getTastePreferencesServer(session.accessToken) : null;
+  const signedInTasteSlugs = accessToken ? await getTastePreferencesServer(accessToken) : null;
   const storedTasteSlugs = resolveStoredTasteSlugs(signedInTasteSlugs, cookieTasteSlugs);
 
   await queryClient.prefetchQuery({ queryKey: ["categories"], queryFn: getCategoriesServer });
@@ -42,7 +42,7 @@ export const TasteResultsSlot = async ({ categorySlug, typeId }: TasteResultsSlo
   const activeCategorySlug = resolveActiveCategorySlug(displayCategories, deepLinkedSlug);
   const activeType = typeId && typeId !== ALL_TYPE_ID ? typeId : undefined;
 
-  if (session) {
+  if (accessToken) {
     queryClient.setQueryData(TASTE_PREFERENCES_QUERY_KEY, signedInTasteSlugs);
   }
 

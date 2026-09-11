@@ -192,6 +192,9 @@ export default defineConfig({
         "src/features/explore/components/PostActionsRow.tsx",
         "src/shared/hooks/usePendingPhotos.ts",
         "src/app/(dashboard)/share-target/ShareTargetComposer.tsx",
+        "src/features/brands/api/serverBrands.ts",
+        "src/features/brand-profile/api/getBrandProfileServerPublic.ts",
+        "src/features/creator-profile/api/getCreatorProfileServerPublic.ts",
       ],
       thresholds: {
         lines: 80,
