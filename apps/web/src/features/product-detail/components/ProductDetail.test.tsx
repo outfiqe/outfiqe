@@ -5,9 +5,10 @@ import type { ProductDetail as ProductDetailType } from "../api/productDetailSch
 import { ProductDetail } from "./ProductDetail";
 
 const addToCart = vi.fn();
+const authState = { isAuthenticated: true, isBrandOwner: false, isAdmin: false };
 
 vi.mock("@/features/auth/context/AuthContext", () => ({
-  useAuth: () => ({ isAuthenticated: true }),
+  useAuth: () => authState,
 }));
 
 vi.mock("@/features/cart", () => ({
@@ -119,5 +120,37 @@ describe("ProductDetail out-of-stock handling", () => {
       expect.objectContaining({ productId: "product-1", sizeId: "m", qty: 1 }),
       expect.anything(),
     );
+  });
+});
+
+describe("ProductDetail buy controls by account type", () => {
+  beforeEach(() => {
+    authState.isBrandOwner = false;
+    authState.isAdmin = false;
+  });
+
+  it("hides Add to cart and Buy now from a brand owner and explains why", () => {
+    authState.isBrandOwner = true;
+    render(<ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />);
+
+    expect(screen.queryByRole("button", { name: /add to cart/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /buy now/i })).not.toBeInTheDocument();
+    expect(screen.getByText("Shopping is available on customer accounts.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+  });
+
+  it("hides the buy controls from an admin too", () => {
+    authState.isAdmin = true;
+    render(<ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />);
+
+    expect(screen.queryByRole("button", { name: /add to cart/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /buy now/i })).not.toBeInTheDocument();
+  });
+
+  it("keeps the buy controls for a shopper", () => {
+    render(<ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />);
+
+    expect(screen.getByRole("button", { name: /add to cart/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /buy now/i })).toBeInTheDocument();
   });
 });

@@ -138,6 +138,28 @@ describe("buildOrganizationAdminUrl", () => {
       ),
     ).toBe("https://daraz.outfiqe.com/admin/crm");
   });
+
+  it("never doubles the slash when the admin url has a trailing slash", () => {
+    expect(
+      buildOrganizationAdminUrl(
+        { subdomain: "daraz", isPlatformOrg: false },
+        "/crm",
+        "https://outfiqe.com/admin/",
+        "outfiqe.com",
+      ),
+    ).toBe("https://daraz.outfiqe.com/admin/crm");
+  });
+
+  it("never doubles the slash when the admin url has no path at all", () => {
+    expect(
+      buildOrganizationAdminUrl(
+        { subdomain: "daraz", isPlatformOrg: false },
+        "/crm",
+        "https://outfiqe.com",
+        "outfiqe.com",
+      ),
+    ).toBe("https://daraz.outfiqe.com/crm");
+  });
 });
 
 describe("findUnselectablePermissionKeys", () => {

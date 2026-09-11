@@ -9,11 +9,11 @@ import { addressApi } from "../api/addressApi";
 export const ADDRESSES_QUERY_KEY = ["addresses"] as const;
 
 export const useAddresses = () => {
-  const { isAuthenticated } = useAuth();
+  const { isShopper } = useAuth();
 
   return useQuery({
     queryKey: ADDRESSES_QUERY_KEY,
     queryFn: () => addressApi.list(),
-    enabled: isAuthenticated,
+    enabled: isShopper,
   });
 };

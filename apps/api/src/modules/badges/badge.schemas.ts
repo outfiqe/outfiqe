@@ -140,6 +140,7 @@ export const badgeCoreFields = {
   isDynamic: z.boolean(),
   isPublic: z.boolean(),
   isTitleEligible: z.boolean(),
+  showProfileRing: z.boolean(),
   assignmentLimit: z.number().int().positive().nullable(),
   sponsorBrandId: z.uuid().nullable(),
 };

@@ -14,6 +14,7 @@ import { MAX_SAVED_ADDRESSES_PER_USER } from "./address.service.js";
 const OK_STATUS = 200;
 const CREATED_STATUS = 201;
 const UNAUTHORIZED_STATUS = 401;
+const FORBIDDEN_STATUS = 403;
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
 const VALIDATION_ERROR_STATUS = 422;
@@ -28,7 +29,7 @@ const authHeaderFor = (userId: string) => {
   return `Bearer ${accessToken}`;
 };
 
-const createUser = async () => {
+const createUser = async (role: UserRole = UserRole.CUSTOMER) => {
   const suffix = randomUUID().slice(0, 8);
   return prisma.user.create({
     data: {
@@ -36,9 +37,14 @@ const createUser = async () => {
       name: "Sabin Shrestha",
       handle: `address-tester-${suffix}`,
       passwordHash: "not-used-in-tests",
-      role: UserRole.CUSTOMER,
+      role,
     },
   });
+};
+
+const authHeaderForRole = (userId: string, role: UserRole) => {
+  const { accessToken } = generateTokenpair({ sub: userId, role });
+  return `Bearer ${accessToken}`;
 };
 
 const validBody = (overrides: Record<string, unknown> = {}) => ({
@@ -61,6 +67,21 @@ describe("GET /api/addresses", () => {
   it("401s without a token", async () => {
     const response = await request(testApp).get("/api/addresses");
     expect(response.status).toBe(UNAUTHORIZED_STATUS);
+  });
+
+  it("403s a brand-owner account — saved addresses are for shoppers only", async () => {
+    const brandOwner = await createUser(UserRole.BRAND_OWNER);
+
+    const listResponse = await request(testApp)
+      .get("/api/addresses")
+      .set("Authorization", authHeaderForRole(brandOwner.id, UserRole.BRAND_OWNER));
+    expect(listResponse.status).toBe(FORBIDDEN_STATUS);
+
+    const createResponse = await request(testApp)
+      .post("/api/addresses")
+      .set("Authorization", authHeaderForRole(brandOwner.id, UserRole.BRAND_OWNER))
+      .send(validBody());
+    expect(createResponse.status).toBe(FORBIDDEN_STATUS);
   });
 
   it("lists only the caller's addresses, default first", async () => {

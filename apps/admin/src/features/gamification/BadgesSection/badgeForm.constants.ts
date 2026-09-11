@@ -21,6 +21,7 @@ export const EMPTY_FORM: BadgeFormState = {
   isDynamic: false,
   isPublic: true,
   isTitleEligible: false,
+  showProfileRing: false,
   isAdminAward: false,
   assignmentLimit: "",
   sponsorBrandId: null,

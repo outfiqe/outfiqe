@@ -6,7 +6,7 @@ The public social feed: browsing posts (looks), liking/saving/commenting, follow
 
 ## Structure
 
-- `components/ExploreFeed.tsx` — the `/explore` page: filter tabs (For You / Following / a trending tag), infinite-scroll feed, sidebar, and live updates via socket. Supports two layouts — List renders `PostCard`; Grid (the default) renders the lighter `PostGridCard` in a plain CSS grid (`grid-cols-2 xl:grid-cols-3`) — see "Grid layout is CSS grid, not multi-column" below. Its first page is server-rendered — see "First feed page is server-rendered" below.
+- `components/ExploreFeed.tsx` — the `/explore` page: filter tabs (For You / Following / a trending tag), infinite-scroll feed, sidebar, and live updates via socket. Tab/layout state lives in the URL but is highlighted optimistically via `usePendingSelection` — see "Tab and layout switches highlight optimistically" below. Supports two layouts — List renders `PostCard`; Grid (the default) renders the lighter `PostGridCard` in a plain CSS grid (`grid-cols-2 xl:grid-cols-3`) — see "Grid layout is CSS grid, not multi-column" below. Its first page is server-rendered — see "First feed page is server-rendered" below.
 - `components/PostCard.tsx` — one feed card (List layout): header, photo carousel, tagged-product pills, caption, like/comment/save row, and an inline expandable comments section.
 - `components/PostGridCard.tsx` — one grid tile (Grid layout): just the image (with a stack icon if the post has multiple photos) and a static two-line clamped caption below it — no header/actions/comments and no interactive "see more", since tapping the tile opens the full `PostDetailModal` with the whole caption. The caption area holds a fixed two-line height so a short or missing caption never shifts the tiles below it. Deliberately lighter than `PostCard` so two columns fit comfortably on a phone screen; the tiles are laid out by a plain CSS `grid` (`ExploreFeed`), no JS layout pass and no `react-masonry-css`, unlike the richer-card masonry grid `MASONRY_BREAKPOINT_COLUMNS` used by `SavedPostsGrid`, which still collapses to 1 column on mobile because it renders full `PostCard`s. `EXPLORE_GRID_BREAKPOINT_COLUMNS` (`explore.constants.ts`) now only feeds `search`'s masonry.
 - `components/PostDetailModal.tsx` — the modal opened when a post's image is clicked (from the feed, saved posts, or a creator's profile grid). Two-pane layout: a fixed photo pane on the left, and a scrollable pane on the right (creator header, tags, caption, actions, comments) — same shape as `PostCard`'s content, just side-by-side with the image instead of stacked below it.
@@ -14,7 +14,7 @@ The public social feed: browsing posts (looks), liking/saving/commenting, follow
 - `components/CommentThread.tsx` — one top-level comment plus its replies: the inline reply preview, "View N replies"/"Load more replies" expansion, the Reply toggle, and the reply composer. One instance per comment, each owning its own expand/collapse and pagination state via `useCommentReplies` — see "Real-time comments and replies" below.
 - `components/SavedPostsGrid.tsx` — the saved-posts view: a masonry grid of `PostCard`s that also opens `PostDetailModal` on click.
 - `components/AddPostButton.tsx` — floating action button that opens `creator-dashboard`'s `PostModal` (cross-feature import — this feature displays posts, `creator-dashboard` owns creating/editing them).
-- `components/Sidebar.tsx`, `ExploreSidebarNav.tsx`, `HeaderBackdrop.tsx`, `FeedFilterTabs.tsx`, `PostCardSkeleton.tsx` — the rest of the feed page's chrome and loading states. `Sidebar`'s "Creators to follow" rail is a fixed-size slice (`SUGGESTED_CREATORS_LIMIT`, `apps/api/src/modules/follows/follow.constants.ts`) of the ranked suggestion pool (see `apps/api/src/modules/follows/README.md`); its "Find more" button opens `SuggestedCreatorsModal`.
+- `components/Sidebar.tsx`, `ExploreSidebarNav.tsx`, `HeaderBackdrop.tsx`, `FeedFilterTabs.tsx`, `PostCardSkeleton.tsx` — the rest of the feed page's chrome and loading states. `ExploreSidebarNav` is the desktop rail: the For You / Following / Trending tab buttons and the Grid / List view buttons (both prop-driven, highlighted from `ExploreFeed`'s optimistic `tab`/`layout`), plus a "Saved" `<Link>` to `/wishlist` that shows its own `useLinkStatus` pending state — see "Tab and layout switches highlight optimistically" below. `Sidebar`'s "Creators to follow" rail is a fixed-size slice (`SUGGESTED_CREATORS_LIMIT`, `apps/api/src/modules/follows/follow.constants.ts`) of the ranked suggestion pool (see `apps/api/src/modules/follows/README.md`); its "Find more" button opens `SuggestedCreatorsModal`.
 - `components/SuggestedCreatorRow.tsx` — one suggested-creator row (avatar, name, follower count, Follow button), shared by the sidebar rail and `SuggestedCreatorsModal` so the two surfaces never drift in markup.
 - `components/SuggestedCreatorsModal.tsx` — the expanded, scrollable "Creators to follow" modal opened from the sidebar's "Find more" button. Infinite-scrolls the same ranked pool the rail's first page comes from, via `useInfiniteSuggestedCreators` + the shared `useLoadMoreOnVisible` sentinel (same pattern as `BrandsGrid`/`ExploreFeed`).
 - `api/exploreFeedApi.ts`, `exploreFeedSchemas.ts` — feed/comment/reply fetches and the `FeedPost`/`FeedComment`/`FeedCommentReply` shapes everything above is built on.
@@ -23,7 +23,7 @@ The public social feed: browsing posts (looks), liking/saving/commenting, follow
 - `hooks/useCommentReplies.ts` — one comment thread's reply pagination (`useInfiniteCursorPage`) and the optimistic `submitReply`; instantiated per `CommentThread`, not shared across comments.
 - `hooks/useInfiniteExploreFeed.ts`, `useInfiniteSavedPosts.ts`, `useLikeLook.ts`, `useSaveLook.ts`, `useFollowCreator.ts`, `useTrendingTags.ts`, `useSuggestedCreators.ts`, `useInfiniteSuggestedCreators.ts`, `useExploreAuthGate.ts`, `useExploreFeedSocket.ts` — one hook per query/mutation/concern; `useExploreAuthGate`'s `gated()` redirects an unauthenticated visitor to sign-in instead of letting them like/save/comment/reply/follow. `useSuggestedCreators` (unpaginated, `SUGGESTED_CREATORS_LIMIT`-sized) backs the sidebar rail; `useInfiniteSuggestedCreators` (cursor-paginated) backs the "Find more" modal — both call `GET /follows/suggested-creators`, just with/without a `cursor`.
 - `hooks/useRecordLookView.ts` — fires `POST /creator-looks/:lookId/views` (gamification view-tracking, see `../../creator-looks/README.md`'s "View tracking" section on the API side) the first time a `PostCard` becomes at least half-visible in the viewport, then disconnects — a plain `IntersectionObserver`, same primitive `@/shared/hooks/useLoadMoreOnVisible.ts` uses for infinite scroll, but fire-once rather than fire-on-every-intersection.
-- `utils/feedCacheUpdate.ts` — `patchPostInFeedCaches`, applying an optimistic/server patch to a post across every query cache it might currently be sitting in (feed, saved grid, single-post views).
+- `utils/feedCacheUpdate.ts` — `patchPostInFeedCaches` / `patchCreatorInFeedCaches`, applying an optimistic/server like/save/follow patch to a post across **every** React Query cache it might be sitting in: the explore feed (`["explore-feed"]`), the saved grid (`["saved-posts"]`), a creator profile's own look grid (`["creator-looks", handle]`), look search results (`["look-search"]`), and a single deep-linked look (`usePublicLook`'s `["creator-looks", "public", lookId]`). It walks the `FEED_POST_QUERY_ROOTS` list and shape-guards each entry (infinite `FeedPage` vs. a bare `FeedPost` vs. anything else, e.g. the co-located `["creator-looks", "detail", id]` editor cache which it leaves alone). `cancelFeedPostQueries` cancels those same roots in the mutations' `onMutate`. See "A like/save/follow has to reach the post in every cache" below.
 - `utils/commentCacheUpdate.ts` — the id-deduped cache operations `useLookComments`/`useCommentReplies` share: appending a new comment/reply exactly once regardless of whether it arrived via the submitter's own optimistic insert, the REST response, or the live socket echo; reverting an optimistic reply on failure.
 - `utils/offlineActionTypes.ts` — the queue-action-type string each of like/save/follow enqueues and
   replays under, shared between the mutation hook and `offlineActionHandlers.ts` so the two can
@@ -43,7 +43,7 @@ The public social feed: browsing posts (looks), liking/saving/commenting, follow
 
 **User-facing:** anyone can browse `/explore`, switch tabs, and scroll the feed. Clicking a post's photo opens `PostDetailModal` with the same content as the card, laid out beside the image instead of below it. Liking/saving/following/commenting all prompt a sign-in redirect if the visitor isn't authenticated (`useExploreAuthGate`). Signed-in creators post via the floating `AddPostButton`.
 
-**Technical:** `ExploreFeed`/`SavedPostsGrid` fetch pages via `useInfiniteExploreFeed`/`useInfiniteSavedPosts` → `exploreFeedApi` → `GET /explore/feed` / `GET /explore/saved`. `PostCard` and `PostDetailModal` both read their interactive state from `usePostCardState`, so liking/saving/commenting from either place updates the same React Query cache entries (`patchPostInFeedCaches`) and stays consistent across the feed, saved grid, and any open detail modal. `useExploreFeedSocket` keeps the "N new looks" banner live by asking the server for a tab-scoped count (`FEED_SYNC_REQUEST`/`FEED_SYNC_RESULT`, backed by `creatorLookService.countNewSince`) rather than counting anything itself.
+**Technical:** `ExploreFeed`/`SavedPostsGrid` fetch pages via `useInfiniteExploreFeed`/`useInfiniteSavedPosts` → `exploreFeedApi` → `GET /explore/feed` / `GET /explore/saved`. `PostCard` and `PostDetailModal` both read their interactive state from `usePostCardState`, so liking/saving/commenting from either place updates the same React Query cache entries (`patchPostInFeedCaches`) and stays consistent across the feed, the saved grid, a creator profile's grid, look search, and any open detail modal — see "A like/save/follow has to reach the post in every cache". `useExploreFeedSocket` keeps the "N new looks" banner live by asking the server for a tab-scoped count (`FEED_SYNC_REQUEST`/`FEED_SYNC_RESULT`, backed by `creatorLookService.countNewSince`) rather than counting anything itself.
 
 ## Real-time comments and replies
 
@@ -54,6 +54,21 @@ The public social feed: browsing posts (looks), liking/saving/commenting, follow
 **Every append is id-deduped, because both self-echo and redelivery are expected, not edge cases.** The submitting user's own socket is a member of the room it just broadcast to, so their own comment/reply arrives twice: once from the optimistic insert → REST response, and again from the live event. Separately, the API's Redis Streams consumer group is at-least-once, so a crash-before-ack can redeliver the same event later. `appendCommentIfNew`/`applyReplyToCommentCaches` (`utils/commentCacheUpdate.ts`) check the target cache for the id before inserting, so both cases are silent no-ops rather than a duplicate row in the UI.
 
 **Optimistic replies revert precisely, not with a full refetch.** A failed `submitReply` calls `revertReplyOptimisticInsert`, which removes only the temp-id entry from both the parent comment's `previewReplies` and the expanded infinite-replies cache (and decrements `replyCount`, floored at zero) — chosen over invalidating the whole comments query so a failed reply doesn't also discard other live updates that landed in the meantime.
+
+## A like/save/follow has to reach the post in every cache
+
+`PostCard` and `PostDetailModal` render their like/save/follow state straight from the `post` prop —
+they hold no local state — so the icon only flips when the query cache that `post` came from is
+patched and a new object is handed down. `patchPostInFeedCaches` used to touch only `["explore-feed"]`
+and `["saved-posts"]`. The same `PostDetailModal` is also opened from a creator profile
+(`detailPost` derived from `["creator-looks", handle]`, or `usePublicLook`'s
+`["creator-looks", "public", lookId]` for a look not in the grid) and from look search
+(`["look-search", q]`). Liking a post there hit the API but never patched the cache the modal was
+reading, so the flame never moved and every further click re-sent the same stale `liked` value —
+"works in the feed, dead everywhere else". The fix is to patch **every** `FEED_POST_QUERY_ROOTS`
+cache (shape-guarded), and `cancelFeedPostQueries` cancels the same set so an in-flight refetch
+can't clobber the optimistic patch. `useFollowCreator` also gained an `onSuccess` that reconciles
+`isFollowingCreator` to the server's `following` value, matching `useLikeLook`/`useSaveLook`.
 
 ## Liking, saving, and following work with no connection
 
@@ -102,6 +117,20 @@ and refetches its personalised feed. `/creator-looks/feed` is `optionalAuth`, so
 is a valid feed rather than an error. Reading `searchParams` makes the page dynamic (it is no longer
 in the prerendered browse-shell set), but the 30s fetch cache keeps origin load flat.
 
+**Tab and layout switches highlight optimistically, via `usePendingSelection`.** `tab`/`layout` live
+in the URL (`?tab=`/`?layout=`), and `app/explore/page.tsx` reads `searchParams`, so a `router.replace`
+to a new tab is a full RSC round-trip — the highlight (derived from `useSearchParams`) would otherwise
+only move once that commits, ~half a second of dead click on a slow connection. `ExploreFeed` wraps
+each of `committedTab`/`committedLayout` in `@/shared/hooks/usePendingSelection` (keyed on the
+committed value), so `markPending(next)` immediately makes `next` the effective value everywhere —
+the sidebar/tab-strip highlight, the feed query key, the socket sync, the auth gate — and it
+reconciles the moment `useSearchParams` catches up (or after the hook's 3s stuck-timeout). This is
+the same hook and pattern `features/shop/components/ShopResults.tsx` uses for its type filter. The
+sidebar's "Saved" item is a real `<Link>` to `/wishlist`, not a same-page toggle, so it can't use
+`usePendingSelection`; it takes the `<Link>`-native route: a `useLinkStatus()` child that highlights
+the row and pulses a dot while the navigation is in flight, matching `ShopExploreToggle` and
+`DashboardSidebarLink`.
+
 **The feed's skeleton gate no longer waits on client auth.** It previously showed a skeleton until
 `useAuth` resolved, which threw away the server-rendered feed on every load. It now renders whatever
 posts are in cache immediately; the skeleton only shows for a genuinely empty, still-loading feed
@@ -115,11 +144,15 @@ client-only data, and `PostCard` only renders in the non-default List layout —
 of the route's initial chunk is worth the extra request when they are actually needed.
 
 **`AddPostButton` sits higher on mobile when the user is signed in.** Below `sm` the global
-`FloatingChatLauncher` bubble (`messaging`, mounted in `app/providers.tsx`) is pinned to
-`bottom-24 right-4` — the exact spot this FAB used to occupy, so on `/explore` and creator profiles
-the two overlapped. Signed-in users get `bottom-40` here (clearing the 44px launcher plus a gap);
-signed-out users, who never see the launcher, keep `bottom-24`. At `sm` and up the launcher moves
-to `bottom-6 right-6` and the collision is gone, so the offset is mobile-only.
+`FloatingChatLauncher` bubble (`messaging`, mounted in `app/providers.tsx`) sits just above the
+`MobileTabBar` at `bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4`, so on `/explore`
+and creator profiles this FAB stacks on top of it at
+`bottom-[calc(9rem+env(safe-area-inset-bottom))]` (a 48px launcher plus an ~8px gap); signed-out
+users, who never see the launcher, take the launcher's own slot. Both offsets add
+`env(safe-area-inset-bottom)` so the pair clears the tab bar (which does the same) on a notched
+phone. On mobile both buttons are `size-12` circles for a tidy cluster; at `sm` and up the
+launcher moves to `bottom-6` and this FAB becomes the `Post` pill, so the stacking only matters
+below `sm`.
 
 **Like/save/follow all set `networkMode: "always"`, and that is what makes queueing them possible
 at all — not an unrelated hardening.** React Query's default `networkMode: "online"` pauses a

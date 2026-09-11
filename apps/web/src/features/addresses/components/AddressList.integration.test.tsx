@@ -12,7 +12,10 @@ import type * as DeliveryZonesModule from "@/features/delivery-zones";
 
 import { AddressList } from "./AddressList";
 
-vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
+vi.mock("@/features/auth", () => ({
+  useAuth: vi.fn(),
+  NotAShopperNotice: () => <div>Not available on this account</div>,
+}));
 
 vi.mock("@/features/delivery-zones", async () => {
   const actual = await vi.importActual<typeof DeliveryZonesModule>("@/features/delivery-zones");
@@ -77,10 +80,28 @@ beforeEach(() => {
   vi.mocked(useAuth).mockReturnValue({
     isAuthenticated: true,
     isAuthResolved: true,
+    isShopper: true,
+    isBrandOwner: false,
+    isAdmin: false,
   } as ReturnType<typeof useAuth>);
 });
 
 describe("AddressList", () => {
+  it("shows the not-a-shopper notice for a brand-owner account", () => {
+    vi.mocked(useAuth).mockReturnValue({
+      isAuthenticated: true,
+      isAuthResolved: true,
+      isShopper: false,
+      isBrandOwner: true,
+      isAdmin: false,
+    } as ReturnType<typeof useAuth>);
+
+    renderList();
+
+    expect(screen.getByText("Not available on this account")).toBeInTheDocument();
+    expect(screen.queryByText("Delivery addresses")).not.toBeInTheDocument();
+  });
+
   it("shows the empty state when there are no saved addresses", async () => {
     mswServer.use(http.get("/api/addresses", () => listResponse([])));
     renderList();

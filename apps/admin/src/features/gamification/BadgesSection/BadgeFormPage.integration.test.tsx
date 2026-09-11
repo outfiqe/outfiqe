@@ -33,6 +33,7 @@ const badgeFixture: BadgeAdmin = {
   assignmentLimit: null,
   assignmentCount: 0,
   isTitleEligible: false,
+  showProfileRing: false,
   sponsorBrand: null,
   achievement: {
     id: "ach-1",
@@ -153,6 +154,33 @@ describe("BadgeFormPage", () => {
 
     await waitFor(() => expect(createHandler).toHaveBeenCalled());
     expect(await screen.findByText("badges-list")).toBeInTheDocument();
+  });
+
+  it("reveals the avatar-ring option only after title-eligible is checked and sends it", async () => {
+    const createHandler = vi.fn(async ({ request }: { request: Request }) => {
+      const body = (await request.json()) as { showProfileRing: boolean; isTitleEligible: boolean };
+      expect(body).toMatchObject({ isTitleEligible: true, showProfileRing: true });
+      return HttpResponse.json(
+        { success: true, data: { ...badgeFixture, id: "badge-new" } },
+        { status: 201 },
+      );
+    });
+    mswServer.use(http.post(`${API_BASE}/badges`, createHandler));
+
+    renderFormPage(<BadgeFormPage mode="create" />);
+
+    await userEvent.type(await screen.findByLabelText("Name"), "Ringed");
+    await userEvent.type(screen.getByLabelText("Description"), "A description");
+    await userEvent.click(
+      screen.getByLabelText("Admin-award only (no automatic rule — awarded by hand)"),
+    );
+
+    expect(screen.queryByLabelText(/Avatar ring on the profile/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByLabelText("Title-eligible"));
+    await userEvent.click(screen.getByLabelText(/Avatar ring on the profile/));
+    await userEvent.click(screen.getByRole("button", { name: "Create badge" }));
+
+    await waitFor(() => expect(createHandler).toHaveBeenCalled());
   });
 
   it("patches an existing badge on save", async () => {

@@ -122,7 +122,7 @@ export const creatorService = {
       followingCount,
     } = user;
 
-    const [postsCount, taggedProductIds, isFollowing, featuredBadges, titleBadge] =
+    const [postsCount, taggedProductIds, isFollowing, allFeaturedBadges, titleBadge] =
       await Promise.all([
         creatorLookRepository.countByCreatorId(id),
         productRepository.listProductIdsTaggedByCreator(id),
@@ -131,6 +131,7 @@ export const creatorService = {
         badgeService.getTitleBadgeForUser(id),
       ]);
 
+    const featuredBadges = allFeaturedBadges.filter((badge) => badge.id !== titleBadge?.id);
     const isOwnProfile = viewerId === id;
 
     return {

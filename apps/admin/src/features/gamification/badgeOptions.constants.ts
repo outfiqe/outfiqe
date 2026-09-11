@@ -25,7 +25,19 @@ export const RARITY_OPTIONS: BadgeRarityValue[] = [
   "EXCLUSIVE",
 ];
 
-export const SHAPE_OPTIONS: BadgeShapeValue[] = ["circle", "shield", "star", "diamond", "hexagon"];
+export const SHAPE_OPTIONS: BadgeShapeValue[] = [
+  "circle",
+  "shield",
+  "star",
+  "diamond",
+  "hexagon",
+  "triangle",
+  "gem",
+  "octagon",
+  "capsule",
+  "heart",
+  "crescent",
+];
 
 export const AUTO_ANIMATION_OPTION = "auto" as const;
 

@@ -215,6 +215,48 @@ describe("GET /api/creators/by-handle/:handle", () => {
 
     expect(response.status).toBe(404);
   });
+
+  it("keeps the equipped title badge out of the featured-badge list", async () => {
+    const creator = await createApprovedCreator("Badge Wearer", "badge-wearer");
+    const titleBadge = await prisma.badge.create({
+      data: {
+        name: `Title Badge ${randomUUID()}`,
+        description: "A title-eligible badge for the dedup test.",
+        category: "SPECIAL",
+        rarity: "EXCLUSIVE",
+        icon: "🎖️",
+        designConfig: { shape: "hexagon", primaryColor: "#0ea5e9" },
+        isTitleEligible: true,
+        showProfileRing: true,
+      },
+    });
+    const otherFeatured = await prisma.badge.create({
+      data: {
+        name: `Featured Badge ${randomUUID()}`,
+        description: "A plain featured badge for the dedup test.",
+        category: "CREATOR",
+        rarity: "COMMON",
+        icon: "⭐",
+        designConfig: { shape: "circle", primaryColor: "#f97316" },
+      },
+    });
+    await prisma.userBadge.create({
+      data: { userId: creator.id, badgeId: titleBadge.id, isFeatured: true, isTitle: true },
+    });
+    await prisma.userBadge.create({
+      data: { userId: creator.id, badgeId: otherFeatured.id, isFeatured: true },
+    });
+
+    const response = await request(testApp).get(`/api/creators/by-handle/${creator.handle}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.titleBadge).toMatchObject({
+      id: titleBadge.id,
+      showProfileRing: true,
+    });
+    const featuredIds = response.body.data.featuredBadges.map((badge: { id: string }) => badge.id);
+    expect(featuredIds).toEqual([otherFeatured.id]);
+  });
 });
 
 describe("GET /api/creators/by-handle/:handle/looks", () => {

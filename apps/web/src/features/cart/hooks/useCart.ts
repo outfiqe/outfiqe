@@ -8,11 +8,11 @@ import { cartApi } from "../api/cartApi";
 import { CART_QUERY_KEY } from "../cart.constants";
 
 export const useCart = () => {
-  const { isAuthenticated } = useAuth();
+  const { isShopper } = useAuth();
 
   return useQuery({
     queryKey: CART_QUERY_KEY,
     queryFn: cartApi.get,
-    enabled: isAuthenticated,
+    enabled: isShopper,
   });
 };

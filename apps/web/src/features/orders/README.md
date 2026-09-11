@@ -7,8 +7,9 @@ The buyer's view of their own orders — the list at `/orders` and the single-or
 
 ## Structure
 
-- `components/OrdersListBody.tsx` — the `/orders` page body: auth gate, loading/empty states, and
-  an infinite list of `OrderRow`s.
+- `components/OrdersListBody.tsx` — the `/orders` page body: auth gate (plus a `<NotAShopperNotice>`
+  bounce for `BRAND_OWNER`/`ADMIN` — buyer order history is `CUSTOMER`-only, matching the
+  `GET /orders` server gate), loading/empty states, and an infinite list of `OrderRow`s.
 - `components/OrderRow.tsx` — one summary row in that list.
 - `components/OrderDetailBody.tsx` — the `/orders/[id]` page body. Picks the header treatment from
   payment state and composes `OrderTracker` (or `ShipmentTrackers` for a multi-brand order) /

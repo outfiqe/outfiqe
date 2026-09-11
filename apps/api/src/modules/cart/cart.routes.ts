@@ -1,7 +1,9 @@
 import { Router } from "express";
 
+import { UserRole } from "#generated/prisma/enums.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
+import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
 import { applyCartCouponSchema } from "#modules/coupons/coupon.schemas.js";
 
@@ -24,44 +26,46 @@ const cartCouponApplyRateLimit = rateLimit({
   message: "Too many coupon attempts. Please wait a moment and try again.",
 });
 
+const requireShopper = [requireAuth, requireRole(UserRole.CUSTOMER)];
+
 export const cartRoutes = Router();
 
-cartRoutes.get("/", requireAuth, cartController.get);
+cartRoutes.get("/", ...requireShopper, cartController.get);
 
 cartRoutes.post(
   "/items",
-  requireAuth,
+  ...requireShopper,
   validate({ body: addCartItemBodySchema }),
   cartController.addItem,
 );
 
 cartRoutes.patch(
   "/items/:cartItemId",
-  requireAuth,
+  ...requireShopper,
   validate({ params: cartItemIdParamSchema, body: updateCartItemBodySchema }),
   cartController.updateItem,
 );
 
 cartRoutes.delete(
   "/items/:cartItemId",
-  requireAuth,
+  ...requireShopper,
   validate({ params: cartItemIdParamSchema }),
   cartController.removeItem,
 );
 
 cartRoutes.patch(
   "/city",
-  requireAuth,
+  ...requireShopper,
   validate({ body: updateCartCityBodySchema }),
   cartController.updateCity,
 );
 
 cartRoutes.post(
   "/coupon",
-  requireAuth,
+  ...requireShopper,
   cartCouponApplyRateLimit,
   validate({ body: applyCartCouponSchema }),
   cartController.applyCoupon,
 );
 
-cartRoutes.delete("/coupon", requireAuth, cartController.removeCoupon);
+cartRoutes.delete("/coupon", ...requireShopper, cartController.removeCoupon);

@@ -1,5 +1,18 @@
 # Orders — checkout
 
+## Only shoppers can buy
+
+The buyer-facing routes — `POST /orders/checkout`, `GET /orders`, `GET /orders/:orderId`,
+`POST /orders/:orderId/cancel` — are gated by `requireShopper` (`[requireAuth, requireRole(UserRole.CUSTOMER)]`),
+not bare `requireAuth`. `CUSTOMER` is the whole buyer audience: creators shop too and are
+`CUSTOMER`-role accounts with `isCreator` set; `BRAND_OWNER` and `ADMIN` are explicitly not
+buyers. Before this, any authenticated account could complete a purchase. The cart routes
+(`apps/api/src/modules/cart`) carry the same guard, since a cart is a checkout precursor. The
+`/orders/brand/*` fulfilment routes keep their own `requireBrandOwner`, and `/orders/admin/*`
+keep `requireAdmin`. (`requireShopper` is inlined in both `order.routes.ts` and `cart.routes.ts`,
+matching the existing per-module `requireBrandOwner`/`requireAdmin` arrays; consolidating all
+three into `#middlewares` is a reasonable follow-up.)
+
 ## Stock decrement timing depends on payment method
 
 COD orders decrement stock immediately, inside the checkout transaction — there's no gateway step, so the order is as good as committed the moment it's placed. eSewa/Khalti orders do **not** decrement stock at checkout — only at payment verification (see the `payments` module). This matches "nothing is reserved while a payment is in progress": an abandoned eSewa session shouldn't hold the last unit of something hostage for up to an hour while the reconciliation sweep waits it out.

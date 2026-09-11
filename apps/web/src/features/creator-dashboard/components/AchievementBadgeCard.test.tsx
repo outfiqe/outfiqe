@@ -11,6 +11,7 @@ import { AchievementBadgeCard } from "./AchievementBadgeCard";
 vi.mock("../api/badgeApi", () => ({
   badgeApi: {
     updateDisplay: vi.fn().mockResolvedValue(undefined),
+    updateTitle: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -42,6 +43,8 @@ const baseEntry: BadgeCollectionEntry = {
   unlockedAt: "2026-08-01T00:00:00.000Z",
   isDisplayed: true,
   isFeatured: false,
+  isTitle: null,
+  isTitleEligible: false,
   displayOrder: null,
   isDynamicallyActive: null,
   progress: null,
@@ -162,5 +165,35 @@ describe("AchievementBadgeCard", () => {
     renderCard({ ...baseEntry, isFeatured: true }, { isFeaturable: false });
 
     expect(screen.getByRole("button", { name: "Unfeature" })).toBeEnabled();
+  });
+
+  it("offers Set as title for a collected, displayed, title-eligible badge", async () => {
+    const user = userEvent.setup();
+    renderCard({ ...baseEntry, isTitleEligible: true, isDisplayed: true, isTitle: false });
+
+    await user.click(screen.getByRole("button", { name: "Set as title" }));
+
+    expect(badgeApi.updateTitle).toHaveBeenCalledWith("badge-1");
+  });
+
+  it("clears the title with a null badge id when the badge is already the title", async () => {
+    const user = userEvent.setup();
+    renderCard({ ...baseEntry, isTitleEligible: true, isDisplayed: true, isTitle: true });
+
+    await user.click(screen.getByRole("button", { name: "Remove title" }));
+
+    expect(badgeApi.updateTitle).toHaveBeenCalledWith(null);
+  });
+
+  it("shows no title action for a badge that is not title-eligible", () => {
+    renderCard({ ...baseEntry, isTitleEligible: false });
+
+    expect(screen.queryByRole("button", { name: "Set as title" })).not.toBeInTheDocument();
+  });
+
+  it("shows no Set as title action while the badge is hidden from the profile", () => {
+    renderCard({ ...baseEntry, isTitleEligible: true, isDisplayed: false, isTitle: false });
+
+    expect(screen.queryByRole("button", { name: "Set as title" })).not.toBeInTheDocument();
   });
 });

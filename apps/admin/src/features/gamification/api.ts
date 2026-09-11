@@ -87,6 +87,7 @@ export type BadgeFormInput = {
   isDynamic: boolean;
   isPublic: boolean;
   isTitleEligible: boolean;
+  showProfileRing: boolean;
   assignmentLimit: number | null;
   sponsorBrandId: string | null;
   requirementType: string;

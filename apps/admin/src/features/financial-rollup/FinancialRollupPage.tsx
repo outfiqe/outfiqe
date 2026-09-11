@@ -1,14 +1,17 @@
 import { StatCard } from "@outfiqe/design-system";
 import type { PaymentMethod } from "@outfiqe/types";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+
+import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { financialRollupApi } from "./api";
 import { money, PAYMENT_METHOD_LABEL, PAYMENT_METHOD_ORDER, percent } from "./constants";
 import { LedgerTable } from "./LedgerTable";
 import type { PaymentMethodBreakdown, RollupRange } from "./schemas";
 
-const RANGE_TABS: RollupRange[] = ["cycle", "30d", "all"];
+const DEFAULT_RANGE: RollupRange = "cycle";
+const RANGE_TABS: RollupRange[] = [DEFAULT_RANGE, "30d", "all"];
+const RANGE_FILTER = oneOfFilter<RollupRange>(RANGE_TABS, DEFAULT_RANGE);
 const RANGE_LABEL: Record<RollupRange, string> = {
   cycle: "This cycle",
   "30d": "Last 30 days",
@@ -55,7 +58,7 @@ const PaymentMethodRow = ({
 );
 
 export const FinancialRollupPage = () => {
-  const [range, setRange] = useState<RollupRange>("cycle");
+  const [range, setRange] = useSearchFilter("range", RANGE_FILTER);
 
   const {
     data: rollup,

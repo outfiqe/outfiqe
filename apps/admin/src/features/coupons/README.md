@@ -16,8 +16,10 @@ per-coupon performance report, and look up a redemption for support.
   wrappers, same pattern as `withdraw-requests`.
 - `hooks/useCouponPerformance.ts` — a plain `useQuery`, enabled only once a coupon is selected.
 - `CouponsPage.tsx` — the routed page (`/coupons`), two tabs: Coupons and Redemption lookup.
-- `CouponsListSection.tsx` — the coupon list: status tabs, budget progress bar, and the
-  approve/pause-activate/archive/edit-budget/performance actions.
+- `CouponsListSection.tsx` — the coupon list: status tabs (URL-bound via `@/lib/useSearchFilter`
+  as `?status=`, so a filtered view survives a refresh and is shareable; the default `ACTIVE` is
+  omitted from the URL — `_authenticated.coupons.tsx` declares the `validateSearch`), budget
+  progress bar, and the approve/pause-activate/archive/edit-budget/performance actions.
 - `CreateCouponModal.tsx` — the new-coupon form.
 - `CouponPerformanceModal.tsx` — `StatCard` grid over `GET /:id/performance`.
 - `RedemptionLookupSection.tsx` — search by coupon code or order id; a released redemption shows its

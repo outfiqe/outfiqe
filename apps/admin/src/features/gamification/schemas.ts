@@ -20,7 +20,19 @@ export const badgeRaritySchema = z.enum([
 ]);
 export type BadgeRarityValue = z.infer<typeof badgeRaritySchema>;
 
-export const badgeShapeSchema = z.enum(["circle", "shield", "star", "diamond", "hexagon"]);
+export const badgeShapeSchema = z.enum([
+  "circle",
+  "shield",
+  "star",
+  "diamond",
+  "hexagon",
+  "triangle",
+  "gem",
+  "octagon",
+  "capsule",
+  "heart",
+  "crescent",
+]);
 export type BadgeShapeValue = z.infer<typeof badgeShapeSchema>;
 
 export const badgeAnimationSchema = z.enum(["none", "glow", "shimmer", "pulse", "radiant"]);
@@ -226,6 +238,7 @@ export const badgeAdminSchema = z.object({
   assignmentLimit: z.number().nullable(),
   assignmentCount: z.number(),
   isTitleEligible: z.boolean(),
+  showProfileRing: z.boolean(),
   sponsorBrand: sponsorBrandSchema.nullable(),
   achievement: z
     .object({

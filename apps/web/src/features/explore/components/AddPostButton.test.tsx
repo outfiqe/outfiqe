@@ -61,12 +61,15 @@ describe("AddPostButton", () => {
     expect(screen.getByRole("button", { name: "Add a post" })).toBeInTheDocument();
   });
 
+  const LIFTED_FAB_CLASS = "bottom-[calc(9rem+env(safe-area-inset-bottom))]";
+  const DEFAULT_FAB_CLASS = "bottom-[calc(5.5rem+env(safe-area-inset-bottom))]";
+
   it("lifts the FAB above the chat launcher when the viewer is signed in", () => {
     mockAuth(UserRole.CUSTOMER, CreatorStatus.APPROVED);
 
     render(<AddPostButton />);
 
-    expect(screen.getByRole("button", { name: "Add a post" })).toHaveClass("bottom-40");
+    expect(screen.getByRole("button", { name: "Add a post" })).toHaveClass(LIFTED_FAB_CLASS);
   });
 
   it("keeps the default FAB position when there is no session (no chat launcher on screen)", () => {
@@ -81,7 +84,7 @@ describe("AddPostButton", () => {
     render(<AddPostButton />);
 
     const button = screen.getByRole("button", { name: "Add a post" });
-    expect(button).toHaveClass("bottom-24");
-    expect(button).not.toHaveClass("bottom-40");
+    expect(button).toHaveClass(DEFAULT_FAB_CLASS);
+    expect(button).not.toHaveClass(LIFTED_FAB_CLASS);
   });
 });

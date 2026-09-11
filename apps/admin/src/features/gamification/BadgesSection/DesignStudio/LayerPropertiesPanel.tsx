@@ -7,18 +7,18 @@ import {
 } from "../../badgeOptions.constants";
 import type { BadgeImageFitValue, BadgeLayer, BadgeShapeValue } from "../../schemas";
 import { BadgeIconUploader } from "../BadgeIconUploader";
+import { LayerNumberInput } from "./LayerNumberInput";
 import {
   BADGE_FONT_WEIGHT,
   BADGE_LAYER_TYPE,
   MAX_LAYER_BORDER_WIDTH,
   MAX_LAYER_FONT_SIZE,
-  MIN_LAYER_BORDER_WIDTH,
   MIN_LAYER_FONT_SIZE,
 } from "./studioLayer.constants";
 
 const DEFAULT_BORDER_COLOR = "#000000";
 const DEFAULT_BORDER_WIDTH_PX = 2;
-const NO_BORDER_WIDTH_PX = 0;
+const MIN_ENABLED_BORDER_WIDTH_PX = 1;
 const MIN_LAYER_RADIUS = 0;
 const MAX_LAYER_RADIUS = 100;
 
@@ -96,13 +96,12 @@ export const LayerPropertiesPanel = ({
               <label htmlFor="layer-border-width" className="block text-xs text-muted-foreground">
                 Border width (px)
               </label>
-              <Input
+              <LayerNumberInput
                 id="layer-border-width"
-                type="number"
-                min={MIN_LAYER_BORDER_WIDTH}
+                min={MIN_ENABLED_BORDER_WIDTH_PX}
                 max={MAX_LAYER_BORDER_WIDTH}
-                value={layer.borderWidth ?? NO_BORDER_WIDTH_PX}
-                onChange={(e) => onChange({ borderWidth: Number(e.target.value) })}
+                value={layer.borderWidth ?? DEFAULT_BORDER_WIDTH_PX}
+                onCommit={(borderWidth) => onChange({ borderWidth })}
                 className="w-20"
               />
             </div>
@@ -130,13 +129,12 @@ export const LayerPropertiesPanel = ({
           <label htmlFor="layer-icon-size" className="block text-xs text-muted-foreground">
             Size (% of badge)
           </label>
-          <Input
+          <LayerNumberInput
             id="layer-icon-size"
-            type="number"
             min={MIN_LAYER_FONT_SIZE}
             max={MAX_LAYER_FONT_SIZE}
             value={layer.fontSize}
-            onChange={(e) => onChange({ fontSize: Number(e.target.value) })}
+            onCommit={(fontSize) => onChange({ fontSize })}
             className="w-20"
           />
         </div>
@@ -176,13 +174,12 @@ export const LayerPropertiesPanel = ({
           <label htmlFor="layer-image-radius" className="block text-xs text-muted-foreground">
             Corner radius (%)
           </label>
-          <Input
+          <LayerNumberInput
             id="layer-image-radius"
-            type="number"
             min={MIN_LAYER_RADIUS}
             max={MAX_LAYER_RADIUS}
             value={layer.radius ?? MIN_LAYER_RADIUS}
-            onChange={(e) => onChange({ radius: Number(e.target.value) })}
+            onCommit={(radius) => onChange({ radius })}
             className="w-20"
           />
         </div>
@@ -219,13 +216,12 @@ export const LayerPropertiesPanel = ({
           <label htmlFor="layer-text-size" className="block text-xs text-muted-foreground">
             Size (% of badge)
           </label>
-          <Input
+          <LayerNumberInput
             id="layer-text-size"
-            type="number"
             min={MIN_LAYER_FONT_SIZE}
             max={MAX_LAYER_FONT_SIZE}
             value={layer.fontSize}
-            onChange={(e) => onChange({ fontSize: Number(e.target.value) })}
+            onCommit={(fontSize) => onChange({ fontSize })}
             className="w-20"
           />
         </div>
