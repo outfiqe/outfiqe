@@ -1,7 +1,7 @@
 @import "./fonts.css";
 
 :root {
-  --background: 188 16% 98%;
+  --background: 32 30% 95%;
   --foreground: 200 12% 13%;
 
   --card: 0 0% 100%;
@@ -114,7 +114,7 @@
 }
 
 .dark {
-  --background: 200 6% 6%;
+  --background: 30 22% 8%;
   --foreground: 190 10% 94%;
 
   --card: 200 6% 11%;
