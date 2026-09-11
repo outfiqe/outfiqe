@@ -9,5 +9,6 @@ export const useInfiniteExploreFeed = (tab: string, enabled = true) => {
     ["explore-feed", tab],
     (cursor) => exploreFeedApi.list({ tab, cursor }),
     enabled,
+    { revalidateStalePersistedCacheOnMount: true },
   );
 };

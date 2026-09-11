@@ -158,6 +158,16 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   instead of `https://outfiqe.com/admin`) silently produced a doubled-slash, wrong-path invite link
   (`daraz.outfiqe.com//crm` instead of `daraz.outfiqe.com/admin/crm`) that a user actually hit in
   production — caught from a real invite email, not a hypothetical.
+  **This function has always faithfully reproduced whatever path `env.ADMIN_URL` actually carries —
+  it has no way to know the admin SPA's `/admin` basepath is mandatory.** The admin app's own
+  `vite.config.ts` (`base: "/admin/"`) and `main.tsx` (`basepath: "/admin"`) hard-require every URL
+  that reaches it to include `/admin`, on any hostname. A bare `ADMIN_URL` (no path at all, e.g.
+  `https://admin.outfiqe.com`) produces a link that is missing `/admin` entirely
+  (`daraz.outfiqe.com/crm`) rather than doubled — same root cause as the bug above, just without a
+  trailing slash to trigger it. `deploy/.env.prod.example` and `deploy/.env.dev.example` previously
+  set exactly this bare form; they're fixed to include `/admin` now, but an already-deployed
+  `.env.prod`/`.env.dev` on the server needs the same fix applied and the `api`/`worker` containers
+  recreated for it to take effect — see `deploy/README.md`'s "Known gotchas".
 - **Creating a second organization** (`POST /api/crm/organizations`) is deliberately not
   tenant-scoped — there's no `Membership` to check permissions against before the org exists — so
   it's gated on `requirePlatformAccess` instead, registered before

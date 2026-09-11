@@ -1492,6 +1492,38 @@ describe("creatorLookService trending pipeline", () => {
 
     expect(ranked.some((entry) => entry.lookId === look.id)).toBe(true);
   });
+
+  it("breaks a tie between equally-scored posts the same way on every recompute", async () => {
+    const creator = await createCreator("Pipeline Tie Creator", "pipeline-tie-creator");
+    const viewerOne = await createCreator("Pipeline Tie Viewer One", "pipeline-tie-viewer-one");
+    const viewerTwo = await createCreator("Pipeline Tie Viewer Two", "pipeline-tie-viewer-two");
+    const lookA = await createLook(creator.id, "Pipeline tie post A");
+    const lookB = await createLook(creator.id, "Pipeline tie post B");
+    await prisma.creatorLookLike.createMany({
+      data: [
+        { creatorLookId: lookA.id, userId: viewerOne.id },
+        { creatorLookId: lookA.id, userId: viewerTwo.id },
+        { creatorLookId: lookB.id, userId: viewerOne.id },
+        { creatorLookId: lookB.id, userId: viewerTwo.id },
+      ],
+    });
+    await creatorLookService.runTrendingAggregation();
+
+    const firstRun = await creatorLookService.runTrendingScoring();
+    const secondRun = await creatorLookService.runTrendingScoring();
+
+    const rankOf = (ranked: typeof firstRun.ranked, lookId: string) =>
+      ranked.findIndex((entry) => entry.lookId === lookId);
+
+    const firstScoreA = firstRun.ranked[rankOf(firstRun.ranked, lookA.id)]?.score;
+    const firstScoreB = firstRun.ranked[rankOf(firstRun.ranked, lookB.id)]?.score;
+    expect(firstScoreA).toBe(firstScoreB);
+
+    const firstRunAWinsTie = rankOf(firstRun.ranked, lookA.id) < rankOf(firstRun.ranked, lookB.id);
+    const secondRunAWinsTie =
+      rankOf(secondRun.ranked, lookA.id) < rankOf(secondRun.ranked, lookB.id);
+    expect(secondRunAWinsTie).toBe(firstRunAWinsTie);
+  });
 });
 
 describe("GET /api/creators/by-handle/:handle/looks integration with feed", () => {

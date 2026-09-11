@@ -21,7 +21,10 @@ Shared React hooks reused across `apps/web` and `apps/admin` — generic data-fe
   Without the filter, every `data.pages.flatMap((page) => page.something)` call site — and there
   are ~20 — crashes on `Cannot read properties of null`. The `select` is `useCallback`-wrapped so
   its identity is stable and react-query doesn't re-run it (and re-break `useMemo([data])` in
-  consumers like `BrandProfile`) each render.
+  consumers like `BrandProfile`) each render. The optional 4th argument,
+  `revalidateStalePersistedCacheOnMount`, forces `refetchOnMount: "always"` — see the
+  "Non-obvious rationale" bullet on `apps/web`'s persisted-query allowlist for why any query key
+  under `explore-feed`/`creator-looks` needs this.
 - `useNotifications.ts` — `NOTIFICATIONS_QUERY_KEY`/`NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY`, and
   `useNotifications`: the feed's cursor pagination (via `useInfiniteCursorPage`) plus optimistic
   mark-read/mark-all-read. Owns fetching and mutating only — real-time updates come from
@@ -67,3 +70,18 @@ brand-new notification would, not stay wherever it was originally inserted.
 live-only counter would drift if any event was missed while the socket was disconnected (a mark-read
 on another tab, a reconnect after a server restart); refetching on every `connect` — including the
 first one — makes a missed event self-heal within one reconnect instead of silently staying wrong.
+
+**A persisted-and-rehydrated query can look "fresh" while carrying stale per-viewer state.**
+`apps/web`'s `Providers.tsx` persists react-query's whole cache to IndexedDB for a set of query
+roots (`PERSISTABLE_QUERY_ROOTS` in `apps/web/src/features/pwa/constants/offlineCache.ts`) so
+previously-seen content still renders instantly offline. Restoring a persisted query keeps its
+original `dataUpdatedAt`, and react-query's default `staleTime` (30s app-wide) is measured from
+that timestamp, not from the moment of rehydration — so a page refresh moments after liking/saving/
+following something can restore a snapshot still inside its staleTime window and skip revalidating
+entirely, showing the pre-action state for up to 30 seconds. This was a real, live bug: the explore
+feed's "For You"/"Following" tabs (`["explore-feed", tab]`, a persisted root) showed the wrong
+like/save/follow state after a refresh or tab switch, while the creator profile grid
+(`["creator-looks", handle]`, also persisted) happened not to hit it in practice. Any query key
+under a persisted root that also carries interactive, frequently-mutated per-viewer state needs
+`revalidateStalePersistedCacheOnMount: true` for exactly this reason — trust the persisted snapshot
+for the instant first paint, never trust it to skip revalidating once the viewer is back online.

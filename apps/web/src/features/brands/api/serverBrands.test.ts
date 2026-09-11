@@ -7,9 +7,9 @@ vi.mock("@/shared/lib/serverApiClient", () => ({
   serverApiRequest: (...args: unknown[]) => serverApiRequest(...args),
 }));
 
-const getServerSessionWithToken = vi.fn();
+const getServerAccessToken = vi.fn();
 vi.mock("@/features/auth/api/serverAuth", () => ({
-  getServerSessionWithToken: () => getServerSessionWithToken(),
+  getServerAccessToken: () => getServerAccessToken(),
 }));
 
 const { getBrandsFirstPageServer } = await import("./serverBrands");
@@ -35,12 +35,12 @@ const brandPage = {
 
 beforeEach(() => {
   serverApiRequest.mockReset();
-  getServerSessionWithToken.mockReset();
+  getServerAccessToken.mockReset();
 });
 
 describe("getBrandsFirstPageServer", () => {
   it("forwards the viewer's access token so isFollowing is personalized", async () => {
-    getServerSessionWithToken.mockResolvedValue({ accessToken: "viewer-token", user: {} });
+    getServerAccessToken.mockResolvedValue("viewer-token");
     serverApiRequest.mockResolvedValue(brandPage);
 
     const page = await getBrandsFirstPageServer();
@@ -50,7 +50,7 @@ describe("getBrandsFirstPageServer", () => {
   });
 
   it("requests anonymously when there is no session", async () => {
-    getServerSessionWithToken.mockResolvedValue(null);
+    getServerAccessToken.mockResolvedValue(null);
     serverApiRequest.mockResolvedValue(brandPage);
 
     await getBrandsFirstPageServer();
@@ -59,7 +59,7 @@ describe("getBrandsFirstPageServer", () => {
   });
 
   it("rejects when the response fails schema validation", async () => {
-    getServerSessionWithToken.mockResolvedValue(null);
+    getServerAccessToken.mockResolvedValue(null);
     serverApiRequest.mockResolvedValue({ brands: "not-an-array" });
 
     await expect(getBrandsFirstPageServer()).rejects.toThrow();
