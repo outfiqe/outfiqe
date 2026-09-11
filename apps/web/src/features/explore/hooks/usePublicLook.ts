@@ -9,5 +9,6 @@ export const usePublicLook = (lookId: string | null) => {
     queryKey: ["creator-looks", "public", lookId],
     queryFn: () => exploreFeedApi.getById(lookId as string),
     enabled: lookId !== null,
+    refetchOnMount: "always",
   });
 };
