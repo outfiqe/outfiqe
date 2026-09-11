@@ -179,6 +179,33 @@ describe("AchievementBadgeIcon", () => {
     expect(container.textContent).not.toContain("MVP");
   });
 
+  it("clips the studio shimmer sweep to the background layer's shape, not the full box", () => {
+    const { container } = renderIcon({
+      rarity: "EPIC",
+      designConfig: {
+        version: 2,
+        layers: [
+          {
+            id: "bg",
+            type: "background",
+            shape: "diamond",
+            fill: "#5d1877",
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+          },
+        ],
+      },
+    });
+
+    const layersContainer = container.firstElementChild?.firstElementChild as HTMLElement;
+    const shimmer = layersContainer.lastElementChild as HTMLElement;
+
+    expect(shimmer.className).toContain("animate-badge-shimmer");
+    expect(shimmer.style.clipPath).toBe(SHAPE_CLIP_PATH.diamond);
+  });
+
   it("uses the studio background layer's fill for the badge glow color", () => {
     const { container } = renderIcon({
       rarity: "RARE",
