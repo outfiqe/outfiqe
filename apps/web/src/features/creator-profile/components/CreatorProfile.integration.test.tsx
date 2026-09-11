@@ -440,6 +440,38 @@ describe("CreatorProfile title badge", () => {
     expect(screen.getByText("Outfiqe OG")).toBeInTheDocument();
     expect(container.querySelector(".animate-avatar-ring-spin")).not.toBeInTheDocument();
   });
+
+  it("tints the title pill and avatar ring with a studio badge's background-layer fill, not the legacy-only fallback color", () => {
+    const studioTitleBadge = {
+      id: "badge-studio",
+      name: "Studio Badge",
+      icon: "🌀",
+      designConfig: {
+        version: 2 as const,
+        layers: [
+          {
+            id: "bg",
+            type: "background" as const,
+            shape: "capsule" as const,
+            fill: "#671877",
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+          },
+        ],
+      },
+      rarity: "EXCLUSIVE" as const,
+      showProfileRing: true,
+    };
+
+    const { container } = renderProfile(buildCreator({ titleBadge: studioTitleBadge }));
+
+    expect(screen.getByText("Studio Badge")).toHaveStyle({ color: "#671877" });
+
+    const ring = container.querySelector(".animate-avatar-ring-spin") as HTMLElement;
+    expect(ring.style.background).toContain("rgb(103, 24, 119)");
+  });
 });
 
 describe("CreatorProfile edit flow", () => {

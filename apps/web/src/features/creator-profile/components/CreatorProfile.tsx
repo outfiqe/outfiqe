@@ -49,8 +49,11 @@ const TITLE_BADGE_FALLBACK_COLOR = "#146c78";
 const LOOK_QUERY_PARAM = "look";
 const EDIT_QUERY_PARAM = "edit";
 
-const badgeAccentColor = (designConfig: FeaturedBadge["designConfig"]): string =>
-  "primaryColor" in designConfig ? designConfig.primaryColor : TITLE_BADGE_FALLBACK_COLOR;
+const badgeAccentColor = (designConfig: FeaturedBadge["designConfig"]): string => {
+  if ("primaryColor" in designConfig) return designConfig.primaryColor;
+  const backgroundLayer = designConfig.layers.find((layer) => layer.type === "background");
+  return backgroundLayer?.fill ?? TITLE_BADGE_FALLBACK_COLOR;
+};
 
 export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const router = useRouter();
