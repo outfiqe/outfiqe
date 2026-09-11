@@ -1,5 +1,6 @@
 "use client";
 
+import { FormBanner } from "@outfiqe/design-system";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -75,6 +76,7 @@ export const ExploreFeed = () => {
   };
 
   const followingGated = isAuthResolved && tab === EXPLORE_TAB.FOLLOWING && !isAuthenticated;
+  const showForYouPersonalizationHint = tab === EXPLORE_TAB.FOR_YOU;
   const isFollowingTab = tab === EXPLORE_TAB.FOLLOWING;
   const feedEnabled = !isFollowingTab || (isAuthResolved && isAuthenticated);
 
@@ -122,6 +124,12 @@ export const ExploreFeed = () => {
         <ExploreSidebarNav tab={tab} onChange={setTab} layout={layout} onLayoutChange={setLayout} />
 
         <div>
+          {showForYouPersonalizationHint && (
+            <FormBanner tone="neutral">
+              For You gets more personalized as you follow creators and like or save looks you love.
+            </FormBanner>
+          )}
+
           {newLookCount > 0 && (
             <button
               type="button"
