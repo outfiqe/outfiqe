@@ -60,6 +60,7 @@ const baseUser: UserRecord = {
   followingCount: 3,
   tagCounterfeitFlagCount: 0,
   hideFromLeaderboards: false,
+  handleChangedAt: null,
   lastSeenAt: null,
   createdAt: NOW,
   updatedAt: NOW,
