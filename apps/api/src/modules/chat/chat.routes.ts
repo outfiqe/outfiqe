@@ -1,7 +1,8 @@
 import { Router } from "express";
 
 import { rateLimit } from "#middlewares/rate-limit.js";
-import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
+import { requireActiveAuth } from "#middlewares/require-active-account.js";
+import { getAuthPrincipal } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 
 import {
@@ -26,10 +27,10 @@ const chatSettingsMutationRateLimit = rateLimit({
 
 export const chatRoutes = Router();
 
-chatRoutes.get("/settings", requireAuth, chatController.getSettings);
+chatRoutes.get("/settings", ...requireActiveAuth, chatController.getSettings);
 chatRoutes.patch(
   "/settings",
-  requireAuth,
+  ...requireActiveAuth,
   chatSettingsMutationRateLimit,
   validate({ body: updateChatSettingsBodySchema }),
   chatController.updateSettings,
@@ -37,26 +38,26 @@ chatRoutes.patch(
 
 chatRoutes.get(
   "/blocks/search",
-  requireAuth,
+  ...requireActiveAuth,
   validate({ query: searchChatContactsQuerySchema }),
   chatController.searchContacts,
 );
 chatRoutes.get(
   "/blocks",
-  requireAuth,
+  ...requireActiveAuth,
   validate({ query: listChatBlocksQuerySchema }),
   chatController.listBlocks,
 );
 chatRoutes.post(
   "/blocks/:userId",
-  requireAuth,
+  ...requireActiveAuth,
   chatSettingsMutationRateLimit,
   validate({ params: chatBlockTargetParamSchema }),
   chatController.blockUser,
 );
 chatRoutes.delete(
   "/blocks/:userId",
-  requireAuth,
+  ...requireActiveAuth,
   chatSettingsMutationRateLimit,
   validate({ params: chatBlockTargetParamSchema }),
   chatController.unblockUser,

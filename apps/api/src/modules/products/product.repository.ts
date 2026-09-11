@@ -2,7 +2,12 @@ import { PRODUCT_SORT, type ProductSort } from "@outfiqe/utils";
 
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
-import { CreatorStatus, ProductStatus, TagReviewStatus } from "#generated/prisma/enums.js";
+import {
+  AccountStatus,
+  CreatorStatus,
+  ProductStatus,
+  TagReviewStatus,
+} from "#generated/prisma/enums.js";
 import { RESPONSIVE_IMAGE_ASSET_SELECT } from "#lib/responsive-image.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
@@ -92,6 +97,7 @@ type PublicFilter = {
 const buildPublicWhere = (filter: PublicFilter): Prisma.ProductWhereInput => ({
   status: ProductStatus.APPROVED,
   deletedAt: null,
+  brand: { accountStatus: AccountStatus.ACTIVE },
   categories: filter.categoryId ? { some: { id: filter.categoryId } } : undefined,
   productTypeId: filter.productTypeId,
   brandId: filter.brandId,
@@ -269,7 +275,12 @@ export const productRepository = {
 
   async findApprovedByIds(ids: string[]): Promise<ProductRecord[]> {
     return prisma.product.findMany({
-      where: { id: { in: ids }, status: ProductStatus.APPROVED, deletedAt: null },
+      where: {
+        id: { in: ids },
+        status: ProductStatus.APPROVED,
+        deletedAt: null,
+        brand: { accountStatus: AccountStatus.ACTIVE },
+      },
     });
   },
 
@@ -357,7 +368,11 @@ export const productRepository = {
 
   async listTrending(): Promise<(ProductWithStock & ProductSalesStats)[]> {
     const rows = await prisma.product.findMany({
-      where: { status: ProductStatus.APPROVED, deletedAt: null },
+      where: {
+        status: ProductStatus.APPROVED,
+        deletedAt: null,
+        brand: { accountStatus: AccountStatus.ACTIVE },
+      },
       include: { ...withBrandAndCategories, ...withFirstImageAsset, ...withActiveDiscount() },
       orderBy: { reviewedAt: "desc" },
       take: TRENDING_LIMIT,
@@ -369,7 +384,12 @@ export const productRepository = {
     if (ids.length === 0) return [];
 
     const rows = await prisma.product.findMany({
-      where: { id: { in: ids }, status: ProductStatus.APPROVED, deletedAt: null },
+      where: {
+        id: { in: ids },
+        status: ProductStatus.APPROVED,
+        deletedAt: null,
+        brand: { accountStatus: AccountStatus.ACTIVE },
+      },
       include: { ...withBrandAndCategories, ...withFirstImageAsset, ...withActiveDiscount() },
     });
     const withStats = await withSalesStats(withTotalStock(rows));
@@ -385,6 +405,7 @@ export const productRepository = {
       where: {
         status: ProductStatus.APPROVED,
         deletedAt: null,
+        brand: { accountStatus: AccountStatus.ACTIVE },
         createdAt: { gte: new Date(Date.now() - NEW_ARRIVAL_WINDOW_MS) },
       },
       include: { ...withBrandAndCategories, ...withFirstImageAsset, ...withActiveDiscount() },
@@ -403,7 +424,12 @@ export const productRepository = {
     | null
   > {
     const product = await prisma.product.findFirst({
-      where: { id, status: ProductStatus.APPROVED, deletedAt: null },
+      where: {
+        id,
+        status: ProductStatus.APPROVED,
+        deletedAt: null,
+        brand: { accountStatus: AccountStatus.ACTIVE },
+      },
       include: {
         brand: { select: { name: true } },
         categories: { select: { slug: true, name: true } },

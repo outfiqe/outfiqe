@@ -1,6 +1,7 @@
 ﻿import { Router } from "express";
 
 import { rateLimit } from "#middlewares/rate-limit.js";
+import { requireActiveAuth } from "#middlewares/require-active-account.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
@@ -73,21 +74,21 @@ withdrawRoutes.put(
 
 withdrawRoutes.get(
   "/policy",
-  requireAuth,
+  ...requireActiveAuth,
   validate({ query: ownerTypeQuerySchema }),
   withdrawController.getPolicy,
 );
 
 withdrawRoutes.get(
   "/eligibility",
-  requireAuth,
+  ...requireActiveAuth,
   validate({ query: ownerTypeQuerySchema }),
   withdrawController.getEligibility,
 );
 
 withdrawRoutes.post(
   "/requests",
-  requireAuth,
+  ...requireActiveAuth,
   createWithdrawRequestRateLimit,
   validate({ body: createWithdrawRequestSchema }),
   withdrawController.createRequest,
@@ -95,7 +96,7 @@ withdrawRoutes.post(
 
 withdrawRoutes.get(
   "/requests",
-  requireAuth,
+  ...requireActiveAuth,
   validate({ query: listWithdrawRequestsQuerySchema }),
   withdrawController.listMine,
 );

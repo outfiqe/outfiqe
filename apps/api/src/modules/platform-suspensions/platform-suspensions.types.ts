@@ -18,6 +18,18 @@ export type LiftUserSuspensionInput = {
   actorUserId?: string;
 };
 
+export type SuspendBrandInput = {
+  targetBrandId: string;
+  actorUserId: string;
+  reason: string;
+  durationHours?: number;
+};
+
+export type LiftBrandSuspensionInput = {
+  targetBrandId: string;
+  actorUserId?: string;
+};
+
 export type AccountSuspensionState = {
   accountStatus: AccountStatus;
   suspendedAt: Date | null;

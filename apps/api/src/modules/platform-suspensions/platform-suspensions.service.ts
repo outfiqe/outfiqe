@@ -15,7 +15,9 @@ import { SUSPENSION_REDIS_TTL_PADDING_SECONDS } from "./platform-suspensions.con
 import { platformSuspensionsRepository } from "./platform-suspensions.repository.js";
 import type {
   BanUserInput,
+  LiftBrandSuspensionInput,
   LiftUserSuspensionInput,
+  SuspendBrandInput,
   SuspendUserInput,
 } from "./platform-suspensions.types.js";
 
@@ -24,7 +26,9 @@ const FORBIDDEN_STATUS = 403;
 const CONFLICT_STATUS = 409;
 const NOT_FOUND_STATUS = 404;
 const USER_NOT_FOUND_MESSAGE = "User not found.";
+const BRAND_NOT_FOUND_MESSAGE = "Brand not found.";
 const TARGET_TYPE_USER = "user";
+const TARGET_TYPE_BRAND = "brand";
 
 const assertNotSelf = (actorUserId: string, targetUserId: string): void => {
   if (actorUserId === targetUserId) {
@@ -216,5 +220,71 @@ export const platformSuspensionsService = {
     });
 
     await eventBus.publish(DomainEvents.USER_UNSUSPENDED, { userId: targetUserId });
+  },
+
+  async suspendBrand(input: SuspendBrandInput): Promise<void> {
+    const { targetBrandId, actorUserId, reason, durationHours } = input;
+
+    const existing = await platformSuspensionsRepository.findBrandSuspensionState(targetBrandId);
+    if (!existing) throw new AppError("BRAND_NOT_FOUND", BRAND_NOT_FOUND_MESSAGE, NOT_FOUND_STATUS);
+
+    const expiresAt = durationHours ? new Date(Date.now() + durationHours * HOURS_TO_MS) : null;
+
+    const changed = await platformSuspensionsRepository.suspendBrand({
+      brandId: targetBrandId,
+      suspendedBy: actorUserId,
+      reason,
+      expiresAt,
+    });
+
+    if (!changed) {
+      throw new AppError("ALREADY_SUSPENDED", "This brand is already suspended.", CONFLICT_STATUS);
+    }
+
+    await platformAudit.record({
+      actorUserId,
+      action: PLATFORM_AUDIT_ACTION.BRAND_SUSPENDED,
+      summary: `Suspended brand ${targetBrandId}${durationHours ? ` for ${durationHours}h` : " indefinitely"}: ${reason}`,
+      targetType: TARGET_TYPE_BRAND,
+      targetId: targetBrandId,
+      metadata: {
+        reason,
+        durationHours: durationHours ?? null,
+        expiresAt: expiresAt ? expiresAt.toISOString() : null,
+      },
+    });
+
+    await eventBus.publish(DomainEvents.BRAND_SUSPENDED, {
+      brandId: targetBrandId,
+      reason,
+      expiresAt: expiresAt ? expiresAt.toISOString() : null,
+    });
+  },
+
+  async unsuspendBrand(input: LiftBrandSuspensionInput): Promise<void> {
+    const { targetBrandId, actorUserId } = input;
+
+    const changed = await platformSuspensionsRepository.unsuspendBrand(targetBrandId);
+    if (!changed) {
+      throw new AppError(
+        "NOT_SUSPENDED",
+        "This brand is not currently suspended.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    if (actorUserId) {
+      await platformAudit.record({
+        actorUserId,
+        action: PLATFORM_AUDIT_ACTION.BRAND_UNSUSPENDED,
+        summary: `Unsuspended brand ${targetBrandId}`,
+        targetType: TARGET_TYPE_BRAND,
+        targetId: targetBrandId,
+      });
+    } else {
+      logger.info(`Suspension expiry sweep lifted the suspension on brand ${targetBrandId}`);
+    }
+
+    await eventBus.publish(DomainEvents.BRAND_UNSUSPENDED, { brandId: targetBrandId });
   },
 };

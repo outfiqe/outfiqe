@@ -7,6 +7,7 @@ import { platformSuspensionsController } from "./platform-suspensions.controller
 import {
   banUserBodySchema,
   suspendUserBodySchema,
+  targetBrandIdParamSchema,
   targetUserIdParamSchema,
 } from "./platform-suspensions.schemas.js";
 
@@ -40,4 +41,18 @@ platformSuspensionsRoutes.post(
   ...manageSuspensions,
   validate({ params: targetUserIdParamSchema }),
   platformSuspensionsController.unbanUser,
+);
+
+platformSuspensionsRoutes.post(
+  "/brands/:brandId/suspend",
+  ...manageSuspensions,
+  validate({ params: targetBrandIdParamSchema, body: suspendUserBodySchema }),
+  platformSuspensionsController.suspendBrand,
+);
+
+platformSuspensionsRoutes.post(
+  "/brands/:brandId/unsuspend",
+  ...manageSuspensions,
+  validate({ params: targetBrandIdParamSchema }),
+  platformSuspensionsController.unsuspendBrand,
 );

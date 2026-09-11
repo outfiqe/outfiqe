@@ -99,6 +99,52 @@ export const platformSuspensionsRepository = {
     return rows.map((row) => row.id);
   },
 
+  async findBrandSuspensionState(
+    brandId: string,
+    client: DbClient = prisma,
+  ): Promise<AccountSuspensionState | null> {
+    return client.brand.findUnique({ where: { id: brandId }, select: suspensionStateSelect });
+  },
+
+  async suspendBrand(
+    input: { brandId: string; suspendedBy: string; reason: string; expiresAt: Date | null },
+    client: DbClient = prisma,
+  ): Promise<boolean> {
+    const { count } = await client.brand.updateMany({
+      where: { id: input.brandId, accountStatus: { not: AccountStatus.SUSPENDED } },
+      data: {
+        accountStatus: AccountStatus.SUSPENDED,
+        suspendedAt: new Date(),
+        suspendedBy: input.suspendedBy,
+        suspensionReason: input.reason,
+        suspensionExpiresAt: input.expiresAt,
+      },
+    });
+    return count > 0;
+  },
+
+  async unsuspendBrand(brandId: string, client: DbClient = prisma): Promise<boolean> {
+    const { count } = await client.brand.updateMany({
+      where: { id: brandId, accountStatus: AccountStatus.SUSPENDED },
+      data: {
+        accountStatus: AccountStatus.ACTIVE,
+        suspendedAt: null,
+        suspendedBy: null,
+        suspensionReason: null,
+        suspensionExpiresAt: null,
+      },
+    });
+    return count > 0;
+  },
+
+  async findExpiredSuspendedBrandIds(now: Date, client: DbClient = prisma): Promise<string[]> {
+    const rows = await client.brand.findMany({
+      where: { accountStatus: AccountStatus.SUSPENDED, suspensionExpiresAt: { lte: now } },
+      select: { id: true },
+    });
+    return rows.map((row) => row.id);
+  },
+
   async findLatestBanActorUserId(
     userId: string,
     client: DbClient = prisma,

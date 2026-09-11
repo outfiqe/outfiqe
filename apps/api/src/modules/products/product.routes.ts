@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
 import { optionalAuth } from "#middlewares/optional-auth.js";
+import { requireActiveAuth } from "#middlewares/require-active-account.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
@@ -21,7 +22,7 @@ import {
   updateProductSchema,
 } from "./product.schemas.js";
 
-const requireBrandOwner = [requireAuth, requireRole(UserRole.BRAND_OWNER)];
+const requireBrandOwner = [...requireActiveAuth, requireRole(UserRole.BRAND_OWNER)];
 const requireAdmin = [requireAuth, requirePlatformAccess];
 
 export const productRoutes = Router();

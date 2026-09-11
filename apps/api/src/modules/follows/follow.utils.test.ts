@@ -93,6 +93,11 @@ const baseBrand: BrandRecord = {
   rating: 4.5,
   tagReviewPolicy: "TRUSTED_ONLY",
   autoApproveVerifiedBuyers: true,
+  accountStatus: AccountStatus.ACTIVE,
+  suspendedAt: null,
+  suspendedBy: null,
+  suspensionReason: null,
+  suspensionExpiresAt: null,
   createdAt: NOW,
   updatedAt: NOW,
 };

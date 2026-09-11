@@ -20,6 +20,8 @@ import {
 } from "#modules/leaderboard/leaderboard.socket.js";
 import { registerNotificationEventConsumers } from "#modules/notifications/notification.events.js";
 import { registerNotificationSocketEventConsumer } from "#modules/notifications/notification.socket.js";
+import { registerSuspensionNotificationEventConsumers } from "#modules/platform-suspensions/platform-suspensions.events.js";
+import { registerSuspensionSocketEventConsumer } from "#modules/platform-suspensions/platform-suspensions.socket.js";
 import { registerPushEventConsumer } from "#modules/push/push.events.js";
 import { registerTagReportEventConsumers } from "#modules/tag-reports/tagReport.events.js";
 import { registerXpEventConsumers } from "#modules/xp/xp.events.js";
@@ -41,6 +43,7 @@ export const registerRealtimeConsumers = (): void => {
   registerConversationSocketHandlers();
   registerMessageEventConsumer();
   registerPresenceSocketConsumer();
+  registerSuspensionSocketEventConsumer();
 };
 
 export const registerBackgroundConsumers = (): void => {
@@ -49,4 +52,5 @@ export const registerBackgroundConsumers = (): void => {
   registerNotificationEventConsumers();
   registerPushEventConsumer();
   registerTagReportEventConsumers();
+  registerSuspensionNotificationEventConsumers();
 };

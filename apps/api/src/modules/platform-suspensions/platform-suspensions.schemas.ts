@@ -16,6 +16,11 @@ export const targetUserIdParamSchema = z.object({
   userId: z.uuid(),
 });
 
+export const targetBrandIdParamSchema = z.object({
+  brandId: z.uuid(),
+});
+
 export type SuspendUserBody = z.infer<typeof suspendUserBodySchema>;
 export type BanUserBody = z.infer<typeof banUserBodySchema>;
 export type TargetUserIdParam = z.infer<typeof targetUserIdParamSchema>;
+export type TargetBrandIdParam = z.infer<typeof targetBrandIdParamSchema>;

@@ -89,6 +89,35 @@ describe("platform suspensions", () => {
     adminAuth = authHeaderFor(admin.id);
   });
 
+  it("blocks a suspended user mid-session on a requireActiveAuth route, then un-blocks after unsuspend", async () => {
+    const { user } = await createUserWithPassword();
+    const userAuth = authHeaderFor(user.id, UserRole.CUSTOMER);
+
+    const before = await request(testApp).get("/api/chat/settings").set("Authorization", userAuth);
+    expect(before.status).toBe(200);
+
+    await request(testApp)
+      .post(`/api/platform/users/${user.id}/suspend`)
+      .set("Authorization", adminAuth)
+      .send({ reason: "Harassment reports" });
+
+    const duringSuspension = await request(testApp)
+      .get("/api/chat/settings")
+      .set("Authorization", userAuth);
+    expect(duringSuspension.status).toBe(403);
+    expect(duringSuspension.body.code).toBe("ACCOUNT_SUSPENDED");
+
+    await request(testApp)
+      .post(`/api/platform/users/${user.id}/unsuspend`)
+      .set("Authorization", adminAuth)
+      .send();
+
+    const afterUnsuspend = await request(testApp)
+      .get("/api/chat/settings")
+      .set("Authorization", userAuth);
+    expect(afterUnsuspend.status).toBe(200);
+  });
+
   it("suspends a user, revokes their sessions, and blocks login", async () => {
     const { user, password } = await createUserWithPassword();
     await prisma.refreshToken.create({
@@ -244,5 +273,23 @@ describe("platform suspensions", () => {
       .send({ reason: "Should be blocked" });
 
     expect(res.status).toBe(403);
+  });
+
+  it("blocks starting a conversation with a suspended recipient, even though the caller is active", async () => {
+    const caller = await createUser();
+    const recipient = await createUser();
+
+    await request(testApp)
+      .post(`/api/platform/users/${recipient.id}/suspend`)
+      .set("Authorization", adminAuth)
+      .send({ reason: "Reported for harassment" });
+
+    const res = await request(testApp)
+      .post("/api/conversations")
+      .set("Authorization", authHeaderFor(caller.id, UserRole.CUSTOMER))
+      .send({ userId: recipient.id });
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe("CHAT_UNAVAILABLE");
   });
 });
