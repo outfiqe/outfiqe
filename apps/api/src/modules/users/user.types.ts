@@ -1,4 +1,4 @@
-import type { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
+import type { AccountStatus, CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 
 export interface UserRecord {
   id: string;
@@ -22,6 +22,11 @@ export interface UserRecord {
   hideFromLeaderboards: boolean;
   handleChangedAt: Date | null;
   lastSeenAt: Date | null;
+  accountStatus: AccountStatus;
+  suspendedAt: Date | null;
+  suspendedBy: string | null;
+  suspensionReason: string | null;
+  suspensionExpiresAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

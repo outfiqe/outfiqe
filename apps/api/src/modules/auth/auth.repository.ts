@@ -38,8 +38,8 @@ export const authRepository = {
     await prisma.refreshToken.deleteMany({ where: { familyId } });
   },
 
-  async deleteAllRefreshTokensForUser(userId: string): Promise<void> {
-    await prisma.refreshToken.deleteMany({ where: { userId } });
+  async deleteAllRefreshTokensForUser(userId: string, client: DbClient = prisma): Promise<void> {
+    await client.refreshToken.deleteMany({ where: { userId } });
   },
 
   async deleteRefreshTokensForUserExcept(userId: string, keepTokenHash: string): Promise<void> {

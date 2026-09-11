@@ -25,6 +25,11 @@ export const PLATFORM_PERMISSION_CATALOG = [
     group: "Platform",
   },
   {
+    key: "platform:suspensions:manage",
+    label: "Suspend, ban, or restore accounts and brands",
+    group: "Platform",
+  },
+  {
     key: "platform:support:read",
     label: "Read support requests",
     group: "Support",
