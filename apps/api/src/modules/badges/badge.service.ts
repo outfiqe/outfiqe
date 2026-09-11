@@ -69,6 +69,8 @@ const listCollectionForUser = async (userId: string): Promise<BadgeCollectionEnt
       unlockedAt: state ? state.unlockedAt.toISOString() : null,
       isDisplayed: state?.isDisplayed ?? null,
       isFeatured: state?.isFeatured ?? null,
+      isTitle: state?.isTitle ?? null,
+      isTitleEligible: badge.isTitleEligible,
       displayOrder: state?.displayOrder ?? null,
       isDynamicallyActive: state && badge.isDynamic ? state.isDynamicallyEligible : null,
       progress: state ? null : (progressByBadgeId.get(badge.id) ?? null),
@@ -124,7 +126,14 @@ const listFeaturedForUser = async (userId: string): Promise<FeaturedBadgeView[]>
       );
       continue;
     }
-    featured.push({ id: row.id, name: row.name, icon: row.icon, designConfig, rarity: row.rarity });
+    featured.push({
+      id: row.id,
+      name: row.name,
+      icon: row.icon,
+      designConfig,
+      rarity: row.rarity,
+      showProfileRing: row.showProfileRing,
+    });
   }
   return featured;
 };
@@ -167,7 +176,14 @@ const getTitleBadgeForUser = async (userId: string): Promise<FeaturedBadgeView |
     logger.error(`Badge ${row.id} has an invalid designConfig — excluded from the title view.`);
     return null;
   }
-  return { id: row.id, name: row.name, icon: row.icon, designConfig, rarity: row.rarity };
+  return {
+    id: row.id,
+    name: row.name,
+    icon: row.icon,
+    designConfig,
+    rarity: row.rarity,
+    showProfileRing: row.showProfileRing,
+  };
 };
 
 const updateTitle = async (userId: string, badgeId: string | null): Promise<void> => {

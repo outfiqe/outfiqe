@@ -32,6 +32,12 @@ export const BadgeShape = {
   STAR: "star",
   DIAMOND: "diamond",
   HEXAGON: "hexagon",
+  TRIANGLE: "triangle",
+  GEM: "gem",
+  OCTAGON: "octagon",
+  CAPSULE: "capsule",
+  HEART: "heart",
+  CRESCENT: "crescent",
 } as const satisfies Record<string, BadgeShapeType>;
 export type BadgeShapeValue = (typeof BadgeShape)[keyof typeof BadgeShape];
 
@@ -159,6 +165,8 @@ export const badgeCollectionEntrySchema = z.object({
   unlockedAt: z.string().nullable(),
   isDisplayed: z.boolean().nullable(),
   isFeatured: z.boolean().nullable(),
+  isTitle: z.boolean().nullable(),
+  isTitleEligible: z.boolean(),
   displayOrder: z.number().nullable(),
   isDynamicallyActive: z.boolean().nullable(),
   progress: z.array(badgeConditionProgressSchema).nullable(),
@@ -174,5 +182,6 @@ export const featuredBadgeSchema = z.object({
   icon: z.string(),
   designConfig: badgeDesignConfigSchema,
   rarity: z.enum(BadgeRarity),
+  showProfileRing: z.boolean(),
 });
 export type FeaturedBadge = z.infer<typeof featuredBadgeSchema>;

@@ -15,8 +15,12 @@ first-party support requests raised by shoppers, creators and brands. Backed by
   `useSupportAgents`, and the reply/status/assign/priority mutations (each caches the returned
   thread, invalidates the inbox + stats, and toasts).
 - `support.constants.ts` — status/category/segment/priority label maps and status `Badge` tones.
-- `SupportInboxPage.tsx` — stat cards, the filter row (assignee incl. "me" / unassigned, status,
-  category, subject search), and the cursor-paginated list. Each row links to the ticket.
+- `SupportInboxPage.tsx` — stat cards, the filter row, and the cursor-paginated list. Each row
+  links to the ticket. The three fixed-set filters — assignee (`all` / `me` / `unassigned`),
+  status and category — are URL-bound via `@/lib/useSearchFilter` (`?assignee=` / `?status=` /
+  `?category=`, defaults omitted; `_authenticated.support.index.tsx` declares the `validateSearch`),
+  so a filtered inbox survives a refresh and is a shareable link. The subject search box stays
+  local component state for now.
 - `SupportTicketPage.tsx` — the thread (customer / staff / internal-note styled distinctly), the
   reply composer with a **Reply to customer** / **Internal note** toggle, and a right rail with
   legal-only status buttons, the assignee `Select`, priority, and a requester-context card.

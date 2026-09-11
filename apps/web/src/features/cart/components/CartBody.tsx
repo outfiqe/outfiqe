@@ -4,6 +4,7 @@ import { Button, Skeleton } from "@outfiqe/design-system";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { NotAShopperNotice } from "@/features/auth";
 import { useAuth } from "@/features/auth/context/AuthContext";
 
 import { useCart } from "../hooks/useCart";
@@ -30,10 +31,12 @@ const EmptyBag = ({ message }: { message: string }) => (
 
 export const CartBody = () => {
   const router = useRouter();
-  const { isAuthenticated, isAuthResolved } = useAuth();
+  const { isAuthenticated, isAuthResolved, isBrandOwner, isAdmin } = useAuth();
   const cartQuery = useCart();
 
   if (!isAuthResolved) return null;
+
+  if (isBrandOwner || isAdmin) return <NotAShopperNotice />;
 
   if (!isAuthenticated) {
     return (

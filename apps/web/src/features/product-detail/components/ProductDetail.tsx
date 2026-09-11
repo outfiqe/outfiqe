@@ -31,7 +31,8 @@ type ProductDetailProps = {
 
 export const ProductDetail = ({ product }: ProductDetailProps) => {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isBrandOwner, isAdmin } = useAuth();
+  const canShop = !isBrandOwner && !isAdmin;
   const wishlistMutation = useToggleWishlist();
   const addToCartMutation = useAddToCart();
 
@@ -198,18 +199,22 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
           <QuantitySelector quantity={quantity} onChange={setQuantity} />
 
           <div className="mt-5 flex gap-2.5">
-            <Button
-              variant="outline"
-              className="flex-1"
-              disabled={!canPurchase || addToCartMutation.isPending}
-              onClick={() => gated(addToCart)}
-            >
-              {addToCartMutation.isPending ? "Adding…" : "Add to cart"}
-            </Button>
-            <Button className="flex-1" disabled={!canPurchase} onClick={() => gated(buyNow)}>
-              <Zap className="size-4" />
-              Buy now
-            </Button>
+            {canShop && (
+              <>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  disabled={!canPurchase || addToCartMutation.isPending}
+                  onClick={() => gated(addToCart)}
+                >
+                  {addToCartMutation.isPending ? "Adding…" : "Add to cart"}
+                </Button>
+                <Button className="flex-1" disabled={!canPurchase} onClick={() => gated(buyNow)}>
+                  <Zap className="size-4" />
+                  Buy now
+                </Button>
+              </>
+            )}
             <Button
               variant="outline"
               size="icon"
@@ -230,7 +235,11 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
               <Share2 className="size-[18px]" />
             </Button>
           </div>
-          {isSoldOut ? (
+          {!canShop ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Shopping is available on customer accounts.
+            </p>
+          ) : isSoldOut ? (
             <p className="mt-2 text-sm font-semibold text-foreground">Out of stock</p>
           ) : needsSizeChoice ? (
             <p className="mt-2 text-xs text-destructive">Select a size to continue.</p>

@@ -20,6 +20,7 @@ const baseBadge: BadgeAdmin = {
   assignmentLimit: null,
   assignmentCount: 0,
   isTitleEligible: false,
+  showProfileRing: false,
   sponsorBrand: null,
   achievement: {
     id: "ach-1",
@@ -115,6 +116,15 @@ describe("toFormInput", () => {
     });
     expect(input.designConfig).not.toHaveProperty("imageUrl");
     expect(input.designConfig).toMatchObject({ version: 2 });
+  });
+
+  it("only sends showProfileRing when the badge is also title-eligible", () => {
+    expect(
+      toFormInput({ ...EMPTY_FORM, isTitleEligible: true, showProfileRing: true }).showProfileRing,
+    ).toBe(true);
+    expect(
+      toFormInput({ ...EMPTY_FORM, isTitleEligible: false, showProfileRing: true }).showProfileRing,
+    ).toBe(false);
   });
 
   it("round-trips a simple custom-image badge through formForBadge and back", () => {

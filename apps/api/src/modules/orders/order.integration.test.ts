@@ -143,6 +143,20 @@ const createBuyer = async () => {
   });
 };
 
+const createUserWithRole = async (role: UserRole) => {
+  const suffix = randomUUID().slice(0, 8);
+  return prisma.user.create({
+    data: {
+      email: `${role.toLowerCase()}-${suffix}@outfiqe.test`,
+      name: `Test ${role}`,
+      handle: `test-${role.toLowerCase()}-${suffix}`,
+      phone: uniquePhone(),
+      passwordHash: "not-used-in-tests",
+      role,
+    },
+  });
+};
+
 const createOrder = async (userId: string, fulfilmentStatus: FulfilmentStatus = "PLACED") =>
   prisma.order.create({
     data: {
@@ -200,6 +214,68 @@ describe("PATCH /api/orders/admin/:orderId/fulfilment", () => {
 
     expect(response.status).toBe(409);
     expect(response.body.code).toBe("INVALID_TRANSITION");
+  });
+});
+
+describe("POST /api/orders/checkout — buyer role gate", () => {
+  const checkoutBody = (productId: string, sizeId: string) => ({
+    fullName: "Test Buyer",
+    phone: "9800000000",
+    address: "123 Test Street",
+    city: "Kathmandu",
+    paymentMethod: PaymentMethod.COD,
+    buyNow: { productId, sizeId, qty: 1 },
+  });
+
+  it("lets a CUSTOMER check out", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await createActiveCommissionRule(adminId);
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(1000);
+    const buyer = await createBuyer();
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send(checkoutBody(product.id, size.id));
+
+    expect(response.status).toBe(201);
+  });
+
+  it("rejects a BRAND_OWNER with 403", async () => {
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(1000);
+    const owner = await createUserWithRole(UserRole.BRAND_OWNER);
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER))
+      .send(checkoutBody(product.id, size.id));
+
+    expect(response.status).toBe(403);
+  });
+
+  it("rejects an ADMIN with 403", async () => {
+    await createDefaultDeliveryZone();
+    const { product, size } = await createPurchasableProduct(1000);
+    const admin = await createUserWithRole(UserRole.ADMIN);
+
+    const response = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN))
+      .send(checkoutBody(product.id, size.id));
+
+    expect(response.status).toBe(403);
+  });
+
+  it("rejects a BRAND_OWNER from the buyer order list with 403", async () => {
+    const owner = await createUserWithRole(UserRole.BRAND_OWNER);
+
+    const response = await request(testApp)
+      .get("/api/orders")
+      .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER));
+
+    expect(response.status).toBe(403);
   });
 });
 

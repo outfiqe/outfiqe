@@ -31,8 +31,13 @@ client-side session/user context the rest of the app reads.
   `OAuthCallbackScreen/` (renders at `/auth/oauth-callback`, the page the API redirects a failed or
   link-required OAuth attempt to — a successful sign-in never lands here, it's redirected straight
   to its destination with the session cookie already set).
+- `components/NotAShopperNotice.tsx` — the panel `CartBody`/`CheckoutBody`/`OrdersListBody` render
+  in place of the shopping flow for a `BRAND_OWNER`/`ADMIN` account (buying is `CUSTOMER`-only;
+  the real gate is server-side in `apps/api/src/modules/{orders,cart}`). Links the viewer to
+  their own dashboard via `getDefaultRouteForUser`.
 - `context/AuthContext.tsx` + `context/authReducer.ts` — the client-side auth state (current user,
-  auth status) and its reducer, exposed via `useAuth()`.
+  auth status) and its reducer, exposed via `useAuth()`. Derives the role booleans consumers gate
+  on: `isBrandOwner` / `isAdmin` / `isCreator` / `isShopper` (`role === CUSTOMER`).
 - `context/authTestWrapper.tsx` — test-only support for hooks that read/write `AuthContext`:
   `createAuthQueryClientWrapper()` (a `renderHook`/`render` wrapper combining `AuthProvider` with
   the shared `createTestQueryClient()` from `apps/web/src/testing/integration/queryClientWrapper.tsx`),

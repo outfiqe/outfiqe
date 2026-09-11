@@ -60,6 +60,7 @@ const validBadgePayload = (overrides: Record<string, unknown> = {}) => ({
   isDynamic: false,
   isPublic: true,
   isTitleEligible: false,
+  showProfileRing: false,
   assignmentLimit: null,
   sponsorBrandId: null,
   requirementType: "ENGAGEMENT",
@@ -247,6 +248,33 @@ describe("PATCH /api/badges/title", () => {
   });
 });
 
+describe("GET /api/badges/collection", () => {
+  it("reports title eligibility and the equipped title on each collected badge", async () => {
+    const user = await createUser("Collection Reader");
+    const titleBadge = await createBadge({ isTitleEligible: true });
+    const plainBadge = await createBadge({ isTitleEligible: false });
+    await grantBadge(user.id, titleBadge.id);
+    await grantBadge(user.id, plainBadge.id);
+    await request(testApp)
+      .patch("/api/badges/title")
+      .set("Authorization", authHeaderFor(user.id))
+      .send({ badgeId: titleBadge.id });
+
+    const response = await request(testApp)
+      .get("/api/badges/collection")
+      .set("Authorization", authHeaderFor(user.id));
+
+    expect(response.status).toBe(200);
+    const entries: { id: string; isTitle: boolean | null; isTitleEligible: boolean }[] =
+      response.body.data;
+    const titleEntry = entries.find((entry) => entry.id === titleBadge.id);
+    const plainEntry = entries.find((entry) => entry.id === plainBadge.id);
+
+    expect(titleEntry).toMatchObject({ isTitle: true, isTitleEligible: true });
+    expect(plainEntry).toMatchObject({ isTitle: false, isTitleEligible: false });
+  });
+});
+
 describe("POST /api/badges (admin)", () => {
   it("creates a rule-based badge with its achievement in one call", async () => {
     const admin = await createAdmin();
@@ -259,6 +287,33 @@ describe("POST /api/badges (admin)", () => {
     expect(response.status).toBe(201);
     expect(response.body.data.achievement.requirementType).toBe("ENGAGEMENT");
     expect(response.body.data.achievement.requirementConfig.conditions).toHaveLength(1);
+  });
+
+  it("persists showProfileRing and returns it on the badge", async () => {
+    const admin = await createAdmin();
+
+    const created = await request(testApp)
+      .post("/api/badges")
+      .set("Authorization", admin.header)
+      .send(validBadgePayload({ isTitleEligible: true, showProfileRing: true }));
+
+    expect(created.status).toBe(201);
+    expect(created.body.data.showProfileRing).toBe(true);
+
+    const updated = await request(testApp)
+      .patch(`/api/badges/${created.body.data.id}`)
+      .set("Authorization", admin.header)
+      .send(
+        validBadgePayload({
+          isTitleEligible: true,
+          showProfileRing: false,
+          isActive: true,
+          achievementIsActive: true,
+        }),
+      );
+
+    expect(updated.status).toBe(200);
+    expect(updated.body.data.showProfileRing).toBe(false);
   });
 
   it("creates an admin-award badge with an assignment limit and empty conditions", async () => {

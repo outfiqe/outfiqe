@@ -1,6 +1,6 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, waitFor } from "@testing-library/react";
+import { renderWithRouter } from "@test/renderWithRouter";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
@@ -24,14 +24,7 @@ const buildRow = (overrides: Partial<Record<string, unknown>> = {}) => ({
   ...overrides,
 });
 
-const renderTable = () => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <LedgerTable />
-    </QueryClientProvider>,
-  );
-};
+const renderTable = () => renderWithRouter(<LedgerTable />, { path: "/financial-rollup" });
 
 describe("LedgerTable", () => {
   it("shows an empty state when there are no matching rows", async () => {

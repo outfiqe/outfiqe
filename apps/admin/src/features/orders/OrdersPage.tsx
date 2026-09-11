@@ -1,13 +1,17 @@
 import { Badge, Button } from "@outfiqe/design-system";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+
+import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { useInfiniteOrders } from "./hooks/useInfiniteOrders";
 import { FULFILMENT_STATUS_TONE, PAYMENT_STATUS_TONE } from "./orderStatusTone";
 import type { FulfilmentStatusValue } from "./schemas";
 
-const TABS: (FulfilmentStatusValue | "ALL")[] = [
-  "ALL",
+const ALL_STATUSES = "ALL";
+type OrdersStatusTab = FulfilmentStatusValue | typeof ALL_STATUSES;
+
+const TABS: OrdersStatusTab[] = [
+  ALL_STATUSES,
   "PLACED",
   "PACKED",
   "SHIPPED",
@@ -15,8 +19,10 @@ const TABS: (FulfilmentStatusValue | "ALL")[] = [
   "CANCELLED",
 ];
 
+const ORDERS_STATUS_FILTER = oneOfFilter<OrdersStatusTab>(TABS, ALL_STATUSES);
+
 export const OrdersPage = () => {
-  const [tab, setTab] = useState<FulfilmentStatusValue | "ALL">("ALL");
+  const [tab, setTab] = useSearchFilter("status", ORDERS_STATUS_FILTER);
 
   const {
     data: ordersQuery,
@@ -25,7 +31,7 @@ export const OrdersPage = () => {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useInfiniteOrders(tab === "ALL" ? undefined : tab);
+  } = useInfiniteOrders(tab === ALL_STATUSES ? undefined : tab);
   const orders = ordersQuery?.pages.flatMap((page) => page.orders) ?? [];
 
   return (

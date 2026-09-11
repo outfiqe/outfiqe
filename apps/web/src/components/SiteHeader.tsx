@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
+import { useAuth } from "@/features/auth";
 import { useCart } from "@/features/cart";
 import { SiteNotificationBell } from "@/features/notifications";
 import { ExploreSearchBox, ProductSearchBox } from "@/features/search";
@@ -29,6 +30,7 @@ export const SiteHeader = () => {
   const pathname = usePathname();
   const isCondensed = useHeaderCondense();
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const { isShopper } = useAuth();
   const { data: cart } = useCart();
   const cartCount = cart?.itemCount ?? 0;
 
@@ -119,18 +121,20 @@ export const SiteHeader = () => {
           <Heart className="size-[18px]" />
         </Link>
 
-        <Link
-          href="/cart"
-          aria-label="Cart"
-          className="relative hidden size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted lg:flex"
-        >
-          <ShoppingBag className="size-[18px]" />
-          {cartCount > 0 && (
-            <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-              {cartCount}
-            </span>
-          )}
-        </Link>
+        {isShopper && (
+          <Link
+            href="/cart"
+            aria-label="Cart"
+            className="relative hidden size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted lg:flex"
+          >
+            <ShoppingBag className="size-[18px]" />
+            {cartCount > 0 && (
+              <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                {cartCount}
+              </span>
+            )}
+          </Link>
+        )}
 
         <SiteNotificationBell />
         <ThemeToggle className="hidden lg:inline-flex" />

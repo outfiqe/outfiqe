@@ -30,6 +30,7 @@ export * from "./rating";
 export * from "./select";
 export * from "./skeleton";
 export * from "./stat-card";
+export * from "./studio-badge-visual.utils";
 export * from "./switch";
 export * from "./table";
 export * from "./tabs";

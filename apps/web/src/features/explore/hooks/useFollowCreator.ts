@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { exploreFeedApi } from "../api/exploreFeedApi";
-import { patchCreatorInFeedCaches } from "../utils/feedCacheUpdate";
+import { cancelFeedPostQueries, patchCreatorInFeedCaches } from "../utils/feedCacheUpdate";
 import { FOLLOW_CREATOR_ACTION_TYPE } from "../utils/offlineActionTypes";
 import { toggleWithOfflineQueue } from "../utils/offlineQueueableToggle";
 
@@ -24,13 +24,18 @@ export const useFollowCreator = () => {
     networkMode: "always",
 
     onMutate: async ({ creatorId, following }) => {
-      await queryClient.cancelQueries({ queryKey: ["explore-feed"] });
+      await cancelFeedPostQueries(queryClient);
       patchCreatorInFeedCaches(queryClient, creatorId, !following);
     },
 
     onError: (error, { creatorId, following }) => {
       patchCreatorInFeedCaches(queryClient, creatorId, following);
       toast.error(getErrorMessage(error));
+    },
+
+    onSuccess: (result, { creatorId }) => {
+      if (!result) return;
+      patchCreatorInFeedCaches(queryClient, creatorId, result.following);
     },
 
     onSettled: () => {

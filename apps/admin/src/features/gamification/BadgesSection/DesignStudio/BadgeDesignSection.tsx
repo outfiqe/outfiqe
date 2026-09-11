@@ -204,6 +204,7 @@ export const BadgeDesignSection = ({
             {selectedLayer && (
               <StudioSection title="Layer properties">
                 <LayerPropertiesPanel
+                  key={selectedLayer.id}
                   layer={selectedLayer}
                   onChange={(updates) => updateLayer(selectedLayer.id, updates)}
                 />
@@ -251,25 +252,28 @@ export const BadgeDesignSection = ({
                   ))}
                 </Select>
               </div>
-              {!form.iconImageUrl && (
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor={`${idPrefix}-color`}
-                    className="block text-xs text-muted-foreground"
-                  >
-                    Color
-                  </label>
-                  <Input
-                    id={`${idPrefix}-color`}
-                    type="color"
-                    value={form.primaryColor}
-                    onChange={(e) => onChange({ ...form, primaryColor: e.target.value })}
-                    className="h-11 w-16 p-1"
-                  />
-                </div>
-              )}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor={`${idPrefix}-color`}
+                  className="block text-xs text-muted-foreground"
+                >
+                  Color
+                </label>
+                <Input
+                  id={`${idPrefix}-color`}
+                  type="color"
+                  value={form.primaryColor}
+                  onChange={(e) => onChange({ ...form, primaryColor: e.target.value })}
+                  className="h-11 w-16 p-1"
+                />
+              </div>
               <AnimationField idPrefix={idPrefix} form={form} onChange={onChange} />
             </div>
+
+            <p className="text-xs text-muted-foreground">
+              Color fills the shape, and also tints the badge&apos;s glow and the accent ring and
+              label shown on a creator&apos;s profile — it still applies under a custom image.
+            </p>
 
             <div className="space-y-1.5">
               <p className="block text-xs text-muted-foreground">

@@ -1,7 +1,9 @@
 import { Router } from "express";
 
+import { UserRole } from "#generated/prisma/enums.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
+import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
 
 import { addressController } from "./address.controller.js";
@@ -22,13 +24,15 @@ const writeRateLimit = rateLimit({
   message: "Too many address changes. Please wait a moment and try again.",
 });
 
+const requireShopper = [requireAuth, requireRole(UserRole.CUSTOMER)];
+
 export const addressRoutes = Router();
 
-addressRoutes.get("/", requireAuth, addressController.list);
+addressRoutes.get("/", ...requireShopper, addressController.list);
 
 addressRoutes.post(
   "/",
-  requireAuth,
+  ...requireShopper,
   writeRateLimit,
   validate({ body: createAddressSchema }),
   addressController.create,
@@ -36,7 +40,7 @@ addressRoutes.post(
 
 addressRoutes.patch(
   "/:id",
-  requireAuth,
+  ...requireShopper,
   writeRateLimit,
   validate({ params: addressIdParamSchema, body: updateAddressSchema }),
   addressController.update,
@@ -44,7 +48,7 @@ addressRoutes.patch(
 
 addressRoutes.delete(
   "/:id",
-  requireAuth,
+  ...requireShopper,
   writeRateLimit,
   validate({ params: addressIdParamSchema }),
   addressController.remove,
@@ -52,7 +56,7 @@ addressRoutes.delete(
 
 addressRoutes.patch(
   "/:id/default",
-  requireAuth,
+  ...requireShopper,
   writeRateLimit,
   validate({ params: addressIdParamSchema }),
   addressController.setDefault,

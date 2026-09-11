@@ -12,11 +12,14 @@ Addresses, and pick one at checkout instead of retyping. Backed by the API `addr
   `addressFormSchema` (`AddressFormInput`, the create/edit form — same field bounds as the
   backend, kept in sync by hand).
 - `api/addressApi.ts` — `list / create / update / remove / setDefault` over `/addresses`.
-- `hooks/useAddresses.ts` — the list query (`ADDRESSES_QUERY_KEY = ["addresses"]`, gated on
-  auth). `hooks/useCreateAddress.ts` / `useUpdateAddress.ts` / `useDeleteAddress.ts` /
+- `hooks/useAddresses.ts` — the list query (`ADDRESSES_QUERY_KEY = ["addresses"]`, `enabled`
+  only for a shopper account, so a brand-owner viewing the page never fires the 403 request). `hooks/useCreateAddress.ts` / `useUpdateAddress.ts` / `useDeleteAddress.ts` /
   `useSetDefaultAddress.ts` — the mutations, each invalidating `ADDRESSES_QUERY_KEY`.
 - `components/AddressList.tsx` — the settings section: heading, "Add address", loading / error /
-  empty states, the list.
+  empty states, the list. Renders `<NotAShopperNotice>` instead for a brand-owner / admin
+  account (the address book is shopper-only, matching the `/addresses` API's `requireShopper`
+  gate); `useDashboardNav` also drops the Addresses item from the brand sidebar, so this is the
+  URL-typed fallback.
 - `components/AddressCard.tsx` — one saved address: label, recipient, address line, default
   badge, and the "Set as default" / "Edit" / "Delete" (confirm `Modal`) actions.
 - `components/AddressFormModal.tsx` — the add/edit form (`Modal` + RHF), reusing

@@ -20,7 +20,7 @@ describe("parseDesignConfig", () => {
   });
 
   it("returns null for an unsupported shape value", () => {
-    expect(parseDesignConfig({ shape: "octagon", primaryColor: "#f97316" })).toBeNull();
+    expect(parseDesignConfig({ shape: "not-a-real-shape", primaryColor: "#f97316" })).toBeNull();
   });
 
   it("returns null when primaryColor is missing", () => {

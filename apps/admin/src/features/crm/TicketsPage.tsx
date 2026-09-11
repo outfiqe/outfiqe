@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { crmApi } from "./api";
 import { formatDate } from "./format.utils";
@@ -18,6 +19,12 @@ import {
 } from "./ticketsSchemas";
 
 const TICKETS_QUERY_KEY = ["crm-tickets"];
+
+const NO_STATUS_FILTER = "";
+const TICKET_STATUS_FILTER = oneOfFilter<TicketStatusValue | typeof NO_STATUS_FILTER>(
+  TICKET_STATUSES,
+  NO_STATUS_FILTER,
+);
 const OPTIONS_PAGE_SIZE = 100;
 
 const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
@@ -154,7 +161,7 @@ export const TicketsPage = () => {
     enabled: Boolean(canReadMembers),
   });
 
-  const [statusFilter, setStatusFilter] = useState<TicketStatusValue | "">("");
+  const [statusFilter, setStatusFilter] = useSearchFilter("status", TICKET_STATUS_FILTER);
   const {
     data: tickets,
     isLoading,
@@ -179,9 +186,7 @@ export const TicketsPage = () => {
           <Select
             aria-label="Filter by status"
             value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter((event.target.value as TicketStatusValue | "") || "")
-            }
+            onChange={(event) => setStatusFilter(event.target.value as TicketStatusValue | "")}
             className="w-40"
           >
             <option value="">All statuses</option>

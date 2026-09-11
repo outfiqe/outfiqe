@@ -51,10 +51,11 @@
 @keyframes badge-glow {
   0%,
   100% {
-    box-shadow: 0 0 0 0 var(--badge-glow-color, transparent);
+    filter: var(--badge-rest-shadow, drop-shadow(0 0 0 transparent));
   }
   50% {
-    box-shadow: 0 0 18px 5px var(--badge-glow-color, transparent);
+    filter: var(--badge-rest-shadow, drop-shadow(0 0 0 transparent))
+      drop-shadow(0 0 10px var(--badge-glow-color, transparent));
   }
 }
 
@@ -81,11 +82,12 @@
   0%,
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 var(--badge-glow-color, transparent);
+    filter: var(--badge-rest-shadow, drop-shadow(0 0 0 transparent));
   }
   50% {
     transform: scale(1.06);
-    box-shadow: 0 0 20px 6px var(--badge-glow-color, transparent);
+    filter: var(--badge-rest-shadow, drop-shadow(0 0 0 transparent))
+      drop-shadow(0 0 12px var(--badge-glow-color, transparent));
   }
 }
 

@@ -165,6 +165,7 @@ const mockAuth = (userId: string | null, isAuthenticated = true) => {
     isBrandOwner: false,
     isAdmin: false,
     isCreator: false,
+    isShopper: true,
     hasCrmAccess: false,
     state: {
       user: userId ? buildUserSession(userId) : null,
@@ -411,6 +412,33 @@ describe("CreatorProfile followers/following stats", () => {
     await user.click(screen.getByRole("button", { name: "Close following" }));
 
     expect(screen.queryByRole("dialog", { name: "Following" })).not.toBeInTheDocument();
+  });
+});
+
+describe("CreatorProfile title badge", () => {
+  const titleBadge = {
+    id: "badge-og",
+    name: "Outfiqe OG",
+    icon: "🎖️",
+    designConfig: { shape: "hexagon" as const, primaryColor: "#0ea5e9" },
+    rarity: "EXCLUSIVE" as const,
+    showProfileRing: true,
+  };
+
+  it("shows the title pill and the avatar ring when showProfileRing is on", () => {
+    const { container } = renderProfile(buildCreator({ titleBadge }));
+
+    expect(screen.getByText("Outfiqe OG")).toBeInTheDocument();
+    expect(container.querySelector(".animate-avatar-ring-spin")).toBeInTheDocument();
+  });
+
+  it("shows the title pill but no avatar ring when showProfileRing is off", () => {
+    const { container } = renderProfile(
+      buildCreator({ titleBadge: { ...titleBadge, showProfileRing: false } }),
+    );
+
+    expect(screen.getByText("Outfiqe OG")).toBeInTheDocument();
+    expect(container.querySelector(".animate-avatar-ring-spin")).not.toBeInTheDocument();
   });
 });
 

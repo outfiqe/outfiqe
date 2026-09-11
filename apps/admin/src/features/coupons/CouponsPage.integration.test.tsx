@@ -1,9 +1,8 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, waitFor } from "@testing-library/react";
+import { renderWithRouter } from "@test/renderWithRouter";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
 import { CouponsPage } from "@/features/coupons/CouponsPage";
@@ -40,13 +39,7 @@ const buildCoupon = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const renderPage = () => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-  return render(<CouponsPage />, { wrapper });
-};
+const renderPage = () => renderWithRouter(<CouponsPage />, { path: "/coupons" });
 
 describe("CouponsPage", () => {
   it("shows a coupon's budget utilization and a pending-approval badge", async () => {

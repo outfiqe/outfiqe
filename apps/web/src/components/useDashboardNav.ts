@@ -75,7 +75,6 @@ const BRAND_NAV: SidebarNavItem[] = [
   { id: "tag-reviews", href: "/tag-reviews", label: "Tag reviews", icon: Tags },
   { id: "orders", href: "/manage-orders", label: "Orders", icon: ShoppingBag },
   { id: "wallet", href: "/wallet", label: "Wallet", icon: Wallet },
-  ADDRESSES_NAV_ITEM,
   CHAT_SETTINGS_NAV_ITEM,
   SECURITY_NAV_ITEM,
 ];

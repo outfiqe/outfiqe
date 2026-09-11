@@ -1,4 +1,4 @@
-import { cn, SHAPE_CLIP_PATH } from "@outfiqe/design-system";
+import { cn, layerBorderWidthPx, layerFontSizePx, SHAPE_CLIP_PATH } from "@outfiqe/design-system";
 import { ImageIcon } from "lucide-react";
 import { Rnd } from "react-rnd";
 
@@ -28,7 +28,9 @@ const LayerContent = ({ layer }: { layer: BadgeLayer }) => {
           clipPath,
           backgroundColor: layer.fill,
           borderColor: layer.borderColor,
-          borderWidth: layer.borderWidth ? `${layer.borderWidth}px` : undefined,
+          borderWidth: layer.borderWidth
+            ? `${layerBorderWidthPx(layer.borderWidth, CANVAS_SIZE_PX)}px`
+            : undefined,
           borderStyle: layer.borderWidth ? "solid" : undefined,
         }}
       />
@@ -36,7 +38,11 @@ const LayerContent = ({ layer }: { layer: BadgeLayer }) => {
   }
 
   if (layer.type === BADGE_LAYER_TYPE.ICON) {
-    return <span style={{ fontSize: `${layer.fontSize}%` }}>{layer.glyph}</span>;
+    return (
+      <span style={{ fontSize: `${layerFontSizePx(layer.fontSize, CANVAS_SIZE_PX)}px` }}>
+        {layer.glyph}
+      </span>
+    );
   }
 
   if (layer.type === BADGE_LAYER_TYPE.IMAGE) {
@@ -65,7 +71,10 @@ const LayerContent = ({ layer }: { layer: BadgeLayer }) => {
   return (
     <span
       className={layer.fontWeight === BADGE_FONT_WEIGHT.BOLD ? "font-bold" : "font-normal"}
-      style={{ fontSize: `${layer.fontSize}%`, color: layer.color }}
+      style={{
+        fontSize: `${layerFontSizePx(layer.fontSize, CANVAS_SIZE_PX)}px`,
+        color: layer.color,
+      }}
     >
       {layer.content}
     </span>

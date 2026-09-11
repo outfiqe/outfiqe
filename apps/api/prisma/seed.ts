@@ -1553,6 +1553,7 @@ type BadgeSeed = {
   conditions: { metric: string; operator: "gte"; value: number }[];
   assignmentLimit?: number;
   isTitleEligible?: boolean;
+  showProfileRing?: boolean;
 };
 
 // First slice of the spec 12 catalog (not all 40) — enough to exercise every
@@ -1644,6 +1645,7 @@ const BADGE_SEED: BadgeSeed[] = [
     requirementType: AchievementRequirementType.ENGAGEMENT,
     conditions: [{ metric: "total_likes", operator: "gte", value: 50000 }],
     isTitleEligible: true,
+    showProfileRing: true,
   },
   {
     name: "Community Friend",
@@ -1756,6 +1758,7 @@ const BADGE_SEED: BadgeSeed[] = [
     requirementType: AchievementRequirementType.ADMIN_AWARD,
     conditions: [],
     isTitleEligible: true,
+    showProfileRing: true,
   },
   {
     name: "Challenge Winner",
@@ -1789,6 +1792,7 @@ const seedGamificationBadges = async () => {
         xpReward: seedBadge.xpReward,
         assignmentLimit: seedBadge.assignmentLimit ?? null,
         isTitleEligible: seedBadge.isTitleEligible ?? false,
+        showProfileRing: seedBadge.showProfileRing ?? false,
         achievement: {
           create: {
             name: seedBadge.name,

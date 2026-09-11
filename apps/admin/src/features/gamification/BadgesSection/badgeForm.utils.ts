@@ -54,6 +54,7 @@ export const formForBadge = (badge: BadgeAdmin): BadgeFormState => {
     isDynamic: badge.isDynamic,
     isPublic: badge.isPublic,
     isTitleEligible: badge.isTitleEligible,
+    showProfileRing: badge.showProfileRing,
     isAdminAward: badge.achievement?.requirementType === ADMIN_AWARD_REQUIREMENT_TYPE,
     assignmentLimit: badge.assignmentLimit === null ? "" : String(badge.assignmentLimit),
     sponsorBrandId: badge.sponsorBrand?.id ?? null,
@@ -99,6 +100,7 @@ export const toFormInput = (form: BadgeFormState): BadgeFormInput => ({
   isDynamic: form.isDynamic,
   isPublic: form.isPublic,
   isTitleEligible: form.isTitleEligible,
+  showProfileRing: form.isTitleEligible && form.showProfileRing,
   assignmentLimit: form.isAdminAward && form.assignmentLimit ? Number(form.assignmentLimit) : null,
   sponsorBrandId: form.sponsorBrandId,
   ...(form.isAdminAward

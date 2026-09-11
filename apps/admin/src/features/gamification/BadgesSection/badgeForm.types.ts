@@ -31,6 +31,7 @@ export type BadgeFormState = {
   isDynamic: boolean;
   isPublic: boolean;
   isTitleEligible: boolean;
+  showProfileRing: boolean;
   isAdminAward: boolean;
   assignmentLimit: string;
   sponsorBrandId: string | null;

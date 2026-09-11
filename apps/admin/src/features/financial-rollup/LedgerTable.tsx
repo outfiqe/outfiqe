@@ -8,7 +8,8 @@ import {
 } from "@outfiqe/design-system";
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
 import type { BrandPayoutStatus, PaymentMethod } from "@outfiqe/types";
-import { useState } from "react";
+
+import { oneOfFilter, rawTextFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { financialRollupApi } from "./api";
 import {
@@ -19,6 +20,16 @@ import {
   PAYMENT_METHOD_ORDER,
 } from "./constants";
 import type { LedgerFilters, LedgerRow } from "./schemas";
+
+const NO_FILTER = "";
+const PAYMENT_METHOD_FILTER = oneOfFilter<PaymentMethod | typeof NO_FILTER>(
+  PAYMENT_METHOD_ORDER,
+  NO_FILTER,
+);
+const BRAND_PAYOUT_STATUS_FILTER = oneOfFilter<BrandPayoutStatus | typeof NO_FILTER>(
+  BRAND_PAYOUT_STATUS_ORDER,
+  NO_FILTER,
+);
 
 const dateLabel = (iso: string) => new Date(iso).toLocaleDateString();
 const amountOrDash = (amount: number | null) => (amount === null ? "—" : money(amount));
@@ -71,10 +82,13 @@ const sumField = (entries: LedgerRow[], field: keyof LedgerRow) =>
   }, 0);
 
 export const LedgerTable = () => {
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("");
-  const [brandPayoutStatus, setBrandPayoutStatus] = useState<BrandPayoutStatus | "">("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [paymentMethod, setPaymentMethod] = useSearchFilter("method", PAYMENT_METHOD_FILTER);
+  const [brandPayoutStatus, setBrandPayoutStatus] = useSearchFilter(
+    "payout",
+    BRAND_PAYOUT_STATUS_FILTER,
+  );
+  const [dateFrom, setDateFrom] = useSearchFilter("from", rawTextFilter);
+  const [dateTo, setDateTo] = useSearchFilter("to", rawTextFilter);
 
   const filters: LedgerFilters = {
     paymentMethod: paymentMethod || undefined,

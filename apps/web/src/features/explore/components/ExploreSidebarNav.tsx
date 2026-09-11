@@ -1,7 +1,7 @@
 "use client";
 
 import { Bookmark } from "lucide-react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 
 import { SAVED_QUERY_PARAM, SAVED_TAB } from "@/features/wishlist";
 import { cn } from "@/shared/lib/cn";
@@ -13,6 +13,31 @@ type ExploreSidebarNavProps = {
   onChange: (tab: string) => void;
   layout: FeedLayout;
   onLayoutChange: (layout: FeedLayout) => void;
+};
+
+const NAV_ITEM_CLASS =
+  "flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors";
+const NAV_ITEM_SELECTED_CLASS = "bg-foreground text-background";
+const NAV_ITEM_UNSELECTED_CLASS = "text-muted-foreground hover:bg-muted hover:text-foreground";
+const LAYOUT_ITEM_SELECTED_CLASS = "bg-muted text-foreground";
+
+const SavedNavLink = () => {
+  const { pending } = useLinkStatus();
+  return (
+    <span
+      className={cn(NAV_ITEM_CLASS, pending ? NAV_ITEM_SELECTED_CLASS : NAV_ITEM_UNSELECTED_CLASS)}
+    >
+      <Bookmark className="size-4 shrink-0" />
+      Saved
+      <span
+        aria-hidden
+        className={cn(
+          "size-1.5 rounded-full bg-current transition-opacity duration-150",
+          pending ? "opacity-70 motion-safe:animate-pulse" : "opacity-0",
+        )}
+      />
+    </span>
+  );
 };
 
 export const ExploreSidebarNav = ({
@@ -30,10 +55,8 @@ export const ExploreSidebarNav = ({
           onClick={() => onChange(value)}
           aria-pressed={tab === value}
           className={cn(
-            "flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-            tab === value
-              ? "bg-foreground text-background"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            NAV_ITEM_CLASS,
+            tab === value ? NAV_ITEM_SELECTED_CLASS : NAV_ITEM_UNSELECTED_CLASS,
           )}
         >
           <Icon className="size-4 shrink-0" />
@@ -49,10 +72,9 @@ export const ExploreSidebarNav = ({
 
       <Link
         href={`/wishlist?${SAVED_QUERY_PARAM.TAB}=${SAVED_TAB.POSTS}`}
-        className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="block rounded-lg"
       >
-        <Bookmark className="size-4 shrink-0" />
-        Saved
+        <SavedNavLink />
       </Link>
 
       <div className="my-2 border-t border-border" />
@@ -68,10 +90,8 @@ export const ExploreSidebarNav = ({
           onClick={() => onLayoutChange(value)}
           aria-pressed={layout === value}
           className={cn(
-            "flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-            layout === value
-              ? "bg-muted text-foreground"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            NAV_ITEM_CLASS,
+            layout === value ? LAYOUT_ITEM_SELECTED_CLASS : NAV_ITEM_UNSELECTED_CLASS,
           )}
         >
           <Icon className="size-4 shrink-0" />

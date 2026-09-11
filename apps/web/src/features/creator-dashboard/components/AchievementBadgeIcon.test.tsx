@@ -1,4 +1,4 @@
-import { AchievementBadgeIcon } from "@outfiqe/design-system";
+import { AchievementBadgeIcon, SHAPE_CLIP_PATH } from "@outfiqe/design-system";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -75,6 +75,53 @@ describe("AchievementBadgeIcon", () => {
     expect(style.getPropertyValue("--badge-glow-color")).toBe("#f97316");
   });
 
+  it("keeps the clip-path off the animated wrapper so the glow can trace the shape", () => {
+    const { container } = renderIcon({
+      rarity: "RARE",
+      designConfig: { shape: "diamond", primaryColor: "#f97316" },
+    });
+
+    const wrapper = container.firstElementChild as HTMLElement;
+    const surface = wrapper.firstElementChild as HTMLElement;
+
+    expect(wrapper.className).toContain("animate-badge-glow");
+    expect(wrapper.style.clipPath).toBe("");
+    expect(surface.style.clipPath).toBe(SHAPE_CLIP_PATH.diamond);
+  });
+
+  it("elevates a non-circle badge with a shape-following drop-shadow, not a rectangular ring", () => {
+    const { container } = renderIcon({
+      rarity: "EPIC",
+      designConfig: { shape: "star", primaryColor: "#f97316" },
+    });
+
+    const wrapper = container.firstElementChild as HTMLElement;
+    expect(wrapper.className).not.toMatch(/\bring-/);
+    expect(wrapper.style.filter).toContain("drop-shadow");
+  });
+
+  it("keeps the rectangular ring utility for a plain circle badge", () => {
+    const { container } = renderIcon({
+      rarity: "EPIC",
+      designConfig: { shape: "circle", primaryColor: "#f97316" },
+    });
+
+    const wrapper = container.firstElementChild as HTMLElement;
+    expect(wrapper.className).toMatch(/\bring-/);
+    expect(wrapper.style.filter).toBe("");
+  });
+
+  it.each(["triangle", "gem", "octagon", "capsule", "heart", "crescent"] as const)(
+    "clips the badge surface to the %s shape",
+    (shape) => {
+      const { container } = renderIcon({ designConfig: { shape, primaryColor: "#f97316" } });
+
+      const surface = (container.firstElementChild as HTMLElement).firstElementChild as HTMLElement;
+      expect(surface.style.clipPath).toBe(SHAPE_CLIP_PATH[shape]);
+      expect(SHAPE_CLIP_PATH[shape]).toBeTruthy();
+    },
+  );
+
   const studioLayers: BadgeLayer[] = [
     {
       id: "bg",
@@ -130,6 +177,33 @@ describe("AchievementBadgeIcon", () => {
     });
 
     expect(container.textContent).not.toContain("MVP");
+  });
+
+  it("clips the studio shimmer sweep to the background layer's shape, not the full box", () => {
+    const { container } = renderIcon({
+      rarity: "EPIC",
+      designConfig: {
+        version: 2,
+        layers: [
+          {
+            id: "bg",
+            type: "background",
+            shape: "diamond",
+            fill: "#5d1877",
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+          },
+        ],
+      },
+    });
+
+    const layersContainer = container.firstElementChild?.firstElementChild as HTMLElement;
+    const shimmer = layersContainer.lastElementChild as HTMLElement;
+
+    expect(shimmer.className).toContain("animate-badge-shimmer");
+    expect(shimmer.style.clipPath).toBe(SHAPE_CLIP_PATH.diamond);
   });
 
   it("uses the studio background layer's fill for the badge glow color", () => {

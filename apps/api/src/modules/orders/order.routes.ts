@@ -57,6 +57,7 @@ const brandFulfilmentRateLimit = rateLimit({
 
 const requireAdmin = [requireAuth, requirePlatformAccess];
 const requireBrandOwner = [requireAuth, requireRole(UserRole.BRAND_OWNER)];
+const requireShopper = [requireAuth, requireRole(UserRole.CUSTOMER)];
 
 export const orderRoutes = Router();
 
@@ -124,24 +125,29 @@ orderRoutes.post(
 
 orderRoutes.post(
   "/checkout",
-  requireAuth,
+  ...requireShopper,
   checkoutRateLimit,
   validate({ body: checkoutBodySchema }),
   orderController.checkout,
 );
 
-orderRoutes.get("/", requireAuth, validate({ query: listOrdersQuerySchema }), orderController.list);
+orderRoutes.get(
+  "/",
+  ...requireShopper,
+  validate({ query: listOrdersQuerySchema }),
+  orderController.list,
+);
 
 orderRoutes.get(
   "/:orderId",
-  requireAuth,
+  ...requireShopper,
   validate({ params: orderIdParamSchema }),
   orderController.get,
 );
 
 orderRoutes.post(
   "/:orderId/cancel",
-  requireAuth,
+  ...requireShopper,
   cancelMyOrderRateLimit,
   validate({ params: orderIdParamSchema, body: cancelMyOrderSchema }),
   orderController.cancelMine,

@@ -7,6 +7,7 @@ export { ConnectedAccounts } from "./components/ConnectedAccounts";
 export { ContinueWithOAuthButtons } from "./components/ContinueWithOAuthButtons";
 export { ForgotPasswordForm } from "./components/ForgotPasswordForm";
 export { LoginForm } from "./components/LoginForm";
+export { NotAShopperNotice } from "./components/NotAShopperNotice";
 export { OAuthCallbackScreen } from "./components/OAuthCallbackScreen";
 export { RegisterForm } from "./components/RegisterForm";
 export { ResetPasswordForm } from "./components/ResetPasswordForm";

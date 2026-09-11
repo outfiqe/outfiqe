@@ -168,6 +168,19 @@ export const BadgeDetailsFields = ({
             </label>
           </div>
 
+          {form.isTitleEligible && (
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <Checkbox
+                checked={form.showProfileRing}
+                onChange={(e) => onChange({ ...form, showProfileRing: e.target.checked })}
+              />
+              Avatar ring on the profile
+              <span className="text-xs text-muted-foreground">
+                — a rotating ring on the wearer&apos;s avatar while this is their title
+              </span>
+            </label>
+          )}
+
           <BrandSponsorField
             idPrefix={idPrefix}
             sponsorBrandId={form.sponsorBrandId}
