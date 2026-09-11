@@ -81,6 +81,7 @@ const createPurchasableProduct = async (price: number) => {
 
 describe("cart is for shoppers only", () => {
   it("lets a CUSTOMER read and add to their cart", async () => {
+    await createDefaultDeliveryZone();
     const buyer = await createBuyer();
     const { product, size } = await createPurchasableProduct(1_000);
 
