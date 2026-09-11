@@ -19,7 +19,7 @@ vi.mock("@/shared/hooks/useTenantHost", () => ({
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/profile",
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
 }));
 
 vi.mock("next/link", () => ({

@@ -20,9 +20,14 @@ export const SuggestedCreatorRowSkeleton = () => (
 type SuggestedCreatorRowProps = {
   creator: SuggestedCreator;
   onFollow: (creatorId: string) => void;
+  isFollowPending?: boolean;
 };
 
-export const SuggestedCreatorRow = ({ creator, onFollow }: SuggestedCreatorRowProps) => {
+export const SuggestedCreatorRow = ({
+  creator,
+  onFollow,
+  isFollowPending,
+}: SuggestedCreatorRowProps) => {
   const { id, handle, name, followerCount } = creator;
 
   return (
@@ -45,7 +50,8 @@ export const SuggestedCreatorRow = ({ creator, onFollow }: SuggestedCreatorRowPr
       <button
         type="button"
         onClick={() => onFollow(id)}
-        className="ml-auto shrink-0 cursor-pointer rounded-full border border-foreground px-3 py-1 text-xs font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background"
+        disabled={isFollowPending}
+        className="ml-auto shrink-0 cursor-pointer rounded-full border border-foreground px-3 py-1 text-xs font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background disabled:cursor-default disabled:opacity-60"
       >
         Follow
       </button>

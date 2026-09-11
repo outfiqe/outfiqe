@@ -3,6 +3,7 @@
 import { Button, Input, Modal, Skeleton } from "@outfiqe/design-system";
 import { useDebouncedValue } from "@outfiqe/hooks";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -20,16 +21,26 @@ type FollowerRowProps = {
 };
 
 const FollowerRow = ({ follower, viewerId }: FollowerRowProps) => {
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const followMutation = useToggleFollow("user");
   const [isFollowing, setIsFollowing] = useState(follower.isFollowedByViewer);
   const isSelf = follower.id === viewerId;
 
   const toggleFollow = () => {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    if (followMutation.isPending) return;
     const wasFollowing = isFollowing;
     setIsFollowing(!wasFollowing);
     followMutation.mutate(
       { targetId: follower.id, following: wasFollowing },
-      { onError: () => setIsFollowing(wasFollowing) },
+      {
+        onSuccess: (result) => setIsFollowing(result.following),
+        onError: () => setIsFollowing(wasFollowing),
+      },
     );
   };
 
@@ -69,9 +80,10 @@ const FollowerRow = ({ follower, viewerId }: FollowerRowProps) => {
         <button
           type="button"
           onClick={toggleFollow}
+          disabled={followMutation.isPending}
           aria-pressed={isFollowing}
           className={cn(
-            "shrink-0 cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
+            "shrink-0 cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition-colors disabled:cursor-default disabled:opacity-60",
             isFollowing
               ? "border-foreground bg-foreground text-background"
               : "border-foreground text-foreground hover:bg-foreground hover:text-background",

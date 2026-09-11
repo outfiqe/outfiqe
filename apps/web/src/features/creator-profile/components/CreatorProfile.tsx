@@ -126,12 +126,17 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
       router.push(`/login?redirect=/creator/${handle}`);
       return;
     }
+    if (followMutation.isPending) return;
     const wasFollowing = isFollowing;
     setIsFollowing(!wasFollowing);
     setFollowerCount((count) => count + (wasFollowing ? -1 : 1));
     followMutation.mutate(
       { targetId: userId, following: wasFollowing },
       {
+        onSuccess: (result) => {
+          setIsFollowing(result.following);
+          setFollowerCount(result.followerCount);
+        },
         onError: () => {
           setIsFollowing(wasFollowing);
           setFollowerCount((count) => count + (wasFollowing ? 1 : -1));
