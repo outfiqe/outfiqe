@@ -259,12 +259,68 @@ describe("PATCH /api/orders/brand/fulfilment-groups/:groupId", () => {
 
     const orderAfterShip = await prisma.order.findUniqueOrThrow({ where: { id: orderId } });
     expect(orderAfterShip.fulfilmentSummary).toBe(OrderFulfilmentSummary.SHIPPED);
+    expect(orderAfterShip.deliveredAt).toBeNull();
 
     expect(
       (await patchGroup(owner.id, group.id, { status: FulfilmentStatus.DELIVERED })).status,
     ).toBe(OK);
     const orderAfterDelivery = await prisma.order.findUniqueOrThrow({ where: { id: orderId } });
     expect(orderAfterDelivery.fulfilmentSummary).toBe(OrderFulfilmentSummary.FULFILLED);
+    expect(orderAfterDelivery.fulfilmentStatus).toBe(FulfilmentStatus.DELIVERED);
+    expect(orderAfterDelivery.deliveredAt).not.toBeNull();
+  });
+
+  it("stamps order.deliveredAt only once every shipment is delivered on a multi-brand order", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await seedCommerceConfig(adminId);
+    const { brand: brandA, owner: ownerA } = await createBrandWithOwner();
+    const { brand: brandB, owner: ownerB } = await createBrandWithOwner();
+    const a = await createProduct(brandA.id, 1000);
+    const b = await createProduct(brandB.id, 1000);
+    const buyer = await createUser(UserRole.CUSTOMER);
+
+    const cart = await prisma.cart.create({ data: { userId: buyer.id } });
+    await prisma.cartItem.createMany({
+      data: [
+        { cartId: cart.id, productId: a.product.id, sizeId: a.size.id, qty: 1 },
+        { cartId: cart.id, productId: b.product.id, sizeId: b.size.id, qty: 1 },
+      ],
+    });
+    const checkout = await request(testApp)
+      .post("/api/orders/checkout")
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({
+        fullName: "Buyer Person",
+        phone: "9812345678",
+        address: "42 Delivery Road",
+        city: "Kathmandu",
+        paymentMethod: PaymentMethod.COD,
+      });
+    expect(checkout.status).toBe(CREATED);
+    const orderId = checkout.body.data.id as string;
+
+    const groupA = await groupFor(orderId, brandA.id);
+    const groupB = await groupFor(orderId, brandB.id);
+
+    const deliver = async (ownerId: string, groupId: string) => {
+      await patchGroup(ownerId, groupId, { status: FulfilmentStatus.PACKED });
+      await patchGroup(ownerId, groupId, {
+        status: FulfilmentStatus.SHIPPED,
+        carrier: "Pathao",
+        trackingNumber: `PA-${groupId.slice(0, 6)}`,
+      });
+      await patchGroup(ownerId, groupId, { status: FulfilmentStatus.DELIVERED });
+    };
+
+    await deliver(ownerA.id, groupA.id);
+    const afterFirst = await prisma.order.findUniqueOrThrow({ where: { id: orderId } });
+    expect(afterFirst.fulfilmentSummary).toBe(OrderFulfilmentSummary.PARTIALLY_SHIPPED);
+    expect(afterFirst.deliveredAt).toBeNull();
+
+    await deliver(ownerB.id, groupB.id);
+    const afterBoth = await prisma.order.findUniqueOrThrow({ where: { id: orderId } });
+    expect(afterBoth.fulfilmentSummary).toBe(OrderFulfilmentSummary.FULFILLED);
+    expect(afterBoth.deliveredAt).not.toBeNull();
   });
 
   it("rejects skipping a step and rejects touching another brand's group", async () => {

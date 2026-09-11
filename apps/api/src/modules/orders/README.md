@@ -225,3 +225,35 @@ can act on it.
 - **Phone-number masking / relay.** The brand sees the real number today. A masked relay needs a
   telephony provider, a rented number pool, per-shipment assignment and call/SMS webhooks — a
   privacy enhancement on a working system, worth doing when volume justifies the cost.
+
+## `Order.deliveredAt` is stamped from the group rollup, not the group itself
+
+`setOrderFulfilmentRollup` (`order.repository.ts`) is the single place that writes
+`Order.fulfilmentStatus`/`fulfilmentSummary` after any group changes — the admin advance path and
+`advanceBrandFulfilmentGroup` both funnel through it. It also stamps `Order.deliveredAt` the moment
+the recomputed rollup reaches `DELIVERED`, guarded by `deliveredAt: null` so it's only ever set
+once. This is the field `commission.repository.ts`/`brandPayout.repository.ts`'s
+`findApprovableIds` sweeps read (`fulfilmentStatus = DELIVERED AND deliveredAt <= cutoff`) to mature
+commissions and brand payouts — before this, a brand marking its own shipment delivered moved the
+order to `DELIVERED` without ever stamping the timestamp those sweeps depend on, so a brand-fulfilled
+order's commission/payout could never mature. On a multi-brand order this only fires once every
+group has delivered (`deriveOrderFulfilment` only reaches `DELIVERED` there), never on the first
+brand to ship.
+
+## Stale-shipment reminder digest
+
+A brand can mark a group `SHIPPED` and then never come back to mark it `DELIVERED` — there's no
+courier webhook doing this automatically yet (see the deferred phone-masking note above for the
+same "manual for now, automate when volume justifies it" stance). `runStaleShipmentReminderDigest`
+(`order.jobs.ts`) runs daily (`STALE_SHIPMENT_REMINDER_INTERVAL_MS`,
+`scheduled-jobs.ts`), finds every brand with at least one group stuck at `SHIPPED` for more than
+`STALE_SHIPMENT_REMINDER_MIN_AGE_DAYS` (7) days (`listBrandsWithStaleShippedShipments`), and emails
+each one a single digest naming how many shipments need attention, linking to `/manage-orders`.
+
+This is a nudge, not an automatic status change — it never marks anything `DELIVERED` on a brand's
+behalf, since only the brand (or an admin) actually knows a parcel arrived. Deliberately plain email
+rather than the in-app notification stack `tag-review-reminder-digest` uses
+(`NotificationType`/`packages/types`/`packages/components` bell routing) — that stack is worth it
+for a high-volume, cross-app notification; at current order volume a single scheduled email covers
+the same need without a new migration or cross-package churn. Worth upgrading to an in-app
+notification once shipment volume makes an email easy to miss.
