@@ -550,6 +550,7 @@ describe("GET /api/crm/organization", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data.id).toBe(organization.id);
+    expect(response.body.data.viewerRoleName).toBe(BUILT_IN_ROLE_NAME.ADMIN);
   });
 
   it("allows a Member-role holder, since org:read is in the Member permission set", async () => {
@@ -574,6 +575,61 @@ describe("GET /api/crm/organization", () => {
       .set("Authorization", authHeaderFor(staff.id));
 
     expect(response.status).toBe(403);
+  });
+});
+
+describe("PATCH /api/crm/members/:membershipId", () => {
+  it("blocks an admin from changing their own role", async () => {
+    const { organization, adminRole, memberRole } = await seedOrganization();
+    const admin = await createStaffUser("Self Demoting Admin");
+    const adminMembership = await addMembership(organization.id, admin.id, adminRole.id);
+
+    const response = await request(testApp)
+      .patch(`/api/crm/members/${adminMembership.id}`)
+      .set("Authorization", authHeaderFor(admin.id))
+      .send({ roleId: memberRole.id });
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("MEMBERSHIP_SELF_UPDATE_FORBIDDEN");
+
+    const unchanged = await prisma.membership.findUniqueOrThrow({
+      where: { id: adminMembership.id },
+    });
+    expect(unchanged.roleId).toBe(adminRole.id);
+  });
+
+  it("blocks an admin from deactivating their own membership", async () => {
+    const { organization, adminRole } = await seedOrganization();
+    const admin = await createStaffUser("Self Deactivating Admin");
+    const adminMembership = await addMembership(organization.id, admin.id, adminRole.id);
+
+    const response = await request(testApp)
+      .patch(`/api/crm/members/${adminMembership.id}`)
+      .set("Authorization", authHeaderFor(admin.id))
+      .send({ status: "DEACTIVATED" });
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("MEMBERSHIP_SELF_UPDATE_FORBIDDEN");
+  });
+
+  it("lets an admin change another member's role", async () => {
+    const { organization, adminRole, memberRole } = await seedOrganization();
+    const admin = await createStaffUser("Acting Admin");
+    await addMembership(organization.id, admin.id, adminRole.id);
+    const teammate = await createStaffUser("Promoted Teammate");
+    const teammateMembership = await addMembership(organization.id, teammate.id, memberRole.id);
+
+    const response = await request(testApp)
+      .patch(`/api/crm/members/${teammateMembership.id}`)
+      .set("Authorization", authHeaderFor(admin.id))
+      .send({ roleId: adminRole.id });
+
+    expect(response.status).toBe(200);
+
+    const updated = await prisma.membership.findUniqueOrThrow({
+      where: { id: teammateMembership.id },
+    });
+    expect(updated.roleId).toBe(adminRole.id);
   });
 });
 

@@ -152,7 +152,7 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
   };
 
   const confirmStagingPhoto = () => {
-    if (!stagingPhoto) return;
+    if (!stagingPhoto?.croppedAreaPixels) return;
     setNewPhotos((current) => [...current, stagingPhoto]);
     setStagingPhoto(null);
   };
@@ -223,16 +223,17 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
       let uploadedNewAssetIds: (string | null)[] = [];
       if (newPhotos.length > 0) {
         const files = await Promise.all(
-          newPhotos.map((photo) =>
-            photo.croppedAreaPixels
-              ? getCroppedImageFile(
-                  photo.objectUrl,
-                  photo.croppedAreaPixels,
-                  photo.file.name,
-                  photo.file.type || DEFAULT_IMAGE_MIME_TYPE,
-                )
-              : photo.file,
-          ),
+          newPhotos.map((photo) => {
+            if (!photo.croppedAreaPixels) {
+              throw new Error("That photo isn't cropped yet — reselect it and try again.");
+            }
+            return getCroppedImageFile(
+              photo.objectUrl,
+              photo.croppedAreaPixels,
+              photo.file.name,
+              photo.file.type || DEFAULT_IMAGE_MIME_TYPE,
+            );
+          }),
         );
         const uploaded = await uploadsApi.uploadWithPipeline(files);
         uploadedNewUrls = uploaded.map((file) => file.url);
@@ -346,7 +347,11 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
               <Button variant="outline" size="sm" onClick={cancelStagingPhoto}>
                 Cancel
               </Button>
-              <Button size="sm" onClick={confirmStagingPhoto}>
+              <Button
+                size="sm"
+                onClick={confirmStagingPhoto}
+                disabled={!stagingPhoto.croppedAreaPixels}
+              >
                 Use photo
               </Button>
             </div>

@@ -50,6 +50,16 @@ export const shouldShowPlatformSection = (
   crmOrganization: { isPlatformOrg?: boolean } | undefined,
 ): boolean => hasPlatformAccess && crmOrganization?.isPlatformOrg !== false;
 
+const PLATFORM_STAFF_ACCOUNT_LABEL = "Admin account";
+
+export const resolveAccountLabel = (viewer: {
+  hasPlatformAccess: boolean;
+  crmRoleName: string | undefined;
+}): string => {
+  if (viewer.hasPlatformAccess) return PLATFORM_STAFF_ACCOUNT_LABEL;
+  return viewer.crmRoleName ?? PLATFORM_STAFF_ACCOUNT_LABEL;
+};
+
 export const isCrmSubItemVisible = (
   item: CrmItemVisibilityRules,
   crmOrganization: CrmOrganizationContext | undefined,

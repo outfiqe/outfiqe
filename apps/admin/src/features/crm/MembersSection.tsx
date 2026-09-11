@@ -2,10 +2,14 @@ import { Badge, Button, Checkbox, FormBanner, Modal, Select, toast } from "@outf
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { ConfirmModal } from "@/components/ConfirmModal";
+import { useAuth } from "@/features/auth/AuthContext";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
 import type { MembershipStatusValue, MembershipSummary } from "./schemas";
+
+type PendingRoleChange = { member: MembershipSummary; nextRoleId: string };
 
 const STATUS_TONE: Record<MembershipStatusValue, "neutral" | "positive" | "negative"> = {
   ACTIVE: "positive",
@@ -22,9 +26,12 @@ export const MembersSection = ({
   hasPendingOwnershipTransfer,
 }: MembersSectionProps) => {
   const queryClient = useQueryClient();
+  const { state: authState } = useAuth();
+  const viewerUserId = authState.status === "signed-in" ? authState.user.id : null;
   const [transferTarget, setTransferTarget] = useState<MembershipSummary | null>(null);
   const [transferError, setTransferError] = useState<string | null>(null);
   const [removeSenderMembership, setRemoveSenderMembership] = useState(false);
+  const [pendingRoleChange, setPendingRoleChange] = useState<PendingRoleChange | null>(null);
 
   const {
     data: members,
@@ -33,12 +40,18 @@ export const MembersSection = ({
   } = useQuery({ queryKey: ["crm-members"], queryFn: crmApi.listMembers });
   const { data: roles } = useQuery({ queryKey: ["crm-roles"], queryFn: crmApi.listRoles });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["crm-members"] });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["crm-members"] });
+    queryClient.invalidateQueries({ queryKey: ["crm-organization"] });
+  };
 
   const changeRole = useMutation({
     mutationFn: ({ membershipId, roleId }: { membershipId: string; roleId: string }) =>
       crmApi.updateMember(membershipId, { roleId }),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      setPendingRoleChange(null);
+    },
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -65,6 +78,17 @@ export const MembersSection = ({
   });
 
   const isActing = changeRole.isPending || toggleStatus.isPending;
+
+  const isViewersOwnRow = (member: MembershipSummary) =>
+    viewerUserId !== null && member.userId === viewerUserId;
+
+  const requestRoleChange = (member: MembershipSummary, nextRoleId: string) => {
+    if (nextRoleId === member.roleId) return;
+    setPendingRoleChange({ member, nextRoleId });
+  };
+
+  const pendingRoleName =
+    roles?.find((role) => role.id === pendingRoleChange?.nextRoleId)?.name ?? "the selected role";
 
   const canTransferOwnershipTo = (member: MembershipSummary) =>
     viewerIsSuperAdmin &&
@@ -96,13 +120,18 @@ export const MembersSection = ({
           </Badge>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">{member.userEmail}</p>
+        {isViewersOwnRow(member) && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            You can&apos;t change your own role or access — ask another admin.
+          </p>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
         <Select
           value={member.roleId}
-          disabled={member.isSuperAdmin || isActing}
-          onChange={(e) => changeRole.mutate({ membershipId: member.id, roleId: e.target.value })}
+          disabled={member.isSuperAdmin || isViewersOwnRow(member) || isActing}
+          onChange={(e) => requestRoleChange(member, e.target.value)}
           className="w-40"
         >
           {roles?.map((role) => (
@@ -114,7 +143,7 @@ export const MembersSection = ({
         <Button
           variant="outline"
           size="sm"
-          disabled={member.isSuperAdmin || isActing}
+          disabled={member.isSuperAdmin || isViewersOwnRow(member) || isActing}
           onClick={() =>
             toggleStatus.mutate({
               membershipId: member.id,
@@ -187,6 +216,24 @@ export const MembersSection = ({
             Remove my own access after this transfer
           </label>
         </Modal>
+      )}
+
+      {pendingRoleChange && (
+        <ConfirmModal
+          open
+          title="Change member role"
+          description={`Change ${pendingRoleChange.member.userName}'s role to ${pendingRoleName}? This takes effect right away and changes what they can access.`}
+          confirmLabel="Change role"
+          pendingLabel="Saving…"
+          isPending={changeRole.isPending}
+          onConfirm={() =>
+            changeRole.mutate({
+              membershipId: pendingRoleChange.member.id,
+              roleId: pendingRoleChange.nextRoleId,
+            })
+          }
+          onCancel={() => setPendingRoleChange(null)}
+        />
       )}
     </div>
   );

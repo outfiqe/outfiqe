@@ -39,6 +39,9 @@ const mockPending = (photos: PendingPhoto[]) => {
   vi.mocked(usePendingPhotos).mockReturnValue({
     photos,
     activePhoto: photos[0] ?? null,
+    hasUnresolvedCrop: photos.some(
+      (photo) => photo.file !== null && photo.croppedAreaPixels === null,
+    ),
     setActiveId,
     inputRef: { current: null },
     handleFileSelect: vi.fn(),

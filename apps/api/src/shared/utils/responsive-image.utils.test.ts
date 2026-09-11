@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ImageProcessingStatus } from "#generated/prisma/enums.js";
+
+vi.mock("#config/env.config.js", () => ({
+  env: { API_PUBLIC_URL: "http://api.outfiqe.test" },
+}));
 
 import {
   type ImageAssetForResponsiveImage,
@@ -26,7 +30,7 @@ const completedAsset = (
 
 describe("imageAssetPublicBaseUrl", () => {
   it("joins the api public url with the asset path segment", () => {
-    expect(imageAssetPublicBaseUrl()).toBe("http://localhost:4000/image-processing-assets");
+    expect(imageAssetPublicBaseUrl()).toBe("http://api.outfiqe.test/image-processing-assets");
   });
 });
 
@@ -66,8 +70,8 @@ describe("toResponsiveImage", () => {
       (source) => source.format === "avif",
     );
     expect(avifSource?.srcSet).toBe(
-      "http://localhost:4000/image-processing-assets/variants/abc/320w.avif 320w, " +
-        "http://localhost:4000/image-processing-assets/variants/abc/640w.avif 640w",
+      "http://api.outfiqe.test/image-processing-assets/variants/abc/320w.avif 320w, " +
+        "http://api.outfiqe.test/image-processing-assets/variants/abc/640w.avif 640w",
     );
   });
 

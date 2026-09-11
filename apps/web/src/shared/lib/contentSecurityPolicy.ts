@@ -28,7 +28,8 @@ type BuildContentSecurityPolicyOptions = {
 
 const scriptSrc = (nonce: string, isDev: boolean, renderMode: CspRenderMode): string => {
   if (renderMode === "static") {
-    return `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' ${TURNSTILE_ORIGIN}`;
+    const devTrustAnchor = isDev ? " 'unsafe-eval'" : "";
+    return `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${devTrustAnchor} ${TURNSTILE_ORIGIN}`;
   }
 
   const trustAnchor = isDev ? "'unsafe-eval'" : "'strict-dynamic' 'wasm-unsafe-eval'";

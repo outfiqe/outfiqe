@@ -29,9 +29,10 @@ activities/tasks, support/ticketing, reporting, audit log) lives in the sibling 
 - `crm-access.utils.ts` — pure mappers: `toMembershipSummary`, `toInviteSummary` (derives
   PENDING/ACCEPTED/REVOKED/EXPIRED from an invite's timestamps, the same shape as
   `admin-invites/adminInvite.utils.ts`'s `toSummary`), `toOrganizationWithViewerContext` (adds the
-  calling membership's own `viewerIsSuperAdmin`/`viewerPermissionKeys` plus any
+  calling membership's own `viewerIsSuperAdmin`/`viewerRoleName`/`viewerPermissionKeys` plus any
   `pendingOwnershipTransfer` onto the organization response, so `apps/admin` can decide what to
-  render without guessing at a 403), `toPendingOwnershipTransferSummary`,
+  render — and what to label the account as in the sidebar — without guessing at a 403),
+  `toPendingOwnershipTransferSummary`,
   `extractSubdomain(host, baseDomain)` (a re-export of `@outfiqe/utils`' `extractTenantSubdomain`,
   which `apps/web` and `apps/admin` also use to gate the storefront ⇄ CRM links; `SUBDOMAIN_REGEX`
   and `RESERVED_SUBDOMAINS` likewise re-export the `@outfiqe/utils` originals so all three apps share
@@ -41,8 +42,10 @@ activities/tasks, support/ticketing, reporting, audit log) lives in the sibling 
 - `crm-access.service.ts` — business rules: invite target must already be an existing staff
   account, one pending invite per email, accept requires the invite's email to match the accepting
   account, the SUPERADMIN membership can't be edited via `updateMembership` (use ownership transfer
-  instead — see Non-obvious rationale), one pending ownership-transfer request per organization at
-  a time. Custom-role rules live here too — `createRole`/`updateRole`/`deleteRole`/
+  instead — see Non-obvious rationale), a member can't edit their **own** membership via
+  `updateMembership` (`MEMBERSHIP_SELF_UPDATE_FORBIDDEN` — the acting membership id comes from
+  `res.locals.crmMembership` via the controller; stops an admin demoting or deactivating themselves
+  into a lockout), one pending ownership-transfer request per organization at a time. Custom-role rules live here too — `createRole`/`updateRole`/`deleteRole`/
   `updateOrganization` (see the custom-role-builder bullet in Non-obvious rationale).
 - `crm-access.middleware.ts` — `resolveTenant` (resolves the request's `Organization` by
   subdomain, stores it on `res.locals.crmOrganization`), `requirePermission(key)` (reads that

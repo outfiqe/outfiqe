@@ -1,11 +1,28 @@
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
-import type { CommissionStatus, PaymentTransactionType } from "#generated/prisma/enums.js";
+import type { CommissionStatus, PaymentMethod } from "#generated/prisma/enums.js";
 import {
   BrandPayoutStatus,
   CouponRedemptionStatus,
   PaymentTransactionStatus,
+  PaymentTransactionType,
 } from "#generated/prisma/enums.js";
+
+import type {
+  AttributionCounts,
+  LedgerRow,
+  PaymentMethodOrderTotals,
+  PaymentMethodPayoutFees,
+} from "./financialRollup.types.js";
+
+export type LedgerFilters = {
+  paymentMethod?: PaymentMethod;
+  brandPayoutStatus?: BrandPayoutStatus;
+  dateFrom?: Date;
+  dateTo?: Date;
+  cursor?: { createdAt: Date; orderItemId: string };
+  limit: number;
+};
 
 export const financialRollupRepository = {
   async sumOrderTotalsForTransactionType(
@@ -21,6 +38,41 @@ export const financialRollupRepository = {
         ${since ? Prisma.sql`AND pt.created_at >= ${since}` : Prisma.empty}
     `);
     return rows[0]?.total ?? 0;
+  },
+
+  async sumOrderTotalsByPaymentMethod(
+    type: PaymentTransactionType,
+    since: Date | null,
+  ): Promise<PaymentMethodOrderTotals[]> {
+    return prisma.$queryRaw<PaymentMethodOrderTotals[]>(Prisma.sql`
+      SELECT
+        o.payment_method AS "paymentMethod",
+        COALESCE(SUM(o.total), 0)::int AS total,
+        COUNT(*)::int AS "orderCount"
+      FROM payment_transactions pt
+      JOIN orders o ON o.id = pt.order_id
+      WHERE pt.type = ${type}
+        AND pt.status = ${PaymentTransactionStatus.SUCCEEDED}
+        ${since ? Prisma.sql`AND pt.created_at >= ${since}` : Prisma.empty}
+      GROUP BY o.payment_method
+    `);
+  },
+
+  async sumRealizedBrandPayoutFeesByPaymentMethod(
+    since: Date | null,
+  ): Promise<PaymentMethodPayoutFees[]> {
+    return prisma.$queryRaw<PaymentMethodPayoutFees[]>(Prisma.sql`
+      SELECT
+        o.payment_method AS "paymentMethod",
+        COALESCE(SUM(bp.platform_fee), 0)::int AS "platformFee",
+        COALESCE(SUM(bp.gateway_fee), 0)::int AS "gatewayFee"
+      FROM brand_payouts bp
+      JOIN order_items oi ON oi.id = bp.order_item_id
+      JOIN orders o ON o.id = oi.order_id
+      WHERE bp.status = ${BrandPayoutStatus.WITHDRAWN}
+        ${since ? Prisma.sql`AND bp.created_at >= ${since}` : Prisma.empty}
+      GROUP BY o.payment_method
+    `);
   },
 
   async sumCreatorCommissionsByStatus(
@@ -64,6 +116,64 @@ export const financialRollupRepository = {
       _sum: { platformFee: true },
     });
     return result._sum.platformFee ?? 0;
+  },
+
+  async listLedger({
+    paymentMethod,
+    brandPayoutStatus,
+    dateFrom,
+    dateTo,
+    cursor,
+    limit,
+  }: LedgerFilters): Promise<LedgerRow[]> {
+    return prisma.$queryRaw<LedgerRow[]>(Prisma.sql`
+      SELECT
+        o.id AS "orderId",
+        oi.id AS "orderItemId",
+        oi.created_at AS "createdAt",
+        o.payment_method AS "paymentMethod",
+        bp.gross_amount AS "grossAmount",
+        bp.platform_fee AS "platformFee",
+        bp.gateway_fee AS "gatewayFee",
+        bp.net_amount AS "brandNetAmount",
+        bp.status AS "brandPayoutStatus",
+        cc.amount AS "creatorCommissionAmount",
+        cc.status AS "creatorCommissionStatus"
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
+      LEFT JOIN brand_payouts bp ON bp.order_item_id = oi.id
+      LEFT JOIN creator_commissions cc ON cc.order_item_id = oi.id
+      WHERE 1 = 1
+        ${paymentMethod ? Prisma.sql`AND o.payment_method = ${paymentMethod}` : Prisma.empty}
+        ${brandPayoutStatus ? Prisma.sql`AND bp.status = ${brandPayoutStatus}` : Prisma.empty}
+        ${dateFrom ? Prisma.sql`AND oi.created_at >= ${dateFrom}` : Prisma.empty}
+        ${dateTo ? Prisma.sql`AND oi.created_at <= ${dateTo}` : Prisma.empty}
+        ${
+          cursor
+            ? Prisma.sql`AND (oi.created_at, oi.id) < (${cursor.createdAt}, ${cursor.orderItemId})`
+            : Prisma.empty
+        }
+      ORDER BY oi.created_at DESC, oi.id DESC
+      LIMIT ${limit + 1}
+    `);
+  },
+
+  async sumAttributionCounts(since: Date | null): Promise<AttributionCounts> {
+    const rows = await prisma.$queryRaw<AttributionCounts[]>(Prisma.sql`
+      SELECT
+        COUNT(*)::int AS "totalItems",
+        COUNT(oi.attributed_creator_id)::int AS "attributedItems"
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
+      WHERE EXISTS (
+        SELECT 1 FROM payment_transactions pt
+        WHERE pt.order_id = o.id
+          AND pt.type = ${PaymentTransactionType.PAYMENT}
+          AND pt.status = ${PaymentTransactionStatus.SUCCEEDED}
+      )
+      ${since ? Prisma.sql`AND oi.created_at >= ${since}` : Prisma.empty}
+    `);
+    return rows[0] ?? { totalItems: 0, attributedItems: 0 };
   },
 
   async sumCouponSpend(since: Date | null): Promise<number> {

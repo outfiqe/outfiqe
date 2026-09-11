@@ -95,4 +95,20 @@ describe("buildContentSecurityPolicy", () => {
     expect(csp).not.toContain("'nonce-");
     expect(csp).not.toContain("'strict-dynamic'");
   });
+
+  it("still allows 'unsafe-eval' on static pages in dev, so Turbopack HMR doesn't break there", () => {
+    const devStaticCsp = buildContentSecurityPolicy({
+      ...baseOptions,
+      isDev: true,
+      renderMode: "static",
+    });
+    expect(devStaticCsp).toMatch(/ 'unsafe-eval'/);
+
+    const prodStaticCsp = buildContentSecurityPolicy({
+      ...baseOptions,
+      isDev: false,
+      renderMode: "static",
+    });
+    expect(prodStaticCsp).not.toMatch(/ 'unsafe-eval'/);
+  });
 });

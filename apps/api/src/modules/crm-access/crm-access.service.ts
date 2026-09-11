@@ -330,9 +330,18 @@ export const crmAccessService = {
 
   async updateMembership(
     organization: OrganizationRecord,
+    actingMembershipId: string,
     membershipId: string,
     data: { roleId?: string; status?: MembershipStatus },
   ): Promise<MembershipRecord> {
+    if (membershipId === actingMembershipId) {
+      throw new AppError(
+        "MEMBERSHIP_SELF_UPDATE_FORBIDDEN",
+        "You can't change your own role or access. Ask another admin to do it.",
+        FORBIDDEN_STATUS,
+      );
+    }
+
     if (organization.superAdminMembershipId === membershipId) {
       throw new AppError(
         "SUPERADMIN_MEMBERSHIP_LOCKED",

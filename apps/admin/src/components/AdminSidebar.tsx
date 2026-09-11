@@ -59,6 +59,7 @@ import {
   isAdminNavReady,
   isCrmSubItemVisible,
   type PlatformNavItem,
+  resolveAccountLabel,
   shouldShowCrmSection,
   shouldShowPlatformSection,
   visiblePlatformNavItems,
@@ -296,6 +297,10 @@ export const AdminSidebar = () => {
 
   const user = state.status === "signed-in" ? state.user : null;
   const isCoFounder = user?.isCoFounder ?? false;
+  const accountLabel = resolveAccountLabel({
+    hasPlatformAccess: user?.hasPlatformAccess ?? false,
+    crmRoleName: crmOrganization?.viewerRoleName,
+  });
   const platformNavItems: SidebarNavItem[] = [
     PLATFORM_OVERVIEW_NAV_ITEM,
     ...visiblePlatformNavItems(PLATFORM_NAV_ITEMS, {
@@ -340,7 +345,9 @@ export const AdminSidebar = () => {
               Co-founder
             </Badge>
           ) : (
-            <p className="truncate text-[11px] text-muted-foreground">Admin account</p>
+            <p className="truncate text-[11px] text-muted-foreground" title={accountLabel}>
+              {accountLabel}
+            </p>
           )}
         </div>
       )}

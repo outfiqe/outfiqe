@@ -184,6 +184,7 @@ describe("toOrganizationWithViewerContext", () => {
     );
 
     expect(result.viewerIsSuperAdmin).toBe(true);
+    expect(result.viewerRoleName).toBe("Owner");
     expect(result.viewerPermissionKeys).toEqual(["tickets:read", "deals:write"]);
     expect(result.advancedFeaturesEnabled).toBe(true);
     expect(result.features).toEqual({ advancedReports: true });

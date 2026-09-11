@@ -100,6 +100,14 @@ even though both eventually read the same server state. They share a query key
 so the badge count stays live and correct even while the panel itself is closed or unmounted, not
 just while it's open.
 
+**The sidebar rail (`railClass`) carries `overflow-hidden` alongside its `max-h`/`min-h-0`.** The
+nav list scrolls inside its own `overflow-y-auto` `<ul>`, but a `max-height`-clamped flex column
+whose content is taller than the clamp still contributes that hidden overflow to the _document's_
+scrollable height when the rail itself is `overflow: visible`. On a page with little main content
+that showed up as hundreds of pixels of empty scroll past the end of the page (worst on `apps/admin`,
+whose Platform nav is long). Clipping the rail keeps the document's scroll height equal to the actual
+content height; the `<ul>` is still the thing that scrolls.
+
 **The sidebar's optional `LinkComponent` exists so an app can hand the widget its framework's own
 link.** The default `<a onClick={navigate}>` path derives the active highlight purely from
 `pathname`, so the highlight only moves once the router commits the new route — on Next's App

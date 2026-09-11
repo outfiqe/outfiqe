@@ -5,6 +5,7 @@ import {
   isAdminNavReady,
   isCrmSubItemVisible,
   type PlatformNavItem,
+  resolveAccountLabel,
   shouldShowCrmSection,
   shouldShowPlatformSection,
   visiblePlatformNavItems,
@@ -115,6 +116,25 @@ describe("isAdminNavReady", () => {
 
   it("is ready once the crm-organization query has errored so a failed lookup never blocks the nav", () => {
     expect(isAdminNavReady(true, "error")).toBe(true);
+  });
+});
+
+describe("resolveAccountLabel", () => {
+  it("labels a platform staff account generically regardless of CRM role", () => {
+    expect(resolveAccountLabel({ hasPlatformAccess: true, crmRoleName: "Member" })).toBe(
+      "Admin account",
+    );
+  });
+
+  it("shows a tenant user their actual CRM role", () => {
+    expect(resolveAccountLabel({ hasPlatformAccess: false, crmRoleName: "Member" })).toBe("Member");
+    expect(resolveAccountLabel({ hasPlatformAccess: false, crmRoleName: "Admin" })).toBe("Admin");
+  });
+
+  it("falls back to the generic label when the CRM role has not resolved yet", () => {
+    expect(resolveAccountLabel({ hasPlatformAccess: false, crmRoleName: undefined })).toBe(
+      "Admin account",
+    );
   });
 });
 

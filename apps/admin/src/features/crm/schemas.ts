@@ -42,6 +42,7 @@ export const organizationSchema = z.object({
   linkedBrandId: z.string().nullable(),
   superAdminMembershipId: z.string().nullable(),
   viewerIsSuperAdmin: z.boolean(),
+  viewerRoleName: z.string().optional(),
   viewerPermissionKeys: z.array(z.string()),
   pendingOwnershipTransfer: pendingOwnershipTransferSchema.nullable(),
   advancedFeaturesEnabled: z.boolean(),

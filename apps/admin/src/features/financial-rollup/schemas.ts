@@ -1,4 +1,4 @@
-import type { BrandPayoutStatus, CommissionStatus } from "@outfiqe/types";
+import type { BrandPayoutStatus, CommissionStatus, PaymentMethod } from "@outfiqe/types";
 import { z } from "zod";
 
 export const rollupRangeSchema = z.enum(["cycle", "30d", "all"]);
@@ -17,6 +17,21 @@ const commissionStatusValues = [
   "PAID",
   "VOIDED",
 ] satisfies CommissionStatus[];
+const paymentMethodValues = ["COD", "ESEWA", "KHALTI"] satisfies PaymentMethod[];
+
+export const paymentMethodBreakdownSchema = z.object({
+  gmv: z.number(),
+  orderCount: z.number(),
+  realizedTakeRate: z.number(),
+});
+export type PaymentMethodBreakdown = z.infer<typeof paymentMethodBreakdownSchema>;
+
+export const attributionSchema = z.object({
+  totalItems: z.number(),
+  attributedItems: z.number(),
+  attributedShare: z.number(),
+});
+export type Attribution = z.infer<typeof attributionSchema>;
 
 export const financialRollupSchema = z.object({
   range: rollupRangeSchema,
@@ -32,5 +47,35 @@ export const financialRollupSchema = z.object({
     creatorCommissionsByStatus: z.partialRecord(z.enum(commissionStatusValues), z.number()),
     platformRevenueRealized: z.number(),
   }),
+  byPaymentMethod: z.partialRecord(z.enum(paymentMethodValues), paymentMethodBreakdownSchema),
+  attribution: attributionSchema,
 });
 export type FinancialRollup = z.infer<typeof financialRollupSchema>;
+
+export const ledgerRowSchema = z.object({
+  orderId: z.string(),
+  orderItemId: z.string(),
+  createdAt: z.string(),
+  paymentMethod: z.enum(paymentMethodValues),
+  grossAmount: z.number().nullable(),
+  platformFee: z.number().nullable(),
+  gatewayFee: z.number().nullable(),
+  brandNetAmount: z.number().nullable(),
+  brandPayoutStatus: z.enum(brandPayoutStatusValues).nullable(),
+  creatorCommissionAmount: z.number().nullable(),
+  creatorCommissionStatus: z.enum(commissionStatusValues).nullable(),
+});
+export type LedgerRow = z.infer<typeof ledgerRowSchema>;
+
+export const ledgerPageSchema = z.object({
+  entries: z.array(ledgerRowSchema),
+  nextCursor: z.string().nullable(),
+});
+export type LedgerPage = z.infer<typeof ledgerPageSchema>;
+
+export type LedgerFilters = {
+  paymentMethod?: PaymentMethod;
+  brandPayoutStatus?: BrandPayoutStatus;
+  dateFrom?: string;
+  dateTo?: string;
+};
