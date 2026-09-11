@@ -7,10 +7,15 @@ export type CursorPage = { nextCursor: string | null };
 
 type Cursor = string | undefined;
 
+type InfiniteCursorPageOptions = {
+  revalidateStalePersistedCacheOnMount?: boolean;
+};
+
 export const useInfiniteCursorPage = <T extends CursorPage>(
   queryKey: readonly unknown[],
   fetchPage: (cursor?: string) => Promise<T>,
   enabled = true,
+  { revalidateStalePersistedCacheOnMount = false }: InfiniteCursorPageOptions = {},
 ) => {
   const dropEmptyPages = useCallback((data: InfiniteData<T, Cursor>): InfiniteData<T, Cursor> => {
     const pages: T[] = [];
@@ -33,5 +38,6 @@ export const useInfiniteCursorPage = <T extends CursorPage>(
     getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
     select: dropEmptyPages,
     enabled,
+    refetchOnMount: revalidateStalePersistedCacheOnMount ? "always" : undefined,
   });
 };
