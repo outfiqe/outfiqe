@@ -195,6 +195,9 @@ export default defineConfig({
         "src/features/explore/hooks/useInfiniteExploreFeed.ts",
         "src/features/explore/hooks/usePublicLook.ts",
         "src/features/creator-profile/hooks/useInfiniteCreatorLooks.ts",
+        "src/features/brands/api/serverBrands.ts",
+        "src/features/brand-profile/api/getBrandProfileServerPublic.ts",
+        "src/features/creator-profile/api/getCreatorProfileServerPublic.ts",
       ],
       thresholds: {
         lines: 80,

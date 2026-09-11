@@ -24,7 +24,7 @@ const REFRESH_COOKIE_NAME = "refresh_token";
 
 export type ServerSession = { user: UserSession; accessToken: string };
 
-export const getServerSessionWithToken = cache(async (): Promise<ServerSession | null> => {
+export const getServerAccessToken = cache(async (): Promise<string | null> => {
   const cookieStore = await cookies();
   const refreshToken = cookieStore.get(REFRESH_COOKIE_NAME)?.value;
   if (!refreshToken) return null;
@@ -36,10 +36,20 @@ export const getServerSessionWithToken = cache(async (): Promise<ServerSession |
       method: "POST",
       cookie: cookieHeader,
     });
+    return accessToken;
+  } catch {
+    return null;
+  }
+});
+
+export const getServerSessionWithToken = cache(async (): Promise<ServerSession | null> => {
+  const accessToken = await getServerAccessToken();
+  if (!accessToken) return null;
+
+  try {
     const rawUser = await serverApiRequest<CurrentUser>("/auth/me", { accessToken });
     return { user: toUserSession(currentUserSchema.parse(rawUser)), accessToken };
   } catch {
-    // No valid session — not an error state for the guard, just "signed out".
     return null;
   }
 });
