@@ -32,7 +32,7 @@ export const SidebarSection = ({
         aria-labelledby={headingId}
         className={cx(
           navListClass,
-          "min-h-0 flex-1 overflow-y-auto overflow-x-hidden",
+          "min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-1.5",
           sidebarScrollClass,
         )}
       >
