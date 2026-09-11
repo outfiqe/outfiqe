@@ -33,6 +33,8 @@ import {
 import { leaderboardService } from "#modules/leaderboard/leaderboard.service.js";
 import { NOTIFICATION_RETENTION_SWEEP_INTERVAL_MS } from "#modules/notifications/notification.constants.js";
 import { runNotificationRetentionSweep } from "#modules/notifications/notification.retention.js";
+import { STALE_SHIPMENT_REMINDER_INTERVAL_MS } from "#modules/orders/order.constants.js";
+import { runStaleShipmentReminderDigest } from "#modules/orders/order.jobs.js";
 import { RECONCILE_CHECK_INTERVAL_MS } from "#modules/payments/payment.constants.js";
 import { runPaymentReconciliationSweep } from "#modules/payments/payment.reconciliation.js";
 import { IMPERSONATION_REAP_INTERVAL_MS } from "#modules/platform-impersonation/platform-impersonation.constants.js";
@@ -176,6 +178,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "tag-review-reminder-digest",
     run: runTagReviewReminderDigest,
     intervalMs: TAG_REVIEW_REMINDER_INTERVAL_MS,
+  },
+  {
+    name: "stale-shipment-reminder-digest",
+    run: runStaleShipmentReminderDigest,
+    intervalMs: STALE_SHIPMENT_REMINDER_INTERVAL_MS,
   },
 ];
 

@@ -371,6 +371,29 @@ export const supportStaffReplyTemplate = (
   }),
 });
 
+export const staleShipmentReminderTemplate = (input: {
+  brandName: string;
+  shipmentCount: number;
+  ordersUrl: string;
+}): { subject: string; html: string } => {
+  const noun = input.shipmentCount === 1 ? "shipment" : "shipments";
+  return {
+    subject: `${input.shipmentCount} ${noun} waiting to be marked delivered`,
+    html: renderEmailLayout({
+      preheader: `Mark your shipped orders as delivered.`,
+      bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Confirm your deliveries</h1>
+      <p style="color:${SUB};margin:0 0 4px;">
+        <strong>${escapeHtml(input.brandName)}</strong> has <strong>${input.shipmentCount}</strong>
+        ${noun} that have been shipped for over a week but not yet marked delivered. Marking them
+        keeps buyers informed and releases your payout for those items.
+      </p>
+      ${emailButtonHtml("Open your orders", input.ordersUrl)}
+    `,
+    }),
+  };
+};
+
 export const supportResolvedTemplate = (
   input: SupportEmailInput & { reopenUrl: string },
 ): { subject: string; html: string } => ({

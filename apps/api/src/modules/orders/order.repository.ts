@@ -203,6 +203,36 @@ export const orderRepository = {
     }
   },
 
+  async listBrandsWithStaleShippedShipments(
+    shippedBefore: Date,
+  ): Promise<{ brandId: string; brandName: string; brandEmail: string; shipmentCount: number }[]> {
+    const grouped = await prisma.orderFulfilmentGroup.groupBy({
+      by: ["brandId"],
+      where: { status: FulfilmentStatus.SHIPPED, shippedAt: { lte: shippedBefore } },
+      _count: { _all: true },
+    });
+    if (grouped.length === 0) return [];
+
+    const brands = await prisma.brand.findMany({
+      where: { id: { in: grouped.map((row) => row.brandId) } },
+      select: { id: true, name: true, email: true },
+    });
+    const brandById = new Map(brands.map((brand) => [brand.id, brand]));
+
+    return grouped.flatMap((row) => {
+      const brand = brandById.get(row.brandId);
+      if (!brand) return [];
+      return [
+        {
+          brandId: row.brandId,
+          brandName: brand.name,
+          brandEmail: brand.email,
+          shipmentCount: row._count._all,
+        },
+      ];
+    });
+  },
+
   async cancelFulfilmentGroupsForOrder(
     client: DbClient,
     orderId: string,
