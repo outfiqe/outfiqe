@@ -309,6 +309,7 @@ const listRecentPostMetricBuckets = async (sinceDays: number): Promise<PostMetri
   const since = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000);
   const rows = await prisma.creatorLookTrendMetric.findMany({
     where: { bucketStart: { gte: since } },
+    orderBy: [{ creatorLookId: "asc" }, { bucketStart: "asc" }],
     select: {
       creatorLookId: true,
       bucketStart: true,
@@ -384,7 +385,7 @@ const computeRankedLookScores = async (
     if (breakdown.score > 0) candidates.push(breakdown);
   }
 
-  candidates.sort((a, b) => b.score - a.score);
+  candidates.sort((a, b) => b.score - a.score || a.lookId.localeCompare(b.lookId));
   return candidates.map(({ lookId, score }) => ({ lookId, score }));
 };
 
@@ -428,7 +429,7 @@ const computeRankedCreatorMomentumScores = async (
     if (entry.momentum > 0) candidates.push(entry);
   }
 
-  candidates.sort((a, b) => b.momentum - a.momentum);
+  candidates.sort((a, b) => b.momentum - a.momentum || a.creatorId.localeCompare(b.creatorId));
   return candidates;
 };
 
