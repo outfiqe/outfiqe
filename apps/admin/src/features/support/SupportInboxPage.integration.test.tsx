@@ -31,7 +31,11 @@ const stubInbox = () => {
   return inboxQueries;
 };
 
-const lastQuery = (queries: URLSearchParams[]) => queries[queries.length - 1];
+const lastQuery = (queries: URLSearchParams[]): URLSearchParams => {
+  const query = queries.at(-1);
+  if (!query) throw new Error("Expected at least one request to have reached the inbox endpoint.");
+  return query;
+};
 
 describe("SupportInboxPage", () => {
   it("applies the assignee, status and category filters from the URL", async () => {
