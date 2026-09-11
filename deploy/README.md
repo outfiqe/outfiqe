@@ -98,7 +98,7 @@ Copy `.env.prod.example` and replace every `######`. Notes:
 ## CI/CD
 
 - `ci.yml` runs on push and PRs to `main` and `dev` (lint, typecheck, unit, integration, build). The coverage gate runs on push to `main` only.
-- `deploy.yml` runs after a successful `CI` run on `main` (or manually via `workflow_dispatch`). It builds and pushes the image tagged with the commit SHA and `latest`, copies `docker-compose.prod.yml` and `Caddyfile` to `/srv/outfiqe`, then over SSH: reclaims disk, checks free space, pulls, runs `prisma migrate deploy` against the direct URL, `up -d --remove-orphans`, and polls `/ready`.
+- `deploy.yml` runs after a successful `CI` run on `main` (or manually via `workflow_dispatch`). It builds and pushes the image tagged with the commit SHA and `latest`, copies `docker-compose.prod.yml` and `Caddyfile` to `/srv/outfiqe`, then over SSH: reclaims disk, checks free space, pulls, runs `prisma migrate deploy` against the direct URL, `up -d --remove-orphans`, reloads Caddy's config (see "Known gotchas" for why that step exists on its own), and polls `/ready`.
 - The compose file and `Caddyfile` are shipped by the deploy, so the versions in git are the ones that run. Editing either directly on the droplet is pointless — the next deploy overwrites it. `.env.prod` is deliberately **not** copied: it holds secrets and lives only on the droplet.
 - The `production` GitHub Environment gates the deploy job. Add a required reviewer there for a one-click approval.
 - `keepalive.yml` curls `/ready` every three days so the Supabase free project does not pause.
@@ -130,6 +130,19 @@ When clearing space by hand, never pass `--volumes` to `docker system prune`. It
 
 ## Known gotchas
 
+- **Syncing a new `Caddyfile` to the droplet does not make Caddy use it.** `caddy` mounts the file
+  read-only (`./Caddyfile:/etc/caddy/Caddyfile:ro`) and its service definition in
+  `docker-compose.prod.yml` never changes, so `docker compose up -d` sees nothing different and
+  leaves the already-running container alone — it keeps serving whatever config it loaded at its
+  last start, no matter what the file on disk now says. A real incident: a fix that made
+  `resolveTenant` prefer `X-Forwarded-Host` shipped correctly to the API, but Caddy's Caddyfile
+  needed the matching `header_up X-Forwarded-Host {http.request.header.X-Forwarded-Host}` (Caddy's
+  own default overwrites that header from its own `Host` otherwise) — and kept silently discarding
+  it after the deploy anyway, because the file changed on disk but the running Caddy process never
+  reloaded. `deploy.yml` now runs `docker compose exec caddy caddy reload --config
+/etc/caddy/Caddyfile` right after `up -d`, which is a zero-downtime config swap, not a restart —
+  so this is the one config file where a deploy needing to touch the _running_ process, not just
+  the file on disk, is load-bearing.
 - Build the image on `linux/amd64` (the workflow does). Building on an ARM Mac needs `--platform=linux/amd64` or `sharp` fails at runtime.
 - The runtime image runs the app with `tsx` (no compile-to-`dist` step). This sidesteps the `#alias -> ./src/*` import map and the Prisma 7 TypeScript client both needing a build. Compiling to `dist` is a later optimisation.
 - `prisma migrate deploy` cannot run through the pooled connection — always use `DIRECT_DATABASE_URL`.

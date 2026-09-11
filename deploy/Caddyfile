@@ -1,4 +1,6 @@
 {$API_DOMAIN} {
 	encode zstd gzip
-	reverse_proxy api:4000
+	reverse_proxy api:4000 {
+		header_up X-Forwarded-Host {http.request.header.X-Forwarded-Host}
+	}
 }
