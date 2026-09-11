@@ -6,6 +6,7 @@ import { validated } from "#middlewares/validate.js";
 
 import type {
   CreateUserBody,
+  HandleAvailabilityQuery,
   SearchUsersQuery,
   UpdateOwnProfileBody,
   UserIdParam,
@@ -44,5 +45,13 @@ export const userController = {
 
     const user = await userService.updateMe(userId, body);
     sendSuccess(res, user, "Profile updated.");
+  },
+
+  async checkHandleAvailability(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { handle } = validated.query<HandleAvailabilityQuery>(res);
+
+    const result = await userService.checkHandleAvailability(handle, userId);
+    sendSuccess(res, result, "Username availability.");
   },
 };

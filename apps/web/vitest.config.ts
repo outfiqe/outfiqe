@@ -112,6 +112,7 @@ export default defineConfig({
         "src/features/creator-dashboard/hooks/useCreatorOverview.ts",
         "src/features/creator-dashboard/hooks/useEarningsSummary.ts",
         "src/features/creator-dashboard/hooks/useGamificationSocket.ts",
+        "src/features/creator-dashboard/hooks/useHandleAvailability.ts",
         "src/features/creator-dashboard/hooks/useLookDetail.ts",
         "src/features/creator-dashboard/hooks/useMyCreatorLinks.ts",
         "src/features/creator-dashboard/hooks/useMyEarnings.ts",

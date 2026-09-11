@@ -14,7 +14,30 @@ import { toPublicUser } from "./user.utils.js";
 const CONFLICT_STATUS = 409;
 const USER_SEARCH_LIMIT = 10;
 
+const assertHandleAvailable = async (handle: string, excludingUserId: string): Promise<void> => {
+  const existing = await userRepository.findByHandle(handle);
+  if (existing && existing.id !== excludingUserId) {
+    throw new AppError("HANDLE_TAKEN", "That username is already taken.", CONFLICT_STATUS);
+  }
+};
+
+const checkHandleAvailability = async (
+  handle: string,
+  userId: string,
+): Promise<{ available: boolean }> => {
+  try {
+    await assertHandleAvailable(handle, userId);
+    return { available: true };
+  } catch (error) {
+    if (error instanceof AppError && error.code === "HANDLE_TAKEN") return { available: false };
+    throw error;
+  }
+};
+
 export const userService = {
+  assertHandleAvailable,
+  checkHandleAvailability,
+
   async createUser(input: CreateUserInput): Promise<PublicUser> {
     const existing = await userRepository.findByEmail(input.email);
     if (existing) {

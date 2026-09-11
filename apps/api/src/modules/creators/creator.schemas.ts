@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { SEARCH_QUERY_MAX_LENGTH } from "#constants/search.constants.js";
 import { CreatorStatus } from "#generated/prisma/enums.js";
+import { handleField } from "#lib/handle.schemas.js";
 
 import { MAX_HEIGHT_CM, MIN_HEIGHT_CM } from "./creator.constants.js";
 
@@ -27,6 +28,7 @@ export const creatorHandleParamSchema = z.object({
 export const updateCreatorProfileSchema = z
   .object({
     name: z.string().trim().min(1).max(100),
+    handle: handleField,
     avatarUrl: z.url().nullable(),
     avatarImageAssetId: z.uuid().nullable(),
     heightCm: z.number().int().min(MIN_HEIGHT_CM).max(MAX_HEIGHT_CM).nullable(),

@@ -38,6 +38,7 @@ model User {
   followingCount       Int           @default(0) @map("following_count")
   tagCounterfeitFlagCount Int        @default(0) @map("tag_counterfeit_flag_count")
   hideFromLeaderboards Boolean       @default(false) @map("hide_from_leaderboards")
+  handleChangedAt      DateTime?     @map("handle_changed_at")
   lastSeenAt           DateTime?     @map("last_seen_at")
   createdAt            DateTime      @default(now()) @map("created_at")
   updatedAt            DateTime      @updatedAt @map("updated_at")

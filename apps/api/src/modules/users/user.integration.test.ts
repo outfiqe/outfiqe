@@ -12,13 +12,15 @@ import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
-const createUserWithAccessToken = async (overrides: { phone?: string | null } = {}) => {
+const createUserWithAccessToken = async (
+  overrides: { phone?: string | null; handle?: string } = {},
+) => {
   const suffix = randomUUID().slice(0, 8);
   const user = await prisma.user.create({
     data: {
       email: `user-${suffix}@outfiqe.test`,
       name: "Test User",
-      handle: `test-user-${suffix}`,
+      handle: overrides.handle ?? `testuser${suffix}`,
       phone: overrides.phone === undefined ? uniquePhone() : overrides.phone,
       passwordHash: await hashPassword("correct-horse-battery"),
       emailVerified: true,
@@ -241,6 +243,81 @@ describe("GET /api/users/:id (admin)", () => {
 
     expect(response.status).toBe(404);
     expect(response.body.code).toBe("USER_NOT_FOUND");
+  });
+});
+
+describe("GET /api/users/handle-availability", () => {
+  it("requires authentication", async () => {
+    const response = await request(testApp).get("/api/users/handle-availability?handle=freename");
+
+    expect(response.status).toBe(401);
+  });
+
+  it("rejects a handle shorter than the minimum length", async () => {
+    const { accessToken } = await createUserWithAccessToken();
+
+    const response = await request(testApp)
+      .get("/api/users/handle-availability?handle=ab")
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(422);
+  });
+
+  it("rejects a reserved handle", async () => {
+    const { accessToken } = await createUserWithAccessToken();
+
+    const response = await request(testApp)
+      .get("/api/users/handle-availability?handle=admin")
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(422);
+  });
+
+  it("normalizes uppercase input instead of rejecting it", async () => {
+    const { accessToken } = await createUserWithAccessToken();
+    const candidate = `FreeHandle${randomUUID().slice(0, 6)}`;
+
+    const response = await request(testApp)
+      .get(`/api/users/handle-availability?handle=${candidate}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual({ available: true });
+  });
+
+  it("reports a free handle as available", async () => {
+    const { accessToken } = await createUserWithAccessToken();
+    const candidate = `free${randomUUID().slice(0, 8)}`;
+
+    const response = await request(testApp)
+      .get(`/api/users/handle-availability?handle=${candidate}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual({ available: true });
+  });
+
+  it("reports another account's handle as unavailable", async () => {
+    const { user: existingOwner } = await createUserWithAccessToken();
+    const { accessToken } = await createUserWithAccessToken();
+
+    const response = await request(testApp)
+      .get(`/api/users/handle-availability?handle=${existingOwner.handle}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual({ available: false });
+  });
+
+  it("reports the caller's own current handle as available", async () => {
+    const { user, accessToken } = await createUserWithAccessToken();
+
+    const response = await request(testApp)
+      .get(`/api/users/handle-availability?handle=${user.handle}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual({ available: true });
   });
 });
 

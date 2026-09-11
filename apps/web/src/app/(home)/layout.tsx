@@ -30,8 +30,8 @@ const HomeLayout = ({
       <main>
         {hero}
         {taste}
-        {collections}
         {trending}
+        {collections}
         {creatorLooks}
         {newArrivals}
         <BrandCallout />

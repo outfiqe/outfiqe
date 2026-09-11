@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { handleField } from "#lib/handle.schemas.js";
 import { phoneSchema } from "#lib/phone.utils.js";
 
 export const createUserSchema = z.object({
@@ -25,7 +26,12 @@ export const updateOwnProfileSchema = z
   })
   .partial();
 
+export const handleAvailabilityQuerySchema = z.object({
+  handle: handleField,
+});
+
 export type CreateUserBody = z.infer<typeof createUserSchema>;
 export type UserIdParam = z.infer<typeof userIdParamSchema>;
 export type SearchUsersQuery = z.infer<typeof searchUsersQuerySchema>;
 export type UpdateOwnProfileBody = z.infer<typeof updateOwnProfileSchema>;
+export type HandleAvailabilityQuery = z.infer<typeof handleAvailabilityQuerySchema>;

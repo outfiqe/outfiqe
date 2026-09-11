@@ -3,7 +3,7 @@
 ## Purpose
 
 The public landing page. It is composed of independent sections (highlights carousel, taste
-explorer, collections, trending, creator looks, new arrivals, brand callout). Each data-driven
+explorer, trending, collections, creator looks, new arrivals, brand callout). Each data-driven
 section renders in its own [parallel route](https://nextjs.org/docs/app/building-your-application/routing/parallel-routes)
 slot so that a render failure in one section shows a small inline "try again" card for that
 section only, while every other section — and the header, footer and nav — keep working.
@@ -15,7 +15,7 @@ section only, while every other section — and the header, footer and nav — k
   data fetching, so the shell paints immediately and each slot streams in on its own.
 - `page.tsx` — the `children` slot. Holds only the page `metadata`; renders nothing.
 - `default.tsx` — `children` fallback for soft-navigation states; renders nothing.
-- `@hero`, `@collections`, `@trending`, `@creatorLooks`, `@newArrivals` — one slot per section.
+- `@hero`, `@trending`, `@collections`, `@creatorLooks`, `@newArrivals` — one slot per section.
   Each has `page.tsx` (renders the section component from `@/features/landing` or
   `@/features/collections`), `loading.tsx` (the streamed skeleton), `error.tsx` (the per-section
   error boundary, delegating to `@/components/HomeSectionError`), and `default.tsx` (re-exports

@@ -157,6 +157,113 @@ describe("PATCH /api/creators/me", () => {
   });
 });
 
+describe("PATCH /api/creators/me — username change", () => {
+  it("updates the handle and records when it changed", async () => {
+    const creator = await createApprovedCreator("Handle Changer", "handle-changer");
+    const nextHandle = `freshhandle${randomUUID().slice(0, 8)}`;
+
+    const response = await request(testApp)
+      .patch("/api/creators/me")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({ handle: nextHandle });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.handle).toBe(nextHandle);
+
+    const stored = await prisma.user.findUniqueOrThrow({ where: { id: creator.id } });
+    expect(stored.handle).toBe(nextHandle);
+    expect(stored.handleChangedAt).not.toBeNull();
+  });
+
+  it("rejects a handle already taken by another account", async () => {
+    const owner = await createApprovedCreator("Handle Owner", "handle-owner");
+    const challenger = await createApprovedCreator("Handle Challenger", "handle-challenger");
+    const takenHandle = `takenhandle${randomUUID().slice(0, 6)}`;
+    await prisma.user.update({ where: { id: owner.id }, data: { handle: takenHandle } });
+
+    const response = await request(testApp)
+      .patch("/api/creators/me")
+      .set("Authorization", authHeaderFor(challenger.id))
+      .send({ handle: takenHandle });
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("HANDLE_TAKEN");
+  });
+
+  it("rejects an invalid or reserved handle", async () => {
+    const creator = await createApprovedCreator("Format Rejector", "format-rejector");
+
+    const invalidFormat = await request(testApp)
+      .patch("/api/creators/me")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({ handle: "no spaces" });
+    expect(invalidFormat.status).toBe(422);
+
+    const reserved = await request(testApp)
+      .patch("/api/creators/me")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({ handle: "admin" });
+    expect(reserved.status).toBe(422);
+  });
+
+  it("blocks a second change within the 14-day cooldown", async () => {
+    const creator = await createApprovedCreator("Cooldown Tester", "cooldown-tester");
+    await prisma.user.update({
+      where: { id: creator.id },
+      data: { handleChangedAt: new Date() },
+    });
+
+    const response = await request(testApp)
+      .patch("/api/creators/me")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({ handle: `nexthandle${randomUUID().slice(0, 6)}` });
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("HANDLE_CHANGE_COOLING_DOWN");
+  });
+
+  it("lets other fields save during the cooldown when the handle is unchanged", async () => {
+    const creator = await createApprovedCreator("Same Handle Saver", "same-handle-saver");
+    const currentHandle = `samehandle${randomUUID().slice(0, 6)}`;
+    await prisma.user.update({
+      where: { id: creator.id },
+      data: { handle: currentHandle, handleChangedAt: new Date() },
+    });
+
+    const response = await request(testApp)
+      .patch("/api/creators/me")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({ handle: currentHandle, heightCm: 170 });
+
+    expect(response.status).toBe(200);
+    const stored = await prisma.user.findUniqueOrThrow({ where: { id: creator.id } });
+    expect(stored.heightCm).toBe(170);
+  });
+
+  it("lets exactly one of two concurrent claims on the same free handle win", async () => {
+    const first = await createApprovedCreator("Race First", "race-first");
+    const second = await createApprovedCreator("Race Second", "race-second");
+    const contestedHandle = `contested${randomUUID().slice(0, 8)}`;
+
+    const [firstResponse, secondResponse] = await Promise.all([
+      request(testApp)
+        .patch("/api/creators/me")
+        .set("Authorization", authHeaderFor(first.id))
+        .send({ handle: contestedHandle }),
+      request(testApp)
+        .patch("/api/creators/me")
+        .set("Authorization", authHeaderFor(second.id))
+        .send({ handle: contestedHandle }),
+    ]);
+
+    const statuses = [firstResponse.status, secondResponse.status].sort();
+    expect(statuses).toEqual([200, 409]);
+
+    const owners = await prisma.user.count({ where: { handle: contestedHandle } });
+    expect(owners).toBe(1);
+  });
+});
+
 describe("GET /api/creators/by-handle/:handle", () => {
   it("hides height from other viewers when the creator has not opted in", async () => {
     const creator = await createApprovedCreator("Hidden Height", "hidden-height", {
