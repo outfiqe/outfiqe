@@ -128,6 +128,13 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   true — `app.ts`). `env.ADMIN_URL` (used to build the invite email link) follows the same rule:
   it has to be the proxied, browser-facing origin, not a raw backing-server port, or the person
   clicking the link lands on a different origin than the one they're already logged into.
+- **`buildOrganizationAdminUrl` strips a trailing slash off the admin url/pathname before appending
+  `path`**, rather than trusting `env.ADMIN_URL` to always be trailing-slash-free and always carry a
+  path. Every local `.env` and `.env.test` sets `ADMIN_URL` with a path (`http://localhost:3000/admin`),
+  so this never surfaced there — but a bare or trailing-slash `ADMIN_URL` (`https://outfiqe.com`
+  instead of `https://outfiqe.com/admin`) silently produced a doubled-slash, wrong-path invite link
+  (`daraz.outfiqe.com//crm` instead of `daraz.outfiqe.com/admin/crm`) that a user actually hit in
+  production — caught from a real invite email, not a hypothetical.
 - **Creating a second organization** (`POST /api/crm/organizations`) is deliberately not
   tenant-scoped — there's no `Membership` to check permissions against before the org exists — so
   it's gated on `requirePlatformAccess` instead, registered before

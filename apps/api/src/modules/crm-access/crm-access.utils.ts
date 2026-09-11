@@ -78,17 +78,23 @@ export const toInviteSummary = (
   expiresAt: invite.expiresAt,
 });
 
+const joinUrlPath = (basePath: string, path: string): string =>
+  `${basePath.replace(/\/$/, "")}${path}`;
+
 export const buildOrganizationAdminUrl = (
   organization: Pick<OrganizationRecord, "subdomain" | "isPlatformOrg">,
   path: string,
   adminUrl: string,
   tenantBaseDomain: string,
 ): string => {
-  if (organization.isPlatformOrg) return `${adminUrl}${path}`;
+  if (organization.isPlatformOrg) return joinUrlPath(adminUrl, path);
 
   const { protocol, port, pathname } = new URL(adminUrl);
   const tenantPort = port ? `:${port}` : "";
-  return `${protocol}//${organization.subdomain}.${tenantBaseDomain}${tenantPort}${pathname}${path}`;
+  return joinUrlPath(
+    `${protocol}//${organization.subdomain}.${tenantBaseDomain}${tenantPort}${pathname}`,
+    path,
+  );
 };
 
 const selectableRolePermissionKeys = new Set(SELECTABLE_ROLE_PERMISSION_KEYS);
