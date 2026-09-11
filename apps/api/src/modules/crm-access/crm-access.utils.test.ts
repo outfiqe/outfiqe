@@ -14,6 +14,7 @@ import {
   canDeleteRole,
   extractSubdomain,
   findUnselectablePermissionKeys,
+  resolveTenantHostname,
   toInviteSummary,
   toMembershipSummary,
   toOrganizationWithViewerContext,
@@ -159,6 +160,28 @@ describe("buildOrganizationAdminUrl", () => {
         "outfiqe.com",
       ),
     ).toBe("https://daraz.outfiqe.com/crm");
+  });
+});
+
+describe("resolveTenantHostname", () => {
+  it("prefers the forwarded host over the literal request hostname when present", () => {
+    expect(resolveTenantHostname("everlane.outfiqe.com", "api.outfiqe.com")).toBe(
+      "everlane.outfiqe.com",
+    );
+  });
+
+  it("falls back to the request hostname when no forwarded host header was sent", () => {
+    expect(resolveTenantHostname(undefined, "everlane.outfiqe.com")).toBe("everlane.outfiqe.com");
+  });
+
+  it("takes only the first entry of a comma-separated forwarded host chain", () => {
+    expect(resolveTenantHostname("everlane.outfiqe.com, api.outfiqe.com", "api.outfiqe.com")).toBe(
+      "everlane.outfiqe.com",
+    );
+  });
+
+  it("falls back to the request hostname when the forwarded host header is blank", () => {
+    expect(resolveTenantHostname("", "everlane.outfiqe.com")).toBe("everlane.outfiqe.com");
   });
 });
 

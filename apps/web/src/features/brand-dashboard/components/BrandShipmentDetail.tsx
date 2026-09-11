@@ -36,7 +36,7 @@ type BrandShipmentDetailProps = {
   groupId: string;
 };
 
-const DetailSkeleton = () => (
+export const BrandShipmentDetailSkeleton = () => (
   <div role="status" aria-label="Loading" className="space-y-4">
     <Skeleton className="h-8 w-40 rounded-lg" />
     <Skeleton className="h-24 w-full rounded-2xl" />
@@ -202,7 +202,7 @@ export const BrandShipmentDetail = ({ groupId }: BrandShipmentDetailProps) => {
         {isError ? (
           <FormBanner>We couldn&apos;t load this shipment right now. Please try again.</FormBanner>
         ) : isPending || !shipment ? (
-          <DetailSkeleton />
+          <BrandShipmentDetailSkeleton />
         ) : (
           <div className="space-y-4">
             <div className="flex flex-wrap items-start justify-between gap-3">

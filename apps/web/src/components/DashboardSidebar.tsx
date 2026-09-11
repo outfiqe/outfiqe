@@ -17,6 +17,7 @@ import { cn } from "@/shared/lib/cn";
 
 import { SidebarPendingNavProvider } from "./SidebarPendingNavContext";
 import { useDashboardNav } from "./useDashboardNav";
+import { useIdlePrefetchSidebarLinks } from "./useIdlePrefetchSidebarLinks";
 import { useNextSidebarNavigation } from "./useNextSidebarNavigation";
 
 export const DashboardSidebar = () => {
@@ -25,6 +26,7 @@ export const DashboardSidebar = () => {
   const navigation = useNextSidebarNavigation();
   const { collapsed, toggle } = useSidebarCollapse("outfiqe:web-sidebar-collapsed");
   const { navItems, isBrand, accountLabel } = useDashboardNav();
+  useIdlePrefetchSidebarLinks(navItems.map((item) => item.href));
 
   if (state.status === AuthStatus.IDLE || state.status === AuthStatus.LOADING) {
     return (

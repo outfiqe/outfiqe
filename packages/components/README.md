@@ -122,3 +122,13 @@ tab of a section at once and each tab is a dynamic, auth-gated route, so the def
 prefetch fires a full server render for every tab the moment the shell mounts. `prefetch={false}`
 drops that on-mount stampede while `next/link` still warms a route on hover/touch, so an intended
 tab switch stays instant.
+
+Hover/touch alone still leaves a cold tap unwarmed — a touch tap gives the route far less lead
+time than a mouse hover does, and any click at all reaches a tab that's never been visited yet
+with zero warning. `apps/web`'s `useIdlePrefetchSidebarLinks`
+(`apps/web/src/components/useIdlePrefetchSidebarLinks.ts`) closes that gap without reintroducing
+the stampede: once the current page is idle (`requestIdleCallback`, staggered a few hundred ms
+apart per link), it calls `router.prefetch` on every sidebar destination in the background. By the
+time a real click lands, every tab is already warm, and the staggering means the browser never
+sees a burst of N simultaneous prefetch requests the way an eager on-mount `prefetch={true}` would
+produce.
