@@ -132,15 +132,19 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   a two-hop proxy chain, not one.** `apps/web`'s rewrite (`next.config.ts`) forwards `/api/*` to an
   absolute external `apiUrl`, and that outgoing request's literal `Host` becomes the API's own
   domain (`api.outfiqe.com`) — a **reserved** subdomain — not the tenant subdomain the browser is
-  actually on. Caddy (`deploy/Caddyfile`) sits in front of the API container as a second hop and
-  passes that mismatch straight through. `app.set("trust proxy", 1)` only trusts the immediate
-  connecting peer (Caddy) for `req.hostname`, which isn't enough on its own to guarantee the
-  original browser-facing host survives two hops — so `resolveTenant` reads `X-Forwarded-Host`
-  itself instead of depending on that. This was a real, live bug caught in production: every tenant
-  organization created after the wildcard subdomain went live hit "no CRM access" for its actual,
-  correctly-provisioned owner, because tenant resolution silently fell back to the default
-  organization every single time. Falls back to `req.hostname` when `X-Forwarded-Host` is absent
-  (local dev, `.env.test`, any single-hop setup), so nothing here changes outside the two-hop case.
+  actually on. `app.set("trust proxy", 1)` only trusts the immediate connecting peer for
+  `req.hostname`, which isn't enough on its own to guarantee the original browser-facing host
+  survives two hops — so `resolveTenant` reads `X-Forwarded-Host` itself instead of depending on
+  that. This was a real, live bug caught in production: every tenant organization created after the
+  wildcard subdomain went live hit "no CRM access" for its actual, correctly-provisioned owner,
+  because tenant resolution silently fell back to the default organization every single time. Falls
+  back to `req.hostname` when `X-Forwarded-Host` is absent (local dev, `.env.test`, any single-hop
+  setup), so nothing here changes outside the two-hop case. **This app-side fix alone did not fix
+  the bug** — Caddy (`deploy/Caddyfile`), the second hop, does not pass an incoming
+  `X-Forwarded-Host` through by default; it needs an explicit `header_up` line, or it overwrites the
+  header with its own `Host` before the API ever sees it. See `deploy/README.md`'s "Known gotchas"
+  for that half of the fix, and why a Caddyfile change needs an explicit reload on deploy, not just
+  a file sync, to actually take effect.
   **Trusting a forwarded host for routing doesn't weaken authorization** — `requirePermission`
   independently re-checks `findMembershipByUserAndOrg` against whatever organization actually
   resolves, so a forged header can only make a request resolve to the _wrong_ org (still a `403`),

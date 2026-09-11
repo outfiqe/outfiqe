@@ -117,6 +117,9 @@ jobs:
 
             docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
 
+            docker compose -f docker-compose.prod.yml --env-file .env.prod exec caddy \
+              caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+
       - name: Wait for readiness
         run: |
           for attempt in $(seq 1 30); do
