@@ -108,7 +108,8 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   (`OrganizationInvite.roleId` only ever points at a real `Role`). It's set once by the seed
   script or by `createOrganization`, and moved only through the ownership-transfer flow below.
 - **Tenant resolution is subdomain-first, single-org-fallback, resolved once per request.**
-  `resolveTenant` extracts a subdomain from `req.hostname` against `env.TENANT_BASE_DOMAIN`
+  `resolveTenant` extracts a subdomain from `resolveTenantHostname` (which prefers `X-Forwarded-Host`
+  over `req.hostname` when present — see the bullet below) against `env.TENANT_BASE_DOMAIN`
   (`extractSubdomain` — rejects malformed labels and a reserved list: `www`, `api`, `admin`, `app`,
   `crm`, etc.). If a subdomain is present, the organization **must** match it exactly — an unknown
   subdomain is a `404`, never a silent fallback to the default org, since that would let a
@@ -123,11 +124,29 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   to.** That's what lets `resolveTenant` see a real org subdomain from actual browser traffic, not
   just curl/tests — the request reaches the API through whichever proxy is in front of the app
   (`apps/web`'s `next.config.ts` rewrites in the normal dev/deploy setup, `apps/admin`'s own
-  `vite.config.ts` dev proxy when run standalone), both configured to forward the original Host,
-  which Express already reads via `req.hostname` once `app.set("trust proxy", 1)` is set (already
-  true — `app.ts`). `env.ADMIN_URL` (used to build the invite email link) follows the same rule:
-  it has to be the proxied, browser-facing origin, not a raw backing-server port, or the person
-  clicking the link lands on a different origin than the one they're already logged into.
+  `vite.config.ts` dev proxy when run standalone). `env.ADMIN_URL` (used to build the invite email
+  link) follows the same rule: it has to be the proxied, browser-facing origin, not a raw
+  backing-server port, or the person clicking the link lands on a different origin than the one
+  they're already logged into.
+- **`resolveTenantHostname` reads `X-Forwarded-Host` ahead of `req.hostname`, because production is
+  a two-hop proxy chain, not one.** `apps/web`'s rewrite (`next.config.ts`) forwards `/api/*` to an
+  absolute external `apiUrl`, and that outgoing request's literal `Host` becomes the API's own
+  domain (`api.outfiqe.com`) — a **reserved** subdomain — not the tenant subdomain the browser is
+  actually on. Caddy (`deploy/Caddyfile`) sits in front of the API container as a second hop and
+  passes that mismatch straight through. `app.set("trust proxy", 1)` only trusts the immediate
+  connecting peer (Caddy) for `req.hostname`, which isn't enough on its own to guarantee the
+  original browser-facing host survives two hops — so `resolveTenant` reads `X-Forwarded-Host`
+  itself instead of depending on that. This was a real, live bug caught in production: every tenant
+  organization created after the wildcard subdomain went live hit "no CRM access" for its actual,
+  correctly-provisioned owner, because tenant resolution silently fell back to the default
+  organization every single time. Falls back to `req.hostname` when `X-Forwarded-Host` is absent
+  (local dev, `.env.test`, any single-hop setup), so nothing here changes outside the two-hop case.
+  **Trusting a forwarded host for routing doesn't weaken authorization** — `requirePermission`
+  independently re-checks `findMembershipByUserAndOrg` against whatever organization actually
+  resolves, so a forged header can only make a request resolve to the _wrong_ org (still a `403`),
+  never grant access to an org the caller has no real membership in — proven directly in
+  `crm-access.integration.test.ts`'s "never grants cross-tenant access from a forged X-Forwarded-Host
+  header".
 - **`buildOrganizationAdminUrl` strips a trailing slash off the admin url/pathname before appending
   `path`**, rather than trusting `env.ADMIN_URL` to always be trailing-slash-free and always carry a
   path. Every local `.env` and `.env.test` sets `ADMIN_URL` with a path (`http://localhost:3000/admin`),

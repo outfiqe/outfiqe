@@ -106,3 +106,11 @@ export const canDeleteRole = (role: { isBuiltIn: boolean }, memberCount: number)
   !role.isBuiltIn && memberCount === 0;
 
 export const extractSubdomain = extractTenantSubdomain;
+
+export const resolveTenantHostname = (
+  forwardedHostHeader: string | undefined,
+  requestHostname: string,
+): string => {
+  const forwardedHost = forwardedHostHeader?.split(",")[0]?.trim();
+  return forwardedHost || requestHostname;
+};

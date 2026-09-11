@@ -8,14 +8,15 @@ import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { crmAccessRepository } from "./crm-access.repository.js";
 import { crmAccessService } from "./crm-access.service.js";
 import type { MembershipWithRole, OrganizationRecord } from "./crm-access.types.js";
-import { extractSubdomain } from "./crm-access.utils.js";
+import { extractSubdomain, resolveTenantHostname } from "./crm-access.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const FORBIDDEN_STATUS = 403;
 const FORBIDDEN_MESSAGE = "You do not have permission to do this.";
 
 export const resolveTenant = async (req: Request, res: Response, next: NextFunction) => {
-  const subdomain = extractSubdomain(req.hostname, env.TENANT_BASE_DOMAIN);
+  const hostname = resolveTenantHostname(req.get("x-forwarded-host"), req.hostname);
+  const subdomain = extractSubdomain(hostname, env.TENANT_BASE_DOMAIN);
 
   const organization = subdomain
     ? await crmAccessRepository.findOrganizationBySubdomain(subdomain)

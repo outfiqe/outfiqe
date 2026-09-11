@@ -692,6 +692,40 @@ describe("Tenant resolution via subdomain", () => {
     expect(response.status).toBe(200);
     expect(response.body.data.id).toBe(organization.id);
   });
+
+  it("prefers X-Forwarded-Host over the literal Host header, matching a real proxy chain", async () => {
+    const { organization, adminRole } = await seedOrganization({ subdomain: "proxied-corp" });
+    const staff = await createStaffUser("Proxied Owner");
+    const membership = await addMembership(organization.id, staff.id, adminRole.id);
+    await makeSuperAdmin(organization.id, membership.id);
+
+    const response = await request(testApp)
+      .get("/api/crm/organization")
+      .set("Host", "api.localhost")
+      .set("X-Forwarded-Host", "proxied-corp.localhost")
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.id).toBe(organization.id);
+  });
+
+  it("never grants cross-tenant access from a forged X-Forwarded-Host header", async () => {
+    const orgA = await seedOrganization({ subdomain: "forge-a" });
+    const orgB = await seedOrganization({ subdomain: "forge-b" });
+
+    const staffA = await createStaffUser("Forge A Owner");
+    const membershipA = await addMembership(orgA.organization.id, staffA.id, orgA.adminRole.id);
+    await makeSuperAdmin(orgA.organization.id, membershipA.id);
+
+    const response = await request(testApp)
+      .get("/api/crm/organization")
+      .set("Host", "forge-a.localhost")
+      .set("X-Forwarded-Host", "forge-b.localhost")
+      .set("Authorization", authHeaderFor(staffA.id));
+
+    expect(response.status).toBe(403);
+    expect(response.body.data?.id).not.toBe(orgB.organization.id);
+  });
 });
 
 describe("CRM invites", () => {
