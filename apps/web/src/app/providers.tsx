@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { type ReactNode, useState } from "react";
 
-import { AuthProvider } from "@/features/auth";
+import { AccountSuspensionSocketListener, AuthProvider } from "@/features/auth";
 import { GamificationSocketListener } from "@/features/creator-dashboard/components/GamificationSocketListener";
 import { ChatPanel, ChatPanelProvider, FloatingChatLauncher } from "@/features/messaging";
 import {
@@ -58,6 +58,7 @@ export const Providers = ({ children }: { children: ReactNode }) => {
         <PwaKillSwitchTeardown />
         <Toaster />
         <GamificationSocketListener />
+        <AccountSuspensionSocketListener />
         <DeferredMount>
           <AppUpdatePrompt />
           <InstallPrompt />

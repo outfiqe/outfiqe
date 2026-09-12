@@ -1,5 +1,6 @@
+import { mockNextRouter } from "@test/integration/mockRouter";
 import { renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "../context/AuthContext";
 import {
@@ -8,6 +9,15 @@ import {
   testUserSession,
 } from "../context/authTestWrapper";
 import { useCurrentUser } from "./useCurrentUser";
+
+vi.mock("next/navigation", () => ({
+  useRouter: vi.fn(),
+  useSearchParams: vi.fn(),
+}));
+
+beforeEach(() => {
+  mockNextRouter();
+});
 
 describe("useCurrentUser", () => {
   it("returns null before a session exists", () => {

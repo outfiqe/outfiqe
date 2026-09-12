@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   createContext,
   type Dispatch,
@@ -10,7 +11,11 @@ import {
 } from "react";
 
 import { clearAllOfflineData } from "@/features/pwa/utils/clearOfflineData";
-import { setAccessToken, setUnauthorizedHandler } from "@/shared/lib/apiClient";
+import {
+  setAccessToken,
+  setSuspendedHandler,
+  setUnauthorizedHandler,
+} from "@/shared/lib/apiClient";
 
 import { authApi } from "../api/authApi";
 import {
@@ -21,6 +26,7 @@ import {
   UserRole,
   type UserSession,
 } from "../types";
+import { buildAccountSuspendedPath } from "../utils/accountSuspended";
 import { authReducer, initialAuthState } from "./authReducer";
 
 // Mirrors the non-httpOnly companion cookie the API sets/clears alongside
@@ -45,6 +51,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(authReducer, initialAuthState);
+  const router = useRouter();
 
   useEffect(() => {
     setAccessToken(state.accessToken);
@@ -54,6 +61,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUnauthorizedHandler(() => {
       dispatch({ type: AuthActionType.AUTH_LOGOUT });
       void clearAllOfflineData();
+    });
+
+    setSuspendedHandler((details) => {
+      dispatch({ type: AuthActionType.AUTH_LOGOUT });
+      void clearAllOfflineData();
+      router.push(buildAccountSuspendedPath(details));
     });
 
     let cancelled = false;
@@ -82,8 +95,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       cancelled = true;
       setUnauthorizedHandler(null);
+      setSuspendedHandler(null);
     };
-  }, []);
+  }, [router]);
 
   const logout = async (): Promise<void> => {
     try {
