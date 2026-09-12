@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/apiClient";
 
 import {
+  type Organization,
   type OrganizationCreationSuggestion,
   organizationCreationSuggestionSchema,
   type OrganizationListPage,
