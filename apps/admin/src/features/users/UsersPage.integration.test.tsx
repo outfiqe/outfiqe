@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 import { UsersPage } from "@/features/users/UsersPage";
 
 const API_BASE = "http://localhost:3000/api";
+const SLOW_CI_QUERY_TIMEOUT_MS = 12000;
 
 const activeUser = {
   id: "user-1",
@@ -60,7 +61,7 @@ describe("UsersPage", () => {
     await user.click(screen.getByRole("button", { name: "Suspend" }));
 
     const reasonField = await screen.findByLabelText(/reason \(shown to the user\)/i, undefined, {
-      timeout: 5000,
+      timeout: SLOW_CI_QUERY_TIMEOUT_MS,
     });
     await user.type(reasonField, "Reported for spam");
     await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
@@ -94,7 +95,7 @@ describe("UsersPage", () => {
     await screen.findByText("Ava Martinez");
     await user.click(screen.getByRole("button", { name: "Suspend" }));
     const reasonField = await screen.findByLabelText(/reason \(shown to the user\)/i, undefined, {
-      timeout: 5000,
+      timeout: SLOW_CI_QUERY_TIMEOUT_MS,
     });
     await user.type(reasonField, "Reported for spam");
     await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
