@@ -40,3 +40,11 @@ queue exists or was asked for — see the "Moderation" decision in the review sy
 there's nothing to triage in bulk, only something to look up and act on when a specific review is
 flagged (e.g., reported to support outside this app). A search-then-moderate flow fits that shape
 better than a queue with nothing reliable to sort it by.
+
+**Deleting a review asks for confirmation and surfaces a real error on failure**, via the shared
+`ConfirmModal` (`apps/admin/src/components/ConfirmModal.tsx`) and `toast.error(getErrorMessage(...))`
+— the same pattern every other destructive admin action in this app already uses (delivery zones,
+withdraw requests, platform-commission exemptions). A found-in-audit gap: this page originally
+deleted on a single click with no confirmation and no failure feedback, so a mis-click destroyed a
+review with no undo, and a failed delete (a race with another admin, a session hiccup) re-enabled
+the button with zero signal anything went wrong.
