@@ -440,6 +440,38 @@ describe("CreatorProfile title badge", () => {
     expect(screen.getByText("Outfiqe OG")).toBeInTheDocument();
     expect(container.querySelector(".animate-avatar-ring-spin")).not.toBeInTheDocument();
   });
+
+  it("tints the title pill and avatar ring with a studio badge's background-layer fill, not the legacy-only fallback color", () => {
+    const studioTitleBadge = {
+      id: "badge-studio",
+      name: "Studio Badge",
+      icon: "🌀",
+      designConfig: {
+        version: 2 as const,
+        layers: [
+          {
+            id: "bg",
+            type: "background" as const,
+            shape: "capsule" as const,
+            fill: "#671877",
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+          },
+        ],
+      },
+      rarity: "EXCLUSIVE" as const,
+      showProfileRing: true,
+    };
+
+    const { container } = renderProfile(buildCreator({ titleBadge: studioTitleBadge }));
+
+    expect(screen.getByText("Studio Badge")).toHaveStyle({ color: "#671877" });
+
+    const ring = container.querySelector(".animate-avatar-ring-spin") as HTMLElement;
+    expect(ring.style.background).toContain("rgb(103, 24, 119)");
+  });
 });
 
 describe("CreatorProfile edit flow", () => {
@@ -527,6 +559,210 @@ describe("CreatorProfile edit flow", () => {
     await user.type(heightInput, "170");
 
     expect(heightInput).toHaveValue(170);
+  });
+});
+
+describe("CreatorProfile edit flow — username change", () => {
+  const patchProfileWithHandle = () =>
+    http.patch("/api/creators/me", async ({ request }) => {
+      const body = (await request.json()) as { handle?: string };
+      return HttpResponse.json({
+        success: true,
+        message: "Profile updated.",
+        data: {
+          userId: "creator-9",
+          name: "Ava Martinez",
+          email: "ava@outfiqe.test",
+          handle: body.handle ?? "ava",
+          avatarUrl: null,
+          heightCm: null,
+          showHeight: false,
+          hideFromLeaderboards: false,
+          isCreator: true,
+          creatorStatus: "APPROVED",
+        },
+      });
+    });
+
+  it("disables Save immediately for a badly formatted handle, without calling the availability endpoint", async () => {
+    const availabilityCheck = vi.fn();
+    mswServer.use(
+      http.get("/api/users/handle-availability", () => {
+        availabilityCheck();
+        return HttpResponse.json({
+          success: true,
+          message: "Available.",
+          data: { available: true },
+        });
+      }),
+    );
+
+    mockAuth("creator-9");
+    const user = userEvent.setup();
+    renderProfile(buildCreator({ handle: "ava" }));
+
+    await user.click(screen.getByRole("button", { name: "Edit profile" }));
+    const handleInput = screen.getByLabelText("Username");
+    await user.clear(handleInput);
+    await user.type(handleInput, "AB");
+
+    expect(
+      screen.getByText(
+        "3-20 characters, start with a letter, lowercase letters/numbers/underscores only",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    expect(availabilityCheck).not.toHaveBeenCalled();
+  });
+
+  it("disables Save while checking a new handle, then enables it once the check reports available", async () => {
+    mswServer.use(
+      http.get("/api/users/handle-availability", () =>
+        HttpResponse.json({ success: true, message: "Available.", data: { available: true } }),
+      ),
+    );
+
+    mockAuth("creator-9");
+    const user = userEvent.setup();
+    renderProfile(buildCreator({ handle: "ava" }));
+
+    await user.click(screen.getByRole("button", { name: "Edit profile" }));
+    const handleInput = screen.getByLabelText("Username");
+    await user.clear(handleInput);
+    await user.type(handleInput, "avamartinez");
+
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+
+    await waitFor(() => expect(screen.getByText("Username is available")).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
+  });
+
+  it("disables Save and shows a taken message when the handle is already in use", async () => {
+    mswServer.use(
+      http.get("/api/users/handle-availability", () =>
+        HttpResponse.json({ success: true, message: "Taken.", data: { available: false } }),
+      ),
+    );
+
+    mockAuth("creator-9");
+    const user = userEvent.setup();
+    renderProfile(buildCreator({ handle: "ava" }));
+
+    await user.click(screen.getByRole("button", { name: "Edit profile" }));
+    const handleInput = screen.getByLabelText("Username");
+    await user.clear(handleInput);
+    await user.type(handleInput, "avamartinez");
+
+    await waitFor(() =>
+      expect(screen.getByText("That username is already taken")).toBeInTheDocument(),
+    );
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+  });
+
+  it("saves the new handle, updates the @handle display, and calls updateUser", async () => {
+    mswServer.use(
+      http.get("/api/users/handle-availability", () =>
+        HttpResponse.json({ success: true, message: "Available.", data: { available: true } }),
+      ),
+      patchProfileWithHandle(),
+    );
+
+    const updateUser = vi.fn();
+    vi.mocked(useAuth).mockReturnValue({
+      isAuthenticated: true,
+      isAuthResolved: true,
+      isBrandOwner: false,
+      isAdmin: false,
+      isCreator: false,
+      isShopper: true,
+      hasCrmAccess: false,
+      state: {
+        user: buildUserSession("creator-9"),
+        accessToken: "test-access-token",
+        status: AuthStatus.AUTHENTICATED,
+      },
+      dispatch: vi.fn(),
+      logout: vi.fn(),
+      updateUser,
+    });
+
+    const user = userEvent.setup();
+    renderProfile(buildCreator({ handle: "ava" }));
+
+    await user.click(screen.getByRole("button", { name: "Edit profile" }));
+    const handleInput = screen.getByLabelText("Username");
+    await user.clear(handleInput);
+    await user.type(handleInput, "avamartinez");
+
+    await waitFor(() => expect(screen.getByText("Username is available")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByText("@avamartinez")).toBeInTheDocument();
+    expect(updateUser).toHaveBeenCalledWith(expect.objectContaining({ handle: "avamartinez" }));
+  });
+
+  it("replaces the URL with the new handle after a successful change on the /creator/[handle] route", async () => {
+    mswServer.use(
+      http.get("/api/users/handle-availability", () =>
+        HttpResponse.json({ success: true, message: "Available.", data: { available: true } }),
+      ),
+      patchProfileWithHandle(),
+    );
+
+    const originalLocation = window.location;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, pathname: "/creator/ava" },
+    });
+
+    mockAuth("creator-9");
+    const user = userEvent.setup();
+    renderProfile(buildCreator({ handle: "ava" }));
+
+    await user.click(screen.getByRole("button", { name: "Edit profile" }));
+    const handleInput = screen.getByLabelText("Username");
+    await user.clear(handleInput);
+    await user.type(handleInput, "avamartinez");
+
+    await waitFor(() => expect(screen.getByText("Username is available")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/creator/avamartinez"));
+
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+  });
+
+  it("doesn't navigate after a successful change when there's no handle in the current URL", async () => {
+    mswServer.use(
+      http.get("/api/users/handle-availability", () =>
+        HttpResponse.json({ success: true, message: "Available.", data: { available: true } }),
+      ),
+      patchProfileWithHandle(),
+    );
+
+    const originalLocation = window.location;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, pathname: "/profile" },
+    });
+
+    mockAuth("creator-9");
+    const user = userEvent.setup();
+    renderProfile(buildCreator({ handle: "ava" }));
+
+    await user.click(screen.getByRole("button", { name: "Edit profile" }));
+    const handleInput = screen.getByLabelText("Username");
+    await user.clear(handleInput);
+    await user.type(handleInput, "avamartinez");
+
+    await waitFor(() => expect(screen.getByText("Username is available")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(replace).not.toHaveBeenCalled();
+
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
   });
 });
 

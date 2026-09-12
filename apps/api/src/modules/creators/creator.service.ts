@@ -4,6 +4,7 @@ import { creatorApprovedTemplate, creatorRejectedTemplate } from "#email-templat
 import { CreatorStatus, FollowTargetType } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
+import { uniqueConstraintTargetIncludes } from "#lib/prisma.utils.js";
 import { toResponsiveImage } from "#lib/responsive-image.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -14,6 +15,7 @@ import { imageProcessingService } from "#modules/image-processing/image-processi
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
+import { userService } from "#modules/users/user.service.js";
 import type { UserRecord } from "#modules/users/user.types.js";
 import { cacheService } from "#redis/cache.service.js";
 import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
@@ -38,6 +40,9 @@ import { toProfile, toSearchResult } from "./creator.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
+
+const HANDLE_CHANGE_COOLDOWN_DAYS = 14;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
 const AUTOCOMPLETE_CACHE_NAMESPACE = "creator-autocomplete";
@@ -64,6 +69,19 @@ const requirePendingCreator = async (userId: string): Promise<UserRecord> => {
     );
   }
   return user;
+};
+
+const assertHandleChangeAllowed = (handleChangedAt: Date | null): void => {
+  if (!handleChangedAt) return;
+
+  const eligibleAt = new Date(handleChangedAt.getTime() + HANDLE_CHANGE_COOLDOWN_DAYS * MS_PER_DAY);
+  if (eligibleAt > new Date()) {
+    throw new AppError(
+      "HANDLE_CHANGE_COOLING_DOWN",
+      `You can change your username again on ${eligibleAt.toISOString().slice(0, 10)}.`,
+      CONFLICT_STATUS,
+    );
+  }
 };
 
 export const creatorService = {
@@ -94,11 +112,30 @@ export const creatorService = {
   },
 
   async updateMe(userId: string, input: UpdateCreatorProfileBody): Promise<CreatorProfile> {
-    await requireUser(userId);
+    const user = await requireUser(userId);
     if (input.avatarImageAssetId) {
       await imageProcessingService.assertAssetsOwnedBy([input.avatarImageAssetId], userId);
     }
-    const updated = await userRepository.updateProfile(userId, input);
+
+    let handleChangedAt: Date | undefined;
+    if (input.handle !== undefined && input.handle !== user.handle) {
+      assertHandleChangeAllowed(user.handleChangedAt);
+      await userService.assertHandleAvailable(input.handle, userId);
+      handleChangedAt = new Date();
+    }
+
+    let updated: UserRecord;
+    try {
+      updated = await userRepository.updateProfile(userId, {
+        ...input,
+        ...(handleChangedAt ? { handleChangedAt } : {}),
+      });
+    } catch (error) {
+      if (uniqueConstraintTargetIncludes(error, "handle")) {
+        throw new AppError("HANDLE_TAKEN", "That username is already taken.", CONFLICT_STATUS);
+      }
+      throw error;
+    }
     return toProfile(updated);
   },
 

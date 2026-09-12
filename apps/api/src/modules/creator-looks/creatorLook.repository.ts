@@ -596,6 +596,32 @@ const cacheForYouSnapshot = async (sessionId: string, ids: string[]): Promise<vo
   }
 };
 
+const forYouStableRankingKey = (viewerId: string) =>
+  redisKeys.cache("explore-for-you-stable-ranking", viewerId);
+
+const resolveForYouCandidateIds = async (
+  viewerId: string | undefined,
+  followedCreatorIds: string[],
+): Promise<string[]> => {
+  if (!viewerId) return buildTrendingSnapshot();
+
+  const stableKey = forYouStableRankingKey(viewerId);
+  try {
+    const stable = await cacheService.get<string[]>(stableKey);
+    if (stable) return stable;
+  } catch (error) {
+    logger.warn(`Cache read failed for "${stableKey}": ${describeError(error)}`);
+  }
+
+  const fresh = await buildPersonalizedSnapshot(viewerId, followedCreatorIds);
+  try {
+    await cacheService.set(stableKey, fresh, CACHE_TTL.EXPLORE_FOR_YOU_STABLE_RANKING);
+  } catch (error) {
+    logger.warn(`Cache write failed for "${stableKey}": ${describeError(error)}`);
+  }
+  return fresh;
+};
+
 const listForYouIds = async ({
   cursor,
   limit,
@@ -620,9 +646,7 @@ const listForYouIds = async ({
   } else {
     sessionId = randomUUID();
     offset = 0;
-    ids = viewerId
-      ? await buildPersonalizedSnapshot(viewerId, followedCreatorIds)
-      : await buildTrendingSnapshot();
+    ids = await resolveForYouCandidateIds(viewerId, followedCreatorIds);
     await cacheForYouSnapshot(sessionId, ids);
   }
 

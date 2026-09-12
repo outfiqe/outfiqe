@@ -20,6 +20,7 @@ export interface UserRecord {
   followingCount: number;
   tagCounterfeitFlagCount: number;
   hideFromLeaderboards: boolean;
+  handleChangedAt: Date | null;
   lastSeenAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -38,12 +39,14 @@ export type UpdateUserProfileInput = Partial<
   Pick<
     UserRecord,
     | "name"
+    | "handle"
     | "phone"
     | "avatarUrl"
     | "avatarImageAssetId"
     | "heightCm"
     | "showHeight"
     | "hideFromLeaderboards"
+    | "handleChangedAt"
   >
 >;
 

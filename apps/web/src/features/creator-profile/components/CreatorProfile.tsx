@@ -19,6 +19,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import type { FeaturedBadge } from "@/features/creator-dashboard/api/badgeSchemas";
 import { EditPostModal } from "@/features/creator-dashboard/components/EditPostModal";
 import { useDeleteLook } from "@/features/creator-dashboard/hooks/useDeleteLook";
+import { useHandleAvailability } from "@/features/creator-dashboard/hooks/useHandleAvailability";
 import { useUpdateCreatorProfile } from "@/features/creator-dashboard/hooks/useUpdateCreatorProfile";
 import { AddPostButton, PostDetailModal, usePublicLook } from "@/features/explore";
 import { useChatPanel } from "@/features/messaging";
@@ -48,8 +49,11 @@ const TITLE_BADGE_FALLBACK_COLOR = "#146c78";
 const LOOK_QUERY_PARAM = "look";
 const EDIT_QUERY_PARAM = "edit";
 
-const badgeAccentColor = (designConfig: FeaturedBadge["designConfig"]): string =>
-  "primaryColor" in designConfig ? designConfig.primaryColor : TITLE_BADGE_FALLBACK_COLOR;
+const badgeAccentColor = (designConfig: FeaturedBadge["designConfig"]): string => {
+  if ("primaryColor" in designConfig) return designConfig.primaryColor;
+  const backgroundLayer = designConfig.layers.find((layer) => layer.type === "background");
+  return backgroundLayer?.fill ?? TITLE_BADGE_FALLBACK_COLOR;
+};
 
 export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const router = useRouter();
@@ -59,21 +63,13 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const { openConversationWith, isStartingConversation } = useChatPanel();
   const updateProfile = useUpdateCreatorProfile();
   const deleteLook = useDeleteLook();
-  const {
-    handle,
-    userId,
-    creatorStatus,
-    taggedPiecesCount,
-    followingCount,
-    featuredBadges,
-    titleBadge,
-  } = creator;
+  const { userId, creatorStatus, taggedPiecesCount, followingCount, featuredBadges, titleBadge } =
+    creator;
   const titleBadgeAccentColor = titleBadge ? badgeAccentColor(titleBadge.designConfig) : null;
   const showsAvatarRing = titleBadge?.showProfileRing ?? false;
-  const looks = useInfiniteCreatorLooks(handle);
-  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = looks;
 
   const [name, setName] = useState(creator.name);
+  const [handle, setHandle] = useState(creator.handle);
   const [avatarUrl, setAvatarUrl] = useState(creator.avatarUrl);
   const [heightCm, setHeightCm] = useState(creator.heightCm);
   const [showHeight, setShowHeight] = useState(creator.showHeight);
@@ -85,6 +81,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const [followingModalOpen, setFollowingModalOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [draftName, setDraftName] = useState(name);
+  const [draftHandle, setDraftHandle] = useState(handle);
   const [draftAvatarUrl, setDraftAvatarUrl] = useState(avatarUrl);
   const [draftAvatarImageAssetId, setDraftAvatarImageAssetId] = useState<string | null>(null);
   const [draftHeightCm, setDraftHeightCm] = useState(heightCm);
@@ -93,6 +90,10 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const [editingLookId, setEditingLookId] = useState<string | null>(null);
   const [deletingLookId, setDeletingLookId] = useState<string | null>(null);
   const isOwnProfile = state.user?.id === userId;
+
+  const looks = useInfiniteCreatorLooks(handle);
+  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = looks;
+  const handleAvailability = useHandleAvailability(draftHandle, handle);
 
   const detailPostId = searchParams.get(LOOK_QUERY_PARAM);
   const editParamLookId = isOwnProfile ? searchParams.get(EDIT_QUERY_PARAM) : null;
@@ -165,6 +166,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
 
   const openEdit = () => {
     setDraftName(name);
+    setDraftHandle(handle);
     setDraftAvatarUrl(avatarUrl);
     setDraftAvatarImageAssetId(null);
     setDraftHeightCm(heightCm);
@@ -173,9 +175,12 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
     setEditOpen(true);
   };
 
+  const handleChanged = draftHandle.trim().toLowerCase() !== handle;
+  const canSaveHandle = !handleChanged || handleAvailability === "available";
+
   const saveEdit = () => {
     const trimmed = draftName.trim();
-    if (!trimmed) return;
+    if (!trimmed || !canSaveHandle) return;
 
     const avatarChanged = draftAvatarUrl !== avatarUrl;
 
@@ -185,6 +190,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
         heightCm: draftHeightCm,
         showHeight: draftShowHeight,
         hideFromLeaderboards: draftHideFromLeaderboards,
+        ...(handleChanged ? { handle: draftHandle.trim().toLowerCase() } : {}),
         ...(avatarChanged
           ? { avatarUrl: draftAvatarUrl, avatarImageAssetId: draftAvatarImageAssetId }
           : {}),
@@ -192,13 +198,17 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
       {
         onSuccess: (updated) => {
           setName(updated.name);
+          setHandle(updated.handle);
           setAvatarUrl(updated.avatarUrl);
           setHeightCm(updated.heightCm);
           setShowHeight(updated.showHeight);
           setHideFromLeaderboards(updated.hideFromLeaderboards);
-          updateUser({ name: updated.name, avatarUrl: updated.avatarUrl });
+          updateUser({ name: updated.name, handle: updated.handle, avatarUrl: updated.avatarUrl });
           setEditOpen(false);
           toast.success("Profile updated");
+          if (window.location.pathname.startsWith("/creator/")) {
+            router.replace(`/creator/${updated.handle}`);
+          }
         },
         onError: (error) => toast.error(getErrorMessage(error)),
       },
@@ -467,7 +477,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
               <Button variant="outline" onClick={() => setEditOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={saveEdit} disabled={updateProfile.isPending}>
+              <Button onClick={saveEdit} disabled={updateProfile.isPending || !canSaveHandle}>
                 {updateProfile.isPending ? "Saving…" : "Save"}
               </Button>
             </div>
@@ -499,6 +509,43 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
                 value={draftName}
                 onChange={(event) => setDraftName(event.target.value)}
               />
+            </div>
+            <div>
+              <label
+                htmlFor="creator-profile-edit-handle"
+                className="mb-1.5 block text-sm font-medium text-foreground"
+              >
+                Username
+              </label>
+              <div className="relative">
+                <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-sm text-muted-foreground">
+                  @
+                </span>
+                <Input
+                  id="creator-profile-edit-handle"
+                  value={draftHandle}
+                  onChange={(event) => setDraftHandle(event.target.value)}
+                  aria-invalid={handleAvailability === "taken" || handleAvailability === "invalid"}
+                  className="pl-7"
+                />
+              </div>
+              {handleAvailability !== "idle" && (
+                <p
+                  className={cn(
+                    "mt-1.5 text-[13px]",
+                    handleAvailability === "available" && "text-success",
+                    (handleAvailability === "taken" || handleAvailability === "invalid") &&
+                      "text-destructive",
+                    handleAvailability === "checking" && "text-muted-foreground",
+                  )}
+                >
+                  {handleAvailability === "checking" && "Checking availability…"}
+                  {handleAvailability === "available" && "Username is available"}
+                  {handleAvailability === "taken" && "That username is already taken"}
+                  {handleAvailability === "invalid" &&
+                    "3-20 characters, start with a letter, lowercase letters/numbers/underscores only"}
+                </p>
+              )}
             </div>
             <div>
               <label
