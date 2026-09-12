@@ -18,8 +18,6 @@ client-side session/user context the rest of the app reads.
   the full-page-navigation `start`/`link/start` redirects (`buildOAuthStartUrl`/
   `buildOAuthLinkStartUrl` — never `fetch` calls, since those endpoints are browser navigations),
   plus real API calls for `confirmLink`, `unlink`, and `getLinkedAccounts`.
-- `api/profileApi.ts` — `PATCH /users/me` (currently only used to add a phone number from the
-  Security page's nudge; not a general profile-editing surface).
 - `components/` — the form/screen components: `LoginForm`, `RegisterForm`, `BrandRegisterForm`,
   `ForgotPasswordForm`, `ResetPasswordForm`, `VerifyEmailScreen`, plus their success/loading/
   expired sub-states; `ChangePasswordCard/` (the signed-in "change your password" form on Account

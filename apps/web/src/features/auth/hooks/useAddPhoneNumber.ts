@@ -2,9 +2,9 @@
 
 import { useMutation } from "@tanstack/react-query";
 
+import { profileApi } from "@/features/users/api/profileApi";
 import type { ApiClientError } from "@/shared/lib/apiClient";
 
-import { profileApi } from "../api/profileApi";
 import { useAuth } from "../context/AuthContext";
 import type { AddPhoneNumberInput } from "../schemas/addPhoneNumber.schema";
 

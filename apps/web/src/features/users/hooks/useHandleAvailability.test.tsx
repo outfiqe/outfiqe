@@ -3,11 +3,11 @@ import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { creatorDashboardApi } from "../api/creatorDashboardApi";
+import { profileApi } from "../api/profileApi";
 import { useHandleAvailability } from "./useHandleAvailability";
 
-vi.mock("../api/creatorDashboardApi", () => ({
-  creatorDashboardApi: {
+vi.mock("../api/profileApi", () => ({
+  profileApi: {
     checkHandleAvailability: vi.fn(),
   },
 }));
@@ -36,7 +36,7 @@ describe("useHandleAvailability", () => {
     });
 
     expect(result.current).toBe("invalid");
-    expect(creatorDashboardApi.checkHandleAvailability).not.toHaveBeenCalled();
+    expect(profileApi.checkHandleAvailability).not.toHaveBeenCalled();
   });
 
   it("stays idle and never calls the endpoint when the candidate equals the current handle", async () => {
@@ -48,11 +48,11 @@ describe("useHandleAvailability", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 350));
 
-    expect(creatorDashboardApi.checkHandleAvailability).not.toHaveBeenCalled();
+    expect(profileApi.checkHandleAvailability).not.toHaveBeenCalled();
   });
 
   it("checks availability after the debounce for a valid, changed candidate and reports the result", async () => {
-    vi.mocked(creatorDashboardApi.checkHandleAvailability).mockResolvedValue({ available: true });
+    vi.mocked(profileApi.checkHandleAvailability).mockResolvedValue({ available: true });
 
     const { result, rerender } = renderHook(
       ({ draftHandle }) => useHandleAvailability(draftHandle, "currenthandle"),
@@ -64,14 +64,14 @@ describe("useHandleAvailability", () => {
     rerender({ draftHandle: "newhandle" });
 
     expect(result.current).toBe("checking");
-    expect(creatorDashboardApi.checkHandleAvailability).not.toHaveBeenCalled();
+    expect(profileApi.checkHandleAvailability).not.toHaveBeenCalled();
 
     await waitFor(() => expect(result.current).toBe("available"), { timeout: 2000 });
-    expect(creatorDashboardApi.checkHandleAvailability).toHaveBeenCalledWith("newhandle");
+    expect(profileApi.checkHandleAvailability).toHaveBeenCalledWith("newhandle");
   });
 
   it("reports taken when the debounced check comes back unavailable", async () => {
-    vi.mocked(creatorDashboardApi.checkHandleAvailability).mockResolvedValue({ available: false });
+    vi.mocked(profileApi.checkHandleAvailability).mockResolvedValue({ available: false });
 
     const { result, rerender } = renderHook(
       ({ draftHandle }) => useHandleAvailability(draftHandle, "currenthandle"),

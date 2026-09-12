@@ -3,12 +3,8 @@
 import { useDebouncedValue } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 
-import { creatorDashboardApi } from "../api/creatorDashboardApi";
-import {
-  HANDLE_MAX_LENGTH,
-  HANDLE_MIN_LENGTH,
-  HANDLE_PATTERN,
-} from "../api/creatorDashboardSchemas";
+import { profileApi } from "../api/profileApi";
+import { HANDLE_MAX_LENGTH, HANDLE_MIN_LENGTH, HANDLE_PATTERN } from "../api/userProfileSchemas";
 
 const HANDLE_AVAILABILITY_DEBOUNCE_MS = 300;
 
@@ -32,7 +28,7 @@ export const useHandleAvailability = (draftHandle: string, currentHandle: string
 
   const { data, isFetching } = useQuery({
     queryKey: ["handle-availability", debouncedDraft],
-    queryFn: () => creatorDashboardApi.checkHandleAvailability(debouncedDraft),
+    queryFn: () => profileApi.checkHandleAvailability(debouncedDraft),
     enabled: shouldCheck,
     staleTime: HANDLE_AVAILABILITY_DEBOUNCE_MS,
   });

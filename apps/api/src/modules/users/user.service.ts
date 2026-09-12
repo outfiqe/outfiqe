@@ -1,19 +1,24 @@
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { buildCursorPage, type CursorPage } from "#lib/pagination.utils.js";
 import { hashPassword } from "#lib/password.utils.js";
+import { uniqueConstraintTargetIncludes } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 
 import { userRepository } from "./user.repository.js";
 import type {
   CreateUserInput,
   PublicUser,
   UpdateUserProfileInput,
+  UserRecord,
   UserSearchResult,
 } from "./user.types.js";
 import { toPublicUser } from "./user.utils.js";
 
 const CONFLICT_STATUS = 409;
 const USER_SEARCH_LIMIT = 10;
+const HANDLE_CHANGE_COOLDOWN_DAYS = 14;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const assertHandleAvailable = async (handle: string, excludingUserId: string): Promise<void> => {
   const existing = await userRepository.findByHandle(handle);
@@ -35,9 +40,45 @@ const checkHandleAvailability = async (
   }
 };
 
+const assertHandleChangeAllowed = (handleChangedAt: Date | null): void => {
+  if (!handleChangedAt) return;
+
+  const eligibleAt = new Date(handleChangedAt.getTime() + HANDLE_CHANGE_COOLDOWN_DAYS * MS_PER_DAY);
+  if (eligibleAt > new Date()) {
+    throw new AppError(
+      "HANDLE_CHANGE_COOLING_DOWN",
+      `You can change your username again on ${eligibleAt.toISOString().slice(0, 10)}.`,
+      CONFLICT_STATUS,
+    );
+  }
+};
+
+const prepareHandleChange = async (
+  user: UserRecord,
+  handle: string | undefined,
+): Promise<Date | undefined> => {
+  if (handle === undefined || handle === user.handle) return undefined;
+  assertHandleChangeAllowed(user.handleChangedAt);
+  await assertHandleAvailable(handle, user.id);
+  return new Date();
+};
+
+const writeProfile = async (userId: string, input: UpdateUserProfileInput): Promise<UserRecord> => {
+  try {
+    return await userRepository.updateProfile(userId, input);
+  } catch (error) {
+    if (uniqueConstraintTargetIncludes(error, "handle")) {
+      throw new AppError("HANDLE_TAKEN", "That username is already taken.", CONFLICT_STATUS);
+    }
+    throw error;
+  }
+};
+
 export const userService = {
   assertHandleAvailable,
   checkHandleAvailability,
+  prepareHandleChange,
+  writeProfile,
 
   async createUser(input: CreateUserInput): Promise<PublicUser> {
     const existing = await userRepository.findByEmail(input.email);
@@ -85,7 +126,21 @@ export const userService = {
       }
     }
 
-    const updated = await userRepository.updateProfile(id, input);
+    if (input.avatarImageAssetId) {
+      await imageProcessingService.assertAssetsOwnedBy([input.avatarImageAssetId], id);
+    }
+
+    let handleChangedAt: Date | undefined;
+    if (input.handle !== undefined) {
+      const user = await userRepository.findById(id);
+      if (!user) throw new AppError("USER_NOT_FOUND", "User not found", 404);
+      handleChangedAt = await prepareHandleChange(user, input.handle);
+    }
+
+    const updated = await writeProfile(id, {
+      ...input,
+      ...(handleChangedAt ? { handleChangedAt } : {}),
+    });
     return toPublicUser(updated);
   },
 };

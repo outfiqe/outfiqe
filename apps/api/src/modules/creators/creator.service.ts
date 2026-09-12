@@ -4,7 +4,6 @@ import { creatorApprovedTemplate, creatorRejectedTemplate } from "#email-templat
 import { CreatorStatus, FollowTargetType } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
-import { uniqueConstraintTargetIncludes } from "#lib/prisma.utils.js";
 import { toResponsiveImage } from "#lib/responsive-image.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -41,9 +40,6 @@ import { toProfile, toSearchResult } from "./creator.utils.js";
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
 
-const HANDLE_CHANGE_COOLDOWN_DAYS = 14;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
 const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
 const AUTOCOMPLETE_CACHE_NAMESPACE = "creator-autocomplete";
 const MS_PER_SECOND = 1000;
@@ -69,19 +65,6 @@ const requirePendingCreator = async (userId: string): Promise<UserRecord> => {
     );
   }
   return user;
-};
-
-const assertHandleChangeAllowed = (handleChangedAt: Date | null): void => {
-  if (!handleChangedAt) return;
-
-  const eligibleAt = new Date(handleChangedAt.getTime() + HANDLE_CHANGE_COOLDOWN_DAYS * MS_PER_DAY);
-  if (eligibleAt > new Date()) {
-    throw new AppError(
-      "HANDLE_CHANGE_COOLING_DOWN",
-      `You can change your username again on ${eligibleAt.toISOString().slice(0, 10)}.`,
-      CONFLICT_STATUS,
-    );
-  }
 };
 
 export const creatorService = {
@@ -117,25 +100,12 @@ export const creatorService = {
       await imageProcessingService.assertAssetsOwnedBy([input.avatarImageAssetId], userId);
     }
 
-    let handleChangedAt: Date | undefined;
-    if (input.handle !== undefined && input.handle !== user.handle) {
-      assertHandleChangeAllowed(user.handleChangedAt);
-      await userService.assertHandleAvailable(input.handle, userId);
-      handleChangedAt = new Date();
-    }
+    const handleChangedAt = await userService.prepareHandleChange(user, input.handle);
 
-    let updated: UserRecord;
-    try {
-      updated = await userRepository.updateProfile(userId, {
-        ...input,
-        ...(handleChangedAt ? { handleChangedAt } : {}),
-      });
-    } catch (error) {
-      if (uniqueConstraintTargetIncludes(error, "handle")) {
-        throw new AppError("HANDLE_TAKEN", "That username is already taken.", CONFLICT_STATUS);
-      }
-      throw error;
-    }
+    const updated = await userService.writeProfile(userId, {
+      ...input,
+      ...(handleChangedAt ? { handleChangedAt } : {}),
+    });
     return toProfile(updated);
   },
 

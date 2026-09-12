@@ -98,6 +98,110 @@ describe("PATCH /api/users/me", () => {
   });
 });
 
+describe("PATCH /api/users/me — username change", () => {
+  it("lets a plain, non-creator account change its own handle", async () => {
+    const { user, accessToken } = await createUserWithAccessToken();
+    const nextHandle = `freshhandle${randomUUID().slice(0, 8)}`;
+
+    const response = await request(testApp)
+      .patch("/api/users/me")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ handle: nextHandle });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.handle).toBe(nextHandle);
+
+    const stored = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+    expect(stored.handle).toBe(nextHandle);
+    expect(stored.handleChangedAt).not.toBeNull();
+  });
+
+  it("rejects a handle already taken by another account", async () => {
+    const { user: owner } = await createUserWithAccessToken();
+    const { accessToken: challengerToken } = await createUserWithAccessToken();
+
+    const response = await request(testApp)
+      .patch("/api/users/me")
+      .set("Authorization", `Bearer ${challengerToken}`)
+      .send({ handle: owner.handle });
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("HANDLE_TAKEN");
+  });
+
+  it("rejects an invalid or reserved handle", async () => {
+    const { accessToken } = await createUserWithAccessToken();
+
+    const invalidFormat = await request(testApp)
+      .patch("/api/users/me")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ handle: "no spaces" });
+    expect(invalidFormat.status).toBe(422);
+
+    const reserved = await request(testApp)
+      .patch("/api/users/me")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ handle: "admin" });
+    expect(reserved.status).toBe(422);
+  });
+
+  it("blocks a second change within the 14-day cooldown", async () => {
+    const { user, accessToken } = await createUserWithAccessToken();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { handleChangedAt: new Date() },
+    });
+
+    const response = await request(testApp)
+      .patch("/api/users/me")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ handle: `nexthandle${randomUUID().slice(0, 6)}` });
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("HANDLE_CHANGE_COOLING_DOWN");
+  });
+
+  it("lets other fields save during the cooldown when the handle is unchanged", async () => {
+    const { user, accessToken } = await createUserWithAccessToken();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { handleChangedAt: new Date() },
+    });
+
+    const response = await request(testApp)
+      .patch("/api/users/me")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ handle: user.handle, name: "Still Changeable" });
+
+    expect(response.status).toBe(200);
+    const stored = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+    expect(stored.name).toBe("Still Changeable");
+  });
+
+  it("lets exactly one of two concurrent claims on the same free handle win", async () => {
+    const { accessToken: firstToken } = await createUserWithAccessToken();
+    const { accessToken: secondToken } = await createUserWithAccessToken();
+    const contestedHandle = `contested${randomUUID().slice(0, 8)}`;
+
+    const [firstResponse, secondResponse] = await Promise.all([
+      request(testApp)
+        .patch("/api/users/me")
+        .set("Authorization", `Bearer ${firstToken}`)
+        .send({ handle: contestedHandle }),
+      request(testApp)
+        .patch("/api/users/me")
+        .set("Authorization", `Bearer ${secondToken}`)
+        .send({ handle: contestedHandle }),
+    ]);
+
+    const statuses = [firstResponse.status, secondResponse.status].sort();
+    expect(statuses).toEqual([200, 409]);
+
+    const owners = await prisma.user.count({ where: { handle: contestedHandle } });
+    expect(owners).toBe(1);
+  });
+});
+
 describe("GET /api/users/search (admin)", () => {
   it("finds users by a fragment of their name or handle", async () => {
     const adminToken = await createAdminToken();
