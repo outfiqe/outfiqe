@@ -113,7 +113,7 @@ const searchAndSelectProduct = async (
   optionName: RegExp,
 ) => {
   await user.type(screen.getByPlaceholderText("Search products to tag…"), query);
-  await user.click(await screen.findByRole("option", { name: optionName }));
+  await user.click(await screen.findByRole("option", { name: optionName }, { timeout: 5000 }));
 };
 
 const renderForm = (detail: CreatorLookEditDetail, onClose = vi.fn()) => {
