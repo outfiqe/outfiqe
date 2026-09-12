@@ -19,7 +19,8 @@ export const adminInviteController = {
   },
 
   async list(_req: Request, res: Response) {
-    const invites = await adminInviteService.list();
-    sendSuccess(res, invites, "Admin invites.");
+    const principal = requireAuthPrincipal(res);
+    const result = await adminInviteService.list(principal.userId);
+    sendSuccess(res, result, "Admin invites.");
   },
 };

@@ -14,6 +14,7 @@ import {
   CreatorProfilePageSkeleton,
   getCreatorProfileServerPublic,
 } from "@/features/creator-profile";
+import { EditOwnProfileCard } from "@/features/users";
 
 import { requireDashboardSession } from "../requireDashboardSession";
 
@@ -35,10 +36,18 @@ const CreatorProfileSection = async ({ accessToken }: { accessToken: string }) =
 
   if (profile.creatorStatus !== CreatorStatus.APPROVED) {
     return (
-      <CreatorStatusGate
-        creatorStatus={profile.creatorStatus}
-        pitch="Set up your public creator profile — post your fits and let people discover what you're wearing."
-      />
+      <>
+        <EditOwnProfileCard
+          userId={profile.userId}
+          name={profile.name}
+          handle={profile.handle}
+          avatarUrl={profile.avatarUrl}
+        />
+        <CreatorStatusGate
+          creatorStatus={profile.creatorStatus}
+          pitch="Set up your public creator profile — post your fits and let people discover what you're wearing."
+        />
+      </>
     );
   }
 

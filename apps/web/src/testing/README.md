@@ -46,6 +46,13 @@ start/reset/stop lifecycle live here, not the mocked endpoints themselves.
   issue was scheduler starvation, not any one slow operation. Matches the same reasoning
   `apps/api/vitest.config.ts`'s integration project already applies with its own (larger, DB-bound)
   `testTimeout: 15000`.
+- **The `integration` project caps `maxWorkers: 2` (`vitest.config.ts`).** Each worker boots a real
+  jsdom environment plus MSW's interceptors and renders full pages behind `AuthProvider`/
+  `QueryClientProvider` — heavier per-file than a plain unit test. At vitest's default worker count
+  (one per CPU core), the CI runner's suite crashed with `JavaScript heap out of memory` partway
+  through the run; the crash point was identical across repeated reruns, pointing at a real
+  concurrent-memory ceiling rather than a one-off flake. Capping concurrency trades some wall-clock
+  time for not OOM-crashing the run.
 - Not colocated with a single source file, unlike `<name>.test.tsx` files: `mswServer` is one
   shared instance reused by every integration test in the app, and `setup.ts` is wired in as a
   vitest config-level `setupFiles` entry, which has to be a real file path.
