@@ -105,6 +105,19 @@ describe("ProductCard save button", () => {
     );
   });
 
+  it("picks up a fresh isSaved prop from a later fetch, not just the value it first mounted with", () => {
+    useAuthMock.mockReturnValue({ isAuthenticated: true });
+    const { rerender } = render(<ProductCard product={buildProduct({ isSaved: false })} />);
+    expect(screen.getByRole("button", { name: "Save to wishlist" })).toBeInTheDocument();
+
+    rerender(<ProductCard product={buildProduct({ isSaved: true })} />);
+
+    expect(screen.getByRole("button", { name: "Remove from wishlist" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
   it("disables the save button while a wishlist toggle is already in flight", () => {
     useAuthMock.mockReturnValue({ isAuthenticated: true });
     wishlistMutationState.isPending = true;

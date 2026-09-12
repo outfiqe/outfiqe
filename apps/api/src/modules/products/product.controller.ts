@@ -102,17 +102,20 @@ export const productController = {
 
   async listPublic(_req: Request, res: Response) {
     const query = validated.query<ListPublicProductsQuery>(res);
-    const page = await productService.listPublic(query);
+    const principal = getAuthPrincipal(res);
+    const page = await productService.listPublic(query, principal?.userId);
     sendSuccess(res, page, "Products.");
   },
 
   async listTrending(_req: Request, res: Response) {
-    const products = await productService.listTrending();
+    const principal = getAuthPrincipal(res);
+    const products = await productService.listTrending(principal?.userId);
     sendSuccess(res, products, "Trending products.");
   },
 
   async listNewArrivals(_req: Request, res: Response) {
-    const products = await productService.listNewArrivals();
+    const principal = getAuthPrincipal(res);
+    const products = await productService.listNewArrivals(principal?.userId);
     sendSuccess(res, products, "New arrivals.");
   },
 

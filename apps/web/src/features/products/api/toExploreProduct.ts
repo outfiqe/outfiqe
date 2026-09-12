@@ -15,6 +15,7 @@ export const toExploreProduct = (product: PublicProduct): ExploreProduct => ({
   type: product.type,
   lowStock: product.lowStock,
   isNew: product.isNew,
+  isSaved: product.isSaved,
   image: product.imageUrl ?? undefined,
   responsiveImage: product.image ?? null,
   avgRating: product.avgRating,

@@ -240,6 +240,7 @@ describe("PostModal", () => {
                 unitsSold: 0,
                 avgRating: null,
                 reviewCount: 0,
+                isSaved: false,
               },
             ],
             nextCursor: null,
@@ -276,6 +277,7 @@ describe("PostModal", () => {
     unitsSold: 0,
     avgRating: null,
     reviewCount: 0,
+    isSaved: false,
   };
 
   it("closes the results and clears the search after tagging a product", async () => {

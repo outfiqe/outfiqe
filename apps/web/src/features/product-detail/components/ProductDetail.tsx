@@ -37,6 +37,11 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
   const addToCartMutation = useAddToCart();
 
   const [isSaved, setIsSaved] = useState(product.isSaved);
+  const [lastSeenIsSaved, setLastSeenIsSaved] = useState(product.isSaved);
+  if (product.isSaved !== lastSeenIsSaved) {
+    setLastSeenIsSaved(product.isSaved);
+    setIsSaved(product.isSaved);
+  }
 
   const availableSizes = product.sizes.filter((size) => size.inStock);
   const isSoldOut = availableSizes.length === 0;

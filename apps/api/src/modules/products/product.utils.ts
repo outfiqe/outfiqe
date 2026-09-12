@@ -89,6 +89,7 @@ export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduc
     image: imageUrl ? toResponsiveImage(imageUrl, images?.[0]?.imageAsset ?? null) : null,
     lowStock: totalStock === undefined ? lowStock : isLowStock(totalStock),
     isNew: isNew(createdAt),
+    isSaved: false,
     creatorBuyerCount: creatorBuyerCount ?? 0,
     unitsSold: unitsSold ?? 0,
     avgRating,

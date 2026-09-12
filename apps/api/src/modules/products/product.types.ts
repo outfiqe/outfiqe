@@ -170,6 +170,7 @@ export type PublicProduct = {
   image: ResponsiveImage | null;
   lowStock: boolean;
   isNew: boolean;
+  isSaved: boolean;
   creatorBuyerCount: number;
   unitsSold: number;
 } & ProductRatingSummary;
@@ -217,5 +218,4 @@ export type PublicProductDetail = Omit<PublicProduct, "brand"> & {
   images: string[];
   wornByCount: number;
   seenOnCreators: SeenOnCreator[];
-  isSaved: boolean;
 };

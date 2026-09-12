@@ -17,6 +17,7 @@ export const publicProductSchema = z.object({
   image: responsiveImageSchema.nullish(),
   lowStock: z.boolean(),
   isNew: z.boolean(),
+  isSaved: z.boolean(),
   creatorBuyerCount: z.number(),
   unitsSold: z.number(),
   avgRating: z.number().nullable(),

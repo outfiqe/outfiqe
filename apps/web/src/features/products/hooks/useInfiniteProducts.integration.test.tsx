@@ -31,6 +31,7 @@ const realPage: ProductPage = {
       imageUrl: null,
       lowStock: false,
       isNew: false,
+      isSaved: false,
       creatorBuyerCount: 0,
       unitsSold: 0,
       avgRating: null,
