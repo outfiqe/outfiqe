@@ -14,7 +14,12 @@ const STATUS_TONE: Record<OrganizationInviteStatusValue, "neutral" | "positive" 
   EXPIRED: "negative",
 };
 
-export const InviteSection = () => {
+type InviteSectionProps = {
+  viewerIsSuperAdmin: boolean;
+  viewerPermissionKeys: string[];
+};
+
+export const InviteSection = ({ viewerIsSuperAdmin, viewerPermissionKeys }: InviteSectionProps) => {
   const queryClient = useQueryClient();
 
   const {
@@ -23,6 +28,13 @@ export const InviteSection = () => {
     error,
   } = useQuery({ queryKey: ["crm-invites"], queryFn: crmApi.listInvites });
   const { data: roles } = useQuery({ queryKey: ["crm-roles"], queryFn: crmApi.listRoles });
+
+  const assignableRoles =
+    roles?.filter(
+      (role) =>
+        viewerIsSuperAdmin ||
+        role.permissionKeys.every((key) => viewerPermissionKeys.includes(key)),
+    ) ?? [];
 
   const [email, setEmail] = useState("");
   const [roleId, setRoleId] = useState("");
@@ -90,7 +102,7 @@ export const InviteSection = () => {
             <option value="" disabled>
               Select a role
             </option>
-            {roles?.map((role) => (
+            {assignableRoles.map((role) => (
               <option key={role.id} value={role.id}>
                 {role.name}
               </option>

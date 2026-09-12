@@ -18,11 +18,13 @@ const STATUS_TONE: Record<MembershipStatusValue, "neutral" | "positive" | "negat
 
 type MembersSectionProps = {
   viewerIsSuperAdmin: boolean;
+  viewerPermissionKeys: string[];
   hasPendingOwnershipTransfer: boolean;
 };
 
 export const MembersSection = ({
   viewerIsSuperAdmin,
+  viewerPermissionKeys,
   hasPendingOwnershipTransfer,
 }: MembersSectionProps) => {
   const queryClient = useQueryClient();
@@ -90,6 +92,12 @@ export const MembersSection = ({
   const pendingRoleName =
     roles?.find((role) => role.id === pendingRoleChange?.nextRoleId)?.name ?? "the selected role";
 
+  const canViewerGrantRole = (role: { permissionKeys: string[] }) =>
+    viewerIsSuperAdmin || role.permissionKeys.every((key) => viewerPermissionKeys.includes(key));
+
+  const assignableRolesFor = (member: MembershipSummary) =>
+    roles?.filter((role) => role.id === member.roleId || canViewerGrantRole(role)) ?? [];
+
   const canTransferOwnershipTo = (member: MembershipSummary) =>
     viewerIsSuperAdmin &&
     !member.isSuperAdmin &&
@@ -134,7 +142,7 @@ export const MembersSection = ({
           onChange={(e) => requestRoleChange(member, e.target.value)}
           className="w-40"
         >
-          {roles?.map((role) => (
+          {assignableRolesFor(member).map((role) => (
             <option key={role.id} value={role.id}>
               {role.name}
             </option>
