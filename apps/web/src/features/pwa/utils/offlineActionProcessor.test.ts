@@ -1,3 +1,4 @@
+import type { QueryClient } from "@tanstack/react-query";
 import { subDays } from "date-fns/subDays";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -5,6 +6,7 @@ import type { QueuedOfflineAction } from "./offlineActionQueue";
 
 const FRESH_QUEUED_AT = Date.now();
 const STALE_QUEUED_AT = subDays(new Date(), 2).getTime();
+const queryClient = {} as QueryClient;
 
 const { listQueuedOfflineActions, removeQueuedOfflineAction } = vi.hoisted(() => ({
   listQueuedOfflineActions: vi.fn((): Promise<QueuedOfflineAction[]> => Promise.resolve([])),
@@ -34,9 +36,9 @@ describe("drainQueuedOfflineActions", () => {
       },
     ]);
 
-    await drainQueuedOfflineActions();
+    await drainQueuedOfflineActions(queryClient);
 
-    expect(handler).toHaveBeenCalledWith({ lookId: "1" });
+    expect(handler).toHaveBeenCalledWith({ lookId: "1" }, queryClient);
     expect(removeQueuedOfflineAction).toHaveBeenCalledWith("like-look:1");
   });
 
@@ -47,7 +49,7 @@ describe("drainQueuedOfflineActions", () => {
       { key: "follow-creator:1", type: "follow-creator", payload: {}, queuedAt: FRESH_QUEUED_AT },
     ]);
 
-    await drainQueuedOfflineActions();
+    await drainQueuedOfflineActions(queryClient);
 
     expect(removeQueuedOfflineAction).not.toHaveBeenCalled();
   });
@@ -57,7 +59,7 @@ describe("drainQueuedOfflineActions", () => {
       { key: "unknown-type:1", type: "unknown-type", payload: {}, queuedAt: FRESH_QUEUED_AT },
     ]);
 
-    await expect(drainQueuedOfflineActions()).resolves.toBeUndefined();
+    await expect(drainQueuedOfflineActions(queryClient)).resolves.toBeUndefined();
     expect(removeQueuedOfflineAction).not.toHaveBeenCalled();
   });
 
@@ -76,7 +78,7 @@ describe("drainQueuedOfflineActions", () => {
       },
     ]);
 
-    await drainQueuedOfflineActions();
+    await drainQueuedOfflineActions(queryClient);
 
     expect(succeedingHandler).toHaveBeenCalledTimes(1);
     expect(removeQueuedOfflineAction).toHaveBeenCalledWith("follow-creator:1");
@@ -96,8 +98,8 @@ describe("drainQueuedOfflineActions", () => {
       { key: "like-look:1", type: "like-look", payload: {}, queuedAt: FRESH_QUEUED_AT },
     ]);
 
-    const firstDrain = drainQueuedOfflineActions();
-    const secondDrain = drainQueuedOfflineActions();
+    const firstDrain = drainQueuedOfflineActions(queryClient);
+    const secondDrain = drainQueuedOfflineActions(queryClient);
     await vi.waitFor(() => expect(slowHandler).toHaveBeenCalledTimes(1));
     resolveFirstHandler();
     await Promise.all([firstDrain, secondDrain]);
@@ -117,7 +119,7 @@ describe("drainQueuedOfflineActions", () => {
       },
     ]);
 
-    await drainQueuedOfflineActions();
+    await drainQueuedOfflineActions(queryClient);
 
     expect(handler).not.toHaveBeenCalled();
     expect(removeQueuedOfflineAction).toHaveBeenCalledWith("save-look:1");

@@ -39,5 +39,6 @@ export const useInfiniteCursorPage = <T extends CursorPage>(
     select: dropEmptyPages,
     enabled,
     refetchOnMount: revalidateStalePersistedCacheOnMount ? "always" : undefined,
+    refetchOnReconnect: revalidateStalePersistedCacheOnMount ? "always" : undefined,
   });
 };

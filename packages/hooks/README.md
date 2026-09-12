@@ -22,9 +22,9 @@ Shared React hooks reused across `apps/web` and `apps/admin` — generic data-fe
   are ~20 — crashes on `Cannot read properties of null`. The `select` is `useCallback`-wrapped so
   its identity is stable and react-query doesn't re-run it (and re-break `useMemo([data])` in
   consumers like `BrandProfile`) each render. The optional 4th argument,
-  `revalidateStalePersistedCacheOnMount`, forces `refetchOnMount: "always"` — see the
-  "Non-obvious rationale" bullet on `apps/web`'s persisted-query allowlist for why any query key
-  under `explore-feed`/`creator-looks` needs this.
+  `revalidateStalePersistedCacheOnMount`, forces `refetchOnMount: "always"` and
+  `refetchOnReconnect: "always"` — see the "Non-obvious rationale" bullet on `apps/web`'s
+  persisted-query allowlist for why any query key under `explore-feed`/`creator-looks` needs this.
 - `useNotifications.ts` — `NOTIFICATIONS_QUERY_KEY`/`NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY`, and
   `useNotifications`: the feed's cursor pagination (via `useInfiniteCursorPage`) plus optimistic
   mark-read/mark-all-read. Owns fetching and mutating only — real-time updates come from
@@ -85,3 +85,7 @@ like/save/follow state after a refresh or tab switch, while the creator profile 
 under a persisted root that also carries interactive, frequently-mutated per-viewer state needs
 `revalidateStalePersistedCacheOnMount: true` for exactly this reason — trust the persisted snapshot
 for the instant first paint, never trust it to skip revalidating once the viewer is back online.
+The flag forces `refetchOnReconnect: "always"` too, not only `refetchOnMount` — they're independent
+react-query options, and a query that's already mounted and sitting on screen through a real
+offline/online cycle needs the same guarantee a fresh mount gets, or coming back online silently
+does nothing for a query react-query still considers fresh by its frozen `dataUpdatedAt`.
