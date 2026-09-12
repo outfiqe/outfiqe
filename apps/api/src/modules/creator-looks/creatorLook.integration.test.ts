@@ -1340,6 +1340,45 @@ describe("GET /api/creator-looks/feed", () => {
     expect(busyLookIdsInFeed.length).toBeLessThanOrEqual(3);
   });
 
+  it("keeps the for_you candidate set stable across repeat page-1 requests, even once a new post starts scoring in between", async () => {
+    const creatorA = await createCreator("Stable Creator A", "stable-creator-a");
+    const neutralViewer = await createCreator("Stable Neutral Viewer", "stable-neutral-viewer");
+    const viewer = await createCreator("Stable Ranking Viewer", "stable-ranking-viewer");
+
+    const lookA = await createLook(creatorA.id, "Stable ranking post A");
+    await prisma.creatorLookLike.create({
+      data: { creatorLookId: lookA.id, userId: neutralViewer.id },
+    });
+    await creatorLookService.runTrendingAggregation();
+    await creatorLookService.runTrendingScoring();
+
+    const first = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you", limit: 30 })
+      .set("Authorization", authHeaderFor(viewer.id));
+    expect(first.status).toBe(200);
+    const firstIds = first.body.data.posts.map((post: { id: string }) => post.id);
+    expect(firstIds).toContain(lookA.id);
+
+    const creatorC = await createCreator("Stable Creator C", "stable-creator-c");
+    const lookC = await createLook(creatorC.id, "Newly scored post C");
+    await prisma.creatorLookLike.create({
+      data: { creatorLookId: lookC.id, userId: neutralViewer.id },
+    });
+    await creatorLookService.runTrendingAggregation();
+    await creatorLookService.runTrendingScoring();
+
+    const second = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you", limit: 30 })
+      .set("Authorization", authHeaderFor(viewer.id));
+    expect(second.status).toBe(200);
+    const secondIds = second.body.data.posts.map((post: { id: string }) => post.id);
+
+    expect(secondIds).toEqual(firstIds);
+    expect(secondIds).not.toContain(lookC.id);
+  });
+
   it("computes a fresh personalized score when nothing is cached yet", async () => {
     const creator = await createCreator("Fresh Score Creator", "fresh-score-creator");
     const viewer = await createCreator("Fresh Score Viewer", "fresh-score-viewer");
