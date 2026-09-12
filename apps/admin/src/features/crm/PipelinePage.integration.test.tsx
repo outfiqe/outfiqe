@@ -1,3 +1,4 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
@@ -42,7 +43,13 @@ const DEALS = [
   },
 ];
 
-const mockPipeline = (overrides: { patchDeal?: () => Response } = {}) => {
+const mockPipeline = (
+  overrides: {
+    patchDeal?: () => Response;
+    viewerIsSuperAdmin?: boolean;
+    viewerPermissionKeys?: string[];
+  } = {},
+) => {
   mswServer.use(
     http.get(`${API_BASE}/crm/organization`, () =>
       HttpResponse.json({
@@ -54,8 +61,8 @@ const mockPipeline = (overrides: { patchDeal?: () => Response } = {}) => {
           trialEndsAt: null,
           linkedBrandId: "brand-1",
           superAdminMembershipId: "m-1",
-          viewerIsSuperAdmin: true,
-          viewerPermissionKeys: [],
+          viewerIsSuperAdmin: overrides.viewerIsSuperAdmin ?? true,
+          viewerPermissionKeys: overrides.viewerPermissionKeys ?? [],
           pendingOwnershipTransfer: null,
           advancedFeaturesEnabled: true,
         },
@@ -98,6 +105,7 @@ const renderPipelinePage = () => {
   render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
+      <Toaster />
     </QueryClientProvider>,
   );
 };
@@ -131,6 +139,32 @@ describe("PipelinePage", () => {
     await user.selectOptions(await screen.findByLabelText("Move to"), "s-won");
 
     await waitFor(() => expect(patchBody).toEqual({ stageId: "s-won" }));
+  });
+
+  it("disables the move-to control for a viewer without deals:write", async () => {
+    mockPipeline({ viewerIsSuperAdmin: false, viewerPermissionKeys: ["deals:read"] });
+    renderPipelinePage();
+
+    expect(await screen.findByLabelText("Move to")).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "New deal" })).not.toBeInTheDocument();
+  });
+
+  it("shows an error toast and doesn't invalidate the board when a move is rejected", async () => {
+    mockPipeline({
+      patchDeal: () =>
+        HttpResponse.json(
+          { success: false, message: "You do not have permission to do this." },
+          { status: 403 },
+        ),
+    });
+
+    renderPipelinePage();
+    const user = userEvent.setup({ delay: null });
+
+    await user.selectOptions(await screen.findByLabelText("Move to"), "s-won");
+
+    expect(await screen.findByText("You do not have permission to do this.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Move to")).toHaveValue("s-lead");
   });
 
   it("opens the new-deal modal", async () => {

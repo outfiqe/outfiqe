@@ -17,6 +17,7 @@ export type KanbanBoardProps<TCard extends KanbanCard> = {
   renderCard: (card: TCard) => ReactNode;
   onCardMove: (cardId: string, toColumnId: string) => void;
   emptyColumnLabel?: string;
+  disabled?: boolean;
 };
 
 export const KanbanBoard = <TCard extends KanbanCard>({
@@ -25,6 +26,7 @@ export const KanbanBoard = <TCard extends KanbanCard>({
   renderCard,
   onCardMove,
   emptyColumnLabel = "No cards",
+  disabled = false,
 }: KanbanBoardProps<TCard>) => {
   const [draggingCardId, setDraggingCardId] = useState<string | null>(null);
   const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
@@ -35,6 +37,7 @@ export const KanbanBoard = <TCard extends KanbanCard>({
   }
 
   const moveCard = (cardId: string, toColumnId: string) => {
+    if (disabled) return;
     const card = cards.find((candidate) => candidate.id === cardId);
     if (card && card.columnId !== toColumnId) onCardMove(cardId, toColumnId);
   };
@@ -48,6 +51,7 @@ export const KanbanBoard = <TCard extends KanbanCard>({
             key={column.id}
             aria-label={column.title}
             onDragOver={(event) => {
+              if (disabled) return;
               event.preventDefault();
               setDragOverColumnId(column.id);
             }}
@@ -87,14 +91,15 @@ export const KanbanBoard = <TCard extends KanbanCard>({
               {columnCards.map((card) => (
                 <article
                   key={card.id}
-                  draggable
-                  onDragStart={() => setDraggingCardId(card.id)}
+                  draggable={!disabled}
+                  onDragStart={() => !disabled && setDraggingCardId(card.id)}
                   onDragEnd={() => {
                     setDraggingCardId(null);
                     setDragOverColumnId(null);
                   }}
                   className={[
-                    "cursor-grab rounded-lg border border-border bg-background p-3 text-sm shadow-sm",
+                    "rounded-lg border border-border bg-background p-3 text-sm shadow-sm",
+                    disabled ? "cursor-default" : "cursor-grab",
                     draggingCardId === card.id ? "opacity-50" : "",
                   ].join(" ")}
                 >
@@ -104,8 +109,9 @@ export const KanbanBoard = <TCard extends KanbanCard>({
                     Move to
                     <select
                       value={card.columnId}
+                      disabled={disabled}
                       onChange={(event) => moveCard(card.id, event.target.value)}
-                      className="flex-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+                      className="flex-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {columns.map((option) => (
                         <option key={option.id} value={option.id}>

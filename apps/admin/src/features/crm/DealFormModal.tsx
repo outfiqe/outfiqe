@@ -1,15 +1,14 @@
 import { Button, FormBanner, Input, Modal, Select } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { PartnerSearchField, type SelectedPartner } from "./PartnerSearchField";
 import { crmPipelineApi } from "./pipelineApi";
 import type { Deal, PipelineStage } from "./pipelineSchemas";
-import { crmRelationshipsApi } from "./relationshipsApi";
 
 const DEALS_QUERY_KEY = ["crm-deals"];
-const PARTNER_OPTIONS_PAGE_SIZE = 100;
 
 type DealFormModalProps = {
   open: boolean;
@@ -25,19 +24,18 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
   const [title, setTitle] = useState(deal?.title ?? "");
   const [stageId, setStageId] = useState(deal?.stageId ?? stages[0]?.id ?? "");
   const [value, setValue] = useState(deal?.value ?? 0);
-  const [partnerCreatorId, setPartnerCreatorId] = useState(deal?.partnerCreatorId ?? "");
-
-  const { data: partnerPage } = useQuery({
-    queryKey: ["crm-partner-options"],
-    queryFn: () => crmRelationshipsApi.listPartners({ pageSize: PARTNER_OPTIONS_PAGE_SIZE }),
-    enabled: open && !isEditing,
-  });
+  const [partner, setPartner] = useState<SelectedPartner | null>(null);
 
   const save = useMutation({
     mutationFn: () =>
       isEditing
         ? crmPipelineApi.updateDeal(deal.id, { title, stageId, value })
-        : crmPipelineApi.createDeal({ title, stageId, value, partnerCreatorId }),
+        : crmPipelineApi.createDeal({
+            title,
+            stageId,
+            value,
+            partnerCreatorId: partner?.creatorId ?? "",
+          }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: DEALS_QUERY_KEY });
       onClose();
@@ -49,8 +47,7 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
     save.mutate();
   };
 
-  const canSubmit =
-    title.trim().length > 0 && stageId !== "" && (isEditing || partnerCreatorId !== "");
+  const canSubmit = title.trim().length > 0 && stageId !== "" && (isEditing || partner !== null);
 
   return (
     <Modal open={open} onClose={onClose} title={isEditing ? "Edit deal" : "New deal"}>
@@ -102,19 +99,7 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
             <label htmlFor="deal-partner" className="text-xs text-muted-foreground">
               Partner
             </label>
-            <Select
-              id="deal-partner"
-              value={partnerCreatorId}
-              onChange={(event) => setPartnerCreatorId(event.target.value)}
-              required
-            >
-              <option value="">Select a partner…</option>
-              {(partnerPage?.items ?? []).map((partner) => (
-                <option key={partner.creatorId} value={partner.creatorId}>
-                  {partner.name} (@{partner.handle})
-                </option>
-              ))}
-            </Select>
+            <PartnerSearchField id="deal-partner" value={partner} onChange={setPartner} />
           </div>
         )}
 

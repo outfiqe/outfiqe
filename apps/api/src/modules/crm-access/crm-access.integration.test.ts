@@ -1475,3 +1475,167 @@ describe("Custom roles and organization settings", () => {
     expect(stored.name).toBe("Renamed Org Co");
   });
 });
+
+describe("Permission escalation guards", () => {
+  const seedSuperAdminOrganization = async (label: string) => {
+    const { organization, adminRole, memberRole } = await seedOrganization();
+    const owner = await createStaffUser(`${label} Owner`);
+    const ownerMembership = await addMembership(organization.id, owner.id, adminRole.id);
+    await makeSuperAdmin(organization.id, ownerMembership.id);
+    return { organization, owner, adminRole, memberRole };
+  };
+
+  const host = (subdomain: string) => `${subdomain}.localhost`;
+
+  const createCustomRole = async (organizationId: string, name: string, permissionKeys: string[]) =>
+    prisma.role.create({
+      data: {
+        organizationId,
+        name,
+        isBuiltIn: false,
+        permissions: { create: permissionKeys.map((permissionKey) => ({ permissionKey })) },
+      },
+    });
+
+  it("blocks a roles:manage holder from creating a role with a permission they don't hold themselves", async () => {
+    const { organization } = await seedSuperAdminOrganization("Create Escalation");
+    const limitedRole = await createCustomRole(organization.id, "Role Editor", ["roles:manage"]);
+    const actor = await createStaffUser("Limited Role Editor");
+    await addMembership(organization.id, actor.id, limitedRole.id);
+
+    const response = await request(testApp)
+      .post("/api/crm/roles")
+      .set("Authorization", authHeaderFor(actor.id))
+      .set("Host", host(organization.subdomain))
+      .send({ name: "Self-Granted Power", permissionKeys: ["roles:manage", "billing:manage"] });
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("PERMISSION_EXCEEDS_ACTOR_GRANT");
+    expect(
+      await prisma.role.findFirst({
+        where: { organizationId: organization.id, name: "Self-Granted Power" },
+      }),
+    ).toBeNull();
+  });
+
+  it("lets a roles:manage holder create a role limited to permissions they already hold", async () => {
+    const { organization } = await seedSuperAdminOrganization("Create Within Grant");
+    const limitedRole = await createCustomRole(organization.id, "Role Editor Two", [
+      "roles:manage",
+      "tickets:read",
+    ]);
+    const actor = await createStaffUser("Compliant Role Editor");
+    await addMembership(organization.id, actor.id, limitedRole.id);
+
+    const response = await request(testApp)
+      .post("/api/crm/roles")
+      .set("Authorization", authHeaderFor(actor.id))
+      .set("Host", host(organization.subdomain))
+      .send({ name: "Ticket Reader", permissionKeys: ["tickets:read"] });
+
+    expect(response.status).toBe(201);
+  });
+
+  it("blocks adding an ungranted permission to an existing role, but still allows shrinking it", async () => {
+    const { organization } = await seedSuperAdminOrganization("Update Escalation");
+    const target = await createCustomRole(organization.id, "Target Role", [
+      "tickets:read",
+      "tickets:write",
+    ]);
+    const limitedRole = await createCustomRole(organization.id, "Role Editor Three", [
+      "roles:manage",
+      "tickets:read",
+    ]);
+    const actor = await createStaffUser("Limited Role Editor Two");
+    await addMembership(organization.id, actor.id, limitedRole.id);
+
+    const escalate = await request(testApp)
+      .patch(`/api/crm/roles/${target.id}`)
+      .set("Authorization", authHeaderFor(actor.id))
+      .set("Host", host(organization.subdomain))
+      .send({ permissionKeys: ["tickets:read", "billing:manage"] });
+    expect(escalate.status).toBe(403);
+    expect(escalate.body.code).toBe("PERMISSION_EXCEEDS_ACTOR_GRANT");
+
+    const shrink = await request(testApp)
+      .patch(`/api/crm/roles/${target.id}`)
+      .set("Authorization", authHeaderFor(actor.id))
+      .set("Host", host(organization.subdomain))
+      .send({ permissionKeys: ["tickets:read"] });
+    expect(shrink.status).toBe(200);
+    expect(shrink.body.data.permissionKeys).toEqual(["tickets:read"]);
+  });
+
+  it("blocks a members:manage holder from reassigning a teammate into a role with permissions they don't hold", async () => {
+    const { organization, memberRole } = await seedSuperAdminOrganization("Membership Escalation");
+    const powerfulRole = await createCustomRole(organization.id, "Billing Boss", [
+      "billing:manage",
+    ]);
+    const limitedRole = await createCustomRole(organization.id, "Member Manager", [
+      "members:manage",
+    ]);
+    const actor = await createStaffUser("Limited Member Manager");
+    await addMembership(organization.id, actor.id, limitedRole.id);
+    const teammate = await createStaffUser("Reassignment Target");
+    const teammateMembership = await addMembership(organization.id, teammate.id, memberRole.id);
+
+    const response = await request(testApp)
+      .patch(`/api/crm/members/${teammateMembership.id}`)
+      .set("Authorization", authHeaderFor(actor.id))
+      .set("Host", host(organization.subdomain))
+      .send({ roleId: powerfulRole.id });
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("PERMISSION_EXCEEDS_ACTOR_GRANT");
+
+    const unchanged = await prisma.membership.findUniqueOrThrow({
+      where: { id: teammateMembership.id },
+    });
+    expect(unchanged.roleId).toBe(memberRole.id);
+  });
+
+  it("blocks a members:invite holder from inviting someone straight into the built-in Admin role", async () => {
+    const { organization, adminRole } = await seedSuperAdminOrganization("Invite Escalation");
+    const limitedRole = await createCustomRole(organization.id, "Inviter Only", ["members:invite"]);
+    const actor = await createStaffUser("Limited Inviter");
+    await addMembership(organization.id, actor.id, limitedRole.id);
+    const strangerEmail = `escalated-invite-${randomUUID()}@outfiqe.test`;
+
+    const response = await request(testApp)
+      .post("/api/crm/invites")
+      .set("Authorization", authHeaderFor(actor.id))
+      .set("Host", host(organization.subdomain))
+      .send({ email: strangerEmail, roleId: adminRole.id });
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("PERMISSION_EXCEEDS_ACTOR_GRANT");
+    expect(
+      await prisma.organizationInvite.findFirst({
+        where: { organizationId: organization.id, email: strangerEmail },
+      }),
+    ).toBeNull();
+  });
+
+  it("still lets a SUPERADMIN grant any role, even one holding a limited role themselves", async () => {
+    const { organization, memberRole, adminRole } =
+      await seedSuperAdminOrganization("Superadmin Bypass");
+    const transferredSuperAdminUser = await createStaffUser("Transferred Superadmin");
+    const transferredSuperAdminMembership = await addMembership(
+      organization.id,
+      transferredSuperAdminUser.id,
+      memberRole.id,
+    );
+    await makeSuperAdmin(organization.id, transferredSuperAdminMembership.id);
+
+    const teammate = await createStaffUser("Promotion Target Under New Superadmin");
+    const teammateMembership = await addMembership(organization.id, teammate.id, memberRole.id);
+
+    const response = await request(testApp)
+      .patch(`/api/crm/members/${teammateMembership.id}`)
+      .set("Authorization", authHeaderFor(transferredSuperAdminUser.id))
+      .set("Host", host(organization.subdomain))
+      .send({ roleId: adminRole.id });
+
+    expect(response.status).toBe(200);
+  });
+});

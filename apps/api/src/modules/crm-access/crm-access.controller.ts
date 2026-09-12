@@ -28,7 +28,7 @@ import type {
   UpdateRoleBody,
 } from "./crm-access.schemas.js";
 import { crmAccessService } from "./crm-access.service.js";
-import { toOrganizationWithViewerContext } from "./crm-access.utils.js";
+import { toActingPermissionGrant, toOrganizationWithViewerContext } from "./crm-access.utils.js";
 
 const CREATED_STATUS = 201;
 
@@ -114,8 +114,13 @@ export const crmAccessController = {
   async createRole(req: Request, res: Response) {
     const { name, permissionKeys } = validated.body<CreateRoleBody>(res);
     const organization = getResolvedOrganization(res);
+    const actingMembership = getCrmMembership(res);
 
-    const role = await crmAccessService.createRole(organization.id, { name, permissionKeys });
+    const role = await crmAccessService.createRole(
+      organization.id,
+      { name, permissionKeys },
+      toActingPermissionGrant(organization, actingMembership),
+    );
     await crmAudit.record({
       organizationId: organization.id,
       action: CrmAuditAction.ROLE_CREATED,
@@ -131,8 +136,14 @@ export const crmAccessController = {
     const { roleId } = validated.params<RoleIdParams>(res);
     const body = validated.body<UpdateRoleBody>(res);
     const organization = getResolvedOrganization(res);
+    const actingMembership = getCrmMembership(res);
 
-    const role = await crmAccessService.updateRole(organization.id, roleId, body);
+    const role = await crmAccessService.updateRole(
+      organization.id,
+      roleId,
+      body,
+      toActingPermissionGrant(organization, actingMembership),
+    );
     await crmAudit.record({
       organizationId: organization.id,
       action: CrmAuditAction.ROLE_UPDATED,
@@ -195,6 +206,7 @@ export const crmAccessController = {
       actingMembership.id,
       membershipId,
       body,
+      toActingPermissionGrant(organization, actingMembership),
     );
     await crmAudit.record({
       organizationId: organization.id,
@@ -223,8 +235,15 @@ export const crmAccessController = {
     const { email, roleId } = validated.body<CreateOrganizationInviteBody>(res);
     const principal = requireAuthPrincipal(res);
     const organization = getResolvedOrganization(res);
+    const actingMembership = getCrmMembership(res);
 
-    await crmAccessService.inviteMember(organization, email, roleId, principal.userId);
+    await crmAccessService.inviteMember(
+      organization,
+      email,
+      roleId,
+      principal.userId,
+      toActingPermissionGrant(organization, actingMembership),
+    );
     await crmAudit.record({
       organizationId: organization.id,
       action: CrmAuditAction.INVITE_SENT,

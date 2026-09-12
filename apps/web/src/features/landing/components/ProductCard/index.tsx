@@ -84,6 +84,11 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
     reviewCount,
   } = product;
   const [saved, setSaved] = useState(isSaved ?? false);
+  const [lastSeenIsSaved, setLastSeenIsSaved] = useState(isSaved ?? false);
+  if ((isSaved ?? false) !== lastSeenIsSaved) {
+    setLastSeenIsSaved(isSaved ?? false);
+    setSaved(isSaved ?? false);
+  }
 
   const avatarCount = Math.min(creatorBuyerCount, 3);
   const badgeLabel = isNew ? "New" : lowStock ? "Low stock" : null;

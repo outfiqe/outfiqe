@@ -40,6 +40,16 @@ export const wishlistRepository = {
     return existing !== null;
   },
 
+  async listSavedProductIds(userId: string, productIds: string[]): Promise<Set<string>> {
+    if (productIds.length === 0) return new Set();
+
+    const rows = await prisma.savedProduct.findMany({
+      where: { userId, productId: { in: productIds } },
+      select: { productId: true },
+    });
+    return new Set(rows.map((row) => row.productId));
+  },
+
   async listSaved(
     userId: string,
     params: { cursor?: string; limit: number },

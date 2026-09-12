@@ -1,5 +1,5 @@
 import { KanbanBoard } from "@outfiqe/components";
-import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
+import { Button, FormBanner, Skeleton, toast } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -43,6 +43,7 @@ export const PipelinePage = () => {
     mutationFn: ({ dealId, stageId }: { dealId: string; stageId: string }) =>
       crmPipelineApi.updateDeal(dealId, { stageId }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: DEALS_QUERY_KEY }),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const canConfigure =
@@ -106,6 +107,7 @@ export const PipelinePage = () => {
             columns={columns}
             cards={cards}
             onCardMove={(dealId, stageId) => moveDeal.mutate({ dealId, stageId })}
+            disabled={!canWriteDeals || moveDeal.isPending}
             emptyColumnLabel="No deals"
             renderCard={(card) => (
               <button

@@ -2,6 +2,7 @@ import { extractTenantSubdomain } from "@outfiqe/utils";
 
 import { SELECTABLE_ROLE_PERMISSION_KEYS } from "./crm-access.constants.js";
 import type {
+  ActingPermissionGrant,
   MembershipJoinRow,
   MembershipSummary,
   MembershipWithRole,
@@ -104,6 +105,14 @@ export const findUnselectablePermissionKeys = (permissionKeys: string[]): string
 
 export const canDeleteRole = (role: { isBuiltIn: boolean }, memberCount: number): boolean =>
   !role.isBuiltIn && memberCount === 0;
+
+export const toActingPermissionGrant = (
+  organization: Pick<OrganizationRecord, "superAdminMembershipId">,
+  actingMembership: MembershipWithRole,
+): ActingPermissionGrant => ({
+  isSuperAdmin: organization.superAdminMembershipId === actingMembership.id,
+  permissionKeys: actingMembership.role.permissionKeys,
+});
 
 export const extractSubdomain = extractTenantSubdomain;
 

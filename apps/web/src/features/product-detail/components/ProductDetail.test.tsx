@@ -168,4 +168,16 @@ describe("ProductDetail save button", () => {
 
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
+
+  it("picks up a fresh isSaved prop from a later fetch, not just the value it first mounted with", () => {
+    const sizes = [{ id: "m", label: "M", inStock: true }];
+    const { rerender } = render(
+      <ProductDetail product={buildProduct(sizes, { isSaved: false })} />,
+    );
+    expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute("aria-pressed", "false");
+
+    rerender(<ProductDetail product={buildProduct(sizes, { isSaved: true })} />);
+
+    expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute("aria-pressed", "true");
+  });
 });
