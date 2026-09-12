@@ -153,6 +153,7 @@ crmAccessRoutes.patch(
   "/members/:membershipId",
   denyDuringImpersonation,
   requirePermission("members:manage"),
+  crmRoleRateLimit,
   validate({ params: membershipIdParamsSchema, body: updateMembershipSchema }),
   crmAccessController.updateMember,
 );

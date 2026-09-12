@@ -27,6 +27,7 @@ import {
 } from "./crm-access.constants.js";
 import { crmAccessRepository } from "./crm-access.repository.js";
 import type {
+  ActingPermissionGrant,
   CreateOrganizationInput,
   CrmInviteRegistrationInfo,
   MembershipRecord,
@@ -93,6 +94,24 @@ const assertPermissionKeysSelectable = (permissionKeys: string[]): void => {
       "INVALID_PERMISSION_KEYS",
       "One or more of the selected permissions can't be granted to a custom role.",
       BAD_REQUEST_STATUS,
+    );
+  }
+};
+
+const assertPermissionKeysWithinActorGrant = (
+  permissionKeys: string[],
+  actingGrant: ActingPermissionGrant,
+): void => {
+  if (actingGrant.isSuperAdmin) return;
+
+  const permissionsBeyondActorGrant = permissionKeys.filter(
+    (key) => !actingGrant.permissionKeys.includes(key),
+  );
+  if (permissionsBeyondActorGrant.length > 0) {
+    throw new AppError(
+      "PERMISSION_EXCEEDS_ACTOR_GRANT",
+      "You can't grant a permission you don't hold yourself.",
+      FORBIDDEN_STATUS,
     );
   }
 };
@@ -245,8 +264,10 @@ export const crmAccessService = {
   async createRole(
     organizationId: string,
     input: { name: string; permissionKeys: string[] },
+    actingGrant: ActingPermissionGrant,
   ): Promise<RoleWithPermissions> {
     assertPermissionKeysSelectable(input.permissionKeys);
+    assertPermissionKeysWithinActorGrant(input.permissionKeys, actingGrant);
     try {
       return await crmAccessRepository.createRole({
         organizationId,
@@ -263,6 +284,7 @@ export const crmAccessService = {
     organizationId: string,
     roleId: string,
     input: UpdateRoleInput,
+    actingGrant: ActingPermissionGrant,
   ): Promise<RoleWithPermissions> {
     const role = await crmAccessRepository.findRoleById(organizationId, roleId);
     if (!role) {
@@ -273,6 +295,10 @@ export const crmAccessService = {
     }
     if (input.permissionKeys !== undefined) {
       assertPermissionKeysSelectable(input.permissionKeys);
+      const permissionsNewlyGranted = input.permissionKeys.filter(
+        (key) => !role.permissionKeys.includes(key),
+      );
+      assertPermissionKeysWithinActorGrant(permissionsNewlyGranted, actingGrant);
     }
 
     try {
@@ -333,6 +359,7 @@ export const crmAccessService = {
     actingMembershipId: string,
     membershipId: string,
     data: { roleId?: string; status?: MembershipStatus },
+    actingGrant: ActingPermissionGrant,
   ): Promise<MembershipRecord> {
     if (membershipId === actingMembershipId) {
       throw new AppError(
@@ -360,6 +387,7 @@ export const crmAccessService = {
       if (!role) {
         throw new AppError("ROLE_NOT_FOUND", "Role not found.", NOT_FOUND_STATUS);
       }
+      assertPermissionKeysWithinActorGrant(role.permissionKeys, actingGrant);
     }
 
     return crmAccessRepository.updateMembership(organization.id, membershipId, data);
@@ -375,11 +403,13 @@ export const crmAccessService = {
     email: string,
     roleId: string,
     invitedById: string,
+    actingGrant: ActingPermissionGrant,
   ): Promise<void> {
     const role = await crmAccessRepository.findRoleById(organization.id, roleId);
     if (!role) {
       throw new AppError("ROLE_NOT_FOUND", "Role not found.", NOT_FOUND_STATUS);
     }
+    assertPermissionKeysWithinActorGrant(role.permissionKeys, actingGrant);
 
     const invitedUser = await userRepository.findByEmail(email);
     if (invitedUser && invitedUser.role !== UserRole.ADMIN) {

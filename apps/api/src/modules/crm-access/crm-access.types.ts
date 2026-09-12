@@ -206,3 +206,8 @@ export type UpdateMembershipInput = {
   roleId?: string;
   status?: MembershipStatus;
 };
+
+export type ActingPermissionGrant = {
+  isSuperAdmin: boolean;
+  permissionKeys: string[];
+};

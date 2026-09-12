@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
@@ -20,7 +20,16 @@ const wrapper = ({ children }: { children: ReactNode }) => {
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 };
 
-const renderInviteSection = () => render(<InviteSection />, { wrapper });
+const renderInviteSection = (
+  overrides: { viewerIsSuperAdmin?: boolean; viewerPermissionKeys?: string[] } = {},
+) =>
+  render(
+    <InviteSection
+      viewerIsSuperAdmin={overrides.viewerIsSuperAdmin ?? false}
+      viewerPermissionKeys={overrides.viewerPermissionKeys ?? ["members:read"]}
+    />,
+    { wrapper },
+  );
 
 describe("InviteSection", () => {
   it("renders pending invites", async () => {
@@ -102,5 +111,19 @@ describe("InviteSection", () => {
       expect(requestBody).toEqual({ email: "colleague@outfiqe.test", roleId: "role-member" }),
     );
     await waitFor(() => expect(screen.getByLabelText("Email")).toHaveValue(""));
+  });
+
+  it("hides a role the viewer can't grant from the invite form's role picker", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/crm/roles`, () => HttpResponse.json({ success: true, data: ROLES })),
+      http.get(`${API_BASE}/crm/invites`, () => HttpResponse.json({ success: true, data: [] })),
+    );
+
+    renderInviteSection({ viewerPermissionKeys: [] });
+    await screen.findByText("No invites yet.");
+
+    const roleSelect = screen.getByLabelText("Role");
+    expect(within(roleSelect).getByRole("option", { name: "Member" })).toBeInTheDocument();
+    expect(within(roleSelect).queryByRole("option", { name: "Admin" })).not.toBeInTheDocument();
   });
 });

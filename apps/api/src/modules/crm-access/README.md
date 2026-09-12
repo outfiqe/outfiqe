@@ -281,6 +281,32 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   `PATCH /api/crm/organization` (gated `org:update`) renames the organization — the one org-settings
   write a tenant has. `findOrganizationByLinkedBrandId` and the `linkedBrand` name join on
   `listOrganizations` remain the only Step-0 additions.
+- **Granting a permission to someone else requires holding it yourself — a fifth server-side rule
+  on the custom-role builder, plus the same rule on membership role changes and invites.**
+  `roles:manage`, `members:manage` and `members:invite` are all real, independently grantable
+  permissions — a tenant can hand any one of them to a custom role without the other two. Before
+  this rule existed, that meant a member with only `members:invite` could invite a brand-new
+  account straight into the built-in Admin role (every selectable permission), or a member with
+  only `members:manage` could repoint any teammate's role to Admin, with nothing checking the
+  _acting_ member's own grant against what they were handing out — a real, unauthenticated-by-role
+  privilege-escalation hole, not a hypothetical. `assertPermissionKeysWithinActorGrant`
+  (`crm-access.service.ts`) closes it: `createRole`, `updateRole`, `updateMembership` and
+  `inviteMember` all take the acting membership's own permission grant
+  (`toActingPermissionGrant`, `crm-access.utils.ts` — `{ isSuperAdmin, permissionKeys }` built from
+  `res.locals.crmMembership` in the controller) and reject any permission key beyond it with
+  `403 PERMISSION_EXCEEDS_ACTOR_GRANT`. The SUPERADMIN always bypasses this check, deliberately —
+  ownership can move to a membership holding any role via ownership transfer (see below), so a
+  SUPERADMIN's own role permissions are not a reliable ceiling for what they're allowed to grant.
+  `updateRole` only checks the permissions being **newly added** (diffed against the role's current
+  permission set), not the full submitted set, so a `roles:manage` holder can still freely rename a
+  role or strip permissions from it — including ones they don't personally hold — without hitting
+  this check; only _adding_ a permission they lack is blocked. The `apps/admin` UI mirrors this as
+  defense-in-depth, not as the actual boundary: `RoleFormModal` disables a permission checkbox the
+  viewer can't grant (unless it was already on the role being edited), and `MembersSection`/
+  `InviteSection` filter their role pickers to roles the viewer could actually assign — but the
+  server-side check above is what actually stops it, proven in
+  `crm-access.integration.test.ts`'s "Permission escalation guards" tests, which hit the raw API
+  directly.
 - **`listOrganizations` is scoped `isPlatformOrg: false`** (`TENANT_ORGANIZATION_SCOPE` from
   `#constants/organization.constants`, shared with `platform-metrics`). The platform org is an
   `Organization` row too but not a tenant, so the admin "Organizations" screen — which manages CRM
