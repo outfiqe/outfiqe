@@ -9,6 +9,7 @@ import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
+import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
 import {
   ensurePlatformOrganizationExists,
   seedPlatformOrganization,
@@ -41,6 +42,7 @@ const createPlatformStaffUser = async (name: string) => {
   const staff = await createStaffUser(name);
   await ensurePlatformOrganizationExists();
   await crmAccessService.grantPlatformStaffMembership(staff.id);
+  await grantPlatformPermissions(staff.id, "platform:organizations:manage");
   return staff;
 };
 
@@ -242,6 +244,19 @@ describe("POST /api/crm/organizations", () => {
     const response = await request(testApp)
       .post("/api/crm/organizations")
       .set("Authorization", `Bearer ${accessToken}`)
+      .send({ name: "Shouldn't Work", subdomain: `nope-${randomUUID().slice(0, 8)}` });
+
+    expect(response.status).toBe(403);
+  });
+
+  it("blocks a platform staffer without platform:organizations:manage", async () => {
+    const staff = await createStaffUser("No Organizations Permission");
+    await ensurePlatformOrganizationExists();
+    await crmAccessService.grantPlatformStaffMembership(staff.id);
+
+    const response = await request(testApp)
+      .post("/api/crm/organizations")
+      .set("Authorization", authHeaderFor(staff.id))
       .send({ name: "Shouldn't Work", subdomain: `nope-${randomUUID().slice(0, 8)}` });
 
     expect(response.status).toBe(403);
@@ -471,12 +486,42 @@ describe("GET /api/crm/organizations", () => {
       .set("Authorization", authHeaderFor(staff.id));
 
     expect(response.status).toBe(200);
-    const ids = response.body.data.map((organization: { id: string }) => organization.id);
+    const ids = response.body.data.organizations.map(
+      (organization: { id: string }) => organization.id,
+    );
     expect(ids).toEqual(expect.arrayContaining([first.id, second.id]));
     expect(ids.indexOf(first.id)).toBeLessThan(ids.indexOf(second.id));
-    for (const organization of response.body.data) {
+    for (const organization of response.body.data.organizations) {
       expect(organization).toHaveProperty("linkedBrandName");
     }
+  });
+
+  it("paginates with a cursor once more organizations exist than the page limit", async () => {
+    const { organization: first } = await seedOrganization();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const { organization: second } = await seedOrganization();
+    const staff = await createPlatformStaffUser("Org Paginator");
+
+    const firstPage = await request(testApp)
+      .get("/api/crm/organizations")
+      .query({ limit: 1 })
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(firstPage.status).toBe(200);
+    expect(firstPage.body.data.organizations).toHaveLength(1);
+    expect(firstPage.body.data.organizations[0].id).toBe(first.id);
+    expect(firstPage.body.data.nextCursor).toBe(first.id);
+
+    const secondPage = await request(testApp)
+      .get("/api/crm/organizations")
+      .query({ limit: 1, cursor: firstPage.body.data.nextCursor })
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(secondPage.status).toBe(200);
+    const secondPageIds = secondPage.body.data.organizations.map(
+      (organization: { id: string }) => organization.id,
+    );
+    expect(secondPageIds).toContain(second.id);
   });
 
   it("excludes the platform organization, which is not a tenant", async () => {
@@ -489,7 +534,9 @@ describe("GET /api/crm/organizations", () => {
       .set("Authorization", authHeaderFor(staff.id));
 
     expect(response.status).toBe(200);
-    const ids = response.body.data.map((organization: { id: string }) => organization.id);
+    const ids = response.body.data.organizations.map(
+      (organization: { id: string }) => organization.id,
+    );
     expect(ids).toContain(tenant.id);
     expect(ids).not.toContain(platformOrganization.id);
   });
@@ -508,7 +555,7 @@ describe("GET /api/crm/organizations", () => {
       .set("Authorization", authHeaderFor(staff.id));
 
     expect(response.status).toBe(200);
-    const linkedOrganization = response.body.data.find(
+    const linkedOrganization = response.body.data.organizations.find(
       (candidate: { id: string }) => candidate.id === organization.id,
     );
     expect(linkedOrganization.linkedBrandName).toBe("Rollup Brand Co");

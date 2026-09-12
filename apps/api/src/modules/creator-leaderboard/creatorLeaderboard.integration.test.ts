@@ -8,6 +8,7 @@ import { CreatorLeaderboardCategory, CreatorStatus, UserRole } from "#generated/
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { previousIsoWeekKey } from "#lib/iso-week.utils.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
+import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
 import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -34,6 +35,7 @@ const createAdmin = async () => {
   const admin = await createCreator();
   await ensurePlatformOrganizationExists();
   await crmAccessService.grantPlatformStaffMembership(admin.id);
+  await grantPlatformPermissions(admin.id, "platform:gamification:manage");
   const { accessToken } = generateTokenpair({ sub: admin.id, role: UserRole.ADMIN });
   return { ...admin, header: `Bearer ${accessToken}` };
 };
@@ -206,6 +208,20 @@ describe("PATCH /api/creator-leaderboard/categories/:category (admin)", () => {
   it("requires the ADMIN role", async () => {
     const nonAdmin = await createCreator();
     const { accessToken } = generateTokenpair({ sub: nonAdmin.id, role: UserRole.CUSTOMER });
+
+    const response = await request(testApp)
+      .patch(`/api/creator-leaderboard/categories/${CreatorLeaderboardCategory.TOP_XP}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ enabled: false });
+
+    expect(response.status).toBe(403);
+  });
+
+  it("blocks a platform staffer without platform:gamification:manage", async () => {
+    const staffer = await createCreator();
+    await ensurePlatformOrganizationExists();
+    await crmAccessService.grantPlatformStaffMembership(staffer.id);
+    const { accessToken } = generateTokenpair({ sub: staffer.id, role: UserRole.ADMIN });
 
     const response = await request(testApp)
       .patch(`/api/creator-leaderboard/categories/${CreatorLeaderboardCategory.TOP_XP}`)

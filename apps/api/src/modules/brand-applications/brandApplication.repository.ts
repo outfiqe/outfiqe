@@ -1,11 +1,24 @@
 import { prisma } from "#db/prisma.js";
 import { BrandApplicationStatus } from "#generated/prisma/enums.js";
+import { AppError } from "#middlewares/error-handler.js";
 
 import type {
   ApproveBrandApplicationInput,
   BrandApplicationRecord,
   CreateBrandApplicationInput,
 } from "./brandApplication.types.js";
+
+const CONFLICT_STATUS = 409;
+
+const requireClaimedPendingRow = (claimedCount: number): void => {
+  if (claimedCount === 0) {
+    throw new AppError(
+      "ALREADY_REVIEWED",
+      "This application has already been reviewed.",
+      CONFLICT_STATUS,
+    );
+  }
+};
 
 export const brandApplicationRepository = {
   async create(input: CreateBrandApplicationInput): Promise<BrandApplicationRecord> {
@@ -29,9 +42,14 @@ export const brandApplicationRepository = {
   },
 
   async reject(id: string, reviewedById: string): Promise<BrandApplicationRecord> {
-    return prisma.brandApplication.update({
-      where: { id },
-      data: { status: BrandApplicationStatus.REJECTED, reviewedAt: new Date(), reviewedById },
+    return prisma.$transaction(async (tx) => {
+      const claim = await tx.brandApplication.updateMany({
+        where: { id, status: BrandApplicationStatus.PENDING },
+        data: { status: BrandApplicationStatus.REJECTED, reviewedAt: new Date(), reviewedById },
+      });
+      requireClaimedPendingRow(claim.count);
+
+      return tx.brandApplication.findUniqueOrThrow({ where: { id } });
     });
   },
 
@@ -40,6 +58,16 @@ export const brandApplicationRepository = {
     input: ApproveBrandApplicationInput,
   ): Promise<{ brandId: string }> {
     const brand = await prisma.$transaction(async (tx) => {
+      const claim = await tx.brandApplication.updateMany({
+        where: { id: application.id, status: BrandApplicationStatus.PENDING },
+        data: {
+          status: BrandApplicationStatus.APPROVED,
+          reviewedAt: new Date(),
+          reviewedById: input.reviewedById,
+        },
+      });
+      requireClaimedPendingRow(claim.count);
+
       const brand = await tx.brand.create({
         data: {
           name: application.brandName,
@@ -58,15 +86,6 @@ export const brandApplicationRepository = {
           tokenHash: input.tokenHash,
           expiresAt: input.expiresAt,
           approvedById: input.reviewedById,
-        },
-      });
-
-      await tx.brandApplication.update({
-        where: { id: application.id },
-        data: {
-          status: BrandApplicationStatus.APPROVED,
-          reviewedAt: new Date(),
-          reviewedById: input.reviewedById,
         },
       });
 

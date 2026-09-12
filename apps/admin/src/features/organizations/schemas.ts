@@ -13,6 +13,12 @@ export const organizationSchema = z.object({
 });
 export type Organization = z.infer<typeof organizationSchema>;
 
+export const organizationListPageSchema = z.object({
+  organizations: z.array(organizationSchema),
+  nextCursor: z.string().nullable(),
+});
+export type OrganizationListPage = z.infer<typeof organizationListPageSchema>;
+
 export const organizationCreationSuggestionSchema = z.object({
   brandId: z.string(),
   brandName: z.string(),

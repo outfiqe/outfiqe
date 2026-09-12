@@ -35,7 +35,7 @@ import type {
   OrganizationCreationSuggestion,
   OrganizationInviteRecord,
   OrganizationInviteSummary,
-  OrganizationListItem,
+  OrganizationListPage,
   OrganizationRecord,
   OwnershipTransferRequestRecord,
   PendingOwnershipTransferSummary,
@@ -249,8 +249,17 @@ export const crmAccessService = {
     };
   },
 
-  async listOrganizations(): Promise<OrganizationListItem[]> {
-    return crmAccessRepository.listOrganizations();
+  async listOrganizations(params: {
+    cursor?: string;
+    limit: number;
+  }): Promise<OrganizationListPage> {
+    const rows = await crmAccessRepository.listOrganizations(params);
+
+    const hasMore = rows.length > params.limit;
+    const organizations = hasMore ? rows.slice(0, params.limit) : rows;
+    const nextCursor = hasMore ? (organizations.at(-1)?.id ?? null) : null;
+
+    return { organizations, nextCursor };
   },
 
   async listPermissions(): Promise<PermissionRecord[]> {

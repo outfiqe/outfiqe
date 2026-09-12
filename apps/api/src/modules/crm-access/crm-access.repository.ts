@@ -58,10 +58,15 @@ export const crmAccessRepository = {
     return prisma.organization.findFirst({ orderBy: { createdAt: "asc" } });
   },
 
-  async listOrganizations(): Promise<OrganizationListItem[]> {
+  async listOrganizations(params: {
+    cursor?: string;
+    limit: number;
+  }): Promise<OrganizationListItem[]> {
     const organizations = await prisma.organization.findMany({
       where: TENANT_ORGANIZATION_SCOPE,
-      orderBy: { createdAt: "asc" },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      take: params.limit + 1,
+      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
       include: { linkedBrand: { select: { name: true } } },
     });
     return organizations.map(({ linkedBrand, ...organization }) => ({

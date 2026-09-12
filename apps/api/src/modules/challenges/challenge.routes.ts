@@ -4,6 +4,7 @@ import { optionalAuth } from "#middlewares/optional-auth.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import { challengeController } from "./challenge.controller.js";
@@ -14,6 +15,10 @@ import {
 } from "./challenge.schemas.js";
 
 const requireAdmin = [requireAuth, requirePlatformAccess, requirePlatformNavItem("gamification")];
+const requireGamificationMutationAdmin = [
+  ...requirePlatformRole("platform:gamification:manage"),
+  requirePlatformNavItem("gamification"),
+];
 
 export const challengeRoutes = Router();
 
@@ -23,7 +28,7 @@ challengeRoutes.get("/", optionalAuth, challengeController.listActive);
 
 challengeRoutes.post(
   "/",
-  ...requireAdmin,
+  ...requireGamificationMutationAdmin,
   validate({ body: createChallengeSchema }),
   challengeController.create,
 );
@@ -37,7 +42,7 @@ challengeRoutes.get(
 
 challengeRoutes.patch(
   "/:challengeId",
-  ...requireAdmin,
+  ...requireGamificationMutationAdmin,
   validate({ params: challengeIdParamSchema, body: updateChallengeSchema }),
   challengeController.update,
 );

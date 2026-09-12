@@ -11,9 +11,12 @@ payable snapshot (`BrandPayout`) that a brand's withdrawable balance is summed f
 
 ## Structure
 
-- `brandPayout.routes.ts` — `GET /me/summary`, `GET /me` (brand member); `GET/POST
-/commission-rules`, `GET/POST /gateway-fee-rates`, `GET/POST /exemptions`, `PATCH
-/exemptions/:id/revoke` (admin).
+- `brandPayout.routes.ts` — `GET /me/summary`, `GET /me` (brand member); `GET /commission-rules`,
+  `GET /gateway-fee-rates`, `GET /exemptions` are admin reads (`requirePlatformAccess` +
+  `requirePlatformNavItem("platform-commission")`); `POST /commission-rules`, `POST
+/gateway-fee-rates`, `POST /exemptions`, `PATCH /exemptions/:id/revoke` additionally need
+  `platform:commissions:manage` (`requirePlatformRole`, see `platform-access/README.md` and
+  `commissions/README.md`).
 - `brandPayout.controller.ts` — resolves the caller's brand via `requireBrandId`, reads validated
   input, calls the service.
 - `brandPayout.service.ts` — summary/ledger listing for a brand; creates a new active commission

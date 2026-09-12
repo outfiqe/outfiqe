@@ -48,6 +48,7 @@ export default defineConfig({
         "src/features/explore/components/ExploreFeed.tsx",
         "src/features/brand-profile/components/BrandProfile.tsx",
         "src/features/product-detail/api/getProductDetailServer.ts",
+        "src/features/products/api/getProductsServer.ts",
         "src/features/creator-leaderboard/components/CreatorLeaderboardTabs.tsx",
         "src/features/explore/components/FeedFilterTabs.tsx",
         "src/features/explore/components/ExploreSidebarNav.tsx",

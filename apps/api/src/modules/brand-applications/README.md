@@ -43,7 +43,12 @@ half-provisioned.
 
 - `approve` rejects (409 `ALREADY_REVIEWED`) if the application isn't `PENDING` — this guards
   against a double-click or two admins approving the same application concurrently; only the first
-  request wins.
+  request wins. The service-level check is a fast-path pre-check only; the actual guarantee is an
+  atomic `updateMany({ where: { id, status: PENDING } })` inside the same transaction as the
+  `Brand`/`BrandInvite` writes (`brandApplication.repository.ts`) — a plain read-then-write here
+  would let two concurrent `approve` calls (or a racing `approve` + `reject`) both pass the read
+  and each provision its own `Brand`, so the status flip is the thing that's atomic, not just the
+  earlier read.
 - `approve` also rejects (409 `EMAIL_ALREADY_REGISTERED`) when the application email already
   belongs to a `User`. The brand-invite flow (`auth.registerBrand`) only ever _creates_ a new
   `BRAND_OWNER` account — there is no path to upgrade an existing shopper/creator/staff account —

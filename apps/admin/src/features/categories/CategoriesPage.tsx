@@ -1,4 +1,4 @@
-import { Badge, Button, cn, FormBanner, Input } from "@outfiqe/design-system";
+import { Badge, Button, cn, FormBanner, Input, toast } from "@outfiqe/design-system";
 import { useDragReorder } from "@outfiqe/hooks";
 import { LANDING_TASTE_CATEGORY_COUNT } from "@outfiqe/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -6,6 +6,7 @@ import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
 import { ImageUpload } from "@/components/ImageUpload";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { categoriesApi } from "./api";
 import type { Category, CategoryStatusValue } from "./schemas";
@@ -57,12 +58,14 @@ export const CategoriesPage = () => {
     mutationFn: (category: Category) =>
       categoriesApi.setStatus(category.id, category.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED"),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-categories"] }),
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const setCategoryImage = useMutation({
     mutationFn: ({ id, imageUrl: url }: { id: string; imageUrl: string }) =>
       categoriesApi.setImage(id, url),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-categories"] }),
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const reorder = useMutation({

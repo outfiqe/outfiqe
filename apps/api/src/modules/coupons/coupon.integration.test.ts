@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { CouponType, PaymentMethod, ProductStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
-import { createAdminSession } from "#test/integration/authHelpers.js";
+import { createAdminSession, grantPlatformPermissions } from "#test/integration/authHelpers.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -14,6 +14,12 @@ import { uniquePhone } from "#test/integration/uniqueValues.js";
 const authHeaderFor = (userId: string) => {
   const { accessToken } = generateTokenpair({ sub: userId, role: UserRole.CUSTOMER });
   return `Bearer ${accessToken}`;
+};
+
+const createCouponAdmin = async () => {
+  const admin = await createAdminSession();
+  await grantPlatformPermissions(admin.userId, "platform:coupons:manage");
+  return admin;
 };
 
 const createBuyer = async () => {
@@ -117,7 +123,7 @@ const BUDGET_BELOW_THRESHOLD = 10_000;
 
 describe("POST /api/admin/coupons", () => {
   it("creates a coupon", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createCouponAdmin();
 
     const response = await request(testApp)
       .post("/api/admin/coupons")
@@ -136,7 +142,7 @@ describe("POST /api/admin/coupons", () => {
   });
 
   it("rejects a duplicate code", async () => {
-    const { authHeader, userId } = await createAdminSession();
+    const { authHeader, userId } = await createCouponAdmin();
     await createCoupon({ code: "DUPE1", createdById: userId });
 
     const response = await request(testApp)
@@ -149,7 +155,7 @@ describe("POST /api/admin/coupons", () => {
   });
 
   it("starts paused and pending approval once the budget exceeds the approval threshold", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createCouponAdmin();
 
     const response = await request(testApp)
       .post("/api/admin/coupons")
@@ -169,7 +175,7 @@ describe("POST /api/admin/coupons", () => {
   });
 
   it("goes straight to active when the budget is under the approval threshold", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createCouponAdmin();
 
     const response = await request(testApp)
       .post("/api/admin/coupons")
@@ -190,7 +196,7 @@ describe("POST /api/admin/coupons", () => {
 
 describe("PATCH /api/admin/coupons/:id/approve", () => {
   it("refuses activation before approval", async () => {
-    const { authHeader, userId } = await createAdminSession();
+    const { authHeader, userId } = await createCouponAdmin();
     const coupon = await createCoupon({
       createdById: userId,
       totalBudgetAmount: BUDGET_ABOVE_THRESHOLD,
@@ -210,7 +216,7 @@ describe("PATCH /api/admin/coupons/:id/approve", () => {
   });
 
   it("refuses a same-admin sign-off", async () => {
-    const { authHeader, userId } = await createAdminSession();
+    const { authHeader, userId } = await createCouponAdmin();
     const coupon = await createCoupon({
       createdById: userId,
       totalBudgetAmount: BUDGET_ABOVE_THRESHOLD,
@@ -230,7 +236,7 @@ describe("PATCH /api/admin/coupons/:id/approve", () => {
 
   it("activates the coupon once a different admin approves", async () => {
     const { userId: creatorId } = await createAdminSession();
-    const { authHeader: approverAuthHeader, userId: approverId } = await createAdminSession();
+    const { authHeader: approverAuthHeader, userId: approverId } = await createCouponAdmin();
     const coupon = await createCoupon({
       createdById: creatorId,
       totalBudgetAmount: BUDGET_ABOVE_THRESHOLD,
@@ -253,7 +259,7 @@ describe("PATCH /api/admin/coupons/:id/approve", () => {
 
 describe("PATCH /api/admin/coupons/:id/budget", () => {
   it("re-requires approval when a budget raise crosses the threshold", async () => {
-    const { authHeader, userId } = await createAdminSession();
+    const { authHeader, userId } = await createCouponAdmin();
     const coupon = await createCoupon({
       createdById: userId,
       totalBudgetAmount: BUDGET_BELOW_THRESHOLD,
@@ -271,7 +277,7 @@ describe("PATCH /api/admin/coupons/:id/budget", () => {
   });
 
   it("doesn't require re-approval for a raise that stays under the threshold", async () => {
-    const { authHeader, userId } = await createAdminSession();
+    const { authHeader, userId } = await createCouponAdmin();
     const coupon = await createCoupon({
       createdById: userId,
       totalBudgetAmount: 5_000,
@@ -308,7 +314,7 @@ describe("GET /api/admin/coupons", () => {
 
 describe("PATCH /api/admin/coupons/:id/status", () => {
   it("pauses an active coupon", async () => {
-    const { authHeader, userId } = await createAdminSession();
+    const { authHeader, userId } = await createCouponAdmin();
     const coupon = await createCoupon({ createdById: userId });
 
     const response = await request(testApp)
@@ -318,6 +324,18 @@ describe("PATCH /api/admin/coupons/:id/status", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data.status).toBe("PAUSED");
+  });
+
+  it("blocks a platform staffer without platform:coupons:manage", async () => {
+    const { authHeader, userId } = await createAdminSession();
+    const coupon = await createCoupon({ createdById: userId });
+
+    const response = await request(testApp)
+      .patch(`/api/admin/coupons/${coupon.id}/status`)
+      .set("Authorization", authHeader)
+      .send({ status: "PAUSED" });
+
+    expect(response.status).toBe(403);
   });
 });
 

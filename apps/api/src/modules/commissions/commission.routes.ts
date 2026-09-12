@@ -3,6 +3,7 @@
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import { commissionController } from "./commission.controller.js";
@@ -17,6 +18,10 @@ import {
 } from "./commission.schemas.js";
 
 const requireAdmin = [requireAuth, requirePlatformAccess, requirePlatformNavItem("commissions")];
+const requireCommissionMutationAdmin = [
+  ...requirePlatformRole("platform:commissions:manage"),
+  requirePlatformNavItem("commissions"),
+];
 
 export const commissionRoutes = Router();
 
@@ -33,21 +38,21 @@ commissionRoutes.get("/tiers", ...requireAdmin, commissionController.listTiers);
 
 commissionRoutes.post(
   "/tiers",
-  ...requireAdmin,
+  ...requireCommissionMutationAdmin,
   validate({ body: createCommissionTierSchema }),
   commissionController.createTier,
 );
 
 commissionRoutes.patch(
   "/tiers/:id",
-  ...requireAdmin,
+  ...requireCommissionMutationAdmin,
   validate({ params: commissionTierIdParamSchema, body: updateCommissionTierSchema }),
   commissionController.updateTier,
 );
 
 commissionRoutes.delete(
   "/tiers/:id",
-  ...requireAdmin,
+  ...requireCommissionMutationAdmin,
   validate({ params: commissionTierIdParamSchema }),
   commissionController.deleteTier,
 );
@@ -61,21 +66,21 @@ commissionRoutes.get(
 
 commissionRoutes.post(
   "/:id/approve",
-  ...requireAdmin,
+  ...requireCommissionMutationAdmin,
   validate({ params: commissionIdParamSchema }),
   commissionController.approve,
 );
 
 commissionRoutes.post(
   "/:id/void",
-  ...requireAdmin,
+  ...requireCommissionMutationAdmin,
   validate({ params: commissionIdParamSchema, body: voidCommissionSchema }),
   commissionController.void,
 );
 
 commissionRoutes.post(
   "/:id/mark-paid",
-  ...requireAdmin,
+  ...requireCommissionMutationAdmin,
   validate({ params: commissionIdParamSchema }),
   commissionController.markPaid,
 );

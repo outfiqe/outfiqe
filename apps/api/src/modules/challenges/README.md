@@ -11,7 +11,7 @@ A promotional, time-boxed layer on top of the achievement engine (spec 36–37):
 - `challenge.utils.ts` — `computeChallengeStatus`, the one pure function here (`UPCOMING`/`OPEN`/`ENDED` from `activeFrom`/`activeUntil`/`now`). Unit tests live here.
 - `challenge.repository.ts` — Prisma queries only. `createChallengeWithAchievementAndBadge`/`updateChallengeWithAchievementAndBadge` write `Badge`, `Achievement`, and `Challenge` together (a triple-nested `create`, or a three-statement transaction for updates) — see rationale for why the relation chain runs `Challenge → Achievement → Badge`, not `Challenge → Badge`. `listActiveChallenges`/`findActiveChallengeById` (both filtered to `Challenge.isActive` and `Badge.isActive`), `listAllChallengesAdmin` (everything, for the admin list).
 - `challenge.service.ts` — `listActiveChallengesForViewer`/`findActiveChallengeForViewer` (the public reads — load the challenge(s), then, only if a `viewerId` is present, batch-fetch completion state and per-condition progress and fold it in), plus thin pass-throughs for the admin CRUD (`listAllChallengesAdmin`, `createChallenge`, `updateChallenge`).
-- `challenge.controller.ts` / `challenge.routes.ts` — `GET /challenges` and `GET /challenges/:challengeId` (`optionalAuth`, public), `GET /challenges/admin`, `POST /challenges`, `PATCH /challenges/:challengeId` (`requireRole(ADMIN)`).
+- `challenge.controller.ts` / `challenge.routes.ts` — `GET /challenges` and `GET /challenges/:challengeId` (`optionalAuth`, public), `GET /challenges/admin` (`requirePlatformAccess` + `requirePlatformNavItem("gamification")`); `POST /challenges`/`PATCH /challenges/:challengeId` additionally need `platform:gamification:manage` (`requirePlatformRole`, see `platform-access/README.md`).
 
 ## Funnel
 

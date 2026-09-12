@@ -117,4 +117,44 @@ describe("ProductReviewsPage", () => {
     expect(await screen.findByText("Only platform staff can remove reviews.")).toBeInTheDocument();
     expect(screen.getByText("Runs true to size.")).toBeInTheDocument();
   });
+
+  it("loads the next page of reviews on demand", async () => {
+    const secondReview = {
+      ...REVIEW,
+      id: "review-2",
+      title: "Runs small",
+      body: "Sized up and it fit perfectly.",
+    };
+    mswServer.use(
+      http.get(`${API_BASE}/products/autocomplete`, () =>
+        HttpResponse.json({ success: true, data: [PRODUCT] }),
+      ),
+      http.get(`${API_BASE}/products/product-1/reviews`, ({ request }) => {
+        const cursor = new URL(request.url).searchParams.get("cursor");
+        if (!cursor) {
+          return HttpResponse.json({
+            success: true,
+            data: { reviews: [REVIEW], nextCursor: "review-1" },
+          });
+        }
+        return HttpResponse.json({
+          success: true,
+          data: { reviews: [secondReview], nextCursor: null },
+        });
+      }),
+    );
+
+    const user = userEvent.setup();
+    render(<ProductReviewsPage />, { wrapper });
+    await user.type(screen.getByPlaceholderText("Search products by name…"), "Everyday");
+    await user.click(await screen.findByText("Everyday Tee"));
+
+    expect(await screen.findByText("Runs true to size.")).toBeInTheDocument();
+    expect(screen.queryByText("Sized up and it fit perfectly.")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Load more" }));
+
+    expect(await screen.findByText("Sized up and it fit perfectly.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Load more" })).not.toBeInTheDocument();
+  });
 });

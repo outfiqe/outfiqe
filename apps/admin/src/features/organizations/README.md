@@ -19,7 +19,12 @@ signup.
   `OrganizationCreationSuggestion` carries `existingOrganizationForBrand`.
 - `api.ts` — `organizationsApi.list`/`.suggestFromBrand`/`.create`, thin `apiClient` calls against
   `GET /api/crm/organizations`, `GET /api/crm/organizations/suggest`, `POST /api/crm/organizations`.
-  `.create` takes a single `{ name, subdomain, targetOwnerUserId, linkedBrandId }` input.
+  `.list` takes an optional `cursor` and returns a `{ organizations, nextCursor }` page — every
+  tenant onboarded grows this list without bound, so `OrganizationsPage.tsx` reads it via
+  `useInfiniteQuery` with a "Load more" button, the same pattern `AuditPage` uses, rather than one
+  unbounded fetch. `.create` takes a single `{ name, subdomain, targetOwnerUserId, linkedBrandId }`
+  input, gated server-side on `platform:organizations:manage` (see `crm-access/README.md` in
+  `apps/api`) — listing/suggesting stay on the coarser platform-staff gate.
 - `BusinessOwnerField.tsx` — brand-search autocomplete for picking the business to onboard, same
   shape as `features/gamification/BadgesSection/BrandSponsorField.tsx`, built on the shared
   `brandsApi.search` (`apps/admin/src/lib/brandsApi.ts`) rather than a third local copy of that

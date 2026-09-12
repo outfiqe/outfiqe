@@ -75,7 +75,10 @@ export const getNewArrivalsServer = async (): Promise<ExploreProduct[]> => {
 
 export const getFeaturedCreatorLooksServer = async (): Promise<FeedPost[]> => {
   try {
-    const raw = await serverApiRequest<FeedPage>("/creator-looks");
+    const accessToken = await getServerAccessToken();
+    const raw = await serverApiRequest<FeedPage>("/creator-looks", {
+      accessToken: accessToken ?? undefined,
+    });
     return feedPageSchema.parse(raw).posts;
   } catch {
     return [];

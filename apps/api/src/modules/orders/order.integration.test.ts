@@ -18,7 +18,7 @@ import {
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
-import { createAdminSession } from "#test/integration/authHelpers.js";
+import { createAdminSession, grantPlatformPermissions } from "#test/integration/authHelpers.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -419,7 +419,8 @@ describe("POST /api/orders/checkout — settlement ledger", () => {
   });
 
   it("applies the correct band of a multi-tier ladder based on the item's price", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader, userId } = await createAdminSession();
+    await grantPlatformPermissions(userId, "platform:commissions:manage");
     await request(testApp)
       .post("/api/brand-payouts/commission-rules")
       .set("Authorization", authHeader)

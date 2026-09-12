@@ -10,7 +10,9 @@ rest and only ever decrypted through one narrow, audited admin path.
 ## Structure
 
 - `bankAccount.routes.ts` — `POST /`, `GET /`, `PATCH /:id/default` (owner-only); `PATCH
-/:id/verify`, `GET /:id/reveal` (admin-only).
+/:id/verify`, `GET /:id/reveal` need `platform:withdraw:manage` (`requirePlatformRole`, see
+  `platform-access/README.md` — reused from the withdraw module, since verifying/revealing a bank
+  account is part of the same "clear money out to a real bank" workflow, not a separate concern).
 - `bankAccount.controller.ts` — reads validated input + the auth principal, calls the service.
 - `bankAccount.service.ts` — business rules: validates the bank is active/known
   (`nepalBankService.requireActiveBank`), encrypts the account number on create, flags an

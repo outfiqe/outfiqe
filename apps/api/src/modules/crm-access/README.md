@@ -170,8 +170,11 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   recreated for it to take effect — see `deploy/README.md`'s "Known gotchas".
 - **Creating a second organization** (`POST /api/crm/organizations`) is deliberately not
   tenant-scoped — there's no `Membership` to check permissions against before the org exists — so
-  it's gated on `requirePlatformAccess` instead, registered before
-  `crmAccessRoutes.use(resolveTenant, ...)` so it never runs through tenant resolution at all. The
+  it's gated on `requirePlatformRole("platform:organizations:manage")` instead (see
+  `platform-access/README.md`), registered before `crmAccessRoutes.use(resolveTenant, ...)` so it
+  never runs through tenant resolution at all. `GET /organizations`/`/organizations/suggest` stay
+  on the coarser `requirePlatformAccess` view gate — tenant creation is the sensitive action here,
+  not looking at the list. The
   creating account automatically becomes the new org's SUPERADMIN at creation time — matching how
   creating a workspace in Slack/Notion/Vercel makes you its owner, not a separate "assign yourself"
   step — but see the next bullet for what happens immediately after, when a target owner is given.
@@ -311,6 +314,10 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   `#constants/organization.constants`, shared with `platform-metrics`). The platform org is an
   `Organization` row too but not a tenant, so the admin "Organizations" screen — which manages CRM
   tenants — must not list it. `platform-metrics` applies the same constant to every tenant query.
+- **`listOrganizations` is cursor-paginated** (`cursor`/`limit`, same `take: limit + 1` /
+  `hasMore` shape every other paginated list in this codebase uses), rather than a single unbounded
+  `findMany` — every tenant that signs up grows this table without bound. The admin Organizations
+  screen uses `useInfiniteQuery` with a "Load more" button, the same pattern `AuditPage` uses.
 - **Ownership transfer requires the recipient's acceptance — it's never an immediate, unilateral
   handoff.** Every other membership-changing action in this module already works this way (CRM
   invites, admin invites both require an explicit accept step), so this follows the same shape

@@ -4,7 +4,7 @@ import { bankAccountBodySchema, bankAccountIdParamSchema } from "#lib/bank-accou
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 
 import { bankAccountController } from "./bankAccount.controller.js";
 
@@ -19,7 +19,7 @@ const createBankAccountRateLimit = rateLimit({
   message: "Too many bank account changes. Please wait a moment and try again.",
 });
 
-const requireAdmin = [requireAuth, requirePlatformAccess];
+const requireBankAccountMutationAdmin = requirePlatformRole("platform:withdraw:manage");
 
 export const bankAccountRoutes = Router();
 
@@ -42,14 +42,14 @@ bankAccountRoutes.patch(
 
 bankAccountRoutes.patch(
   "/:id/verify",
-  ...requireAdmin,
+  ...requireBankAccountMutationAdmin,
   validate({ params: bankAccountIdParamSchema }),
   bankAccountController.verify,
 );
 
 bankAccountRoutes.get(
   "/:id/reveal",
-  ...requireAdmin,
+  ...requireBankAccountMutationAdmin,
   validate({ params: bankAccountIdParamSchema }),
   bankAccountController.reveal,
 );

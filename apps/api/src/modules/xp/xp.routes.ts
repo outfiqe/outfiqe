@@ -21,6 +21,10 @@ import {
 } from "./xp.schemas.js";
 
 const requireAdmin = [requireAuth, requirePlatformAccess, requirePlatformNavItem("gamification")];
+const requireGamificationMutationAdmin = [
+  ...requirePlatformRole("platform:gamification:manage"),
+  requirePlatformNavItem("gamification"),
+];
 
 export const xpRoutes = Router();
 
@@ -37,14 +41,14 @@ xpRoutes.get("/levels", ...requireAdmin, xpController.listLevels);
 
 xpRoutes.post(
   "/levels",
-  ...requireAdmin,
+  ...requireGamificationMutationAdmin,
   validate({ body: createLevelSchema }),
   xpController.createLevel,
 );
 
 xpRoutes.patch(
   "/levels/:id",
-  ...requireAdmin,
+  ...requireGamificationMutationAdmin,
   validate({ params: levelIdParamSchema, body: updateLevelSchema }),
   xpController.updateLevel,
 );
@@ -55,14 +59,14 @@ xpRoutes.get("/multipliers", ...requireAdmin, xpController.listMultipliers);
 
 xpRoutes.post(
   "/multipliers",
-  ...requireAdmin,
+  ...requireGamificationMutationAdmin,
   validate({ body: createXpMultiplierSchema }),
   xpController.createMultiplier,
 );
 
 xpRoutes.patch(
   "/multipliers/:id",
-  ...requireAdmin,
+  ...requireGamificationMutationAdmin,
   validate({ params: xpMultiplierIdParamSchema, body: updateXpMultiplierSchema }),
   xpController.updateMultiplier,
 );
@@ -71,7 +75,7 @@ xpRoutes.get("/activity-config", ...requireAdmin, xpController.listActivityConfi
 
 xpRoutes.patch(
   "/activity-config/:activityType",
-  ...requireAdmin,
+  ...requireGamificationMutationAdmin,
   validate({ params: activityTypeParamSchema, body: updateActivityXpConfigSchema }),
   xpController.updateActivityConfig,
 );

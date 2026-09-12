@@ -1,5 +1,5 @@
 import { Button, FormBanner, Input } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -7,14 +7,19 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { organizationsApi } from "./api";
 import { BusinessOwnerField } from "./BusinessOwnerField";
 
+const ORGANIZATIONS_QUERY_KEY = ["organizations"];
+
 export const OrganizationsPage = () => {
   const queryClient = useQueryClient();
 
-  const {
-    data: organizations,
-    isLoading,
-    error,
-  } = useQuery({ queryKey: ["organizations"], queryFn: organizationsApi.list });
+  const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: ORGANIZATIONS_QUERY_KEY,
+      queryFn: ({ pageParam }) => organizationsApi.list(pageParam),
+      initialPageParam: undefined as string | undefined,
+      getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    });
+  const organizations = data?.pages.flatMap((page) => page.organizations);
 
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
   const [selectedBrandName, setSelectedBrandName] = useState("");
@@ -60,7 +65,7 @@ export const OrganizationsPage = () => {
     },
     onSuccess: () => {
       resetForm();
-      queryClient.invalidateQueries({ queryKey: ["organizations"] });
+      queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY });
     },
     onError: (mutationError) => setFormError(getErrorMessage(mutationError)),
   });
@@ -154,6 +159,17 @@ export const OrganizationsPage = () => {
             </div>
           </div>
         ))}
+
+        {hasNextPage && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isFetchingNextPage}
+            onClick={() => fetchNextPage()}
+          >
+            {isFetchingNextPage ? "Loading…" : "Load more"}
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import { ICON_IMAGE_MIME_TYPES, MAX_ICON_IMAGE_BYTES } from "./badge.constants.js";
@@ -23,6 +24,10 @@ import {
 } from "./badge.schemas.js";
 
 const requireAdmin = [requireAuth, requirePlatformAccess, requirePlatformNavItem("gamification")];
+const requireGamificationMutationAdmin = [
+  ...requirePlatformRole("platform:gamification:manage"),
+  requirePlatformNavItem("gamification"),
+];
 
 const INVALID_FILE_STATUS = 422;
 const allowedIconImageMimeTypes = new Set<string>(ICON_IMAGE_MIME_TYPES);
@@ -71,7 +76,7 @@ badgeRoutes.get("/admin", ...requireAdmin, badgeController.listAllAdmin);
 
 badgeRoutes.post(
   "/admin/icon-image",
-  ...requireAdmin,
+  ...requireGamificationMutationAdmin,
   handleIconImageUpload,
   badgeController.uploadIconImage,
 );
@@ -89,7 +94,7 @@ badgeRoutes.get("/user-badges/manual", ...requireAdmin, badgeController.listManu
 
 badgeRoutes.post(
   "/",
-  ...requireAdmin,
+  ...requireGamificationMutationAdmin,
   validate({ body: createBadgeSchema }),
   badgeController.create,
 );
@@ -110,7 +115,7 @@ badgeRoutes.patch(
 
 badgeRoutes.post(
   "/user-badges/:userBadgeId/remove",
-  ...requireAdmin,
+  ...requireGamificationMutationAdmin,
   validate({ params: userBadgeIdParamSchema, body: removeUserBadgeSchema }),
   badgeController.removeUserBadge,
 );
@@ -124,14 +129,14 @@ badgeRoutes.patch(
 
 badgeRoutes.patch(
   "/:badgeId",
-  ...requireAdmin,
+  ...requireGamificationMutationAdmin,
   validate({ params: badgeIdParamSchema, body: updateBadgeSchema }),
   badgeController.update,
 );
 
 badgeRoutes.post(
   "/:badgeId/award",
-  ...requireAdmin,
+  ...requireGamificationMutationAdmin,
   validate({ params: badgeIdParamSchema, body: awardBadgeSchema }),
   badgeController.award,
 );
