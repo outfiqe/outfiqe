@@ -147,11 +147,13 @@ support reports, and review the organization's audit log — against the `/api/c
 - `pipelineApi.ts` / `pipelineSchemas.ts` — `crmPipelineApi` (stage CRUD + reorder, deal CRUD) +
   Zod mirrors of `/api/crm/pipeline/*` and `/api/crm/deals`.
 - `PipelinePage.tsx` — a `KanbanBoard` (`@outfiqe/components`) of stages → deals. `deals:write`
-  gets a "New deal" button (`DealFormModal.tsx`, with a partner picker fed by
-  `crmRelationshipsApi.listPartners`); `pipeline:configure` gets "Configure stages"
-  (`StageConfigModal.tsx` — add / rename-less delete / drag-or-arrow reorder via
-  `useDragReorder`). Moving a card patches the
-  deal's `stageId`.
+  gets a "New deal" button (`DealFormModal.tsx`, with `PartnerSearchField` — a debounced,
+  type-to-search picker over `crmRelationshipsApi.listPartners`'s `q` param, not a fixed page of
+  options, since a brand can have far more than one page of partners); `pipeline:configure` gets
+  "Configure stages" (`StageConfigModal.tsx` — add / rename-less delete / drag-or-arrow reorder via
+  `useDragReorder`). The board itself is passed `disabled={!canWriteDeals || moveDeal.isPending}`
+  (see `KanbanBoard`'s own README for why) and a failed move surfaces as a toast instead of
+  silently reverting. Moving a card patches the deal's `stageId`.
 - `activitiesApi.ts` / `activitiesSchemas.ts` — `crmActivitiesApi` (timeline, log activity, task
   CRUD) + Zod mirrors of `/api/crm/timeline`, `/api/crm/activities`, `/api/crm/tasks`.
 - `TimelineSection.tsx` — the merged Timeline (logged activity + live order rows) with an inline
@@ -163,7 +165,14 @@ support reports, and review the organization's audit log — against the `/api/c
   status change, assign, comment) + Zod mirrors of `/api/crm/tickets*`.
 - `TicketsPage.tsx` — the Support tab: a status-filtered ticket list; clicking a row expands
   `TicketDetail.tsx` inline (description, forward-only status buttons, assignee `<Select>`,
-  internal comment thread). "New ticket" modal collects type / title / description / customer. The
+  internal comment thread). "New ticket" modal collects type / title / description / a customer
+  picked via `CustomerSearchField` (the same debounced-search pattern as `PartnerSearchField`, over
+  `crmRelationshipsApi.listCustomers`). "New ticket", the status buttons, and the comment form are
+  all gated on `tickets:write`; the assignee `<Select>` is gated on the stricter `tickets:manage`
+  (`TicketsPage` computes both and passes them into `TicketDetail` as `canWrite`/
+  `canManageAssignee`) — matching what the corresponding routes actually require server-side
+  (`crm-tickets.routes.ts`), not just hiding the "New ticket" button while leaving every other
+  control interactive for a read-only viewer. The
   status filter is URL-bound via `@/lib/useSearchFilter` (`?status=`, default "all" omitted;
   `_authenticated.crm.support.index.tsx` declares the `validateSearch`).
 - `format.utils.ts` — `formatRupees` / `formatDate` / `formatDateTime` / `formatDuration`

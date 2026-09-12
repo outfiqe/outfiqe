@@ -76,12 +76,50 @@ describe("DealFormModal", () => {
     const user = userEvent.setup({ delay: null });
 
     await user.type(screen.getByLabelText("Title"), "Autumn drop");
-    await user.selectOptions(await screen.findByLabelText("Partner"), "u1");
+    await user.type(screen.getByLabelText("Partner"), "aasha");
+    await user.click(await screen.findByRole("option", { name: /Aasha/ }));
     await user.click(screen.getByRole("button", { name: "Create deal" }));
 
     await waitFor(() =>
       expect(body).toMatchObject({ title: "Autumn drop", stageId: "s1", partnerCreatorId: "u1" }),
     );
+  });
+
+  it("searches partners by the typed query instead of a fixed page of options", async () => {
+    let lastQueryParam: string | null = "unset";
+    mswServer.use(
+      http.get(`${API_BASE}/crm/partners`, ({ request }) => {
+        lastQueryParam = new URL(request.url).searchParams.get("q");
+        return HttpResponse.json({
+          success: true,
+          data: {
+            items: [
+              {
+                creatorId: "u2",
+                name: "Beyond The Fold",
+                handle: "beyondthefold",
+                avatarUrl: null,
+                tagClickCount: 0,
+                attributedOrderCount: 0,
+                attributedRevenue: 0,
+                lastActivityAt: null,
+              },
+            ],
+            total: 1,
+            hasMore: false,
+            reason: null,
+          },
+        });
+      }),
+    );
+
+    render(<DealFormModal open onClose={() => {}} stages={STAGES} deal={null} />, { wrapper });
+    const user = userEvent.setup({ delay: null });
+
+    await user.type(screen.getByLabelText("Partner"), "beyond");
+
+    expect(await screen.findByRole("option", { name: /Beyond The Fold/ })).toBeInTheDocument();
+    expect(lastQueryParam).toBe("beyond");
   });
 
   it("edits an existing deal without the partner field", async () => {
