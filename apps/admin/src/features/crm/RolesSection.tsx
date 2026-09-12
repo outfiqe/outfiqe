@@ -43,15 +43,32 @@ const groupSelectablePermissions = (permissions: Permission[]): PermissionGroup[
 type RoleFormModalProps = {
   permissionGroups: PermissionGroup[];
   editingRole: Role | null;
+  viewerIsSuperAdmin: boolean;
+  viewerPermissionKeys: string[];
   onClose: () => void;
 };
 
-const RoleFormModal = ({ permissionGroups, editingRole, onClose }: RoleFormModalProps) => {
+const RoleFormModal = ({
+  permissionGroups,
+  editingRole,
+  viewerIsSuperAdmin,
+  viewerPermissionKeys,
+  onClose,
+}: RoleFormModalProps) => {
   const queryClient = useQueryClient();
   const [name, setName] = useState(editingRole?.name ?? "");
+  const rolesOwnOriginalPermissionKeys = useMemo(
+    () => new Set(editingRole?.permissionKeys ?? []),
+    [editingRole],
+  );
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(
     new Set(editingRole?.permissionKeys ?? []),
   );
+
+  const isPermissionBeyondViewersOwnGrant = (permissionKey: string) =>
+    !viewerIsSuperAdmin &&
+    !viewerPermissionKeys.includes(permissionKey) &&
+    !rolesOwnOriginalPermissionKeys.has(permissionKey);
 
   const toggleKey = (key: string) => {
     setSelectedKeys((current) => {
@@ -102,18 +119,24 @@ const RoleFormModal = ({ permissionGroups, editingRole, onClose }: RoleFormModal
             <div key={permissionGroup.group} className="space-y-2">
               <p className="text-sm font-semibold text-foreground">{permissionGroup.group}</p>
               <div className="grid gap-2 sm:grid-cols-2">
-                {permissionGroup.permissions.map((permission) => (
-                  <label
-                    key={permission.key}
-                    className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
-                  >
-                    <Checkbox
-                      checked={selectedKeys.has(permission.key)}
-                      onChange={() => toggleKey(permission.key)}
-                    />
-                    {permission.label}
-                  </label>
-                ))}
+                {permissionGroup.permissions.map((permission) => {
+                  const disabled = isPermissionBeyondViewersOwnGrant(permission.key);
+                  return (
+                    <label
+                      key={permission.key}
+                      className="flex cursor-pointer items-center gap-2 text-sm text-foreground aria-disabled:cursor-not-allowed aria-disabled:text-muted-foreground"
+                      aria-disabled={disabled}
+                      title={disabled ? "You don't have this permission yourself" : undefined}
+                    >
+                      <Checkbox
+                        checked={selectedKeys.has(permission.key)}
+                        disabled={disabled}
+                        onChange={() => toggleKey(permission.key)}
+                      />
+                      {permission.label}
+                    </label>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -308,6 +331,8 @@ export const RolesSection = ({
         <RoleFormModal
           permissionGroups={permissionGroups}
           editingRole={editingRole}
+          viewerIsSuperAdmin={viewerIsSuperAdmin}
+          viewerPermissionKeys={viewerPermissionKeys}
           onClose={() => {
             setCreating(false);
             setEditingRole(null);

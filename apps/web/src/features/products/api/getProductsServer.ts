@@ -3,6 +3,7 @@ import "server-only";
 import type { ProductSort } from "@outfiqe/utils";
 import { z } from "zod";
 
+import { getServerAccessToken } from "@/features/auth/api/serverAuth";
 import {
   type FeedPage,
   feedPageSchema,
@@ -38,7 +39,10 @@ export const getProductsFirstPageServer = async ({
     if (type) params.set("type", type);
     if (sort) params.set("sort", sort);
 
-    const raw = await serverApiRequest<ProductPage>(`/products?${params.toString()}`);
+    const accessToken = await getServerAccessToken();
+    const raw = await serverApiRequest<ProductPage>(`/products?${params.toString()}`, {
+      accessToken: accessToken ?? undefined,
+    });
     return productPageSchema.parse(raw);
   } catch {
     return null;
@@ -47,7 +51,10 @@ export const getProductsFirstPageServer = async ({
 
 export const getTrendingProductsServer = async (): Promise<ExploreProduct[]> => {
   try {
-    const raw = await serverApiRequest<PublicProduct[]>("/products/trending");
+    const accessToken = await getServerAccessToken();
+    const raw = await serverApiRequest<PublicProduct[]>("/products/trending", {
+      accessToken: accessToken ?? undefined,
+    });
     return productListSchema.parse(raw).map(toExploreProduct);
   } catch {
     return [];
@@ -56,7 +63,10 @@ export const getTrendingProductsServer = async (): Promise<ExploreProduct[]> => 
 
 export const getNewArrivalsServer = async (): Promise<ExploreProduct[]> => {
   try {
-    const raw = await serverApiRequest<PublicProduct[]>("/products/new-arrivals");
+    const accessToken = await getServerAccessToken();
+    const raw = await serverApiRequest<PublicProduct[]>("/products/new-arrivals", {
+      accessToken: accessToken ?? undefined,
+    });
     return productListSchema.parse(raw).map(toExploreProduct);
   } catch {
     return [];

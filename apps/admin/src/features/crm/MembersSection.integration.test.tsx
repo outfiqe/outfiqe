@@ -34,11 +34,16 @@ const wrapper = ({ children }: { children: ReactNode }) => {
 };
 
 const renderMembersSection = (
-  overrides: { viewerIsSuperAdmin?: boolean; hasPendingOwnershipTransfer?: boolean } = {},
+  overrides: {
+    viewerIsSuperAdmin?: boolean;
+    viewerPermissionKeys?: string[];
+    hasPendingOwnershipTransfer?: boolean;
+  } = {},
 ) =>
   render(
     <MembersSection
       viewerIsSuperAdmin={overrides.viewerIsSuperAdmin ?? false}
+      viewerPermissionKeys={overrides.viewerPermissionKeys ?? ["members:read"]}
       hasPendingOwnershipTransfer={overrides.hasPendingOwnershipTransfer ?? false}
     />,
     { wrapper },
@@ -256,6 +261,37 @@ describe("MembersSection", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(patchCalled).toBe(false);
     expect(screen.getByRole("combobox")).toHaveValue("role-member");
+  });
+
+  it("hides a role the viewer can't grant from the picker, but still shows the member's current role", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/crm/roles`, () => HttpResponse.json({ success: true, data: ROLES })),
+      http.get(`${API_BASE}/crm/members`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [
+            {
+              id: "membership-2",
+              userId: "user-2",
+              userName: "Grace Hopper",
+              userEmail: "grace@outfiqe.test",
+              roleId: "role-member",
+              roleName: "Member",
+              status: "ACTIVE",
+              isSuperAdmin: false,
+              createdAt: "2026-01-01T00:00:00.000Z",
+            },
+          ],
+        }),
+      ),
+    );
+
+    renderMembersSection({ viewerPermissionKeys: [] });
+    await screen.findByText("Grace Hopper");
+
+    const combobox = screen.getByRole("combobox");
+    expect(within(combobox).getByRole("option", { name: "Member" })).toBeInTheDocument();
+    expect(within(combobox).queryByRole("option", { name: "Admin" })).not.toBeInTheDocument();
   });
 
   it("shows a transfer ownership button for an eligible member when the viewer is the SUPERADMIN", async () => {

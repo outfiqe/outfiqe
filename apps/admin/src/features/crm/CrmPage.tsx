@@ -80,10 +80,16 @@ export const CrmPage = () => {
               {canViewMembers(organization) && (
                 <MembersSection
                   viewerIsSuperAdmin={organization.viewerIsSuperAdmin}
+                  viewerPermissionKeys={organization.viewerPermissionKeys}
                   hasPendingOwnershipTransfer={organization.pendingOwnershipTransfer !== null}
                 />
               )}
-              {canInviteMembers(organization) && <InviteSection />}
+              {canInviteMembers(organization) && (
+                <InviteSection
+                  viewerIsSuperAdmin={organization.viewerIsSuperAdmin}
+                  viewerPermissionKeys={organization.viewerPermissionKeys}
+                />
+              )}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">

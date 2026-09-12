@@ -33,7 +33,9 @@ const TICKET = {
   updatedAt: "2026-08-20T00:00:00.000Z",
 };
 
-const mockCommon = () => {
+const mockCommon = (
+  overrides: { viewerIsSuperAdmin?: boolean; viewerPermissionKeys?: string[] } = {},
+) => {
   mswServer.use(
     http.get(`${API_BASE}/crm/organization`, () =>
       HttpResponse.json({
@@ -45,8 +47,8 @@ const mockCommon = () => {
           trialEndsAt: null,
           linkedBrandId: "brand-1",
           superAdminMembershipId: "m-1",
-          viewerIsSuperAdmin: true,
-          viewerPermissionKeys: [],
+          viewerIsSuperAdmin: overrides.viewerIsSuperAdmin ?? true,
+          viewerPermissionKeys: overrides.viewerPermissionKeys ?? [],
           pendingOwnershipTransfer: null,
           advancedFeaturesEnabled: true,
         },
@@ -220,7 +222,8 @@ describe("TicketsPage", () => {
     await user.click(await screen.findByRole("button", { name: "New ticket" }));
     await user.type(await screen.findByLabelText("Title"), "Late delivery");
     await user.type(screen.getByLabelText("Description"), "Nothing arrived");
-    await user.selectOptions(await screen.findByLabelText("Customer"), "c-1");
+    await user.type(screen.getByLabelText("Customer"), "sita");
+    await user.click(await screen.findByRole("option", { name: /Sita/ }));
     await user.click(screen.getByRole("button", { name: "Create ticket" }));
 
     await waitFor(() =>
@@ -230,6 +233,26 @@ describe("TicketsPage", () => {
         subjectId: "c-1",
       }),
     );
+  });
+
+  it("hides write controls for a viewer with only tickets:read", async () => {
+    mockCommon({ viewerIsSuperAdmin: false, viewerPermissionKeys: ["tickets:read"] });
+    mswServer.use(
+      http.get(`${API_BASE}/crm/tickets/tk-1`, () =>
+        HttpResponse.json({ success: true, data: { ...TICKET, comments: [] } }),
+      ),
+    );
+
+    renderTicketsPage();
+    const user = userEvent.setup({ delay: null });
+
+    expect(screen.queryByRole("button", { name: "New ticket" })).not.toBeInTheDocument();
+
+    await user.click(await screen.findByRole("button", { name: /Damaged package/ }));
+
+    expect(await screen.findByRole("button", { name: "in progress" })).toBeDisabled();
+    expect(screen.getByLabelText("Assignee")).toBeDisabled();
+    expect(screen.queryByLabelText("New comment")).not.toBeInTheDocument();
   });
 
   it("filters the ticket list by status and reflects it in the URL", async () => {

@@ -6,9 +6,9 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { crmApi } from "./api";
+import { CustomerSearchField, type SelectedCustomer } from "./CustomerSearchField";
 import { formatDate } from "./format.utils";
 import { PlanGateBanner } from "./PlanGateBanner";
-import { crmRelationshipsApi } from "./relationshipsApi";
 import { TicketDetail } from "./TicketDetail";
 import { crmTicketsApi } from "./ticketsApi";
 import {
@@ -25,20 +25,13 @@ const TICKET_STATUS_FILTER = oneOfFilter<TicketStatusValue | typeof NO_STATUS_FI
   TICKET_STATUSES,
   NO_STATUS_FILTER,
 );
-const OPTIONS_PAGE_SIZE = 100;
 
 const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const queryClient = useQueryClient();
   const [type, setType] = useState<TicketTypeValue>("COMPLAINT");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [customerId, setCustomerId] = useState("");
-
-  const { data: customerPage } = useQuery({
-    queryKey: ["crm-customer-options"],
-    queryFn: () => crmRelationshipsApi.listCustomers({ pageSize: OPTIONS_PAGE_SIZE }),
-    enabled: open,
-  });
+  const [customer, setCustomer] = useState<SelectedCustomer | null>(null);
 
   const create = useMutation({
     mutationFn: () =>
@@ -47,7 +40,7 @@ const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void 
         title: title.trim(),
         description: description.trim(),
         subjectType: "customer",
-        subjectId: customerId,
+        subjectId: customer?.userId ?? "",
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TICKETS_QUERY_KEY });
@@ -109,19 +102,7 @@ const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void 
           <label htmlFor="ticket-customer" className="text-xs text-muted-foreground">
             Customer
           </label>
-          <Select
-            id="ticket-customer"
-            value={customerId}
-            onChange={(event) => setCustomerId(event.target.value)}
-            required
-          >
-            <option value="">Select a customer…</option>
-            {(customerPage?.items ?? []).map((customer) => (
-              <option key={customer.userId} value={customer.userId}>
-                {customer.name} (@{customer.handle})
-              </option>
-            ))}
-          </Select>
+          <CustomerSearchField id="ticket-customer" value={customer} onChange={setCustomer} />
         </div>
 
         {create.isError && <FormBanner>{getErrorMessage(create.error)}</FormBanner>}
@@ -135,7 +116,7 @@ const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void 
             disabled={
               title.trim().length === 0 ||
               description.trim().length === 0 ||
-              customerId === "" ||
+              customer === null ||
               create.isPending
             }
           >
@@ -155,6 +136,12 @@ export const TicketsPage = () => {
 
   const canReadMembers =
     organization?.viewerIsSuperAdmin || organization?.viewerPermissionKeys.includes("members:read");
+  const canWriteTickets =
+    organization?.viewerIsSuperAdmin ||
+    organization?.viewerPermissionKeys.includes("tickets:write");
+  const canManageTickets =
+    organization?.viewerIsSuperAdmin ||
+    organization?.viewerPermissionKeys.includes("tickets:manage");
   const { data: members } = useQuery({
     queryKey: ["crm-members"],
     queryFn: crmApi.listMembers,
@@ -196,9 +183,11 @@ export const TicketsPage = () => {
               </option>
             ))}
           </Select>
-          <Button size="sm" onClick={() => setModalOpen(true)}>
-            New ticket
-          </Button>
+          {canWriteTickets && (
+            <Button size="sm" onClick={() => setModalOpen(true)}>
+              New ticket
+            </Button>
+          )}
         </div>
       </div>
 
@@ -239,6 +228,8 @@ export const TicketsPage = () => {
                         id: member.id,
                         userName: member.userName,
                       }))}
+                      canWrite={Boolean(canWriteTickets)}
+                      canManageAssignee={Boolean(canManageTickets)}
                     />
                   </div>
                 )}

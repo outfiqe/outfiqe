@@ -39,8 +39,8 @@ productRoutes.get(
   validate({ query: listReviewProductsQuerySchema }),
   productController.listForReview,
 );
-productRoutes.get("/trending", productController.listTrending);
-productRoutes.get("/new-arrivals", productController.listNewArrivals);
+productRoutes.get("/trending", optionalAuth, productController.listTrending);
+productRoutes.get("/new-arrivals", optionalAuth, productController.listNewArrivals);
 productRoutes.get(
   "/autocomplete",
   validate({ query: autocompleteQuerySchema }),
@@ -49,6 +49,7 @@ productRoutes.get(
 
 productRoutes.get(
   "/",
+  optionalAuth,
   validate({ query: listPublicProductsQuerySchema }),
   productController.listPublic,
 );

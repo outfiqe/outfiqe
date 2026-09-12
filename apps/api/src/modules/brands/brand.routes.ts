@@ -40,6 +40,7 @@ brandRoutes.get(
 );
 brandRoutes.get(
   "/:id/products",
+  optionalAuth,
   validate({ params: brandIdParamSchema, query: listBrandProductsQuerySchema }),
   brandController.listProducts,
 );

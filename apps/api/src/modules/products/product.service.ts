@@ -113,6 +113,19 @@ const notifyBrand = async (
   await sendEmail({ to: brand.email, subject, body: fallbackBody, html });
 };
 
+const hydrateSavedFlags = async (
+  products: PublicProduct[],
+  viewerId?: string,
+): Promise<PublicProduct[]> => {
+  if (!viewerId || products.length === 0) return products;
+
+  const savedProductIds = await wishlistRepository.listSavedProductIds(
+    viewerId,
+    products.map((product) => product.id),
+  );
+  return products.map((product) => ({ ...product, isSaved: savedProductIds.has(product.id) }));
+};
+
 export const productService = {
   async create(
     userId: string,
@@ -436,17 +449,20 @@ export const productService = {
     return suggestions;
   },
 
-  async listPublic({
-    type: typeSlug,
-    category,
-    q,
-    sort,
-    minPrice,
-    maxPrice,
-    inStock,
-    cursor,
-    limit,
-  }: ListPublicProductsQuery): Promise<PublicProductPage> {
+  async listPublic(
+    {
+      type: typeSlug,
+      category,
+      q,
+      sort,
+      minPrice,
+      maxPrice,
+      inStock,
+      cursor,
+      limit,
+    }: ListPublicProductsQuery,
+    viewerId?: string,
+  ): Promise<PublicProductPage> {
     const productTypeId = typeSlug ? (await productTypeService.getBySlug(typeSlug)).id : undefined;
     const categoryId = category ? (await categoryService.getBySlug(category)).id : undefined;
 
@@ -467,7 +483,8 @@ export const productService = {
       const nextCursor =
         nextOffset < total ? encodeCursor<ProductSearchCursor>({ offset: nextOffset }) : null;
 
-      return { products: rows.map(toPublicProduct), nextCursor, total, brandCount };
+      const products = await hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
+      return { products, nextCursor, total, brandCount };
     }
 
     const isUnfilteredTrendingBrowse =
@@ -488,8 +505,9 @@ export const productService = {
           productRepository.countPublic({}),
         ]);
 
+        const products = await hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
         return {
-          products: rows.map(toPublicProduct),
+          products,
           nextCursor,
           total: counts.total,
           brandCount: counts.brandCount,
@@ -506,8 +524,9 @@ export const productService = {
 
     const { items: pagedProducts, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
 
+    const products = await hydrateSavedFlags(pagedProducts.map(toPublicProduct), viewerId);
     return {
-      products: pagedProducts.map(toPublicProduct),
+      products,
       nextCursor,
       total: counts.total,
       brandCount: counts.brandCount,
@@ -553,6 +572,7 @@ export const productService = {
   async listPublicByBrand(
     brandId: string,
     { type: typeSlug, cursor, limit }: ListBrandProductsQuery,
+    viewerId?: string,
   ): Promise<PublicProductPage> {
     const productTypeId = typeSlug ? (await productTypeService.getBySlug(typeSlug)).id : undefined;
 
@@ -563,25 +583,27 @@ export const productService = {
 
     const { items: pagedProducts, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
 
+    const products = await hydrateSavedFlags(pagedProducts.map(toPublicProduct), viewerId);
     return {
-      products: pagedProducts.map(toPublicProduct),
+      products,
       nextCursor,
       total: counts.total,
       brandCount: counts.brandCount,
     };
   },
 
-  async listTrending(): Promise<PublicProduct[]> {
+  async listTrending(viewerId?: string): Promise<PublicProduct[]> {
     const rankedIds = await trendingService.getTrendingProductIds(TRENDING_LIMIT);
     const rows =
       rankedIds.length > 0
         ? await productRepository.listApprovedByIds(rankedIds)
         : await productRepository.listTrending();
-    return rows.map(toPublicProduct);
+    return hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
   },
 
-  async listNewArrivals(): Promise<PublicProduct[]> {
-    return (await productRepository.listNewArrivals()).map(toPublicProduct);
+  async listNewArrivals(viewerId?: string): Promise<PublicProduct[]> {
+    const rows = await productRepository.listNewArrivals();
+    return hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
   },
 
   async decrementStockForItems(

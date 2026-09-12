@@ -100,7 +100,7 @@ describe("RolesSection", () => {
       }),
     );
 
-    renderRolesSection({ viewerPermissionKeys: ["roles:read", "roles:manage"] });
+    renderRolesSection({ viewerPermissionKeys: ["roles:read", "roles:manage", "reports:read"] });
     const user = userEvent.setup({ delay: null });
 
     await user.click(await screen.findByRole("button", { name: "New role" }));
@@ -135,7 +135,7 @@ describe("RolesSection", () => {
       }),
     );
 
-    renderRolesSection({ viewerPermissionKeys: ["roles:read", "roles:manage"] });
+    renderRolesSection({ viewerPermissionKeys: ["roles:read", "roles:manage", "tickets:write"] });
     const user = userEvent.setup({ delay: null });
 
     const supportRow = (await screen.findByText("Support agent")).closest(
@@ -155,6 +155,46 @@ describe("RolesSection", () => {
         name: "Support agent",
         permissionKeys: ["tickets:read", "tickets:write"],
       }),
+    );
+  });
+
+  it("disables a permission the viewer doesn't hold themselves and keeps it out of the submitted set", async () => {
+    mockLists();
+    let patchedBody: unknown;
+    mswServer.use(
+      http.patch(`${API_BASE}/crm/roles/role-support`, async ({ request }) => {
+        patchedBody = await request.json();
+        return HttpResponse.json({
+          success: true,
+          data: {
+            id: "role-support",
+            name: "Support agent",
+            isBuiltIn: false,
+            permissionKeys: ["tickets:read"],
+          },
+        });
+      }),
+    );
+
+    renderRolesSection({ viewerPermissionKeys: ["roles:read", "roles:manage"] });
+    const user = userEvent.setup({ delay: null });
+
+    const supportRow = (await screen.findByText("Support agent")).closest(
+      "div.rounded-xl",
+    ) as HTMLElement;
+    await user.click(within(supportRow).getByRole("button", { name: "Edit" }));
+
+    const dialog = screen.getByRole("dialog");
+    const ungrantedCheckbox = within(dialog).getByRole("checkbox", { name: "Edit tickets" });
+    expect(ungrantedCheckbox).toBeDisabled();
+
+    await user.click(ungrantedCheckbox);
+    expect(ungrantedCheckbox).not.toBeChecked();
+
+    await user.click(within(dialog).getByRole("button", { name: "Save role" }));
+
+    await waitFor(() =>
+      expect(patchedBody).toEqual({ name: "Support agent", permissionKeys: ["tickets:read"] }),
     );
   });
 

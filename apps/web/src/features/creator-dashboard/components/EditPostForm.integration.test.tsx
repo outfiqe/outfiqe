@@ -190,6 +190,7 @@ describe("EditPostForm", () => {
                 unitsSold: 0,
                 avgRating: null,
                 reviewCount: 0,
+                isSaved: false,
               },
             ],
             nextCursor: null,
