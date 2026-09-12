@@ -139,6 +139,7 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
           aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
           aria-pressed={saved}
           onClick={toggleSaved}
+          disabled={wishlistMutation.isPending}
           className={cn(
             "absolute right-3 top-3 size-8 bg-background/90 text-foreground hover:bg-background",
             saved && "text-primary",

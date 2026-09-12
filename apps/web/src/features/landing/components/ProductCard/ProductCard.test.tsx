@@ -7,6 +7,7 @@ import { type ExploreProduct, ProductCard } from "./index";
 const push = vi.fn();
 const mutate = vi.fn();
 const useAuthMock = vi.fn(() => ({ isAuthenticated: false }));
+const wishlistMutationState = { isPending: false };
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
@@ -16,7 +17,7 @@ vi.mock("@/features/auth/context/AuthContext", () => ({
   useAuth: () => useAuthMock(),
 }));
 vi.mock("@/features/wishlist", () => ({
-  useToggleWishlist: () => ({ mutate }),
+  useToggleWishlist: () => ({ mutate, isPending: wishlistMutationState.isPending }),
 }));
 vi.mock("next/link", () => ({
   __esModule: true,
@@ -41,6 +42,7 @@ beforeEach(() => {
   push.mockClear();
   mutate.mockClear();
   useAuthMock.mockReturnValue({ isAuthenticated: false });
+  wishlistMutationState.isPending = false;
 });
 
 describe("ProductCard rating display", () => {
@@ -101,6 +103,14 @@ describe("ProductCard save button", () => {
       "aria-pressed",
       "true",
     );
+  });
+
+  it("disables the save button while a wishlist toggle is already in flight", () => {
+    useAuthMock.mockReturnValue({ isAuthenticated: true });
+    wishlistMutationState.isPending = true;
+    render(<ProductCard product={buildProduct()} />);
+
+    expect(screen.getByRole("button", { name: "Save to wishlist" })).toBeDisabled();
   });
 
   it("rolls the pressed state back if the wishlist mutation errors", async () => {
