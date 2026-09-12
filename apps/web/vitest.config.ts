@@ -239,7 +239,7 @@ export default defineConfig({
           testTimeout: 10000,
           pool: "forks",
           maxWorkers: 1,
-          execArgv: ["--max-old-space-size=4096"],
+          execArgv: ["--max-old-space-size=3072"],
           vmMemoryLimit: "384mb",
         },
       },

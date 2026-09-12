@@ -46,23 +46,27 @@ start/reset/stop lifecycle live here, not the mocked endpoints themselves.
   issue was scheduler starvation, not any one slow operation. Matches the same reasoning
   `apps/api/vitest.config.ts`'s integration project already applies with its own (larger, DB-bound)
   `testTimeout: 15000`.
-- **`test:integration` (`package.json`) runs the `integration` project as two separate
-  `vitest run --shard` invocations chained with `&&`, instead of one.** At vitest's default worker
-  count, the CI runner's suite crashed with `JavaScript heap out of memory` partway through the run,
-  at an identical point across repeated reruns — a real memory ceiling, not a one-off flake. Each
-  worker boots a real jsdom environment plus MSW's interceptors and renders full pages behind
-  `AuthProvider`/`QueryClientProvider`, heavier per-file than a plain unit test, and memory kept
-  accumulating across sequential files within a worker regardless of how few workers ran at once.
-  Tried, in order, before landing here: `maxWorkers: 2` (still crashed, just later); `maxWorkers: 1`
-  (still crashed — the single worker sat idle for ~5 minutes doing GC, "Ineffective mark-compacts
-  near heap limit", before dying, proving the leak wasn't about concurrency at all); vitest's
-  `vmMemoryLimit` option, meant to recycle a worker before it exhausts memory, at both `"1gb"` and
-  `"384mb"` (the crash point never moved even a single file between the two values, meaning it
-  wasn't actually taking effect here). Splitting the run into two `--shard` invocations sidesteps
-  the problem instead of tuning around it: each shard is a **separate OS process**, so whatever's
-  accumulating gets a real, guaranteed reset halfway through, no matter how vitest's own recycling
-  behaves. `maxWorkers: 1` and the raised `execArgv`/`vmMemoryLimit` settings stay in
-  `vitest.config.ts` as a secondary safety net within each shard.
+- **`test:integration` (`package.json`) runs the `integration` project as three separate
+  `vitest run --shard` invocations chained with `&&`, instead of one; `vitest.config.ts` also caps
+  `maxWorkers: 1` and sets `execArgv: ["--max-old-space-size=3072"]`.** CI's runner
+  (`runs-on: ubuntu-latest`, the standard GitHub-hosted spec — fixed at roughly 2 vCPU / 7GB RAM
+  regardless of billing plan, unless the org pays for larger runners) crashed the suite with
+  `JavaScript heap out of memory` partway through the run, at consistent points across reruns.
+  Tried first, based on a wrong assumption that this was a gradual per-file leak: `maxWorkers: 2`
+  (still crashed, just later); `maxWorkers: 1` (still crashed — the single worker sat idle for ~5
+  minutes doing GC, "Ineffective mark-compacts near heap limit", before dying); `vmMemoryLimit`
+  (meant to recycle a worker before it exhausts memory) at `"1gb"` then `"384mb"` (no effect either
+  time); a 2-way `--shard` split (**still** crashed, at 25/26 files — nearly the same _fraction_
+  through the run as the unsplit suite crashed at, which is what finally gave away the real cause).
+  A fixed-size run crashing near its end regardless of how many files that run actually contains
+  points at the runner's **total system memory**, not a growing per-file leak — confirmed by an
+  earlier attempt that raised `execArgv` to `--max-old-space-size=8192` (8GB): on a ~7GB machine,
+  asking Node to reserve _more_ heap than physically exists doesn't help, it's just a differently-
+  shaped version of the same problem. `3072` MB leaves headroom for the OS, the Postgres/Redis
+  service containers, and Node's own non-heap overhead on that ~7GB box. The 3-way shard split on
+  top of that is real, additional safety margin — fewer files accumulating state before whatever
+  fixed-size pressure exists at the end of a run, each shard being a **separate OS process** so nothing
+  carries over between them regardless of how vitest's own recycling behaves.
 - Not colocated with a single source file, unlike `<name>.test.tsx` files: `mswServer` is one
   shared instance reused by every integration test in the app, and `setup.ts` is wired in as a
   vitest config-level `setupFiles` entry, which has to be a real file path.

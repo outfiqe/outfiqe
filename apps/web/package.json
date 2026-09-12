@@ -21,7 +21,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run --project unit",
-    "test:integration": "vitest run --project integration --shard=1/2 && vitest run --project integration --shard=2/2",
+    "test:integration": "vitest run --project integration --shard=1/3 && vitest run --project integration --shard=2/3 && vitest run --project integration --shard=3/3",
     "test:watch": "vitest",
     "generate:pwa-assets": "tsx scripts/generate-pwa-assets.mts",
     "capture:pwa-screenshots": "tsx scripts/capture-pwa-screenshots.mts",
