@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { CreatorStatus, FollowTargetType, UserRole } from "#generated/prisma/enums.js";
+import {
+  AccountStatus,
+  CreatorStatus,
+  FollowTargetType,
+  UserRole,
+} from "#generated/prisma/enums.js";
 import type { BrandRecord } from "#modules/brands/brand.types.js";
 import type { UserRecord } from "#modules/users/user.types.js";
 
@@ -62,6 +67,11 @@ const baseUser: UserRecord = {
   hideFromLeaderboards: false,
   handleChangedAt: null,
   lastSeenAt: null,
+  accountStatus: AccountStatus.ACTIVE,
+  suspendedAt: null,
+  suspendedBy: null,
+  suspensionReason: null,
+  suspensionExpiresAt: null,
   createdAt: NOW,
   updatedAt: NOW,
 };
@@ -83,6 +93,11 @@ const baseBrand: BrandRecord = {
   rating: 4.5,
   tagReviewPolicy: "TRUSTED_ONLY",
   autoApproveVerifiedBuyers: true,
+  accountStatus: AccountStatus.ACTIVE,
+  suspendedAt: null,
+  suspendedBy: null,
+  suspensionReason: null,
+  suspensionExpiresAt: null,
   createdAt: NOW,
   updatedAt: NOW,
 };

@@ -410,3 +410,113 @@ export const supportResolvedTemplate = (
     `,
   }),
 });
+
+type AccountSuspendedInput = {
+  reason: string;
+  expiresAtLabel: string | null;
+  supportUrl: string;
+};
+
+export const accountSuspendedTemplate = (
+  input: AccountSuspendedInput,
+): { subject: string; html: string } => ({
+  subject: "Your Outfiqe account has been suspended",
+  html: renderEmailLayout({
+    preheader: "Your account has been temporarily suspended.",
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Your account has been suspended</h1>
+      <p style="color:${SUB};margin:0 0 12px;">
+        ${
+          input.expiresAtLabel
+            ? `This is temporary and lifts automatically on ${escapeHtml(input.expiresAtLabel)}.`
+            : "This suspension has no set end date."
+        }
+      </p>
+      ${paragraphsHtml(input.reason)}
+      <p style="color:${SUB};margin:12px 0 0;">
+        If you think this is a mistake, you can reach our support team.
+      </p>
+      ${emailButtonHtml("Contact support", input.supportUrl)}
+    `,
+  }),
+});
+
+type AccountBannedInput = {
+  reason: string;
+  supportUrl: string;
+};
+
+export const accountBannedTemplate = (
+  input: AccountBannedInput,
+): { subject: string; html: string } => ({
+  subject: "Your Outfiqe account has been banned",
+  html: renderEmailLayout({
+    preheader: "Your account has been banned.",
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Your account has been banned</h1>
+      ${paragraphsHtml(input.reason)}
+      <p style="color:${SUB};margin:12px 0 0;">
+        If you think this is a mistake, you can reach our support team.
+      </p>
+      ${emailButtonHtml("Contact support", input.supportUrl)}
+    `,
+  }),
+});
+
+export const accountRestoredTemplate = (): { subject: string; html: string } => ({
+  subject: "Your Outfiqe account is active again",
+  html: renderEmailLayout({
+    preheader: "Your account access has been restored.",
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Welcome back</h1>
+      <p style="color:${SUB};margin:0;">
+        Your account is active again and everything is back to normal.
+      </p>
+    `,
+  }),
+});
+
+type BrandSuspendedInput = {
+  brandName: string;
+  reason: string;
+  expiresAtLabel: string | null;
+  supportUrl: string;
+};
+
+export const brandSuspendedTemplate = (
+  input: BrandSuspendedInput,
+): { subject: string; html: string } => ({
+  subject: `${input.brandName} has been suspended on Outfiqe`,
+  html: renderEmailLayout({
+    preheader: "Your brand's storefront has been temporarily suspended.",
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">${escapeHtml(input.brandName)} has been suspended</h1>
+      <p style="color:${SUB};margin:0 0 12px;">
+        Your listings are hidden from the storefront and order fulfilment is paused.
+        ${
+          input.expiresAtLabel
+            ? `This is temporary and lifts automatically on ${escapeHtml(input.expiresAtLabel)}.`
+            : "This suspension has no set end date."
+        }
+      </p>
+      ${paragraphsHtml(input.reason)}
+      <p style="color:${SUB};margin:12px 0 0;">
+        If you think this is a mistake, you can reach our support team.
+      </p>
+      ${emailButtonHtml("Contact support", input.supportUrl)}
+    `,
+  }),
+});
+
+export const brandRestoredTemplate = (brandName: string): { subject: string; html: string } => ({
+  subject: `${brandName} is active again on Outfiqe`,
+  html: renderEmailLayout({
+    preheader: "Your brand's storefront access has been restored.",
+    bodyHtml: `
+      <h1 style="font-size:20px;margin:0 0 4px;">Welcome back</h1>
+      <p style="color:${SUB};margin:0;">
+        ${escapeHtml(brandName)} is active again — listings are visible and fulfilment can resume.
+      </p>
+    `,
+  }),
+});

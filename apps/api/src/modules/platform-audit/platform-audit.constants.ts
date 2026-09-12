@@ -11,4 +11,10 @@ export const PLATFORM_AUDIT_ACTION = {
   NAV_ACCESS_HIDDEN_KEYS_SET: "nav-access.hidden-keys.set",
   NAV_ACCESS_CO_FOUNDER_PROMOTED: "nav-access.co-founder.promoted",
   NAV_ACCESS_CO_FOUNDER_DEMOTED: "nav-access.co-founder.demoted",
+  USER_SUSPENDED: "user.suspended",
+  USER_UNSUSPENDED: "user.unsuspended",
+  USER_BANNED: "user.banned",
+  USER_UNBANNED: "user.unbanned",
+  BRAND_SUSPENDED: "brand.suspended",
+  BRAND_UNSUSPENDED: "brand.unsuspended",
 } as const;

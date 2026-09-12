@@ -1,4 +1,4 @@
-import { FollowTargetType } from "#generated/prisma/enums.js";
+import { AccountStatus, FollowTargetType } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
@@ -10,8 +10,23 @@ import type { BrandProfile, PublicBrandPage, PublicBrandProfile } from "./brand.
 import { toPublicBrandProfile } from "./brand.utils.js";
 
 const NOT_FOUND_STATUS = 404;
+const FORBIDDEN_STATUS = 403;
 
 export const brandService = {
+  async assertActive(brandId: string): Promise<void> {
+    const accountStatus = await brandRepository.findAccountStatus(brandId);
+    if (!accountStatus) {
+      throw new AppError("BRAND_NOT_FOUND", "Brand not found.", NOT_FOUND_STATUS);
+    }
+    if (accountStatus !== AccountStatus.ACTIVE) {
+      throw new AppError(
+        "BRAND_SUSPENDED",
+        "This brand's account is suspended and can't be acted on right now.",
+        FORBIDDEN_STATUS,
+      );
+    }
+  },
+
   async getMyBrand(userId: string): Promise<BrandProfile> {
     const profile = await brandRepository.findByMemberUserId(userId);
 
@@ -22,6 +37,8 @@ export const brandService = {
         NOT_FOUND_STATUS,
       );
     }
+
+    await brandService.assertActive(profile.brand.id);
 
     return profile;
   },
@@ -36,6 +53,8 @@ export const brandService = {
         NOT_FOUND_STATUS,
       );
     }
+
+    await brandService.assertActive(profile.brand.id);
 
     const linkedAssetIds = [input.bannerImageAssetId, input.avatarImageAssetId].filter(
       (assetId): assetId is string => Boolean(assetId),

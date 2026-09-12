@@ -42,6 +42,7 @@ export const SOCKET_EVENTS = {
   MESSAGE_CREATED: "message:created",
   CONVERSATION_UPDATED: "conversation:updated",
   PRESENCE_CHANGED: "presence:changed",
+  ACCOUNT_SUSPENDED: "account:suspended",
 } as const;
 
 export const SOCKET_RATE_LIMIT = {

@@ -40,6 +40,11 @@ model User {
   hideFromLeaderboards Boolean       @default(false) @map("hide_from_leaderboards")
   handleChangedAt      DateTime?     @map("handle_changed_at")
   lastSeenAt           DateTime?     @map("last_seen_at")
+  accountStatus        AccountStatus @default(ACTIVE) @map("account_status")
+  suspendedAt          DateTime?     @map("suspended_at")
+  suspendedBy          String?       @map("suspended_by") @db.Uuid
+  suspensionReason     String?       @map("suspension_reason")
+  suspensionExpiresAt  DateTime?     @map("suspension_expires_at")
   createdAt            DateTime      @default(now()) @map("created_at")
   updatedAt            DateTime      @updatedAt @map("updated_at")
 
@@ -129,6 +134,8 @@ model User {
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
   @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_name_trgm_idx")
+  @@index([accountStatus])
+  @@index([suspensionExpiresAt])
   @@map("users")
 }
 
@@ -136,6 +143,12 @@ enum UserRole {
   CUSTOMER
   BRAND_OWNER
   ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
 }
 
 enum CreatorStatus {
@@ -261,6 +274,12 @@ model Brand {
   tagReviewPolicy           BrandTagReviewPolicy @default(TRUSTED_ONLY) @map("tag_review_policy")
   autoApproveVerifiedBuyers Boolean              @default(true) @map("auto_approve_verified_buyers")
 
+  accountStatus       AccountStatus @default(ACTIVE) @map("account_status")
+  suspendedAt         DateTime?     @map("suspended_at")
+  suspendedBy         String?       @map("suspended_by") @db.Uuid
+  suspensionReason    String?       @map("suspension_reason")
+  suspensionExpiresAt DateTime?     @map("suspension_expires_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -279,6 +298,8 @@ model Brand {
 
   @@index([bannerImageAssetId])
   @@index([avatarImageAssetId])
+  @@index([accountStatus])
+  @@index([suspensionExpiresAt])
   @@map("brands")
 }
 

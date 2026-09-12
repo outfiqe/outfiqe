@@ -170,7 +170,7 @@ jobs:
       - name: Setup workspace
         uses: ./.github/actions/setup-workspace
       - name: Run integration tests (no coverage)
-        run: pnpm test:integration
+        run: pnpm exec turbo run test:integration --concurrency=1
 
   lighthouse:
     name: Lighthouse

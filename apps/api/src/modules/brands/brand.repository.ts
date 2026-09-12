@@ -1,5 +1,5 @@
 import { prisma } from "#db/prisma.js";
-import { BrandRole, ProductStatus } from "#generated/prisma/enums.js";
+import { type AccountStatus, BrandRole, ProductStatus } from "#generated/prisma/enums.js";
 import { RESPONSIVE_IMAGE_ASSET_SELECT } from "#lib/responsive-image.utils.js";
 
 import type {
@@ -78,5 +78,13 @@ export const brandRepository = {
     return prisma.brand.count({
       where: q ? { name: { contains: q, mode: "insensitive" } } : undefined,
     });
+  },
+
+  async findAccountStatus(brandId: string): Promise<AccountStatus | null> {
+    const brand = await prisma.brand.findUnique({
+      where: { id: brandId },
+      select: { accountStatus: true },
+    });
+    return brand?.accountStatus ?? null;
   },
 };

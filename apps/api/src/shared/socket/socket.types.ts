@@ -126,6 +126,11 @@ export type PresenceChangedPayload = {
   lastSeenAt: string | null;
 };
 
+export type AccountSuspendedPayload = {
+  reason: string;
+  expiresAt: string | null;
+};
+
 // Key literals must match SOCKET_EVENTS in socket.keys.ts.
 export type ServerToClientEvents = {
   "look:created": (payload: LookCreatedPayload) => void;
@@ -145,6 +150,7 @@ export type ServerToClientEvents = {
   "message:created": (payload: MessageBroadcastPayload) => void;
   "conversation:updated": (payload: MessageBroadcastPayload) => void;
   "presence:changed": (payload: PresenceChangedPayload) => void;
+  "account:suspended": (payload: AccountSuspendedPayload) => void;
 };
 
 export type ClientToServerEvents = {

@@ -11,7 +11,7 @@ import { TokenPurpose, TokenTypeEnum } from "#constants/enums/auth.enum.js";
 import { prisma } from "#db/prisma.js";
 import { passwordResetTemplate, verifyEmailTemplate } from "#email-templates/templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
-import { BrandRole, UserRole } from "#generated/prisma/enums.js";
+import { AccountStatus, BrandRole, UserRole } from "#generated/prisma/enums.js";
 import { parseDurationMs } from "#lib/duration.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { generateToken } from "#lib/generate-token.utils.js";
@@ -376,6 +376,21 @@ export const authService = {
         "EMAIL_NOT_VERIFIED",
         "Please verify your email before signing in.",
         FORBIDDEN_STATUS,
+      );
+    }
+
+    if (user.accountStatus !== AccountStatus.ACTIVE) {
+      auditLog("failure", "Login blocked: account suspended or banned", {
+        event: "login.account_suspended",
+        userId: id,
+        email,
+        ip: remoteIp,
+      });
+      throw new AppError(
+        "ACCOUNT_SUSPENDED",
+        "This account has been suspended.",
+        FORBIDDEN_STATUS,
+        { reason: user.suspensionReason, expiresAt: user.suspensionExpiresAt },
       );
     }
 

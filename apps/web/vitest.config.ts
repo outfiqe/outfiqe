@@ -17,6 +17,8 @@ export default defineConfig({
       include: [
         "src/features/auth/utils/safeRedirect.ts",
         "src/features/auth/utils/getDefaultRoute.ts",
+        "src/features/auth/utils/accountSuspended.ts",
+        "src/features/auth/components/AccountSuspendedScreen.tsx",
         "src/features/auth/components/CaptchaChallenge.tsx",
         "src/features/auth/hooks/**/*.{ts,tsx}",
         "src/features/auth/api/oauthApi.ts",

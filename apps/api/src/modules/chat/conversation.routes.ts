@@ -1,7 +1,8 @@
 import { Router } from "express";
 
 import { rateLimit } from "#middlewares/rate-limit.js";
-import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
+import { requireActiveAuth } from "#middlewares/require-active-account.js";
+import { getAuthPrincipal } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 
 import {
@@ -29,38 +30,38 @@ export const conversationRoutes = Router();
 
 conversationRoutes.post(
   "/",
-  requireAuth,
+  ...requireActiveAuth,
   validate({ body: startConversationBodySchema }),
   conversationController.start,
 );
 conversationRoutes.get(
   "/",
-  requireAuth,
+  ...requireActiveAuth,
   validate({ query: listConversationsQuerySchema }),
   conversationController.list,
 );
 conversationRoutes.get(
   "/:id",
-  requireAuth,
+  ...requireActiveAuth,
   validate({ params: conversationIdParamSchema }),
   conversationController.get,
 );
 conversationRoutes.get(
   "/:id/messages",
-  requireAuth,
+  ...requireActiveAuth,
   validate({ params: conversationIdParamSchema, query: listMessagesQuerySchema }),
   messageController.list,
 );
 conversationRoutes.post(
   "/:id/messages",
-  requireAuth,
+  ...requireActiveAuth,
   messageSendRateLimit,
   validate({ params: conversationIdParamSchema, body: sendMessageBodySchema }),
   messageController.send,
 );
 conversationRoutes.patch(
   "/:id/read",
-  requireAuth,
+  ...requireActiveAuth,
   validate({ params: conversationIdParamSchema }),
   messageController.markRead,
 );

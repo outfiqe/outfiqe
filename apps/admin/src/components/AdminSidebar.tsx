@@ -35,6 +35,7 @@ import {
   PiggyBank,
   Ruler,
   ScrollText,
+  ShieldAlert,
   ShieldCheck,
   Shirt,
   ShoppingBag,
@@ -197,6 +198,7 @@ const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
   { id: "tag-reviews", href: "/tag-reviews", label: "Tag reviews", icon: ListChecks },
   { id: "tag-reports", href: "/tag-reports", label: "Tag reports", icon: Flag },
   { id: "trending", href: "/trending", label: "Trending debug", icon: TrendingUp },
+  { id: "users", href: "/users", label: "Users", icon: ShieldAlert },
   { id: "creators", href: "/creators", label: "Creators", icon: Users },
   { id: "commissions", href: "/commissions", label: "Commissions", icon: Wallet },
   {

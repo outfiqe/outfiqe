@@ -9,6 +9,15 @@ type RetriableConfig = InternalAxiosRequestConfig & { skipAuthRetry?: boolean; _
 
 const CSRF_TOKEN_COOKIE_NAME = "csrf_token";
 const CSRF_TOKEN_HEADER_NAME = "X-CSRF-Token";
+const ACCOUNT_SUSPENDED_CODE = "ACCOUNT_SUSPENDED";
+
+export type SuspendedAccountDetails = { reason: string; expiresAt: string | null };
+type SuspendedHandler = (details: SuspendedAccountDetails) => void;
+
+const isSuspendedAccountDetails = (value: unknown): value is SuspendedAccountDetails =>
+  typeof value === "object" &&
+  value !== null &&
+  typeof (value as { reason?: unknown }).reason === "string";
 
 const getCsrfTokenFromCookie = (): string | undefined => {
   if (typeof document === "undefined") return undefined;
@@ -28,6 +37,7 @@ export const createApiClient = ({
 }: CreateApiClientOptions) => {
   let accessToken: string | null = null;
   let unauthorizedHandler: (() => void) | null = null;
+  let suspendedHandler: SuspendedHandler | null = null;
   let refreshPromise: Promise<string> | null = null;
 
   const setAccessToken = (token: string | null): void => {
@@ -38,6 +48,10 @@ export const createApiClient = ({
 
   const setUnauthorizedHandler = (handler: (() => void) | null): void => {
     unauthorizedHandler = handler;
+  };
+
+  const setSuspendedHandler = (handler: SuspendedHandler | null): void => {
+    suspendedHandler = handler;
   };
 
   const http = axios.create({ baseURL, withCredentials: true });
@@ -94,6 +108,11 @@ export const createApiClient = ({
       }
 
       const { message, code, details } = error.response?.data ?? {};
+
+      if (code === ACCOUNT_SUSPENDED_CODE && isSuspendedAccountDetails(details)) {
+        suspendedHandler?.(details);
+      }
+
       throw new ApiClientError(
         message ?? error.message ?? "Request failed",
         code ?? "UNKNOWN_ERROR",
@@ -148,6 +167,7 @@ export const createApiClient = ({
     setAccessToken,
     getAccessToken,
     setUnauthorizedHandler,
+    setSuspendedHandler,
     refresh: refreshAccessToken,
   };
 };

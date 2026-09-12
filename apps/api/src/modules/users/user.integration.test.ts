@@ -341,6 +341,18 @@ describe("GET /api/users (admin)", () => {
       .set("Authorization", `Bearer ${adminToken}`);
 
     expect(response.status).toBe(200);
-    expect(response.body.data.map((entry: { id: string }) => entry.id)).toContain(user.id);
+    expect(response.body.data.items.map((entry: { id: string }) => entry.id)).toContain(user.id);
+  });
+
+  it("filters by a search term across name, handle, and email", async () => {
+    const adminToken = await createAdminToken();
+    const { user } = await createUserWithAccessToken();
+
+    const response = await request(testApp)
+      .get(`/api/users?q=${encodeURIComponent(user.handle)}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.items.map((entry: { id: string }) => entry.id)).toContain(user.id);
   });
 });

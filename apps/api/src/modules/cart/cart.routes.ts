@@ -2,7 +2,8 @@ import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
-import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
+import { requireActiveAuth } from "#middlewares/require-active-account.js";
+import { getAuthPrincipal } from "#middlewares/require-auth.js";
 import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
 import { applyCartCouponSchema } from "#modules/coupons/coupon.schemas.js";
@@ -26,7 +27,7 @@ const cartCouponApplyRateLimit = rateLimit({
   message: "Too many coupon attempts. Please wait a moment and try again.",
 });
 
-const requireShopper = [requireAuth, requireRole(UserRole.CUSTOMER)];
+const requireShopper = [...requireActiveAuth, requireRole(UserRole.CUSTOMER)];
 
 export const cartRoutes = Router();
 

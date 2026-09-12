@@ -224,6 +224,19 @@ export type DomainEventPayloads = {
     orderId: string;
     flagReason: string;
   };
+  [DomainEvents.USER_SUSPENDED]: {
+    userId: string;
+    reason: string;
+    expiresAt: string | null;
+  };
+  [DomainEvents.USER_UNSUSPENDED]: { userId: string };
+  [DomainEvents.USER_BANNED]: { userId: string; reason: string };
+  [DomainEvents.BRAND_SUSPENDED]: {
+    brandId: string;
+    reason: string;
+    expiresAt: string | null;
+  };
+  [DomainEvents.BRAND_UNSUSPENDED]: { brandId: string };
 };
 
 export type DomainEventHandler<E extends DomainEvent> = (
