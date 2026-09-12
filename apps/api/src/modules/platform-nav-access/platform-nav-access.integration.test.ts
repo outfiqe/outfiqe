@@ -136,6 +136,66 @@ describe("platform nav-access writes", () => {
       .set("Authorization", founders[0]!.authHeader)
       .expect(409);
   });
+
+  it("never lets two concurrent promotions push the co-founder group past the cap", async () => {
+    const founders: Awaited<ReturnType<typeof createAdminSession>>[] = [];
+    for (let index = 0; index < MAX_PLATFORM_CO_FOUNDERS - 1; index += 1) {
+      founders.push(await createAdminSession());
+    }
+    for (const founder of founders) {
+      await promoteToCoFounder(founder.userId);
+    }
+
+    const candidateA = await createAdminSession();
+    const candidateB = await createAdminSession();
+    const [membershipA, membershipB] = await Promise.all([
+      prisma.membership.findFirstOrThrow({ where: { userId: candidateA.userId } }),
+      prisma.membership.findFirstOrThrow({ where: { userId: candidateB.userId } }),
+    ]);
+
+    const [resultA, resultB] = await Promise.all([
+      request(testApp)
+        .post("/api/platform/nav-access/co-founders")
+        .set("Authorization", founders[0]!.authHeader)
+        .send({ membershipId: membershipA.id }),
+      request(testApp)
+        .post("/api/platform/nav-access/co-founders")
+        .set("Authorization", founders[0]!.authHeader)
+        .send({ membershipId: membershipB.id }),
+    ]);
+
+    const statuses = [resultA.status, resultB.status].sort();
+    expect(statuses).toEqual([200, 409]);
+
+    const finalCount = await prisma.membership.count({
+      where: { isPlatformSuperAdmin: true, status: "ACTIVE" },
+    });
+    expect(finalCount).toBe(MAX_PLATFORM_CO_FOUNDERS);
+  });
+
+  it("never lets two concurrent demotions remove the last two co-founders at once", async () => {
+    const first = await createAdminSession();
+    const second = await createAdminSession();
+    const firstMembershipId = await promoteToCoFounder(first.userId);
+    const secondMembershipId = await promoteToCoFounder(second.userId);
+
+    const [resultA, resultB] = await Promise.all([
+      request(testApp)
+        .delete(`/api/platform/nav-access/co-founders/${firstMembershipId}`)
+        .set("Authorization", first.authHeader),
+      request(testApp)
+        .delete(`/api/platform/nav-access/co-founders/${secondMembershipId}`)
+        .set("Authorization", second.authHeader),
+    ]);
+
+    const statuses = [resultA.status, resultB.status].sort();
+    expect(statuses).toEqual([200, 409]);
+
+    const finalCount = await prisma.membership.count({
+      where: { isPlatformSuperAdmin: true, status: "ACTIVE" },
+    });
+    expect(finalCount).toBe(1);
+  });
 });
 
 describe("GET /api/auth/me", () => {

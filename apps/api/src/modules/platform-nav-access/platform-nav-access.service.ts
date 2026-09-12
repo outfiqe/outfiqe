@@ -130,6 +130,10 @@ export const platformNavAccessService = {
     }
 
     await platformNavAccessRepository.runInTransaction(async (client) => {
+      await platformNavAccessRepository.lockPlatformOrganizationForCoFounderChange(
+        context.platformOrganizationId,
+        client,
+      );
       const current = await platformNavAccessRepository.countActiveCoFounders(
         context.platformOrganizationId,
         client,
@@ -162,6 +166,10 @@ export const platformNavAccessService = {
     }
 
     await platformNavAccessRepository.runInTransaction(async (client) => {
+      await platformNavAccessRepository.lockPlatformOrganizationForCoFounderChange(
+        context.platformOrganizationId,
+        client,
+      );
       const current = await platformNavAccessRepository.countActiveCoFounders(
         context.platformOrganizationId,
         client,
