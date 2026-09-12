@@ -44,8 +44,9 @@ export const brandController = {
   async listProducts(_req: Request, res: Response) {
     const { id } = validated.params<BrandIdParam>(res);
     const query = validated.query<ListBrandProductsQuery>(res);
+    const principal = getAuthPrincipal(res);
 
-    const page = await productService.listPublicByBrand(id, query);
+    const page = await productService.listPublicByBrand(id, query, principal?.userId);
     sendSuccess(res, page, "Brand products.");
   },
 };
