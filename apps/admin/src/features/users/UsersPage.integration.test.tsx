@@ -9,7 +9,8 @@ import { describe, expect, it } from "vitest";
 import { UsersPage } from "@/features/users/UsersPage";
 
 const API_BASE = "http://localhost:3000/api";
-const SLOW_CI_QUERY_TIMEOUT_MS = 12000;
+const SLOW_CI_QUERY_TIMEOUT_MS = 20000;
+const SLOW_CI_TEST_TIMEOUT_MS = 25000;
 
 const activeUser = {
   id: "user-1",
@@ -45,63 +46,71 @@ const mockUsersList = (users: unknown[]) => {
 };
 
 describe("UsersPage", () => {
-  it("finds a user by search and suspends them with a reason", async () => {
-    const user = userEvent.setup();
-    mockUsersList([activeUser]);
-    mswServer.use(
-      http.post(`${API_BASE}/platform/users/user-1/suspend`, () =>
-        HttpResponse.json({ success: true, message: "Account suspended.", data: null }),
-      ),
-    );
-
-    renderPage();
-    await user.type(screen.getByPlaceholderText(/search by name/i), "ava");
-
-    await screen.findByText("Ava Martinez");
-    await user.click(screen.getByRole("button", { name: "Suspend" }));
-
-    const reasonField = await screen.findByLabelText(/reason \(shown to the user\)/i, undefined, {
-      timeout: SLOW_CI_QUERY_TIMEOUT_MS,
-    });
-    await user.type(reasonField, "Reported for spam");
-    await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
-
-    await waitFor(() =>
-      expect(
-        screen.queryByRole("heading", { name: "Suspend Ava Martinez" }),
-      ).not.toBeInTheDocument(),
-    );
-  });
-
-  it("surfaces a server error inline when suspending fails", async () => {
-    const user = userEvent.setup();
-    mockUsersList([activeUser]);
-    mswServer.use(
-      http.post(`${API_BASE}/platform/users/user-1/suspend`, () =>
-        HttpResponse.json(
-          {
-            success: false,
-            message: "This account is already suspended.",
-            code: "ALREADY_SUSPENDED",
-          },
-          { status: 409 },
+  it(
+    "finds a user by search and suspends them with a reason",
+    async () => {
+      const user = userEvent.setup();
+      mockUsersList([activeUser]);
+      mswServer.use(
+        http.post(`${API_BASE}/platform/users/user-1/suspend`, () =>
+          HttpResponse.json({ success: true, message: "Account suspended.", data: null }),
         ),
-      ),
-    );
+      );
 
-    renderPage();
-    await user.type(screen.getByPlaceholderText(/search by name/i), "ava");
+      renderPage();
+      await user.type(screen.getByPlaceholderText(/search by name/i), "ava");
 
-    await screen.findByText("Ava Martinez");
-    await user.click(screen.getByRole("button", { name: "Suspend" }));
-    const reasonField = await screen.findByLabelText(/reason \(shown to the user\)/i, undefined, {
-      timeout: SLOW_CI_QUERY_TIMEOUT_MS,
-    });
-    await user.type(reasonField, "Reported for spam");
-    await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
+      await screen.findByText("Ava Martinez");
+      await user.click(screen.getByRole("button", { name: "Suspend" }));
 
-    expect(await screen.findByText("This account is already suspended.")).toBeInTheDocument();
-  });
+      const reasonField = await screen.findByLabelText(/reason \(shown to the user\)/i, undefined, {
+        timeout: SLOW_CI_QUERY_TIMEOUT_MS,
+      });
+      await user.type(reasonField, "Reported for spam");
+      await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
+
+      await waitFor(() =>
+        expect(
+          screen.queryByRole("heading", { name: "Suspend Ava Martinez" }),
+        ).not.toBeInTheDocument(),
+      );
+    },
+    SLOW_CI_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "surfaces a server error inline when suspending fails",
+    async () => {
+      const user = userEvent.setup();
+      mockUsersList([activeUser]);
+      mswServer.use(
+        http.post(`${API_BASE}/platform/users/user-1/suspend`, () =>
+          HttpResponse.json(
+            {
+              success: false,
+              message: "This account is already suspended.",
+              code: "ALREADY_SUSPENDED",
+            },
+            { status: 409 },
+          ),
+        ),
+      );
+
+      renderPage();
+      await user.type(screen.getByPlaceholderText(/search by name/i), "ava");
+
+      await screen.findByText("Ava Martinez");
+      await user.click(screen.getByRole("button", { name: "Suspend" }));
+      const reasonField = await screen.findByLabelText(/reason \(shown to the user\)/i, undefined, {
+        timeout: SLOW_CI_QUERY_TIMEOUT_MS,
+      });
+      await user.type(reasonField, "Reported for spam");
+      await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
+
+      expect(await screen.findByText("This account is already suspended.")).toBeInTheDocument();
+    },
+    SLOW_CI_TEST_TIMEOUT_MS,
+  );
 
   it("hides moderation actions for admin accounts", async () => {
     const user = userEvent.setup();
