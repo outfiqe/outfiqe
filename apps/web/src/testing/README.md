@@ -46,20 +46,22 @@ start/reset/stop lifecycle live here, not the mocked endpoints themselves.
   issue was scheduler starvation, not any one slow operation. Matches the same reasoning
   `apps/api/vitest.config.ts`'s integration project already applies with its own (larger, DB-bound)
   `testTimeout: 15000`.
-- **The `integration` project caps `maxWorkers: 1`, raises `execArgv: ["--max-old-space-size=4096"]`,
+- **The `integration` project caps `maxWorkers: 2`, raises `execArgv: ["--max-old-space-size=4096"]`,
   and sets `vmMemoryLimit: "1gb"` (`vitest.config.ts`).** Each worker boots a real jsdom environment
   plus MSW's interceptors and renders full pages behind `AuthProvider`/`QueryClientProvider` —
   heavier per-file than a plain unit test. At vitest's default worker count (one per CPU core), the
   CI runner's suite crashed with `JavaScript heap out of memory` partway through the run; the crash
   point was identical across repeated reruns, pointing at a real memory ceiling rather than a
-  one-off flake. `maxWorkers: 2` still crashed, just later in the run, and `maxWorkers: 1` alone
-  _still_ crashed — the same single worker sat idle for ~5 minutes doing GC ("Ineffective
+  one-off flake. `maxWorkers: 2` alone still crashed, just later in the run, and `maxWorkers: 1`
+  alone _still_ crashed — the same single worker sat idle for ~5 minutes doing GC ("Ineffective
   mark-compacts near heap limit") before finally dying, proving memory keeps accumulating across
   sequential files within one worker, not just across concurrent ones. `vmMemoryLimit` is vitest's
-  purpose-built answer to exactly this — it recycles the worker process once it nears that limit,
-  discarding whatever's accumulated instead of letting it grow for the rest of the run;
-  `execArgv`'s higher heap ceiling is a backstop in case a single file's own working set is large
-  enough to need it. All three trade real wall-clock time for not OOM-crashing the run.
+  purpose-built answer to exactly this — it recycles a worker process once it nears that limit,
+  discarding whatever's accumulated instead of letting it grow for the rest of the run. Once that
+  was in place, `maxWorkers` no longer had to be 1 for correctness — it went back to 2 to recover
+  concurrency/speed, since `vmMemoryLimit` bounds each worker independently regardless of how many
+  run at once. `execArgv`'s higher heap ceiling is a backstop in case a single file's own working
+  set is large enough to need it. All three trade some wall-clock time for not OOM-crashing the run.
 - Not colocated with a single source file, unlike `<name>.test.tsx` files: `mswServer` is one
   shared instance reused by every integration test in the app, and `setup.ts` is wired in as a
   vitest config-level `setupFiles` entry, which has to be a real file path.

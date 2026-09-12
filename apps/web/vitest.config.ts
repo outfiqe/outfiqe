@@ -231,7 +231,7 @@ export default defineConfig({
           setupFiles: ["./src/testing/setup.ts", "./src/testing/integration/setup.ts"],
           testTimeout: 10000,
           pool: "forks",
-          maxWorkers: 1,
+          maxWorkers: 2,
           execArgv: ["--max-old-space-size=4096"],
           vmMemoryLimit: "1gb",
         },
