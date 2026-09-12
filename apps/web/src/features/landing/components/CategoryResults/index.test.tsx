@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { useRouter, useSearchParams } from "next/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
 import { useProductTypes } from "@/features/products/hooks/useProductTypes";
@@ -29,7 +30,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("@/features/auth/context/AuthContext", () => ({
-  useAuth: () => ({ isAuthenticated: false, isAuthResolved: true }),
+  useAuth: vi.fn(),
 }));
 
 vi.mock("@/features/auth", () => ({
@@ -146,6 +147,11 @@ const renderCategoryResults = () =>
   );
 
 beforeEach(() => {
+  vi.mocked(useAuth).mockReturnValue({
+    isAuthenticated: false,
+    isAuthResolved: true,
+  } as ReturnType<typeof useAuth>);
+
   vi.mocked(useRouter).mockReturnValue({
     push,
     replace,
@@ -213,6 +219,19 @@ describe("CategoryResults", () => {
     renderCategoryResults();
 
     expect(screen.getByRole("status", { name: "Loading products" })).toBeInTheDocument();
+  });
+
+  it("shows the loading skeleton instead of stale anonymous data while auth is still resolving", () => {
+    vi.mocked(useAuth).mockReturnValue({
+      isAuthenticated: false,
+      isAuthResolved: false,
+    } as ReturnType<typeof useAuth>);
+
+    renderCategoryResults();
+
+    expect(screen.getByRole("status", { name: "Loading products" })).toBeInTheDocument();
+    expect(screen.queryByText("Everyday Tee")).not.toBeInTheDocument();
+    expect(useInfiniteProducts).toHaveBeenCalledWith(expect.objectContaining({ enabled: false }));
   });
 
   it("renders nothing when there is no category to show", () => {

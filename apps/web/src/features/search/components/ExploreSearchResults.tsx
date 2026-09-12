@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Masonry from "react-masonry-css";
 
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { PostDetailModal } from "@/features/explore/components/PostDetailModal";
 import { PostGridCard } from "@/features/explore/components/PostGridCard";
 import { EXPLORE_GRID_BREAKPOINT_COLUMNS } from "@/features/explore/explore.constants";
@@ -18,6 +19,7 @@ import { MIN_QUERY_LENGTH } from "../search.constants";
 
 export const ExploreSearchResults = () => {
   const searchParams = useSearchParams();
+  const { isAuthResolved } = useAuth();
   const query = (searchParams.get("q") ?? "").trim();
   const hasQuery = query.length >= MIN_QUERY_LENGTH;
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
@@ -28,7 +30,7 @@ export const ExploreSearchResults = () => {
     hasNextPage: hasMoreCreators,
     isFetchingNextPage: isFetchingMoreCreators,
     isLoading: isLoadingCreators,
-  } = useCreatorSearch(query, hasQuery);
+  } = useCreatorSearch(query, isAuthResolved && hasQuery);
 
   const {
     data: postPages,
@@ -36,7 +38,7 @@ export const ExploreSearchResults = () => {
     hasNextPage: hasMorePosts,
     isFetchingNextPage: isFetchingMorePosts,
     isLoading: isLoadingPosts,
-  } = useLookSearch(query, hasQuery);
+  } = useLookSearch(query, isAuthResolved && hasQuery);
 
   const creatorSentinelRef = useLoadMoreOnVisible(
     () => fetchNextCreators(),
@@ -56,7 +58,7 @@ export const ExploreSearchResults = () => {
   const creators = creatorPages?.pages.flatMap((page) => page.creators) ?? [];
   const posts = postPages?.pages.flatMap((page) => page.posts) ?? [];
   const detailPost = detailPostId ? (posts.find((post) => post.id === detailPostId) ?? null) : null;
-  const isLoading = isLoadingCreators || isLoadingPosts;
+  const isLoading = isLoadingCreators || isLoadingPosts || !isAuthResolved;
 
   return (
     <div>

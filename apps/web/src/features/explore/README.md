@@ -70,6 +70,47 @@ cache (shape-guarded), and `cancelFeedPostQueries` cancels the same set so an in
 can't clobber the optimistic patch. `useFollowCreator` also gained an `onSuccess` that reconciles
 `isFollowingCreator` to the server's `following` value, matching `useLikeLook`/`useSaveLook`.
 
+## For You and Trending must wait for auth to resolve before their first fetch
+
+**The bug this section explains:** For You and Trending sometimes rendered every post as
+`isFollowingCreator: false` (and the equivalent for likes/saves) even for a creator the viewer
+genuinely followed — but only on those two tabs, never on Following, and only sometimes, which made
+it look like a caching problem for a long time. It wasn't a cache-propagation bug at all —
+`patchCreatorInFeedCaches` and the persisted-cache revalidation both already covered this correctly
+(see the section above). The actual cause was that `ExploreFeed` enabled the For You/Trending query
+the instant the component mounted, without waiting to find out whether the viewer was even logged
+in.
+
+`AuthProvider` resolves the session asynchronously — it reads a `has_session` cookie, then calls
+`/auth/session` and `/auth/me`, and only then calls `setAccessToken`, which is what makes the
+`apiClient` request interceptor attach an `Authorization` header at all (`packages/client/src/client/index.ts`
+— the interceptor reads a plain in-memory `accessToken` variable synchronously at request-send time,
+nothing async). `ExploreFeed`'s `feedEnabled` used to be `!isFollowingTab || (isAuthResolved &&
+isAuthenticated)` — true immediately for For You/Trending, false until resolved for Following. Since
+React fires effects for a deeply-nested child before its ancestor's effect in the same commit, the
+feed's fetch-on-mount effect runs before `AuthProvider`'s own effect has even started its async
+session check, guaranteeing (not just risking) that the very first For You/Trending request for a
+logged-in visitor goes out with no token — hitting `GET /creator-looks/feed`'s `optionalAuth`
+middleware as a fully anonymous viewer. The backend has no bug here either: with no `viewerId` it
+correctly returns `isFollowingCreator: false` for everyone, since it has no viewer to check follow
+rows against. That wrong response then sits in the query cache with nothing to invalidate it once
+auth actually resolves a moment later — `refetchOnMount` only re-fires when a _new_ observer
+subscribes to a query key, and this one already had one from the premature first mount.
+
+Following was never affected because it already gated `feedEnabled` on `isAuthResolved &&
+isAuthenticated` — it has to, since "posts from creators you follow" can't be computed at all before
+knowing who's asking. For You and Trending never got that same guard, because they're meant to work
+for anonymous visitors too and nobody wanted to needlessly delay the public case. The actual fix
+keeps that anonymous case fast: `feedEnabled` is now `isAuthResolved && (!isFollowingTab ||
+isAuthenticated)`. A visitor with no `has_session` cookie at all resolves `isAuthResolved` to `true`
+synchronously, in the same tick, with zero network round trip (`AuthContext.tsx` dispatches
+`AUTH_LOGOUT` immediately when the cookie is absent) — so the public feed still loads with no added
+delay. Only a visitor who might be logged in now waits the one real round trip needed to find out,
+which is exactly the visitor for whom `isFollowingCreator` needs to be correct in the first place.
+`ExploreFeed.authTiming.integration.test.tsx` renders `ExploreFeed` behind the real `AuthProvider`
+with a deliberately delayed `/auth/session` response and asserts the first feed request carries the
+resolved token — proven to fail without this fix and pass with it, not just asserted.
+
 ## Liking, saving, and following work with no connection
 
 **User-facing:** tapping like, save, or follow shows the change immediately, whether or not there

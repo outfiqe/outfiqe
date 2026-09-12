@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
@@ -12,6 +13,7 @@ import { MIN_QUERY_LENGTH } from "../search.constants";
 
 export const SearchResults = () => {
   const searchParams = useSearchParams();
+  const { isAuthResolved } = useAuth();
   const query = (searchParams.get("q") ?? "").trim();
   const hasQuery = query.length >= MIN_QUERY_LENGTH;
 
@@ -20,8 +22,9 @@ export const SearchResults = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isLoading,
-  } = useInfiniteProducts({ q: query, enabled: hasQuery });
+    isLoading: isFetchingProducts,
+  } = useInfiniteProducts({ q: query, enabled: isAuthResolved && hasQuery });
+  const isLoading = isFetchingProducts || !isAuthResolved;
 
   const sentinelRef = useLoadMoreOnVisible(
     () => fetchNextPage(),
