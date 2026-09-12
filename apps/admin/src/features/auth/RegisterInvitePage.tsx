@@ -3,6 +3,8 @@ import { NEPAL_PHONE_REGEX } from "@outfiqe/utils";
 import { getRouteApi, Navigate, useNavigate } from "@tanstack/react-router";
 import { type FormEvent, useEffect, useState } from "react";
 
+import { setAccessToken } from "@/lib/apiClient";
+
 import { authApi } from "./api";
 import { useAuth } from "./AuthContext";
 import type { AdminInviteInfo } from "./schemas";
@@ -18,7 +20,7 @@ type InviteLoadState =
 export const RegisterInvitePage = () => {
   const { token } = routeApi.useSearch();
   const navigate = useNavigate();
-  const { state: authState } = useAuth();
+  const { state: authState, setSession } = useAuth();
 
   const [inviteState, setInviteState] = useState<InviteLoadState>(() =>
     token
@@ -66,11 +68,17 @@ export const RegisterInvitePage = () => {
 
     setIsSubmitting(true);
     try {
-      await authApi.registerAdmin({ inviteToken: token, phone, password, confirmPassword });
+      const { accessToken, user } = await authApi.registerAdmin({
+        inviteToken: token,
+        phone,
+        password,
+        confirmPassword,
+      });
+      setAccessToken(accessToken);
+      setSession(user);
       navigate({ to: "/", replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
-    } finally {
       setIsSubmitting(false);
     }
   };

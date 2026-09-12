@@ -86,6 +86,15 @@ export const platformImpersonationService = {
       );
     }
 
+    const targetRole = await platformImpersonationRepository.findUserRole(input.targetUserId);
+    if (!targetRole) {
+      throw new AppError(
+        "TARGET_NOT_A_MEMBER",
+        "The target account no longer exists.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
     if (await platformImpersonationRepository.isPlatformStaff(input.targetUserId)) {
       throw new AppError(
         "TARGET_IS_PLATFORM_STAFF",
@@ -112,6 +121,7 @@ export const platformImpersonationService = {
 
     const token = mintImpersonationToken({
       targetUserId: input.targetUserId,
+      targetRole,
       impersonatorId: input.impersonatorId,
       sessionId: session.id,
       scope: input.scope,

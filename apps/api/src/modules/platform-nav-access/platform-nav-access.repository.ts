@@ -1,6 +1,7 @@
 import type { PlatformNavKey } from "@outfiqe/utils";
 
 import { prisma, prismaRead } from "#db/prisma.js";
+import { Prisma } from "#generated/prisma/client.js";
 import type { DbClient } from "#types/db.types.js";
 
 import type { CoFounderSummary } from "./platform-nav-access.types.js";
@@ -111,6 +112,15 @@ export const platformNavAccessRepository = {
         user: { select: { name: true, email: true } },
       },
     });
+  },
+
+  async lockPlatformOrganizationForCoFounderChange(
+    platformOrganizationId: string,
+    client: DbClient,
+  ): Promise<void> {
+    await client.$queryRaw(
+      Prisma.sql`SELECT id FROM organizations WHERE id = ${platformOrganizationId} FOR UPDATE`,
+    );
   },
 
   countActiveCoFounders(

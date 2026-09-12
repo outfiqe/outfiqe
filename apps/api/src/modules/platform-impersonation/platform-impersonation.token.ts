@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 
 import { TOKEN } from "#config/token.config.js";
-import { UserRole } from "#generated/prisma/enums.js";
+import type { UserRole } from "#generated/prisma/enums.js";
 
 import {
   IMPERSONATION_ACTOR_VIA,
@@ -10,6 +10,7 @@ import {
 
 export const mintImpersonationToken = (params: {
   targetUserId: string;
+  targetRole: UserRole;
   impersonatorId: string;
   sessionId: string;
   scope: ImpersonationScope;
@@ -18,7 +19,7 @@ export const mintImpersonationToken = (params: {
   jwt.sign(
     {
       sub: params.targetUserId,
-      role: UserRole.ADMIN,
+      role: params.targetRole,
       act: {
         sub: params.impersonatorId,
         via: IMPERSONATION_ACTOR_VIA,

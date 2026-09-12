@@ -7,6 +7,7 @@ import { prisma } from "#db/prisma.js";
 import { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
+import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
 import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -34,6 +35,12 @@ const createAdmin = async () => {
   await ensurePlatformOrganizationExists();
   await crmAccessService.grantPlatformStaffMembership(admin.id);
   return { ...admin, header: authHeaderFor(admin.id, UserRole.ADMIN) };
+};
+
+const createXpAdmin = async () => {
+  const admin = await createAdmin();
+  await grantPlatformPermissions(admin.id, "platform:xp:manage");
+  return admin;
 };
 
 const ensureFloorLevel = async () => {
@@ -113,7 +120,7 @@ describe("PATCH /api/xp/activity-config/:activityType (admin)", () => {
 describe("POST /api/xp/adjust (admin)", () => {
   it("grants XP and reports the resulting level", async () => {
     await ensureFloorLevel();
-    const admin = await createAdmin();
+    const admin = await createXpAdmin();
     const target = await createUser("Adjust Target");
 
     const response = await request(testApp)
@@ -127,7 +134,7 @@ describe("POST /api/xp/adjust (admin)", () => {
   });
 
   it("rejects an adjustment that would take XP below zero", async () => {
-    const admin = await createAdmin();
+    const admin = await createXpAdmin();
     const target = await createUser("Negative Floor Target");
 
     const response = await request(testApp)
@@ -138,8 +145,40 @@ describe("POST /api/xp/adjust (admin)", () => {
     expect(response.status).toBe(422);
   });
 
+  it("never lets two concurrent negative adjustments take XP below zero", async () => {
+    await ensureFloorLevel();
+    const admin = await createXpAdmin();
+    const target = await createUser("Concurrent Docking Target");
+
+    await request(testApp)
+      .post("/api/xp/adjust")
+      .set("Authorization", admin.header)
+      .send({ userId: target.id, amount: 100, reason: "Seed balance" })
+      .expect(200);
+
+    const [resultA, resultB] = await Promise.all([
+      request(testApp)
+        .post("/api/xp/adjust")
+        .set("Authorization", admin.header)
+        .send({ userId: target.id, amount: -70, reason: "Concurrent dock A" }),
+      request(testApp)
+        .post("/api/xp/adjust")
+        .set("Authorization", admin.header)
+        .send({ userId: target.id, amount: -70, reason: "Concurrent dock B" }),
+    ]);
+
+    for (const result of [resultA, resultB]) {
+      expect([200, 422]).toContain(result.status);
+    }
+
+    const finalProgress = await prisma.userProgress.findUniqueOrThrow({
+      where: { userId: target.id },
+    });
+    expect(finalProgress.totalXp).toBeGreaterThanOrEqual(0);
+  });
+
   it("404s for a nonexistent user", async () => {
-    const admin = await createAdmin();
+    const admin = await createXpAdmin();
 
     const response = await request(testApp)
       .post("/api/xp/adjust")
@@ -150,7 +189,7 @@ describe("POST /api/xp/adjust (admin)", () => {
   });
 
   it("rejects a zero amount", async () => {
-    const admin = await createAdmin();
+    const admin = await createXpAdmin();
     const target = await createUser("Zero Amount Target");
 
     const response = await request(testApp)
@@ -168,6 +207,18 @@ describe("POST /api/xp/adjust (admin)", () => {
     const response = await request(testApp)
       .post("/api/xp/adjust")
       .set("Authorization", authHeaderFor(nonAdmin.id))
+      .send({ userId: target.id, amount: 10, reason: "x" });
+
+    expect(response.status).toBe(403);
+  });
+
+  it("blocks a platform staffer without platform:xp:manage", async () => {
+    const admin = await createAdmin();
+    const target = await createUser("Adjust Target 3");
+
+    const response = await request(testApp)
+      .post("/api/xp/adjust")
+      .set("Authorization", admin.header)
       .send({ userId: target.id, amount: 10, reason: "x" });
 
     expect(response.status).toBe(403);

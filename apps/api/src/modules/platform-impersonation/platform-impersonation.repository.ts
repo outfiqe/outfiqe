@@ -1,4 +1,5 @@
 import { prisma } from "#db/prisma.js";
+import type { UserRole } from "#generated/prisma/enums.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 
 import type { ImpersonationScope } from "./platform-impersonation.constants.js";
@@ -63,6 +64,11 @@ export const platformImpersonationRepository = {
       where: { userId, organizationId, status: "ACTIVE" },
       select: { id: true },
     });
+  },
+
+  async findUserRole(userId: string): Promise<UserRole | null> {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    return user?.role ?? null;
   },
 
   async listImpersonationCandidates(organizationId: string): Promise<ImpersonationCandidate[]> {

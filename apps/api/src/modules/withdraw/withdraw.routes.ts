@@ -5,6 +5,7 @@ import { requireActiveAuth } from "#middlewares/require-active-account.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import { withdrawController } from "./withdraw.controller.js";
@@ -33,7 +34,14 @@ const createWithdrawRequestRateLimit = rateLimit({
 
 const requireAdmin = [requireAuth, requirePlatformAccess];
 const requireWithdrawRequestsAdmin = [...requireAdmin, requirePlatformNavItem("withdraw-requests")];
-const requireWithdrawPolicyAdmin = [...requireAdmin, requirePlatformNavItem("withdraw-policy")];
+const requireWithdrawRequestsMutationAdmin = [
+  ...requirePlatformRole("platform:withdraw:manage"),
+  requirePlatformNavItem("withdraw-requests"),
+];
+const requireWithdrawPolicyAdmin = [
+  ...requirePlatformRole("platform:withdraw:manage"),
+  requirePlatformNavItem("withdraw-policy"),
+];
 
 export const withdrawRoutes = Router();
 
@@ -46,21 +54,21 @@ withdrawRoutes.get(
 
 withdrawRoutes.patch(
   "/admin/requests/:id/approve",
-  ...requireWithdrawRequestsAdmin,
+  ...requireWithdrawRequestsMutationAdmin,
   validate({ params: withdrawRequestIdParamSchema, body: approveWithdrawRequestSchema }),
   withdrawController.approve,
 );
 
 withdrawRoutes.patch(
   "/admin/requests/:id/reject",
-  ...requireWithdrawRequestsAdmin,
+  ...requireWithdrawRequestsMutationAdmin,
   validate({ params: withdrawRequestIdParamSchema, body: rejectWithdrawRequestSchema }),
   withdrawController.reject,
 );
 
 withdrawRoutes.patch(
   "/admin/requests/:id/mark-paid",
-  ...requireWithdrawRequestsAdmin,
+  ...requireWithdrawRequestsMutationAdmin,
   validate({ params: withdrawRequestIdParamSchema, body: markWithdrawRequestPaidSchema }),
   withdrawController.markPaid,
 );

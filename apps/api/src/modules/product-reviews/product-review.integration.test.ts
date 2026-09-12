@@ -381,11 +381,11 @@ describe("DELETE /api/products/:productId/reviews/:reviewId", () => {
     expect(response.status).toBe(403);
   });
 
-  it("lets an admin delete any review", async () => {
+  it("lets an admin delete any review and leaves an audit trail", async () => {
     const { product, size } = await createProduct("Admin Moderated Jacket");
     const buyer = await createUser("Moderated Reviewer", "moderated-reviewer");
     await createDeliveredOrderItem(buyer.id, product.id, size.id);
-    const { authHeader: adminAuthHeader } = await createAdminSession();
+    const { userId: adminUserId, authHeader: adminAuthHeader } = await createAdminSession();
 
     const created = await request(testApp)
       .post(`/api/products/${product.id}/reviews`)
@@ -397,5 +397,15 @@ describe("DELETE /api/products/:productId/reviews/:reviewId", () => {
       .set("Authorization", adminAuthHeader);
 
     expect(response.status).toBe(200);
+
+    const auditRow = await prisma.platformAuditLog.findFirst({
+      where: {
+        action: "product-review.removed-by-admin",
+        actorUserId: adminUserId,
+        targetId: created.body.data.id,
+      },
+    });
+    expect(auditRow).not.toBeNull();
+    expect(auditRow?.onBehalfOfUserId).toBe(buyer.id);
   });
 });
