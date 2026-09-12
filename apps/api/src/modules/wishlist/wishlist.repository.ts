@@ -4,23 +4,27 @@ import type { ProductWithBrand } from "#modules/products/product.types.js";
 
 export const wishlistRepository = {
   async save(userId: string, productId: string): Promise<boolean> {
-    const existing = await prisma.savedProduct.findUnique({
-      where: { userId_productId: { userId, productId } },
-    });
-    if (existing) return false;
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.savedProduct.findUnique({
+        where: { userId_productId: { userId, productId } },
+      });
+      if (existing) return false;
 
-    await prisma.savedProduct.create({ data: { userId, productId } });
-    return true;
+      await tx.savedProduct.create({ data: { userId, productId } });
+      return true;
+    });
   },
 
   async unsave(userId: string, productId: string): Promise<boolean> {
-    const existing = await prisma.savedProduct.findUnique({
-      where: { userId_productId: { userId, productId } },
-    });
-    if (!existing) return false;
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.savedProduct.findUnique({
+        where: { userId_productId: { userId, productId } },
+      });
+      if (!existing) return false;
 
-    await prisma.savedProduct.delete({ where: { userId_productId: { userId, productId } } });
-    return true;
+      await tx.savedProduct.delete({ where: { userId_productId: { userId, productId } } });
+      return true;
+    });
   },
 
   async count(userId: string): Promise<number> {
