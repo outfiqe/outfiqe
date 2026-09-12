@@ -15,3 +15,11 @@ Admin CRUD for the size catalog a brand picks from when adding a product (`S`/`M
 **User-facing**: pick a product type tab, type a size label, add it. Existing sizes for that type list below with a delete button each.
 
 **Technical**: `SizeOptionsPage` → `sizeOptionsApi` → `GET/POST/DELETE /api/size-options` (admin-gated) → `apps/api/src/modules/size-options`. There's no edit — a size is add-or-delete only, matching how small a taxonomy entry this is (a single label).
+
+## Non-obvious rationale
+
+**Deleting a size asks for confirmation and surfaces a real error on failure**, via the shared
+`ConfirmModal` and `toast.error(getErrorMessage(...))` — the same pattern every other destructive
+admin action in this app uses. Originally this page deleted on a single click with no confirmation
+and no failure feedback; a mis-click permanently removed a size a brand might already be using on a
+live product, with no undo and no indication if the delete actually failed.
