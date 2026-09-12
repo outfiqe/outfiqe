@@ -34,7 +34,10 @@ const findPlatformStaffMembership = async (userId: string) => {
 
 const grantPlatformPermission = async (userId: string, permissionKey: string) => {
   const membership = await findPlatformStaffMembership(userId);
-  await prisma.permission.createMany({ data: PLATFORM_PERMISSION_CATALOG, skipDuplicates: true });
+  await prisma.permission.createMany({
+    data: PLATFORM_PERMISSION_CATALOG.map((permission) => ({ ...permission })),
+    skipDuplicates: true,
+  });
   await prisma.rolePermission.create({ data: { roleId: membership.roleId, permissionKey } });
 };
 
