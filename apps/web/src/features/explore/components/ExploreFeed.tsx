@@ -78,7 +78,7 @@ export const ExploreFeed = () => {
   const followingGated = isAuthResolved && tab === EXPLORE_TAB.FOLLOWING && !isAuthenticated;
   const showForYouPersonalizationHint = tab === EXPLORE_TAB.FOR_YOU;
   const isFollowingTab = tab === EXPLORE_TAB.FOLLOWING;
-  const feedEnabled = !isFollowingTab || (isAuthResolved && isAuthenticated);
+  const feedEnabled = isAuthResolved && (!isFollowingTab || isAuthenticated);
 
   const {
     data: exploreFeedPages,
@@ -153,7 +153,7 @@ export const ExploreFeed = () => {
                 Log in or sign up
               </button>
             </div>
-          ) : posts.length === 0 && (isLoading || (isFollowingTab && !isAuthResolved)) ? (
+          ) : posts.length === 0 && (isLoading || !isAuthResolved) ? (
             <ExploreFeedSkeleton layout={layout} compactGrid />
           ) : posts.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">

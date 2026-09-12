@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
@@ -19,6 +20,7 @@ import { ProductCard } from "../ProductCard";
 export const CategoryResults = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isAuthResolved } = useAuth();
   const categorySlug = searchParams.get("category");
   const activeType = searchParams.get("type") ?? ALL_TYPE_ID;
 
@@ -47,7 +49,7 @@ export const CategoryResults = () => {
   } = useInfiniteProducts({
     category: category?.slug,
     type: effectiveActiveType === ALL_TYPE_ID ? undefined : effectiveActiveType,
-    enabled: Boolean(category) && !isNavigatingCategory,
+    enabled: isAuthResolved && Boolean(category) && !isNavigatingCategory,
   });
 
   const sentinelRef = useLoadMoreOnVisible(
@@ -55,7 +57,7 @@ export const CategoryResults = () => {
     Boolean(hasNextPage) && !isFetchingNextPage,
   );
 
-  if (categories.isLoading) {
+  if (categories.isLoading || !isAuthResolved) {
     return <ProductGridSkeleton className="mt-8 px-6 lg:px-10" />;
   }
 

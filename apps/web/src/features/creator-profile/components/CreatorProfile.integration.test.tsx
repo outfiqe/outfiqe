@@ -158,10 +158,10 @@ const buildUserSession = (userId: string): UserSession => ({
   creatorStatus: CreatorStatus.NONE,
 });
 
-const mockAuth = (userId: string | null, isAuthenticated = true) => {
+const mockAuth = (userId: string | null, isAuthenticated = true, isAuthResolved = true) => {
   vi.mocked(useAuth).mockReturnValue({
     isAuthenticated,
-    isAuthResolved: true,
+    isAuthResolved,
     isBrandOwner: false,
     isAdmin: false,
     isCreator: false,
@@ -224,6 +224,16 @@ describe("CreatorProfile loading and post states", () => {
     renderProfile(buildCreator());
 
     expect(screen.getByRole("status", { name: "Loading posts" })).toBeInTheDocument();
+  });
+
+  it("shows the loading skeleton instead of stale anonymous data while auth is still resolving", () => {
+    mockAuth("viewer-1", true, false);
+
+    renderProfile(buildCreator());
+
+    expect(screen.getByRole("status", { name: "Loading posts" })).toBeInTheDocument();
+    expect(screen.queryByText("Caption p1")).not.toBeInTheDocument();
+    expect(useInfiniteCreatorLooks).toHaveBeenCalledWith(expect.any(String), false);
   });
 
   it("shows an empty state when there are no posts", () => {

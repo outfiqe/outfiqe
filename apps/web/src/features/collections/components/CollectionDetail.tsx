@@ -1,6 +1,7 @@
 "use client";
 
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { AppImage } from "@/shared/components/AppImage";
@@ -17,9 +18,17 @@ type CollectionDetailProps = {
 
 export const CollectionDetail = ({ collection }: CollectionDetailProps) => {
   const { slug, imageUrl, image, id, name, description, productCount } = collection;
+  const { isAuthResolved } = useAuth();
 
-  const products = useInfiniteCollectionProducts(slug);
-  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = products;
+  const products = useInfiniteCollectionProducts(slug, isAuthResolved);
+  const {
+    data,
+    isLoading: isFetchingProducts,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = products;
+  const isLoading = isFetchingProducts || !isAuthResolved;
   const collectionProducts = data?.pages.flatMap((page) => page.products) ?? [];
 
   return (

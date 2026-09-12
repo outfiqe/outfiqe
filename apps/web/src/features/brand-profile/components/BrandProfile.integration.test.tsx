@@ -65,9 +65,29 @@ const buildBrand = (overrides: Partial<BrandProfileType> = {}): BrandProfileType
   ...overrides,
 });
 
+const buildProduct = () => ({
+  id: "p1",
+  brand: "Studio One",
+  name: "Everyday Tee",
+  price: 1500,
+  effectivePrice: 1500,
+  discountPercent: null,
+  type: "tops",
+  categorySlugs: [],
+  imageUrl: null,
+  lowStock: false,
+  isNew: false,
+  isSaved: false,
+  creatorBuyerCount: 0,
+  unitsSold: 0,
+  avgRating: null,
+  reviewCount: 0,
+});
+
 const mockAuth = (isAuthenticated: boolean) => {
   vi.mocked(useAuth).mockReturnValue({
     isAuthenticated,
+    isAuthResolved: true,
     state: { user: isAuthenticated ? { id: "viewer-1" } : null },
   } as ReturnType<typeof useAuth>);
 };
@@ -167,6 +187,29 @@ describe("BrandProfile follow toggle", () => {
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Follow brand" })).toBeInTheDocument(),
     );
+  });
+
+  it("shows the loading skeleton instead of stale anonymous data while auth is still resolving", () => {
+    vi.mocked(useAuth).mockReturnValue({
+      isAuthenticated: false,
+      isAuthResolved: false,
+      state: { user: null },
+    } as ReturnType<typeof useAuth>);
+    vi.mocked(useInfiniteBrandProducts, { partial: true }).mockReturnValue({
+      data: {
+        pages: [{ products: [buildProduct()], nextCursor: null, total: 1, brandCount: 1 }],
+        pageParams: [undefined],
+      },
+      isLoading: false,
+      hasNextPage: false,
+      fetchNextPage: vi.fn(),
+      isFetchingNextPage: false,
+    });
+
+    renderBrandProfile(buildBrand());
+
+    expect(screen.getByRole("status", { name: "Loading products" })).toBeInTheDocument();
+    expect(screen.queryByTestId("product-card")).not.toBeInTheDocument();
   });
 
   it("adopts a corrected server follow state when the profile props change", () => {
