@@ -28,3 +28,8 @@ export type AdminInviteSummary = {
   createdAt: Date;
   expiresAt: Date;
 };
+
+export type AdminInviteListResult = {
+  invites: AdminInviteSummary[];
+  viewerPermissionKeys: string[];
+};

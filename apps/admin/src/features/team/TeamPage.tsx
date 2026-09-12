@@ -11,12 +11,16 @@ const STATUS_TONE: Record<AdminInviteSummary["status"], "neutral" | "positive" |
   EXPIRED: "negative",
 };
 
+const TEAM_MANAGE_PERMISSION_KEY = "platform:team:manage";
+
 export const TeamPage = () => {
   const queryClient = useQueryClient();
-  const { data: invites, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["admin-invites"],
     queryFn: teamApi.list,
   });
+  const invites = data?.invites;
+  const canManageTeam = data?.viewerPermissionKeys.includes(TEAM_MANAGE_PERMISSION_KEY) ?? false;
 
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -42,39 +46,47 @@ export const TeamPage = () => {
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Team</h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-      >
-        <div className="space-y-1.5">
-          <label htmlFor="invite-name" className="text-xs text-muted-foreground">
-            Name
-          </label>
-          <Input
-            id="invite-name"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-48"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="invite-email" className="text-xs text-muted-foreground">
-            Email
-          </label>
-          <Input
-            id="invite-email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-64"
-          />
-        </div>
-        <Button type="submit" disabled={invite.isPending}>
-          {invite.isPending ? "Sending…" : "Invite admin"}
-        </Button>
-      </form>
+      {canManageTeam ? (
+        <form
+          onSubmit={handleSubmit}
+          className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
+        >
+          <div className="space-y-1.5">
+            <label htmlFor="invite-name" className="text-xs text-muted-foreground">
+              Name
+            </label>
+            <Input
+              id="invite-name"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-48"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="invite-email" className="text-xs text-muted-foreground">
+              Email
+            </label>
+            <Input
+              id="invite-email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-64"
+            />
+          </div>
+          <Button type="submit" disabled={invite.isPending}>
+            {invite.isPending ? "Sending…" : "Invite admin"}
+          </Button>
+        </form>
+      ) : (
+        !isLoading && (
+          <p className="mt-5 text-sm text-muted-foreground">
+            You don&rsquo;t have permission to invite new admins.
+          </p>
+        )
+      )}
 
       {error && <FormBanner className="mt-3">{error}</FormBanner>}
 

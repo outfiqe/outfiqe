@@ -4,10 +4,11 @@ import { sendEmail } from "#lib/email.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { adminInviteRepository } from "./adminInvite.repository.js";
-import type { AdminInviteSummary } from "./adminInvite.types.js";
+import type { AdminInviteListResult } from "./adminInvite.types.js";
 import { toSummary } from "./adminInvite.utils.js";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -46,11 +47,16 @@ export const adminInviteService = {
     logger.info(`Admin invite sent to ${email} by ${invitedById}`);
   },
 
-  async list(): Promise<AdminInviteSummary[]> {
+  async list(viewerUserId: string): Promise<AdminInviteListResult> {
     const invites = await adminInviteRepository.list();
     const coFounderEmails = await adminInviteRepository.findPlatformCoFounderEmails(
       invites.map((invite) => invite.email),
     );
-    return invites.map((invite) => toSummary(invite, coFounderEmails.has(invite.email)));
+    const viewerPermissionKeys = await platformAccessService.permissionKeysFor(viewerUserId);
+
+    return {
+      invites: invites.map((invite) => toSummary(invite, coFounderEmails.has(invite.email))),
+      viewerPermissionKeys,
+    };
   },
 };

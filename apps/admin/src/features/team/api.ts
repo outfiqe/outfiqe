@@ -1,15 +1,11 @@
-import { z } from "zod";
-
 import { apiClient } from "@/lib/apiClient";
 
-import { type AdminInviteSummary, adminInviteSummarySchema } from "./schemas";
-
-const listSchema = z.array(adminInviteSummarySchema);
+import { type AdminInviteListResult, adminInviteListResultSchema } from "./schemas";
 
 export const teamApi = {
-  async list(): Promise<AdminInviteSummary[]> {
-    const res = await apiClient.get<AdminInviteSummary[]>("/admin/invites");
-    return listSchema.parse(res.data);
+  async list(): Promise<AdminInviteListResult> {
+    const res = await apiClient.get<AdminInviteListResult>("/admin/invites");
+    return adminInviteListResultSchema.parse(res.data);
   },
 
   async invite(email: string, name: string): Promise<void> {
