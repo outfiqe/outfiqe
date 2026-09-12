@@ -28,25 +28,31 @@ const renderPage = () => {
   );
 };
 
+const mockInvitesEndpoint = (
+  invites: ReturnType<typeof invite>[],
+  viewerPermissionKeys: string[] = ["platform:team:manage"],
+) =>
+  mswServer.use(
+    http.get(`${API_BASE}/admin/invites`, () =>
+      HttpResponse.json({
+        success: true,
+        message: "Invites.",
+        data: { invites, viewerPermissionKeys },
+      }),
+    ),
+  );
+
 describe("TeamPage", () => {
   it("shows a Co-founder badge only on the rows whose account is a co-founder", async () => {
-    mswServer.use(
-      http.get(`${API_BASE}/admin/invites`, () =>
-        HttpResponse.json({
-          success: true,
-          message: "Invites.",
-          data: [
-            invite({
-              id: "cf",
-              name: "Prapti Bidari",
-              email: "prapti@outfiqe.com",
-              isCoFounder: true,
-            }),
-            invite({ id: "plain", name: "Regular Admin", email: "regular@outfiqe.com" }),
-          ],
-        }),
-      ),
-    );
+    mockInvitesEndpoint([
+      invite({
+        id: "cf",
+        name: "Prapti Bidari",
+        email: "prapti@outfiqe.com",
+        isCoFounder: true,
+      }),
+      invite({ id: "plain", name: "Regular Admin", email: "regular@outfiqe.com" }),
+    ]);
 
     renderPage();
 
@@ -58,14 +64,29 @@ describe("TeamPage", () => {
   });
 
   it("renders the empty state when there are no invites", async () => {
-    mswServer.use(
-      http.get(`${API_BASE}/admin/invites`, () =>
-        HttpResponse.json({ success: true, message: "Invites.", data: [] }),
-      ),
-    );
+    mockInvitesEndpoint([]);
 
     renderPage();
 
     expect(await screen.findByText("No invites yet.")).toBeInTheDocument();
+  });
+
+  it("shows the invite form to a staffer who can manage the team", async () => {
+    mockInvitesEndpoint([], ["platform:team:manage"]);
+
+    renderPage();
+
+    expect(await screen.findByRole("button", { name: "Invite admin" })).toBeInTheDocument();
+  });
+
+  it("hides the invite form and explains why for a staffer who cannot manage the team", async () => {
+    mockInvitesEndpoint([], []);
+
+    renderPage();
+
+    expect(
+      await screen.findByText("You don’t have permission to invite new admins."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Invite admin" })).not.toBeInTheDocument();
   });
 });

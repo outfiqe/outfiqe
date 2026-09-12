@@ -14,3 +14,9 @@ export const adminInviteSummarySchema = z.object({
   expiresAt: z.string(),
 });
 export type AdminInviteSummary = z.infer<typeof adminInviteSummarySchema>;
+
+export const adminInviteListResultSchema = z.object({
+  invites: z.array(adminInviteSummarySchema),
+  viewerPermissionKeys: z.array(z.string()),
+});
+export type AdminInviteListResult = z.infer<typeof adminInviteListResultSchema>;

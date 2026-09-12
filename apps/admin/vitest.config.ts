@@ -55,6 +55,7 @@ export default defineConfig({
         "src/components/ConfirmModal.tsx",
         "src/components/TextPromptModal.tsx",
         "src/features/users/**/*.{ts,tsx}",
+        "src/features/team/**/*.{ts,tsx}",
       ],
       thresholds: {
         lines: 80,

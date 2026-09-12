@@ -12,15 +12,17 @@ flags, impersonation, the platform audit log) live in sibling `platform-*` modul
 
 - `platform-access.constants.ts` — `PLATFORM_PERMISSION_CATALOG` (`platform:metrics:read`,
   `platform:features:manage`, `platform:impersonate`, `platform:impersonate:manage`,
-  `platform:audit:read`), the `PlatformPermissionKey` union, and `isPlatformPermissionKey`.
+  `platform:audit:read`, `platform:team:manage`, `platform:suspensions:manage`,
+  `platform:support:read`, `platform:support:respond`, `platform:support:manage`), the
+  `PlatformPermissionKey` union, and `isPlatformPermissionKey`.
 - `platform-access.types.ts` — `PlatformPrincipal`, the shape stored on `res.locals.platform`.
 - `platform-access.service.ts` — `permissionKeysFor(userId)`: resolves the user's membership in
   the platform organization (via `crm-access`'s repository) and returns the platform keys their
   role holds; the platform-org SUPERADMIN gets every key.
 - `platform-access.middleware.ts` — `requirePlatformRole(key)` returns
-  `[requirePlatformAccess, enforceKey]`: the existing role-and-membership gate followed by the
-  specific-key check, which stamps `res.locals.platform`. `getPlatformPrincipal(res)` reads it
-  back.
+  `[requireAuth, requirePlatformAccess, enforceKey]`: auth, the existing role-and-membership gate,
+  then the specific-key check, which stamps `res.locals.platform`. `getPlatformPrincipal(res)`
+  reads it back.
 - `platform-access.integration.test.ts` — `permissionKeysFor` against a real database.
 
 `apps/api/src/shared/db/prisma.ts` also gains `prismaRead` in this change: it is the primary
@@ -56,3 +58,9 @@ holds `platform:access`) → `enforceKey` (`platformAccessService.permissionKeys
   "stack the coarse gate, then the specific key, then stash the principal on `res.locals`" shape,
   but keyed off the platform organization rather than a tenant-resolved one, and never touching
   `resolveTenant`.
+- **`platform:team:manage` gates `POST /api/admin/invites` (see the `admin-invites` module).**
+  Without a fine-grained key here, any staffer holding `platform:access` at all — not just someone
+  whose role was actually meant to manage the team — could invite themselves or an outsider into a
+  more powerful admin role. `requirePlatformRole` is spread onto that one route on top of that
+  module's existing router-level `requirePlatformAccess` gate, mirroring how `support.routes.ts`
+  composes it per-route.
