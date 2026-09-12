@@ -47,23 +47,24 @@ start/reset/stop lifecycle live here, not the mocked endpoints themselves.
   `apps/api/vitest.config.ts`'s integration project already applies with its own (larger, DB-bound)
   `testTimeout: 15000`.
 - **The `integration` project caps `maxWorkers: 1`, raises `execArgv: ["--max-old-space-size=4096"]`,
-  and sets `vmMemoryLimit: "1gb"` (`vitest.config.ts`).** Each worker boots a real jsdom environment
-  plus MSW's interceptors and renders full pages behind `AuthProvider`/`QueryClientProvider` —
-  heavier per-file than a plain unit test. At vitest's default worker count (one per CPU core), the
-  CI runner's suite crashed with `JavaScript heap out of memory` partway through the run; the crash
-  point was identical across repeated reruns, pointing at a real memory ceiling rather than a
-  one-off flake. `maxWorkers: 2` alone still crashed, just later in the run, and `maxWorkers: 1`
-  alone _still_ crashed — the same single worker sat idle for ~5 minutes doing GC ("Ineffective
-  mark-compacts near heap limit") before finally dying, proving memory keeps accumulating across
-  sequential files within one worker, not just across concurrent ones. `vmMemoryLimit` is vitest's
-  purpose-built answer to exactly this — it recycles a worker process once it nears that limit,
-  discarding whatever's accumulated instead of letting it grow for the rest of the run. With that in
-  place, `maxWorkers: 2` ran clean once (52 files); adding one more heavy integration test file to
-  the suite was enough to tip it back into an OOM crash under 2 concurrent workers, so `maxWorkers`
-  is back to 1 — the only configuration that's actually held with zero crashes across every retest.
-  `execArgv`'s higher heap ceiling is a backstop in case a single file's own working set is large
-  enough to need it. All three trade wall-clock time for not OOM-crashing the run; revisit
-  `maxWorkers` again if this suite's size stabilizes and CI speed becomes worth re-testing for.
+  and sets `vmMemoryLimit: "384mb"` (`vitest.config.ts`).** Each worker boots a real jsdom
+  environment plus MSW's interceptors and renders full pages behind `AuthProvider`/
+  `QueryClientProvider` — heavier per-file than a plain unit test. At vitest's default worker count
+  (one per CPU core), the CI runner's suite crashed with `JavaScript heap out of memory` partway
+  through the run; the crash point was identical across repeated reruns, pointing at a real memory
+  ceiling rather than a one-off flake. `maxWorkers: 2` alone still crashed, just later in the run,
+  and `maxWorkers: 1` alone _still_ crashed — the same single worker sat idle for ~5 minutes doing
+  GC ("Ineffective mark-compacts near heap limit") before finally dying, proving memory keeps
+  accumulating across sequential files within one worker, not just across concurrent ones.
+  `vmMemoryLimit` is vitest's purpose-built answer to exactly this — it recycles a worker process
+  once it nears that limit, discarding whatever's accumulated instead of letting it grow for the
+  rest of the run. The first attempt set it to `"1gb"`, which still crashed on the very last file of
+  the run three times out of four — right at the edge, not fully clear of it. Lowered to `"384mb"`
+  so the worker recycles well before nearing the real ceiling, with more margin against a suite that
+  keeps growing. `execArgv`'s higher heap ceiling is a backstop in case a single file's own working
+  set is large enough to need it on its own. All three trade wall-clock time for not OOM-crashing
+  the run; revisit `maxWorkers` again if this suite's size stabilizes and CI speed becomes worth
+  re-testing for.
 - Not colocated with a single source file, unlike `<name>.test.tsx` files: `mswServer` is one
   shared instance reused by every integration test in the app, and `setup.ts` is wired in as a
   vitest config-level `setupFiles` entry, which has to be a real file path.

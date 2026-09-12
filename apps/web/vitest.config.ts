@@ -240,7 +240,7 @@ export default defineConfig({
           pool: "forks",
           maxWorkers: 1,
           execArgv: ["--max-old-space-size=4096"],
-          vmMemoryLimit: "1gb",
+          vmMemoryLimit: "384mb",
         },
       },
     ],
