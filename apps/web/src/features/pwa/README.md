@@ -440,6 +440,20 @@ page could reconnect with nothing registered to replay their queued like — the
 registration would simply never have been imported yet this session. Registering from the app's
 root composition instead guarantees every handler exists before the very first drain can run.
 
+**A replay handler's second argument is the app's real `QueryClient`, threaded from
+`OfflineActionSync` through `drainQueuedOfflineActions`, specifically so a handler can reconcile
+the feed cache with the server's response after it replays.** This closes a real gap: the handlers
+used to call the API and discard the result, unlike the equivalent online mutation
+(`useLikeLook.ts`/`useSaveLook.ts`/`useFollowCreator.ts`), which always patches every feed cache
+with the server's authoritative `{liked, likeCount}`/`{saved, saveCount}`/`{following}` in its own
+`onSuccess`. A queued action can sit for up to `QUEUED_OFFLINE_ACTION_MAX_AGE_MS` (24h) before it
+replays, and its payload freezes whatever `liked`/`saved`/`following` boolean was true the moment
+it was queued — if the true server-side state has since moved on for any reason, the client's
+optimistic patch from `onMutate` was the only thing ever shown, with nothing to correct it once the
+replay actually happened. Explore's `offlineActionHandlers.ts` now calls
+`patchPostInFeedCaches`/`patchCreatorInFeedCaches` with the real response after every successful
+replay, exactly mirroring what the online path already did.
+
 **The offline-reading allowlist is a list of what may be saved, never a list of what may not.** A
 "don't save these" list fails open: the day someone adds a query for saved addresses or payout
 details, it is written to disk because nobody remembered to add it. An allowlist fails closed — a

@@ -221,6 +221,7 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
               aria-pressed={isSaved}
               aria-label="Save"
               onClick={() => gated(toggleSaved)}
+              disabled={wishlistMutation.isPending}
               className={cn("size-11 shrink-0", isSaved && "border-primary text-primary")}
             >
               <Heart className={cn("size-[18px]", isSaved && "fill-primary")} />

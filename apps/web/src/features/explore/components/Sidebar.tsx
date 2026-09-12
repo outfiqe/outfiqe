@@ -76,6 +76,7 @@ const SuggestedCreators = () => {
             key={creator.id}
             creator={creator}
             onFollow={(creatorId) => followMutation.mutate({ creatorId, following: false })}
+            isFollowPending={followMutation.isPending}
           />
         ))}
       </div>

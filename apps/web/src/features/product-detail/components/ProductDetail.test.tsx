@@ -15,8 +15,10 @@ vi.mock("@/features/cart", () => ({
   useAddToCart: () => ({ mutate: addToCart, isPending: false }),
 }));
 
+const wishlistMutationState = { isPending: false };
+
 vi.mock("@/features/wishlist", () => ({
-  useToggleWishlist: () => ({ mutate: vi.fn() }),
+  useToggleWishlist: () => ({ mutate: vi.fn(), isPending: wishlistMutationState.isPending }),
 }));
 
 vi.mock("@/features/checkout", () => ({
@@ -152,5 +154,18 @@ describe("ProductDetail buy controls by account type", () => {
 
     expect(screen.getByRole("button", { name: /add to cart/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /buy now/i })).toBeInTheDocument();
+  });
+});
+
+describe("ProductDetail save button", () => {
+  beforeEach(() => {
+    wishlistMutationState.isPending = false;
+  });
+
+  it("disables the save button while a wishlist toggle is already in flight", () => {
+    wishlistMutationState.isPending = true;
+    render(<ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />);
+
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
 });

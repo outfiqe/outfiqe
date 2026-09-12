@@ -87,6 +87,25 @@ const buildIdleMutationResult = () => ({
   reset: vi.fn(),
 });
 
+const buildPendingMutationResult = () => ({
+  context: undefined,
+  data: undefined,
+  error: null,
+  failureCount: 0,
+  failureReason: null,
+  isPaused: false,
+  status: "pending" as const,
+  variables: { creatorId: "creator-1", following: false },
+  submittedAt: 0,
+  isError: false as const,
+  isIdle: false as const,
+  isPending: true as const,
+  isSuccess: false as const,
+  mutate: vi.fn(),
+  mutateAsync: vi.fn(),
+  reset: vi.fn(),
+});
+
 beforeEach(() => {
   vi.mocked(useSuggestedCreators).mockReturnValue(
     buildQuerySuccessResult([]) as ReturnType<typeof useSuggestedCreators>,
@@ -129,5 +148,28 @@ describe("Sidebar", () => {
     await user.click(screen.getByText("close-modal"));
 
     expect(screen.queryByTestId("suggested-creators-modal")).not.toBeInTheDocument();
+  });
+
+  it("disables a suggested creator's follow button while a follow is already in flight", () => {
+    mockAuthGate(true);
+    vi.mocked(useSuggestedCreators).mockReturnValue(
+      buildQuerySuccessResult([
+        {
+          id: "creator-1",
+          handle: "creator-one",
+          name: "Creator One",
+          followerCount: 3,
+          isCreator: true,
+          creatorStatus: "APPROVED",
+        },
+      ]) as ReturnType<typeof useSuggestedCreators>,
+    );
+    vi.mocked(useFollowCreator).mockReturnValue(
+      buildPendingMutationResult() as ReturnType<typeof useFollowCreator>,
+    );
+
+    render(<Sidebar activeTag="" onTagClick={vi.fn()} />);
+
+    expect(screen.getByRole("button", { name: "Follow" })).toBeDisabled();
   });
 });

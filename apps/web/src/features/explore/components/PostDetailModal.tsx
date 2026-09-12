@@ -59,6 +59,7 @@ export const PostDetailModal = ({
   const { isLoading: commentsLoading, data: commentsData } = comments;
   const { mutate: toggleLike, isPending: isLiking } = likeMutation;
   const { mutate: toggleSave, isPending: isSaving } = saveMutation;
+  const { mutate: toggleFollow, isPending: isFollowToggling } = followMutation;
   const hasCaptionContent = taggedProducts.length > 0 || Boolean(caption);
 
   useEffect(() => {
@@ -93,8 +94,9 @@ export const PostDetailModal = ({
               isOwnPost={isOwnPost}
               isFollowingCreator={isFollowingCreator}
               onFollowToggle={() =>
-                gated(() => followMutation.mutate({ creatorId, following: isFollowingCreator }))
+                gated(() => toggleFollow({ creatorId, following: isFollowingCreator }))
               }
+              isFollowToggling={isFollowToggling}
               className="shrink-0 border-b border-border py-3 pl-4 pr-14"
             />
           )}
