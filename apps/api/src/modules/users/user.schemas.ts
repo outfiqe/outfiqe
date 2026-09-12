@@ -35,8 +35,10 @@ export const searchUsersQuerySchema = z.object({
 export const updateOwnProfileSchema = z
   .object({
     name: z.string().trim().min(1).max(100),
+    handle: handleField,
     phone: phoneSchema,
     avatarUrl: z.url().nullable(),
+    avatarImageAssetId: z.uuid().nullable(),
   })
   .partial();
 

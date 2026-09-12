@@ -1,5 +1,6 @@
 ﻿import { Router } from "express";
 
+import { rateLimitHandleChangesOnly } from "#middlewares/handle-change-rate-limit.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { requireActiveAuth } from "#middlewares/require-active-account.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
@@ -35,6 +36,7 @@ userRoutes.post("/", ...requireAdmin, validate({ body: createUserSchema }), user
 userRoutes.patch(
   "/me",
   ...requireActiveAuth,
+  rateLimitHandleChangesOnly,
   validate({ body: updateOwnProfileSchema }),
   userController.updateMe,
 );
