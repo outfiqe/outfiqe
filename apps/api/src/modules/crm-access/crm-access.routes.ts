@@ -5,6 +5,7 @@ import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { AUDIT_READ_PERMISSION_KEY } from "#modules/crm-audit/crm-audit.constants.js";
+import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import {
@@ -30,6 +31,7 @@ import {
   createOwnershipTransferSchema,
   createRoleSchema,
   inviteIdParamsSchema,
+  listOrganizationsQuerySchema,
   membershipIdParamsSchema,
   ownershipTransferIdParamsSchema,
   roleIdParamsSchema,
@@ -78,10 +80,15 @@ const requireOrganizationsAdmin = [
   requirePlatformAccess,
   requirePlatformNavItem("organizations"),
 ];
+const requireOrganizationsMutationAdmin = [
+  ...requirePlatformRole("platform:organizations:manage"),
+  requirePlatformNavItem("organizations"),
+];
 
 crmAccessRoutes.get(
   "/organizations",
   ...requireOrganizationsAdmin,
+  validate({ query: listOrganizationsQuerySchema }),
   crmAccessController.listOrganizations,
 );
 crmAccessRoutes.get(
@@ -92,7 +99,7 @@ crmAccessRoutes.get(
 );
 crmAccessRoutes.post(
   "/organizations",
-  ...requireOrganizationsAdmin,
+  ...requireOrganizationsMutationAdmin,
   crmOrganizationRateLimit,
   validate({ body: createOrganizationSchema }),
   crmAccessController.createOrganization,

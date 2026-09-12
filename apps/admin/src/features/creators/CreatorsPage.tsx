@@ -1,6 +1,8 @@
-import { Button } from "@outfiqe/design-system";
+import { Button, toast } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { creatorsApi } from "./api";
 import { useInfiniteCreators } from "./hooks/useInfiniteCreators";
@@ -25,11 +27,13 @@ export const CreatorsPage = () => {
   const approve = useMutation({
     mutationFn: (userId: string) => creatorsApi.approve(userId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["creators"] }),
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const reject = useMutation({
     mutationFn: (userId: string) => creatorsApi.reject(userId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["creators"] }),
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   return (

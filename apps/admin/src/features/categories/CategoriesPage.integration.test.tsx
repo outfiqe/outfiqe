@@ -1,3 +1,4 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -29,7 +30,10 @@ const okJson = (data: unknown) => HttpResponse.json({ success: true, message: "o
 const renderPage = () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <Toaster />
+    </QueryClientProvider>
   );
   return render(<CategoriesPage />, { wrapper });
 };
@@ -123,5 +127,27 @@ describe("CategoriesPage", () => {
 
     expect(await screen.findByRole("button", { name: "Move Alpha up" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Move Beta down" })).toBeDisabled();
+  });
+
+  it("shows an error toast when publishing a category fails", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/categories/admin`, () => okJson([category("id-a", "Alpha", 0)])),
+      http.patch(`${API_BASE}/categories/id-a`, () =>
+        HttpResponse.json(
+          { success: false, message: "Only platform staff can publish categories." },
+          { status: 403 },
+        ),
+      ),
+    );
+    stubPopularity();
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "Unpublish" }));
+
+    expect(
+      await screen.findByText("Only platform staff can publish categories."),
+    ).toBeInTheDocument();
   });
 });

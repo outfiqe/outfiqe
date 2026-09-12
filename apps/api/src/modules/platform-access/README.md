@@ -13,7 +13,9 @@ flags, impersonation, the platform audit log) live in sibling `platform-*` modul
 - `platform-access.constants.ts` — `PLATFORM_PERMISSION_CATALOG` (`platform:metrics:read`,
   `platform:features:manage`, `platform:impersonate`, `platform:impersonate:manage`,
   `platform:audit:read`, `platform:team:manage`, `platform:suspensions:manage`,
-  `platform:support:read`, `platform:support:respond`, `platform:support:manage`), the
+  `platform:support:read`, `platform:support:respond`, `platform:support:manage`,
+  `platform:withdraw:manage`, `platform:coupons:manage`, `platform:organizations:manage`,
+  `platform:xp:manage`, `platform:gamification:manage`, `platform:commissions:manage`), the
   `PlatformPermissionKey` union, and `isPlatformPermissionKey`.
 - `platform-access.types.ts` — `PlatformPrincipal`, the shape stored on `res.locals.platform`.
 - `platform-access.service.ts` — `permissionKeysFor(userId)`: resolves the user's membership in

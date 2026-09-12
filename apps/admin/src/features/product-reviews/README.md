@@ -12,7 +12,9 @@ anything that shouldn't be up. There is no cross-product "all reviews" queue —
   (`GET`/`DELETE /products/:productId/reviews[/​:reviewId]`) — no admin-only backend route was
   added for this page.
 - `ProductReviewsPage.tsx` — the whole feature in one component: a debounced product search, then
-  the selected product's review list with a delete button per row.
+  the selected product's review list with a delete button per row, cursor-paginated via
+  `useInfiniteQuery` with a "Load more" button (same pattern `AuditPage` uses) rather than fetching
+  every review for a product in one request.
 
 ## Funnel
 

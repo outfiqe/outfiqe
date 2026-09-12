@@ -1,20 +1,19 @@
-import { z } from "zod";
-
 import { apiClient } from "@/lib/apiClient";
 
 import {
-  type Organization,
   type OrganizationCreationSuggestion,
   organizationCreationSuggestionSchema,
+  type OrganizationListPage,
+  organizationListPageSchema,
   organizationSchema,
 } from "./schemas";
 
-const organizationsListSchema = z.array(organizationSchema);
-
 export const organizationsApi = {
-  async list(): Promise<Organization[]> {
-    const res = await apiClient.get<Organization[]>("/crm/organizations");
-    return organizationsListSchema.parse(res.data);
+  async list(cursor?: string): Promise<OrganizationListPage> {
+    const res = await apiClient.get<OrganizationListPage>("/crm/organizations", {
+      params: cursor ? { cursor } : undefined,
+    });
+    return organizationListPageSchema.parse(res.data);
   },
 
   async suggestFromBrand(brandId: string): Promise<OrganizationCreationSuggestion> {

@@ -1,3 +1,4 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
@@ -41,6 +42,7 @@ const renderPage = () => {
   render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
+      <Toaster />
     </QueryClientProvider>,
   );
 };
@@ -90,6 +92,27 @@ describe("ProductTypesPage", () => {
     await user.click(await screen.findByRole("button", { name: "Switch off" }));
 
     await waitFor(() => expect(patchBody).toEqual({ isActive: false }));
+  });
+
+  it("shows an error toast when switching a garment type off fails", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/product-types/admin`, () => okJson([productType("id-a", "Alpha", 0)])),
+      http.patch(`${API_BASE}/product-types/id-a`, () =>
+        HttpResponse.json(
+          { success: false, message: "Only platform staff can change garment types." },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Switch off" }));
+
+    expect(
+      await screen.findByText("Only platform staff can change garment types."),
+    ).toBeInTheDocument();
   });
 
   it("links to the sizes page for a type that has none yet", async () => {

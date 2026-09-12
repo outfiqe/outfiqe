@@ -1,8 +1,7 @@
 ﻿import { Router } from "express";
 
-import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import { creatorLeaderboardController } from "./creatorLeaderboard.controller.js";
@@ -12,7 +11,10 @@ import {
   updateCreatorLeaderboardCategorySchema,
 } from "./creatorLeaderboard.schemas.js";
 
-const requireAdmin = [requireAuth, requirePlatformAccess, requirePlatformNavItem("gamification")];
+const requireGamificationMutationAdmin = [
+  ...requirePlatformRole("platform:gamification:manage"),
+  requirePlatformNavItem("gamification"),
+];
 
 export const creatorLeaderboardRoutes = Router();
 
@@ -26,7 +28,7 @@ creatorLeaderboardRoutes.get(
 
 creatorLeaderboardRoutes.patch(
   "/categories/:category",
-  ...requireAdmin,
+  ...requireGamificationMutationAdmin,
   validate({
     params: creatorLeaderboardCategoryParamSchema,
     body: updateCreatorLeaderboardCategorySchema,

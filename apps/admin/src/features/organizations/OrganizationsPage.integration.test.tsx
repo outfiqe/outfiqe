@@ -23,26 +23,29 @@ describe("OrganizationsPage", () => {
       http.get(`${API_BASE}/crm/organizations`, () =>
         HttpResponse.json({
           success: true,
-          data: [
-            {
-              id: "org-1",
-              name: "Outfiqe",
-              subdomain: "outfiqe",
-              plan: "trial",
-              linkedBrandId: null,
-              linkedBrandName: null,
-              createdAt: "2026-01-01T00:00:00.000Z",
-            },
-            {
-              id: "org-2",
-              name: "Meridian Apparel Co.",
-              subdomain: "meridian",
-              plan: "trial",
-              linkedBrandId: "brand-7",
-              linkedBrandName: "Kastha Studio",
-              createdAt: "2026-01-02T00:00:00.000Z",
-            },
-          ],
+          data: {
+            organizations: [
+              {
+                id: "org-1",
+                name: "Outfiqe",
+                subdomain: "outfiqe",
+                plan: "trial",
+                linkedBrandId: null,
+                linkedBrandName: null,
+                createdAt: "2026-01-01T00:00:00.000Z",
+              },
+              {
+                id: "org-2",
+                name: "Meridian Apparel Co.",
+                subdomain: "meridian",
+                plan: "trial",
+                linkedBrandId: "brand-7",
+                linkedBrandName: "Kastha Studio",
+                createdAt: "2026-01-02T00:00:00.000Z",
+              },
+            ],
+            nextCursor: null,
+          },
         }),
       ),
     );
@@ -54,10 +57,65 @@ describe("OrganizationsPage", () => {
     expect(screen.getByText("meridian · trial · linked to Kastha Studio")).toBeInTheDocument();
   });
 
+  it("loads the next page of organizations on demand", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/crm/organizations`, ({ request }) => {
+        const cursor = new URL(request.url).searchParams.get("cursor");
+        if (!cursor) {
+          return HttpResponse.json({
+            success: true,
+            data: {
+              organizations: [
+                {
+                  id: "org-1",
+                  name: "Outfiqe",
+                  subdomain: "outfiqe",
+                  plan: "trial",
+                  linkedBrandId: null,
+                  linkedBrandName: null,
+                  createdAt: "2026-01-01T00:00:00.000Z",
+                },
+              ],
+              nextCursor: "org-1",
+            },
+          });
+        }
+        return HttpResponse.json({
+          success: true,
+          data: {
+            organizations: [
+              {
+                id: "org-2",
+                name: "Meridian Apparel Co.",
+                subdomain: "meridian",
+                plan: "trial",
+                linkedBrandId: null,
+                linkedBrandName: null,
+                createdAt: "2026-01-02T00:00:00.000Z",
+              },
+            ],
+            nextCursor: null,
+          },
+        });
+      }),
+    );
+
+    renderOrganizationsPage();
+
+    expect(await screen.findByText("Outfiqe")).toBeInTheDocument();
+    expect(screen.queryByText("Meridian Apparel Co.")).not.toBeInTheDocument();
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Load more" }));
+
+    expect(await screen.findByText("Meridian Apparel Co.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Load more" })).not.toBeInTheDocument();
+  });
+
   it("shows an explicit empty state when there are no organizations", async () => {
     mswServer.use(
       http.get(`${API_BASE}/crm/organizations`, () =>
-        HttpResponse.json({ success: true, data: [] }),
+        HttpResponse.json({ success: true, data: { organizations: [], nextCursor: null } }),
       ),
     );
 
@@ -128,7 +186,7 @@ describe("OrganizationsPage", () => {
     let requestBody: unknown;
     mswServer.use(
       http.get(`${API_BASE}/crm/organizations`, () =>
-        HttpResponse.json({ success: true, data: [] }),
+        HttpResponse.json({ success: true, data: { organizations: [], nextCursor: null } }),
       ),
       http.post(`${API_BASE}/crm/organizations`, async ({ request }) => {
         requestBody = await request.json();
@@ -173,7 +231,7 @@ describe("OrganizationsPage", () => {
   it("snaps the business field back to the picked name when an uncommitted edit is abandoned", async () => {
     mswServer.use(
       http.get(`${API_BASE}/crm/organizations`, () =>
-        HttpResponse.json({ success: true, data: [] }),
+        HttpResponse.json({ success: true, data: { organizations: [], nextCursor: null } }),
       ),
     );
     mockBrandSearch();
@@ -196,7 +254,7 @@ describe("OrganizationsPage", () => {
   it("shows the backend error message when creation fails", async () => {
     mswServer.use(
       http.get(`${API_BASE}/crm/organizations`, () =>
-        HttpResponse.json({ success: true, data: [] }),
+        HttpResponse.json({ success: true, data: { organizations: [], nextCursor: null } }),
       ),
       http.post(
         `${API_BASE}/crm/organizations`,
@@ -227,7 +285,7 @@ describe("OrganizationsPage", () => {
   it("shows the owner's existing organizations instead of hiding them", async () => {
     mswServer.use(
       http.get(`${API_BASE}/crm/organizations`, () =>
-        HttpResponse.json({ success: true, data: [] }),
+        HttpResponse.json({ success: true, data: { organizations: [], nextCursor: null } }),
       ),
     );
     mockBrandSearch();
@@ -246,7 +304,7 @@ describe("OrganizationsPage", () => {
   it("warns when the picked business is already linked to an organization", async () => {
     mswServer.use(
       http.get(`${API_BASE}/crm/organizations`, () =>
-        HttpResponse.json({ success: true, data: [] }),
+        HttpResponse.json({ success: true, data: { organizations: [], nextCursor: null } }),
       ),
     );
     mockBrandSearch();

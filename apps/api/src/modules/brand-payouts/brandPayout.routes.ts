@@ -3,6 +3,7 @@
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import { brandPayoutController } from "./brandPayout.controller.js";
@@ -18,6 +19,10 @@ import {
 const requireAdmin = [
   requireAuth,
   requirePlatformAccess,
+  requirePlatformNavItem("platform-commission"),
+];
+const requireBrandPayoutMutationAdmin = [
+  ...requirePlatformRole("platform:commissions:manage"),
   requirePlatformNavItem("platform-commission"),
 ];
 
@@ -36,7 +41,7 @@ brandPayoutRoutes.get("/commission-rules", ...requireAdmin, brandPayoutControlle
 
 brandPayoutRoutes.post(
   "/commission-rules",
-  ...requireAdmin,
+  ...requireBrandPayoutMutationAdmin,
   validate({ body: createPlatformCommissionRuleSchema }),
   brandPayoutController.createRule,
 );
@@ -49,7 +54,7 @@ brandPayoutRoutes.get(
 
 brandPayoutRoutes.post(
   "/gateway-fee-rates",
-  ...requireAdmin,
+  ...requireBrandPayoutMutationAdmin,
   validate({ body: createGatewayFeeRateSchema }),
   brandPayoutController.createGatewayFeeRate,
 );
@@ -63,14 +68,14 @@ brandPayoutRoutes.get(
 
 brandPayoutRoutes.post(
   "/exemptions",
-  ...requireAdmin,
+  ...requireBrandPayoutMutationAdmin,
   validate({ body: createBrandCommissionExemptionSchema }),
   brandPayoutController.createExemption,
 );
 
 brandPayoutRoutes.patch(
   "/exemptions/:id/revoke",
-  ...requireAdmin,
+  ...requireBrandPayoutMutationAdmin,
   validate({ params: exemptionIdParamSchema }),
   brandPayoutController.revokeExemption,
 );

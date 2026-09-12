@@ -6,8 +6,13 @@
 (`#lib/creator-guard.utils.js`) before touching the repository, so a signed-in shopper who isn't
 an approved creator gets `403 NOT_A_CREATOR` rather than an all-zero summary. Commission _rows_
 are still created speculatively for any buyer's order (see below) — the gate is on reading an
-earnings view, which only means anything for a creator. The admin `/commissions/*` endpoints
-keep their own `requirePlatformAccess` gate and are untouched.
+earnings view, which only means anything for a creator. The admin `/commissions/*` endpoints keep
+their own `requirePlatformAccess` + `requirePlatformNavItem("commissions")` gate for reads
+(`listTiers`, `listAll`); every write (`createTier`/`updateTier`/`deleteTier`, `approve`/`void`/
+`markPaid`) additionally needs `platform:commissions:manage` (`requirePlatformRole`, see
+`platform-access/README.md`) — the same key also gates `brand-payouts`' commission-rule/gateway-fee/
+exemption writes, since both modules mutate the same "how much the platform takes or pays out"
+surface.
 
 ## Commission creation isn't deferred like stock is
 

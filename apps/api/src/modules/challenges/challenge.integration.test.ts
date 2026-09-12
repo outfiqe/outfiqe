@@ -8,6 +8,7 @@ import { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { achievementService } from "#modules/achievements/achievement.service.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
+import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
 import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -34,6 +35,7 @@ const createAdmin = async () => {
   const admin = await createUser("Test Admin");
   await ensurePlatformOrganizationExists();
   await crmAccessService.grantPlatformStaffMembership(admin.id);
+  await grantPlatformPermissions(admin.id, "platform:gamification:manage");
   return { ...admin, header: authHeaderFor(admin.id, UserRole.ADMIN) };
 };
 
@@ -117,6 +119,19 @@ describe("POST /api/challenges (admin)", () => {
     const response = await request(testApp)
       .post("/api/challenges")
       .set("Authorization", authHeaderFor(nonAdmin.id))
+      .send(validChallengePayload());
+
+    expect(response.status).toBe(403);
+  });
+
+  it("blocks a platform staffer without platform:gamification:manage", async () => {
+    const staffer = await createUser("No Gamification Permission");
+    await ensurePlatformOrganizationExists();
+    await crmAccessService.grantPlatformStaffMembership(staffer.id);
+
+    const response = await request(testApp)
+      .post("/api/challenges")
+      .set("Authorization", authHeaderFor(staffer.id, UserRole.ADMIN))
       .send(validChallengePayload());
 
     expect(response.status).toBe(403);

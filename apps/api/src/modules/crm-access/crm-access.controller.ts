@@ -19,6 +19,7 @@ import type {
   CreateOwnershipTransferBody,
   CreateRoleBody,
   InviteIdParams,
+  ListOrganizationsQuery,
   MembershipIdParams,
   OwnershipTransferIdParams,
   RoleIdParams,
@@ -56,8 +57,9 @@ export const crmAccessController = {
   },
 
   async listOrganizations(_req: Request, res: Response) {
-    const organizations = await crmAccessService.listOrganizations();
-    sendSuccess(res, organizations, "Organizations.");
+    const { cursor, limit } = validated.query<ListOrganizationsQuery>(res);
+    const page = await crmAccessService.listOrganizations({ cursor, limit });
+    sendSuccess(res, page, "Organizations.");
   },
 
   async getOrganization(_req: Request, res: Response) {

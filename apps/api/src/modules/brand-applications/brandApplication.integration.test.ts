@@ -156,6 +156,51 @@ describe("POST /api/brand-applications/:id/approve", () => {
     expect(response.status).toBe(404);
     expect(response.body.code).toBe("NOT_FOUND");
   });
+
+  it("never lets two concurrent approvals both provision a brand", async () => {
+    const { authHeader } = await createAdminSession();
+    const application = await prisma.brandApplication.create({ data: validApplicationBody() });
+
+    const [resultA, resultB] = await Promise.all([
+      request(testApp)
+        .post(`/api/brand-applications/${application.id}/approve`)
+        .set("Authorization", authHeader),
+      request(testApp)
+        .post(`/api/brand-applications/${application.id}/approve`)
+        .set("Authorization", authHeader),
+    ]);
+
+    const statuses = [resultA.status, resultB.status].sort();
+    expect(statuses).toEqual([200, 409]);
+
+    const brands = await prisma.brand.findMany({ where: { applicationId: application.id } });
+    expect(brands).toHaveLength(1);
+  });
+
+  it("never lets a concurrent approve and reject both succeed", async () => {
+    const { authHeader } = await createAdminSession();
+    const application = await prisma.brandApplication.create({ data: validApplicationBody() });
+
+    const [approveResult, rejectResult] = await Promise.all([
+      request(testApp)
+        .post(`/api/brand-applications/${application.id}/approve`)
+        .set("Authorization", authHeader),
+      request(testApp)
+        .post(`/api/brand-applications/${application.id}/reject`)
+        .set("Authorization", authHeader)
+        .send({ reason: "Racing the approval." }),
+    ]);
+
+    const statuses = [approveResult.status, rejectResult.status].sort();
+    expect(statuses).toEqual([200, 409]);
+
+    const updated = await prisma.brandApplication.findUniqueOrThrow({
+      where: { id: application.id },
+    });
+    expect([BrandApplicationStatus.APPROVED, BrandApplicationStatus.REJECTED]).toContain(
+      updated.status,
+    );
+  });
 });
 
 describe("POST /api/brand-applications/:id/reject", () => {

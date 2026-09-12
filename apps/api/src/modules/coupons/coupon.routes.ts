@@ -3,6 +3,7 @@ import { Router } from "express";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import { couponController } from "./coupon.controller.js";
@@ -16,12 +17,16 @@ import {
 } from "./coupon.schemas.js";
 
 const requireAdmin = [requireAuth, requirePlatformAccess, requirePlatformNavItem("coupons")];
+const requireCouponMutationAdmin = [
+  ...requirePlatformRole("platform:coupons:manage"),
+  requirePlatformNavItem("coupons"),
+];
 
 export const couponRoutes = Router();
 
 couponRoutes.post(
   "/",
-  ...requireAdmin,
+  ...requireCouponMutationAdmin,
   validate({ body: createCouponSchema }),
   couponController.create,
 );
@@ -51,19 +56,19 @@ couponRoutes.get(
 );
 couponRoutes.patch(
   "/:id/status",
-  ...requireAdmin,
+  ...requireCouponMutationAdmin,
   validate({ params: couponIdParamSchema, body: updateCouponStatusSchema }),
   couponController.updateStatus,
 );
 couponRoutes.patch(
   "/:id/budget",
-  ...requireAdmin,
+  ...requireCouponMutationAdmin,
   validate({ params: couponIdParamSchema, body: updateCouponBudgetSchema }),
   couponController.updateBudget,
 );
 couponRoutes.patch(
   "/:id/approve",
-  ...requireAdmin,
+  ...requireCouponMutationAdmin,
   validate({ params: couponIdParamSchema }),
   couponController.approve,
 );

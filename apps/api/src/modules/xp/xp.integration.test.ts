@@ -37,6 +37,12 @@ const createAdmin = async () => {
   return { ...admin, header: authHeaderFor(admin.id, UserRole.ADMIN) };
 };
 
+const createGamificationAdmin = async () => {
+  const admin = await createAdmin();
+  await grantPlatformPermissions(admin.id, "platform:gamification:manage");
+  return admin;
+};
+
 const createXpAdmin = async () => {
   const admin = await createAdmin();
   await grantPlatformPermissions(admin.id, "platform:xp:manage");
@@ -61,7 +67,7 @@ const ensureActivityConfig = async (activityType: "LOOK_CREATED") => {
 
 describe("POST /api/xp/levels (admin)", () => {
   it("creates a level and rejects a duplicate level number", async () => {
-    const admin = await createAdmin();
+    const admin = await createGamificationAdmin();
     const levelNumber = Math.floor(Math.random() * 100000) + 1000;
 
     const first = await request(testApp)
@@ -89,11 +95,22 @@ describe("POST /api/xp/levels (admin)", () => {
 
     expect(response.status).toBe(403);
   });
+
+  it("blocks a platform staffer without platform:gamification:manage", async () => {
+    const admin = await createAdmin();
+
+    const response = await request(testApp)
+      .post("/api/xp/levels")
+      .set("Authorization", admin.header)
+      .send({ level: 1, name: "x", requiredXp: 0 });
+
+    expect(response.status).toBe(403);
+  });
 });
 
 describe("PATCH /api/xp/activity-config/:activityType (admin)", () => {
   it("updates an existing config", async () => {
-    const admin = await createAdmin();
+    const admin = await createGamificationAdmin();
     await ensureActivityConfig("LOOK_CREATED");
 
     const response = await request(testApp)
@@ -106,7 +123,7 @@ describe("PATCH /api/xp/activity-config/:activityType (admin)", () => {
   });
 
   it("404s for an activity type with no config row", async () => {
-    const admin = await createAdmin();
+    const admin = await createGamificationAdmin();
 
     const response = await request(testApp)
       .patch("/api/xp/activity-config/ADMIN_ADJUSTMENT")

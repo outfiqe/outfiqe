@@ -5,10 +5,23 @@ import { MembershipStatus } from "#generated/prisma/enums.js";
 import {
   CUSTOM_ROLE_NAME_MAX_LENGTH,
   CUSTOM_ROLE_NAME_MIN_LENGTH,
+  DEFAULT_ORGANIZATION_PAGE_SIZE,
+  MAX_ORGANIZATION_PAGE_SIZE,
   ORGANIZATION_NAME_MAX_LENGTH,
   ORGANIZATION_NAME_MIN_LENGTH,
   SUBDOMAIN_REGEX,
 } from "./crm-access.constants.js";
+
+export const listOrganizationsQuerySchema = z.object({
+  cursor: z.uuid().optional(),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(MAX_ORGANIZATION_PAGE_SIZE)
+    .optional()
+    .default(DEFAULT_ORGANIZATION_PAGE_SIZE),
+});
 
 export const createOrganizationSchema = z.object({
   name: z.string().min(2).max(100),
@@ -90,6 +103,7 @@ export const ownershipTransferIdParamsSchema = z.object({
   requestId: z.uuid(),
 });
 
+export type ListOrganizationsQuery = z.infer<typeof listOrganizationsQuerySchema>;
 export type CreateOrganizationBody = z.infer<typeof createOrganizationSchema>;
 export type SuggestOrganizationQuery = z.infer<typeof suggestOrganizationQuerySchema>;
 export type CreateOrganizationInviteBody = z.infer<typeof createOrganizationInviteSchema>;
