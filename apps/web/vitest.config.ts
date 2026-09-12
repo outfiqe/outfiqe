@@ -231,7 +231,7 @@ export default defineConfig({
           setupFiles: ["./src/testing/setup.ts", "./src/testing/integration/setup.ts"],
           testTimeout: 10000,
           pool: "forks",
-          maxWorkers: 2,
+          maxWorkers: 1,
         },
       },
     ],
