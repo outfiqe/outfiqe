@@ -59,11 +59,17 @@ export interface PublicUser {
   id: string;
   email: string;
   name: string;
+  handle: string;
   avatarUrl: string | null;
   role: UserRole;
   isCreator: boolean;
   creatorStatus: CreatorStatus;
   emailVerified: boolean;
+  accountStatus: AccountStatus;
+  suspendedAt: string | null;
+  suspendedBy: string | null;
+  suspensionReason: string | null;
+  suspensionExpiresAt: string | null;
   createdAt: string;
 }
 
