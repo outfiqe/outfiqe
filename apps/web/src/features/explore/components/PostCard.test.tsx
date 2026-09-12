@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import type { FeedPost } from "../api/exploreFeedSchemas";
 import { PostCard } from "./PostCard";
@@ -18,8 +18,11 @@ vi.mock("../hooks/useLikeLook", () => ({
 vi.mock("../hooks/useSaveLook", () => ({
   useSaveLook: () => ({ mutate: vi.fn(), isPending: false }),
 }));
+const { followMutationState } = vi.hoisted(() => ({
+  followMutationState: { isPending: false },
+}));
 vi.mock("../hooks/useFollowCreator", () => ({
-  useFollowCreator: () => ({ mutate: vi.fn(), isPending: false }),
+  useFollowCreator: () => ({ mutate: vi.fn(), isPending: followMutationState.isPending }),
 }));
 vi.mock("../hooks/useLookComments", () => ({
   useLookComments: () => ({
@@ -73,6 +76,10 @@ beforeAll(() => {
   );
 });
 
+afterEach(() => {
+  followMutationState.isPending = false;
+});
+
 describe("PostCard caption spacing", () => {
   it("adds a divider above the actions row when there is a caption", () => {
     render(<PostCard post={aPost({ caption: "Streetwear fit" })} />);
@@ -92,5 +99,20 @@ describe("PostCard caption spacing", () => {
 
     expect(actionsRow).not.toHaveClass("border-t");
     expect(actionsRow).not.toHaveClass("mt-2.5");
+  });
+});
+
+describe("PostCard follow button", () => {
+  it("disables the follow button while a follow toggle is already in flight", () => {
+    followMutationState.isPending = true;
+    render(<PostCard post={aPost()} />);
+
+    expect(screen.getByRole("button", { name: "Follow" })).toBeDisabled();
+  });
+
+  it("stays enabled once no follow toggle is in flight", () => {
+    render(<PostCard post={aPost()} />);
+
+    expect(screen.getByRole("button", { name: "Follow" })).toBeEnabled();
   });
 });

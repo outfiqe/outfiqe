@@ -65,6 +65,25 @@ const buildIdleMutationResult = (mutate: typeof mutateMock) => ({
   reset: vi.fn(),
 });
 
+const buildPendingMutationResult = (mutate: typeof mutateMock) => ({
+  context: undefined,
+  data: undefined,
+  error: null,
+  failureCount: 0,
+  failureReason: null,
+  isPaused: false,
+  status: "pending" as const,
+  variables: { creatorId: "1", following: false },
+  submittedAt: 0,
+  isError: false as const,
+  isIdle: false as const,
+  isPending: true as const,
+  isSuccess: false as const,
+  mutate,
+  mutateAsync: vi.fn(),
+  reset: vi.fn(),
+});
+
 beforeEach(() => {
   vi.mocked(useLoadMoreOnVisible).mockReturnValue(createRef<HTMLDivElement>());
   vi.mocked(useFollowCreator).mockReturnValue(
@@ -138,6 +157,22 @@ describe("SuggestedCreatorsModal", () => {
     render(<SuggestedCreatorsModal onClose={vi.fn()} />);
 
     expect(vi.mocked(useLoadMoreOnVisible)).toHaveBeenCalledWith(expect.any(Function), true);
+  });
+
+  it("disables a creator's follow button while a follow is already in flight", () => {
+    mockInfiniteSuggestedCreators({
+      data: {
+        pages: [{ creators: [buildCreator("1")], nextCursor: null }],
+        pageParams: [undefined],
+      },
+    });
+    vi.mocked(useFollowCreator).mockReturnValue(
+      buildPendingMutationResult(mutateMock) as ReturnType<typeof useFollowCreator>,
+    );
+
+    render(<SuggestedCreatorsModal onClose={vi.fn()} />);
+
+    expect(screen.getByRole("button", { name: "Follow" })).toBeDisabled();
   });
 
   it("calls onClose when the modal is dismissed", async () => {

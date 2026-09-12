@@ -53,6 +53,7 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
   const { isLoading: commentsLoading, data: commentsData } = comments;
   const { mutate: toggleLike, isPending: isLiking } = likeMutation;
   const { mutate: toggleSave, isPending: isSaving } = saveMutation;
+  const { mutate: toggleFollow, isPending: isFollowToggling } = followMutation;
   const cardRef = useRecordLookView(id, !isOwnPost);
   const hasCaptionContent = taggedProducts.length > 0 || Boolean(caption);
 
@@ -68,8 +69,9 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
         isOwnPost={isOwnPost}
         isFollowingCreator={isFollowingCreator}
         onFollowToggle={() =>
-          gated(() => followMutation.mutate({ creatorId, following: isFollowingCreator }))
+          gated(() => toggleFollow({ creatorId, following: isFollowingCreator }))
         }
+        isFollowToggling={isFollowToggling}
         className="px-3 py-2.5"
       />
 

@@ -10,5 +10,6 @@ export const usePublicLook = (lookId: string | null) => {
     queryFn: () => exploreFeedApi.getById(lookId as string),
     enabled: lookId !== null,
     refetchOnMount: "always",
+    refetchOnReconnect: "always",
   });
 };

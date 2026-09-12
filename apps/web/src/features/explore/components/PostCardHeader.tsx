@@ -12,6 +12,7 @@ type PostCardHeaderProps = {
   isOwnPost: boolean;
   isFollowingCreator: boolean;
   onFollowToggle: () => void;
+  isFollowToggling?: boolean;
   className?: string;
 };
 
@@ -22,6 +23,7 @@ export const PostCardHeader = ({
   isOwnPost,
   isFollowingCreator,
   onFollowToggle,
+  isFollowToggling,
   className,
 }: PostCardHeaderProps) => {
   return (
@@ -44,9 +46,10 @@ export const PostCardHeader = ({
         <button
           type="button"
           onClick={onFollowToggle}
+          disabled={isFollowToggling}
           aria-pressed={isFollowingCreator}
           className={cn(
-            "ml-auto shrink-0 cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
+            "ml-auto shrink-0 cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition-colors disabled:cursor-default disabled:opacity-60",
             isFollowingCreator
               ? "border-foreground bg-foreground text-background"
               : "border-foreground text-foreground hover:bg-foreground hover:text-background",

@@ -35,4 +35,20 @@ describe("useInfiniteExploreFeed", () => {
     await waitFor(() => expect(exploreFeedApi.list).toHaveBeenCalled());
     expect(exploreFeedApi.list).toHaveBeenCalledWith({ tab: "for-you", cursor: undefined });
   });
+
+  it("also forces a real refetch on reconnect, not just on mount", async () => {
+    vi.mocked(exploreFeedApi.list).mockResolvedValue({ posts: [], nextCursor: null });
+
+    const queryClient = buildFreshQueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+
+    renderHook(() => useInfiniteExploreFeed("for-you"), { wrapper });
+
+    await waitFor(() => expect(exploreFeedApi.list).toHaveBeenCalled());
+    const query = queryClient.getQueryCache().find({ queryKey: ["explore-feed", "for-you"] });
+    const options = query?.options as { refetchOnReconnect?: unknown } | undefined;
+    expect(options?.refetchOnReconnect).toBe("always");
+  });
 });
