@@ -26,6 +26,16 @@ passed in.
   native HTML5 drag-and-drop and a "Move to" `<select>` on every card — so it needs **no
   drag-and-drop library dependency** (a deliberate call for an internal-tool board; revisit if a
   richer DnD interaction is ever required). First consumer: `apps/admin`'s CRM Pipeline page.
+  The board takes its own `disabled` prop rather than expecting the consumer to withhold
+  `onCardMove` — it turns off `draggable`, the "Move to" `<select>`, and the drag-over highlight
+  together, and `moveCard` itself no-ops while disabled as a second guard against a stray native
+  drag event. `apps/admin`'s `PipelinePage` passes `disabled={!canWriteDeals || moveDeal.isPending}`:
+  the same prop covers both "this viewer can't move deals at all" (a real permission gap found in
+  a QA audit — the board previously rendered fully interactive for `deals:read`-only viewers, whose
+  move attempt the server correctly rejected but the UI never explained) and "a move request for
+  this card is already in flight" (preventing two overlapping drags from resolving out of order and
+  silently overwriting each other, since the board has no optimistic local state of its own — it
+  always renders straight from the `deals` query cache).
 - `notifications/` — the shared notification bell UI, reused by `apps/web`'s
   `SiteNotificationBell` and `apps/admin`'s `AdminNotificationBell` (each app supplies its own
   `NotificationsApi`, socket, and `type -> route` resolver — see those features' own READMEs):

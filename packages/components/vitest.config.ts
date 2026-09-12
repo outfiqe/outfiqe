@@ -12,6 +12,7 @@ export default defineConfig({
         "src/header/HeaderBar.tsx",
         "src/header/useHeaderHeightVar.ts",
         "src/notifications/NotificationBell.tsx",
+        "src/kanban/KanbanBoard.tsx",
       ],
       exclude: ["src/**/*.test.tsx", "src/testing/**"],
       thresholds: {

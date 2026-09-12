@@ -20,9 +20,13 @@ const STATUS_TONE: Record<TicketStatusValue, "neutral" | "positive" | "negative"
 export const TicketDetail = ({
   ticketId,
   members,
+  canWrite,
+  canManageAssignee,
 }: {
   ticketId: string;
   members: { id: string; userName: string }[];
+  canWrite: boolean;
+  canManageAssignee: boolean;
 }) => {
   const queryClient = useQueryClient();
   const {
@@ -84,7 +88,7 @@ export const TicketDetail = ({
             key={status}
             size="sm"
             variant={status === ticket.status ? "default" : "outline"}
-            disabled={status === ticket.status || changeStatus.isPending}
+            disabled={!canWrite || status === ticket.status || changeStatus.isPending}
             onClick={() => changeStatus.mutate(status)}
           >
             {status.replace("_", " ").toLowerCase()}
@@ -97,6 +101,7 @@ export const TicketDetail = ({
         <Select
           aria-label="Assignee"
           value={ticket.assigneeMembershipId ?? ""}
+          disabled={!canManageAssignee || assign.isPending}
           onChange={(event) => assign.mutate(event.target.value || null)}
           className="w-56"
         >
@@ -132,22 +137,24 @@ export const TicketDetail = ({
           </ul>
         )}
 
-        <form onSubmit={submitComment} className="mt-2 flex gap-2">
-          <input
-            aria-label="New comment"
-            value={comment}
-            onChange={(event) => setComment(event.target.value)}
-            placeholder="Add an internal note…"
-            className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3.5 py-2 text-sm text-foreground"
-          />
-          <Button
-            type="submit"
-            size="sm"
-            disabled={comment.trim().length === 0 || addComment.isPending}
-          >
-            Comment
-          </Button>
-        </form>
+        {canWrite && (
+          <form onSubmit={submitComment} className="mt-2 flex gap-2">
+            <input
+              aria-label="New comment"
+              value={comment}
+              onChange={(event) => setComment(event.target.value)}
+              placeholder="Add an internal note…"
+              className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3.5 py-2 text-sm text-foreground"
+            />
+            <Button
+              type="submit"
+              size="sm"
+              disabled={comment.trim().length === 0 || addComment.isPending}
+            >
+              Comment
+            </Button>
+          </form>
+        )}
       </div>
     </div>
   );
