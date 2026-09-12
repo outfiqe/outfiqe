@@ -5,6 +5,7 @@ import { PRODUCT_SORT, PRODUCT_SORT_VALUES, type ProductSort } from "@outfiqe/ut
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
@@ -22,6 +23,7 @@ const parseSort = (value: string | null): ProductSort | undefined =>
 export const ShopResults = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isAuthResolved } = useAuth();
   const categorySlug = searchParams.get("category");
   const activeType = searchParams.get("type") ?? ALL_TYPE_ID;
   const sort = parseSort(searchParams.get("sort"));
@@ -48,7 +50,7 @@ export const ShopResults = () => {
     category: category?.slug,
     type: effectiveActiveType === ALL_TYPE_ID ? undefined : effectiveActiveType,
     sort,
-    enabled: !isResolvingCategory,
+    enabled: isAuthResolved && !isResolvingCategory,
   });
 
   const sentinelRef = useLoadMoreOnVisible(
@@ -56,7 +58,7 @@ export const ShopResults = () => {
     Boolean(hasNextPage) && !isFetchingNextPage,
   );
 
-  if (isResolvingCategory) {
+  if (isResolvingCategory || !isAuthResolved) {
     return <ProductGridSkeleton className="mt-8" />;
   }
 

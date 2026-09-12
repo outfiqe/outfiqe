@@ -58,7 +58,7 @@ const badgeAccentColor = (designConfig: FeaturedBadge["designConfig"]): string =
 export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, state, updateUser } = useAuth();
+  const { isAuthenticated, isAuthResolved, state, updateUser } = useAuth();
   const followMutation = useToggleFollow("user");
   const { openConversationWith, isStartingConversation } = useChatPanel();
   const updateProfile = useUpdateCreatorProfile();
@@ -91,8 +91,15 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const [deletingLookId, setDeletingLookId] = useState<string | null>(null);
   const isOwnProfile = state.user?.id === userId;
 
-  const looks = useInfiniteCreatorLooks(handle);
-  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = looks;
+  const looks = useInfiniteCreatorLooks(handle, isAuthResolved);
+  const {
+    data,
+    isLoading: isFetchingLooks,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = looks;
+  const isLoading = isFetchingLooks || !isAuthResolved;
   const handleAvailability = useHandleAvailability(draftHandle, handle);
 
   const detailPostId = searchParams.get(LOOK_QUERY_PARAM);
@@ -219,6 +226,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const detailPostFromGrid = posts.find((post) => post.id === detailPostId) ?? null;
   const { data: fetchedDetailPost } = usePublicLook(
     detailPostId && !detailPostFromGrid ? detailPostId : null,
+    isAuthResolved,
   );
   const detailPost = detailPostFromGrid ?? fetchedDetailPost ?? null;
 

@@ -18,7 +18,10 @@ import {
   WithdrawWindowType,
 } from "#generated/prisma/enums.js";
 import { redis } from "#redis/redis.client.js";
-import { createAdminSession } from "#test/integration/authHelpers.js";
+import {
+  createAdminSession,
+  createAdminSessionWithPlatformPermissions,
+} from "#test/integration/authHelpers.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -185,7 +188,9 @@ const createWithdrawRequest = async (
 
 describe("PATCH /api/withdraw/admin/requests/:id/approve", () => {
   it("requires an identity cross-check on a bank account's first payout", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createAdminSessionWithPlatformPermissions(
+      "platform:withdraw:manage",
+    );
     const policy = await createOpenPolicy(WithdrawOwnerType.CREATOR);
     const creator = await createUser();
     const bankAccount = await createVerifiedBankAccount(creator.id);
@@ -215,8 +220,29 @@ describe("PATCH /api/withdraw/admin/requests/:id/approve", () => {
     expect(updatedAccount.firstPayoutCrossCheckedAt).not.toBeNull();
   });
 
-  it("requires an identity cross-check on a brand bank account's first payout", async () => {
+  it("blocks a platform staffer without platform:withdraw:manage", async () => {
     const { authHeader } = await createAdminSession();
+    const policy = await createOpenPolicy(WithdrawOwnerType.CREATOR);
+    const creator = await createUser();
+    const bankAccount = await createVerifiedBankAccount(creator.id);
+    const withdrawRequest = await createWithdrawRequest(creator, bankAccount.id, policy.id, 1000);
+
+    const response = await request(testApp)
+      .patch(`/api/withdraw/admin/requests/${withdrawRequest.id}/approve`)
+      .set("Authorization", authHeader)
+      .send({ identityCrossCheckConfirmed: true });
+
+    expect(response.status).toBe(403);
+    const untouchedRequest = await prisma.withdrawRequest.findUniqueOrThrow({
+      where: { id: withdrawRequest.id },
+    });
+    expect(untouchedRequest.status).toBe(WithdrawRequestStatus.PENDING);
+  });
+
+  it("requires an identity cross-check on a brand bank account's first payout", async () => {
+    const { authHeader } = await createAdminSessionWithPlatformPermissions(
+      "platform:withdraw:manage",
+    );
     const policy = await createOpenPolicy(WithdrawOwnerType.BUSINESS);
     const brand = await prisma.brand.create({
       data: {
@@ -275,7 +301,9 @@ describe("PATCH /api/withdraw/admin/requests/:id/approve", () => {
   });
 
   it("does not re-require the cross-check on a second payout to the same account", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createAdminSessionWithPlatformPermissions(
+      "platform:withdraw:manage",
+    );
     const policy = await createOpenPolicy(WithdrawOwnerType.CREATOR);
     const creator = await createUser();
     const bankAccount = await createVerifiedBankAccount(creator.id);
@@ -296,8 +324,8 @@ describe("PATCH /api/withdraw/admin/requests/:id/approve", () => {
   });
 
   it("requires a second, different admin for a soft-ceiling request", async () => {
-    const admin1 = await createAdminSession();
-    const admin2 = await createAdminSession();
+    const admin1 = await createAdminSessionWithPlatformPermissions("platform:withdraw:manage");
+    const admin2 = await createAdminSessionWithPlatformPermissions("platform:withdraw:manage");
     const policy = await createOpenPolicy(WithdrawOwnerType.CREATOR);
     const creator = await createUser();
     const bankAccount = await createVerifiedBankAccount(creator.id);
@@ -345,7 +373,9 @@ describe("PATCH /api/withdraw/admin/requests/:id/approve", () => {
   });
 
   it("rejects re-approving an already-approved request", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createAdminSessionWithPlatformPermissions(
+      "platform:withdraw:manage",
+    );
     const policy = await createOpenPolicy(WithdrawOwnerType.CREATOR);
     const creator = await createUser();
     const bankAccount = await createVerifiedBankAccount(creator.id);
@@ -368,7 +398,9 @@ describe("PATCH /api/withdraw/admin/requests/:id/approve", () => {
 
 describe("PATCH /api/withdraw/admin/requests/:id/reject", () => {
   it("rejects a pending request with a reason", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createAdminSessionWithPlatformPermissions(
+      "platform:withdraw:manage",
+    );
     const policy = await createOpenPolicy(WithdrawOwnerType.CREATOR);
     const creator = await createUser();
     const bankAccount = await createVerifiedBankAccount(creator.id);
@@ -390,7 +422,9 @@ describe("PATCH /api/withdraw/admin/requests/:id/reject", () => {
 
 describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
   it("claims AVAILABLE commissions oldest-first and creates ledger entries", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createAdminSessionWithPlatformPermissions(
+      "platform:withdraw:manage",
+    );
     const policy = await createOpenPolicy(WithdrawOwnerType.CREATOR);
     const creator = await createUser();
     const bankAccount = await createVerifiedBankAccount(creator.id);
@@ -430,7 +464,9 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
   });
 
   it("fails cleanly when there aren't enough available rows, leaving the request APPROVED", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createAdminSessionWithPlatformPermissions(
+      "platform:withdraw:manage",
+    );
     const policy = await createOpenPolicy(WithdrawOwnerType.CREATOR);
     const creator = await createUser();
     const bankAccount = await createVerifiedBankAccount(creator.id);
@@ -455,7 +491,9 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
   });
 
   it("rejects marking a non-approved request paid", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createAdminSessionWithPlatformPermissions(
+      "platform:withdraw:manage",
+    );
     const policy = await createOpenPolicy(WithdrawOwnerType.CREATOR);
     const creator = await createUser();
     const bankAccount = await createVerifiedBankAccount(creator.id);
@@ -471,8 +509,10 @@ describe("PATCH /api/withdraw/admin/requests/:id/mark-paid", () => {
   });
 
   it("claims AVAILABLE brand payouts for a business request", async () => {
-    const { authHeader } = await createAdminSession();
-    const admin = await createAdminSession();
+    const { authHeader } = await createAdminSessionWithPlatformPermissions(
+      "platform:withdraw:manage",
+    );
+    const admin = await createAdminSessionWithPlatformPermissions("platform:withdraw:manage");
     const policy = await createOpenPolicy(WithdrawOwnerType.BUSINESS);
     const brand = await prisma.brand.create({
       data: {
@@ -693,7 +733,9 @@ describe("GET /api/withdraw/admin/requests", () => {
 
 describe("PUT /api/withdraw/admin/policy", () => {
   it("creates a new active version for the given ownerType and deactivates the previous one", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createAdminSessionWithPlatformPermissions(
+      "platform:withdraw:manage",
+    );
     const original = await createOpenPolicy(WithdrawOwnerType.CREATOR, { minAmount: 500 });
     const otherOwnerPolicy = await createOpenPolicy(WithdrawOwnerType.BUSINESS, {
       minAmount: 3000,

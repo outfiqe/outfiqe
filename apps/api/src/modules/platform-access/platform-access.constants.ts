@@ -49,6 +49,26 @@ export const PLATFORM_PERMISSION_CATALOG = [
     label: "Assign and configure support",
     group: "Support",
   },
+  {
+    key: "platform:withdraw:manage",
+    label: "Approve, reject, and pay out withdrawal requests",
+    group: "Finance",
+  },
+  {
+    key: "platform:coupons:manage",
+    label: "Create and manage platform coupons",
+    group: "Finance",
+  },
+  {
+    key: "platform:organizations:manage",
+    label: "Create new tenant organizations",
+    group: "Platform",
+  },
+  {
+    key: "platform:xp:manage",
+    label: "Manually adjust a user's XP",
+    group: "Gamification",
+  },
 ] as const;
 
 export type PlatformPermissionKey = (typeof PLATFORM_PERMISSION_CATALOG)[number]["key"];

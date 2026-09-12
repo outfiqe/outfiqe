@@ -3,13 +3,13 @@ import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { Prisma } from "#generated/prisma/client.js";
 import { XpActivityType } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
-import { isUniqueConstraintError } from "#lib/prisma.utils.js";
+import { isCheckConstraintViolation, isUniqueConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
 import { describeError } from "#redis/redis.utils.js";
 
-import { ONE_DAY_MS, XP_SOURCE } from "./xp.constants.js";
+import { ONE_DAY_MS, USER_PROGRESS_TOTAL_XP_FLOOR_CONSTRAINT, XP_SOURCE } from "./xp.constants.js";
 import { xpRepository } from "./xp.repository.js";
 import type {
   ActivityTypeParam,
@@ -54,6 +54,8 @@ const baseMetadataObject = (
   metadata: Prisma.InputJsonValue | undefined,
 ): Record<string, Prisma.InputJsonValue> => (isPlainMetadataObject(metadata) ? metadata : {});
 
+const clampToXpFloor = (totalXp: number): number => Math.max(totalXp, MIN_TOTAL_XP);
+
 const applyXpTransaction = async (input: AwardXpInput, amount: number): Promise<AwardXpResult> => {
   const { userId } = input;
 
@@ -66,16 +68,16 @@ const applyXpTransaction = async (input: AwardXpInput, amount: number): Promise<
   const result = await prisma.$transaction(async (tx) => {
     await xpRepository.createTransaction(tx, { ...input, amount });
 
-    const fallbackLevelId = computeLevelProgress(amount, activeLevelsDesc).level.id;
+    const { level: fallbackLevel } = computeLevelProgress(clampToXpFloor(amount), activeLevelsDesc);
     const updatedProgress = await xpRepository.incrementProgress(
       tx,
       userId,
       amount,
-      fallbackLevelId,
+      fallbackLevel.id,
     );
     const { totalXp: updatedTotalXp, currentLevelId: previousCurrentLevelId } = updatedProgress;
 
-    const previousTotalXp = Math.max(updatedTotalXp - amount, MIN_TOTAL_XP);
+    const previousTotalXp = clampToXpFloor(updatedTotalXp - amount);
     const { level: previousLevel } = computeLevelProgress(previousTotalXp, activeLevelsDesc);
     const { level: currentLevel } = computeLevelProgress(updatedTotalXp, activeLevelsDesc);
 
@@ -302,15 +304,27 @@ const adjustXp = async (
     );
   }
 
-  const result = await grantFixedXp(
-    {
-      userId,
-      activityType: XpActivityType.ADMIN_ADJUSTMENT,
-      source: XP_SOURCE.ADMIN,
-      metadata: { reason, adminUserId },
-    },
-    amount,
-  );
+  let result: AwardXpResult;
+  try {
+    result = await applyXpTransaction(
+      {
+        userId,
+        activityType: XpActivityType.ADMIN_ADJUSTMENT,
+        source: XP_SOURCE.ADMIN,
+        metadata: { reason, adminUserId },
+      },
+      amount,
+    );
+  } catch (error) {
+    if (isCheckConstraintViolation(error, USER_PROGRESS_TOTAL_XP_FLOOR_CONSTRAINT)) {
+      throw new AppError(
+        "XP_WOULD_GO_NEGATIVE",
+        `This adjustment would take the user's XP below zero (currently ${currentTotalXp}).`,
+        VALIDATION_STATUS,
+      );
+    }
+    throw error;
+  }
 
   logger.info(
     `XP manually adjusted for user ${userId} by admin ${adminUserId}: ${amount} (${reason})`,

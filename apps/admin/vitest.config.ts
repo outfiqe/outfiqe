@@ -45,6 +45,7 @@ export default defineConfig({
         "src/lib/brandsApi.ts",
         "src/lib/useSearchFilter.ts",
         "src/features/auth/AuthContext.tsx",
+        "src/features/auth/RegisterInvitePage.tsx",
         "src/components/ProtectedRoute.tsx",
         "src/components/ProtectedRoute.utils.ts",
         "src/components/AdminSidebar.utils.ts",

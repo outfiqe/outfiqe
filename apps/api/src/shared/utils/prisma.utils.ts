@@ -52,6 +52,31 @@ export const isDeadlockError = (error: unknown): boolean => {
   return asRecord(driverCause)?.originalCode === POSTGRES_DEADLOCK_SQLSTATE;
 };
 
+const POSTGRES_CHECK_VIOLATION_SQLSTATE = "23514";
+
+const PRISMA_KNOWN_REQUEST_ERROR_NAME = "PrismaClientKnownRequestError";
+
+const isPrismaKnownRequestError = (error: unknown): error is Prisma.PrismaClientKnownRequestError =>
+  error instanceof Error && error.name === PRISMA_KNOWN_REQUEST_ERROR_NAME;
+
+const violationMessageIncludesConstraint = (message: unknown, constraintName: string): boolean =>
+  typeof message === "string" && message.includes(`violates check constraint "${constraintName}"`);
+
+export const isCheckConstraintViolation = (error: unknown, constraintName: string): boolean => {
+  if (!isPrismaKnownRequestError(error)) return false;
+
+  const driverCause = asRecord(asRecord(error.meta)?.driverAdapterError)?.cause;
+  const record = asRecord(driverCause);
+  if (record?.originalCode === POSTGRES_CHECK_VIOLATION_SQLSTATE) {
+    return (
+      violationMessageIncludesConstraint(record.message, constraintName) ||
+      violationMessageIncludesConstraint(record.originalMessage, constraintName)
+    );
+  }
+
+  return violationMessageIncludesConstraint(error.message, constraintName);
+};
+
 const DEADLOCK_RETRY_ATTEMPTS = 3;
 
 export const runWithDeadlockRetry = async <T>(operation: () => Promise<T>): Promise<T> => {

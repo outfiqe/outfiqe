@@ -4,6 +4,8 @@ import { buildCursorPage } from "#lib/pagination.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
+import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
+import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 
@@ -157,6 +159,17 @@ export const productReviewService = {
 
     await productReviewRepository.softDelete(reviewId);
     await productService.recomputeRatingSummary(productId);
+
+    if (isAdmin && !isOwner) {
+      await platformAudit.record({
+        actorUserId: principal.userId,
+        action: PLATFORM_AUDIT_ACTION.PRODUCT_REVIEW_REMOVED_BY_ADMIN,
+        summary: `Deleted ${review.userId}'s review on product ${productId}`,
+        onBehalfOfUserId: review.userId,
+        targetType: "ProductReview",
+        targetId: reviewId,
+      });
+    }
   },
 
   async markHelpful(

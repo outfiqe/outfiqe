@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import jwt from "jsonwebtoken";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
@@ -29,7 +30,7 @@ const createUser = (role: UserRole) =>
     },
   });
 
-const seedScene = async () => {
+const seedScene = async (targetRole: UserRole = UserRole.ADMIN) => {
   const { organization: platformOrg, adminRole: platformAdminRole } =
     await seedPlatformOrganization();
   await prisma.permission.createMany({
@@ -54,7 +55,7 @@ const seedScene = async () => {
   });
 
   const { organization: tenant, adminRole: tenantAdminRole } = await seedTenantOrganization();
-  const target = await createUser(UserRole.ADMIN);
+  const target = await createUser(targetRole);
   const targetMembership = await prisma.membership.create({
     data: {
       organizationId: tenant.id,
@@ -117,6 +118,14 @@ describe("impersonation auth path", () => {
       .send({ toMembershipId: randomUUID() });
     expect(transfer.status).toBe(403);
     expect(transfer.body.code).toBe("IMPERSONATION_READ_ONLY");
+  });
+
+  it("mints the token with the target's real role, not a hardcoded admin role", async () => {
+    const scene = await seedScene(UserRole.CUSTOMER);
+    const { token } = await startSession(scene);
+
+    const decoded = jwt.decode(token.replace("Bearer ", ""));
+    expect(decoded).toMatchObject({ sub: scene.target.id, role: UserRole.CUSTOMER });
   });
 
   it("401s every request the moment the session is revoked", async () => {

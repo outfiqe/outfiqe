@@ -30,7 +30,7 @@ type BrandProfileProps = {
 
 export const BrandProfile = ({ brand }: BrandProfileProps) => {
   const router = useRouter();
-  const { isAuthenticated, state } = useAuth();
+  const { isAuthenticated, isAuthResolved, state } = useAuth();
   const productTypes = useProductTypes();
   const { openConversationWith, isStartingConversation } = useChatPanel();
 
@@ -58,6 +58,7 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
   const products = useInfiniteBrandProducts(
     id,
     activeType === ALL_PRODUCT_TYPE ? undefined : activeType,
+    isAuthResolved,
   );
 
   const followBrand = () => {
@@ -98,7 +99,7 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
   }, [brandProducts]);
 
   const filters = [{ slug: ALL_PRODUCT_TYPE, label: "All" }, ...(productTypes.data ?? [])];
-  const isLoading = isProductsLoading || productTypes.isLoading;
+  const isLoading = isProductsLoading || productTypes.isLoading || !isAuthResolved;
   const sectionedTypes = (productTypes.data ?? []).filter((type) => groupedByType.has(type.slug));
 
   return (
