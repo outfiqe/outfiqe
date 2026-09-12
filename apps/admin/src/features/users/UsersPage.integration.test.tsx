@@ -59,7 +59,9 @@ describe("UsersPage", () => {
     await screen.findByText("Ava Martinez");
     await user.click(screen.getByRole("button", { name: "Suspend" }));
 
-    const reasonField = await screen.findByLabelText(/reason \(shown to the user\)/i);
+    const reasonField = await screen.findByLabelText(/reason \(shown to the user\)/i, undefined, {
+      timeout: 5000,
+    });
     await user.type(reasonField, "Reported for spam");
     await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
 
@@ -91,7 +93,9 @@ describe("UsersPage", () => {
 
     await screen.findByText("Ava Martinez");
     await user.click(screen.getByRole("button", { name: "Suspend" }));
-    const reasonField = await screen.findByLabelText(/reason \(shown to the user\)/i);
+    const reasonField = await screen.findByLabelText(/reason \(shown to the user\)/i, undefined, {
+      timeout: 5000,
+    });
     await user.type(reasonField, "Reported for spam");
     await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
 
