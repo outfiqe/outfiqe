@@ -2,7 +2,7 @@ import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
 import { optionalAuth } from "#middlewares/optional-auth.js";
-import { requireAuth } from "#middlewares/require-auth.js";
+import { requireActiveAuth } from "#middlewares/require-active-account.js";
 import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
 import { listBrandProductsQuerySchema } from "#modules/products/product.schemas.js";
@@ -23,10 +23,10 @@ brandRoutes.get(
   brandController.listPublic,
 );
 
-brandRoutes.get("/me", requireAuth, requireRole(UserRole.BRAND_OWNER), brandController.me);
+brandRoutes.get("/me", ...requireActiveAuth, requireRole(UserRole.BRAND_OWNER), brandController.me);
 brandRoutes.patch(
   "/me",
-  requireAuth,
+  ...requireActiveAuth,
   requireRole(UserRole.BRAND_OWNER),
   validate({ body: updateBrandProfileSchema }),
   brandController.updateMe,

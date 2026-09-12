@@ -4,6 +4,7 @@ export const PLATFORM_NAV_KEYS = [
   "platform-features",
   "platform-impersonation",
   "platform-nav-access",
+  "users",
   "products",
   "collections",
   "categories",

@@ -1,11 +1,21 @@
+import { mockNextRouter } from "@test/integration/mockRouter";
 import { mswServer } from "@test/integration/msw/server";
 import { renderHook, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuthStatus } from "../types";
 import { useAuth } from "./AuthContext";
 import { createAuthQueryClientWrapper } from "./authTestWrapper";
+
+vi.mock("next/navigation", () => ({
+  useRouter: vi.fn(),
+  useSearchParams: vi.fn(),
+}));
+
+beforeEach(() => {
+  mockNextRouter();
+});
 
 const SESSION_URL = "/api/auth/session";
 const CURRENT_USER_URL = "/api/auth/me";

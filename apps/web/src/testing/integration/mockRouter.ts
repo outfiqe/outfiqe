@@ -1,11 +1,15 @@
 import { useRouter } from "next/navigation";
 import { vi } from "vitest";
 
-export const mockNextRouter = (): { replace: ReturnType<typeof vi.fn> } => {
+export const mockNextRouter = (): {
+  push: ReturnType<typeof vi.fn>;
+  replace: ReturnType<typeof vi.fn>;
+} => {
+  const push = vi.fn();
   const replace = vi.fn();
 
   vi.mocked(useRouter).mockReturnValue({
-    push: vi.fn(),
+    push,
     replace,
     back: vi.fn(),
     forward: vi.fn(),
@@ -14,5 +18,5 @@ export const mockNextRouter = (): { replace: ReturnType<typeof vi.fn> } => {
     bfcacheId: "test-bfcache-id",
   });
 
-  return { replace };
+  return { push, replace };
 };

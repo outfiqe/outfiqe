@@ -10,6 +10,8 @@ import { authApi, type LoginResponse } from "../api/authApi";
 import { useAuth } from "../context/AuthContext";
 import type { LoginInput } from "../schemas/login.schema";
 import { AuthActionType } from "../types";
+import { buildAccountSuspendedPath, isSuspendedAccountDetails } from "../utils/accountSuspended";
+import { AuthErrorCode } from "../utils/authErrors";
 import { getDefaultRouteForUser } from "../utils/getDefaultRoute";
 import { getSafeRedirect, isAdminAppTarget, resolveLoginDestination } from "../utils/safeRedirect";
 
@@ -42,6 +44,14 @@ export const useLogin = () => {
         payload: { user: data.user, accessToken: data.accessToken },
       });
       router.replace(destination);
+    },
+    onError: (error) => {
+      if (
+        error.code === AuthErrorCode.ACCOUNT_SUSPENDED &&
+        isSuspendedAccountDetails(error.details)
+      ) {
+        router.push(buildAccountSuspendedPath(error.details));
+      }
     },
   });
 };

@@ -1,4 +1,5 @@
 import { DomainEvents, eventBus } from "#events/event-bus.js";
+import { buildCursorPage, type CursorPage } from "#lib/pagination.utils.js";
 import { hashPassword } from "#lib/password.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
@@ -58,9 +59,14 @@ export const userService = {
     return toPublicUser(user);
   },
 
-  async listUsers(): Promise<PublicUser[]> {
-    const users = await userRepository.list();
-    return users.map(toPublicUser);
+  async listUsers(params: {
+    q?: string;
+    cursor?: string;
+    limit: number;
+  }): Promise<CursorPage<PublicUser>> {
+    const rows = await userRepository.list(params);
+    const { items, nextCursor } = buildCursorPage(rows, params.limit, (row) => row.id);
+    return { items: items.map(toPublicUser), nextCursor };
   },
 
   async searchUsers(query: string): Promise<UserSearchResult[]> {

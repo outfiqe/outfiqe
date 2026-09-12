@@ -20,6 +20,7 @@ export enum AuthErrorCode {
   OAUTH_STATE_INVALID = "OAUTH_STATE_INVALID",
   OAUTH_EMAIL_UNVERIFIED = "OAUTH_EMAIL_UNVERIFIED",
   OAUTH_EXCHANGE_FAILED = "OAUTH_EXCHANGE_FAILED",
+  ACCOUNT_SUSPENDED = "ACCOUNT_SUSPENDED",
 }
 
 const MESSAGES: Record<AuthErrorCode, string> = {
@@ -51,6 +52,7 @@ const MESSAGES: Record<AuthErrorCode, string> = {
   [AuthErrorCode.OAUTH_EMAIL_UNVERIFIED]:
     "Your account's email isn't verified with this provider. Please verify it and try again.",
   [AuthErrorCode.OAUTH_EXCHANGE_FAILED]: "Could not complete sign-in. Please try again.",
+  [AuthErrorCode.ACCOUNT_SUSPENDED]: "This account has been suspended.",
 };
 
 const isKnownAuthErrorCode = (code: string): code is AuthErrorCode => {

@@ -116,8 +116,22 @@ export const userRepository = {
     });
   },
 
-  async list(): Promise<UserRecord[]> {
-    return prisma.user.findMany({ orderBy: { createdAt: "desc" } });
+  async list(params: { q?: string; cursor?: string; limit: number }): Promise<UserRecord[]> {
+    const { q, cursor, limit } = params;
+    return prisma.user.findMany({
+      where: q
+        ? {
+            OR: [
+              { name: { contains: q, mode: "insensitive" } },
+              { handle: { contains: q, mode: "insensitive" } },
+              { email: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : undefined,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
   },
 
   async search(query: string, limit: number): Promise<UserSearchResult[]> {

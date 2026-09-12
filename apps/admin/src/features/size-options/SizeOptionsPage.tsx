@@ -1,8 +1,10 @@
-import { Badge, Button, FormBanner, Input } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Input, toast } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { productTypesApi } from "@/features/product-types/api";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { sizeOptionsApi } from "./api";
 import type { SizeOption } from "./schemas";
@@ -22,6 +24,7 @@ export const SizeOptionsPage = () => {
   const type = selectedType ?? productTypes?.[0]?.slug ?? null;
   const [label, setLabel] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SizeOption | null>(null);
 
   const labelForType = (slug: string) =>
     productTypes?.find((productType) => productType.slug === slug)?.label ?? slug;
@@ -41,7 +44,11 @@ export const SizeOptionsPage = () => {
 
   const remove = useMutation({
     mutationFn: (sizeOption: SizeOption) => sizeOptionsApi.remove(sizeOption.id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-size-options"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-size-options"] });
+      setDeleteTarget(null);
+    },
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const handleSubmit = (e: FormEvent) => {
@@ -117,12 +124,7 @@ export const SizeOptionsPage = () => {
                   {sizeOption.label}
                 </Badge>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => remove.mutate(sizeOption)}
-                  disabled={remove.isPending}
-                >
+                <Button variant="outline" size="sm" onClick={() => setDeleteTarget(sizeOption)}>
                   Delete
                 </Button>
               </div>
@@ -136,6 +138,19 @@ export const SizeOptionsPage = () => {
           Add a garment type first, then come back to give it sizes.
         </p>
       )}
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="Delete size"
+        description={deleteTarget ? `Delete the "${deleteTarget.label}" size?` : undefined}
+        confirmLabel="Delete"
+        destructive
+        isPending={remove.isPending}
+        onConfirm={() => {
+          if (deleteTarget) remove.mutate(deleteTarget);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 };

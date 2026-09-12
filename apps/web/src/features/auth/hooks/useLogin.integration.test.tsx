@@ -19,6 +19,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 let replace: ReturnType<typeof vi.fn>;
+let push: ReturnType<typeof vi.fn>;
 
 const mockRedirectParam = (redirect: string | null) => {
   vi.mocked(useSearchParams).mockReturnValue(
@@ -27,7 +28,7 @@ const mockRedirectParam = (redirect: string | null) => {
 };
 
 beforeEach(() => {
-  ({ replace } = mockNextRouter());
+  ({ push, replace } = mockNextRouter());
   mockRedirectParam(null);
 });
 
@@ -105,6 +106,31 @@ describe("useLogin", () => {
     expect(result.current.login.error?.code).toBe("INVALID_CREDENTIALS");
     expect(result.current.auth.isAuthenticated).toBe(false);
     expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("redirects to the account-suspended screen with the reason and expiry", async () => {
+    mswServer.use(
+      http.post(LOGIN_URL, () =>
+        HttpResponse.json(
+          {
+            success: false,
+            message: "This account has been suspended.",
+            code: "ACCOUNT_SUSPENDED",
+            details: { reason: "Reported for spam", expiresAt: "2026-09-20T00:00:00.000Z" },
+          },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    const { result } = renderUseLogin();
+    result.current.login.mutate({ email: customerUser.email, password: "correct-horse-battery" });
+
+    await waitFor(() => expect(result.current.login.isError).toBe(true));
+    expect(push).toHaveBeenCalledWith(
+      "/account-suspended?reason=Reported+for+spam&expiresAt=2026-09-20T00%3A00%3A00.000Z",
+    );
+    expect(result.current.auth.isAuthenticated).toBe(false);
   });
 
   it("hard-navigates admins to their app instead of updating auth state", async () => {

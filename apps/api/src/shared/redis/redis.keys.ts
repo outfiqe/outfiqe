@@ -7,6 +7,7 @@ export const redisKeys = {
   stream: (event: string) => `stream:${event}`,
   lock: (name: string) => `lock:${name}`,
   loginLockout: (email: string) => `auth:login-lockout:${email}`,
+  suspendedUser: (userId: string) => `suspension:user:${userId}`,
   oauthState: (state: string) => `auth:oauth-state:${state}`,
   oauthLinkPending: (linkToken: string) => `auth:oauth-link-pending:${linkToken}`,
   leaderboard: (category: LeaderboardCategory, week: string) =>

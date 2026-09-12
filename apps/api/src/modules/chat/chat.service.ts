@@ -1,5 +1,5 @@
 import { DomainEvents, eventBus } from "#events/event-bus.js";
-import { UserRole } from "#generated/prisma/enums.js";
+import { AccountStatus, UserRole } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
@@ -50,6 +50,13 @@ const computeChatAvailability = async (
   }
   if (caller.role === UserRole.ADMIN || recipient.role === UserRole.ADMIN) {
     return { isAvailable: true };
+  }
+
+  if (
+    caller.accountStatus !== AccountStatus.ACTIVE ||
+    recipient.accountStatus !== AccountStatus.ACTIVE
+  ) {
+    return { isAvailable: false, reason: ChatUnavailableReason.RECIPIENT_UNREACHABLE };
   }
 
   if (block) {

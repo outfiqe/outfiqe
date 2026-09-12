@@ -97,6 +97,7 @@ const seedBrandCustomerOrders = async (
             sizeId: line.sizeId,
             qty: line.qty,
             unitPrice: line.unitPrice,
+            listUnitPrice: line.unitPrice,
             attributedCreatorId:
               lineIndex === 0 && creators.length > 0 ? pick(creators, index).id : null,
           })),

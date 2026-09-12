@@ -50,8 +50,11 @@ export default defineConfig({
         "src/components/AdminSidebar.utils.ts",
         "src/features/notifications/resolveNotificationHref.ts",
         "src/features/coupons/**/*.{ts,tsx}",
+        "src/features/product-reviews/**/*.{ts,tsx}",
+        "src/features/size-options/**/*.{ts,tsx}",
         "src/components/ConfirmModal.tsx",
         "src/components/TextPromptModal.tsx",
+        "src/features/users/**/*.{ts,tsx}",
       ],
       thresholds: {
         lines: 80,

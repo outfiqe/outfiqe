@@ -56,6 +56,11 @@ export const DomainEvents = {
   COUPON_APPROVAL_REQUESTED: "coupon.approval.requested",
   COUPON_BUDGET_ALERT: "coupon.budget.alert",
   COUPON_REDEMPTION_FLAGGED: "coupon.redemption.flagged",
+  USER_SUSPENDED: "user.suspended",
+  USER_UNSUSPENDED: "user.unsuspended",
+  USER_BANNED: "user.banned",
+  BRAND_SUSPENDED: "brand.suspended",
+  BRAND_UNSUSPENDED: "brand.unsuspended",
 } as const;
 
 // A Redis hiccup must never fail the caller's request (like/comment/follow/etc.) — log and move on,

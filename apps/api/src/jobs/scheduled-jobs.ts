@@ -41,6 +41,8 @@ import { IMPERSONATION_REAP_INTERVAL_MS } from "#modules/platform-impersonation/
 import { platformImpersonationService } from "#modules/platform-impersonation/platform-impersonation.service.js";
 import { PLATFORM_METRICS_SNAPSHOT_INTERVAL_MS } from "#modules/platform-metrics/platform-metrics.constants.js";
 import { platformMetricsService } from "#modules/platform-metrics/platform-metrics.service.js";
+import { SUSPENSION_EXPIRY_SWEEP_INTERVAL_MS } from "#modules/platform-suspensions/platform-suspensions.constants.js";
+import { runSuspensionExpirySweep } from "#modules/platform-suspensions/platform-suspensions.expiry.js";
 import { SUPPORT_AUTO_CLOSE_JOB_INTERVAL_MS } from "#modules/support/support.constants.js";
 import { runSupportAutoCloseSweep } from "#modules/support/support.lifecycle.js";
 import {
@@ -183,6 +185,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "stale-shipment-reminder-digest",
     run: runStaleShipmentReminderDigest,
     intervalMs: STALE_SHIPMENT_REMINDER_INTERVAL_MS,
+  },
+  {
+    name: "suspension-expiry-sweep",
+    run: runSuspensionExpirySweep,
+    intervalMs: SUSPENSION_EXPIRY_SWEEP_INTERVAL_MS,
   },
 ];
 

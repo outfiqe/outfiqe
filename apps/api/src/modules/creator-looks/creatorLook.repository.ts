@@ -3,7 +3,12 @@ import { randomUUID } from "node:crypto";
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import type { CreatorLookTagClickSource } from "#generated/prisma/enums.js";
-import { CreatorStatus, ProductStatus, TagReviewStatus } from "#generated/prisma/enums.js";
+import {
+  AccountStatus,
+  CreatorStatus,
+  ProductStatus,
+  TagReviewStatus,
+} from "#generated/prisma/enums.js";
 import { computeViewerEngagementAffinity } from "#lib/creator-engagement-affinity.utils.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 import { RESPONSIVE_IMAGE_ASSET_SELECT, toResponsiveImage } from "#lib/responsive-image.utils.js";
@@ -170,7 +175,7 @@ const hydrateFeedPosts = async (
 
   const [looks, likedRows, savedRows] = await Promise.all([
     prisma.creatorLook.findMany({
-      where: { id: { in: orderedIds } },
+      where: { id: { in: orderedIds }, creator: { accountStatus: AccountStatus.ACTIVE } },
       include: feedRelationsInclude,
     }),
     viewerId

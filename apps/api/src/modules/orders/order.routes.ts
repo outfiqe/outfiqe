@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { UserRole } from "#generated/prisma/enums.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
+import { requireActiveAuth } from "#middlewares/require-active-account.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
@@ -56,8 +57,8 @@ const brandFulfilmentRateLimit = rateLimit({
 });
 
 const requireAdmin = [requireAuth, requirePlatformAccess];
-const requireBrandOwner = [requireAuth, requireRole(UserRole.BRAND_OWNER)];
-const requireShopper = [requireAuth, requireRole(UserRole.CUSTOMER)];
+const requireBrandOwner = [...requireActiveAuth, requireRole(UserRole.BRAND_OWNER)];
+const requireShopper = [...requireActiveAuth, requireRole(UserRole.CUSTOMER)];
 
 export const orderRoutes = Router();
 

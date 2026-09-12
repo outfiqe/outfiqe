@@ -1,11 +1,14 @@
-import { Badge, Button, Input, Skeleton } from "@outfiqe/design-system";
+import { Badge, Button, Input, Skeleton, toast } from "@outfiqe/design-system";
 import { useDebouncedValue } from "@outfiqe/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ImageOff, Search, Star, X } from "lucide-react";
 import { useState } from "react";
 
+import { ConfirmModal } from "@/components/ConfirmModal";
+import { getErrorMessage } from "@/lib/errorMessages";
+
 import { productReviewsApi } from "./api";
-import type { ProductSuggestion } from "./schemas";
+import type { ProductReview, ProductSuggestion } from "./schemas";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -42,6 +45,7 @@ export const ProductReviewsPage = () => {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
   const [selectedProduct, setSelectedProduct] = useState<ProductSuggestion | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ProductReview | null>(null);
 
   const { data: suggestions, isLoading: isSearching } = useQuery({
     queryKey: ["admin-product-search", debouncedQuery],
@@ -58,7 +62,11 @@ export const ProductReviewsPage = () => {
 
   const removeReview = useMutation({
     mutationFn: (reviewId: string) => productReviewsApi.remove(selectedProduct?.id ?? "", reviewId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: reviewsQueryKey }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: reviewsQueryKey });
+      setDeleteTarget(null);
+    },
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const clearSelection = () => {
@@ -155,8 +163,7 @@ export const ProductReviewsPage = () => {
                   </div>
                   <Button
                     variant="outline"
-                    onClick={() => removeReview.mutate(id)}
-                    disabled={removeReview.isPending}
+                    onClick={() => setDeleteTarget(review)}
                     className="shrink-0 border-destructive text-destructive hover:bg-destructive hover:text-white"
                   >
                     Delete
@@ -167,6 +174,23 @@ export const ProductReviewsPage = () => {
           })}
         </div>
       )}
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="Delete review"
+        description={
+          deleteTarget
+            ? `Delete ${deleteTarget.author.name}'s review? This can't be undone.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        destructive
+        isPending={removeReview.isPending}
+        onConfirm={() => {
+          if (deleteTarget) removeReview.mutate(deleteTarget.id);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 };

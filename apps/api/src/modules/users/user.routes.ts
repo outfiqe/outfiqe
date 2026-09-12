@@ -1,6 +1,7 @@
 ﻿import { Router } from "express";
 
 import { rateLimit } from "#middlewares/rate-limit.js";
+import { requireActiveAuth } from "#middlewares/require-active-account.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
@@ -9,6 +10,7 @@ import { userController } from "./user.controller.js";
 import {
   createUserSchema,
   handleAvailabilityQuerySchema,
+  listUsersQuerySchema,
   searchUsersQuerySchema,
   updateOwnProfileSchema,
   userIdParamSchema,
@@ -32,7 +34,7 @@ export const userRoutes = Router();
 userRoutes.post("/", ...requireAdmin, validate({ body: createUserSchema }), userController.create);
 userRoutes.patch(
   "/me",
-  requireAuth,
+  ...requireActiveAuth,
   validate({ body: updateOwnProfileSchema }),
   userController.updateMe,
 );
@@ -43,7 +45,12 @@ userRoutes.get(
   validate({ query: handleAvailabilityQuerySchema }),
   userController.checkHandleAvailability,
 );
-userRoutes.get("/", ...requireAdmin, userController.list);
+userRoutes.get(
+  "/",
+  ...requireAdmin,
+  validate({ query: listUsersQuerySchema }),
+  userController.list,
+);
 userRoutes.get(
   "/search",
   ...requireAdmin,

@@ -34,6 +34,7 @@ export * from "./studio-badge-visual.utils";
 export * from "./switch";
 export * from "./table";
 export * from "./tabs";
+export * from "./textarea";
 export * from "./theme";
 export * from "./theme-init";
 export * from "./theme-toggle";

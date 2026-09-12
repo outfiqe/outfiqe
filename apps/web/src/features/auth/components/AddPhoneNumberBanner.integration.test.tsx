@@ -1,16 +1,26 @@
+import { mockNextRouter } from "@test/integration/mockRouter";
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createAuthQueryClientWrapper } from "../context/authTestWrapper";
 import { AddPhoneNumberBanner } from "./AddPhoneNumberBanner";
+
+vi.mock("next/navigation", () => ({
+  useRouter: vi.fn(),
+  useSearchParams: vi.fn(),
+}));
 
 const UPDATE_ME_URL = "/api/users/me";
 
 const renderBanner = () =>
   render(<AddPhoneNumberBanner />, { wrapper: createAuthQueryClientWrapper() });
+
+beforeEach(() => {
+  mockNextRouter();
+});
 
 describe("AddPhoneNumberBanner", () => {
   it("shows the nudge and opens the phone form on click", async () => {

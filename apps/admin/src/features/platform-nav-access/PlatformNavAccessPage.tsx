@@ -14,6 +14,7 @@ const NAV_KEY_LABELS: Record<PlatformNavKey, string> = {
   "platform-features": "Feature flags",
   "platform-impersonation": "Impersonation",
   "platform-nav-access": "Navigation access",
+  users: "Users",
   products: "Products",
   collections: "Collections",
   categories: "Categories",

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { AccountStatus } from "#generated/prisma/enums.js";
+
 import type { BrandWithImageAssets } from "./brand.types.js";
 import { toPublicBrandProfile } from "./brand.utils.js";
 
@@ -22,6 +24,11 @@ const baseBrand: BrandWithImageAssets = {
   rating: 4.5,
   tagReviewPolicy: "TRUSTED_ONLY",
   autoApproveVerifiedBuyers: true,
+  accountStatus: AccountStatus.ACTIVE,
+  suspendedAt: null,
+  suspendedBy: null,
+  suspensionReason: null,
+  suspensionExpiresAt: null,
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
   updatedAt: new Date("2026-01-01T00:00:00.000Z"),
 };

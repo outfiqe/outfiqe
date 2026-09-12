@@ -7,6 +7,7 @@ import { validated } from "#middlewares/validate.js";
 import type {
   CreateUserBody,
   HandleAvailabilityQuery,
+  ListUsersQuery,
   SearchUsersQuery,
   UpdateOwnProfileBody,
   UserIdParam,
@@ -29,8 +30,9 @@ export const userController = {
   },
 
   async list(_req: Request, res: Response) {
-    const users = await userService.listUsers();
-    sendSuccess(res, users, "Users fetched successfully");
+    const query = validated.query<ListUsersQuery>(res);
+    const page = await userService.listUsers(query);
+    sendSuccess(res, page, "Users fetched successfully");
   },
 
   async search(_req: Request, res: Response) {

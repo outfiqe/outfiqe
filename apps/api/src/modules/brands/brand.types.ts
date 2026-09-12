@@ -1,6 +1,6 @@
 import type { ResponsiveImage } from "@outfiqe/types";
 
-import type { BrandRole, BrandTagReviewPolicy } from "#generated/prisma/enums.js";
+import type { AccountStatus, BrandRole, BrandTagReviewPolicy } from "#generated/prisma/enums.js";
 import type { ImageAssetForResponsiveImage } from "#lib/responsive-image.utils.js";
 
 export type BrandRecord = {
@@ -20,6 +20,11 @@ export type BrandRecord = {
   rating: number | null;
   tagReviewPolicy: BrandTagReviewPolicy;
   autoApproveVerifiedBuyers: boolean;
+  accountStatus: AccountStatus;
+  suspendedAt: Date | null;
+  suspendedBy: string | null;
+  suspensionReason: string | null;
+  suspensionExpiresAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
