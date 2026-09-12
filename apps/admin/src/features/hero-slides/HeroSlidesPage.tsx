@@ -1,8 +1,9 @@
-import { Badge, Button, FormBanner, Input } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Input, toast } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { ImageUpload } from "@/components/ImageUpload";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { heroSlidesApi } from "./api";
 import type { HeroSlide, HeroSlideStatusValue } from "./schemas";
@@ -57,6 +58,7 @@ export const HeroSlidesPage = () => {
     mutationFn: (slide: HeroSlide) =>
       heroSlidesApi.setStatus(slide.id, slide.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED"),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] }),
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const setSlideImage = useMutation({
@@ -70,6 +72,7 @@ export const HeroSlidesPage = () => {
       imageAssetId: string;
     }) => heroSlidesApi.setImage(id, url, assetId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] }),
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const handleSubmit = (e: FormEvent) => {

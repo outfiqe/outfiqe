@@ -69,6 +69,16 @@ export const PLATFORM_PERMISSION_CATALOG = [
     label: "Manually adjust a user's XP",
     group: "Gamification",
   },
+  {
+    key: "platform:gamification:manage",
+    label: "Manage badges, challenges, and creator competitions",
+    group: "Gamification",
+  },
+  {
+    key: "platform:commissions:manage",
+    label: "Manage commission tiers, payouts, and platform fees",
+    group: "Finance",
+  },
 ] as const;
 
 export type PlatformPermissionKey = (typeof PLATFORM_PERMISSION_CATALOG)[number]["key"];

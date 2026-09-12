@@ -1,6 +1,6 @@
 import { Badge, Button, Input, Skeleton, toast } from "@outfiqe/design-system";
 import { useDebouncedValue } from "@outfiqe/hooks";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ImageOff, Search, Star, X } from "lucide-react";
 import { useState } from "react";
 
@@ -54,11 +54,20 @@ export const ProductReviewsPage = () => {
   });
 
   const reviewsQueryKey = ["admin-product-reviews", selectedProduct?.id] as const;
-  const { data: reviewPage, isLoading: isLoadingReviews } = useQuery({
+  const {
+    data: reviewPages,
+    isLoading: isLoadingReviews,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: reviewsQueryKey,
-    queryFn: () => productReviewsApi.list(selectedProduct?.id ?? ""),
+    queryFn: ({ pageParam }) => productReviewsApi.list(selectedProduct?.id ?? "", pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: selectedProduct !== null,
   });
+  const reviews = reviewPages?.pages.flatMap((page) => page.reviews);
 
   const removeReview = useMutation({
     mutationFn: (reviewId: string) => productReviewsApi.remove(selectedProduct?.id ?? "", reviewId),
@@ -140,11 +149,11 @@ export const ProductReviewsPage = () => {
             </div>
           )}
 
-          {!isLoadingReviews && reviewPage?.reviews.length === 0 && (
+          {!isLoadingReviews && reviews?.length === 0 && (
             <p className="text-sm text-muted-foreground">This product has no reviews yet.</p>
           )}
 
-          {reviewPage?.reviews.map((review) => {
+          {reviews?.map((review) => {
             const { id, author, rating, title, body } = review;
 
             return (
@@ -172,6 +181,17 @@ export const ProductReviewsPage = () => {
               </div>
             );
           })}
+
+          {hasNextPage && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isFetchingNextPage}
+              onClick={() => fetchNextPage()}
+            >
+              {isFetchingNextPage ? "Loading…" : "Load more"}
+            </Button>
+          )}
         </div>
       )}
 

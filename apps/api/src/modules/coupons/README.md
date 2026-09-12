@@ -50,9 +50,13 @@ for the brand-funded counterpart (Phase 1) this module deliberately never touche
   transaction commits) owns budget-alert firing and 100%-budget auto-pause.
 - `coupon.controller.ts`/`coupon.routes.ts` — admin-only CRUD (`create`, `list` — filterable by
   `status`, `getById`, `updateStatus`, `approve`, `updateBudget`, `getPerformance`,
-  `searchRedemptions`), mounted at `/api/admin/coupons`, gated by both `requirePlatformAccess` and
-  `requirePlatformNavItem("coupons")` (so an admin whose nav access has been narrowed loses API access
-  too, not just the sidebar link — same pattern `withdraw`/`financial-rollup` already use).
+  `searchRedemptions`), mounted at `/api/admin/coupons`. `list`/`getById`/`getPerformance`/
+  `searchRedemptions` are gated by `requirePlatformAccess` + `requirePlatformNavItem("coupons")` (so
+  an admin whose nav access has been narrowed loses API access too, not just the sidebar link — same
+  pattern `withdraw`/`financial-rollup` already use). `create`/`updateStatus`/`updateBudget`/
+  `approve` additionally need `platform:coupons:manage` (`requirePlatformRole`, see
+  `platform-access/README.md`) — coupons are a direct revenue lever, so mutating them needs more
+  than generic platform-staff access.
 - `coupon.customer.routes.ts` — the one customer-facing coupon endpoint that isn't cart-shaped:
   `POST /api/coupons/preview-buy-now` (`requireAuth` only, its own rate limit), backing
   `couponService.previewForBuyNow`.

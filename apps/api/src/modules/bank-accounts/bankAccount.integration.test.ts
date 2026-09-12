@@ -8,6 +8,7 @@ import { BankType, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { redis } from "#redis/redis.client.js";
+import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
 import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
@@ -44,6 +45,7 @@ const createAdmin = async () => {
   const admin = await createUser({ role: UserRole.ADMIN });
   await ensurePlatformOrganizationExists();
   await crmAccessService.grantPlatformStaffMembership(admin.id);
+  await grantPlatformPermissions(admin.id, "platform:withdraw:manage");
   return admin;
 };
 
@@ -283,5 +285,29 @@ describe("admin bank account actions", () => {
       .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
 
     expect(response.status).toBe(NOT_FOUND_STATUS);
+  });
+
+  it("blocks a platform staffer without platform:withdraw:manage", async () => {
+    const owner = await createUser();
+    const staffer = await createUser({ role: UserRole.ADMIN });
+    await ensurePlatformOrganizationExists();
+    await crmAccessService.grantPlatformStaffMembership(staffer.id);
+    const bank = await createBank();
+
+    const created = await request(testApp)
+      .post("/api/bank-accounts")
+      .set("Authorization", authHeaderFor(owner.id, UserRole.CUSTOMER))
+      .send(validBody(bank.id));
+    const id = created.body.data.bankAccount.id;
+
+    const verifyResponse = await request(testApp)
+      .patch(`/api/bank-accounts/${id}/verify`)
+      .set("Authorization", authHeaderFor(staffer.id, UserRole.ADMIN));
+    expect(verifyResponse.status).toBe(FORBIDDEN_STATUS);
+
+    const revealResponse = await request(testApp)
+      .get(`/api/bank-accounts/${id}/reveal`)
+      .set("Authorization", authHeaderFor(staffer.id, UserRole.ADMIN));
+    expect(revealResponse.status).toBe(FORBIDDEN_STATUS);
   });
 });

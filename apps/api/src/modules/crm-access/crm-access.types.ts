@@ -17,6 +17,11 @@ export type OrganizationListItem = OrganizationRecord & {
   linkedBrandName: string | null;
 };
 
+export type OrganizationListPage = {
+  organizations: OrganizationListItem[];
+  nextCursor: string | null;
+};
+
 export type RoleRecord = {
   id: string;
   organizationId: string;

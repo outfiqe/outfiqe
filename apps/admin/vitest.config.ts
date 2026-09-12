@@ -57,6 +57,11 @@ export default defineConfig({
         "src/components/TextPromptModal.tsx",
         "src/features/users/**/*.{ts,tsx}",
         "src/features/team/**/*.{ts,tsx}",
+        "src/features/categories/CategoriesPage.tsx",
+        "src/features/creators/CreatorsPage.tsx",
+        "src/features/hero-slides/HeroSlidesPage.tsx",
+        "src/features/platform-commission/BrandExemptionsSection.tsx",
+        "src/features/products/ProductsPage.tsx",
       ],
       thresholds: {
         lines: 80,

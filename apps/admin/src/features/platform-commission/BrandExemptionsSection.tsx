@@ -7,6 +7,7 @@ import {
   FormBanner,
   Input,
   Skeleton,
+  toast,
 } from "@outfiqe/design-system";
 import { useDebouncedValue } from "@outfiqe/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -166,6 +167,7 @@ export const BrandExemptionsSection = () => {
       invalidate();
       setRevokeTarget(null);
     },
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const handleSubmit = (e: FormEvent) => {

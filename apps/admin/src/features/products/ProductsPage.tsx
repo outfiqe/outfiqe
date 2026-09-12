@@ -1,6 +1,8 @@
-import { Badge, Button } from "@outfiqe/design-system";
+import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { productsApi } from "./api";
 import { useInfiniteProducts } from "./hooks/useInfiniteProducts";
@@ -31,11 +33,13 @@ export const ProductsPage = () => {
   const approve = useMutation({
     mutationFn: (id: string) => productsApi.approve(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const reject = useMutation({
     mutationFn: (id: string) => productsApi.reject(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   return (

@@ -1,9 +1,11 @@
-import { Badge, Button, cn, FormBanner, Input } from "@outfiqe/design-system";
+import { Badge, Button, cn, FormBanner, Input, toast } from "@outfiqe/design-system";
 import { useDragReorder } from "@outfiqe/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import { type FormEvent, useState } from "react";
+
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { productTypesApi } from "./api";
 import type { ProductType } from "./schemas";
@@ -47,6 +49,7 @@ export const ProductTypesPage = () => {
     mutationFn: (productType: ProductType) =>
       productTypesApi.setActive(productType.id, !productType.isActive),
     onSuccess: invalidate,
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const reorder = useMutation({

@@ -14,7 +14,7 @@ import {
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
-import { createAdminSession } from "#test/integration/authHelpers.js";
+import { createAdminSession, grantPlatformPermissions } from "#test/integration/authHelpers.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -31,6 +31,12 @@ beforeEach(async () => {
 const authHeaderFor = (userId: string, role: UserRole) => {
   const { accessToken } = generateTokenpair({ sub: userId, role });
   return `Bearer ${accessToken}`;
+};
+
+const createBrandPayoutAdmin = async () => {
+  const admin = await createAdminSession();
+  await grantPlatformPermissions(admin.userId, "platform:commissions:manage");
+  return admin;
 };
 
 const createUser = async (role: UserRole = UserRole.BRAND_OWNER) => {
@@ -145,7 +151,7 @@ describe("platform commission rules (admin)", () => {
   });
 
   it("creates a new active rule and deactivates the previous one", async () => {
-    const { userId: adminId, authHeader } = await createAdminSession();
+    const { userId: adminId, authHeader } = await createBrandPayoutAdmin();
     const first = await request(testApp)
       .post("/api/brand-payouts/commission-rules")
       .set("Authorization", authHeader)
@@ -177,7 +183,7 @@ describe("platform commission rules (admin)", () => {
   });
 
   it("rejects a tier ladder with a gap", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createBrandPayoutAdmin();
 
     const response = await request(testApp)
       .post("/api/brand-payouts/commission-rules")
@@ -193,7 +199,7 @@ describe("platform commission rules (admin)", () => {
   });
 
   it("rejects a tier ladder that doesn't start at 0", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createBrandPayoutAdmin();
 
     const response = await request(testApp)
       .post("/api/brand-payouts/commission-rules")
@@ -204,7 +210,7 @@ describe("platform commission rules (admin)", () => {
   });
 
   it("rejects a tier ladder whose highest tier is capped", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createBrandPayoutAdmin();
 
     const response = await request(testApp)
       .post("/api/brand-payouts/commission-rules")
@@ -228,7 +234,7 @@ describe("gateway fee rates (admin)", () => {
   });
 
   it("creates a new active rate and deactivates only the previous rate for that provider", async () => {
-    const { userId: adminId, authHeader } = await createAdminSession();
+    const { userId: adminId, authHeader } = await createBrandPayoutAdmin();
 
     const firstEsewa = await request(testApp)
       .post("/api/brand-payouts/gateway-fee-rates")
@@ -286,7 +292,7 @@ describe("brand commission exemptions (admin)", () => {
   });
 
   it("creates, lists, and revokes an exemption", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createBrandPayoutAdmin();
     const { brand } = await createBrandWithMember();
 
     const createResponse = await request(testApp)
@@ -326,7 +332,7 @@ describe("brand commission exemptions (admin)", () => {
   });
 
   it("does not alter an already-created brand payout when its brand's exemption is revoked", async () => {
-    const { userId: adminId, authHeader } = await createAdminSession();
+    const { userId: adminId, authHeader } = await createBrandPayoutAdmin();
     const { brand } = await createBrandWithMember();
     const rule = await prisma.platformCommissionRule.create({
       data: { isActive: true, updatedById: adminId },
@@ -353,6 +359,41 @@ describe("brand commission exemptions (admin)", () => {
     });
     expect(unchangedPayout.platformFee).toBe(0);
     expect(unchangedPayout.netAmount).toBe(1000);
+  });
+});
+
+describe("brand-payout mutations require platform:commissions:manage", () => {
+  it("blocks a platform staffer without the permission from every mutation", async () => {
+    const { authHeader } = await createAdminSession();
+    const { brand } = await createBrandWithMember();
+
+    const commissionRuleResponse = await request(testApp)
+      .post("/api/brand-payouts/commission-rules")
+      .set("Authorization", authHeader)
+      .send({ tiers: SINGLE_FLAT_TIER });
+    expect(commissionRuleResponse.status).toBe(FORBIDDEN_STATUS);
+
+    const gatewayFeeResponse = await request(testApp)
+      .post("/api/brand-payouts/gateway-fee-rates")
+      .set("Authorization", authHeader)
+      .send({ paymentMethod: PaymentMethod.ESEWA, ratePercent: 2 });
+    expect(gatewayFeeResponse.status).toBe(FORBIDDEN_STATUS);
+
+    const exemptionResponse = await request(testApp)
+      .post("/api/brand-payouts/exemptions")
+      .set("Authorization", authHeader)
+      .send({
+        brandId: brand.id,
+        startsAt: new Date().toISOString(),
+        endsAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+        reason: "Launch cohort",
+      });
+    expect(exemptionResponse.status).toBe(FORBIDDEN_STATUS);
+
+    const revokeResponse = await request(testApp)
+      .patch(`/api/brand-payouts/exemptions/${randomUUID()}/revoke`)
+      .set("Authorization", authHeader);
+    expect(revokeResponse.status).toBe(FORBIDDEN_STATUS);
   });
 });
 

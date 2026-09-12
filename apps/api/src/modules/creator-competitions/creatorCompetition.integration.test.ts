@@ -9,6 +9,7 @@ import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { previousIsoWeekKey } from "#lib/iso-week.utils.js";
 import { creatorLeaderboardRepository } from "#modules/creator-leaderboard/creatorLeaderboard.repository.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
+import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
 import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -37,6 +38,7 @@ const createAdmin = async () => {
   const admin = await createUser();
   await ensurePlatformOrganizationExists();
   await crmAccessService.grantPlatformStaffMembership(admin.id);
+  await grantPlatformPermissions(admin.id, "platform:gamification:manage");
   return { ...admin, header: authHeaderFor(admin.id, UserRole.ADMIN) };
 };
 
@@ -231,6 +233,19 @@ describe("creator competitions admin API", () => {
     expect(updateResponse.status).toBe(200);
     expect(updateResponse.body.data.isActive).toBe(false);
     expect(updateResponse.body.data.category).toBe("TOP_CREATOR");
+  });
+
+  it("blocks a platform staffer without platform:gamification:manage", async () => {
+    const staffer = await createUser();
+    await ensurePlatformOrganizationExists();
+    await crmAccessService.grantPlatformStaffMembership(staffer.id);
+
+    const response = await request(testApp)
+      .post("/api/creator-competitions")
+      .set("Authorization", authHeaderFor(staffer.id, UserRole.ADMIN))
+      .send(validCompetitionPayload());
+
+    expect(response.status).toBe(403);
   });
 
   it("public list only returns active competitions with an active badge", async () => {
