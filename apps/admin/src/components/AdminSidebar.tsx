@@ -308,6 +308,7 @@ const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     href: "/announcements",
     label: "Announcements",
     icon: Megaphone,
+    group: "growth",
   },
   {
     id: "gamification",
