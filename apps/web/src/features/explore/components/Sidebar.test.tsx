@@ -34,6 +34,7 @@ const mockAuthGate = (isAuthenticated: boolean) => {
   vi.mocked(useExploreAuthGate).mockReturnValue({
     isAuthenticated,
     isAuthResolved: true,
+    viewerId: null,
     goToSignIn: vi.fn(),
     gated: vi.fn(),
   } as ReturnType<typeof useExploreAuthGate>);

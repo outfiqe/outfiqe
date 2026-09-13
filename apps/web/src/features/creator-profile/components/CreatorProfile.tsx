@@ -91,7 +91,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const [deletingLookId, setDeletingLookId] = useState<string | null>(null);
   const isOwnProfile = state.user?.id === userId;
 
-  const looks = useInfiniteCreatorLooks(handle, isAuthResolved);
+  const looks = useInfiniteCreatorLooks(handle, isAuthResolved, state.user?.id);
   const {
     data,
     isLoading: isFetchingLooks,
@@ -227,6 +227,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const { data: fetchedDetailPost } = usePublicLook(
     detailPostId && !detailPostFromGrid ? detailPostId : null,
     isAuthResolved,
+    state.user?.id,
   );
   const detailPost = detailPostFromGrid ?? fetchedDetailPost ?? null;
 

@@ -233,7 +233,7 @@ describe("CreatorProfile loading and post states", () => {
 
     expect(screen.getByRole("status", { name: "Loading posts" })).toBeInTheDocument();
     expect(screen.queryByText("Caption p1")).not.toBeInTheDocument();
-    expect(useInfiniteCreatorLooks).toHaveBeenCalledWith(expect.any(String), false);
+    expect(useInfiniteCreatorLooks).toHaveBeenCalledWith(expect.any(String), false, "viewer-1");
   });
 
   it("shows an empty state when there are no posts", () => {
