@@ -22,7 +22,7 @@ describe("useInfiniteCreatorLooks", () => {
     vi.mocked(creatorProfileApi.listLooks).mockResolvedValue({ posts: [], nextCursor: null });
 
     const queryClient = buildFreshQueryClient();
-    queryClient.setQueryData(["creator-looks", "sabin"], {
+    queryClient.setQueryData(["creator-looks", "sabin", "anonymous"], {
       pages: [{ posts: [], nextCursor: null }],
       pageParams: [undefined],
     });

@@ -8,10 +8,10 @@ export const EXPLORE_SIGN_IN_REDIRECT = "/login?redirect=/explore";
 
 export const useExploreAuthGate = () => {
   const router = useRouter();
-  const { isAuthenticated, isAuthResolved } = useAuth();
+  const { isAuthenticated, isAuthResolved, state } = useAuth();
 
   const goToSignIn = () => router.push(EXPLORE_SIGN_IN_REDIRECT);
   const gated = (action: () => void) => (isAuthenticated ? action() : goToSignIn());
 
-  return { isAuthenticated, isAuthResolved, goToSignIn, gated };
+  return { isAuthenticated, isAuthResolved, viewerId: state.user?.id ?? null, goToSignIn, gated };
 };

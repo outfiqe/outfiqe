@@ -32,7 +32,7 @@ describe("usePublicLook", () => {
     vi.mocked(exploreFeedApi.getById).mockResolvedValue(post as never);
 
     const queryClient = buildFreshQueryClient();
-    queryClient.setQueryData(["creator-looks", "public", "look-1"], post);
+    queryClient.setQueryData(["creator-looks", "public", "look-1", "anonymous"], post);
     const wrapper = ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );

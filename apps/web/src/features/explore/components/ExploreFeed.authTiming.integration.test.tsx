@@ -1,8 +1,12 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
+import { createTestQueryClient } from "@test/integration/queryClientWrapper";
 import { render, screen, waitFor } from "@testing-library/react";
 import { delay, http, HttpResponse } from "msw";
+import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { AuthProvider } from "@/features/auth/context/AuthContext";
 import { createAuthQueryClientWrapper } from "@/features/auth/context/authTestWrapper";
 
 import { ExploreFeed } from "./ExploreFeed";
@@ -114,5 +118,54 @@ describe("ExploreFeed auth-resolution timing", () => {
     expect(checkSession).not.toHaveBeenCalled();
     expect(feedAuthorizationHeaders[0]).toBeNull();
     expect(await screen.findByText("Nothing here yet — try a different tab.")).toBeInTheDocument();
+  });
+
+  it("never reuses a signed-out visitor's cached feed for a signed-in viewer", async () => {
+    setHasSessionCookie();
+    mockAncillaryFeedEndpoints();
+
+    const feedAuthorizationHeaders: (string | null)[] = [];
+    mswServer.use(
+      http.post(SESSION_URL, () =>
+        HttpResponse.json({
+          success: true,
+          message: "Session is valid.",
+          data: { accessToken: "access-token" },
+        }),
+      ),
+      http.get(CURRENT_USER_URL, () =>
+        HttpResponse.json({ success: true, message: "Current user.", data: currentUser }),
+      ),
+      http.get(FEED_URL, ({ request }) => {
+        feedAuthorizationHeaders.push(request.headers.get("Authorization"));
+        return HttpResponse.json({
+          success: true,
+          message: "Feed.",
+          data: { posts: [], nextCursor: null },
+        });
+      }),
+    );
+
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(["explore-feed", "for_you", "anonymous"], {
+      pages: [{ posts: [], nextCursor: null }],
+      pageParams: [undefined],
+    });
+
+    const Wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>{children}</AuthProvider>
+      </QueryClientProvider>
+    );
+
+    render(<ExploreFeed />, { wrapper: Wrapper });
+
+    await waitFor(() => expect(feedAuthorizationHeaders.length).toBeGreaterThan(0));
+
+    expect(feedAuthorizationHeaders[0]).toBe("Bearer access-token");
+    expect(queryClient.getQueryData(["explore-feed", "for_you", "anonymous"])).toEqual({
+      pages: [{ posts: [], nextCursor: null }],
+      pageParams: [undefined],
+    });
   });
 });

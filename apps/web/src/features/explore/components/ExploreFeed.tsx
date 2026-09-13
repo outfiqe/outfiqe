@@ -39,7 +39,7 @@ const PostDetailModal = dynamic(() => import("./PostDetailModal").then((m) => m.
 const Sidebar = dynamic(() => import("./Sidebar").then((m) => m.Sidebar), { ssr: false });
 
 export const ExploreFeed = () => {
-  const { isAuthenticated, isAuthResolved, goToSignIn } = useExploreAuthGate();
+  const { isAuthenticated, isAuthResolved, viewerId, goToSignIn } = useExploreAuthGate();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
@@ -87,7 +87,7 @@ export const ExploreFeed = () => {
     isFetchingNextPage,
     isLoading,
     refetch,
-  } = useInfiniteExploreFeed(tab, feedEnabled);
+  } = useInfiniteExploreFeed(tab, feedEnabled, viewerId);
 
   const { newLookCount, dismiss } = useExploreFeedSocket(tab);
 
