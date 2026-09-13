@@ -67,13 +67,14 @@ export const groupPlatformNavItems = (
 
   return PLATFORM_NAV_GROUP_ORDER.reduce<SidebarNavItem[]>((groups, groupKey) => {
     const groupItems = visibleItems.filter((item) => item.group === groupKey).map(toSidebarNavItem);
+    const [firstGroupItem] = groupItems;
 
-    if (groupItems.length === 0) return groups;
+    if (!firstGroupItem) return groups;
 
     groups.push({
       id: `platform-group-${groupKey}`,
       label: PLATFORM_NAV_GROUP_LABELS[groupKey],
-      href: groupItems[0].href,
+      href: firstGroupItem.href,
       icon: groupIcons[groupKey],
       items: groupItems,
     });
