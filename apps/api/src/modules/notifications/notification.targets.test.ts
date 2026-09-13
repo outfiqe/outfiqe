@@ -189,4 +189,26 @@ describe("resolveNotificationTarget", () => {
   it("returns null for a review request with no entityId", () => {
     expect(resolve(NotificationType.REVIEW_REQUESTED, null)).toBeNull();
   });
+
+  it("reads an announcement's target straight from its admin-authored metadata", () => {
+    expect(
+      resolve(NotificationType.ANNOUNCEMENT, "announcement-1", {
+        announcementTargetSurface: NotificationSurface.WEB,
+        announcementTargetPath: "/events/spring-drop",
+      }),
+    ).toEqual({ surface: NotificationSurface.WEB, path: "/events/spring-drop" });
+  });
+
+  it("carries a null surface for an announcement's external link", () => {
+    expect(
+      resolve(NotificationType.ANNOUNCEMENT, "announcement-1", {
+        announcementTargetSurface: null,
+        announcementTargetPath: "https://forms.gle/survey",
+      }),
+    ).toEqual({ surface: null, path: "https://forms.gle/survey" });
+  });
+
+  it("returns null for a purely informational announcement with no call-to-action", () => {
+    expect(resolve(NotificationType.ANNOUNCEMENT, "announcement-1", {})).toBeNull();
+  });
 });

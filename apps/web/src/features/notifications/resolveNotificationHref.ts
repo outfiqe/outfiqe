@@ -4,6 +4,8 @@ import {
   NotificationSurface,
   NotificationType,
 } from "@outfiqe/types";
+import { isExternalNotificationPath } from "@outfiqe/utils";
+import { isPast } from "date-fns/isPast";
 
 import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
 import { lookPermalinkPath } from "@/features/explore";
@@ -114,7 +116,7 @@ export const resolveNotificationHref = (
 export const isFullPageNavHref = (href: string): boolean =>
   /^https?:\/\//.test(href) || href === ADMIN_URL || href.startsWith(`${ADMIN_URL}/`);
 
-export type NotificationNavigation = { href: string; fullPage: boolean };
+export type NotificationNavigation = { href: string; fullPage: boolean; external: boolean };
 
 const TYPES_RESOLVED_FROM_CURRENT_LOGIC = new Set<NotificationType>([
   NotificationType.NEW_FOLLOWER,
@@ -122,20 +124,32 @@ const TYPES_RESOLVED_FROM_CURRENT_LOGIC = new Set<NotificationType>([
   NotificationType.COMMENT_REPLIED,
 ]);
 
+const isExpiredAnnouncement = (notification: Notification): boolean => {
+  if (notification.type !== NotificationType.ANNOUNCEMENT) return false;
+  const expiresAt = notification.metadata.announcementExpiresAt;
+  return Boolean(expiresAt && isPast(new Date(expiresAt)));
+};
+
 export const resolveNotificationNavigation = (
   notification: Notification,
   ownHandle: string | undefined,
   isAdmin: boolean,
 ): NotificationNavigation | null => {
+  if (isExpiredAnnouncement(notification)) return null;
+
+  if (isExternalNotificationPath(notification.targetPath)) {
+    return { href: notification.targetPath as string, fullPage: false, external: true };
+  }
+
   const ignoreStoredTarget = TYPES_RESOLVED_FROM_CURRENT_LOGIC.has(notification.type);
 
   if (notification.targetPath && !ignoreStoredTarget) {
     return notification.targetSurface === NotificationSurface.WEB
-      ? { href: notification.targetPath, fullPage: false }
-      : { href: `${ADMIN_URL}${notification.targetPath}`, fullPage: true };
+      ? { href: notification.targetPath, fullPage: false, external: false }
+      : { href: `${ADMIN_URL}${notification.targetPath}`, fullPage: true, external: false };
   }
 
   const legacyHref = resolveNotificationHref(notification, ownHandle, isAdmin);
   if (!legacyHref) return null;
-  return { href: legacyHref, fullPage: isFullPageNavHref(legacyHref) };
+  return { href: legacyHref, fullPage: isFullPageNavHref(legacyHref), external: false };
 };

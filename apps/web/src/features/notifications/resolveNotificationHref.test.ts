@@ -316,6 +316,7 @@ describe("resolveNotificationNavigation", () => {
     expect(resolveNotificationNavigation(notification, OWN_HANDLE, true)).toEqual({
       href: "/messages/conversation-1",
       fullPage: false,
+      external: false,
     });
   });
 
@@ -328,6 +329,7 @@ describe("resolveNotificationNavigation", () => {
     expect(resolveNotificationNavigation(notification, OWN_HANDLE, true)).toEqual({
       href: "/admin/platform/brand-applications",
       fullPage: true,
+      external: false,
     });
   });
 
@@ -336,6 +338,7 @@ describe("resolveNotificationNavigation", () => {
     expect(resolveNotificationNavigation(legacy, OWN_HANDLE, false)).toEqual({
       href: "/badges",
       fullPage: false,
+      external: false,
     });
 
     const staffLegacy = buildNotification({
@@ -345,6 +348,7 @@ describe("resolveNotificationNavigation", () => {
     expect(resolveNotificationNavigation(staffLegacy, OWN_HANDLE, true)).toEqual({
       href: "/admin/support/ticket-1",
       fullPage: true,
+      external: false,
     });
   });
 
@@ -365,6 +369,7 @@ describe("resolveNotificationNavigation", () => {
     expect(resolveNotificationNavigation(staleBrandFollow, OWN_HANDLE, false)).toEqual({
       href: "/profile",
       fullPage: false,
+      external: false,
     });
 
     const creatorFollow = buildNotification({
@@ -380,6 +385,7 @@ describe("resolveNotificationNavigation", () => {
     expect(resolveNotificationNavigation(creatorFollow, OWN_HANDLE, false)).toEqual({
       href: "/creator/jane",
       fullPage: false,
+      external: false,
     });
 
     const staleBrandFollowerOfBrand = buildNotification({
@@ -401,6 +407,7 @@ describe("resolveNotificationNavigation", () => {
     expect(resolveNotificationNavigation(staleBrandFollowerOfBrand, OWN_HANDLE, false)).toEqual({
       href: "/creator/anjeshghimire",
       fullPage: false,
+      external: false,
     });
   });
 
@@ -415,6 +422,58 @@ describe("resolveNotificationNavigation", () => {
     expect(resolveNotificationNavigation(staleReply, OWN_HANDLE, false)).toEqual({
       href: "/creator/mun?look=look-3",
       fullPage: false,
+      external: false,
+    });
+  });
+
+  it("opens an announcement's internal target path in-app", () => {
+    const notification = buildNotification({
+      type: "ANNOUNCEMENT",
+      targetSurface: "WEB",
+      targetPath: "/events/spring-drop",
+    });
+    expect(resolveNotificationNavigation(notification, OWN_HANDLE, false)).toEqual({
+      href: "/events/spring-drop",
+      fullPage: false,
+      external: false,
+    });
+  });
+
+  it("flags an announcement's external link for a new-tab open, even with no targetSurface", () => {
+    const notification = buildNotification({
+      type: "ANNOUNCEMENT",
+      targetSurface: null,
+      targetPath: "https://forms.gle/survey",
+    });
+    expect(resolveNotificationNavigation(notification, OWN_HANDLE, false)).toEqual({
+      href: "https://forms.gle/survey",
+      fullPage: false,
+      external: true,
+    });
+  });
+
+  it("returns null for an announcement whose expiresAt has already passed", () => {
+    const notification = buildNotification({
+      type: "ANNOUNCEMENT",
+      targetSurface: "WEB",
+      targetPath: "/events/spring-drop",
+      metadata: { announcementExpiresAt: "2020-01-01T00:00:00.000Z" },
+    });
+    expect(resolveNotificationNavigation(notification, OWN_HANDLE, false)).toBeNull();
+  });
+
+  it("still resolves an announcement whose expiresAt is in the future", () => {
+    const farFuture = new Date(Date.now() + 1000 * 60 * 60 * 24 * 365).toISOString();
+    const notification = buildNotification({
+      type: "ANNOUNCEMENT",
+      targetSurface: "WEB",
+      targetPath: "/events/spring-drop",
+      metadata: { announcementExpiresAt: farFuture },
+    });
+    expect(resolveNotificationNavigation(notification, OWN_HANDLE, false)).toEqual({
+      href: "/events/spring-drop",
+      fullPage: false,
+      external: false,
     });
   });
 });

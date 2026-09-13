@@ -379,3 +379,65 @@ describe("notificationService.notifyManyIndividual", () => {
     expect(rowsB).toHaveLength(0);
   });
 });
+
+describe("notificationService.notifyBroadcast", () => {
+  it("bulk-writes a row per eligible recipient and skips a muted one", async () => {
+    const [recipientA, recipientB] = await Promise.all([createUser(), createUser()]);
+    if (!recipientA || !recipientB) throw new Error("expected two recipients");
+
+    await prisma.notificationPreference.create({
+      data: { userId: recipientB.id, type: NotificationType.ANNOUNCEMENT, enabled: false },
+    });
+
+    const entityId = randomUUID();
+    const sentCount = await notificationService.notifyBroadcast({
+      type: NotificationType.ANNOUNCEMENT,
+      entityType: NotificationEntityType.ANNOUNCEMENT,
+      entityId,
+      metadata: { announcementTitle: "Livestream tomorrow" },
+      recipientIds: [recipientA.id, recipientB.id],
+    });
+
+    expect(sentCount).toBe(1);
+    const [rowsA, rowsB] = await Promise.all([
+      prisma.notification.findMany({ where: { recipientId: recipientA.id, entityId } }),
+      prisma.notification.findMany({ where: { recipientId: recipientB.id, entityId } }),
+    ]);
+    expect(rowsA).toHaveLength(1);
+    expect(rowsB).toHaveLength(0);
+  });
+
+  it("returns 0 and writes nothing for an empty recipient list", async () => {
+    const sentCount = await notificationService.notifyBroadcast({
+      type: NotificationType.ANNOUNCEMENT,
+      entityType: NotificationEntityType.ANNOUNCEMENT,
+      entityId: randomUUID(),
+      metadata: {},
+      recipientIds: [],
+    });
+    expect(sentCount).toBe(0);
+  });
+
+  it("resolves the announcement's authored target onto every written row", async () => {
+    const recipient = await createUser();
+    const entityId = randomUUID();
+
+    await notificationService.notifyBroadcast({
+      type: NotificationType.ANNOUNCEMENT,
+      entityType: NotificationEntityType.ANNOUNCEMENT,
+      entityId,
+      metadata: {
+        announcementTitle: "Livestream tomorrow",
+        announcementTargetSurface: "WEB",
+        announcementTargetPath: "/events/spring-drop",
+      },
+      recipientIds: [recipient.id],
+    });
+
+    const row = await prisma.notification.findFirstOrThrow({
+      where: { recipientId: recipient.id, entityId },
+    });
+    expect(row.targetSurface).toBe("WEB");
+    expect(row.targetPath).toBe("/events/spring-drop");
+  });
+});

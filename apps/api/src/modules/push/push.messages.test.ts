@@ -123,6 +123,62 @@ describe("toPushMessage", () => {
     expect(message.tag).toBe("LEVEL_UP:n-1");
   });
 
+  it("uses the admin-authored title and body for an announcement", () => {
+    const message = toPushMessage(
+      aNotification({
+        type: NotificationType.ANNOUNCEMENT,
+        metadata: {
+          announcementTitle: "Livestream tomorrow",
+          announcementBody: "Join us at 6pm for a live drop.",
+        },
+      }),
+    );
+
+    expect(message.title).toBe("Livestream tomorrow");
+    expect(message.body).toBe("Join us at 6pm for a live drop.");
+  });
+
+  it("falls back to generic copy when an announcement is missing its metadata", () => {
+    const message = toPushMessage(
+      aNotification({ type: NotificationType.ANNOUNCEMENT, metadata: {} }),
+    );
+
+    expect(message.title).toBe("New announcement");
+    expect(message.body).toBe("You have a new announcement");
+  });
+
+  it("opens an announcement's internal target path", () => {
+    const message = toPushMessage(
+      aNotification({
+        type: NotificationType.ANNOUNCEMENT,
+        targetSurface: null,
+        targetPath: "/events/spring-drop",
+      }),
+    );
+
+    expect(message.url).toBe("/events/spring-drop");
+  });
+
+  it("opens an announcement's external link even though targetSurface is null", () => {
+    const message = toPushMessage(
+      aNotification({
+        type: NotificationType.ANNOUNCEMENT,
+        targetSurface: null,
+        targetPath: "https://forms.gle/survey",
+      }),
+    );
+
+    expect(message.url).toBe("https://forms.gle/survey");
+  });
+
+  it("falls back to the notification list for an announcement with no call-to-action", () => {
+    const message = toPushMessage(
+      aNotification({ type: NotificationType.ANNOUNCEMENT, targetSurface: null, targetPath: null }),
+    );
+
+    expect(message.url).toBe("/notifications");
+  });
+
   it("gives every notification type a title and a body", () => {
     for (const type of Object.values(NotificationType)) {
       const message = toPushMessage(aNotification({ type }));
