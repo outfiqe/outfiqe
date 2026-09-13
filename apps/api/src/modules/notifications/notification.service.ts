@@ -9,7 +9,9 @@ import { SOCKET_EVENTS, userRoom } from "#socket/socket.keys.js";
 import { getIO } from "#socket/socket.server.js";
 
 import { notificationRepository } from "./notification.repository.js";
+import { resolveNotificationTarget } from "./notification.targets.js";
 import type {
+  BroadcastNotificationInput,
   CreateIndividualNotificationInput,
   NotificationChannelChanges,
   NotificationFeedCursor,
@@ -61,6 +63,40 @@ export const notificationService = {
       const record = await notificationRepository.createIndividual(input);
       if (record) await broadcastCreated(record);
     }
+  },
+
+  async notifyBroadcast(input: BroadcastNotificationInput): Promise<number> {
+    if (input.recipientIds.length === 0) return 0;
+
+    const mutedRecipientIds = await notificationRepository.findMutedRecipientIds(
+      input.recipientIds,
+      input.type,
+    );
+    const eligibleRecipientIds = input.recipientIds.filter(
+      (recipientId) => !mutedRecipientIds.has(recipientId),
+    );
+    if (eligibleRecipientIds.length === 0) return 0;
+
+    const target = resolveNotificationTarget({
+      type: input.type,
+      entityId: input.entityId ?? null,
+      metadata: input.metadata,
+    });
+
+    const records = await notificationRepository.createManyForBroadcast(
+      eligibleRecipientIds.map((recipientId) => ({
+        recipientId,
+        type: input.type,
+        entityType: input.entityType,
+        entityId: input.entityId,
+        targetSurface: target?.surface ?? null,
+        targetPath: target?.path ?? null,
+        metadata: input.metadata,
+      })),
+    );
+
+    for (const record of records) await broadcastCreated(record);
+    return records.length;
   },
 
   async notifyGroup(input: UpsertGroupInput): Promise<void> {

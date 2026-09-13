@@ -86,6 +86,8 @@ export const resolveNotificationMessage = (notification: Notification): string =
       return metadata.tagRejectionNote
         ? `A brand removed a live product tag from your look: ${metadata.tagRejectionNote}`
         : "A brand removed a live product tag from your look";
+    case NotificationType.ANNOUNCEMENT:
+      return metadata.announcementTitle ?? "New announcement";
     default:
       return "You have a new notification";
   }

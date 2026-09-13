@@ -14,6 +14,7 @@ import { describeError } from "#redis/redis.utils.js";
 import { achievementRoutes } from "./modules/achievements/achievement.routes.js";
 import { addressRoutes } from "./modules/addresses/address.routes.js";
 import { adminInviteRoutes } from "./modules/admin-invites/adminInvite.routes.js";
+import { announcementRoutes } from "./modules/announcements/announcement.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { facebookWebhookRoutes } from "./modules/auth/oauth/facebook.webhooks.routes.js";
 import { oauthRoutes } from "./modules/auth/oauth/oauth.routes.js";
@@ -224,6 +225,7 @@ export const createApp = () => {
   app.use("/api/withdraw", withdrawRoutes);
   app.use("/api/admin/financial-rollup", financialRollupRoutes);
   app.use("/api/admin/coupons", couponRoutes);
+  app.use("/api/admin/announcements", announcementRoutes);
   app.use("/api/coupons", couponCustomerRoutes);
   app.use("/api/chat", chatRoutes);
   app.use("/api/conversations", conversationRoutes);

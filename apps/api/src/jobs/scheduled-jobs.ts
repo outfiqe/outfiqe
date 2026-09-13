@@ -2,6 +2,8 @@ import { CRM_COUNTER_RECONCILE_INTERVAL_MS, recomputeCrmCounters } from "#lib/cr
 import { nextIsoWeekStart } from "#lib/iso-week.utils.js";
 import { DYNAMIC_BADGE_RECHECK_INTERVAL_MS } from "#modules/achievements/achievement.constants.js";
 import { achievementService } from "#modules/achievements/achievement.service.js";
+import { ANNOUNCEMENT_SCHEDULE_SWEEP_INTERVAL_MS } from "#modules/announcements/announcement.constants.js";
+import { runAnnouncementScheduledDispatch } from "#modules/announcements/announcement.lifecycle.js";
 import { AUTH_RETENTION_SWEEP_INTERVAL_MS } from "#modules/auth/auth.constants.js";
 import { runAuthRetentionSweep } from "#modules/auth/auth.retention.js";
 import { runBrandPayoutLifecycleSweep } from "#modules/brand-payouts/brandPayout.lifecycle.js";
@@ -61,6 +63,11 @@ import { trendingService } from "#modules/trending/trending.service.js";
 import type { BoundaryJob, RecurringJob } from "#scheduling/scheduler.types.js";
 
 export const INTERVAL_JOBS: RecurringJob[] = [
+  {
+    name: "announcement-scheduled-dispatch",
+    run: runAnnouncementScheduledDispatch,
+    intervalMs: ANNOUNCEMENT_SCHEDULE_SWEEP_INTERVAL_MS,
+  },
   {
     name: "payment-reconciliation",
     run: runPaymentReconciliationSweep,

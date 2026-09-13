@@ -31,4 +31,5 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   [NotificationType.PRODUCT_TAG_APPROVED]: "Your tags approved by brands",
   [NotificationType.PRODUCT_TAG_REJECTED]: "Your tags declined by brands",
   [NotificationType.PRODUCT_TAG_REVOKED]: "Your live tags removed by brands",
+  [NotificationType.ANNOUNCEMENT]: "Broadcast announcements",
 };

@@ -53,4 +53,19 @@ describe("resolveNotificationMessage", () => {
     );
     expect(message).toBe("A coupon redemption was flagged for review");
   });
+
+  it("shows the admin-authored title for an announcement", () => {
+    const message = resolveNotificationMessage(
+      buildNotification({
+        type: "ANNOUNCEMENT",
+        metadata: { announcementTitle: "Livestream tomorrow" },
+      }),
+    );
+    expect(message).toBe("Livestream tomorrow");
+  });
+
+  it("falls back to a generic label when an announcement has no title", () => {
+    const message = resolveNotificationMessage(buildNotification({ type: "ANNOUNCEMENT" }));
+    expect(message).toBe("New announcement");
+  });
 });
