@@ -1,5 +1,6 @@
 import {
   Sidebar,
+  type SidebarIcon,
   type SidebarNavItem,
   type SidebarNavSection,
   SidebarSkeleton,
@@ -57,13 +58,14 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { crmApi } from "@/features/crm/api";
 
 import {
+  groupPlatformNavItems,
   isAdminNavReady,
   isCrmSubItemVisible,
+  type PlatformNavGroupKey,
   type PlatformNavItem,
   resolveAccountLabel,
   shouldShowCrmSection,
   shouldShowPlatformSection,
-  visiblePlatformNavItems,
 } from "./AdminSidebar.utils";
 import { useTanStackSidebarNavigation } from "./useTanStackSidebarNavigation";
 
@@ -165,77 +167,147 @@ const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     href: "/platform/brand-applications",
     label: "Brand applications",
     icon: ClipboardList,
+    group: "brand-tenants",
   },
-  { id: "platform-metrics", href: "/platform/metrics", label: "Tenant metrics", icon: Gauge },
+  {
+    id: "platform-metrics",
+    href: "/platform/metrics",
+    label: "Tenant metrics",
+    icon: Gauge,
+    group: "brand-tenants",
+  },
   {
     id: "platform-features",
     href: "/platform/features",
     label: "Feature flags",
     icon: SlidersHorizontal,
+    group: "platform-settings",
   },
   {
     id: "platform-impersonation",
     href: "/platform/impersonation",
     label: "Impersonation",
     icon: VenetianMask,
+    group: "brand-tenants",
   },
   {
     id: "platform-nav-access",
     href: "/platform/nav-access",
     label: "Navigation access",
     icon: Fingerprint,
+    group: "platform-settings",
     coFounderOnly: true,
   },
-  { id: "products", href: "/products", label: "Products", icon: Package },
-  { id: "collections", href: "/collections", label: "Collections", icon: Layers },
-  { id: "categories", href: "/categories", label: "Categories", icon: Tags },
-  { id: "product-types", href: "/product-types", label: "Garment types", icon: Shirt },
-  { id: "size-options", href: "/size-options", label: "Sizes", icon: Ruler },
-  { id: "hero-slides", href: "/hero-slides", label: "Hero slides", icon: GalleryHorizontal },
-  { id: "orders", href: "/orders", label: "Orders", icon: ShoppingBag },
-  { id: "support", href: "/support", label: "Support requests", icon: LifeBuoy },
-  { id: "product-reviews", href: "/product-reviews", label: "Product Reviews", icon: Star },
-  { id: "tag-reviews", href: "/tag-reviews", label: "Tag reviews", icon: ListChecks },
-  { id: "tag-reports", href: "/tag-reports", label: "Tag reports", icon: Flag },
-  { id: "trending", href: "/trending", label: "Trending debug", icon: TrendingUp },
-  { id: "users", href: "/users", label: "Users", icon: ShieldAlert },
-  { id: "creators", href: "/creators", label: "Creators", icon: Users },
-  { id: "commissions", href: "/commissions", label: "Commissions", icon: Wallet },
+  { id: "products", href: "/products", label: "Products", icon: Package, group: "catalog" },
+  {
+    id: "collections",
+    href: "/collections",
+    label: "Collections",
+    icon: Layers,
+    group: "catalog",
+  },
+  { id: "categories", href: "/categories", label: "Categories", icon: Tags, group: "catalog" },
+  {
+    id: "product-types",
+    href: "/product-types",
+    label: "Garment types",
+    icon: Shirt,
+    group: "catalog",
+  },
+  { id: "size-options", href: "/size-options", label: "Sizes", icon: Ruler, group: "catalog" },
+  {
+    id: "hero-slides",
+    href: "/hero-slides",
+    label: "Hero slides",
+    icon: GalleryHorizontal,
+    group: "catalog",
+  },
+  { id: "orders", href: "/orders", label: "Orders", icon: ShoppingBag, group: "commerce" },
+  {
+    id: "support",
+    href: "/support",
+    label: "Support requests",
+    icon: LifeBuoy,
+    group: "moderation",
+  },
+  {
+    id: "product-reviews",
+    href: "/product-reviews",
+    label: "Product Reviews",
+    icon: Star,
+    group: "moderation",
+  },
+  {
+    id: "tag-reviews",
+    href: "/tag-reviews",
+    label: "Tag reviews",
+    icon: ListChecks,
+    group: "moderation",
+  },
+  {
+    id: "tag-reports",
+    href: "/tag-reports",
+    label: "Tag reports",
+    icon: Flag,
+    group: "moderation",
+  },
+  {
+    id: "trending",
+    href: "/trending",
+    label: "Trending debug",
+    icon: TrendingUp,
+    group: "growth",
+  },
+  { id: "users", href: "/users", label: "Users", icon: ShieldAlert, group: "moderation" },
+  { id: "creators", href: "/creators", label: "Creators", icon: Users, group: "growth" },
+  {
+    id: "commissions",
+    href: "/commissions",
+    label: "Commissions",
+    icon: Wallet,
+    group: "finance",
+  },
   {
     id: "platform-commission",
     href: "/platform-commission",
     label: "Platform commission",
     icon: Percent,
+    group: "finance",
   },
   {
     id: "withdraw-requests",
     href: "/withdraw-requests",
     label: "Withdrawal requests",
     icon: BanknoteArrowUp,
+    group: "finance",
   },
   {
     id: "withdraw-policy",
     href: "/withdraw-policy",
     label: "Withdrawal policy",
     icon: Landmark,
+    group: "finance",
   },
   {
     id: "financial-rollup",
     href: "/financial-rollup",
     label: "Financial rollup",
     icon: PiggyBank,
+    group: "finance",
   },
   {
     id: "coupons",
     href: "/coupons",
     label: "Coupons",
     icon: TicketPercent,
+    group: "commerce",
   },
   {
     id: "gamification",
     href: "/gamification",
     label: "Gamification",
     icon: Trophy,
+    group: "growth",
     items: [
       {
         id: "gamification-xp-levels",
@@ -263,10 +335,32 @@ const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
       },
     ],
   },
-  { id: "delivery-zones", href: "/delivery-zones", label: "Delivery zones", icon: MapPin },
-  { id: "organizations", href: "/organizations", label: "Organizations", icon: Building2 },
-  { id: "team", href: "/team", label: "Team", icon: UserCog },
+  {
+    id: "delivery-zones",
+    href: "/delivery-zones",
+    label: "Delivery zones",
+    icon: MapPin,
+    group: "commerce",
+  },
+  {
+    id: "organizations",
+    href: "/organizations",
+    label: "Organizations",
+    icon: Building2,
+    group: "brand-tenants",
+  },
+  { id: "team", href: "/team", label: "Team", icon: UserCog, group: "brand-tenants" },
 ];
+
+const PLATFORM_NAV_GROUP_ICONS: Record<PlatformNavGroupKey, SidebarIcon> = {
+  "brand-tenants": Building2,
+  catalog: LayoutGrid,
+  commerce: ShoppingBag,
+  moderation: ShieldAlert,
+  finance: Wallet,
+  growth: TrendingUp,
+  "platform-settings": SlidersHorizontal,
+};
 
 const SIDEBAR_SKELETON_ROW_COUNT = 8;
 
@@ -305,10 +399,11 @@ export const AdminSidebar = () => {
   });
   const platformNavItems: SidebarNavItem[] = [
     PLATFORM_OVERVIEW_NAV_ITEM,
-    ...visiblePlatformNavItems(PLATFORM_NAV_ITEMS, {
-      isCoFounder,
-      hiddenNavKeys: user?.hiddenPlatformNavKeys ?? [],
-    }),
+    ...groupPlatformNavItems(
+      PLATFORM_NAV_ITEMS,
+      { isCoFounder, hiddenNavKeys: user?.hiddenPlatformNavKeys ?? [] },
+      PLATFORM_NAV_GROUP_ICONS,
+    ),
   ];
   const navSections: SidebarNavSection[] = [
     ...(shouldShowCrmSection(crmOrganization)
