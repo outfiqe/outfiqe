@@ -83,7 +83,7 @@ const computeAllScoreBreakdowns = async (
     if (breakdown.score > 0) candidates.push(breakdown);
   }
 
-  candidates.sort((a, b) => b.score - a.score);
+  candidates.sort((a, b) => b.score - a.score || a.productId.localeCompare(b.productId));
   return { candidates, bucketsByProduct, categoryBaselines, globalBaseline };
 };
 
@@ -124,10 +124,11 @@ const resolveTrendingSnapshotSource = async (
     return { sessionId: decoded.sessionId, offset: decoded.offset, ids: cachedIds };
   }
 
-  const sessionId = randomUUID();
+  const sessionId = decoded?.sessionId ?? randomUUID();
   const ids = await buildTrendingSnapshotIds();
   await cacheTrendingSnapshot(sessionId, ids);
-  return { sessionId, offset: 0, ids };
+  const offset = decoded ? Math.min(decoded.offset, ids.length) : 0;
+  return { sessionId, offset, ids };
 };
 
 const computeRankedTrendingProducts = async (): Promise<TrendingEntry[]> => {

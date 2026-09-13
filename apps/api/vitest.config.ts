@@ -74,6 +74,7 @@ export default defineConfig({
         "src/modules/creator-competitions/creatorCompetition.routes.ts",
         "src/modules/creators/**/*.ts",
         "src/modules/creator-looks/**/*.ts",
+        "src/modules/trending/**/*.ts",
         "src/modules/tag-reviews/**/*.ts",
         "src/modules/tag-reports/**/*.ts",
         "src/shared/utils/tag-review.utils.ts",
