@@ -1,4 +1,4 @@
-import type { SidebarNavItem } from "@outfiqe/components";
+import type { SidebarIcon, SidebarNavItem } from "@outfiqe/components";
 import type { PlatformNavKey } from "@outfiqe/utils";
 
 type CrmItemVisibilityRules = {
@@ -13,8 +13,31 @@ export const isAdminNavReady = (
   crmOrganizationQueryStatus: CrmOrganizationQueryStatus,
 ): boolean => isAuthResolved && crmOrganizationQueryStatus !== "pending";
 
+export const PLATFORM_NAV_GROUP_ORDER = [
+  "brand-tenants",
+  "catalog",
+  "commerce",
+  "moderation",
+  "finance",
+  "growth",
+  "platform-settings",
+] as const;
+
+export type PlatformNavGroupKey = (typeof PLATFORM_NAV_GROUP_ORDER)[number];
+
+export const PLATFORM_NAV_GROUP_LABELS: Record<PlatformNavGroupKey, string> = {
+  "brand-tenants": "Brand & Tenants",
+  catalog: "Catalog",
+  commerce: "Commerce",
+  moderation: "Moderation & Support",
+  finance: "Finance",
+  growth: "Growth",
+  "platform-settings": "Platform Settings",
+};
+
 export type PlatformNavItem = Omit<SidebarNavItem, "id"> & {
   id: PlatformNavKey;
+  group: PlatformNavGroupKey;
   coFounderOnly?: boolean;
 };
 
@@ -23,17 +46,41 @@ type PlatformNavViewer = {
   hiddenNavKeys: string[];
 };
 
-export const visiblePlatformNavItems = (
-  items: PlatformNavItem[],
+const isPlatformNavItemVisible = (item: PlatformNavItem, viewer: PlatformNavViewer): boolean => {
+  if (item.coFounderOnly && !viewer.isCoFounder) return false;
+  if (viewer.isCoFounder) return true;
+  return !viewer.hiddenNavKeys.includes(item.id);
+};
+
+const toSidebarNavItem = ({
+  coFounderOnly: _coFounderOnly,
+  group: _group,
+  ...item
+}: PlatformNavItem): SidebarNavItem => item;
+
+export const groupPlatformNavItems = (
+  items: readonly PlatformNavItem[],
   viewer: PlatformNavViewer,
-): SidebarNavItem[] =>
-  items
-    .filter((item) => {
-      if (item.coFounderOnly && !viewer.isCoFounder) return false;
-      if (viewer.isCoFounder) return true;
-      return !viewer.hiddenNavKeys.includes(item.id);
-    })
-    .map(({ coFounderOnly: _coFounderOnly, ...item }) => item);
+  groupIcons: Readonly<Record<PlatformNavGroupKey, SidebarIcon>>,
+): SidebarNavItem[] => {
+  const visibleItems = items.filter((item) => isPlatformNavItemVisible(item, viewer));
+
+  return PLATFORM_NAV_GROUP_ORDER.reduce<SidebarNavItem[]>((groups, groupKey) => {
+    const groupItems = visibleItems.filter((item) => item.group === groupKey).map(toSidebarNavItem);
+    const [firstGroupItem] = groupItems;
+
+    if (!firstGroupItem) return groups;
+
+    groups.push({
+      id: `platform-group-${groupKey}`,
+      label: PLATFORM_NAV_GROUP_LABELS[groupKey],
+      href: firstGroupItem.href,
+      icon: groupIcons[groupKey],
+      items: groupItems,
+    });
+    return groups;
+  }, []);
+};
 
 type CrmOrganizationContext = {
   viewerIsSuperAdmin: boolean;

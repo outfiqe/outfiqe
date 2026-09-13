@@ -2,13 +2,13 @@ import { Circle } from "lucide-react";
 import { describe, expect, it } from "vitest";
 
 import {
+  groupPlatformNavItems,
   isAdminNavReady,
   isCrmSubItemVisible,
   type PlatformNavItem,
   resolveAccountLabel,
   shouldShowCrmSection,
   shouldShowPlatformSection,
-  visiblePlatformNavItems,
 } from "./AdminSidebar.utils";
 
 const brandlessOrg = {
@@ -139,46 +139,94 @@ describe("resolveAccountLabel", () => {
 });
 
 const platformItems: PlatformNavItem[] = [
-  { id: "orders", href: "/orders", label: "Orders", icon: Circle },
-  { id: "gamification", href: "/gamification", label: "Gamification", icon: Circle },
-  { id: "team", href: "/team", label: "Team", icon: Circle },
+  { id: "orders", href: "/orders", label: "Orders", icon: Circle, group: "commerce" },
+  {
+    id: "gamification",
+    href: "/gamification",
+    label: "Gamification",
+    icon: Circle,
+    group: "growth",
+  },
+  { id: "team", href: "/team", label: "Team", icon: Circle, group: "brand-tenants" },
   {
     id: "platform-nav-access",
     href: "/platform/nav-access",
     label: "Navigation access",
     icon: Circle,
+    group: "platform-settings",
     coFounderOnly: true,
   },
 ];
 
-describe("visiblePlatformNavItems", () => {
-  it("gives a co-founder every item, including the co-founder-only one, with the marker stripped", () => {
-    const result = visiblePlatformNavItems(platformItems, {
-      isCoFounder: true,
-      hiddenNavKeys: ["orders", "gamification"],
-    });
-    expect(result.map((item) => item.id)).toEqual([
+const groupIcons = {
+  "brand-tenants": Circle,
+  catalog: Circle,
+  commerce: Circle,
+  moderation: Circle,
+  finance: Circle,
+  growth: Circle,
+  "platform-settings": Circle,
+} as const;
+
+describe("groupPlatformNavItems", () => {
+  it("gives a co-founder every item, including the co-founder-only one, grouped and with markers stripped", () => {
+    const result = groupPlatformNavItems(
+      platformItems,
+      { isCoFounder: true, hiddenNavKeys: ["orders", "gamification"] },
+      groupIcons,
+    );
+
+    expect(result.map((group) => group.id)).toEqual([
+      "platform-group-brand-tenants",
+      "platform-group-commerce",
+      "platform-group-growth",
+      "platform-group-platform-settings",
+    ]);
+    expect(result.flatMap((group) => group.items?.map((item) => item.id) ?? [])).toEqual([
+      "team",
       "orders",
       "gamification",
-      "team",
       "platform-nav-access",
     ]);
-    expect(result.every((item) => !("coFounderOnly" in item))).toBe(true);
+    expect(result.every((group) => group.items?.every((item) => !("coFounderOnly" in item)))).toBe(
+      true,
+    );
   });
 
-  it("drops hidden keys and the co-founder-only item for a non-co-founder", () => {
-    const result = visiblePlatformNavItems(platformItems, {
-      isCoFounder: false,
-      hiddenNavKeys: ["gamification"],
-    });
-    expect(result.map((item) => item.id)).toEqual(["orders", "team"]);
+  it("drops hidden keys and the co-founder-only item's group for a non-co-founder", () => {
+    const result = groupPlatformNavItems(
+      platformItems,
+      { isCoFounder: false, hiddenNavKeys: ["gamification"] },
+      groupIcons,
+    );
+
+    expect(result.map((group) => group.id)).toEqual([
+      "platform-group-brand-tenants",
+      "platform-group-commerce",
+    ]);
   });
 
-  it("shows every non-co-founder item when nothing is hidden", () => {
-    const result = visiblePlatformNavItems(platformItems, {
-      isCoFounder: false,
-      hiddenNavKeys: [],
-    });
-    expect(result.map((item) => item.id)).toEqual(["orders", "gamification", "team"]);
+  it("shows every non-co-founder-visible group when nothing is hidden", () => {
+    const result = groupPlatformNavItems(
+      platformItems,
+      { isCoFounder: false, hiddenNavKeys: [] },
+      groupIcons,
+    );
+
+    expect(result.map((group) => group.id)).toEqual([
+      "platform-group-brand-tenants",
+      "platform-group-commerce",
+      "platform-group-growth",
+    ]);
+  });
+
+  it("omits a group entirely once all of its items are filtered out", () => {
+    const result = groupPlatformNavItems(
+      platformItems,
+      { isCoFounder: false, hiddenNavKeys: ["orders", "gamification", "team"] },
+      groupIcons,
+    );
+
+    expect(result).toEqual([]);
   });
 });
