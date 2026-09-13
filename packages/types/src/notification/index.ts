@@ -29,6 +29,7 @@ export const NotificationType = {
   PRODUCT_TAG_REJECTED: "PRODUCT_TAG_REJECTED",
   PRODUCT_TAG_REVOKED: "PRODUCT_TAG_REVOKED",
   PRODUCT_TAG_REVIEW_REMINDER: "PRODUCT_TAG_REVIEW_REMINDER",
+  ANNOUNCEMENT: "ANNOUNCEMENT",
 } as const;
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
@@ -46,6 +47,7 @@ export const NotificationEntityType = {
   CRM_TASK: "CRM_TASK",
   CRM_TICKET: "CRM_TICKET",
   SUPPORT_TICKET: "SUPPORT_TICKET",
+  ANNOUNCEMENT: "ANNOUNCEMENT",
 } as const;
 
 export type NotificationEntityType =
@@ -107,6 +109,11 @@ export type NotificationMetadata = {
   tagRejectionNote?: string | null;
   tagAutoApproved?: boolean;
   pendingTagReviewCount?: number;
+  announcementTitle?: string;
+  announcementBody?: string;
+  announcementTargetSurface?: NotificationSurface | null;
+  announcementTargetPath?: string | null;
+  announcementExpiresAt?: string | null;
 };
 
 export type Notification = {

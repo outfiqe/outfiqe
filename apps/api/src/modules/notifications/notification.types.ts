@@ -46,6 +46,11 @@ export type NotificationMetadata = {
   tagRejectionNote?: string | null;
   tagAutoApproved?: boolean;
   pendingTagReviewCount?: number;
+  announcementTitle?: string;
+  announcementBody?: string;
+  announcementTargetSurface?: NotificationSurface | null;
+  announcementTargetPath?: string | null;
+  announcementExpiresAt?: string | null;
 };
 
 export type NotificationRecord = {
@@ -96,6 +101,22 @@ export type RetractGroupActorInput = {
   recipientId: string;
   groupKey: string;
   actorId: string;
+};
+
+export type BroadcastNotificationInput = {
+  type: NotificationType;
+  entityType?: NotificationEntityType | null;
+  entityId?: string | null;
+  metadata: NotificationMetadata;
+  recipientIds: string[];
+};
+
+export type CreateManyForBroadcastRow = PersistNotificationTarget & {
+  recipientId: string;
+  type: NotificationType;
+  entityType?: NotificationEntityType | null;
+  entityId?: string | null;
+  metadata: NotificationMetadata;
 };
 
 export type NotificationPage = {

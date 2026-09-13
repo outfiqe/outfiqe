@@ -3,7 +3,7 @@ import { NotificationSurface, NotificationType } from "#generated/prisma/enums.j
 import type { NotificationMetadata } from "./notification.types.js";
 
 export type NotificationTarget = {
-  surface: NotificationSurface;
+  surface: NotificationSurface | null;
   path: string;
 };
 
@@ -64,6 +64,14 @@ const commentReplyTarget = (
   return lookHandle && entityId
     ? web(lookPermalink(lookHandle, entityId))
     : web(WEB_ROUTES.dashboardProfile);
+};
+
+const announcementTarget = (metadata: NotificationMetadata): NotificationTarget | null => {
+  if (!metadata.announcementTargetPath) return null;
+  return {
+    surface: metadata.announcementTargetSurface ?? null,
+    path: metadata.announcementTargetPath,
+  };
 };
 
 const supportTicketTarget = (
@@ -136,6 +144,8 @@ export const resolveNotificationTarget = ({
       return entityId
         ? admin(`${ADMIN_ROUTES.ordersList}/${entityId}`)
         : admin(ADMIN_ROUTES.coupons);
+    case NotificationType.ANNOUNCEMENT:
+      return announcementTarget(metadata);
     default:
       return null;
   }

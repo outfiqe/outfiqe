@@ -7,6 +7,7 @@ import { cn } from "./cn";
 type MultiSelectOption = { value: string; label: string };
 
 type MultiSelectProps = {
+  id?: string;
   options: MultiSelectOption[];
   value: string[];
   onChange: (value: string[]) => void;
@@ -15,6 +16,7 @@ type MultiSelectProps = {
 };
 
 export const MultiSelect = ({
+  id,
   options,
   value,
   onChange,
@@ -55,6 +57,7 @@ export const MultiSelect = ({
       )}
 
       <select
+        id={id}
         value=""
         onChange={(event) => add(event.target.value)}
         disabled={available.length === 0}

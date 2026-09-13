@@ -28,6 +28,7 @@ export const PLATFORM_NAV_KEYS = [
   "delivery-zones",
   "organizations",
   "team",
+  "announcements",
 ] as const;
 
 export type PlatformNavKey = (typeof PLATFORM_NAV_KEYS)[number];
@@ -44,6 +45,7 @@ export const SERVER_ENFORCED_PLATFORM_NAV_KEYS = [
   "platform-features",
   "team",
   "organizations",
+  "announcements",
 ] as const satisfies readonly PlatformNavKey[];
 
 export type ServerEnforcedPlatformNavKey = (typeof SERVER_ENFORCED_PLATFORM_NAV_KEYS)[number];

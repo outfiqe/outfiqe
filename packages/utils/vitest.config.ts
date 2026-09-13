@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     coverage: {
       provider: "v8",
-      include: ["src/uuid/index.ts"],
+      include: ["src/uuid/index.ts", "src/notifications/isExternalNotificationPath.ts"],
       thresholds: {
         lines: COVERAGE_THRESHOLD,
         functions: COVERAGE_THRESHOLD,

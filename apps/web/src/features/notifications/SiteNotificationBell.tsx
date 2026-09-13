@@ -47,7 +47,8 @@ export const SiteNotificationBell = () => {
   const handleSelect = (notification: Notification): void => {
     const navigation = resolveNotificationNavigation(notification, state.user?.handle, isAdmin);
     if (!navigation) return;
-    if (navigation.fullPage) window.location.assign(navigation.href);
+    if (navigation.external) window.open(navigation.href, "_blank", "noopener,noreferrer");
+    else if (navigation.fullPage) window.location.assign(navigation.href);
     else router.push(navigation.href);
   };
 
