@@ -22,7 +22,7 @@ describe("useInfiniteExploreFeed", () => {
     vi.mocked(exploreFeedApi.list).mockResolvedValue({ posts: [], nextCursor: null });
 
     const queryClient = buildFreshQueryClient();
-    queryClient.setQueryData(["explore-feed", "for-you"], {
+    queryClient.setQueryData(["explore-feed", "for-you", "anonymous"], {
       pages: [{ posts: [], nextCursor: null }],
       pageParams: [undefined],
     });
@@ -47,7 +47,9 @@ describe("useInfiniteExploreFeed", () => {
     renderHook(() => useInfiniteExploreFeed("for-you"), { wrapper });
 
     await waitFor(() => expect(exploreFeedApi.list).toHaveBeenCalled());
-    const query = queryClient.getQueryCache().find({ queryKey: ["explore-feed", "for-you"] });
+    const query = queryClient
+      .getQueryCache()
+      .find({ queryKey: ["explore-feed", "for-you", "anonymous"] });
     const options = query?.options as { refetchOnReconnect?: unknown } | undefined;
     expect(options?.refetchOnReconnect).toBe("always");
   });

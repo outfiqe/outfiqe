@@ -53,7 +53,9 @@ const setHasSessionCookie = () => {
 
 beforeEach(() => {
   mockNextRouter();
-  vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams());
+  vi.mocked(useSearchParams).mockReturnValue(
+    new URLSearchParams() as ReturnType<typeof useSearchParams>,
+  );
 });
 
 afterEach(() => {
