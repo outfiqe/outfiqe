@@ -38,6 +38,7 @@ beforeEach(() => {
   vi.mocked(useExploreAuthGate).mockReturnValue({
     isAuthenticated: true,
     isAuthResolved: true,
+    viewerId: null,
     goToSignIn: vi.fn(),
     gated: vi.fn(),
   } as ReturnType<typeof useExploreAuthGate>);
@@ -77,6 +78,7 @@ describe("AddPostButton", () => {
     vi.mocked(useExploreAuthGate).mockReturnValue({
       isAuthenticated: false,
       isAuthResolved: true,
+      viewerId: null,
       goToSignIn: vi.fn(),
       gated: vi.fn(),
     } as ReturnType<typeof useExploreAuthGate>);
