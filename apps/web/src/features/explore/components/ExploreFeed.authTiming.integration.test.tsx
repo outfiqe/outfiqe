@@ -1,10 +1,12 @@
 import { QueryClientProvider } from "@tanstack/react-query";
+import { mockNextRouter } from "@test/integration/mockRouter";
 import { mswServer } from "@test/integration/msw/server";
 import { createTestQueryClient } from "@test/integration/queryClientWrapper";
 import { render, screen, waitFor } from "@testing-library/react";
 import { delay, http, HttpResponse } from "msw";
+import { useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuthProvider } from "@/features/auth/context/AuthContext";
 import { createAuthQueryClientWrapper } from "@/features/auth/context/authTestWrapper";
@@ -35,14 +37,24 @@ const currentUser = {
   hasPassword: true,
 };
 
+// A factory that returns a brand-new object/URLSearchParams on every call makes
+// AuthProvider's `useEffect(..., [router])` dependency unstable — a new reference
+// every render re-fires the effect, which dispatches, which re-renders, which asks
+// for a new router again, forever. useRouter()/useSearchParams() must return the
+// same reference across renders, matching every other mocked-navigation test.
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
-  useSearchParams: () => new URLSearchParams(),
+  useRouter: vi.fn(),
+  useSearchParams: vi.fn(),
 }));
 
 const setHasSessionCookie = () => {
   document.cookie = "has_session=1";
 };
+
+beforeEach(() => {
+  mockNextRouter();
+  vi.mocked(useSearchParams).mockReturnValue(new URLSearchParams());
+});
 
 afterEach(() => {
   document.cookie = "has_session=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
