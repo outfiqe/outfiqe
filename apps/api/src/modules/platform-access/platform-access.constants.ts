@@ -79,6 +79,11 @@ export const PLATFORM_PERMISSION_CATALOG = [
     label: "Manage commission tiers, payouts, and platform fees",
     group: "Finance",
   },
+  {
+    key: "platform:announcements:manage",
+    label: "Compose and send broadcast announcements",
+    group: "Platform",
+  },
 ] as const;
 
 export type PlatformPermissionKey = (typeof PLATFORM_PERMISSION_CATALOG)[number]["key"];

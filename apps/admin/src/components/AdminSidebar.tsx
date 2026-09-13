@@ -30,6 +30,7 @@ import {
   LifeBuoy,
   ListChecks,
   MapPin,
+  Megaphone,
   Package,
   Percent,
   PiggyBank,
@@ -230,6 +231,12 @@ const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     href: "/coupons",
     label: "Coupons",
     icon: TicketPercent,
+  },
+  {
+    id: "announcements",
+    href: "/announcements",
+    label: "Announcements",
+    icon: Megaphone,
   },
   {
     id: "gamification",

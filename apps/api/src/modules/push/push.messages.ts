@@ -154,6 +154,13 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     title: "Product tag removed",
     body: () => "A brand removed a live product tag from your look",
   },
+  [NotificationType.ANNOUNCEMENT]: {
+    title: "New announcement",
+    body: (payload) =>
+      typeof payload.metadata.announcementBody === "string"
+        ? payload.metadata.announcementBody
+        : "You have a new announcement",
+  },
 };
 
 const urlFor = (payload: NotificationBroadcastPayload): string => {
@@ -198,15 +205,24 @@ const urlFor = (payload: NotificationBroadcastPayload): string => {
   }
 };
 
-const webPushUrl = (payload: NotificationBroadcastPayload): string =>
-  payload.targetSurface === NotificationSurface.WEB && payload.targetPath
+const webPushUrl = (payload: NotificationBroadcastPayload): string => {
+  if (payload.type === NotificationType.ANNOUNCEMENT) {
+    return payload.targetPath ?? NOTIFICATIONS_PATH;
+  }
+  return payload.targetSurface === NotificationSurface.WEB && payload.targetPath
     ? payload.targetPath
     : urlFor(payload);
+};
 
 export const toPushMessage = (payload: NotificationBroadcastPayload): PushMessage => {
   const copy = COPY_BY_TYPE[payload.type];
+  const title =
+    payload.type === NotificationType.ANNOUNCEMENT &&
+    typeof payload.metadata.announcementTitle === "string"
+      ? payload.metadata.announcementTitle
+      : copy.title;
   return {
-    title: copy.title,
+    title,
     body: copy.body(payload),
     url: webPushUrl(payload),
     tag: `${payload.type}:${payload.groupKey ?? payload.entityId ?? payload.id}`,

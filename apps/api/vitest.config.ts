@@ -131,6 +131,7 @@ export default defineConfig({
         "src/modules/coupons/coupon.routes.ts",
         "src/modules/payments/providers/esewa.provider.ts",
         "src/modules/commissions/commission.routes.ts",
+        "src/modules/announcements/**/*.ts",
       ],
       thresholds: {
         lines: 80,

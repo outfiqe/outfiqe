@@ -53,6 +53,7 @@ model User {
   reviewedApplications                     BrandApplication[]          @relation("BrandApplicationReviewer")
   approvedInvites                          BrandInvite[]               @relation("BrandInviteApprover")
   sentAdminInvites                         AdminInvite[]               @relation("AdminInviteSender")
+  sentAnnouncements                        Announcement[]
   reviewedProducts                         Product[]                   @relation("ProductReviewer")
   createdProductDiscounts                  ProductDiscount[]           @relation("ProductDiscountCreatedBy")
   createdCoupons                           Coupon[]                    @relation("CouponCreatedBy")
@@ -1757,6 +1758,7 @@ enum NotificationType {
   PRODUCT_TAG_REJECTED
   PRODUCT_TAG_REVOKED
   PRODUCT_TAG_REVIEW_REMINDER
+  ANNOUNCEMENT
 }
 
 enum NotificationEntityType {
@@ -1772,6 +1774,7 @@ enum NotificationEntityType {
   CRM_TASK
   CRM_TICKET
   SUPPORT_TICKET
+  ANNOUNCEMENT
 }
 
 enum NotificationSurface {
@@ -1815,6 +1818,54 @@ model NotificationPreference {
 
   @@unique([userId, type])
   @@map("notification_preferences")
+}
+
+enum AnnouncementAudience {
+  EVERYONE
+  CUSTOMERS
+  APPROVED_CREATORS
+  BRAND_OWNERS
+  STAFF
+}
+
+enum AnnouncementStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELED
+}
+
+model Announcement {
+  id               String                       @id @default(uuid()) @db.Uuid
+  title            String
+  body             String
+  audiences        AnnouncementAudienceTarget[]
+  targetSurface    NotificationSurface?         @map("target_surface")
+  targetPath       String?                      @map("target_path")
+  expiresAt        DateTime?                    @map("expires_at")
+  scheduledAt      DateTime?                    @map("scheduled_at")
+  sentAt           DateTime?                    @map("sent_at")
+  status           AnnouncementStatus           @default(DRAFT)
+  recipientCount   Int?                         @map("recipient_count")
+  createdByAdminId String                       @map("created_by_admin_id") @db.Uuid
+  createdByAdmin   User                         @relation(fields: [createdByAdminId], references: [id], onDelete: Restrict)
+  createdAt        DateTime                     @default(now()) @map("created_at")
+  updatedAt        DateTime                     @updatedAt @map("updated_at")
+
+  @@index([status, scheduledAt])
+  @@index([createdByAdminId])
+  @@map("announcements")
+}
+
+model AnnouncementAudienceTarget {
+  id             String               @id @default(uuid()) @db.Uuid
+  announcementId String               @map("announcement_id") @db.Uuid
+  announcement   Announcement         @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  audience       AnnouncementAudience
+
+  @@unique([announcementId, audience])
+  @@map("announcement_audience_targets")
 }
 
 // ---------------------------------------------------------------------------

@@ -14,6 +14,7 @@ import { describeError } from "#redis/redis.utils.js";
 import { resolveNotificationTarget } from "./notification.targets.js";
 import type {
   CreateIndividualNotificationInput,
+  CreateManyForBroadcastRow,
   NotificationActorSnapshot,
   NotificationChannelChanges,
   NotificationFeedCursor,
@@ -93,6 +94,43 @@ export const notificationRepository = {
         `Skipped notification for a since-deleted recipient or actor: type=${input.type} recipient=${input.recipientId}`,
       );
       return null;
+    }
+  },
+
+  async createManyForBroadcast(rows: CreateManyForBroadcastRow[]): Promise<NotificationRecord[]> {
+    if (rows.length === 0) return [];
+
+    const data = rows.map((row) => ({
+      recipientId: row.recipientId,
+      type: row.type,
+      entityType: row.entityType ?? undefined,
+      entityId: row.entityId ?? undefined,
+      targetSurface: row.targetSurface ?? undefined,
+      targetPath: row.targetPath ?? undefined,
+      metadata: row.metadata as Prisma.InputJsonValue,
+    }));
+
+    try {
+      const created = await prisma.notification.createManyAndReturn({ data });
+      return created.map(toNotificationRecord);
+    } catch (error) {
+      if (!isForeignKeyConstraintError(error)) throw error;
+
+      const candidateIds = [...new Set(rows.map((row) => row.recipientId))];
+      const stillExistingUsers = await prisma.user.findMany({
+        where: { id: { in: candidateIds } },
+        select: { id: true },
+      });
+      const stillExistingIds = new Set(stillExistingUsers.map((user) => user.id));
+      const survivingData = data.filter((row) => stillExistingIds.has(row.recipientId));
+
+      logger.warn(
+        `Skipped ${rows.length - survivingData.length} broadcast notification(s) for since-deleted recipients`,
+      );
+      if (survivingData.length === 0) return [];
+
+      const created = await prisma.notification.createManyAndReturn({ data: survivingData });
+      return created.map(toNotificationRecord);
     }
   },
 
