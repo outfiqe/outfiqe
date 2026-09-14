@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import request from "supertest";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
@@ -9,6 +9,7 @@ import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { testApp } from "#test/integration/testApp.js";
 
+import { addressRepository } from "./address.repository.js";
 import { MAX_SAVED_ADDRESSES_PER_USER } from "./address.service.js";
 
 const OK_STATUS = 200;
@@ -23,6 +24,12 @@ const RATE_LIMITED_STATUS = 429;
 beforeEach(async () => {
   await redis.flushdb();
 });
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const authHeaderFor = (userId: string) => {
   const { accessToken } = generateTokenpair({ sub: userId, role: UserRole.CUSTOMER });
@@ -103,6 +110,29 @@ describe("GET /api/addresses", () => {
       "Home",
       "Office",
     ]);
+  });
+
+  it("breaks an updatedAt tie deterministically by id, newest id first", async () => {
+    const owner = await createUser();
+
+    await postAddress(owner.id, { label: "Original default" });
+    const candidateA = await postAddress(owner.id, { label: "Candidate A" });
+    const candidateB = await postAddress(owner.id, { label: "Candidate B" });
+
+    const tiedTimestamp = new Date("2026-01-01T00:00:00.000Z");
+    await prisma.$executeRaw`UPDATE saved_addresses SET updated_at = ${tiedTimestamp} WHERE id = ${candidateA.body.data.id}`;
+    await prisma.$executeRaw`UPDATE saved_addresses SET updated_at = ${tiedTimestamp} WHERE id = ${candidateB.body.data.id}`;
+
+    const response = await request(testApp)
+      .get("/api/addresses")
+      .set("Authorization", authHeaderFor(owner.id));
+
+    const nonDefaultIds = response.body.data
+      .filter((address: { isDefault: boolean }) => !address.isDefault)
+      .map((address: { id: string }) => address.id);
+    const expectedOrder = [candidateA.body.data.id, candidateB.body.data.id].sort().reverse();
+
+    expect(nonDefaultIds).toEqual(expectedOrder);
   });
 });
 
@@ -280,6 +310,53 @@ describe("PATCH /api/addresses/:id/default", () => {
 
     expect(response.status).toBe(NOT_FOUND_STATUS);
   });
+
+  it("never leaves two addresses marked default when two set-default requests race", async () => {
+    const owner = await createUser();
+    const authHeader = authHeaderFor(owner.id);
+
+    await postAddress(owner.id, { label: "Original default" });
+    const candidateA = await postAddress(owner.id, { label: "Candidate A" });
+    const candidateB = await postAddress(owner.id, { label: "Candidate B" });
+
+    const setDefaultImmediately = (id: string) =>
+      new Promise<request.Response>((resolve, reject) => {
+        request(testApp)
+          .patch(`/api/addresses/${id}/default`)
+          .set("Authorization", authHeader)
+          .end((error, response) => (error ? reject(error) : resolve(response)));
+      });
+
+    let releaseFirstClear: () => void = () => {};
+    const firstClearGate = new Promise<void>((resolve) => {
+      releaseFirstClear = resolve;
+    });
+    const originalClearDefault = addressRepository.clearDefault.bind(addressRepository);
+    let hasHeldFirstCall = false;
+    vi.spyOn(addressRepository, "clearDefault").mockImplementation(async (userId, client) => {
+      await originalClearDefault(userId, client);
+      if (!hasHeldFirstCall) {
+        hasHeldFirstCall = true;
+        await firstClearGate;
+      }
+    });
+
+    const firstRequest = setDefaultImmediately(candidateA.body.data.id);
+    await sleep(200);
+
+    const secondRequest = setDefaultImmediately(candidateB.body.data.id);
+    await sleep(200);
+
+    releaseFirstClear();
+
+    const [firstResponse, secondResponse] = await Promise.all([firstRequest, secondRequest]);
+
+    expect(firstResponse.status).toBe(OK_STATUS);
+    expect(secondResponse.status).toBe(OK_STATUS);
+
+    const stored = await prisma.savedAddress.findMany({ where: { userId: owner.id } });
+    expect(stored.filter((address) => address.isDefault)).toHaveLength(1);
+  });
 });
 
 describe("DELETE /api/addresses/:id", () => {
@@ -298,6 +375,31 @@ describe("DELETE /api/addresses/:id", () => {
     expect(stored).toHaveLength(1);
     expect(stored[0]?.id).toBe(second.body.data.id);
     expect(stored[0]?.isDefault).toBe(true);
+  });
+
+  it("breaks an updatedAt tie deterministically by id when promoting a new default", async () => {
+    const owner = await createUser();
+    const authHeader = authHeaderFor(owner.id);
+
+    const original = await postAddress(owner.id, { label: "Original default" });
+    const candidateA = await postAddress(owner.id, { label: "Candidate A" });
+    const candidateB = await postAddress(owner.id, { label: "Candidate B" });
+
+    const tiedTimestamp = new Date("2026-01-01T00:00:00.000Z");
+    await prisma.$executeRaw`UPDATE saved_addresses SET updated_at = ${tiedTimestamp} WHERE id = ${candidateA.body.data.id}`;
+    await prisma.$executeRaw`UPDATE saved_addresses SET updated_at = ${tiedTimestamp} WHERE id = ${candidateB.body.data.id}`;
+
+    await request(testApp)
+      .delete(`/api/addresses/${original.body.data.id}`)
+      .set("Authorization", authHeader);
+
+    const stored = await prisma.savedAddress.findMany({ where: { userId: owner.id } });
+    const promoted = stored.find((address) => address.isDefault);
+    const [expectedPromotedId] = [candidateA.body.data.id, candidateB.body.data.id]
+      .sort()
+      .reverse();
+
+    expect(promoted?.id).toBe(expectedPromotedId);
   });
 
   it("leaves the book empty without error when the last address is deleted", async () => {

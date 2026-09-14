@@ -15,7 +15,7 @@ export const addressRepository = {
   async listForUser(userId: string): Promise<SavedAddressRecord[]> {
     return prisma.savedAddress.findMany({
       where: { userId },
-      orderBy: [{ isDefault: "desc" }, { updatedAt: "desc" }],
+      orderBy: [{ isDefault: "desc" }, { updatedAt: "desc" }, { id: "desc" }],
     });
   },
 
@@ -59,7 +59,7 @@ export const addressRepository = {
   ): Promise<SavedAddressRecord | null> {
     return client.savedAddress.findFirst({
       where: { userId },
-      orderBy: { updatedAt: "desc" },
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
     });
   },
 };
