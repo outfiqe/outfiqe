@@ -2,6 +2,8 @@
 
 import { Button, Skeleton } from "@outfiqe/design-system";
 
+import { getErrorMessage } from "@/shared/lib/errorMessages";
+
 import { useMyXpTransactions } from "../hooks/useMyXpTransactions";
 import { useXpProgress } from "../hooks/useXpProgress";
 import { LevelProgressCard } from "./LevelProgressCard";
@@ -9,8 +11,23 @@ import { XpMultiplierBanner } from "./XpMultiplierBanner";
 import { XpTransactionRow } from "./XpTransactionRow";
 
 export const ProgressSection = () => {
-  const { data: progress, isPending: isProgressPending } = useXpProgress();
-  const { data, isPending, hasNextPage, fetchNextPage, isFetchingNextPage } = useMyXpTransactions();
+  const {
+    data: progress,
+    isPending: isProgressPending,
+    isError: isProgressError,
+    error: progressError,
+    refetch: refetchProgress,
+  } = useXpProgress();
+  const {
+    data,
+    isPending,
+    isError,
+    error,
+    refetch,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useMyXpTransactions();
   const transactions = data?.pages.flatMap((page) => page.items) ?? [];
 
   return (
@@ -24,7 +41,13 @@ export const ProgressSection = () => {
 
       <div className="mt-6">
         <XpMultiplierBanner />
-        <LevelProgressCard progress={progress} isLoading={isProgressPending} />
+        <LevelProgressCard
+          progress={progress}
+          isLoading={isProgressPending}
+          isError={isProgressError}
+          error={progressError}
+          onRetry={() => void refetchProgress()}
+        />
       </div>
 
       {isPending && (
@@ -35,7 +58,18 @@ export const ProgressSection = () => {
         </div>
       )}
 
-      {!isPending && transactions.length === 0 && (
+      {isError && (
+        <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            Couldn&apos;t load your XP history. {getErrorMessage(error)}
+          </p>
+          <Button variant="outline" size="sm" onClick={() => void refetch()}>
+            Try again
+          </Button>
+        </div>
+      )}
+
+      {!isPending && !isError && transactions.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">
             No XP yet — post a look, follow a creator, or make a purchase to start earning.
