@@ -1,7 +1,7 @@
 import { LRUCache } from "lru-cache";
 
 import { creatorApprovedTemplate, creatorRejectedTemplate } from "#email-templates/templates.js";
-import { CreatorStatus, FollowTargetType } from "#generated/prisma/enums.js";
+import { CreatorStatus, FollowTargetType, UserRole } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 import { toResponsiveImage } from "#lib/responsive-image.utils.js";
@@ -39,6 +39,7 @@ import { toProfile, toSearchResult } from "./creator.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
+const FORBIDDEN_STATUS = 403;
 
 const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
 const AUTOCOMPLETE_CACHE_NAMESPACE = "creator-autocomplete";
@@ -67,9 +68,20 @@ const requirePendingCreator = async (userId: string): Promise<UserRecord> => {
   return user;
 };
 
+const assertCanBeCreator = (user: UserRecord): void => {
+  if (user.role !== UserRole.CUSTOMER) {
+    throw new AppError(
+      "STAFF_CANNOT_APPLY",
+      "Staff and brand accounts can't apply to become a creator.",
+      FORBIDDEN_STATUS,
+    );
+  }
+};
+
 export const creatorService = {
   async apply(userId: string): Promise<CreatorProfile> {
     const user = await requireUser(userId);
+    assertCanBeCreator(user);
 
     if (
       user.creatorStatus === CreatorStatus.PENDING ||
@@ -233,6 +245,7 @@ export const creatorService = {
 
   async approve(userId: string, adminUserId: string): Promise<void> {
     const user = await requirePendingCreator(userId);
+    assertCanBeCreator(user);
 
     await userRepository.updateCreatorStatus(userId, {
       creatorStatus: CreatorStatus.APPROVED,

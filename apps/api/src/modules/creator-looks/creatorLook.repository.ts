@@ -1234,6 +1234,18 @@ export const creatorLookRepository = {
     await prisma.creatorLook.update({ where: { id: lookId }, data: { deletedAt: new Date() } });
   },
 
+  async findActiveByIdForRemoval(
+    lookId: string,
+  ): Promise<{ creatorId: string; taggedProducts: { productId: string }[] } | null> {
+    return prisma.creatorLook.findFirst({
+      where: { id: lookId, deletedAt: null },
+      select: {
+        creatorId: true,
+        taggedProducts: { select: { productId: true } },
+      },
+    });
+  },
+
   async listFeaturedLooks(params: { cursor?: string; limit: number }): Promise<FeedPage> {
     const listed = await listFeaturedLookIds(params);
     const posts = await hydrateFeedPosts(listed.ids, undefined);
@@ -1649,6 +1661,45 @@ export const creatorLookRepository = {
     return prisma.creatorLookComment.findFirst({
       where: { id: commentId, deletedAt: null },
       select: { id: true, creatorLookId: true, userId: true, parentCommentId: true },
+    });
+  },
+
+  async softDeleteComment(params: {
+    commentId: string;
+    lookId: string;
+    parentCommentId: string | null;
+  }): Promise<void> {
+    const { commentId, lookId, parentCommentId } = params;
+    const now = new Date();
+
+    await prisma.$transaction(async (tx) => {
+      if (parentCommentId) {
+        await tx.creatorLookComment.update({
+          where: { id: commentId },
+          data: { deletedAt: now },
+        });
+        await tx.creatorLookComment.update({
+          where: { id: parentCommentId },
+          data: { replyCount: { decrement: 1 } },
+        });
+        await tx.creatorLook.update({
+          where: { id: lookId },
+          data: { commentCount: { decrement: 1 } },
+        });
+        return;
+      }
+
+      const { count: removedCount } = await tx.creatorLookComment.updateMany({
+        where: {
+          deletedAt: null,
+          OR: [{ id: commentId }, { parentCommentId: commentId }],
+        },
+        data: { deletedAt: now },
+      });
+      await tx.creatorLook.update({
+        where: { id: lookId },
+        data: { commentCount: { decrement: removedCount } },
+      });
     });
   },
 

@@ -1,6 +1,34 @@
+import type { ContentReportReason, ContentReportTarget } from "@outfiqe/types";
 import { z } from "zod";
 
 import { responsiveImageSchema } from "@/shared/lib/responsiveImage";
+
+const contentReportTargetValues = [
+  "CREATOR_LOOK",
+  "CREATOR_LOOK_COMMENT",
+] satisfies ContentReportTarget[];
+const contentReportReasonValues = [
+  "SPAM",
+  "HARASSMENT_OR_BULLYING",
+  "HATE_SPEECH",
+  "NUDITY_OR_SEXUAL_CONTENT",
+  "VIOLENCE_OR_DANGEROUS_ACTS",
+  "SCAM_OR_MISLEADING",
+  "INTELLECTUAL_PROPERTY",
+  "OTHER",
+] satisfies ContentReportReason[];
+
+export const contentReportTargetSchema = z.enum(contentReportTargetValues);
+export const contentReportReasonSchema = z.enum(contentReportReasonValues);
+export type ContentReportReasonValue = z.infer<typeof contentReportReasonSchema>;
+
+export const submitContentReportSchema = z.object({
+  targetType: contentReportTargetSchema,
+  targetId: z.string(),
+  reason: contentReportReasonSchema,
+  note: z.string().trim().min(1).max(500).optional(),
+});
+export type SubmitContentReportInput = z.infer<typeof submitContentReportSchema>;
 
 export const feedTaggedProductSchema = z.object({
   id: z.string(),

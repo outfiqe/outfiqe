@@ -3,11 +3,16 @@
 import { Skeleton } from "@outfiqe/design-system";
 import { useState } from "react";
 
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { formatRelativeTime } from "@/shared/lib/formatRelativeTime";
 
 import type { FeedComment, FeedCommentReply } from "../api/exploreFeedSchemas";
 import { useCommentReplies } from "../hooks/useCommentReplies";
+import { useDeleteComment } from "../hooks/useDeleteComment";
+import { useReportContent } from "../hooks/useReportContent";
+import { ConfirmDeleteCommentModal } from "./ConfirmDeleteCommentModal";
 import { CommentAvatar } from "./PostCommentsSection";
+import { ReportContentModal } from "./ReportContentModal";
 
 type CommentThreadProps = {
   lookId: string;
@@ -15,22 +20,91 @@ type CommentThreadProps = {
   isAuthenticated: boolean;
 };
 
-const ReplyRow = ({ reply }: { reply: FeedCommentReply }) => (
-  <li className="flex items-start gap-2.5">
-    <CommentAvatar userId={reply.userId} name={reply.userName} avatarUrl={reply.userAvatarUrl} />
-    <div className="min-w-0 flex-1">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="truncate text-[12.5px] font-semibold text-foreground">
-          @{reply.userHandle}
-        </span>
-        <span className="shrink-0 text-[11px] text-muted-foreground">
-          {formatRelativeTime(reply.createdAt)}
-        </span>
+const CommentRowActions = ({
+  isOwn,
+  onDelete,
+  onReport,
+}: {
+  isOwn: boolean;
+  onDelete: () => void;
+  onReport: () => void;
+}) =>
+  isOwn ? (
+    <button
+      type="button"
+      onClick={onDelete}
+      className="cursor-pointer text-[11.5px] font-semibold text-muted-foreground hover:text-foreground"
+    >
+      Delete
+    </button>
+  ) : (
+    <button
+      type="button"
+      onClick={onReport}
+      className="cursor-pointer text-[11.5px] font-semibold text-muted-foreground hover:text-foreground"
+    >
+      Report
+    </button>
+  );
+
+const ReplyRow = ({ lookId, reply }: { lookId: string; reply: FeedCommentReply }) => {
+  const { state } = useAuth();
+  const isOwn = state.user?.id === reply.userId;
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const { mutate: deleteComment, isPending: isDeleting } = useDeleteComment(lookId);
+  const { mutate: submitReport, isPending: isReporting } = useReportContent(() =>
+    setReporting(false),
+  );
+
+  return (
+    <li className="flex items-start gap-2.5">
+      <CommentAvatar userId={reply.userId} name={reply.userName} avatarUrl={reply.userAvatarUrl} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="truncate text-[12.5px] font-semibold text-foreground">
+            @{reply.userHandle}
+          </span>
+          <span className="shrink-0 text-[11px] text-muted-foreground">
+            {formatRelativeTime(reply.createdAt)}
+          </span>
+        </div>
+        <p className="mt-0.5 text-[12.5px] leading-relaxed text-foreground">{reply.body}</p>
+        <div className="mt-1">
+          <CommentRowActions
+            isOwn={isOwn}
+            onDelete={() => setConfirmingDelete(true)}
+            onReport={() => setReporting(true)}
+          />
+        </div>
       </div>
-      <p className="mt-0.5 text-[12.5px] leading-relaxed text-foreground">{reply.body}</p>
-    </div>
-  </li>
-);
+
+      {confirmingDelete && (
+        <ConfirmDeleteCommentModal
+          isPending={isDeleting}
+          onConfirm={() =>
+            deleteComment(
+              { commentId: reply.id, parentCommentId: reply.parentCommentId, totalRemoved: 1 },
+              { onSuccess: () => setConfirmingDelete(false) },
+            )
+          }
+          onCancel={() => setConfirmingDelete(false)}
+        />
+      )}
+
+      {reporting && (
+        <ReportContentModal
+          targetLabel="comment"
+          isPending={isReporting}
+          onConfirm={(input) =>
+            submitReport({ targetType: "CREATOR_LOOK_COMMENT", targetId: reply.id, ...input })
+          }
+          onCancel={() => setReporting(false)}
+        />
+      )}
+    </li>
+  );
+};
 
 export const CommentThread = ({ lookId, comment, isAuthenticated }: CommentThreadProps) => {
   const {
@@ -44,8 +118,16 @@ export const CommentThread = ({ lookId, comment, isAuthenticated }: CommentThrea
     replyCount,
     previewReplies,
   } = comment;
+  const { state } = useAuth();
+  const isOwn = state.user?.id === userId;
   const [repliesExpanded, setRepliesExpanded] = useState(false);
   const [replyBoxOpen, setReplyBoxOpen] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const { mutate: deleteComment, isPending: isDeleting } = useDeleteComment(lookId);
+  const { mutate: submitReport, isPending: isReporting } = useReportContent(() =>
+    setReporting(false),
+  );
 
   const {
     data,
@@ -74,15 +156,22 @@ export const CommentThread = ({ lookId, comment, isAuthenticated }: CommentThrea
         </div>
         <p className="mt-0.5 text-[13px] leading-relaxed text-foreground">{body}</p>
 
-        {isAuthenticated && (
-          <button
-            type="button"
-            onClick={() => setReplyBoxOpen((open) => !open)}
-            className="mt-1 cursor-pointer text-[11.5px] font-semibold text-muted-foreground hover:text-foreground"
-          >
-            Reply
-          </button>
-        )}
+        <div className="mt-1 flex items-center gap-3">
+          {isAuthenticated && (
+            <button
+              type="button"
+              onClick={() => setReplyBoxOpen((open) => !open)}
+              className="cursor-pointer text-[11.5px] font-semibold text-muted-foreground hover:text-foreground"
+            >
+              Reply
+            </button>
+          )}
+          <CommentRowActions
+            isOwn={isOwn}
+            onDelete={() => setConfirmingDelete(true)}
+            onReport={() => setReporting(true)}
+          />
+        </div>
 
         {(displayedReplies.length > 0 || (repliesExpanded && repliesLoading)) && (
           <ul className="mt-2.5 flex flex-col gap-2.5 border-l border-border pl-3">
@@ -92,7 +181,7 @@ export const CommentThread = ({ lookId, comment, isAuthenticated }: CommentThrea
               </li>
             )}
             {displayedReplies.map((reply) => (
-              <ReplyRow key={reply.id} reply={reply} />
+              <ReplyRow key={reply.id} lookId={lookId} reply={reply} />
             ))}
           </ul>
         )}
@@ -143,6 +232,30 @@ export const CommentThread = ({ lookId, comment, isAuthenticated }: CommentThrea
           </form>
         )}
       </div>
+
+      {confirmingDelete && (
+        <ConfirmDeleteCommentModal
+          isPending={isDeleting}
+          onConfirm={() =>
+            deleteComment(
+              { commentId: id, parentCommentId: null, totalRemoved: 1 + replyCount },
+              { onSuccess: () => setConfirmingDelete(false) },
+            )
+          }
+          onCancel={() => setConfirmingDelete(false)}
+        />
+      )}
+
+      {reporting && (
+        <ReportContentModal
+          targetLabel="comment"
+          isPending={isReporting}
+          onConfirm={(input) =>
+            submitReport({ targetType: "CREATOR_LOOK_COMMENT", targetId: id, ...input })
+          }
+          onCancel={() => setReporting(false)}
+        />
+      )}
     </li>
   );
 };

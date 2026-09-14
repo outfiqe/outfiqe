@@ -65,6 +65,7 @@ const baseUser: UserRecord = {
   followerCount: 12,
   followingCount: 3,
   tagCounterfeitFlagCount: 0,
+  contentFlagCount: 0,
   hideFromLeaderboards: false,
   handleChangedAt: null,
   lastSeenAt: null,

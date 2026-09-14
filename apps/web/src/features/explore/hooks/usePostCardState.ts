@@ -12,6 +12,7 @@ import { useExploreAuthGate } from "./useExploreAuthGate";
 import { useFollowCreator } from "./useFollowCreator";
 import { useLikeLook } from "./useLikeLook";
 import { useLookComments } from "./useLookComments";
+import { useReportContent } from "./useReportContent";
 import { useSaveLook } from "./useSaveLook";
 
 export const usePostCardState = ({ id, creator, caption, taggedProducts }: FeedPost) => {
@@ -21,6 +22,8 @@ export const usePostCardState = ({ id, creator, caption, taggedProducts }: FeedP
   const saveMutation = useSaveLook();
   const followMutation = useFollowCreator();
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const reportMutation = useReportContent(() => setReportOpen(false));
 
   const isOwnPost = state.user?.id === creator.id;
 
@@ -51,5 +54,8 @@ export const usePostCardState = ({ id, creator, caption, taggedProducts }: FeedP
     setDraft,
     comments,
     submitComment,
+    reportOpen,
+    setReportOpen,
+    reportMutation,
   };
 };

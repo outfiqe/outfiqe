@@ -5,6 +5,8 @@ import Link from "next/link";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 
+import { PostReportMenu } from "./PostReportMenu";
+
 type PostCardHeaderProps = {
   creatorId: string;
   creatorHandle: string;
@@ -13,6 +15,7 @@ type PostCardHeaderProps = {
   isFollowingCreator: boolean;
   onFollowToggle: () => void;
   isFollowToggling?: boolean;
+  onReport?: () => void;
   className?: string;
 };
 
@@ -24,6 +27,7 @@ export const PostCardHeader = ({
   isFollowingCreator,
   onFollowToggle,
   isFollowToggling,
+  onReport,
   className,
 }: PostCardHeaderProps) => {
   return (
@@ -43,20 +47,23 @@ export const PostCardHeader = ({
       </Link>
 
       {!isOwnPost && (
-        <button
-          type="button"
-          onClick={onFollowToggle}
-          disabled={isFollowToggling}
-          aria-pressed={isFollowingCreator}
-          className={cn(
-            "ml-auto shrink-0 cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition-colors disabled:cursor-default disabled:opacity-60",
-            isFollowingCreator
-              ? "border-foreground bg-foreground text-background"
-              : "border-foreground text-foreground hover:bg-foreground hover:text-background",
-          )}
-        >
-          {isFollowingCreator ? "Following" : "Follow"}
-        </button>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={onFollowToggle}
+            disabled={isFollowToggling}
+            aria-pressed={isFollowingCreator}
+            className={cn(
+              "shrink-0 cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition-colors disabled:cursor-default disabled:opacity-60",
+              isFollowingCreator
+                ? "border-foreground bg-foreground text-background"
+                : "border-foreground text-foreground hover:bg-foreground hover:text-background",
+            )}
+          >
+            {isFollowingCreator ? "Following" : "Follow"}
+          </button>
+          {onReport && <PostReportMenu onReport={onReport} />}
+        </div>
       )}
     </div>
   );

@@ -54,6 +54,15 @@ describe("AddPostButton", () => {
     expect(screen.queryByRole("button", { name: "Add a post" })).not.toBeInTheDocument();
   });
 
+  it("renders nothing for a platform admin", () => {
+    mockAuth(UserRole.ADMIN, CreatorStatus.NONE);
+
+    const { container } = render(<AddPostButton />);
+
+    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByRole("button", { name: "Add a post" })).not.toBeInTheDocument();
+  });
+
   it("shows the post button for an approved creator", () => {
     mockAuth(UserRole.CUSTOMER, CreatorStatus.APPROVED);
 

@@ -32,6 +32,7 @@ import {
   ListChecks,
   MapPin,
   Megaphone,
+  MessageSquareWarning,
   Package,
   Percent,
   PiggyBank,
@@ -250,6 +251,13 @@ const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     href: "/tag-reports",
     label: "Tag reports",
     icon: Flag,
+    group: "moderation",
+  },
+  {
+    id: "content-reports",
+    href: "/content-reports",
+    label: "Content reports",
+    icon: MessageSquareWarning,
     group: "moderation",
   },
   {
