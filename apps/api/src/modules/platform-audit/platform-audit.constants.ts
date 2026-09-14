@@ -18,4 +18,6 @@ export const PLATFORM_AUDIT_ACTION = {
   BRAND_SUSPENDED: "brand.suspended",
   BRAND_UNSUSPENDED: "brand.unsuspended",
   PRODUCT_REVIEW_REMOVED_BY_ADMIN: "product-review.removed-by-admin",
+  CREATOR_LOOK_REMOVED_BY_ADMIN: "creator-look.removed-by-admin",
+  CREATOR_LOOK_COMMENT_REMOVED_BY_ADMIN: "creator-look-comment.removed-by-admin",
 } as const;

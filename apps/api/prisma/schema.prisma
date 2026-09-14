@@ -20,33 +20,34 @@ datasource db {
 }
 
 model User {
-  id                   String        @id @default(uuid()) @db.Uuid
-  email                String        @unique
-  name                 String
-  handle               String        @unique
-  phone                String?       @unique
-  avatarUrl            String?       @map("avatar_url")
-  passwordHash         String?       @map("password_hash")
-  role                 UserRole      @default(CUSTOMER)
-  isCreator            Boolean       @default(false) @map("is_creator")
-  creatorStatus        CreatorStatus @default(NONE) @map("creator_status")
-  creatorApprovedAt    DateTime?     @map("creator_approved_at")
-  heightCm             Int?          @map("height_cm")
-  showHeight           Boolean       @default(false) @map("show_height")
-  emailVerified        Boolean       @default(false) @map("email_verified")
-  followerCount        Int           @default(0) @map("follower_count")
-  followingCount       Int           @default(0) @map("following_count")
-  tagCounterfeitFlagCount Int        @default(0) @map("tag_counterfeit_flag_count")
-  hideFromLeaderboards Boolean       @default(false) @map("hide_from_leaderboards")
-  handleChangedAt      DateTime?     @map("handle_changed_at")
-  lastSeenAt           DateTime?     @map("last_seen_at")
-  accountStatus        AccountStatus @default(ACTIVE) @map("account_status")
-  suspendedAt          DateTime?     @map("suspended_at")
-  suspendedBy          String?       @map("suspended_by") @db.Uuid
-  suspensionReason     String?       @map("suspension_reason")
-  suspensionExpiresAt  DateTime?     @map("suspension_expires_at")
-  createdAt            DateTime      @default(now()) @map("created_at")
-  updatedAt            DateTime      @updatedAt @map("updated_at")
+  id                      String        @id @default(uuid()) @db.Uuid
+  email                   String        @unique
+  name                    String
+  handle                  String        @unique
+  phone                   String?       @unique
+  avatarUrl               String?       @map("avatar_url")
+  passwordHash            String?       @map("password_hash")
+  role                    UserRole      @default(CUSTOMER)
+  isCreator               Boolean       @default(false) @map("is_creator")
+  creatorStatus           CreatorStatus @default(NONE) @map("creator_status")
+  creatorApprovedAt       DateTime?     @map("creator_approved_at")
+  heightCm                Int?          @map("height_cm")
+  showHeight              Boolean       @default(false) @map("show_height")
+  emailVerified           Boolean       @default(false) @map("email_verified")
+  followerCount           Int           @default(0) @map("follower_count")
+  followingCount          Int           @default(0) @map("following_count")
+  tagCounterfeitFlagCount Int           @default(0) @map("tag_counterfeit_flag_count")
+  contentFlagCount        Int           @default(0) @map("content_flag_count")
+  hideFromLeaderboards    Boolean       @default(false) @map("hide_from_leaderboards")
+  handleChangedAt         DateTime?     @map("handle_changed_at")
+  lastSeenAt              DateTime?     @map("last_seen_at")
+  accountStatus           AccountStatus @default(ACTIVE) @map("account_status")
+  suspendedAt             DateTime?     @map("suspended_at")
+  suspendedBy             String?       @map("suspended_by") @db.Uuid
+  suspensionReason        String?       @map("suspension_reason")
+  suspensionExpiresAt     DateTime?     @map("suspension_expires_at")
+  createdAt               DateTime      @default(now()) @map("created_at")
+  updatedAt               DateTime      @updatedAt @map("updated_at")
 
   memberships                              BrandMembership[]
   refreshTokens                            RefreshToken[]
@@ -131,6 +132,8 @@ model User {
   supportTicketsAssigned                   SupportTicket[]             @relation("SupportTicketAssignee")
   supportMessages                          SupportMessage[]            @relation("SupportMessageAuthor")
   pushSubscriptions                        PushSubscription[]
+  contentReportsMade                       ContentReport[]             @relation("ContentReportReporter")
+  contentReportsResolved                   ContentReport[]             @relation("ContentReportResolver")
 
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
@@ -907,6 +910,49 @@ model CreatorLookComment {
   @@index([creatorLookId, deletedAt])
   @@index([parentCommentId, createdAt])
   @@map("creator_look_comments")
+}
+
+enum ContentReportTarget {
+  CREATOR_LOOK
+  CREATOR_LOOK_COMMENT
+}
+
+enum ContentReportReason {
+  SPAM
+  HARASSMENT_OR_BULLYING
+  HATE_SPEECH
+  NUDITY_OR_SEXUAL_CONTENT
+  VIOLENCE_OR_DANGEROUS_ACTS
+  SCAM_OR_MISLEADING
+  INTELLECTUAL_PROPERTY
+  OTHER
+}
+
+enum ContentReportStatus {
+  OPEN
+  ACTIONED
+  DISMISSED
+}
+
+model ContentReport {
+  id             String              @id @default(uuid()) @db.Uuid
+  targetType     ContentReportTarget @map("target_type")
+  targetId       String              @map("target_id") @db.Uuid
+  reason         ContentReportReason
+  note           String?
+  reportedById   String?             @map("reported_by_id") @db.Uuid
+  reportedBy     User?               @relation("ContentReportReporter", fields: [reportedById], references: [id], onDelete: SetNull)
+  reporterIpHash String?             @map("reporter_ip_hash")
+  status         ContentReportStatus @default(OPEN)
+  resolvedById   String?             @map("resolved_by_id") @db.Uuid
+  resolvedBy     User?               @relation("ContentReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  resolvedAt     DateTime?           @map("resolved_at")
+  resolutionNote String?             @map("resolution_note")
+  createdAt      DateTime            @default(now()) @map("created_at")
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+  @@map("content_reports")
 }
 
 model CreatorLookHashtag {

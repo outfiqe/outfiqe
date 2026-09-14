@@ -76,6 +76,7 @@ export default defineConfig({
         "src/modules/creator-looks/**/*.ts",
         "src/modules/tag-reviews/**/*.ts",
         "src/modules/tag-reports/**/*.ts",
+        "src/modules/content-reports/**/*.ts",
         "src/shared/utils/tag-review.utils.ts",
         "src/shared/utils/user-agent.utils.ts",
         "src/modules/product-reviews/**/*.ts",

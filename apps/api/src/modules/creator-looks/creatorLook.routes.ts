@@ -149,6 +149,12 @@ creatorLookRoutes.post(
   validate({ params: lookIdParamsSchema, body: createCommentSchema }),
   creatorLookController.addComment,
 );
+creatorLookRoutes.delete(
+  "/:lookId/comments/:commentId",
+  requireAuth,
+  validate({ params: commentIdParamsSchema }),
+  creatorLookController.removeComment,
+);
 
 creatorLookRoutes.get(
   "/:lookId/comments/:commentId/replies",

@@ -19,6 +19,7 @@ import {
   followResultSchema,
   likeResultSchema,
   saveResultSchema,
+  type SubmitContentReportInput,
   type SuggestedCreatorsPage,
   suggestedCreatorsResponseSchema,
   trendingTagsResponseSchema,
@@ -118,6 +119,14 @@ export const exploreFeedApi = {
       { body },
     );
     return commentReplySchema.parse(res.data);
+  },
+
+  async deleteComment(lookId: string, commentId: string): Promise<void> {
+    await apiClient.del(`/creator-looks/${lookId}/comments/${commentId}`);
+  },
+
+  async submitContentReport(input: SubmitContentReportInput): Promise<void> {
+    await apiClient.post("/content-reports", input);
   },
 
   async recordTagClick(

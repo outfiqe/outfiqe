@@ -19,6 +19,7 @@ export interface UserRecord {
   followerCount: number;
   followingCount: number;
   tagCounterfeitFlagCount: number;
+  contentFlagCount: number;
   hideFromLeaderboards: boolean;
   handleChangedAt: Date | null;
   lastSeenAt: Date | null;

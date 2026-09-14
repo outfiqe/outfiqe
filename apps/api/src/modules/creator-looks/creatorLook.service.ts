@@ -2,7 +2,7 @@ import { LRUCache } from "lru-cache";
 
 import { env } from "#config/env.config.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
-import { FollowTargetType, TagReviewStatus } from "#generated/prisma/enums.js";
+import { FollowTargetType, TagReviewStatus, UserRole } from "#generated/prisma/enums.js";
 import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
 import { extractHashtags } from "#lib/hashtags.utils.js";
 import { truncateToHour } from "#lib/trend-scoring.utils.js";
@@ -12,9 +12,14 @@ import { AppError } from "#middlewares/error-handler.js";
 import { followRepository } from "#modules/follows/follow.repository.js";
 import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 import { orderRepository } from "#modules/orders/order.repository.js";
+import { CONTENT_MODERATE_PERMISSION_KEY } from "#modules/platform-access/platform-access.constants.js";
+import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
+import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
+import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 import type { ProductRecord } from "#modules/products/product.types.js";
+import { userRepository } from "#modules/users/user.repository.js";
 import { cacheService } from "#redis/cache.service.js";
 import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
 import { describeError } from "#redis/redis.utils.js";
@@ -54,6 +59,7 @@ import { toSuggestion } from "./creatorLook.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const UNAUTHORIZED_STATUS = 401;
+const FORBIDDEN_STATUS = 403;
 
 const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
 const AUTOCOMPLETE_CACHE_NAMESPACE = "look-autocomplete";
@@ -68,6 +74,20 @@ const VALIDATION_STATUS = 422;
 const FOLLOWING_TAB = "following";
 const TRENDING_TAB = "trending";
 const FOR_YOU_TAB = "for_you";
+
+const isPlatformModerator = (principal: { userId: string; role: UserRole }): Promise<boolean> =>
+  platformAccessService.principalHasPermission(principal, CONTENT_MODERATE_PERMISSION_KEY);
+
+const assertCanEngage = async (userId: string): Promise<void> => {
+  const user = await userRepository.findById(userId);
+  if (user?.role === UserRole.ADMIN) {
+    throw new AppError(
+      "ADMIN_CANNOT_ENGAGE",
+      "Platform staff accounts can't like, comment, or post — this keeps trending and payouts based on real audience activity.",
+      FORBIDDEN_STATUS,
+    );
+  }
+};
 
 const requireActiveLook = async (lookId: string): Promise<{ id: string; creatorId: string }> => {
   const look = await creatorLookRepository.findActiveById(lookId);
@@ -306,13 +326,68 @@ export const creatorLookService = {
     return summary;
   },
 
-  async remove(lookId: string, userId: string): Promise<void> {
-    const existing = await requireOwnedLook(lookId, userId);
+  async remove(lookId: string, principal: { userId: string; role: UserRole }): Promise<void> {
+    const existing = await creatorLookRepository.findActiveByIdForRemoval(lookId);
+    if (!existing) {
+      throw new AppError("LOOK_NOT_FOUND", "This post no longer exists.", NOT_FOUND_STATUS);
+    }
+
+    const isOwner = existing.creatorId === principal.userId;
+    const isModerator = !isOwner && (await isPlatformModerator(principal));
+    if (!isOwner && !isModerator) {
+      throw new AppError("LOOK_NOT_FOUND", "This post no longer exists.", NOT_FOUND_STATUS);
+    }
+
     await creatorLookRepository.softDelete(lookId);
 
     await Promise.all(
       existing.taggedProducts.map((tag) => productService.recountWornBy(tag.productId)),
     );
+
+    if (isModerator) {
+      await platformAudit.record({
+        actorUserId: principal.userId,
+        action: PLATFORM_AUDIT_ACTION.CREATOR_LOOK_REMOVED_BY_ADMIN,
+        summary: `Removed a post by ${existing.creatorId}`,
+        onBehalfOfUserId: existing.creatorId,
+        targetType: "CreatorLook",
+        targetId: lookId,
+      });
+    }
+  },
+
+  async removeComment(
+    lookId: string,
+    commentId: string,
+    principal: { userId: string; role: UserRole },
+  ): Promise<void> {
+    const comment = await creatorLookRepository.findCommentById(commentId);
+    if (!comment || comment.creatorLookId !== lookId) {
+      throw new AppError("COMMENT_NOT_FOUND", "This comment no longer exists.", NOT_FOUND_STATUS);
+    }
+
+    const isOwner = comment.userId === principal.userId;
+    const isModerator = !isOwner && (await isPlatformModerator(principal));
+    if (!isOwner && !isModerator) {
+      throw new AppError("COMMENT_NOT_FOUND", "This comment no longer exists.", NOT_FOUND_STATUS);
+    }
+
+    await creatorLookRepository.softDeleteComment({
+      commentId,
+      lookId,
+      parentCommentId: comment.parentCommentId,
+    });
+
+    if (isModerator) {
+      await platformAudit.record({
+        actorUserId: principal.userId,
+        action: PLATFORM_AUDIT_ACTION.CREATOR_LOOK_COMMENT_REMOVED_BY_ADMIN,
+        summary: `Removed a comment by ${comment.userId}`,
+        onBehalfOfUserId: comment.userId,
+        targetType: "CreatorLookComment",
+        targetId: commentId,
+      });
+    }
   },
 
   async listMySaved(userId: string, query: ListSavedQuery): Promise<FeedPage> {
@@ -519,6 +594,7 @@ export const creatorLookService = {
   },
 
   async like(lookId: string, userId: string): Promise<{ liked: boolean; likeCount: number }> {
+    await assertCanEngage(userId);
     const look = await requireActiveLook(lookId);
     const { likeCount } = await creatorLookRepository.like(lookId, userId);
     await eventBus.publish(DomainEvents.LOOK_LIKED, { lookId, creatorId: look.creatorId, userId });
@@ -560,6 +636,7 @@ export const creatorLookService = {
   },
 
   async addComment(lookId: string, userId: string, body: string) {
+    await assertCanEngage(userId);
     const look = await requireActiveLook(lookId);
     const comment = await creatorLookRepository.createComment(lookId, userId, body);
     await eventBus.publish(DomainEvents.LOOK_COMMENTED, {
@@ -582,6 +659,7 @@ export const creatorLookService = {
   },
 
   async addReply(lookId: string, commentId: string, userId: string, body: string) {
+    await assertCanEngage(userId);
     const look = await requireActiveLook(lookId);
     const parentComment = await requireTopLevelComment(lookId, commentId);
     const reply = await creatorLookRepository.createReply(lookId, commentId, userId, body);

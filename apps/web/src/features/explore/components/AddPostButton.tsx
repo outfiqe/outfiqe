@@ -31,9 +31,10 @@ export const AddPostButton = () => {
   const creatorStatus = state.user?.creatorStatus ?? CreatorStatus.NONE;
   const isApprovedCreator = creatorStatus === CreatorStatus.APPROVED;
   const isBrandOwner = state.user?.role === UserRole.BRAND_OWNER;
+  const isAdmin = state.user?.role === UserRole.ADMIN;
   const close = () => setTarget(null);
 
-  if (isBrandOwner) return null;
+  if (isBrandOwner || isAdmin) return null;
 
   const handleClick = () => {
     if (!isAuthenticated) {

@@ -52,6 +52,44 @@ export const removeCommentById = (
     if (!data) return data;
     return { ...data, comments: data.comments.filter((existing) => existing.id !== commentId) };
   });
+  queryClient.removeQueries({ queryKey: commentRepliesQueryKey(lookId, commentId) });
+};
+
+export const removeReplyById = (
+  queryClient: QueryClient,
+  lookId: string,
+  parentCommentId: string,
+  replyId: string,
+): void => {
+  queryClient.setQueryData<InfiniteData<CommentReplyPage>>(
+    commentRepliesQueryKey(lookId, parentCommentId),
+    (data) => {
+      if (!data) return data;
+      return {
+        ...data,
+        pages: data.pages.map((page) => ({
+          ...page,
+          replies: page.replies.filter((reply) => reply.id !== replyId),
+        })),
+      };
+    },
+  );
+
+  queryClient.setQueryData<CommentPage>(lookCommentsQueryKey(lookId), (data) => {
+    if (!data) return data;
+    return {
+      ...data,
+      comments: data.comments.map((comment) =>
+        comment.id === parentCommentId
+          ? {
+              ...comment,
+              replyCount: Math.max(comment.replyCount - 1, 0),
+              previewReplies: comment.previewReplies.filter((reply) => reply.id !== replyId),
+            }
+          : comment,
+      ),
+    };
+  });
 };
 
 export const applyReplyToCommentCaches = (

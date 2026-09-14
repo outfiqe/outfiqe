@@ -13,6 +13,7 @@ import { PostCardHeader } from "./PostCardHeader";
 import { PostCarousel } from "./PostCarousel";
 import { PostCommentsSection } from "./PostCommentsSection";
 import { PostTagPill } from "./PostTagPill";
+import { ReportContentModal } from "./ReportContentModal";
 
 interface PostCardProps {
   post: FeedPost;
@@ -49,11 +50,15 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
     setDraft,
     comments,
     submitComment,
+    reportOpen,
+    setReportOpen,
+    reportMutation,
   } = usePostCardState(post);
   const { isLoading: commentsLoading, data: commentsData } = comments;
   const { mutate: toggleLike, isPending: isLiking } = likeMutation;
   const { mutate: toggleSave, isPending: isSaving } = saveMutation;
   const { mutate: toggleFollow, isPending: isFollowToggling } = followMutation;
+  const { mutate: submitReport, isPending: isReporting } = reportMutation;
   const cardRef = useRecordLookView(id, !isOwnPost);
   const hasCaptionContent = taggedProducts.length > 0 || Boolean(caption);
 
@@ -72,6 +77,7 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
           gated(() => toggleFollow({ creatorId, following: isFollowingCreator }))
         }
         isFollowToggling={isFollowToggling}
+        onReport={() => setReportOpen(true)}
         className="px-3 py-2.5"
       />
 
@@ -124,6 +130,17 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
           />
         )}
       </div>
+
+      {reportOpen && (
+        <ReportContentModal
+          targetLabel="post"
+          isPending={isReporting}
+          onConfirm={(input) =>
+            submitReport({ targetType: "CREATOR_LOOK", targetId: id, ...input })
+          }
+          onCancel={() => setReportOpen(false)}
+        />
+      )}
     </article>
   );
 };
