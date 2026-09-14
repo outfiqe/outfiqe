@@ -96,6 +96,32 @@ describe("PATCH /api/users/me", () => {
     expect(stored.name).toBe("Updated Name");
     expect(stored.phone).toBe(user.phone);
   });
+
+  it("lets exactly one of two concurrent claims on the same phone number win", async () => {
+    const { accessToken: firstToken } = await createUserWithAccessToken({ phone: null });
+    const { accessToken: secondToken } = await createUserWithAccessToken({ phone: null });
+    const contestedPhone = uniquePhone();
+
+    const [firstResponse, secondResponse] = await Promise.all([
+      request(testApp)
+        .patch("/api/users/me")
+        .set("Authorization", `Bearer ${firstToken}`)
+        .send({ phone: contestedPhone }),
+      request(testApp)
+        .patch("/api/users/me")
+        .set("Authorization", `Bearer ${secondToken}`)
+        .send({ phone: contestedPhone }),
+    ]);
+
+    const statuses = [firstResponse.status, secondResponse.status].sort();
+    expect(statuses).toEqual([200, 409]);
+
+    const loser = firstResponse.status === 409 ? firstResponse : secondResponse;
+    expect(loser.body.code).toBe("PHONE_EXISTS");
+
+    const owners = await prisma.user.count({ where: { phone: contestedPhone } });
+    expect(owners).toBe(1);
+  });
 });
 
 describe("PATCH /api/users/me — username change", () => {

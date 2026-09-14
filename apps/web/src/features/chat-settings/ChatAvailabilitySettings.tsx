@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Checkbox, Input, Skeleton } from "@outfiqe/design-system";
+import { Button, Checkbox, FormBanner, Input, Skeleton } from "@outfiqe/design-system";
 import {
   type EventSocket,
   useChatBlocks,
@@ -55,27 +55,39 @@ const ContactRowSkeleton = () => (
 );
 
 const ChatAvailabilityToggle = () => {
-  const { isChatEnabled, isLoading, isUpdating, setChatEnabled } = useChatSettings(chatApi);
+  const { isChatEnabled, isLoading, isError, isUpdating, isUpdateError, setChatEnabled } =
+    useChatSettings(chatApi);
+
+  if (isError) {
+    return <FormBanner>We couldn&apos;t load your chat settings. Please try again.</FormBanner>;
+  }
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3.5">
-      <div>
-        <label htmlFor="chat-global-toggle" className="text-sm font-semibold text-foreground">
-          Turn off chat
-        </label>
-        <p className="mt-0.5 text-[13px] text-muted-foreground">
-          While chat is off, you won&apos;t be able to send or receive new messages from anyone.
-        </p>
+    <div>
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3.5">
+        <div>
+          <label htmlFor="chat-global-toggle" className="text-sm font-semibold text-foreground">
+            Turn off chat
+          </label>
+          <p className="mt-0.5 text-[13px] text-muted-foreground">
+            While chat is off, you won&apos;t be able to send or receive new messages from anyone.
+          </p>
+        </div>
+        {isLoading ? (
+          <Skeleton className="size-5 shrink-0 rounded" />
+        ) : (
+          <Checkbox
+            id="chat-global-toggle"
+            checked={!isChatEnabled}
+            disabled={isUpdating}
+            onChange={(event) => setChatEnabled(!event.target.checked)}
+          />
+        )}
       </div>
-      {isLoading ? (
-        <Skeleton className="size-5 shrink-0 rounded" />
-      ) : (
-        <Checkbox
-          id="chat-global-toggle"
-          checked={!isChatEnabled}
-          disabled={isUpdating}
-          onChange={(event) => setChatEnabled(!event.target.checked)}
-        />
+      {isUpdateError && (
+        <FormBanner className="mt-3">
+          We couldn&apos;t update your chat settings. Please try again.
+        </FormBanner>
       )}
     </div>
   );
@@ -94,7 +106,18 @@ const ChatBlockedContactsSection = () => {
             <ContactRowSkeleton key={index} />
           ))}
 
-        {!blocksQuery.isLoading && blockedContacts.length === 0 && (
+        {blocksQuery.isError && (
+          <li className="flex flex-col items-center gap-2 py-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              We couldn&apos;t load the people you&apos;ve turned off chat with.
+            </p>
+            <Button variant="outline" size="sm" onClick={() => void blocksQuery.refetch()}>
+              Retry
+            </Button>
+          </li>
+        )}
+
+        {!blocksQuery.isLoading && !blocksQuery.isError && blockedContacts.length === 0 && (
           <li className="py-6 text-center text-sm text-muted-foreground">
             You haven&apos;t turned off chat with anyone.
           </li>
@@ -167,11 +190,22 @@ const ChatContactSearchSection = () => {
               <ContactRowSkeleton key={index} />
             ))}
 
-          {!contactSearchQuery.isLoading && searchResults.length === 0 && (
-            <li className="py-4 text-center text-sm text-muted-foreground">
-              No one found for &quot;{debouncedQuery}&quot;.
+          {contactSearchQuery.isError && (
+            <li className="flex flex-col items-center gap-2 py-4 text-center">
+              <p className="text-sm text-muted-foreground">We couldn&apos;t search right now.</p>
+              <Button variant="outline" size="sm" onClick={() => void contactSearchQuery.refetch()}>
+                Retry
+              </Button>
             </li>
           )}
+
+          {!contactSearchQuery.isLoading &&
+            !contactSearchQuery.isError &&
+            searchResults.length === 0 && (
+              <li className="py-4 text-center text-sm text-muted-foreground">
+                No one found for &quot;{debouncedQuery}&quot;.
+              </li>
+            )}
 
           {searchResults.map((contact) => (
             <li key={contact.id} className="flex items-center gap-3 py-2">

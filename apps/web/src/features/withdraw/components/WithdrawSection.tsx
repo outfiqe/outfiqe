@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Skeleton } from "@outfiqe/design-system";
+import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 
 import { BankAccountsList, useBankAccounts } from "@/features/bank-accounts";
 
@@ -19,11 +19,25 @@ type WithdrawSectionProps = {
 };
 
 export const WithdrawSection = ({ ownerType, title, description }: WithdrawSectionProps) => {
-  const { data: policy, isPending: isPolicyPending } = useWithdrawPolicy(ownerType);
-  const { data: eligibility, isPending: isEligibilityPending } = useWithdrawEligibility(ownerType);
+  const {
+    data: policy,
+    isPending: isPolicyPending,
+    isError: isPolicyError,
+  } = useWithdrawPolicy(ownerType);
+  const {
+    data: eligibility,
+    isPending: isEligibilityPending,
+    isError: isEligibilityError,
+  } = useWithdrawEligibility(ownerType);
   const { data: bankAccounts } = useBankAccounts(ownerType);
-  const { data, isPending, hasNextPage, fetchNextPage, isFetchingNextPage } =
-    useMyWithdrawRequests(ownerType);
+  const {
+    data,
+    isPending,
+    isError: isRequestsError,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useMyWithdrawRequests(ownerType);
   const requests = data?.pages.flatMap((page) => page.items) ?? [];
   const verifiedBankAccounts = (bankAccounts ?? []).filter((bankAccount) => bankAccount.isVerified);
 
@@ -39,6 +53,7 @@ export const WithdrawSection = ({ ownerType, title, description }: WithdrawSecti
           policy={policy}
           eligibility={eligibility}
           isLoading={isPolicyPending || isEligibilityPending}
+          isError={isPolicyError || isEligibilityError}
         />
       </div>
 
@@ -50,7 +65,11 @@ export const WithdrawSection = ({ ownerType, title, description }: WithdrawSecti
         <h2 className="mb-3 font-display text-sm font-bold uppercase tracking-wide text-foreground">
           Request a withdrawal
         </h2>
-        {isEligibilityPending ? (
+        {isEligibilityError ? (
+          <FormBanner>
+            We couldn&apos;t load your withdrawal eligibility right now. Please try again.
+          </FormBanner>
+        ) : isEligibilityPending ? (
           <Skeleton className="h-32 w-full rounded-2xl" />
         ) : (
           eligibility && (
@@ -68,7 +87,13 @@ export const WithdrawSection = ({ ownerType, title, description }: WithdrawSecti
           History
         </h2>
 
-        {isPending && (
+        {isRequestsError && (
+          <FormBanner>
+            We couldn&apos;t load your withdrawal history right now. Please try again.
+          </FormBanner>
+        )}
+
+        {isPending && !isRequestsError && (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, index) => (
               <Skeleton key={index} className="h-20 w-full rounded-2xl" />
@@ -76,13 +101,13 @@ export const WithdrawSection = ({ ownerType, title, description }: WithdrawSecti
           </div>
         )}
 
-        {!isPending && requests.length === 0 && (
+        {!isPending && !isRequestsError && requests.length === 0 && (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-10 text-center">
             <p className="text-sm text-muted-foreground">No withdrawal requests yet.</p>
           </div>
         )}
 
-        {requests.length > 0 && (
+        {!isRequestsError && requests.length > 0 && (
           <div className="space-y-3">
             {requests.map((request) => (
               <WithdrawRequestRow key={request.id} request={request} />
@@ -90,7 +115,7 @@ export const WithdrawSection = ({ ownerType, title, description }: WithdrawSecti
           </div>
         )}
 
-        {hasNextPage && (
+        {!isRequestsError && hasNextPage && (
           <div className="mt-4 flex justify-center">
             <Button
               variant="outline"

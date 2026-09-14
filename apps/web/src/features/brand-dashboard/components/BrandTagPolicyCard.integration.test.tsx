@@ -4,11 +4,31 @@ import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
+import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BrandProfile } from "../api/brandDashboardSchemas";
 import { BrandTagPolicyCard } from "./BrandTagPolicyCard";
+
+vi.mock("next/navigation", () => ({
+  useRouter: vi.fn(),
+}));
+
+const refresh = vi.fn();
+
+beforeEach(() => {
+  vi.mocked(useRouter).mockReturnValue({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh,
+    prefetch: vi.fn(),
+    bfcacheId: "test-bfcache-id",
+  });
+  refresh.mockClear();
+});
 
 const buildProfile = (overrides: Partial<BrandProfile["brand"]> = {}): BrandProfile => ({
   brand: {
@@ -83,5 +103,23 @@ describe("BrandTagPolicyCard", () => {
       }),
     );
     await waitFor(() => expect(screen.getByRole("button", { name: "Save" })).toBeDisabled());
+  });
+
+  it("refreshes the router on a successful save so a revisit of /profile can't show stale data", async () => {
+    mswServer.use(
+      http.patch("/api/brands/me", () =>
+        HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: buildProfile({ tagReviewPolicy: "APPROVAL_REQUIRED" }),
+        }),
+      ),
+    );
+    renderCard();
+
+    await userEvent.selectOptions(screen.getByLabelText(POLICY_LABEL), "APPROVAL_REQUIRED");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(refresh).toHaveBeenCalledOnce());
   });
 });

@@ -42,6 +42,7 @@ export type SlaEligibleTag = {
   lookId: string;
   creatorId: string;
   productId: string;
+  reviewStatus: TagReviewStatus;
 };
 
 export type BrandReviewBacklog = {

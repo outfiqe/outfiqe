@@ -1,4 +1,4 @@
-import { Skeleton } from "@outfiqe/design-system";
+import { FormBanner, Skeleton } from "@outfiqe/design-system";
 
 import type { WithdrawEligibility, WithdrawPolicy } from "../api/withdrawSchemas";
 
@@ -6,13 +6,25 @@ type WithdrawPolicyPanelProps = {
   policy: WithdrawPolicy | undefined;
   eligibility: WithdrawEligibility | undefined;
   isLoading: boolean;
+  isError: boolean;
 };
 
 export const WithdrawPolicyPanel = ({
   policy,
   eligibility,
   isLoading,
+  isError,
 }: WithdrawPolicyPanelProps) => {
+  if (isError) {
+    return (
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <FormBanner>
+          We couldn&apos;t load your withdrawal balance right now. Please try again.
+        </FormBanner>
+      </div>
+    );
+  }
+
   if (isLoading || !policy || !eligibility) {
     return (
       <div className="rounded-2xl border border-border bg-card p-5">

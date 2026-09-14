@@ -162,7 +162,14 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-foreground">Type</label>
-          <select className={selectClass} {...typeField}>
+          <select
+            className={selectClass}
+            {...typeField}
+            onChange={(event) => {
+              typeField.onChange(event);
+              form.setValue("sizes", []);
+            }}
+          >
             {productTypes.data?.map((productType) => (
               <option key={productType.slug} value={productType.slug}>
                 {productType.label}

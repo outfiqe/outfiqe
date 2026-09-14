@@ -27,6 +27,7 @@ import { uniquePhone } from "#test/integration/uniqueValues.js";
 const OK_STATUS = 200;
 const CREATED_STATUS = 201;
 const BAD_REQUEST_STATUS = 400;
+const CONFLICT_STATUS = 409;
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -591,6 +592,38 @@ describe("POST /api/withdraw/requests — business soft ceiling", () => {
     expect(persisted).not.toBeNull();
     expect(persisted?.minAmount).toBe(3_000);
     expect(persisted?.updatedById).toBeNull();
+  });
+});
+
+describe("POST /api/withdraw/requests — concurrent double-spend guard", () => {
+  it("never lets two simultaneous requests together reserve more than the available balance", async () => {
+    await createOpenPolicy(WithdrawOwnerType.BUSINESS, { maxAttemptsPerWindow: 5 });
+    const { brand, member } = await createBrandWithMember();
+    await grantAvailableBrandPayout(brand.id, 10_000);
+    const bankAccount = await createVerifiedBrandBankAccount(brand.id);
+    const authHeader = authHeaderFor(member.id, UserRole.BRAND_OWNER);
+
+    const submitWithdrawRequest = () =>
+      request(testApp)
+        .post("/api/withdraw/requests")
+        .set("Authorization", authHeader)
+        .send({ ownerType: "BUSINESS", bankAccountId: bankAccount.id, amount: 6_000 });
+
+    const [first, second] = await Promise.all([submitWithdrawRequest(), submitWithdrawRequest()]);
+
+    const statuses = [first.status, second.status].sort();
+    expect(statuses[0]).toBe(CREATED_STATUS);
+    expect([BAD_REQUEST_STATUS, CONFLICT_STATUS]).toContain(statuses[1]);
+
+    const reservedRequests = await prisma.withdrawRequest.findMany({
+      where: {
+        brandId: brand.id,
+        status: { in: [WithdrawRequestStatus.PENDING, WithdrawRequestStatus.UNDER_REVIEW] },
+      },
+    });
+    expect(reservedRequests).toHaveLength(1);
+    const totalReserved = reservedRequests.reduce((sum, row) => sum + row.amount, 0);
+    expect(totalReserved).toBeLessThanOrEqual(10_000);
   });
 });
 

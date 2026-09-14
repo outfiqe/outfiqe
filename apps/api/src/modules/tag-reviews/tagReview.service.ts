@@ -11,6 +11,7 @@ import type { ReviewableTag, TagReviewMetrics, TagReviewQueuePage } from "./tagR
 
 const NOT_FOUND_STATUS = 404;
 const INVALID_TRANSITION_STATUS = 422;
+const CONFLICT_STATUS = 409;
 
 const requireReviewableTag = async (userId: string, tagId: string): Promise<ReviewableTag> => {
   const brandIds = await tagReviewRepository.listMemberBrandIds(userId);
@@ -35,9 +36,13 @@ const requireTransition = (from: TagReviewStatus, to: TagReviewStatus): void => 
   }
 };
 
-type ApprovableTag = { id: string; lookId: string; creatorId: string; productId: string };
-
-type TransitionableTag = ApprovableTag & { reviewStatus: TagReviewStatus };
+type TransitionableTag = {
+  id: string;
+  lookId: string;
+  creatorId: string;
+  productId: string;
+  reviewStatus: TagReviewStatus;
+};
 
 export const applyTagRejection = async (
   tag: TransitionableTag,
@@ -46,10 +51,10 @@ export const applyTagRejection = async (
     note,
     reviewedById,
   }: { reason: TagRejectionReason; note: string | null; reviewedById: string },
-): Promise<void> => {
+): Promise<boolean> => {
   const wasApproved = tag.reviewStatus === TagReviewStatus.APPROVED;
 
-  await tagReviewRepository.transitionTag(tag.id, {
+  const applied = await tagReviewRepository.transitionTag(tag.id, tag.reviewStatus, {
     reviewStatus: TagReviewStatus.REJECTED,
     approvalSource: null,
     reviewedById,
@@ -57,6 +62,7 @@ export const applyTagRejection = async (
     rejectionReason: reason,
     rejectionNote: note,
   });
+  if (!applied) return false;
 
   if (wasApproved) {
     await productService.recountWornBy(tag.productId);
@@ -73,13 +79,14 @@ export const applyTagRejection = async (
       note,
     },
   );
+  return true;
 };
 
 export const applyTagApproval = async (
-  tag: ApprovableTag,
+  tag: TransitionableTag,
   { source, reviewedById }: { source: TagApprovalSource; reviewedById: string | null },
-): Promise<void> => {
-  await tagReviewRepository.transitionTag(tag.id, {
+): Promise<boolean> => {
+  const applied = await tagReviewRepository.transitionTag(tag.id, tag.reviewStatus, {
     reviewStatus: TagReviewStatus.APPROVED,
     approvalSource: source,
     reviewedById,
@@ -87,6 +94,7 @@ export const applyTagApproval = async (
     rejectionReason: null,
     rejectionNote: null,
   });
+  if (!applied) return false;
 
   await productService.recountWornBy(tag.productId);
   await eventBus.publish(DomainEvents.PRODUCT_TAGGED, {
@@ -101,6 +109,16 @@ export const applyTagApproval = async (
     productId: tag.productId,
     auto: source !== TagApprovalSource.BRAND,
   });
+  return true;
+};
+
+const requireAppliedTransition = (applied: boolean): void => {
+  if (applied) return;
+  throw new AppError(
+    "TAG_REVIEW_ALREADY_RESOLVED",
+    "Someone already reviewed this tag — refresh to see its current status.",
+    CONFLICT_STATUS,
+  );
 };
 
 export const tagReviewService = {
@@ -126,14 +144,23 @@ export const tagReviewService = {
       await tagReviewRepository.trustCreator(tag.brandId, tag.creatorId, userId);
     }
 
-    await applyTagApproval(tag, { source: TagApprovalSource.BRAND, reviewedById: userId });
+    const applied = await applyTagApproval(tag, {
+      source: TagApprovalSource.BRAND,
+      reviewedById: userId,
+    });
+    requireAppliedTransition(applied);
   },
 
   async rejectTag(userId: string, tagId: string, { reason, note }: RejectTagBody): Promise<void> {
     const tag = await requireReviewableTag(userId, tagId);
     requireTransition(tag.reviewStatus, TagReviewStatus.REJECTED);
 
-    await applyTagRejection(tag, { reason, note: note ?? null, reviewedById: userId });
+    const applied = await applyTagRejection(tag, {
+      reason,
+      note: note ?? null,
+      reviewedById: userId,
+    });
+    requireAppliedTransition(applied);
   },
 
   async takeDownTagAsPlatform(
@@ -145,7 +172,6 @@ export const tagReviewService = {
     if (!tag || !canTransitionTagReview(tag.reviewStatus, TagReviewStatus.REJECTED)) {
       return false;
     }
-    await applyTagRejection(tag, { reason, note, reviewedById });
-    return true;
+    return applyTagRejection(tag, { reason, note, reviewedById });
   },
 };

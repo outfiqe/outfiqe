@@ -1,6 +1,10 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { ApiClientError } from "@/shared/lib/apiClient";
 
 import type { BrandProduct } from "../api/brandProductsSchemas";
 import { DiscountModal } from "./DiscountModal";
@@ -44,9 +48,19 @@ beforeEach(() => {
   removeMutate.mockClear();
 });
 
+const renderDiscountModal = (product: BrandProduct | null) => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+  return render(<DiscountModal product={product} onClose={vi.fn()} />, { wrapper });
+};
+
 describe("DiscountModal", () => {
   it("creates a new percent discount", async () => {
-    render(<DiscountModal product={buildProduct()} onClose={vi.fn()} />);
+    renderDiscountModal(buildProduct());
 
     await userEvent.click(screen.getByRole("button", { name: "Start sale" }));
 
@@ -72,12 +86,37 @@ describe("DiscountModal", () => {
       },
     });
 
-    render(<DiscountModal product={product} onClose={vi.fn()} />);
+    renderDiscountModal(product);
 
     expect(screen.getByRole("button", { name: "Remove discount" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
     expect(updateMutate).toHaveBeenCalledWith({
+      productId: "product-1",
+      input: expect.objectContaining({ discountType: "PERCENT", percentBasisPoints: 1_000 }),
+    });
+  });
+
+  it("falls back to creating a fresh discount when the cached one is already gone server-side", async () => {
+    updateMutate.mockRejectedValueOnce(
+      new ApiClientError("This product has no active discount to edit.", "DISCOUNT_NOT_FOUND"),
+    );
+    const product = buildProduct({
+      activeDiscount: {
+        id: "discount-1",
+        discountType: "PERCENT",
+        percentBasisPoints: 1_000,
+        fixedAmount: null,
+        startsAt: new Date().toISOString(),
+        endsAt: null,
+      },
+    });
+
+    renderDiscountModal(product);
+    await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(updateMutate).toHaveBeenCalled();
+    expect(setMutate).toHaveBeenCalledWith({
       productId: "product-1",
       input: expect.objectContaining({ discountType: "PERCENT", percentBasisPoints: 1_000 }),
     });
@@ -95,7 +134,7 @@ describe("DiscountModal", () => {
       },
     });
 
-    render(<DiscountModal product={product} onClose={vi.fn()} />);
+    renderDiscountModal(product);
 
     await userEvent.click(screen.getByRole("button", { name: "Remove discount" }));
 
@@ -103,7 +142,7 @@ describe("DiscountModal", () => {
   });
 
   it("renders nothing when there is no product", () => {
-    const { container } = render(<DiscountModal product={null} onClose={vi.fn()} />);
+    const { container } = renderDiscountModal(null);
     expect(container).toBeEmptyDOMElement();
   });
 });
