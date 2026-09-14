@@ -68,11 +68,13 @@ const applyXpTransaction = async (input: AwardXpInput, amount: number): Promise<
   const result = await prisma.$transaction(async (tx) => {
     await xpRepository.createTransaction(tx, { ...input, amount });
 
-    const { level: fallbackLevel } = computeLevelProgress(clampToXpFloor(amount), activeLevelsDesc);
+    const fallbackTotalXp = clampToXpFloor(amount);
+    const { level: fallbackLevel } = computeLevelProgress(fallbackTotalXp, activeLevelsDesc);
     const updatedProgress = await xpRepository.incrementProgress(
       tx,
       userId,
       amount,
+      fallbackTotalXp,
       fallbackLevel.id,
     );
     const { totalXp: updatedTotalXp, currentLevelId: previousCurrentLevelId } = updatedProgress;
@@ -91,7 +93,7 @@ const applyXpTransaction = async (input: AwardXpInput, amount: number): Promise<
       totalXp: updatedTotalXp,
       previousLevel,
       currentLevel,
-      leveledUp: currentLevel.id !== previousLevel.id,
+      leveledUp: currentLevel.level > previousLevel.level,
     } satisfies AwardXpResult;
   });
 
