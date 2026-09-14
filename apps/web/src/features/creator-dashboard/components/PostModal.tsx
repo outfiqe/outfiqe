@@ -208,7 +208,11 @@ export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) =
           <span className="text-sm font-semibold text-foreground">{state.user?.name}</span>
         </div>
 
+        <label htmlFor="post-modal-caption" className="sr-only">
+          Caption
+        </label>
         <textarea
+          id="post-modal-caption"
           rows={4}
           placeholder="Write your caption here…."
           className="w-full resize-none bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground"

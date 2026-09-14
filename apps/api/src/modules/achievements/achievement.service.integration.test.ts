@@ -123,3 +123,45 @@ describe("achievementService.listProgressForUser with a nested condition tree", 
     );
   });
 });
+
+const createRankAchievement = async () => {
+  const badge = await prisma.badge.create({
+    data: {
+      name: `Rank Badge ${randomUUID()}`,
+      description: "A badge that requires a top leaderboard rank.",
+      category: "COMMUNITY",
+      rarity: "RARE",
+      icon: "🏅",
+      designConfig: { shape: "star", primaryColor: "#000000" },
+      xpReward: 25,
+    },
+  });
+
+  const achievement = await prisma.achievement.create({
+    data: {
+      badgeId: badge.id,
+      name: badge.name,
+      description: badge.description,
+      requirementType: "ENGAGEMENT",
+      requirementConfig: {
+        conditions: [{ metric: "top_xp_rank", operator: "lte", value: 10 }],
+      },
+    },
+  });
+
+  return { badge, achievement };
+};
+
+describe("achievementService.listProgressForUser with a rank-metric condition", () => {
+  it("reports a null currentValue for a creator with no leaderboard activity yet", async () => {
+    const user = await createUser();
+    await createRankAchievement();
+
+    const [progress] = await achievementService.listProgressForUser(user.id);
+
+    expect(progress).toBeDefined();
+    expect(progress!.conditions).toEqual([
+      expect.objectContaining({ metric: "top_xp_rank", currentValue: null }),
+    ]);
+  });
+});

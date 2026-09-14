@@ -36,5 +36,6 @@ export const useChatSettings = (chatApi: ChatApi, enabled = true) => {
     refetch: settingsQuery.refetch,
     setChatEnabled: updateSettingsMutation.mutate,
     isUpdating: updateSettingsMutation.isPending,
+    isUpdateError: updateSettingsMutation.isError,
   };
 };

@@ -6,12 +6,12 @@ import { useBrandPayoutSummary } from "../hooks/useBrandPayoutSummary";
 import { WalletSummaryTiles } from "./WalletSummaryTiles";
 
 export const WalletSection = () => {
-  const { data: summary, isPending } = useBrandPayoutSummary();
+  const { data: summary, isPending, isError } = useBrandPayoutSummary();
 
   return (
     <div>
       <div className="mb-6">
-        <WalletSummaryTiles summary={summary} isLoading={isPending} />
+        <WalletSummaryTiles summary={summary} isLoading={isPending} isError={isError} />
       </div>
 
       <WithdrawSection

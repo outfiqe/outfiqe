@@ -11,6 +11,7 @@ import type { UserRecord } from "#modules/users/user.types.js";
 
 import type { CandidateSignals, ScoredSuggestionCandidate } from "./follow.types.js";
 import {
+  compareSuggestionCandidatesByScore,
   ensureMomentumDiscoveryFloor,
   isPureMomentumSignal,
   isWithinNewCreatorFreshnessWindow,
@@ -342,6 +343,29 @@ describe("ensureMomentumDiscoveryFloor", () => {
 
     expect(result).toHaveLength(2);
     expect(result.map((candidate) => candidate.creatorId)).toEqual(["c", "d"]);
+  });
+});
+
+describe("compareSuggestionCandidatesByScore", () => {
+  it("ranks the higher score first", () => {
+    const higher = candidateOf("creator-high", 10, baseSignals({ momentum: 10 }));
+    const lower = candidateOf("creator-low", 5, baseSignals({ momentum: 5 }));
+
+    expect(
+      [lower, higher].sort(compareSuggestionCandidatesByScore).map((c) => c.creatorId),
+    ).toEqual(["creator-high", "creator-low"]);
+  });
+
+  it("breaks an equal-score tie by creator id, regardless of which order they arrived in", () => {
+    const first = candidateOf("creator-a", 5, baseSignals({ momentum: 5 }));
+    const second = candidateOf("creator-b", 5, baseSignals({ momentum: 5 }));
+
+    expect(
+      [first, second].sort(compareSuggestionCandidatesByScore).map((c) => c.creatorId),
+    ).toEqual(["creator-a", "creator-b"]);
+    expect(
+      [second, first].sort(compareSuggestionCandidatesByScore).map((c) => c.creatorId),
+    ).toEqual(["creator-a", "creator-b"]);
   });
 });
 

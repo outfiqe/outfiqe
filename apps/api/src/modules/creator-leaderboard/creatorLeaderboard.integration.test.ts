@@ -145,6 +145,88 @@ describe("creatorLeaderboardService.runRecompute + getTop", () => {
     expect(entries.some((entry) => entry.creatorId === optedOut.id)).toBe(false);
   });
 
+  it("excludes a creator with zero activity from every stats-derived category, not just RISING_CREATOR", async () => {
+    const zeroActivity = await createCreator();
+    const active = await createCreator();
+    await giveXp(active.id, 50);
+    await giveLook(active.id, 5);
+    await giveBadge(active.id);
+
+    await creatorLeaderboardService.runRecompute();
+
+    const categories = [
+      CreatorLeaderboardCategory.TOP_XP,
+      CreatorLeaderboardCategory.TOP_CREATOR,
+      CreatorLeaderboardCategory.MOST_LIKES,
+      CreatorLeaderboardCategory.MOST_ENGAGED,
+      CreatorLeaderboardCategory.TOP_SELLER,
+      CreatorLeaderboardCategory.MOST_ACHIEVEMENTS,
+    ];
+
+    for (const category of categories) {
+      const { entries } = await creatorLeaderboardService.getTop(category);
+      expect(entries.some((entry) => entry.creatorId === zeroActivity.id)).toBe(false);
+    }
+  });
+
+  it("drops a creator from the public ranking the moment they're banned, even while the cached ZSET is still warm", async () => {
+    const banned = await createCreator();
+    await giveXp(banned.id, 5000);
+
+    await creatorLeaderboardService.runRecompute();
+    const before = await creatorLeaderboardService.getTop(CreatorLeaderboardCategory.TOP_XP);
+    expect(before.entries.some((entry) => entry.creatorId === banned.id)).toBe(true);
+
+    await prisma.user.update({
+      where: { id: banned.id },
+      data: { accountStatus: "BANNED" },
+    });
+
+    const after = await creatorLeaderboardService.getTop(CreatorLeaderboardCategory.TOP_XP);
+    expect(after.entries.some((entry) => entry.creatorId === banned.id)).toBe(false);
+  });
+
+  it("renumbers ranks with no gaps once an ineligible creator is filtered out mid-list", async () => {
+    const first = await createCreator();
+    const bannedSecond = await createCreator();
+    const third = await createCreator();
+    await giveXp(first.id, 300);
+    await giveXp(bannedSecond.id, 200);
+    await giveXp(third.id, 100);
+
+    await creatorLeaderboardService.runRecompute();
+    await prisma.user.update({
+      where: { id: bannedSecond.id },
+      data: { accountStatus: "BANNED" },
+    });
+
+    const { entries } = await creatorLeaderboardService.getTop(CreatorLeaderboardCategory.TOP_XP);
+    const firstEntry = entries.find((entry) => entry.creatorId === first.id);
+    const thirdEntry = entries.find((entry) => entry.creatorId === third.id);
+
+    expect(firstEntry?.rank).toBe(1);
+    expect(thirdEntry?.rank).toBe(2);
+  });
+
+  it("excludes a creator whose XP dropped week-over-week from RISING_CREATOR instead of showing a negative surge", async () => {
+    const demoted = await createCreator();
+    const now = new Date();
+
+    await creatorLeaderboardRepository.replaceWeeklyScores(
+      CreatorLeaderboardCategory.TOP_XP,
+      previousIsoWeekKey(now),
+      [{ member: demoted.id, score: 500 }],
+    );
+    await giveXp(demoted.id, 100);
+
+    await creatorLeaderboardService.runRecompute();
+    const { entries } = await creatorLeaderboardService.getTop(
+      CreatorLeaderboardCategory.RISING_CREATOR,
+    );
+
+    expect(entries.some((entry) => entry.creatorId === demoted.id)).toBe(false);
+  });
+
   it("derives RISING_CREATOR from the week-over-week change in TOP_XP", async () => {
     const creator = await createCreator();
     const now = new Date();

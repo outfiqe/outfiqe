@@ -77,11 +77,12 @@ export const xpRepository = {
     client: DbClient,
     userId: string,
     amount: number,
+    fallbackTotalXp: number,
     fallbackLevelId: string,
   ): Promise<{ totalXp: number; currentLevelId: string }> {
     return client.userProgress.upsert({
       where: { userId },
-      create: { userId, totalXp: amount, currentLevelId: fallbackLevelId },
+      create: { userId, totalXp: fallbackTotalXp, currentLevelId: fallbackLevelId },
       update: { totalXp: { increment: amount } },
       select: { totalXp: true, currentLevelId: true },
     });

@@ -12,7 +12,10 @@ import { redisKeys } from "#redis/redis.keys.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
-import { OAUTH_START_IP_RATE_LIMIT_MAX_REQUESTS } from "./oauth.constants.js";
+import {
+  OAUTH_START_IP_RATE_LIMIT_MAX_REQUESTS,
+  OAUTH_UNLINK_RATE_LIMIT_MAX_REQUESTS,
+} from "./oauth.constants.js";
 
 const googleExchangeMock = vi.hoisted(() => vi.fn());
 const facebookExchangeMock = vi.hoisted(() => vi.fn());
@@ -601,6 +604,35 @@ describe("DELETE /api/auth/oauth/:provider/link", () => {
       .send({});
 
     expect(response.status).toBe(200);
+  });
+
+  it("rate limits repeated incorrect password attempts against the same account", async () => {
+    const { user, password } = await createPasswordUser();
+    await prisma.oAuthIdentity.create({
+      data: {
+        userId: user.id,
+        provider: OAuthProvider.GOOGLE,
+        providerUserId: `google-${randomUUID()}`,
+        emailAtLinkTime: user.email,
+      },
+    });
+    const accessToken = await loginAndGetAccessToken(user.email, password);
+
+    for (let attempt = 0; attempt < OAUTH_UNLINK_RATE_LIMIT_MAX_REQUESTS; attempt += 1) {
+      const response = await request(testApp)
+        .delete("/api/auth/oauth/google/link")
+        .set(...bearer(accessToken))
+        .send({ password: "not-the-right-password" });
+      expect(response.status).toBe(401);
+    }
+
+    const limited = await request(testApp)
+      .delete("/api/auth/oauth/google/link")
+      .set(...bearer(accessToken))
+      .send({ password: "not-the-right-password" });
+
+    expect(limited.status).toBe(429);
+    expect(limited.body.code).toBe("RATE_LIMITED");
   });
 });
 

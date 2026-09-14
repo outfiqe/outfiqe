@@ -13,14 +13,19 @@ export const runTagReviewSlaSweep = async (): Promise<{ approved: number }> => {
   const submittedBefore = new Date(Date.now() - TAG_REVIEW_SLA_DAYS * DAY_MS);
   const eligibleTags = await tagReviewRepository.listSlaEligibleTags(submittedBefore);
 
+  let approvedCount = 0;
   for (const tag of eligibleTags) {
-    await applyTagApproval(tag, { source: TagApprovalSource.SLA, reviewedById: null });
+    const applied = await applyTagApproval(tag, {
+      source: TagApprovalSource.SLA,
+      reviewedById: null,
+    });
+    if (applied) approvedCount += 1;
   }
 
-  if (eligibleTags.length > 0) {
-    logger.info(`Tag-review SLA sweep auto-approved ${eligibleTags.length} tag(s)`);
+  if (approvedCount > 0) {
+    logger.info(`Tag-review SLA sweep auto-approved ${approvedCount} tag(s)`);
   }
-  return { approved: eligibleTags.length };
+  return { approved: approvedCount };
 };
 
 export const runTagReviewReminderDigest = async (): Promise<{ brandsNotified: number }> => {

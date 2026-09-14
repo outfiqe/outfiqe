@@ -1,4 +1,6 @@
 import { prisma } from "#db/prisma.js";
+import { Prisma } from "#generated/prisma/client.js";
+import { runWithDeadlockRetry } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 import { addressRepository } from "./address.repository.js";
@@ -28,6 +30,13 @@ const buildUpdateFields = (body: UpdateAddressBody): UpdateSavedAddressFields =>
   return fields;
 };
 
+const runDefaultInvariantTransaction = <T>(
+  work: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> =>
+  runWithDeadlockRetry(() =>
+    prisma.$transaction(work, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }),
+  );
+
 export const addressService = {
   async listForUser(userId: string): Promise<PublicSavedAddress[]> {
     const addresses = await addressRepository.listForUser(userId);
@@ -35,7 +44,7 @@ export const addressService = {
   },
 
   async create(userId: string, body: CreateAddressBody): Promise<PublicSavedAddress> {
-    const created = await prisma.$transaction(async (tx) => {
+    const created = await runDefaultInvariantTransaction(async (tx) => {
       const existingCount = await addressRepository.countForUser(userId, tx);
       if (existingCount >= MAX_SAVED_ADDRESSES_PER_USER) {
         throw new AppError(
@@ -67,7 +76,7 @@ export const addressService = {
   },
 
   async update(userId: string, id: string, body: UpdateAddressBody): Promise<PublicSavedAddress> {
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await runDefaultInvariantTransaction(async (tx) => {
       const owned = await addressRepository.findOwned(userId, id, tx);
       if (!owned) throw notFound();
 
@@ -85,7 +94,7 @@ export const addressService = {
   },
 
   async remove(userId: string, id: string): Promise<void> {
-    await prisma.$transaction(async (tx) => {
+    await runDefaultInvariantTransaction(async (tx) => {
       const owned = await addressRepository.findOwned(userId, id, tx);
       if (!owned) throw notFound();
 
@@ -101,7 +110,7 @@ export const addressService = {
   },
 
   async setDefault(userId: string, id: string): Promise<void> {
-    await prisma.$transaction(async (tx) => {
+    await runDefaultInvariantTransaction(async (tx) => {
       const owned = await addressRepository.findOwned(userId, id, tx);
       if (!owned) throw notFound();
       if (owned.isDefault) return;

@@ -250,6 +250,16 @@ const evaluateForUser = async (userId: string): Promise<EligibleAchievementRecor
   }
 };
 
+const currentValueForDisplay = (
+  condition: ReturnType<typeof collectLeafConditions>[number],
+  snapshot: MetricSnapshot,
+): number | null => {
+  const value = currentValueForCondition(condition, snapshot);
+  const isUnrankedRankMetric =
+    RANK_METRIC_CATEGORY[condition.metric] !== undefined && value === UNRANKED_METRIC_VALUE;
+  return isUnrankedRankMetric ? null : value;
+};
+
 const listProgressForUser = async (userId: string): Promise<AchievementProgressView[]> => {
   const eligible = await loadEligibleAchievements(userId);
   if (eligible.length === 0) return [];
@@ -263,7 +273,7 @@ const listProgressForUser = async (userId: string): Promise<AchievementProgressV
     badgeIcon: achievement.badgeIcon,
     conditions: collectLeafConditions(achievement.conditions).map((condition) => ({
       ...condition,
-      currentValue: currentValueForCondition(condition, snapshot),
+      currentValue: currentValueForDisplay(condition, snapshot),
     })),
   }));
 };

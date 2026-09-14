@@ -76,6 +76,7 @@ const renderModal = (initialPhotoFile?: File | null) => {
   );
   return {
     ...view,
+    queryClient,
     rerenderWith: (photoFile?: File | null) =>
       view.rerender(
         <QueryClientProvider client={queryClient}>
@@ -142,6 +143,49 @@ describe("PostModal", () => {
 
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(reset).toHaveBeenCalledOnce();
+  });
+
+  it("invalidates the explore feed and saved posts caches too, not just the creator's own looks", async () => {
+    resolvePendingPhotoAssets.mockResolvedValue({
+      urls: ["https://cdn.outfiqe.test/p1.jpg"],
+      imageAssetIds: [null],
+    });
+    mockPending([buildExistingPhoto("p1")]);
+    mswServer.use(
+      http.post("/api/creator-looks", () =>
+        HttpResponse.json({
+          success: true,
+          message: "Look posted.",
+          data: {
+            id: "look-1",
+            imageUrl: "https://cdn.outfiqe.test/p1.jpg",
+            caption: null,
+            createdAt: "2026-01-01T00:00:00.000Z",
+            taggedProducts: [],
+          },
+        }),
+      ),
+    );
+
+    const user = userEvent.setup();
+    const { queryClient } = renderModal();
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+
+    await user.click(screen.getByRole("button", { name: "Post look" }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["creator-looks"] });
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["explore-feed"] });
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["saved-posts"] });
+  });
+
+  it("labels the caption field for assistive technology", () => {
+    mockPending([buildExistingPhoto("p1")]);
+    renderModal();
+
+    expect(screen.getByLabelText("Caption")).toBe(
+      screen.getByPlaceholderText("Write your caption here…."),
+    );
   });
 
   it("surfaces the upload error message and doesn't submit when resolving photos fails", async () => {

@@ -1,4 +1,5 @@
 import { cva, type VariantProps } from "class-variance-authority";
+import { X } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { cn } from "./cn";
@@ -18,12 +19,25 @@ const formBannerVariants = cva("mb-4 rounded-lg border px-3.5 py-3 text-sm", {
 export interface FormBannerProps extends VariantProps<typeof formBannerVariants> {
   children: ReactNode;
   className?: string;
+  onDismiss?: () => void;
 }
 
-export const FormBanner = ({ children, className, tone }: FormBannerProps) => {
+export const FormBanner = ({ children, className, tone, onDismiss }: FormBannerProps) => {
   return (
     <div role="alert" aria-live="polite" className={cn(formBannerVariants({ tone }), className)}>
-      {children}
+      <div className="flex items-start gap-3">
+        <div className="flex-1">{children}</div>
+        {onDismiss && (
+          <button
+            type="button"
+            onClick={onDismiss}
+            aria-label="Dismiss"
+            className="shrink-0 cursor-pointer rounded-full p-0.5 text-current/70 transition-colors hover:text-current"
+          >
+            <X className="size-4" />
+          </button>
+        )}
+      </div>
     </div>
   );
 };

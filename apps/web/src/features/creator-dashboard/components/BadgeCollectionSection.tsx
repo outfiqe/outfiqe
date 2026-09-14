@@ -1,6 +1,6 @@
 "use client";
 
-import { Skeleton, toast } from "@outfiqe/design-system";
+import { Button, Skeleton, toast } from "@outfiqe/design-system";
 import { useMemo, useState } from "react";
 
 import { getErrorMessage } from "@/shared/lib/errorMessages";
@@ -13,7 +13,7 @@ import { BADGE_FILTER, BadgeFilterTabs, type BadgeFilterValue } from "./BadgeFil
 const MAX_FEATURED_BADGES = 6;
 
 export const BadgeCollectionSection = () => {
-  const { data: collection, isPending } = useBadgeCollection();
+  const { data: collection, isPending, isError, error, refetch } = useBadgeCollection();
   const updateFeatured = useUpdateFeaturedBadges();
   const [filter, setFilter] = useState<BadgeFilterValue>(BADGE_FILTER.ALL);
 
@@ -65,7 +65,18 @@ export const BadgeCollectionSection = () => {
         </div>
       )}
 
-      {!isPending && filtered.length === 0 && (
+      {isError && (
+        <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            Couldn&apos;t load your badge collection. {getErrorMessage(error)}
+          </p>
+          <Button variant="outline" size="sm" onClick={() => void refetch()}>
+            Try again
+          </Button>
+        </div>
+      )}
+
+      {!isPending && !isError && filtered.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">No badges match this filter yet.</p>
         </div>

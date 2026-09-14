@@ -174,4 +174,74 @@ describe("ChatAvailabilitySettings", () => {
 
     await waitFor(() => expect(toggle).toBeChecked());
   });
+
+  it("shows an error instead of silently defaulting the toggle when the setting fails to load", async () => {
+    mswServer.use(
+      http.get("/api/chat/settings", () => HttpResponse.json({ success: false }, { status: 500 })),
+    );
+    mockBlocks([]);
+    renderSettings(new FakeSocket());
+
+    expect(
+      await screen.findByText("We couldn't load your chat settings. Please try again."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "Turn off chat" })).not.toBeInTheDocument();
+  });
+
+  it("shows an error with a retry option instead of a misleading empty state when the blocked list fails to load", async () => {
+    mockSettings(true);
+    mswServer.use(
+      http.get("/api/chat/blocks", () => HttpResponse.json({ success: false }, { status: 500 })),
+    );
+    renderSettings(new FakeSocket());
+
+    expect(
+      await screen.findByText("We couldn't load the people you've turned off chat with."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("You haven't turned off chat with anyone.")).not.toBeInTheDocument();
+
+    mockBlocks([]);
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+
+    await waitFor(() =>
+      expect(screen.getByText("You haven't turned off chat with anyone.")).toBeInTheDocument(),
+    );
+  });
+
+  it("shows an error with a retry option instead of a misleading no-results state when contact search fails", async () => {
+    mockSettings(true);
+    mockBlocks([]);
+    mswServer.use(
+      http.get("/api/chat/blocks/search", () =>
+        HttpResponse.json({ success: false }, { status: 500 }),
+      ),
+    );
+    renderSettings(new FakeSocket());
+
+    const user = userEvent.setup();
+    await user.type(screen.getByPlaceholderText("Search by name or handle"), "Jane");
+
+    expect(await screen.findByText("We couldn't search right now.")).toBeInTheDocument();
+    expect(screen.queryByText('No one found for "Jane".')).not.toBeInTheDocument();
+  });
+
+  it("shows an error and restores the toggle when turning off chat fails to save", async () => {
+    mockSettings(true);
+    mockBlocks([]);
+    mswServer.use(
+      http.patch("/api/chat/settings", () =>
+        HttpResponse.json({ success: false }, { status: 500 }),
+      ),
+    );
+    renderSettings(new FakeSocket());
+
+    const toggle = await screen.findByRole("checkbox", { name: "Turn off chat" });
+    const user = userEvent.setup();
+    await user.click(toggle);
+
+    expect(
+      await screen.findByText("We couldn't update your chat settings. Please try again."),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(toggle).not.toBeChecked());
+  });
 });

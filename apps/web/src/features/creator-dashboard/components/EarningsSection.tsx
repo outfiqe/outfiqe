@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Skeleton } from "@outfiqe/design-system";
+import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 
 import { CreatorStatus } from "@/features/auth/types";
 
@@ -15,8 +15,19 @@ type EarningsSectionProps = {
 };
 
 export const EarningsSection = ({ creatorStatus }: EarningsSectionProps) => {
-  const { data: summary, isPending: isSummaryPending } = useEarningsSummary();
-  const { data, isPending, hasNextPage, fetchNextPage, isFetchingNextPage } = useMyEarnings();
+  const {
+    data: summary,
+    isPending: isSummaryPending,
+    isError: isSummaryError,
+  } = useEarningsSummary();
+  const {
+    data,
+    isPending,
+    isError: isEarningsError,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useMyEarnings();
   const earnings = data?.pages.flatMap((page) => page.items) ?? [];
 
   if (creatorStatus !== CreatorStatus.APPROVED) {
@@ -38,10 +49,20 @@ export const EarningsSection = ({ creatorStatus }: EarningsSectionProps) => {
       </div>
 
       <div className="mt-6">
-        <EarningsSummaryTiles summary={summary} isLoading={isSummaryPending} />
+        <EarningsSummaryTiles
+          summary={summary}
+          isLoading={isSummaryPending}
+          isError={isSummaryError}
+        />
       </div>
 
-      {isPending && (
+      {isEarningsError && (
+        <FormBanner className="mt-6">
+          We couldn&apos;t load your earnings right now. Please try again.
+        </FormBanner>
+      )}
+
+      {isPending && !isEarningsError && (
         <div className="mt-6 space-y-3">
           {Array.from({ length: 3 }).map((_, index) => (
             <Skeleton key={index} className="h-20 w-full rounded-2xl" />
@@ -49,7 +70,7 @@ export const EarningsSection = ({ creatorStatus }: EarningsSectionProps) => {
         </div>
       )}
 
-      {!isPending && earnings.length === 0 && (
+      {!isPending && !isEarningsError && earnings.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">
             No earnings yet — tag products in your posts to start earning.
@@ -57,7 +78,7 @@ export const EarningsSection = ({ creatorStatus }: EarningsSectionProps) => {
         </div>
       )}
 
-      {earnings.length > 0 && (
+      {!isEarningsError && earnings.length > 0 && (
         <div className="mt-6 space-y-3">
           {earnings.map((commission) => (
             <EarningsLedgerRow key={commission.id} commission={commission} />
@@ -65,7 +86,7 @@ export const EarningsSection = ({ creatorStatus }: EarningsSectionProps) => {
         </div>
       )}
 
-      {hasNextPage && (
+      {!isEarningsError && hasNextPage && (
         <div className="mt-6 flex justify-center">
           <Button
             variant="outline"

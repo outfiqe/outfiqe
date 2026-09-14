@@ -122,6 +122,7 @@ const renderForm = (detail: CreatorLookEditDetail, onClose = vi.fn()) => {
   });
   return {
     onClose,
+    queryClient,
     ...render(
       <QueryClientProvider client={queryClient}>
         <EditPostForm lookId={detail.id} detail={detail} onClose={onClose} />
@@ -136,6 +137,14 @@ describe("EditPostForm", () => {
 
     expect(screen.getByText("1/6 photos")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Write your caption here….")).toHaveValue("A great fit");
+  });
+
+  it("labels the caption field for assistive technology", () => {
+    renderForm(buildDetail());
+
+    expect(screen.getByLabelText("Caption")).toBe(
+      screen.getByPlaceholderText("Write your caption here…."),
+    );
   });
 
   it("shows the existing tagged product with its size", () => {
@@ -565,6 +574,43 @@ describe("EditPostForm", () => {
     expect((patchBody as { taggedProducts: { productId: string }[] }).taggedProducts).toEqual([
       { productId: "product-1", sizeWorn: "M" },
     ]);
+  });
+
+  it("disables Request again while the re-request is in flight, so it can't be double-submitted", async () => {
+    mswServer.use(
+      http.patch("/api/creator-looks/look-1", async () => {
+        await delay(50);
+        return HttpResponse.json({
+          success: true,
+          message: "Post updated.",
+          data: {
+            id: "look-1",
+            imageUrl: "https://cdn.outfiqe.test/existing.jpg",
+            caption: null,
+            createdAt: "2026-01-01T00:00:00.000Z",
+            taggedProducts: [],
+          },
+        });
+      }),
+    );
+
+    const user = userEvent.setup();
+    const { onClose } = renderForm(
+      buildDetail({
+        taggedProducts: [
+          buildTaggedProduct({
+            reviewStatus: "REJECTED",
+            rejectionReason: "MISREPRESENTS_PRODUCT",
+            canReRequest: true,
+          }),
+        ],
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Request again" }));
+
+    expect(screen.getByRole("button", { name: "Requesting…" })).toBeDisabled();
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
   });
 
   it("locks re-request on a declined tag that hit the cap", () => {

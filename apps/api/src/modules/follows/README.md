@@ -145,3 +145,80 @@ re-shuffled one on every page fetch. The first page's ordering always matches wh
 sidebar rail would show (`buildRankedSuggestionIds` runs the discovery-floor swap against exactly
 the first `SUGGESTED_CREATORS_LIMIT` positions before appending the rest of the scored pool), so
 the rail and the "Find more" modal's first page are never inconsistent with each other.
+
+**A session's cursor used to rewind to page one instead of resuming, if its snapshot cache expired
+mid-scroll.** Same bug shape as `../creator-looks`'s `resolveTrendingSnapshotSource`/`listForYouIds`
+(see that module's README). On a snapshot cache miss with a decoded cursor already in hand — the
+`SUGGESTED_CREATORS_SNAPSHOT` TTL lapsing while a viewer was still scrolling the "Find more" modal —
+`suggestedCreators` minted a brand-new `sessionId` **and** reset `offset` to `0`, so the very next
+"load more" silently jumped back to page one instead of continuing where the viewer left off.
+Reproduced as a real integration test before the fix: fetch page one, delete the session's Redis key
+to simulate the TTL lapsing, fetch "page two" with the original cursor — got page one's creator
+again instead of the second-ranked one. Fixed the same way as `../creator-looks`: `suggestedCreators`
+now goes through `resolveSuggestionSnapshotSource`, which reuses the cursor's own `sessionId` (rather
+than minting a new one) and clamps the cursor's `offset` into the freshly-rebuilt list instead of
+discarding it.
+
+### Read-time re-validation against bans and de-approval
+
+**A creator could keep surfacing as "suggested" for the life of the snapshot cache, or even the
+momentum cache, after being banned or de-approved.** `User.accountStatus` (`ACTIVE`/`SUSPENDED`/
+`BANNED`) and `User.creatorStatus` (`NONE`/`PENDING`/`APPROVED`/`REJECTED`) are separate columns —
+banning an account doesn't touch `creatorStatus`, and de-approving a creator doesn't touch
+`accountStatus`. Three places in this pipeline read those columns, and only one of them checked
+both:
+
+1. `buildRankedSuggestionIds`'s own candidate query filtered `isCreator`/`creatorStatus` but never
+   `accountStatus` — a suspended or banned creator with a stale `creatorStatus = APPROVED` could
+   enter the ranked pool on a **fresh** build, not just a stale cached one.
+2. `listLegacySuggestedCreators`'s raw SQL only used `creator_status = 'APPROVED'` as an `ORDER BY`
+   priority, never as a `WHERE` filter — so once there weren't enough approved+active creators to
+   fill `SUGGESTED_LIMIT`, it padded the list with `PENDING`/`REJECTED` creators and banned accounts
+   instead of excluding them.
+3. `suggestedCreators`'s final hydrate step — the query that turns a page of cached candidate ids
+   into `UserRecord`s — did no status filtering at all. A creator cached into a snapshot while
+   `APPROVED`/`ACTIVE` who gets banned or de-approved during the `SUGGESTED_CREATORS_SNAPSHOT` TTL
+   still had their record served on the next "load more" fetch.
+
+Reproduced as real integration tests before the fix: a mutual-followed candidate pre-banned before
+ever being scored still showed up in a fresh build; a candidate cached into page two of a session
+then banned (or de-approved) before that page was fetched still came back in the response; a
+cold-start viewer with a `PENDING` and a `BANNED` "creator" in the DB got both back from the legacy
+fallback alongside the one genuinely approved+active creator. All three now share one filter,
+`ELIGIBLE_SUGGESTED_CREATOR_WHERE` (`isCreator`/`creatorStatus: APPROVED`/`accountStatus: ACTIVE`),
+applied at candidate-selection time, at legacy-fallback time, and — the fix that actually closes the
+cache-staleness window — again at final hydrate time, so a status change that happens after either
+cache was populated is still caught the next time that id is read.
+
+### Deterministic tie-break
+
+**Two candidates with the exact same score had no guaranteed relative order.** `buildRankedSuggestionIds`
+sorted scored candidates with `(a, b) => b.score - a.score`, no secondary key. Node's `Array.sort` is
+stable, but the array being sorted came from `prisma.user.findMany({ where: { id: { in: [...] } } })`
+with no `orderBy` — Postgres makes no guarantee about row order for an unordered `IN (...)` scan, so
+a tie's "input order" (and therefore its output order, and which candidates land in the same
+`applyWeightedRotation` tie-band together) was an accident of the query plan, not a controlled
+property — the same class of bug `../creator-looks` found and fixed in `computeRankedLookScores`/
+`computeRankedCreatorMomentumScores` (see that module's README). Fixed by extracting the comparison
+into `compareSuggestionCandidatesByScore` (`follow.utils.ts`) — `b.score - a.score || a.creatorId.localeCompare(b.creatorId)`
+— used for the main sort, with a matching `id`/`following_id` tiebreak added to the two raw-SQL
+queries whose own `ORDER BY ... LIMIT` truncation could otherwise let a tied row silently swap in or
+out of the candidate set between requests (`listMutualFollowCandidates`, `listLegacySuggestedCreators`).
+Locked in with a unit test on the extracted comparator (asserting the same two creators sort into the
+same order regardless of which order they're handed in) rather than a live-DB race, since a
+same-process query on an otherwise-idle table rarely reproduces Postgres's lack of ordering
+guarantees on demand — the risk is real regardless of whether a given local run happens to expose it,
+exactly as `../creator-looks` found.
+
+### Checked and already correct
+
+`readCreatorMomentumPool` and the snapshot-cache read both already fail open on a Redis error or
+corrupted payload (falling back to the other candidate sources, or the legacy list) rather than
+5xx-ing the endpoint — confirmed by seeding a mutual-follow candidate, writing invalid JSON directly
+into the momentum-score cache key, and getting a 200 with that candidate still present. Self-
+suggestion and already-followed exclusion, the mutual-follow/hashtag boost caps, and
+`ensureMomentumDiscoveryFloor`'s discovery-slot floor were all re-checked against the existing test
+coverage and found correctly implemented — no changes made. This module has no raw-SQL hourly-bucket
+aggregation of its own (unlike `../creator-looks`'s trend metrics); it only reads that module's
+already-aggregated momentum cache and runs its own live queries, so the hour-boundary bucketing bug
+`../creator-looks` had doesn't apply here.

@@ -32,7 +32,16 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
     setNewLink(null);
   };
 
-  const { data, isPending, hasNextPage, fetchNextPage, isFetchingNextPage } = useMyCreatorLinks();
+  const {
+    data,
+    isPending,
+    isError,
+    error,
+    refetch,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useMyCreatorLinks();
   const links = data?.pages.flatMap((page) => page.items) ?? [];
 
   const createInternal = useCreateInternalLink();
@@ -145,7 +154,18 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
           </div>
         )}
 
-        {!isPending && links.length === 0 && (
+        {isError && (
+          <div className="mt-3 rounded-2xl border border-dashed border-border p-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              Couldn&apos;t load your links. {getErrorMessage(error)}
+            </p>
+            <Button variant="outline" size="sm" className="mt-3" onClick={() => void refetch()}>
+              Try again
+            </Button>
+          </div>
+        )}
+
+        {!isPending && !isError && links.length === 0 && (
           <p className="mt-3 text-sm text-muted-foreground">
             No links generated yet — share a product above to get started.
           </p>

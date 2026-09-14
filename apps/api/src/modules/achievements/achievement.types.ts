@@ -13,7 +13,7 @@ export type EligibleAchievementRecord = {
 
 export type MetricSnapshot = Partial<Record<AchievementMetric, number>>;
 
-export type AchievementConditionProgress = AchievementCondition & { currentValue: number };
+export type AchievementConditionProgress = AchievementCondition & { currentValue: number | null };
 
 export type AchievementProgressView = {
   achievementId: string;

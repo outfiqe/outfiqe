@@ -4,12 +4,16 @@ import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import { CreatorStatus, FollowTargetType } from "#generated/prisma/enums.js";
+import { AccountStatus, CreatorStatus, FollowTargetType } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
+import { decodeCursor } from "#lib/pagination.utils.js";
 import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
 import { redis } from "#redis/redis.client.js";
+import { CREATOR_MOMENTUM_SCORE_CACHE_KEY, redisKeys } from "#redis/redis.keys.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
+
+import type { SuggestionSnapshotCursor } from "./follow.types.js";
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -228,6 +232,252 @@ describe("GET /api/follows/suggested-creators", () => {
     );
     expect(secondIds.length).toBeGreaterThan(0);
     expect(secondIds.some((id) => firstIds.includes(id))).toBe(false);
+  });
+
+  it("resumes from where it left off instead of rewinding to page one when the session snapshot expires mid-scroll", async () => {
+    const viewer = await createCreator("Resume Suggestions Viewer", "resume-suggestions-viewer");
+    const strongFan = await createCreator("Resume Strong Fan", "resume-strong-fan");
+    const weakFan = await createCreator("Resume Weak Fan", "resume-weak-fan");
+    const extraFan = await createCreator("Resume Extra Fan", "resume-extra-fan");
+    const topCandidate = await createCreator("Resume Top Candidate", "resume-top-candidate", 50);
+    const secondCandidate = await createCreator(
+      "Resume Second Candidate",
+      "resume-second-candidate",
+      10,
+    );
+
+    const topLook = await createLook(topCandidate.id, "Resume top post");
+    await prisma.creatorLookLike.createMany({
+      data: [
+        { creatorLookId: topLook.id, userId: strongFan.id },
+        { creatorLookId: topLook.id, userId: weakFan.id },
+        { creatorLookId: topLook.id, userId: extraFan.id },
+      ],
+    });
+    const secondLook = await createLook(secondCandidate.id, "Resume second post");
+    await prisma.creatorLookLike.create({
+      data: { creatorLookId: secondLook.id, userId: strongFan.id },
+    });
+    await creatorLookService.runTrendingAggregation();
+    await creatorLookService.runCreatorMomentumScoring();
+
+    const first = await request(testApp)
+      .get("/api/follows/suggested-creators")
+      .query({ limit: 1 })
+      .set("Authorization", authHeaderFor(viewer.id));
+    expect(first.status).toBe(200);
+    expect(first.body.data.creators[0]?.id).toBe(topCandidate.id);
+    expect(first.body.data.nextCursor).not.toBeNull();
+
+    const firstCursor = decodeCursor<SuggestionSnapshotCursor>(first.body.data.nextCursor);
+    await redis.del(redisKeys.cache("suggested-creators-snapshot", firstCursor?.sessionId ?? ""));
+
+    const second = await request(testApp)
+      .get("/api/follows/suggested-creators")
+      .query({ limit: 1, cursor: first.body.data.nextCursor })
+      .set("Authorization", authHeaderFor(viewer.id));
+
+    expect(second.status).toBe(200);
+    expect(second.body.data.creators[0]?.id).toBe(secondCandidate.id);
+  });
+
+  it("never suggests a creator through a fresh candidate-pool build once their account is banned", async () => {
+    const viewer = await createCreator("Banned Pool Viewer", "banned-pool-viewer");
+    const connectors = await Promise.all([
+      createCreator("Banned Pool Connector One", "banned-pool-connector-one"),
+      createCreator("Banned Pool Connector Two", "banned-pool-connector-two"),
+      createCreator("Banned Pool Connector Three", "banned-pool-connector-three"),
+    ]);
+    const bannedCandidate = await createCreator(
+      "Banned Pool Candidate",
+      "banned-pool-candidate",
+      50,
+    );
+    for (const connector of connectors) {
+      await followUser(viewer.id, connector.id);
+      await followUser(connector.id, bannedCandidate.id);
+    }
+    await prisma.user.update({
+      where: { id: bannedCandidate.id },
+      data: { accountStatus: AccountStatus.BANNED },
+    });
+
+    const response = await requestSuggestions(viewer.id);
+
+    expect(response.status).toBe(200);
+    const ids: string[] = response.body.data.creators.map((creator: { id: string }) => creator.id);
+    expect(ids).not.toContain(bannedCandidate.id);
+  });
+
+  it("drops a creator from a cached suggestion snapshot once their account is banned mid-session", async () => {
+    const viewer = await createCreator("Mid-Session Ban Viewer", "mid-session-ban-viewer");
+    const strongFan = await createCreator("Mid-Session Ban Strong Fan", "mid-session-ban-strong");
+    const weakFan = await createCreator("Mid-Session Ban Weak Fan", "mid-session-ban-weak");
+    const topCandidate = await createCreator(
+      "Mid-Session Ban Top Candidate",
+      "mid-session-ban-top",
+      50,
+    );
+    const soonBannedCandidate = await createCreator(
+      "Mid-Session Ban Second Candidate",
+      "mid-session-ban-second",
+      10,
+    );
+    const topLook = await createLook(topCandidate.id, "Mid-session ban top post");
+    await prisma.creatorLookLike.createMany({
+      data: [
+        { creatorLookId: topLook.id, userId: strongFan.id },
+        { creatorLookId: topLook.id, userId: weakFan.id },
+      ],
+    });
+    const secondLook = await createLook(soonBannedCandidate.id, "Mid-session ban second post");
+    await prisma.creatorLookLike.create({
+      data: { creatorLookId: secondLook.id, userId: strongFan.id },
+    });
+    await creatorLookService.runTrendingAggregation();
+    await creatorLookService.runCreatorMomentumScoring();
+
+    const first = await request(testApp)
+      .get("/api/follows/suggested-creators")
+      .query({ limit: 1 })
+      .set("Authorization", authHeaderFor(viewer.id));
+    expect(first.status).toBe(200);
+    expect(first.body.data.creators[0]?.id).toBe(topCandidate.id);
+    expect(first.body.data.nextCursor).not.toBeNull();
+
+    await prisma.user.update({
+      where: { id: soonBannedCandidate.id },
+      data: { accountStatus: AccountStatus.BANNED },
+    });
+
+    const second = await request(testApp)
+      .get("/api/follows/suggested-creators")
+      .query({ limit: 1, cursor: first.body.data.nextCursor })
+      .set("Authorization", authHeaderFor(viewer.id));
+
+    expect(second.status).toBe(200);
+    const secondIds: string[] = second.body.data.creators.map(
+      (creator: { id: string }) => creator.id,
+    );
+    expect(secondIds).not.toContain(soonBannedCandidate.id);
+  });
+
+  it("drops a creator from a cached suggestion snapshot once they're de-approved mid-session", async () => {
+    const viewer = await createCreator("Mid-Session Reject Viewer", "mid-session-reject-viewer");
+    const strongFan = await createCreator(
+      "Mid-Session Reject Strong Fan",
+      "mid-session-reject-strong",
+    );
+    const weakFan = await createCreator("Mid-Session Reject Weak Fan", "mid-session-reject-weak");
+    const topCandidate = await createCreator(
+      "Mid-Session Reject Top Candidate",
+      "mid-session-reject-top",
+      50,
+    );
+    const soonRejectedCandidate = await createCreator(
+      "Mid-Session Reject Second Candidate",
+      "mid-session-reject-second",
+      10,
+    );
+    const topLook = await createLook(topCandidate.id, "Mid-session reject top post");
+    await prisma.creatorLookLike.createMany({
+      data: [
+        { creatorLookId: topLook.id, userId: strongFan.id },
+        { creatorLookId: topLook.id, userId: weakFan.id },
+      ],
+    });
+    const secondLook = await createLook(soonRejectedCandidate.id, "Mid-session reject second post");
+    await prisma.creatorLookLike.create({
+      data: { creatorLookId: secondLook.id, userId: strongFan.id },
+    });
+    await creatorLookService.runTrendingAggregation();
+    await creatorLookService.runCreatorMomentumScoring();
+
+    const first = await request(testApp)
+      .get("/api/follows/suggested-creators")
+      .query({ limit: 1 })
+      .set("Authorization", authHeaderFor(viewer.id));
+    expect(first.status).toBe(200);
+    expect(first.body.data.creators[0]?.id).toBe(topCandidate.id);
+    expect(first.body.data.nextCursor).not.toBeNull();
+
+    await prisma.user.update({
+      where: { id: soonRejectedCandidate.id },
+      data: { creatorStatus: CreatorStatus.REJECTED },
+    });
+
+    const second = await request(testApp)
+      .get("/api/follows/suggested-creators")
+      .query({ limit: 1, cursor: first.body.data.nextCursor })
+      .set("Authorization", authHeaderFor(viewer.id));
+
+    expect(second.status).toBe(200);
+    const secondIds: string[] = second.body.data.creators.map(
+      (creator: { id: string }) => creator.id,
+    );
+    expect(secondIds).not.toContain(soonRejectedCandidate.id);
+  });
+
+  it("excludes a not-yet-approved or banned creator from the legacy fallback list, not just ranks them lower", async () => {
+    const viewer = await createCreator("Legacy Filter Viewer", "legacy-filter-viewer");
+    const pendingCreator = await prisma.user.create({
+      data: {
+        email: `legacy-pending-${randomUUID()}@outfiqe.test`,
+        name: "Legacy Pending Creator",
+        handle: `legacy-pending-${randomUUID().slice(0, 6)}`,
+        phone: uniquePhone(),
+        passwordHash: "not-used-in-tests",
+        isCreator: true,
+        creatorStatus: CreatorStatus.PENDING,
+        followerCount: 1000,
+      },
+    });
+    const bannedCreator = await createCreator(
+      "Legacy Banned Creator",
+      "legacy-banned-creator",
+      1000,
+    );
+    await prisma.user.update({
+      where: { id: bannedCreator.id },
+      data: { accountStatus: AccountStatus.BANNED },
+    });
+    const approvedCreator = await createCreator(
+      "Legacy Approved Creator",
+      "legacy-approved-creator",
+      1,
+    );
+
+    const response = await requestSuggestions(viewer.id);
+
+    expect(response.status).toBe(200);
+    const ids: string[] = response.body.data.creators.map((creator: { id: string }) => creator.id);
+    expect(ids).toContain(approvedCreator.id);
+    expect(ids).not.toContain(pendingCreator.id);
+    expect(ids).not.toContain(bannedCreator.id);
+  });
+
+  it("degrades gracefully to candidate generation without the momentum pool when its cache holds corrupted data", async () => {
+    const viewer = await createCreator("Corrupt Cache Viewer", "corrupt-cache-viewer");
+    const connectors = await Promise.all([
+      createCreator("Corrupt Cache Connector One", "corrupt-cache-connector-one"),
+      createCreator("Corrupt Cache Connector Two", "corrupt-cache-connector-two"),
+    ]);
+    const mutualCandidate = await createCreator(
+      "Corrupt Cache Mutual Candidate",
+      "corrupt-cache-mutual-candidate",
+      5,
+    );
+    for (const connector of connectors) {
+      await followUser(viewer.id, connector.id);
+      await followUser(connector.id, mutualCandidate.id);
+    }
+    await redis.set(CREATOR_MOMENTUM_SCORE_CACHE_KEY, "not-valid-json");
+
+    const response = await requestSuggestions(viewer.id);
+
+    expect(response.status).toBe(200);
+    const ids: string[] = response.body.data.creators.map((creator: { id: string }) => creator.id);
+    expect(ids).toContain(mutualCandidate.id);
   });
 });
 

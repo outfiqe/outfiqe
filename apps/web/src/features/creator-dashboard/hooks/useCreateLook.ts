@@ -15,6 +15,8 @@ export const useCreateLook = () => {
     mutationFn: creatorLooksApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["creator-looks"] });
+      queryClient.invalidateQueries({ queryKey: ["explore-feed"] });
+      queryClient.invalidateQueries({ queryKey: ["saved-posts"] });
     },
   });
 };

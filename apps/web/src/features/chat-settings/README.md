@@ -17,7 +17,9 @@ UI yet, since nothing sends messages yet.
   `NotificationPreferencesView` already established), a debounced contact search
   (`useChatContactSearch` + `useDebouncedValue`) with a "Turn off chat" action per result, and the
   blocked-people list (`useChatBlocks`, `useInfiniteCursorPage`-backed) with a "Turn chat back on"
-  action per row.
+  action per row. The global toggle renders a `FormBanner` instead of the row when the initial
+  `GET /chat/settings` fetch fails, and another below the row if a `PATCH /chat/settings` save
+  fails — see rationale below.
 - `SiteChatAvailabilitySettings.tsx` — the thin app wrapper mounted by the page. Subscribes to the
   shared `shared/lib/socketClient` connection via `useSyncExternalStore` (mirrors
   `SiteNotificationBell.tsx` exactly — see that feature's README for why `useSyncExternalStore`
@@ -62,3 +64,19 @@ rows, each with its own action button — not the `Autocomplete` dropdown primit
 `ExploreSearchBox` use for select-one-and-navigate. This page needs to show and act on possibly
 several results at once (block more than one person in a sitting), which fits the list-of-rows shape
 better than a single-select dropdown.
+
+**The global toggle used to fail silently on both the initial load and a failed save.** `useChatSettings`
+only ever exposed the _query's_ `isError` (unused by the component) and never the _mutation's_ — so a
+failed `GET /chat/settings` rendered the checkbox anyway, defaulting to `isChatEnabled ?? true` as if
+chat were confirmed on, and a failed `PATCH /chat/settings` rolled the optimistic toggle back with no
+visible feedback at all, identical to `NotificationPreferencesView`'s same-shaped gap but inconsistent
+with this very page's own `ConnectedAccounts` section, which already shows a `FormBanner` on a failed
+fetch. Confirmed with real MSW-mocked component tests
+(`ChatAvailabilitySettings.integration.test.tsx`) forcing a `500` from each endpoint: before this fix
+neither produced any error text, and the fetch-failure case rendered the toggle as if the setting had
+loaded successfully. Fixed by adding `isUpdateError` (the mutation's `isError`) to `useChatSettings`'s
+return value and having `ChatAvailabilityToggle` render a `FormBanner` in place of the row on a query
+error, and a second `FormBanner` below the row on a mutation error — matching `ConnectedAccounts`'
+existing convention on this same page instead of inventing a new one. `NotificationPreferencesView`
+itself was left as-is: it's a different, shared component outside this audit's scope, not something
+this pass touches.

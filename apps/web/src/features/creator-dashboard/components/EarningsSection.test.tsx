@@ -44,6 +44,7 @@ const mockSummary = (overrides: Partial<ReturnType<typeof useEarningsSummary>> =
   vi.mocked(useEarningsSummary).mockReturnValue({
     data: { totalEarnings: 0, pending: 0, available: 0, paid: 0 },
     isPending: false,
+    isError: false,
     ...overrides,
   } as ReturnType<typeof useEarningsSummary>);
 };
@@ -52,6 +53,7 @@ const mockEarnings = (overrides: Partial<ReturnType<typeof useMyEarnings>> = {})
   vi.mocked(useMyEarnings).mockReturnValue({
     data: { pages: [{ items: [], nextCursor: null }], pageParams: [undefined] },
     isPending: false,
+    isError: false,
     hasNextPage: false,
     fetchNextPage,
     isFetchingNextPage: false,
@@ -130,5 +132,29 @@ describe("EarningsSection", () => {
     render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} />);
 
     expect(screen.queryByText(/Rs\./)).not.toBeInTheDocument();
+  });
+
+  it("shows an error banner instead of an empty state when the ledger fails to load", () => {
+    mockEarnings({ isError: true, isPending: false });
+
+    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} />);
+
+    expect(
+      screen.getByText("We couldn't load your earnings right now. Please try again."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("No earnings yet — tag products in your posts to start earning."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows an error banner instead of zeroed-out tiles when the summary fails to load", () => {
+    mockSummary({ isError: true, isPending: false, data: undefined });
+
+    render(<EarningsSection creatorStatus={CreatorStatus.APPROVED} />);
+
+    expect(
+      screen.getByText("We couldn't load your earnings summary right now. Please try again."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Rs\. 0/)).not.toBeInTheDocument();
   });
 });

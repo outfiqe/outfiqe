@@ -1,7 +1,7 @@
 import { Router } from "express";
 
 import { rateLimit } from "#middlewares/rate-limit.js";
-import { requireAuth } from "#middlewares/require-auth.js";
+import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 
 import {
@@ -11,6 +11,8 @@ import {
   OAUTH_LINK_START_IP_RATE_LIMIT_WINDOW_MS,
   OAUTH_START_IP_RATE_LIMIT_MAX_REQUESTS,
   OAUTH_START_IP_RATE_LIMIT_WINDOW_MS,
+  OAUTH_UNLINK_RATE_LIMIT_MAX_REQUESTS,
+  OAUTH_UNLINK_RATE_LIMIT_WINDOW_MS,
 } from "./oauth.constants.js";
 import { oauthController } from "./oauth.controller.js";
 import {
@@ -43,6 +45,14 @@ const oauthLinkConfirmIpRateLimit = rateLimit({
   max: OAUTH_LINK_CONFIRM_IP_RATE_LIMIT_MAX_REQUESTS,
   keyGenerator: (req) => req.ip,
   message: "Too many attempts. Please try again in 15 minutes.",
+});
+
+const oauthUnlinkRateLimit = rateLimit({
+  namespace: "oauth-unlink",
+  windowMs: OAUTH_UNLINK_RATE_LIMIT_WINDOW_MS,
+  max: OAUTH_UNLINK_RATE_LIMIT_MAX_REQUESTS,
+  keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
+  message: "Too many disconnect attempts. Please try again in 15 minutes.",
 });
 
 export const oauthRoutes = Router();
@@ -80,6 +90,7 @@ oauthRoutes.post(
 oauthRoutes.delete(
   "/:provider/link",
   requireAuth,
+  oauthUnlinkRateLimit,
   validate({ params: oauthProviderParamsSchema, body: oauthUnlinkBodySchema }),
   oauthController.unlink,
 );

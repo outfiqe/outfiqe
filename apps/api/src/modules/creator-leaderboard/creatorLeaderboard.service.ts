@@ -1,8 +1,13 @@
 import { DomainEvents, eventBus } from "#events/event-bus.js";
-import { CreatorLeaderboardCategory } from "#generated/prisma/enums.js";
+import {
+  AccountStatus,
+  CreatorLeaderboardCategory,
+  CreatorStatus,
+} from "#generated/prisma/enums.js";
 import { currentIsoWeekKey, previousIsoWeekKey } from "#lib/iso-week.utils.js";
 import logger from "#lib/winston.utils.js";
 import { userRepository } from "#modules/users/user.repository.js";
+import type { UserRecord } from "#modules/users/user.types.js";
 import { describeError } from "#redis/redis.utils.js";
 
 import { CREATOR_LEADERBOARD_TOP_N } from "./creatorLeaderboard.constants.js";
@@ -28,6 +33,12 @@ const STATS_DERIVED_CATEGORIES: CreatorLeaderboardCategory[] = [
   CreatorLeaderboardCategory.MOST_ACHIEVEMENTS,
 ];
 
+const isEligibleForLeaderboard = (creator: UserRecord | undefined): creator is UserRecord =>
+  creator !== undefined &&
+  creator.accountStatus === AccountStatus.ACTIVE &&
+  creator.creatorStatus === CreatorStatus.APPROVED &&
+  !creator.hideFromLeaderboards;
+
 const publishUpdated = async (
   category: CreatorLeaderboardCategory,
   week: string,
@@ -41,10 +52,9 @@ const writeStatsDerivedCategories = async (
 ): Promise<void> => {
   await Promise.all(
     STATS_DERIVED_CATEGORIES.map(async (category) => {
-      const entries = stats.map((row) => ({
-        member: row.creatorId,
-        score: scoreForCategory(category, row),
-      }));
+      const entries = stats
+        .map((row) => ({ member: row.creatorId, score: scoreForCategory(category, row) }))
+        .filter(({ score }) => score > 0);
       await creatorLeaderboardRepository.replaceWeeklyScores(category, week, entries);
       await publishUpdated(category, week);
     }),
@@ -66,7 +76,8 @@ const writeRisingCreator = async (now: Date): Promise<void> => {
     .map(({ member, score }) => ({
       member,
       score: deriveGrowthScore(score, previousXpByCreator.get(member) ?? 0),
-    }));
+    }))
+    .filter(({ score }) => score > 0);
 
   await creatorLeaderboardRepository.replaceWeeklyScores(
     CreatorLeaderboardCategory.RISING_CREATOR,
@@ -118,11 +129,11 @@ const getTop = async (
   const entries: CreatorLeaderboardEntry[] = [];
   top.forEach(({ member, score }, index) => {
     const creator = creatorsById.get(member);
-    if (!creator) return;
+    if (!isEligibleForLeaderboard(creator)) return;
 
     const previousRank = previousRanks[index] ?? null;
     entries.push({
-      rank: index + 1,
+      rank: entries.length + 1,
       creatorId: creator.id,
       creatorName: creator.name,
       creatorHandle: creator.handle,

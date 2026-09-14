@@ -1,10 +1,11 @@
-import { Skeleton } from "@outfiqe/design-system";
+import { FormBanner, Skeleton } from "@outfiqe/design-system";
 
 import type { EarningsSummary } from "../api/commissionSchemas";
 
 type EarningsSummaryTilesProps = {
   summary: EarningsSummary | undefined;
   isLoading: boolean;
+  isError: boolean;
 };
 
 const TILES: { key: keyof EarningsSummary; label: string }[] = [
@@ -14,7 +15,19 @@ const TILES: { key: keyof EarningsSummary; label: string }[] = [
   { key: "paid", label: "Paid" },
 ];
 
-export const EarningsSummaryTiles = ({ summary, isLoading }: EarningsSummaryTilesProps) => {
+export const EarningsSummaryTiles = ({
+  summary,
+  isLoading,
+  isError,
+}: EarningsSummaryTilesProps) => {
+  if (isError) {
+    return (
+      <FormBanner>
+        We couldn&apos;t load your earnings summary right now. Please try again.
+      </FormBanner>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {TILES.map(({ key, label }) => (
