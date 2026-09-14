@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -53,5 +53,84 @@ describe("KanbanBoard", () => {
     columnB.dispatchEvent(new Event("drop", { bubbles: true, cancelable: true }));
 
     expect(onCardMove).not.toHaveBeenCalled();
+  });
+
+  it("highlights the column being dragged over and suppresses the browser default", () => {
+    render(
+      <KanbanBoard
+        columns={COLUMNS}
+        cards={CARDS}
+        onCardMove={vi.fn()}
+        renderCard={(card) => card.title}
+      />,
+    );
+
+    const columnA = screen.getByRole("region", { name: "Column A" });
+    expect(columnA.className).not.toContain("border-foreground");
+
+    const wasNotPrevented = fireEvent.dragOver(columnA);
+
+    expect(wasNotPrevented).toBe(false);
+    expect(columnA.className).toContain("border-foreground");
+  });
+
+  it("does not suppress the browser default or highlight the column when disabled", () => {
+    render(
+      <KanbanBoard
+        columns={COLUMNS}
+        cards={CARDS}
+        onCardMove={vi.fn()}
+        renderCard={(card) => card.title}
+        disabled
+      />,
+    );
+
+    const columnA = screen.getByRole("region", { name: "Column A" });
+    const wasNotPrevented = fireEvent.dragOver(columnA);
+
+    expect(wasNotPrevented).toBe(true);
+    expect(columnA.className).not.toContain("border-foreground");
+  });
+
+  it("clears the drag-over highlight once the drag leaves the column", () => {
+    render(
+      <KanbanBoard
+        columns={COLUMNS}
+        cards={CARDS}
+        onCardMove={vi.fn()}
+        renderCard={(card) => card.title}
+      />,
+    );
+
+    const columnA = screen.getByRole("region", { name: "Column A" });
+    fireEvent.dragOver(columnA);
+    expect(columnA.className).toContain("border-foreground");
+
+    fireEvent.dragLeave(columnA);
+    expect(columnA.className).not.toContain("border-foreground");
+  });
+
+  it("fades a card while it is being dragged and clears both drag states on drag end", () => {
+    render(
+      <KanbanBoard
+        columns={COLUMNS}
+        cards={CARDS}
+        onCardMove={vi.fn()}
+        renderCard={(card) => card.title}
+      />,
+    );
+
+    const card = screen.getByText("First card").closest("article") as HTMLElement;
+    const columnA = screen.getByRole("region", { name: "Column A" });
+
+    fireEvent.dragStart(card);
+    expect(card.className).toContain("opacity-50");
+
+    fireEvent.dragOver(columnA);
+    expect(columnA.className).toContain("border-foreground");
+
+    fireEvent.dragEnd(card);
+    expect(card.className).not.toContain("opacity-50");
+    expect(columnA.className).not.toContain("border-foreground");
   });
 });
