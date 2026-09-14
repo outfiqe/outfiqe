@@ -71,7 +71,8 @@ export const ProductsPage = () => {
         )}
 
         {products.map((product) => {
-          const { id, imageUrl, name, status, lowStock, brand, price, type, categories } = product;
+          const { id, imageUrl, name, status, lowStock, brand, price, productType, categories } =
+            product;
 
           return (
             <div
@@ -100,7 +101,7 @@ export const ProductsPage = () => {
                   {brand.name} &middot; Rs. {price.toLocaleString()}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {type} &middot; {categories.join(", ")}
+                  {productType.label} &middot; {categories.join(", ")}
                 </p>
               </div>
 
