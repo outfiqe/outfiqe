@@ -15,13 +15,18 @@ import {
   UserRole,
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
+import { decodeCursor } from "#lib/pagination.utils.js";
+import { truncateToHour } from "#lib/trend-scoring.utils.js";
+import { creatorLookRepository } from "#modules/creator-looks/creatorLook.repository.js";
 import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
+import type { TrendingSnapshotCursor } from "#modules/creator-looks/creatorLook.utils.js";
 import {
   PLATFORM_PERMISSION_CATALOG,
   PLATFORM_PERMISSION_KEYS,
 } from "#modules/platform-access/platform-access.constants.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { redis } from "#redis/redis.client.js";
+import { redisKeys } from "#redis/redis.keys.js";
 import { seedPlatformOrganization } from "#test/integration/crmFixtures.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
@@ -1722,6 +1727,34 @@ describe("GET /api/creator-looks/feed", () => {
     expect(busyLookIdsInFeed.length).toBeLessThanOrEqual(3);
   });
 
+  it("surfaces a followed creator's brand-new, not-yet-trending post in for_you, not just re-ranked trending content", async () => {
+    const trendingCreator = await createCreator("Discovery Creator", "discovery-creator");
+    const followedCreator = await createCreator("Quiet Followed Creator", "quiet-followed-creator");
+    const engager = await createCreator("Discovery Engager", "discovery-engager");
+    const viewer = await createCreator("Followed Discovery Viewer", "followed-discovery-viewer");
+
+    const trendingLook = await createLook(trendingCreator.id, "Discovery trending post");
+    await prisma.creatorLookLike.create({
+      data: { creatorLookId: trendingLook.id, userId: engager.id },
+    });
+    const quietFollowedLook = await createLook(followedCreator.id, "Quiet followed post");
+
+    await followCreator(viewer.id, followedCreator.id);
+    await creatorLookService.runTrendingAggregation();
+    const { ranked } = await creatorLookService.runTrendingScoring();
+    expect(ranked.some((entry) => entry.lookId === quietFollowedLook.id)).toBe(false);
+
+    const response = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you", limit: 30 })
+      .set("Authorization", authHeaderFor(viewer.id));
+
+    expect(response.status).toBe(200);
+    const ids = response.body.data.posts.map((post: { id: string }) => post.id);
+    expect(ids).toContain(quietFollowedLook.id);
+    expect(ids).toContain(trendingLook.id);
+  });
+
   it("keeps the for_you candidate set stable across repeat page-1 requests, even once a new post starts scoring in between", async () => {
     const creatorA = await createCreator("Stable Creator A", "stable-creator-a");
     const neutralViewer = await createCreator("Stable Neutral Viewer", "stable-neutral-viewer");
@@ -1811,6 +1844,118 @@ describe("GET /api/creator-looks/feed", () => {
       expect(second.status).toBe(200);
       expect(second.body.data.posts[0]?.id).not.toBe(first.body.data.posts[0]?.id);
     }
+  });
+
+  it("drops a post from the trending tab once it's deleted, even while its snapshot cache is warm", async () => {
+    const creator = await createCreator("Stale Trending Creator", "stale-trending-creator");
+    const engager = await createCreator("Stale Trending Engager", "stale-trending-engager");
+    const look = await createLook(creator.id, "Stale trending post");
+    await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: engager.id } });
+    await creatorLookService.runTrendingAggregation();
+    await creatorLookService.runTrendingScoring();
+
+    const before = await request(testApp).get("/api/creator-looks/feed").query({ tab: "trending" });
+    expect(before.body.data.posts.map((post: { id: string }) => post.id)).toContain(look.id);
+
+    await prisma.creatorLook.update({ where: { id: look.id }, data: { deletedAt: new Date() } });
+
+    const after = await request(testApp).get("/api/creator-looks/feed").query({ tab: "trending" });
+    expect(after.body.data.posts.map((post: { id: string }) => post.id)).not.toContain(look.id);
+  });
+
+  it("drops a post from the for_you tab once it's deleted, even while its snapshot cache is warm", async () => {
+    const creator = await createCreator("Stale For You Creator", "stale-for-you-creator");
+    const engager = await createCreator("Stale For You Engager", "stale-for-you-engager");
+    const look = await createLook(creator.id, "Stale for-you post");
+    await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: engager.id } });
+    await creatorLookService.runTrendingAggregation();
+    await creatorLookService.runTrendingScoring();
+
+    const viewerBefore = await createCreator(
+      "Stale For You Viewer Before",
+      "stale-for-you-viewer-a",
+    );
+    const before = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you" })
+      .set("Authorization", authHeaderFor(viewerBefore.id));
+    expect(before.body.data.posts.map((post: { id: string }) => post.id)).toContain(look.id);
+
+    await prisma.creatorLook.update({ where: { id: look.id }, data: { deletedAt: new Date() } });
+
+    const viewerAfter = await createCreator("Stale For You Viewer After", "stale-for-you-viewer-b");
+    const after = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you" })
+      .set("Authorization", authHeaderFor(viewerAfter.id));
+    expect(after.body.data.posts.map((post: { id: string }) => post.id)).not.toContain(look.id);
+  });
+
+  it("resumes the trending tab from where it left off instead of rewinding to page one when the session snapshot expires mid-scroll", async () => {
+    const creator = await createCreator("Resume Trending Creator", "resume-trending-creator");
+    const engagerOne = await createCreator("Resume Trending Engager One", "resume-trending-eng-1");
+    const engagerTwo = await createCreator("Resume Trending Engager Two", "resume-trending-eng-2");
+    const topLook = await createLook(creator.id, "Resume trending top post");
+    const secondLook = await createLook(creator.id, "Resume trending second post");
+    await prisma.creatorLookLike.createMany({
+      data: [
+        { creatorLookId: topLook.id, userId: engagerOne.id },
+        { creatorLookId: topLook.id, userId: engagerTwo.id },
+        { creatorLookId: secondLook.id, userId: engagerOne.id },
+      ],
+    });
+    await creatorLookService.runTrendingAggregation();
+    await creatorLookService.runTrendingScoring();
+
+    const first = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "trending", limit: 1 });
+    expect(first.body.data.posts[0]?.id).toBe(topLook.id);
+    expect(first.body.data.nextCursor).not.toBeNull();
+
+    const firstCursor = decodeCursor<TrendingSnapshotCursor>(first.body.data.nextCursor);
+    await redis.del(redisKeys.cache("explore-trending-snapshot", firstCursor?.sessionId ?? ""));
+
+    const second = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "trending", limit: 1, cursor: first.body.data.nextCursor });
+
+    expect(second.body.data.posts[0]?.id).toBe(secondLook.id);
+  });
+
+  it("resumes the for_you tab from where it left off instead of rewinding to page one when the session snapshot expires mid-scroll", async () => {
+    const creator = await createCreator("Resume For You Creator", "resume-for-you-creator");
+    const engagerOne = await createCreator("Resume For You Engager One", "resume-for-you-eng-1");
+    const engagerTwo = await createCreator("Resume For You Engager Two", "resume-for-you-eng-2");
+    const viewer = await createCreator("Resume For You Viewer", "resume-for-you-viewer");
+    const topLook = await createLook(creator.id, "Resume for-you top post");
+    const secondLook = await createLook(creator.id, "Resume for-you second post");
+    await prisma.creatorLookLike.createMany({
+      data: [
+        { creatorLookId: topLook.id, userId: engagerOne.id },
+        { creatorLookId: topLook.id, userId: engagerTwo.id },
+        { creatorLookId: secondLook.id, userId: engagerOne.id },
+      ],
+    });
+    await creatorLookService.runTrendingAggregation();
+    await creatorLookService.runTrendingScoring();
+
+    const first = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you", limit: 1 })
+      .set("Authorization", authHeaderFor(viewer.id));
+    expect(first.body.data.posts[0]?.id).toBe(topLook.id);
+    expect(first.body.data.nextCursor).not.toBeNull();
+
+    const firstCursor = decodeCursor<TrendingSnapshotCursor>(first.body.data.nextCursor);
+    await redis.del(redisKeys.cache("explore-for-you-snapshot", firstCursor?.sessionId ?? ""));
+
+    const second = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you", limit: 1, cursor: first.body.data.nextCursor })
+      .set("Authorization", authHeaderFor(viewer.id));
+
+    expect(second.body.data.posts[0]?.id).toBe(secondLook.id);
   });
 });
 
@@ -1944,6 +2089,44 @@ describe("creatorLookService trending pipeline", () => {
     const secondRunAWinsTie =
       rankOf(secondRun.ranked, lookA.id) < rankOf(secondRun.ranked, lookB.id);
     expect(secondRunAWinsTie).toBe(firstRunAWinsTie);
+  });
+
+  it("finalizes an hour's bucket with activity that arrives after aggregation has already moved on to the next hour", async () => {
+    const creator = await createCreator("Boundary Creator", "boundary-creator");
+    const engagerA = await createCreator("Boundary Engager A", "boundary-engager-a");
+    const engagerB = await createCreator("Boundary Engager B", "boundary-engager-b");
+    const look = await createLook(creator.id, "Boundary gap post");
+
+    const hourOneStart = truncateToHour(new Date(Date.now() - 2 * 60 * 60 * 1000));
+    const hourTwoStart = new Date(hourOneStart.getTime() + 60 * 60 * 1000);
+
+    await prisma.creatorLookLike.create({
+      data: {
+        creatorLookId: look.id,
+        userId: engagerA.id,
+        createdAt: new Date(hourOneStart.getTime() + 10 * 60 * 1000),
+      },
+    });
+    await creatorLookRepository.upsertHourlyPostMetrics(hourOneStart);
+
+    await prisma.creatorLookLike.create({
+      data: {
+        creatorLookId: look.id,
+        userId: engagerB.id,
+        createdAt: new Date(hourOneStart.getTime() + 50 * 60 * 1000),
+      },
+    });
+    await creatorLookRepository.upsertHourlyPostMetrics(hourTwoStart);
+
+    const hourOneBucket = await prisma.creatorLookTrendMetric.findUnique({
+      where: { creatorLookId_bucketStart: { creatorLookId: look.id, bucketStart: hourOneStart } },
+    });
+    const hourTwoBucket = await prisma.creatorLookTrendMetric.findUnique({
+      where: { creatorLookId_bucketStart: { creatorLookId: look.id, bucketStart: hourTwoStart } },
+    });
+    const totalCountedLikes = (hourOneBucket?.likes ?? 0) + (hourTwoBucket?.likes ?? 0);
+
+    expect(totalCountedLikes).toBe(2);
   });
 });
 

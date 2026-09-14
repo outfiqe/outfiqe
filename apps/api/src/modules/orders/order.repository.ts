@@ -347,7 +347,12 @@ export const orderRepository = {
     if (toStatus === FulfilmentStatus.DELIVERED) reachedTimestamp.deliveredAt = patch.at;
 
     const updated = await prisma.orderFulfilmentGroup.updateMany({
-      where: { id: groupId, brandId, status: { in: fromStatuses } },
+      where: {
+        id: groupId,
+        brandId,
+        status: { in: fromStatuses },
+        cancellationRequestedAt: null,
+      },
       data: {
         status: toStatus,
         ...reachedTimestamp,

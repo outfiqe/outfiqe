@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
-import { CreatorStatus, FollowTargetType } from "#generated/prisma/enums.js";
+import { AccountStatus, CreatorStatus, FollowTargetType } from "#generated/prisma/enums.js";
 import {
   computeViewerEngagementAffinity,
   listCreatorsByHashtagAffinity,
@@ -34,6 +34,7 @@ import type {
   SuggestionSnapshotCursor,
 } from "./follow.types.js";
 import {
+  compareSuggestionCandidatesByScore,
   ensureMomentumDiscoveryFloor,
   scoreSuggestionCandidate,
   suggestionRotationSeed,
@@ -43,6 +44,12 @@ type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 const SUGGESTED_LIMIT = 10;
 const FOLLOWING_SCAN_CAP = 500;
+
+const ELIGIBLE_SUGGESTED_CREATOR_WHERE = {
+  isCreator: true,
+  creatorStatus: CreatorStatus.APPROVED,
+  accountStatus: AccountStatus.ACTIVE,
+} as const;
 
 const getFollowerCount = async (
   tx: Tx,
@@ -86,7 +93,9 @@ const listLegacySuggestedCreators = async (userId: string): Promise<UserRecord[]
     FROM users
     WHERE id NOT IN (${Prisma.join(excludeIds)})
       AND is_creator = true
-    ORDER BY (creator_status = 'APPROVED') DESC, follower_count DESC
+      AND creator_status = 'APPROVED'
+      AND account_status = 'ACTIVE'
+    ORDER BY follower_count DESC, id ASC
     LIMIT ${SUGGESTED_LIMIT}
   `);
 
@@ -109,7 +118,7 @@ const listMutualFollowCandidates = async (
     WHERE f1.follower_id = ${viewerId} AND f1.following_type = 'USER'
       AND f2.following_id != ${viewerId}
     GROUP BY f2.following_id
-    ORDER BY mutual_count DESC
+    ORDER BY mutual_count DESC, f2.following_id ASC
     LIMIT ${limit}
   `);
   return rows.map((row) => ({
@@ -179,8 +188,7 @@ const buildRankedSuggestionIds = async (userId: string): Promise<string[]> => {
   const candidateUsers = await prisma.user.findMany({
     where: {
       id: { in: [...candidateIds] },
-      isCreator: true,
-      creatorStatus: CreatorStatus.APPROVED,
+      ...ELIGIBLE_SUGGESTED_CREATOR_WHERE,
     },
   });
   if (candidateUsers.length === 0) {
@@ -199,7 +207,7 @@ const buildRankedSuggestionIds = async (userId: string): Promise<string[]> => {
     };
     return { creatorId: user.id, signals, score: scoreSuggestionCandidate(signals, now) };
   });
-  scoredCandidates.sort((a, b) => b.score - a.score);
+  scoredCandidates.sort(compareSuggestionCandidatesByScore);
 
   const rotated = applyWeightedRotation(
     scoredCandidates,
@@ -245,6 +253,22 @@ const cacheSuggestionSnapshot = async (sessionId: string, ids: string[]): Promis
       `Cache write failed for "${suggestionSnapshotKey(sessionId)}": ${describeError(error)}`,
     );
   }
+};
+
+const resolveSuggestionSnapshotSource = async (
+  userId: string,
+  decoded: SuggestionSnapshotCursor | undefined,
+): Promise<{ sessionId: string; offset: number; ids: string[] }> => {
+  const cachedIds = decoded ? await getSuggestionSnapshot(decoded.sessionId) : null;
+  if (decoded && cachedIds) {
+    return { sessionId: decoded.sessionId, offset: decoded.offset, ids: cachedIds };
+  }
+
+  const sessionId = decoded?.sessionId ?? randomUUID();
+  const ids = await buildRankedSuggestionIds(userId);
+  await cacheSuggestionSnapshot(sessionId, ids);
+  const offset = decoded ? Math.min(decoded.offset, ids.length) : 0;
+  return { sessionId, offset, ids };
 };
 
 export const followRepository = {
@@ -404,21 +428,7 @@ export const followRepository = {
     params: { cursor?: string; limit: number },
   ): Promise<{ items: UserRecord[]; nextCursor: string | null }> {
     const decoded = decodeCursor<SuggestionSnapshotCursor>(params.cursor);
-    const cachedIds = decoded ? await getSuggestionSnapshot(decoded.sessionId) : null;
-
-    let sessionId: string;
-    let offset: number;
-    let ids: string[];
-
-    if (decoded && cachedIds) {
-      ({ sessionId, offset } = decoded);
-      ids = cachedIds;
-    } else {
-      sessionId = randomUUID();
-      offset = 0;
-      ids = await buildRankedSuggestionIds(userId);
-      await cacheSuggestionSnapshot(sessionId, ids);
-    }
+    const { sessionId, offset, ids } = await resolveSuggestionSnapshotSource(userId, decoded);
 
     const pageIds = ids.slice(offset, offset + params.limit);
     const nextOffset = offset + pageIds.length;
@@ -429,7 +439,9 @@ export const followRepository = {
 
     if (pageIds.length === 0) return { items: [], nextCursor };
 
-    const users = await prisma.user.findMany({ where: { id: { in: pageIds } } });
+    const users = await prisma.user.findMany({
+      where: { id: { in: pageIds }, ...ELIGIBLE_SUGGESTED_CREATOR_WHERE },
+    });
     const usersById = new Map(users.map((user) => [user.id, user]));
     const items = pageIds
       .map((id) => usersById.get(id))

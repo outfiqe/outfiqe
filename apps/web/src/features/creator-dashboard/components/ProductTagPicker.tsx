@@ -70,10 +70,12 @@ const TagReviewNote = ({
   review,
   productName,
   onReRequest,
+  isReRequestPending,
 }: {
   review: TagReviewState;
   productName: string;
   onReRequest: () => void;
+  isReRequestPending: boolean;
 }) => {
   if (review.reviewStatus === "APPROVED") return null;
 
@@ -95,9 +97,10 @@ const TagReviewNote = ({
           variant="outline"
           size="sm"
           onClick={onReRequest}
+          disabled={isReRequestPending}
           className="mt-1.5 h-7 border-red-300 text-red-800 hover:bg-red-800 hover:text-white"
         >
-          Request again
+          {isReRequestPending ? "Requesting…" : "Request again"}
         </Button>
       ) : (
         <p className="mt-1 text-red-700">
@@ -118,6 +121,7 @@ type ProductTagPickerProps = {
   onRemoveTag: (productId: string) => void;
   onSizeChange: (productId: string, sizeWorn: string) => void;
   onReRequestTag?: (productId: string) => void;
+  isReRequestPending?: boolean;
   initialExpanded?: boolean;
   sizeErrors?: Record<string, string>;
   productFilter: string;
@@ -138,6 +142,7 @@ export const ProductTagPicker = ({
   onRemoveTag,
   onSizeChange,
   onReRequestTag,
+  isReRequestPending = false,
   initialExpanded = false,
   sizeErrors,
   productFilter,
@@ -210,6 +215,7 @@ export const ProductTagPicker = ({
                         review={review}
                         productName={productName}
                         onReRequest={() => onReRequestTag?.(tag.productId)}
+                        isReRequestPending={isReRequestPending}
                       />
                     )}
                   </div>

@@ -1,19 +1,45 @@
-import { ProgressBar, Skeleton } from "@outfiqe/design-system";
+import { Button, ProgressBar, Skeleton } from "@outfiqe/design-system";
+
+import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { XpProgress } from "../api/xpSchemas";
 
 type LevelProgressCardProps = {
   progress: XpProgress | null | undefined;
   isLoading: boolean;
+  isError?: boolean;
+  error?: unknown;
+  onRetry?: () => void;
 };
 
-export const LevelProgressCard = ({ progress, isLoading }: LevelProgressCardProps) => {
+export const LevelProgressCard = ({
+  progress,
+  isLoading,
+  isError,
+  error,
+  onRetry,
+}: LevelProgressCardProps) => {
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-border bg-card p-5">
         <Skeleton className="h-5 w-40" />
         <Skeleton className="mt-4 h-2 w-full rounded-full" />
         <Skeleton className="mt-2 h-3.5 w-32" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-2xl border border-dashed border-border p-5 text-center">
+        <p className="text-sm text-muted-foreground">
+          Couldn&apos;t load your progress. {getErrorMessage(error)}
+        </p>
+        {onRetry && (
+          <Button variant="outline" size="sm" className="mt-3" onClick={onRetry}>
+            Try again
+          </Button>
+        )}
       </div>
     );
   }

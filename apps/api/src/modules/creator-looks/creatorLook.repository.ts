@@ -24,6 +24,9 @@ import {
   FOR_YOU_ENGAGED_CREATOR_BOOST,
   FOR_YOU_ENGAGEMENT_LOOKBACK_DAYS,
   FOR_YOU_FOLLOW_BOOST,
+  FOR_YOU_FOLLOWED_MAX_INJECTED,
+  FOR_YOU_FOLLOWED_RECENCY_WINDOW_DAYS,
+  FOR_YOU_FOLLOWED_SLOT_INTERVAL,
   FOR_YOU_HASHTAG_BOOST_CAP,
   FOR_YOU_HASHTAG_BOOST_PER_MATCH,
   FOR_YOU_HASHTAG_MATCH_WEIGHT_CAP,
@@ -72,6 +75,7 @@ import {
   computeGlobalTagBaseline,
   groupPostBucketsByLook,
   groupTagBucketsByTag,
+  interleaveFollowedLooks,
   scoreCreatorMomentum,
   scorePost,
   scoreTag,
@@ -175,7 +179,11 @@ const hydrateFeedPosts = async (
 
   const [looks, likedRows, savedRows] = await Promise.all([
     prisma.creatorLook.findMany({
-      where: { id: { in: orderedIds }, creator: { accountStatus: AccountStatus.ACTIVE } },
+      where: {
+        id: { in: orderedIds },
+        deletedAt: null,
+        creator: { accountStatus: AccountStatus.ACTIVE },
+      },
       include: feedRelationsInclude,
     }),
     viewerId
@@ -215,46 +223,57 @@ const hydrateFeedPosts = async (
 };
 
 const TRENDING_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
 
-const upsertPostLikesBucket = (bucketStart: Date) => prisma.$executeRaw`
+const upsertPostLikesBucket = (bucketStart: Date, bucketEnd: Date) => prisma.$executeRaw`
   INSERT INTO creator_look_trend_metrics (id, creator_look_id, bucket_start, likes, updated_at)
   SELECT gen_random_uuid(), creator_look_id, ${bucketStart}, COUNT(*), now()
   FROM creator_look_likes
-  WHERE created_at >= ${bucketStart}
+  WHERE created_at >= ${bucketStart} AND created_at < ${bucketEnd}
   GROUP BY creator_look_id
   ON CONFLICT (creator_look_id, bucket_start)
   DO UPDATE SET likes = excluded.likes, updated_at = now();
 `;
 
-const upsertPostCommentsBucket = (bucketStart: Date) => prisma.$executeRaw`
+const upsertPostCommentsBucket = (bucketStart: Date, bucketEnd: Date) => prisma.$executeRaw`
   INSERT INTO creator_look_trend_metrics (id, creator_look_id, bucket_start, comments, updated_at)
   SELECT gen_random_uuid(), creator_look_id, ${bucketStart}, COUNT(*), now()
   FROM creator_look_comments
-  WHERE created_at >= ${bucketStart} AND deleted_at IS NULL
+  WHERE created_at >= ${bucketStart} AND created_at < ${bucketEnd} AND deleted_at IS NULL
   GROUP BY creator_look_id
   ON CONFLICT (creator_look_id, bucket_start)
   DO UPDATE SET comments = excluded.comments, updated_at = now();
 `;
 
-const upsertPostSavesBucket = (bucketStart: Date) => prisma.$executeRaw`
+const upsertPostSavesBucket = (bucketStart: Date, bucketEnd: Date) => prisma.$executeRaw`
   INSERT INTO creator_look_trend_metrics (id, creator_look_id, bucket_start, saves, updated_at)
   SELECT gen_random_uuid(), creator_look_id, ${bucketStart}, COUNT(*), now()
   FROM creator_look_saves
-  WHERE created_at >= ${bucketStart}
+  WHERE created_at >= ${bucketStart} AND created_at < ${bucketEnd}
   GROUP BY creator_look_id
   ON CONFLICT (creator_look_id, bucket_start)
   DO UPDATE SET saves = excluded.saves, updated_at = now();
 `;
 
-const upsertPostTagClicksBucket = (bucketStart: Date) => prisma.$executeRaw`
+const upsertPostTagClicksBucket = (bucketStart: Date, bucketEnd: Date) => prisma.$executeRaw`
   INSERT INTO creator_look_trend_metrics (id, creator_look_id, bucket_start, tag_clicks, updated_at)
   SELECT gen_random_uuid(), creator_look_id, ${bucketStart}, COUNT(DISTINCT session_id), now()
   FROM creator_look_tag_clicks
-  WHERE created_at >= ${bucketStart}
+  WHERE created_at >= ${bucketStart} AND created_at < ${bucketEnd}
   GROUP BY creator_look_id
   ON CONFLICT (creator_look_id, bucket_start)
   DO UPDATE SET tag_clicks = excluded.tag_clicks, updated_at = now();
 `;
+
+const upsertPostMetricsForHour = (bucketStart: Date): Promise<unknown> => {
+  const bucketEnd = new Date(bucketStart.getTime() + HOUR_MS);
+  return Promise.all([
+    upsertPostLikesBucket(bucketStart, bucketEnd),
+    upsertPostCommentsBucket(bucketStart, bucketEnd),
+    upsertPostSavesBucket(bucketStart, bucketEnd),
+    upsertPostTagClicksBucket(bucketStart, bucketEnd),
+  ]);
+};
 
 const trendingSnapshotKey = (sessionId: string) =>
   redisKeys.cache("explore-trending-snapshot", sessionId);
@@ -462,10 +481,11 @@ const resolveTrendingSnapshotSource = async (
     return { sessionId: decoded.sessionId, offset: decoded.offset, ids: cachedIds };
   }
 
-  const sessionId = randomUUID();
+  const sessionId = decoded?.sessionId ?? randomUUID();
   const ids = await buildTrendingSnapshot();
   await cacheTrendingSnapshot(sessionId, ids);
-  return { sessionId, offset: 0, ids };
+  const offset = decoded ? Math.min(decoded.offset, ids.length) : 0;
+  return { sessionId, offset, ids };
 };
 
 const listTrendingIds = async ({
@@ -501,6 +521,29 @@ const listCandidateAffinityMeta = async (lookIds: string[]): Promise<CandidateAf
   }));
 };
 
+const listRecentFollowedLookIds = async (
+  followedCreatorIds: string[],
+  sinceDays: number,
+  limit: number,
+): Promise<string[]> => {
+  if (followedCreatorIds.length === 0) return [];
+  const since = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000);
+  const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+    SELECT id FROM (
+      SELECT id, created_at,
+        ROW_NUMBER() OVER (PARTITION BY creator_id ORDER BY created_at DESC) AS rank_in_creator
+      FROM creator_looks
+      WHERE creator_id IN (${Prisma.join(followedCreatorIds)})
+        AND deleted_at IS NULL
+        AND created_at >= ${since}
+    ) ranked
+    WHERE rank_in_creator <= ${FOR_YOU_MAX_PER_CREATOR}
+    ORDER BY created_at DESC
+    LIMIT ${limit}
+  `);
+  return rows.map((row) => row.id);
+};
+
 const scorePersonalized = (
   candidate: PostTrendingEntry,
   meta: CandidateAffinityMeta,
@@ -530,6 +573,12 @@ const buildPersonalizedSnapshot = async (
   viewerId: string,
   followedCreatorIds: string[],
 ): Promise<string[]> => {
+  const followedLookIds = await listRecentFollowedLookIds(
+    followedCreatorIds,
+    FOR_YOU_FOLLOWED_RECENCY_WINDOW_DAYS,
+    FOR_YOU_FOLLOWED_MAX_INJECTED,
+  );
+
   let scored: PostTrendingEntry[] | null = null;
   try {
     scored = await cacheService.get<PostTrendingEntry[]>(EXPLORE_TRENDING_SCORE_CACHE_KEY);
@@ -539,7 +588,14 @@ const buildPersonalizedSnapshot = async (
     );
   }
   if (scored === null) scored = await computeRankedLookScores();
-  if (scored.length === 0) return buildLegacyTrendingSnapshot();
+  if (scored.length === 0) {
+    const legacyDiscoveryIds = await buildLegacyTrendingSnapshot();
+    return interleaveFollowedLooks(
+      legacyDiscoveryIds,
+      followedLookIds,
+      FOR_YOU_FOLLOWED_SLOT_INTERVAL,
+    );
+  }
 
   const [candidateMeta, engagement] = await Promise.all([
     listCandidateAffinityMeta(scored.map((candidate) => candidate.lookId)),
@@ -573,7 +629,8 @@ const buildPersonalizedSnapshot = async (
     FOR_YOU_MAX_PER_CREATOR,
     (entry) => entry.creatorId,
   );
-  return diversified.map((entry) => entry.lookId);
+  const discoveryIds = diversified.map((entry) => entry.lookId);
+  return interleaveFollowedLooks(discoveryIds, followedLookIds, FOR_YOU_FOLLOWED_SLOT_INTERVAL);
 };
 
 const forYouSnapshotKey = (sessionId: string) =>
@@ -649,9 +706,9 @@ const listForYouIds = async ({
     ({ sessionId, offset } = decoded);
     ids = cachedIds;
   } else {
-    sessionId = randomUUID();
-    offset = 0;
+    sessionId = decoded?.sessionId ?? randomUUID();
     ids = await resolveForYouCandidateIds(viewerId, followedCreatorIds);
+    offset = decoded ? Math.min(decoded.offset, ids.length) : 0;
     await cacheForYouSnapshot(sessionId, ids);
   }
 
@@ -805,16 +862,19 @@ const fetchLegacyTrendingTags = async (): Promise<TrendingTag[]> => {
   return trendingTags;
 };
 
-const upsertHashtagBucket = (bucketStart: Date) => prisma.$executeRaw`
+const upsertHashtagBucket = (bucketStart: Date, bucketEnd: Date) => prisma.$executeRaw`
   INSERT INTO hashtag_trend_metrics (id, tag, bucket_start, post_count, updated_at)
   SELECT gen_random_uuid(), h.tag, ${bucketStart}, COUNT(*), now()
   FROM creator_look_hashtags h
   JOIN creator_looks cl ON cl.id = h.creator_look_id
-  WHERE cl.created_at >= ${bucketStart} AND cl.deleted_at IS NULL
+  WHERE cl.created_at >= ${bucketStart} AND cl.created_at < ${bucketEnd} AND cl.deleted_at IS NULL
   GROUP BY h.tag
   ON CONFLICT (tag, bucket_start)
   DO UPDATE SET post_count = excluded.post_count, updated_at = now();
 `;
+
+const upsertHashtagBucketForHour = (bucketStart: Date): Promise<unknown> =>
+  upsertHashtagBucket(bucketStart, new Date(bucketStart.getTime() + HOUR_MS));
 
 const listRecentTagMetricBuckets = async (sinceDays: number): Promise<TagMetricBucket[]> => {
   const since = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000);
@@ -1361,11 +1421,10 @@ export const creatorLookRepository = {
   },
 
   async upsertHourlyPostMetrics(bucketStart: Date): Promise<void> {
+    const previousBucketStart = new Date(bucketStart.getTime() - HOUR_MS);
     await Promise.all([
-      upsertPostLikesBucket(bucketStart),
-      upsertPostCommentsBucket(bucketStart),
-      upsertPostSavesBucket(bucketStart),
-      upsertPostTagClicksBucket(bucketStart),
+      upsertPostMetricsForHour(bucketStart),
+      upsertPostMetricsForHour(previousBucketStart),
     ]);
   },
 
@@ -1425,7 +1484,11 @@ export const creatorLookRepository = {
   },
 
   async upsertHourlyTagMetrics(bucketStart: Date): Promise<void> {
-    await upsertHashtagBucket(bucketStart);
+    const previousBucketStart = new Date(bucketStart.getTime() - HOUR_MS);
+    await Promise.all([
+      upsertHashtagBucketForHour(bucketStart),
+      upsertHashtagBucketForHour(previousBucketStart),
+    ]);
   },
 
   async deleteTagTrendMetricsOlderThan(cutoff: Date): Promise<number> {

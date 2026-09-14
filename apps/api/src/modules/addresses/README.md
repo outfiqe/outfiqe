@@ -42,14 +42,37 @@ checkout body.
 
 ## Non-obvious rationale
 
-**One-default-per-user is enforced in a transaction, not by a DB constraint.** The natural
-constraint is a Postgres partial unique index (`... (user_id) WHERE is_default`), but Prisma 7
-can't represent a partial index in `schema.prisma`, so a hand-added one shows up as schema drift
-and the next `prisma migrate dev` writes a migration to drop it. `bank-accounts` hit the same
-wall and settled on a transaction (`clearDefault` then set) — this module follows that pattern
-for consistency. The write surface is tiny (a user toggling their own default), so the
-clear-then-set race is not a real exposure; `listForUser` orders `isDefault desc` and the client
-picks the first, so even a transient double-default degrades gracefully.
+**One-default-per-user is enforced by a `Serializable` transaction with automatic conflict
+retry, not by a DB constraint.** The natural constraint is a Postgres partial unique index
+(`... (user_id) WHERE is_default`), but Prisma 7 can't represent a partial index in
+`schema.prisma`, so a hand-added one shows up as schema drift and the next `prisma migrate dev`
+writes a migration to drop it. `bank-accounts` hit the same wall and settled on a plain
+transaction (`clearDefault` then set) at the database's default `ReadCommitted` isolation; this
+module used to follow that exact pattern too, on the stated assumption that the write surface was
+too small for the clear-then-set race to be a real exposure. **That assumption was wrong** — an
+audit found that two concurrent `setDefault`/`create`/`update`/`remove` calls that both need to
+change the default can genuinely leave two `SavedAddress` rows with `isDefault: true` (or, for a
+delete-while-promoting race, zero). Under `ReadCommitted`, the second transaction's `clearDefault`
+blocks on the row the first transaction is also clearing; once the first commits, Postgres
+re-evaluates that specific row against the `WHERE isDefault = true` predicate, finds it no longer
+matches (the first transaction already flipped it), and silently updates zero rows instead of the
+row the second transaction actually needed to clear — so the second transaction goes on to set its
+own address default too, alongside the first's. `listForUser`'s `isDefault desc` ordering doesn't
+save this: `AddressCard` renders a "Default" badge per row from that row's own `isDefault` field,
+so two default rows show two visible "Default" badges, and there's no guarantee the promoted-on-delete
+address stays the visible one either. Reproduced deterministically in
+`address.integration.test.ts` ("never leaves two addresses marked default when two set-default
+requests race") by pausing one request's `clearDefault` call (via a spy) until a second, concurrent
+request's own `clearDefault` has blocked on the same row, then releasing it — this fails
+against the old `ReadCommitted` transaction every time. Fixed by running `create`/`update`/
+`remove`/`setDefault` at `Prisma.TransactionIsolationLevel.Serializable` (same mechanism
+`withdraw.service.ts#createRequest` already uses for its own concurrent-balance guard) wrapped in
+the existing `runWithDeadlockRetry` (`#lib/prisma.utils.js`, already used by
+`crm-access.repository.ts#acceptInvite`): under `Serializable`, the second transaction's blocked
+`clearDefault` raises a real conflict (`P2034`) instead of silently skipping the row once it
+unblocks, and `runWithDeadlockRetry` transparently retries the whole transaction against the
+now-committed state — so the user never sees an error, and the invariant holds under concurrency
+without a schema migration.
 
 **`shippingAddressFields` lives in `#lib`, not imported from `delivery-zones`.** The checkout
 body and a saved address validate the identical five fields, so per the repo's "second consumer →

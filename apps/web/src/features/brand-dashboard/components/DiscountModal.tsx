@@ -1,8 +1,10 @@
 "use client";
 
 import { Button, Modal, Select, toast } from "@outfiqe/design-system";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { ApiClientError } from "@/shared/lib/apiClient";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { BrandProduct } from "../api/brandProductsSchemas";
@@ -19,8 +21,13 @@ type DiscountModalProps = {
 
 const PERCENT_BASIS_POINTS_PER_PERCENT = 100;
 const DEFAULT_PERCENT_OFF = 20;
+const DISCOUNT_NOT_FOUND_CODE = "DISCOUNT_NOT_FOUND";
+
+const isDiscountNotFoundError = (error: unknown): boolean =>
+  error instanceof ApiClientError && error.code === DISCOUNT_NOT_FOUND_CODE;
 
 export const DiscountModal = ({ product, onClose }: DiscountModalProps) => {
+  const queryClient = useQueryClient();
   const setDiscount = useSetProductDiscount();
   const updateDiscount = useUpdateProductDiscount();
   const removeDiscount = useRemoveProductDiscount();
@@ -58,25 +65,30 @@ export const DiscountModal = ({ product, onClose }: DiscountModalProps) => {
       fixedAmount: discountType === "FIXED" ? fixedAmount : undefined,
     };
     const endsAtIso = endsAt ? new Date(endsAt).toISOString() : null;
+    const createInput = {
+      discountType,
+      ...amountFields,
+      startsAt: new Date().toISOString(),
+      endsAt: endsAtIso,
+    };
 
     try {
+      let createdFresh = false;
       if (existing) {
-        await updateDiscount.mutateAsync({
-          productId: product.id,
-          input: { discountType, ...amountFields, endsAt: endsAtIso },
-        });
+        try {
+          await updateDiscount.mutateAsync({
+            productId: product.id,
+            input: { discountType, ...amountFields, endsAt: endsAtIso },
+          });
+        } catch (updateError) {
+          if (!isDiscountNotFoundError(updateError)) throw updateError;
+          await setDiscount.mutateAsync({ productId: product.id, input: createInput });
+          createdFresh = true;
+        }
       } else {
-        await setDiscount.mutateAsync({
-          productId: product.id,
-          input: {
-            discountType,
-            ...amountFields,
-            startsAt: new Date().toISOString(),
-            endsAt: endsAtIso,
-          },
-        });
+        await setDiscount.mutateAsync({ productId: product.id, input: createInput });
       }
-      toast.success(existing ? "Discount updated" : "Discount created");
+      toast.success(existing && !createdFresh ? "Discount updated" : "Discount created");
       close();
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -89,6 +101,12 @@ export const DiscountModal = ({ product, onClose }: DiscountModalProps) => {
       toast.success("Discount removed");
       close();
     } catch (error) {
+      if (isDiscountNotFoundError(error)) {
+        await queryClient.invalidateQueries({ queryKey: ["brand-products"] });
+        toast.success("Discount removed");
+        close();
+        return;
+      }
       toast.error(getErrorMessage(error));
     }
   };

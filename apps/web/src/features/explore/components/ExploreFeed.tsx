@@ -19,6 +19,7 @@ import {
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 import { useExploreFeedSocket } from "../hooks/useExploreFeedSocket";
 import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";
+import { isForYouHintDismissed, rememberForYouHintDismissed } from "../utils/forYouHint";
 import { ExploreSidebarNav } from "./ExploreSidebarNav";
 import { FeedFilterTabs } from "./FeedFilterTabs";
 import { HeaderBackdrop } from "./HeaderBackdrop";
@@ -43,6 +44,12 @@ export const ExploreFeed = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
+  const [isForYouHintVisible, setIsForYouHintVisible] = useState(() => !isForYouHintDismissed());
+
+  const dismissForYouHint = () => {
+    rememberForYouHintDismissed();
+    setIsForYouHintVisible(false);
+  };
 
   const committedTab = searchParams.get(EXPLORE_QUERY_PARAM.TAB) ?? EXPLORE_TAB.FOR_YOU;
   const committedLayout: FeedLayout =
@@ -76,7 +83,7 @@ export const ExploreFeed = () => {
   };
 
   const followingGated = isAuthResolved && tab === EXPLORE_TAB.FOLLOWING && !isAuthenticated;
-  const showForYouPersonalizationHint = tab === EXPLORE_TAB.FOR_YOU;
+  const showForYouPersonalizationHint = tab === EXPLORE_TAB.FOR_YOU && isForYouHintVisible;
   const isFollowingTab = tab === EXPLORE_TAB.FOLLOWING;
   const feedEnabled = isAuthResolved && (!isFollowingTab || isAuthenticated);
 
@@ -125,7 +132,7 @@ export const ExploreFeed = () => {
 
         <div>
           {showForYouPersonalizationHint && (
-            <FormBanner tone="neutral">
+            <FormBanner tone="neutral" onDismiss={dismissForYouHint}>
               For You gets more personalized as you follow creators and like or save looks you love.
             </FormBanner>
           )}

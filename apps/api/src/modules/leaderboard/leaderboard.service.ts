@@ -3,8 +3,10 @@ import {
   type LeaderboardCategory,
 } from "#constants/leaderboard.constants.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
+import { AccountStatus } from "#generated/prisma/enums.js";
 import logger from "#lib/winston.utils.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
+import type { BrandRecord } from "#modules/brands/brand.types.js";
 import { trendingService } from "#modules/trending/trending.service.js";
 import { describeError } from "#redis/redis.utils.js";
 
@@ -23,6 +25,9 @@ import {
 } from "./leaderboard.utils.js";
 
 const GROWTH_PERCENT_MULTIPLIER = 100;
+
+const isEligibleForLeaderboard = (brand: BrandRecord | undefined): brand is BrandRecord =>
+  brand !== undefined && brand.accountStatus === AccountStatus.ACTIVE;
 
 const publishUpdated = async (category: LeaderboardCategory, week: string): Promise<void> => {
   await eventBus.publish(DomainEvents.LEADERBOARD_BRAND_UPDATED, { category, week });
@@ -71,7 +76,8 @@ const recomputeFastestGrowing = async (now: Date): Promise<void> => {
           ? ((score - previousScore) / previousScore) * GROWTH_PERCENT_MULTIPLIER
           : FASTEST_GROWING_SURGE_SCORE;
       return { member, score: growth };
-    });
+    })
+    .filter(({ score }) => score > 0);
 
   await leaderboardRepository.replaceWeeklyScores(
     LEADERBOARD_CATEGORY.FASTEST_GROWING,
@@ -123,11 +129,11 @@ const getTop = async (category: LeaderboardCategory): Promise<LeaderboardSnapsho
   const entries: LeaderboardEntry[] = [];
   top.forEach(({ member, score }, index) => {
     const brand = brandsById.get(member);
-    if (!brand) return;
+    if (!isEligibleForLeaderboard(brand)) return;
 
     const previousRank = previousRanks[index] ?? null;
     entries.push({
-      rank: index + 1,
+      rank: entries.length + 1,
       brandId: brand.id,
       brandName: brand.name,
       avatarUrl: brand.avatarUrl,

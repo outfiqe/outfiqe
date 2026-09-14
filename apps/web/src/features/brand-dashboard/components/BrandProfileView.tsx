@@ -213,22 +213,40 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Contact name</label>
+            <label
+              htmlFor="brand-profile-edit-contact-name"
+              className="mb-1.5 block text-sm font-medium text-foreground"
+            >
+              Contact name
+            </label>
             <Input
+              id="brand-profile-edit-contact-name"
               value={draft.contactName}
               onChange={(event) => setDraft({ ...draft, contactName: event.target.value })}
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Phone</label>
+            <label
+              htmlFor="brand-profile-edit-phone"
+              className="mb-1.5 block text-sm font-medium text-foreground"
+            >
+              Phone
+            </label>
             <Input
+              id="brand-profile-edit-phone"
               value={draft.phone}
               onChange={(event) => setDraft({ ...draft, phone: event.target.value })}
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Instagram</label>
+            <label
+              htmlFor="brand-profile-edit-instagram"
+              className="mb-1.5 block text-sm font-medium text-foreground"
+            >
+              Instagram
+            </label>
             <Input
+              id="brand-profile-edit-instagram"
               value={draft.instagram}
               onChange={(event) => setDraft({ ...draft, instagram: event.target.value })}
             />

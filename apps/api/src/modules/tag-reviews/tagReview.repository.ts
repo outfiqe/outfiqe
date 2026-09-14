@@ -296,8 +296,16 @@ export const tagReviewRepository = {
     };
   },
 
-  async transitionTag(tagId: string, data: TagTransitionData): Promise<void> {
-    await prisma.creatorLookProduct.update({ where: { id: tagId }, data });
+  async transitionTag(
+    tagId: string,
+    fromStatus: TagReviewStatus,
+    data: TagTransitionData,
+  ): Promise<boolean> {
+    const result = await prisma.creatorLookProduct.updateMany({
+      where: { id: tagId, reviewStatus: fromStatus },
+      data,
+    });
+    return result.count > 0;
   },
 
   async findTagForTransition(tagId: string): Promise<{
@@ -369,6 +377,7 @@ export const tagReviewRepository = {
       lookId: row.creatorLookId,
       creatorId: row.creatorLook.creatorId,
       productId: row.productId,
+      reviewStatus: TagReviewStatus.PENDING,
     }));
   },
 

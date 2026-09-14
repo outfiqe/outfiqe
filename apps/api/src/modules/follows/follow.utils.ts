@@ -135,6 +135,11 @@ export const ensureMomentumDiscoveryFloor = (
   ].sort((a, b) => b.score - a.score);
 };
 
+export const compareSuggestionCandidatesByScore = (
+  a: ScoredSuggestionCandidate,
+  b: ScoredSuggestionCandidate,
+): number => b.score - a.score || a.creatorId.localeCompare(b.creatorId);
+
 const ROTATION_SEED_HOUR_MS = 60 * 60 * 1000;
 
 const hashStringToInt = (value: string): number => {

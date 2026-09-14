@@ -13,7 +13,7 @@ const summary: EarningsSummary = {
 
 describe("EarningsSummaryTiles", () => {
   it("renders every tile label", () => {
-    render(<EarningsSummaryTiles summary={summary} isLoading={false} />);
+    render(<EarningsSummaryTiles summary={summary} isLoading={false} isError={false} />);
 
     expect(screen.getByText("Total earnings")).toBeInTheDocument();
     expect(screen.getByText("Pending")).toBeInTheDocument();
@@ -22,7 +22,7 @@ describe("EarningsSummaryTiles", () => {
   });
 
   it("formats each amount with the Rs. prefix and thousands separators", () => {
-    render(<EarningsSummaryTiles summary={summary} isLoading={false} />);
+    render(<EarningsSummaryTiles summary={summary} isLoading={false} isError={false} />);
 
     expect(screen.getByText("Rs. 12,000")).toBeInTheDocument();
     expect(screen.getByText("Rs. 3,000")).toBeInTheDocument();
@@ -35,6 +35,7 @@ describe("EarningsSummaryTiles", () => {
       <EarningsSummaryTiles
         summary={{ totalEarnings: 0, pending: 0, available: 0, paid: 0 }}
         isLoading={false}
+        isError={false}
       />,
     );
 
@@ -42,8 +43,18 @@ describe("EarningsSummaryTiles", () => {
   });
 
   it("shows skeleton placeholders instead of amounts while loading", () => {
-    render(<EarningsSummaryTiles summary={undefined} isLoading />);
+    render(<EarningsSummaryTiles summary={undefined} isLoading isError={false} />);
 
+    expect(screen.queryByText(/Rs\./)).not.toBeInTheDocument();
+  });
+
+  it("shows an error banner instead of stale zeroes when the summary fails to load", () => {
+    render(<EarningsSummaryTiles summary={undefined} isLoading={false} isError />);
+
+    expect(
+      screen.getByText("We couldn't load your earnings summary right now. Please try again."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Total earnings")).not.toBeInTheDocument();
     expect(screen.queryByText(/Rs\./)).not.toBeInTheDocument();
   });
 });

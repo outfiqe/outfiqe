@@ -38,7 +38,16 @@ export const ProductsSection = () => {
   const [deletingProduct, setDeletingProduct] = useState<BrandProduct | null>(null);
   const products = useBrandProducts();
   const deleteProduct = useDeleteProduct();
-  const { data, isPending, hasNextPage, fetchNextPage, isFetchingNextPage } = products;
+  const {
+    data,
+    isPending,
+    isError,
+    error,
+    refetch,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = products;
   const brandProducts = data?.pages.flatMap((page) => page.products) ?? [];
 
   const confirmDelete = () => {
@@ -76,7 +85,18 @@ export const ProductsSection = () => {
         </div>
       )}
 
-      {!isPending && brandProducts.length === 0 && (
+      {isError && (
+        <div className="mt-6 rounded-2xl border border-dashed border-border p-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            Couldn&apos;t load your products. {getErrorMessage(error)}
+          </p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => void refetch()}>
+            Try again
+          </Button>
+        </div>
+      )}
+
+      {!isPending && !isError && brandProducts.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">
             Nothing listed yet — add your first piece.

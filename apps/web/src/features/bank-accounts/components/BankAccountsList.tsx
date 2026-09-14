@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Skeleton } from "@outfiqe/design-system";
+import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 import { useState } from "react";
 
 import type { OwnerTypeValue } from "../api/bankAccountSchemas";
@@ -13,7 +13,7 @@ type BankAccountsListProps = {
 };
 
 export const BankAccountsList = ({ ownerType }: BankAccountsListProps) => {
-  const { data: bankAccounts, isPending } = useBankAccounts(ownerType);
+  const { data: bankAccounts, isPending, isError } = useBankAccounts(ownerType);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   return (
@@ -32,7 +32,15 @@ export const BankAccountsList = ({ ownerType }: BankAccountsListProps) => {
         </Button>
       </div>
 
-      {isPending && (
+      {isError && (
+        <div className="mt-4">
+          <FormBanner>
+            We couldn&apos;t load your bank accounts right now. Please try again.
+          </FormBanner>
+        </div>
+      )}
+
+      {isPending && !isError && (
         <div className="mt-4 space-y-3">
           {Array.from({ length: 2 }).map((_, index) => (
             <Skeleton key={index} className="h-[76px] w-full rounded-2xl" />
@@ -40,7 +48,7 @@ export const BankAccountsList = ({ ownerType }: BankAccountsListProps) => {
         </div>
       )}
 
-      {!isPending && (bankAccounts?.length ?? 0) === 0 && (
+      {!isPending && !isError && (bankAccounts?.length ?? 0) === 0 && (
         <div className="mt-4 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-8 text-center">
           <p className="text-sm text-muted-foreground">
             No bank accounts yet — add one to request a withdrawal.
@@ -48,7 +56,7 @@ export const BankAccountsList = ({ ownerType }: BankAccountsListProps) => {
         </div>
       )}
 
-      {(bankAccounts?.length ?? 0) > 0 && (
+      {!isError && (bankAccounts?.length ?? 0) > 0 && (
         <div className="mt-4 space-y-3">
           {bankAccounts?.map((bankAccount) => (
             <BankAccountCard key={bankAccount.id} ownerType={ownerType} bankAccount={bankAccount} />
