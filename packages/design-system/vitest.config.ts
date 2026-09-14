@@ -10,6 +10,7 @@ export default defineConfig({
       provider: "v8",
       include: [
         "src/studio-badge-visual.utils.ts",
+        "src/form-banner.tsx",
         "src/autocomplete.tsx",
         "src/chart.tsx",
         "src/chart-card.tsx",
