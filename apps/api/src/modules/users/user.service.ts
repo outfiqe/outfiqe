@@ -70,6 +70,13 @@ const writeProfile = async (userId: string, input: UpdateUserProfileInput): Prom
     if (uniqueConstraintTargetIncludes(error, "handle")) {
       throw new AppError("HANDLE_TAKEN", "That username is already taken.", CONFLICT_STATUS);
     }
+    if (uniqueConstraintTargetIncludes(error, "phone")) {
+      throw new AppError(
+        "PHONE_EXISTS",
+        "An account with this phone number already exists.",
+        CONFLICT_STATUS,
+      );
+    }
     throw error;
   }
 };

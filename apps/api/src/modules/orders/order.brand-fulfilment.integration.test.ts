@@ -184,6 +184,57 @@ describe("GET /api/orders/brand/fulfilment-groups", () => {
       .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER));
     expect(response.status).toBe(FORBIDDEN);
   });
+
+  it("returns an empty page for a brand with no shipments at all", async () => {
+    const { owner } = await createBrandWithOwner();
+    const response = await getGroups(owner.id);
+    expect(response.status).toBe(OK);
+    expect(response.body.data).toMatchObject({ items: [], nextCursor: null });
+  });
+
+  it("keysets through every group exactly once across page boundaries", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await seedCommerceConfig(adminId);
+    const { brand, owner } = await createBrandWithOwner();
+    const { product, size } = await createProduct(brand.id, 1000);
+    const buyer = await createUser(UserRole.CUSTOMER);
+
+    const orderIds: string[] = [];
+    for (let index = 0; index < 3; index += 1) {
+      orderIds.push(await checkoutBuyNow(buyer.id, product.id, size.id));
+    }
+    const groupIds = await Promise.all(
+      orderIds.map(async (orderId) => (await groupFor(orderId, brand.id)).id),
+    );
+
+    const single = await getGroups(owner.id, { limit: "1" });
+    expect(single.status).toBe(OK);
+    expect(single.body.data.items).toHaveLength(1);
+    expect(single.body.data.nextCursor).not.toBeNull();
+
+    const seenGroupIds: string[] = [];
+    let cursor: string | undefined = undefined;
+    let lastNextCursor: string | null = null;
+    for (let page = 0; page < groupIds.length; page += 1) {
+      const response: request.Response = await getGroups(
+        owner.id,
+        cursor ? { limit: "1", cursor } : { limit: "1" },
+      );
+      expect(response.status).toBe(OK);
+      expect(response.body.data.items).toHaveLength(1);
+      seenGroupIds.push(response.body.data.items[0].id);
+      lastNextCursor = response.body.data.nextCursor;
+      cursor = lastNextCursor ?? undefined;
+    }
+
+    expect(lastNextCursor).toBeNull();
+    expect(new Set(seenGroupIds).size).toBe(groupIds.length);
+    expect(seenGroupIds.sort()).toEqual([...groupIds].sort());
+
+    const wholePage = await getGroups(owner.id, { limit: "10" });
+    expect(wholePage.body.data.items).toHaveLength(groupIds.length);
+    expect(wholePage.body.data.nextCursor).toBeNull();
+  });
 });
 
 describe("GET /api/orders/brand/fulfilment-groups/:groupId", () => {
@@ -342,6 +393,39 @@ describe("PATCH /api/orders/brand/fulfilment-groups/:groupId", () => {
 
     const foreign = await patchGroup(otherOwner.id, group.id, { status: FulfilmentStatus.PACKED });
     expect(foreign.status).toBe(NOT_FOUND);
+  });
+
+  it("rejects advancing a group that already has a pending cancellation request", async () => {
+    const { userId: adminId } = await createAdminSession();
+    await seedCommerceConfig(adminId);
+    const { brand, owner } = await createBrandWithOwner();
+    const { product, size } = await createProduct(brand.id, 1000);
+    const buyer = await createUser(UserRole.CUSTOMER);
+    const orderId = await checkoutBuyNow(buyer.id, product.id, size.id);
+    const group = await groupFor(orderId, brand.id);
+
+    expect((await patchGroup(owner.id, group.id, { status: FulfilmentStatus.PACKED })).status).toBe(
+      OK,
+    );
+
+    const cancellationRequest = await request(testApp)
+      .post(`/api/orders/brand/fulfilment-groups/${group.id}/request-cancellation`)
+      .set("Authorization", authHeaderFor(owner.id, UserRole.BRAND_OWNER))
+      .send({ reason: "Ran out of stock before packing" });
+    expect(cancellationRequest.status).toBe(OK);
+
+    const advanceAfterRequest = await patchGroup(owner.id, group.id, {
+      status: FulfilmentStatus.SHIPPED,
+      carrier: "Pathao",
+      trackingNumber: "PA-2",
+    });
+    expect(advanceAfterRequest.status).toBe(CONFLICT);
+
+    const stillPacked = await prisma.orderFulfilmentGroup.findUniqueOrThrow({
+      where: { id: group.id },
+    });
+    expect(stillPacked.status).toBe(FulfilmentStatus.PACKED);
+    expect(stillPacked.cancellationRequestedAt).not.toBeNull();
   });
 });
 

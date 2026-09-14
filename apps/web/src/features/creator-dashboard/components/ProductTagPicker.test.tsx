@@ -221,3 +221,63 @@ describe("ProductTagPicker", () => {
     expect(screen.getByRole("button", { name: "6 products tagged" })).toBeInTheDocument();
   });
 });
+
+describe("ProductTagPicker re-request flow", () => {
+  const declinedReview = {
+    reviewStatus: "REJECTED" as const,
+    rejectionReason: "OTHER" as const,
+    rejectionNote: "Not a match for our brand.",
+    canReRequest: true,
+  };
+
+  it("calls onReRequestTag when Request again is clicked", async () => {
+    const onReRequestTag = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ProductTagPicker
+        {...baseProps}
+        taggedProducts={[{ productId: "product-1", sizeWorn: "M" }]}
+        productCache={{ "product-1": { name: "Denim Jacket", imageUrl: null } }}
+        reviewByProductId={{ "product-1": declinedReview }}
+        onReRequestTag={onReRequestTag}
+        initialExpanded
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Request again" }));
+
+    expect(onReRequestTag).toHaveBeenCalledWith("product-1");
+  });
+
+  it("disables Request again while a re-request is already in flight, so it can't be double-submitted", () => {
+    render(
+      <ProductTagPicker
+        {...baseProps}
+        taggedProducts={[{ productId: "product-1", sizeWorn: "M" }]}
+        productCache={{ "product-1": { name: "Denim Jacket", imageUrl: null } }}
+        reviewByProductId={{ "product-1": declinedReview }}
+        onReRequestTag={vi.fn()}
+        isReRequestPending
+        initialExpanded
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Requesting…" })).toBeDisabled();
+  });
+
+  it("hides Request again once the server-reported cap is used up, showing the used-up message instead", () => {
+    render(
+      <ProductTagPicker
+        {...baseProps}
+        taggedProducts={[{ productId: "product-1", sizeWorn: "M" }]}
+        productCache={{ "product-1": { name: "Denim Jacket", imageUrl: null } }}
+        reviewByProductId={{ "product-1": { ...declinedReview, canReRequest: false } }}
+        onReRequestTag={vi.fn()}
+        initialExpanded
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /Request again/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/used all your re-requests for Denim Jacket/)).toBeInTheDocument();
+  });
+});

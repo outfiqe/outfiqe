@@ -1,12 +1,14 @@
 "use client";
 
-import { Skeleton } from "@outfiqe/design-system";
+import { Button, Skeleton } from "@outfiqe/design-system";
+
+import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import { useChallenges } from "../hooks/useChallenges";
 import { ChallengeCard } from "./ChallengeCard";
 
 export const ChallengesSection = () => {
-  const { data: challenges, isPending } = useChallenges();
+  const { data: challenges, isPending, isError, error, refetch } = useChallenges();
 
   return (
     <div>
@@ -25,7 +27,18 @@ export const ChallengesSection = () => {
         </div>
       )}
 
-      {!isPending && challenges?.length === 0 && (
+      {isError && (
+        <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            Couldn&apos;t load challenges. {getErrorMessage(error)}
+          </p>
+          <Button variant="outline" size="sm" onClick={() => void refetch()}>
+            Try again
+          </Button>
+        </div>
+      )}
+
+      {!isPending && !isError && challenges?.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">No challenges are running right now.</p>
         </div>

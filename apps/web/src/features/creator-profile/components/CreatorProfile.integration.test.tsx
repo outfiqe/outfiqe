@@ -88,6 +88,7 @@ beforeAll(() => {
 
 const push = vi.fn();
 const replace = vi.fn();
+const refresh = vi.fn();
 const replaceState = vi.spyOn(window.history, "replaceState");
 const fetchNextPage = vi.fn();
 
@@ -195,12 +196,13 @@ beforeEach(() => {
     replace,
     back: vi.fn(),
     forward: vi.fn(),
-    refresh: vi.fn(),
+    refresh,
     prefetch: vi.fn(),
     bfcacheId: "test-bfcache-id",
   });
   push.mockClear();
   replace.mockClear();
+  refresh.mockClear();
   replaceState.mockClear();
   mockSearchParams();
   fetchNextPage.mockClear();
@@ -520,6 +522,42 @@ describe("CreatorProfile edit flow", () => {
 
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(screen.getAllByText("Ava M.").length).toBeGreaterThan(0);
+  });
+
+  it("refreshes the router on a successful save, so a later revisit doesn't show stale server data", async () => {
+    mswServer.use(
+      http.patch("/api/creators/me", async ({ request }) => {
+        const body = (await request.json()) as { name: string };
+        return HttpResponse.json({
+          success: true,
+          message: "Profile updated.",
+          data: {
+            userId: "creator-9",
+            name: body.name,
+            email: "ava@outfiqe.test",
+            handle: "ava",
+            avatarUrl: null,
+            heightCm: null,
+            showHeight: false,
+            hideFromLeaderboards: false,
+            isCreator: true,
+            creatorStatus: "APPROVED",
+          },
+        });
+      }),
+    );
+
+    mockAuth("creator-9");
+    const user = userEvent.setup();
+    renderProfile(buildCreator({ name: "Ava Martinez" }));
+
+    await user.click(screen.getByRole("button", { name: "Edit profile" }));
+    const nameInput = screen.getByLabelText("Display name");
+    await user.clear(nameInput);
+    await user.type(nameInput, "Ava M.");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(refresh).toHaveBeenCalledOnce());
   });
 
   it("doesn't call the API when saving a blank name", async () => {

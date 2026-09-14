@@ -240,4 +240,35 @@ describe("POST /api/xp/adjust (admin)", () => {
 
     expect(response.status).toBe(403);
   });
+
+  it("does not report leveledUp when a downward adjustment merely drops a level", async () => {
+    await ensureFloorLevel();
+    const tierLevelNumber = Math.floor(Math.random() * 100000) + 1000;
+    await prisma.level.create({
+      data: { level: tierLevelNumber, name: "Adjust Test Tier", requiredXp: 500000 },
+    });
+    const admin = await createXpAdmin();
+    const target = await createUser("Demotion Target");
+
+    const up = await request(testApp)
+      .post("/api/xp/adjust")
+      .set("Authorization", admin.header)
+      .send({ userId: target.id, amount: 500050, reason: "Reach the new tier" });
+    expect(up.status).toBe(200);
+    expect(up.body.data.leveledUp).toBe(true);
+
+    const DOWN_ADJUSTMENT_AMOUNT = -10;
+    const down = await request(testApp)
+      .post("/api/xp/adjust")
+      .set("Authorization", admin.header)
+      .send({
+        userId: target.id,
+        amount: DOWN_ADJUSTMENT_AMOUNT,
+        reason: "Correction that demotes",
+      });
+
+    expect(down.status).toBe(200);
+    expect(down.body.data.awarded).toBe(true);
+    expect(down.body.data.leveledUp).toBe(false);
+  });
 });

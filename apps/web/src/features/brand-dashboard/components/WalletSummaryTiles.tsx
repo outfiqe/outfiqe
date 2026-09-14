@@ -1,10 +1,11 @@
-import { Skeleton } from "@outfiqe/design-system";
+import { FormBanner, Skeleton } from "@outfiqe/design-system";
 
 import type { BrandPayoutSummary } from "../api/brandPayoutSchemas";
 
 type WalletSummaryTilesProps = {
   summary: BrandPayoutSummary | undefined;
   isLoading: boolean;
+  isError: boolean;
 };
 
 const TILES: { key: keyof BrandPayoutSummary; label: string }[] = [
@@ -14,7 +15,15 @@ const TILES: { key: keyof BrandPayoutSummary; label: string }[] = [
   { key: "withdrawn", label: "Withdrawn" },
 ];
 
-export const WalletSummaryTiles = ({ summary, isLoading }: WalletSummaryTilesProps) => {
+export const WalletSummaryTiles = ({ summary, isLoading, isError }: WalletSummaryTilesProps) => {
+  if (isError) {
+    return (
+      <FormBanner>
+        We couldn&apos;t load your wallet balance right now. Please try again.
+      </FormBanner>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {TILES.map(({ key, label }) => (

@@ -358,7 +358,11 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
           </div>
         )}
 
+        <label htmlFor="edit-post-form-caption" className="sr-only">
+          Caption
+        </label>
         <textarea
+          id="edit-post-form-caption"
           rows={4}
           placeholder="Write your caption here…."
           className="w-full resize-none rounded-lg border border-border bg-transparent p-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
@@ -383,6 +387,7 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
           onRemoveTag={removeTag}
           onSizeChange={setSizeWorn}
           onReRequestTag={() => void submitEdit()}
+          isReRequestPending={isSaving}
           sizeErrors={sizeErrors}
           productFilter={productFilter}
           onFilterChange={setProductFilter}

@@ -77,10 +77,15 @@ const buildLink = (id: string): CreatorLink => ({
 
 const fetchNextPage = vi.fn();
 
+const refetch = vi.fn();
+
 const mockMyCreatorLinks = (overrides: Partial<ReturnType<typeof useMyCreatorLinks>> = {}) => {
   vi.mocked(useMyCreatorLinks).mockReturnValue({
     data: { pages: [{ items: [], nextCursor: null }], pageParams: [undefined] },
     isPending: false,
+    isError: false,
+    error: null,
+    refetch,
     hasNextPage: false,
     fetchNextPage,
     isFetchingNextPage: false,
@@ -101,6 +106,7 @@ const renderSection = (creatorStatus: CreatorStatus = CreatorStatus.APPROVED) =>
 
 beforeEach(() => {
   fetchNextPage.mockClear();
+  refetch.mockClear();
   mockMyCreatorLinks();
 });
 
@@ -330,6 +336,27 @@ describe("ShareSection", () => {
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Get my profile link" })).not.toBeDisabled(),
     );
+  });
+
+  it("shows a real error banner instead of the empty state when the links fetch fails", () => {
+    mockMyCreatorLinks({ isError: true, error: new Error("Network error"), data: undefined });
+
+    renderSection();
+
+    expect(screen.getByText(/Couldn't load your links/)).toBeInTheDocument();
+    expect(
+      screen.queryByText("No links generated yet — share a product above to get started."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("retries the links fetch when Try again is clicked on the error banner", async () => {
+    mockMyCreatorLinks({ isError: true, error: new Error("Network error"), data: undefined });
+    const user = userEvent.setup();
+    renderSection();
+
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+
+    expect(refetch).toHaveBeenCalledOnce();
   });
 
   it("shows loading skeletons instead of the link list while pending", () => {

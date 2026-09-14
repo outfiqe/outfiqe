@@ -327,6 +327,29 @@ describe("POST /api/tag-reviews/:id/reject", () => {
   });
 });
 
+describe("Concurrent tag review decisions", () => {
+  it("lets only one of a simultaneous approve/reject pair win, and conflicts the other", async () => {
+    const { owner, tag } = await seedPendingTag();
+
+    const [approveResponse, rejectResponse] = await Promise.all([
+      request(testApp)
+        .post(`/api/tag-reviews/${tag.id}/approve`)
+        .set("Authorization", brandOwnerHeader(owner.id))
+        .send({}),
+      request(testApp)
+        .post(`/api/tag-reviews/${tag.id}/reject`)
+        .set("Authorization", brandOwnerHeader(owner.id))
+        .send({ reason: "NOT_OUR_PRODUCT" }),
+    ]);
+
+    const statuses = [approveResponse.status, rejectResponse.status].sort((a, b) => a - b);
+    expect(statuses).toEqual([200, 409]);
+
+    const stored = await prisma.creatorLookProduct.findUniqueOrThrow({ where: { id: tag.id } });
+    expect(["APPROVED", "REJECTED"]).toContain(stored.reviewStatus);
+  });
+});
+
 describe("PATCH /api/brands/me tag review policy", () => {
   it("persists the policy without touching existing pending tags", async () => {
     const { owner, tag } = await seedPendingTag();
