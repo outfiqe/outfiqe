@@ -31,6 +31,7 @@ import {
 } from "./creatorLook.constants.js";
 import { creatorLookRepository } from "./creatorLook.repository.js";
 import type {
+  AdminListLooksQuery,
   AutocompleteQuery,
   CreateCreatorLookBody,
   ListCreatorLooksQuery,
@@ -41,6 +42,7 @@ import type {
 } from "./creatorLook.schemas.js";
 import { resolveTagReviewStatus } from "./creatorLook.tagReview.js";
 import type {
+  AdminLookPage,
   CommentPage,
   CommentReplyPage,
   CreatorLookEditDetail,
@@ -486,6 +488,10 @@ export const creatorLookService = {
     { q, cursor, limit }: SearchCreatorLooksQuery,
   ): Promise<LookSearchPage> {
     return creatorLookRepository.searchLooks(q, { cursor, limit }, viewerId);
+  },
+
+  async adminListLooks(query: AdminListLooksQuery): Promise<AdminLookPage> {
+    return creatorLookRepository.adminListLooks(query);
   },
 
   async autocomplete({ q }: AutocompleteQuery): Promise<PostSuggestion[]> {

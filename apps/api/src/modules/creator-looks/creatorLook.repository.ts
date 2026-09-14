@@ -39,6 +39,7 @@ import {
   TREND_RECENT_METRICS_WINDOW_HOURS,
 } from "./creatorLook.constants.js";
 import type {
+  AdminLookPage,
   BrandTagPolicy,
   CandidateAffinityMeta,
   CommentPage,
@@ -1282,6 +1283,62 @@ export const creatorLookRepository = {
       rows.map((row) => row.id),
       undefined,
     );
+  },
+
+  async adminListLooks({
+    q,
+    cursor,
+    limit,
+  }: {
+    q?: string;
+    cursor?: string;
+    limit: number;
+  }): Promise<AdminLookPage> {
+    const decoded = decodeCursor<SimpleCursor>(cursor);
+    const cursorWhere: Prisma.CreatorLookWhereInput = decoded
+      ? {
+          OR: [
+            { createdAt: { lt: new Date(decoded.c) } },
+            { AND: [{ createdAt: new Date(decoded.c) }, { id: { lt: decoded.i } }] },
+          ],
+        }
+      : {};
+    const searchWhere: Prisma.CreatorLookWhereInput = q
+      ? {
+          OR: [
+            { caption: { contains: q, mode: "insensitive" } },
+            { creator: { handle: { contains: q, mode: "insensitive" } } },
+            { creator: { name: { contains: q, mode: "insensitive" } } },
+          ],
+        }
+      : {};
+
+    const rows = await prisma.creatorLook.findMany({
+      where: { AND: [{ deletedAt: null }, searchWhere, cursorWhere] },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: limit + 1,
+      include: {
+        creator: { select: { id: true, name: true, handle: true, contentFlagCount: true } },
+      },
+    });
+
+    const { items: pageRows, nextCursor } = buildCursorPage(rows, limit, (row) =>
+      encodeCursor<SimpleCursor>({ c: row.createdAt.toISOString(), i: row.id }),
+    );
+
+    return {
+      items: pageRows.map((row) => ({
+        id: row.id,
+        imageUrl: row.imageUrl,
+        caption: row.caption,
+        creator: row.creator,
+        likeCount: row.likeCount,
+        commentCount: row.commentCount,
+        saveCount: row.saveCount,
+        createdAt: row.createdAt,
+      })),
+      nextCursor,
+    };
   },
 
   async countByCreatorId(creatorId: string): Promise<number> {

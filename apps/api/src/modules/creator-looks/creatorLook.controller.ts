@@ -5,6 +5,7 @@ import { getAuthPrincipal, requireAuthPrincipal } from "#middlewares/require-aut
 import { validated } from "#middlewares/validate.js";
 
 import type {
+  AdminListLooksQuery,
   AutocompleteQuery,
   CommentIdParams,
   CommentsQuery,
@@ -94,6 +95,12 @@ export const creatorLookController = {
     const query = validated.query<SearchCreatorLooksQuery>(res);
 
     const page = await creatorLookService.search(viewerId, query);
+    sendSuccess(res, page, "Posts.");
+  },
+
+  async adminList(_req: Request, res: Response) {
+    const query = validated.query<AdminListLooksQuery>(res);
+    const page = await creatorLookService.adminListLooks(query);
     sendSuccess(res, page, "Posts.");
   },
 
