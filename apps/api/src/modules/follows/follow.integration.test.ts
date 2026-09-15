@@ -4,7 +4,12 @@ import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import { AccountStatus, CreatorStatus, FollowTargetType } from "#generated/prisma/enums.js";
+import {
+  AccountStatus,
+  CreatorStatus,
+  FollowTargetType,
+  UserRole,
+} from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { decodeCursor } from "#lib/pagination.utils.js";
 import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
@@ -42,7 +47,7 @@ const createLook = async (creatorId: string, caption: string) =>
     },
   });
 
-const createPlainUser = async (name: string, handle: string) =>
+const createPlainUser = async (name: string, handle: string, role: UserRole = UserRole.CUSTOMER) =>
   prisma.user.create({
     data: {
       email: `${handle}-${randomUUID()}@outfiqe.test`,
@@ -50,6 +55,7 @@ const createPlainUser = async (name: string, handle: string) =>
       handle: `${handle}-${randomUUID().slice(0, 6)}`,
       phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
+      role,
     },
   });
 
@@ -69,8 +75,8 @@ const followUser = async (followerId: string, targetId: string) =>
     data: { followerId, followingType: FollowTargetType.USER, followingId: targetId },
   });
 
-const authHeaderFor = (userId: string) => {
-  const { accessToken } = generateTokenpair({ sub: userId, role: "CUSTOMER" });
+const authHeaderFor = (userId: string, role: UserRole = UserRole.CUSTOMER) => {
+  const { accessToken } = generateTokenpair({ sub: userId, role });
   return `Bearer ${accessToken}`;
 };
 
@@ -552,6 +558,21 @@ describe("POST /api/follows/:targetType/:targetId", () => {
     const response = await request(testApp).post(`/api/follows/user/${target.id}`);
 
     expect(response.status).toBe(401);
+  });
+
+  it("rejects a platform admin following a creator", async () => {
+    const admin = await createPlainUser("Following Admin", "following-admin", UserRole.ADMIN);
+    const target = await createCreator("Admin Follow Target", "admin-follow-target");
+
+    const response = await request(testApp)
+      .post(`/api/follows/user/${target.id}`)
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("ADMIN_CANNOT_FOLLOW");
+
+    const updatedTarget = await prisma.user.findUniqueOrThrow({ where: { id: target.id } });
+    expect(updatedTarget.followerCount).toBe(0);
   });
 });
 

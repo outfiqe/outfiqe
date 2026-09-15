@@ -29,7 +29,7 @@ type BrandCardProps = {
 export const BrandCard = ({ brand }: BrandCardProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
 
   const { id, name, avatarUrl, bannerUrl, madeInNepal, productCount } = brand;
   const { isFollowing, followerCount, isTogglingFollow, toggleFollow } = useOptimisticFollow(
@@ -89,20 +89,22 @@ export const BrandCard = ({ brand }: BrandCardProps) => {
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={followBrand}
-            aria-pressed={isFollowing}
-            disabled={isTogglingFollow}
-            className={cn(
-              "relative z-10 shrink-0 cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition-colors disabled:opacity-60",
-              isFollowing
-                ? "border-foreground bg-foreground text-background"
-                : "border-foreground text-foreground hover:bg-foreground hover:text-background",
-            )}
-          >
-            {isFollowing ? FOLLOW_BUTTON_LABEL.FOLLOWING : FOLLOW_BUTTON_LABEL.FOLLOW}
-          </button>
+          {!isAdmin && (
+            <button
+              type="button"
+              onClick={followBrand}
+              aria-pressed={isFollowing}
+              disabled={isTogglingFollow}
+              className={cn(
+                "relative z-10 shrink-0 cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition-colors disabled:opacity-60",
+                isFollowing
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-foreground text-foreground hover:bg-foreground hover:text-background",
+              )}
+            >
+              {isFollowing ? FOLLOW_BUTTON_LABEL.FOLLOWING : FOLLOW_BUTTON_LABEL.FOLLOW}
+            </button>
+          )}
         </div>
 
         <div className="mt-3 flex gap-4 text-[11.5px] text-muted-foreground">

@@ -10,7 +10,7 @@ import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
-const createShopper = async (name: string, handle: string) =>
+const createShopper = async (name: string, handle: string, role: UserRole = UserRole.CUSTOMER) =>
   prisma.user.create({
     data: {
       email: `${handle}-${randomUUID()}@outfiqe.test`,
@@ -18,6 +18,7 @@ const createShopper = async (name: string, handle: string) =>
       handle: `${handle}-${randomUUID().slice(0, 6)}`,
       phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
+      role,
     },
   });
 
@@ -72,6 +73,23 @@ describe("POST and DELETE /api/wishlist/:productId", () => {
       where: { userId: shopper.id, productId: product.id },
     });
     expect(savedRows).toBe(1);
+  });
+
+  it("rejects a platform admin saving a product", async () => {
+    const admin = await createShopper("Saving Admin", "saving-admin", UserRole.ADMIN);
+    const product = await createApprovedProduct("Off-limits Jacket");
+
+    const response = await request(testApp)
+      .post(`/api/wishlist/${product.id}`)
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("ADMIN_CANNOT_SAVE");
+
+    const savedRows = await prisma.savedProduct.count({
+      where: { userId: admin.id, productId: product.id },
+    });
+    expect(savedRows).toBe(0);
   });
 
   it("removes a saved product, then no-ops on a repeat unsave", async () => {

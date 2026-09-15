@@ -12,6 +12,7 @@ type PostCardHeaderProps = {
   creatorHandle: string;
   creatorName: string;
   isOwnPost: boolean;
+  isAdmin?: boolean;
   isFollowingCreator: boolean;
   onFollowToggle: () => void;
   isFollowToggling?: boolean;
@@ -24,6 +25,7 @@ export const PostCardHeader = ({
   creatorHandle,
   creatorName,
   isOwnPost,
+  isAdmin,
   isFollowingCreator,
   onFollowToggle,
   isFollowToggling,
@@ -46,7 +48,7 @@ export const PostCardHeader = ({
         <p className="truncate text-[11px] text-muted-foreground">@{creatorHandle}</p>
       </Link>
 
-      {!isOwnPost && (
+      {!isOwnPost && !isAdmin && (
         <div className="ml-auto flex shrink-0 items-center gap-1">
           <button
             type="button"

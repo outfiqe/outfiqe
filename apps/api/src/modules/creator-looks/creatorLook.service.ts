@@ -2,8 +2,10 @@ import { LRUCache } from "lru-cache";
 
 import { env } from "#config/env.config.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
-import { FollowTargetType, TagReviewStatus, UserRole } from "#generated/prisma/enums.js";
+import type { UserRole } from "#generated/prisma/enums.js";
+import { FollowTargetType, TagReviewStatus } from "#generated/prisma/enums.js";
 import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
+import { assertCanEngage } from "#lib/engagement-guard.utils.js";
 import { extractHashtags } from "#lib/hashtags.utils.js";
 import { truncateToHour } from "#lib/trend-scoring.utils.js";
 import { isLikelyBotUserAgent } from "#lib/user-agent.utils.js";
@@ -19,7 +21,6 @@ import { platformAudit } from "#modules/platform-audit/platform-audit.service.js
 import { productRepository } from "#modules/products/product.repository.js";
 import { productService } from "#modules/products/product.service.js";
 import type { ProductRecord } from "#modules/products/product.types.js";
-import { userRepository } from "#modules/users/user.repository.js";
 import { cacheService } from "#redis/cache.service.js";
 import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
 import { describeError } from "#redis/redis.utils.js";
@@ -61,7 +62,6 @@ import { toSuggestion } from "./creatorLook.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const UNAUTHORIZED_STATUS = 401;
-const FORBIDDEN_STATUS = 403;
 
 const AUTOCOMPLETE_MEMORY_CACHE_MAX_ENTRIES = 500;
 const AUTOCOMPLETE_CACHE_NAMESPACE = "look-autocomplete";
@@ -79,17 +79,6 @@ const FOR_YOU_TAB = "for_you";
 
 const isPlatformModerator = (principal: { userId: string; role: UserRole }): Promise<boolean> =>
   platformAccessService.principalHasPermission(principal, CONTENT_MODERATE_PERMISSION_KEY);
-
-const assertCanEngage = async (userId: string): Promise<void> => {
-  const user = await userRepository.findById(userId);
-  if (user?.role === UserRole.ADMIN) {
-    throw new AppError(
-      "ADMIN_CANNOT_ENGAGE",
-      "Platform staff accounts can't like, comment, or post — this keeps trending and payouts based on real audience activity.",
-      FORBIDDEN_STATUS,
-    );
-  }
-};
 
 const requireActiveLook = async (lookId: string): Promise<{ id: string; creatorId: string }> => {
   const look = await creatorLookRepository.findActiveById(lookId);

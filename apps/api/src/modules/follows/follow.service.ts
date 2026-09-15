@@ -1,5 +1,6 @@
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { FollowTargetType } from "#generated/prisma/enums.js";
+import { assertCanEngage } from "#lib/engagement-guard.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
@@ -46,6 +47,12 @@ export const followService = {
     targetTypeParam: FollowTargetTypeParam,
     targetId: string,
   ): Promise<FollowResult> {
+    await assertCanEngage(followerId, {
+      code: "ADMIN_CANNOT_FOLLOW",
+      message:
+        "Platform staff accounts can't follow — this keeps follower counts and the leaderboard based on real audience activity.",
+    });
+
     const targetType = toPrismaTargetType(targetTypeParam);
     if (targetType === FollowTargetType.USER && followerId === targetId) {
       throw new AppError("CANNOT_SELF_FOLLOW", "You can't follow yourself.", BAD_REQUEST_STATUS);

@@ -2,12 +2,17 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { useAuth } from "@/features/auth/context/AuthContext";
+
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 import { useFollowCreator } from "../hooks/useFollowCreator";
 import { useSuggestedCreators } from "../hooks/useSuggestedCreators";
 import { useTrendingTags } from "../hooks/useTrendingTags";
 import { Sidebar } from "./Sidebar";
 
+vi.mock("@/features/auth/context/AuthContext", () => ({
+  useAuth: vi.fn(),
+}));
 vi.mock("../hooks/useExploreAuthGate", () => ({
   useExploreAuthGate: vi.fn(),
 }));
@@ -108,6 +113,7 @@ const buildPendingMutationResult = () => ({
 });
 
 beforeEach(() => {
+  vi.mocked(useAuth).mockReturnValue({ isAdmin: false } as ReturnType<typeof useAuth>);
   vi.mocked(useSuggestedCreators).mockReturnValue(
     buildQuerySuccessResult([]) as ReturnType<typeof useSuggestedCreators>,
   );
@@ -172,5 +178,27 @@ describe("Sidebar", () => {
     render(<Sidebar activeTag="" onTagClick={vi.fn()} />);
 
     expect(screen.getByRole("button", { name: "Follow" })).toBeDisabled();
+  });
+
+  it("hides the entire creators-to-follow widget for a platform admin viewer", () => {
+    mockAuthGate(true);
+    vi.mocked(useAuth).mockReturnValue({ isAdmin: true } as ReturnType<typeof useAuth>);
+    vi.mocked(useSuggestedCreators).mockReturnValue(
+      buildQuerySuccessResult([
+        {
+          id: "creator-1",
+          handle: "creator-one",
+          name: "Creator One",
+          followerCount: 3,
+          isCreator: true,
+          creatorStatus: "APPROVED",
+        },
+      ]) as ReturnType<typeof useSuggestedCreators>,
+    );
+
+    render(<Sidebar activeTag="" onTagClick={vi.fn()} />);
+
+    expect(screen.queryByText("Creators to follow")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Find more" })).not.toBeInTheDocument();
   });
 });

@@ -34,4 +34,27 @@ describe("PostActionsRow", () => {
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(onShare).not.toHaveBeenCalled();
   });
+
+  it("keeps the like button visible but disabled when a disabled reason is given", async () => {
+    const onLike = vi.fn();
+    render(
+      <PostActionsRow
+        {...baseProps}
+        onLike={onLike}
+        likeDisabledReason="Platform staff accounts can't like posts."
+      />,
+    );
+
+    const likeButton = screen.getByRole("button", { name: "3" });
+    expect(likeButton).toBeDisabled();
+    await userEvent.click(likeButton);
+    expect(onLike).not.toHaveBeenCalled();
+  });
+
+  it("renders the comment count as read-only text when no click handler is given", () => {
+    render(<PostActionsRow {...baseProps} onCommentClick={undefined} />);
+
+    expect(screen.queryByRole("button", { name: "2" })).not.toBeInTheDocument();
+    expect(screen.getByText("2")).toBeInTheDocument();
+  });
 });

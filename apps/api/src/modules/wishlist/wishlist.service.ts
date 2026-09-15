@@ -1,3 +1,4 @@
+import { assertCanEngage } from "#lib/engagement-guard.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { productRepository } from "#modules/products/product.repository.js";
@@ -17,6 +18,11 @@ const requireProduct = async (productId: string): Promise<void> => {
 
 export const wishlistService = {
   async save(userId: string, productId: string): Promise<WishlistResult> {
+    await assertCanEngage(userId, {
+      code: "ADMIN_CANNOT_SAVE",
+      message:
+        "Platform staff accounts can't save products — this keeps trending based on real audience activity.",
+    });
     await requireProduct(productId);
     await wishlistRepository.save(userId, productId);
     return { saved: true };

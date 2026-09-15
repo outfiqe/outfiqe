@@ -131,6 +131,34 @@ describe("POST /api/content-reports", () => {
 
     expect(response.status).toBe(422);
   });
+
+  it("rejects a platform admin filing a public report", async () => {
+    const { authHeader, userId } = await createAdminSession();
+    const creator = await createCreator();
+    const look = await createLook(creator.id);
+
+    const response = await request(testApp)
+      .post("/api/content-reports")
+      .set("User-Agent", REAL_BROWSER_UA)
+      .set("Authorization", authHeader)
+      .send({ targetType: "CREATOR_LOOK", targetId: look.id, reason: "SPAM" });
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("ADMIN_CANNOT_REPORT");
+    expect(await prisma.contentReport.count({ where: { reportedById: userId } })).toBe(0);
+  });
+
+  it("still accepts an anonymous report with no reporter to check", async () => {
+    const creator = await createCreator();
+    const look = await createLook(creator.id);
+
+    const response = await request(testApp)
+      .post("/api/content-reports")
+      .set("User-Agent", REAL_BROWSER_UA)
+      .send({ targetType: "CREATOR_LOOK", targetId: look.id, reason: "SPAM" });
+
+    expect(response.status).toBe(202);
+  });
 });
 
 describe("GET /api/content-reports", () => {
