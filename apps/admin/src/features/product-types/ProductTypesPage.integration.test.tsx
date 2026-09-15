@@ -233,7 +233,7 @@ describe("ProductTypesPage", () => {
     });
   });
 
-  it("shows a loading line before the list arrives", async () => {
+  it("shows skeleton rows before the list arrives", async () => {
     mswServer.use(
       http.get(`${API_BASE}/product-types/admin`, async () => {
         await new Promise((resolve) => setTimeout(resolve, 40));
@@ -243,6 +243,7 @@ describe("ProductTypesPage", () => {
 
     renderPage();
 
-    expect(await screen.findByText("Loading…")).toBeInTheDocument();
+    await waitFor(() => expect(document.querySelectorAll(".animate-pulse")).toHaveLength(3));
+    await waitFor(() => expect(document.querySelectorAll(".animate-pulse")).toHaveLength(0));
   });
 });

@@ -1,15 +1,17 @@
-import { Badge, Button } from "@outfiqe/design-system";
+import { Badge, Button, Skeleton } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { ApiClientError } from "@/lib/apiClient";
+import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { brandApplicationsApi } from "./api";
 import { useInfiniteBrandApplications } from "./hooks/useInfiniteBrandApplications";
 import type { BrandApplicationStatusValue } from "./schemas";
 
 const TABS: BrandApplicationStatusValue[] = ["PENDING", "APPROVED", "REJECTED"];
+const BRAND_APPLICATIONS_STATUS_FILTER = oneOfFilter<BrandApplicationStatusValue>(TABS, "PENDING");
 
 const STATUS_TONE: Record<BrandApplicationStatusValue, "neutral" | "positive" | "negative"> = {
   PENDING: "neutral",
@@ -27,7 +29,7 @@ const reviewFailureMessage = (mutationError: unknown, fallback: string): string 
   mutationError instanceof ApiClientError ? mutationError.message : fallback;
 
 export const BrandApplicationsPage = () => {
-  const [tab, setTab] = useState<BrandApplicationStatusValue>("PENDING");
+  const [tab, setTab] = useSearchFilter("status", BRAND_APPLICATIONS_STATUS_FILTER);
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -86,7 +88,10 @@ export const BrandApplicationsPage = () => {
       </div>
 
       <div className="mt-6 space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load applications.</p>}
         {!isLoading && applications.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>

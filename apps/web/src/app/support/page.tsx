@@ -1,3 +1,4 @@
+import { Skeleton } from "@outfiqe/design-system";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -28,7 +29,7 @@ const SupportPage = async () => {
         </p>
 
         <div className="mt-8">
-          <Suspense fallback={<p className="text-sm text-muted-foreground">Loading…</p>}>
+          <Suspense fallback={<Skeleton className="h-40 w-full rounded-xl" />}>
             <SupportRequestsView />
           </Suspense>
         </div>

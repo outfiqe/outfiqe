@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@outfiqe/design-system";
+import { Button, Skeleton } from "@outfiqe/design-system";
 import { useState } from "react";
 
 import { getErrorMessage } from "@/shared/lib/errorMessages";
@@ -19,7 +19,7 @@ export const SupportThread = ({ ticketId, onBack }: { ticketId: string; onBack: 
   const reply = useReplyToSupportRequest(ticketId);
   const [body, setBody] = useState("");
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (isLoading) return <Skeleton className="h-64 w-full rounded-xl" />;
   if (error || !ticket)
     return <p className="text-sm text-destructive">We couldn&apos;t load this request.</p>;
 

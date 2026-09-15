@@ -1,4 +1,4 @@
-import { Button, FormBanner, Input, Select } from "@outfiqe/design-system";
+import { Button, FormBanner, Input, Select, Skeleton } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
@@ -75,7 +75,7 @@ const PolicyForm = ({ ownerType }: { ownerType: OwnerTypeValue }) => {
   };
 
   if (isLoading || !activeForm) {
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+    return <Skeleton className="h-64 w-full rounded-xl" />;
   }
 
   return (

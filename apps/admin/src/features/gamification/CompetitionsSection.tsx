@@ -1,4 +1,12 @@
-import { Button, Checkbox, FormBanner, Input, Modal, Select } from "@outfiqe/design-system";
+import {
+  Button,
+  Checkbox,
+  FormBanner,
+  Input,
+  Modal,
+  Select,
+  Skeleton,
+} from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
@@ -407,7 +415,10 @@ export const CompetitionsSection = () => {
       {error && <FormBanner className="mt-3">{error}</FormBanner>}
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          ))}
         {competitions?.length === 0 && (
           <p className="text-sm text-muted-foreground">No competitions yet.</p>
         )}

@@ -1,4 +1,13 @@
-import { Badge, Button, Checkbox, FormBanner, Modal, Select, toast } from "@outfiqe/design-system";
+import {
+  Badge,
+  Button,
+  Checkbox,
+  FormBanner,
+  Modal,
+  Select,
+  Skeleton,
+  toast,
+} from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -175,7 +184,10 @@ export const MembersSection = ({
       <h2 className="font-display text-lg font-bold text-foreground">Members</h2>
 
       <div className="mt-3 space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+          ))}
         {error && <p className="text-sm text-destructive">{getErrorMessage(error)}</p>}
         {!isLoading && !error && members?.length === 0 && (
           <p className="text-sm text-muted-foreground">No CRM members yet.</p>

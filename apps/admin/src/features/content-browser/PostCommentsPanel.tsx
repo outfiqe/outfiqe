@@ -82,7 +82,7 @@ const CommentRepliesSection = ({
           View {hiddenReplyCount} more repl{hiddenReplyCount === 1 ? "y" : "ies"}
         </button>
       )}
-      {repliesExpanded && isLoading && <p className="text-xs text-muted-foreground">Loading…</p>}
+      {repliesExpanded && isLoading && <Skeleton className="h-3 w-24" />}
       {repliesExpanded && hasNextPage && (
         <Button
           variant="outline"

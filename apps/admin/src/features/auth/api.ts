@@ -13,6 +13,8 @@ import {
   crmInviteInfoSchema,
   loginResponseSchema,
   type UpdateProfileInput,
+  updateProfileResponseSchema,
+  type UpdateProfileResult,
 } from "./schemas";
 
 type LoginResult = z.infer<typeof loginResponseSchema>;
@@ -32,9 +34,9 @@ export const authApi = {
     await apiClient.post("/auth/logout");
   },
 
-  async updateProfile(input: UpdateProfileInput): Promise<AdminUser> {
-    const res = await apiClient.patch<AdminUser>("/users/me", input);
-    return adminUserSchema.parse(res.data);
+  async updateProfile(input: UpdateProfileInput): Promise<UpdateProfileResult> {
+    const res = await apiClient.patch<UpdateProfileResult>("/users/me", input);
+    return updateProfileResponseSchema.parse(res.data);
   },
 
   async changePassword(input: ChangePasswordInput): Promise<void> {

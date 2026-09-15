@@ -1,4 +1,4 @@
-import { Button, Checkbox, FormBanner, Input, Modal } from "@outfiqe/design-system";
+import { Button, Checkbox, FormBanner, Input, Modal, Skeleton } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
@@ -212,7 +212,10 @@ export const MultipliersSection = () => {
       {error && <FormBanner className="mt-3">{error}</FormBanner>}
 
       <div className="mt-4 space-y-2">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-16 w-full rounded-xl" />
+          ))}
         {multipliers?.length === 0 && (
           <p className="text-sm text-muted-foreground">No XP multipliers yet.</p>
         )}

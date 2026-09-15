@@ -1,4 +1,4 @@
-import { Badge, Button, Input, Select } from "@outfiqe/design-system";
+import { Badge, Button, Input, Select, Skeleton } from "@outfiqe/design-system";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
@@ -141,7 +141,10 @@ export const SupportInboxPage = () => {
       </div>
 
       <div className="space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load support requests.</p>}
         {!isLoading && tickets.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing matches these filters.</p>

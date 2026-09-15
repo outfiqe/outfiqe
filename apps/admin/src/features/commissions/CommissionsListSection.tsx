@@ -1,15 +1,17 @@
-import { Badge, Button, toast } from "@outfiqe/design-system";
+import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { commissionsApi } from "./api";
 import { useInfiniteCommissions } from "./hooks/useInfiniteCommissions";
 import type { CommissionStatusValue } from "./schemas";
 
 const TABS: CommissionStatusValue[] = ["PENDING", "APPROVED", "AVAILABLE", "PAID", "VOIDED"];
+const COMMISSIONS_STATUS_FILTER = oneOfFilter<CommissionStatusValue>(TABS, "PENDING");
 
 const STATUS_TONE: Record<CommissionStatusValue, "neutral" | "positive" | "negative"> = {
   PENDING: "neutral",
@@ -26,7 +28,7 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 export const CommissionsListSection = () => {
-  const [tab, setTab] = useState<CommissionStatusValue>("PENDING");
+  const [tab, setTab] = useSearchFilter("status", COMMISSIONS_STATUS_FILTER);
   const [voidTargetId, setVoidTargetId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -86,7 +88,10 @@ export const CommissionsListSection = () => {
       </div>
 
       <div className="mt-4 space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+          ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load commissions.</p>}
         {!isLoading && commissions.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>

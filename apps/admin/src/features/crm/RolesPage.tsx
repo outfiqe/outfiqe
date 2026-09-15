@@ -1,4 +1,4 @@
-import { FormBanner } from "@outfiqe/design-system";
+import { FormBanner, Skeleton } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -21,7 +21,7 @@ export const RolesPage = () => {
       </p>
 
       <div className="mt-6">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading && <Skeleton className="h-48 w-full rounded-xl" />}
         {error && <FormBanner>{getErrorMessage(error)}</FormBanner>}
         {organization && (
           <RolesSection

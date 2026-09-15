@@ -10,6 +10,10 @@ export const TAG_REVIEW_QUEUE_TABS: { status: TagReviewStatusValue; label: strin
   { status: "REJECTED", label: "Declined" },
 ];
 
+export const TAG_REVIEW_QUERY_PARAM = {
+  STATUS: "status",
+} as const;
+
 export const TAG_REJECTION_REASON_OPTIONS: { value: TagRejectionReasonValue; label: string }[] = [
   { value: "NOT_OUR_PRODUCT", label: "This isn't one of our products" },
   { value: "COUNTERFEIT_SUSPECTED", label: "This looks like a counterfeit" },

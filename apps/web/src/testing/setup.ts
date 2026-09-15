@@ -15,3 +15,24 @@ class ResizeObserverStub {
 if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = ResizeObserverStub;
 }
+
+class ProgressEventStub<T extends EventTarget = EventTarget>
+  extends Event
+  implements ProgressEvent<T>
+{
+  readonly lengthComputable: boolean;
+  readonly loaded: number;
+  readonly total: number;
+  declare readonly target: T | null;
+
+  constructor(type: string, eventInitDict: ProgressEventInit = {}) {
+    super(type, eventInitDict);
+    this.lengthComputable = eventInitDict.lengthComputable ?? false;
+    this.loaded = eventInitDict.loaded ?? 0;
+    this.total = eventInitDict.total ?? 0;
+  }
+}
+
+if (!globalThis.ProgressEvent) {
+  globalThis.ProgressEvent = ProgressEventStub;
+}

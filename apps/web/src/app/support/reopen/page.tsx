@@ -1,3 +1,4 @@
+import { Skeleton } from "@outfiqe/design-system";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
@@ -18,7 +19,7 @@ const ReopenSupportPage = () => (
     <SiteHeader />
     <main className="mx-auto max-w-md px-6 py-16">
       <h1 className="font-display text-2xl font-bold text-foreground">Reopen your request</h1>
-      <Suspense fallback={<p className="mt-3 text-sm text-muted-foreground">Loading…</p>}>
+      <Suspense fallback={<Skeleton className="mt-3 h-32 w-full rounded-xl" />}>
         <ReopenSupportRequest />
       </Suspense>
     </main>
