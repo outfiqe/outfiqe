@@ -104,12 +104,11 @@ const getTop = async (
   const isEnabled = await creatorLeaderboardRepository.isCategoryEnabled(category);
   if (!isEnabled) return { category, week, isEnabled: false, entries: [] };
 
-  const currentTop = await creatorLeaderboardRepository.topN(
-    category,
-    week,
-    CREATOR_LEADERBOARD_TOP_N,
-  );
-  const isAwaitingFirstRecompute = currentTop.length === 0;
+  const [currentTop, wasComputedThisWeek] = await Promise.all([
+    creatorLeaderboardRepository.topN(category, week, CREATOR_LEADERBOARD_TOP_N),
+    creatorLeaderboardRepository.wasComputedThisWeek(category, week),
+  ]);
+  const isAwaitingFirstRecompute = currentTop.length === 0 && !wasComputedThisWeek;
   const top = isAwaitingFirstRecompute
     ? await creatorLeaderboardRepository.topN(category, previousWeek, CREATOR_LEADERBOARD_TOP_N)
     : currentTop;
@@ -132,15 +131,16 @@ const getTop = async (
     if (!isEligibleForLeaderboard(creator)) return;
 
     const previousRank = previousRanks[index] ?? null;
+    const displayedIndex = entries.length;
     entries.push({
-      rank: entries.length + 1,
+      rank: displayedIndex + 1,
       creatorId: creator.id,
       creatorName: creator.name,
       creatorHandle: creator.handle,
       avatarUrl: creator.avatarUrl,
       score,
       scoreLabel: formatCreatorScoreLabel(category, score),
-      movement: previousRank === null ? null : previousRank - index,
+      movement: previousRank === null ? null : previousRank - displayedIndex,
     });
   });
 
