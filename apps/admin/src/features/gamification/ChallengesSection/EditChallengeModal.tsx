@@ -53,8 +53,8 @@ export const EditChallengeModal = ({
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" form={formId} disabled={update.isPending}>
-              {update.isPending ? "Saving…" : "Save changes"}
+            <Button type="submit" form={formId} isLoading={update.isPending}>
+              Save changes
             </Button>
           </div>
         </div>

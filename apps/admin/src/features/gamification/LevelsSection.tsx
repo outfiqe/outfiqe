@@ -140,8 +140,8 @@ const EditLevelModal = ({ level, onClose }: { level: Level; onClose: () => void 
           Active
         </label>
         {error && <FormBanner>{error}</FormBanner>}
-        <Button type="submit" disabled={update.isPending}>
-          {update.isPending ? "Saving…" : "Save changes"}
+        <Button type="submit" isLoading={update.isPending}>
+          Save changes
         </Button>
       </form>
     </Modal>
@@ -187,8 +187,8 @@ export const LevelsSection = () => {
         className="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
       >
         <LevelFields idPrefix="create-level" form={form} onChange={setForm} levelEditable />
-        <Button type="submit" disabled={create.isPending}>
-          {create.isPending ? "Creating…" : "Add level"}
+        <Button type="submit" isLoading={create.isPending}>
+          Add level
         </Button>
       </form>
 

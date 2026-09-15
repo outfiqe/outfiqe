@@ -186,10 +186,10 @@ export const ProductReviewsPage = () => {
             <Button
               variant="outline"
               size="sm"
-              disabled={isFetchingNextPage}
+              isLoading={isFetchingNextPage}
               onClick={() => fetchNextPage()}
             >
-              {isFetchingNextPage ? "Loading…" : "Load more"}
+              Load more
             </Button>
           )}
         </div>

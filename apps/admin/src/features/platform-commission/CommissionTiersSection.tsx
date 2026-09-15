@@ -246,8 +246,8 @@ export const CommissionTiersSection = () => {
             <Button type="button" variant="outline" size="sm" onClick={addTierRow}>
               Add band
             </Button>
-            <Button type="submit" disabled={createRule.isPending}>
-              {createRule.isPending ? "Saving…" : "Save as new version"}
+            <Button type="submit" isLoading={createRule.isPending}>
+              Save as new version
             </Button>
           </div>
         )}

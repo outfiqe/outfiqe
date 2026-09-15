@@ -130,8 +130,8 @@ export const ProductTypesPage = () => {
           />
         </div>
 
-        <Button type="submit" disabled={create.isPending}>
-          {create.isPending ? "Creating…" : "Create type"}
+        <Button type="submit" isLoading={create.isPending}>
+          Create type
         </Button>
       </form>
 

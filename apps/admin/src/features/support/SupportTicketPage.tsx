@@ -186,10 +186,11 @@ export const SupportTicketPage = () => {
             <Button
               size="sm"
               onClick={submitReply}
-              disabled={reply.isPending || !body.trim()}
+              disabled={!body.trim()}
+              isLoading={reply.isPending}
               className="mt-2"
             >
-              {reply.isPending ? "Sending…" : visibility === "PUBLIC" ? "Send reply" : "Add note"}
+              {visibility === "PUBLIC" ? "Send reply" : "Add note"}
             </Button>
           </div>
         </div>

@@ -227,8 +227,8 @@ export const BrandExemptionsSection = () => {
             onChange={(e) => setForm({ ...form, reason: e.target.value })}
           />
         </div>
-        <Button type="submit" disabled={create.isPending}>
-          {create.isPending ? "Adding…" : "Add exemption"}
+        <Button type="submit" isLoading={create.isPending}>
+          Add exemption
         </Button>
       </form>
 
