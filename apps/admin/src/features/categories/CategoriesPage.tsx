@@ -156,8 +156,8 @@ export const CategoriesPage = () => {
           <ImageUpload value={imageUrl} onChange={setImageUrl} />
         </div>
 
-        <Button type="submit" disabled={create.isPending}>
-          {create.isPending ? "Creating…" : "Create category"}
+        <Button type="submit" isLoading={create.isPending}>
+          Create category
         </Button>
       </form>
 

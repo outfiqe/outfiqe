@@ -96,9 +96,10 @@ const NewTaskModal = ({
           </Button>
           <Button
             type="submit"
-            disabled={title.trim().length === 0 || assigneeMembershipId === "" || create.isPending}
+            disabled={title.trim().length === 0 || assigneeMembershipId === ""}
+            isLoading={create.isPending}
           >
-            {create.isPending ? "Creating…" : "Create task"}
+            Create task
           </Button>
         </div>
       </form>

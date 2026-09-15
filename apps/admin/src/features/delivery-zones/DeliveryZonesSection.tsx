@@ -132,8 +132,8 @@ const EditZoneModal = ({ zone, onClose }: { zone: DeliveryZone; onClose: () => v
       <form onSubmit={handleSubmit} className="space-y-4">
         <ZoneFields form={form} onChange={setForm} />
         {error && <FormBanner>{error}</FormBanner>}
-        <Button type="submit" disabled={update.isPending}>
-          {update.isPending ? "Saving…" : "Save changes"}
+        <Button type="submit" isLoading={update.isPending}>
+          Save changes
         </Button>
       </form>
     </Modal>
@@ -200,8 +200,8 @@ export const DeliveryZonesSection = () => {
 
       <form onSubmit={handleSubmit} className="mt-4 rounded-xl border border-border bg-card p-4">
         <ZoneFields form={form} onChange={setForm} />
-        <Button type="submit" disabled={create.isPending} className="mt-3">
-          {create.isPending ? "Creating…" : "Add zone"}
+        <Button type="submit" isLoading={create.isPending} className="mt-3">
+          Add zone
         </Button>
       </form>
 

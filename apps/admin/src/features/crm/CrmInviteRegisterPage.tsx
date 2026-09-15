@@ -170,8 +170,8 @@ export const CrmInviteRegisterPage = () => {
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Creating account…" : "Create account & join"}
+              <Button type="submit" className="w-full" isLoading={isSubmitting}>
+                Create account & join
               </Button>
             </form>
           </>

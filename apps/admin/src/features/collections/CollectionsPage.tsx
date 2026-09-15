@@ -148,8 +148,8 @@ export const CollectionsPage = () => {
           />
         </div>
 
-        <Button type="submit" disabled={create.isPending}>
-          {create.isPending ? "Creating…" : "Create collection"}
+        <Button type="submit" isLoading={create.isPending}>
+          Create collection
         </Button>
       </form>
 

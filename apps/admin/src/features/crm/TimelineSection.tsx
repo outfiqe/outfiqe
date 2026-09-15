@@ -87,9 +87,10 @@ export const TimelineSection = ({ subjectType, subjectId }: TimelineSectionProps
         <Button
           type="submit"
           size="sm"
-          disabled={body.trim().length === 0 || logActivity.isPending}
+          disabled={body.trim().length === 0}
+          isLoading={logActivity.isPending}
         >
-          {logActivity.isPending ? "Saving…" : "Log"}
+          Log
         </Button>
       </form>
 

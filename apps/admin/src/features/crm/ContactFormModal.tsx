@@ -231,8 +231,8 @@ export const ContactFormModal = ({ open, onClose, contact }: ContactFormModalPro
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={name.trim().length === 0 || save.isPending}>
-            {save.isPending ? "Saving…" : isEditing ? "Save contact" : "Create contact"}
+          <Button type="submit" disabled={name.trim().length === 0} isLoading={save.isPending}>
+            {isEditing ? "Save contact" : "Create contact"}
           </Button>
         </div>
       </form>

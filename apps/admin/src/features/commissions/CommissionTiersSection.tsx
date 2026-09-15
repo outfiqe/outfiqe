@@ -110,8 +110,8 @@ const EditTierModal = ({ tier, onClose }: { tier: CommissionTier; onClose: () =>
       <form onSubmit={handleSubmit} className="space-y-4">
         <TierFields form={form} onChange={setForm} />
         {error && <FormBanner>{error}</FormBanner>}
-        <Button type="submit" disabled={update.isPending}>
-          {update.isPending ? "Saving…" : "Save changes"}
+        <Button type="submit" isLoading={update.isPending}>
+          Save changes
         </Button>
       </form>
     </Modal>
@@ -166,8 +166,8 @@ export const CommissionTiersSection = () => {
         className="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
       >
         <TierFields form={form} onChange={setForm} />
-        <Button type="submit" disabled={create.isPending}>
-          {create.isPending ? "Creating…" : "Add tier"}
+        <Button type="submit" isLoading={create.isPending}>
+          Add tier
         </Button>
       </form>
 
