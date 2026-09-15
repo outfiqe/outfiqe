@@ -12,8 +12,12 @@ export const redisKeys = {
   oauthLinkPending: (linkToken: string) => `auth:oauth-link-pending:${linkToken}`,
   leaderboard: (category: LeaderboardCategory, week: string) =>
     `leaderboard:brand:${category}:${week}`,
+  leaderboardComputed: (category: LeaderboardCategory, week: string) =>
+    `leaderboard:brand:computed:${category}:${week}`,
   creatorLeaderboard: (category: CreatorLeaderboardCategory, week: string) =>
     `leaderboard:creator:${category}:${week}`,
+  creatorLeaderboardComputed: (category: CreatorLeaderboardCategory, week: string) =>
+    `leaderboard:creator:computed:${category}:${week}`,
 };
 
 export const CACHE_TTL = {

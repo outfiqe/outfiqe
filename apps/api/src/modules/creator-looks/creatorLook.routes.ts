@@ -4,6 +4,8 @@ import { optionalAuth } from "#middlewares/optional-auth.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
+import { CONTENT_MODERATE_PERMISSION_KEY } from "#modules/platform-access/platform-access.constants.js";
+import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 
 import {
   COMMENT_RATE_LIMIT_MAX_REQUESTS,
@@ -13,6 +15,7 @@ import {
 } from "./creatorLook.constants.js";
 import { creatorLookController } from "./creatorLook.controller.js";
 import {
+  adminListLooksQuerySchema,
   autocompleteQuerySchema,
   commentIdParamsSchema,
   commentsQuerySchema,
@@ -73,6 +76,12 @@ creatorLookRoutes.get(
   requireAuth,
   validate({ query: listSavedQuerySchema }),
   creatorLookController.listSaved,
+);
+creatorLookRoutes.get(
+  "/admin",
+  ...requirePlatformRole(CONTENT_MODERATE_PERMISSION_KEY),
+  validate({ query: adminListLooksQuerySchema }),
+  creatorLookController.adminList,
 );
 
 creatorLookRoutes.get(
@@ -148,6 +157,12 @@ creatorLookRoutes.post(
   commentRateLimit,
   validate({ params: lookIdParamsSchema, body: createCommentSchema }),
   creatorLookController.addComment,
+);
+creatorLookRoutes.delete(
+  "/:lookId/comments/:commentId",
+  requireAuth,
+  validate({ params: commentIdParamsSchema }),
+  creatorLookController.removeComment,
 );
 
 creatorLookRoutes.get(

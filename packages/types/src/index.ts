@@ -8,6 +8,7 @@ export * from "./category";
 export * from "./chat";
 export * from "./collection";
 export * from "./commission";
+export * from "./content-report";
 export * from "./hero-slide";
 export * from "./image";
 export * from "./leaderboard";

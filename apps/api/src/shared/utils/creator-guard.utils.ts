@@ -1,4 +1,4 @@
-import { CreatorStatus } from "#generated/prisma/enums.js";
+import { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
@@ -10,6 +10,13 @@ export const requireApprovedCreator = async (
   message = DEFAULT_MESSAGE,
 ): Promise<void> => {
   const user = await userRepository.findById(userId);
+  if (user && user.role !== UserRole.CUSTOMER) {
+    throw new AppError(
+      "STAFF_CANNOT_BE_CREATOR",
+      "Staff and brand accounts can't post as a creator.",
+      FORBIDDEN_STATUS,
+    );
+  }
   if (!user || !user.isCreator || user.creatorStatus !== CreatorStatus.APPROVED) {
     throw new AppError("NOT_A_CREATOR", message, FORBIDDEN_STATUS);
   }

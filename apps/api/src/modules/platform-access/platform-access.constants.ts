@@ -84,9 +84,16 @@ export const PLATFORM_PERMISSION_CATALOG = [
     label: "Compose and send broadcast announcements",
     group: "Platform",
   },
+  {
+    key: "platform:content:moderate",
+    label: "Remove reported creator-look posts and comments",
+    group: "Moderation",
+  },
 ] as const;
 
 export type PlatformPermissionKey = (typeof PLATFORM_PERMISSION_CATALOG)[number]["key"];
+
+export const CONTENT_MODERATE_PERMISSION_KEY: PlatformPermissionKey = "platform:content:moderate";
 
 export const PLATFORM_PERMISSION_KEYS: readonly PlatformPermissionKey[] =
   PLATFORM_PERMISSION_CATALOG.map((permission) => permission.key);

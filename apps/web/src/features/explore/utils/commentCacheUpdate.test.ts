@@ -13,6 +13,7 @@ import {
   commentRepliesQueryKey,
   lookCommentsQueryKey,
   removeCommentById,
+  removeReplyById,
   replaceCommentId,
   revertReplyOptimisticInsert,
 } from "./commentCacheUpdate";
@@ -114,6 +115,53 @@ describe("removeCommentById", () => {
 
     const cachedPage = queryClient.getQueryData<CommentPage>(lookCommentsQueryKey(LOOK_ID));
     expect(cachedPage?.comments.map((comment) => comment.id)).toEqual(["keep"]);
+  });
+
+  it("also drops the deleted comment's cached replies, matching the backend's cascade delete", () => {
+    const queryClient = new QueryClient();
+    seedComments(queryClient, [buildComment({ id: "drop", replyCount: 1 })]);
+    seedReplies(queryClient, "drop", [buildReply({ id: "reply-1" })]);
+
+    removeCommentById(queryClient, LOOK_ID, "drop");
+
+    expect(queryClient.getQueryData(commentRepliesQueryKey(LOOK_ID, "drop"))).toBeUndefined();
+  });
+});
+
+describe("removeReplyById", () => {
+  it("removes the reply from the expanded list and the parent's preview, decrementing replyCount", () => {
+    const queryClient = new QueryClient();
+    seedComments(queryClient, [
+      buildComment({
+        id: "comment-1",
+        replyCount: 1,
+        previewReplies: [buildReply({ id: "reply-1" })],
+      }),
+    ]);
+    seedReplies(queryClient, "comment-1", [buildReply({ id: "reply-1" })]);
+
+    removeReplyById(queryClient, LOOK_ID, "comment-1", "reply-1");
+
+    const cachedPage = queryClient.getQueryData<CommentPage>(lookCommentsQueryKey(LOOK_ID));
+    expect(cachedPage?.comments[0]?.replyCount).toBe(0);
+    expect(cachedPage?.comments[0]?.previewReplies).toEqual([]);
+
+    const replies = queryClient.getQueryData<{ pages: CommentReplyPage[] }>(
+      commentRepliesQueryKey(LOOK_ID, "comment-1"),
+    );
+    expect(replies?.pages[0]?.replies).toEqual([]);
+  });
+
+  it("never decrements replyCount below zero", () => {
+    const queryClient = new QueryClient();
+    seedComments(queryClient, [
+      buildComment({ id: "comment-1", replyCount: 0, previewReplies: [] }),
+    ]);
+
+    removeReplyById(queryClient, LOOK_ID, "comment-1", "reply-1");
+
+    const cachedPage = queryClient.getQueryData<CommentPage>(lookCommentsQueryKey(LOOK_ID));
+    expect(cachedPage?.comments[0]?.replyCount).toBe(0);
   });
 });
 

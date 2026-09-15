@@ -21,6 +21,9 @@ vi.mock("./useExploreAuthGate", () => ({
 
 vi.mock("./useLikeLook", () => ({ useLikeLook: () => ({ mutate: vi.fn(), isPending: false }) }));
 vi.mock("./useSaveLook", () => ({ useSaveLook: () => ({ mutate: vi.fn(), isPending: false }) }));
+vi.mock("./useReportContent", () => ({
+  useReportContent: () => ({ mutate: vi.fn(), isPending: false }),
+}));
 vi.mock("./useFollowCreator", () => ({
   useFollowCreator: () => ({ mutate: vi.fn(), isPending: false }),
 }));

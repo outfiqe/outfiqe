@@ -1,3 +1,4 @@
+import { UserRole } from "#generated/prisma/enums.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
 
 import {
@@ -23,5 +24,14 @@ export const platformAccessService = {
     if (isSuperAdmin) return [...PLATFORM_PERMISSION_KEYS];
 
     return membership.role.permissionKeys.filter(isPlatformPermissionKey);
+  },
+
+  async principalHasPermission(
+    principal: { userId: string; role: UserRole },
+    key: PlatformPermissionKey,
+  ): Promise<boolean> {
+    if (principal.role !== UserRole.ADMIN) return false;
+    const permissionKeys = await platformAccessService.permissionKeysFor(principal.userId);
+    return permissionKeys.includes(key);
   },
 };

@@ -20,8 +20,14 @@ import { truncateToHour } from "#lib/trend-scoring.utils.js";
 import { creatorLookRepository } from "#modules/creator-looks/creatorLook.repository.js";
 import { creatorLookService } from "#modules/creator-looks/creatorLook.service.js";
 import type { TrendingSnapshotCursor } from "#modules/creator-looks/creatorLook.utils.js";
+import {
+  PLATFORM_PERMISSION_CATALOG,
+  PLATFORM_PERMISSION_KEYS,
+} from "#modules/platform-access/platform-access.constants.js";
+import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
+import { seedPlatformOrganization } from "#test/integration/crmFixtures.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -53,6 +59,54 @@ const createPlainUser = async (name: string, handle: string) =>
       passwordHash: "not-used-in-tests",
     },
   });
+
+const createUserWithRole = async (
+  name: string,
+  handle: string,
+  role: UserRole,
+  overrides: { isCreator?: boolean; creatorStatus?: CreatorStatus } = {},
+) =>
+  prisma.user.create({
+    data: {
+      email: `${handle}-${randomUUID()}@outfiqe.test`,
+      name,
+      handle: `${handle}-${randomUUID().slice(0, 6)}`,
+      phone: uniquePhone(),
+      passwordHash: "not-used-in-tests",
+      role,
+      ...overrides,
+    },
+  });
+
+const seedPlatformAdminRole = async () => {
+  const { organization, adminRole } = await seedPlatformOrganization();
+  await prisma.permission.createMany({
+    data: PLATFORM_PERMISSION_CATALOG.map((permission) => ({ ...permission })),
+    skipDuplicates: true,
+  });
+  await prisma.rolePermission.createMany({
+    data: PLATFORM_PERMISSION_KEYS.map((permissionKey) => ({
+      roleId: adminRole.id,
+      permissionKey,
+    })),
+    skipDuplicates: true,
+  });
+  return { organization, adminRole };
+};
+
+const createContentModerator = async (name: string, handle: string) => {
+  const { organization, adminRole } = await seedPlatformAdminRole();
+  const moderator = await createUserWithRole(name, handle, UserRole.ADMIN);
+  await prisma.membership.create({
+    data: {
+      organizationId: organization.id,
+      userId: moderator.id,
+      roleId: adminRole.id,
+      status: "ACTIVE",
+    },
+  });
+  return moderator;
+};
 
 const createLook = async (creatorId: string, caption: string) =>
   prisma.creatorLook.create({
@@ -330,6 +384,26 @@ describe("POST /api/creator-looks", () => {
       });
 
     expect(response.status).toBe(403);
+  });
+
+  it("rejects a platform admin even if their row is already flagged as an approved creator", async () => {
+    const corruptedAdmin = await createUserWithRole(
+      "Corrupted Admin Creator",
+      "corrupted-admin-creator",
+      UserRole.ADMIN,
+      { isCreator: true, creatorStatus: CreatorStatus.APPROVED },
+    );
+
+    const response = await request(testApp)
+      .post("/api/creator-looks")
+      .set("Authorization", authHeaderFor(corruptedAdmin.id, UserRole.ADMIN))
+      .send({
+        imageUrls: ["https://cdn.outfiqe.test/staff-post.jpg"],
+        taggedProducts: [],
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("STAFF_CANNOT_BE_CREATOR");
   });
 
   it("rejects tagging a product that isn't approved", async () => {
@@ -631,6 +705,43 @@ describe("DELETE /api/creator-looks/:lookId", () => {
     expect(response.status).toBe(404);
   });
 
+  it("returns 404 for a platform admin with no content-moderate permission", async () => {
+    const owner = await createCreator("Unmoderated Owner", "unmoderated-owner");
+    const bareAdmin = await createUserWithRole("Bare Admin", "bare-admin", UserRole.ADMIN);
+    const look = await createLook(owner.id, "Still protected from a bare admin");
+
+    const response = await request(testApp)
+      .delete(`/api/creator-looks/${look.id}`)
+      .set("Authorization", authHeaderFor(bareAdmin.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(404);
+  });
+
+  it("lets a platform moderator delete another creator's post and logs it", async () => {
+    const owner = await createCreator("Moderated Owner", "moderated-owner");
+    const moderator = await createContentModerator("Content Moderator", "content-moderator-look");
+    const look = await createLook(owner.id, "About to be removed by staff");
+
+    const response = await request(testApp)
+      .delete(`/api/creator-looks/${look.id}`)
+      .set("Authorization", authHeaderFor(moderator.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual({ deleted: true });
+
+    const stored = await prisma.creatorLook.findUniqueOrThrow({ where: { id: look.id } });
+    expect(stored.deletedAt).not.toBeNull();
+
+    const auditLog = await prisma.platformAuditLog.findFirst({
+      where: { targetType: "CreatorLook", targetId: look.id },
+    });
+    expect(auditLog).toMatchObject({
+      actorUserId: moderator.id,
+      onBehalfOfUserId: owner.id,
+      action: PLATFORM_AUDIT_ACTION.CREATOR_LOOK_REMOVED_BY_ADMIN,
+    });
+  });
+
   it("requires authentication", async () => {
     const response = await request(testApp).delete(`/api/creator-looks/${randomUUID()}`);
 
@@ -929,6 +1040,40 @@ describe("POST /api/creator-looks/:lookId/like and unlike", () => {
 
     expect(response.status).toBe(401);
   });
+
+  it("rejects a platform admin liking a post", async () => {
+    const creator = await createCreator("Admin Like Target Creator", "admin-like-target-creator");
+    const admin = await createUserWithRole("Liking Admin", "liking-admin", UserRole.ADMIN);
+    const look = await createLook(creator.id, "Off-limits to staff");
+
+    const response = await request(testApp)
+      .post(`/api/creator-looks/${look.id}/like`)
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("ADMIN_CANNOT_ENGAGE");
+
+    const stored = await prisma.creatorLook.findUniqueOrThrow({ where: { id: look.id } });
+    expect(stored.likeCount).toBe(0);
+  });
+
+  it("still allows a platform admin to unlike a post from before this restriction shipped", async () => {
+    const creator = await createCreator(
+      "Admin Unlike Target Creator",
+      "admin-unlike-target-creator",
+    );
+    const admin = await createUserWithRole("Unliking Admin", "unliking-admin", UserRole.ADMIN);
+    const look = await createLook(creator.id, "Legacy admin like");
+    await prisma.creatorLook.update({ where: { id: look.id }, data: { likeCount: 1 } });
+    await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: admin.id } });
+
+    const response = await request(testApp)
+      .delete(`/api/creator-looks/${look.id}/like`)
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual({ liked: false, likeCount: 0 });
+  });
 });
 
 describe("POST /api/creator-looks/:lookId/save and unsave", () => {
@@ -1004,6 +1149,24 @@ describe("POST /api/creator-looks/:lookId/save and unsave", () => {
     const response = await request(testApp).post(`/api/creator-looks/${randomUUID()}/save`);
 
     expect(response.status).toBe(401);
+  });
+
+  it("allows a platform admin to save and unsave a post, unlike/comment/like", async () => {
+    const creator = await createCreator("Admin Save Target Creator", "admin-save-target-creator");
+    const admin = await createUserWithRole("Saving Admin", "saving-admin", UserRole.ADMIN);
+    const look = await createLook(creator.id, "Admins can still bookmark this");
+
+    const saveResponse = await request(testApp)
+      .post(`/api/creator-looks/${look.id}/save`)
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
+    expect(saveResponse.status).toBe(200);
+    expect(saveResponse.body.data).toEqual({ saved: true, saveCount: 1 });
+
+    const unsaveResponse = await request(testApp)
+      .delete(`/api/creator-looks/${look.id}/save`)
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
+    expect(unsaveResponse.status).toBe(200);
+    expect(unsaveResponse.body.data).toEqual({ saved: false, saveCount: 0 });
   });
 });
 
@@ -1104,6 +1267,225 @@ describe("GET and POST /api/creator-looks/:lookId/comments", () => {
       .send({ body: "" });
 
     expect(response.status).toBe(422);
+  });
+
+  it("rejects a platform admin commenting on a post", async () => {
+    const creator = await createCreator(
+      "Admin Comment Target Creator",
+      "admin-comment-target-creator",
+    );
+    const admin = await createUserWithRole("Commenting Admin", "commenting-admin", UserRole.ADMIN);
+    const look = await createLook(creator.id, "Off-limits comment target");
+
+    const response = await request(testApp)
+      .post(`/api/creator-looks/${look.id}/comments`)
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN))
+      .send({ body: "Nice fit" });
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("ADMIN_CANNOT_ENGAGE");
+
+    const stored = await prisma.creatorLook.findUniqueOrThrow({ where: { id: look.id } });
+    expect(stored.commentCount).toBe(0);
+  });
+});
+
+describe("DELETE /api/creator-looks/:lookId/comments/:commentId", () => {
+  it("lets a comment's own author delete it", async () => {
+    const creator = await createCreator("Comment Delete Creator", "comment-delete-creator");
+    const commenter = await createCreator("Comment Deleter", "comment-deleter");
+    const look = await createLook(creator.id, "Comment gets deleted");
+    const comment = await prisma.creatorLookComment.create({
+      data: { creatorLookId: look.id, userId: commenter.id, body: "Oops, deleting this" },
+    });
+    await prisma.creatorLook.update({ where: { id: look.id }, data: { commentCount: 1 } });
+
+    const response = await request(testApp)
+      .delete(`/api/creator-looks/${look.id}/comments/${comment.id}`)
+      .set("Authorization", authHeaderFor(commenter.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual({ deleted: true });
+
+    const stored = await prisma.creatorLookComment.findUniqueOrThrow({
+      where: { id: comment.id },
+    });
+    expect(stored.deletedAt).not.toBeNull();
+
+    const storedLook = await prisma.creatorLook.findUniqueOrThrow({ where: { id: look.id } });
+    expect(storedLook.commentCount).toBe(0);
+  });
+
+  it("returns 404 for a non-owner, non-moderator caller", async () => {
+    const creator = await createCreator("Protected Comment Creator", "protected-comment-creator");
+    const commenter = await createCreator("Protected Commenter", "protected-commenter");
+    const outsider = await createCreator("Comment Outsider", "comment-outsider");
+    const look = await createLook(creator.id, "Comment stays");
+    const comment = await prisma.creatorLookComment.create({
+      data: { creatorLookId: look.id, userId: commenter.id, body: "Not yours to delete" },
+    });
+
+    const response = await request(testApp)
+      .delete(`/api/creator-looks/${look.id}/comments/${comment.id}`)
+      .set("Authorization", authHeaderFor(outsider.id));
+
+    expect(response.status).toBe(404);
+
+    const stored = await prisma.creatorLookComment.findUniqueOrThrow({
+      where: { id: comment.id },
+    });
+    expect(stored.deletedAt).toBeNull();
+  });
+
+  it("lets a platform moderator delete someone else's comment and logs it", async () => {
+    const creator = await createCreator("Moderated Comment Creator", "moderated-comment-creator");
+    const commenter = await createCreator("Moderated Commenter", "moderated-commenter");
+    const moderator = await createContentModerator(
+      "Comment Moderator",
+      "content-moderator-comment",
+    );
+    const look = await createLook(creator.id, "Comment removed by staff");
+    const comment = await prisma.creatorLookComment.create({
+      data: { creatorLookId: look.id, userId: commenter.id, body: "Reported comment" },
+    });
+
+    const response = await request(testApp)
+      .delete(`/api/creator-looks/${look.id}/comments/${comment.id}`)
+      .set("Authorization", authHeaderFor(moderator.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(200);
+
+    const auditLog = await prisma.platformAuditLog.findFirst({
+      where: { targetType: "CreatorLookComment", targetId: comment.id },
+    });
+    expect(auditLog).toMatchObject({
+      actorUserId: moderator.id,
+      onBehalfOfUserId: commenter.id,
+      action: PLATFORM_AUDIT_ACTION.CREATOR_LOOK_COMMENT_REMOVED_BY_ADMIN,
+    });
+  });
+
+  it("returns 404 for a comment that doesn't exist", async () => {
+    const creator = await createCreator("Missing Comment Creator", "missing-comment-creator");
+    const look = await createLook(creator.id, "No such comment");
+
+    const response = await request(testApp)
+      .delete(`/api/creator-looks/${look.id}/comments/${randomUUID()}`)
+      .set("Authorization", authHeaderFor(creator.id));
+
+    expect(response.status).toBe(404);
+  });
+
+  it("cascades to every reply when a top-level comment is deleted", async () => {
+    const creator = await createCreator("Cascade Creator", "cascade-creator");
+    const commenter = await createCreator("Cascade Commenter", "cascade-commenter");
+    const replier = await createCreator("Cascade Replier", "cascade-replier");
+    const look = await createLook(creator.id, "Cascade target");
+    const comment = await prisma.creatorLookComment.create({
+      data: { creatorLookId: look.id, userId: commenter.id, body: "Parent comment" },
+    });
+    const replyOne = await prisma.creatorLookComment.create({
+      data: {
+        creatorLookId: look.id,
+        userId: replier.id,
+        parentCommentId: comment.id,
+        body: "First reply",
+      },
+    });
+    const replyTwo = await prisma.creatorLookComment.create({
+      data: {
+        creatorLookId: look.id,
+        userId: replier.id,
+        parentCommentId: comment.id,
+        body: "Second reply",
+      },
+    });
+    await prisma.creatorLookComment.update({
+      where: { id: comment.id },
+      data: { replyCount: 2 },
+    });
+    await prisma.creatorLook.update({ where: { id: look.id }, data: { commentCount: 3 } });
+
+    const response = await request(testApp)
+      .delete(`/api/creator-looks/${look.id}/comments/${comment.id}`)
+      .set("Authorization", authHeaderFor(commenter.id));
+
+    expect(response.status).toBe(200);
+
+    const [storedComment, storedReplyOne, storedReplyTwo, storedLook] = await Promise.all([
+      prisma.creatorLookComment.findUniqueOrThrow({ where: { id: comment.id } }),
+      prisma.creatorLookComment.findUniqueOrThrow({ where: { id: replyOne.id } }),
+      prisma.creatorLookComment.findUniqueOrThrow({ where: { id: replyTwo.id } }),
+      prisma.creatorLook.findUniqueOrThrow({ where: { id: look.id } }),
+    ]);
+    expect(storedComment.deletedAt).not.toBeNull();
+    expect(storedReplyOne.deletedAt).not.toBeNull();
+    expect(storedReplyTwo.deletedAt).not.toBeNull();
+    expect(storedLook.commentCount).toBe(0);
+  });
+
+  it("deleting a single reply only decrements the parent's reply count by one", async () => {
+    const creator = await createCreator("Single Reply Creator", "single-reply-creator");
+    const commenter = await createCreator("Single Reply Commenter", "single-reply-commenter");
+    const replier = await createCreator("Single Replier", "single-replier");
+    const look = await createLook(creator.id, "Single reply target");
+    const comment = await prisma.creatorLookComment.create({
+      data: { creatorLookId: look.id, userId: commenter.id, body: "Parent stays" },
+    });
+    const reply = await prisma.creatorLookComment.create({
+      data: {
+        creatorLookId: look.id,
+        userId: replier.id,
+        parentCommentId: comment.id,
+        body: "Reply goes away",
+      },
+    });
+    await prisma.creatorLookComment.update({ where: { id: comment.id }, data: { replyCount: 1 } });
+    await prisma.creatorLook.update({ where: { id: look.id }, data: { commentCount: 2 } });
+
+    const response = await request(testApp)
+      .delete(`/api/creator-looks/${look.id}/comments/${reply.id}`)
+      .set("Authorization", authHeaderFor(replier.id));
+
+    expect(response.status).toBe(200);
+
+    const [storedReply, storedParent, storedLook] = await Promise.all([
+      prisma.creatorLookComment.findUniqueOrThrow({ where: { id: reply.id } }),
+      prisma.creatorLookComment.findUniqueOrThrow({ where: { id: comment.id } }),
+      prisma.creatorLook.findUniqueOrThrow({ where: { id: look.id } }),
+    ]);
+    expect(storedReply.deletedAt).not.toBeNull();
+    expect(storedParent.deletedAt).toBeNull();
+    expect(storedParent.replyCount).toBe(0);
+    expect(storedLook.commentCount).toBe(1);
+  });
+
+  it("requires authentication", async () => {
+    const response = await request(testApp).delete(
+      `/api/creator-looks/${randomUUID()}/comments/${randomUUID()}`,
+    );
+
+    expect(response.status).toBe(401);
+  });
+});
+
+describe("POST /api/creator-looks/:lookId/comments/:commentId/replies", () => {
+  it("rejects a platform admin replying to a comment", async () => {
+    const creator = await createCreator("Admin Reply Target Creator", "admin-reply-target-creator");
+    const commenter = await createCreator("Reply Thread Starter", "reply-thread-starter");
+    const admin = await createUserWithRole("Replying Admin", "replying-admin", UserRole.ADMIN);
+    const look = await createLook(creator.id, "Off-limits reply target");
+    const comment = await prisma.creatorLookComment.create({
+      data: { creatorLookId: look.id, userId: commenter.id, body: "Starting a thread" },
+    });
+
+    const response = await request(testApp)
+      .post(`/api/creator-looks/${look.id}/comments/${comment.id}/replies`)
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN))
+      .send({ body: "Staff reply" });
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("ADMIN_CANNOT_ENGAGE");
   });
 });
 

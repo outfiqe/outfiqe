@@ -26,6 +26,8 @@ const NAV_KEY_LABELS: Record<PlatformNavKey, string> = {
   "product-reviews": "Product reviews",
   "tag-reviews": "Tag reviews",
   "tag-reports": "Tag reports",
+  "content-reports": "Content reports",
+  "content-browser": "Browse posts",
   trending: "Trending debug",
   creators: "Creators",
   commissions: "Commissions",

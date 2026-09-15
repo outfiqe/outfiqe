@@ -13,6 +13,7 @@ import { PostCardHeader } from "./PostCardHeader";
 import { PostCarousel } from "./PostCarousel";
 import { PostCommentsSection } from "./PostCommentsSection";
 import { PostTagPill } from "./PostTagPill";
+import { ReportContentModal } from "./ReportContentModal";
 
 const PHOTO_ASPECT = 4 / 5;
 const PHOTO_ASPECT_CSS = "4 / 5";
@@ -55,11 +56,15 @@ export const PostDetailModal = ({
     setDraft,
     comments,
     submitComment,
+    reportOpen,
+    setReportOpen,
+    reportMutation,
   } = usePostCardState(post);
   const { isLoading: commentsLoading, data: commentsData } = comments;
   const { mutate: toggleLike, isPending: isLiking } = likeMutation;
   const { mutate: toggleSave, isPending: isSaving } = saveMutation;
   const { mutate: toggleFollow, isPending: isFollowToggling } = followMutation;
+  const { mutate: submitReport, isPending: isReporting } = reportMutation;
   const hasCaptionContent = taggedProducts.length > 0 || Boolean(caption);
 
   useEffect(() => {
@@ -97,6 +102,7 @@ export const PostDetailModal = ({
                 gated(() => toggleFollow({ creatorId, following: isFollowingCreator }))
               }
               isFollowToggling={isFollowToggling}
+              onReport={() => setReportOpen(true)}
               className="shrink-0 border-b border-border py-3 pl-4 pr-14"
             />
           )}
@@ -138,6 +144,17 @@ export const PostDetailModal = ({
           </div>
         </div>
       </div>
+
+      {reportOpen && (
+        <ReportContentModal
+          targetLabel="post"
+          isPending={isReporting}
+          onConfirm={(input) =>
+            submitReport({ targetType: "CREATOR_LOOK", targetId: id, ...input })
+          }
+          onCancel={() => setReportOpen(false)}
+        />
+      )}
     </Modal>
   );
 };

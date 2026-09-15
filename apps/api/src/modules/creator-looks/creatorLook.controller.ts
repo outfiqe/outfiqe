@@ -5,6 +5,7 @@ import { getAuthPrincipal, requireAuthPrincipal } from "#middlewares/require-aut
 import { validated } from "#middlewares/validate.js";
 
 import type {
+  AdminListLooksQuery,
   AutocompleteQuery,
   CommentIdParams,
   CommentsQuery,
@@ -60,10 +61,10 @@ export const creatorLookController = {
   },
 
   async remove(_req: Request, res: Response) {
-    const { userId } = requireAuthPrincipal(res);
+    const principal = requireAuthPrincipal(res);
     const { lookId } = validated.params<LookIdParams>(res);
 
-    await creatorLookService.remove(lookId, userId);
+    await creatorLookService.remove(lookId, principal);
     sendSuccess(res, { deleted: true }, "Post deleted.");
   },
 
@@ -94,6 +95,12 @@ export const creatorLookController = {
     const query = validated.query<SearchCreatorLooksQuery>(res);
 
     const page = await creatorLookService.search(viewerId, query);
+    sendSuccess(res, page, "Posts.");
+  },
+
+  async adminList(_req: Request, res: Response) {
+    const query = validated.query<AdminListLooksQuery>(res);
+    const page = await creatorLookService.adminListLooks(query);
     sendSuccess(res, page, "Posts.");
   },
 
@@ -173,6 +180,14 @@ export const creatorLookController = {
 
     const reply = await creatorLookService.addReply(lookId, commentId, userId, body);
     sendSuccess(res, reply, "Reply added.", CREATED_STATUS);
+  },
+
+  async removeComment(_req: Request, res: Response) {
+    const principal = requireAuthPrincipal(res);
+    const { lookId, commentId } = validated.params<CommentIdParams>(res);
+
+    await creatorLookService.removeComment(lookId, commentId, principal);
+    sendSuccess(res, { deleted: true }, "Comment deleted.");
   },
 
   async recordTagClick(_req: Request, res: Response) {

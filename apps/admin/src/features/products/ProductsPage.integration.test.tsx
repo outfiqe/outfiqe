@@ -15,7 +15,7 @@ const product = (id: string, name: string) => ({
   id,
   name,
   price: 1_000,
-  type: "Jacket",
+  productType: { slug: "jacket", label: "Jacket" },
   categories: [],
   imageUrl: null,
   lowStock: false,

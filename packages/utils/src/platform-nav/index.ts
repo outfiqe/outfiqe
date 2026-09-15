@@ -16,6 +16,8 @@ export const PLATFORM_NAV_KEYS = [
   "product-reviews",
   "tag-reviews",
   "tag-reports",
+  "content-reports",
+  "content-browser",
   "trending",
   "creators",
   "commissions",

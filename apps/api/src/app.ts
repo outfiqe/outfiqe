@@ -32,6 +32,7 @@ import { chatRoutes } from "./modules/chat/chat.routes.js";
 import { conversationRoutes } from "./modules/chat/conversation.routes.js";
 import { collectionRoutes } from "./modules/collections/collection.routes.js";
 import { commissionRoutes } from "./modules/commissions/commission.routes.js";
+import { contentReportRoutes } from "./modules/content-reports/contentReport.routes.js";
 import { couponCustomerRoutes } from "./modules/coupons/coupon.customer.routes.js";
 import { couponRoutes } from "./modules/coupons/coupon.routes.js";
 import { creatorCompetitionRoutes } from "./modules/creator-competitions/creatorCompetition.routes.js";
@@ -232,6 +233,7 @@ export const createApp = () => {
   app.use("/api/support", supportRoutes);
   app.use("/api/tag-reviews", tagReviewRoutes);
   app.use("/api/tag-reports", tagReportRoutes);
+  app.use("/api/content-reports", contentReportRoutes);
   app.use("/api/push", pushRoutes);
 
   Sentry.setupExpressErrorHandler(app);

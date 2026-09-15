@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { TRENDING_RANKS, type TrendingRank } from "@/shared/components/TrendingRankBadge";
+import { useIsHydrated } from "@/shared/hooks/useIsHydrated";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
 
@@ -44,11 +45,14 @@ export const ExploreFeed = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
-  const [isForYouHintVisible, setIsForYouHintVisible] = useState(() => !isForYouHintDismissed());
+  const isHydrated = useIsHydrated();
+  const [hasJustDismissedForYouHint, setHasJustDismissedForYouHint] = useState(false);
+  const isForYouHintVisible =
+    !hasJustDismissedForYouHint && !(isHydrated && isForYouHintDismissed());
 
   const dismissForYouHint = () => {
     rememberForYouHintDismissed();
-    setIsForYouHintVisible(false);
+    setHasJustDismissedForYouHint(true);
   };
 
   const committedTab = searchParams.get(EXPLORE_QUERY_PARAM.TAB) ?? EXPLORE_TAB.FOR_YOU;

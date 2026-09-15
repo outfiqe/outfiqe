@@ -186,6 +186,29 @@ export type TrendingTag = {
   postCount: number;
 };
 
+export type AdminLookCreator = {
+  id: string;
+  name: string;
+  handle: string;
+  contentFlagCount: number;
+};
+
+export type AdminLookSummary = {
+  id: string;
+  imageUrl: string;
+  caption: string | null;
+  creator: AdminLookCreator;
+  likeCount: number;
+  commentCount: number;
+  saveCount: number;
+  createdAt: Date;
+};
+
+export type AdminLookPage = {
+  items: AdminLookSummary[];
+  nextCursor: string | null;
+};
+
 export type PostMetricBucket = {
   lookId: string;
   bucketStart: Date;

@@ -40,6 +40,18 @@ const createPlainUser = async (name: string, handle: string) =>
     },
   });
 
+const createUserWithRole = async (name: string, handle: string, role: UserRole) =>
+  prisma.user.create({
+    data: {
+      email: `${handle}-${randomUUID()}@outfiqe.test`,
+      name,
+      handle: `${handle}-${randomUUID().slice(0, 6)}`,
+      phone: uniquePhone(),
+      passwordHash: "not-used-in-tests",
+      role,
+    },
+  });
+
 const createPendingCreator = async (name: string, handle: string) =>
   prisma.user.create({
     data: {
@@ -432,6 +444,35 @@ describe("POST /api/creators/apply", () => {
 
     expect(response.status).toBe(401);
   });
+
+  it("rejects a platform admin applying to become a creator", async () => {
+    const admin = await createUserWithRole("Admin Applicant", "admin-applicant", UserRole.ADMIN);
+
+    const response = await request(testApp)
+      .post("/api/creators/apply")
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("STAFF_CANNOT_APPLY");
+
+    const stored = await prisma.user.findUniqueOrThrow({ where: { id: admin.id } });
+    expect(stored.creatorStatus).toBe(CreatorStatus.NONE);
+  });
+
+  it("rejects a brand owner applying to become a creator", async () => {
+    const brandOwner = await createUserWithRole(
+      "Brand Owner Applicant",
+      "brand-owner-applicant",
+      UserRole.BRAND_OWNER,
+    );
+
+    const response = await request(testApp)
+      .post("/api/creators/apply")
+      .set("Authorization", authHeaderFor(brandOwner.id, UserRole.BRAND_OWNER));
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("STAFF_CANNOT_APPLY");
+  });
 });
 
 describe("GET /api/creators/me", () => {
@@ -586,6 +627,31 @@ describe("POST /api/creators/:userId/approve", () => {
       .set("Authorization", authHeaderFor(pending.id));
 
     expect(response.status).toBe(403);
+  });
+
+  it("rejects approving a target whose role isn't a customer, even if already pending", async () => {
+    const admin = await createAdmin("Approving Admin Four", "approving-admin-four");
+    const staffApplicant = await prisma.user.create({
+      data: {
+        email: `staff-pending-${randomUUID()}@outfiqe.test`,
+        name: "Staff Pending Legacy",
+        handle: `staff-pending-legacy-${randomUUID().slice(0, 6)}`,
+        phone: uniquePhone(),
+        passwordHash: "not-used-in-tests",
+        role: UserRole.ADMIN,
+        creatorStatus: CreatorStatus.PENDING,
+      },
+    });
+
+    const response = await request(testApp)
+      .post(`/api/creators/${staffApplicant.id}/approve`)
+      .set("Authorization", adminAuthHeaderFor(admin.id));
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("STAFF_CANNOT_APPLY");
+
+    const stored = await prisma.user.findUniqueOrThrow({ where: { id: staffApplicant.id } });
+    expect(stored.isCreator).toBe(false);
   });
 });
 
