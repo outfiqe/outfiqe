@@ -966,6 +966,109 @@ describe("GET /api/creator-looks/tags/trending", () => {
   });
 });
 
+describe("creatorLookService tag trending pipeline", () => {
+  it("caches an empty scoring result with a short TTL instead of the normal long-lived one", async () => {
+    const { ranked } = await creatorLookService.runTagTrendingScoring();
+    expect(ranked).toHaveLength(0);
+
+    const ttl = await redis.ttl(redisKeys.cache("explore-tag-trend-score", "global"));
+    expect(ttl).toBeGreaterThan(0);
+    expect(ttl).toBeLessThanOrEqual(90);
+  });
+
+  it("caches a non-empty scoring result with the normal long-lived TTL", async () => {
+    const creator = await createCreator("Tag TTL Creator", "tag-ttl-creator");
+    const marker = randomUUID().slice(0, 6);
+    const look = await createLook(creator.id, `Tag TTL post #tagttl${marker}`);
+    await prisma.creatorLookHashtag.create({
+      data: { creatorLookId: look.id, tag: `tagttl${marker}` },
+    });
+    await creatorLookService.runTagTrendingAggregation();
+
+    const { ranked } = await creatorLookService.runTagTrendingScoring();
+    expect(ranked.length).toBeGreaterThan(0);
+
+    const ttl = await redis.ttl(redisKeys.cache("explore-tag-trend-score", "global"));
+    expect(ttl).toBeGreaterThan(90);
+  });
+
+  it("excludes hashtags from deleted creator looks when aggregating tag metrics", async () => {
+    const creator = await createCreator("Tag Deleted Creator", "tag-deleted-creator");
+    const marker = randomUUID().slice(0, 6);
+    const tag = `deletedtag${marker}`;
+    const look = await createLook(creator.id, `Deleted post #${tag}`);
+    await prisma.creatorLookHashtag.create({ data: { creatorLookId: look.id, tag } });
+    await prisma.creatorLook.update({ where: { id: look.id }, data: { deletedAt: new Date() } });
+
+    await creatorLookService.runTagTrendingAggregation();
+    const { ranked } = await creatorLookService.runTagTrendingScoring();
+
+    expect(ranked.some((entry) => entry.tag === tag)).toBe(false);
+  });
+
+  it("weighs recent tag activity more heavily than old activity from the same tag", async () => {
+    const markerOld = randomUUID().slice(0, 6);
+    const markerRecent = randomUUID().slice(0, 6);
+    const oldTag = `oldtag${markerOld}`;
+    const recentTag = `recenttag${markerRecent}`;
+
+    const oldBucketStart = truncateToHour(new Date(Date.now() - 13 * 24 * 60 * 60 * 1000));
+    await prisma.hashtagTrendMetric.create({
+      data: { tag: oldTag, bucketStart: oldBucketStart, postCount: 20 },
+    });
+
+    const recentBucketStart = truncateToHour(new Date());
+    await prisma.hashtagTrendMetric.create({
+      data: { tag: recentTag, bucketStart: recentBucketStart, postCount: 2 },
+    });
+
+    const { ranked } = await creatorLookService.runTagTrendingScoring();
+
+    const oldIndex = ranked.findIndex((entry) => entry.tag === oldTag);
+    const recentIndex = ranked.findIndex((entry) => entry.tag === recentTag);
+
+    expect(oldIndex).toBe(-1);
+    expect(recentIndex).toBeGreaterThanOrEqual(0);
+  });
+
+  it("breaks a tie between equally-scored tags the same way on every recompute", async () => {
+    const creatorOne = await createCreator("Tag Tie Creator One", "tag-tie-creator-one");
+    const creatorTwo = await createCreator("Tag Tie Creator Two", "tag-tie-creator-two");
+    const markerA = randomUUID().slice(0, 6);
+    const markerB = randomUUID().slice(0, 6);
+    const tagA = `tietaga${markerA}`;
+    const tagB = `tietagb${markerB}`;
+
+    const lookA = await createLook(creatorOne.id, `Tie post A #${tagA}`);
+    await prisma.creatorLookHashtag.create({ data: { creatorLookId: lookA.id, tag: tagA } });
+    const lookB = await createLook(creatorTwo.id, `Tie post B #${tagB}`);
+    await prisma.creatorLookHashtag.create({ data: { creatorLookId: lookB.id, tag: tagB } });
+    await creatorLookService.runTagTrendingAggregation();
+
+    const firstRun = await creatorLookService.runTagTrendingScoring();
+    const secondRun = await creatorLookService.runTagTrendingScoring();
+
+    const rankOf = (ranked: typeof firstRun.ranked, tag: string) =>
+      ranked.findIndex((entry) => entry.tag === tag);
+
+    const firstScoreA = firstRun.ranked[rankOf(firstRun.ranked, tagA)]?.score;
+    const firstScoreB = firstRun.ranked[rankOf(firstRun.ranked, tagB)]?.score;
+    expect(firstScoreA).toBe(firstScoreB);
+
+    const expectedOrder = tagA.localeCompare(tagB) <= 0 ? [tagA, tagB] : [tagB, tagA];
+    const firstOrder = [
+      rankOf(firstRun.ranked, tagA) < rankOf(firstRun.ranked, tagB) ? tagA : tagB,
+      rankOf(firstRun.ranked, tagA) < rankOf(firstRun.ranked, tagB) ? tagB : tagA,
+    ];
+    const secondOrder = [
+      rankOf(secondRun.ranked, tagA) < rankOf(secondRun.ranked, tagB) ? tagA : tagB,
+      rankOf(secondRun.ranked, tagA) < rankOf(secondRun.ranked, tagB) ? tagB : tagA,
+    ];
+    expect(firstOrder).toEqual(expectedOrder);
+    expect(secondOrder).toEqual(expectedOrder);
+  });
+});
+
 describe("POST /api/creator-looks/:lookId/like and unlike", () => {
   it("likes a post and increments the like count", async () => {
     const creator = await createCreator("Like Target Creator", "like-target-creator");

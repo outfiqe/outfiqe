@@ -1,5 +1,5 @@
 import { prisma } from "#db/prisma.js";
-import { ProductStatus } from "#generated/prisma/enums.js";
+import { AccountStatus, ProductStatus } from "#generated/prisma/enums.js";
 
 import type { MetricBucket, ProductTrendMeta } from "./trending.types.js";
 
@@ -105,7 +105,12 @@ export const trendingRepository = {
   async listActiveProductMeta(productIds: string[]): Promise<ProductTrendMeta[]> {
     if (productIds.length === 0) return [];
     return prisma.product.findMany({
-      where: { id: { in: productIds }, status: ProductStatus.APPROVED, deletedAt: null },
+      where: {
+        id: { in: productIds },
+        status: ProductStatus.APPROVED,
+        deletedAt: null,
+        brand: { accountStatus: AccountStatus.ACTIVE },
+      },
       select: { id: true, brandId: true, productTypeId: true, createdAt: true },
     });
   },
