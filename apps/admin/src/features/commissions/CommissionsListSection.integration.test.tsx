@@ -293,7 +293,7 @@ describe("CommissionsListSection", () => {
     await screen.findByText("Asha Rai");
     await userEvent.click(await screen.findByRole("button", { name: "Load more" }));
 
-    expect(await screen.findByRole("button", { name: "Loading…" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Loading" })).toBeInTheDocument();
   });
 
   it("only offers void for an approved commission, no approve or mark-paid action", async () => {
