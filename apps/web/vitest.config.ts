@@ -47,6 +47,7 @@ export default defineConfig({
         "src/features/landing/components/CategoryResults/index.tsx",
         "src/features/shop/components/ShopResults.tsx",
         "src/features/explore/components/ExploreFeed.tsx",
+        "src/features/explore/components/PostCardSkeleton.tsx",
         "src/features/brand-profile/components/BrandProfile.tsx",
         "src/features/product-detail/api/getProductDetailServer.ts",
         "src/features/products/api/getProductsServer.ts",

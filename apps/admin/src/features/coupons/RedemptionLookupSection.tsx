@@ -1,4 +1,4 @@
-import { Badge, Button } from "@outfiqe/design-system";
+import { Badge, Button, Skeleton } from "@outfiqe/design-system";
 import { useState } from "react";
 
 import { useInfiniteRedemptions } from "./hooks/useInfiniteRedemptions";
@@ -64,7 +64,10 @@ export const RedemptionLookupSection = () => {
 
       {filters !== null && (
         <div className="space-y-3">
-          {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {isLoading &&
+            Array.from({ length: 3 }).map((_, index) => (
+              <Skeleton key={index} className="h-20 w-full rounded-xl" />
+            ))}
           {error && <p className="text-sm text-destructive">Couldn&apos;t search redemptions.</p>}
           {!isLoading && redemptions.length === 0 && (
             <p className="text-sm text-muted-foreground">No matching redemptions.</p>

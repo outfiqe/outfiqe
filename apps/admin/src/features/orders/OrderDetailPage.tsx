@@ -1,4 +1,4 @@
-import { Badge, Button, toast } from "@outfiqe/design-system";
+import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
@@ -48,7 +48,7 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (isLoading) return <Skeleton className="h-64 w-full rounded-xl" />;
   if (error || !order) return <p className="text-sm text-destructive">Couldn&apos;t load order.</p>;
 
   const {

@@ -3,6 +3,7 @@ import {
   Button,
   Checkbox,
   FormBanner,
+  Skeleton,
   Tabs,
   TabsContent,
   TabsList,
@@ -209,7 +210,7 @@ export const BadgeFormPage = (props: BadgeFormPageProps) => {
   }
 
   if (badgeQuery.isLoading) {
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+    return <Skeleton className="h-64 w-full rounded-xl" />;
   }
 
   if (badgeQuery.error || !badgeQuery.data) {

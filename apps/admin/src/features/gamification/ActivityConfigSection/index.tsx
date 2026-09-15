@@ -1,3 +1,4 @@
+import { Skeleton } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -22,7 +23,10 @@ export const ActivityConfigSection = () => {
       </p>
 
       <div className="mt-4 space-y-2">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-14 w-full rounded-xl" />
+          ))}
 
         {configs?.map((config) => (
           <ActivityConfigCard key={config.activityType} config={config} onEdit={setEditingConfig} />

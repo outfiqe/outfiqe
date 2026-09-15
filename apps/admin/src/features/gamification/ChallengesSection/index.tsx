@@ -1,4 +1,4 @@
-import { Button } from "@outfiqe/design-system";
+import { Button, Skeleton } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -39,7 +39,10 @@ export const ChallengesSection = () => {
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 6 }).map((_, index) => (
+            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+          ))}
         {challenges?.length === 0 && (
           <p className="text-sm text-muted-foreground">No challenges yet.</p>
         )}
