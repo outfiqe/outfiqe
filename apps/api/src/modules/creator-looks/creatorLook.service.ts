@@ -587,6 +587,9 @@ export const creatorLookService = {
 
   async runTagTrendingScoring(): Promise<{ ranked: TagScoreBreakdown[] }> {
     const ranked = await creatorLookRepository.computeRankedTrendingTags();
+    if (ranked.length === 0) {
+      logger.warn("tag-trend-scoring produced zero scored tags this cycle");
+    }
     await creatorLookRepository.cacheRankedTrendingTags(ranked);
     return { ranked };
   },

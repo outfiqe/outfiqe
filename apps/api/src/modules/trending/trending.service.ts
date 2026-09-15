@@ -16,6 +16,7 @@ import {
   RECENT_METRICS_WINDOW_HOURS,
   ROTATION_TIE_BAND,
   SCORING_INTERVAL_MS,
+  TRENDING_SCORE_RECOMPUTE_LOCK_TTL_MS,
 } from "./trending.constants.js";
 import { trendingRepository } from "./trending.repository.js";
 import type {
@@ -38,6 +39,10 @@ import {
 } from "./trending.utils.js";
 
 const TRENDING_CACHE_KEY = redisKeys.cache("product-trending", "global");
+const TRENDING_SCORE_RECOMPUTE_LOCK_KEY = redisKeys.lock("product-trending-score-recompute");
+
+const trendingScoreCacheTtl = (ranked: TrendingEntry[]): number =>
+  ranked.length > 0 ? CACHE_TTL.PRODUCT_TRENDING : CACHE_TTL.PRODUCT_TRENDING_EMPTY;
 
 const computeAllScoreBreakdowns = async (
   now: Date,
@@ -143,6 +148,35 @@ const computeRankedTrendingProducts = async (): Promise<TrendingEntry[]> => {
   return rotated.map(({ productId, score }) => ({ productId, score }));
 };
 
+const getOrRecomputeTrendingScores = async (): Promise<TrendingEntry[]> => {
+  let cached: TrendingEntry[] | null = null;
+  try {
+    cached = await cacheService.get<TrendingEntry[]>(TRENDING_CACHE_KEY);
+  } catch (error) {
+    logger.warn(`Cache read failed for "${TRENDING_CACHE_KEY}": ${describeError(error)}`);
+  }
+  if (cached !== null) return cached;
+
+  try {
+    const recomputed = await cacheService.withLock(
+      TRENDING_SCORE_RECOMPUTE_LOCK_KEY,
+      TRENDING_SCORE_RECOMPUTE_LOCK_TTL_MS,
+      async () => {
+        logger.info(
+          `On-demand product trending score recompute triggered (cache miss for "${TRENDING_CACHE_KEY}")`,
+        );
+        const fresh = await computeRankedTrendingProducts();
+        await cacheService.set(TRENDING_CACHE_KEY, fresh, trendingScoreCacheTtl(fresh));
+        return fresh;
+      },
+    );
+    return recomputed ?? [];
+  } catch (error) {
+    logger.warn(`On-demand product trending score recompute failed: ${describeError(error)}`);
+    return [];
+  }
+};
+
 export const trendingService = {
   async runAggregation(): Promise<{ bucketStart: Date; deletedBuckets: number }> {
     const bucketStart = truncateToHour(new Date());
@@ -156,13 +190,15 @@ export const trendingService = {
 
   async runScoring(): Promise<{ ranked: TrendingEntry[] }> {
     const ranked = await computeRankedTrendingProducts();
-    await cacheService.set(TRENDING_CACHE_KEY, ranked, CACHE_TTL.PRODUCT_TRENDING);
+    if (ranked.length === 0) {
+      logger.warn("product-trending-scoring produced zero scored products this cycle");
+    }
+    await cacheService.set(TRENDING_CACHE_KEY, ranked, trendingScoreCacheTtl(ranked));
     return { ranked };
   },
 
   async getTrendingProductIds(limit: number): Promise<string[]> {
-    const cached = await cacheService.get<TrendingEntry[]>(TRENDING_CACHE_KEY);
-    const ranked = cached ?? (await computeRankedTrendingProducts());
+    const ranked = await getOrRecomputeTrendingScores();
     return ranked.slice(0, limit).map((entry) => entry.productId);
   },
 

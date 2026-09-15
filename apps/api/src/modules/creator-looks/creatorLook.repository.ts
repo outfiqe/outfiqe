@@ -36,6 +36,7 @@ import {
   MAX_TAG_RE_REQUESTS,
   TAG_TREND_BASELINE_WINDOW_DAYS,
   TAG_TREND_RECENT_METRICS_WINDOW_HOURS,
+  TAG_TREND_SCORE_RECOMPUTE_LOCK_TTL_MS,
   TAG_TRENDING_LIMIT,
   TREND_BASELINE_WINDOW_DAYS,
   TREND_RECENT_METRICS_WINDOW_HOURS,
@@ -1009,21 +1010,47 @@ const computeRankedTagScores = async (): Promise<TagScoreBreakdown[]> => {
     if (breakdown.score > 0) candidates.push(breakdown);
   }
 
-  candidates.sort((a, b) => b.score - a.score);
+  candidates.sort((a, b) => b.score - a.score || a.tag.localeCompare(b.tag));
   return candidates;
 };
 
 const TAG_TREND_SCORE_CACHE_KEY = redisKeys.cache("explore-tag-trend-score", "global");
+const TAG_TREND_SCORE_RECOMPUTE_LOCK_KEY = redisKeys.lock("tag-trend-score-recompute");
 
-const fetchTrendingTags = async (): Promise<TrendingTag[]> => {
-  let scored: TagScoreBreakdown[] | null = null;
+const tagTrendScoreCacheTtl = (scored: TagScoreBreakdown[]): number =>
+  scored.length > 0 ? CACHE_TTL.TAG_TREND_SCORE : CACHE_TTL.TAG_TREND_SCORE_EMPTY;
+
+const getOrRecomputeTagScores = async (): Promise<TagScoreBreakdown[]> => {
+  let cached: TagScoreBreakdown[] | null = null;
   try {
-    scored = await cacheService.get<TagScoreBreakdown[]>(TAG_TREND_SCORE_CACHE_KEY);
+    cached = await cacheService.get<TagScoreBreakdown[]>(TAG_TREND_SCORE_CACHE_KEY);
   } catch (error) {
     logger.warn(`Cache read failed for "${TAG_TREND_SCORE_CACHE_KEY}": ${describeError(error)}`);
   }
+  if (cached !== null) return cached;
 
-  if (scored === null) scored = await computeRankedTagScores();
+  try {
+    const recomputed = await cacheService.withLock(
+      TAG_TREND_SCORE_RECOMPUTE_LOCK_KEY,
+      TAG_TREND_SCORE_RECOMPUTE_LOCK_TTL_MS,
+      async () => {
+        logger.info(
+          `On-demand tag trend score recompute triggered (cache miss for "${TAG_TREND_SCORE_CACHE_KEY}")`,
+        );
+        const fresh = await computeRankedTagScores();
+        await cacheService.set(TAG_TREND_SCORE_CACHE_KEY, fresh, tagTrendScoreCacheTtl(fresh));
+        return fresh;
+      },
+    );
+    return recomputed ?? [];
+  } catch (error) {
+    logger.warn(`On-demand tag trend score recompute failed: ${describeError(error)}`);
+    return [];
+  }
+};
+
+const fetchTrendingTags = async (): Promise<TrendingTag[]> => {
+  const scored = await getOrRecomputeTagScores();
   if (scored.length === 0) return fetchLegacyTrendingTags();
 
   return scored
@@ -1664,7 +1691,7 @@ export const creatorLookRepository = {
 
   async cacheRankedTrendingTags(ranked: TagScoreBreakdown[]): Promise<void> {
     try {
-      await cacheService.set(TAG_TREND_SCORE_CACHE_KEY, ranked, CACHE_TTL.EXPLORE_TRENDING_SCORE);
+      await cacheService.set(TAG_TREND_SCORE_CACHE_KEY, ranked, tagTrendScoreCacheTtl(ranked));
     } catch (error) {
       logger.warn(`Cache write failed for "${TAG_TREND_SCORE_CACHE_KEY}": ${describeError(error)}`);
     }

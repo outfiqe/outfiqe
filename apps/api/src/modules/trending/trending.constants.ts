@@ -32,3 +32,5 @@ export const CANDIDATE_POOL_SIZE = 50;
 export const DIVERSE_POOL_LIMIT = 30;
 export const MAX_PER_BRAND = 2;
 export const ROTATION_TIE_BAND = 0.1;
+
+export const TRENDING_SCORE_RECOMPUTE_LOCK_TTL_MS = 30_000;
