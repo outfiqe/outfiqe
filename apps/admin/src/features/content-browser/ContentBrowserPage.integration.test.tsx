@@ -36,14 +36,6 @@ const aComment = (overrides: Partial<LookComment> = {}): LookComment => ({
   ...overrides,
 });
 
-const stubLooks = (looks: AdminLook[]) => {
-  mswServer.use(
-    http.get(`${API_BASE}/creator-looks/admin`, () =>
-      HttpResponse.json({ success: true, message: "ok", data: { items: looks, nextCursor: null } }),
-    ),
-  );
-};
-
 const aReply = (overrides: Partial<LookCommentReply> = {}): LookCommentReply => ({
   id: "reply-1",
   parentCommentId: "comment-1",
@@ -55,6 +47,14 @@ const aReply = (overrides: Partial<LookCommentReply> = {}): LookCommentReply => 
   createdAt: "2026-09-08T02:00:00.000Z",
   ...overrides,
 });
+
+const stubLooks = (looks: AdminLook[]) => {
+  mswServer.use(
+    http.get(`${API_BASE}/creator-looks/admin`, () =>
+      HttpResponse.json({ success: true, message: "ok", data: { items: looks, nextCursor: null } }),
+    ),
+  );
+};
 
 const stubComments = (lookId: string, comments: LookComment[]) => {
   mswServer.use(
@@ -78,15 +78,26 @@ const renderPage = () => {
   return render(<ContentBrowserPage />, { wrapper });
 };
 
+const openDetail = async (look: AdminLook) => {
+  await userEvent.click(await screen.findByRole("button", { name: look.caption ?? "" }));
+  return screen.findByRole("dialog");
+};
+
+const topmostConfirmDialog = async (): Promise<HTMLElement> => {
+  const dialogs = await screen.findAllByRole("dialog");
+  const topmost = dialogs.at(-1);
+  if (!topmost) throw new Error("Expected a confirm dialog to be open.");
+  return topmost;
+};
+
 describe("ContentBrowserPage", () => {
-  it("lists a post with its creator, counts, and prior-removal badge", async () => {
+  it("lists a post as a grid card with its creator and caption", async () => {
     stubLooks([aLook()]);
     renderPage();
 
     expect(await screen.findByText("@asharai")).toBeInTheDocument();
     expect(screen.getByText("Denim jacket fit")).toBeInTheDocument();
-    expect(screen.getByText("2 prior removals")).toBeInTheDocument();
-    expect(screen.getByText(/12 likes/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Denim jacket fit" })).toBeInTheDocument();
   });
 
   it("searches posts by the typed query", async () => {
@@ -111,7 +122,16 @@ describe("ContentBrowserPage", () => {
     await waitFor(() => expect(requestedQuery).toBe("denim"));
   });
 
-  it("deletes a post after confirming", async () => {
+  it("opens a post's detail and shows the prior-removal count and engagement stats", async () => {
+    stubLooks([aLook()]);
+    renderPage();
+    const dialog = await openDetail(aLook());
+
+    expect(within(dialog).getByText("2 prior removals")).toBeInTheDocument();
+    expect(within(dialog).getByText(/12 likes/)).toBeInTheDocument();
+  });
+
+  it("deletes a post after confirming from the detail view", async () => {
     stubLooks([aLook()]);
     let deleteCalled = false;
     mswServer.use(
@@ -122,14 +142,16 @@ describe("ContentBrowserPage", () => {
     );
     renderPage();
 
-    await userEvent.click(await screen.findByRole("button", { name: "Delete post" }));
-    const dialog = await screen.findByRole("dialog");
-    await userEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+    const dialog = await openDetail(aLook());
+    await userEvent.click(within(dialog).getByRole("button", { name: "Delete post" }));
+
+    const confirm = await topmostConfirmDialog();
+    await userEvent.click(within(confirm).getByRole("button", { name: "Delete" }));
 
     await waitFor(() => expect(deleteCalled).toBe(true));
   });
 
-  it("expands a post's comments and deletes one", async () => {
+  it("shows a post's comments in its detail view and deletes one", async () => {
     stubLooks([aLook()]);
     stubComments("look-1", [aComment()]);
     let deletedCommentId: string | null = null;
@@ -141,12 +163,14 @@ describe("ContentBrowserPage", () => {
     );
     renderPage();
 
-    await userEvent.click(await screen.findByRole("button", { name: "Comments (1)" }));
-    expect(await screen.findByText(/Buy followers at cheapfollowers\.test/)).toBeInTheDocument();
+    const dialog = await openDetail(aLook());
+    expect(
+      await within(dialog).findByText(/Buy followers at cheapfollowers\.test/),
+    ).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Delete" }));
-    const dialog = await screen.findByRole("dialog");
     await userEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+    const confirm = await topmostConfirmDialog();
+    await userEvent.click(within(confirm).getByRole("button", { name: "Delete" }));
 
     await waitFor(() => expect(deletedCommentId).toBe("comment-1"));
   });
@@ -178,20 +202,19 @@ describe("ContentBrowserPage", () => {
     );
     renderPage();
 
-    await userEvent.click(await screen.findByRole("button", { name: "Comments (1)" }));
-    expect(await screen.findByText("First reply")).toBeInTheDocument();
-    expect(screen.queryByText("Second reply")).not.toBeInTheDocument();
+    const dialog = await openDetail(aLook());
+    expect(await within(dialog).findByText("First reply")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Second reply")).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "View 1 more reply" }));
-    expect(await screen.findByText("Second reply")).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: "View 1 more reply" }));
+    expect(await within(dialog).findByText("Second reply")).toBeInTheDocument();
 
-    const secondReplyRow = screen.getByText("Second reply").closest("div")?.parentElement;
-    expect(secondReplyRow).not.toBeNull();
-    await userEvent.click(
-      within(secondReplyRow as HTMLElement).getByRole("button", { name: "Delete" }),
-    );
-    const dialog = await screen.findByRole("dialog");
-    await userEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+    const secondReplyRow = within(dialog).getByText("Second reply").closest("div")?.parentElement;
+    if (!secondReplyRow) throw new Error("Expected the second reply's row to be in the document.");
+    await userEvent.click(within(secondReplyRow).getByRole("button", { name: "Delete" }));
+
+    const confirm = await topmostConfirmDialog();
+    await userEvent.click(within(confirm).getByRole("button", { name: "Delete" }));
 
     await waitFor(() => expect(deletedReplyId).toBe("reply-2"));
   });

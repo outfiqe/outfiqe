@@ -2,8 +2,9 @@
 
 ## Purpose
 
-Direct moderation for creator posts and comments: search or browse posts newest-first, expand a
-post's comments (and their replies) inline, and delete a post or an individual comment/reply on
+Direct moderation for creator posts and comments: search or browse posts newest-first in a grid
+(the same layout/interaction as the storefront's own explore grid + post detail modal), open one
+to see its full caption, comments, and replies, and delete a post or an individual comment/reply on
 the spot. Unlike `content-reports`, nothing here waits on a viewer report first — a moderator can
 act on anything they happen to spot.
 
@@ -18,19 +19,26 @@ act on anything they happen to spot.
 - `hooks/useInfiniteAdminLooks.ts`, `hooks/useInfiniteLookComments.ts`,
   `hooks/useInfiniteLookReplies.ts` — cursor pagination via the shared `useInfiniteCursorPage`
   (`@outfiqe/hooks`), one per list.
-- `ContentBrowserPage.tsx` — debounced search box, the post list, and the two `ConfirmModal`
+- `ContentBrowserPage.tsx` — debounced search box, the post grid, and the two `ConfirmModal`
   instances (delete post / delete comment) shared with the rest of the admin app.
-- `PostCommentsPanel.tsx` — the comment list for one expanded post: each root comment shows its
-  `previewReplies` (the same small preview the storefront shows) with a "View N more replies"
+- `PostGridCard.tsx` — one grid tile: the post's thumbnail (with a small flag-count badge when the
+  creator has prior removals) and its caption underneath, mirroring
+  `apps/web/src/features/explore/components/PostGridCard.tsx`'s layout.
+- `PostDetailModal.tsx` — the expanded view for one post, opened by clicking its grid tile: image
+  on one side, creator/engagement/caption and the comment panel on the other, matching the
+  storefront's own `PostDetailModal`'s split-pane shape (image + `ConfirmModal`-driven actions
+  instead of like/save/follow, since this is a moderation view, not a viewer one).
+- `PostCommentsPanel.tsx` — the comment list shown inside `PostDetailModal`: each root comment shows
+  its `previewReplies` (the same small preview the storefront shows) with a "View N more replies"
   expander that switches to the fully paginated `useInfiniteLookReplies` once clicked, so opening a
   post never fetches more than a handful of replies unless a moderator actually asks for the rest.
 
 ## Funnel
 
 **User-facing:** an admin opens Browse posts, optionally types a caption or `@handle` to narrow
-the list, and sees posts newest-first with the creator's handle, a prior-removal count if they have
-one, and engagement counts. "Comments (N)" expands that post's comments inline; "Delete" on a
-post/comment/reply opens a confirmation modal before anything is removed.
+the grid, and sees posts newest-first as thumbnails. Clicking one opens its detail — caption,
+creator, engagement counts, and its comments/replies — where "Delete post" and "Delete" on a
+comment/reply each open a confirmation modal before anything is removed.
 
 **Technical:** the post list hits a new admin-only endpoint
 (`GET /api/creator-looks/admin`, gated by `platform:content:moderate` via `requirePlatformRole`)
