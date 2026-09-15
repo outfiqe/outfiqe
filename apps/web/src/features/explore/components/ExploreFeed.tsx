@@ -3,7 +3,7 @@
 import { FormBanner } from "@outfiqe/design-system";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 import { useIsHydrated } from "@/shared/hooks/useIsHydrated";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
@@ -20,7 +20,7 @@ import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 import { useExploreFeedSocket } from "../hooks/useExploreFeedSocket";
 import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";
 import { isForYouHintDismissed, rememberForYouHintDismissed } from "../utils/forYouHint";
-import { buildTrendingRankByPostId } from "../utils/trendingRank";
+import { buildTrendingRankByPostId, findTrendingFallbackBoundary } from "../utils/trendingRank";
 import { ExploreSidebarNav } from "./ExploreSidebarNav";
 import { FeedFilterTabs } from "./FeedFilterTabs";
 import { HeaderBackdrop } from "./HeaderBackdrop";
@@ -114,6 +114,8 @@ export const ExploreFeed = () => {
 
   const isRankedTab = tab === EXPLORE_TAB.TRENDING || tab === EXPLORE_TAB.FOR_YOU;
   const trendingRankByPostId = buildTrendingRankByPostId(posts, isRankedTab);
+  const isTrendingTab = tab === EXPLORE_TAB.TRENDING;
+  const fallbackBoundaryIndex = findTrendingFallbackBoundary(posts, isTrendingTab);
 
   const showNewLooks = () => {
     dismiss();
@@ -165,6 +167,10 @@ export const ExploreFeed = () => {
             </div>
           ) : posts.length === 0 && (isLoading || !isAuthResolved) ? (
             <ExploreFeedSkeleton layout={layout} compactGrid />
+          ) : posts.length === 0 && isTrendingTab ? (
+            <p className="py-16 text-center text-sm text-muted-foreground">
+              Nothing is trending right now. Check back soon.
+            </p>
           ) : posts.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
               Nothing here yet — try a different tab.
@@ -174,24 +180,33 @@ export const ExploreFeed = () => {
               {posts.map((post, index) => {
                 const { id } = post;
                 return (
-                  <PostGridCard
-                    key={id}
-                    post={post}
-                    onClick={() => setDetailPostId(id)}
-                    trendingRank={trendingRankByPostId.get(id)}
-                    eager={index < EAGER_IMAGE_COUNT}
-                  />
+                  <Fragment key={id}>
+                    {index === fallbackBoundaryIndex && fallbackBoundaryIndex > 0 && (
+                      <p className="col-span-full py-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Recent & popular
+                      </p>
+                    )}
+                    <PostGridCard
+                      post={post}
+                      onClick={() => setDetailPostId(id)}
+                      trendingRank={trendingRankByPostId.get(id)}
+                      eager={index < EAGER_IMAGE_COUNT}
+                    />
+                  </Fragment>
                 );
               })}
             </div>
           ) : (
             <div className="mx-auto flex max-w-xl flex-col">
-              {posts.map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  trendingRank={trendingRankByPostId.get(post.id)}
-                />
+              {posts.map((post, index) => (
+                <Fragment key={post.id}>
+                  {index === fallbackBoundaryIndex && fallbackBoundaryIndex > 0 && (
+                    <p className="py-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Recent & popular
+                    </p>
+                  )}
+                  <PostCard post={post} trendingRank={trendingRankByPostId.get(post.id)} />
+                </Fragment>
               ))}
             </div>
           )}

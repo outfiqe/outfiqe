@@ -556,6 +556,9 @@ export const creatorLookService = {
   async runTrendingScoring(): Promise<{ ranked: PostTrendingEntry[] }> {
     const { postScores, creatorMomentum } =
       await creatorLookRepository.computeRankedTrendingScoreAndCreatorMomentum();
+    if (postScores.length === 0) {
+      logger.warn("explore-trending-scoring produced zero scored posts this cycle");
+    }
     await Promise.all([
       creatorLookRepository.cacheRankedTrendingScore(postScores),
       creatorLookRepository.cacheRankedCreatorMomentumScores(creatorMomentum),

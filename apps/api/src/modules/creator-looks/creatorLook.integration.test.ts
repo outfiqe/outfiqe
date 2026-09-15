@@ -1990,6 +1990,129 @@ describe("GET /api/creator-looks/feed", () => {
 
     expect(second.body.data.posts[0]?.id).toBe(secondLook.id);
   });
+
+  it("recomputes on demand once an empty cached score result has expired, instead of staying suppressed", async () => {
+    const creator = await createCreator("Self Heal Creator", "self-heal-creator");
+    const viewer = await createCreator("Self Heal Viewer", "self-heal-viewer");
+    const look = await createLook(creator.id, "Self heal post");
+    await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: viewer.id } });
+    await creatorLookService.runTrendingAggregation();
+
+    await redis.set(
+      redisKeys.cache("explore-trending-score", "global"),
+      JSON.stringify([]),
+      "PX",
+      50,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    const response = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "trending" });
+
+    expect(response.status).toBe(200);
+    const posts = response.body.data.posts as { id: string; isTrending: boolean }[];
+    expect(posts.find((post) => post.id === look.id)?.isTrending).toBe(true);
+  });
+
+  it("shows scored trending posts first, followed by unscored recent posts, without marking the fallback ones as trending", async () => {
+    const scoredCreator = await createCreator("Hybrid Scored Creator", "hybrid-scored-creator");
+    const engager = await createCreator("Hybrid Engager", "hybrid-engager");
+    const quietCreator = await createCreator("Hybrid Quiet Creator", "hybrid-quiet-creator");
+
+    const scoredLook = await createLook(scoredCreator.id, "Hybrid scored post");
+    await prisma.creatorLookLike.create({
+      data: { creatorLookId: scoredLook.id, userId: engager.id },
+    });
+    const quietLook = await createLook(quietCreator.id, "Hybrid quiet post");
+
+    await creatorLookService.runTrendingAggregation();
+    const { ranked } = await creatorLookService.runTrendingScoring();
+    expect(ranked.some((entry) => entry.lookId === scoredLook.id)).toBe(true);
+    expect(ranked.some((entry) => entry.lookId === quietLook.id)).toBe(false);
+
+    const response = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "trending", limit: 30 });
+
+    const posts = response.body.data.posts as { id: string; isTrending: boolean }[];
+    const scoredIndex = posts.findIndex((post) => post.id === scoredLook.id);
+    const quietIndex = posts.findIndex((post) => post.id === quietLook.id);
+
+    expect(scoredIndex).toBeGreaterThanOrEqual(0);
+    expect(quietIndex).toBeGreaterThanOrEqual(0);
+    expect(scoredIndex).toBeLessThan(quietIndex);
+    expect(posts[scoredIndex]?.isTrending).toBe(true);
+    expect(posts[quietIndex]?.isTrending).toBe(false);
+  });
+
+  it("keeps engagement-based personalization for for_you even when nothing has been scored yet", async () => {
+    const engagedCreator = await createCreator(
+      "Fallback Engaged Creator",
+      "fallback-engaged-creator",
+    );
+    const otherCreator = await createCreator("Fallback Other Creator", "fallback-other-creator");
+    const viewer = await createCreator(
+      "Fallback Personalize Viewer",
+      "fallback-personalize-viewer",
+    );
+
+    const engagedLook = await createLook(engagedCreator.id, "Fallback engaged post");
+    await prisma.creatorLookSave.create({
+      data: { creatorLookId: engagedLook.id, userId: viewer.id },
+    });
+    const otherLook = await createLook(otherCreator.id, "Fallback unrelated post");
+
+    const response = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you", limit: 30 })
+      .set("Authorization", authHeaderFor(viewer.id));
+
+    expect(response.status).toBe(200);
+    const posts = response.body.data.posts as { id: string; isTrending: boolean }[];
+    const engagedIndex = posts.findIndex((post) => post.id === engagedLook.id);
+    const otherIndex = posts.findIndex((post) => post.id === otherLook.id);
+
+    expect(engagedIndex).toBeGreaterThanOrEqual(0);
+    expect(otherIndex).toBeGreaterThanOrEqual(0);
+    expect(engagedIndex).toBeLessThan(otherIndex);
+    expect(posts.every((post) => !post.isTrending)).toBe(true);
+  });
+
+  it("gives anonymous for_you its own creator-diversity-capped ranking instead of mirroring the trending tab", async () => {
+    const busyCreator = await createCreator("Anon Busy Creator", "anon-busy-creator");
+    const engager = await createCreator("Anon Diversity Engager", "anon-diversity-engager");
+
+    const busyLooks = await Promise.all(
+      Array.from({ length: 5 }, (_, index) =>
+        createLook(busyCreator.id, `Anon busy post ${index}`),
+      ),
+    );
+    for (const look of busyLooks) {
+      await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: engager.id } });
+    }
+
+    await creatorLookService.runTrendingAggregation();
+    const { ranked } = await creatorLookService.runTrendingScoring();
+    expect(ranked.length).toBeGreaterThanOrEqual(5);
+
+    const trendingResponse = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "trending", limit: 30 });
+    const trendingBusyCount = trendingResponse.body.data.posts.filter(
+      (post: { creator: { id: string } }) => post.creator.id === busyCreator.id,
+    ).length;
+    expect(trendingBusyCount).toBe(5);
+
+    const forYouResponse = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you", limit: 30 });
+    const forYouBusyCount = forYouResponse.body.data.posts.filter(
+      (post: { creator: { id: string } }) => post.creator.id === busyCreator.id,
+    ).length;
+    expect(forYouBusyCount).toBeLessThanOrEqual(3);
+    expect(forYouBusyCount).toBeLessThan(trendingBusyCount);
+  });
 });
 
 describe("creatorLookService.countNewSince", () => {
@@ -2160,6 +2283,29 @@ describe("creatorLookService trending pipeline", () => {
     const totalCountedLikes = (hourOneBucket?.likes ?? 0) + (hourTwoBucket?.likes ?? 0);
 
     expect(totalCountedLikes).toBe(2);
+  });
+
+  it("caches an empty scoring result with a short TTL instead of the normal long-lived one", async () => {
+    const { ranked } = await creatorLookService.runTrendingScoring();
+    expect(ranked).toHaveLength(0);
+
+    const ttl = await redis.ttl(redisKeys.cache("explore-trending-score", "global"));
+    expect(ttl).toBeGreaterThan(0);
+    expect(ttl).toBeLessThanOrEqual(90);
+  });
+
+  it("caches a non-empty scoring result with the normal long-lived TTL", async () => {
+    const creator = await createCreator("TTL Creator", "ttl-creator");
+    const viewer = await createCreator("TTL Viewer", "ttl-viewer");
+    const look = await createLook(creator.id, "TTL post");
+    await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: viewer.id } });
+    await creatorLookService.runTrendingAggregation();
+
+    const { ranked } = await creatorLookService.runTrendingScoring();
+    expect(ranked.length).toBeGreaterThan(0);
+
+    const ttl = await redis.ttl(redisKeys.cache("explore-trending-score", "global"));
+    expect(ttl).toBeGreaterThan(90);
   });
 });
 
