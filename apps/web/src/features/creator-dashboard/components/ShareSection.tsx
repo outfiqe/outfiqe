@@ -81,9 +81,9 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
                   onError: (error) => toast.error(getErrorMessage(error)),
                 })
               }
-              disabled={profileLink.isPending}
+              isLoading={profileLink.isPending}
             >
-              {profileLink.isPending ? "Getting your link…" : "Get my profile link"}
+              Get my profile link
             </Button>
           )}
         </div>
@@ -113,9 +113,10 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
                   onError: (error) => toast.error(getErrorMessage(error)),
                 })
               }
-              disabled={createInternal.isPending || getOrCreateExternal.isPending}
+              disabled={getOrCreateExternal.isPending}
+              isLoading={createInternal.isPending}
             >
-              {createInternal.isPending ? "Generating…" : "Generate one-time link"}
+              Generate one-time link
             </Button>
             <Button
               size="sm"
@@ -129,9 +130,10 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
                   onError: (error) => toast.error(getErrorMessage(error)),
                 })
               }
-              disabled={createInternal.isPending || getOrCreateExternal.isPending}
+              disabled={createInternal.isPending}
+              isLoading={getOrCreateExternal.isPending}
             >
-              {getOrCreateExternal.isPending ? "Getting link…" : "Get reusable link"}
+              Get reusable link
             </Button>
           </div>
         )}
@@ -189,9 +191,9 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
             <Button
               variant="outline"
               onClick={() => void fetchNextPage()}
-              disabled={isFetchingNextPage}
+              isLoading={isFetchingNextPage}
             >
-              {isFetchingNextPage ? "Loading…" : "Load more"}
+              Load more
             </Button>
           </div>
         )}

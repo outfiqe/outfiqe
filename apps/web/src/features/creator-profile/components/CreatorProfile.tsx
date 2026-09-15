@@ -488,8 +488,12 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
               <Button variant="outline" onClick={() => setEditOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={saveEdit} disabled={updateProfile.isPending || !canSaveHandle}>
-                {updateProfile.isPending ? "Saving…" : "Save"}
+              <Button
+                onClick={saveEdit}
+                disabled={!canSaveHandle}
+                isLoading={updateProfile.isPending}
+              >
+                Save
               </Button>
             </div>
           }
@@ -614,10 +618,10 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
                 </Button>
                 <Button
                   onClick={confirmDeletePost}
-                  disabled={deleteLook.isPending}
+                  isLoading={deleteLook.isPending}
                   className="border border-destructive bg-transparent text-destructive hover:bg-destructive hover:text-white"
                 >
-                  {deleteLook.isPending ? "Deleting…" : "Delete"}
+                  Delete
                 </Button>
               </div>
             }

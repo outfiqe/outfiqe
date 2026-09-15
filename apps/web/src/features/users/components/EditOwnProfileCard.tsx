@@ -112,8 +112,12 @@ export const EditOwnProfileCard = ({
             <Button variant="outline" onClick={() => setEditOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={saveEdit} disabled={updateProfile.isPending || !canSaveHandle}>
-              {updateProfile.isPending ? "Saving…" : "Save"}
+            <Button
+              onClick={saveEdit}
+              disabled={!canSaveHandle}
+              isLoading={updateProfile.isPending}
+            >
+              Save
             </Button>
           </div>
         }

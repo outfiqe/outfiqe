@@ -192,9 +192,9 @@ export const ConversationList = ({ onSelect, activeConversationId }: Conversatio
               variant="outline"
               size="sm"
               onClick={() => void conversationsQuery.fetchNextPage()}
-              disabled={conversationsQuery.isFetchingNextPage}
+              isLoading={conversationsQuery.isFetchingNextPage}
             >
-              {conversationsQuery.isFetchingNextPage ? "Loading…" : "Load more"}
+              Load more
             </Button>
           </li>
         )}
