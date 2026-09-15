@@ -74,6 +74,20 @@ export const autocompleteQuerySchema = z.object({
   q: z.string().trim().min(1).max(SEARCH_QUERY_MAX_LENGTH),
 });
 
+const DEFAULT_ADMIN_LOOK_PAGE_SIZE = 20;
+const MAX_ADMIN_LOOK_PAGE_SIZE = 50;
+
+export const adminListLooksQuerySchema = z.object({
+  q: z.string().trim().min(1).max(SEARCH_QUERY_MAX_LENGTH).optional(),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(MAX_ADMIN_LOOK_PAGE_SIZE)
+    .default(DEFAULT_ADMIN_LOOK_PAGE_SIZE),
+});
+
 export const feedQuerySchema = z.object({
   tab: z.string().default("for_you"),
   cursor: z.string().optional(),
@@ -132,6 +146,7 @@ export type TagClickParams = z.infer<typeof tagClickParamsSchema>;
 export type FeedQuery = z.infer<typeof feedQuerySchema>;
 export type SearchCreatorLooksQuery = z.infer<typeof searchCreatorLooksQuerySchema>;
 export type AutocompleteQuery = z.infer<typeof autocompleteQuerySchema>;
+export type AdminListLooksQuery = z.infer<typeof adminListLooksQuerySchema>;
 export type ListSavedQuery = z.infer<typeof listSavedQuerySchema>;
 export type FeedSyncRequest = z.infer<typeof feedSyncRequestSchema>;
 export type CommentsQuery = z.infer<typeof commentsQuerySchema>;

@@ -23,6 +23,7 @@ import {
   GalleryHorizontal,
   Gauge,
   IdCard,
+  Images,
   KanbanSquare,
   Landmark,
   Layers,
@@ -258,6 +259,13 @@ const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     href: "/content-reports",
     label: "Content reports",
     icon: MessageSquareWarning,
+    group: "moderation",
+  },
+  {
+    id: "content-browser",
+    href: "/content-browser",
+    label: "Browse posts",
+    icon: Images,
     group: "moderation",
   },
   {
