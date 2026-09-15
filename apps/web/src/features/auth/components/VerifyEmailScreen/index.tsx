@@ -82,8 +82,8 @@ const VerifyEmailError = ({ error }: { error: unknown }) => {
               Enter a valid email address
             </p>
           )}
-          <Button type="submit" className="mt-4 w-full" disabled={resend.isPending}>
-            {resend.isPending ? "Sending…" : "Request a new link"}
+          <Button type="submit" className="mt-4 w-full" isLoading={resend.isPending}>
+            Request a new link
           </Button>
         </form>
       )}

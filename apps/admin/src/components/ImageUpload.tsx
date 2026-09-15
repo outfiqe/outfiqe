@@ -54,9 +54,9 @@ export const ImageUpload = ({ value, onChange, onUploaded }: ImageUploadProps) =
           type="button"
           variant="outline"
           onClick={() => inputRef.current?.click()}
-          disabled={isUploading}
+          isLoading={isUploading}
         >
-          {isUploading ? "Uploading…" : value ? "Change image" : "Upload image"}
+          {value ? "Change image" : "Upload image"}
         </Button>
         {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
       </div>

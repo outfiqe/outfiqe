@@ -33,9 +33,9 @@ export const ClearOfflineDataCard = () => {
           type="button"
           variant="outline"
           onClick={() => void clearOfflineData()}
-          disabled={isClearing}
+          isLoading={isClearing}
         >
-          {isClearing ? "Clearing…" : "Clear offline data"}
+          Clear offline data
         </Button>
       </div>
     </div>

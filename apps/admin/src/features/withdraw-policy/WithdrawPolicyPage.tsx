@@ -163,8 +163,8 @@ const PolicyForm = ({ ownerType }: { ownerType: OwnerTypeValue }) => {
 
       {update.isError && <FormBanner>{getErrorMessage(update.error)}</FormBanner>}
 
-      <Button type="submit" disabled={update.isPending}>
-        {update.isPending ? "Saving…" : "Save policy"}
+      <Button type="submit" isLoading={update.isPending}>
+        Save policy
       </Button>
     </form>
   );

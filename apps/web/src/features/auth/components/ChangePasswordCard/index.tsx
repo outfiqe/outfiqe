@@ -131,8 +131,8 @@ export const ChangePasswordCard = ({ hasPassword }: { hasPassword: boolean }) =>
             )}
           />
 
-          <Button type="submit" disabled={isPending}>
-            {showPending ? "Updating…" : "Update password"}
+          <Button type="submit" disabled={isPending} isLoading={showPending}>
+            Update password
           </Button>
         </form>
       </Form>

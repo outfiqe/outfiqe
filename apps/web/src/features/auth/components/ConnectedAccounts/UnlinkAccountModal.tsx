@@ -111,8 +111,8 @@ export const UnlinkAccountModal = ({
               <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending}>
-                {showPending ? "Disconnecting…" : "Disconnect"}
+              <Button type="submit" disabled={isPending} isLoading={showPending}>
+                Disconnect
               </Button>
             </div>
           </form>
@@ -129,8 +129,13 @@ export const UnlinkAccountModal = ({
             <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
               Cancel
             </Button>
-            <Button type="button" onClick={() => disconnect()} disabled={isPending}>
-              {showPending ? "Disconnecting…" : "Disconnect"}
+            <Button
+              type="button"
+              onClick={() => disconnect()}
+              disabled={isPending}
+              isLoading={showPending}
+            >
+              Disconnect
             </Button>
           </div>
         </div>

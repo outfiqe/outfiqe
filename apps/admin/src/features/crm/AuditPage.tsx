@@ -97,10 +97,10 @@ export const AuditPage = () => {
             variant="outline"
             size="sm"
             className="mt-4"
-            disabled={isFetchingNextPage}
+            isLoading={isFetchingNextPage}
             onClick={() => fetchNextPage()}
           >
-            {isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         )}
       </div>

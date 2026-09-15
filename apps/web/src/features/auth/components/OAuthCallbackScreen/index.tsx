@@ -105,8 +105,13 @@ export const OAuthCallbackScreen = () => {
               )}
             />
 
-            <Button type="submit" className="mt-6 w-full" disabled={confirmLink.isPending}>
-              {showPending ? "Connecting…" : `Connect ${providerLabel}`}
+            <Button
+              type="submit"
+              className="mt-6 w-full"
+              disabled={confirmLink.isPending}
+              isLoading={showPending}
+            >
+              Connect {providerLabel}
             </Button>
           </form>
         </Form>

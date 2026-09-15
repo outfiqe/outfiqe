@@ -357,8 +357,8 @@ const EditCompetitionModal = ({
           Active
         </label>
         {error && <FormBanner>{error}</FormBanner>}
-        <Button type="submit" disabled={update.isPending}>
-          {update.isPending ? "Saving…" : "Save changes"}
+        <Button type="submit" isLoading={update.isPending}>
+          Save changes
         </Button>
       </form>
     </Modal>
@@ -407,8 +407,8 @@ export const CompetitionsSection = () => {
         className="mt-4 space-y-4 rounded-xl border border-border bg-card p-4"
       >
         <CompetitionFields idPrefix="create-competition" form={form} onChange={setForm} />
-        <Button type="submit" disabled={create.isPending}>
-          {create.isPending ? "Creating…" : "Create competition"}
+        <Button type="submit" isLoading={create.isPending}>
+          Create competition
         </Button>
       </form>
 

@@ -160,8 +160,8 @@ export const AddBankAccountModal = ({ ownerType, onClose }: AddBankAccountModalP
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={addBankAccount.isPending}>
-              {addBankAccount.isPending ? "Adding…" : "Add bank account"}
+            <Button type="submit" isLoading={addBankAccount.isPending}>
+              Add bank account
             </Button>
           </div>
         </form>

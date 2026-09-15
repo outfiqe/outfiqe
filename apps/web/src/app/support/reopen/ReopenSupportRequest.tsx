@@ -40,8 +40,8 @@ export const ReopenSupportRequest = () => {
       {reopen.isError && (
         <p className="text-sm text-destructive">{getErrorMessage(reopen.error)}</p>
       )}
-      <Button onClick={() => reopen.mutate()} disabled={reopen.isPending}>
-        {reopen.isPending ? "Reopening…" : "Reopen this request"}
+      <Button onClick={() => reopen.mutate()} isLoading={reopen.isPending}>
+        Reopen this request
       </Button>
     </div>
   );

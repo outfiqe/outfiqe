@@ -65,10 +65,10 @@ export const RejectTagModal = ({
           </Button>
           <Button
             onClick={submit}
-            disabled={isSubmitting}
+            isLoading={isSubmitting}
             className="border border-destructive bg-transparent text-destructive hover:bg-destructive hover:text-white"
           >
-            {isSubmitting ? "Saving…" : isLiveTag ? "Remove tag" : "Decline tag"}
+            {isLiveTag ? "Remove tag" : "Decline tag"}
           </Button>
         </div>
       }

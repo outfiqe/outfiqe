@@ -114,13 +114,11 @@ const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void 
           <Button
             type="submit"
             disabled={
-              title.trim().length === 0 ||
-              description.trim().length === 0 ||
-              customer === null ||
-              create.isPending
+              title.trim().length === 0 || description.trim().length === 0 || customer === null
             }
+            isLoading={create.isPending}
           >
-            {create.isPending ? "Creating…" : "Create ticket"}
+            Create ticket
           </Button>
         </div>
       </form>

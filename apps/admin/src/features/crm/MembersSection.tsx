@@ -216,9 +216,9 @@ export const MembersSection = ({
                 <Button
                   type="button"
                   onClick={() => transferOwnership.mutate(transferTarget.id)}
-                  disabled={transferOwnership.isPending}
+                  isLoading={transferOwnership.isPending}
                 >
-                  {transferOwnership.isPending ? "Requesting…" : "Transfer ownership"}
+                  Transfer ownership
                 </Button>
               </div>
             </div>

@@ -22,8 +22,8 @@ export const ConfirmDeleteCommentModal = ({
         <Button variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button onClick={onConfirm} disabled={isPending}>
-          {isPending ? "Deleting…" : "Delete"}
+        <Button onClick={onConfirm} isLoading={isPending}>
+          Delete
         </Button>
       </div>
     }

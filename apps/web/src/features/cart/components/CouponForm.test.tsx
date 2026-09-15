@@ -61,7 +61,7 @@ describe("CouponForm", () => {
     expect(applyMutate).not.toHaveBeenCalled();
   });
 
-  it("shows the pending label while a coupon is being applied", () => {
+  it("shows a loading spinner while a coupon is being applied", () => {
     useApplyCouponMock.mockReturnValue({
       mutate: applyMutate,
       isPending: true,
@@ -71,7 +71,7 @@ describe("CouponForm", () => {
 
     render(<CouponForm appliedCoupon={null} />);
 
-    expect(screen.getByRole("button", { name: "Applying…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Loading" })).toBeDisabled();
   });
 
   it("shows the backend's error message when applying fails", () => {

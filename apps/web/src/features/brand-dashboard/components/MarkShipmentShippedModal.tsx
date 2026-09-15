@@ -56,8 +56,12 @@ export const MarkShipmentShippedModal = ({
           <Button variant="outline" onClick={close}>
             Cancel
           </Button>
-          <Button onClick={() => void submit()} disabled={!canSubmit || advanceShipment.isPending}>
-            {advanceShipment.isPending ? "Saving…" : "Mark shipped"}
+          <Button
+            onClick={() => void submit()}
+            disabled={!canSubmit}
+            isLoading={advanceShipment.isPending}
+          >
+            Mark shipped
           </Button>
         </div>
       }

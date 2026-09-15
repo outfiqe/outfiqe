@@ -121,8 +121,8 @@ export const SupportRequestForm = ({
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={submit.isPending}>
-            {showPending ? "Sending…" : "Send request"}
+          <Button type="submit" disabled={submit.isPending} isLoading={showPending}>
+            Send request
           </Button>
         </form>
       </Form>

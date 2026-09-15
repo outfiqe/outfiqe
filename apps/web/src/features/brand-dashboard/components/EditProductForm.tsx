@@ -116,8 +116,8 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button onClick={() => void handleSaveChanges()} disabled={isSaving}>
-              {isSaving ? "Saving…" : "Save changes"}
+            <Button onClick={() => void handleSaveChanges()} isLoading={isSaving}>
+              Save changes
             </Button>
           </>
         }

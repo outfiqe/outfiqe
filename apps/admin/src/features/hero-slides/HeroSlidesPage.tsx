@@ -164,8 +164,8 @@ export const HeroSlidesPage = () => {
           />
         </div>
 
-        <Button type="submit" disabled={create.isPending}>
-          {create.isPending ? "Creating…" : "Create slide"}
+        <Button type="submit" isLoading={create.isPending}>
+          Create slide
         </Button>
       </form>
 

@@ -100,8 +100,8 @@ export const SizeOptionsPage = () => {
               />
             </div>
 
-            <Button type="submit" disabled={create.isPending || !label.trim()}>
-              {create.isPending ? "Adding…" : `Add to ${labelForType(type)}`}
+            <Button type="submit" disabled={!label.trim()} isLoading={create.isPending}>
+              Add to {labelForType(type)}
             </Button>
           </form>
 

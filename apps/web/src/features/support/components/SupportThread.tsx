@@ -76,11 +76,12 @@ export const SupportThread = ({ ticketId, onBack }: { ticketId: string; onBack: 
           />
           <Button
             onClick={submit}
-            disabled={reply.isPending || !body.trim()}
+            disabled={!body.trim()}
+            isLoading={reply.isPending}
             className="mt-2"
             size="sm"
           >
-            {reply.isPending ? "Sending…" : "Send reply"}
+            Send reply
           </Button>
         </div>
       )}

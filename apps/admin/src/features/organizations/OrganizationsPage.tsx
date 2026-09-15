@@ -110,8 +110,12 @@ export const OrganizationsPage = () => {
             className="w-48"
           />
         </div>
-        <Button type="submit" disabled={!selectedBrandId || isSuggesting || create.isPending}>
-          {create.isPending ? "Creating…" : "Create organization"}
+        <Button
+          type="submit"
+          disabled={!selectedBrandId || isSuggesting}
+          isLoading={create.isPending}
+        >
+          Create organization
         </Button>
       </form>
 
@@ -167,10 +171,10 @@ export const OrganizationsPage = () => {
           <Button
             variant="outline"
             size="sm"
-            disabled={isFetchingNextPage}
+            isLoading={isFetchingNextPage}
             onClick={() => fetchNextPage()}
           >
-            {isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         )}
       </div>

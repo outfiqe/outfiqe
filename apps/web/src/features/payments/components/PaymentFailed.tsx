@@ -29,8 +29,8 @@ export const PaymentFailed = ({ orderId, onRetry, isRetrying }: PaymentFailedPro
         Your order is still saved — you can try paying again, or check its status.
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
-        <Button onClick={onRetry} disabled={isRetrying}>
-          {isRetrying ? "Trying again…" : "Try again"}
+        <Button onClick={onRetry} isLoading={isRetrying}>
+          Try again
         </Button>
         <Button asChild variant="outline">
           <Link href={`/orders/${orderId}`}>View order</Link>

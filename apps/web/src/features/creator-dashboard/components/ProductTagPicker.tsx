@@ -97,10 +97,10 @@ const TagReviewNote = ({
           variant="outline"
           size="sm"
           onClick={onReRequest}
-          disabled={isReRequestPending}
+          isLoading={isReRequestPending}
           className="mt-1.5 h-7 border-red-300 text-red-800 hover:bg-red-800 hover:text-white"
         >
-          {isReRequestPending ? "Requesting…" : "Request again"}
+          Request again
         </Button>
       ) : (
         <p className="mt-1 text-red-700">

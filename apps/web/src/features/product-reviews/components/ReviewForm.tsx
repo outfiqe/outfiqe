@@ -75,10 +75,11 @@ export const ReviewForm = ({
       footer={
         <Button
           className="w-full"
-          disabled={!canSubmit || isSubmitting}
+          disabled={!canSubmit}
+          isLoading={isSubmitting}
           onClick={() => void submit()}
         >
-          {isSubmitting ? "Posting…" : isEditing ? "Save changes" : "Post review"}
+          {isEditing ? "Save changes" : "Post review"}
         </Button>
       }
     >

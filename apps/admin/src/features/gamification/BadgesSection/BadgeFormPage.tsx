@@ -174,8 +174,8 @@ const BadgeForm = ({
           <Button type="button" variant="outline" asChild>
             <Link to="/gamification/badges">Cancel</Link>
           </Button>
-          <Button type="submit" disabled={save.isPending || Boolean(designIssue)}>
-            {save.isPending ? "Saving…" : mode === "edit" ? "Save changes" : "Create badge"}
+          <Button type="submit" disabled={Boolean(designIssue)} isLoading={save.isPending}>
+            {mode === "edit" ? "Save changes" : "Create badge"}
           </Button>
         </div>
       </div>

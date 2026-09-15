@@ -109,8 +109,8 @@ export const InviteSection = ({ viewerIsSuperAdmin, viewerPermissionKeys }: Invi
             ))}
           </Select>
         </div>
-        <Button type="submit" disabled={invite.isPending}>
-          {invite.isPending ? "Sending…" : "Send invite"}
+        <Button type="submit" isLoading={invite.isPending}>
+          Send invite
         </Button>
       </form>
 

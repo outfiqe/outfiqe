@@ -142,8 +142,9 @@ export const LoginForm = () => {
             type="submit"
             className="mt-6 w-full"
             disabled={login.isPending || (captchaRequired && !captchaToken)}
+            isLoading={showPending}
           >
-            {showPending ? "Signing in…" : "Sign in"}
+            Sign in
           </Button>
         </form>
       </Form>

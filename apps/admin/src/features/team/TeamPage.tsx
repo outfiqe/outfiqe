@@ -76,8 +76,8 @@ export const TeamPage = () => {
               className="w-64"
             />
           </div>
-          <Button type="submit" disabled={invite.isPending}>
-            {invite.isPending ? "Sending…" : "Invite admin"}
+          <Button type="submit" isLoading={invite.isPending}>
+            Invite admin
           </Button>
         </form>
       ) : (

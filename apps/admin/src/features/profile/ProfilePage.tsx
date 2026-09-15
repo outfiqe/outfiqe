@@ -72,8 +72,8 @@ export const ProfilePage = () => {
         {error && <FormBanner>{error}</FormBanner>}
         {saved && !error && <p className="text-sm text-primary">Profile updated.</p>}
 
-        <Button type="submit" disabled={update.isPending}>
-          {update.isPending ? "Saving…" : "Save changes"}
+        <Button type="submit" isLoading={update.isPending}>
+          Save changes
         </Button>
       </form>
 

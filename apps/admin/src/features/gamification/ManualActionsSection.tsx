@@ -85,8 +85,8 @@ const AwardBadgeForm = () => {
           onChange={(e) => setReason(e.target.value)}
         />
       </div>
-      <Button type="submit" disabled={award.isPending || !recipient || !badgeId}>
-        {award.isPending ? "Awarding…" : "Award badge"}
+      <Button type="submit" disabled={!recipient || !badgeId} isLoading={award.isPending}>
+        Award badge
       </Button>
       {error && <FormBanner className="w-full">{error}</FormBanner>}
     </form>
@@ -159,8 +159,8 @@ const AdjustXpForm = () => {
           onChange={(e) => setReason(e.target.value)}
         />
       </div>
-      <Button type="submit" disabled={adjust.isPending || !target}>
-        {adjust.isPending ? "Adjusting…" : "Adjust XP"}
+      <Button type="submit" disabled={!target} isLoading={adjust.isPending}>
+        Adjust XP
       </Button>
       {error && <FormBanner className="w-full">{error}</FormBanner>}
       {result && <p className="w-full text-sm text-muted-foreground">{result}</p>}

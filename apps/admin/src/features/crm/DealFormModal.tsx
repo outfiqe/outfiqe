@@ -109,8 +109,8 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={!canSubmit || save.isPending}>
-            {save.isPending ? "Saving…" : isEditing ? "Save deal" : "Create deal"}
+          <Button type="submit" disabled={!canSubmit} isLoading={save.isPending}>
+            {isEditing ? "Save deal" : "Create deal"}
           </Button>
         </div>
       </form>

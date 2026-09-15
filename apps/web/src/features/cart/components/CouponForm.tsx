@@ -52,8 +52,13 @@ export const CouponForm = ({ appliedCoupon }: CouponFormProps) => {
           aria-label="Coupon code"
           disabled={applyCoupon.isPending}
         />
-        <Button type="submit" variant="outline" disabled={applyCoupon.isPending || !code.trim()}>
-          {applyCoupon.isPending ? "Applying…" : "Apply"}
+        <Button
+          type="submit"
+          variant="outline"
+          disabled={!code.trim()}
+          isLoading={applyCoupon.isPending}
+        >
+          Apply
         </Button>
       </div>
       {applyCoupon.isError && (

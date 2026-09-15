@@ -95,7 +95,7 @@ describe("ApplyAsCreatorButton", () => {
 
     await user.click(screen.getByRole("button", { name: "Apply to become a creator" }));
 
-    expect(await screen.findByRole("button", { name: "Applying…" })).toBeDisabled();
+    expect(await screen.findByRole("button", { name: "Loading" })).toBeDisabled();
   });
 
   it("shows an error message when the application fails", async () => {

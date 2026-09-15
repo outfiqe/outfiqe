@@ -137,8 +137,8 @@ export const WithdrawRequestForm = ({
           )}
         />
 
-        <Button type="submit" className="mt-2 w-full" disabled={createWithdrawRequest.isPending}>
-          {createWithdrawRequest.isPending ? "Submitting…" : "Request withdrawal"}
+        <Button type="submit" className="mt-2 w-full" isLoading={createWithdrawRequest.isPending}>
+          Request withdrawal
         </Button>
       </form>
     </Form>

@@ -72,8 +72,8 @@ const ProviderRateForm = ({ paymentMethod }: { paymentMethod: GatewayPaymentMeth
           className="w-24"
         />
       </div>
-      <Button type="submit" size="sm" disabled={createRate.isPending}>
-        {createRate.isPending ? "Saving…" : "Update"}
+      <Button type="submit" size="sm" isLoading={createRate.isPending}>
+        Update
       </Button>
       {createRate.isError && (
         <FormBanner className="w-full">{getErrorMessage(createRate.error)}</FormBanner>

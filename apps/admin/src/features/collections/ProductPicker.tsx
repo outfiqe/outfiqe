@@ -150,8 +150,8 @@ export const ProductPicker = ({ collection, onClose }: ProductPickerProps) => {
       </div>
 
       <div className="flex items-center gap-3">
-        <Button onClick={() => save.mutate(selected)} disabled={save.isPending}>
-          {save.isPending ? "Saving…" : "Save products"}
+        <Button onClick={() => save.mutate(selected)} isLoading={save.isPending}>
+          Save products
         </Button>
         <Button variant="ghost" onClick={onClose}>
           Cancel

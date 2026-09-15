@@ -54,9 +54,10 @@ export const RequestShipmentCancellationModal = ({
           </Button>
           <Button
             onClick={() => void submit()}
-            disabled={!canSubmit || requestCancellation.isPending}
+            disabled={!canSubmit}
+            isLoading={requestCancellation.isPending}
           >
-            {requestCancellation.isPending ? "Sending…" : "Send request"}
+            Send request
           </Button>
         </div>
       }

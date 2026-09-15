@@ -162,9 +162,9 @@ export const ProductsSection = () => {
           <Button
             variant="outline"
             onClick={() => void fetchNextPage()}
-            disabled={isFetchingNextPage}
+            isLoading={isFetchingNextPage}
           >
-            {isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         </div>
       )}
@@ -186,10 +186,10 @@ export const ProductsSection = () => {
             </Button>
             <Button
               onClick={confirmDelete}
-              disabled={deleteProduct.isPending}
+              isLoading={deleteProduct.isPending}
               className="border border-destructive bg-transparent text-destructive hover:bg-destructive hover:text-white"
             >
-              {deleteProduct.isPending ? "Deleting…" : "Delete"}
+              Delete
             </Button>
           </div>
         }

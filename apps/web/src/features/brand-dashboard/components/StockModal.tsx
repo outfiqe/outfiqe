@@ -56,9 +56,10 @@ export const StockModal = ({ product, onClose }: StockModalProps) => {
           </Button>
           <Button
             onClick={() => void onSubmit()}
-            disabled={adjustStock.isPending || product.sizes.length === 0}
+            disabled={product.sizes.length === 0}
+            isLoading={adjustStock.isPending}
           >
-            {adjustStock.isPending ? "Saving…" : "Save"}
+            Save
           </Button>
         </div>
       }

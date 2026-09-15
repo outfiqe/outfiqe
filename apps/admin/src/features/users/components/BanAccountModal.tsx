@@ -44,8 +44,8 @@ export const BanAccountModal = ({
           <Button variant="outline" onClick={onCancel} disabled={isPending}>
             Cancel
           </Button>
-          <Button onClick={submit} disabled={!canConfirm}>
-            {isPending ? "Banning…" : "Confirm ban"}
+          <Button onClick={submit} disabled={!canConfirm} isLoading={isPending}>
+            Confirm ban
           </Button>
         </div>
       }

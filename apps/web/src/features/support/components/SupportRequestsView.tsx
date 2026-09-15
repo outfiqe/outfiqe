@@ -86,9 +86,9 @@ export const SupportRequestsView = () => {
             variant="outline"
             size="sm"
             onClick={() => void fetchNextPage()}
-            disabled={isFetchingNextPage}
+            isLoading={isFetchingNextPage}
           >
-            {isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         )}
       </div>

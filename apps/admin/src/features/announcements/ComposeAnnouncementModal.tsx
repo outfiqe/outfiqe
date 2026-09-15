@@ -108,8 +108,8 @@ export const ComposeAnnouncementModal = ({
             <Button variant="outline" onClick={onClose}>
               Close
             </Button>
-            <Button onClick={() => void submit()} disabled={isSubmitting || !canSubmit}>
-              {isSubmitting ? "Saving…" : "Save draft"}
+            <Button onClick={() => void submit()} disabled={!canSubmit} isLoading={isSubmitting}>
+              Save draft
             </Button>
           </div>
         </div>
