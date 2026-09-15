@@ -52,6 +52,7 @@ import type {
   CreatorLookSummary,
   CreatorLookUpdateOutcome,
   CreatorMomentumEntry,
+  FeedCandidateSnapshot,
   FeedPage,
   LookSearchPage,
   PostMetricBucket,
@@ -143,6 +144,7 @@ const toFeedPost = (
     createdAt,
   }: LookWithFeedRelations,
   viewer: { likedIds: Set<string>; savedIds: Set<string>; followingIds: Set<string> },
+  trendingIds: ReadonlySet<string>,
 ): CreatorLookFeedPost => ({
   id,
   creator: {
@@ -170,11 +172,13 @@ const toFeedPost = (
   })),
   hashtags: hashtags.map((hashtag) => hashtag.tag),
   createdAt,
+  isTrending: trendingIds.has(id),
 });
 
 const hydrateFeedPosts = async (
   orderedIds: string[],
   viewerId: string | undefined,
+  trendingIds: ReadonlySet<string> = new Set(),
 ): Promise<CreatorLookFeedPost[]> => {
   if (orderedIds.length === 0) return [];
 
@@ -220,7 +224,7 @@ const hydrateFeedPosts = async (
   return orderedIds
     .map((id) => byId.get(id))
     .filter((look): look is LookWithFeedRelations => Boolean(look))
-    .map((look) => toFeedPost(look, viewer));
+    .map((look) => toFeedPost(look, viewer, trendingIds));
 };
 
 const TRENDING_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
@@ -287,11 +291,11 @@ const refreshTrendingSnapshotTtl = async (key: string): Promise<void> => {
   }
 };
 
-const getTrendingSnapshot = async (sessionId: string): Promise<string[] | null> => {
+const getTrendingSnapshot = async (sessionId: string): Promise<FeedCandidateSnapshot | null> => {
   const key = trendingSnapshotKey(sessionId);
 
   try {
-    const cached = await cacheService.get<string[]>(key);
+    const cached = await cacheService.get<FeedCandidateSnapshot>(key);
     if (cached) await refreshTrendingSnapshotTtl(key);
     return cached;
   } catch (error) {
@@ -300,11 +304,14 @@ const getTrendingSnapshot = async (sessionId: string): Promise<string[] | null> 
   }
 };
 
-const cacheTrendingSnapshot = async (sessionId: string, ids: string[]): Promise<void> => {
+const cacheTrendingSnapshot = async (
+  sessionId: string,
+  snapshot: FeedCandidateSnapshot,
+): Promise<void> => {
   try {
     await cacheService.set(
       trendingSnapshotKey(sessionId),
-      ids,
+      snapshot,
       CACHE_TTL.EXPLORE_TRENDING_SNAPSHOT,
     );
   } catch (error) {
@@ -458,7 +465,7 @@ const computeRankedCreatorMomentumScores = async (
   return candidates;
 };
 
-const buildTrendingSnapshot = async (): Promise<string[]> => {
+const buildTrendingSnapshot = async (): Promise<FeedCandidateSnapshot> => {
   let scored: PostTrendingEntry[] | null = null;
   try {
     scored = await cacheService.get<PostTrendingEntry[]>(EXPLORE_TRENDING_SCORE_CACHE_KEY);
@@ -469,24 +476,27 @@ const buildTrendingSnapshot = async (): Promise<string[]> => {
   }
 
   if (scored === null) scored = await computeRankedLookScores();
-  if (scored.length > 0) return scored.map((entry) => entry.lookId);
+  if (scored.length > 0) {
+    const ids = scored.map((entry) => entry.lookId);
+    return { ids, trendingIds: ids };
+  }
 
-  return buildLegacyTrendingSnapshot();
+  return { ids: await buildLegacyTrendingSnapshot(), trendingIds: [] };
 };
 
 const resolveTrendingSnapshotSource = async (
   decoded: TrendingSnapshotCursor | undefined,
-): Promise<{ sessionId: string; offset: number; ids: string[] }> => {
-  const cachedIds = decoded ? await getTrendingSnapshot(decoded.sessionId) : null;
-  if (decoded && cachedIds) {
-    return { sessionId: decoded.sessionId, offset: decoded.offset, ids: cachedIds };
+): Promise<{ sessionId: string; offset: number; snapshot: FeedCandidateSnapshot }> => {
+  const cachedSnapshot = decoded ? await getTrendingSnapshot(decoded.sessionId) : null;
+  if (decoded && cachedSnapshot) {
+    return { sessionId: decoded.sessionId, offset: decoded.offset, snapshot: cachedSnapshot };
   }
 
   const sessionId = decoded?.sessionId ?? randomUUID();
-  const ids = await buildTrendingSnapshot();
-  await cacheTrendingSnapshot(sessionId, ids);
-  const offset = decoded ? Math.min(decoded.offset, ids.length) : 0;
-  return { sessionId, offset, ids };
+  const snapshot = await buildTrendingSnapshot();
+  await cacheTrendingSnapshot(sessionId, snapshot);
+  const offset = decoded ? Math.min(decoded.offset, snapshot.ids.length) : 0;
+  return { sessionId, offset, snapshot };
 };
 
 const listTrendingIds = async ({
@@ -495,18 +505,23 @@ const listTrendingIds = async ({
 }: {
   cursor?: string;
   limit: number;
-}): Promise<{ ids: string[]; nextCursor: string | null }> => {
+}): Promise<{ ids: string[]; nextCursor: string | null; trendingIds: Set<string> }> => {
   const decoded = decodeCursor<TrendingSnapshotCursor>(cursor);
-  const { sessionId, offset, ids } = await resolveTrendingSnapshotSource(decoded);
+  const { sessionId, offset, snapshot } = await resolveTrendingSnapshotSource(decoded);
 
-  const pageIds = ids.slice(offset, offset + limit);
+  const pageIds = snapshot.ids.slice(offset, offset + limit);
   const nextOffset = offset + pageIds.length;
   const nextCursor =
-    nextOffset < ids.length
+    nextOffset < snapshot.ids.length
       ? encodeCursor<TrendingSnapshotCursor>({ sessionId, offset: nextOffset })
       : null;
 
-  return { ids: pageIds, nextCursor };
+  const trendingIdSet = new Set(snapshot.trendingIds);
+  return {
+    ids: pageIds,
+    nextCursor,
+    trendingIds: new Set(pageIds.filter((id) => trendingIdSet.has(id))),
+  };
 };
 
 const listCandidateAffinityMeta = async (lookIds: string[]): Promise<CandidateAffinityMeta[]> => {
@@ -573,7 +588,7 @@ const scorePersonalized = (
 const buildPersonalizedSnapshot = async (
   viewerId: string,
   followedCreatorIds: string[],
-): Promise<string[]> => {
+): Promise<FeedCandidateSnapshot> => {
   const followedLookIds = await listRecentFollowedLookIds(
     followedCreatorIds,
     FOR_YOU_FOLLOWED_RECENCY_WINDOW_DAYS,
@@ -591,11 +606,14 @@ const buildPersonalizedSnapshot = async (
   if (scored === null) scored = await computeRankedLookScores();
   if (scored.length === 0) {
     const legacyDiscoveryIds = await buildLegacyTrendingSnapshot();
-    return interleaveFollowedLooks(
-      legacyDiscoveryIds,
-      followedLookIds,
-      FOR_YOU_FOLLOWED_SLOT_INTERVAL,
-    );
+    return {
+      ids: interleaveFollowedLooks(
+        legacyDiscoveryIds,
+        followedLookIds,
+        FOR_YOU_FOLLOWED_SLOT_INTERVAL,
+      ),
+      trendingIds: [],
+    };
   }
 
   const [candidateMeta, engagement] = await Promise.all([
@@ -631,16 +649,19 @@ const buildPersonalizedSnapshot = async (
     (entry) => entry.creatorId,
   );
   const discoveryIds = diversified.map((entry) => entry.lookId);
-  return interleaveFollowedLooks(discoveryIds, followedLookIds, FOR_YOU_FOLLOWED_SLOT_INTERVAL);
+  return {
+    ids: interleaveFollowedLooks(discoveryIds, followedLookIds, FOR_YOU_FOLLOWED_SLOT_INTERVAL),
+    trendingIds: discoveryIds,
+  };
 };
 
 const forYouSnapshotKey = (sessionId: string) =>
   redisKeys.cache("explore-for-you-snapshot", sessionId);
 
-const getForYouSnapshot = async (sessionId: string): Promise<string[] | null> => {
+const getForYouSnapshot = async (sessionId: string): Promise<FeedCandidateSnapshot | null> => {
   const key = forYouSnapshotKey(sessionId);
   try {
-    const cached = await cacheService.get<string[]>(key);
+    const cached = await cacheService.get<FeedCandidateSnapshot>(key);
     if (cached) await cacheService.touch(key, CACHE_TTL.EXPLORE_TRENDING_SNAPSHOT);
     return cached;
   } catch (error) {
@@ -649,9 +670,16 @@ const getForYouSnapshot = async (sessionId: string): Promise<string[] | null> =>
   }
 };
 
-const cacheForYouSnapshot = async (sessionId: string, ids: string[]): Promise<void> => {
+const cacheForYouSnapshot = async (
+  sessionId: string,
+  snapshot: FeedCandidateSnapshot,
+): Promise<void> => {
   try {
-    await cacheService.set(forYouSnapshotKey(sessionId), ids, CACHE_TTL.EXPLORE_TRENDING_SNAPSHOT);
+    await cacheService.set(
+      forYouSnapshotKey(sessionId),
+      snapshot,
+      CACHE_TTL.EXPLORE_TRENDING_SNAPSHOT,
+    );
   } catch (error) {
     logger.warn(
       `Cache write failed for "${forYouSnapshotKey(sessionId)}": ${describeError(error)}`,
@@ -665,12 +693,12 @@ const forYouStableRankingKey = (viewerId: string) =>
 const resolveForYouCandidateIds = async (
   viewerId: string | undefined,
   followedCreatorIds: string[],
-): Promise<string[]> => {
+): Promise<FeedCandidateSnapshot> => {
   if (!viewerId) return buildTrendingSnapshot();
 
   const stableKey = forYouStableRankingKey(viewerId);
   try {
-    const stable = await cacheService.get<string[]>(stableKey);
+    const stable = await cacheService.get<FeedCandidateSnapshot>(stableKey);
     if (stable) return stable;
   } catch (error) {
     logger.warn(`Cache read failed for "${stableKey}": ${describeError(error)}`);
@@ -695,32 +723,37 @@ const listForYouIds = async ({
   limit: number;
   viewerId?: string;
   followedCreatorIds: string[];
-}): Promise<{ ids: string[]; nextCursor: string | null }> => {
+}): Promise<{ ids: string[]; nextCursor: string | null; trendingIds: Set<string> }> => {
   const decoded = decodeCursor<TrendingSnapshotCursor>(cursor);
-  const cachedIds = decoded ? await getForYouSnapshot(decoded.sessionId) : null;
+  const cachedSnapshot = decoded ? await getForYouSnapshot(decoded.sessionId) : null;
 
   let sessionId: string;
   let offset: number;
-  let ids: string[];
+  let snapshot: FeedCandidateSnapshot;
 
-  if (decoded && cachedIds) {
+  if (decoded && cachedSnapshot) {
     ({ sessionId, offset } = decoded);
-    ids = cachedIds;
+    snapshot = cachedSnapshot;
   } else {
     sessionId = decoded?.sessionId ?? randomUUID();
-    ids = await resolveForYouCandidateIds(viewerId, followedCreatorIds);
-    offset = decoded ? Math.min(decoded.offset, ids.length) : 0;
-    await cacheForYouSnapshot(sessionId, ids);
+    snapshot = await resolveForYouCandidateIds(viewerId, followedCreatorIds);
+    offset = decoded ? Math.min(decoded.offset, snapshot.ids.length) : 0;
+    await cacheForYouSnapshot(sessionId, snapshot);
   }
 
-  const pageIds = ids.slice(offset, offset + limit);
+  const pageIds = snapshot.ids.slice(offset, offset + limit);
   const nextOffset = offset + pageIds.length;
   const nextCursor =
-    nextOffset < ids.length
+    nextOffset < snapshot.ids.length
       ? encodeCursor<TrendingSnapshotCursor>({ sessionId, offset: nextOffset })
       : null;
 
-  return { ids: pageIds, nextCursor };
+  const trendingIdSet = new Set(snapshot.trendingIds);
+  return {
+    ids: pageIds,
+    nextCursor,
+    trendingIds: new Set(pageIds.filter((id) => trendingIdSet.has(id))),
+  };
 };
 
 const listIdsByFilter = async (
@@ -1397,7 +1430,7 @@ export const creatorLookRepository = {
     viewerId?: string;
     followingCreatorIds: string[];
   }): Promise<FeedPage> {
-    let listed: { ids: string[]; nextCursor: string | null };
+    let listed: { ids: string[]; nextCursor: string | null; trendingIds?: Set<string> };
 
     if (tab === "following") {
       listed = await listIdsByFilter({ creatorId: { in: followingCreatorIds } }, { cursor, limit });
@@ -1415,7 +1448,7 @@ export const creatorLookRepository = {
       listed = await listIdsByFilter({ hashtags: { some: { tag } } }, { cursor, limit });
     }
 
-    const posts = await hydrateFeedPosts(listed.ids, viewerId);
+    const posts = await hydrateFeedPosts(listed.ids, viewerId, listed.trendingIds);
     return { posts, nextCursor: listed.nextCursor };
   },
 

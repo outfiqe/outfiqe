@@ -63,6 +63,7 @@ export const feedPostSchema = z.object({
   taggedProducts: z.array(feedTaggedProductSchema),
   hashtags: z.array(z.string()),
   createdAt: z.string(),
+  isTrending: z.boolean(),
 });
 export type FeedPost = z.infer<typeof feedPostSchema>;
 

@@ -1755,6 +1755,36 @@ describe("GET /api/creator-looks/feed", () => {
     expect(ids).toContain(trendingLook.id);
   });
 
+  it("only flags genuinely-scored posts as trending in for_you, not the followed posts interleaved in for personalization", async () => {
+    const trendingCreator = await createCreator("Rank Discovery Creator", "rank-discovery-creator");
+    const followedCreator = await createCreator(
+      "Rank Quiet Followed Creator",
+      "rank-quiet-followed-creator",
+    );
+    const engager = await createCreator("Rank Discovery Engager", "rank-discovery-engager");
+    const viewer = await createCreator("Rank Discovery Viewer", "rank-discovery-viewer");
+
+    const trendingLook = await createLook(trendingCreator.id, "Rank discovery trending post");
+    await prisma.creatorLookLike.create({
+      data: { creatorLookId: trendingLook.id, userId: engager.id },
+    });
+    const quietFollowedLook = await createLook(followedCreator.id, "Rank quiet followed post");
+
+    await followCreator(viewer.id, followedCreator.id);
+    await creatorLookService.runTrendingAggregation();
+    await creatorLookService.runTrendingScoring();
+
+    const response = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you", limit: 30 })
+      .set("Authorization", authHeaderFor(viewer.id));
+
+    expect(response.status).toBe(200);
+    const posts = response.body.data.posts as { id: string; isTrending: boolean }[];
+    expect(posts.find((post) => post.id === trendingLook.id)?.isTrending).toBe(true);
+    expect(posts.find((post) => post.id === quietFollowedLook.id)?.isTrending).toBe(false);
+  });
+
   it("keeps the for_you candidate set stable across repeat page-1 requests, even once a new post starts scoring in between", async () => {
     const creatorA = await createCreator("Stable Creator A", "stable-creator-a");
     const neutralViewer = await createCreator("Stable Neutral Viewer", "stable-neutral-viewer");
@@ -1810,10 +1840,10 @@ describe("GET /api/creator-looks/feed", () => {
     expect(response.body.data.posts.some((post: { id: string }) => post.id === look.id)).toBe(true);
   });
 
-  it("falls back to the legacy trending snapshot for an authenticated viewer when no post has ever scored", async () => {
+  it("falls back to the legacy trending snapshot for an authenticated viewer when no post has ever scored, without flagging it as trending", async () => {
     const creator = await createCreator("No Score Creator", "no-score-creator");
     const viewer = await createCreator("No Score Viewer", "no-score-viewer");
-    await createLook(creator.id, "Never scored post");
+    const look = await createLook(creator.id, "Never scored post");
 
     const response = await request(testApp)
       .get("/api/creator-looks/feed")
@@ -1822,6 +1852,8 @@ describe("GET /api/creator-looks/feed", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveProperty("posts");
+    const posts = response.body.data.posts as { id: string; isTrending: boolean }[];
+    expect(posts.find((post) => post.id === look.id)?.isTrending).toBe(false);
   });
 
   it("paginates the trending tab with a stable snapshot across pages", async () => {
@@ -1911,6 +1943,7 @@ describe("GET /api/creator-looks/feed", () => {
       .get("/api/creator-looks/feed")
       .query({ tab: "trending", limit: 1 });
     expect(first.body.data.posts[0]?.id).toBe(topLook.id);
+    expect(first.body.data.posts[0]?.isTrending).toBe(true);
     expect(first.body.data.nextCursor).not.toBeNull();
 
     const firstCursor = decodeCursor<TrendingSnapshotCursor>(first.body.data.nextCursor);

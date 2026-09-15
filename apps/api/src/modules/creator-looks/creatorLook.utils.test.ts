@@ -79,6 +79,7 @@ describe("toSuggestion", () => {
         taggedProducts: [],
         hashtags: [],
         createdAt: NOW,
+        isTrending: false,
       }),
     ).toEqual({
       id: "look-1",
