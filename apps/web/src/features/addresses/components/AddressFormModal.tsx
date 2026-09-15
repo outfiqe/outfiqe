@@ -201,8 +201,8 @@ export const AddressFormModal = ({ address, onClose }: AddressFormModalProps) =>
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={activeMutation.isPending}>
-              {activeMutation.isPending ? "Saving…" : isEditing ? "Save changes" : "Add address"}
+            <Button type="submit" isLoading={activeMutation.isPending}>
+              {isEditing ? "Save changes" : "Add address"}
             </Button>
           </div>
         </form>

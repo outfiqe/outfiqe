@@ -173,8 +173,9 @@ export const RegisterForm = () => {
             type="submit"
             className="mt-6 w-full"
             disabled={register.isPending || !captchaToken}
+            isLoading={showPending}
           >
-            {showPending ? "Creating account…" : "Create account"}
+            Create account
           </Button>
         </form>
       </Form>

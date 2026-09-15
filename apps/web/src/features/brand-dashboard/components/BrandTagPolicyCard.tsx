@@ -93,8 +93,8 @@ export const BrandTagPolicyCard = ({ profile }: { profile: BrandProfile }) => {
         </label>
 
         <div className="flex justify-end">
-          <Button onClick={save} disabled={!isDirty || updateProfile.isPending}>
-            {updateProfile.isPending ? "Saving…" : "Save"}
+          <Button onClick={save} disabled={!isDirty} isLoading={updateProfile.isPending}>
+            Save
           </Button>
         </div>
       </div>

@@ -72,8 +72,8 @@ export const AddPhoneNumberBanner = () => {
                 />
 
                 <div className="mt-3 flex gap-2.5">
-                  <Button type="submit" size="sm" disabled={isPending}>
-                    {showPending ? "Saving…" : "Save"}
+                  <Button type="submit" size="sm" disabled={isPending} isLoading={showPending}>
+                    Save
                   </Button>
                   <Button
                     type="button"
