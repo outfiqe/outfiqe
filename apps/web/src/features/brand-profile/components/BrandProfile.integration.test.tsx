@@ -84,10 +84,11 @@ const buildProduct = () => ({
   reviewCount: 0,
 });
 
-const mockAuth = (isAuthenticated: boolean) => {
+const mockAuth = (isAuthenticated: boolean, isAdmin = false) => {
   vi.mocked(useAuth).mockReturnValue({
     isAuthenticated,
     isAuthResolved: true,
+    isAdmin,
     state: { user: isAuthenticated ? { id: "viewer-1" } : null },
   } as ReturnType<typeof useAuth>);
 };
@@ -220,5 +221,12 @@ describe("BrandProfile follow toggle", () => {
     rerenderWith(buildBrand({ isFollowing: true }));
 
     expect(screen.getByRole("button", { name: "Following" })).toBeInTheDocument();
+  });
+
+  it("hides the Follow brand button for a platform admin viewer", () => {
+    mockAuth(true, true);
+    renderBrandProfile(buildBrand({ isFollowing: false }));
+
+    expect(screen.queryByRole("button", { name: "Follow brand" })).not.toBeInTheDocument();
   });
 });

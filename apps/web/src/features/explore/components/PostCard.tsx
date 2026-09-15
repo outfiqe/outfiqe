@@ -38,6 +38,8 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
   const {
     isAuthenticated,
     isOwnPost,
+    isAdmin,
+    likeDisabledReason,
     taggedProducts,
     gated,
     likeMutation,
@@ -72,6 +74,7 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
         creatorHandle={creatorHandle}
         creatorName={creatorName}
         isOwnPost={isOwnPost}
+        isAdmin={isAdmin}
         isFollowingCreator={isFollowingCreator}
         onFollowToggle={() =>
           gated(() => toggleFollow({ creatorId, following: isFollowingCreator }))
@@ -107,8 +110,9 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
           likeCount={likeCount}
           onLike={() => gated(() => toggleLike({ lookId: id, liked: isLiked }))}
           isLiking={isLiking}
+          likeDisabledReason={likeDisabledReason}
           commentCount={commentCount}
-          onCommentClick={() => setCommentsOpen((open) => !open)}
+          onCommentClick={isAdmin ? undefined : () => setCommentsOpen((open) => !open)}
           commentsOpen={commentsOpen}
           isSaved={isSaved}
           onSave={() => gated(() => toggleSave({ lookId: id, saved: isSaved }))}

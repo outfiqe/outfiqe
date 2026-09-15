@@ -1,5 +1,6 @@
 import type { UserRole } from "#generated/prisma/enums.js";
 import { ContentReportStatus, ContentReportTarget } from "#generated/prisma/enums.js";
+import { assertCanEngage } from "#lib/engagement-guard.utils.js";
 import { hashToken } from "#lib/opaque-token.utils.js";
 import { isLikelyBotUserAgent } from "#lib/user-agent.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
@@ -48,6 +49,14 @@ export const contentReportService = {
     { reporterUserId, reporterIp, userAgent }: SubmitReportContext,
   ): Promise<void> {
     if (isLikelyBotUserAgent(userAgent)) return;
+
+    if (reporterUserId) {
+      await assertCanEngage(reporterUserId, {
+        code: "ADMIN_CANNOT_REPORT",
+        message:
+          "Platform staff accounts can't file public reports — use the moderation tools directly instead.",
+      });
+    }
 
     const target = await contentReportRepository.findReportableTarget(targetType, targetId);
     if (!target) {

@@ -1,13 +1,13 @@
 "use client";
 
-import { Button } from "@outfiqe/design-system";
+import { Button, Tooltip } from "@outfiqe/design-system";
 import { Heart, Shirt, Star } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { useToggleWishlist } from "@/features/wishlist";
+import { ADMIN_CANNOT_SAVE_PRODUCT_MESSAGE, useToggleWishlist } from "@/features/wishlist";
 import { AppImage } from "@/shared/components/AppImage";
 import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { cn } from "@/shared/lib/cn";
@@ -64,7 +64,7 @@ type ProductCardProps = {
 export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCardProps) => {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const wishlistMutation = useToggleWishlist();
   const {
     id,
@@ -138,20 +138,34 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
           )
         )}
 
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
-          aria-pressed={saved}
-          onClick={toggleSaved}
-          disabled={wishlistMutation.isPending}
-          className={cn(
-            "absolute right-3 top-3 size-8 bg-background/90 text-foreground hover:bg-background",
-            saved && "text-primary",
-          )}
-        >
-          <Heart className={cn("size-4", saved && "fill-primary")} />
-        </Button>
+        {isAdmin ? (
+          <Tooltip content={ADMIN_CANNOT_SAVE_PRODUCT_MESSAGE}>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Save to wishlist"
+              disabled
+              className="absolute right-3 top-3 size-8 bg-background/90 text-foreground hover:bg-background"
+            >
+              <Heart className="size-4" />
+            </Button>
+          </Tooltip>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
+            aria-pressed={saved}
+            onClick={toggleSaved}
+            disabled={wishlistMutation.isPending}
+            className={cn(
+              "absolute right-3 top-3 size-8 bg-background/90 text-foreground hover:bg-background",
+              saved && "text-primary",
+            )}
+          >
+            <Heart className={cn("size-4", saved && "fill-primary")} />
+          </Button>
+        )}
 
         {!image && <Shirt className="size-16 text-foreground/25" strokeWidth={1} />}
       </div>

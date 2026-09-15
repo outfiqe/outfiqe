@@ -3,6 +3,7 @@
 import { Skeleton } from "@outfiqe/design-system";
 import { useState } from "react";
 
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { TRENDING_RANKS, TrendingRankChip } from "@/shared/components/TrendingRankBadge";
 import { cn } from "@/shared/lib/cn";
 
@@ -29,9 +30,12 @@ export const Sidebar = ({ activeTag, onTagClick }: SidebarProps) => {
 
 const SuggestedCreators = () => {
   const { isAuthenticated, isAuthResolved, goToSignIn } = useExploreAuthGate();
+  const { isAdmin } = useAuth();
   const { data: creators, isLoading } = useSuggestedCreators();
   const followMutation = useFollowCreator();
   const [isFindMoreOpen, setIsFindMoreOpen] = useState(false);
+
+  if (isAdmin) return null;
 
   return (
     <div className="rounded-xl border border-border p-4">

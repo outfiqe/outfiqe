@@ -15,8 +15,11 @@ import { useLookComments } from "./useLookComments";
 import { useReportContent } from "./useReportContent";
 import { useSaveLook } from "./useSaveLook";
 
+const ADMIN_CANNOT_LIKE_MESSAGE =
+  "Platform staff accounts can't like posts — this keeps trending and payouts based on real audience activity.";
+
 export const usePostCardState = ({ id, creator, caption, taggedProducts }: FeedPost) => {
-  const { state } = useAuth();
+  const { state, isAdmin } = useAuth();
   const { isAuthenticated, gated } = useExploreAuthGate();
   const likeMutation = useLikeLook();
   const saveMutation = useSaveLook();
@@ -26,6 +29,7 @@ export const usePostCardState = ({ id, creator, caption, taggedProducts }: FeedP
   const reportMutation = useReportContent(() => setReportOpen(false));
 
   const isOwnPost = state.user?.id === creator.id;
+  const likeDisabledReason = isAdmin ? ADMIN_CANNOT_LIKE_MESSAGE : undefined;
 
   const { comments, draft, setDraft, submitComment } = useLookComments(id, commentsOpen);
 
@@ -42,6 +46,8 @@ export const usePostCardState = ({ id, creator, caption, taggedProducts }: FeedP
   return {
     isAuthenticated,
     isOwnPost,
+    isAdmin,
+    likeDisabledReason,
     taggedProducts,
     gated,
     likeMutation,

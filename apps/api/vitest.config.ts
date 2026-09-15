@@ -92,6 +92,8 @@ export default defineConfig({
         "src/modules/product-types/**/*.ts",
         "src/modules/taste-preferences/**/*.ts",
         "src/modules/follows/**/*.ts",
+        "src/modules/wishlist/**/*.ts",
+        "src/shared/utils/engagement-guard.utils.ts",
         "src/modules/notifications/notification.utils.ts",
         "src/modules/notifications/notification.targets.ts",
         "src/modules/notifications/notification.retention.ts",

@@ -21,9 +21,10 @@ vi.mock("@/features/auth/context/AuthContext", () => ({
 
 const push = vi.fn();
 
-const mockAuth = (isAuthenticated: boolean) => {
+const mockAuth = (isAuthenticated: boolean, isAdmin = false) => {
   vi.mocked(useAuth).mockReturnValue({
     isAuthenticated,
+    isAdmin,
   } as ReturnType<typeof useAuth>);
 };
 
@@ -196,5 +197,12 @@ describe("BrandCard follow toggle", () => {
       expect(screen.getByRole("button", { name: "Following" })).toBeInTheDocument(),
     );
     expect(screen.getByText("10")).toBeInTheDocument();
+  });
+
+  it("hides the Follow button for a platform admin viewer", () => {
+    mockAuth(true, true);
+    renderCard(buildBrand({ isFollowing: false, followerCount: 10 }));
+
+    expect(screen.queryByRole("button", { name: "Follow" })).not.toBeInTheDocument();
   });
 });
