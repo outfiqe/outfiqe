@@ -26,11 +26,23 @@ export const leaderboardRepository = {
   ): Promise<void> {
     const key = redisKeys.leaderboard(category, week);
     await redis.del(key);
-    if (entries.length === 0) return;
+    if (entries.length > 0) {
+      const args = entries.flatMap(({ member, score }) => [score, member]);
+      await redis.zadd(key, ...args);
+      await redis.expire(key, LEADERBOARD_KEY_RETENTION_SECONDS);
+    }
 
-    const args = entries.flatMap(({ member, score }) => [score, member]);
-    await redis.zadd(key, ...args);
-    await redis.expire(key, LEADERBOARD_KEY_RETENTION_SECONDS);
+    await redis.set(
+      redisKeys.leaderboardComputed(category, week),
+      "1",
+      "EX",
+      LEADERBOARD_KEY_RETENTION_SECONDS,
+    );
+  },
+
+  async wasComputedThisWeek(category: LeaderboardCategory, week: string): Promise<boolean> {
+    const exists = await redis.exists(redisKeys.leaderboardComputed(category, week));
+    return exists === 1;
   },
 
   async incrementScore(

@@ -6,8 +6,10 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { CreatorLeaderboardCategory, CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
-import { previousIsoWeekKey } from "#lib/iso-week.utils.js";
+import { currentIsoWeekKey, previousIsoWeekKey } from "#lib/iso-week.utils.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
+import { redis } from "#redis/redis.client.js";
+import { redisKeys } from "#redis/redis.keys.js";
 import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
 import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
@@ -208,6 +210,38 @@ describe("creatorLeaderboardService.runRecompute + getTop", () => {
     expect(thirdEntry?.rank).toBe(2);
   });
 
+  it("computes rank movement off the creator's displayed position, not their pre-filter index, once someone ahead of them is filtered out", async () => {
+    const first = await createCreator();
+    const bannedSecond = await createCreator();
+    const third = await createCreator();
+    const now = new Date();
+
+    await creatorLeaderboardRepository.replaceWeeklyScores(
+      CreatorLeaderboardCategory.TOP_XP,
+      previousIsoWeekKey(now),
+      [
+        { member: first.id, score: 300 },
+        { member: bannedSecond.id, score: 200 },
+        { member: third.id, score: 100 },
+      ],
+    );
+    await giveXp(first.id, 300);
+    await giveXp(bannedSecond.id, 200);
+    await giveXp(third.id, 100);
+
+    await creatorLeaderboardService.runRecompute();
+    await prisma.user.update({
+      where: { id: bannedSecond.id },
+      data: { accountStatus: "BANNED" },
+    });
+
+    const { entries } = await creatorLeaderboardService.getTop(CreatorLeaderboardCategory.TOP_XP);
+    const thirdEntry = entries.find((entry) => entry.creatorId === third.id);
+
+    expect(thirdEntry?.rank).toBe(2);
+    expect(thirdEntry?.movement).toBe(1);
+  });
+
   it("excludes a creator whose XP dropped week-over-week from RISING_CREATOR instead of showing a negative surge", async () => {
     const demoted = await createCreator();
     const now = new Date();
@@ -245,6 +279,48 @@ describe("creatorLeaderboardService.runRecompute + getTop", () => {
 
     const entry = entries.find((row) => row.creatorId === creator.id);
     expect(entry?.score).toBe(100);
+  });
+
+  it("shows an empty board once this week is genuinely computed, instead of falling back to a stale zero-score entry from last week", async () => {
+    const zeroActivity = await createCreator();
+    const now = new Date();
+
+    await creatorLeaderboardRepository.replaceWeeklyScores(
+      CreatorLeaderboardCategory.TOP_XP,
+      previousIsoWeekKey(now),
+      [{ member: zeroActivity.id, score: 0 }],
+    );
+
+    await creatorLeaderboardService.runRecompute();
+    const { entries } = await creatorLeaderboardService.getTop(CreatorLeaderboardCategory.TOP_XP);
+
+    expect(entries).toEqual([]);
+  });
+
+  it("still bridges to last week's board while this week genuinely hasn't been computed yet", async () => {
+    const creator = await createCreator();
+    const now = new Date();
+
+    await creatorLeaderboardRepository.replaceWeeklyScores(
+      CreatorLeaderboardCategory.TOP_XP,
+      previousIsoWeekKey(now),
+      [{ member: creator.id, score: 400 }],
+    );
+    await redis.del(
+      redisKeys.creatorLeaderboard(CreatorLeaderboardCategory.TOP_XP, currentIsoWeekKey(now)),
+    );
+    await redis.del(
+      redisKeys.creatorLeaderboardComputed(
+        CreatorLeaderboardCategory.TOP_XP,
+        currentIsoWeekKey(now),
+      ),
+    );
+
+    const { entries } = await creatorLeaderboardService.getTop(CreatorLeaderboardCategory.TOP_XP);
+
+    expect(entries.some((entry) => entry.creatorId === creator.id && entry.score === 400)).toBe(
+      true,
+    );
   });
 });
 

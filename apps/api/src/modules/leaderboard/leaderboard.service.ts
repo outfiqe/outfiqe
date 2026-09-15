@@ -52,7 +52,9 @@ const recomputeTrending = async (now: Date): Promise<void> => {
   await leaderboardRepository.replaceWeeklyScores(
     LEADERBOARD_CATEGORY.TRENDING,
     week,
-    [...scoresByBrand.entries()].map(([brandId, score]) => ({ member: brandId, score })),
+    [...scoresByBrand.entries()]
+      .map(([brandId, score]) => ({ member: brandId, score }))
+      .filter(({ score }) => score > 0),
   );
   await publishUpdated(LEADERBOARD_CATEGORY.TRENDING, week);
 };
@@ -109,9 +111,15 @@ const getTop = async (category: LeaderboardCategory): Promise<LeaderboardSnapsho
   const week = currentIsoWeekKey(now);
   const previousWeek = previousIsoWeekKey(now);
 
-  const currentTop = await leaderboardRepository.topN(category, week, LEADERBOARD_TOP_N);
+  const isRecomputeBased = RECOMPUTE_BASED_CATEGORIES.has(category);
+  const [currentTop, wasComputedThisWeek] = await Promise.all([
+    leaderboardRepository.topN(category, week, LEADERBOARD_TOP_N),
+    isRecomputeBased
+      ? leaderboardRepository.wasComputedThisWeek(category, week)
+      : Promise.resolve(false),
+  ]);
   const isAwaitingFirstRecompute =
-    currentTop.length === 0 && RECOMPUTE_BASED_CATEGORIES.has(category);
+    currentTop.length === 0 && isRecomputeBased && !wasComputedThisWeek;
   const top = isAwaitingFirstRecompute
     ? await leaderboardRepository.topN(category, previousWeek, LEADERBOARD_TOP_N)
     : currentTop;
@@ -132,15 +140,16 @@ const getTop = async (category: LeaderboardCategory): Promise<LeaderboardSnapsho
     if (!isEligibleForLeaderboard(brand)) return;
 
     const previousRank = previousRanks[index] ?? null;
+    const displayedIndex = entries.length;
     entries.push({
-      rank: entries.length + 1,
+      rank: displayedIndex + 1,
       brandId: brand.id,
       brandName: brand.name,
       avatarUrl: brand.avatarUrl,
       bannerUrl: brand.bannerUrl,
       score,
       scoreLabel: formatScoreLabel(category, score),
-      movement: previousRank === null ? null : previousRank - index,
+      movement: previousRank === null ? null : previousRank - displayedIndex,
     });
   });
 

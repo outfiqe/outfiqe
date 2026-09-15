@@ -19,11 +19,23 @@ export const creatorLeaderboardRepository = {
   ): Promise<void> {
     const key = redisKeys.creatorLeaderboard(category, week);
     await redis.del(key);
-    if (entries.length === 0) return;
+    if (entries.length > 0) {
+      const args = entries.flatMap(({ member, score }) => [score, member]);
+      await redis.zadd(key, ...args);
+      await redis.expire(key, CREATOR_LEADERBOARD_KEY_RETENTION_SECONDS);
+    }
 
-    const args = entries.flatMap(({ member, score }) => [score, member]);
-    await redis.zadd(key, ...args);
-    await redis.expire(key, CREATOR_LEADERBOARD_KEY_RETENTION_SECONDS);
+    await redis.set(
+      redisKeys.creatorLeaderboardComputed(category, week),
+      "1",
+      "EX",
+      CREATOR_LEADERBOARD_KEY_RETENTION_SECONDS,
+    );
+  },
+
+  async wasComputedThisWeek(category: CreatorLeaderboardCategory, week: string): Promise<boolean> {
+    const exists = await redis.exists(redisKeys.creatorLeaderboardComputed(category, week));
+    return exists === 1;
   },
 
   async topN(
