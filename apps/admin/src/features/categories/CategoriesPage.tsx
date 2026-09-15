@@ -1,4 +1,4 @@
-import { Badge, Button, cn, FormBanner, Input, toast } from "@outfiqe/design-system";
+import { Badge, Button, cn, FormBanner, Input, Skeleton, toast } from "@outfiqe/design-system";
 import { useDragReorder } from "@outfiqe/hooks";
 import { LANDING_TASTE_CATEGORY_COUNT } from "@outfiqe/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -169,7 +169,10 @@ export const CategoriesPage = () => {
       </p>
 
       <div className="mt-3 space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          ))}
         {categories?.length === 0 && (
           <p className="text-sm text-muted-foreground">No categories yet.</p>
         )}

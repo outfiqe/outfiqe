@@ -1,4 +1,4 @@
-import { Button, FormBanner, Input } from "@outfiqe/design-system";
+import { Button, FormBanner, Input, Skeleton } from "@outfiqe/design-system";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
@@ -135,7 +135,10 @@ export const OrganizationsPage = () => {
       {formError && <FormBanner className="mt-3">{formError}</FormBanner>}
 
       <div className="mt-6 space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+          ))}
         {error && <p className="text-sm text-destructive">{getErrorMessage(error)}</p>}
         {!isLoading && !error && organizations?.length === 0 && (
           <p className="text-sm text-muted-foreground">No organizations yet.</p>

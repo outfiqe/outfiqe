@@ -5,6 +5,7 @@ import { type FormEvent, useState } from "react";
 import { ImageUpload } from "@/components/ImageUpload";
 import { authApi } from "@/features/auth/api";
 import { useAuth } from "@/features/auth/AuthContext";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { ChangePasswordCard } from "./ChangePasswordCard";
 
@@ -26,7 +27,7 @@ export const ProfilePage = () => {
     },
     onError: (err) => {
       setSaved(false);
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(getErrorMessage(err));
     },
   });
 

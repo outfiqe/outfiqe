@@ -1,4 +1,4 @@
-import { Badge, Button, cn, FormBanner, Input, toast } from "@outfiqe/design-system";
+import { Badge, Button, cn, FormBanner, Input, Skeleton, toast } from "@outfiqe/design-system";
 import { useDragReorder } from "@outfiqe/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -138,7 +138,10 @@ export const ProductTypesPage = () => {
       {error && <FormBanner className="mt-3">{error}</FormBanner>}
 
       <div className="mt-6 space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-16 w-full rounded-xl" />
+          ))}
         {productTypes?.length === 0 && (
           <p className="text-sm text-muted-foreground">No garment types yet.</p>
         )}
