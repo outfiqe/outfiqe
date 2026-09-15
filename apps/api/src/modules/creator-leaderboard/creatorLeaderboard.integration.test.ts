@@ -4,7 +4,15 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import { CreatorLeaderboardCategory, CreatorStatus, UserRole } from "#generated/prisma/enums.js";
+import {
+  CommissionSource,
+  CommissionStatus,
+  CreatorLeaderboardCategory,
+  CreatorStatus,
+  PaymentMethod,
+  ProductStatus,
+  UserRole,
+} from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { currentIsoWeekKey, previousIsoWeekKey } from "#lib/iso-week.utils.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
@@ -12,6 +20,7 @@ import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
 import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
 import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
+import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -78,6 +87,72 @@ const giveBadge = async (userId: string) => {
   await prisma.userBadge.create({ data: { userId, badgeId: badge.id } });
 };
 
+const giveSale = async (creatorId: string, amount: number, status: CommissionStatus) => {
+  const buyer = await createCreator();
+  const brand = await prisma.brand.create({
+    data: {
+      name: `Leaderboard Test Brand ${randomUUID().slice(0, 6)}`,
+      contactName: "Contact",
+      email: `${randomUUID()}@brand.outfiqe.test`,
+      phone: uniquePhone(),
+      instagram: `@${randomUUID().slice(0, 8)}`,
+    },
+  });
+  const product = await prisma.product.create({
+    data: {
+      brandId: brand.id,
+      name: "Leaderboard Test Product",
+      price: amount,
+      productTypeId: await ensureProductType(),
+      status: ProductStatus.APPROVED,
+    },
+  });
+  const size = await prisma.productSize.create({
+    data: { productId: product.id, label: "M", stock: 5 },
+  });
+  const order = await prisma.order.create({
+    data: {
+      userId: buyer.id,
+      fullName: "Leaderboard Buyer",
+      phone: uniquePhone(),
+      address: "Somewhere",
+      city: "Kathmandu",
+      paymentMethod: PaymentMethod.COD,
+      subtotal: amount,
+      deliveryFee: 0,
+      total: amount,
+      items: {
+        create: [
+          {
+            productId: product.id,
+            sizeId: size.id,
+            qty: 1,
+            unitPrice: amount,
+            listUnitPrice: amount,
+          },
+        ],
+      },
+    },
+    include: { items: true },
+  });
+  const orderItemId = order.items[0]?.id;
+  if (!orderItemId) throw new Error("order item not created");
+
+  const tier = await prisma.commissionTier.create({
+    data: { minPrice: 0, maxPrice: null, amount, sortOrder: 0 },
+  });
+  await prisma.creatorCommission.create({
+    data: {
+      creatorId,
+      orderItemId,
+      source: CommissionSource.TAG_CLICK,
+      tierId: tier.id,
+      amount,
+      status,
+    },
+  });
+};
+
 describe("creatorLeaderboardService.runRecompute + getTop", () => {
   it("ranks creators by XP for TOP_XP", async () => {
     const [low, high] = await Promise.all([createCreator(), createCreator()]);
@@ -121,6 +196,21 @@ describe("creatorLeaderboardService.runRecompute + getTop", () => {
 
     const entry = entries.find((row) => row.creatorId === creator.id);
     expect(entry?.score).toBe(2);
+  });
+
+  it("sums a creator's real order-driven commissions for TOP_SELLER, excluding voided ones", async () => {
+    const creator = await createCreator();
+    await giveSale(creator.id, 500, CommissionStatus.APPROVED);
+    await giveSale(creator.id, 300, CommissionStatus.PENDING);
+    await giveSale(creator.id, 9000, CommissionStatus.VOIDED);
+
+    await creatorLeaderboardService.runRecompute();
+    const { entries } = await creatorLeaderboardService.getTop(
+      CreatorLeaderboardCategory.TOP_SELLER,
+    );
+
+    const entry = entries.find((row) => row.creatorId === creator.id);
+    expect(entry?.score).toBe(800);
   });
 
   it("combines XP and a weighted follower count for TOP_CREATOR", async () => {
