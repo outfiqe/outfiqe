@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-import { TRENDING_RANKS, type TrendingRank } from "@/shared/components/TrendingRankBadge";
 import { useIsHydrated } from "@/shared/hooks/useIsHydrated";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
@@ -21,6 +20,7 @@ import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 import { useExploreFeedSocket } from "../hooks/useExploreFeedSocket";
 import { useInfiniteExploreFeed } from "../hooks/useInfiniteExploreFeed";
 import { isForYouHintDismissed, rememberForYouHintDismissed } from "../utils/forYouHint";
+import { buildTrendingRankByPostId } from "../utils/trendingRank";
 import { ExploreSidebarNav } from "./ExploreSidebarNav";
 import { FeedFilterTabs } from "./FeedFilterTabs";
 import { HeaderBackdrop } from "./HeaderBackdrop";
@@ -113,8 +113,7 @@ export const ExploreFeed = () => {
   const detailPost = detailPostId ? (postsById.get(detailPostId) ?? null) : null;
 
   const isRankedTab = tab === EXPLORE_TAB.TRENDING || tab === EXPLORE_TAB.FOR_YOU;
-  const trendingRankOf = (index: number): TrendingRank | undefined =>
-    isRankedTab ? TRENDING_RANKS[index] : undefined;
+  const trendingRankByPostId = buildTrendingRankByPostId(posts, isRankedTab);
 
   const showNewLooks = () => {
     dismiss();
@@ -179,7 +178,7 @@ export const ExploreFeed = () => {
                     key={id}
                     post={post}
                     onClick={() => setDetailPostId(id)}
-                    trendingRank={trendingRankOf(index)}
+                    trendingRank={trendingRankByPostId.get(id)}
                     eager={index < EAGER_IMAGE_COUNT}
                   />
                 );
@@ -187,8 +186,12 @@ export const ExploreFeed = () => {
             </div>
           ) : (
             <div className="mx-auto flex max-w-xl flex-col">
-              {posts.map((post, index) => (
-                <PostCard key={post.id} post={post} trendingRank={trendingRankOf(index)} />
+              {posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  trendingRank={trendingRankByPostId.get(post.id)}
+                />
               ))}
             </div>
           )}

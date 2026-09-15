@@ -32,6 +32,7 @@ const rawFeedPage = {
       taggedProducts: [],
       hashtags: [],
       createdAt: "2026-01-01T00:00:00.000Z",
+      isTrending: false,
     },
   ],
   nextCursor: null,

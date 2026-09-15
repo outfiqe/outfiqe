@@ -57,6 +57,7 @@ const aPost = (overrides: Partial<FeedPost> = {}): FeedPost =>
     isLiked: false,
     isSaved: false,
     isFollowingCreator: false,
+    isTrending: false,
     taggedProducts: [],
     hashtags: [],
     createdAt: new Date().toISOString(),
