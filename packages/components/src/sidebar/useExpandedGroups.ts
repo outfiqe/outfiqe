@@ -8,6 +8,14 @@ export type ExpandedGroups = {
   readonly toggle: (id: string) => void;
 };
 
+const idsWithFlippedTrailMembership = (
+  previousTrailIds: ReadonlySet<string>,
+  nextTrailIds: ReadonlySet<string>,
+): string[] =>
+  [...previousTrailIds, ...nextTrailIds].filter(
+    (id) => previousTrailIds.has(id) !== nextTrailIds.has(id),
+  );
+
 export const useExpandedGroups = (
   sections: readonly SidebarNavSection[],
   pathname: string,
@@ -18,12 +26,20 @@ export const useExpandedGroups = (
     [sections, pathname, isActive],
   );
 
-  const [pathnameAtOverride, setPathnameAtOverride] = useState(pathname);
   const [overrides, setOverrides] = useState<Record<string, boolean>>({});
+  const [trackedActiveTrailIds, setTrackedActiveTrailIds] = useState(activeTrailIds);
 
-  if (pathname !== pathnameAtOverride) {
-    setPathnameAtOverride(pathname);
-    setOverrides({});
+  if (trackedActiveTrailIds !== activeTrailIds) {
+    const flippedIds = idsWithFlippedTrailMembership(trackedActiveTrailIds, activeTrailIds);
+    setTrackedActiveTrailIds(activeTrailIds);
+
+    if (flippedIds.length > 0) {
+      setOverrides((prev) => {
+        const next = { ...prev };
+        for (const id of flippedIds) delete next[id];
+        return next;
+      });
+    }
   }
 
   const isExpanded = (id: string): boolean => overrides[id] ?? activeTrailIds.has(id);

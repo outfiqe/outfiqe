@@ -110,6 +110,17 @@ even though both eventually read the same server state. They share a query key
 so the badge count stays live and correct even while the panel itself is closed or unmounted, not
 just while it's open.
 
+**`useExpandedGroups` only clears a group's manual expand/collapse override when that specific
+group's active-trail membership actually flips, not on every navigation.** It used to reset every
+override the instant `pathname` changed at all, on the theory that a fresh page means a fresh
+slate. In practice this fired on literally any click — including a click to a sibling item inside
+the same still-active group — so a group you'd deliberately opened via its chevron would snap shut
+the moment you clicked anything else in the sidebar, and the group that became newly active would
+snap open at the same instant, visibly jolting every item between/below them for a frame. Fixed by
+diffing the active-trail `Set` before and after a navigation and clearing overrides only for the
+ids whose trail membership changed — a group that's neither entered nor left the active trail keeps
+whatever expand/collapse state the user last chose for it.
+
 **The sidebar rail (`railClass`) carries `overflow-hidden` alongside its `max-h`/`min-h-0`.** The
 nav list scrolls inside its own `overflow-y-auto` `<ul>`, but a `max-height`-clamped flex column
 whose content is taller than the clamp still contributes that hidden overflow to the _document's_
