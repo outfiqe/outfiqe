@@ -1,9 +1,8 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { renderWithRouter } from "@test/renderWithRouter";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
 import { ContentReportsPage } from "@/features/content-reports/ContentReportsPage";
@@ -48,15 +47,7 @@ const stub = (openItems: ContentReport[]) => {
   );
 };
 
-const renderPage = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-  return render(<ContentReportsPage />, { wrapper });
-};
+const renderPage = () => renderWithRouter(<ContentReportsPage />, { path: "/content-reports" });
 
 describe("ContentReportsPage", () => {
   it("lists an open report with the target preview and prior-removal count", async () => {
@@ -111,5 +102,53 @@ describe("ContentReportsPage", () => {
     renderPage();
 
     expect(await screen.findByText(/no longer exists/)).toBeInTheDocument();
+  });
+
+  it("reads the status filter from the URL on load", async () => {
+    const requestedStatuses: (string | null)[] = [];
+    mswServer.use(
+      http.get(`${API_BASE}/content-reports/open-count`, () =>
+        HttpResponse.json({ success: true, message: "ok", data: { openCount: 0 } }),
+      ),
+      http.get(`${API_BASE}/content-reports`, ({ request }) => {
+        requestedStatuses.push(new URL(request.url).searchParams.get("status"));
+        return HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: { items: [], nextCursor: null },
+        });
+      }),
+    );
+
+    renderWithRouter(<ContentReportsPage />, {
+      path: "/content-reports",
+      initialEntry: "/content-reports?status=ACTIONED",
+    });
+
+    await waitFor(() => expect(requestedStatuses).toContain("ACTIONED"));
+  });
+
+  it("puts the chosen status in the URL and refetches", async () => {
+    const requestedStatuses: (string | null)[] = [];
+    mswServer.use(
+      http.get(`${API_BASE}/content-reports/open-count`, () =>
+        HttpResponse.json({ success: true, message: "ok", data: { openCount: 0 } }),
+      ),
+      http.get(`${API_BASE}/content-reports`, ({ request }) => {
+        requestedStatuses.push(new URL(request.url).searchParams.get("status"));
+        return HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: { items: [], nextCursor: null },
+        });
+      }),
+    );
+
+    const { router } = renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Dismissed" }));
+
+    await waitFor(() => expect(router.state.location.search).toEqual({ status: "DISMISSED" }));
+    await waitFor(() => expect(requestedStatuses).toContain("DISMISSED"));
   });
 });

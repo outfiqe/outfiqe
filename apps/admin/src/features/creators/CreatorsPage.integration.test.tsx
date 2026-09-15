@@ -1,10 +1,9 @@
 import { Toaster } from "@outfiqe/design-system";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen } from "@testing-library/react";
+import { renderWithRouter } from "@test/renderWithRouter";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
 import { CreatorsPage } from "./CreatorsPage";
@@ -21,16 +20,14 @@ const creator = (userId: string, name: string) => ({
 
 const okJson = (data: unknown) => HttpResponse.json({ success: true, message: "ok", data });
 
-const renderPage = () => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      {children}
+const renderPage = () =>
+  renderWithRouter(
+    <>
+      <CreatorsPage />
       <Toaster />
-    </QueryClientProvider>
+    </>,
+    { path: "/creators" },
   );
-  return render(<CreatorsPage />, { wrapper });
-};
 
 describe("CreatorsPage", () => {
   it("approves a pending creator", async () => {
@@ -105,5 +102,42 @@ describe("CreatorsPage", () => {
     renderPage();
 
     expect(await screen.findByText("Nothing here right now.")).toBeInTheDocument();
+  });
+
+  it("reads the status filter from the URL on load", async () => {
+    const requestedStatuses: (string | null)[] = [];
+    mswServer.use(
+      http.get(`${API_BASE}/creators`, ({ request }) => {
+        requestedStatuses.push(new URL(request.url).searchParams.get("status"));
+        return okJson({ creators: [], nextCursor: null });
+      }),
+    );
+
+    renderWithRouter(
+      <>
+        <CreatorsPage />
+        <Toaster />
+      </>,
+      { path: "/creators", initialEntry: "/creators?status=APPROVED" },
+    );
+
+    await waitFor(() => expect(requestedStatuses).toContain("APPROVED"));
+  });
+
+  it("puts the chosen status in the URL and refetches", async () => {
+    const requestedStatuses: (string | null)[] = [];
+    mswServer.use(
+      http.get(`${API_BASE}/creators`, ({ request }) => {
+        requestedStatuses.push(new URL(request.url).searchParams.get("status"));
+        return okJson({ creators: [], nextCursor: null });
+      }),
+    );
+
+    const { router } = renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Rejected" }));
+
+    await waitFor(() => expect(router.state.location.search).toEqual({ status: "REJECTED" }));
+    await waitFor(() => expect(requestedStatuses).toContain("REJECTED"));
   });
 });
