@@ -125,11 +125,17 @@ export type CreatorLookFeedPost = {
   taggedProducts: FeedTaggedProduct[];
   hashtags: string[];
   createdAt: Date;
+  isTrending: boolean;
 };
 
 export type FeedPage = {
   posts: CreatorLookFeedPost[];
   nextCursor: string | null;
+};
+
+export type FeedCandidateSnapshot = {
+  ids: string[];
+  trendingIds: string[];
 };
 
 export type LookSearchPage = FeedPage & { total: number };

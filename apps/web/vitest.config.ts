@@ -153,6 +153,7 @@ export default defineConfig({
         "src/features/auth/api/userSchemas.ts",
         "src/features/explore/utils/commentCacheUpdate.ts",
         "src/features/explore/utils/feedCacheUpdate.ts",
+        "src/features/explore/utils/trendingRank.ts",
         "src/features/explore/components/CommentThread.tsx",
         "src/app/internal/revalidate/route.ts",
         "src/shared/components/DeferredMount.tsx",

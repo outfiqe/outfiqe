@@ -26,6 +26,7 @@ const buildPost = (overrides: Partial<FeedPost> = {}): FeedPost => ({
   isLiked: false,
   isSaved: false,
   isFollowingCreator: false,
+  isTrending: false,
   taggedProducts: [],
   hashtags: [],
   createdAt: "2026-01-01T00:00:00.000Z",
