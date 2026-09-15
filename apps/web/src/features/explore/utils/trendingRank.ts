@@ -19,3 +19,8 @@ export const buildTrendingRankByPostId = (
   }
   return trendingRankByPostId;
 };
+
+export const findTrendingFallbackBoundary = (posts: FeedPost[], isRankedTab: boolean): number => {
+  if (!isRankedTab) return -1;
+  return posts.findIndex((post) => !post.isTrending);
+};
