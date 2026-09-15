@@ -145,9 +145,9 @@ const ChatBlockedContactsSection = () => {
             variant="outline"
             size="sm"
             onClick={() => void blocksQuery.fetchNextPage()}
-            disabled={blocksQuery.isFetchingNextPage}
+            isLoading={blocksQuery.isFetchingNextPage}
           >
-            {blocksQuery.isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         </div>
       )}

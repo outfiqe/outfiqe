@@ -485,7 +485,7 @@ describe("EditPostForm", () => {
 
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 
-    expect(await screen.findByText("Saving…")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Loading" })).toBeInTheDocument();
   });
 
   it("shows an error banner when the update request fails", async () => {
@@ -607,9 +607,10 @@ describe("EditPostForm", () => {
       }),
     );
 
-    await user.click(screen.getByRole("button", { name: "Request again" }));
+    const reRequestButton = screen.getByRole("button", { name: "Request again" });
+    await user.click(reRequestButton);
 
-    expect(screen.getByRole("button", { name: "Requesting…" })).toBeDisabled();
+    expect(reRequestButton).toBeDisabled();
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
   });
 

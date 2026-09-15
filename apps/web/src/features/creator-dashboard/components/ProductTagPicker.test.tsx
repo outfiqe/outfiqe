@@ -262,7 +262,7 @@ describe("ProductTagPicker re-request flow", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Requesting…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Loading" })).toBeDisabled();
   });
 
   it("hides Request again once the server-reported cap is used up, showing the used-up message instead", () => {

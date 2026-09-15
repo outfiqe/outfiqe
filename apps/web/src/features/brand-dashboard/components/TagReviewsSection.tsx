@@ -127,9 +127,9 @@ export const TagReviewsSection = () => {
           <Button
             variant="outline"
             onClick={() => void queue.fetchNextPage()}
-            disabled={queue.isFetchingNextPage}
+            isLoading={queue.isFetchingNextPage}
           >
-            {queue.isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         </div>
       )}

@@ -441,7 +441,7 @@ describe("PostModal", () => {
 
     await user.click(screen.getByRole("button", { name: "Post look" }));
 
-    expect(await screen.findByText("Posting…")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Loading" })).toBeInTheDocument();
   });
 
   it("shows a processing state while photos are being resolved", async () => {
@@ -476,6 +476,6 @@ describe("PostModal", () => {
 
     await user.click(screen.getByRole("button", { name: "Post look" }));
 
-    expect(await screen.findByText("Processing…")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Loading" })).toBeInTheDocument();
   });
 });

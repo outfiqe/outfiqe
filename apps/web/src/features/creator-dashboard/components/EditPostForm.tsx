@@ -403,8 +403,12 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
         <Button variant="outline" onClick={close}>
           Cancel
         </Button>
-        <Button onClick={() => void submitEdit()} disabled={isSaving || Boolean(stagingPhoto)}>
-          {isSaving ? "Saving…" : "Save changes"}
+        <Button
+          onClick={() => void submitEdit()}
+          disabled={Boolean(stagingPhoto)}
+          isLoading={isSaving}
+        >
+          Save changes
         </Button>
       </div>
     </>
