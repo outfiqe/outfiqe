@@ -39,6 +39,20 @@ suggestion snapshot (see below).
 
 ## Non-obvious rationale
 
+### Platform staff can't follow
+
+**`follow()` rejects an `ADMIN`-role account with a 403 before touching the follow edge at
+all.** An admin follow would inflate `followerCount`/`followingCount` and the brand leaderboard's
+most-loved ranking with activity that isn't a real audience signal — the same integrity concern
+`../creator-looks` already enforces for likes/comments/posts. Uses the shared
+`assertCanEngage` guard (`#lib/engagement-guard.utils.js`, promoted out of `../creator-looks`
+once this module needed the identical check) with a follow-specific message. `unfollow()` stays
+open to admins, matching this codebase's existing "undo actions stay open" rule. The web app hides
+the Follow control entirely for an admin viewer everywhere it appears (post cards, creator/brand
+profiles, brand cards, the followers-list modal, and the "Creators to follow" sidebar rail, which
+is hidden as a whole widget since every row in it would otherwise be a dead end) rather than
+letting them hit this error.
+
 ### "Creators to follow" — multi-signal ranking
 
 **Why this exists.** `suggestedCreators` used to be a single flat query —

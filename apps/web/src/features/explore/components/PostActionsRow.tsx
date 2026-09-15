@@ -1,5 +1,6 @@
 "use client";
 
+import { Tooltip } from "@outfiqe/design-system";
 import { Bookmark, Flame, MessageCircle, Share2 } from "lucide-react";
 
 import { cn } from "@/shared/lib/cn";
@@ -9,6 +10,7 @@ type PostActionsRowProps = {
   likeCount: number;
   onLike: () => void;
   isLiking?: boolean;
+  likeDisabledReason?: string;
   commentCount: number;
   onCommentClick?: () => void;
   commentsOpen?: boolean;
@@ -24,6 +26,7 @@ export const PostActionsRow = ({
   likeCount,
   onLike,
   isLiking,
+  likeDisabledReason,
   commentCount,
   onCommentClick,
   commentsOpen,
@@ -33,21 +36,29 @@ export const PostActionsRow = ({
   onShare,
   className,
 }: PostActionsRowProps) => {
+  const likeButton = (
+    <button
+      type="button"
+      onClick={onLike}
+      disabled={isLiking || Boolean(likeDisabledReason)}
+      aria-pressed={isLiked}
+      className={cn(
+        "flex cursor-pointer items-center gap-1.5 text-[12.5px] transition-colors disabled:cursor-default disabled:opacity-60",
+        isLiked ? "text-primary-strong" : "text-muted-foreground hover:text-foreground",
+      )}
+    >
+      <Flame className={cn("size-5", isLiked && "fill-primary stroke-primary")} />
+      {likeCount}
+    </button>
+  );
+
   return (
     <div className={cn("flex items-center gap-4", className)}>
-      <button
-        type="button"
-        onClick={onLike}
-        disabled={isLiking}
-        aria-pressed={isLiked}
-        className={cn(
-          "flex cursor-pointer items-center gap-1.5 text-[12.5px] transition-colors disabled:cursor-default disabled:opacity-60",
-          isLiked ? "text-primary-strong" : "text-muted-foreground hover:text-foreground",
-        )}
-      >
-        <Flame className={cn("size-5", isLiked && "fill-primary stroke-primary")} />
-        {likeCount}
-      </button>
+      {likeDisabledReason ? (
+        <Tooltip content={likeDisabledReason}>{likeButton}</Tooltip>
+      ) : (
+        likeButton
+      )}
 
       {onCommentClick ? (
         <button

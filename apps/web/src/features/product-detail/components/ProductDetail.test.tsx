@@ -19,6 +19,7 @@ const wishlistMutationState = { isPending: false };
 
 vi.mock("@/features/wishlist", () => ({
   useToggleWishlist: () => ({ mutate: vi.fn(), isPending: wishlistMutationState.isPending }),
+  ADMIN_CANNOT_SAVE_PRODUCT_MESSAGE: "Platform staff accounts can't save products.",
 }));
 
 vi.mock("@/features/checkout", () => ({
@@ -141,12 +142,13 @@ describe("ProductDetail buy controls by account type", () => {
     expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
   });
 
-  it("hides the buy controls from an admin too", () => {
+  it("hides the buy controls from an admin too, and disables saving", () => {
     authState.isAdmin = true;
     render(<ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />);
 
     expect(screen.queryByRole("button", { name: /add to cart/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /buy now/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
 
   it("keeps the buy controls for a shopper", () => {

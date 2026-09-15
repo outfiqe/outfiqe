@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, toast } from "@outfiqe/design-system";
+import { Button, toast, Tooltip } from "@outfiqe/design-system";
 import { ChevronLeft, Heart, Share2, Shirt, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,7 @@ import { useAddToCart } from "@/features/cart";
 import { saveBuyNowPayload } from "@/features/checkout";
 import { ReviewsSection } from "@/features/product-reviews";
 import { shareOrCopyLink } from "@/features/pwa";
-import { useToggleWishlist } from "@/features/wishlist";
+import { ADMIN_CANNOT_SAVE_PRODUCT_MESSAGE, useToggleWishlist } from "@/features/wishlist";
 import { AppImage } from "@/shared/components/AppImage";
 import { cn } from "@/shared/lib/cn";
 
@@ -220,17 +220,31 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
                 </Button>
               </>
             )}
-            <Button
-              variant="outline"
-              size="icon"
-              aria-pressed={isSaved}
-              aria-label="Save"
-              onClick={() => gated(toggleSaved)}
-              disabled={wishlistMutation.isPending}
-              className={cn("size-11 shrink-0", isSaved && "border-primary text-primary")}
-            >
-              <Heart className={cn("size-[18px]", isSaved && "fill-primary")} />
-            </Button>
+            {isAdmin ? (
+              <Tooltip content={ADMIN_CANNOT_SAVE_PRODUCT_MESSAGE}>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Save"
+                  disabled
+                  className="size-11 shrink-0"
+                >
+                  <Heart className="size-[18px]" />
+                </Button>
+              </Tooltip>
+            ) : (
+              <Button
+                variant="outline"
+                size="icon"
+                aria-pressed={isSaved}
+                aria-label="Save"
+                onClick={() => gated(toggleSaved)}
+                disabled={wishlistMutation.isPending}
+                className={cn("size-11 shrink-0", isSaved && "border-primary text-primary")}
+              >
+                <Heart className={cn("size-[18px]", isSaved && "fill-primary")} />
+              </Button>
+            )}
             <Button
               variant="outline"
               size="icon"

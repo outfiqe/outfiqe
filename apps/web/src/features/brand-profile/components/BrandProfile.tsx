@@ -30,7 +30,7 @@ type BrandProfileProps = {
 
 export const BrandProfile = ({ brand }: BrandProfileProps) => {
   const router = useRouter();
-  const { isAuthenticated, isAuthResolved, state } = useAuth();
+  const { isAuthenticated, isAuthResolved, isAdmin, state } = useAuth();
   const productTypes = useProductTypes();
   const { openConversationWith, isStartingConversation } = useChatPanel();
 
@@ -171,14 +171,16 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
           </div>
 
           <div className="mt-5 flex gap-2">
-            <Button
-              variant="outline"
-              aria-pressed={isFollowing}
-              onClick={followBrand}
-              disabled={isTogglingFollow}
-            >
-              {isFollowing ? "Following" : "Follow brand"}
-            </Button>
+            {!isAdmin && (
+              <Button
+                variant="outline"
+                aria-pressed={isFollowing}
+                onClick={followBrand}
+                disabled={isTogglingFollow}
+              >
+                {isFollowing ? "Following" : "Follow brand"}
+              </Button>
+            )}
             {!isOwnBrand && contactUserId && (
               <Button variant="outline" onClick={messageBrand} disabled={isStartingConversation}>
                 Message

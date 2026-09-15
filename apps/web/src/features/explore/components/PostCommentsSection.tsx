@@ -53,7 +53,7 @@ export const PostCommentsSection = ({
   onSubmit,
   className,
 }: PostCommentsSectionProps) => {
-  const { state } = useAuth();
+  const { state, isAdmin } = useAuth();
   const currentUser = state.user;
 
   return (
@@ -78,38 +78,40 @@ export const PostCommentsSection = ({
         ))}
       </ul>
 
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          onSubmit();
-        }}
-        className="mt-5 flex items-center gap-3"
-      >
-        {currentUser && (
-          <CommentAvatar
-            userId={currentUser.id}
-            name={currentUser.name}
-            avatarUrl={currentUser.avatarUrl}
-          />
-        )}
-        <input
-          value={draft}
-          onChange={(event) => onDraftChange(event.target.value)}
-          placeholder={isAuthenticated ? "Add a comment…" : "Sign in to comment"}
-          disabled={!isAuthenticated}
-          className={cn(
-            "min-w-0 flex-1 rounded-full border border-transparent bg-muted px-3.5 py-2 text-[13px] outline-none focus:border-foreground",
-            "disabled:opacity-60",
-          )}
-        />
-        <button
-          type="submit"
-          disabled={!isAuthenticated || !draft.trim()}
-          className="shrink-0 cursor-pointer rounded-full bg-foreground px-3.5 py-2 text-[12.5px] font-semibold text-background disabled:cursor-default disabled:opacity-40"
+      {!isAdmin && (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSubmit();
+          }}
+          className="mt-5 flex items-center gap-3"
         >
-          Post
-        </button>
-      </form>
+          {currentUser && (
+            <CommentAvatar
+              userId={currentUser.id}
+              name={currentUser.name}
+              avatarUrl={currentUser.avatarUrl}
+            />
+          )}
+          <input
+            value={draft}
+            onChange={(event) => onDraftChange(event.target.value)}
+            placeholder={isAuthenticated ? "Add a comment…" : "Sign in to comment"}
+            disabled={!isAuthenticated}
+            className={cn(
+              "min-w-0 flex-1 rounded-full border border-transparent bg-muted px-3.5 py-2 text-[13px] outline-none focus:border-foreground",
+              "disabled:opacity-60",
+            )}
+          />
+          <button
+            type="submit"
+            disabled={!isAuthenticated || !draft.trim()}
+            className="shrink-0 cursor-pointer rounded-full bg-foreground px-3.5 py-2 text-[12.5px] font-semibold text-background disabled:cursor-default disabled:opacity-40"
+          >
+            Post
+          </button>
+        </form>
+      )}
     </div>
   );
 };

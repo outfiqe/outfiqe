@@ -9,7 +9,11 @@ import { FollowersModal } from "./FollowersModal";
 const push = vi.fn();
 const mutate = vi.fn();
 
-type AuthMockState = { isAuthenticated: boolean; state: { user: { id: string } | null } };
+type AuthMockState = {
+  isAuthenticated: boolean;
+  isAdmin?: boolean;
+  state: { user: { id: string } | null };
+};
 type ToggleFollowMockState = { mutate: typeof mutate; isPending: boolean };
 type FollowersListMockState = {
   data: { pages: { items: Follower[]; nextCursor: string | null }[] };
@@ -96,5 +100,17 @@ describe("FollowersModal", () => {
     await userEvent.click(screen.getByRole("button", { name: "Follow" }));
 
     expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it("hides the Follow button on every row for a platform admin viewer", () => {
+    authMock.mockReturnValue({
+      isAuthenticated: true,
+      isAdmin: true,
+      state: { user: { id: "admin-1" } },
+    });
+
+    render(<FollowersModal targetType="user" targetId="creator-1" onClose={() => {}} />);
+
+    expect(screen.queryByRole("button", { name: "Follow" })).not.toBeInTheDocument();
   });
 });

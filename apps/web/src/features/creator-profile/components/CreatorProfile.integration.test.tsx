@@ -159,12 +159,17 @@ const buildUserSession = (userId: string): UserSession => ({
   creatorStatus: CreatorStatus.NONE,
 });
 
-const mockAuth = (userId: string | null, isAuthenticated = true, isAuthResolved = true) => {
+const mockAuth = (
+  userId: string | null,
+  isAuthenticated = true,
+  isAuthResolved = true,
+  isAdmin = false,
+) => {
   vi.mocked(useAuth).mockReturnValue({
     isAuthenticated,
     isAuthResolved,
     isBrandOwner: false,
-    isAdmin: false,
+    isAdmin,
     isCreator: false,
     isShopper: true,
     hasCrmAccess: false,
@@ -280,6 +285,14 @@ describe("CreatorProfile own vs visitor view", () => {
     expect(screen.getByRole("button", { name: "Follow" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Edit profile" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Add post" })).not.toBeInTheDocument();
+  });
+
+  it("hides the Follow button for a platform admin viewer, keeping Message", () => {
+    mockAuth("admin-1", true, true, true);
+    renderProfile(buildCreator());
+
+    expect(screen.queryByRole("button", { name: "Follow" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Message" })).toBeInTheDocument();
   });
 
   it("shows the Message button for a visitor, not the profile owner", () => {

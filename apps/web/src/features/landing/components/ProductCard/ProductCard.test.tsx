@@ -6,7 +6,9 @@ import { type ExploreProduct, ProductCard } from "./index";
 
 const push = vi.fn();
 const mutate = vi.fn();
-const useAuthMock = vi.fn(() => ({ isAuthenticated: false }));
+const useAuthMock = vi.fn((): { isAuthenticated: boolean; isAdmin?: boolean } => ({
+  isAuthenticated: false,
+}));
 const wishlistMutationState = { isPending: false };
 
 vi.mock("next/navigation", () => ({
@@ -18,6 +20,7 @@ vi.mock("@/features/auth/context/AuthContext", () => ({
 }));
 vi.mock("@/features/wishlist", () => ({
   useToggleWishlist: () => ({ mutate, isPending: wishlistMutationState.isPending }),
+  ADMIN_CANNOT_SAVE_PRODUCT_MESSAGE: "Platform staff accounts can't save products.",
 }));
 vi.mock("next/link", () => ({
   __esModule: true,
@@ -137,6 +140,15 @@ describe("ProductCard save button", () => {
       "aria-pressed",
       "true",
     );
+  });
+
+  it("disables the save button for a platform admin viewer, without calling the mutation", async () => {
+    useAuthMock.mockReturnValue({ isAuthenticated: true, isAdmin: true });
+    render(<ProductCard product={buildProduct()} />);
+
+    const button = screen.getByRole("button", { name: "Save to wishlist" });
+    expect(button).toBeDisabled();
+    expect(mutate).not.toHaveBeenCalled();
   });
 });
 

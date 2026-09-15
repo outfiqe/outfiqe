@@ -73,6 +73,14 @@ so. Same posture `../tag-reports` already documents for tag takedowns.
 `tagCounterfeitFlagCount`'s exact "repeat-offender signal, not an enforcement lever" rationale — it
 doesn't gate anything in v1.
 
+**A logged-in platform admin can't file a public report — they already have direct moderation
+tools.** `submitReport` runs the shared `assertCanEngage` guard (`#lib/engagement-guard.utils.js`)
+against `reporterUserId`, but only when one is present — an anonymous report (`reporterUserId`
+`undefined`) is untouched, since the public/unauthenticated reporting path is intentional and
+shouldn't require a login. An admin hitting this gets a 403 with an explanation instead of a
+confusing "reported" toast for an action platform staff shouldn't need; the web report affordance
+is hidden entirely for an admin viewer rather than left to error.
+
 **Resolving a report whose target was already removed another way still succeeds.** `resolveReport`
 re-checks `findReportableTarget` before attempting a takedown; if the content is already gone (e.g. a
 different moderator deleted it directly moments earlier), it marks the report `ACTIONED` with

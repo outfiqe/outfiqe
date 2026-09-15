@@ -45,6 +45,8 @@ export const PostDetailModal = ({
   const {
     isAuthenticated,
     isOwnPost,
+    isAdmin,
+    likeDisabledReason,
     taggedProducts,
     gated,
     likeMutation,
@@ -97,6 +99,7 @@ export const PostDetailModal = ({
               creatorHandle={creatorHandle}
               creatorName={creatorName}
               isOwnPost={isOwnPost}
+              isAdmin={isAdmin}
               isFollowingCreator={isFollowingCreator}
               onFollowToggle={() =>
                 gated(() => toggleFollow({ creatorId, following: isFollowingCreator }))
@@ -123,6 +126,7 @@ export const PostDetailModal = ({
               likeCount={likeCount}
               onLike={() => gated(() => toggleLike({ lookId: id, liked: isLiked }))}
               isLiking={isLiking}
+              likeDisabledReason={likeDisabledReason}
               commentCount={commentCount}
               isSaved={isSaved}
               onSave={() => gated(() => toggleSave({ lookId: id, saved: isSaved }))}

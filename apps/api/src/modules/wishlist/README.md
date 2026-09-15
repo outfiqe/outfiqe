@@ -22,4 +22,14 @@ A shopper's saved-for-later product list — save/unsave a product, list what's 
 
 **`save`/`unsave` are wrapped in `prisma.$transaction`, checking `findUnique` before writing, so a duplicate call is a no-op rather than a unique-constraint error.** The `(userId, productId)` pair is a real DB unique constraint; two near-simultaneous requests for the same toggle (a rapid double-tap on the frontend, or a retried request) would otherwise race between the check and the write. `apps/web`'s wishlist buttons now also guard against the common trigger (`disabled` while `useToggleWishlist().isPending`, matching `explore`'s like/save/follow buttons), but the backend stays safe on its own regardless of what any particular client does.
 
+**A platform admin can't save a product.** `save` runs the shared `assertCanEngage` guard
+(`#lib/engagement-guard.utils.js`) before checking the product exists — an admin's wishlist saves
+would otherwise feed straight into `../trending`'s `saves` signal like any real shopper's, which
+isn't a genuine audience-activity signal. `unsave` stays open, matching this codebase's "undo
+actions stay open" rule for admins already established in `../creator-looks`/`../follows`. The web
+heart button stays visible but disabled with a tooltip for an admin viewer (unlike a hard-blocked
+action such as follow, which is hidden outright) — saving is a lighter-weight, easily-explained
+restriction, so showing why rather than removing the control entirely was the more informative
+choice here.
+
 **`listSavedProductIds` is the batched form `getPublicDetail`'s single-item `isSaved` couldn't reuse as-is.** `getPublicDetail` (the single-product page) always had real `isSaved`, via one `wishlistRepository.isSaved(viewerId, id)` call for that one viewer+product pair. Every _listing_ endpoint (`GET /products`, a brand's product list, the trending/new-arrivals rails) used to skip it entirely — doing the single-item check once per listed product would have meant a real N+1 cost across a shop grid, every brand page, and both home rails. `listSavedProductIds` is the fix: one `WHERE userId = ? AND productId IN (...)` per page instead, called from a shared `hydrateSavedFlags` helper in `product.service.ts` — see `../products/README.md`'s `isSaved` section for the full shape of that fix.

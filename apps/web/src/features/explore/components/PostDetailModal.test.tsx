@@ -1,12 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { FeedPost } from "../api/exploreFeedSchemas";
 import { PostDetailModal } from "./PostDetailModal";
 
+const { authState } = vi.hoisted(() => ({ authState: { isAdmin: false } }));
 vi.mock("@/features/auth/context/AuthContext", () => ({
-  useAuth: () => ({ state: { user: { id: "viewer-1", name: "Viewer" } } }),
+  useAuth: () => ({
+    state: { user: { id: "viewer-1", name: "Viewer" } },
+    isAdmin: authState.isAdmin,
+  }),
 }));
 vi.mock("@/features/pwa", () => ({ shareOrCopyLink: vi.fn() }));
 vi.mock("../hooks/useExploreAuthGate", () => ({
@@ -41,6 +45,7 @@ vi.mock("next/link", () => ({
 vi.mock("@outfiqe/design-system", () => ({
   Modal: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   Skeleton: ({ className }: { className?: string }) => <div className={className} />,
+  Tooltip: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
 const aPost = (overrides: Partial<FeedPost> = {}): FeedPost =>
@@ -62,6 +67,10 @@ const aPost = (overrides: Partial<FeedPost> = {}): FeedPost =>
     ...overrides,
   }) as FeedPost;
 
+afterEach(() => {
+  authState.isAdmin = false;
+});
+
 describe("PostDetailModal caption spacing", () => {
   it("adds a divider above the actions row when there is a caption", () => {
     render(<PostDetailModal post={aPost({ caption: "Streetwear fit" })} onClose={vi.fn()} />);
@@ -81,5 +90,18 @@ describe("PostDetailModal caption spacing", () => {
 
     expect(actionsRow).not.toHaveClass("border-t");
     expect(actionsRow).not.toHaveClass("mt-2.5");
+  });
+});
+
+describe("PostDetailModal for a platform admin viewer", () => {
+  it("hides follow, report, and the comment compose form, and disables like", () => {
+    authState.isAdmin = true;
+    render(<PostDetailModal post={aPost({ likeCount: 5 })} onClose={vi.fn()} />);
+
+    expect(screen.queryByRole("button", { name: "Follow" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Post options" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "5" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Post" })).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Add a comment…")).not.toBeInTheDocument();
   });
 });

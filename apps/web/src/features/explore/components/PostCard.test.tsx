@@ -5,8 +5,9 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../api/exploreFeedSchemas";
 import { PostCard } from "./PostCard";
 
+const { authState } = vi.hoisted(() => ({ authState: { isAdmin: false } }));
 vi.mock("@/features/auth/context/AuthContext", () => ({
-  useAuth: () => ({ state: { user: { id: "viewer-1" } } }),
+  useAuth: () => ({ state: { user: { id: "viewer-1" } }, isAdmin: authState.isAdmin }),
 }));
 vi.mock("@/features/pwa", () => ({ shareOrCopyLink: vi.fn() }));
 vi.mock("../hooks/useExploreAuthGate", () => ({
@@ -81,6 +82,7 @@ beforeAll(() => {
 
 afterEach(() => {
   followMutationState.isPending = false;
+  authState.isAdmin = false;
 });
 
 describe("PostCard caption spacing", () => {
@@ -117,5 +119,21 @@ describe("PostCard follow button", () => {
     render(<PostCard post={aPost()} />);
 
     expect(screen.getByRole("button", { name: "Follow" })).toBeEnabled();
+  });
+});
+
+describe("PostCard for a platform admin viewer", () => {
+  it("hides follow and report, disables like, and hides the comment trigger", () => {
+    authState.isAdmin = true;
+    render(<PostCard post={aPost({ likeCount: 5, commentCount: 3 })} />);
+
+    expect(screen.queryByRole("button", { name: "Follow" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Post options" })).not.toBeInTheDocument();
+
+    const likeButton = screen.getByRole("button", { name: "5" });
+    expect(likeButton).toBeDisabled();
+
+    expect(screen.queryByRole("button", { name: "3" })).not.toBeInTheDocument();
+    expect(screen.getByText("3")).toBeInTheDocument();
   });
 });
