@@ -16,6 +16,8 @@ export enum OAuthCallbackStatus {
 
 export const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 
+export const GOOGLE_OAUTH_PROMPT = "select_account";
+
 const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
 export const OAUTH_START_IP_RATE_LIMIT_WINDOW_MS = FIFTEEN_MINUTES_MS;
 export const OAUTH_START_IP_RATE_LIMIT_MAX_REQUESTS = 20;

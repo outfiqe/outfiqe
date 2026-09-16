@@ -151,6 +151,7 @@ _RFC 9700 OAuth 2.0 Security BCP; ASVS V3_
 - **Google**: `google-auth-library`'s `OAuth2Client.verifyIdToken` verifies the returned `id_token`'s signature against Google's _live_ JWKS (never decodes-and-trusts it), plus issuer/audience/expiry.
 - **Facebook**: every Graph API call carries an `appsecret_proof` (HMAC-SHA256 of the access token, keyed by the app secret) — Meta rejects any call without a matching proof, so a leaked access token alone isn't enough to impersonate the app.
 - An unverified provider email is rejected outright (`OAUTH_EMAIL_UNVERIFIED`) before any account is created or session issued.
+- Google's authorization request always sends `prompt=select_account`, so a retried flow always shows the account chooser instead of Google silently reusing a previously-authenticated account from the same browser session.
 - `OAUTH_REDIRECT_BASE_URL` is the public frontend origin, not the API's own — see the rationale in `apps/api/src/modules/auth/oauth/README.md`.
 - **Session issuance stays uniform**: OAuth sign-in reuses the exact same `issueTokens` function (short-lived JWT access token + DB-backed, hashed, rotating refresh token) that password login uses — no separate, weaker session type for social login.
 
