@@ -1,4 +1,4 @@
-import { Badge, Button, FormBanner, Input, toast } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Input, Skeleton, toast } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
@@ -164,15 +164,18 @@ export const HeroSlidesPage = () => {
           />
         </div>
 
-        <Button type="submit" disabled={create.isPending}>
-          {create.isPending ? "Creating…" : "Create slide"}
+        <Button type="submit" isLoading={create.isPending}>
+          Create slide
         </Button>
       </form>
 
       {error && <FormBanner className="mt-3">{error}</FormBanner>}
 
       <div className="mt-6 space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          ))}
         {heroSlides?.length === 0 && (
           <p className="text-sm text-muted-foreground">No hero slides yet.</p>
         )}

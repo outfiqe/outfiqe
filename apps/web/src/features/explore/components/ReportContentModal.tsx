@@ -50,9 +50,10 @@ export const ReportContentModal = ({
           </Button>
           <Button
             onClick={() => onConfirm({ reason, note: note.trim() ? note.trim() : undefined })}
-            disabled={isPending || !canSubmit}
+            disabled={!canSubmit}
+            isLoading={isPending}
           >
-            {isPending ? "Sending…" : "Report"}
+            Report
           </Button>
         </div>
       }

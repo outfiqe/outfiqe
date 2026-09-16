@@ -209,10 +209,11 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
                 <Button
                   variant="outline"
                   className="flex-1"
-                  disabled={!canPurchase || addToCartMutation.isPending}
+                  disabled={!canPurchase}
+                  isLoading={addToCartMutation.isPending}
                   onClick={() => gated(addToCart)}
                 >
-                  {addToCartMutation.isPending ? "Adding…" : "Add to cart"}
+                  Add to cart
                 </Button>
                 <Button className="flex-1" disabled={!canPurchase} onClick={() => gated(buyNow)}>
                   <Zap className="size-4" />

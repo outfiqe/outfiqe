@@ -18,4 +18,14 @@ export const cacheService = {
     if (keys.length === 0) return;
     await redis.del(...keys);
   },
+
+  async withLock<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T | null> {
+    const acquired = await redis.set(key, "1", "PX", ttlMs, "NX");
+    if (!acquired) return null;
+    try {
+      return await fn();
+    } finally {
+      await redis.del(key);
+    }
+  },
 };

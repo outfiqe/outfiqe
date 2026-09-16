@@ -4,7 +4,12 @@ import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import { PaymentMethod, PaymentStatus, ProductStatus } from "#generated/prisma/enums.js";
+import {
+  AccountStatus,
+  PaymentMethod,
+  PaymentStatus,
+  ProductStatus,
+} from "#generated/prisma/enums.js";
 import { decodeCursor } from "#lib/pagination.utils.js";
 import { truncateToHour } from "#lib/trend-scoring.utils.js";
 import { trendingRepository } from "#modules/trending/trending.repository.js";
@@ -196,6 +201,116 @@ describe("trendingService.listTrendingProductIds pagination", () => {
 
     expect(second.status).toBe(OK_STATUS);
     expect(second.body.data.products[0]?.id).toBe(secondProduct.id);
+  });
+});
+
+describe("trendingService score cache TTL", () => {
+  it("caches an empty scoring result with a short TTL instead of the normal long-lived one", async () => {
+    const { ranked } = await trendingService.runScoring();
+    expect(ranked).toHaveLength(0);
+
+    const ttl = await redis.ttl(redisKeys.cache("product-trending", "global"));
+    expect(ttl).toBeGreaterThan(0);
+    expect(ttl).toBeLessThanOrEqual(90);
+  });
+
+  it("caches a non-empty scoring result with the normal long-lived TTL", async () => {
+    const product = await createApprovedProduct("TTL Product");
+    const saver = await createShopper("ttl-saver");
+    await saveProduct(saver.id, product.id, new Date());
+    await trendingRepository.upsertHourlyMetrics(truncateToHour(new Date()));
+
+    const { ranked } = await trendingService.runScoring();
+    expect(ranked.length).toBeGreaterThan(0);
+
+    const ttl = await redis.ttl(redisKeys.cache("product-trending", "global"));
+    expect(ttl).toBeGreaterThan(90);
+  });
+});
+
+describe("trendingService excludes ineligible products from scoring", () => {
+  it("excludes products from a suspended brand from the ranked candidate pool", async () => {
+    const brand = await createBrand("Suspended Trend Brand");
+    const product = await createApprovedProduct("Suspended Brand Product", { brandId: brand.id });
+    const saver = await createShopper("suspended-brand-saver");
+    await saveProduct(saver.id, product.id, new Date());
+    await prisma.brand.update({
+      where: { id: brand.id },
+      data: { accountStatus: AccountStatus.SUSPENDED },
+    });
+
+    await trendingRepository.upsertHourlyMetrics(truncateToHour(new Date()));
+    await trendingService.runScoring();
+    const rankedIds = await trendingService.getTrendingProductIds(50);
+
+    expect(rankedIds).not.toContain(product.id);
+  });
+});
+
+describe("trendingService momentum favors recent, real activity over freshness alone", () => {
+  it("does not rank a brand-new product with zero activity above an older product with real activity", async () => {
+    await createApprovedProduct("Brand New Zero Activity Product", { createdAt: new Date() });
+
+    const activeProduct = await createApprovedProduct("Older Active Product", {
+      createdAt: new Date(Date.now() - 30 * 24 * HOUR_MS),
+    });
+    const saver = await createShopper("older-active-saver");
+    await saveProduct(saver.id, activeProduct.id, new Date());
+    await trendingRepository.upsertHourlyMetrics(truncateToHour(new Date()));
+
+    await trendingService.runScoring();
+    const rankedIds = await trendingService.getTrendingProductIds(5);
+
+    expect(rankedIds).toContain(activeProduct.id);
+  });
+
+  it("keeps an older product trending as long as it keeps generating real recent activity", async () => {
+    const olderProduct = await createApprovedProduct("Sustained Older Product", {
+      createdAt: new Date(Date.now() - 60 * 24 * HOUR_MS),
+    });
+    const saverOne = await createShopper("sustained-saver-one");
+    const saverTwo = await createShopper("sustained-saver-two");
+    await saveProduct(saverOne.id, olderProduct.id, new Date());
+    await saveProduct(saverTwo.id, olderProduct.id, new Date());
+    await trendingRepository.upsertHourlyMetrics(truncateToHour(new Date()));
+
+    await trendingService.runScoring();
+    const rankedIds = await trendingService.getTrendingProductIds(5);
+
+    expect(rankedIds).toContain(olderProduct.id);
+  });
+
+  it("returns fewer than the trending limit when fewer eligible products exist", async () => {
+    const product = await createApprovedProduct("Only Trending Product");
+    const saver = await createShopper("only-trending-saver");
+    await saveProduct(saver.id, product.id, new Date());
+    await trendingRepository.upsertHourlyMetrics(truncateToHour(new Date()));
+
+    await trendingService.runScoring();
+    const rankedIds = await trendingService.getTrendingProductIds(5);
+
+    expect(rankedIds).toEqual([product.id]);
+  });
+});
+
+describe("GET /api/products/new-arrivals stays recency-ordered and independent of trending", () => {
+  it("orders by createdAt regardless of trending activity", async () => {
+    const olderWithActivity = await createApprovedProduct("New Arrivals Older Active", {
+      createdAt: new Date(Date.now() - 2 * HOUR_MS),
+    });
+    const newerNoActivity = await createApprovedProduct("New Arrivals Newer Idle", {
+      createdAt: new Date(),
+    });
+    const saver = await createShopper("new-arrivals-saver");
+    await saveProduct(saver.id, olderWithActivity.id, new Date());
+    await trendingRepository.upsertHourlyMetrics(truncateToHour(new Date()));
+    await trendingService.runScoring();
+
+    const response = await request(testApp).get("/api/products/new-arrivals");
+
+    expect(response.status).toBe(OK_STATUS);
+    const ids = response.body.data.map((entry: { id: string }) => entry.id);
+    expect(ids.indexOf(newerNoActivity.id)).toBeLessThan(ids.indexOf(olderWithActivity.id));
   });
 });
 

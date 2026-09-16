@@ -111,8 +111,8 @@ export const ChangePasswordCard = () => {
         <p className="text-sm text-primary">Password updated. Other devices were signed out.</p>
       )}
 
-      <Button type="submit" disabled={changePassword.isPending}>
-        {changePassword.isPending ? "Updating…" : "Update password"}
+      <Button type="submit" isLoading={changePassword.isPending}>
+        Update password
       </Button>
     </form>
   );

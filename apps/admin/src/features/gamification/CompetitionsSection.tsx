@@ -1,4 +1,12 @@
-import { Button, Checkbox, FormBanner, Input, Modal, Select } from "@outfiqe/design-system";
+import {
+  Button,
+  Checkbox,
+  FormBanner,
+  Input,
+  Modal,
+  Select,
+  Skeleton,
+} from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
@@ -349,8 +357,8 @@ const EditCompetitionModal = ({
           Active
         </label>
         {error && <FormBanner>{error}</FormBanner>}
-        <Button type="submit" disabled={update.isPending}>
-          {update.isPending ? "Saving…" : "Save changes"}
+        <Button type="submit" isLoading={update.isPending}>
+          Save changes
         </Button>
       </form>
     </Modal>
@@ -399,15 +407,18 @@ export const CompetitionsSection = () => {
         className="mt-4 space-y-4 rounded-xl border border-border bg-card p-4"
       >
         <CompetitionFields idPrefix="create-competition" form={form} onChange={setForm} />
-        <Button type="submit" disabled={create.isPending}>
-          {create.isPending ? "Creating…" : "Create competition"}
+        <Button type="submit" isLoading={create.isPending}>
+          Create competition
         </Button>
       </form>
 
       {error && <FormBanner className="mt-3">{error}</FormBanner>}
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          ))}
         {competitions?.length === 0 && (
           <p className="text-sm text-muted-foreground">No competitions yet.</p>
         )}

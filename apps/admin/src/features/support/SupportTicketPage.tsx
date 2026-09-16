@@ -1,4 +1,4 @@
-import { Badge, Button, Select } from "@outfiqe/design-system";
+import { Badge, Button, Select, Skeleton } from "@outfiqe/design-system";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -91,7 +91,7 @@ export const SupportTicketPage = () => {
   const [visibility, setVisibility] = useState<SupportVisibilityValue>("PUBLIC");
   const [moveToWaiting, setMoveToWaiting] = useState(false);
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (isLoading) return <Skeleton className="h-64 w-full rounded-xl" />;
   if (error || !ticket)
     return <p className="text-sm text-destructive">Couldn&apos;t load this request.</p>;
 
@@ -186,10 +186,11 @@ export const SupportTicketPage = () => {
             <Button
               size="sm"
               onClick={submitReply}
-              disabled={reply.isPending || !body.trim()}
+              disabled={!body.trim()}
+              isLoading={reply.isPending}
               className="mt-2"
             >
-              {reply.isPending ? "Sending…" : visibility === "PUBLIC" ? "Send reply" : "Add note"}
+              {visibility === "PUBLIC" ? "Send reply" : "Add note"}
             </Button>
           </div>
         </div>

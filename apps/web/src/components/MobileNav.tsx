@@ -213,9 +213,9 @@ export const MobileNav = () => {
                       setOpen(false);
                       logout.mutate();
                     }}
-                    disabled={logout.isPending}
+                    isLoading={logout.isPending}
                   >
-                    {logout.isPending ? "Signing out…" : "Sign out"}
+                    Sign out
                   </Button>
                 </>
               ) : (

@@ -91,9 +91,9 @@ export const EarningsSection = ({ creatorStatus }: EarningsSectionProps) => {
           <Button
             variant="outline"
             onClick={() => void fetchNextPage()}
-            disabled={isFetchingNextPage}
+            isLoading={isFetchingNextPage}
           >
-            {isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         </div>
       )}

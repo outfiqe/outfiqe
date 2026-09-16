@@ -1,4 +1,4 @@
-import { Modal, StatCard } from "@outfiqe/design-system";
+import { Modal, Skeleton, StatCard } from "@outfiqe/design-system";
 
 import { useCouponPerformance } from "./hooks/useCouponPerformance";
 import type { Coupon } from "./schemas";
@@ -17,7 +17,13 @@ export const CouponPerformanceModal = ({ coupon, onClose }: CouponPerformanceMod
 
   return (
     <Modal open title={`Performance — ${coupon.code}`} onClose={onClose}>
-      {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {isLoading && (
+        <div className="grid grid-cols-2 gap-3">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-16 w-full rounded-xl" />
+          ))}
+        </div>
+      )}
       {performance && (
         <div className="grid grid-cols-2 gap-3">
           <StatCard label="Redemptions" value={performance.redemptionCount} />

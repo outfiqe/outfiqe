@@ -3,6 +3,7 @@ import {
   Button,
   Checkbox,
   FormBanner,
+  Skeleton,
   Tabs,
   TabsContent,
   TabsList,
@@ -173,8 +174,8 @@ const BadgeForm = ({
           <Button type="button" variant="outline" asChild>
             <Link to="/gamification/badges">Cancel</Link>
           </Button>
-          <Button type="submit" disabled={save.isPending || Boolean(designIssue)}>
-            {save.isPending ? "Saving…" : mode === "edit" ? "Save changes" : "Create badge"}
+          <Button type="submit" disabled={Boolean(designIssue)} isLoading={save.isPending}>
+            {mode === "edit" ? "Save changes" : "Create badge"}
           </Button>
         </div>
       </div>
@@ -209,7 +210,7 @@ export const BadgeFormPage = (props: BadgeFormPageProps) => {
   }
 
   if (badgeQuery.isLoading) {
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+    return <Skeleton className="h-64 w-full rounded-xl" />;
   }
 
   if (badgeQuery.error || !badgeQuery.data) {

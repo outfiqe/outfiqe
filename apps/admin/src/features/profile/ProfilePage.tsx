@@ -5,6 +5,7 @@ import { type FormEvent, useState } from "react";
 import { ImageUpload } from "@/components/ImageUpload";
 import { authApi } from "@/features/auth/api";
 import { useAuth } from "@/features/auth/AuthContext";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { ChangePasswordCard } from "./ChangePasswordCard";
 
@@ -26,7 +27,7 @@ export const ProfilePage = () => {
     },
     onError: (err) => {
       setSaved(false);
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(getErrorMessage(err));
     },
   });
 
@@ -71,8 +72,8 @@ export const ProfilePage = () => {
         {error && <FormBanner>{error}</FormBanner>}
         {saved && !error && <p className="text-sm text-primary">Profile updated.</p>}
 
-        <Button type="submit" disabled={update.isPending}>
-          {update.isPending ? "Saving…" : "Save changes"}
+        <Button type="submit" isLoading={update.isPending}>
+          Save changes
         </Button>
       </form>
 

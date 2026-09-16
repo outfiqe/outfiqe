@@ -1,4 +1,4 @@
-import { Badge, Button, toast } from "@outfiqe/design-system";
+import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -6,6 +6,7 @@ import { ConfirmModal } from "@/components/ConfirmModal";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { ApiClientError } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { withdrawRequestsApi } from "./api";
 import { useInfiniteWithdrawRequests } from "./hooks/useInfiniteWithdrawRequests";
@@ -18,6 +19,7 @@ const TABS: WithdrawRequestStatusValue[] = [
   "PAID",
   "REJECTED",
 ];
+const WITHDRAW_REQUESTS_STATUS_FILTER = oneOfFilter<WithdrawRequestStatusValue>(TABS, "PENDING");
 
 const STATUS_TONE: Record<WithdrawRequestStatusValue, "neutral" | "positive" | "negative"> = {
   PENDING: "neutral",
@@ -36,7 +38,7 @@ const CROSS_CHECK_CONFIRM_MESSAGE =
   "This is the first payout to this bank account. Confirm the identity/bank-name cross-check to approve it.";
 
 export const WithdrawRequestsListSection = () => {
-  const [tab, setTab] = useState<WithdrawRequestStatusValue>("PENDING");
+  const [tab, setTab] = useSearchFilter("status", WITHDRAW_REQUESTS_STATUS_FILTER);
   const [crossCheckTargetId, setCrossCheckTargetId] = useState<string | null>(null);
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
   const [markPaidTargetId, setMarkPaidTargetId] = useState<string | null>(null);
@@ -119,7 +121,10 @@ export const WithdrawRequestsListSection = () => {
       </div>
 
       <div className="mt-4 space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+          ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load requests.</p>}
         {!isLoading && requests.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
@@ -203,10 +208,10 @@ export const WithdrawRequestsListSection = () => {
           <Button
             variant="outline"
             onClick={() => void fetchNextPage()}
-            disabled={isFetchingNextPage}
+            isLoading={isFetchingNextPage}
             className="mx-auto"
           >
-            {isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         )}
       </div>

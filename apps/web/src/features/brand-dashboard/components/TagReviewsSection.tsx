@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Skeleton, Tabs, TabsList, TabsTrigger, toast } from "@outfiqe/design-system";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { getErrorMessage } from "@/shared/lib/errorMessages";
@@ -9,7 +10,7 @@ import type { RejectTagInput, TagReviewQueueItem } from "../api/tagReviewSchemas
 import { useReviewTagActions } from "../hooks/useReviewTagActions";
 import { useTagReviewPendingCount } from "../hooks/useTagReviewPendingCount";
 import { useTagReviewQueue } from "../hooks/useTagReviewQueue";
-import { TAG_REVIEW_QUEUE_TABS } from "../tagReview.constants";
+import { TAG_REVIEW_QUERY_PARAM, TAG_REVIEW_QUEUE_TABS } from "../tagReview.constants";
 import { RejectTagModal } from "./RejectTagModal";
 import { TagReviewCard } from "./TagReviewCard";
 
@@ -20,7 +21,15 @@ const EMPTY_COPY: Record<string, string> = {
 };
 
 export const TagReviewsSection = () => {
-  const [tab, setTab] = useState(TAG_REVIEW_QUEUE_TABS[0]!.status);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabFromParam = TAG_REVIEW_QUEUE_TABS.find(
+    ({ status }) => status === searchParams.get(TAG_REVIEW_QUERY_PARAM.STATUS),
+  )?.status;
+  const tab = tabFromParam ?? TAG_REVIEW_QUEUE_TABS[0]!.status;
+  const setTab = (nextTab: typeof tab) =>
+    router.replace(`?${TAG_REVIEW_QUERY_PARAM.STATUS}=${nextTab}`, { scroll: false });
+
   const [rejectingItem, setRejectingItem] = useState<TagReviewQueueItem | null>(null);
 
   const pendingCount = useTagReviewPendingCount();
@@ -127,9 +136,9 @@ export const TagReviewsSection = () => {
           <Button
             variant="outline"
             onClick={() => void queue.fetchNextPage()}
-            disabled={queue.isFetchingNextPage}
+            isLoading={queue.isFetchingNextPage}
           >
-            {queue.isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         </div>
       )}

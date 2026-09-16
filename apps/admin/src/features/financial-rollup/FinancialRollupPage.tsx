@@ -1,4 +1,4 @@
-import { StatCard } from "@outfiqe/design-system";
+import { Skeleton, StatCard } from "@outfiqe/design-system";
 import type { PaymentMethod } from "@outfiqe/types";
 import { useQuery } from "@tanstack/react-query";
 
@@ -89,7 +89,7 @@ export const FinancialRollupPage = () => {
         ))}
       </div>
 
-      {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {isLoading && <Skeleton className="h-32 w-full rounded-xl" />}
       {error && <p className="text-sm text-destructive">Couldn&apos;t load the rollup.</p>}
 
       {rollup && (

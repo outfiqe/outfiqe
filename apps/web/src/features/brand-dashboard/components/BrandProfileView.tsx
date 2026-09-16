@@ -176,8 +176,8 @@ export const BrandProfileView = ({ profile }: { profile: BrandProfile }) => {
             <Button variant="outline" onClick={() => setEditOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={save} disabled={updateProfile.isPending}>
-              {updateProfile.isPending ? "Saving…" : "Save"}
+            <Button onClick={save} isLoading={updateProfile.isPending}>
+              Save
             </Button>
           </div>
         }

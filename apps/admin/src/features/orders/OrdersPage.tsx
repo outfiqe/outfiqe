@@ -1,4 +1,4 @@
-import { Badge, Button } from "@outfiqe/design-system";
+import { Badge, Button, Skeleton } from "@outfiqe/design-system";
 import { Link } from "@tanstack/react-router";
 
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
@@ -56,7 +56,10 @@ export const OrdersPage = () => {
       </div>
 
       <div className="mt-6 space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load orders.</p>}
         {!isLoading && orders.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
@@ -114,10 +117,10 @@ export const OrdersPage = () => {
           <Button
             variant="outline"
             onClick={() => void fetchNextPage()}
-            disabled={isFetchingNextPage}
+            isLoading={isFetchingNextPage}
             className="mx-auto"
           >
-            {isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         )}
       </div>

@@ -1,10 +1,9 @@
 import { Toaster } from "@outfiqe/design-system";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen } from "@testing-library/react";
+import { renderWithRouter } from "@test/renderWithRouter";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
 import { ProductsPage } from "./ProductsPage";
@@ -26,16 +25,14 @@ const product = (id: string, name: string) => ({
 
 const okJson = (data: unknown) => HttpResponse.json({ success: true, message: "ok", data });
 
-const renderPage = () => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      {children}
+const renderPage = () =>
+  renderWithRouter(
+    <>
+      <ProductsPage />
       <Toaster />
-    </QueryClientProvider>
+    </>,
+    { path: "/products" },
   );
-  return render(<ProductsPage />, { wrapper });
-};
 
 describe("ProductsPage", () => {
   it("approves a pending product", async () => {
@@ -110,5 +107,42 @@ describe("ProductsPage", () => {
     renderPage();
 
     expect(await screen.findByText("Nothing here right now.")).toBeInTheDocument();
+  });
+
+  it("reads the status filter from the URL on load", async () => {
+    const requestedStatuses: (string | null)[] = [];
+    mswServer.use(
+      http.get(`${API_BASE}/products/review`, ({ request }) => {
+        requestedStatuses.push(new URL(request.url).searchParams.get("status"));
+        return okJson({ products: [], nextCursor: null });
+      }),
+    );
+
+    renderWithRouter(
+      <>
+        <ProductsPage />
+        <Toaster />
+      </>,
+      { path: "/products", initialEntry: "/products?status=APPROVED" },
+    );
+
+    await waitFor(() => expect(requestedStatuses).toContain("APPROVED"));
+  });
+
+  it("puts the chosen status in the URL and refetches", async () => {
+    const requestedStatuses: (string | null)[] = [];
+    mswServer.use(
+      http.get(`${API_BASE}/products/review`, ({ request }) => {
+        requestedStatuses.push(new URL(request.url).searchParams.get("status"));
+        return okJson({ products: [], nextCursor: null });
+      }),
+    );
+
+    const { router } = renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Rejected" }));
+
+    await waitFor(() => expect(router.state.location.search).toEqual({ status: "REJECTED" }));
+    await waitFor(() => expect(requestedStatuses).toContain("REJECTED"));
   });
 });

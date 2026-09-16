@@ -1,17 +1,18 @@
-import { Button, toast } from "@outfiqe/design-system";
+import { Button, Skeleton, toast } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { creatorsApi } from "./api";
 import { useInfiniteCreators } from "./hooks/useInfiniteCreators";
 import type { CreatorStatusValue } from "./schemas";
 
 const TABS: CreatorStatusValue[] = ["PENDING", "APPROVED", "REJECTED"];
+const CREATORS_STATUS_FILTER = oneOfFilter<CreatorStatusValue>(TABS, "PENDING");
 
 export const CreatorsPage = () => {
-  const [tab, setTab] = useState<CreatorStatusValue>("PENDING");
+  const [tab, setTab] = useSearchFilter("status", CREATORS_STATUS_FILTER);
   const queryClient = useQueryClient();
 
   const {
@@ -58,7 +59,10 @@ export const CreatorsPage = () => {
       </div>
 
       <div className="mt-6 space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+          ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load creators.</p>}
         {!isLoading && creators.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
@@ -102,10 +106,10 @@ export const CreatorsPage = () => {
           <Button
             variant="outline"
             onClick={() => void fetchNextPage()}
-            disabled={isFetchingNextPage}
+            isLoading={isFetchingNextPage}
             className="mx-auto"
           >
-            {isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         )}
       </div>

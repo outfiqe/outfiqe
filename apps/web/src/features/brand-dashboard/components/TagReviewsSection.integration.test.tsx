@@ -4,6 +4,7 @@ import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -13,6 +14,11 @@ import type { TagReviewQueueItem } from "../api/tagReviewSchemas";
 import { TagReviewsSection } from "./TagReviewsSection";
 
 vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+  useRouter: vi.fn(),
+  useSearchParams: vi.fn(),
+}));
 
 vi.mock("next/link", () => ({
   __esModule: true,
@@ -58,6 +64,12 @@ const stubQueue = (
   );
 };
 
+let currentSearchParams = new URLSearchParams();
+const replace = vi.fn((url: string) => {
+  const [, queryString = ""] = url.split("?");
+  currentSearchParams = new URLSearchParams(queryString);
+});
+
 const renderSection = () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -68,7 +80,12 @@ const renderSection = () => {
       <Toaster />
     </QueryClientProvider>
   );
-  return render(<TagReviewsSection />, { wrapper });
+  const utils = render(<TagReviewsSection />, { wrapper });
+  const clickTab = async (name: string) => {
+    await userEvent.click(await screen.findByRole("tab", { name }));
+    utils.rerender(<TagReviewsSection />);
+  };
+  return { ...utils, clickTab };
 };
 
 beforeEach(() => {
@@ -76,6 +93,21 @@ beforeEach(() => {
     isAuthenticated: true,
     state: { user: { role: "BRAND_OWNER" } },
   } as ReturnType<typeof useAuth>);
+
+  currentSearchParams = new URLSearchParams();
+  vi.mocked(useSearchParams).mockImplementation(
+    () => currentSearchParams as ReturnType<typeof useSearchParams>,
+  );
+  vi.mocked(useRouter).mockReturnValue({
+    push: vi.fn(),
+    replace,
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+    bfcacheId: "test-bfcache-id",
+  });
+  replace.mockClear();
 });
 
 describe("TagReviewsSection", () => {
@@ -175,10 +207,11 @@ describe("TagReviewsSection", () => {
         return HttpResponse.json({ success: true, message: "ok", data: null });
       }),
     );
-    renderSection();
+    const { clickTab } = renderSection();
 
-    await userEvent.click(await screen.findByRole("tab", { name: "Approved" }));
+    await clickTab("Approved");
 
+    expect(replace).toHaveBeenCalledWith("?status=APPROVED", { scroll: false });
     expect(await screen.findByText(/bought on outfiqe/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Remove tag" }));
 
@@ -200,11 +233,23 @@ describe("TagReviewsSection", () => {
         }),
       ],
     });
-    renderSection();
+    const { clickTab } = renderSection();
 
-    await userEvent.click(await screen.findByRole("tab", { name: "Declined" }));
+    await clickTab("Declined");
 
     expect(await screen.findByText(/This is a reseller listing\./)).toBeInTheDocument();
+  });
+
+  it("opens directly on the tab named in the URL, so a shared or reloaded link lands correctly", async () => {
+    currentSearchParams = new URLSearchParams({ status: "REJECTED" });
+    stubQueue({
+      REJECTED: [anItem({ id: "tag-declined", reviewStatus: "REJECTED" })],
+    });
+    renderSection();
+
+    expect(
+      await screen.findByRole("tab", { name: "Declined", selected: true }),
+    ).toBeInTheDocument();
   });
 
   it("surfaces a load error with a retry", async () => {

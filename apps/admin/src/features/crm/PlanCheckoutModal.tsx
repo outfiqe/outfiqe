@@ -134,8 +134,8 @@ export const PlanCheckoutModal = ({
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={startPayment.isPending || seats < minSeats}>
-            {startPayment.isPending ? "Starting…" : "Continue to payment"}
+          <Button type="submit" disabled={seats < minSeats} isLoading={startPayment.isPending}>
+            Continue to payment
           </Button>
         </div>
       </form>

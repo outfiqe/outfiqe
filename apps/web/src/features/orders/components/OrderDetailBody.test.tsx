@@ -250,7 +250,7 @@ describe("OrderDetailBody", () => {
     renderOrderDetail();
 
     expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
-    expect(await screen.findByRole("button", { name: /starting/i })).toBeDisabled();
+    expect(await screen.findByRole("button", { name: "Loading" })).toBeDisabled();
     expect(screen.getByRole("button", { name: /cancel order/i })).toBeDisabled();
   });
 

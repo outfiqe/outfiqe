@@ -62,8 +62,12 @@ export const PendingPaymentPanel = ({
       )}
 
       <div className="mt-4 flex flex-wrap gap-2.5">
-        <Button onClick={startResume} disabled={resumePayment.isPending || resumeAlreadyPaid}>
-          {showResuming ? "Starting…" : "Resume payment"}
+        <Button
+          onClick={startResume}
+          disabled={resumePayment.isPending || resumeAlreadyPaid}
+          isLoading={showResuming}
+        >
+          Resume payment
         </Button>
         <Button
           variant="outline"
@@ -98,8 +102,12 @@ export const PendingPaymentPanel = ({
           >
             Keep order
           </Button>
-          <Button onClick={confirmCancelOrder} disabled={cancelOrder.isPending}>
-            {showCancelling ? "Cancelling…" : "Yes, cancel"}
+          <Button
+            onClick={confirmCancelOrder}
+            disabled={cancelOrder.isPending}
+            isLoading={showCancelling}
+          >
+            Yes, cancel
           </Button>
         </div>
       </Modal>

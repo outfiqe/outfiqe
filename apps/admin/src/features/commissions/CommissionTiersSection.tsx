@@ -1,4 +1,4 @@
-import { Button, FormBanner, Input, Modal, toast } from "@outfiqe/design-system";
+import { Button, FormBanner, Input, Modal, Skeleton, toast } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
@@ -110,8 +110,8 @@ const EditTierModal = ({ tier, onClose }: { tier: CommissionTier; onClose: () =>
       <form onSubmit={handleSubmit} className="space-y-4">
         <TierFields form={form} onChange={setForm} />
         {error && <FormBanner>{error}</FormBanner>}
-        <Button type="submit" disabled={update.isPending}>
-          {update.isPending ? "Saving…" : "Save changes"}
+        <Button type="submit" isLoading={update.isPending}>
+          Save changes
         </Button>
       </form>
     </Modal>
@@ -166,15 +166,18 @@ export const CommissionTiersSection = () => {
         className="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
       >
         <TierFields form={form} onChange={setForm} />
-        <Button type="submit" disabled={create.isPending}>
-          {create.isPending ? "Creating…" : "Add tier"}
+        <Button type="submit" isLoading={create.isPending}>
+          Add tier
         </Button>
       </form>
 
       {error && <FormBanner className="mt-3">{error}</FormBanner>}
 
       <div className="mt-4 space-y-2">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-16 w-full rounded-xl" />
+          ))}
         {tiers?.length === 0 && <p className="text-sm text-muted-foreground">No tiers yet.</p>}
 
         {tiers?.map((tier) => (

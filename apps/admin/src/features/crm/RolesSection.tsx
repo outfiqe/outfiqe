@@ -148,8 +148,8 @@ const RoleFormModal = ({
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={!canSubmit}>
-            {save.isPending ? "Saving…" : editingRole ? "Save role" : "Create role"}
+          <Button type="submit" disabled={!canSubmit} isLoading={save.isPending}>
+            {editingRole ? "Save role" : "Create role"}
           </Button>
         </div>
       </form>
@@ -183,10 +183,10 @@ const DeleteRoleModal = ({ role, onClose }: { role: Role; onClose: () => void })
           <Button
             type="button"
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            disabled={remove.isPending}
+            isLoading={remove.isPending}
             onClick={() => remove.mutate()}
           >
-            {remove.isPending ? "Deleting…" : "Delete role"}
+            Delete role
           </Button>
         </div>
       </div>
@@ -230,9 +230,10 @@ const OrganizationNameCard = ({ currentName }: { currentName: string }) => {
       </div>
       <Button
         type="submit"
-        disabled={name.trim().length < 2 || name.trim() === currentName || rename.isPending}
+        disabled={name.trim().length < 2 || name.trim() === currentName}
+        isLoading={rename.isPending}
       >
-        {rename.isPending ? "Saving…" : "Save"}
+        Save
       </Button>
     </form>
   );

@@ -21,6 +21,7 @@ import { describeError } from "#redis/redis.utils.js";
 
 import {
   COMMENT_REPLY_PREVIEW_COUNT,
+  FOR_YOU_ANONYMOUS_TRENDING_BOOST,
   FOR_YOU_ENGAGED_CREATOR_BOOST,
   FOR_YOU_ENGAGEMENT_LOOKBACK_DAYS,
   FOR_YOU_FOLLOW_BOOST,
@@ -30,13 +31,17 @@ import {
   FOR_YOU_HASHTAG_BOOST_CAP,
   FOR_YOU_HASHTAG_BOOST_PER_MATCH,
   FOR_YOU_HASHTAG_MATCH_WEIGHT_CAP,
+  FOR_YOU_LEGACY_POSITION_DECAY,
   FOR_YOU_MAX_PER_CREATOR,
   MAX_TAG_RE_REQUESTS,
   TAG_TREND_BASELINE_WINDOW_DAYS,
   TAG_TREND_RECENT_METRICS_WINDOW_HOURS,
+  TAG_TREND_SCORE_RECOMPUTE_LOCK_TTL_MS,
   TAG_TRENDING_LIMIT,
   TREND_BASELINE_WINDOW_DAYS,
   TREND_RECENT_METRICS_WINDOW_HOURS,
+  TRENDING_HYBRID_MIN_SCORED_POOL_SIZE,
+  TRENDING_SCORE_RECOMPUTE_LOCK_TTL_MS,
 } from "./creatorLook.constants.js";
 import type {
   AdminLookPage,
@@ -322,6 +327,7 @@ const cacheTrendingSnapshot = async (
 };
 
 const EXPLORE_TRENDING_SCORE_CACHE_KEY = redisKeys.cache("explore-trending-score", "global");
+const TRENDING_SCORE_RECOMPUTE_LOCK_KEY = redisKeys.lock("explore-trending-score-recompute");
 
 const buildLegacyTrendingSnapshot = async (): Promise<string[]> => {
   const since = new Date(Date.now() - TRENDING_WINDOW_MS);
@@ -465,7 +471,10 @@ const computeRankedCreatorMomentumScores = async (
   return candidates;
 };
 
-const buildTrendingSnapshot = async (): Promise<FeedCandidateSnapshot> => {
+const trendingScoreCacheTtl = (ranked: PostTrendingEntry[]): number =>
+  ranked.length > 0 ? CACHE_TTL.EXPLORE_TRENDING_SCORE : CACHE_TTL.EXPLORE_TRENDING_SCORE_EMPTY;
+
+const getOrRecomputeTrendingScores = async (): Promise<PostTrendingEntry[]> => {
   let scored: PostTrendingEntry[] | null = null;
   try {
     scored = await cacheService.get<PostTrendingEntry[]>(EXPLORE_TRENDING_SCORE_CACHE_KEY);
@@ -474,14 +483,44 @@ const buildTrendingSnapshot = async (): Promise<FeedCandidateSnapshot> => {
       `Cache read failed for "${EXPLORE_TRENDING_SCORE_CACHE_KEY}": ${describeError(error)}`,
     );
   }
+  if (scored !== null) return scored;
 
-  if (scored === null) scored = await computeRankedLookScores();
-  if (scored.length > 0) {
-    const ids = scored.map((entry) => entry.lookId);
-    return { ids, trendingIds: ids };
+  try {
+    const recomputed = await cacheService.withLock(
+      TRENDING_SCORE_RECOMPUTE_LOCK_KEY,
+      TRENDING_SCORE_RECOMPUTE_LOCK_TTL_MS,
+      async () => {
+        logger.info(
+          `On-demand trending score recompute triggered (cache miss for "${EXPLORE_TRENDING_SCORE_CACHE_KEY}")`,
+        );
+        const fresh = await computeRankedLookScores();
+        await cacheService.set(
+          EXPLORE_TRENDING_SCORE_CACHE_KEY,
+          fresh,
+          trendingScoreCacheTtl(fresh),
+        );
+        return fresh;
+      },
+    );
+    return recomputed ?? [];
+  } catch (error) {
+    logger.warn(`On-demand trending score recompute failed: ${describeError(error)}`);
+    return [];
+  }
+};
+
+const buildTrendingSnapshot = async (): Promise<FeedCandidateSnapshot> => {
+  const scored = await getOrRecomputeTrendingScores();
+  const scoredIds = scored.map((entry) => entry.lookId);
+
+  if (scoredIds.length >= TRENDING_HYBRID_MIN_SCORED_POOL_SIZE) {
+    return { ids: scoredIds, trendingIds: scoredIds };
   }
 
-  return { ids: await buildLegacyTrendingSnapshot(), trendingIds: [] };
+  const legacyIds = await buildLegacyTrendingSnapshot();
+  const scoredIdSet = new Set(scoredIds);
+  const fallbackIds = legacyIds.filter((id) => !scoredIdSet.has(id));
+  return { ids: [...scoredIds, ...fallbackIds], trendingIds: scoredIds };
 };
 
 const resolveTrendingSnapshotSource = async (
@@ -595,29 +634,24 @@ const buildPersonalizedSnapshot = async (
     FOR_YOU_FOLLOWED_MAX_INJECTED,
   );
 
-  let scored: PostTrendingEntry[] | null = null;
-  try {
-    scored = await cacheService.get<PostTrendingEntry[]>(EXPLORE_TRENDING_SCORE_CACHE_KEY);
-  } catch (error) {
-    logger.warn(
-      `Cache read failed for "${EXPLORE_TRENDING_SCORE_CACHE_KEY}": ${describeError(error)}`,
-    );
-  }
-  if (scored === null) scored = await computeRankedLookScores();
-  if (scored.length === 0) {
-    const legacyDiscoveryIds = await buildLegacyTrendingSnapshot();
+  const scored = await getOrRecomputeTrendingScores();
+  const usingRealScores = scored.length > 0;
+  const candidatePool: PostTrendingEntry[] = usingRealScores
+    ? scored
+    : (await buildLegacyTrendingSnapshot()).map((lookId, index) => ({
+        lookId,
+        score: FOR_YOU_LEGACY_POSITION_DECAY ** index,
+      }));
+
+  if (candidatePool.length === 0) {
     return {
-      ids: interleaveFollowedLooks(
-        legacyDiscoveryIds,
-        followedLookIds,
-        FOR_YOU_FOLLOWED_SLOT_INTERVAL,
-      ),
+      ids: interleaveFollowedLooks([], followedLookIds, FOR_YOU_FOLLOWED_SLOT_INTERVAL),
       trendingIds: [],
     };
   }
 
   const [candidateMeta, engagement] = await Promise.all([
-    listCandidateAffinityMeta(scored.map((candidate) => candidate.lookId)),
+    listCandidateAffinityMeta(candidatePool.map((candidate) => candidate.lookId)),
     computeViewerEngagementAffinity(viewerId, FOR_YOU_ENGAGEMENT_LOOKBACK_DAYS),
   ]);
   const metaById = new Map(candidateMeta.map((row) => [row.id, row]));
@@ -627,7 +661,7 @@ const buildPersonalizedSnapshot = async (
     hashtagWeights: engagement.hashtagWeights,
   };
 
-  const personalized = scored
+  const personalized = candidatePool
     .map((candidate) => {
       const meta = metaById.get(candidate.lookId);
       if (!meta) return null;
@@ -651,7 +685,44 @@ const buildPersonalizedSnapshot = async (
   const discoveryIds = diversified.map((entry) => entry.lookId);
   return {
     ids: interleaveFollowedLooks(discoveryIds, followedLookIds, FOR_YOU_FOLLOWED_SLOT_INTERVAL),
-    trendingIds: discoveryIds,
+    trendingIds: usingRealScores ? discoveryIds : [],
+  };
+};
+
+const buildAnonymousForYouSnapshot = async (): Promise<FeedCandidateSnapshot> => {
+  const [scored, legacyIds] = await Promise.all([
+    getOrRecomputeTrendingScores(),
+    buildLegacyTrendingSnapshot(),
+  ]);
+
+  const trendingIdSet = new Set(scored.map((entry) => entry.lookId));
+  const candidateIds = legacyIds.length > 0 ? legacyIds : scored.map((entry) => entry.lookId);
+  if (candidateIds.length === 0) return { ids: [], trendingIds: [] };
+
+  const candidateMeta = await listCandidateAffinityMeta(candidateIds);
+  const creatorIdByLookId = new Map(candidateMeta.map((meta) => [meta.id, meta.creatorId]));
+
+  const ranked = candidateIds
+    .map((lookId, index) => ({
+      lookId,
+      creatorId: creatorIdByLookId.get(lookId) ?? lookId,
+      score:
+        FOR_YOU_LEGACY_POSITION_DECAY ** index *
+        (trendingIdSet.has(lookId) ? 1 + FOR_YOU_ANONYMOUS_TRENDING_BOOST : 1),
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  const diversified = applyDiversity(
+    ranked,
+    ranked.length,
+    FOR_YOU_MAX_PER_CREATOR,
+    (entry) => entry.creatorId,
+  );
+  const diversifiedIds = diversified.map((entry) => entry.lookId);
+
+  return {
+    ids: diversifiedIds,
+    trendingIds: diversifiedIds.filter((id) => trendingIdSet.has(id)),
   };
 };
 
@@ -694,7 +765,7 @@ const resolveForYouCandidateIds = async (
   viewerId: string | undefined,
   followedCreatorIds: string[],
 ): Promise<FeedCandidateSnapshot> => {
-  if (!viewerId) return buildTrendingSnapshot();
+  if (!viewerId) return buildAnonymousForYouSnapshot();
 
   const stableKey = forYouStableRankingKey(viewerId);
   try {
@@ -939,21 +1010,47 @@ const computeRankedTagScores = async (): Promise<TagScoreBreakdown[]> => {
     if (breakdown.score > 0) candidates.push(breakdown);
   }
 
-  candidates.sort((a, b) => b.score - a.score);
+  candidates.sort((a, b) => b.score - a.score || a.tag.localeCompare(b.tag));
   return candidates;
 };
 
 const TAG_TREND_SCORE_CACHE_KEY = redisKeys.cache("explore-tag-trend-score", "global");
+const TAG_TREND_SCORE_RECOMPUTE_LOCK_KEY = redisKeys.lock("tag-trend-score-recompute");
 
-const fetchTrendingTags = async (): Promise<TrendingTag[]> => {
-  let scored: TagScoreBreakdown[] | null = null;
+const tagTrendScoreCacheTtl = (scored: TagScoreBreakdown[]): number =>
+  scored.length > 0 ? CACHE_TTL.TAG_TREND_SCORE : CACHE_TTL.TAG_TREND_SCORE_EMPTY;
+
+const getOrRecomputeTagScores = async (): Promise<TagScoreBreakdown[]> => {
+  let cached: TagScoreBreakdown[] | null = null;
   try {
-    scored = await cacheService.get<TagScoreBreakdown[]>(TAG_TREND_SCORE_CACHE_KEY);
+    cached = await cacheService.get<TagScoreBreakdown[]>(TAG_TREND_SCORE_CACHE_KEY);
   } catch (error) {
     logger.warn(`Cache read failed for "${TAG_TREND_SCORE_CACHE_KEY}": ${describeError(error)}`);
   }
+  if (cached !== null) return cached;
 
-  if (scored === null) scored = await computeRankedTagScores();
+  try {
+    const recomputed = await cacheService.withLock(
+      TAG_TREND_SCORE_RECOMPUTE_LOCK_KEY,
+      TAG_TREND_SCORE_RECOMPUTE_LOCK_TTL_MS,
+      async () => {
+        logger.info(
+          `On-demand tag trend score recompute triggered (cache miss for "${TAG_TREND_SCORE_CACHE_KEY}")`,
+        );
+        const fresh = await computeRankedTagScores();
+        await cacheService.set(TAG_TREND_SCORE_CACHE_KEY, fresh, tagTrendScoreCacheTtl(fresh));
+        return fresh;
+      },
+    );
+    return recomputed ?? [];
+  } catch (error) {
+    logger.warn(`On-demand tag trend score recompute failed: ${describeError(error)}`);
+    return [];
+  }
+};
+
+const fetchTrendingTags = async (): Promise<TrendingTag[]> => {
+  const scored = await getOrRecomputeTagScores();
   if (scored.length === 0) return fetchLegacyTrendingTags();
 
   return scored
@@ -1546,7 +1643,7 @@ export const creatorLookRepository = {
       await cacheService.set(
         EXPLORE_TRENDING_SCORE_CACHE_KEY,
         ranked,
-        CACHE_TTL.EXPLORE_TRENDING_SCORE,
+        trendingScoreCacheTtl(ranked),
       );
     } catch (error) {
       logger.warn(
@@ -1594,7 +1691,7 @@ export const creatorLookRepository = {
 
   async cacheRankedTrendingTags(ranked: TagScoreBreakdown[]): Promise<void> {
     try {
-      await cacheService.set(TAG_TREND_SCORE_CACHE_KEY, ranked, CACHE_TTL.EXPLORE_TRENDING_SCORE);
+      await cacheService.set(TAG_TREND_SCORE_CACHE_KEY, ranked, tagTrendScoreCacheTtl(ranked));
     } catch (error) {
       logger.warn(`Cache write failed for "${TAG_TREND_SCORE_CACHE_KEY}": ${describeError(error)}`);
     }

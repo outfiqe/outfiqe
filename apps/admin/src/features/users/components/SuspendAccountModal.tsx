@@ -59,8 +59,8 @@ export const SuspendAccountModal = ({
           <Button variant="outline" onClick={onCancel} disabled={isPending}>
             Cancel
           </Button>
-          <Button onClick={submit} disabled={!canConfirm}>
-            {isPending ? "Suspending…" : "Confirm suspension"}
+          <Button onClick={submit} disabled={!canConfirm} isLoading={isPending}>
+            Confirm suspension
           </Button>
         </div>
       }

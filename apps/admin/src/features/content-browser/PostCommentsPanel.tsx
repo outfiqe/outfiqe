@@ -82,15 +82,15 @@ const CommentRepliesSection = ({
           View {hiddenReplyCount} more repl{hiddenReplyCount === 1 ? "y" : "ies"}
         </button>
       )}
-      {repliesExpanded && isLoading && <p className="text-xs text-muted-foreground">Loading…</p>}
+      {repliesExpanded && isLoading && <Skeleton className="h-3 w-24" />}
       {repliesExpanded && hasNextPage && (
         <Button
           variant="outline"
           size="sm"
           onClick={() => void fetchNextPage()}
-          disabled={isFetchingNextPage}
+          isLoading={isFetchingNextPage}
         >
-          {isFetchingNextPage ? "Loading…" : "Load more replies"}
+          Load more replies
         </Button>
       )}
     </div>
@@ -125,10 +125,10 @@ export const PostCommentsPanel = ({
               variant="outline"
               size="sm"
               onClick={() => onDeleteComment(comment.id, comment.body)}
-              disabled={deletingCommentId === comment.id}
+              isLoading={deletingCommentId === comment.id}
               className="shrink-0"
             >
-              {deletingCommentId === comment.id ? "Deleting…" : "Delete"}
+              Delete
             </Button>
           </div>
           {comment.replyCount > 0 && (
@@ -147,9 +147,9 @@ export const PostCommentsPanel = ({
           variant="outline"
           size="sm"
           onClick={() => void fetchNextPage()}
-          disabled={isFetchingNextPage}
+          isLoading={isFetchingNextPage}
         >
-          {isFetchingNextPage ? "Loading…" : "Load more comments"}
+          Load more comments
         </Button>
       )}
     </div>

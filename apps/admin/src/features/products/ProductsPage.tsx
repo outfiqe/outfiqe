@@ -1,14 +1,15 @@
-import { Badge, Button, toast } from "@outfiqe/design-system";
+import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
+import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { productsApi } from "./api";
 import { useInfiniteProducts } from "./hooks/useInfiniteProducts";
 import type { ProductStatusValue } from "./schemas";
 
 const TABS: ProductStatusValue[] = ["PENDING", "APPROVED", "REJECTED"];
+const PRODUCTS_STATUS_FILTER = oneOfFilter<ProductStatusValue>(TABS, "PENDING");
 
 const STATUS_TONE: Record<ProductStatusValue, "neutral" | "positive" | "negative"> = {
   PENDING: "neutral",
@@ -17,7 +18,7 @@ const STATUS_TONE: Record<ProductStatusValue, "neutral" | "positive" | "negative
 };
 
 export const ProductsPage = () => {
-  const [tab, setTab] = useState<ProductStatusValue>("PENDING");
+  const [tab, setTab] = useSearchFilter("status", PRODUCTS_STATUS_FILTER);
   const queryClient = useQueryClient();
 
   const {
@@ -64,7 +65,10 @@ export const ProductsPage = () => {
       </div>
 
       <div className="mt-6 space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+          ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load products.</p>}
         {!isLoading && products.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
@@ -130,10 +134,10 @@ export const ProductsPage = () => {
           <Button
             variant="outline"
             onClick={() => void fetchNextPage()}
-            disabled={isFetchingNextPage}
+            isLoading={isFetchingNextPage}
             className="mx-auto"
           >
-            {isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         )}
       </div>

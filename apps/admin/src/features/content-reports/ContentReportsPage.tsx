@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { ApiClientError } from "@/lib/apiClient";
+import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { contentReportsApi } from "./api";
 import { useInfiniteContentReports } from "./hooks/useInfiniteContentReports";
@@ -12,6 +13,7 @@ import type { ContentReport, ContentReportStatusValue, ResolveContentReportInput
 const WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
 
 const TABS: ContentReportStatusValue[] = ["OPEN", "ACTIONED", "DISMISSED"];
+const CONTENT_REPORTS_STATUS_FILTER = oneOfFilter<ContentReportStatusValue>(TABS, "OPEN");
 
 const TAB_LABEL: Record<ContentReportStatusValue, string> = {
   OPEN: "Open",
@@ -35,7 +37,7 @@ const errorText = (error: unknown, fallback: string): string =>
 
 export const ContentReportsPage = () => {
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<ContentReportStatusValue>("OPEN");
+  const [tab, setTab] = useSearchFilter("status", CONTENT_REPORTS_STATUS_FILTER);
   const [resolving, setResolving] = useState<ContentReport | null>(null);
 
   const openCount = useQuery({
@@ -178,10 +180,10 @@ export const ContentReportsPage = () => {
           <Button
             variant="outline"
             onClick={() => void fetchNextPage()}
-            disabled={isFetchingNextPage}
+            isLoading={isFetchingNextPage}
             className="mx-auto"
           >
-            {isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         )}
       </div>

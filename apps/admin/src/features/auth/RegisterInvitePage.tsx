@@ -151,8 +151,8 @@ export const RegisterInvitePage = () => {
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Creating account…" : "Create admin account"}
+              <Button type="submit" className="w-full" isLoading={isSubmitting}>
+                Create admin account
               </Button>
             </form>
           </>

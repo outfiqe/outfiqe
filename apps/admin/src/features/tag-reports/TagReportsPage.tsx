@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { ApiClientError } from "@/lib/apiClient";
+import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { tagReportsApi } from "./api";
 import { useInfiniteTagReports } from "./hooks/useInfiniteTagReports";
@@ -10,6 +11,7 @@ import { ResolveReportModal } from "./ResolveReportModal";
 import type { ResolveTagReportInput, TagReport, TagReportStatusValue } from "./schemas";
 
 const TABS: TagReportStatusValue[] = ["OPEN", "ACTIONED", "DISMISSED"];
+const TAG_REPORTS_STATUS_FILTER = oneOfFilter<TagReportStatusValue>(TABS, "OPEN");
 
 const TAB_LABEL: Record<TagReportStatusValue, string> = {
   OPEN: "Open",
@@ -35,7 +37,7 @@ const errorText = (error: unknown, fallback: string): string =>
 
 export const TagReportsPage = () => {
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<TagReportStatusValue>("OPEN");
+  const [tab, setTab] = useSearchFilter("status", TAG_REPORTS_STATUS_FILTER);
   const [resolving, setResolving] = useState<TagReport | null>(null);
 
   const openCount = useQuery({
@@ -146,10 +148,10 @@ export const TagReportsPage = () => {
           <Button
             variant="outline"
             onClick={() => void fetchNextPage()}
-            disabled={isFetchingNextPage}
+            isLoading={isFetchingNextPage}
             className="mx-auto"
           >
-            {isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         )}
       </div>

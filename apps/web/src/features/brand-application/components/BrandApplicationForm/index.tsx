@@ -142,8 +142,8 @@ export const BrandApplicationForm = () => {
           <ProductionField control={form.control} />
 
           <div className="flex flex-wrap items-center gap-4 pt-2">
-            <Button type="submit" disabled={submit.isPending}>
-              {showPending ? "Sending…" : "Send application"}
+            <Button type="submit" disabled={submit.isPending} isLoading={showPending}>
+              Send application
             </Button>
             <span className="text-xs text-muted-foreground">No fee to be listed.</span>
           </div>

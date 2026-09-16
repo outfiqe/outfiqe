@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@outfiqe/design-system";
+import { Button, Skeleton } from "@outfiqe/design-system";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
@@ -53,7 +53,10 @@ export const SupportRequestsView = () => {
       </div>
 
       <div className="mt-4 space-y-2.5">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-16 w-full rounded-xl" />
+          ))}
         {!isLoading && tickets.length === 0 && (
           <p className="text-sm text-muted-foreground">
             You haven&apos;t raised any support requests yet.
@@ -83,9 +86,9 @@ export const SupportRequestsView = () => {
             variant="outline"
             size="sm"
             onClick={() => void fetchNextPage()}
-            disabled={isFetchingNextPage}
+            isLoading={isFetchingNextPage}
           >
-            {isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         )}
       </div>

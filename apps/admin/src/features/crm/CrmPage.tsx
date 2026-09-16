@@ -1,4 +1,4 @@
-import { FormBanner } from "@outfiqe/design-system";
+import { FormBanner, Skeleton } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 
 import { ApiClientError } from "@/lib/apiClient";
@@ -57,7 +57,7 @@ export const CrmPage = () => {
         )}
       </div>
 
-      {isLoading && <p className="mt-6 text-sm text-muted-foreground">Loading…</p>}
+      {isLoading && <Skeleton className="mt-6 h-64 w-full rounded-xl" />}
       {error && (
         <FormBanner className="mt-6">
           {isNoOrganizationAccessError(error)

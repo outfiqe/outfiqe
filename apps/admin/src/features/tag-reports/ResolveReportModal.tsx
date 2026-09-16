@@ -47,8 +47,8 @@ export const ResolveReportModal = ({
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button onClick={confirm} disabled={isPending}>
-            {isPending ? "Saving…" : "Resolve"}
+          <Button onClick={confirm} isLoading={isPending}>
+            Resolve
           </Button>
         </div>
       }

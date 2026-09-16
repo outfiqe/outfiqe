@@ -556,6 +556,9 @@ export const creatorLookService = {
   async runTrendingScoring(): Promise<{ ranked: PostTrendingEntry[] }> {
     const { postScores, creatorMomentum } =
       await creatorLookRepository.computeRankedTrendingScoreAndCreatorMomentum();
+    if (postScores.length === 0) {
+      logger.warn("explore-trending-scoring produced zero scored posts this cycle");
+    }
     await Promise.all([
       creatorLookRepository.cacheRankedTrendingScore(postScores),
       creatorLookRepository.cacheRankedCreatorMomentumScores(creatorMomentum),
@@ -584,6 +587,9 @@ export const creatorLookService = {
 
   async runTagTrendingScoring(): Promise<{ ranked: TagScoreBreakdown[] }> {
     const ranked = await creatorLookRepository.computeRankedTrendingTags();
+    if (ranked.length === 0) {
+      logger.warn("tag-trend-scoring produced zero scored tags this cycle");
+    }
     await creatorLookRepository.cacheRankedTrendingTags(ranked);
     return { ranked };
   },

@@ -48,8 +48,8 @@ export const CreateChallengeModal = ({
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" form={CREATE_CHALLENGE_FORM_ID} disabled={create.isPending}>
-              {create.isPending ? "Creating…" : "Create challenge"}
+            <Button type="submit" form={CREATE_CHALLENGE_FORM_ID} isLoading={create.isPending}>
+              Create challenge
             </Button>
           </div>
         </div>

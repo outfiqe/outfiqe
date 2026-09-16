@@ -178,14 +178,10 @@ export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) =
             </Button>
             <Button
               onClick={() => void handlePostLook()}
-              disabled={
-                pending.photos.length === 0 ||
-                pending.hasUnresolvedCrop ||
-                isProcessingPhotos ||
-                create.isPending
-              }
+              disabled={pending.photos.length === 0 || pending.hasUnresolvedCrop}
+              isLoading={isProcessingPhotos || create.isPending}
             >
-              {isProcessingPhotos ? "Processing…" : create.isPending ? "Posting…" : "Post look"}
+              Post look
             </Button>
           </>
         }

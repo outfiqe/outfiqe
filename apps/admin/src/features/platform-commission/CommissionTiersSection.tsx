@@ -1,4 +1,4 @@
-import { Button, FormBanner, Input, Select } from "@outfiqe/design-system";
+import { Button, FormBanner, Input, Select, Skeleton } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useRef, useState } from "react";
 
@@ -229,7 +229,7 @@ export const CommissionTiersSection = () => {
       )}
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading && <Skeleton className="h-24 w-full rounded-xl" />}
 
         {!isLoading &&
           activeTierRows.map((tierRow) => (
@@ -246,8 +246,8 @@ export const CommissionTiersSection = () => {
             <Button type="button" variant="outline" size="sm" onClick={addTierRow}>
               Add band
             </Button>
-            <Button type="submit" disabled={createRule.isPending}>
-              {createRule.isPending ? "Saving…" : "Save as new version"}
+            <Button type="submit" isLoading={createRule.isPending}>
+              Save as new version
             </Button>
           </div>
         )}

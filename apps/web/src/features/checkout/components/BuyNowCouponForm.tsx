@@ -75,9 +75,10 @@ export const BuyNowCouponForm = ({
           type="button"
           variant="outline"
           onClick={submitCode}
-          disabled={preview.isPending || !code.trim()}
+          disabled={!code.trim()}
+          isLoading={preview.isPending}
         >
-          {preview.isPending ? "Applying…" : "Apply"}
+          Apply
         </Button>
       </div>
       {preview.isError && (

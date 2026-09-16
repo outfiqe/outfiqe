@@ -99,8 +99,12 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
           <Button variant="outline" onClick={close}>
             Cancel
           </Button>
-          <Button onClick={() => void submit()} disabled={isSubmitting || code.trim().length < 4}>
-            {isSubmitting ? "Creating…" : "Create coupon"}
+          <Button
+            onClick={() => void submit()}
+            disabled={code.trim().length < 4}
+            isLoading={isSubmitting}
+          >
+            Create coupon
           </Button>
         </div>
       }

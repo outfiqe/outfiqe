@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { FeedPost } from "../api/exploreFeedSchemas";
-import { buildTrendingRankByPostId } from "./trendingRank";
+import { buildTrendingRankByPostId, findTrendingFallbackBoundary } from "./trendingRank";
 
 const buildPost = (overrides: Partial<FeedPost> = {}): FeedPost => ({
   id: "look-1",
@@ -72,5 +72,42 @@ describe("buildTrendingRankByPostId", () => {
 
     expect(ranks.get("trend-3")).toBe(3);
     expect(ranks.has("trend-4")).toBe(false);
+  });
+});
+
+describe("findTrendingFallbackBoundary", () => {
+  it("returns -1 on a tab that isn't ranked", () => {
+    const posts = [buildPost({ id: "post-1", isTrending: false })];
+
+    expect(findTrendingFallbackBoundary(posts, false)).toBe(-1);
+  });
+
+  it("returns -1 when every post is genuinely trending, so there is nothing to divide", () => {
+    const posts = [
+      buildPost({ id: "trend-1", isTrending: true }),
+      buildPost({ id: "trend-2", isTrending: true }),
+    ];
+
+    expect(findTrendingFallbackBoundary(posts, true)).toBe(-1);
+  });
+
+  it("returns 0 when no post is genuinely trending, so the whole list is fallback", () => {
+    const posts = [
+      buildPost({ id: "fallback-1", isTrending: false }),
+      buildPost({ id: "fallback-2", isTrending: false }),
+    ];
+
+    expect(findTrendingFallbackBoundary(posts, true)).toBe(0);
+  });
+
+  it("returns the index of the first fallback post in a mixed scored-then-fallback list", () => {
+    const posts = [
+      buildPost({ id: "trend-1", isTrending: true }),
+      buildPost({ id: "trend-2", isTrending: true }),
+      buildPost({ id: "fallback-1", isTrending: false }),
+      buildPost({ id: "fallback-2", isTrending: false }),
+    ];
+
+    expect(findTrendingFallbackBoundary(posts, true)).toBe(2);
   });
 });

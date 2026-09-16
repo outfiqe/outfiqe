@@ -1,4 +1,4 @@
-import { Badge, Button, Input } from "@outfiqe/design-system";
+import { Badge, Button, Input, Skeleton } from "@outfiqe/design-system";
 import { useDebouncedValue } from "@outfiqe/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -124,9 +124,11 @@ export const UsersPage = () => {
         {!debouncedQuery.trim() && (
           <p className="text-sm text-muted-foreground">Start typing to find an account.</p>
         )}
-        {debouncedQuery.trim() && isLoading && (
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        )}
+        {debouncedQuery.trim() &&
+          isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load users.</p>}
         {debouncedQuery.trim() && !isLoading && users.length === 0 && (
           <p className="text-sm text-muted-foreground">
@@ -225,10 +227,10 @@ export const UsersPage = () => {
           <Button
             variant="outline"
             onClick={() => void fetchNextPage()}
-            disabled={isFetchingNextPage}
+            isLoading={isFetchingNextPage}
             className="mx-auto"
           >
-            {isFetchingNextPage ? "Loading…" : "Load more"}
+            Load more
           </Button>
         )}
       </div>

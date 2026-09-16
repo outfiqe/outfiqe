@@ -91,10 +91,10 @@ const SubscriptionCard = ({
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={cancelRenewal.isPending}
+                  isLoading={cancelRenewal.isPending}
                   onClick={() => cancelRenewal.mutate()}
                 >
-                  {cancelRenewal.isPending ? "Cancelling…" : "Cancel renewal"}
+                  Cancel renewal
                 </Button>
               )}
             </div>

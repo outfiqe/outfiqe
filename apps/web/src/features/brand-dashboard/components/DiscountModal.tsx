@@ -124,9 +124,10 @@ export const DiscountModal = ({ product, onClose }: DiscountModalProps) => {
               variant="outline"
               onClick={() => void remove()}
               disabled={isPending}
+              isLoading={removeDiscount.isPending}
               className="border-destructive text-destructive hover:bg-destructive hover:text-white"
             >
-              {removeDiscount.isPending ? "Removing…" : "Remove discount"}
+              Remove discount
             </Button>
           ) : (
             <span />

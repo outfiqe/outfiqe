@@ -135,8 +135,13 @@ export const BrandRegisterForm = ({ inviteToken, email, brandName }: BrandRegist
             )}
           />
 
-          <Button type="submit" className="mt-6 w-full" disabled={brandRegister.isPending}>
-            {showPending ? "Setting up…" : "Set up my account"}
+          <Button
+            type="submit"
+            className="mt-6 w-full"
+            disabled={brandRegister.isPending}
+            isLoading={showPending}
+          >
+            Set up my account
           </Button>
         </form>
       </Form>

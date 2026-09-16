@@ -192,9 +192,9 @@ export const ReviewsSection = ({ productId, initialRatingSummary }: ReviewsSecti
             <Button
               variant="outline"
               onClick={() => void fetchNextPage()}
-              disabled={isFetchingNextPage}
+              isLoading={isFetchingNextPage}
             >
-              {isFetchingNextPage ? "Loading…" : "Load more reviews"}
+              Load more reviews
             </Button>
           </div>
         )}
@@ -220,10 +220,10 @@ export const ReviewsSection = ({ productId, initialRatingSummary }: ReviewsSecti
             </Button>
             <Button
               onClick={confirmDelete}
-              disabled={deleteReview.isPending}
+              isLoading={deleteReview.isPending}
               className="border border-destructive bg-transparent text-destructive hover:bg-destructive hover:text-white"
             >
-              {deleteReview.isPending ? "Deleting…" : "Delete"}
+              Delete
             </Button>
           </div>
         }

@@ -1,4 +1,4 @@
-import { Button, FormBanner, Input, Select, toast } from "@outfiqe/design-system";
+import { Button, FormBanner, Input, Select, Skeleton, toast } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
@@ -85,8 +85,8 @@ const AwardBadgeForm = () => {
           onChange={(e) => setReason(e.target.value)}
         />
       </div>
-      <Button type="submit" disabled={award.isPending || !recipient || !badgeId}>
-        {award.isPending ? "Awarding…" : "Award badge"}
+      <Button type="submit" disabled={!recipient || !badgeId} isLoading={award.isPending}>
+        Award badge
       </Button>
       {error && <FormBanner className="w-full">{error}</FormBanner>}
     </form>
@@ -159,8 +159,8 @@ const AdjustXpForm = () => {
           onChange={(e) => setReason(e.target.value)}
         />
       </div>
-      <Button type="submit" disabled={adjust.isPending || !target}>
-        {adjust.isPending ? "Adjusting…" : "Adjust XP"}
+      <Button type="submit" disabled={!target} isLoading={adjust.isPending}>
+        Adjust XP
       </Button>
       {error && <FormBanner className="w-full">{error}</FormBanner>}
       {result && <p className="w-full text-sm text-muted-foreground">{result}</p>}
@@ -192,7 +192,10 @@ const ManualAwardsList = () => {
 
   return (
     <div className="mt-4 space-y-2">
-      {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {isLoading &&
+        Array.from({ length: 3 }).map((_, index) => (
+          <Skeleton key={index} className="h-16 w-full rounded-xl" />
+        ))}
       {awards?.length === 0 && (
         <p className="text-sm text-muted-foreground">No manual awards yet.</p>
       )}

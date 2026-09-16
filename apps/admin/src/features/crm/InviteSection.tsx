@@ -1,4 +1,4 @@
-import { Badge, Button, FormBanner, Input, Select, toast } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Input, Select, Skeleton, toast } from "@outfiqe/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
@@ -109,8 +109,8 @@ export const InviteSection = ({ viewerIsSuperAdmin, viewerPermissionKeys }: Invi
             ))}
           </Select>
         </div>
-        <Button type="submit" disabled={invite.isPending}>
-          {invite.isPending ? "Sending…" : "Send invite"}
+        <Button type="submit" isLoading={invite.isPending}>
+          Send invite
         </Button>
       </form>
 
@@ -123,7 +123,10 @@ export const InviteSection = ({ viewerIsSuperAdmin, viewerPermissionKeys }: Invi
 
       <h3 className="mt-6 font-display text-base font-bold text-foreground">Pending invites</h3>
       <div className="mt-3 space-y-3">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+          ))}
         {error && <p className="text-sm text-destructive">{getErrorMessage(error)}</p>}
         {!isLoading && !error && invites?.length === 0 && (
           <p className="text-sm text-muted-foreground">No invites yet.</p>

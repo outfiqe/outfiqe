@@ -1,3 +1,4 @@
+import { Skeleton } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
@@ -55,7 +56,7 @@ export const TagReviewMetricsPage = () => {
   });
 
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+    return <Skeleton className="h-64 w-full rounded-xl" />;
   }
   if (error || !data) {
     return <p className="text-sm text-destructive">Couldn&apos;t load tag review metrics.</p>;

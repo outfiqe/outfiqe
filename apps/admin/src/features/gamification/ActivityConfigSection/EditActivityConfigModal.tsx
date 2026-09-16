@@ -40,8 +40,8 @@ export const EditActivityConfigModal = ({
       <form onSubmit={handleSubmit} className="space-y-4">
         <ActivityConfigFields idPrefix="activity-config" form={form} onChange={setForm} />
         {error && <FormBanner>{error}</FormBanner>}
-        <Button type="submit" disabled={update.isPending}>
-          {update.isPending ? "Saving…" : "Save changes"}
+        <Button type="submit" isLoading={update.isPending}>
+          Save changes
         </Button>
       </form>
     </Modal>

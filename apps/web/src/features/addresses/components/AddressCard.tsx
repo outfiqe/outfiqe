@@ -107,8 +107,8 @@ export const AddressCard = ({ address }: AddressCardProps) => {
             >
               Cancel
             </Button>
-            <Button type="button" onClick={confirmDelete} disabled={deleteAddress.isPending}>
-              {deleteAddress.isPending ? "Deleting…" : "Delete"}
+            <Button type="button" onClick={confirmDelete} isLoading={deleteAddress.isPending}>
+              Delete
             </Button>
           </div>
         </Modal>

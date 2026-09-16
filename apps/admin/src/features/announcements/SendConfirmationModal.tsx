@@ -71,8 +71,8 @@ export const SendConfirmationModal = ({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={() => void submit()} disabled={isSubmitting}>
-            {isSubmitting ? "Sending…" : mode === SendMode.SCHEDULE ? "Schedule" : "Send now"}
+          <Button onClick={() => void submit()} isLoading={isSubmitting}>
+            {mode === SendMode.SCHEDULE ? "Schedule" : "Send now"}
           </Button>
         </div>
       }
