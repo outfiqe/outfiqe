@@ -18,6 +18,8 @@ import type { ActiveBrandDiscount } from "#modules/discounts/discount.types.js";
 import { isBrandDiscountWithinCeiling } from "#modules/discounts/discount.utils.js";
 import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 import { productTypeService } from "#modules/product-types/product-type.service.js";
+import { SALE_RAIL_LIMIT } from "#modules/sale/sale.constants.js";
+import { saleService } from "#modules/sale/sale.service.js";
 import { sizeOptionService } from "#modules/size-options/size-option.service.js";
 import { trendingService } from "#modules/trending/trending.service.js";
 import { wishlistRepository } from "#modules/wishlist/wishlist.repository.js";
@@ -598,6 +600,13 @@ export const productService = {
       rankedIds.length > 0
         ? await productRepository.listApprovedByIds(rankedIds)
         : await productRepository.listTrending();
+    return hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
+  },
+
+  async listSale(viewerId?: string): Promise<PublicProduct[]> {
+    const rankedIds = await saleService.getSaleProductIds(viewerId, SALE_RAIL_LIMIT);
+    if (rankedIds.length === 0) return [];
+    const rows = await productRepository.listApprovedByIds(rankedIds);
     return hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
   },
 

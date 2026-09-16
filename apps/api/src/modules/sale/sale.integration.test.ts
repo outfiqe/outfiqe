@@ -4,7 +4,16 @@ import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import { AccountStatus, DiscountType, ProductStatus, UserRole } from "#generated/prisma/enums.js";
+import {
+  AccountStatus,
+  CategoryStatus,
+  DiscountType,
+  PaymentMethod,
+  ProductStatus,
+  TagReviewStatus,
+  UserRole,
+} from "#generated/prisma/enums.js";
+import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
 import { createAdminSession } from "#test/integration/authHelpers.js";
@@ -47,7 +56,12 @@ const createBrand = (overrides: { accountStatus?: AccountStatus } = {}) =>
 
 const createStockedProduct = async (
   price: number,
-  overrides: { brandId?: string; stock?: number } = {},
+  overrides: {
+    brandId?: string;
+    stock?: number;
+    categoryIds?: string[];
+    productTypeSlug?: string;
+  } = {},
 ) => {
   const brandId = overrides.brandId ?? (await createBrand()).id;
   const product = await prisma.product.create({
@@ -55,14 +69,44 @@ const createStockedProduct = async (
       brandId,
       name: "Sale Jacket",
       price,
-      productTypeId: await ensureProductType(),
+      productTypeId: await ensureProductType(overrides.productTypeSlug ?? "tops"),
       status: ProductStatus.APPROVED,
+      categories: overrides.categoryIds
+        ? { connect: overrides.categoryIds.map((id) => ({ id })) }
+        : undefined,
     },
   });
   await prisma.productSize.create({
     data: { productId: product.id, label: "M", stock: overrides.stock ?? 10 },
   });
   return product;
+};
+
+const createCategory = () =>
+  prisma.category.create({
+    data: {
+      name: `Sale Category ${randomUUID().slice(0, 6)}`,
+      slug: `sale-category-${randomUUID().slice(0, 8)}`,
+      status: CategoryStatus.PUBLISHED,
+      sortOrder: 0,
+    },
+  });
+
+const createShopper = () =>
+  prisma.user.create({
+    data: {
+      email: `${randomUUID()}@outfiqe.test`,
+      name: "Test Shopper",
+      handle: `shopper-${randomUUID().slice(0, 8)}`,
+      phone: uniquePhone(),
+      passwordHash: "not-used-in-tests",
+      role: UserRole.CUSTOMER,
+    },
+  });
+
+const authHeaderFor = (userId: string, role: UserRole = UserRole.CUSTOMER) => {
+  const { accessToken } = generateTokenpair({ sub: userId, role });
+  return `Bearer ${accessToken}`;
 };
 
 const createDiscount = (
@@ -247,5 +291,188 @@ describe("GET /api/admin/sale/products/:productId/debug", () => {
       .set("Authorization", authHeader);
 
     expect(response.status).toBe(404);
+  });
+});
+
+describe("saleService.getSaleProductIds — personalization", () => {
+  it("ranks a product in the viewer's saved category above an equally-discounted product in an unrelated category", async () => {
+    const admin = await createAdmin();
+    const shopper = await createShopper();
+    const savedCategory = await createCategory();
+    const otherCategory = await createCategory();
+
+    const savedProduct = await createStockedProduct(1_000, {
+      categoryIds: [savedCategory.id],
+    });
+    await prisma.savedProduct.create({
+      data: { userId: shopper.id, productId: savedProduct.id },
+    });
+
+    const matchingCategoryDeal = await createStockedProduct(1_000, {
+      categoryIds: [savedCategory.id],
+    });
+    await createDiscount(matchingCategoryDeal.id, admin.id, { percentBasisPoints: 2_000 });
+
+    const unrelatedCategoryDeal = await createStockedProduct(1_000, {
+      categoryIds: [otherCategory.id],
+      productTypeSlug: "bottoms",
+    });
+    await createDiscount(unrelatedCategoryDeal.id, admin.id, { percentBasisPoints: 2_000 });
+
+    await saleService.runScoring();
+
+    const personalizedIds = await saleService.getSaleProductIds(shopper.id, 5);
+    const matchingIndex = personalizedIds.indexOf(matchingCategoryDeal.id);
+    const unrelatedIndex = personalizedIds.indexOf(unrelatedCategoryDeal.id);
+
+    expect(matchingIndex).toBeGreaterThanOrEqual(0);
+    expect(unrelatedIndex).toBeGreaterThanOrEqual(0);
+    expect(matchingIndex).toBeLessThan(unrelatedIndex);
+  });
+
+  it("boosts a product tagged in a look the viewer liked", async () => {
+    const admin = await createAdmin();
+    const creator = await createShopper();
+    const shopper = await createShopper();
+    const likedCategory = await createCategory();
+    const otherCategory = await createCategory();
+
+    const look = await prisma.creatorLook.create({
+      data: { creatorId: creator.id, imageUrl: `https://cdn.outfiqe.test/${randomUUID()}.jpg` },
+    });
+
+    const likedTagDeal = await createStockedProduct(1_000, { categoryIds: [likedCategory.id] });
+    await prisma.creatorLookProduct.create({
+      data: {
+        creatorLookId: look.id,
+        productId: likedTagDeal.id,
+        reviewStatus: TagReviewStatus.APPROVED,
+      },
+    });
+    await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: shopper.id } });
+    await createDiscount(likedTagDeal.id, admin.id, { percentBasisPoints: 2_000 });
+
+    const unrelatedDeal = await createStockedProduct(1_000, { categoryIds: [otherCategory.id] });
+    await createDiscount(unrelatedDeal.id, admin.id, { percentBasisPoints: 2_000 });
+
+    await saleService.runScoring();
+
+    const personalizedIds = await saleService.getSaleProductIds(shopper.id, 5);
+
+    expect(personalizedIds.indexOf(likedTagDeal.id)).toBeLessThan(
+      personalizedIds.indexOf(unrelatedDeal.id),
+    );
+  });
+
+  it("never returns a product the viewer has already purchased", async () => {
+    const admin = await createAdmin();
+    const shopper = await createShopper();
+    const purchasedProduct = await createStockedProduct(1_000);
+    await createDiscount(purchasedProduct.id, admin.id);
+
+    const size = await prisma.productSize.findFirstOrThrow({
+      where: { productId: purchasedProduct.id },
+    });
+    const order = await prisma.order.create({
+      data: {
+        userId: shopper.id,
+        subtotal: 1_000,
+        total: 1_000,
+        deliveryFee: 0,
+        codFee: 0,
+        paymentMethod: PaymentMethod.COD,
+        fullName: "Test Shopper",
+        phone: uniquePhone(),
+        address: "123 Test Street",
+        city: "Kathmandu",
+      },
+    });
+    await prisma.orderItem.create({
+      data: {
+        orderId: order.id,
+        productId: purchasedProduct.id,
+        sizeId: size.id,
+        qty: 1,
+        unitPrice: 1_000,
+        listUnitPrice: 1_000,
+      },
+    });
+
+    await saleService.runScoring();
+    const personalizedIds = await saleService.getSaleProductIds(shopper.id, 5);
+
+    expect(personalizedIds).not.toContain(purchasedProduct.id);
+  });
+
+  it("falls back to the same ranking anonymous visitors see for a signed-in shopper with no activity", async () => {
+    const admin = await createAdmin();
+    const shopper = await createShopper();
+    const product = await createStockedProduct(1_000);
+    await createDiscount(product.id, admin.id);
+
+    await saleService.runScoring();
+
+    const anonymousIds = await saleService.getSaleProductIds(undefined, 5);
+    const newShopperIds = await saleService.getSaleProductIds(shopper.id, 5);
+
+    expect(newShopperIds).toEqual(anonymousIds);
+  });
+});
+
+describe("GET /api/products/sale", () => {
+  it("returns discounted products with no authentication required", async () => {
+    const admin = await createAdmin();
+    const product = await createStockedProduct(1_000);
+    await createDiscount(product.id, admin.id);
+    await saleService.runScoring();
+
+    const response = await request(testApp).get("/api/products/sale");
+
+    expect(response.status).toBe(200);
+    const productIds = (response.body.data as { id: string }[]).map((entry) => entry.id);
+    expect(productIds).toContain(product.id);
+  });
+
+  it("returns an empty list, not an error, when nothing is on sale", async () => {
+    await saleService.runScoring();
+
+    const response = await request(testApp).get("/api/products/sale");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual([]);
+  });
+
+  it("personalizes the rail for an authenticated shopper", async () => {
+    const admin = await createAdmin();
+    const shopper = await createShopper();
+    const savedCategory = await createCategory();
+    const otherCategory = await createCategory();
+
+    const savedProduct = await createStockedProduct(1_000, { categoryIds: [savedCategory.id] });
+    await prisma.savedProduct.create({
+      data: { userId: shopper.id, productId: savedProduct.id },
+    });
+
+    const matchingCategoryDeal = await createStockedProduct(1_000, {
+      categoryIds: [savedCategory.id],
+    });
+    await createDiscount(matchingCategoryDeal.id, admin.id, { percentBasisPoints: 2_000 });
+    const unrelatedCategoryDeal = await createStockedProduct(1_000, {
+      categoryIds: [otherCategory.id],
+      productTypeSlug: "bottoms",
+    });
+    await createDiscount(unrelatedCategoryDeal.id, admin.id, { percentBasisPoints: 2_000 });
+
+    await saleService.runScoring();
+
+    const response = await request(testApp)
+      .get("/api/products/sale")
+      .set("Authorization", authHeaderFor(shopper.id));
+
+    expect(response.status).toBe(200);
+    const productIds = (response.body.data as { id: string }[]).map((entry) => entry.id);
+    expect(productIds.indexOf(matchingCategoryDeal.id)).toBeLessThan(
+      productIds.indexOf(unrelatedCategoryDeal.id),
+    );
   });
 });

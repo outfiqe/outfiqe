@@ -16,7 +16,12 @@ import {
 } from "./sale.constants.js";
 import { saleRepository } from "./sale.repository.js";
 import type { SaleDebugSnapshot, SaleProductSummary, ScoredSaleCandidate } from "./sale.types.js";
-import { scoreSaleCandidate } from "./sale.utils.js";
+import {
+  applyPersonalization,
+  deriveAffinityWeights,
+  excludeAlreadyPurchased,
+  scoreSaleCandidate,
+} from "./sale.utils.js";
 
 const SALE_CACHE_KEY = redisKeys.cache("product-sale", "global");
 const SALE_SCORE_RECOMPUTE_LOCK_KEY = redisKeys.lock("product-sale-score-recompute");
@@ -97,8 +102,20 @@ export const saleService = {
     return { ranked };
   },
 
-  async getRankedSaleCandidates(): Promise<ScoredSaleCandidate[]> {
-    return getOrRecomputeSaleScores();
+  async getSaleProductIds(viewerId: string | undefined, limit: number): Promise<string[]> {
+    const ranked = await getOrRecomputeSaleScores();
+    if (!viewerId) return ranked.slice(0, limit).map((candidate) => candidate.productId);
+
+    const { signals, purchasedProductIds } =
+      await saleRepository.listViewerShoppingSignals(viewerId);
+    const affinity = deriveAffinityWeights(signals);
+
+    const personalized = applyPersonalization(
+      excludeAlreadyPurchased(ranked, purchasedProductIds),
+      affinity,
+    ).sort((a, b) => b.score - a.score || a.productId.localeCompare(b.productId));
+
+    return personalized.slice(0, limit).map((candidate) => candidate.productId);
   },
 
   async listTopSaleProducts(limit: number): Promise<SaleProductSummary[]> {

@@ -17,6 +17,8 @@ export const AFFINITY_BOOST_CAP = 0.5;
 export const VIEWER_SIGNAL_LOOKBACK_LIMIT = 30;
 export const PURCHASE_HISTORY_LOOKUP_LIMIT = 300;
 
+export const SALE_RAIL_LIMIT = 5;
+
 export const SALE_SCORING_INTERVAL_MS = 30 * 60 * 1000;
 export const SALE_CANDIDATE_POOL_SIZE = 50;
 export const SALE_DIVERSE_POOL_LIMIT = 30;

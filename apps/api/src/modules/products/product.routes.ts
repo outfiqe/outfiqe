@@ -40,6 +40,7 @@ productRoutes.get(
   productController.listForReview,
 );
 productRoutes.get("/trending", optionalAuth, productController.listTrending);
+productRoutes.get("/sale", optionalAuth, productController.listSale);
 productRoutes.get("/new-arrivals", optionalAuth, productController.listNewArrivals);
 productRoutes.get(
   "/autocomplete",
