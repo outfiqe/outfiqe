@@ -41,7 +41,7 @@ export type { DbClient } from "#types/db.types.js";
 const NEW_ARRIVALS_LIMIT = 10;
 const SEEN_ON_CREATORS_LIMIT = 5;
 
-const withActiveDiscount = () => {
+export const withActiveDiscount = () => {
   const now = new Date();
   return {
     discounts: {
