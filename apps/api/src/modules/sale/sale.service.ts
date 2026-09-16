@@ -1,5 +1,6 @@
 import { applyDiversity, applyWeightedRotation } from "#lib/trend-scoring.utils.js";
 import logger from "#lib/winston.utils.js";
+import { productRepository } from "#modules/products/product.repository.js";
 import { trendingService } from "#modules/trending/trending.service.js";
 import { cacheService } from "#redis/cache.service.js";
 import { CACHE_TTL, redisKeys } from "#redis/redis.keys.js";
@@ -14,7 +15,7 @@ import {
   SALE_SCORING_INTERVAL_MS,
 } from "./sale.constants.js";
 import { saleRepository } from "./sale.repository.js";
-import type { ScoredSaleCandidate } from "./sale.types.js";
+import type { SaleDebugSnapshot, SaleProductSummary, ScoredSaleCandidate } from "./sale.types.js";
 import { scoreSaleCandidate } from "./sale.utils.js";
 
 const SALE_CACHE_KEY = redisKeys.cache("product-sale", "global");
@@ -98,5 +99,41 @@ export const saleService = {
 
   async getRankedSaleCandidates(): Promise<ScoredSaleCandidate[]> {
     return getOrRecomputeSaleScores();
+  },
+
+  async listTopSaleProducts(limit: number): Promise<SaleProductSummary[]> {
+    const now = new Date();
+    const scored = await computeScoredSaleCandidates(now);
+    const top = scored.slice(0, limit);
+
+    const products = await productRepository.listApprovedByIds(top.map((c) => c.productId));
+    const productById = new Map(products.map((product) => [product.id, product]));
+
+    const summaries: SaleProductSummary[] = [];
+    top.forEach((candidate, index) => {
+      const product = productById.get(candidate.productId);
+      if (!product) return;
+      summaries.push({
+        productId: candidate.productId,
+        name: product.name,
+        brand: product.brand.name,
+        imageUrl: product.imageUrl,
+        discountPercent: candidate.discountPercent,
+        score: candidate.score,
+        rank: index + 1,
+      });
+    });
+    return summaries;
+  },
+
+  async getDebugSnapshot(productId: string): Promise<SaleDebugSnapshot | null> {
+    const now = new Date();
+    const scored = await computeScoredSaleCandidates(now);
+    const rankIndex = scored.findIndex((candidate) => candidate.productId === productId);
+    if (rankIndex < 0) return null;
+
+    const candidate = scored[rankIndex];
+    if (!candidate) return null;
+    return { ...candidate, rank: rankIndex + 1, scoredAt: now };
   },
 };

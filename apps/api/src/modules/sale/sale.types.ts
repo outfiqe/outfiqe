@@ -34,3 +34,18 @@ export type ViewerShoppingSignals = {
   signals: AffinitySignal[];
   purchasedProductIds: string[];
 };
+
+export type SaleDebugSnapshot = ScoredSaleCandidate & {
+  rank: number | null;
+  scoredAt: Date;
+};
+
+export type SaleProductSummary = {
+  productId: string;
+  name: string;
+  brand: string;
+  imageUrl: string | null;
+  discountPercent: number;
+  score: number;
+  rank: number;
+};

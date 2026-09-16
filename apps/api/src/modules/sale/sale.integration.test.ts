@@ -1,12 +1,15 @@
 import { randomUUID } from "node:crypto";
 
+import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { AccountStatus, DiscountType, ProductStatus, UserRole } from "#generated/prisma/enums.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
+import { createAdminSession } from "#test/integration/authHelpers.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
+import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
 import { saleService } from "./sale.service.js";
@@ -191,5 +194,58 @@ describe("saleService.runScoring", () => {
     const pool = await readCachedSalePool();
 
     expect(pool).toEqual([]);
+  });
+});
+
+describe("GET /api/admin/sale/products", () => {
+  it("requires authentication", async () => {
+    const response = await request(testApp).get("/api/admin/sale/products");
+
+    expect(response.status).toBe(401);
+  });
+
+  it("lists ranked sale candidates for a platform-access admin", async () => {
+    const { authHeader } = await createAdminSession();
+    const admin = await createAdmin();
+    const product = await createStockedProduct(1_000);
+    await createDiscount(product.id, admin.id);
+
+    const response = await request(testApp)
+      .get("/api/admin/sale/products")
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(200);
+    const productIds = (response.body.data as { productId: string }[]).map(
+      (entry) => entry.productId,
+    );
+    expect(productIds).toContain(product.id);
+  });
+});
+
+describe("GET /api/admin/sale/products/:productId/debug", () => {
+  it("returns the score breakdown for a currently-discounted product", async () => {
+    const { authHeader } = await createAdminSession();
+    const admin = await createAdmin();
+    const product = await createStockedProduct(1_000);
+    await createDiscount(product.id, admin.id, { percentBasisPoints: 3_000 });
+
+    const response = await request(testApp)
+      .get(`/api/admin/sale/products/${product.id}/debug`)
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.discountPercent).toBe(30);
+    expect(response.body.data.rank).toBe(1);
+  });
+
+  it("returns 404 for a product that isn't currently on sale", async () => {
+    const { authHeader } = await createAdminSession();
+    const product = await createStockedProduct(1_000);
+
+    const response = await request(testApp)
+      .get(`/api/admin/sale/products/${product.id}/debug`)
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(404);
   });
 });
