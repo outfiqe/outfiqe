@@ -476,3 +476,74 @@ describe("GET /api/products/sale", () => {
     );
   });
 });
+
+describe("GET /api/products?sort=on-sale", () => {
+  it("returns only discounted products, deepest discount first", async () => {
+    const admin = await createAdmin();
+    const shallow = await createStockedProduct(1_000);
+    await createDiscount(shallow.id, admin.id, { percentBasisPoints: 1_000 });
+    const deep = await createStockedProduct(1_000);
+    await createDiscount(deep.id, admin.id, { percentBasisPoints: 4_000 });
+    const notOnSale = await createStockedProduct(1_000);
+
+    const response = await request(testApp).get("/api/products").query({ sort: "on-sale" });
+
+    expect(response.status).toBe(200);
+    const productIds = (response.body.data.products as { id: string }[]).map((entry) => entry.id);
+    expect(productIds).toContain(shallow.id);
+    expect(productIds).toContain(deep.id);
+    expect(productIds).not.toContain(notOnSale.id);
+    expect(productIds.indexOf(deep.id)).toBeLessThan(productIds.indexOf(shallow.id));
+    expect(response.body.data.total).toBe(2);
+  });
+
+  it("pages through the full sale catalog without skipping or repeating products", async () => {
+    const admin = await createAdmin();
+    const first = await createStockedProduct(1_000);
+    await createDiscount(first.id, admin.id, { percentBasisPoints: 4_000 });
+    const second = await createStockedProduct(1_000);
+    await createDiscount(second.id, admin.id, { percentBasisPoints: 3_000 });
+
+    const pageOne = await request(testApp)
+      .get("/api/products")
+      .query({ sort: "on-sale", limit: 1 });
+    expect(pageOne.status).toBe(200);
+    expect(pageOne.body.data.products).toHaveLength(1);
+    expect(pageOne.body.data.products[0].id).toBe(first.id);
+    expect(pageOne.body.data.nextCursor).toBeTruthy();
+
+    const pageTwo = await request(testApp)
+      .get("/api/products")
+      .query({ sort: "on-sale", limit: 1, cursor: pageOne.body.data.nextCursor });
+    expect(pageTwo.status).toBe(200);
+    expect(pageTwo.body.data.products).toHaveLength(1);
+    expect(pageTwo.body.data.products[0].id).toBe(second.id);
+  });
+
+  it("still only returns discounted products when combined with a category filter", async () => {
+    const admin = await createAdmin();
+    const category = await createCategory();
+    const onSaleInCategory = await createStockedProduct(1_000, { categoryIds: [category.id] });
+    await createDiscount(onSaleInCategory.id, admin.id);
+    const notOnSaleInCategory = await createStockedProduct(1_000, {
+      categoryIds: [category.id],
+    });
+
+    const response = await request(testApp)
+      .get("/api/products")
+      .query({ sort: "on-sale", category: category.slug });
+
+    expect(response.status).toBe(200);
+    const productIds = (response.body.data.products as { id: string }[]).map((entry) => entry.id);
+    expect(productIds).toContain(onSaleInCategory.id);
+    expect(productIds).not.toContain(notOnSaleInCategory.id);
+  });
+
+  it("returns an empty page, not an error, when nothing is on sale", async () => {
+    const response = await request(testApp).get("/api/products").query({ sort: "on-sale" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.products).toEqual([]);
+    expect(response.body.data.total).toBe(0);
+  });
+});

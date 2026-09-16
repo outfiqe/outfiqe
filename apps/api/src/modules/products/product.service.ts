@@ -517,6 +517,33 @@ export const productService = {
       }
     }
 
+    const isUnfilteredSaleBrowse =
+      sort === PRODUCT_SORT.ON_SALE &&
+      !categoryId &&
+      !productTypeId &&
+      !minPrice &&
+      !maxPrice &&
+      !inStock;
+
+    if (isUnfilteredSaleBrowse) {
+      const { ids, nextCursor } = await saleService.listSaleProductIds({ cursor, limit });
+
+      if (ids.length > 0 || cursor) {
+        const [rows, counts] = await Promise.all([
+          productRepository.listApprovedByIds(ids),
+          productRepository.countPublic({ sort: PRODUCT_SORT.ON_SALE }),
+        ]);
+
+        const products = await hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
+        return {
+          products,
+          nextCursor,
+          total: counts.total,
+          brandCount: counts.brandCount,
+        };
+      }
+    }
+
     const keysetCursor = cursor && isUuid(cursor) ? cursor : undefined;
     const filter = { categoryId, productTypeId, minPrice, maxPrice, inStockOnly: inStock, sort };
     const [rows, counts] = await Promise.all([

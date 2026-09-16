@@ -110,6 +110,10 @@ const buildPublicWhere = (filter: PublicFilter): Prisma.ProductWhereInput => ({
     filter.sort === PRODUCT_SORT.NEW_ARRIVALS
       ? { gte: new Date(Date.now() - NEW_ARRIVAL_WINDOW_MS) }
       : undefined,
+  discounts:
+    filter.sort === PRODUCT_SORT.ON_SALE
+      ? { some: withActiveDiscount().discounts.where }
+      : undefined,
 });
 
 const withTotalStock = <T extends { sizes: { stock: number }[] }>(

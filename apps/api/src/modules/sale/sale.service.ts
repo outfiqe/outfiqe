@@ -1,3 +1,6 @@
+import { randomUUID } from "node:crypto";
+
+import { decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
 import { applyDiversity, applyWeightedRotation } from "#lib/trend-scoring.utils.js";
 import logger from "#lib/winston.utils.js";
 import { productRepository } from "#modules/products/product.repository.js";
@@ -15,7 +18,13 @@ import {
   SALE_SCORING_INTERVAL_MS,
 } from "./sale.constants.js";
 import { saleRepository } from "./sale.repository.js";
-import type { SaleDebugSnapshot, SaleProductSummary, ScoredSaleCandidate } from "./sale.types.js";
+import type {
+  SaleDebugSnapshot,
+  SaleProductPage,
+  SaleProductSummary,
+  SaleSnapshotCursor,
+  ScoredSaleCandidate,
+} from "./sale.types.js";
 import {
   applyPersonalization,
   deriveAffinityWeights,
@@ -92,6 +101,49 @@ const getOrRecomputeSaleScores = async (): Promise<ScoredSaleCandidate[]> => {
   }
 };
 
+const saleSnapshotKey = (sessionId: string) => redisKeys.cache("product-sale-snapshot", sessionId);
+
+const getSaleSnapshot = async (sessionId: string): Promise<string[] | null> => {
+  const key = saleSnapshotKey(sessionId);
+  try {
+    const cached = await cacheService.get<string[]>(key);
+    if (cached) await cacheService.touch(key, CACHE_TTL.PRODUCT_SALE_SNAPSHOT);
+    return cached;
+  } catch (error) {
+    logger.warn(`Cache read failed for "${key}": ${describeError(error)}`);
+    return null;
+  }
+};
+
+const cacheSaleSnapshot = async (sessionId: string, ids: string[]): Promise<void> => {
+  const key = saleSnapshotKey(sessionId);
+  try {
+    await cacheService.set(key, ids, CACHE_TTL.PRODUCT_SALE_SNAPSHOT);
+  } catch (error) {
+    logger.warn(`Cache write failed for "${key}": ${describeError(error)}`);
+  }
+};
+
+const buildSaleSnapshotIds = async (): Promise<string[]> => {
+  const scored = await computeScoredSaleCandidates(new Date());
+  return scored.map((candidate) => candidate.productId);
+};
+
+const resolveSaleSnapshotSource = async (
+  decoded: SaleSnapshotCursor | undefined,
+): Promise<{ sessionId: string; offset: number; ids: string[] }> => {
+  const cachedIds = decoded ? await getSaleSnapshot(decoded.sessionId) : null;
+  if (decoded && cachedIds) {
+    return { sessionId: decoded.sessionId, offset: decoded.offset, ids: cachedIds };
+  }
+
+  const sessionId = decoded?.sessionId ?? randomUUID();
+  const ids = await buildSaleSnapshotIds();
+  await cacheSaleSnapshot(sessionId, ids);
+  const offset = decoded ? Math.min(decoded.offset, ids.length) : 0;
+  return { sessionId, offset, ids };
+};
+
 export const saleService = {
   async runScoring(): Promise<{ ranked: ScoredSaleCandidate[] }> {
     const ranked = await computeRankedSaleCandidates();
@@ -116,6 +168,26 @@ export const saleService = {
     ).sort((a, b) => b.score - a.score || a.productId.localeCompare(b.productId));
 
     return personalized.slice(0, limit).map((candidate) => candidate.productId);
+  },
+
+  async listSaleProductIds({
+    cursor,
+    limit,
+  }: {
+    cursor?: string;
+    limit: number;
+  }): Promise<SaleProductPage> {
+    const decoded = decodeCursor<SaleSnapshotCursor>(cursor);
+    const { sessionId, offset, ids } = await resolveSaleSnapshotSource(decoded);
+
+    const pageIds = ids.slice(offset, offset + limit);
+    const nextOffset = offset + pageIds.length;
+    const nextCursor =
+      nextOffset < ids.length
+        ? encodeCursor<SaleSnapshotCursor>({ sessionId, offset: nextOffset })
+        : null;
+
+    return { ids: pageIds, nextCursor };
   },
 
   async listTopSaleProducts(limit: number): Promise<SaleProductSummary[]> {

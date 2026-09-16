@@ -49,3 +49,7 @@ export type SaleProductSummary = {
   score: number;
   rank: number;
 };
+
+export type SaleSnapshotCursor = { sessionId: string; offset: number };
+
+export type SaleProductPage = { ids: string[]; nextCursor: string | null };
