@@ -3,7 +3,7 @@
 ## Purpose
 
 The public landing page. It is composed of independent sections (highlights carousel, taste
-explorer, trending, collections, creator looks, new arrivals, brand callout). Each data-driven
+explorer, trending, sale, collections, creator looks, new arrivals, brand callout). Each data-driven
 section renders in its own [parallel route](https://nextjs.org/docs/app/building-your-application/routing/parallel-routes)
 slot so that a render failure in one section shows a small inline "try again" card for that
 section only, while every other section — and the header, footer and nav — keep working.
@@ -15,11 +15,14 @@ section only, while every other section — and the header, footer and nav — k
   data fetching, so the shell paints immediately and each slot streams in on its own.
 - `page.tsx` — the `children` slot. Holds only the page `metadata`; renders nothing.
 - `default.tsx` — `children` fallback for soft-navigation states; renders nothing.
-- `@hero`, `@trending`, `@collections`, `@creatorLooks`, `@newArrivals` — one slot per section.
-  Each has `page.tsx` (renders the section component from `@/features/landing` or
+- `@hero`, `@trending`, `@sale`, `@collections`, `@creatorLooks`, `@newArrivals` — one slot per
+  section. Each has `page.tsx` (renders the section component from `@/features/landing` or
   `@/features/collections`), `loading.tsx` (the streamed skeleton), `error.tsx` (the per-section
   error boundary, delegating to `@/components/HomeSectionError`), and `default.tsx` (re-exports
-  `page.tsx`).
+  `page.tsx`). `@sale` is the one slot that can legitimately render nothing (`SaleRail` returns
+  `null` when no product currently has an active discount) — see `landing/components/SaleRail`'s
+  own rationale for why that's a `null` return rather than an empty-state message like its
+  siblings.
 - `@taste` — the taste explorer + category results. These two components share
   `CategorySelectionContext` and a single React Query `HydrationBoundary`, so they live in one
   slot. `TasteResultsSlot.tsx` resolves the visitor's stored taste pick server-side — the
@@ -41,7 +44,7 @@ section fills in as its data resolves. If one section errors, that section shows
 "… didn't load / try again" card and the rest of the page is unaffected; pressing "try again"
 re-renders just that slot.
 
-Technical: `layout.tsx` renders the shell and the six slot props → each `@slot/page.tsx` renders
+Technical: `layout.tsx` renders the shell and the seven slot props → each `@slot/page.tsx` renders
 its `@/features/*` section (an async server component that fetches directly, except `@taste`
 which prefetches into React Query and hydrates its client components) → Next.js wraps each slot
 in its own Suspense (`loading.tsx`) and error boundary (`error.tsx`).

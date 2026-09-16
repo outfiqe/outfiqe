@@ -11,6 +11,7 @@ interface HomeLayoutProps {
   taste: ReactNode;
   collections: ReactNode;
   trending: ReactNode;
+  sale: ReactNode;
   creatorLooks: ReactNode;
   newArrivals: ReactNode;
 }
@@ -21,6 +22,7 @@ const HomeLayout = ({
   taste,
   collections,
   trending,
+  sale,
   creatorLooks,
   newArrivals,
 }: HomeLayoutProps) => {
@@ -31,6 +33,7 @@ const HomeLayout = ({
         {hero}
         {taste}
         {trending}
+        {sale}
         {collections}
         {creatorLooks}
         {newArrivals}
