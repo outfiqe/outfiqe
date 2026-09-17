@@ -48,6 +48,47 @@
   --font-body: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
 }
 
+@theme {
+  --animate-like-burst-flame: like-burst-flame 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  --animate-like-burst-spark: like-burst-spark 0.55s ease-out forwards;
+}
+
+@keyframes like-burst-flame {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-12deg);
+  }
+  22% {
+    opacity: 1;
+    transform: scale(1.28) rotate(9deg);
+  }
+  40% {
+    transform: scale(0.92) rotate(-5deg);
+  }
+  58% {
+    transform: scale(1.08) rotate(3deg);
+  }
+  78% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes like-burst-spark {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx), var(--ty)) scale(0.2);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

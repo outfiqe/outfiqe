@@ -56,6 +56,7 @@ export default defineConfig({
         "src/features/explore/components/ExploreSidebarNav.tsx",
         "src/features/explore/components/AddPostButton.tsx",
         "src/features/explore/components/PostCard.tsx",
+        "src/features/explore/components/PostCarousel.tsx",
         "src/features/explore/components/PostCardHeader.tsx",
         "src/features/explore/components/PostCommentsSection.tsx",
         "src/features/explore/components/PostDetailModal.tsx",
