@@ -26,6 +26,7 @@ import {
   PRODUCT_PHOTO_ASPECT,
 } from "./ProductModal.constants";
 import { SizeStockFields } from "./SizeStockFields";
+import { ThriftListingFields } from "./ThriftListingFields";
 
 const selectClass =
   "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-foreground";
@@ -54,6 +55,7 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
       imageAssetIds: [],
       lowStock: false,
       sizes: [],
+      isThrift: false,
     },
   });
 
@@ -206,6 +208,20 @@ export const ProductModal = ({ open, onClose }: ProductModalProps) => {
             <p className="mt-1.5 text-xs text-destructive">{form.formState.errors.sizes.message}</p>
           )}
         </div>
+
+        <ThriftListingFields
+          isThrift={form.watch("isThrift") ?? false}
+          onIsThriftChange={(next) => form.setValue("isThrift", next, { shouldValidate: true })}
+          conditionRating={form.watch("thriftConditionRating")}
+          onConditionRatingChange={(next) =>
+            form.setValue("thriftConditionRating", next, { shouldValidate: true })
+          }
+          conditionNotes={form.watch("thriftConditionNotes") ?? ""}
+          onConditionNotesChange={(next) =>
+            form.setValue("thriftConditionNotes", next, { shouldValidate: true })
+          }
+          conditionError={form.formState.errors.thriftConditionRating?.message}
+        />
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-foreground">Categories</label>

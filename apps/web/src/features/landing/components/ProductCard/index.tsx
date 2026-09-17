@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Tooltip } from "@outfiqe/design-system";
+import { THRIFT_CONDITION_LABEL, type ThriftCondition } from "@outfiqe/utils";
 import { Heart, Shirt, Star } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -30,6 +31,8 @@ export interface ExploreProduct {
   type?: ProductType;
   lowStock?: boolean;
   isNew?: boolean;
+  isThrift?: boolean;
+  thriftConditionRating?: ThriftCondition | null;
   image?: string;
   responsiveImage?: ResponsiveImage | null;
   isSaved?: boolean;
@@ -77,6 +80,8 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
     unitsSold,
     lowStock,
     isNew,
+    isThrift,
+    thriftConditionRating,
     image,
     responsiveImage,
     isSaved,
@@ -168,6 +173,12 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
         )}
 
         {!image && <Shirt className="size-16 text-foreground/25" strokeWidth={1} />}
+
+        {isThrift && (
+          <span className="absolute bottom-2.5 left-2.5 rounded-full bg-thrift px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-thrift-foreground">
+            Thrift{thriftConditionRating && ` · ${THRIFT_CONDITION_LABEL[thriftConditionRating]}`}
+          </span>
+        )}
       </div>
 
       <p className="mt-3 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">

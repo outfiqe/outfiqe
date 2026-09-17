@@ -1,6 +1,6 @@
 import type { ResponsiveImage } from "@outfiqe/types";
 
-import type { DiscountType, ProductStatus } from "#generated/prisma/enums.js";
+import type { DiscountType, ProductStatus, ThriftCondition } from "#generated/prisma/enums.js";
 import type { ImageAssetForResponsiveImage } from "#lib/responsive-image.utils.js";
 
 export type ProductTypeSummary = { slug: string; label: string };
@@ -32,6 +32,9 @@ export type ProductRecord = {
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
+  isThrift: boolean;
+  thriftConditionRating: ThriftCondition | null;
+  thriftConditionNotes: string | null;
 } & ProductRatingSummary;
 
 export type ProductSizeRecord = {
@@ -130,6 +133,10 @@ export type ProductBrandSummary = {
   status: ProductStatus;
   createdAt: Date;
   sizes: BrandProductSize[];
+  isThrift: boolean;
+  thriftConditionRating: ThriftCondition | null;
+  thriftConditionNotes: string | null;
+  isSoldOut: boolean;
 };
 
 export type ProductBrandSummaryPage = {
@@ -153,9 +160,20 @@ export type CreateProductInput = {
   imageAssetIds?: (string | null)[];
   lowStock?: boolean;
   sizes: CreateProductSizeInput[];
+  isThrift?: boolean;
+  thriftConditionRating?: ThriftCondition;
+  thriftConditionNotes?: string;
 };
 
-export type UpdateProductInput = Partial<Omit<CreateProductInput, "brandId">>;
+type ClearableThriftConditionFields = {
+  thriftConditionRating?: ThriftCondition | null;
+  thriftConditionNotes?: string | null;
+};
+
+export type UpdateProductInput = Partial<
+  Omit<CreateProductInput, "brandId" | "thriftConditionRating" | "thriftConditionNotes">
+> &
+  ClearableThriftConditionFields;
 
 export type PublicProduct = {
   id: string;
@@ -171,6 +189,10 @@ export type PublicProduct = {
   lowStock: boolean;
   isNew: boolean;
   isSaved: boolean;
+  isThrift: boolean;
+  thriftConditionRating: ThriftCondition | null;
+  thriftConditionNotes: string | null;
+  isSoldOut: boolean;
   creatorBuyerCount: number;
   unitsSold: number;
 } & ProductRatingSummary;
@@ -189,6 +211,7 @@ export type ProductSearchFilter = {
   minPrice?: number;
   maxPrice?: number;
   inStockOnly?: boolean;
+  thrift?: boolean;
 };
 
 export type ProductSearchParams = ProductSearchFilter & {

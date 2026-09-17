@@ -51,6 +51,9 @@ export const sumStock = (sizes: { stock: number }[]): number =>
 export const isLowStock = (totalStock: number): boolean =>
   totalStock > 0 && totalStock <= LOW_STOCK_THRESHOLD;
 
+export const isThriftSoldOut = (isThrift: boolean, totalStock: number | undefined): boolean =>
+  isThrift && totalStock !== undefined && totalStock <= 0;
+
 export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduct => {
   const {
     id,
@@ -62,6 +65,9 @@ export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduc
     imageUrl,
     totalStock,
     lowStock,
+    isThrift,
+    thriftConditionRating,
+    thriftConditionNotes,
     createdAt,
     creatorBuyerCount,
     unitsSold,
@@ -90,6 +96,10 @@ export const toPublicProduct = (product: ProductWithOptionalStock): PublicProduc
     lowStock: totalStock === undefined ? lowStock : isLowStock(totalStock),
     isNew: isNew(createdAt),
     isSaved: false,
+    isThrift,
+    thriftConditionRating,
+    thriftConditionNotes,
+    isSoldOut: isThriftSoldOut(isThrift, totalStock),
     creatorBuyerCount: creatorBuyerCount ?? 0,
     unitsSold: unitsSold ?? 0,
     avgRating,
@@ -110,6 +120,7 @@ export const toBrandSummary = ({
   productTypeId: _productTypeId,
   totalStock,
   lowStock: _lowStock,
+  isThrift,
   discounts,
   price,
   ...rest
@@ -117,6 +128,7 @@ export const toBrandSummary = ({
   const [activeDiscountRecord] = discounts ?? [];
   return {
     ...rest,
+    isThrift,
     price,
     effectivePrice: resolveBrandFundedUnitPrice(price, toActiveBrandDiscount(activeDiscountRecord)),
     activeDiscount: activeDiscountRecord ? toDiscountView(activeDiscountRecord) : null,
@@ -125,5 +137,6 @@ export const toBrandSummary = ({
     categorySlugs: categories.map((category) => category.slug),
     imageUrls: images.map((image) => image.url),
     lowStock: isLowStock(totalStock),
+    isSoldOut: isThriftSoldOut(isThrift, totalStock),
   };
 };

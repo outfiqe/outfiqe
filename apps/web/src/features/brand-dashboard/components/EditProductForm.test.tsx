@@ -61,6 +61,10 @@ const buildProduct = (overrides: Partial<BrandProduct> = {}): BrandProduct => ({
   status: "APPROVED",
   createdAt: new Date().toISOString(),
   sizes: [],
+  isThrift: false,
+  thriftConditionRating: null,
+  thriftConditionNotes: null,
+  isSoldOut: false,
   ...overrides,
 });
 

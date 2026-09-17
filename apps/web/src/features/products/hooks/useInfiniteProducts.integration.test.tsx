@@ -15,6 +15,7 @@ const productsKey = [
   undefined,
   undefined,
   undefined,
+  undefined,
 ];
 
 const realPage: ProductPage = {
@@ -32,6 +33,10 @@ const realPage: ProductPage = {
       lowStock: false,
       isNew: false,
       isSaved: false,
+      isThrift: false,
+      thriftConditionRating: null,
+      thriftConditionNotes: null,
+      isSoldOut: false,
       creatorBuyerCount: 0,
       unitsSold: 0,
       avgRating: null,

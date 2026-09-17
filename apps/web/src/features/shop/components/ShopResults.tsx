@@ -15,6 +15,8 @@ import { TRENDING_RANKS } from "@/shared/components/TrendingRankBadge";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
 
+import { ThriftOnlyToggle } from "./ThriftOnlyToggle";
+
 const SHOP_BASE_PATH = "/shop";
 
 const parseSort = (value: string | null): ProductSort | undefined =>
@@ -27,6 +29,7 @@ export const ShopResults = () => {
   const categorySlug = searchParams.get("category");
   const activeType = searchParams.get("type") ?? ALL_TYPE_ID;
   const sort = parseSort(searchParams.get("sort"));
+  const thriftOnly = searchParams.get("thrift") === "true";
 
   const { pendingValue: pendingType, markPending: markTypePending } =
     usePendingSelection<string>(activeType);
@@ -50,6 +53,7 @@ export const ShopResults = () => {
     category: category?.slug,
     type: effectiveActiveType === ALL_TYPE_ID ? undefined : effectiveActiveType,
     sort,
+    thrift: thriftOnly ? true : undefined,
     enabled: isAuthResolved && !isResolvingCategory,
   });
 
@@ -70,6 +74,16 @@ export const ShopResults = () => {
     router.replace(`${SHOP_BASE_PATH}?${params.toString()}`, { scroll: false });
   };
 
+  const toggleThriftOnly = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (thriftOnly) {
+      params.delete("thrift");
+    } else {
+      params.set("thrift", "true");
+    }
+    router.replace(`${SHOP_BASE_PATH}?${params.toString()}`, { scroll: false });
+  };
+
   const showLoadingGrid = isLoading || isNavigatingType;
   const products = productsPages?.pages.flatMap((page) => page.products) ?? [];
   const firstPage = productsPages?.pages[0];
@@ -86,15 +100,16 @@ export const ShopResults = () => {
         <Skeleton className="h-4 w-40" />
       )}
 
-      {category && (
-        <div className="mt-6">
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        {category && (
           <CategoryTypeFilters
             activeType={effectiveActiveType}
             isNavigating={isNavigatingType}
             onSelectType={selectType}
           />
-        </div>
-      )}
+        )}
+        <ThriftOnlyToggle active={thriftOnly} onToggle={toggleThriftOnly} />
+      </div>
 
       {showLoadingGrid ? (
         <ProductGridSkeleton className="mt-8" />

@@ -188,3 +188,41 @@ Every public product shape (`PublicProduct`, `PublicProductDetail`) carries `ima
 `listPublic`, `listPublicByBrand`, `listTrending`, and `listNewArrivals` all now call a shared `hydrateSavedFlags(products, viewerId)` after fetching the page, rather than each `PublicProduct` carrying its own real `isSaved` from the start. `toPublicProduct` sets `isSaved: false` unconditionally; `hydrateSavedFlags` is the only thing that ever overrides it, and only for an authenticated viewer. It calls `wishlistRepository.listSavedProductIds(viewerId, productIds)` exactly once per page — a single `WHERE userId = ? AND productId IN (...)` — never once per listed product, which is what an N+1 version of this would have cost across a shop grid, every brand page, and both home rails. An anonymous viewer skips the call entirely and gets `isSaved: false` for everything, correctly. `GET /products`, `/products/trending`, `/products/new-arrivals`, and `/brands/:id/products` all needed `optionalAuth` added to their routes for this — none of them resolved a viewer before, since nothing on the response depended on one.
 
 Before this, only `GET /products/:id` (`getPublicDetail`) ever computed real `isSaved` — every listing view showed `isSaved: false` unconditionally, so the wishlist heart on a shop grid or a home rail tile only ever reflected what was clicked during that page's own session, never the shopper's actual saved state. See `apps/web/src/features/wishlist/README.md` for the frontend half of this fix.
+
+## Thrift listings — a tag, not a taxonomy, and a sold-out one hides itself
+
+A brand can mark a product `isThrift` (secondhand/one-of-a-kind) alongside a required
+`thriftConditionRating` (`LIKE_NEW`/`GOOD`/`FAIR`) and `thriftConditionNotes` — enforced together by a
+conditional Zod `.refine()` on `createProductSchema`/`updateProductSchema` (the same shape
+`setProductDiscountSchema` already uses for its own type-dependent amount field). A thrift product
+stays in its real category/type — there is no separate "Thrift" category — so `?thrift=true` on
+`GET /products` (and the matching `p_thrift` param on `search_products`) is a plain composable
+filter, exactly like `inStock`, not a new taxonomy or a `sort` value: thrift narrows the set, it
+doesn't rank it. See `docs/PRD-THRIFT-LISTINGS.md` for the product spec.
+
+**A sold-out thrift product is excluded from every shopper-facing listing, unconditionally, the
+moment its last unit sells — never just when a shopper opts into `inStock=true`.** Unlike an
+ordinary product (which can restock and stays listed at zero stock, see the existing
+`fix/product-out-of-stock-cta` treatment on the web side), a thrift piece is one-of-a-kind by
+definition and can never restock. `excludeSoldOutThrift` (`product.repository.ts`) — `{ isThrift:
+true, sizes: { every: { stock: { lte: 0 } } } }`, wrapped in a `NOT` — is folded into
+`buildPublicWhere` and into `listTrending`/`listApprovedByIds`/`listNewArrivals`'s own inline
+`where` clauses (those three don't route through `buildPublicWhere`, so the exclusion has to be
+added at each one individually). `every` on a product's `sizes` relation is vacuously true when
+there are zero sizes at all, which correctly excludes that edge case too. `listApprovedByIds` gets
+it specifically so a stale cached trending/sale ranking (refreshed on its own ~15–30 min interval)
+can never re-surface a thrift item that sold out since the last recompute.
+
+**`findPublicById` (`GET /products/:id`) is deliberately the one read path that never applies this
+exclusion.** A sold-out thrift product's own page has to stay reachable — a shared link, a browser
+history entry, an old cart/wishlist reference — rather than 404ing on something that was real
+moments ago. `isThriftSoldOut(isThrift, totalStock)` (`product.utils.ts`) is computed at the mapper
+level and surfaces as `isSoldOut` on every public product shape; the web product-detail page uses it
+to show "Sold — this one-of-a-kind piece is gone" in place of the ordinary "Out of stock" copy,
+reusing the exact same disabled-CTA mechanics either way. `listByBrandId` (the brand's own `/products
+/mine`) also never applies the exclusion, on purpose — a brand keeps seeing their own sold-out
+listings, marked `isSoldOut`, for their own record-keeping.
+
+**Naming note:** this is unrelated to the platform's gamification `Badge`/`UserBadge` system
+(`../badges`). Don't call the Thrift indicator a "badge" in code or conversation — it's a plain
+product attribute, never an earned collectible.

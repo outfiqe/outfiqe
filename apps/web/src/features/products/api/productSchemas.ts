@@ -1,8 +1,12 @@
+import { THRIFT_CONDITION_VALUES } from "@outfiqe/utils";
 import { z } from "zod";
 
 import { responsiveImageSchema } from "@/shared/lib/responsiveImage";
 
 export const productTypeSchema = z.string();
+
+export const thriftConditionSchema = z.enum(THRIFT_CONDITION_VALUES);
+export type ThriftCondition = z.infer<typeof thriftConditionSchema>;
 
 export const publicProductSchema = z.object({
   id: z.string(),
@@ -18,6 +22,10 @@ export const publicProductSchema = z.object({
   lowStock: z.boolean(),
   isNew: z.boolean(),
   isSaved: z.boolean(),
+  isThrift: z.boolean(),
+  thriftConditionRating: thriftConditionSchema.nullable(),
+  thriftConditionNotes: z.string().nullable(),
+  isSoldOut: z.boolean(),
   creatorBuyerCount: z.number(),
   unitsSold: z.number(),
   avgRating: z.number().nullable(),

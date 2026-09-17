@@ -327,6 +327,10 @@ model Product {
   wornByCount   Int           @default(0) @map("worn_by_count")
   deletedAt     DateTime?     @map("deleted_at")
 
+  isThrift              Boolean          @default(false) @map("is_thrift")
+  thriftConditionRating ThriftCondition? @map("thrift_condition_rating")
+  thriftConditionNotes  String?          @map("thrift_condition_notes")
+
   sizes         ProductSize[]
   taggedInLooks CreatorLookProduct[]
   tagClicks     CreatorLookTagClick[]
@@ -353,6 +357,7 @@ model Product {
   @@index([deletedAt])
   @@index([brandId])
   @@index([productTypeId])
+  @@index([isThrift])
   @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "products_name_trgm_idx")
   @@index([searchVector], type: Gin, map: "products_search_vector_idx")
   @@map("products")
@@ -1049,6 +1054,12 @@ enum ProductStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum ThriftCondition {
+  LIKE_NEW
+  GOOD
+  FAIR
 }
 
 model BrandMembership {

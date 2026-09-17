@@ -149,6 +149,45 @@ describe("ShopResults", () => {
     expect(useInfiniteProducts).toHaveBeenCalledWith(expect.objectContaining({ enabled: false }));
   });
 
+  it("shows the Thrift only toggle regardless of whether a category is active", () => {
+    mockSearchParams({});
+    render(<ShopResults />);
+
+    expect(screen.getByRole("button", { name: "Thrift only" })).toBeInTheDocument();
+  });
+
+  it("adds thrift=true to the URL and passes thrift:true to the query when toggled on", async () => {
+    mockSearchParams({ category: "tops" });
+    const user = userEvent.setup();
+    render(<ShopResults />);
+
+    await user.click(screen.getByRole("button", { name: "Thrift only" }));
+
+    expect(replace).toHaveBeenCalledWith("/shop?category=tops&thrift=true", { scroll: false });
+  });
+
+  it("removes thrift from the URL when toggled back off", async () => {
+    mockSearchParams({ category: "tops", thrift: "true" });
+    const user = userEvent.setup();
+    render(<ShopResults />);
+
+    expect(screen.getByRole("button", { name: "Thrift only" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Thrift only" }));
+
+    expect(replace).toHaveBeenCalledWith("/shop?category=tops", { scroll: false });
+  });
+
+  it("passes thrift:true through to useInfiniteProducts when the toggle is active", () => {
+    mockSearchParams({ thrift: "true" });
+    render(<ShopResults />);
+
+    expect(useInfiniteProducts).toHaveBeenCalledWith(expect.objectContaining({ thrift: true }));
+  });
+
   it("shows an empty-shop message when no category filter is requested and there is nothing to sell", () => {
     mockSearchParams({});
     mockInfiniteProducts({
