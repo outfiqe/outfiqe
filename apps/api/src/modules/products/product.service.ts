@@ -140,6 +140,9 @@ export const productService = {
       imageAssetIds,
       lowStock,
       sizes,
+      isThrift,
+      thriftConditionRating,
+      thriftConditionNotes,
     }: CreateProductBody,
   ): Promise<ProductBrandSummary> {
     const brandId = await requireBrandId(userId);
@@ -163,6 +166,9 @@ export const productService = {
       imageUrls,
       imageAssetIds,
       lowStock,
+      isThrift,
+      thriftConditionRating: isThrift ? thriftConditionRating : undefined,
+      thriftConditionNotes: isThrift ? thriftConditionNotes : undefined,
       sizes: sizes.map(({ sizeOptionId, stock }, sortOrder) => {
         const sizeOption = sizeOptionById.get(sizeOptionId);
         if (!sizeOption) {
@@ -182,7 +188,19 @@ export const productService = {
   async update(
     userId: string,
     productId: string,
-    { categories, name, price, type, imageUrls, imageAssetIds, lowStock, sizes }: UpdateProductBody,
+    {
+      categories,
+      name,
+      price,
+      type,
+      imageUrls,
+      imageAssetIds,
+      lowStock,
+      sizes,
+      isThrift,
+      thriftConditionRating,
+      thriftConditionNotes,
+    }: UpdateProductBody,
   ): Promise<ProductBrandSummary> {
     const brandId = await requireBrandId(userId);
     const product = await requireOwnedProduct(productId, brandId);
@@ -237,6 +255,9 @@ export const productService = {
         imageAssetIds,
         lowStock,
         sizes: sizeChanges,
+        isThrift,
+        thriftConditionRating: isThrift === false ? null : (thriftConditionRating ?? undefined),
+        thriftConditionNotes: isThrift === false ? null : (thriftConditionNotes ?? undefined),
       });
       return toBrandSummary(product);
     } catch (error) {
@@ -400,11 +421,12 @@ export const productService = {
 
   async listForReview({
     status: rawStatus,
+    isThrift,
     cursor,
     limit,
   }: ListReviewProductsQuery): Promise<ProductReviewPage> {
     const status = rawStatus ?? ProductStatus.PENDING;
-    const rows = await productRepository.listForReview(status, { cursor, limit });
+    const rows = await productRepository.listForReview(status, { cursor, limit, isThrift });
 
     const { items: pagedProducts, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
     return {
@@ -460,6 +482,7 @@ export const productService = {
       minPrice,
       maxPrice,
       inStock,
+      thrift,
       cursor,
       limit,
     }: ListPublicProductsQuery,
@@ -479,6 +502,7 @@ export const productService = {
         minPrice,
         maxPrice,
         inStockOnly: inStock,
+        thrift,
       });
       const rows = await productRepository.listApprovedByIds(ids);
       const nextOffset = offset + ids.length;
@@ -495,7 +519,8 @@ export const productService = {
       !productTypeId &&
       !minPrice &&
       !maxPrice &&
-      !inStock;
+      !inStock &&
+      thrift === undefined;
 
     if (isUnfilteredTrendingBrowse) {
       const { ids, nextCursor } = await trendingService.listTrendingProductIds({ cursor, limit });
@@ -523,7 +548,8 @@ export const productService = {
       !productTypeId &&
       !minPrice &&
       !maxPrice &&
-      !inStock;
+      !inStock &&
+      thrift === undefined;
 
     if (isUnfilteredSaleBrowse) {
       const { ids, nextCursor } = await saleService.listSaleProductIds({ cursor, limit });
@@ -545,7 +571,15 @@ export const productService = {
     }
 
     const keysetCursor = cursor && isUuid(cursor) ? cursor : undefined;
-    const filter = { categoryId, productTypeId, minPrice, maxPrice, inStockOnly: inStock, sort };
+    const filter = {
+      categoryId,
+      productTypeId,
+      minPrice,
+      maxPrice,
+      inStockOnly: inStock,
+      thrift,
+      sort,
+    };
     const [rows, counts] = await Promise.all([
       productRepository.listPublic({ ...filter, cursor: keysetCursor, limit }),
       productRepository.countPublic(filter),

@@ -2,7 +2,7 @@ import { PRODUCT_SORT, PRODUCT_SORT_VALUES } from "@outfiqe/utils";
 import { z } from "zod";
 
 import { SEARCH_QUERY_MAX_LENGTH } from "#constants/search.constants.js";
-import { DiscountType, ProductStatus } from "#generated/prisma/enums.js";
+import { DiscountType, ProductStatus, ThriftCondition } from "#generated/prisma/enums.js";
 import { MAX_BRAND_DISCOUNT_BASIS_POINTS } from "#modules/discounts/discount.constants.js";
 
 const NAME_MIN = 2;
@@ -17,6 +17,8 @@ const MAX_IMAGES = 6;
 const STOCK_MIN = 0;
 const STOCK_MAX = 100_000;
 const DISCOUNT_PERCENT_BASIS_POINTS_MIN = 1;
+const THRIFT_CONDITION_NOTES_MIN = 3;
+const THRIFT_CONDITION_NOTES_MAX = 500;
 
 export const productTypeSlugSchema = z.string().trim().min(1).max(TYPE_SLUG_MAX);
 export const categorySlugFieldSchema = z.string().trim().min(1).max(60);
@@ -45,18 +47,46 @@ const productFieldsSchema = z.object({
   imageAssetIds: z.array(z.uuid().nullable()).max(MAX_IMAGES).optional(),
   lowStock: z.boolean().optional(),
   sizes: z.array(productSizeInputSchema).min(1, "Add at least one size"),
+  isThrift: z.boolean().optional(),
+  thriftConditionRating: z.enum(ThriftCondition).optional(),
+  thriftConditionNotes: z
+    .string()
+    .trim()
+    .min(THRIFT_CONDITION_NOTES_MIN)
+    .max(THRIFT_CONDITION_NOTES_MAX)
+    .optional(),
 });
 
-export const createProductSchema = productFieldsSchema.refine(imageAssetIdsMatchImageUrls, {
-  message: IMAGE_ASSET_IDS_MISMATCH_MESSAGE,
-  path: ["imageAssetIds"],
-});
+const THRIFT_CONDITION_REQUIRED_MESSAGE =
+  "A thrift listing needs a condition rating and a short condition note.";
+
+const thriftConditionFieldsPresentWhenThrift = (data: {
+  isThrift?: boolean;
+  thriftConditionRating?: ThriftCondition;
+  thriftConditionNotes?: string;
+}): boolean =>
+  !data.isThrift ||
+  (data.thriftConditionRating !== undefined && data.thriftConditionNotes !== undefined);
+
+export const createProductSchema = productFieldsSchema
+  .refine(imageAssetIdsMatchImageUrls, {
+    message: IMAGE_ASSET_IDS_MISMATCH_MESSAGE,
+    path: ["imageAssetIds"],
+  })
+  .refine(thriftConditionFieldsPresentWhenThrift, {
+    message: THRIFT_CONDITION_REQUIRED_MESSAGE,
+    path: ["thriftConditionRating"],
+  });
 
 export const updateProductSchema = productFieldsSchema
   .partial()
   .refine(imageAssetIdsMatchImageUrls, {
     message: IMAGE_ASSET_IDS_MISMATCH_MESSAGE,
     path: ["imageAssetIds"],
+  })
+  .refine(thriftConditionFieldsPresentWhenThrift, {
+    message: THRIFT_CONDITION_REQUIRED_MESSAGE,
+    path: ["thriftConditionRating"],
   });
 
 export const productIdParamSchema = z.object({ id: z.uuid() });
@@ -126,8 +156,14 @@ export const updateProductDiscountSchema = z
     message: "Provide either percentBasisPoints or fixedAmount, not both.",
   });
 
+const booleanFilterSchema = z
+  .enum(["true", "false"])
+  .transform((value) => value === "true")
+  .optional();
+
 export const listReviewProductsQuerySchema = z.object({
   status: productStatusSchema.optional(),
+  isThrift: booleanFilterSchema,
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
@@ -143,10 +179,8 @@ export const listPublicProductsQuerySchema = z.object({
   sort: z.enum(PRODUCT_SORT_VALUES).default(PRODUCT_SORT.NEWEST),
   minPrice: z.coerce.number().int().min(FILTER_PRICE_MIN).max(PRICE_MAX).optional(),
   maxPrice: z.coerce.number().int().min(FILTER_PRICE_MIN).max(PRICE_MAX).optional(),
-  inStock: z
-    .enum(["true", "false"])
-    .transform((value) => value === "true")
-    .optional(),
+  inStock: booleanFilterSchema,
+  thrift: booleanFilterSchema,
   cursor: z.string().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
