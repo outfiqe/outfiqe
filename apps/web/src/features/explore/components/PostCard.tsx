@@ -2,7 +2,6 @@
 
 import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
-import { cn } from "@/shared/lib/cn";
 
 import type { FeedPost } from "../api/exploreFeedSchemas";
 import { usePostCardState } from "../hooks/usePostCardState";
@@ -84,9 +83,22 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
         className="px-3 py-2.5"
       />
 
-      <div onClick={onImageClick} className={cn("relative", onImageClick && "cursor-pointer")}>
+      <div className="relative">
         {trendingRank && <TrendingRankBadge rank={trendingRank} />}
-        <PostCarousel images={images} fallbackColor={getAvatarColor(id)} aspectRatio="4 / 5" />
+        <PostCarousel
+          images={images}
+          fallbackColor={getAvatarColor(id)}
+          aspectRatio="4 / 5"
+          onImageClick={onImageClick}
+          onDoubleTapLike={
+            likeDisabledReason
+              ? undefined
+              : () =>
+                  gated(() => {
+                    if (!isLiked && !isLiking) toggleLike({ lookId: id, liked: isLiked });
+                  })
+          }
+        />
       </div>
 
       <div className="px-3 py-2.5">

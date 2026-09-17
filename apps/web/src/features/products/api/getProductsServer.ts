@@ -61,6 +61,18 @@ export const getTrendingProductsServer = async (): Promise<ExploreProduct[]> => 
   }
 };
 
+export const getSaleProductsServer = async (): Promise<ExploreProduct[]> => {
+  try {
+    const accessToken = await getServerAccessToken();
+    const raw = await serverApiRequest<PublicProduct[]>("/products/sale", {
+      accessToken: accessToken ?? undefined,
+    });
+    return productListSchema.parse(raw).map(toExploreProduct);
+  } catch {
+    return [];
+  }
+};
+
 export const getNewArrivalsServer = async (): Promise<ExploreProduct[]> => {
   try {
     const accessToken = await getServerAccessToken();

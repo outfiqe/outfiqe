@@ -41,7 +41,7 @@ export type { DbClient } from "#types/db.types.js";
 const NEW_ARRIVALS_LIMIT = 10;
 const SEEN_ON_CREATORS_LIMIT = 5;
 
-const withActiveDiscount = () => {
+export const withActiveDiscount = () => {
   const now = new Date();
   return {
     discounts: {
@@ -109,6 +109,10 @@ const buildPublicWhere = (filter: PublicFilter): Prisma.ProductWhereInput => ({
   createdAt:
     filter.sort === PRODUCT_SORT.NEW_ARRIVALS
       ? { gte: new Date(Date.now() - NEW_ARRIVAL_WINDOW_MS) }
+      : undefined,
+  discounts:
+    filter.sort === PRODUCT_SORT.ON_SALE
+      ? { some: withActiveDiscount().discounts.where }
       : undefined,
 });
 

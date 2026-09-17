@@ -73,6 +73,7 @@ import { productReviewRoutes } from "./modules/product-reviews/product-review.ro
 import { productTypeRoutes } from "./modules/product-types/product-type.routes.js";
 import { productRoutes } from "./modules/products/product.routes.js";
 import { pushRoutes } from "./modules/push/push.routes.js";
+import { saleRoutes } from "./modules/sale/sale.routes.js";
 import { sizeOptionRoutes } from "./modules/size-options/size-option.routes.js";
 import { supportRoutes } from "./modules/support/support.routes.js";
 import { tagReportRoutes } from "./modules/tag-reports/tagReport.routes.js";
@@ -211,6 +212,7 @@ export const createApp = () => {
   app.use("/api/hero-slides", heroSlideRoutes);
   app.use("/api/image-processing", imageProcessingRoutes);
   app.use("/api/admin/trending", trendingRoutes);
+  app.use("/api/admin/sale", saleRoutes);
   app.use("/api/leaderboard", leaderboardRoutes);
   app.use("/api/creator-leaderboard", creatorLeaderboardRoutes);
   app.use("/api/xp", xpRoutes);

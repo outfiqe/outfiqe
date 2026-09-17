@@ -202,6 +202,11 @@ export const trendingService = {
     return ranked.slice(0, limit).map((entry) => entry.productId);
   },
 
+  async getTrendingProductScores(): Promise<Map<string, number>> {
+    const ranked = await getOrRecomputeTrendingScores();
+    return new Map(ranked.map((entry) => [entry.productId, entry.score]));
+  },
+
   async listTrendingProductIds({
     cursor,
     limit,

@@ -18,6 +18,8 @@ import type { ActiveBrandDiscount } from "#modules/discounts/discount.types.js";
 import { isBrandDiscountWithinCeiling } from "#modules/discounts/discount.utils.js";
 import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
 import { productTypeService } from "#modules/product-types/product-type.service.js";
+import { SALE_RAIL_LIMIT } from "#modules/sale/sale.constants.js";
+import { saleService } from "#modules/sale/sale.service.js";
 import { sizeOptionService } from "#modules/size-options/size-option.service.js";
 import { trendingService } from "#modules/trending/trending.service.js";
 import { wishlistRepository } from "#modules/wishlist/wishlist.repository.js";
@@ -515,6 +517,33 @@ export const productService = {
       }
     }
 
+    const isUnfilteredSaleBrowse =
+      sort === PRODUCT_SORT.ON_SALE &&
+      !categoryId &&
+      !productTypeId &&
+      !minPrice &&
+      !maxPrice &&
+      !inStock;
+
+    if (isUnfilteredSaleBrowse) {
+      const { ids, nextCursor } = await saleService.listSaleProductIds({ cursor, limit });
+
+      if (ids.length > 0 || cursor) {
+        const [rows, counts] = await Promise.all([
+          productRepository.listApprovedByIds(ids),
+          productRepository.countPublic({ sort: PRODUCT_SORT.ON_SALE }),
+        ]);
+
+        const products = await hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
+        return {
+          products,
+          nextCursor,
+          total: counts.total,
+          brandCount: counts.brandCount,
+        };
+      }
+    }
+
     const keysetCursor = cursor && isUuid(cursor) ? cursor : undefined;
     const filter = { categoryId, productTypeId, minPrice, maxPrice, inStockOnly: inStock, sort };
     const [rows, counts] = await Promise.all([
@@ -598,6 +627,13 @@ export const productService = {
       rankedIds.length > 0
         ? await productRepository.listApprovedByIds(rankedIds)
         : await productRepository.listTrending();
+    return hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
+  },
+
+  async listSale(viewerId?: string): Promise<PublicProduct[]> {
+    const rankedIds = await saleService.getSaleProductIds(viewerId, SALE_RAIL_LIMIT);
+    if (rankedIds.length === 0) return [];
+    const rows = await productRepository.listApprovedByIds(rankedIds);
     return hydrateSavedFlags(rows.map(toPublicProduct), viewerId);
   },
 

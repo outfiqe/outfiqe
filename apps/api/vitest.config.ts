@@ -81,6 +81,7 @@ export default defineConfig({
         "src/modules/creators/**/*.ts",
         "src/modules/creator-looks/**/*.ts",
         "src/modules/trending/**/*.ts",
+        "src/modules/sale/**/*.ts",
         "src/modules/tag-reviews/**/*.ts",
         "src/modules/tag-reports/**/*.ts",
         "src/modules/content-reports/**/*.ts",

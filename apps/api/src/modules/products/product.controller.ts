@@ -113,6 +113,12 @@ export const productController = {
     sendSuccess(res, products, "Trending products.");
   },
 
+  async listSale(_req: Request, res: Response) {
+    const principal = getAuthPrincipal(res);
+    const products = await productService.listSale(principal?.userId);
+    sendSuccess(res, products, "Sale products.");
+  },
+
   async listNewArrivals(_req: Request, res: Response) {
     const principal = getAuthPrincipal(res);
     const products = await productService.listNewArrivals(principal?.userId);

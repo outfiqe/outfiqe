@@ -1,0 +1,27 @@
+export const SALE_DISCOUNT_FRESHNESS_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
+
+export const SALE_POPULARITY_WEIGHT_CAP = 8;
+export const SALE_FRESHNESS_WEIGHT_CAP = 1.5;
+
+export const SALE_DISCOUNT_PERCENT_MIN = 0;
+export const SALE_DISCOUNT_PERCENT_MAX = 100;
+
+export const AFFINITY_WEIGHT_SAVED = 0.5;
+export const AFFINITY_WEIGHT_CART = 0.6;
+export const AFFINITY_WEIGHT_PURCHASE = 0.35;
+export const AFFINITY_WEIGHT_LIKED_TAG = 0.2;
+
+export const AFFINITY_MAX_WEIGHT_PER_KEY = 1.2;
+export const AFFINITY_BOOST_CAP = 0.5;
+
+export const VIEWER_SIGNAL_LOOKBACK_LIMIT = 30;
+export const PURCHASE_HISTORY_LOOKUP_LIMIT = 300;
+
+export const SALE_RAIL_LIMIT = 5;
+
+export const SALE_SCORING_INTERVAL_MS = 30 * 60 * 1000;
+export const SALE_CANDIDATE_POOL_SIZE = 50;
+export const SALE_DIVERSE_POOL_LIMIT = 30;
+export const SALE_MAX_PER_BRAND = 2;
+export const SALE_ROTATION_TIE_BAND = 0.1;
+export const SALE_SCORE_RECOMPUTE_LOCK_TTL_MS = 30_000;
