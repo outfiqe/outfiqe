@@ -1,4 +1,5 @@
 import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
+import { THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -10,6 +11,9 @@ import type { ProductStatusValue } from "./schemas";
 
 const TABS: ProductStatusValue[] = ["PENDING", "APPROVED", "REJECTED"];
 const PRODUCTS_STATUS_FILTER = oneOfFilter<ProductStatusValue>(TABS, "PENDING");
+const THRIFT_FILTER_VALUES = ["all", "thrift"] as const;
+type ThriftFilterValue = (typeof THRIFT_FILTER_VALUES)[number];
+const PRODUCTS_THRIFT_FILTER = oneOfFilter<ThriftFilterValue>(THRIFT_FILTER_VALUES, "all");
 
 const STATUS_TONE: Record<ProductStatusValue, "neutral" | "positive" | "negative"> = {
   PENDING: "neutral",
@@ -19,6 +23,7 @@ const STATUS_TONE: Record<ProductStatusValue, "neutral" | "positive" | "negative
 
 export const ProductsPage = () => {
   const [tab, setTab] = useSearchFilter("status", PRODUCTS_STATUS_FILTER);
+  const [thriftFilter, setThriftFilter] = useSearchFilter("thrift", PRODUCTS_THRIFT_FILTER);
   const queryClient = useQueryClient();
 
   const {
@@ -28,7 +33,7 @@ export const ProductsPage = () => {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useInfiniteProducts(tab);
+  } = useInfiniteProducts(tab, thriftFilter === "thrift" ? true : undefined);
   const products = productsQuery?.pages.flatMap((page) => page.products) ?? [];
 
   const approve = useMutation({
@@ -47,21 +52,35 @@ export const ProductsPage = () => {
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Products</h1>
 
-      <div className="mt-5 flex gap-2">
-        {TABS.map((status) => (
-          <button
-            key={status}
-            onClick={() => setTab(status)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              tab === status
-                ? "bg-foreground text-background"
-                : "border border-border text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {status[0]}
-            {status.slice(1).toLowerCase()}
-          </button>
-        ))}
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-2">
+          {TABS.map((status) => (
+            <button
+              key={status}
+              onClick={() => setTab(status)}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                tab === status
+                  ? "bg-foreground text-background"
+                  : "border border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {status[0]}
+              {status.slice(1).toLowerCase()}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setThriftFilter(thriftFilter === "thrift" ? "all" : "thrift")}
+          aria-pressed={thriftFilter === "thrift"}
+          className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+            thriftFilter === "thrift"
+              ? "bg-thrift text-thrift-foreground"
+              : "border border-border text-muted-foreground hover:text-thrift-strong"
+          }`}
+        >
+          Thrift
+        </button>
       </div>
 
       <div className="mt-6 space-y-3">
@@ -75,8 +94,20 @@ export const ProductsPage = () => {
         )}
 
         {products.map((product) => {
-          const { id, imageUrl, name, status, lowStock, brand, price, productType, categories } =
-            product;
+          const {
+            id,
+            imageUrl,
+            name,
+            status,
+            lowStock,
+            brand,
+            price,
+            productType,
+            categories,
+            isThrift,
+            thriftConditionRating,
+            thriftConditionNotes,
+          } = product;
 
           return (
             <div
@@ -100,6 +131,13 @@ export const ProductsPage = () => {
                       Low stock
                     </Badge>
                   )}
+                  {isThrift && (
+                    <span className="rounded-full bg-thrift/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-thrift-strong">
+                      Thrift
+                      {thriftConditionRating &&
+                        ` · ${THRIFT_CONDITION_LABEL[thriftConditionRating]}`}
+                    </span>
+                  )}
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {brand.name} &middot; Rs. {price.toLocaleString()}
@@ -107,6 +145,11 @@ export const ProductsPage = () => {
                 <p className="mt-1 text-sm text-muted-foreground">
                   {productType.label} &middot; {categories.join(", ")}
                 </p>
+                {isThrift && thriftConditionNotes && (
+                  <p className="mt-1.5 text-sm text-foreground">
+                    <span className="font-medium">Condition notes:</span> {thriftConditionNotes}
+                  </p>
+                )}
               </div>
 
               {status === "PENDING" && (

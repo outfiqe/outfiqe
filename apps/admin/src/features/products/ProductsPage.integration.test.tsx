@@ -10,7 +10,15 @@ import { ProductsPage } from "./ProductsPage";
 
 const API_BASE = "http://localhost:3000/api";
 
-const product = (id: string, name: string) => ({
+const product = (
+  id: string,
+  name: string,
+  overrides: {
+    isThrift?: boolean;
+    thriftConditionRating?: "LIKE_NEW" | "GOOD" | "FAIR" | null;
+    thriftConditionNotes?: string | null;
+  } = {},
+) => ({
   id,
   name,
   price: 1_000,
@@ -21,6 +29,10 @@ const product = (id: string, name: string) => ({
   status: "PENDING" as const,
   createdAt: "2026-01-01T00:00:00.000Z",
   brand: { name: "Studio Nine" },
+  isThrift: false,
+  thriftConditionRating: null,
+  thriftConditionNotes: null,
+  ...overrides,
 });
 
 const okJson = (data: unknown) => HttpResponse.json({ success: true, message: "ok", data });
@@ -144,5 +156,44 @@ describe("ProductsPage", () => {
 
     await waitFor(() => expect(router.state.location.search).toEqual({ status: "REJECTED" }));
     await waitFor(() => expect(requestedStatuses).toContain("REJECTED"));
+  });
+
+  it("shows the declared condition rating and notes on a thrift listing", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/products/review`, () =>
+        okJson({
+          products: [
+            product("product-1", "Secondhand Trench", {
+              isThrift: true,
+              thriftConditionRating: "GOOD",
+              thriftConditionNotes: "Small mark on the left cuff.",
+            }),
+          ],
+          nextCursor: null,
+        }),
+      ),
+    );
+
+    renderPage();
+
+    expect(await screen.findByText(/thrift.*good/i)).toBeInTheDocument();
+    expect(screen.getByText(/small mark on the left cuff/i)).toBeInTheDocument();
+  });
+
+  it("filters the review queue to thrift listings when the Thrift toggle is on", async () => {
+    const requestedIsThrift: (string | null)[] = [];
+    mswServer.use(
+      http.get(`${API_BASE}/products/review`, ({ request }) => {
+        requestedIsThrift.push(new URL(request.url).searchParams.get("isThrift"));
+        return okJson({ products: [], nextCursor: null });
+      }),
+    );
+
+    const { router } = renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Thrift" }));
+
+    await waitFor(() => expect(router.state.location.search).toEqual({ thrift: "thrift" }));
+    await waitFor(() => expect(requestedIsThrift).toContain("true"));
   });
 });
