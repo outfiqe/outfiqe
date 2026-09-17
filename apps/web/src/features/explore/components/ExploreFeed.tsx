@@ -47,8 +47,7 @@ export const ExploreFeed = () => {
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
   const isHydrated = useIsHydrated();
   const [hasJustDismissedForYouHint, setHasJustDismissedForYouHint] = useState(false);
-  const isForYouHintVisible =
-    !hasJustDismissedForYouHint && !(isHydrated && isForYouHintDismissed());
+  const isForYouHintVisible = isHydrated && !hasJustDismissedForYouHint && !isForYouHintDismissed();
 
   const dismissForYouHint = () => {
     rememberForYouHintDismissed();
