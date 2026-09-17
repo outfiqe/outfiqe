@@ -28,6 +28,10 @@
   --destructive: 6 78% 46%;
   --destructive-foreground: 0 0% 100%;
 
+  --thrift: 43 88% 40%;
+  --thrift-foreground: 32 40% 98%;
+  --thrift-strong: 32 70% 28%;
+
   --ring: 175 66% 52%;
 
   --chart-1: 175 66% 42%;
@@ -140,6 +144,10 @@
 
   --destructive: 6 72% 56%;
   --destructive-foreground: 20 14% 8%;
+
+  --thrift: 42 80% 58%;
+  --thrift-foreground: 32 30% 12%;
+  --thrift-strong: 42 75% 68%;
 
   --ring: 175 66% 52%;
 
