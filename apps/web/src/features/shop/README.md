@@ -20,7 +20,9 @@
 
 **User-facing:** land on `/shop` from a "View all" (with `category`, optionally `type`) or "See More" (with `sort=trending`) link elsewhere on the site, from the footer, from search, or navigate there directly. Scroll to load more — no numbered pages.
 
-**Technical:** `page.tsx` (`generateMetadata` + server `<h1>`) → `ShopResults` → `useInfiniteProducts` (`apps/web/src/features/products`) → `GET /products?category=&type=&sort=&cursor=` — the same cursor-paginated endpoint `landing/CategoryResults` already used, now also accepting `sort` (see `apps/api/src/modules/products/README.md`). No category in the URL means "browse everything," gated only by `sort`.
+**Technical:** `page.tsx` (`generateMetadata` + server `<h1>`) → `ShopResults` → `useInfiniteProducts` (`apps/web/src/features/products`) → `GET /products?category=&type=&sort=&thrift=&cursor=` — the same cursor-paginated endpoint `landing/CategoryResults` already used, now also accepting `sort` and `thrift` (see `apps/api/src/modules/products/README.md`). No category in the URL means "browse everything," gated only by `sort`/`thrift`.
+
+**`?thrift=true` is "a separate section" for thrift listings, without a new route.** `ThriftOnlyToggle` renders unconditionally — not gated behind an active `category` the way `CategoryTypeFilters` is — since thrift items stay filed under their real categories rather than a category of their own; the toggle needs to work standalone (`/shop?thrift=true`, the nav's "Thrift" link) and scoped (`/shop?category=dresses&thrift=true`) identically. It's a plain composable filter, not folded into `sort`: thrift narrows the result set, it doesn't rank it.
 
 ## Non-obvious rationale
 

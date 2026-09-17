@@ -17,6 +17,7 @@ type ListProductsInput = {
   minPrice?: number;
   maxPrice?: number;
   inStock?: boolean;
+  thrift?: boolean;
   cursor?: string;
 };
 
@@ -29,6 +30,7 @@ export const productsApi = {
     minPrice,
     maxPrice,
     inStock,
+    thrift,
     cursor,
   }: ListProductsInput): Promise<ProductPage> {
     const params = new URLSearchParams();
@@ -39,6 +41,7 @@ export const productsApi = {
     if (minPrice !== undefined) params.set("minPrice", String(minPrice));
     if (maxPrice !== undefined) params.set("maxPrice", String(maxPrice));
     if (inStock !== undefined) params.set("inStock", String(inStock));
+    if (thrift !== undefined) params.set("thrift", String(thrift));
     if (cursor) params.set("cursor", cursor);
 
     const res = await apiClient.get<ProductPage>(`/products?${params.toString()}`);

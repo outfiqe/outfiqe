@@ -20,7 +20,10 @@ import { MobileNav } from "./MobileNav";
 import { ShopExploreToggle } from "./ShopExploreToggle";
 import { LEADERBOARD_LINKS } from "./siteNav.constants";
 
-const SHOP_LINKS = [{ label: "Brands", href: "/brands" }];
+const SHOP_LINKS = [
+  { label: "Brands", href: "/brands" },
+  { label: "Thrift", href: "/shop?thrift=true" },
+];
 
 const SEARCH_FORM_CLASS =
   "flex min-w-0 flex-1 items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-muted-foreground " +

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { thriftConditionSchema } from "@/features/products/api/productSchemas";
+
 export const brandProductSizeSchema = z.object({
   id: z.string(),
   label: z.string(),
@@ -32,6 +34,10 @@ export const brandProductSchema = z.object({
   status: z.enum(["PENDING", "APPROVED", "REJECTED"]),
   createdAt: z.string(),
   sizes: z.array(brandProductSizeSchema),
+  isThrift: z.boolean(),
+  thriftConditionRating: thriftConditionSchema.nullable(),
+  thriftConditionNotes: z.string().nullable(),
+  isSoldOut: z.boolean(),
 });
 export type BrandProduct = z.infer<typeof brandProductSchema>;
 

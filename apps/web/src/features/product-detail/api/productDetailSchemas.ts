@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { productTypeSchema } from "@/features/products/api/productSchemas";
+import { productTypeSchema, thriftConditionSchema } from "@/features/products/api/productSchemas";
 import { responsiveImageSchema } from "@/shared/lib/responsiveImage";
 
 export const productSizeSchema = z.object({
@@ -46,6 +46,10 @@ export const productDetailSchema = z
     image: responsiveImageSchema.nullish(),
     lowStock: z.boolean(),
     isNew: z.boolean(),
+    isThrift: z.boolean(),
+    thriftConditionRating: thriftConditionSchema.nullable(),
+    thriftConditionNotes: z.string().nullable(),
+    isSoldOut: z.boolean(),
     sizes: z.array(productSizeSchema),
     images: z.array(z.string()),
     wornByCount: z.number(),

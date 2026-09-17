@@ -27,6 +27,7 @@ import {
   PRODUCT_PHOTO_ASPECT,
 } from "./ProductModal.constants";
 import { SizeStockFields } from "./SizeStockFields";
+import { ThriftListingFields } from "./ThriftListingFields";
 
 const selectClass =
   "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-foreground";
@@ -56,6 +57,9 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
       imageAssetIds: product.imageUrls.map(() => null),
       lowStock: product.lowStock,
       sizes: [],
+      isThrift: product.isThrift,
+      thriftConditionRating: product.thriftConditionRating ?? undefined,
+      thriftConditionNotes: product.thriftConditionNotes ?? undefined,
     },
   });
 
@@ -202,6 +206,20 @@ export const EditProductForm = ({ product, onClose }: EditProductFormProps) => {
             )}
           </div>
         )}
+
+        <ThriftListingFields
+          isThrift={form.watch("isThrift") ?? false}
+          onIsThriftChange={(next) => form.setValue("isThrift", next, { shouldValidate: true })}
+          conditionRating={form.watch("thriftConditionRating")}
+          onConditionRatingChange={(next) =>
+            form.setValue("thriftConditionRating", next, { shouldValidate: true })
+          }
+          conditionNotes={form.watch("thriftConditionNotes") ?? ""}
+          onConditionNotesChange={(next) =>
+            form.setValue("thriftConditionNotes", next, { shouldValidate: true })
+          }
+          conditionError={form.formState.errors.thriftConditionRating?.message}
+        />
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-foreground">Categories</label>

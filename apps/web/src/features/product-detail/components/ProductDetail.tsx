@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, toast, Tooltip } from "@outfiqe/design-system";
+import { THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
 import { ChevronLeft, Heart, Share2, Shirt, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -171,6 +172,24 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
           <h1 className="mt-2 font-display text-2xl font-extrabold uppercase leading-tight tracking-tight text-foreground sm:text-3xl">
             {product.name}
           </h1>
+          {product.isThrift && (
+            <div className="mt-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-thrift/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-thrift-strong">
+                Thrift
+                {product.thriftConditionRating && (
+                  <>
+                    <span aria-hidden>·</span>
+                    {THRIFT_CONDITION_LABEL[product.thriftConditionRating]}
+                  </>
+                )}
+              </span>
+              {product.thriftConditionNotes && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  {product.thriftConditionNotes}
+                </p>
+              )}
+            </div>
+          )}
           {product.discountPercent ? (
             <div className="mt-3 flex items-center gap-2">
               <p className="font-display text-xl font-semibold text-foreground">
@@ -261,7 +280,9 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
               Shopping is available on customer accounts.
             </p>
           ) : isSoldOut ? (
-            <p className="mt-2 text-sm font-semibold text-foreground">Out of stock</p>
+            <p className="mt-2 text-sm font-semibold text-foreground">
+              {product.isThrift ? "Sold — this one-of-a-kind piece is gone" : "Out of stock"}
+            </p>
           ) : needsSizeChoice ? (
             <p className="mt-2 text-xs text-destructive">Select a size to continue.</p>
           ) : null}

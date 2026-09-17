@@ -57,6 +57,10 @@ const buildProduct = (
   imageUrl: null,
   lowStock: false,
   isNew: false,
+  isThrift: false,
+  thriftConditionRating: null,
+  thriftConditionNotes: null,
+  isSoldOut: false,
   sizes,
   images: [],
   wornByCount: 0,
@@ -102,6 +106,36 @@ describe("ProductDetail out-of-stock handling", () => {
 
     expect(screen.getByText("Out of stock")).toBeInTheDocument();
     expect(cta(/add to cart/i)).toBeDisabled();
+  });
+
+  it("shows a one-of-a-kind sold message instead of Out of stock for a sold-out thrift piece", () => {
+    render(
+      <ProductDetail
+        product={buildProduct([{ id: "one", label: "One size", inStock: false }], {
+          isThrift: true,
+        })}
+      />,
+    );
+
+    expect(screen.queryByText("Out of stock")).not.toBeInTheDocument();
+    expect(screen.getByText(/sold — this one-of-a-kind piece is gone/i)).toBeInTheDocument();
+    expect(cta(/add to cart/i)).toBeDisabled();
+  });
+
+  it("shows the thrift tag, condition rating and notes for a thrift listing", () => {
+    render(
+      <ProductDetail
+        product={buildProduct([{ id: "one", label: "One size", inStock: true }], {
+          isThrift: true,
+          thriftConditionRating: "GOOD",
+          thriftConditionNotes: "Small mark on the left cuff.",
+        })}
+      />,
+    );
+
+    expect(screen.getByText(/thrift/i)).toBeInTheDocument();
+    expect(screen.getByText(/good/i)).toBeInTheDocument();
+    expect(screen.getByText("Small mark on the left cuff.")).toBeInTheDocument();
   });
 
   it("auto-selects the first available size and enables the CTAs", () => {
