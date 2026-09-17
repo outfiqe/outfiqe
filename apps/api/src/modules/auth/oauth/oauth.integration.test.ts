@@ -149,6 +149,7 @@ describe("GET /api/auth/oauth/:provider/start", () => {
     expect(location.searchParams.get("code_challenge")).toBeTruthy();
     expect(location.searchParams.get("state")).toBeTruthy();
     expect(location.searchParams.get("scope")).toBe("openid email profile");
+    expect(location.searchParams.get("prompt")).toBe("select_account");
   });
 
   it("rejects an unsupported provider", async () => {
@@ -380,6 +381,7 @@ describe("GET /api/auth/oauth/:provider/link/start", () => {
       "https://accounts.google.com/o/oauth2/v2/auth",
     );
     expect(location.searchParams.get("state")).toBeTruthy();
+    expect(location.searchParams.get("prompt")).toBe("select_account");
   });
 });
 
