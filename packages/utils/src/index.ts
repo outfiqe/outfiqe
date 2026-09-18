@@ -5,6 +5,7 @@ export * from "./notifications/formatActorList";
 export * from "./notifications/isExternalNotificationPath";
 export * from "./phone";
 export * from "./platform-nav";
+export * from "./post-layout";
 export * from "./product-sort";
 export * from "./product-type";
 export * from "./tenant";
