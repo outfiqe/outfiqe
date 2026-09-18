@@ -24,7 +24,10 @@ import { QuantitySelector } from "./QuantitySelector";
 import { SeenOnCreators } from "./SeenOnCreators";
 import { ShippingInfo } from "./ShippingInfo";
 import { SizeSelector } from "./SizeSelector";
+import { ThriftPurchaseConfirmModal } from "./ThriftPurchaseConfirmModal";
 import { TrustLine } from "./TrustLine";
+
+type PendingThriftAction = "cart" | "buy" | null;
 
 type ProductDetailProps = {
   product: ProductDetailType;
@@ -43,6 +46,9 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
     setLastSeenIsSaved(product.isSaved);
     setIsSaved(product.isSaved);
   }
+
+  const [pendingThriftAction, setPendingThriftAction] = useState<PendingThriftAction>(null);
+  const [hasConfirmedThriftPurchase, setHasConfirmedThriftPurchase] = useState(false);
 
   const availableSizes = product.sizes.filter((size) => size.inStock);
   const isSoldOut = availableSizes.length === 0;
@@ -105,6 +111,23 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
       unitPrice: product.effectivePrice,
     });
     router.push("/checkout?buyNow=1");
+  };
+
+  const requestPurchase = (action: "cart" | "buy") => {
+    if (product.isThrift && !hasConfirmedThriftPurchase) {
+      setPendingThriftAction(action);
+      return;
+    }
+    if (action === "cart") addToCart();
+    else buyNow();
+  };
+
+  const confirmThriftPurchase = () => {
+    setHasConfirmedThriftPurchase(true);
+    const action = pendingThriftAction;
+    setPendingThriftAction(null);
+    if (action === "cart") addToCart();
+    else if (action === "buy") buyNow();
   };
 
   const scrollToSeenOn = () => {
@@ -230,11 +253,15 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
                   className="flex-1"
                   disabled={!canPurchase}
                   isLoading={addToCartMutation.isPending}
-                  onClick={() => gated(addToCart)}
+                  onClick={() => gated(() => requestPurchase("cart"))}
                 >
                   Add to cart
                 </Button>
-                <Button className="flex-1" disabled={!canPurchase} onClick={() => gated(buyNow)}>
+                <Button
+                  className="flex-1"
+                  disabled={!canPurchase}
+                  onClick={() => gated(() => requestPurchase("buy"))}
+                >
                   <Zap className="size-4" />
                   Buy now
                 </Button>
@@ -294,6 +321,15 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
       <SeenOnCreators productId={product.id} creators={product.seenOnCreators} />
 
       <ReviewsSection productId={product.id} initialRatingSummary={product} />
+
+      {pendingThriftAction && (
+        <ThriftPurchaseConfirmModal
+          conditionRating={product.thriftConditionRating}
+          conditionNotes={product.thriftConditionNotes}
+          onConfirm={confirmThriftPurchase}
+          onCancel={() => setPendingThriftAction(null)}
+        />
+      )}
     </div>
   );
 };

@@ -66,6 +66,7 @@ export default defineConfig({
         "src/features/explore/components/ReportContentModal.tsx",
         "src/features/explore/components/ConfirmDeleteCommentModal.tsx",
         "src/features/product-detail/components/ProductDetail.tsx",
+        "src/features/product-detail/components/ThriftPurchaseConfirmModal.tsx",
         "src/features/product-detail/components/ShippingInfo.tsx",
         "src/features/users/components/UserList.tsx",
         "src/features/users/components/EditOwnProfileCard.tsx",

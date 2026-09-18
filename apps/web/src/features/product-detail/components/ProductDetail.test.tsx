@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ProductDetail as ProductDetailType } from "../api/productDetailSchemas";
@@ -157,6 +157,91 @@ describe("ProductDetail out-of-stock handling", () => {
       expect.objectContaining({ productId: "product-1", sizeId: "m", qty: 1 }),
       expect.anything(),
     );
+  });
+});
+
+describe("ProductDetail thrift purchase consent", () => {
+  beforeEach(() => {
+    addToCart.mockClear();
+  });
+
+  it("shows a consent modal before adding a thrift item to the cart", () => {
+    render(
+      <ProductDetail
+        product={buildProduct([{ id: "one", label: "One size", inStock: true }], {
+          isThrift: true,
+          thriftConditionRating: "GOOD",
+          thriftConditionNotes: "Small mark on the left cuff.",
+        })}
+      />,
+    );
+
+    fireEvent.click(cta(/add to cart/i));
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("You're buying a secondhand piece")).toBeInTheDocument();
+    expect(within(dialog).getByText("Small mark on the left cuff.")).toBeInTheDocument();
+    expect(addToCart).not.toHaveBeenCalled();
+  });
+
+  it("adds to cart only after the shopper confirms", () => {
+    render(
+      <ProductDetail
+        product={buildProduct([{ id: "one", label: "One size", inStock: true }], {
+          isThrift: true,
+        })}
+      />,
+    );
+
+    fireEvent.click(cta(/add to cart/i));
+    fireEvent.click(screen.getByRole("button", { name: /i understand, continue/i }));
+
+    expect(addToCart).toHaveBeenCalledOnce();
+    expect(screen.queryByText("You're buying a secondhand piece")).not.toBeInTheDocument();
+  });
+
+  it("doesn't add to cart when the shopper cancels", () => {
+    render(
+      <ProductDetail
+        product={buildProduct([{ id: "one", label: "One size", inStock: true }], {
+          isThrift: true,
+        })}
+      />,
+    );
+
+    fireEvent.click(cta(/add to cart/i));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(addToCart).not.toHaveBeenCalled();
+    expect(screen.queryByText("You're buying a secondhand piece")).not.toBeInTheDocument();
+  });
+
+  it("doesn't ask again once the shopper has already confirmed once on this page", () => {
+    render(
+      <ProductDetail
+        product={buildProduct([{ id: "one", label: "One size", inStock: true }], {
+          isThrift: true,
+        })}
+      />,
+    );
+
+    fireEvent.click(cta(/add to cart/i));
+    fireEvent.click(screen.getByRole("button", { name: /i understand, continue/i }));
+    addToCart.mockClear();
+
+    fireEvent.click(cta(/add to cart/i));
+
+    expect(screen.queryByText("You're buying a secondhand piece")).not.toBeInTheDocument();
+    expect(addToCart).toHaveBeenCalledOnce();
+  });
+
+  it("never shows the consent modal for a non-thrift item", () => {
+    render(<ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />);
+
+    fireEvent.click(cta(/add to cart/i));
+
+    expect(screen.queryByText("You're buying a secondhand piece")).not.toBeInTheDocument();
+    expect(addToCart).toHaveBeenCalledOnce();
   });
 });
 
