@@ -58,3 +58,11 @@ is deliberately not the same `search_creator_looks` Postgres function the public
 that function ranks by relevance for a viewer looking for looks to browse, while a moderator
 usually already knows who or what they're looking for and wants a plain newest-first list they can
 still narrow — a simpler `ILIKE`-backed filter fits that better than reusing the relevance ranker.
+
+**`PostGridCard`/`PostDetailModal` size their thumbnail from the post's own `layout`
+(`POST_LAYOUT_ASPECT`, `@outfiqe/utils`) instead of a fixed `4/5`, but the grid itself stays a plain
+CSS grid rather than picking up `react-masonry-css` the way the storefront's own grid did.** A
+moderation tool doesn't need pixel-perfect masonry packing for a cosmetic row-height mismatch, and
+adding a new dependency to this app for that alone isn't worth it — the aspect-ratio fix is the real
+correctness issue (a Square/Tall post's image was being force-cropped into a 4:5 box), the ragged
+row gaps a mixed-layout plain grid leaves are not.

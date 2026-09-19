@@ -1464,6 +1464,7 @@ export const creatorLookRepository = {
       items: pageRows.map((row) => ({
         id: row.id,
         imageUrl: row.imageUrl,
+        layout: row.layout,
         caption: row.caption,
         creator: row.creator,
         likeCount: row.likeCount,

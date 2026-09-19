@@ -207,6 +207,7 @@ export type AdminLookCreator = {
 export type AdminLookSummary = {
   id: string;
   imageUrl: string;
+  layout: PostLayout;
   caption: string | null;
   creator: AdminLookCreator;
   likeCount: number;
