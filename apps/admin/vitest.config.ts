@@ -56,6 +56,7 @@ export default defineConfig({
         "src/features/profile/**/*.{ts,tsx}",
         "src/components/ProtectedRoute.tsx",
         "src/components/RoutePendingScreen.tsx",
+        "src/components/PagePendingSkeleton.tsx",
         "src/components/ProtectedRoute.utils.ts",
         "src/components/AdminSidebar.utils.ts",
         "src/features/notifications/resolveNotificationHref.ts",
