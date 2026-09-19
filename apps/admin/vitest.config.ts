@@ -82,6 +82,7 @@ export default defineConfig({
         "src/features/hero-slides/HeroSlidesPage.tsx",
         "src/features/platform-commission/BrandExemptionsSection.tsx",
         "src/features/products/ProductsPage.tsx",
+        "src/features/products/ProductDetailModal.tsx",
         "src/features/announcements/**/*.{ts,tsx}",
       ],
       thresholds: {
