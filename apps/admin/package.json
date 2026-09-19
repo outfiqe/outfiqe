@@ -12,6 +12,7 @@
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "preview": "vite preview",
+    "skeleton:check": "node scripts/skeleton-check.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run --project unit",
