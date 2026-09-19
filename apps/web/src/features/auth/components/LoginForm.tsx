@@ -39,7 +39,9 @@ export const LoginForm = () => {
   const justReset = searchParams.get("reset") === "1";
   const oauthRedirectAfter =
     getSafeRedirect(searchParams.get("redirect")) ?? DEFAULT_OAUTH_REDIRECT;
-  const showPending = useDelayedPending(login.isPending);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const isSigningIn = login.isPending || isRedirecting;
+  const showPending = useDelayedPending(isSigningIn);
   const [captchaToken, setCaptchaToken] = useState<string | undefined>(undefined);
   const [captchaRequired, setCaptchaRequired] = useState(false);
 
@@ -52,6 +54,7 @@ export const LoginForm = () => {
   const onSubmit = form.handleSubmit(async (values) => {
     try {
       await login.mutateAsync({ ...values, captchaToken });
+      setIsRedirecting(true);
     } catch (error) {
       if (error instanceof ApiClientError && error.code === AuthErrorCode.CAPTCHA_FAILED) {
         setCaptchaRequired(true);
@@ -141,7 +144,7 @@ export const LoginForm = () => {
           <Button
             type="submit"
             className="mt-6 w-full"
-            disabled={login.isPending || (captchaRequired && !captchaToken)}
+            disabled={isSigningIn || (captchaRequired && !captchaToken)}
             isLoading={showPending}
           >
             Sign in
