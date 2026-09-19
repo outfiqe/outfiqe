@@ -11,6 +11,19 @@ import type { CreatorStatusValue } from "./schemas";
 const TABS: CreatorStatusValue[] = ["PENDING", "APPROVED", "REJECTED"];
 const CREATORS_STATUS_FILTER = oneOfFilter<CreatorStatusValue>(TABS, "PENDING");
 
+const CREATOR_ROW_SKELETON_COUNT = 6;
+const CREATOR_ROW_CLASS =
+  "flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4";
+
+const CreatorRowSkeleton = () => (
+  <div className={CREATOR_ROW_CLASS} aria-hidden>
+    <div>
+      <Skeleton className="h-6 w-40" />
+      <Skeleton className="mt-1 h-5 w-56" />
+    </div>
+  </div>
+);
+
 export const CreatorsPage = () => {
   const [tab, setTab] = useSearchFilter("status", CREATORS_STATUS_FILTER);
 
@@ -59,8 +72,8 @@ export const CreatorsPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+          Array.from({ length: CREATOR_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
+            <CreatorRowSkeleton key={rowIndex} />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load creators.</p>}
         {!isLoading && creators.length === 0 && (
@@ -71,10 +84,7 @@ export const CreatorsPage = () => {
           const { userId, name, email, creatorStatus } = creator;
 
           return (
-            <div
-              key={userId}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
-            >
+            <div key={userId} className={CREATOR_ROW_CLASS}>
               <div>
                 <h2 className="font-display text-base font-bold text-foreground">{name}</h2>
                 <p className="mt-1 text-sm text-muted-foreground">{email}</p>

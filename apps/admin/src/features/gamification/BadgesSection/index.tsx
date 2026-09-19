@@ -1,9 +1,10 @@
-import { Button, Skeleton } from "@outfiqe/design-system";
+import { Button } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import { gamificationApi } from "../api";
 import type { BadgeAdmin } from "../schemas";
+import { BadgeCardSkeleton } from "../skeletons";
 import { BadgeCard } from "./BadgeCard";
 import { BADGES_QUERY_KEY } from "./badgeForm.constants";
 
@@ -35,9 +36,7 @@ export const BadgesSection = () => {
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading &&
-          Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-xl" />
-          ))}
+          Array.from({ length: 6 }).map((_, index) => <BadgeCardSkeleton key={index} />)}
         {badges?.length === 0 && <p className="text-sm text-muted-foreground">No badges yet.</p>}
 
         {badges?.map((badge) => (

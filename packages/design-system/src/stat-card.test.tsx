@@ -1,7 +1,27 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { StatCard } from "./stat-card";
+import { StatCard, StatCardSkeleton } from "./stat-card";
+
+describe("StatCardSkeleton", () => {
+  it("uses the same card wrapper as StatCard so the loaded card does not shift the layout", () => {
+    const { container: loadedContainer } = render(<StatCard label="Products" value={14} />);
+    const { container: skeletonContainer } = render(<StatCardSkeleton />);
+
+    expect(skeletonContainer.firstElementChild?.className).toBe(
+      loadedContainer.firstElementChild?.className,
+    );
+  });
+
+  it("adds a delta line only when asked to", () => {
+    const { container: withoutDelta } = render(<StatCardSkeleton />);
+    const { container: withDelta } = render(<StatCardSkeleton hasDelta />);
+
+    expect(withDelta.firstElementChild?.children.length).toBe(
+      (withoutDelta.firstElementChild?.children.length ?? 0) + 1,
+    );
+  });
+});
 
 describe("StatCard", () => {
   it("renders the label and value", () => {

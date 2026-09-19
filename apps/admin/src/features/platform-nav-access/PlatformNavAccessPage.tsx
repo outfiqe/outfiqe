@@ -49,6 +49,24 @@ const TOGGLEABLE_NAV_KEYS = PLATFORM_NAV_KEYS.filter((key) => key !== "platform-
 const OVERVIEW_QUERY_KEY = ["platform-nav-access"] as const;
 const CANDIDATES_QUERY_KEY = ["platform-nav-access-candidates"] as const;
 
+const NavItemsSkeleton = () => (
+  <ul
+    className="mt-3 divide-y divide-border rounded-lg border border-border"
+    role="status"
+    aria-label="Loading"
+  >
+    {TOGGLEABLE_NAV_KEYS.map((navKey) => (
+      <li key={navKey} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
+        <Skeleton className="h-5 w-32" />
+        <span className="flex items-center gap-2">
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-6 w-11 rounded-full" />
+        </span>
+      </li>
+    ))}
+  </ul>
+);
+
 export const PlatformNavAccessPage = () => {
   const { state } = useAuth();
   const [selectedMembershipId, setSelectedMembershipId] = useState("");
@@ -125,7 +143,7 @@ export const PlatformNavAccessPage = () => {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Navigation items
         </h2>
-        {overview.isLoading && <Skeleton className="mt-3 h-64 w-full" />}
+        {overview.isLoading && <NavItemsSkeleton />}
         {overview.error && (
           <div className="mt-3">
             <FormBanner>{getErrorMessage(overview.error)}</FormBanner>

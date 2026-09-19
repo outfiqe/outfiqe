@@ -10,6 +10,27 @@ import { TimelineSection } from "./TimelineSection";
 
 const routeApi = getRouteApi("/_authenticated/crm/customers/$userId");
 
+const RECENT_ORDER_SKELETON_COUNT = 3;
+
+const CustomerDetailSkeleton = () => (
+  <div className="mt-4 space-y-6" role="status" aria-label="Loading">
+    <div>
+      <Skeleton className="h-8 w-56" />
+      <Skeleton className="mt-1 h-5 w-96 max-w-full" />
+    </div>
+    <section>
+      <h2 className="font-display text-base font-bold text-foreground">Recent orders</h2>
+      <ul className="mt-2 space-y-2 text-sm">
+        {Array.from({ length: RECENT_ORDER_SKELETON_COUNT }, (_unused, orderIndex) => (
+          <li key={orderIndex} className="rounded-lg border border-border p-3">
+            <Skeleton className="h-5 w-full max-w-xl" />
+          </li>
+        ))}
+      </ul>
+    </section>
+  </div>
+);
+
 export const CustomerDetailPage = () => {
   const { userId } = routeApi.useParams();
   const {
@@ -27,7 +48,7 @@ export const CustomerDetailPage = () => {
         ← Back to customers
       </Link>
 
-      {isLoading && <Skeleton className="mt-4 h-40 w-full" />}
+      {isLoading && <CustomerDetailSkeleton />}
       {error && <FormBanner className="mt-4">{getErrorMessage(error)}</FormBanner>}
 
       {customer && (

@@ -10,6 +10,16 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { sizeOptionsApi } from "./api";
 import type { SizeOption } from "./schemas";
 
+const SizeOptionRowSkeleton = () => (
+  <div
+    className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
+    aria-hidden
+  >
+    <Skeleton className="h-5 w-14 rounded-full" />
+    <Skeleton className="h-8 w-16 rounded-lg" />
+  </div>
+);
+
 export const SizeOptionsPage = () => {
   const { data: productTypes } = useQuery({
     queryKey: ["admin-product-types"],
@@ -107,9 +117,7 @@ export const SizeOptionsPage = () => {
 
           <div className="mt-6 space-y-3">
             {isLoading &&
-              Array.from({ length: 3 }).map((_, index) => (
-                <Skeleton key={index} className="h-14 w-full rounded-xl" />
-              ))}
+              Array.from({ length: 3 }).map((_, index) => <SizeOptionRowSkeleton key={index} />)}
             {!isLoading && sizesForType.length === 0 && (
               <p className="text-sm text-muted-foreground">
                 No sizes yet for {labelForType(type)}.

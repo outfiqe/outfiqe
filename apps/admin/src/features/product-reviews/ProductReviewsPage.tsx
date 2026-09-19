@@ -40,6 +40,37 @@ const SelectedProductBanner = ({ product, onChangeProduct }: SelectedProductBann
   );
 };
 
+const REVIEW_SKELETON_COUNT = 2;
+
+const ProductSuggestionSkeleton = () => (
+  <div
+    className="flex w-full items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-2"
+    aria-hidden
+  >
+    <Skeleton className="size-8 shrink-0 rounded-md" />
+    <div className="min-w-0 flex-1">
+      <Skeleton className="h-5 w-40" />
+      <Skeleton className="h-4 w-24" />
+    </div>
+  </div>
+);
+
+const ReviewCardSkeleton = () => (
+  <div className="rounded-xl border border-border bg-card p-4">
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-5 w-28" />
+          <Skeleton className="h-5 w-12 rounded-full" />
+        </div>
+        <Skeleton className="mt-1 h-5 w-48" />
+        <Skeleton className="mt-1 h-5 w-96 max-w-full" />
+      </div>
+      <Skeleton className="h-10 w-20 shrink-0 rounded-lg" />
+    </div>
+  </div>
+);
+
 export const ProductReviewsPage = () => {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
@@ -103,7 +134,7 @@ export const ProductReviewsPage = () => {
 
           {debouncedQuery.trim().length > 0 && (
             <div className="max-w-md space-y-2">
-              {isSearching && <Skeleton className="h-10 w-full rounded-lg" />}
+              {isSearching && <ProductSuggestionSkeleton />}
               {!isSearching && suggestions?.length === 0 && (
                 <p className="text-sm text-muted-foreground">
                   No products found for &ldquo;{debouncedQuery}&rdquo;
@@ -140,9 +171,10 @@ export const ProductReviewsPage = () => {
       {selectedProduct && (
         <div className="mt-6 space-y-3">
           {isLoadingReviews && (
-            <div className="space-y-2" role="status" aria-label="Loading reviews">
-              <Skeleton className="h-16 w-full rounded-xl" />
-              <Skeleton className="h-16 w-full rounded-xl" />
+            <div className="space-y-3" role="status" aria-label="Loading reviews">
+              {Array.from({ length: REVIEW_SKELETON_COUNT }, (_unused, reviewIndex) => (
+                <ReviewCardSkeleton key={reviewIndex} />
+              ))}
             </div>
           )}
 

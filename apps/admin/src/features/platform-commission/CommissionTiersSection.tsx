@@ -82,6 +82,29 @@ const validateLadder = (tierRows: TierRowState[]): string | null => {
   return null;
 };
 
+const TIER_ROW_SKELETON_COUNT = 3;
+const TIER_FIELD_SKELETONS = [
+  { label: "Min price (Rs.)", inputClass: "w-28" },
+  { label: "Max price (Rs.)", inputClass: "w-28" },
+  { label: "Fee type", inputClass: "w-32" },
+  { label: "Commission (Rs.)", inputClass: "w-32" },
+];
+
+const TierRowSkeleton = () => (
+  <div
+    className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
+    aria-hidden
+  >
+    {TIER_FIELD_SKELETONS.map(({ label, inputClass }) => (
+      <div key={label} className="space-y-1.5">
+        <label className="block text-xs text-muted-foreground">{label}</label>
+        <Skeleton className={`h-10 rounded-lg ${inputClass}`} />
+      </div>
+    ))}
+    <Skeleton className="h-10 w-20 rounded-lg" />
+  </div>
+);
+
 const TierRowFields = ({
   tierRow,
   onChange,
@@ -229,7 +252,10 @@ export const CommissionTiersSection = () => {
       )}
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-        {isLoading && <Skeleton className="h-24 w-full rounded-xl" />}
+        {isLoading &&
+          Array.from({ length: TIER_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
+            <TierRowSkeleton key={rowIndex} />
+          ))}
 
         {!isLoading &&
           activeTierRows.map((tierRow) => (

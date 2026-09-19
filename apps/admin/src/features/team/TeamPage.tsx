@@ -1,8 +1,9 @@
-import { Badge, Button, FormBanner, Input, Select, Skeleton } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Input, Select } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { useAuth } from "@/features/auth/AuthContext";
 import { platformRolesApi } from "@/features/platform-roles/api";
 import { PlatformRolesSection } from "@/features/platform-roles/PlatformRolesSection";
@@ -132,7 +133,13 @@ export const TeamPage = () => {
         <div className="mt-6 space-y-3">
           {isLoading &&
             Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} className="h-24 w-full rounded-xl" />
+              <CardRowSkeleton
+                key={index}
+                hasBadge={false}
+                textLineCount={1}
+                hasMetaLine
+                actionCount={1}
+              />
             ))}
           {invites?.length === 0 && (
             <p className="text-sm text-muted-foreground">No invites yet.</p>

@@ -1,8 +1,9 @@
-import { Button, FormBanner, Input, Select, Skeleton } from "@outfiqe/design-system";
+import { Button, FormBanner, Input, Select } from "@outfiqe/design-system";
 import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { ContactFormModal } from "./ContactFormModal";
@@ -21,6 +22,8 @@ const STAGE_LABELS: Record<string, string> = {
   PARTNER: "Partner",
   OTHER: "Other",
 };
+
+const CONTACT_TABLE_HEADERS = ["Name", "Company", "Stage", "Owner", "Added", ""];
 
 export const ContactsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -103,7 +106,7 @@ export const ContactsPage = () => {
       </p>
 
       <div className="mt-6">
-        {isLoading && <Skeleton className="h-40 w-full" />}
+        {isLoading && <TableSkeleton headers={CONTACT_TABLE_HEADERS} />}
         {error && <FormBanner>{getErrorMessage(error)}</FormBanner>}
         {remove.isError && <FormBanner>{getErrorMessage(remove.error)}</FormBanner>}
 

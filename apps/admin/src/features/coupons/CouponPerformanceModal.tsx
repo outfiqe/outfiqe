@@ -1,4 +1,4 @@
-import { Modal, Skeleton, StatCard } from "@outfiqe/design-system";
+import { Modal, StatCard, StatCardSkeleton } from "@outfiqe/design-system";
 
 import { useCouponPerformance } from "./hooks/useCouponPerformance";
 import type { Coupon } from "./schemas";
@@ -10,6 +10,9 @@ type CouponPerformanceModalProps = {
 
 const formatRs = (amount: number) => `Rs. ${amount.toLocaleString()}`;
 
+const PERFORMANCE_STAT_COUNT = 8;
+const NET_MARGIN_STAT_INDEX = 4;
+
 export const CouponPerformanceModal = ({ coupon, onClose }: CouponPerformanceModalProps) => {
   const { data: performance, isLoading } = useCouponPerformance(coupon?.id ?? null);
 
@@ -18,9 +21,9 @@ export const CouponPerformanceModal = ({ coupon, onClose }: CouponPerformanceMod
   return (
     <Modal open title={`Performance — ${coupon.code}`} onClose={onClose}>
       {isLoading && (
-        <div className="grid grid-cols-2 gap-3">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="h-16 w-full rounded-xl" />
+        <div className="grid grid-cols-2 gap-3" role="status" aria-label="Loading">
+          {Array.from({ length: PERFORMANCE_STAT_COUNT }, (_unused, statIndex) => (
+            <StatCardSkeleton key={statIndex} hasDelta={statIndex === NET_MARGIN_STAT_INDEX} />
           ))}
         </div>
       )}

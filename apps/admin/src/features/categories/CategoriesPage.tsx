@@ -1,4 +1,4 @@
-import { Badge, Button, cn, FormBanner, Input, Skeleton, toast } from "@outfiqe/design-system";
+import { Badge, Button, cn, FormBanner, Input, toast } from "@outfiqe/design-system";
 import { useApiMutation, useDragReorder } from "@outfiqe/hooks";
 import { LANDING_TASTE_CATEGORY_COUNT } from "@outfiqe/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -6,6 +6,7 @@ import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
 import { ImageUpload } from "@/components/ImageUpload";
+import { ReorderRowSkeleton } from "@/components/ReorderRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { categoriesApi } from "./api";
@@ -172,9 +173,7 @@ export const CategoriesPage = () => {
 
       <div className="mt-3 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
-          ))}
+          Array.from({ length: 3 }).map((_, index) => <ReorderRowSkeleton key={index} hasImage />)}
         {categories?.length === 0 && (
           <p className="text-sm text-muted-foreground">No categories yet.</p>
         )}

@@ -5,6 +5,8 @@ import { trendingApi } from "./api";
 import type { TrendingProductSummary } from "./schemas";
 import { formatNumber } from "./trending.utils";
 
+const TOP_TRENDING_SKELETON_COUNT = 5;
+
 export const TopTrendingList = ({
   selectedId,
   onSelect,
@@ -19,11 +21,21 @@ export const TopTrendingList = ({
 
   if (topTrending.isLoading) {
     return (
-      <div className="mt-3 space-y-2">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <Skeleton key={index} className="h-14 rounded-xl" />
+      <ul className="mt-3 space-y-1.5" role="status" aria-label="Loading">
+        {Array.from({ length: TOP_TRENDING_SKELETON_COUNT }, (_unused, rowIndex) => (
+          <li
+            key={rowIndex}
+            className="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5"
+          >
+            <Skeleton className="h-5 w-8" />
+            <span className="min-w-0 flex-1">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-4 w-24" />
+            </span>
+            <Skeleton className="h-4 w-10 shrink-0" />
+          </li>
         ))}
-      </div>
+      </ul>
     );
   }
 

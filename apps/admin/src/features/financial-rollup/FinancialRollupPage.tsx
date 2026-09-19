@@ -1,4 +1,4 @@
-import { Skeleton, StatCard } from "@outfiqe/design-system";
+import { Skeleton, StatCard, StatCardSkeleton } from "@outfiqe/design-system";
 import type { PaymentMethod } from "@outfiqe/types";
 import { useQuery } from "@tanstack/react-query";
 
@@ -57,6 +57,42 @@ const PaymentMethodRow = ({
   </div>
 );
 
+const ROLLUP_CARD_COPY = [
+  { title: "Gateway", description: "Money actually collected via payment gateways.", rowCount: 3 },
+  {
+    title: "Ledger",
+    description: "What's owed to creators and brands per the settlement ledger.",
+    rowCount: 10,
+  },
+];
+
+const RollupSkeleton = () => (
+  <>
+    <StatCardSkeleton hasDelta />
+    <div className="grid gap-4 lg:grid-cols-2">
+      {ROLLUP_CARD_COPY.map(({ title, description, rowCount }) => (
+        <div key={title} className="rounded-xl border border-border bg-card p-5">
+          <h2 className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
+            {title}
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+          <div className="mt-3">
+            {Array.from({ length: rowCount }, (_unused, rowIndex) => (
+              <div
+                key={rowIndex}
+                className="flex items-center justify-between gap-3 border-b border-border/60 py-2 last:border-0"
+              >
+                <Skeleton className="h-5 w-28" />
+                <Skeleton className="h-5 w-20" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </>
+);
+
 export const FinancialRollupPage = () => {
   const [range, setRange] = useSearchFilter("range", RANGE_FILTER);
 
@@ -89,7 +125,7 @@ export const FinancialRollupPage = () => {
         ))}
       </div>
 
-      {isLoading && <Skeleton className="h-32 w-full rounded-xl" />}
+      {isLoading && <RollupSkeleton />}
       {error && <p className="text-sm text-destructive">Couldn&apos;t load the rollup.</p>}
 
       {rollup && (

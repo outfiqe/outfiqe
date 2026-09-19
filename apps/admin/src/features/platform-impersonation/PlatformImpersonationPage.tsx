@@ -1,8 +1,9 @@
-import { Button, FormBanner, Input, Select, Skeleton, toast } from "@outfiqe/design-system";
+import { Button, FormBanner, Input, Select, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformMetricsApi } from "../platform-metrics/api";
@@ -70,6 +71,17 @@ const SessionTable = ({
     </table>
   </div>
 );
+
+const SESSION_TABLE_HEADERS = [
+  "Tenant",
+  "Acting as",
+  "Staff",
+  "Scope",
+  "Started",
+  "Expires",
+  "State",
+];
+const ACTIVE_SESSION_TABLE_HEADERS = [...SESSION_TABLE_HEADERS, "Actions"];
 
 export const PlatformImpersonationPage = () => {
   const [organizationId, setOrganizationId] = useState("");
@@ -281,7 +293,7 @@ export const PlatformImpersonationPage = () => {
       <section className="mt-10">
         <h2 className="font-display text-lg font-semibold text-foreground">Active sessions</h2>
         <div className="mt-3">
-          {activeSessions.isLoading && <Skeleton className="h-24 w-full" />}
+          {activeSessions.isLoading && <TableSkeleton headers={ACTIVE_SESSION_TABLE_HEADERS} />}
           {activeSessions.error && <FormBanner>{getErrorMessage(activeSessions.error)}</FormBanner>}
           {activeSessions.data && activeSessions.data.length === 0 && (
             <p className="text-sm text-muted-foreground">No active impersonation sessions.</p>
@@ -299,7 +311,7 @@ export const PlatformImpersonationPage = () => {
       <section className="mt-10">
         <h2 className="font-display text-lg font-semibold text-foreground">Recent history</h2>
         <div className="mt-3">
-          {history.isLoading && <Skeleton className="h-24 w-full" />}
+          {history.isLoading && <TableSkeleton headers={SESSION_TABLE_HEADERS} />}
           {history.error && <FormBanner>{getErrorMessage(history.error)}</FormBanner>}
           {history.data && history.data.length === 0 && (
             <p className="text-sm text-muted-foreground">Nothing recorded yet.</p>

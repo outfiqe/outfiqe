@@ -1,8 +1,9 @@
-import { Button, FormBanner, Input, Modal, Skeleton, toast } from "@outfiqe/design-system";
+import { Button, FormBanner, Input, Modal, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -171,7 +172,7 @@ export const CommissionTiersSection = () => {
       <div className="mt-4 space-y-2">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-16 w-full rounded-xl" />
+            <ActionRowSkeleton key={index} actionCount={2} />
           ))}
         {tiers?.length === 0 && <p className="text-sm text-muted-foreground">No tiers yet.</p>}
 

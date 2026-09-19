@@ -1,10 +1,11 @@
-import { Checkbox, FormBanner, Skeleton } from "@outfiqe/design-system";
+import { Checkbox, FormBanner } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { gamificationApi } from "./api";
 import { LEADERBOARD_CATEGORY_LABEL } from "./badgeOptions.constants";
+import { CategoryToggleRowSkeleton } from "./skeletons";
 
 const LEADERBOARD_CATEGORIES_QUERY_KEY = ["admin-creator-leaderboard-categories"];
 
@@ -39,7 +40,7 @@ export const LeaderboardSection = () => {
       <div className="mt-4 space-y-2">
         {isLoading &&
           Array.from({ length: CATEGORY_ROW_PLACEHOLDER_COUNT }).map((_, index) => (
-            <Skeleton key={index} className="h-[58px] rounded-xl" />
+            <CategoryToggleRowSkeleton key={index} />
           ))}
 
         {categories?.map(({ category, enabled }) => (

@@ -1,7 +1,9 @@
-import { Button, Checkbox, FormBanner, Input, Modal, Skeleton } from "@outfiqe/design-system";
+import { Button, Checkbox, FormBanner, Input, Modal } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
+
+import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 
 import { type CreateLevelInput, gamificationApi, type UpdateLevelInput } from "./api";
 import type { Level } from "./schemas";
@@ -193,9 +195,7 @@ export const LevelsSection = () => {
 
       <div className="mt-4 space-y-2">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-16 w-full rounded-xl" />
-          ))}
+          Array.from({ length: 3 }).map((_, index) => <ActionRowSkeleton key={index} />)}
         {levels?.length === 0 && <p className="text-sm text-muted-foreground">No levels yet.</p>}
 
         {levels?.map((level) => (

@@ -1,17 +1,9 @@
-import {
-  Badge,
-  Button,
-  Checkbox,
-  FormBanner,
-  Input,
-  Modal,
-  Skeleton,
-  toast,
-} from "@outfiqe/design-system";
+import { Badge, Button, Checkbox, FormBanner, Input, Modal, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useMemo, useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
@@ -285,7 +277,7 @@ export const RolesSection = ({
         </div>
 
         <div className="mt-3 space-y-3">
-          {rolesLoading && <Skeleton className="h-32 w-full" />}
+          {rolesLoading && <CardRowSkeleton textLineCount={1} actionCount={2} />}
           {rolesError && <FormBanner>{getErrorMessage(rolesError)}</FormBanner>}
 
           {roles?.map((role) => (

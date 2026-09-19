@@ -1,7 +1,8 @@
-import { Badge, Button, Skeleton } from "@outfiqe/design-system";
+import { Badge, Button } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { ApiClientError } from "@/lib/apiClient";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
@@ -87,7 +88,7 @@ export const BrandApplicationsPage = () => {
       <div className="mt-6 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+            <CardRowSkeleton key={index} textLineCount={2} actionCount={2} actionSize="regular" />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load applications.</p>}
         {!isLoading && applications.length === 0 && (

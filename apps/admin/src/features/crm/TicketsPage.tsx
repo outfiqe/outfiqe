@@ -1,4 +1,4 @@
-import { Badge, Button, FormBanner, Input, Modal, Select, Skeleton } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Input, Modal, Select } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
@@ -7,6 +7,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { crmApi } from "./api";
+import { CompactRowSkeleton } from "./CompactRowSkeleton";
 import { CustomerSearchField, type SelectedCustomer } from "./CustomerSearchField";
 import { formatDate } from "./format.utils";
 import { PlanGateBanner } from "./PlanGateBanner";
@@ -188,7 +189,7 @@ export const TicketsPage = () => {
       </div>
 
       <div className="mt-6 space-y-4">
-        {isLoading && <Skeleton className="h-40 w-full" />}
+        {isLoading && <CompactRowSkeleton hasTrailingBadge />}
         {error && <FormBanner>{getErrorMessage(error)}</FormBanner>}
 
         {tickets && tickets.length === 0 && (

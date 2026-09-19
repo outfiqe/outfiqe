@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 
 import { cn } from "./cn";
+import { Skeleton } from "./skeleton";
+
+const LOADING_ROW_COUNT = 5;
 
 export type TableColumn<Row> = {
   readonly key: string;
@@ -15,6 +18,8 @@ type TableProps<Row> = {
   readonly rowKey: (row: Row) => string;
   readonly footer?: ReactNode;
   readonly emptyState?: ReactNode;
+  readonly isLoading?: boolean;
+  readonly loadingRowCount?: number;
   readonly className?: string;
 };
 
@@ -27,6 +32,8 @@ export const Table = <Row,>({
   rowKey,
   footer,
   emptyState,
+  isLoading = false,
+  loadingRowCount = LOADING_ROW_COUNT,
   className,
 }: TableProps<Row>) => (
   <div className={cn("overflow-x-auto rounded-xl border border-border", className)}>
@@ -48,7 +55,19 @@ export const Table = <Row,>({
         </tr>
       </thead>
       <tbody>
-        {rows.length === 0 ? (
+        {isLoading ? (
+          Array.from({ length: loadingRowCount }, (_unused, rowIndex) => (
+            <tr key={rowIndex} className="border-t border-border" aria-hidden>
+              {columns.map((column) => (
+                <td key={column.key} className="px-4 py-2.5">
+                  <Skeleton
+                    className={cn("h-5 w-full max-w-24", column.align === "right" && "ml-auto")}
+                  />
+                </td>
+              ))}
+            </tr>
+          ))
+        ) : rows.length === 0 ? (
           <tr>
             <td colSpan={columns.length} className="px-4 py-10 text-center text-muted-foreground">
               {emptyState ?? "Nothing to show."}
@@ -66,7 +85,7 @@ export const Table = <Row,>({
           ))
         )}
       </tbody>
-      {footer && rows.length > 0 && (
+      {footer && !isLoading && rows.length > 0 && (
         <tfoot className="border-t border-border bg-muted/30 font-medium text-foreground">
           {footer}
         </tfoot>

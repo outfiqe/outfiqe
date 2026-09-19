@@ -1,4 +1,4 @@
-import { Badge, Button, FormBanner, Input, Modal, Select, Skeleton } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Input, Modal, Select } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
@@ -8,6 +8,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { crmActivitiesApi } from "./activitiesApi";
 import type { Task } from "./activitiesSchemas";
 import { crmApi } from "./api";
+import { CompactRowSkeleton } from "./CompactRowSkeleton";
 import { formatDate } from "./format.utils";
 import { PlanGateBanner } from "./PlanGateBanner";
 
@@ -153,7 +154,7 @@ export const TasksPage = () => {
       </div>
 
       <div className="mt-6">
-        {isLoading && <Skeleton className="h-40 w-full" />}
+        {isLoading && <CompactRowSkeleton hasCheckbox />}
         {error && <FormBanner>{getErrorMessage(error)}</FormBanner>}
 
         {tasks && tasks.length === 0 && (

@@ -1,8 +1,9 @@
-import { Badge, Button, Skeleton } from "@outfiqe/design-system";
+import { Badge, Button } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { ApiClientError } from "@/lib/apiClient";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
@@ -84,7 +85,12 @@ export const ContentReportsPage = () => {
       <div className="mt-6 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-28 w-full rounded-xl" />
+            <CardRowSkeleton
+              key={index}
+              textLineCount={2}
+              hasBadge={false}
+              leadingImageClass="size-20"
+            />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load content reports.</p>}
         {!isLoading && !error && reports.length === 0 && (

@@ -33,3 +33,23 @@ its own `pendingComponent` (the logo pulse) because there is no shell to put a s
   (a table fetching rows) is that page's own loading state.
 - The pending component reads `location.pathname` from router state, which is the destination while a
   navigation is pending.
+
+## Loading states inside a page
+
+Once a page's code has loaded, each list, table or card shows its own placeholder while its data
+loads. Those placeholders are built from the real content's own markup so nothing moves when the
+data arrives:
+
+- **Same wrapper, placeholder contents.** A skeleton row reuses the real row's border, padding and
+  layout classes and puts placeholder bars (sized to the title, text lines, badges and buttons) where
+  the text goes. Static text — headings, column headers, card titles — is rendered for real, not
+  as a bar.
+- **Shared pieces** in `apps/admin/src/components/`: `CardRowSkeleton` (title + badge, text lines,
+  action buttons, optional thumbnail or chip row), `ActionRowSkeleton` (one text block + buttons),
+  `ReorderRowSkeleton` (drag handle, move arrows, thumbnail), `TableSkeleton` (real headers +
+  placeholder rows) and, in `@outfiqe/design-system`, `StatCardSkeleton` and `Table`'s `isLoading`.
+- **Page-specific skeletons** live in the page's own file (or a `skeletons.tsx` next to it, as in
+  `features/gamification`) when the real layout is unique to that page.
+- **Left generic on purpose:** the CRM home page (its content depends on the viewer's permissions,
+  which are unknown until the organization loads) and the typeahead dropdown option rows, which
+  already match the option height.

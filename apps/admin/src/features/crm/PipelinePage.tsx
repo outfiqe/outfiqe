@@ -1,5 +1,5 @@
-import { KanbanBoard } from "@outfiqe/components";
-import { Button, FormBanner, Skeleton, toast } from "@outfiqe/design-system";
+import { KanbanBoard, KanbanBoardSkeleton } from "@outfiqe/components";
+import { Button, FormBanner, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -93,7 +93,7 @@ export const PipelinePage = () => {
       </div>
 
       <div className="mt-6">
-        {stagesLoading && <Skeleton className="h-64 w-full" />}
+        {stagesLoading && <KanbanBoardSkeleton />}
         {stagesError && <FormBanner>{getErrorMessage(stagesError)}</FormBanner>}
 
         {stages && stages.length === 0 && (
