@@ -22,8 +22,9 @@ form sections for a detail page — shimmering until the real page replaces them
 
 **Technical:** router navigation → pending match → `RoutePendingSkeleton` (set as
 `defaultPendingComponent` in `main.tsx`) → `useRouterState` reads the pathname being navigated to →
-`resolvePageSkeletonKind` → the matching skeleton component. The outer `_authenticated` layout has
-its own `pendingComponent` (the logo pulse) because there is no shell to put a skeleton inside yet.
+`resolvePageSkeletonKind` → the matching skeleton component. The outer `_authenticated` layout renders
+nothing while it loads: the page loader (below) is still covering the screen, and there is no shell to
+put a skeleton inside yet.
 
 ## Non-obvious rationale
 
@@ -53,3 +54,12 @@ data arrives:
 - **Left generic on purpose:** the CRM home page (its content depends on the viewer's permissions,
   which are unknown until the organization loads) and the typeahead dropdown option rows, which
   already match the option height.
+
+## One loader from first paint to the dashboard
+
+The pulsing logo lives in `index.html`, outside the React root, so React never wipes it. It stays up
+through the script download, the session check and the layout load, and is removed
+(`lib/bootLoader.ts`) by the first thing that renders real content: `AppShell` for signed-in pages,
+or the invite-registration and not-found pages, which have no shell. `ProtectedRoute` and the
+`_authenticated` layout render nothing while they wait, so there is no second logo screen. A 15 second
+timer removes the loader anyway, so a page that fails to mount is not covered forever.

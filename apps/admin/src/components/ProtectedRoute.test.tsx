@@ -34,7 +34,7 @@ describe("admin ProtectedRoute", () => {
     expect(screen.getByText("Secret dashboard")).toBeInTheDocument();
   });
 
-  it("shows a loading placeholder while the session is still resolving", () => {
+  it("renders nothing while the session is still resolving, leaving the page loader in place", () => {
     const fakeLocation = {
       href: "http://localhost:3000/crm",
       pathname: "/crm",
@@ -44,13 +44,13 @@ describe("admin ProtectedRoute", () => {
     vi.stubGlobal("location", fakeLocation);
     useAuthMock.mockReturnValue(authState("loading"));
 
-    render(
+    const { container } = render(
       <ProtectedRoute>
         <p>Secret dashboard</p>
       </ProtectedRoute>,
     );
 
-    expect(screen.getByText("Loading…")).toBeInTheDocument();
+    expect(container).toBeEmptyDOMElement();
     expect(screen.queryByText("Secret dashboard")).not.toBeInTheDocument();
     expect(fakeLocation.href).toBe("http://localhost:3000/crm");
   });
@@ -65,13 +65,13 @@ describe("admin ProtectedRoute", () => {
     vi.stubGlobal("location", fakeLocation);
     useAuthMock.mockReturnValue(authState("signed-out", "session-ended"));
 
-    render(
+    const { container } = render(
       <ProtectedRoute>
         <p>Secret dashboard</p>
       </ProtectedRoute>,
     );
 
-    expect(screen.getByText("Redirecting to sign in…")).toBeInTheDocument();
+    expect(container).toBeEmptyDOMElement();
     expect(fakeLocation.href).toMatch(
       /^https?:\/\/[^/]+\/login\?redirect=%2Fcrm%2Fcontacts%3Ftab%3Dleads$/,
     );

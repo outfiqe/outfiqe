@@ -3,7 +3,6 @@ import { type ReactNode, useEffect } from "react";
 import { useAuth } from "@/features/auth/AuthContext";
 
 import { resolveLoginOrigin } from "./ProtectedRoute.utils";
-import { RoutePendingScreen } from "./RoutePendingScreen";
 
 const CONFIGURED_WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
 
@@ -24,7 +23,5 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
   if (status === "signed-in") return <>{children}</>;
 
-  return (
-    <RoutePendingScreen label={status === "loading" ? "Loading…" : "Redirecting to sign in…"} />
-  );
+  return null;
 };
