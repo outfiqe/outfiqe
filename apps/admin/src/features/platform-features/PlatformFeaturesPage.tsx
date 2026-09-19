@@ -1,8 +1,9 @@
-import { Button, FormBanner, Select, Skeleton } from "@outfiqe/design-system";
+import { Button, FormBanner, Select } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformMetricsApi } from "../platform-metrics/api";
@@ -13,6 +14,8 @@ const SOURCE_LABEL: Record<string, string> = {
   plan: "Plan default",
   default: "Registry default",
 };
+
+const FEATURE_TABLE_HEADERS = ["Feature", "State", "Source", "Actions"];
 
 export const PlatformFeaturesPage = () => {
   const [orgId, setOrgId] = useState("");
@@ -78,7 +81,7 @@ export const PlatformFeaturesPage = () => {
         {orgId === "" && (
           <p className="text-sm text-muted-foreground">Pick a tenant to see its features.</p>
         )}
-        {orgId !== "" && resolved.isLoading && <Skeleton className="h-40 w-full" />}
+        {orgId !== "" && resolved.isLoading && <TableSkeleton headers={FEATURE_TABLE_HEADERS} />}
         {resolved.error && <FormBanner>{getErrorMessage(resolved.error)}</FormBanner>}
 
         {resolved.data && (

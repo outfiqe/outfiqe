@@ -6,7 +6,10 @@ import { ApiClientError } from "@/lib/apiClient";
 import { trendingApi } from "./api";
 import type { TrendDebugSubject } from "./schemas";
 import { BASELINE_SOURCE_LABEL, formatNumber } from "./trending.utils";
-import { ActivityStat, StatCard } from "./TrendStatCards";
+import { ActivityStat, ActivityStatSkeleton, StatCard, StatCardSkeleton } from "./TrendStatCards";
+
+const SCORE_STAT_SKELETON_COUNT = 3;
+const ACTIVITY_STAT_SKELETON_COUNT = 5;
 
 export const TrendDebugResult = ({ product }: { product: TrendDebugSubject }) => {
   const snapshot = useQuery({
@@ -16,9 +19,35 @@ export const TrendDebugResult = ({ product }: { product: TrendDebugSubject }) =>
 
   if (snapshot.isLoading) {
     return (
-      <div className="mt-6 space-y-3">
-        <Skeleton className="h-24 rounded-xl" />
-        <Skeleton className="h-40 rounded-xl" />
+      <div className="mt-6 space-y-6" role="status" aria-label="Loading">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {Array.from({ length: SCORE_STAT_SKELETON_COUNT }, (_unused, statIndex) => (
+            <StatCardSkeleton key={statIndex} />
+          ))}
+        </div>
+
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            Activity in the last 6 hours
+          </h3>
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+            {Array.from({ length: ACTIVITY_STAT_SKELETON_COUNT }, (_unused, statIndex) => (
+              <ActivityStatSkeleton key={statIndex} />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            Why it scored this way
+          </h3>
+          <div className="mt-2 space-y-2 rounded-xl border border-border bg-card p-4 text-sm">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-11/12" />
+            <Skeleton className="h-5 w-10/12" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+        </div>
       </div>
     );
   }

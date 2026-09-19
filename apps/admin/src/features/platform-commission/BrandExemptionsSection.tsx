@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
+import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -232,7 +233,7 @@ export const BrandExemptionsSection = () => {
       <div className="mt-4 space-y-2">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+            <ActionRowSkeleton key={index} bodyLineCount={1} />
           ))}
         {exemptions?.length === 0 && (
           <p className="text-sm text-muted-foreground">No exemptions yet.</p>
