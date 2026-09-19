@@ -3,7 +3,7 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { CardRowSkeleton } from "@/components/CardRowSkeleton";
+import { ReportRowSkeleton } from "@/components/ReportRowSkeleton";
 import { ApiClientError } from "@/lib/apiClient";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
@@ -84,14 +84,7 @@ export const ContentReportsPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <CardRowSkeleton
-              key={index}
-              textLineCount={2}
-              hasBadge={false}
-              leadingImageClass="size-20"
-            />
-          ))}
+          Array.from({ length: 3 }).map((_, index) => <ReportRowSkeleton key={index} />)}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load content reports.</p>}
         {!isLoading && !error && reports.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
