@@ -68,6 +68,7 @@ import { impersonationRequestAudit } from "./modules/platform-impersonation/plat
 import { platformImpersonationRoutes } from "./modules/platform-impersonation/platform-impersonation.routes.js";
 import { platformMetricsRoutes } from "./modules/platform-metrics/platform-metrics.routes.js";
 import { platformNavAccessRoutes } from "./modules/platform-nav-access/platform-nav-access.routes.js";
+import { platformRolesRoutes } from "./modules/platform-roles/platform-roles.routes.js";
 import { platformSuspensionsRoutes } from "./modules/platform-suspensions/platform-suspensions.routes.js";
 import { productReviewRoutes } from "./modules/product-reviews/product-review.routes.js";
 import { productTypeRoutes } from "./modules/product-types/product-type.routes.js";
@@ -201,6 +202,7 @@ export const createApp = () => {
   app.use("/api/platform", platformFeaturesRoutes);
   app.use("/api/platform", platformImpersonationRoutes);
   app.use("/api/platform", platformNavAccessRoutes);
+  app.use("/api/platform", platformRolesRoutes);
   app.use("/api/platform", platformSuspensionsRoutes);
   app.use("/api/creator-links", creatorLinkRoutes);
   app.use("/api/creator-looks", creatorLookRoutes);

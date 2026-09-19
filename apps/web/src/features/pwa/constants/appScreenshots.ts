@@ -24,14 +24,14 @@ export const appScreenshots: AppScreenshot[] = [
   },
   {
     fileName: "shop-narrow.png",
-    route: "/shop",
+    route: "/shop?sort=trending",
     formFactor: "narrow",
     size: NARROW_SCREENSHOT_SIZE,
     label: "Browse clothing from Nepali brands",
   },
   {
     fileName: "explore-narrow.png",
-    route: "/explore",
+    route: "/explore?tab=madeinnepal",
     formFactor: "narrow",
     size: NARROW_SCREENSHOT_SIZE,
     label: "See real creator looks",
@@ -45,7 +45,7 @@ export const appScreenshots: AppScreenshot[] = [
   },
   {
     fileName: "shop-wide.png",
-    route: "/shop",
+    route: "/shop?sort=trending",
     formFactor: "wide",
     size: WIDE_SCREENSHOT_SIZE,
     label: "Browse clothing from Nepali brands",

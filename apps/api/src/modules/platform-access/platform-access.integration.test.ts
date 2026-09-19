@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
+import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { seedPlatformOrganization } from "#test/integration/crmFixtures.js";
 
 import {
@@ -81,6 +82,49 @@ describe("platformAccessService.permissionKeysFor", () => {
 
     const keys = await platformAccessService.permissionKeysFor(owner.id);
     expect(keys.sort()).toEqual([...PLATFORM_PERMISSION_KEYS].sort());
+  });
+
+  it("grants every platform key to a co-founder on a role that holds none", async () => {
+    const { organization, memberRole } = await seedPlatformOrgWithPermissions();
+    const coFounder = await createAdminUser();
+    await prisma.membership.create({
+      data: {
+        organizationId: organization.id,
+        userId: coFounder.id,
+        roleId: memberRole.id,
+        status: "ACTIVE",
+        isPlatformSuperAdmin: true,
+      },
+    });
+
+    const keys = await platformAccessService.permissionKeysFor(coFounder.id);
+    expect(keys.sort()).toEqual([...PLATFORM_PERMISSION_KEYS].sort());
+  });
+
+  it("lets a co-founder on a zero-permission role through the platform access gate", async () => {
+    const { organization, memberRole } = await seedPlatformOrgWithPermissions();
+    const coFounder = await createAdminUser();
+    const plainStaff = await createAdminUser();
+    await prisma.membership.createMany({
+      data: [
+        {
+          organizationId: organization.id,
+          userId: coFounder.id,
+          roleId: memberRole.id,
+          status: "ACTIVE",
+          isPlatformSuperAdmin: true,
+        },
+        {
+          organizationId: organization.id,
+          userId: plainStaff.id,
+          roleId: memberRole.id,
+          status: "ACTIVE",
+        },
+      ],
+    });
+
+    await expect(crmAccessService.resolveHasPlatformAccess(coFounder.id)).resolves.toBe(true);
+    await expect(crmAccessService.resolveHasPlatformAccess(plainStaff.id)).resolves.toBe(false);
   });
 
   it("returns no keys for a deactivated membership", async () => {

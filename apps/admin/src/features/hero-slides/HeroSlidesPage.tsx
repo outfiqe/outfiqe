@@ -1,5 +1,6 @@
 import { Badge, Button, FormBanner, Input, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { ImageUpload } from "@/components/ImageUpload";
@@ -13,10 +14,11 @@ const STATUS_TONE: Record<HeroSlideStatusValue, "neutral" | "positive"> = {
   PUBLISHED: "positive",
 };
 
+const HERO_SLIDES_QUERY_KEY = ["admin-hero-slides"];
+
 export const HeroSlidesPage = () => {
-  const queryClient = useQueryClient();
   const { data: heroSlides, isLoading } = useQuery({
-    queryKey: ["admin-hero-slides"],
+    queryKey: HERO_SLIDES_QUERY_KEY,
     queryFn: heroSlidesApi.list,
   });
 
@@ -29,7 +31,7 @@ export const HeroSlidesPage = () => {
   const [imageAssetId, setImageAssetId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () =>
       heroSlidesApi.create({
         tag,
@@ -40,6 +42,7 @@ export const HeroSlidesPage = () => {
         imageUrl: imageUrl ?? undefined,
         imageAssetId: imageAssetId ?? undefined,
       }),
+    invalidateKeys: [HERO_SLIDES_QUERY_KEY],
     onSuccess: () => {
       setTag("");
       setTitle("");
@@ -49,19 +52,18 @@ export const HeroSlidesPage = () => {
       setImageUrl(null);
       setImageAssetId(null);
       setError(null);
-      queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const toggleStatus = useMutation({
+  const toggleStatus = useApiMutation({
     mutationFn: (slide: HeroSlide) =>
       heroSlidesApi.setStatus(slide.id, slide.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED"),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] }),
+    invalidateKeys: [HERO_SLIDES_QUERY_KEY],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const setSlideImage = useMutation({
+  const setSlideImage = useApiMutation({
     mutationFn: ({
       id,
       imageUrl: url,
@@ -71,7 +73,7 @@ export const HeroSlidesPage = () => {
       imageUrl: string;
       imageAssetId: string;
     }) => heroSlidesApi.setImage(id, url, assetId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] }),
+    invalidateKeys: [HERO_SLIDES_QUERY_KEY],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 

@@ -1,5 +1,6 @@
 import { Checkbox, FormBanner, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { gamificationApi } from "./api";
@@ -10,20 +11,17 @@ const LEADERBOARD_CATEGORIES_QUERY_KEY = ["admin-creator-leaderboard-categories"
 const CATEGORY_ROW_PLACEHOLDER_COUNT = 5;
 
 export const LeaderboardSection = () => {
-  const queryClient = useQueryClient();
   const { data: categories, isLoading } = useQuery({
     queryKey: LEADERBOARD_CATEGORIES_QUERY_KEY,
     queryFn: gamificationApi.listCreatorLeaderboardCategories,
   });
   const [error, setError] = useState<string | null>(null);
 
-  const toggle = useMutation({
+  const toggle = useApiMutation({
     mutationFn: ({ category, enabled }: { category: string; enabled: boolean }) =>
       gamificationApi.updateCreatorLeaderboardCategory(category, enabled),
-    onSuccess: () => {
-      setError(null);
-      queryClient.invalidateQueries({ queryKey: LEADERBOARD_CATEGORIES_QUERY_KEY });
-    },
+    invalidateKeys: [LEADERBOARD_CATEGORIES_QUERY_KEY],
+    onSuccess: () => setError(null),
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 

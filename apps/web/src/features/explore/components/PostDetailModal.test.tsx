@@ -101,7 +101,7 @@ describe("PostDetailModal for a platform admin viewer", () => {
 
     expect(screen.queryByRole("button", { name: "Follow" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Post options" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "5" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "5" })).toHaveAttribute("aria-disabled", "true");
     expect(screen.queryByRole("button", { name: "Post" })).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText("Add a comment…")).not.toBeInTheDocument();
   });

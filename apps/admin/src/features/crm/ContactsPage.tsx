@@ -1,6 +1,6 @@
 import { Button, FormBanner, Input, Select, Skeleton } from "@outfiqe/design-system";
-import { useDebouncedValue } from "@outfiqe/hooks";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -23,7 +23,6 @@ const STAGE_LABELS: Record<string, string> = {
 };
 
 export const ContactsPage = () => {
-  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [stageFilter, setStageFilter] = useState("");
   const [page, setPage] = useState(1);
@@ -47,9 +46,9 @@ export const ContactsPage = () => {
       }),
   });
 
-  const remove = useMutation({
+  const remove = useApiMutation({
     mutationFn: (contactId: string) => crmContactsApi.deleteContact(contactId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: CONTACTS_QUERY_KEY }),
+    invalidateKeys: [CONTACTS_QUERY_KEY],
   });
 
   const openCreate = () => {

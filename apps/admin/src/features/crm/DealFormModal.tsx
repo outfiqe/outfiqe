@@ -1,5 +1,5 @@
 import { Button, FormBanner, Input, Modal, Select } from "@outfiqe/design-system";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
 import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -18,7 +18,6 @@ type DealFormModalProps = {
 };
 
 export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProps) => {
-  const queryClient = useQueryClient();
   const isEditing = deal !== null;
 
   const [title, setTitle] = useState(deal?.title ?? "");
@@ -26,7 +25,7 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
   const [value, setValue] = useState(deal?.value ?? 0);
   const [partner, setPartner] = useState<SelectedPartner | null>(null);
 
-  const save = useMutation({
+  const save = useApiMutation({
     mutationFn: () =>
       isEditing
         ? crmPipelineApi.updateDeal(deal.id, { title, stageId, value })
@@ -36,10 +35,8 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
             value,
             partnerCreatorId: partner?.creatorId ?? "",
           }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: DEALS_QUERY_KEY });
-      onClose();
-    },
+    invalidateKeys: [DEALS_QUERY_KEY],
+    onSuccess: () => onClose(),
   });
 
   const submit = (event: FormEvent) => {

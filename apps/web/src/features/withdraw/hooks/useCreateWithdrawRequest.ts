@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
 
 import type { ApiClientError } from "@/shared/lib/apiClient";
 
@@ -11,14 +11,11 @@ import type {
   WithdrawRequest,
 } from "../api/withdrawSchemas";
 
-export const useCreateWithdrawRequest = (ownerType: OwnerTypeValue) => {
-  const queryClient = useQueryClient();
-
-  return useMutation<WithdrawRequest, ApiClientError, CreateWithdrawRequestInput>({
+export const useCreateWithdrawRequest = (ownerType: OwnerTypeValue) =>
+  useApiMutation<WithdrawRequest, ApiClientError, CreateWithdrawRequestInput>({
     mutationFn: (input) => withdrawApi.createRequest(ownerType, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["withdraw", "eligibility", ownerType] });
-      queryClient.invalidateQueries({ queryKey: ["withdraw", "requests", ownerType] });
-    },
+    invalidateKeys: [
+      ["withdraw", "eligibility", ownerType],
+      ["withdraw", "requests", ownerType],
+    ],
   });
-};

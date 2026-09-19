@@ -1,5 +1,6 @@
 import { Badge, Button, ProgressBar, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { TextPromptModal } from "@/components/TextPromptModal";
@@ -51,26 +52,24 @@ export const CouponsListSection = () => {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin-coupons"] });
 
-  const updateStatus = useMutation({
+  const updateStatus = useApiMutation({
     mutationFn: ({ id, status }: { id: string; status: CouponStatusValue }) =>
       couponsApi.updateStatus(id, status),
-    onSuccess: invalidate,
+    invalidateKeys: [["admin-coupons"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const approve = useMutation({
+  const approve = useApiMutation({
     mutationFn: (id: string) => couponsApi.approve(id),
-    onSuccess: invalidate,
+    invalidateKeys: [["admin-coupons"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const updateBudget = useMutation({
+  const updateBudget = useApiMutation({
     mutationFn: ({ id, totalBudgetAmount }: { id: string; totalBudgetAmount: number | null }) =>
       couponsApi.updateBudget(id, { totalBudgetAmount, maxRedemptions: null }),
-    onSuccess: () => {
-      invalidate();
-      setBudgetEditCoupon(null);
-    },
+    invalidateKeys: [["admin-coupons"]],
+    onSuccess: () => setBudgetEditCoupon(null),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 

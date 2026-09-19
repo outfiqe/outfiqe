@@ -1,5 +1,6 @@
 import { Button, Checkbox, FormBanner, Input, Modal, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { type CreateXpMultiplierInput, gamificationApi, type UpdateXpMultiplierInput } from "./api";
@@ -119,18 +120,15 @@ const EditMultiplierModal = ({
   multiplierRow: XpMultiplier;
   onClose: () => void;
 }) => {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState<MultiplierFormState>(() => formForMultiplier(multiplierRow));
   const [isActive, setIsActive] = useState(multiplierRow.isActive);
   const [error, setError] = useState<string | null>(null);
 
-  const update = useMutation({
+  const update = useApiMutation({
     mutationFn: (input: UpdateXpMultiplierInput) =>
       gamificationApi.updateXpMultiplier(multiplierRow.id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MULTIPLIERS_QUERY_KEY });
-      onClose();
-    },
+    invalidateKeys: [MULTIPLIERS_QUERY_KEY],
+    onSuccess: () => onClose(),
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
@@ -165,7 +163,6 @@ const EditMultiplierModal = ({
 };
 
 export const MultipliersSection = () => {
-  const queryClient = useQueryClient();
   const { data: multipliers, isLoading } = useQuery({
     queryKey: MULTIPLIERS_QUERY_KEY,
     queryFn: gamificationApi.listXpMultipliers,
@@ -175,12 +172,12 @@ export const MultipliersSection = () => {
   const [error, setError] = useState<string | null>(null);
   const [editingMultiplier, setEditingMultiplier] = useState<XpMultiplier | null>(null);
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () => gamificationApi.createXpMultiplier(toCreateInput(form)),
+    invalidateKeys: [MULTIPLIERS_QUERY_KEY],
     onSuccess: () => {
       setForm(EMPTY_FORM);
       setError(null);
-      queryClient.invalidateQueries({ queryKey: MULTIPLIERS_QUERY_KEY });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });

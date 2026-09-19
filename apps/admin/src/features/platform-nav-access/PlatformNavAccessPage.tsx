@@ -1,6 +1,7 @@
 import { Badge, Button, FormBanner, Select, Skeleton, Switch } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
 import { MAX_PLATFORM_CO_FOUNDERS, PLATFORM_NAV_KEYS, type PlatformNavKey } from "@outfiqe/utils";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth/AuthContext";
@@ -50,7 +51,6 @@ const CANDIDATES_QUERY_KEY = ["platform-nav-access-candidates"] as const;
 
 export const PlatformNavAccessPage = () => {
   const { state } = useAuth();
-  const queryClient = useQueryClient();
   const [selectedMembershipId, setSelectedMembershipId] = useState("");
 
   const isCoFounder = state.status === "signed-in" && state.user.isCoFounder;
@@ -67,26 +67,20 @@ export const PlatformNavAccessPage = () => {
     enabled: isCoFounder,
   });
 
-  const saveHidden = useMutation({
+  const saveHidden = useApiMutation({
     mutationFn: platformNavAccessApi.setHiddenNavKeys,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: OVERVIEW_QUERY_KEY }),
+    invalidateKeys: [OVERVIEW_QUERY_KEY],
   });
 
-  const promote = useMutation({
+  const promote = useApiMutation({
     mutationFn: platformNavAccessApi.promoteCoFounder,
-    onSuccess: () => {
-      setSelectedMembershipId("");
-      queryClient.invalidateQueries({ queryKey: OVERVIEW_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: CANDIDATES_QUERY_KEY });
-    },
+    invalidateKeys: [OVERVIEW_QUERY_KEY, CANDIDATES_QUERY_KEY],
+    onSuccess: () => setSelectedMembershipId(""),
   });
 
-  const demote = useMutation({
+  const demote = useApiMutation({
     mutationFn: platformNavAccessApi.demoteCoFounder,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: OVERVIEW_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: CANDIDATES_QUERY_KEY });
-    },
+    invalidateKeys: [OVERVIEW_QUERY_KEY, CANDIDATES_QUERY_KEY],
   });
 
   if (!isCoFounder) {

@@ -1,5 +1,6 @@
 import { Button, FormBanner, Input, Select, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useRef, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -157,7 +158,6 @@ const TierRowFields = ({
 );
 
 export const CommissionTiersSection = () => {
-  const queryClient = useQueryClient();
   const nextTierRowKey = useRef(0);
 
   const { data: rules, isLoading } = useQuery({
@@ -174,12 +174,12 @@ export const CommissionTiersSection = () => {
       ? activeRule.tiers.map(tierRowFor)
       : [emptyTierRow("new-0", String(LADDER_FLOOR_PRICE))]);
 
-  const createRule = useMutation({
+  const createRule = useApiMutation({
     mutationFn: (tiers: CreateTierInput[]) => platformCommissionApi.createRule(tiers),
+    invalidateKeys: [RULES_QUERY_KEY],
     onSuccess: (rule) => {
       setTierRows(rule.tiers.map(tierRowFor));
       setError(null);
-      queryClient.invalidateQueries({ queryKey: RULES_QUERY_KEY });
     },
     onError: (mutationError) => setError(getErrorMessage(mutationError)),
   });

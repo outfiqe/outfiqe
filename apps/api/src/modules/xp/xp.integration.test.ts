@@ -6,9 +6,8 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
-import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
-import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
+import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -32,8 +31,7 @@ const authHeaderFor = (userId: string, role: UserRole = UserRole.CUSTOMER) => {
 
 const createAdmin = async () => {
   const admin = await createUser("Test Admin");
-  await ensurePlatformOrganizationExists();
-  await crmAccessService.grantPlatformStaffMembership(admin.id);
+  await grantPlatformStaffMembership(admin.id);
   return { ...admin, header: authHeaderFor(admin.id, UserRole.ADMIN) };
 };
 

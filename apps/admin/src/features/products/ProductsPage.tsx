@@ -1,6 +1,6 @@
 import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
 import { THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
@@ -24,7 +24,6 @@ const STATUS_TONE: Record<ProductStatusValue, "neutral" | "positive" | "negative
 export const ProductsPage = () => {
   const [tab, setTab] = useSearchFilter("status", PRODUCTS_STATUS_FILTER);
   const [thriftFilter, setThriftFilter] = useSearchFilter("thrift", PRODUCTS_THRIFT_FILTER);
-  const queryClient = useQueryClient();
 
   const {
     data: productsQuery,
@@ -36,15 +35,15 @@ export const ProductsPage = () => {
   } = useInfiniteProducts(tab, thriftFilter === "thrift" ? true : undefined);
   const products = productsQuery?.pages.flatMap((page) => page.products) ?? [];
 
-  const approve = useMutation({
+  const approve = useApiMutation({
     mutationFn: (id: string) => productsApi.approve(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    invalidateKeys: [["products"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const reject = useMutation({
+  const reject = useApiMutation({
     mutationFn: (id: string) => productsApi.reject(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    invalidateKeys: [["products"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 

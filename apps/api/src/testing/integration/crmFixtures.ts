@@ -10,6 +10,7 @@ import {
 } from "#modules/crm-access/crm-access.constants.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
 import type {
+  MembershipRecord,
   OrganizationRecord,
   RoleWithPermissions,
 } from "#modules/crm-access/crm-access.types.js";
@@ -63,6 +64,16 @@ export const ensurePlatformOrganizationExists = async (): Promise<OrganizationRe
     if (!seededByAnotherCaller) throw error;
     return seededByAnotherCaller;
   }
+};
+
+export const grantPlatformStaffMembership = async (
+  userId: string,
+): Promise<MembershipRecord | null> => {
+  const platformOrganization = await ensurePlatformOrganizationExists();
+  const adminRole = await prisma.role.findFirstOrThrow({
+    where: { organizationId: platformOrganization.id, name: BUILT_IN_ROLE_NAME.ADMIN },
+  });
+  return crmAccessRepository.grantPlatformStaffMembership(userId, adminRole.id);
 };
 
 export const seedTenantOrganization = async (

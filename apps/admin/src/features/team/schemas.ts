@@ -8,6 +8,8 @@ export const adminInviteSummarySchema = z.object({
   id: z.string(),
   email: z.string(),
   name: z.string(),
+  roleId: z.string(),
+  roleName: z.string(),
   status: adminInviteStatusSchema,
   isCoFounder: z.boolean(),
   createdAt: z.string(),

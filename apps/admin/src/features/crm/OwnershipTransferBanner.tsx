@@ -1,5 +1,5 @@
 import { Button, FormBanner, toast } from "@outfiqe/design-system";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
 
 import { useAuth } from "@/features/auth/AuthContext";
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -9,30 +9,23 @@ import type { Organization } from "./schemas";
 
 export const OwnershipTransferBanner = ({ organization }: { organization: Organization }) => {
   const { state } = useAuth();
-  const queryClient = useQueryClient();
   const pendingTransfer = organization.pendingOwnershipTransfer;
 
-  const invalidateOrganization = () =>
-    queryClient.invalidateQueries({ queryKey: ["crm-organization"] });
-
-  const acceptTransfer = useMutation({
+  const acceptTransfer = useApiMutation({
     mutationFn: (requestId: string) => crmApi.acceptOwnershipTransfer(requestId),
-    onSuccess: () => {
-      invalidateOrganization();
-      queryClient.invalidateQueries({ queryKey: ["crm-members"] });
-    },
+    invalidateKeys: [["crm-organization"], ["crm-members"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const declineTransfer = useMutation({
+  const declineTransfer = useApiMutation({
     mutationFn: (requestId: string) => crmApi.declineOwnershipTransfer(requestId),
-    onSuccess: invalidateOrganization,
+    invalidateKeys: [["crm-organization"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const revokeTransfer = useMutation({
+  const revokeTransfer = useApiMutation({
     mutationFn: (requestId: string) => crmApi.revokeOwnershipTransfer(requestId),
-    onSuccess: invalidateOrganization,
+    invalidateKeys: [["crm-organization"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 

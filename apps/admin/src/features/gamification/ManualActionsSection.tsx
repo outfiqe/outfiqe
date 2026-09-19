@@ -1,5 +1,6 @@
 import { Button, FormBanner, Input, Select, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { TextPromptModal } from "@/components/TextPromptModal";
@@ -12,7 +13,6 @@ const BADGES_QUERY_KEY = ["admin-badges"];
 const MANUAL_AWARDS_QUERY_KEY = ["admin-manual-awards"];
 
 const AwardBadgeForm = () => {
-  const queryClient = useQueryClient();
   const { data: badges } = useQuery({
     queryKey: BADGES_QUERY_KEY,
     queryFn: gamificationApi.listBadgesAdmin,
@@ -24,8 +24,10 @@ const AwardBadgeForm = () => {
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const award = useMutation({
+  const award = useApiMutation({
     mutationFn: (recipientId: string) => gamificationApi.awardBadge(badgeId, recipientId, reason),
+    invalidateKeys: (result) =>
+      result.awarded ? [MANUAL_AWARDS_QUERY_KEY, ["admin-badge-stats"]] : [],
     onSuccess: (result) => {
       if (!result.awarded) {
         setError(result.reason);
@@ -34,8 +36,6 @@ const AwardBadgeForm = () => {
       setRecipient(null);
       setReason("");
       setError(null);
-      queryClient.invalidateQueries({ queryKey: MANUAL_AWARDS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ["admin-badge-stats"] });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
@@ -169,7 +169,6 @@ const AdjustXpForm = () => {
 };
 
 const ManualAwardsList = () => {
-  const queryClient = useQueryClient();
   const { data: awards, isLoading } = useQuery({
     queryKey: MANUAL_AWARDS_QUERY_KEY,
     queryFn: gamificationApi.listManualAwards,
@@ -179,14 +178,11 @@ const ManualAwardsList = () => {
     null,
   );
 
-  const remove = useMutation({
+  const remove = useApiMutation({
     mutationFn: ({ userBadgeId, reason }: { userBadgeId: string; reason: string }) =>
       gamificationApi.removeUserBadge(userBadgeId, reason),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MANUAL_AWARDS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ["admin-badge-stats"] });
-      setRemoveTarget(null);
-    },
+    invalidateKeys: [MANUAL_AWARDS_QUERY_KEY, ["admin-badge-stats"]],
+    onSuccess: () => setRemoveTarget(null),
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 

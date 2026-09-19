@@ -1,6 +1,5 @@
 import { Badge, Button, Input, Skeleton } from "@outfiqe/design-system";
-import { useDebouncedValue } from "@outfiqe/hooks";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
 import { useState } from "react";
 
 import { ApiClientError } from "@/lib/apiClient";
@@ -36,7 +35,6 @@ export const UsersPage = () => {
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
   const [suspendTargetId, setSuspendTargetId] = useState<string | null>(null);
   const [banTargetId, setBanTargetId] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
   const {
     data: usersQuery,
@@ -48,9 +46,9 @@ export const UsersPage = () => {
   } = useInfiniteUsers(debouncedQuery.trim());
   const users = usersQuery?.pages.flatMap((page) => page.items) ?? [];
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["users"] });
+  const USERS_QUERY_KEY = ["users"];
 
-  const suspend = useMutation({
+  const suspend = useApiMutation({
     mutationFn: ({
       userId,
       reason,
@@ -60,29 +58,25 @@ export const UsersPage = () => {
       reason: string;
       durationHours?: number;
     }) => usersApi.suspend(userId, reason, durationHours),
-    onSuccess: () => {
-      invalidate();
-      setSuspendTargetId(null);
-    },
+    invalidateKeys: [USERS_QUERY_KEY],
+    onSuccess: () => setSuspendTargetId(null),
   });
 
-  const ban = useMutation({
+  const ban = useApiMutation({
     mutationFn: ({ userId, reason }: { userId: string; reason: string }) =>
       usersApi.ban(userId, reason),
-    onSuccess: () => {
-      invalidate();
-      setBanTargetId(null);
-    },
+    invalidateKeys: [USERS_QUERY_KEY],
+    onSuccess: () => setBanTargetId(null),
   });
 
-  const unsuspend = useMutation({
+  const unsuspend = useApiMutation({
     mutationFn: (userId: string) => usersApi.unsuspend(userId),
-    onSuccess: invalidate,
+    invalidateKeys: [USERS_QUERY_KEY],
   });
 
-  const unban = useMutation({
+  const unban = useApiMutation({
     mutationFn: (userId: string) => usersApi.unban(userId),
-    onSuccess: invalidate,
+    invalidateKeys: [USERS_QUERY_KEY],
   });
 
   const actionErrorFor = (userId: string): string | null => {

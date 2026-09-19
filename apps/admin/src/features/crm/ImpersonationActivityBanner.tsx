@@ -1,5 +1,6 @@
 import { Button, FormBanner, toast } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -9,7 +10,6 @@ import { crmApi } from "./api";
 const END_SESSION_PERMISSION_KEY = "org:update";
 
 export const ImpersonationActivityBanner = () => {
-  const queryClient = useQueryClient();
   const [historyOpen, setHistoryOpen] = useState(false);
 
   const { data: organization } = useQuery({
@@ -26,13 +26,10 @@ export const ImpersonationActivityBanner = () => {
     enabled: historyOpen,
   });
 
-  const endSession = useMutation({
+  const endSession = useApiMutation({
     mutationFn: crmApi.endImpersonation,
-    onSuccess: async () => {
-      toast.success("Support session ended.");
-      await queryClient.invalidateQueries({ queryKey: ["crm-organization"] });
-      await queryClient.invalidateQueries({ queryKey: ["crm-impersonation-log"] });
-    },
+    invalidateKeys: [["crm-organization"], ["crm-impersonation-log"]],
+    onSuccess: () => toast.success("Support session ended."),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 

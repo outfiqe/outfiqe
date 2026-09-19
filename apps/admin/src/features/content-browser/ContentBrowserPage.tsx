@@ -1,6 +1,5 @@
 import { Button, Input, Skeleton, toast } from "@outfiqe/design-system";
-import { useDebouncedValue } from "@outfiqe/hooks";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
 import { useState } from "react";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -21,7 +20,6 @@ type DeleteCommentTarget = {
 };
 
 export const ContentBrowserPage = () => {
-  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
@@ -39,25 +37,25 @@ export const ContentBrowserPage = () => {
   const looks = looksQuery?.pages.flatMap((page) => page.items) ?? [];
   const detailPost = detailPostId ? (looks.find((look) => look.id === detailPostId) ?? null) : null;
 
-  const deleteLook = useMutation({
+  const deleteLook = useApiMutation({
     mutationFn: (lookId: string) => contentBrowserApi.deleteLook(lookId),
+    invalidateKeys: [["content-browser", "looks"]],
     onSuccess: (_result, lookId) => {
-      queryClient.invalidateQueries({ queryKey: ["content-browser", "looks"] });
       if (detailPostId === lookId) setDetailPostId(null);
       setDeleteLookTarget(null);
     },
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const deleteComment = useMutation({
+  const deleteComment = useApiMutation({
     mutationFn: ({ lookId, commentId }: DeleteCommentTarget) =>
       contentBrowserApi.deleteComment(lookId, commentId),
-    onSuccess: (_result, { lookId }) => {
-      queryClient.invalidateQueries({ queryKey: ["content-browser", "comments", lookId] });
-      queryClient.invalidateQueries({ queryKey: ["content-browser", "replies", lookId] });
-      queryClient.invalidateQueries({ queryKey: ["content-browser", "looks"] });
-      setDeleteCommentTarget(null);
-    },
+    invalidateKeys: (_result, { lookId }) => [
+      ["content-browser", "comments", lookId],
+      ["content-browser", "replies", lookId],
+      ["content-browser", "looks"],
+    ],
+    onSuccess: () => setDeleteCommentTarget(null),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 

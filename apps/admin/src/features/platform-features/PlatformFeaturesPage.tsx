@@ -1,5 +1,6 @@
 import { Button, FormBanner, Select, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -14,7 +15,6 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 export const PlatformFeaturesPage = () => {
-  const queryClient = useQueryClient();
   const [orgId, setOrgId] = useState("");
 
   const tenants = useQuery({
@@ -33,15 +33,14 @@ export const PlatformFeaturesPage = () => {
     enabled: orgId !== "",
   });
 
-  const mutate = useMutation({
+  const mutate = useApiMutation({
     mutationFn: (
       action: { key: string; kind: "set"; enabled: boolean } | { key: string; kind: "clear" },
     ) =>
       action.kind === "set"
         ? platformFeaturesApi.setOverride(orgId, action.key, action.enabled)
         : platformFeaturesApi.clearOverride(orgId, action.key),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["platform-features-resolved", orgId] }),
+    invalidateKeys: [["platform-features-resolved", orgId]],
   });
 
   const labelByKey = new Map(

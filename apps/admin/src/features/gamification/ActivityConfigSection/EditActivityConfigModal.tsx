@@ -1,5 +1,5 @@
 import { Button, FormBanner, Modal } from "@outfiqe/design-system";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
 import { type FormEvent, useState } from "react";
 
 import { gamificationApi } from "../api";
@@ -16,17 +16,14 @@ export const EditActivityConfigModal = ({
   config: ActivityXpConfig;
   onClose: () => void;
 }) => {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState<ActivityConfigFormState>(() => formForActivityConfig(config));
   const [error, setError] = useState<string | null>(null);
 
-  const update = useMutation({
+  const update = useApiMutation({
     mutationFn: () =>
       gamificationApi.updateActivityConfig(config.activityType, toUpdateActivityConfigInput(form)),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ACTIVITY_CONFIG_QUERY_KEY });
-      onClose();
-    },
+    invalidateKeys: [ACTIVITY_CONFIG_QUERY_KEY],
+    onSuccess: () => onClose(),
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 

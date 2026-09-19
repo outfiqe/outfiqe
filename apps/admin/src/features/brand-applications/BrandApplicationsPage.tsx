@@ -1,5 +1,5 @@
 import { Badge, Button, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
 import { useState } from "react";
 
 import { TextPromptModal } from "@/components/TextPromptModal";
@@ -31,7 +31,6 @@ const reviewFailureMessage = (mutationError: unknown, fallback: string): string 
 export const BrandApplicationsPage = () => {
   const [tab, setTab] = useSearchFilter("status", BRAND_APPLICATIONS_STATUS_FILTER);
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
   const {
     data: applicationsQuery,
@@ -43,18 +42,16 @@ export const BrandApplicationsPage = () => {
   } = useInfiniteBrandApplications(tab);
   const applications = applicationsQuery?.pages.flatMap((page) => page.applications) ?? [];
 
-  const approve = useMutation({
+  const approve = useApiMutation({
     mutationFn: (id: string) => brandApplicationsApi.approve(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["brand-applications"] }),
+    invalidateKeys: [["brand-applications"]],
   });
 
-  const reject = useMutation({
+  const reject = useApiMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       brandApplicationsApi.reject(id, reason),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["brand-applications"] });
-      setRejectTargetId(null);
-    },
+    invalidateKeys: [["brand-applications"]],
+    onSuccess: () => setRejectTargetId(null),
   });
 
   const actionErrorFor = (applicationId: string): string | null => {

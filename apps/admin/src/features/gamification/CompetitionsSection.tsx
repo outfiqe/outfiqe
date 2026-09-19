@@ -7,7 +7,8 @@ import {
   Select,
   Skeleton,
 } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import {
@@ -320,18 +321,15 @@ const EditCompetitionModal = ({
   competition: CreatorCompetitionAdmin;
   onClose: () => void;
 }) => {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState<CompetitionFormState>(() => formForCompetition(competition));
   const [isActive, setIsActive] = useState(competition.isActive);
   const [error, setError] = useState<string | null>(null);
 
-  const update = useMutation({
+  const update = useApiMutation({
     mutationFn: (input: UpdateCreatorCompetitionFormInput) =>
       gamificationApi.updateCreatorCompetition(competition.id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: COMPETITIONS_QUERY_KEY });
-      onClose();
-    },
+    invalidateKeys: [COMPETITIONS_QUERY_KEY],
+    onSuccess: () => onClose(),
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
@@ -366,7 +364,6 @@ const EditCompetitionModal = ({
 };
 
 export const CompetitionsSection = () => {
-  const queryClient = useQueryClient();
   const { data: competitions, isLoading } = useQuery({
     queryKey: COMPETITIONS_QUERY_KEY,
     queryFn: gamificationApi.listCreatorCompetitionsAdmin,
@@ -378,12 +375,12 @@ export const CompetitionsSection = () => {
     null,
   );
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () => gamificationApi.createCreatorCompetition(toFormInput(form)),
+    invalidateKeys: [COMPETITIONS_QUERY_KEY],
     onSuccess: () => {
       setForm(EMPTY_FORM);
       setError(null);
-      queryClient.invalidateQueries({ queryKey: COMPETITIONS_QUERY_KEY });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });

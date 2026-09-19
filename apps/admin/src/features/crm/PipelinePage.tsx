@@ -1,6 +1,7 @@
 import { KanbanBoard } from "@outfiqe/components";
 import { Button, FormBanner, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -19,7 +20,6 @@ const PIPELINE_CONFIGURE_PERMISSION = "pipeline:configure";
 const DEALS_WRITE_PERMISSION = "deals:write";
 
 export const PipelinePage = () => {
-  const queryClient = useQueryClient();
   const { data: organization } = useQuery({
     queryKey: ["crm-organization"],
     queryFn: crmApi.getOrganization,
@@ -39,10 +39,10 @@ export const PipelinePage = () => {
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
   const [stageModalOpen, setStageModalOpen] = useState(false);
 
-  const moveDeal = useMutation({
+  const moveDeal = useApiMutation({
     mutationFn: ({ dealId, stageId }: { dealId: string; stageId: string }) =>
       crmPipelineApi.updateDeal(dealId, { stageId }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: DEALS_QUERY_KEY }),
+    invalidateKeys: [DEALS_QUERY_KEY],
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 

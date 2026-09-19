@@ -9,8 +9,8 @@ import {
   Skeleton,
   toast,
 } from "@outfiqe/design-system";
-import { useDebouncedValue } from "@outfiqe/hooks";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
@@ -131,7 +131,6 @@ const EMPTY_FORM: ExemptionFormState = {
 };
 
 export const BrandExemptionsSection = () => {
-  const queryClient = useQueryClient();
   const { data: exemptions, isLoading } = useQuery({
     queryKey: EXEMPTIONS_QUERY_KEY,
     queryFn: platformCommissionApi.listExemptions,
@@ -141,9 +140,7 @@ export const BrandExemptionsSection = () => {
   const [error, setError] = useState<string | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<BrandCommissionExemption | null>(null);
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: EXEMPTIONS_QUERY_KEY });
-
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () => {
       if (!form.brandId) throw new Error("Pick a brand first.");
       return platformCommissionApi.createExemption({
@@ -153,20 +150,18 @@ export const BrandExemptionsSection = () => {
         reason: form.reason,
       });
     },
+    invalidateKeys: [EXEMPTIONS_QUERY_KEY],
     onSuccess: () => {
       setForm(EMPTY_FORM);
       setError(null);
-      invalidate();
     },
     onError: (mutationError) => setError(getErrorMessage(mutationError)),
   });
 
-  const revoke = useMutation({
+  const revoke = useApiMutation({
     mutationFn: (id: string) => platformCommissionApi.revokeExemption(id),
-    onSuccess: () => {
-      invalidate();
-      setRevokeTarget(null);
-    },
+    invalidateKeys: [EXEMPTIONS_QUERY_KEY],
+    onSuccess: () => setRevokeTarget(null),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 

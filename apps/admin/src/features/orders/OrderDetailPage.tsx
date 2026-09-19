@@ -1,5 +1,5 @@
 import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
@@ -25,26 +25,19 @@ type OrderDetailPageProps = {
 };
 
 export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
-  const queryClient = useQueryClient();
   const { data: order, isLoading, error } = useOrder(orderId);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
-  const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
-  };
-
-  const advance = useMutation({
+  const advance = useApiMutation({
     mutationFn: (status: FulfilmentStatusValue) => ordersApi.advanceFulfilment(orderId, status),
-    onSuccess: invalidate,
+    invalidateKeys: [["admin-orders"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const cancel = useMutation({
+  const cancel = useApiMutation({
     mutationFn: (reason: string) => ordersApi.cancel(orderId, reason),
-    onSuccess: () => {
-      invalidate();
-      setIsCancelModalOpen(false);
-    },
+    invalidateKeys: [["admin-orders"]],
+    onSuccess: () => setIsCancelModalOpen(false),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 

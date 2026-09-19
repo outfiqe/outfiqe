@@ -1,5 +1,6 @@
 import { Button, Checkbox, FormBanner, Input, Modal, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { type CreateLevelInput, gamificationApi, type UpdateLevelInput } from "./api";
@@ -98,17 +99,14 @@ const formForLevel = (level: Level): LevelFormState => ({
 });
 
 const EditLevelModal = ({ level, onClose }: { level: Level; onClose: () => void }) => {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState<LevelFormState>(() => formForLevel(level));
   const [isActive, setIsActive] = useState(level.isActive);
   const [error, setError] = useState<string | null>(null);
 
-  const update = useMutation({
+  const update = useApiMutation({
     mutationFn: (input: UpdateLevelInput) => gamificationApi.updateLevel(level.id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: LEVELS_QUERY_KEY });
-      onClose();
-    },
+    invalidateKeys: [LEVELS_QUERY_KEY],
+    onSuccess: () => onClose(),
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
@@ -149,7 +147,6 @@ const EditLevelModal = ({ level, onClose }: { level: Level; onClose: () => void 
 };
 
 export const LevelsSection = () => {
-  const queryClient = useQueryClient();
   const { data: levels, isLoading } = useQuery({
     queryKey: LEVELS_QUERY_KEY,
     queryFn: gamificationApi.listLevels,
@@ -159,12 +156,12 @@ export const LevelsSection = () => {
   const [error, setError] = useState<string | null>(null);
   const [editingLevel, setEditingLevel] = useState<Level | null>(null);
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () => gamificationApi.createLevel(toCreateInput(form)),
+    invalidateKeys: [LEVELS_QUERY_KEY],
     onSuccess: () => {
       setForm(EMPTY_FORM);
       setError(null);
-      queryClient.invalidateQueries({ queryKey: LEVELS_QUERY_KEY });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
