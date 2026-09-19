@@ -1,5 +1,7 @@
 "use client";
 
+import { POST_LAYOUT_ASPECT } from "@outfiqe/utils";
+
 import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
 
@@ -25,6 +27,7 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
     id,
     creator,
     images,
+    layout,
     isFollowingCreator,
     caption,
     isLiked,
@@ -88,7 +91,7 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
         <PostCarousel
           images={images}
           fallbackColor={getAvatarColor(id)}
-          aspectRatio="4 / 5"
+          aspectRatio={String(POST_LAYOUT_ASPECT[layout])}
           onImageClick={onImageClick}
           onDoubleTapLike={
             likeDisabledReason

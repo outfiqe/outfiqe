@@ -1,5 +1,7 @@
 "use client";
 
+import { POST_LAYOUT_ASPECT } from "@outfiqe/utils";
+
 import type { FeedPost } from "@/features/explore";
 import { PostCaption } from "@/features/explore";
 import { AppImage } from "@/shared/components/AppImage";
@@ -24,10 +26,13 @@ export const CreatorPostThumbnail = ({
   onEdit,
   onDelete,
 }: CreatorPostThumbnailProps) => (
-  <div className="group relative">
+  <div className="group relative mb-5">
     <div
-      className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-border transition-colors group-hover:border-foreground/30"
-      style={post.imageUrl ? undefined : { backgroundColor: getAvatarColor(post.id) }}
+      className="relative overflow-hidden rounded-2xl border border-border transition-colors group-hover:border-foreground/30"
+      style={{
+        aspectRatio: String(POST_LAYOUT_ASPECT[post.layout]),
+        ...(post.imageUrl ? null : { backgroundColor: getAvatarColor(post.id) }),
+      }}
     >
       {post.imageUrl && (
         <AppImage src={post.imageUrl} image={post.image} alt="" fill sizes={CREATOR_POST_SIZES} />
