@@ -239,7 +239,7 @@ describe("POST /api/admin/invites", () => {
       .set("Authorization", founder.authHeader)
       .send({ email: "no-role@outfiqe.test", name: "No Role" });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(422);
   });
 
   it("refuses to re-invite an email that already belongs to an admin account", async () => {
