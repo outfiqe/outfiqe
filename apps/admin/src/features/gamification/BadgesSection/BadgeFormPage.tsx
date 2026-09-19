@@ -9,7 +9,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useBlocker, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { type FormEvent, useMemo, useRef, useState } from "react";
@@ -53,7 +54,6 @@ const BadgeForm = ({
   badge: BadgeAdmin | null;
   initialForm: BadgeFormState;
 }) => {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const [form, setForm] = useState<BadgeFormState>(initialForm);
@@ -65,7 +65,7 @@ const BadgeForm = ({
   const [error, setError] = useState<string | null>(null);
   const hasSavedRef = useRef(false);
 
-  const save = useMutation({
+  const save = useApiMutation({
     mutationFn: () => {
       if (mode === "edit" && badge) {
         const input: UpdateBadgeFormInput = {
@@ -77,10 +77,9 @@ const BadgeForm = ({
       }
       return gamificationApi.createBadge(toFormInput(form));
     },
-    onSuccess: (saved) => {
+    invalidateKeys: (saved) => [BADGES_QUERY_KEY, badgeQueryKey(saved.id)],
+    onSuccess: () => {
       hasSavedRef.current = true;
-      void queryClient.invalidateQueries({ queryKey: BADGES_QUERY_KEY });
-      void queryClient.invalidateQueries({ queryKey: badgeQueryKey(saved.id) });
       void navigate({ to: "/gamification/badges" });
     },
     onError: (mutationError) => setError(getErrorMessage(mutationError)),

@@ -1,5 +1,5 @@
 import { Badge, Button, cn, FormBanner, Input, Skeleton, toast } from "@outfiqe/design-system";
-import { useDragReorder } from "@outfiqe/hooks";
+import { useApiMutation, useDragReorder } from "@outfiqe/hooks";
 import { LANDING_TASTE_CATEGORY_COUNT } from "@outfiqe/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
@@ -41,30 +41,32 @@ export const CategoriesPage = () => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const create = useMutation({
+  const CATEGORIES_QUERY_KEY = ["admin-categories"];
+
+  const create = useApiMutation({
     mutationFn: () => categoriesApi.create({ name, slug, imageUrl: imageUrl ?? undefined }),
+    invalidateKeys: [CATEGORIES_QUERY_KEY],
     onSuccess: () => {
       setName("");
       setSlug("");
       setSlugTouched(false);
       setImageUrl(null);
       setError(null);
-      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const toggleStatus = useMutation({
+  const toggleStatus = useApiMutation({
     mutationFn: (category: Category) =>
       categoriesApi.setStatus(category.id, category.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED"),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-categories"] }),
+    invalidateKeys: [CATEGORIES_QUERY_KEY],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const setCategoryImage = useMutation({
+  const setCategoryImage = useApiMutation({
     mutationFn: ({ id, imageUrl: url }: { id: string; imageUrl: string }) =>
       categoriesApi.setImage(id, url),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-categories"] }),
+    invalidateKeys: [CATEGORIES_QUERY_KEY],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 

@@ -1,5 +1,5 @@
 import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
 import { useState } from "react";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -42,7 +42,6 @@ export const WithdrawRequestsListSection = () => {
   const [crossCheckTargetId, setCrossCheckTargetId] = useState<string | null>(null);
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
   const [markPaidTargetId, setMarkPaidTargetId] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
   const {
     data: requestsQuery,
@@ -54,9 +53,9 @@ export const WithdrawRequestsListSection = () => {
   } = useInfiniteWithdrawRequests(tab);
   const requests = requestsQuery?.pages.flatMap((page) => page.items) ?? [];
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["withdraw-requests"] });
+  const WITHDRAW_REQUESTS_QUERY_KEY = ["withdraw-requests"];
 
-  const approve = useMutation({
+  const approve = useApiMutation({
     mutationFn: ({
       id,
       identityCrossCheckConfirmed,
@@ -64,10 +63,8 @@ export const WithdrawRequestsListSection = () => {
       id: string;
       identityCrossCheckConfirmed?: boolean;
     }) => withdrawRequestsApi.approve(id, identityCrossCheckConfirmed),
-    onSuccess: () => {
-      invalidate();
-      setCrossCheckTargetId(null);
-    },
+    invalidateKeys: [WITHDRAW_REQUESTS_QUERY_KEY],
+    onSuccess: () => setCrossCheckTargetId(null),
     onError: (mutationError, variables) => {
       if (
         mutationError instanceof ApiClientError &&
@@ -80,23 +77,19 @@ export const WithdrawRequestsListSection = () => {
     },
   });
 
-  const reject = useMutation({
+  const reject = useApiMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       withdrawRequestsApi.reject(id, reason),
-    onSuccess: () => {
-      invalidate();
-      setRejectTargetId(null);
-    },
+    invalidateKeys: [WITHDRAW_REQUESTS_QUERY_KEY],
+    onSuccess: () => setRejectTargetId(null),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const markPaid = useMutation({
+  const markPaid = useApiMutation({
     mutationFn: ({ id, referenceNote }: { id: string; referenceNote: string }) =>
       withdrawRequestsApi.markPaid(id, referenceNote),
-    onSuccess: () => {
-      invalidate();
-      setMarkPaidTargetId(null);
-    },
+    invalidateKeys: [WITHDRAW_REQUESTS_QUERY_KEY],
+    onSuccess: () => setMarkPaidTargetId(null),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 

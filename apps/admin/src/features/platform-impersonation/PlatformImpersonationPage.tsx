@@ -1,5 +1,6 @@
 import { Button, FormBanner, Input, Select, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -71,7 +72,6 @@ const SessionTable = ({
 );
 
 export const PlatformImpersonationPage = () => {
-  const queryClient = useQueryClient();
   const [organizationId, setOrganizationId] = useState("");
   const [targetUserId, setTargetUserId] = useState("");
   const [reason, setReason] = useState("");
@@ -101,12 +101,9 @@ export const PlatformImpersonationPage = () => {
     queryFn: () => platformImpersonationApi.listHistory(),
   });
 
-  const refreshSessions = () => {
-    queryClient.invalidateQueries({ queryKey: ACTIVE_SESSIONS_QUERY_KEY });
-    queryClient.invalidateQueries({ queryKey: HISTORY_QUERY_KEY });
-  };
+  const IMPERSONATION_INVALIDATE_KEYS = [ACTIVE_SESSIONS_QUERY_KEY, HISTORY_QUERY_KEY];
 
-  const startSession = useMutation({
+  const startSession = useApiMutation({
     mutationFn: () =>
       platformImpersonationApi.start({
         organizationId,
@@ -115,22 +112,20 @@ export const PlatformImpersonationPage = () => {
         scope,
         ttlMinutes: ttlMinutes ? Number(ttlMinutes) : undefined,
       }),
+    invalidateKeys: IMPERSONATION_INVALIDATE_KEYS,
     onSuccess: (result) => {
       setLastResult(result);
       setTokenRevealed(false);
       setReason("");
-      refreshSessions();
       toast.success("Impersonation session started.");
     },
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const revokeSession = useMutation({
+  const revokeSession = useApiMutation({
     mutationFn: (sessionId: string) => platformImpersonationApi.revoke(sessionId),
-    onSuccess: () => {
-      refreshSessions();
-      toast.success("Session revoked.");
-    },
+    invalidateKeys: IMPERSONATION_INVALIDATE_KEYS,
+    onSuccess: () => toast.success("Session revoked."),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 

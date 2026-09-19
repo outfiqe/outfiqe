@@ -1,5 +1,6 @@
 import { Badge, Button, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { ApiClientError } from "@/lib/apiClient";
@@ -36,7 +37,6 @@ const errorText = (error: unknown, fallback: string): string =>
   error instanceof ApiClientError ? error.message : fallback;
 
 export const ContentReportsPage = () => {
-  const queryClient = useQueryClient();
   const [tab, setTab] = useSearchFilter("status", CONTENT_REPORTS_STATUS_FILTER);
   const [resolving, setResolving] = useState<ContentReport | null>(null);
 
@@ -49,13 +49,11 @@ export const ContentReportsPage = () => {
     useInfiniteContentReports(tab);
   const reports = data?.pages.flatMap((page) => page.items) ?? [];
 
-  const resolve = useMutation({
+  const resolve = useApiMutation({
     mutationFn: ({ id, input }: { id: string; input: ResolveContentReportInput }) =>
       contentReportsApi.resolve(id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["content-reports"] });
-      setResolving(null);
-    },
+    invalidateKeys: [["content-reports"]],
+    onSuccess: () => setResolving(null),
   });
 
   return (

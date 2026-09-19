@@ -1,5 +1,6 @@
 import { Button, FormBanner, Select, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -30,7 +31,6 @@ type TimelineSectionProps = {
 };
 
 export const TimelineSection = ({ subjectType, subjectId }: TimelineSectionProps) => {
-  const queryClient = useQueryClient();
   const subject = { subjectType, subjectId };
   const queryKey = ["crm-timeline", subjectType, subjectId];
 
@@ -46,13 +46,11 @@ export const TimelineSection = ({ subjectType, subjectId }: TimelineSectionProps
   const [activityType, setActivityType] = useState<CrmActivityTypeValue>("NOTE");
   const [body, setBody] = useState("");
 
-  const logActivity = useMutation({
+  const logActivity = useApiMutation({
     mutationFn: () =>
       crmActivitiesApi.logActivity(subject, { type: activityType, body: body.trim() }),
-    onSuccess: () => {
-      setBody("");
-      queryClient.invalidateQueries({ queryKey });
-    },
+    invalidateKeys: [queryKey],
+    onSuccess: () => setBody(""),
   });
 
   const submit = (event: FormEvent) => {

@@ -1,5 +1,6 @@
 import { Badge, Button, FormBanner, Input, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -10,7 +11,6 @@ import { sizeOptionsApi } from "./api";
 import type { SizeOption } from "./schemas";
 
 export const SizeOptionsPage = () => {
-  const queryClient = useQueryClient();
   const { data: productTypes } = useQuery({
     queryKey: ["admin-product-types"],
     queryFn: productTypesApi.list,
@@ -31,23 +31,21 @@ export const SizeOptionsPage = () => {
 
   const sizesForType = (sizeOptions ?? []).filter((sizeOption) => sizeOption.type === type);
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () =>
       sizeOptionsApi.create({ type: type ?? "", label, sortOrder: sizesForType.length }),
+    invalidateKeys: [["admin-size-options"]],
     onSuccess: () => {
       setLabel("");
       setError(null);
-      queryClient.invalidateQueries({ queryKey: ["admin-size-options"] });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const remove = useMutation({
+  const remove = useApiMutation({
     mutationFn: (sizeOption: SizeOption) => sizeOptionsApi.remove(sizeOption.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-size-options"] });
-      setDeleteTarget(null);
-    },
+    invalidateKeys: [["admin-size-options"]],
+    onSuccess: () => setDeleteTarget(null),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 

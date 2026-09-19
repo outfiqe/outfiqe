@@ -1,5 +1,6 @@
 import { Badge, Button, FormBanner, Select } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -28,7 +29,6 @@ export const TicketDetail = ({
   canWrite: boolean;
   canManageAssignee: boolean;
 }) => {
-  const queryClient = useQueryClient();
   const {
     data: ticket,
     isLoading,
@@ -40,26 +40,21 @@ export const TicketDetail = ({
 
   const [comment, setComment] = useState("");
 
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["crm-ticket", ticketId] });
-    queryClient.invalidateQueries({ queryKey: TICKETS_QUERY_KEY });
-  };
+  const TICKET_INVALIDATE_KEYS = [["crm-ticket", ticketId], TICKETS_QUERY_KEY];
 
-  const changeStatus = useMutation({
+  const changeStatus = useApiMutation({
     mutationFn: (status: TicketStatusValue) => crmTicketsApi.changeStatus(ticketId, status),
-    onSuccess: invalidate,
+    invalidateKeys: TICKET_INVALIDATE_KEYS,
   });
-  const assign = useMutation({
+  const assign = useApiMutation({
     mutationFn: (assigneeMembershipId: string | null) =>
       crmTicketsApi.assign(ticketId, assigneeMembershipId),
-    onSuccess: invalidate,
+    invalidateKeys: TICKET_INVALIDATE_KEYS,
   });
-  const addComment = useMutation({
+  const addComment = useApiMutation({
     mutationFn: () => crmTicketsApi.addComment(ticketId, comment.trim()),
-    onSuccess: () => {
-      setComment("");
-      invalidate();
-    },
+    invalidateKeys: TICKET_INVALIDATE_KEYS,
+    onSuccess: () => setComment(""),
   });
 
   const submitComment = (event: FormEvent) => {

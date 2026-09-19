@@ -1,5 +1,6 @@
 import { Badge, Button, FormBanner, Input, Modal, Select, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -27,13 +28,12 @@ const TICKET_STATUS_FILTER = oneOfFilter<TicketStatusValue | typeof NO_STATUS_FI
 );
 
 const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const queryClient = useQueryClient();
   const [type, setType] = useState<TicketTypeValue>("COMPLAINT");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [customer, setCustomer] = useState<SelectedCustomer | null>(null);
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () =>
       crmTicketsApi.createTicket({
         type,
@@ -42,10 +42,8 @@ const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void 
         subjectType: "customer",
         subjectId: customer?.userId ?? "",
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TICKETS_QUERY_KEY });
-      onClose();
-    },
+    invalidateKeys: [TICKETS_QUERY_KEY],
+    onSuccess: () => onClose(),
   });
 
   const submit = (event: FormEvent) => {

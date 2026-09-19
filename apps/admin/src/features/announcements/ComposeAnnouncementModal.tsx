@@ -22,7 +22,7 @@ type CtaModeValue = (typeof CtaMode)[keyof typeof CtaMode];
 type ComposeAnnouncementModalProps = {
   announcement: Announcement | null;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: () => Promise<unknown>;
 };
 
 const AUDIENCE_OPTIONS: { value: AnnouncementAudienceValue; label: string }[] = [
@@ -77,7 +77,7 @@ export const ComposeAnnouncementModal = ({
 
       setResolvedAudienceCount(saved.resolvedAudienceCount);
       toast.success(announcement ? "Announcement updated" : "Announcement drafted");
-      onSaved();
+      await onSaved();
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {

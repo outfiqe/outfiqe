@@ -1,5 +1,5 @@
 import { Button, FormBanner, Modal } from "@outfiqe/design-system";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
 import { type FormEvent, useState } from "react";
 
 import { gamificationApi } from "../api";
@@ -17,16 +17,13 @@ export const CreateChallengeModal = ({
   initialForm: ChallengeFormState;
   onClose: () => void;
 }) => {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState<ChallengeFormState>(initialForm);
   const [error, setError] = useState<string | null>(null);
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () => gamificationApi.createChallenge(toChallengeFormInput(form)),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: CHALLENGES_QUERY_KEY });
-      onClose();
-    },
+    invalidateKeys: [CHALLENGES_QUERY_KEY],
+    onSuccess: () => onClose(),
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 

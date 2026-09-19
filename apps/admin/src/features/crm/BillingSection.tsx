@@ -1,5 +1,6 @@
 import { Badge, Button, FormBanner, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -42,7 +43,6 @@ const SubscriptionCard = ({
   onManagePlan: () => void;
   onPayInvoice: (invoice: SubscriptionInvoice) => void;
 }) => {
-  const queryClient = useQueryClient();
   const { subscription, planCatalog, activeSeatCount } = overview;
 
   const { data: invoicePage } = useQuery({
@@ -50,9 +50,9 @@ const SubscriptionCard = ({
     queryFn: () => crmBillingApi.listInvoices(),
   });
 
-  const cancelRenewal = useMutation({
+  const cancelRenewal = useApiMutation({
     mutationFn: crmBillingApi.cancel,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: BILLING_OVERVIEW_KEY }),
+    invalidateKeys: [BILLING_OVERVIEW_KEY],
   });
 
   const planName =

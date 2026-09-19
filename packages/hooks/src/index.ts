@@ -1,4 +1,5 @@
 export * from "./socketEventAdapter";
+export * from "./useApiMutation";
 export * from "./useChatBlocks";
 export * from "./useChatContactSearch";
 export * from "./useChatSettings";

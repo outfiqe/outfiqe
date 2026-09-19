@@ -1,5 +1,6 @@
 import { Button, FormBanner, Input, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -15,7 +16,6 @@ const PROVIDER_LABEL: Record<GatewayPaymentMethodValue, string> = {
 };
 
 const ProviderRateForm = ({ paymentMethod }: { paymentMethod: GatewayPaymentMethodValue }) => {
-  const queryClient = useQueryClient();
   const { data: rates, isLoading: isRatesLoading } = useQuery({
     queryKey: RATES_QUERY_KEY,
     queryFn: platformCommissionApi.listGatewayFeeRates,
@@ -24,16 +24,14 @@ const ProviderRateForm = ({ paymentMethod }: { paymentMethod: GatewayPaymentMeth
 
   const [ratePercent, setRatePercent] = useState("");
 
-  const createRate = useMutation({
+  const createRate = useApiMutation({
     mutationFn: () =>
       platformCommissionApi.createGatewayFeeRate({
         paymentMethod,
         ratePercent: Number(ratePercent),
       }),
-    onSuccess: () => {
-      setRatePercent("");
-      queryClient.invalidateQueries({ queryKey: RATES_QUERY_KEY });
-    },
+    invalidateKeys: [RATES_QUERY_KEY],
+    onSuccess: () => setRatePercent(""),
   });
 
   const handleSubmit = (e: FormEvent) => {

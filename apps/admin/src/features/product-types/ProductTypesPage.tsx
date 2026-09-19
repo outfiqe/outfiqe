@@ -1,5 +1,5 @@
 import { Badge, Button, cn, FormBanner, Input, Skeleton, toast } from "@outfiqe/design-system";
-import { useDragReorder } from "@outfiqe/hooks";
+import { useApiMutation, useDragReorder } from "@outfiqe/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
@@ -33,22 +33,22 @@ export const ProductTypesPage = () => {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: QUERY_KEY });
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () => productTypesApi.create({ label, slug }),
+    invalidateKeys: [QUERY_KEY],
     onSuccess: () => {
       setLabel("");
       setSlug("");
       setSlugTouched(false);
       setError(null);
-      invalidate();
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const toggleActive = useMutation({
+  const toggleActive = useApiMutation({
     mutationFn: (productType: ProductType) =>
       productTypesApi.setActive(productType.id, !productType.isActive),
-    onSuccess: invalidate,
+    invalidateKeys: [QUERY_KEY],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 

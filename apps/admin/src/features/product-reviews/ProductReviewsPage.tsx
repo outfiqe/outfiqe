@@ -1,6 +1,6 @@
 import { Badge, Button, Input, Skeleton, toast } from "@outfiqe/design-system";
-import { useDebouncedValue } from "@outfiqe/hooks";
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { ImageOff, Search, Star, X } from "lucide-react";
 import { useState } from "react";
 
@@ -41,7 +41,6 @@ const SelectedProductBanner = ({ product, onChangeProduct }: SelectedProductBann
 };
 
 export const ProductReviewsPage = () => {
-  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
   const [selectedProduct, setSelectedProduct] = useState<ProductSuggestion | null>(null);
@@ -69,12 +68,10 @@ export const ProductReviewsPage = () => {
   });
   const reviews = reviewPages?.pages.flatMap((page) => page.reviews);
 
-  const removeReview = useMutation({
+  const removeReview = useApiMutation({
     mutationFn: (reviewId: string) => productReviewsApi.remove(selectedProduct?.id ?? "", reviewId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: reviewsQueryKey });
-      setDeleteTarget(null);
-    },
+    invalidateKeys: [reviewsQueryKey],
+    onSuccess: () => setDeleteTarget(null),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 

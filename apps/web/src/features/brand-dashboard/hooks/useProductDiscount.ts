@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
 
 import type { ApiClientError } from "@/shared/lib/apiClient";
 
@@ -8,37 +8,30 @@ import type { SetProductDiscountInput, UpdateProductDiscountInput } from "../api
 import { brandProductsApi } from "../api/brandProductsApi";
 import type { ProductDiscount } from "../api/brandProductsSchemas";
 
-export const useSetProductDiscount = () => {
-  const queryClient = useQueryClient();
+const BRAND_PRODUCTS_INVALIDATE_KEYS = [["brand-products"]];
 
-  return useMutation<
+export const useSetProductDiscount = () =>
+  useApiMutation<
     ProductDiscount,
     ApiClientError,
     { productId: string; input: SetProductDiscountInput }
   >({
     mutationFn: ({ productId, input }) => brandProductsApi.setDiscount(productId, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["brand-products"] }),
+    invalidateKeys: BRAND_PRODUCTS_INVALIDATE_KEYS,
   });
-};
 
-export const useUpdateProductDiscount = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation<
+export const useUpdateProductDiscount = () =>
+  useApiMutation<
     ProductDiscount,
     ApiClientError,
     { productId: string; input: UpdateProductDiscountInput }
   >({
     mutationFn: ({ productId, input }) => brandProductsApi.updateDiscount(productId, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["brand-products"] }),
+    invalidateKeys: BRAND_PRODUCTS_INVALIDATE_KEYS,
   });
-};
 
-export const useRemoveProductDiscount = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation<void, ApiClientError, string>({
+export const useRemoveProductDiscount = () =>
+  useApiMutation<void, ApiClientError, string>({
     mutationFn: (productId) => brandProductsApi.removeDiscount(productId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["brand-products"] }),
+    invalidateKeys: BRAND_PRODUCTS_INVALIDATE_KEYS,
   });
-};

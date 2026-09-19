@@ -1,5 +1,5 @@
 import { Button, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
@@ -13,7 +13,6 @@ const CREATORS_STATUS_FILTER = oneOfFilter<CreatorStatusValue>(TABS, "PENDING");
 
 export const CreatorsPage = () => {
   const [tab, setTab] = useSearchFilter("status", CREATORS_STATUS_FILTER);
-  const queryClient = useQueryClient();
 
   const {
     data: creatorsQuery,
@@ -25,15 +24,15 @@ export const CreatorsPage = () => {
   } = useInfiniteCreators(tab);
   const creators = creatorsQuery?.pages.flatMap((page) => page.creators) ?? [];
 
-  const approve = useMutation({
+  const approve = useApiMutation({
     mutationFn: (userId: string) => creatorsApi.approve(userId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["creators"] }),
+    invalidateKeys: [["creators"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const reject = useMutation({
+  const reject = useApiMutation({
     mutationFn: (userId: string) => creatorsApi.reject(userId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["creators"] }),
+    invalidateKeys: [["creators"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 

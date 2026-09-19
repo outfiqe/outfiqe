@@ -6,8 +6,8 @@ import {
   Button,
   Skeleton,
 } from "@outfiqe/design-system";
-import { useDebouncedValue } from "@outfiqe/hooks";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { collectionsApi } from "./api";
@@ -21,7 +21,6 @@ type ProductPickerProps = {
 };
 
 export const ProductPicker = ({ collection, onClose }: ProductPickerProps) => {
-  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, PRODUCT_SEARCH_DEBOUNCE_MS);
   const isSearching = debouncedQuery.trim().length > 0;
@@ -52,13 +51,10 @@ export const ProductPicker = ({ collection, onClose }: ProductPickerProps) => {
     setKnown((prev) => new Map([...prev, ...search.data.map((p) => [p.id, p] as const)]));
   }
 
-  const save = useMutation({
+  const save = useApiMutation({
     mutationFn: (productIds: string[]) => collectionsApi.setProducts(collection.id, productIds),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-collections"] });
-      queryClient.invalidateQueries({ queryKey: ["collection-products", collection.id] });
-      onClose();
-    },
+    invalidateKeys: [["admin-collections"], ["collection-products", collection.id]],
+    onSuccess: () => onClose(),
   });
 
   const selected = selectedIds ?? [];
