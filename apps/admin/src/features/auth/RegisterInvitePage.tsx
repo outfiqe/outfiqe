@@ -4,6 +4,7 @@ import { getRouteApi, Navigate, useNavigate } from "@tanstack/react-router";
 import { type FormEvent, useEffect, useState } from "react";
 
 import { setAccessToken } from "@/lib/apiClient";
+import { useHideBootLoader } from "@/lib/bootLoader";
 
 import { authApi } from "./api";
 import { useAuth } from "./AuthContext";
@@ -18,6 +19,7 @@ type InviteLoadState =
   | { status: "valid"; invite: AdminInviteInfo };
 
 export const RegisterInvitePage = () => {
+  useHideBootLoader();
   const { token } = routeApi.useSearch();
   const navigate = useNavigate();
   const { state: authState, setSession } = useAuth();

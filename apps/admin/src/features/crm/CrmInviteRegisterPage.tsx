@@ -7,6 +7,7 @@ import { authApi } from "@/features/auth/api";
 import { useAuth } from "@/features/auth/AuthContext";
 import type { CrmInviteInfo } from "@/features/auth/schemas";
 import { setAccessToken } from "@/lib/apiClient";
+import { useHideBootLoader } from "@/lib/bootLoader";
 
 const PASSWORD_MIN_LENGTH = 8;
 const routeApi = getRouteApi("/crm/invites/register");
@@ -17,6 +18,7 @@ type InviteLoadState =
   | { status: "valid"; invite: CrmInviteInfo };
 
 export const CrmInviteRegisterPage = () => {
+  useHideBootLoader();
   const { token } = routeApi.useSearch();
   const navigate = useNavigate();
   const { setSession } = useAuth();

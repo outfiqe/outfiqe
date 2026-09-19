@@ -10,6 +10,7 @@ import { createRoot } from "react-dom/client";
 import { RoutePendingSkeleton } from "./components/page-skeletons/RoutePendingSkeleton";
 import { AuthProvider } from "./features/auth/AuthContext.tsx";
 import { APP_ENV } from "./lib/appEnv";
+import { BOOT_LOADER_MAX_VISIBLE_MS, hideBootLoader } from "./lib/bootLoader";
 import { routeTree } from "./routeTree.gen";
 
 // Without a staleTime, every route remount and window refocus refetches — the default
@@ -49,6 +50,8 @@ declare module "@tanstack/react-router" {
     router: typeof router;
   }
 }
+
+window.setTimeout(hideBootLoader, BOOT_LOADER_MAX_VISIBLE_MS);
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Root element not found");
