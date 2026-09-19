@@ -77,7 +77,9 @@ const login = await context.request.post("http://outfiqe.local:5173/api/auth/log
   },
 });
 if (!login.ok()) throw new Error("login failed " + login.status());
-await page.goto(BASE + "/", { waitUntil: "domcontentloaded" });
+await page.goto(BASE + (process.env.SKELETON_CHECK_START_ROUTE ?? "/profile"), {
+  waitUntil: "domcontentloaded",
+});
 await page.waitForSelector("aside, nav", { timeout: 30000 });
 await page.waitForTimeout(1500);
 

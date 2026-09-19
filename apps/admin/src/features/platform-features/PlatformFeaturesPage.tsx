@@ -16,6 +16,8 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 const FEATURE_TABLE_HEADERS = ["Feature", "State", "Source", "Actions"];
+const FEATURE_ACTION_COLUMN = { header: "Actions", label: "Disable" };
+const FEATURE_FLAG_ROW_COUNT = 5;
 
 export const PlatformFeaturesPage = () => {
   const [orgId, setOrgId] = useState("");
@@ -81,7 +83,13 @@ export const PlatformFeaturesPage = () => {
         {orgId === "" && (
           <p className="text-sm text-muted-foreground">Pick a tenant to see its features.</p>
         )}
-        {orgId !== "" && resolved.isLoading && <TableSkeleton headers={FEATURE_TABLE_HEADERS} />}
+        {orgId !== "" && resolved.isLoading && (
+          <TableSkeleton
+            headers={FEATURE_TABLE_HEADERS}
+            rowCount={FEATURE_FLAG_ROW_COUNT}
+            actionColumn={FEATURE_ACTION_COLUMN}
+          />
+        )}
         {resolved.error && <FormBanner>{getErrorMessage(resolved.error)}</FormBanner>}
 
         {resolved.data && (
