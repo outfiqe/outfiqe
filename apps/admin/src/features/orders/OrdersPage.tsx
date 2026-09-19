@@ -1,6 +1,7 @@
 import { Badge, Button, Skeleton } from "@outfiqe/design-system";
 import { Link } from "@tanstack/react-router";
 
+import { SkeletonBadge } from "@/components/SkeletonControls";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { useInfiniteOrders } from "./hooks/useInfiniteOrders";
@@ -32,8 +33,8 @@ const OrderRowSkeleton = () => (
       <Skeleton className="mt-1 h-5 w-72 max-w-full" />
     </div>
     <div className="flex shrink-0 gap-1.5">
-      <Skeleton className="h-5 w-16 rounded-full" />
-      <Skeleton className="h-5 w-20 rounded-full" />
+      <SkeletonBadge />
+      <SkeletonBadge />
     </div>
   </div>
 );

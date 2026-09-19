@@ -2,6 +2,7 @@ import { Badge, Button, Input, Select, Skeleton } from "@outfiqe/design-system";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
+import { SkeletonBadge } from "@/components/SkeletonControls";
 import { useAuth } from "@/features/auth/AuthContext";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
@@ -52,8 +53,8 @@ const TicketRowSkeleton = () => (
   <div className={TICKET_ROW_CLASS} aria-hidden>
     <div className="flex flex-wrap items-center gap-2">
       <Skeleton className="h-4 w-20" />
-      <Skeleton className="h-5 w-16 rounded-full" />
-      <Skeleton className="h-5 w-20 rounded-full" />
+      <SkeletonBadge />
+      <SkeletonBadge />
       <Skeleton className="h-4 w-16" />
     </div>
     <Skeleton className="mt-1.5 h-6 w-72 max-w-full" />

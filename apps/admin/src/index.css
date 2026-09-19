@@ -94,3 +94,14 @@
     animation: none;
   }
 }
+
+.skeleton-pill {
+  color: transparent !important;
+  background-color: hsl(var(--muted)) !important;
+  border-color: transparent !important;
+  pointer-events: none;
+}
+
+.skeleton-pill * {
+  color: transparent !important;
+}

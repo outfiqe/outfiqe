@@ -8,13 +8,13 @@ describe("ActionRowSkeleton", () => {
     const { container } = render(<ActionRowSkeleton />);
 
     expect(container.firstElementChild).toHaveClass("rounded-xl", "border", "bg-card", "p-4");
-    expect(container.querySelectorAll(".h-8.w-16")).toHaveLength(1);
+    expect(container.querySelectorAll("button")).toHaveLength(1);
   });
 
   it("draws as many action buttons as the real row has", () => {
     const { container } = render(<ActionRowSkeleton actionCount={2} />);
 
-    expect(container.querySelectorAll(".h-8.w-16")).toHaveLength(2);
+    expect(container.querySelectorAll("button")).toHaveLength(2);
   });
 
   it("adds the sub line only when the real row has one", () => {

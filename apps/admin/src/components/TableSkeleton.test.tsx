@@ -19,7 +19,7 @@ describe("TableSkeleton", () => {
 
     const cells = container.querySelectorAll("tbody td");
     expect(cells).toHaveLength(2);
-    expect(cells[1]?.querySelector(".rounded-lg")).not.toBeNull();
+    expect(cells[1]?.querySelector("button")).not.toBeNull();
   });
 
   it("drops the right padding on the last column exactly like the real table", () => {

@@ -9,7 +9,7 @@ describe("ReorderRowSkeleton", () => {
 
     expect(container.querySelector(".size-4")).not.toBeNull();
     expect(container.querySelectorAll(".size-7")).toHaveLength(2);
-    expect(container.querySelector(".h-10.w-24")).not.toBeNull();
+    expect(container.querySelector("button.h-11")).not.toBeNull();
   });
 
   it("adds a thumbnail only for rows that show an image", () => {
