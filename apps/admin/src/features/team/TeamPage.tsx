@@ -138,7 +138,7 @@ export const TeamPage = () => {
                 hasBadge={false}
                 textLineCount={1}
                 hasMetaLine
-                actionCount={1}
+                hasTrailingBadge
               />
             ))}
           {invites?.length === 0 && (

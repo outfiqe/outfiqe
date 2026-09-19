@@ -27,7 +27,14 @@ export const RolesPage = () => {
         {isLoading && (
           <div className="space-y-3" role="status" aria-label="Loading">
             {Array.from({ length: ROLE_SKELETON_COUNT }, (_unused, roleIndex) => (
-              <CardRowSkeleton key={roleIndex} textLineCount={1} actionCount={2} />
+              <CardRowSkeleton
+                key={roleIndex}
+                textLineCount={1}
+                actions={[
+                  { label: "Edit", size: "sm" },
+                  { label: "Delete", size: "sm" },
+                ]}
+              />
             ))}
           </div>
         )}
