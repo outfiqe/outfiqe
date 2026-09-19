@@ -17,6 +17,10 @@ const baseUrl = process.env.SCREENSHOT_BASE_URL ?? "http://127.0.0.1:3100";
 
 const SETTLE_AFTER_LOAD_MS = 4_000;
 
+const PAGE_LOAD_TIMEOUT_MS = 180_000;
+
+const HIDE_DEV_OVERLAY_CSS = "nextjs-portal { display: none !important; }";
+
 const viewportForScreenshot = ({ formFactor, size }: AppScreenshot) => {
   const [width, height] = size.split("x").map(Number);
   return { width, height, deviceScaleFactor: formFactor === "narrow" ? 2 : 1 };
@@ -33,8 +37,9 @@ const captureScreenshots = async () => {
 
       await page.goto(`${baseUrl}${screenshot.route}`, {
         waitUntil: "load",
-        timeout: 30_000,
+        timeout: PAGE_LOAD_TIMEOUT_MS,
       });
+      await page.addStyleTag({ content: HIDE_DEV_OVERLAY_CSS });
       await page.waitForTimeout(SETTLE_AFTER_LOAD_MS);
       await page.screenshot({
         path: path.join(screenshotOutputDirectory, screenshot.fileName),
