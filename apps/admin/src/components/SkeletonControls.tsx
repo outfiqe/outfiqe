@@ -7,9 +7,13 @@ type SkeletonBadgeProps = {
 };
 
 export const SkeletonBadge = ({ label = "Status" }: SkeletonBadgeProps) => (
-  <Badge tone="neutral" showDot={false} className={PLACEHOLDER_CLASS} aria-hidden>
-    {label}
-  </Badge>
+  <Badge
+    tone="neutral"
+    showDot={false}
+    className={PLACEHOLDER_CLASS}
+    aria-hidden
+    data-label={label}
+  />
 );
 
 type SkeletonButtonProps = {
@@ -32,7 +36,6 @@ export const SkeletonButton = ({
     tabIndex={-1}
     aria-hidden
     className={`${PLACEHOLDER_CLASS} ${className}`}
-  >
-    {label}
-  </Button>
+    data-label={label}
+  />
 );
