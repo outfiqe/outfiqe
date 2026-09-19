@@ -57,7 +57,21 @@ export type ReviewLatencyByPolicy = {
   p90Hours: number | null;
 };
 
+export type PeriodTrend = {
+  value: number | null;
+  previousValue: number | null;
+  deltaPercent: number | null;
+};
+
+export type TagReviewOverview = {
+  tagsLive: PeriodTrend;
+  manualReviewRatePercent: PeriodTrend;
+  medianTimeToLiveHours: PeriodTrend;
+  openIssues: { count: number; newLast7d: number };
+};
+
 export type TagReviewMetrics = {
+  overview: TagReviewOverview;
   reviewLatencyByPolicy: ReviewLatencyByPolicy[];
   approvalSourceMix: { source: TagApprovalSource; count: number }[];
   rejectionReasonMix: { reason: TagRejectionReason; count: number }[];
