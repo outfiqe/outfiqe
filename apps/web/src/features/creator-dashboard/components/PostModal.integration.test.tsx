@@ -128,6 +128,7 @@ describe("PostModal", () => {
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/p1.jpg",
+            layout: "PORTRAIT",
             caption: null,
             createdAt: "2026-01-01T00:00:00.000Z",
             taggedProducts: [],
@@ -159,6 +160,7 @@ describe("PostModal", () => {
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/p1.jpg",
+            layout: "PORTRAIT",
             caption: null,
             createdAt: "2026-01-01T00:00:00.000Z",
             taggedProducts: [],
@@ -436,6 +438,7 @@ describe("PostModal", () => {
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/p1.jpg",
+            layout: "PORTRAIT",
             caption: null,
             createdAt: "2026-01-01T00:00:00.000Z",
             taggedProducts: [],
@@ -471,6 +474,7 @@ describe("PostModal", () => {
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/p1.jpg",
+            layout: "PORTRAIT",
             caption: null,
             createdAt: "2026-01-01T00:00:00.000Z",
             taggedProducts: [],
@@ -485,5 +489,72 @@ describe("PostModal", () => {
     await user.click(screen.getByRole("button", { name: "Post look" }));
 
     expect(await screen.findByRole("button", { name: "Loading" })).toBeInTheDocument();
+  });
+
+  it("defaults to Portrait and lets the creator switch layout before adding a photo", async () => {
+    mockPending([]);
+    const user = userEvent.setup();
+    renderModal();
+
+    expect(screen.getByRole("button", { name: "Portrait" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Square" })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: "Square" }));
+
+    expect(screen.getByRole("button", { name: "Square" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Portrait" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  it("locks the layout picker once a photo has been staged", () => {
+    mockPending([buildExistingPhoto("p1")]);
+    renderModal();
+
+    expect(screen.getByRole("button", { name: "Portrait" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Square" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Tall" })).toBeDisabled();
+  });
+
+  it("submits the chosen layout along with the rest of the post", async () => {
+    resolvePendingPhotoAssets.mockResolvedValue({
+      urls: ["https://cdn.outfiqe.test/p1.jpg"],
+      imageAssetIds: [null],
+    });
+    mockPending([]);
+    let requestedLayout: string | undefined;
+    mswServer.use(
+      http.post("/api/creator-looks", async ({ request }) => {
+        const body = (await request.json()) as { layout?: string };
+        requestedLayout = body.layout;
+        return HttpResponse.json({
+          success: true,
+          message: "Look posted.",
+          data: {
+            id: "look-1",
+            imageUrl: "https://cdn.outfiqe.test/p1.jpg",
+            layout: "TALL",
+            caption: null,
+            createdAt: "2026-01-01T00:00:00.000Z",
+            taggedProducts: [],
+          },
+        });
+      }),
+    );
+
+    const user = userEvent.setup();
+    const { rerenderWith } = renderModal();
+
+    await user.click(screen.getByRole("button", { name: "Tall" }));
+
+    mockPending([buildExistingPhoto("p1")]);
+    rerenderWith();
+    await user.click(screen.getByRole("button", { name: "Post look" }));
+
+    await waitFor(() => expect(requestedLayout).toBe("TALL"));
   });
 });

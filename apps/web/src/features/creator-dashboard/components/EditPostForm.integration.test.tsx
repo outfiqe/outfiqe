@@ -64,6 +64,7 @@ vi.mock("@outfiqe/design-system", async (importOriginal) => {
 const buildDetail = (overrides: Partial<CreatorLookEditDetail> = {}): CreatorLookEditDetail => ({
   id: "look-1",
   imageUrls: ["https://cdn.outfiqe.test/existing.jpg"],
+  layout: "PORTRAIT",
   caption: "A great fit",
   taggedProducts: [
     {
@@ -373,6 +374,7 @@ describe("EditPostForm", () => {
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/existing.jpg",
+            layout: "PORTRAIT",
             caption: null,
             createdAt: "2026-01-01T00:00:00.000Z",
             taggedProducts: [],
@@ -446,6 +448,7 @@ describe("EditPostForm", () => {
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/existing.jpg",
+            layout: "PORTRAIT",
             caption: body.caption ?? null,
             createdAt: "2026-01-01T00:00:00.000Z",
             taggedProducts: [],
@@ -476,6 +479,7 @@ describe("EditPostForm", () => {
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/existing.jpg",
+            layout: "PORTRAIT",
             caption: null,
             createdAt: "2026-01-01T00:00:00.000Z",
             taggedProducts: [],
@@ -547,6 +551,7 @@ describe("EditPostForm", () => {
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/existing.jpg",
+            layout: "PORTRAIT",
             caption: null,
             createdAt: "2026-01-01T00:00:00.000Z",
             taggedProducts: [],
@@ -590,6 +595,7 @@ describe("EditPostForm", () => {
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/existing.jpg",
+            layout: "PORTRAIT",
             caption: null,
             createdAt: "2026-01-01T00:00:00.000Z",
             taggedProducts: [],

@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, FormBanner, Modal, toast } from "@outfiqe/design-system";
 import { useDebouncedValue } from "@outfiqe/hooks";
+import { POST_LAYOUT_ASPECT, type PostLayout } from "@outfiqe/utils";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -22,12 +23,13 @@ import {
   collectTaggedProductSizeErrors,
   summarizeTaggedProductErrors,
 } from "../utils/taggedProductSizeErrors";
+import { LayoutPicker } from "./LayoutPicker";
 import {
-  CROP_BOX_STYLE,
+  cropBoxStyleForAspect,
   DEFAULT_IMAGE_MIME_TYPE,
+  DEFAULT_POST_LAYOUT,
   MAX_PHOTOS,
   MAX_TAGGED_PRODUCTS,
-  PHOTO_ASPECT,
   SEARCH_DEBOUNCE_MS,
 } from "./PostModal.constants";
 import { ProductTagPicker } from "./ProductTagPicker";
@@ -49,8 +51,18 @@ export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) =
 
   const form = useForm<LookFormInput>({
     resolver: zodResolver(lookFormSchema),
-    defaultValues: { imageUrls: [], imageAssetIds: [], caption: "", taggedProducts: [] },
+    defaultValues: {
+      imageUrls: [],
+      imageAssetIds: [],
+      caption: "",
+      layout: DEFAULT_POST_LAYOUT,
+      taggedProducts: [],
+    },
   });
+
+  const layout = (form.watch("layout") ?? DEFAULT_POST_LAYOUT) as PostLayout;
+  const photoAspect = POST_LAYOUT_ASPECT[layout];
+  const cropBoxStyle = cropBoxStyleForAspect(photoAspect);
 
   const taggedProducts = form.watch("taggedProducts");
   const taggedProductErrors = form.formState.errors.taggedProducts;
@@ -148,6 +160,10 @@ export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) =
     );
   };
 
+  const selectLayout = (nextLayout: PostLayout) => {
+    form.setValue("layout", nextLayout, { shouldValidate: true });
+  };
+
   const searchResults = taggableProducts.data?.products ?? [];
 
   return (
@@ -161,13 +177,13 @@ export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) =
       {create.isError && <FormBanner>{getErrorMessage(create.error)}</FormBanner>}
 
       <MediaFormShell
-        photoAspect={PHOTO_ASPECT}
+        photoAspect={photoAspect}
         photos={
           <PhotoCropPane
             pending={pending}
             maxPhotos={MAX_PHOTOS}
-            aspect={PHOTO_ASPECT}
-            cropAreaStyle={CROP_BOX_STYLE}
+            aspect={photoAspect}
+            cropAreaStyle={cropBoxStyle}
             error={photoError ?? form.formState.errors.imageUrls?.message}
           />
         }
@@ -213,6 +229,12 @@ export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) =
           placeholder="Write your caption here…."
           className="w-full resize-none bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground"
           {...form.register("caption")}
+        />
+
+        <LayoutPicker
+          selected={layout}
+          onSelect={selectLayout}
+          disabled={pending.photos.length > 0}
         />
 
         <ProductTagPicker
