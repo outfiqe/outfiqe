@@ -202,7 +202,15 @@ export const PlatformRolesSection = () => {
       </div>
 
       <div className="mt-3 space-y-3">
-        {rolesLoading && <CardRowSkeleton textLineCount={1} actionCount={2} />}
+        {rolesLoading && (
+          <CardRowSkeleton
+            textLineCount={1}
+            actions={[
+              { label: "Edit", size: "sm" },
+              { label: "Delete", size: "sm" },
+            ]}
+          />
+        )}
         {rolesError && <FormBanner>{getErrorMessage(rolesError)}</FormBanner>}
 
         {roles?.map((role) => (

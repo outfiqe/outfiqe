@@ -6,15 +6,21 @@ const NO_ITEMS = 0;
 const CHIP_COUNT = 3;
 const CARD_ROW_CLASS = "rounded-xl border border-border bg-card p-4";
 
-const ACTION_LABELS = ["Edit", "Archive", "Delete", "Details"];
-const ACTION_SIZES = { small: "sm", regular: "default" } as const;
+const SELECT_ACTION_CLASS = "h-11 w-40 rounded-lg";
+
+export type SkeletonAction = {
+  label: string;
+  size?: "default" | "sm";
+  variant?: "default" | "outline" | "ghost";
+};
 
 type CardRowSkeletonProps = {
   hasBadge?: boolean;
   textLineCount?: number;
   hasMetaLine?: boolean;
-  actionCount?: number;
-  actionSize?: keyof typeof ACTION_SIZES;
+  actions?: readonly SkeletonAction[];
+  hasSelectAction?: boolean;
+  hasTrailingBadge?: boolean;
   leadingImageClass?: string;
   hasSpacedSections?: boolean;
   hasChipRow?: boolean;
@@ -25,8 +31,9 @@ export const CardRowSkeleton = ({
   hasBadge = true,
   textLineCount = 1,
   hasMetaLine = false,
-  actionCount = NO_ITEMS,
-  actionSize = "small",
+  actions = [],
+  hasSelectAction = false,
+  hasTrailingBadge = false,
   leadingImageClass,
   hasSpacedSections = false,
   hasChipRow = false,
@@ -55,14 +62,12 @@ export const CardRowSkeleton = ({
           </div>
         )}
       </div>
-      {actionCount > NO_ITEMS && (
-        <div className="flex flex-wrap gap-2">
-          {Array.from({ length: actionCount }, (_unused, actionIndex) => (
-            <SkeletonButton
-              key={actionIndex}
-              size={ACTION_SIZES[actionSize]}
-              label={ACTION_LABELS[actionIndex % ACTION_LABELS.length]}
-            />
+      {(actions.length > NO_ITEMS || hasSelectAction || hasTrailingBadge) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {hasSelectAction && <Skeleton className={SELECT_ACTION_CLASS} />}
+          {hasTrailingBadge && <SkeletonBadge />}
+          {actions.map(({ label, size = "sm", variant = "outline" }) => (
+            <SkeletonButton key={label} size={size} variant={variant} label={label} />
           ))}
         </div>
       )}
