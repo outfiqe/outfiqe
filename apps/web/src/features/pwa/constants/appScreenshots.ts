@@ -31,7 +31,7 @@ export const appScreenshots: AppScreenshot[] = [
   },
   {
     fileName: "explore-narrow.png",
-    route: "/explore",
+    route: "/explore?tab=madeinnepal",
     formFactor: "narrow",
     size: NARROW_SCREENSHOT_SIZE,
     label: "See real creator looks",
