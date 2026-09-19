@@ -1,6 +1,6 @@
 import { Badge, Button, Input, Select, Skeleton } from "@outfiqe/design-system";
 import { Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 
 import { SkeletonBadge } from "@/components/SkeletonControls";
 import { useAuth } from "@/features/auth/AuthContext";
@@ -39,10 +39,12 @@ const relativeTime = (iso: string): string => {
   return `${Math.round(hours / 24)}d ago`;
 };
 
-const StatCard = ({ label, value }: { label: string; value: string | number }) => (
+const STAT_CARD_LABELS = ["Open", "Unassigned", "Awaiting us", "Oldest waiting"];
+
+const StatCard = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className="rounded-xl border border-border bg-card px-4 py-3">
     <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-    <p className="mt-1 font-display text-xl font-bold text-foreground">{value}</p>
+    <div className="mt-1 font-display text-xl font-bold text-foreground">{value}</div>
   </div>
 );
 
@@ -94,6 +96,14 @@ export const SupportInboxPage = () => {
   return (
     <div className="space-y-6">
       <h1 className="font-display text-2xl font-bold text-foreground">Support requests</h1>
+
+      {stats.isLoading && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-hidden>
+          {STAT_CARD_LABELS.map((label) => (
+            <StatCard key={label} label={label} value={<Skeleton className="h-7 w-10" />} />
+          ))}
+        </div>
+      )}
 
       {stats.data && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
