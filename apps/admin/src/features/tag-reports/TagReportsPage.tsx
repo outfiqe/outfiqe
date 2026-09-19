@@ -3,7 +3,7 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { CardRowSkeleton } from "@/components/CardRowSkeleton";
+import { ReportRowSkeleton } from "@/components/ReportRowSkeleton";
 import { ApiClientError } from "@/lib/apiClient";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
@@ -85,7 +85,7 @@ export const TagReportsPage = () => {
       <div className="mt-6 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <CardRowSkeleton key={index} textLineCount={2} leadingImageClass="size-20" />
+            <ReportRowSkeleton key={index} hasLeadingName />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load tag reports.</p>}
         {!isLoading && !error && reports.length === 0 && (
