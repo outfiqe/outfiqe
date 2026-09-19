@@ -7,7 +7,7 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { PagePendingSkeleton } from "./components/PagePendingSkeleton";
+import { RoutePendingSkeleton } from "./components/page-skeletons/RoutePendingSkeleton";
 import { AuthProvider } from "./features/auth/AuthContext.tsx";
 import { APP_ENV } from "./lib/appEnv";
 import { routeTree } from "./routeTree.gen";
@@ -30,7 +30,7 @@ const queryClient = new QueryClient({
 const router = createRouter({
   routeTree,
   basepath: "/admin",
-  defaultPendingComponent: PagePendingSkeleton,
+  defaultPendingComponent: RoutePendingSkeleton,
   defaultPendingMs: ROUTE_PENDING_DELAY_MS,
   defaultPendingMinMs: ROUTE_PENDING_MIN_VISIBLE_MS,
 });
