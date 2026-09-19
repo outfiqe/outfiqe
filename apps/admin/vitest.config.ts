@@ -57,6 +57,7 @@ export default defineConfig({
         "src/features/auth/schemas.ts",
         "src/features/profile/**/*.{ts,tsx}",
         "src/components/ProtectedRoute.tsx",
+        "src/components/RedirectingToLogin.tsx",
         "src/lib/bootLoader.ts",
         "src/components/PagePendingSkeleton.tsx",
         "src/components/TableSkeleton.tsx",
