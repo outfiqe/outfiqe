@@ -57,12 +57,15 @@ const PaymentMethodRow = ({
   </div>
 );
 
+const LEDGER_CARD_SKELETON_ROW_COUNT = 4;
+const PAYMENT_METHOD_SKELETON_ROW_COUNT = 2;
+
 const ROLLUP_CARD_COPY = [
   { title: "Gateway", description: "Money actually collected via payment gateways.", rowCount: 3 },
   {
     title: "Ledger",
     description: "What's owed to creators and brands per the settlement ledger.",
-    rowCount: 10,
+    rowCount: LEDGER_CARD_SKELETON_ROW_COUNT,
   },
 ];
 
@@ -89,6 +92,30 @@ const RollupSkeleton = () => (
           </div>
         </div>
       ))}
+    </div>
+    <div className="rounded-xl border border-border bg-card p-5">
+      <h2 className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
+        GMV by payment method
+      </h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Real margin depends heavily on the COD/wallet mix — eSewa and Khalti absorb a gateway fee
+        that COD doesn&apos;t.
+      </p>
+      <div className="mt-3">
+        {Array.from({ length: PAYMENT_METHOD_SKELETON_ROW_COUNT }, (_unused, rowIndex) => (
+          <div key={rowIndex} className="border-b border-border/60 py-3 last:border-0">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-5 w-16" />
+            </div>
+            <Skeleton className="mt-1.5 h-1.5 w-full" />
+            <div className="mt-1.5 flex items-center justify-between">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-4 w-36" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   </>
 );
