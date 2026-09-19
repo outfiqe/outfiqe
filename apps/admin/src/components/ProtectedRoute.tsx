@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import { type ReactNode, useEffect } from "react";
 
 import { useAuth } from "@/features/auth/AuthContext";
@@ -24,7 +25,11 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   if (status === "signed-in") return <>{children}</>;
 
   return (
-    <div className="flex min-h-dvh items-center justify-center text-sm text-muted-foreground">
+    <div
+      role="status"
+      className="flex min-h-dvh items-center justify-center gap-3 bg-background text-sm text-foreground"
+    >
+      <Loader2 className="size-5 animate-spin text-primary" aria-hidden="true" />
       {status === "loading" ? "Loading…" : "Redirecting to sign in…"}
     </div>
   );
