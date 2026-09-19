@@ -1,17 +1,19 @@
 import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
+import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { productsApi } from "./api";
 import { useInfiniteProducts } from "./hooks/useInfiniteProducts";
+import { ProductDetailModal } from "./ProductDetailModal";
 import type { ProductStatusValue } from "./schemas";
 
 const TABS: ProductStatusValue[] = ["PENDING", "APPROVED", "REJECTED"];
 const PRODUCTS_STATUS_FILTER = oneOfFilter<ProductStatusValue>(TABS, "PENDING");
-const THRIFT_FILTER_VALUES = ["all", "thrift"] as const;
+const THRIFT_FILTER_VALUES = ["all", "true"] as const;
 type ThriftFilterValue = (typeof THRIFT_FILTER_VALUES)[number];
 const PRODUCTS_THRIFT_FILTER = oneOfFilter<ThriftFilterValue>(THRIFT_FILTER_VALUES, "all");
 
@@ -39,6 +41,7 @@ const ProductRowSkeleton = () => (
 export const ProductsPage = () => {
   const [tab, setTab] = useSearchFilter("status", PRODUCTS_STATUS_FILTER);
   const [thriftFilter, setThriftFilter] = useSearchFilter("thrift", PRODUCTS_THRIFT_FILTER);
+  const [detailProductId, setDetailProductId] = useState<string | null>(null);
 
   const {
     data: productsQuery,
@@ -47,8 +50,11 @@ export const ProductsPage = () => {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useInfiniteProducts(tab, thriftFilter === "thrift" ? true : undefined);
+  } = useInfiniteProducts(tab, thriftFilter === "true" ? true : undefined);
   const products = productsQuery?.pages.flatMap((page) => page.products) ?? [];
+  const detailProduct = detailProductId
+    ? (products.find((product) => product.id === detailProductId) ?? null)
+    : null;
 
   const approve = useApiMutation({
     mutationFn: (id: string) => productsApi.approve(id),
@@ -85,10 +91,10 @@ export const ProductsPage = () => {
         </div>
 
         <button
-          onClick={() => setThriftFilter(thriftFilter === "thrift" ? "all" : "thrift")}
-          aria-pressed={thriftFilter === "thrift"}
+          onClick={() => setThriftFilter(thriftFilter === "true" ? "all" : "true")}
+          aria-pressed={thriftFilter === "true"}
           className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-            thriftFilter === "thrift"
+            thriftFilter === "true"
               ? "bg-thrift text-thrift-foreground"
               : "border border-border text-muted-foreground hover:text-thrift-strong"
           }`}
@@ -125,43 +131,50 @@ export const ProductsPage = () => {
 
           return (
             <div key={id} className={PRODUCT_ROW_CLASS}>
-              {imageUrl ? (
-                <img src={imageUrl} alt="" className="size-16 shrink-0 rounded-lg object-cover" />
-              ) : (
-                <div className="size-16 shrink-0 rounded-lg bg-muted" />
-              )}
+              <button
+                type="button"
+                onClick={() => setDetailProductId(id)}
+                aria-label={`View ${name}`}
+                className="flex flex-1 items-start gap-4 text-left"
+              >
+                {imageUrl ? (
+                  <img src={imageUrl} alt="" className="size-16 shrink-0 rounded-lg object-cover" />
+                ) : (
+                  <div className="size-16 shrink-0 rounded-lg bg-muted" />
+                )}
 
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h2 className="font-display text-base font-bold text-foreground">{name}</h2>
-                  <Badge tone={STATUS_TONE[status]} showDot={false}>
-                    {status}
-                  </Badge>
-                  {lowStock && (
-                    <Badge tone="negative" showDot={false}>
-                      Low stock
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-base font-bold text-foreground">{name}</h2>
+                    <Badge tone={STATUS_TONE[status]} showDot={false}>
+                      {status}
                     </Badge>
-                  )}
-                  {isThrift && (
-                    <span className="rounded-full bg-thrift/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-thrift-strong">
-                      Thrift
-                      {thriftConditionRating &&
-                        ` · ${THRIFT_CONDITION_LABEL[thriftConditionRating]}`}
-                    </span>
+                    {lowStock && (
+                      <Badge tone="negative" showDot={false}>
+                        Low stock
+                      </Badge>
+                    )}
+                    {isThrift && (
+                      <span className="rounded-full bg-thrift/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-thrift-strong">
+                        Thrift
+                        {thriftConditionRating &&
+                          ` · ${THRIFT_CONDITION_LABEL[thriftConditionRating]}`}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {brand.name} &middot; Rs. {price.toLocaleString()}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {productType.label} &middot; {categories.join(", ")}
+                  </p>
+                  {isThrift && thriftConditionNotes && (
+                    <p className="mt-1.5 text-sm text-foreground">
+                      <span className="font-medium">Condition notes:</span> {thriftConditionNotes}
+                    </p>
                   )}
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {brand.name} &middot; Rs. {price.toLocaleString()}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {productType.label} &middot; {categories.join(", ")}
-                </p>
-                {isThrift && thriftConditionNotes && (
-                  <p className="mt-1.5 text-sm text-foreground">
-                    <span className="font-medium">Condition notes:</span> {thriftConditionNotes}
-                  </p>
-                )}
-              </div>
+              </button>
 
               {status === "PENDING" && (
                 <div className="flex gap-2">
@@ -195,6 +208,16 @@ export const ProductsPage = () => {
           </Button>
         )}
       </div>
+
+      {detailProduct && (
+        <ProductDetailModal
+          product={detailProduct}
+          onClose={() => setDetailProductId(null)}
+          onApprove={() => approve.mutate(detailProduct.id)}
+          onReject={() => reject.mutate(detailProduct.id)}
+          isMutating={approve.isPending || reject.isPending}
+        />
+      )}
     </div>
   );
 };
