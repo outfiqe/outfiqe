@@ -1,6 +1,7 @@
 import { Button, Skeleton, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 
+import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
@@ -15,12 +16,18 @@ const CREATOR_ROW_SKELETON_COUNT = 6;
 const CREATOR_ROW_CLASS =
   "flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4";
 
-const CreatorRowSkeleton = () => (
+const CreatorRowSkeleton = ({ hasReviewActions }: { hasReviewActions: boolean }) => (
   <div className={CREATOR_ROW_CLASS} aria-hidden>
     <div>
       <Skeleton className="h-6 w-40" />
       <Skeleton className="mt-1 h-5 w-56" />
     </div>
+    {hasReviewActions && (
+      <div className="flex gap-2">
+        <SkeletonButton label="Approve" />
+        <SkeletonButton variant="outline" label="Reject" />
+      </div>
+    )}
   </div>
 );
 
@@ -73,7 +80,7 @@ export const CreatorsPage = () => {
       <div className="mt-6 space-y-3">
         {isLoading &&
           Array.from({ length: CREATOR_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
-            <CreatorRowSkeleton key={rowIndex} />
+            <CreatorRowSkeleton key={rowIndex} hasReviewActions={tab === "PENDING"} />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load creators.</p>}
         {!isLoading && creators.length === 0 && (
