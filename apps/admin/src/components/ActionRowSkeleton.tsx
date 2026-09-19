@@ -8,12 +8,14 @@ type ActionRowSkeletonProps = {
   hasSubLine?: boolean;
   bodyLineCount?: number;
   actionCount?: number;
+  actionLabel?: string;
 };
 
 export const ActionRowSkeleton = ({
   hasSubLine = false,
   bodyLineCount = 0,
   actionCount = DEFAULT_ACTION_COUNT,
+  actionLabel = "Edit",
 }: ActionRowSkeletonProps) => (
   <div
     className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
@@ -28,7 +30,7 @@ export const ActionRowSkeleton = ({
     </div>
     <div className="flex gap-2">
       {Array.from({ length: actionCount }, (_unused, actionIndex) => (
-        <SkeletonButton key={actionIndex} size="sm" label="Edit" />
+        <SkeletonButton key={actionIndex} size="sm" label={actionLabel} />
       ))}
     </div>
   </div>
