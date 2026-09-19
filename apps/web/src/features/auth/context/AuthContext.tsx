@@ -27,6 +27,7 @@ import {
   type UserSession,
 } from "../types";
 import { buildAccountSuspendedPath } from "../utils/accountSuspended";
+import { rememberViewerIsAdmin } from "../utils/adminViewerHint";
 import { authReducer, initialAuthState } from "./authReducer";
 
 // Mirrors the non-httpOnly companion cookie the API sets/clears alongside
@@ -56,6 +57,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setAccessToken(state.accessToken);
   }, [state.accessToken]);
+
+  useEffect(() => {
+    if (state.status === AuthStatus.AUTHENTICATED) {
+      rememberViewerIsAdmin(state.user?.role === UserRole.ADMIN);
+    }
+    if (state.status === AuthStatus.UNAUTHENTICATED) rememberViewerIsAdmin(false);
+  }, [state.status, state.user?.role]);
 
   useEffect(() => {
     setUnauthorizedHandler(() => {

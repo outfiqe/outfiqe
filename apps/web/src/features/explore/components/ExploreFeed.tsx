@@ -7,6 +7,7 @@ import { Fragment, useState } from "react";
 import Masonry from "react-masonry-css";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useAdminViewerHint } from "@/features/auth/utils/adminViewerHint";
 import { useIsHydrated } from "@/shared/hooks/useIsHydrated";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
@@ -48,6 +49,7 @@ const Sidebar = dynamic(() => import("./Sidebar").then((m) => m.Sidebar), { ssr:
 export const ExploreFeed = () => {
   const { isAuthenticated, isAuthResolved, viewerId, goToSignIn } = useExploreAuthGate();
   const { isAdmin } = useAuth();
+  const isLastViewerAdmin = useAdminViewerHint();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
@@ -60,13 +62,11 @@ export const ExploreFeed = () => {
     setHasJustDismissedForYouHint(true);
   };
 
-  const adminLockedTabs: readonly string[] = isAdmin ? ADMIN_LOCKED_EXPLORE_TABS : [];
-  const lockedTabs: readonly string[] = isAuthResolved
-    ? adminLockedTabs
-    : ADMIN_LOCKED_EXPLORE_TABS;
-  const lockedTabTooltip = isAdmin ? ADMIN_LOCKED_TAB_TOOLTIP : undefined;
+  const isAdminViewer = isAuthResolved ? isAdmin : isLastViewerAdmin;
+  const lockedTabs: readonly string[] = isAdminViewer ? ADMIN_LOCKED_EXPLORE_TABS : [];
+  const lockedTabTooltip = isAdminViewer ? ADMIN_LOCKED_TAB_TOOLTIP : undefined;
   const requestedTab = searchParams.get(EXPLORE_QUERY_PARAM.TAB) ?? EXPLORE_TAB.FOR_YOU;
-  const committedTab = adminLockedTabs.includes(requestedTab) ? EXPLORE_TAB.TRENDING : requestedTab;
+  const committedTab = lockedTabs.includes(requestedTab) ? EXPLORE_TAB.TRENDING : requestedTab;
   const committedLayout: FeedLayout =
     searchParams.get(EXPLORE_QUERY_PARAM.LAYOUT) === FEED_LAYOUT.LIST
       ? FEED_LAYOUT.LIST
