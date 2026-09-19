@@ -18,12 +18,34 @@ describe("CardRowSkeleton", () => {
 
   it("renders the requested number of text lines, meta line and action buttons", () => {
     const { container } = render(
-      <CardRowSkeleton textLineCount={2} hasMetaLine actionCount={3} actionSize="regular" />,
+      <CardRowSkeleton
+        textLineCount={2}
+        hasMetaLine
+        actions={[
+          { label: "Approve", size: "default" },
+          { label: "Reject", size: "default" },
+          { label: "Hold", size: "default" },
+        ]}
+      />,
     );
 
     expect(container.querySelectorAll(".mt-1.h-5")).toHaveLength(2);
     expect(container.querySelectorAll(".mt-1.h-4")).toHaveLength(1);
     expect(container.querySelectorAll("button.h-11")).toHaveLength(3);
+  });
+
+  it("draws each action with its own size and variant, plus an optional select and trailing badge", () => {
+    const { container } = render(
+      <CardRowSkeleton
+        hasSelectAction
+        hasTrailingBadge
+        actions={[{ label: "Edit", size: "sm", variant: "outline" }]}
+      />,
+    );
+
+    expect(container.querySelector("button.h-9")).not.toBeNull();
+    expect(container.querySelector(".h-11.w-40")).not.toBeNull();
+    expect(container.querySelector("span.skeleton-pill")).not.toBeNull();
   });
 
   it("leaves out the badge and the actions when they are not asked for", () => {

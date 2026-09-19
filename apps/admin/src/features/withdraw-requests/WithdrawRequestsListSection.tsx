@@ -117,7 +117,14 @@ export const WithdrawRequestsListSection = () => {
       <div className="mt-4 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <CardRowSkeleton key={index} textLineCount={1} actionCount={2} />
+            <CardRowSkeleton
+              key={index}
+              textLineCount={1}
+              actions={[
+                { label: "Approve", size: "sm", variant: "default" },
+                { label: "Reject", size: "sm" },
+              ]}
+            />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load requests.</p>}
         {!isLoading && requests.length === 0 && (

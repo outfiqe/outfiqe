@@ -189,7 +189,10 @@ const ManualAwardsList = () => {
 
   return (
     <div className="mt-4 space-y-2">
-      {isLoading && Array.from({ length: 3 }).map((_, index) => <ActionRowSkeleton key={index} />)}
+      {isLoading &&
+        Array.from({ length: 3 }).map((_, index) => (
+          <ActionRowSkeleton key={index} actionLabel="Remove" />
+        ))}
       {awards?.length === 0 && (
         <p className="text-sm text-muted-foreground">No manual awards yet.</p>
       )}

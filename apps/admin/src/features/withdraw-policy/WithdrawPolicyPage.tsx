@@ -171,7 +171,21 @@ const PolicyForm = ({ ownerType }: { ownerType: OwnerTypeValue }) => {
   );
 };
 
-const POLICY_FIELD_SKELETON_COUNT = 4;
+const POLICY_GRID_FIELD_LABELS = [
+  "Min amount (Rs.)",
+  "Max amount (Rs.)",
+  "Window type",
+  "Window value (days before month end / every N days)",
+  "Attempts per window",
+  "Cooldown after rejection (days)",
+];
+
+const PolicyFieldSkeleton = ({ label }: { label: string }) => (
+  <div className="space-y-1.5">
+    <label className="block text-xs text-muted-foreground">{label}</label>
+    <Skeleton className="h-11 w-full rounded-lg" />
+  </div>
+);
 
 const WithdrawPolicySkeleton = () => (
   <div
@@ -180,13 +194,11 @@ const WithdrawPolicySkeleton = () => (
     aria-label="Loading"
   >
     <div className="grid gap-3 sm:grid-cols-2">
-      {Array.from({ length: POLICY_FIELD_SKELETON_COUNT }, (_unused, fieldIndex) => (
-        <div key={fieldIndex} className="space-y-1.5">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-11 w-full rounded-lg" />
-        </div>
+      {POLICY_GRID_FIELD_LABELS.map((label) => (
+        <PolicyFieldSkeleton key={label} label={label} />
       ))}
     </div>
+    <PolicyFieldSkeleton label="Processing note" />
     <SkeletonButton variant="default" label="Save policy" />
   </div>
 );

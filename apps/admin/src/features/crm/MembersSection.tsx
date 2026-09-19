@@ -171,7 +171,12 @@ export const MembersSection = ({
       <div className="mt-3 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <CardRowSkeleton key={index} textLineCount={1} actionCount={2} actionSize="regular" />
+            <CardRowSkeleton
+              key={index}
+              textLineCount={1}
+              hasSelectAction
+              actions={[{ label: "Deactivate", size: "sm" }]}
+            />
           ))}
         {error && <p className="text-sm text-destructive">{getErrorMessage(error)}</p>}
         {!isLoading && !error && members?.length === 0 && (

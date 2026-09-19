@@ -136,11 +136,10 @@ export const UsersPage = () => {
       />
 
       <div className="mt-6 space-y-3">
-        {!debouncedQuery.trim() && (
+        {!debouncedQuery.trim() && !isLoading && users.length === 0 && (
           <p className="text-sm text-muted-foreground">Start typing to find an account.</p>
         )}
-        {debouncedQuery.trim() &&
-          isLoading &&
+        {isLoading &&
           Array.from({ length: USER_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
             <UserRowSkeleton key={rowIndex} />
           ))}

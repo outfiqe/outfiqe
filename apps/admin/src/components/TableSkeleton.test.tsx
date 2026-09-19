@@ -22,6 +22,20 @@ describe("TableSkeleton", () => {
     expect(cells[1]?.querySelector("button")).not.toBeNull();
   });
 
+  it("puts an action-shaped placeholder under a named action column", () => {
+    const { container } = render(
+      <TableSkeleton
+        headers={["Feature", "Actions"]}
+        rowCount={1}
+        actionColumn={{ header: "Actions", label: "Disable" }}
+      />,
+    );
+
+    const cells = container.querySelectorAll("tbody td");
+    expect(cells[0]?.querySelector("button")).toBeNull();
+    expect(cells[1]?.querySelector("button")).not.toBeNull();
+  });
+
   it("drops the right padding on the last column exactly like the real table", () => {
     const { container } = render(
       <TableSkeleton headers={["Shopper", "Last order"]} rowCount={1} />,

@@ -58,3 +58,19 @@ the same pair:
 The Vercel project's **Production Branch** should still be `main` in the dashboard so the
 deployment that does run on `main` is treated as production. If the release branch ever changes,
 update the `main` literal in both `vercel.json` files.
+
+## Skeleton check
+
+`pnpm --filter @outfiqe/admin skeleton:check <output-dir> [route-filter]` opens every admin route in
+Chromium, holds that page's API responses to capture the loading skeleton, then releases them and
+captures the loaded page. It writes a `<route>.skeleton.png` / `<route>.loaded.png` pair per route
+plus `report.json`, and prints skeleton vs loaded page height.
+
+Needs the local API on port 4000, the admin dev server on port 5173, and a seeded database. It logs in as
+`SKELETON_CHECK_EMAIL` / `SKELETON_CHECK_PASSWORD` (default: the local platform superadmin). Run it
+from PowerShell or pass the route filter without a leading slash: Git Bash rewrites `/coupons` into a
+Windows path.
+
+A height difference alone is not a defect, because a skeleton shows a fixed number of rows and the
+real page shows as many as the data has. Compare the image pairs for row structure, control sizes
+and spacing.

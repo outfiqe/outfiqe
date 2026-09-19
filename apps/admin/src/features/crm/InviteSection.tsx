@@ -123,7 +123,12 @@ export const InviteSection = ({ viewerIsSuperAdmin, viewerPermissionKeys }: Invi
       <div className="mt-3 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <CardRowSkeleton key={index} hasSmallTitle textLineCount={1} actionCount={1} />
+            <CardRowSkeleton
+              key={index}
+              hasSmallTitle
+              textLineCount={1}
+              actions={[{ label: "Revoke", size: "sm" }]}
+            />
           ))}
         {error && <p className="text-sm text-destructive">{getErrorMessage(error)}</p>}
         {!isLoading && !error && invites?.length === 0 && (

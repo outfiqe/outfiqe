@@ -114,8 +114,12 @@ export const AnnouncementsListSection = () => {
               key={index}
               textLineCount={1}
               hasMetaLine
-              actionCount={2}
               hasSpacedSections
+              actions={[
+                { label: "Edit", size: "sm" },
+                { label: "Send", size: "sm", variant: "default" },
+                { label: "Discard", size: "sm" },
+              ]}
             />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load announcements.</p>}

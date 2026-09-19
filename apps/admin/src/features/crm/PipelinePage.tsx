@@ -4,6 +4,7 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
@@ -78,6 +79,7 @@ export const PipelinePage = () => {
               Configure stages
             </Button>
           )}
+          {canWriteDeals && stagesLoading && <SkeletonButton size="sm" label="New deal" />}
           {canWriteDeals && stages && stages.length > 0 && (
             <Button
               size="sm"

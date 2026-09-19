@@ -88,7 +88,14 @@ export const BrandApplicationsPage = () => {
       <div className="mt-6 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <CardRowSkeleton key={index} textLineCount={2} actionCount={2} actionSize="regular" />
+            <CardRowSkeleton
+              key={index}
+              textLineCount={2}
+              actions={[
+                { label: "Approve", size: "default", variant: "default" },
+                { label: "Reject", size: "default" },
+              ]}
+            />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load applications.</p>}
         {!isLoading && applications.length === 0 && (

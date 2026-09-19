@@ -6,12 +6,28 @@ const DEFAULT_ROW_COUNT = 8;
 const FIRST_COLUMN_INDEX = 0;
 const NEXT_COLUMN_STEP = 1;
 
+const BLANK_HEADER_ACTION_LABEL = "Delete";
+
+type TableActionColumn = {
+  header: string;
+  label: string;
+};
+
 type TableSkeletonProps = {
   headers: readonly string[];
   rowCount?: number;
+  actionColumn?: TableActionColumn;
 };
 
-export const TableSkeleton = ({ headers, rowCount = DEFAULT_ROW_COUNT }: TableSkeletonProps) => {
+export const TableSkeleton = ({
+  headers,
+  rowCount = DEFAULT_ROW_COUNT,
+  actionColumn,
+}: TableSkeletonProps) => {
+  const actionLabelFor = (header: string) => {
+    if (actionColumn && header === actionColumn.header) return actionColumn.label;
+    return header === "" ? BLANK_HEADER_ACTION_LABEL : null;
+  };
   const lastColumnIndex = headers.length - NEXT_COLUMN_STEP;
   const cellClassFor = (columnIndex: number) =>
     columnIndex === lastColumnIndex ? "py-2" : "py-2 pr-4";
@@ -33,8 +49,12 @@ export const TableSkeleton = ({ headers, rowCount = DEFAULT_ROW_COUNT }: TableSk
             <tr key={rowIndex} className="border-t border-border">
               {headers.map((header, columnIndex) => (
                 <td key={columnIndex} className={cellClassFor(columnIndex)}>
-                  {header === "" ? (
-                    <SkeletonButton size="sm" label="Delete" className="ml-auto" />
+                  {actionLabelFor(header) !== null ? (
+                    <SkeletonButton
+                      size="sm"
+                      label={actionLabelFor(header) ?? BLANK_HEADER_ACTION_LABEL}
+                      className="ml-auto"
+                    />
                   ) : (
                     <Skeleton
                       className={columnIndex === FIRST_COLUMN_INDEX ? "h-5 w-40" : "h-5 w-20"}
