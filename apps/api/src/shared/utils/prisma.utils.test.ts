@@ -43,6 +43,18 @@ const buildDriverAdapterDeadlockError = () =>
     },
   });
 
+const buildDriverAdapterSerializationFailureError = () =>
+  buildPrismaError("P2039", {
+    driverAdapterError: {
+      name: "DriverAdapterError",
+      cause: {
+        kind: "postgres",
+        originalCode: "40001",
+        originalMessage: "could not serialize access due to concurrent update",
+      },
+    },
+  });
+
 describe("isUniqueConstraintError", () => {
   it("is true for a P2002 error", () => {
     expect(isUniqueConstraintError(buildPrismaError("P2002"))).toBe(true);
@@ -70,9 +82,17 @@ describe("isTransactionConflictError", () => {
     expect(isTransactionConflictError(buildPrismaError("P2034"))).toBe(true);
   });
 
+  it("is true for a raw Postgres serialization failure wrapped as P2039", () => {
+    expect(isTransactionConflictError(buildDriverAdapterSerializationFailureError())).toBe(true);
+  });
+
   it("is false for a different Prisma error code and for non-Prisma errors", () => {
     expect(isTransactionConflictError(buildPrismaError("P2002"))).toBe(false);
     expect(isTransactionConflictError(new Error("boom"))).toBe(false);
+  });
+
+  it("is false for a P2039 error from a different underlying cause", () => {
+    expect(isTransactionConflictError(buildDriverAdapterDeadlockError())).toBe(false);
   });
 });
 
@@ -83,6 +103,10 @@ describe("isDeadlockError", () => {
 
   it("is true for a P2034 write-conflict error", () => {
     expect(isDeadlockError(buildPrismaError("P2034"))).toBe(true);
+  });
+
+  it("is true for a raw Postgres serialization failure wrapped as P2039", () => {
+    expect(isDeadlockError(buildDriverAdapterSerializationFailureError())).toBe(true);
   });
 
   it("is false for a P2039 error from a different underlying cause", () => {

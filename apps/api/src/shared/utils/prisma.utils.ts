@@ -39,18 +39,29 @@ export const uniqueConstraintTargetIncludes = (error: unknown, columnName: strin
 export const isForeignKeyConstraintError = (error: unknown): boolean =>
   error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003";
 
-export const isTransactionConflictError = (error: unknown): boolean =>
+const originalPostgresErrorCode = (error: unknown): string | undefined => {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return undefined;
+  const driverCause = asRecord(asRecord(error.meta)?.driverAdapterError)?.cause;
+  const originalCode = asRecord(driverCause)?.originalCode;
+  return typeof originalCode === "string" ? originalCode : undefined;
+};
+
+const POSTGRES_SERIALIZATION_FAILURE_SQLSTATE = "40001";
+
+const isPrismaClassifiedTransactionConflict = (error: unknown): boolean =>
   error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034";
+
+const isRawSerializationFailure = (error: unknown): boolean =>
+  originalPostgresErrorCode(error) === POSTGRES_SERIALIZATION_FAILURE_SQLSTATE;
+
+export const isTransactionConflictError = (error: unknown): boolean =>
+  isPrismaClassifiedTransactionConflict(error) || isRawSerializationFailure(error);
 
 const POSTGRES_DEADLOCK_SQLSTATE = "40P01";
 
-export const isDeadlockError = (error: unknown): boolean => {
-  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return false;
-  if (isTransactionConflictError(error)) return true;
-
-  const driverCause = asRecord(asRecord(error.meta)?.driverAdapterError)?.cause;
-  return asRecord(driverCause)?.originalCode === POSTGRES_DEADLOCK_SQLSTATE;
-};
+export const isDeadlockError = (error: unknown): boolean =>
+  isTransactionConflictError(error) ||
+  originalPostgresErrorCode(error) === POSTGRES_DEADLOCK_SQLSTATE;
 
 const POSTGRES_CHECK_VIOLATION_SQLSTATE = "23514";
 
