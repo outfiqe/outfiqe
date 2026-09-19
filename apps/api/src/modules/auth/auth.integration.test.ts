@@ -13,7 +13,13 @@ import { generateToken } from "#lib/generate-token.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { hashPassword } from "#lib/password.utils.js";
 import { signPurposeToken } from "#lib/purpose-token.utils.js";
-import { seedPlatformOrganization, seedTenantOrganization } from "#test/integration/crmFixtures.js";
+import { BUILT_IN_ROLE_NAME } from "#modules/crm-access/crm-access.constants.js";
+import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
+import {
+  ensurePlatformOrganizationExists,
+  seedPlatformOrganization,
+  seedTenantOrganization,
+} from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -85,14 +91,27 @@ const registerBody = (overrides: Partial<Record<string, string>> = {}) => ({
   ...overrides,
 });
 
-const createAdminInvite = async (overrides: { email?: string; name?: string } = {}) => {
+const findPlatformRoleId = async (roleName: string): Promise<string> => {
+  const platformOrganization = await ensurePlatformOrganizationExists();
+  const role = await prisma.role.findFirstOrThrow({
+    where: { organizationId: platformOrganization.id, name: roleName },
+  });
+  return role.id;
+};
+
+const createAdminInvite = async (
+  overrides: { email?: string; name?: string; roleId?: string } = {},
+) => {
   const { user: inviter } = await createUser();
   const rawToken = generateOpaqueToken();
+
+  const roleId = overrides.roleId ?? (await findPlatformRoleId(BUILT_IN_ROLE_NAME.ADMIN));
 
   await prisma.adminInvite.create({
     data: {
       email: overrides.email ?? `admin-invite-${randomUUID()}@outfiqe.test`,
       name: overrides.name ?? "New Admin",
+      roleId,
       tokenHash: hashToken(rawToken),
       expiresAt: addHours(new Date(), 1),
       invitedById: inviter.id,
@@ -240,6 +259,39 @@ describe("POST /api/auth/register/admin", () => {
       .set("Authorization", `Bearer ${accessToken}`);
 
     expect(platformResponse.status).toBe(200);
+  });
+
+  it("enrolls the new admin onto the invite's chosen role, not a hardcoded default", async () => {
+    await seedPlatformOrganization();
+    const memberRoleId = await findPlatformRoleId(BUILT_IN_ROLE_NAME.MEMBER);
+    const inviteToken = await createAdminInvite({ roleId: memberRoleId });
+
+    const response = await request(testApp).post("/api/auth/register/admin").send({
+      inviteToken,
+      phone: uniquePhone(),
+      password: DEFAULT_TEST_PASSWORD,
+      confirmPassword: DEFAULT_TEST_PASSWORD,
+    });
+
+    expect(response.status).toBe(201);
+
+    const platformOrganization = await crmAccessRepository.findPlatformOrganization();
+    const membership = await prisma.membership.findUniqueOrThrow({
+      where: {
+        userId_organizationId: {
+          userId: response.body.data.user.id,
+          organizationId: platformOrganization!.id,
+        },
+      },
+    });
+    expect(membership.roleId).toBe(memberRoleId);
+
+    const { accessToken } = response.body.data;
+    const platformResponse = await request(testApp)
+      .get("/api/admin/financial-rollup")
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(platformResponse.status).toBe(403);
   });
 });
 

@@ -21,7 +21,7 @@ export const platformAccessService = {
     if (!membership || membership.status !== ACTIVE_MEMBERSHIP_STATUS) return [];
 
     const isSuperAdmin = platformOrganization.superAdminMembershipId === membership.id;
-    if (isSuperAdmin) return [...PLATFORM_PERMISSION_KEYS];
+    if (isSuperAdmin || membership.isPlatformSuperAdmin) return [...PLATFORM_PERMISSION_KEYS];
 
     return membership.role.permissionKeys.filter(isPlatformPermissionKey);
   },

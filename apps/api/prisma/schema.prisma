@@ -1082,12 +1082,14 @@ model AdminInvite {
   id          String    @id @default(uuid()) @db.Uuid
   email       String
   name        String
+  roleId      String    @map("role_id") @db.Uuid
   tokenHash   String    @unique @map("token_hash")
   expiresAt   DateTime  @map("expires_at")
   acceptedAt  DateTime? @map("accepted_at")
   createdAt   DateTime  @default(now()) @map("created_at")
   invitedById String    @map("invited_by_id") @db.Uuid
   invitedBy   User      @relation("AdminInviteSender", fields: [invitedById], references: [id])
+  role        Role      @relation(fields: [roleId], references: [id])
 
   @@map("admin_invites")
 }
@@ -2816,6 +2818,7 @@ model Role {
   memberships  Membership[]
   permissions  RolePermission[]
   invites      OrganizationInvite[]
+  adminInvites AdminInvite[]
 
   @@unique([organizationId, name])
   @@map("roles")

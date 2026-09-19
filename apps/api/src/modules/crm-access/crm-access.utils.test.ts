@@ -42,6 +42,7 @@ const superAdminMembership: MembershipWithRole = {
   organizationId: "org-1",
   roleId: "role-1",
   status: MembershipStatus.ACTIVE,
+  isPlatformSuperAdmin: false,
   createdAt: new Date("2026-01-01T00:00:00Z"),
   updatedAt: new Date("2026-01-01T00:00:00Z"),
   role: {

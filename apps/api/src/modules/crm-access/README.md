@@ -225,7 +225,7 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   automatically — it's granted only to Outfiqe's own built-in Admin role via a dedicated seed step,
   the same "special, not automatic" treatment `org:transfer_ownership` already gets.
   `requirePlatformAccess` resolves in order: not `UserRole.ADMIN` → `403`; an active `Membership`
-  in the platform org that's either its SUPERADMIN or holds `platform:access` → **allow**; any
+  in the platform org that's either its SUPERADMIN, a co-founder (`isPlatformSuperAdmin`, whatever role they hold), or holds `platform:access` → **allow**; any
   other combination (including zero memberships anywhere, or a `Membership` only in a tenant org)
   → **deny**. `crm-access.service.ts`'s `resolveHasPlatformAccess` holds this resolution once,
   reused by both the middleware and `auth.service.ts`'s `getCurrentUser` (which exposes it to
@@ -245,7 +245,18 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   creates brand-new platform staff accounts via the admin-invite flow) now grants a platform-org
   Membership atomically in the same transaction as the user create and invite-accept, via
   `crmAccessService.grantPlatformStaffMembership`, so every future legitimate hire is explicitly
-  provisioned instead of implicitly trusted.
+  provisioned instead of implicitly trusted. `grantPlatformStaffMembership` now takes an explicit
+  `roleId` (the invite's chosen role, see `admin-invites` and `platform-roles`) instead of
+  hardcoding the built-in "Admin" role, and `seedPlatformStaffMemberships`'s own fallback (for
+  accounts that reach the platform org outside the invite flow entirely) now defaults to the
+  zero-access "Member" role rather than "Admin" — secure-by-default, not a demotion of anyone
+  already provisioned.
+- **`MembershipRecord` carries `isPlatformSuperAdmin`.** `platform-access.service.ts`'s
+  `permissionKeysFor` treats a co-founder (`Membership.isPlatformSuperAdmin`) the same as the
+  platform org's single `Organization.superAdminMembershipId` — both get every
+  `PLATFORM_PERMISSION_CATALOG` key regardless of their assigned role. Without this, a co-founder
+  freshly bootstrapped onto the now-zero-access "Member" role (see above) would have no real
+  platform access despite being flagged a co-founder.
 - **Inviting an existing `UserRole.ADMIN` account** takes the logged-in accept path: `acceptInvite`
   checks the accepting account's email matches the invite's email, so a valid token can't be
   redeemed by a different logged-in staff member than the one it was addressed to. An email that

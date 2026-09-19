@@ -1,6 +1,9 @@
-import type { AdminInviteRecord, AdminInviteSummary } from "./adminInvite.types.js";
+import type { AdminInviteSummary, AdminInviteWithRoleName } from "./adminInvite.types.js";
 
-export const toSummary = (invite: AdminInviteRecord, isCoFounder: boolean): AdminInviteSummary => {
+export const toSummary = (
+  invite: AdminInviteWithRoleName,
+  isCoFounder: boolean,
+): AdminInviteSummary => {
   const status = invite.acceptedAt
     ? "ACCEPTED"
     : invite.expiresAt.getTime() <= Date.now()
@@ -11,6 +14,8 @@ export const toSummary = (invite: AdminInviteRecord, isCoFounder: boolean): Admi
     id: invite.id,
     email: invite.email,
     name: invite.name,
+    roleId: invite.roleId,
+    roleName: invite.roleName,
     status,
     isCoFounder,
     createdAt: invite.createdAt,

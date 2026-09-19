@@ -7,9 +7,8 @@ import { prisma } from "#db/prisma.js";
 import { CategoryStatus, ProductStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { categoryService } from "#modules/categories/category.service.js";
-import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { redis } from "#redis/redis.client.js";
-import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
+import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -39,8 +38,7 @@ const authHeaderFor = (userId: string, role: UserRole) => {
 
 const adminAuthHeader = async () => {
   const admin = await createUser(UserRole.ADMIN);
-  await ensurePlatformOrganizationExists();
-  await crmAccessService.grantPlatformStaffMembership(admin.id);
+  await grantPlatformStaffMembership(admin.id);
   return authHeaderFor(admin.id, UserRole.ADMIN);
 };
 

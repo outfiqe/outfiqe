@@ -20,7 +20,8 @@ flags, impersonation, the platform audit log) live in sibling `platform-*` modul
 - `platform-access.types.ts` — `PlatformPrincipal`, the shape stored on `res.locals.platform`.
 - `platform-access.service.ts` — `permissionKeysFor(userId)`: resolves the user's membership in
   the platform organization (via `crm-access`'s repository) and returns the platform keys their
-  role holds; the platform-org SUPERADMIN gets every key.
+  role holds; the platform-org SUPERADMIN and any co-founder (`Membership.isPlatformSuperAdmin`)
+  get every key, regardless of their assigned role.
 - `platform-access.middleware.ts` — `requirePlatformRole(key)` returns
   `[requireAuth, requirePlatformAccess, enforceKey]`: auth, the existing role-and-membership gate,
   then the specific-key check, which stamps `res.locals.platform`. `getPlatformPrincipal(res)`
@@ -60,9 +61,9 @@ holds `platform:access`) → `enforceKey` (`platformAccessService.permissionKeys
   "stack the coarse gate, then the specific key, then stash the principal on `res.locals`" shape,
   but keyed off the platform organization rather than a tenant-resolved one, and never touching
   `resolveTenant`.
-- **`platform:team:manage` gates `POST /api/admin/invites` (see the `admin-invites` module).**
-  Without a fine-grained key here, any staffer holding `platform:access` at all — not just someone
-  whose role was actually meant to manage the team — could invite themselves or an outsider into a
-  more powerful admin role. `requirePlatformRole` is spread onto that one route on top of that
-  module's existing router-level `requirePlatformAccess` gate, mirroring how `support.routes.ts`
-  composes it per-route.
+- **`POST /api/admin/invites` (see the `admin-invites` module) is gated `requireCoFounder`, not
+  `requirePlatformRole("platform:team:manage")`.** Once an invite carries a role choice (see
+  `platform-roles`), sending one is itself a privilege grant — a role holding
+  `platform:team:manage` must never be able to invite someone onto an even more powerful role,
+  which only the fixed, capped co-founder set can guarantee. `platform-roles` follows the same
+  co-founder gate for defining/editing the roles themselves.

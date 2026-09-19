@@ -15,11 +15,10 @@ import {
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { currentIsoWeekKey, previousIsoWeekKey } from "#lib/iso-week.utils.js";
-import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
 import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
-import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
+import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -44,8 +43,7 @@ const createCreator = async (overrides: { hideFromLeaderboards?: boolean } = {})
 
 const createAdmin = async () => {
   const admin = await createCreator();
-  await ensurePlatformOrganizationExists();
-  await crmAccessService.grantPlatformStaffMembership(admin.id);
+  await grantPlatformStaffMembership(admin.id);
   await grantPlatformPermissions(admin.id, "platform:gamification:manage");
   const { accessToken } = generateTokenpair({ sub: admin.id, role: UserRole.ADMIN });
   return { ...admin, header: `Bearer ${accessToken}` };
@@ -467,8 +465,7 @@ describe("PATCH /api/creator-leaderboard/categories/:category (admin)", () => {
 
   it("blocks a platform staffer without platform:gamification:manage", async () => {
     const staffer = await createCreator();
-    await ensurePlatformOrganizationExists();
-    await crmAccessService.grantPlatformStaffMembership(staffer.id);
+    await grantPlatformStaffMembership(staffer.id);
     const { accessToken } = generateTokenpair({ sub: staffer.id, role: UserRole.ADMIN });
 
     const response = await request(testApp)

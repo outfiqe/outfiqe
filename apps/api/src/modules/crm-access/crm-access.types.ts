@@ -47,6 +47,7 @@ export type MembershipRecord = {
   organizationId: string;
   roleId: string;
   status: MembershipStatus;
+  isPlatformSuperAdmin: boolean;
   createdAt: Date;
   updatedAt: Date;
 };

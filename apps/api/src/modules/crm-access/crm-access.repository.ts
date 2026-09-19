@@ -97,6 +97,7 @@ export const crmAccessRepository = {
 
   async grantPlatformStaffMembership(
     userId: string,
+    roleId: string,
     client: DbClient = prisma,
   ): Promise<MembershipRecord | null> {
     const platformOrganization = await client.organization.findFirst({
@@ -104,18 +105,13 @@ export const crmAccessRepository = {
     });
     if (!platformOrganization) return null;
 
-    const adminRole = await client.role.findFirst({
-      where: { organizationId: platformOrganization.id, name: BUILT_IN_ROLE_NAME.ADMIN },
-    });
-    if (!adminRole) return null;
-
     return client.membership.upsert({
       where: { userId_organizationId: { userId, organizationId: platformOrganization.id } },
       update: {},
       create: {
         userId,
         organizationId: platformOrganization.id,
-        roleId: adminRole.id,
+        roleId,
         status: "ACTIVE",
       },
     });

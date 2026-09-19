@@ -8,10 +8,10 @@ import { BrandRole, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
-import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
 import {
   ensurePlatformOrganizationExists,
+  grantPlatformStaffMembership,
   seedPlatformOrganization,
 } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
@@ -40,8 +40,7 @@ const createStaffUser = async (name: string) => {
 
 const createPlatformStaffUser = async (name: string) => {
   const staff = await createStaffUser(name);
-  await ensurePlatformOrganizationExists();
-  await crmAccessService.grantPlatformStaffMembership(staff.id);
+  await grantPlatformStaffMembership(staff.id);
   await grantPlatformPermissions(staff.id, "platform:organizations:manage");
   return staff;
 };
@@ -251,8 +250,7 @@ describe("POST /api/crm/organizations", () => {
 
   it("blocks a platform staffer without platform:organizations:manage", async () => {
     const staff = await createStaffUser("No Organizations Permission");
-    await ensurePlatformOrganizationExists();
-    await crmAccessService.grantPlatformStaffMembership(staff.id);
+    await grantPlatformStaffMembership(staff.id);
 
     const response = await request(testApp)
       .post("/api/crm/organizations")

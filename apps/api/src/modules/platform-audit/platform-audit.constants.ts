@@ -20,4 +20,9 @@ export const PLATFORM_AUDIT_ACTION = {
   PRODUCT_REVIEW_REMOVED_BY_ADMIN: "product-review.removed-by-admin",
   CREATOR_LOOK_REMOVED_BY_ADMIN: "creator-look.removed-by-admin",
   CREATOR_LOOK_COMMENT_REMOVED_BY_ADMIN: "creator-look-comment.removed-by-admin",
+  PLATFORM_ROLE_CREATED: "platform-role.created",
+  PLATFORM_ROLE_UPDATED: "platform-role.updated",
+  PLATFORM_ROLE_DELETED: "platform-role.deleted",
+  PLATFORM_TEAM_MEMBER_ROLE_CHANGED: "platform-team.member-role-changed",
+  ADMIN_INVITE_CREATED: "admin-invite.created",
 } as const;
