@@ -12,6 +12,30 @@
       html.dark {
         background: hsl(30 22% 8%);
       }
+      .boot-loader {
+        display: flex;
+        min-height: 100dvh;
+        align-items: center;
+        justify-content: center;
+      }
+      .boot-loader-spinner {
+        width: 28px;
+        height: 28px;
+        border: 3px solid hsl(175 66% 52% / 0.25);
+        border-top-color: hsl(175 66% 52%);
+        border-radius: 50%;
+        animation: boot-loader-spin 0.8s linear infinite;
+      }
+      @keyframes boot-loader-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-loader-spinner {
+          animation-duration: 2.4s;
+        }
+      }
     </style>
     <script>
       (() => {
@@ -28,7 +52,11 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot-loader" role="status" aria-label="Loading">
+        <div class="boot-loader-spinner"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
