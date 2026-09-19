@@ -1,5 +1,7 @@
 import { Skeleton } from "@outfiqe/design-system";
 
+import { SkeletonButton } from "./SkeletonControls";
+
 const DEFAULT_ACTION_COUNT = 1;
 
 type ActionRowSkeletonProps = {
@@ -26,7 +28,7 @@ export const ActionRowSkeleton = ({
     </div>
     <div className="flex gap-2">
       {Array.from({ length: actionCount }, (_unused, actionIndex) => (
-        <Skeleton key={actionIndex} className="h-8 w-16 rounded-lg" />
+        <SkeletonButton key={actionIndex} size="sm" label="Edit" />
       ))}
     </div>
   </div>

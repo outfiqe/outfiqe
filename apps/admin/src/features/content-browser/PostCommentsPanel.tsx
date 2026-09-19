@@ -1,6 +1,8 @@
 import { Button, Skeleton } from "@outfiqe/design-system";
 import { useState } from "react";
 
+import { SkeletonButton } from "@/components/SkeletonControls";
+
 import { useInfiniteLookComments } from "./hooks/useInfiniteLookComments";
 import { useInfiniteLookReplies } from "./hooks/useInfiniteLookReplies";
 import type { LookComment, LookCommentReply } from "./schemas";
@@ -107,7 +109,7 @@ const CommentsSkeleton = () => (
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-5 w-64 max-w-full" />
         </div>
-        <Skeleton className="h-8 w-16 shrink-0 rounded-lg" />
+        <SkeletonButton size="sm" label="Delete" className="shrink-0" />
       </div>
     ))}
   </>

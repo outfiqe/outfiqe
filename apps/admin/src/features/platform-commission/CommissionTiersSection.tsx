@@ -3,6 +3,7 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useRef, useState } from "react";
 
+import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { type CreateTierInput, platformCommissionApi } from "./api";
@@ -87,7 +88,7 @@ const TIER_FIELD_SKELETONS = [
   { label: "Min price (Rs.)", inputClass: "w-28" },
   { label: "Max price (Rs.)", inputClass: "w-28" },
   { label: "Fee type", inputClass: "w-32" },
-  { label: "Commission (Rs.)", inputClass: "w-32" },
+  { label: "Commission (Rs.)", inputClass: "w-28" },
 ];
 
 const TierRowSkeleton = () => (
@@ -98,10 +99,10 @@ const TierRowSkeleton = () => (
     {TIER_FIELD_SKELETONS.map(({ label, inputClass }) => (
       <div key={label} className="space-y-1.5">
         <label className="block text-xs text-muted-foreground">{label}</label>
-        <Skeleton className={`h-10 rounded-lg ${inputClass}`} />
+        <Skeleton className={`h-11 rounded-lg ${inputClass}`} />
       </div>
     ))}
-    <Skeleton className="h-10 w-20 rounded-lg" />
+    <SkeletonButton variant="ghost" size="sm" label="Remove" />
   </div>
 );
 

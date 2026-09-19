@@ -3,6 +3,7 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -187,11 +188,11 @@ const BillingSkeleton = () => (
           <Skeleton className="h-7 w-40" />
           <Skeleton className="mt-1 h-5 w-72 max-w-full" />
         </div>
-        <Skeleton className="h-5 w-16 rounded-full" />
+        <SkeletonBadge />
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
-        <Skeleton className="h-8 w-40 rounded-lg" />
-        <Skeleton className="h-8 w-32 rounded-lg" />
+        <SkeletonButton size="sm" variant="default" label="Change plan or seats" />
+        <SkeletonButton size="sm" label="Cancel renewal" />
       </div>
     </div>
     <TableSkeleton headers={INVOICE_TABLE_HEADERS} rowCount={INVOICE_SKELETON_ROW_COUNT} />

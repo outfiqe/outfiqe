@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
+import { SkeletonBadge } from "@/components/SkeletonControls";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -38,8 +39,8 @@ const OrderDetailSkeleton = () => (
         <Skeleton className="mt-1 h-5 w-48" />
       </div>
       <div className="flex gap-1.5">
-        <Skeleton className="h-5 w-16 rounded-full" />
-        <Skeleton className="h-5 w-20 rounded-full" />
+        <SkeletonBadge />
+        <SkeletonBadge />
       </div>
     </div>
 

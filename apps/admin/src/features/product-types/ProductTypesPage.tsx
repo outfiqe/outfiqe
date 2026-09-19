@@ -140,7 +140,9 @@ export const ProductTypesPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => <ReorderRowSkeleton key={index} />)}
+          Array.from({ length: 3 }).map((_, index) => (
+            <ReorderRowSkeleton key={index} actionLabel="Switch off" />
+          ))}
         {productTypes?.length === 0 && (
           <p className="text-sm text-muted-foreground">No garment types yet.</p>
         )}

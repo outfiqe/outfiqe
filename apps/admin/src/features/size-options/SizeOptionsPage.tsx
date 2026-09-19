@@ -1,9 +1,10 @@
-import { Badge, Button, FormBanner, Input, Skeleton, toast } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Input, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { productTypesApi } from "@/features/product-types/api";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -15,8 +16,8 @@ const SizeOptionRowSkeleton = () => (
     className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
     aria-hidden
   >
-    <Skeleton className="h-5 w-14 rounded-full" />
-    <Skeleton className="h-8 w-16 rounded-lg" />
+    <SkeletonBadge label="XL" />
+    <SkeletonButton size="sm" label="Delete" />
   </div>
 );
 
