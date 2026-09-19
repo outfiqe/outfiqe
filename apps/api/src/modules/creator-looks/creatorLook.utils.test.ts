@@ -70,6 +70,7 @@ describe("toSuggestion", () => {
         },
         images: [],
         image: { url: "https://cdn.example.com/look.png", lqip: null, sources: [] },
+        layout: "PORTRAIT",
         likeCount: 0,
         commentCount: 0,
         saveCount: 0,
@@ -97,6 +98,7 @@ describe("toSummary", () => {
         id: "look-1",
         creatorId: "creator-1",
         imageUrl: "https://cdn.example.com/look.png",
+        layout: "PORTRAIT",
         caption: null,
         createdAt: NOW,
         taggedProducts: [
@@ -108,6 +110,7 @@ describe("toSummary", () => {
       id: "look-1",
       creatorId: "creator-1",
       imageUrl: "https://cdn.example.com/look.png",
+      layout: "PORTRAIT",
       caption: null,
       createdAt: NOW,
       taggedProducts: [
@@ -123,6 +126,7 @@ describe("toSummary", () => {
         id: "look-1",
         creatorId: "creator-1",
         imageUrl: "https://cdn.example.com/look.png",
+        layout: "PORTRAIT",
         caption: "hi",
         createdAt: NOW,
         taggedProducts: [],
@@ -153,6 +157,7 @@ describe("toEditDetail", () => {
       id: "look-1",
       imageUrl: "https://cdn.example.com/cover.png",
       images: [{ url: "https://cdn.example.com/a.png" }, { url: "https://cdn.example.com/b.png" }],
+      layout: "SQUARE",
       caption: "fit check",
       taggedProducts: [{ ...baseTaggedProduct, sizeWorn: "M" }],
     });
@@ -161,6 +166,7 @@ describe("toEditDetail", () => {
       "https://cdn.example.com/a.png",
       "https://cdn.example.com/b.png",
     ]);
+    expect(detail.layout).toBe("SQUARE");
     expect(detail.taggedProducts).toEqual([
       {
         productId: "product-1",
@@ -185,6 +191,7 @@ describe("toEditDetail", () => {
       id: "look-1",
       imageUrl: "https://cdn.example.com/cover.png",
       images: [],
+      layout: "PORTRAIT",
       caption: null,
       taggedProducts: [{ ...baseTaggedProduct, sizeWorn: null }],
     });
@@ -198,6 +205,7 @@ describe("toEditDetail", () => {
       id: "look-1",
       imageUrl: "https://cdn.example.com/cover.png",
       images: [],
+      layout: "PORTRAIT",
       caption: null,
       taggedProducts: [
         {

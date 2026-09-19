@@ -2,6 +2,7 @@ import type {
   TagRejectionReason as TagRejectionReasonType,
   TagReviewStatus as TagReviewStatusType,
 } from "@outfiqe/types";
+import { POST_LAYOUT_VALUES } from "@outfiqe/utils";
 import { z } from "zod";
 
 export const taggedProductSchema = z.object({
@@ -13,6 +14,7 @@ export const taggedProductSchema = z.object({
 export const creatorLookSchema = z.object({
   id: z.string(),
   imageUrl: z.string(),
+  layout: z.enum(POST_LAYOUT_VALUES),
   caption: z.string().nullable(),
   createdAt: z.string(),
   taggedProducts: z.array(taggedProductSchema),
@@ -55,6 +57,7 @@ export type EditTaggedProduct = z.infer<typeof editTaggedProductSchema>;
 export const creatorLookEditDetailSchema = z.object({
   id: z.string(),
   imageUrls: z.array(z.string()),
+  layout: z.enum(POST_LAYOUT_VALUES),
   caption: z.string().nullable(),
   taggedProducts: z.array(editTaggedProductSchema),
 });

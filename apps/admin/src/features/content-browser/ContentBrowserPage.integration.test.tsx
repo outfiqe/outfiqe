@@ -14,6 +14,7 @@ const API_BASE = "http://localhost:3000/api";
 const aLook = (overrides: Partial<AdminLook> = {}): AdminLook => ({
   id: "look-1",
   imageUrl: "https://cdn.test/look-1.jpg",
+  layout: "PORTRAIT",
   caption: "Denim jacket fit",
   creator: { id: "creator-1", name: "Asha Rai", handle: "asharai", contentFlagCount: 2 },
   likeCount: 12,

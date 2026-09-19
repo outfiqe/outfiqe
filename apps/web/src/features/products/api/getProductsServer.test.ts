@@ -22,6 +22,7 @@ const rawFeedPage = {
       imageUrl: "https://example.test/look.jpg",
       images: [],
       image: null,
+      layout: "PORTRAIT",
       caption: null,
       likeCount: 0,
       commentCount: 0,

@@ -54,6 +54,7 @@ const aPost = (overrides: Partial<FeedPost> = {}): FeedPost =>
     creator: { id: "creator-1", handle: "ram-shrestha", name: "Ram Shrestha", isApproved: true },
     imageUrl: "",
     images: [],
+    layout: "PORTRAIT",
     caption: null,
     likeCount: 0,
     commentCount: 0,

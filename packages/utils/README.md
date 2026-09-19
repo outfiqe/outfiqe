@@ -19,6 +19,9 @@ to any one app.
   (`useTenantHost`) and `apps/admin` (`isOnTenantHost`) use them to only show the storefront ⇄ CRM
   cross-links, and only honour a cross-app `?redirect=` after login, when the browser is actually on
   a tenant subdomain rather than the apex domain.
+- `post-layout/` — `POST_LAYOUT_VALUES`/`POST_LAYOUT`/`PostLayout`, the creator post's layout
+  enum (`PORTRAIT`/`SQUARE`/`TALL`), plus `POST_LAYOUT_ASPECT` (the crop/display aspect ratio for
+  each) and `POST_LAYOUT_LABEL` (the picker's display labels).
 - `product-sort/` — `PRODUCT_SORT_VALUES`/`PRODUCT_SORT`/`ProductSort`, the shop's sort-order enum.
 - `product-type/` — `DEFAULT_PRODUCT_TYPES`, the seed/migration list of garment types. Garment
   types are now an admin-managed table (`apps/api/src/modules/product-types`); this constant only

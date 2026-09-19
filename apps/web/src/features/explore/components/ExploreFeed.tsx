@@ -4,6 +4,7 @@ import { FormBanner } from "@outfiqe/design-system";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Fragment, useState } from "react";
+import Masonry from "react-masonry-css";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useIsHydrated } from "@/shared/hooks/useIsHydrated";
@@ -13,6 +14,7 @@ import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
 import {
   ADMIN_LOCKED_EXPLORE_TABS,
   ADMIN_LOCKED_TAB_TOOLTIP,
+  EXPLORE_GRID_BREAKPOINT_COLUMNS,
   EXPLORE_QUERY_PARAM,
   EXPLORE_TAB,
   type ExploreQueryParamKey,
@@ -125,6 +127,10 @@ export const ExploreFeed = () => {
   const trendingRankByPostId = buildTrendingRankByPostId(posts, isRankedTab);
   const isTrendingTab = tab === EXPLORE_TAB.TRENDING;
   const fallbackBoundaryIndex = findTrendingFallbackBoundary(posts, isTrendingTab);
+  const postsBeforeFallbackBoundary =
+    fallbackBoundaryIndex > 0 ? posts.slice(0, fallbackBoundaryIndex) : posts;
+  const postsAfterFallbackBoundary =
+    fallbackBoundaryIndex > 0 ? posts.slice(fallbackBoundaryIndex) : [];
 
   const showNewLooks = () => {
     dismiss();
@@ -199,26 +205,46 @@ export const ExploreFeed = () => {
               Nothing here yet — try a different tab.
             </p>
           ) : layout === FEED_LAYOUT.GRID ? (
-            <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
-              {posts.map((post, index) => {
-                const { id } = post;
-                return (
-                  <Fragment key={id}>
-                    {index === fallbackBoundaryIndex && fallbackBoundaryIndex > 0 && (
-                      <p className="col-span-full py-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Recent & popular
-                      </p>
-                    )}
-                    <PostGridCard
-                      post={post}
-                      onClick={() => setDetailPostId(id)}
-                      trendingRank={trendingRankByPostId.get(id)}
-                      eager={index < EAGER_IMAGE_COUNT}
-                    />
-                  </Fragment>
-                );
-              })}
-            </div>
+            <>
+              <Masonry
+                breakpointCols={EXPLORE_GRID_BREAKPOINT_COLUMNS}
+                className="-ml-4 flex w-auto"
+                columnClassName="pl-4"
+              >
+                {postsBeforeFallbackBoundary.map((post, index) => (
+                  <PostGridCard
+                    key={post.id}
+                    post={post}
+                    onClick={() => setDetailPostId(post.id)}
+                    trendingRank={trendingRankByPostId.get(post.id)}
+                    eager={index < EAGER_IMAGE_COUNT}
+                  />
+                ))}
+              </Masonry>
+
+              {postsAfterFallbackBoundary.length > 0 && (
+                <>
+                  <p className="py-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Recent & popular
+                  </p>
+                  <Masonry
+                    breakpointCols={EXPLORE_GRID_BREAKPOINT_COLUMNS}
+                    className="-ml-4 flex w-auto"
+                    columnClassName="pl-4"
+                  >
+                    {postsAfterFallbackBoundary.map((post, index) => (
+                      <PostGridCard
+                        key={post.id}
+                        post={post}
+                        onClick={() => setDetailPostId(post.id)}
+                        trendingRank={trendingRankByPostId.get(post.id)}
+                        eager={postsBeforeFallbackBoundary.length + index < EAGER_IMAGE_COUNT}
+                      />
+                    ))}
+                  </Masonry>
+                </>
+              )}
+            </>
           ) : (
             <div className="mx-auto flex max-w-xl flex-col">
               {posts.map((post, index) => (

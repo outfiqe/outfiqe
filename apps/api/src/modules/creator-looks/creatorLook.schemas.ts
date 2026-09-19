@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { SESSION_ID_MAX } from "#constants/commerce.constants.js";
 import { SEARCH_QUERY_MAX_LENGTH } from "#constants/search.constants.js";
+import { PostLayout } from "#generated/prisma/enums.js";
 
 const CAPTION_MAX = 280;
 const MIN_TAGGED_PRODUCTS = 0;
@@ -23,6 +24,7 @@ export const createCreatorLookSchema = z
     imageUrls: z.array(z.url()).min(MIN_IMAGES).max(MAX_IMAGES),
     imageAssetIds: z.array(z.uuid().nullable()).max(MAX_IMAGES).optional(),
     caption: z.string().max(CAPTION_MAX).optional(),
+    layout: z.enum(PostLayout).optional(),
     taggedProducts: z
       .array(taggedProductInputSchema)
       .min(MIN_TAGGED_PRODUCTS)

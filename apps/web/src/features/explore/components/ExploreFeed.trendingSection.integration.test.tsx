@@ -31,6 +31,7 @@ const buildPost = (overrides: Partial<FeedPost> = {}): FeedPost => ({
   imageUrl: "https://img.test/1.jpg",
   images: ["https://img.test/1.jpg"],
   image: null,
+  layout: "PORTRAIT",
   caption: "A look",
   likeCount: 0,
   commentCount: 0,

@@ -1,4 +1,5 @@
 import { Badge, Button, Modal } from "@outfiqe/design-system";
+import { POST_LAYOUT_ASPECT } from "@outfiqe/utils";
 
 import { PostCommentsPanel } from "./PostCommentsPanel";
 import type { AdminLook } from "./schemas";
@@ -27,7 +28,8 @@ export const PostDetailModal = ({
   onDeleteComment,
   deletingCommentId,
 }: PostDetailModalProps) => {
-  const { id, imageUrl, caption, creator, likeCount, commentCount, saveCount, createdAt } = look;
+  const { id, imageUrl, layout, caption, creator, likeCount, commentCount, saveCount, createdAt } =
+    look;
 
   return (
     <Modal
@@ -38,8 +40,11 @@ export const PostDetailModal = ({
     >
       <div className="-mx-6 -my-5 flex flex-col sm:h-[32rem] sm:flex-row">
         <div
-          className="aspect-[4/5] shrink-0 border-b border-border bg-muted bg-cover bg-center sm:aspect-auto sm:h-full sm:w-95 sm:border-b-0 sm:border-r"
-          style={{ backgroundImage: `url(${imageUrl})` }}
+          className="shrink-0 border-b border-border bg-muted bg-cover bg-center sm:h-full sm:w-95 sm:border-b-0 sm:border-r"
+          style={{
+            aspectRatio: String(POST_LAYOUT_ASPECT[layout]),
+            backgroundImage: `url(${imageUrl})`,
+          }}
         />
 
         <div className="flex min-h-0 flex-1 flex-col sm:overflow-y-auto">

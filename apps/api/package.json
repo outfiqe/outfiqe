@@ -50,6 +50,7 @@
     "db:seed:suggestions": "tsx prisma/seedSuggestions.ts",
     "db:seed:reviews": "tsx prisma/seedProductReviews.ts",
     "db:seed:thrift": "tsx prisma/seedThriftListings.ts",
+    "db:seed:post-layouts": "tsx prisma/seedPostLayouts.ts",
     "db:prune": "tsx prisma/prune.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset"

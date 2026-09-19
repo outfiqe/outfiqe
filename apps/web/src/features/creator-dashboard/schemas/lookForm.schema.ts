@@ -1,3 +1,4 @@
+import { POST_LAYOUT_VALUES } from "@outfiqe/utils";
 import { z } from "zod";
 
 const CAPTION_MAX = 280;
@@ -15,6 +16,7 @@ export const lookFormSchema = z.object({
   imageUrls: z.array(z.url()).min(MIN_IMAGES, "Add at least one photo").max(MAX_IMAGES),
   imageAssetIds: z.array(z.uuid().nullable()).max(MAX_IMAGES).optional(),
   caption: z.string().max(CAPTION_MAX).optional(),
+  layout: z.enum(POST_LAYOUT_VALUES).optional(),
   taggedProducts: z
     .array(taggedProductInputSchema)
     .min(MIN_TAGGED_PRODUCTS)
