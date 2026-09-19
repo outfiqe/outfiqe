@@ -2,7 +2,10 @@ import { Info } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
 
 import { cn } from "./cn";
+import { Skeleton } from "./skeleton";
 import { Tooltip } from "./tooltip";
+
+const STAT_CARD_CLASS = "rounded-xl border border-border bg-card p-4";
 
 const DELTA_TONE_CLASS = {
   positive: "text-success",
@@ -27,7 +30,7 @@ type StatCardProps = {
 
 export const StatCard = ({ label, value, icon: Icon, delta, hint, className }: StatCardProps) => {
   return (
-    <div className={cn("rounded-xl border border-border bg-card p-4", className)}>
+    <div className={cn(STAT_CARD_CLASS, className)}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
@@ -55,3 +58,16 @@ export const StatCard = ({ label, value, icon: Icon, delta, hint, className }: S
     </div>
   );
 };
+
+type StatCardSkeletonProps = {
+  readonly hasDelta?: boolean;
+  readonly className?: string;
+};
+
+export const StatCardSkeleton = ({ hasDelta = false, className }: StatCardSkeletonProps) => (
+  <div className={cn(STAT_CARD_CLASS, className)} aria-hidden>
+    <Skeleton className="h-4 w-20" />
+    <Skeleton className="mt-1 h-8 w-24" />
+    {hasDelta && <Skeleton className="mt-1 h-4 w-16" />}
+  </div>
+);
