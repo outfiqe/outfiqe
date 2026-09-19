@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -13,7 +13,7 @@ vi.mock("next/link", () => ({
   useLinkStatus: () => linkStatus,
 }));
 
-import { EXPLORE_TAB, FEED_LAYOUT } from "../explore.constants";
+import { ADMIN_LOCKED_TAB_TOOLTIP, EXPLORE_TAB, FEED_LAYOUT } from "../explore.constants";
 import { ExploreSidebarNav } from "./ExploreSidebarNav";
 
 const renderNav = (props?: Partial<Parameters<typeof ExploreSidebarNav>[0]>) =>
@@ -67,6 +67,31 @@ describe("ExploreSidebarNav", () => {
       "href",
       "/wishlist?tab=posts",
     );
+  });
+
+  it("keeps locked tabs visible but inert and explains why on hover", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+
+    renderNav({
+      onChange,
+      tab: EXPLORE_TAB.TRENDING,
+      lockedTabs: [EXPLORE_TAB.FOR_YOU, EXPLORE_TAB.FOLLOWING],
+    });
+
+    const followingTab = screen.getByRole("button", { name: "Following" });
+    expect(screen.getByRole("button", { name: "For you" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(followingTab).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("button", { name: "Trending" })).not.toHaveAttribute("aria-disabled");
+
+    await user.click(followingTab);
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.focus(followingTab);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(ADMIN_LOCKED_TAB_TOOLTIP);
   });
 
   it("highlights Saved and shows its pending dot while its navigation is pending", () => {

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -35,7 +35,7 @@ describe("PostActionsRow", () => {
     expect(onShare).not.toHaveBeenCalled();
   });
 
-  it("keeps the like button visible but disabled when a disabled reason is given", async () => {
+  it("keeps the like button visible and inert, and explains why on hover, when a disabled reason is given", async () => {
     const onLike = vi.fn();
     render(
       <PostActionsRow
@@ -46,9 +46,14 @@ describe("PostActionsRow", () => {
     );
 
     const likeButton = screen.getByRole("button", { name: "3" });
-    expect(likeButton).toBeDisabled();
+    expect(likeButton).toHaveAttribute("aria-disabled", "true");
     await userEvent.click(likeButton);
     expect(onLike).not.toHaveBeenCalled();
+
+    fireEvent.focus(likeButton);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(
+      "Platform staff accounts can't like posts.",
+    );
   });
 
   it("renders the comment count as read-only text when no click handler is given", () => {

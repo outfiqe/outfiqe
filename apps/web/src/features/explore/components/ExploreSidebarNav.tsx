@@ -1,24 +1,32 @@
 "use client";
 
+import { Tooltip } from "@outfiqe/design-system";
 import { Bookmark } from "lucide-react";
 import Link, { useLinkStatus } from "next/link";
 
 import { SAVED_QUERY_PARAM, SAVED_TAB } from "@/features/wishlist";
 import { cn } from "@/shared/lib/cn";
 
-import { EXPLORE_FIXED_TABS, FEED_LAYOUT_OPTIONS, type FeedLayout } from "../explore.constants";
+import {
+  ADMIN_LOCKED_TAB_TOOLTIP,
+  EXPLORE_FIXED_TABS,
+  FEED_LAYOUT_OPTIONS,
+  type FeedLayout,
+} from "../explore.constants";
 
 type ExploreSidebarNavProps = {
   tab: string;
   onChange: (tab: string) => void;
   layout: FeedLayout;
   onLayoutChange: (layout: FeedLayout) => void;
+  lockedTabs?: readonly string[];
 };
 
 const NAV_ITEM_CLASS =
   "flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors";
 const NAV_ITEM_SELECTED_CLASS = "bg-foreground text-background";
 const NAV_ITEM_UNSELECTED_CLASS = "text-muted-foreground hover:bg-muted hover:text-foreground";
+const NAV_ITEM_LOCKED_CLASS = "cursor-not-allowed text-muted-foreground opacity-50";
 const LAYOUT_ITEM_SELECTED_CLASS = "bg-muted text-foreground";
 
 const SavedNavLink = () => {
@@ -45,24 +53,37 @@ export const ExploreSidebarNav = ({
   onChange,
   layout,
   onLayoutChange,
+  lockedTabs = [],
 }: ExploreSidebarNavProps) => {
   return (
     <aside className="sticky top-[76px] hidden h-fit w-56 shrink-0 flex-col gap-1 rounded-xl border border-border p-3 lg:flex">
-      {EXPLORE_FIXED_TABS.map(({ value, label, icon: Icon }) => (
-        <button
-          key={value}
-          type="button"
-          onClick={() => onChange(value)}
-          aria-pressed={tab === value}
-          className={cn(
-            NAV_ITEM_CLASS,
-            tab === value ? NAV_ITEM_SELECTED_CLASS : NAV_ITEM_UNSELECTED_CLASS,
-          )}
-        >
-          <Icon className="size-4 shrink-0" />
-          {label}
-        </button>
-      ))}
+      {EXPLORE_FIXED_TABS.map(({ value, label, icon: Icon }) => {
+        const isLocked = lockedTabs.includes(value);
+        const navButton = (
+          <button
+            key={value}
+            type="button"
+            onClick={isLocked ? undefined : () => onChange(value)}
+            aria-pressed={tab === value}
+            aria-disabled={isLocked || undefined}
+            className={cn(
+              NAV_ITEM_CLASS,
+              isLocked && NAV_ITEM_LOCKED_CLASS,
+              !isLocked && (tab === value ? NAV_ITEM_SELECTED_CLASS : NAV_ITEM_UNSELECTED_CLASS),
+            )}
+          >
+            <Icon className="size-4 shrink-0" />
+            {label}
+          </button>
+        );
+        return isLocked ? (
+          <Tooltip key={value} content={ADMIN_LOCKED_TAB_TOOLTIP} side="right">
+            {navButton}
+          </Tooltip>
+        ) : (
+          navButton
+        );
+      })}
 
       <div className="my-2 border-t border-border" />
 

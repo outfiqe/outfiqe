@@ -1,10 +1,15 @@
 "use client";
 
-import { Skeleton } from "@outfiqe/design-system";
+import { Skeleton, Tooltip } from "@outfiqe/design-system";
 
 import { cn } from "@/shared/lib/cn";
 
-import { EXPLORE_FIXED_TABS, FEED_LAYOUT_OPTIONS, type FeedLayout } from "../explore.constants";
+import {
+  ADMIN_LOCKED_TAB_TOOLTIP,
+  EXPLORE_FIXED_TABS,
+  FEED_LAYOUT_OPTIONS,
+  type FeedLayout,
+} from "../explore.constants";
 import { useTrendingTags } from "../hooks/useTrendingTags";
 
 const TRENDING_TAG_PLACEHOLDER_COUNT = 4;
@@ -14,31 +19,52 @@ interface FeedFilterTabsProps {
   onChange: (tab: string) => void;
   layout: FeedLayout;
   onLayoutChange: (layout: FeedLayout) => void;
+  lockedTabs?: readonly string[];
 }
 
-export const FeedFilterTabs = ({ tab, onChange, layout, onLayoutChange }: FeedFilterTabsProps) => {
+export const FeedFilterTabs = ({
+  tab,
+  onChange,
+  layout,
+  onLayoutChange,
+  lockedTabs = [],
+}: FeedFilterTabsProps) => {
   const { data: trendingTags, isLoading: isTrendingTagsLoading } = useTrendingTags();
 
   return (
     <div className="sticky top-[var(--site-header-height,0px)] z-30 bg-background px-4">
       <div className="mx-auto flex max-w-6xl items-center gap-3 py-3">
         <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto [scrollbar-width:none]">
-          {EXPLORE_FIXED_TABS.map(({ value, label }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => onChange(value)}
-              aria-pressed={tab === value}
-              className={cn(
-                "shrink-0 cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                tab === value
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
-              )}
-            >
-              {label}
-            </button>
-          ))}
+          {EXPLORE_FIXED_TABS.map(({ value, label }) => {
+            const isLocked = lockedTabs.includes(value);
+            const tabButton = (
+              <button
+                key={value}
+                type="button"
+                onClick={isLocked ? undefined : () => onChange(value)}
+                aria-pressed={tab === value}
+                aria-disabled={isLocked || undefined}
+                className={cn(
+                  "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                  isLocked && "cursor-not-allowed text-muted-foreground opacity-50",
+                  !isLocked && "cursor-pointer",
+                  !isLocked &&
+                    (tab === value
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"),
+                )}
+              >
+                {label}
+              </button>
+            );
+            return isLocked ? (
+              <Tooltip key={value} content={ADMIN_LOCKED_TAB_TOOLTIP}>
+                {tabButton}
+              </Tooltip>
+            ) : (
+              tabButton
+            );
+          })}
 
           {isTrendingTagsLoading
             ? Array.from({ length: TRENDING_TAG_PLACEHOLDER_COUNT }).map((_, index) => (

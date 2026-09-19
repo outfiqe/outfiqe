@@ -36,15 +36,19 @@ export const PostActionsRow = ({
   onShare,
   className,
 }: PostActionsRowProps) => {
+  const isLikeLocked = Boolean(likeDisabledReason);
   const likeButton = (
     <button
       type="button"
-      onClick={onLike}
-      disabled={isLiking || Boolean(likeDisabledReason)}
+      onClick={isLikeLocked ? undefined : onLike}
+      disabled={isLiking}
+      aria-disabled={isLikeLocked || undefined}
       aria-pressed={isLiked}
       className={cn(
-        "flex cursor-pointer items-center gap-1.5 text-[12.5px] transition-colors disabled:cursor-default disabled:opacity-60",
-        isLiked ? "text-primary-strong" : "text-muted-foreground hover:text-foreground",
+        "flex items-center gap-1.5 text-[12.5px] transition-colors disabled:cursor-default disabled:opacity-60",
+        isLikeLocked ? "cursor-not-allowed text-muted-foreground opacity-60" : "cursor-pointer",
+        !isLikeLocked &&
+          (isLiked ? "text-primary-strong" : "text-muted-foreground hover:text-foreground"),
       )}
     >
       <Flame className={cn("size-5", isLiked && "fill-primary stroke-primary")} />
