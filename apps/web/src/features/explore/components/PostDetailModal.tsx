@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal } from "@outfiqe/design-system";
+import { POST_LAYOUT_ASPECT } from "@outfiqe/utils";
 import { type CSSProperties, useEffect } from "react";
 
 import { getMediaRowHeightPx } from "@/shared/components/MediaFormShell";
@@ -14,9 +15,6 @@ import { PostCarousel } from "./PostCarousel";
 import { PostCommentsSection } from "./PostCommentsSection";
 import { PostTagPill } from "./PostTagPill";
 import { ReportContentModal } from "./ReportContentModal";
-
-const PHOTO_ASPECT = 4 / 5;
-const PHOTO_ASPECT_CSS = "4 / 5";
 
 type PostDetailModalProps = {
   post: FeedPost;
@@ -33,6 +31,7 @@ export const PostDetailModal = ({
     id,
     creator,
     images,
+    layout,
     isFollowingCreator,
     caption,
     isLiked,
@@ -41,6 +40,7 @@ export const PostDetailModal = ({
     isSaved,
   } = post;
   const { id: creatorId, handle: creatorHandle, name: creatorName } = creator;
+  const photoAspect = POST_LAYOUT_ASPECT[layout];
 
   const {
     isAuthenticated,
@@ -82,13 +82,13 @@ export const PostDetailModal = ({
     >
       <div
         className="-mx-6 -my-5 flex flex-col sm:h-[var(--modal-row-height)] sm:flex-row"
-        style={{ "--modal-row-height": `${getMediaRowHeightPx(PHOTO_ASPECT)}px` } as CSSProperties}
+        style={{ "--modal-row-height": `${getMediaRowHeightPx(photoAspect)}px` } as CSSProperties}
       >
         <div className="shrink-0 border-b border-border sm:w-95 sm:border-b-0 sm:border-r">
           <PostCarousel
             images={images}
             fallbackColor={getAvatarColor(id)}
-            aspectRatio={PHOTO_ASPECT_CSS}
+            aspectRatio={String(photoAspect)}
             onDoubleTapLike={
               likeDisabledReason
                 ? undefined

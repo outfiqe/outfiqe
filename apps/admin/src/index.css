@@ -102,6 +102,6 @@
   pointer-events: none;
 }
 
-.skeleton-pill * {
-  color: transparent !important;
+.skeleton-pill::before {
+  content: attr(data-label);
 }

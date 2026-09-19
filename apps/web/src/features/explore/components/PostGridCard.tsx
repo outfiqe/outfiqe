@@ -1,5 +1,6 @@
 "use client";
 
+import { POST_LAYOUT_ASPECT } from "@outfiqe/utils";
 import { Layers } from "lucide-react";
 
 import { AppImage } from "@/shared/components/AppImage";
@@ -18,16 +19,19 @@ type PostGridCardProps = {
 };
 
 export const PostGridCard = ({ post, onClick, trendingRank, eager }: PostGridCardProps) => {
-  const { id, imageUrl, image, images, caption } = post;
+  const { id, imageUrl, image, images, layout, caption } = post;
 
   return (
-    <div>
+    <div className="mb-4">
       <button
         type="button"
         onClick={onClick}
         aria-label={caption ?? "View post"}
-        className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30"
-        style={imageUrl ? undefined : { backgroundColor: getAvatarColor(id) }}
+        className="relative block w-full cursor-pointer overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30"
+        style={{
+          aspectRatio: String(POST_LAYOUT_ASPECT[layout]),
+          ...(imageUrl ? null : { backgroundColor: getAvatarColor(id) }),
+        }}
       >
         {imageUrl && (
           <AppImage

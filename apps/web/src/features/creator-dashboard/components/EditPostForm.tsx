@@ -11,7 +11,7 @@ import {
   toast,
 } from "@outfiqe/design-system";
 import { useDebouncedValue } from "@outfiqe/hooks";
-import { generateUuid } from "@outfiqe/utils";
+import { generateUuid, POST_LAYOUT_ASPECT } from "@outfiqe/utils";
 import { ImagePlus, X } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -30,11 +30,10 @@ import {
   summarizeTaggedProductErrors,
 } from "../utils/taggedProductSizeErrors";
 import {
-  CROP_BOX_STYLE,
+  cropBoxStyleForAspect,
   DEFAULT_IMAGE_MIME_TYPE,
   MAX_PHOTOS,
   MAX_TAGGED_PRODUCTS,
-  PHOTO_ASPECT,
   SEARCH_DEBOUNCE_MS,
 } from "./PostModal.constants";
 import { ProductTagPicker } from "./ProductTagPicker";
@@ -58,6 +57,8 @@ type EditPostFormProps = {
 
 export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => {
   const update = useUpdateLook();
+  const photoAspect = POST_LAYOUT_ASPECT[detail.layout];
+  const cropBoxStyle = cropBoxStyleForAspect(photoAspect);
 
   const [existingUrls, setExistingUrls] = useState(detail.imageUrls);
   const [newPhotos, setNewPhotos] = useState<NewLookPhoto[]>([]);
@@ -326,7 +327,7 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
           <div className="space-y-3 rounded-xl border border-border p-3">
             <CropSurface
               imageSrc={stagingPhoto.objectUrl}
-              aspect={PHOTO_ASPECT}
+              aspect={photoAspect}
               crop={stagingPhoto.crop}
               onCropChange={(crop) =>
                 setStagingPhoto((current) => (current ? { ...current, crop } : current))
@@ -341,7 +342,7 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
                 )
               }
               cropAreaClassName="h-56"
-              cropAreaStyle={CROP_BOX_STYLE}
+              cropAreaStyle={cropBoxStyle}
             />
             <div className="flex justify-end gap-2">
               <Button variant="outline" size="sm" onClick={cancelStagingPhoto}>

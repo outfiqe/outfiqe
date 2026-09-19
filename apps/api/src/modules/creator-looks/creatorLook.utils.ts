@@ -1,4 +1,4 @@
-import type { TagRejectionReason } from "#generated/prisma/enums.js";
+import type { PostLayout, TagRejectionReason } from "#generated/prisma/enums.js";
 import { TagReviewStatus } from "#generated/prisma/enums.js";
 import {
   ageHoursOf,
@@ -64,6 +64,7 @@ export const toSummary = ({
   id,
   creatorId,
   imageUrl,
+  layout,
   caption,
   createdAt,
   taggedProducts,
@@ -71,6 +72,7 @@ export const toSummary = ({
   id: string;
   creatorId: string;
   imageUrl: string;
+  layout: PostLayout;
   caption: string | null;
   createdAt: Date;
 } & {
@@ -79,6 +81,7 @@ export const toSummary = ({
   id,
   creatorId,
   imageUrl,
+  layout,
   caption,
   createdAt,
   taggedProducts: taggedProducts.map((tagged) => tagged.product),
@@ -88,12 +91,14 @@ export const toEditDetail = ({
   id,
   imageUrl,
   images,
+  layout,
   caption,
   taggedProducts,
 }: {
   id: string;
   imageUrl: string;
   images: { url: string }[];
+  layout: PostLayout;
   caption: string | null;
   taggedProducts: {
     productId: string;
@@ -113,6 +118,7 @@ export const toEditDetail = ({
 }): CreatorLookEditDetail => ({
   id,
   imageUrls: images.length > 0 ? images.map((image) => image.url) : [imageUrl],
+  layout,
   caption,
   taggedProducts: taggedProducts.map(
     ({

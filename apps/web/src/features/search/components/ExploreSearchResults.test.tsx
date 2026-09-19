@@ -35,6 +35,7 @@ const POST = {
   creator: { id: "creator-1", name: "Ava", handle: "ava", isApproved: true },
   imageUrl: "https://cdn.outfiqe.test/post-1.jpg",
   images: ["https://cdn.outfiqe.test/post-1.jpg"],
+  layout: "PORTRAIT",
   caption: "Everyday fit",
   likeCount: 0,
   commentCount: 0,

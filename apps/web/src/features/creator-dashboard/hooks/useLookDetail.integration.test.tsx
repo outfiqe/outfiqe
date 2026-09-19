@@ -22,6 +22,7 @@ describe("useLookDetail", () => {
           data: {
             id: "look-1",
             imageUrls: ["https://cdn.outfiqe.test/a.jpg"],
+            layout: "PORTRAIT",
             caption: "A great fit",
             taggedProducts: [],
           },

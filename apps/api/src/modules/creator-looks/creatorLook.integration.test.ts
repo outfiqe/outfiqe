@@ -319,6 +319,57 @@ describe("POST /api/creator-looks", () => {
     expect(hashtags).toEqual([]);
   });
 
+  it("defaults to a PORTRAIT layout when none is chosen", async () => {
+    const creator = await createCreator("Default Layout Creator", "default-layout-creator");
+
+    const response = await request(testApp)
+      .post("/api/creator-looks")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({ imageUrls: ["https://cdn.outfiqe.test/default-layout.jpg"], taggedProducts: [] });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.layout).toBe("PORTRAIT");
+  });
+
+  it.each(["PORTRAIT", "SQUARE", "TALL"])(
+    "persists and returns a %s layout chosen at creation",
+    async (layout) => {
+      const creator = await createCreator(`Layout Creator ${layout}`, `layout-creator-${layout}`);
+
+      const response = await request(testApp)
+        .post("/api/creator-looks")
+        .set("Authorization", authHeaderFor(creator.id))
+        .send({
+          imageUrls: [`https://cdn.outfiqe.test/${layout}.jpg`],
+          taggedProducts: [],
+          layout,
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.data.layout).toBe(layout);
+
+      const stored = await prisma.creatorLook.findUniqueOrThrow({
+        where: { id: response.body.data.id },
+      });
+      expect(stored.layout).toBe(layout);
+    },
+  );
+
+  it("rejects a layout value outside the closed set", async () => {
+    const creator = await createCreator("Invalid Layout Creator", "invalid-layout-creator");
+
+    const response = await request(testApp)
+      .post("/api/creator-looks")
+      .set("Authorization", authHeaderFor(creator.id))
+      .send({
+        imageUrls: ["https://cdn.outfiqe.test/invalid-layout.jpg"],
+        taggedProducts: [],
+        layout: "LANDSCAPE",
+      });
+
+    expect(response.status).toBe(422);
+  });
+
   it("links the caller's uploaded image assets to the look's images by position", async () => {
     const creator = await createCreator("Asset Link Creator", "asset-link-creator");
     const asset = await createImageAsset(creator.id);

@@ -19,6 +19,7 @@ const buildPost = (overrides: Partial<FeedPost> = {}): FeedPost => ({
   creator: { id: "creator-1", name: "Ava Martinez", handle: "ava", isApproved: true },
   imageUrl: "https://cdn.test/post-1.jpg",
   images: ["https://cdn.test/post-1.jpg"],
+  layout: "PORTRAIT",
   caption: "Winter layers done right",
   likeCount: 0,
   commentCount: 0,
@@ -85,5 +86,16 @@ describe("CreatorPostThumbnail", () => {
     render(<CreatorPostThumbnail post={buildPost()} onClick={vi.fn()} isOwnProfile />);
 
     expect(screen.queryByRole("button", { name: "Post options" })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["PORTRAIT", "0.8"],
+    ["SQUARE", "1"],
+    ["TALL", String(9 / 16)],
+  ] as const)("renders the %s layout at aspect ratio %s", (layout, aspectRatio) => {
+    render(<CreatorPostThumbnail post={buildPost({ layout })} onClick={vi.fn()} />);
+
+    const button = screen.getByRole("button", { name: "Winter layers done right" });
+    expect(button.parentElement).toHaveStyle({ aspectRatio });
   });
 });

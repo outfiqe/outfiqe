@@ -173,7 +173,7 @@ const resolveTagReviewForProducts = async (
 export const creatorLookService = {
   async create(
     userId: string,
-    { taggedProducts, imageUrls, imageAssetIds, caption }: CreateCreatorLookBody,
+    { taggedProducts, imageUrls, imageAssetIds, caption, layout }: CreateCreatorLookBody,
   ): Promise<CreatorLookSummary> {
     await requireApprovedCreator(userId, "Only approved creators can post looks.");
     const productIds = taggedProducts.map((tag) => tag.productId);
@@ -194,6 +194,7 @@ export const creatorLookService = {
       imageUrls: [coverImageUrl, ...restImageUrls],
       imageAssetIds,
       caption,
+      layout,
       taggedProducts: taggedProducts.map((tag) => {
         const resolved = resolvedTags.get(tag.productId);
         return {

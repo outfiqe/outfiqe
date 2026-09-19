@@ -38,7 +38,13 @@ describe("EditPostModal", () => {
         return HttpResponse.json({
           success: true,
           message: "Post detail.",
-          data: { id: "look-1", imageUrls: [], caption: null, taggedProducts: [] },
+          data: {
+            id: "look-1",
+            imageUrls: [],
+            layout: "PORTRAIT",
+            caption: null,
+            taggedProducts: [],
+          },
         });
       }),
     );
@@ -60,6 +66,7 @@ describe("EditPostModal", () => {
           data: {
             id: "look-1",
             imageUrls: ["https://cdn.outfiqe.test/a.jpg"],
+            layout: "PORTRAIT",
             caption: "Nice fit",
             taggedProducts: [],
           },

@@ -14,6 +14,7 @@ const buildPost = (id: string) => ({
   creator: { id: "creator-1", name: "Ava Martinez", handle: HANDLE, isApproved: true },
   imageUrl: `https://cdn.test/${id}.jpg`,
   images: [`https://cdn.test/${id}.jpg`],
+  layout: "PORTRAIT",
   caption: `Post ${id}`,
   likeCount: 0,
   commentCount: 0,

@@ -1,4 +1,5 @@
 import type { ContentReportReason, ContentReportTarget } from "@outfiqe/types";
+import { POST_LAYOUT_VALUES } from "@outfiqe/utils";
 import { z } from "zod";
 
 import { responsiveImageSchema } from "@/shared/lib/responsiveImage";
@@ -53,6 +54,7 @@ export const feedPostSchema = z.object({
   imageUrl: z.string(),
   images: z.array(z.string()),
   image: responsiveImageSchema.nullish(),
+  layout: z.enum(POST_LAYOUT_VALUES),
   caption: z.string().nullable(),
   likeCount: z.number(),
   commentCount: z.number(),

@@ -12,6 +12,7 @@ import {
 import { Check, Share2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import Masonry from "react-masonry-css";
 
 import { FollowersModal } from "@/components/FollowersModal";
 import { FollowingModal } from "@/components/FollowingModal";
@@ -46,6 +47,7 @@ const MIN_HEIGHT_CM = 90;
 const MAX_HEIGHT_CM = 251;
 const MAX_PROFILE_FEATURED_BADGES = 3;
 const TITLE_BADGE_FALLBACK_COLOR = "#146c78";
+const CREATOR_POST_GRID_BREAKPOINT_COLUMNS = { default: 3, 639: 2 };
 const LOOK_QUERY_PARAM = "look";
 const EDIT_QUERY_PARAM = "edit";
 
@@ -448,7 +450,11 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
       ) : posts.length === 0 ? (
         <p className="py-10 text-sm text-muted-foreground">No posts yet.</p>
       ) : (
-        <div className="grid grid-cols-2 items-start gap-x-4 gap-y-5 sm:grid-cols-3">
+        <Masonry
+          breakpointCols={CREATOR_POST_GRID_BREAKPOINT_COLUMNS}
+          className="-ml-4 flex w-auto"
+          columnClassName="pl-4"
+        >
           {posts.map((post) => (
             <CreatorPostThumbnail
               key={post.id}
@@ -459,7 +465,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
               onDelete={() => setDeletingLookId(post.id)}
             />
           ))}
-        </div>
+        </Masonry>
       )}
 
       {detailPost && (

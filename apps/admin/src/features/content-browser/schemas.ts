@@ -1,3 +1,4 @@
+import { POST_LAYOUT_VALUES } from "@outfiqe/utils";
 import { z } from "zod";
 
 export const adminLookCreatorSchema = z.object({
@@ -10,6 +11,7 @@ export const adminLookCreatorSchema = z.object({
 export const adminLookSchema = z.object({
   id: z.string(),
   imageUrl: z.string(),
+  layout: z.enum(POST_LAYOUT_VALUES),
   caption: z.string().nullable(),
   creator: adminLookCreatorSchema,
   likeCount: z.number(),

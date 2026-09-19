@@ -3,6 +3,7 @@ import { type ReactNode, useEffect } from "react";
 import { useAuth } from "@/features/auth/AuthContext";
 
 import { resolveLoginOrigin } from "./ProtectedRoute.utils";
+import { RedirectingToLogin } from "./RedirectingToLogin";
 
 const CONFIGURED_WEB_URL = import.meta.env.VITE_WEB_URL ?? "http://localhost:3000";
 
@@ -22,6 +23,7 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   }, [status, signedOutReason]);
 
   if (status === "signed-in") return <>{children}</>;
+  if (signedOutReason === "user-signed-out") return <RedirectingToLogin />;
 
   return null;
 };
