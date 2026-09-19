@@ -1,11 +1,4 @@
-import {
-  Button,
-  FormBanner,
-  Select,
-  Skeleton,
-  Table,
-  type TableColumn,
-} from "@outfiqe/design-system";
+import { Button, FormBanner, Select, Table, type TableColumn } from "@outfiqe/design-system";
 import { useInfiniteCursorPage } from "@outfiqe/hooks";
 import type { BrandPayoutStatus, PaymentMethod } from "@outfiqe/types";
 
@@ -157,19 +150,12 @@ export const LedgerTable = () => {
       </div>
 
       <div className="mt-3">
-        {isLoading && (
-          <div className="space-y-2">
-            <Skeleton className="h-9 w-full" />
-            <Skeleton className="h-9 w-full" />
-            <Skeleton className="h-9 w-full" />
-          </div>
-        )}
-
         {isError && <FormBanner>Couldn&apos;t load the ledger.</FormBanner>}
 
-        {!isLoading && !isError && (
+        {!isError && (
           <>
             <Table
+              isLoading={isLoading}
               columns={columns}
               rows={entries}
               rowKey={(row) => row.orderItemId}

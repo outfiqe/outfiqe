@@ -62,6 +62,7 @@ export default defineConfig({
         "src/components/TableSkeleton.tsx",
         "src/components/CardRowSkeleton.tsx",
         "src/components/ReorderRowSkeleton.tsx",
+        "src/components/ActionRowSkeleton.tsx",
         "src/components/page-skeletons/**",
         "src/components/ProtectedRoute.utils.ts",
         "src/components/AdminSidebar.utils.ts",

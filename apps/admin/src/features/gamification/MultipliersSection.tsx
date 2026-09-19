@@ -3,10 +3,11 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
+
 import { type CreateXpMultiplierInput, gamificationApi, type UpdateXpMultiplierInput } from "./api";
 import { toDatetimeLocalValue, toIsoOrNull } from "./datetime.utils";
 import type { XpMultiplier } from "./schemas";
-import { ActionRowSkeleton } from "./skeletons";
 
 const MULTIPLIERS_QUERY_KEY = ["admin-xp-multipliers"];
 

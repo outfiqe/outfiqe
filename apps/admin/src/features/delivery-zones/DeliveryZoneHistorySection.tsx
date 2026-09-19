@@ -5,6 +5,14 @@ import { useDeliveryZoneHistory } from "./hooks/useDeliveryZoneHistory";
 const formatDateTime = (iso: string) =>
   new Date(iso).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
 
+const HistoryEntrySkeleton = () => (
+  <div className="rounded-xl border border-border bg-card p-4" aria-hidden>
+    <Skeleton className="h-5 w-80 max-w-full" />
+    <Skeleton className="mt-1 h-4 w-full max-w-xl" />
+    <Skeleton className="mt-1 h-4 w-2/3 max-w-lg" />
+  </div>
+);
+
 export const DeliveryZoneHistorySection = () => {
   const {
     data: historyQuery,
@@ -22,9 +30,7 @@ export const DeliveryZoneHistorySection = () => {
       <h2 className="font-display text-lg font-bold text-foreground">Change history</h2>
       <div className="mt-4 space-y-2">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-16 w-full rounded-xl" />
-          ))}
+          Array.from({ length: 3 }).map((_, index) => <HistoryEntrySkeleton key={index} />)}
 
         {isError && (
           <FormBanner className="flex items-center justify-between gap-3">

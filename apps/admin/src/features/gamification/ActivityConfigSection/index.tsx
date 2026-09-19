@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
+
 import { gamificationApi } from "../api";
 import type { ActivityXpConfig } from "../schemas";
-import { ActionRowSkeleton } from "../skeletons";
 import { ActivityConfigCard } from "./ActivityConfigCard";
 import { ACTIVITY_CONFIG_QUERY_KEY } from "./activityConfigForm.constants";
 import { EditActivityConfigModal } from "./EditActivityConfigModal";

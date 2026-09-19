@@ -2,23 +2,6 @@ import { Skeleton } from "@outfiqe/design-system";
 
 const BADGE_CARD_ACTION_COUNT = 2;
 
-type ActionRowSkeletonProps = {
-  hasSubLine?: boolean;
-};
-
-export const ActionRowSkeleton = ({ hasSubLine = false }: ActionRowSkeletonProps) => (
-  <div
-    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
-    aria-hidden
-  >
-    <div>
-      <Skeleton className="h-5 w-72 max-w-full" />
-      {hasSubLine && <Skeleton className="h-4 w-56" />}
-    </div>
-    <Skeleton className="h-8 w-16 rounded-lg" />
-  </div>
-);
-
 export const TitleActionCardSkeleton = () => (
   <div className="rounded-xl border border-border bg-card p-4" aria-hidden>
     <div className="flex items-start justify-between gap-2">

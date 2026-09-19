@@ -3,11 +3,11 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { gamificationApi } from "./api";
-import { ActionRowSkeleton } from "./skeletons";
 import { type SelectedUser, UserSearchField } from "./UserSearchField";
 
 const BADGES_QUERY_KEY = ["admin-badges"];

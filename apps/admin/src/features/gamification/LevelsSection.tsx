@@ -3,9 +3,10 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
+
 import { type CreateLevelInput, gamificationApi, type UpdateLevelInput } from "./api";
 import type { Level } from "./schemas";
-import { ActionRowSkeleton } from "./skeletons";
 
 const LEVELS_QUERY_KEY = ["admin-levels"];
 
