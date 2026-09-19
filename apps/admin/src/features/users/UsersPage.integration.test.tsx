@@ -45,6 +45,23 @@ const mockUsersList = (users: unknown[]) => {
 };
 
 describe("UsersPage", () => {
+  it("lists recent accounts without the start-typing hint before anything is searched", async () => {
+    mockUsersList([activeUser]);
+
+    renderPage();
+
+    await screen.findByText("Ava Martinez");
+    expect(screen.queryByText("Start typing to find an account.")).not.toBeInTheDocument();
+  });
+
+  it("shows the start-typing hint when there are no accounts and no search", async () => {
+    mockUsersList([]);
+
+    renderPage();
+
+    expect(await screen.findByText("Start typing to find an account.")).toBeInTheDocument();
+  });
+
   it("finds a user by search and suspends them with a reason", async () => {
     const user = userEvent.setup();
     mockUsersList([activeUser]);
