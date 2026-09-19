@@ -88,6 +88,7 @@ export const ProductReviewsPage = () => {
   const {
     data: reviewPages,
     isLoading: isLoadingReviews,
+    error: reviewsError,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -178,6 +179,8 @@ export const ProductReviewsPage = () => {
               ))}
             </div>
           )}
+
+          {reviewsError && <p className="text-sm text-destructive">Couldn&apos;t load reviews.</p>}
 
           {!isLoadingReviews && reviews?.length === 0 && (
             <p className="text-sm text-muted-foreground">This product has no reviews yet.</p>
