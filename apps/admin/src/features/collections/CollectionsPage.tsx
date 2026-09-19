@@ -1,8 +1,9 @@
-import { Badge, Button, FormBanner, Input, Skeleton } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Input } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { ImageUpload } from "@/components/ImageUpload";
 
 import { collectionsApi } from "./api";
@@ -160,7 +161,13 @@ export const CollectionsPage = () => {
       <div className="mt-6 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+            <CardRowSkeleton
+              key={index}
+              leadingImageClass="size-14"
+              textLineCount={1}
+              actionCount={1}
+              actionSize="regular"
+            />
           ))}
         {collections?.length === 0 && (
           <p className="text-sm text-muted-foreground">No collections yet.</p>

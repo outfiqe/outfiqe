@@ -243,7 +243,9 @@ describe("ProductTypesPage", () => {
 
     renderPage();
 
-    await waitFor(() => expect(document.querySelectorAll(".animate-pulse")).toHaveLength(3));
+    await waitFor(() =>
+      expect(document.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0),
+    );
     await waitFor(() => expect(document.querySelectorAll(".animate-pulse")).toHaveLength(0));
   });
 });

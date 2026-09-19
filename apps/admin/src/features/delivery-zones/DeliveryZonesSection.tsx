@@ -1,8 +1,9 @@
-import { Badge, Button, FormBanner, Input, Modal, Skeleton, toast } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Input, Modal, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -209,7 +210,13 @@ export const DeliveryZonesSection = () => {
       <div className="mt-4 space-y-2">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+            <CardRowSkeleton
+              key={index}
+              hasBadge={false}
+              textLineCount={1}
+              hasChipRow
+              actionCount={2}
+            />
           ))}
 
         {isError && (

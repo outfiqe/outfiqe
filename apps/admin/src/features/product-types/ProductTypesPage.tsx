@@ -1,10 +1,11 @@
-import { Badge, Button, cn, FormBanner, Input, Skeleton, toast } from "@outfiqe/design-system";
+import { Badge, Button, cn, FormBanner, Input, toast } from "@outfiqe/design-system";
 import { useApiMutation, useDragReorder } from "@outfiqe/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
+import { ReorderRowSkeleton } from "@/components/ReorderRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { productTypesApi } from "./api";
@@ -139,9 +140,7 @@ export const ProductTypesPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-16 w-full rounded-xl" />
-          ))}
+          Array.from({ length: 3 }).map((_, index) => <ReorderRowSkeleton key={index} />)}
         {productTypes?.length === 0 && (
           <p className="text-sm text-muted-foreground">No garment types yet.</p>
         )}

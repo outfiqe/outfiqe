@@ -1,8 +1,9 @@
-import { Badge, Button, FormBanner, Input, Select, Skeleton, toast } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Input, Select, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
@@ -122,7 +123,7 @@ export const InviteSection = ({ viewerIsSuperAdmin, viewerPermissionKeys }: Invi
       <div className="mt-3 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+            <CardRowSkeleton key={index} hasSmallTitle textLineCount={1} actionCount={1} />
           ))}
         {error && <p className="text-sm text-destructive">{getErrorMessage(error)}</p>}
         {!isLoading && !error && invites?.length === 0 && (

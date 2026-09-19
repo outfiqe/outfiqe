@@ -2,8 +2,8 @@ import {
   BarSeries,
   ChartCard,
   FormBanner,
-  Skeleton,
   StatCard,
+  StatCardSkeleton,
   TrendChart,
 } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
@@ -16,6 +16,12 @@ import type { CrmOverviewReport } from "./reportingSchemas";
 
 const OVERVIEW_REPORT_KEY = ["crm-report-overview"];
 const KPI_CARD_COUNT = 6;
+const KPI_GRID_CLASS = "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6";
+const CHART_GRID_CLASS = "grid gap-4 lg:grid-cols-2";
+const ACTIVITY_CHART_TITLE = "Activity";
+const ACTIVITY_CHART_DESCRIPTION = "CRM activities logged per day, last 30 days";
+const PIPELINE_CHART_TITLE = "Pipeline value by stage";
+const PIPELINE_CHART_DESCRIPTION = "Open deal value per stage";
 
 const formatShortDate = (isoDate: string) =>
   new Date(isoDate).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -24,7 +30,7 @@ const OverviewKpiRow = ({ report }: { report: CrmOverviewReport }) => {
   const { pipeline, tickets, openTasksDueTodayCount } = report;
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div className={KPI_GRID_CLASS}>
       <StatCard label="Open pipeline" value={formatRupees(pipeline.totals.openValue)} />
       <StatCard label="Open deals" value={String(pipeline.totals.openDealCount)} />
       <StatCard label="Won value" value={formatRupees(pipeline.totals.wonValue)} />
@@ -91,10 +97,10 @@ const OverviewCharts = ({ report }: { report: CrmOverviewReport }) => {
     .map((stage) => ({ stage: stage.stageName, openValue: stage.openValue }));
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className={CHART_GRID_CLASS}>
       <ChartCard
-        title="Activity"
-        description="CRM activities logged per day, last 30 days"
+        title={ACTIVITY_CHART_TITLE}
+        description={ACTIVITY_CHART_DESCRIPTION}
         ariaLabel="CRM activities logged per day over the last 30 days"
         isEmpty={!hasActivity}
         emptyMessage="Not enough data yet — logged calls, notes and emails will show here."
@@ -110,8 +116,8 @@ const OverviewCharts = ({ report }: { report: CrmOverviewReport }) => {
       </ChartCard>
 
       <ChartCard
-        title="Pipeline value by stage"
-        description="Open deal value per stage"
+        title={PIPELINE_CHART_TITLE}
+        description={PIPELINE_CHART_DESCRIPTION}
         ariaLabel="Open deal value by pipeline stage"
         isEmpty={!hasPipelineValue}
         emptyMessage="Not enough data yet — add deals to the pipeline to see value by stage."
@@ -128,6 +134,25 @@ const OverviewCharts = ({ report }: { report: CrmOverviewReport }) => {
     </div>
   );
 };
+
+const OverviewKpiSkeleton = () => (
+  <div className={KPI_GRID_CLASS} role="status" aria-label="Loading">
+    {Array.from({ length: KPI_CARD_COUNT }, (_unused, cardIndex) => (
+      <StatCardSkeleton key={cardIndex} />
+    ))}
+  </div>
+);
+
+const OverviewChartsSkeleton = () => (
+  <div className={CHART_GRID_CLASS}>
+    <ChartCard title={ACTIVITY_CHART_TITLE} description={ACTIVITY_CHART_DESCRIPTION} isLoading>
+      {null}
+    </ChartCard>
+    <ChartCard title={PIPELINE_CHART_TITLE} description={PIPELINE_CHART_DESCRIPTION} isLoading>
+      {null}
+    </ChartCard>
+  </div>
+);
 
 export const CrmOverviewSection = () => {
   const {
@@ -151,17 +176,10 @@ export const CrmOverviewSection = () => {
       {error ? (
         <FormBanner>{getErrorMessage(error)}</FormBanner>
       ) : isLoading || !report ? (
-        <div className="space-y-4" role="status" aria-label="Loading">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {Array.from({ length: KPI_CARD_COUNT }).map((_, index) => (
-              <Skeleton key={index} className="h-24 rounded-xl" />
-            ))}
-          </div>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Skeleton className="h-72 w-full rounded-2xl" />
-            <Skeleton className="h-72 w-full rounded-2xl" />
-          </div>
-        </div>
+        <>
+          <OverviewKpiSkeleton />
+          <OverviewChartsSkeleton />
+        </>
       ) : (
         <>
           <OverviewKpiRow report={report} />

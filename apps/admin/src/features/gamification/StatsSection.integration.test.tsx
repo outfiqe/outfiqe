@@ -42,7 +42,7 @@ describe("StatsSection", () => {
 
     const { container } = render(<StatsSection />, { wrapper });
 
-    expect(container.querySelectorAll(".animate-pulse")).toHaveLength(5);
+    expect(container.querySelectorAll(".rounded-xl.border")).toHaveLength(5);
   });
 
   it("renders the XP and badge figures once loaded", async () => {
