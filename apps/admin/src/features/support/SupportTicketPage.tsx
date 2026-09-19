@@ -2,6 +2,7 @@ import { Badge, Button, Select, Skeleton } from "@outfiqe/design-system";
 import { getRouteApi, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { SkeletonBadge } from "@/components/SkeletonControls";
 import { useAuth } from "@/features/auth/AuthContext";
 
 import {
@@ -83,8 +84,8 @@ const SupportTicketSkeleton = () => (
     <Skeleton className="h-5 w-24" />
     <div className="flex flex-wrap items-center gap-2">
       <Skeleton className="h-4 w-20" />
-      <Skeleton className="h-5 w-16 rounded-full" />
-      <Skeleton className="h-5 w-20 rounded-full" />
+      <SkeletonBadge />
+      <SkeletonBadge />
     </div>
     <Skeleton className="h-8 w-96 max-w-full" />
 

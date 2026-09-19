@@ -2,6 +2,7 @@ import { Badge, Button, Input, Skeleton } from "@outfiqe/design-system";
 import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
 import { useState } from "react";
 
+import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { ApiClientError } from "@/lib/apiClient";
 
 import { usersApi } from "./api";
@@ -20,13 +21,13 @@ const UserRowSkeleton = () => (
       <div>
         <div className="flex items-center gap-2">
           <Skeleton className="h-6 w-36" />
-          <Skeleton className="h-5 w-16 rounded-full" />
+          <SkeletonBadge />
         </div>
         <Skeleton className="mt-1 h-5 w-80 max-w-full" />
       </div>
       <div className="flex gap-2">
-        <Skeleton className="h-10 w-24 rounded-lg" />
-        <Skeleton className="h-10 w-16 rounded-lg" />
+        <SkeletonButton label="Suspend" />
+        <SkeletonButton label="Ban" />
       </div>
     </div>
   </div>

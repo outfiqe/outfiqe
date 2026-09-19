@@ -1,5 +1,7 @@
 import { Skeleton } from "@outfiqe/design-system";
 
+import { SkeletonBadge } from "@/components/SkeletonControls";
+
 const COMPACT_ROW_COUNT = 5;
 
 type CompactRowSkeletonProps = {
@@ -23,7 +25,7 @@ export const CompactRowSkeleton = ({
         </span>
         <span className="flex items-center gap-2">
           <Skeleton className="h-4 w-44" />
-          {hasTrailingBadge && <Skeleton className="h-5 w-16 rounded-full" />}
+          {hasTrailingBadge && <SkeletonBadge />}
         </span>
       </li>
     ))}

@@ -16,6 +16,7 @@ import { ArrowLeft } from "lucide-react";
 import { type FormEvent, useMemo, useRef, useState } from "react";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import type { UpdateBadgeFormInput } from "../api";
@@ -193,7 +194,6 @@ const BadgeForm = ({
 };
 
 const BADGE_FIELD_SKELETON_COUNT = 4;
-const BADGE_FOOTER_BUTTON_COUNT = 2;
 
 const BadgeFormSkeleton = () => (
   <div role="status" aria-label="Loading">
@@ -215,7 +215,7 @@ const BadgeFormSkeleton = () => (
           {Array.from({ length: BADGE_FIELD_SKELETON_COUNT }, (_unused, fieldIndex) => (
             <div key={fieldIndex} className="space-y-1.5">
               <Skeleton className="h-4 w-28" />
-              <Skeleton className="h-10 w-full rounded-lg" />
+              <Skeleton className="h-11 w-full rounded-lg" />
             </div>
           ))}
         </TabsContent>
@@ -224,9 +224,8 @@ const BadgeFormSkeleton = () => (
 
     <div className="mt-6 space-y-3 border-t border-border pt-4">
       <div className="flex justify-end gap-2">
-        {Array.from({ length: BADGE_FOOTER_BUTTON_COUNT }, (_unused, buttonIndex) => (
-          <Skeleton key={buttonIndex} className="h-10 w-28 rounded-lg" />
-        ))}
+        <SkeletonButton label="Cancel" />
+        <SkeletonButton variant="default" label="Create badge" />
       </div>
     </div>
   </div>

@@ -1,10 +1,11 @@
-import { Badge, Button, FormBanner, Input, toast } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Input, Skeleton, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
-import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { ImageUpload } from "@/components/ImageUpload";
+import { ImageUploadSkeleton } from "@/components/ImageUploadSkeleton";
+import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { heroSlidesApi } from "./api";
@@ -16,6 +17,23 @@ const STATUS_TONE: Record<HeroSlideStatusValue, "neutral" | "positive"> = {
 };
 
 const HERO_SLIDES_QUERY_KEY = ["admin-hero-slides"];
+
+const HeroSlideRowSkeleton = () => (
+  <div
+    className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4"
+    aria-hidden
+  >
+    <ImageUploadSkeleton />
+    <div className="min-w-0 flex-1">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-6 w-40" />
+        <SkeletonBadge />
+      </div>
+      <Skeleton className="mt-1 h-5 w-72 max-w-full" />
+    </div>
+    <SkeletonButton variant="ghost" label="Unpublish" />
+  </div>
+);
 
 export const HeroSlidesPage = () => {
   const { data: heroSlides, isLoading } = useQuery({
@@ -176,15 +194,7 @@ export const HeroSlidesPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <CardRowSkeleton
-              key={index}
-              leadingImageClass="size-14"
-              textLineCount={1}
-              actionCount={1}
-              actionSize="regular"
-            />
-          ))}
+          Array.from({ length: 3 }).map((_, index) => <HeroSlideRowSkeleton key={index} />)}
         {heroSlides?.length === 0 && (
           <p className="text-sm text-muted-foreground">No hero slides yet.</p>
         )}

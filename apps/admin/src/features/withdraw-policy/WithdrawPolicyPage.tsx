@@ -2,6 +2,7 @@ import { Button, FormBanner, Input, Select, Skeleton } from "@outfiqe/design-sys
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { type UpdateWithdrawPolicyInput, withdrawPolicyApi } from "./api";
@@ -182,11 +183,11 @@ const WithdrawPolicySkeleton = () => (
       {Array.from({ length: POLICY_FIELD_SKELETON_COUNT }, (_unused, fieldIndex) => (
         <div key={fieldIndex} className="space-y-1.5">
           <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-10 w-full rounded-lg" />
+          <Skeleton className="h-11 w-full rounded-lg" />
         </div>
       ))}
     </div>
-    <Skeleton className="h-10 w-28 rounded-lg" />
+    <SkeletonButton variant="default" label="Save policy" />
   </div>
 );
 

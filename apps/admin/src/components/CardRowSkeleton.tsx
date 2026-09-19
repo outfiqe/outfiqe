@@ -1,20 +1,20 @@
 import { Skeleton } from "@outfiqe/design-system";
 
+import { SkeletonBadge, SkeletonButton } from "./SkeletonControls";
+
 const NO_ITEMS = 0;
 const CHIP_COUNT = 3;
 const CARD_ROW_CLASS = "rounded-xl border border-border bg-card p-4";
 
-const ACTION_SIZE_CLASS = {
-  small: "h-8 w-20",
-  regular: "h-10 w-24",
-} as const;
+const ACTION_LABELS = ["Edit", "Archive", "Delete", "Details"];
+const ACTION_SIZES = { small: "sm", regular: "default" } as const;
 
 type CardRowSkeletonProps = {
   hasBadge?: boolean;
   textLineCount?: number;
   hasMetaLine?: boolean;
   actionCount?: number;
-  actionSize?: keyof typeof ACTION_SIZE_CLASS;
+  actionSize?: keyof typeof ACTION_SIZES;
   leadingImageClass?: string;
   hasSpacedSections?: boolean;
   hasChipRow?: boolean;
@@ -41,7 +41,7 @@ export const CardRowSkeleton = ({
       <div>
         <div className="flex items-center gap-2">
           <Skeleton className={hasSmallTitle ? "h-5 w-40" : "h-6 w-40"} />
-          {hasBadge && <Skeleton className="h-5 w-16 rounded-full" />}
+          {hasBadge && <SkeletonBadge />}
         </div>
         {Array.from({ length: textLineCount }, (_unused, lineIndex) => (
           <Skeleton key={lineIndex} className="mt-1 h-5 w-72 max-w-full" />
@@ -56,9 +56,13 @@ export const CardRowSkeleton = ({
         )}
       </div>
       {actionCount > NO_ITEMS && (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {Array.from({ length: actionCount }, (_unused, actionIndex) => (
-            <Skeleton key={actionIndex} className={`${ACTION_SIZE_CLASS[actionSize]} rounded-lg`} />
+            <SkeletonButton
+              key={actionIndex}
+              size={ACTION_SIZES[actionSize]}
+              label={ACTION_LABELS[actionIndex % ACTION_LABELS.length]}
+            />
           ))}
         </div>
       )}

@@ -1,5 +1,7 @@
 import { Skeleton } from "@outfiqe/design-system";
 
+import { SkeletonButton } from "./SkeletonControls";
+
 const DEFAULT_ROW_COUNT = 8;
 const FIRST_COLUMN_INDEX = 0;
 const NEXT_COLUMN_STEP = 1;
@@ -32,7 +34,7 @@ export const TableSkeleton = ({ headers, rowCount = DEFAULT_ROW_COUNT }: TableSk
               {headers.map((header, columnIndex) => (
                 <td key={columnIndex} className={cellClassFor(columnIndex)}>
                   {header === "" ? (
-                    <Skeleton className="ml-auto h-8 w-16 rounded-lg" />
+                    <SkeletonButton size="sm" label="Delete" className="ml-auto" />
                   ) : (
                     <Skeleton
                       className={columnIndex === FIRST_COLUMN_INDEX ? "h-5 w-40" : "h-5 w-20"}

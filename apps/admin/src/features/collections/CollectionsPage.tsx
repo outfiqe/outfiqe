@@ -1,10 +1,11 @@
-import { Badge, Button, FormBanner, Input } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Input, Skeleton } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
-import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { ImageUpload } from "@/components/ImageUpload";
+import { ImageUploadSkeleton } from "@/components/ImageUploadSkeleton";
+import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 
 import { collectionsApi } from "./api";
 import { ProductPicker } from "./ProductPicker";
@@ -23,6 +24,23 @@ const slugify = (value: string): string =>
     .replace(/^-+|-+$/g, "");
 
 const COLLECTIONS_QUERY_KEY = ["admin-collections"];
+
+const CollectionRowSkeleton = () => (
+  <div className="rounded-xl border border-border bg-card p-4" aria-hidden>
+    <div className="flex flex-wrap items-center gap-3">
+      <ImageUploadSkeleton />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-6 w-40" />
+          <SkeletonBadge />
+        </div>
+        <Skeleton className="mt-1 h-5 w-56" />
+      </div>
+      <SkeletonButton label="Manage products" />
+      <SkeletonButton variant="ghost" label="Unpublish" />
+    </div>
+  </div>
+);
 
 export const CollectionsPage = () => {
   const { data: collections, isLoading } = useQuery({
@@ -160,15 +178,7 @@ export const CollectionsPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <CardRowSkeleton
-              key={index}
-              leadingImageClass="size-14"
-              textLineCount={1}
-              actionCount={1}
-              actionSize="regular"
-            />
-          ))}
+          Array.from({ length: 3 }).map((_, index) => <CollectionRowSkeleton key={index} />)}
         {collections?.length === 0 && (
           <p className="text-sm text-muted-foreground">No collections yet.</p>
         )}

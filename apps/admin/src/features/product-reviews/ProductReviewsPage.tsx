@@ -5,6 +5,7 @@ import { ImageOff, Search, Star, X } from "lucide-react";
 import { useState } from "react";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { productReviewsApi } from "./api";
@@ -61,12 +62,12 @@ const ReviewCardSkeleton = () => (
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <Skeleton className="h-5 w-28" />
-          <Skeleton className="h-5 w-12 rounded-full" />
+          <SkeletonBadge label="5" />
         </div>
         <Skeleton className="mt-1 h-5 w-48" />
         <Skeleton className="mt-1 h-5 w-96 max-w-full" />
       </div>
-      <Skeleton className="h-10 w-20 shrink-0 rounded-lg" />
+      <SkeletonButton label="Delete" className="shrink-0" />
     </div>
   </div>
 );

@@ -23,14 +23,14 @@ describe("CardRowSkeleton", () => {
 
     expect(container.querySelectorAll(".mt-1.h-5")).toHaveLength(2);
     expect(container.querySelectorAll(".mt-1.h-4")).toHaveLength(1);
-    expect(container.querySelectorAll(".h-10.w-24")).toHaveLength(3);
+    expect(container.querySelectorAll("button.h-11")).toHaveLength(3);
   });
 
   it("leaves out the badge and the actions when they are not asked for", () => {
     const { container } = render(<CardRowSkeleton hasBadge={false} />);
 
-    expect(container.querySelector(".rounded-full")).toBeNull();
-    expect(container.querySelector(".h-8.w-20")).toBeNull();
+    expect(container.querySelector("span.skeleton-pill")).toBeNull();
+    expect(container.querySelector("button")).toBeNull();
   });
 
   it("adds a leading image block for rows that show a picture", () => {
