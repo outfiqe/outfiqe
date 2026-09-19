@@ -1091,6 +1091,7 @@ model AdminInvite {
   invitedBy   User      @relation("AdminInviteSender", fields: [invitedById], references: [id])
   role        Role      @relation(fields: [roleId], references: [id])
 
+  @@index([roleId])
   @@map("admin_invites")
 }
 
