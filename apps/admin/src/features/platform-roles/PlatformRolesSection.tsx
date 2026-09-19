@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useMemo, useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
+import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformRolesApi } from "./api";
@@ -174,7 +175,7 @@ export const PlatformRolesSection = () => {
     error: rolesError,
   } = useQuery({ queryKey: ROLES_QUERY_KEY, queryFn: platformRolesApi.listRoles });
 
-  const { data: permissions } = useQuery({
+  const { data: permissions, isLoading: permissionsLoading } = useQuery({
     queryKey: PERMISSIONS_QUERY_KEY,
     queryFn: platformRolesApi.listPermissions,
   });
@@ -194,6 +195,7 @@ export const PlatformRolesSection = () => {
             Define what a platform staff member can access.
           </p>
         </div>
+        {permissionsLoading && <SkeletonButton size="sm" label="New role" />}
         {permissionGroups.length > 0 && (
           <Button size="sm" onClick={() => setCreating(true)}>
             New role

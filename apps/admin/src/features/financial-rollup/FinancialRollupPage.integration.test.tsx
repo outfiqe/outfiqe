@@ -41,8 +41,7 @@ describe("FinancialRollupPage payment method breakdown", () => {
 
     renderPage();
 
-    expect(await screen.findByText("GMV by payment method")).toBeInTheDocument();
-    expect(screen.getByText("No orders in this range yet.")).toBeInTheDocument();
+    expect(await screen.findByText("No orders in this range yet.")).toBeInTheDocument();
   });
 
   it("renders each payment method's GMV share, order count, and realized take rate", async () => {
@@ -63,7 +62,8 @@ describe("FinancialRollupPage payment method breakdown", () => {
 
     renderPage();
 
-    const heading = await screen.findByText("GMV by payment method");
+    await screen.findByText("3 orders");
+    const heading = screen.getByText("GMV by payment method");
     const panel = within(heading.closest("div") as HTMLElement);
 
     expect(panel.getByText("COD")).toBeInTheDocument();
