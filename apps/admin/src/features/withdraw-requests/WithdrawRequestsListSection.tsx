@@ -1,7 +1,8 @@
-import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
+import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { ApiClientError } from "@/lib/apiClient";
@@ -116,7 +117,7 @@ export const WithdrawRequestsListSection = () => {
       <div className="mt-4 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+            <CardRowSkeleton key={index} textLineCount={1} actionCount={2} />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load requests.</p>}
         {!isLoading && requests.length === 0 && (

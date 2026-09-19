@@ -1,4 +1,4 @@
-import { Button, FormBanner, Input, Select, Skeleton, toast } from "@outfiqe/design-system";
+import { Button, FormBanner, Input, Select, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
@@ -7,6 +7,7 @@ import { TextPromptModal } from "@/components/TextPromptModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { gamificationApi } from "./api";
+import { ActionRowSkeleton } from "./skeletons";
 import { type SelectedUser, UserSearchField } from "./UserSearchField";
 
 const BADGES_QUERY_KEY = ["admin-badges"];
@@ -188,10 +189,7 @@ const ManualAwardsList = () => {
 
   return (
     <div className="mt-4 space-y-2">
-      {isLoading &&
-        Array.from({ length: 3 }).map((_, index) => (
-          <Skeleton key={index} className="h-16 w-full rounded-xl" />
-        ))}
+      {isLoading && Array.from({ length: 3 }).map((_, index) => <ActionRowSkeleton key={index} />)}
       {awards?.length === 0 && (
         <p className="text-sm text-muted-foreground">No manual awards yet.</p>
       )}

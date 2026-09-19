@@ -1,12 +1,4 @@
-import {
-  Button,
-  Checkbox,
-  FormBanner,
-  Input,
-  Modal,
-  Select,
-  Skeleton,
-} from "@outfiqe/design-system";
+import { Button, Checkbox, FormBanner, Input, Modal, Select } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
@@ -35,6 +27,7 @@ import type {
   CreatorCompetitionAdmin,
   CreatorLeaderboardCategoryValue,
 } from "./schemas";
+import { TitleActionCardSkeleton } from "./skeletons";
 
 const COMPETITIONS_QUERY_KEY = ["admin-creator-competitions"];
 const MIN_WINNERS = 1;
@@ -413,9 +406,7 @@ export const CompetitionsSection = () => {
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
-          ))}
+          Array.from({ length: 3 }).map((_, index) => <TitleActionCardSkeleton key={index} />)}
         {competitions?.length === 0 && (
           <p className="text-sm text-muted-foreground">No competitions yet.</p>
         )}

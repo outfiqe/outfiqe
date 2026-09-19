@@ -45,6 +45,22 @@ const StatCard = ({ label, value }: { label: string; value: string | number }) =
   </div>
 );
 
+const TICKET_ROW_SKELETON_COUNT = 6;
+const TICKET_ROW_CLASS = "block rounded-xl border border-border bg-card p-4";
+
+const TicketRowSkeleton = () => (
+  <div className={TICKET_ROW_CLASS} aria-hidden>
+    <div className="flex flex-wrap items-center gap-2">
+      <Skeleton className="h-4 w-20" />
+      <Skeleton className="h-5 w-16 rounded-full" />
+      <Skeleton className="h-5 w-20 rounded-full" />
+      <Skeleton className="h-4 w-16" />
+    </div>
+    <Skeleton className="mt-1.5 h-6 w-72 max-w-full" />
+    <Skeleton className="mt-1 h-5 w-64 max-w-full" />
+  </div>
+);
+
 export const SupportInboxPage = () => {
   const { state } = useAuth();
   const meId = state.status === "signed-in" ? state.user.id : undefined;
@@ -142,8 +158,8 @@ export const SupportInboxPage = () => {
 
       <div className="space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          Array.from({ length: TICKET_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
+            <TicketRowSkeleton key={rowIndex} />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load support requests.</p>}
         {!isLoading && tickets.length === 0 && (

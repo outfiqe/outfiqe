@@ -1,9 +1,10 @@
-import { Button, Skeleton } from "@outfiqe/design-system";
+import { Button } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { gamificationApi } from "../api";
 import type { ChallengeAdmin } from "../schemas";
+import { TitleActionCardSkeleton } from "../skeletons";
 import { ChallengeCard } from "./ChallengeCard";
 import { CHALLENGES_QUERY_KEY, createEmptyChallengeForm } from "./challengeForm.constants";
 import type { ChallengeFormState } from "./challengeForm.types";
@@ -40,9 +41,7 @@ export const ChallengesSection = () => {
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading &&
-          Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-xl" />
-          ))}
+          Array.from({ length: 6 }).map((_, index) => <TitleActionCardSkeleton key={index} />)}
         {challenges?.length === 0 && (
           <p className="text-sm text-muted-foreground">No challenges yet.</p>
         )}

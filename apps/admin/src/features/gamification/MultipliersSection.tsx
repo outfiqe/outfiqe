@@ -1,4 +1,4 @@
-import { Button, Checkbox, FormBanner, Input, Modal, Skeleton } from "@outfiqe/design-system";
+import { Button, Checkbox, FormBanner, Input, Modal } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
@@ -6,6 +6,7 @@ import { type FormEvent, useState } from "react";
 import { type CreateXpMultiplierInput, gamificationApi, type UpdateXpMultiplierInput } from "./api";
 import { toDatetimeLocalValue, toIsoOrNull } from "./datetime.utils";
 import type { XpMultiplier } from "./schemas";
+import { ActionRowSkeleton } from "./skeletons";
 
 const MULTIPLIERS_QUERY_KEY = ["admin-xp-multipliers"];
 
@@ -210,9 +211,7 @@ export const MultipliersSection = () => {
 
       <div className="mt-4 space-y-2">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-16 w-full rounded-xl" />
-          ))}
+          Array.from({ length: 3 }).map((_, index) => <ActionRowSkeleton key={index} />)}
         {multipliers?.length === 0 && (
           <p className="text-sm text-muted-foreground">No XP multipliers yet.</p>
         )}

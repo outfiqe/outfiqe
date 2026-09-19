@@ -1,8 +1,9 @@
-import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
+import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
@@ -109,7 +110,13 @@ export const AnnouncementsListSection = () => {
       <div className="mt-4 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+            <CardRowSkeleton
+              key={index}
+              textLineCount={1}
+              hasMetaLine
+              actionCount={2}
+              hasSpacedSections
+            />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load announcements.</p>}
         {!isLoading && announcements.length === 0 && (

@@ -1,8 +1,9 @@
-import { Badge, Button, ProgressBar, Skeleton, toast } from "@outfiqe/design-system";
+import { Badge, Button, ProgressBar, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
@@ -108,7 +109,7 @@ export const CouponsListSection = () => {
       <div className="mt-4 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+            <CardRowSkeleton key={index} textLineCount={1} actionCount={2} hasSpacedSections />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load coupons.</p>}
         {!isLoading && coupons.length === 0 && (

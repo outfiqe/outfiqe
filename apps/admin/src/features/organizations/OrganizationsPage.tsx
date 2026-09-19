@@ -1,8 +1,9 @@
-import { Button, FormBanner, Input, Skeleton } from "@outfiqe/design-system";
+import { Button, FormBanner, Input } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { organizationsApi } from "./api";
@@ -138,7 +139,7 @@ export const OrganizationsPage = () => {
       <div className="mt-6 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+            <CardRowSkeleton key={index} hasBadge={false} textLineCount={1} />
           ))}
         {error && <p className="text-sm text-destructive">{getErrorMessage(error)}</p>}
         {!isLoading && !error && organizations?.length === 0 && (
