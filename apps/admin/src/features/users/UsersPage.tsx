@@ -11,6 +11,26 @@ import { useInfiniteUsers } from "./hooks/useInfiniteUsers";
 import type { AccountStatusValue } from "./schemas";
 
 const SEARCH_DEBOUNCE_MS = 300;
+const USER_ROW_SKELETON_COUNT = 6;
+const USER_ROW_CLASS = "rounded-xl border border-border bg-card p-4";
+
+const UserRowSkeleton = () => (
+  <div className={USER_ROW_CLASS} aria-hidden>
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-6 w-36" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+        <Skeleton className="mt-1 h-5 w-80 max-w-full" />
+      </div>
+      <div className="flex gap-2">
+        <Skeleton className="h-10 w-24 rounded-lg" />
+        <Skeleton className="h-10 w-16 rounded-lg" />
+      </div>
+    </div>
+  </div>
+);
 
 const STATUS_TONE: Record<AccountStatusValue, "success" | "neutral" | "negative"> = {
   ACTIVE: "success",
@@ -120,8 +140,8 @@ export const UsersPage = () => {
         )}
         {debouncedQuery.trim() &&
           isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          Array.from({ length: USER_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
+            <UserRowSkeleton key={rowIndex} />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load users.</p>}
         {debouncedQuery.trim() && !isLoading && users.length === 0 && (
@@ -135,7 +155,7 @@ export const UsersPage = () => {
           const isAdmin = user.role === "ADMIN";
 
           return (
-            <div key={user.id} className="rounded-xl border border-border bg-card p-4">
+            <div key={user.id} className={USER_ROW_CLASS}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
