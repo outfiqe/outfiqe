@@ -1,8 +1,9 @@
-import { Badge, Button, Select, Skeleton, toast } from "@outfiqe/design-system";
+import { Badge, Button, Select, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { useAuth } from "@/features/auth/AuthContext";
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -79,7 +80,7 @@ export const PlatformTeamSection = () => {
       <div className="mt-3 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+            <CardRowSkeleton key={index} textLineCount={1} actionCount={2} actionSize="regular" />
           ))}
         {error && <p className="text-sm text-destructive">{getErrorMessage(error)}</p>}
         {!isLoading && !error && members?.length === 0 && (
