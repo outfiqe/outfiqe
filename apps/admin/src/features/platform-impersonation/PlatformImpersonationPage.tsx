@@ -82,6 +82,8 @@ const SESSION_TABLE_HEADERS = [
   "State",
 ];
 const ACTIVE_SESSION_TABLE_HEADERS = [...SESSION_TABLE_HEADERS, "Actions"];
+const ACTIVE_SESSION_ACTION_COLUMN = { header: "Actions", label: "Revoke" };
+const ACTIVE_SESSION_SKELETON_ROW_COUNT = 3;
 
 export const PlatformImpersonationPage = () => {
   const [organizationId, setOrganizationId] = useState("");
@@ -293,7 +295,13 @@ export const PlatformImpersonationPage = () => {
       <section className="mt-10">
         <h2 className="font-display text-lg font-semibold text-foreground">Active sessions</h2>
         <div className="mt-3">
-          {activeSessions.isLoading && <TableSkeleton headers={ACTIVE_SESSION_TABLE_HEADERS} />}
+          {activeSessions.isLoading && (
+            <TableSkeleton
+              headers={ACTIVE_SESSION_TABLE_HEADERS}
+              rowCount={ACTIVE_SESSION_SKELETON_ROW_COUNT}
+              actionColumn={ACTIVE_SESSION_ACTION_COLUMN}
+            />
+          )}
           {activeSessions.error && <FormBanner>{getErrorMessage(activeSessions.error)}</FormBanner>}
           {activeSessions.data && activeSessions.data.length === 0 && (
             <p className="text-sm text-muted-foreground">No active impersonation sessions.</p>
