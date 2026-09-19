@@ -9,7 +9,7 @@ import type { CouponTypeValue } from "./schemas";
 type CreateCouponModalProps = {
   open: boolean;
   onClose: () => void;
-  onCreated: () => void;
+  onCreated: () => Promise<unknown>;
 };
 
 const PERCENT_BASIS_POINTS_PER_PERCENT = 100;
@@ -79,7 +79,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
         stacksWithBrandDiscount,
       });
       toast.success("Coupon created");
-      onCreated();
+      await onCreated();
       close();
     } catch (error) {
       toast.error(getErrorMessage(error));

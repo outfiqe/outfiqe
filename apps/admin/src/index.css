@@ -68,3 +68,40 @@
     cursor: pointer;
   }
 }
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, hsl(var(--foreground) / 0.08), transparent);
+  animation: skeleton-shimmer-sweep 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer::after {
+    animation: none;
+  }
+}
+
+.skeleton-pill {
+  color: transparent !important;
+  background-color: hsl(var(--muted)) !important;
+  border-color: transparent !important;
+  pointer-events: none;
+}
+
+.skeleton-pill * {
+  color: transparent !important;
+}

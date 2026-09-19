@@ -1,6 +1,8 @@
 import { Button, Skeleton } from "@outfiqe/design-system";
 import { useState } from "react";
 
+import { SkeletonButton } from "@/components/SkeletonControls";
+
 import { useInfiniteLookComments } from "./hooks/useInfiniteLookComments";
 import { useInfiniteLookReplies } from "./hooks/useInfiniteLookReplies";
 import type { LookComment, LookCommentReply } from "./schemas";
@@ -97,6 +99,22 @@ const CommentRepliesSection = ({
   );
 };
 
+const COMMENT_SKELETON_COUNT = 3;
+
+const CommentsSkeleton = () => (
+  <>
+    {Array.from({ length: COMMENT_SKELETON_COUNT }, (_unused, commentIndex) => (
+      <div key={commentIndex} className="flex items-start justify-between gap-3" aria-hidden>
+        <div className="min-w-0">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-5 w-64 max-w-full" />
+        </div>
+        <SkeletonButton size="sm" label="Delete" className="shrink-0" />
+      </div>
+    ))}
+  </>
+);
+
 export const PostCommentsPanel = ({
   lookId,
   onDeleteComment,
@@ -108,7 +126,7 @@ export const PostCommentsPanel = ({
 
   return (
     <div className="mt-4 space-y-4 border-t border-border pt-4">
-      {isLoading && <Skeleton className="h-16 w-full rounded-lg" />}
+      {isLoading && <CommentsSkeleton />}
       {error && <p className="text-sm text-destructive">Couldn&apos;t load comments.</p>}
       {!isLoading && !error && comments.length === 0 && (
         <p className="text-sm text-muted-foreground">No comments on this post.</p>

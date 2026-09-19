@@ -1,7 +1,10 @@
 import { Badge, Button, FormBanner, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmBillingApi } from "./billingApi";
@@ -42,7 +45,6 @@ const SubscriptionCard = ({
   onManagePlan: () => void;
   onPayInvoice: (invoice: SubscriptionInvoice) => void;
 }) => {
-  const queryClient = useQueryClient();
   const { subscription, planCatalog, activeSeatCount } = overview;
 
   const { data: invoicePage } = useQuery({
@@ -50,9 +52,9 @@ const SubscriptionCard = ({
     queryFn: () => crmBillingApi.listInvoices(),
   });
 
-  const cancelRenewal = useMutation({
+  const cancelRenewal = useApiMutation({
     mutationFn: crmBillingApi.cancel,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: BILLING_OVERVIEW_KEY }),
+    invalidateKeys: [BILLING_OVERVIEW_KEY],
   });
 
   const planName =
@@ -175,6 +177,28 @@ const InvoiceHistory = ({ invoices }: { invoices: SubscriptionInvoice[] }) => {
   );
 };
 
+const INVOICE_TABLE_HEADERS = ["Period", "Amount", "Status", "Paid"];
+const INVOICE_SKELETON_ROW_COUNT = 3;
+
+const BillingSkeleton = () => (
+  <div className="space-y-6">
+    <div className="rounded-xl border border-border bg-card p-4" aria-hidden>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <Skeleton className="h-7 w-40" />
+          <Skeleton className="mt-1 h-5 w-72 max-w-full" />
+        </div>
+        <SkeletonBadge />
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <SkeletonButton size="sm" variant="default" label="Change plan or seats" />
+        <SkeletonButton size="sm" label="Cancel renewal" />
+      </div>
+    </div>
+    <TableSkeleton headers={INVOICE_TABLE_HEADERS} rowCount={INVOICE_SKELETON_ROW_COUNT} />
+  </div>
+);
+
 export const BillingSection = () => {
   const {
     data: overview,
@@ -186,12 +210,7 @@ export const BillingSection = () => {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   if (isLoading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-32 w-full" />
-      </div>
-    );
+    return <BillingSkeleton />;
   }
 
   if (error || !overview) {

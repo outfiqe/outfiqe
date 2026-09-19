@@ -6,10 +6,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { BankType, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
-import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { redis } from "#redis/redis.client.js";
 import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
-import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
+import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
 const OK_STATUS = 200;
@@ -43,8 +42,7 @@ const createUser = async (overrides: Partial<{ name: string; role: UserRole }> =
 
 const createAdmin = async () => {
   const admin = await createUser({ role: UserRole.ADMIN });
-  await ensurePlatformOrganizationExists();
-  await crmAccessService.grantPlatformStaffMembership(admin.id);
+  await grantPlatformStaffMembership(admin.id);
   await grantPlatformPermissions(admin.id, "platform:withdraw:manage");
   return admin;
 };
@@ -290,8 +288,7 @@ describe("admin bank account actions", () => {
   it("blocks a platform staffer without platform:withdraw:manage", async () => {
     const owner = await createUser();
     const staffer = await createUser({ role: UserRole.ADMIN });
-    await ensurePlatformOrganizationExists();
-    await crmAccessService.grantPlatformStaffMembership(staffer.id);
+    await grantPlatformStaffMembership(staffer.id);
     const bank = await createBank();
 
     const created = await request(testApp)

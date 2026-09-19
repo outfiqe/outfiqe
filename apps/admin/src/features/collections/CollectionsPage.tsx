@@ -1,8 +1,11 @@
 import { Badge, Button, FormBanner, Input, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { ImageUpload } from "@/components/ImageUpload";
+import { ImageUploadSkeleton } from "@/components/ImageUploadSkeleton";
+import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 
 import { collectionsApi } from "./api";
 import { ProductPicker } from "./ProductPicker";
@@ -20,10 +23,28 @@ const slugify = (value: string): string =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
+const COLLECTIONS_QUERY_KEY = ["admin-collections"];
+
+const CollectionRowSkeleton = () => (
+  <div className="rounded-xl border border-border bg-card p-4" aria-hidden>
+    <div className="flex flex-wrap items-center gap-3">
+      <ImageUploadSkeleton />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-6 w-40" />
+          <SkeletonBadge />
+        </div>
+        <Skeleton className="mt-1 h-5 w-56" />
+      </div>
+      <SkeletonButton label="Manage products" />
+      <SkeletonButton variant="ghost" label="Unpublish" />
+    </div>
+  </div>
+);
+
 export const CollectionsPage = () => {
-  const queryClient = useQueryClient();
   const { data: collections, isLoading } = useQuery({
-    queryKey: ["admin-collections"],
+    queryKey: COLLECTIONS_QUERY_KEY,
     queryFn: collectionsApi.list,
   });
 
@@ -36,7 +57,7 @@ export const CollectionsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [managingId, setManagingId] = useState<string | null>(null);
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () =>
       collectionsApi.create({
         name,
@@ -45,6 +66,7 @@ export const CollectionsPage = () => {
         imageUrl: imageUrl ?? undefined,
         imageAssetId: imageAssetId ?? undefined,
       }),
+    invalidateKeys: [COLLECTIONS_QUERY_KEY],
     onSuccess: () => {
       setName("");
       setSlug("");
@@ -53,21 +75,20 @@ export const CollectionsPage = () => {
       setImageUrl(null);
       setImageAssetId(null);
       setError(null);
-      queryClient.invalidateQueries({ queryKey: ["admin-collections"] });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const toggleStatus = useMutation({
+  const toggleStatus = useApiMutation({
     mutationFn: (collection: Collection) =>
       collectionsApi.setStatus(
         collection.id,
         collection.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED",
       ),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-collections"] }),
+    invalidateKeys: [COLLECTIONS_QUERY_KEY],
   });
 
-  const setCollectionImage = useMutation({
+  const setCollectionImage = useApiMutation({
     mutationFn: ({
       id,
       imageUrl: url,
@@ -77,7 +98,7 @@ export const CollectionsPage = () => {
       imageUrl: string;
       imageAssetId: string;
     }) => collectionsApi.setImage(id, url, assetId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-collections"] }),
+    invalidateKeys: [COLLECTIONS_QUERY_KEY],
   });
 
   const handleSubmit = (e: FormEvent) => {
@@ -157,9 +178,7 @@ export const CollectionsPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
-          ))}
+          Array.from({ length: 3 }).map((_, index) => <CollectionRowSkeleton key={index} />)}
         {collections?.length === 0 && (
           <p className="text-sm text-muted-foreground">No collections yet.</p>
         )}

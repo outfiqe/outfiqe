@@ -1,6 +1,7 @@
 import { Badge, Button, Skeleton } from "@outfiqe/design-system";
 import { Link } from "@tanstack/react-router";
 
+import { SkeletonBadge } from "@/components/SkeletonControls";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { useInfiniteOrders } from "./hooks/useInfiniteOrders";
@@ -20,6 +21,23 @@ const TABS: OrdersStatusTab[] = [
 ];
 
 const ORDERS_STATUS_FILTER = oneOfFilter<OrdersStatusTab>(TABS, ALL_STATUSES);
+
+const ORDER_ROW_SKELETON_COUNT = 6;
+const ORDER_ROW_CLASS =
+  "flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4";
+
+const OrderRowSkeleton = () => (
+  <div className={ORDER_ROW_CLASS} aria-hidden>
+    <div>
+      <Skeleton className="h-6 w-40" />
+      <Skeleton className="mt-1 h-5 w-72 max-w-full" />
+    </div>
+    <div className="flex shrink-0 gap-1.5">
+      <SkeletonBadge />
+      <SkeletonBadge />
+    </div>
+  </div>
+);
 
 export const OrdersPage = () => {
   const [tab, setTab] = useSearchFilter("status", ORDERS_STATUS_FILTER);
@@ -57,8 +75,8 @@ export const OrdersPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          Array.from({ length: ORDER_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
+            <OrderRowSkeleton key={rowIndex} />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load orders.</p>}
         {!isLoading && orders.length === 0 && (
@@ -83,7 +101,7 @@ export const OrdersPage = () => {
               key={id}
               to="/orders/$orderId"
               params={{ orderId: id }}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:border-foreground"
+              className={`${ORDER_ROW_CLASS} transition-colors hover:border-foreground`}
             >
               <div>
                 <div className="flex items-center gap-2">

@@ -1,7 +1,9 @@
 import { Badge, Button, ProgressBar, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
@@ -32,6 +34,38 @@ const describeAmount = (coupon: Coupon): string => {
   return `Rs. ${(coupon.fixedAmount ?? 0).toLocaleString()} off`;
 };
 
+const COUPON_ROW_SKELETON_COUNT = 3;
+const COUPON_ACTION_LABELS = ["Pause", "Archive", "Edit budget", "Performance"];
+const BUDGET_BAR_EVERY_NTH_ROW = 2;
+
+const CouponRowSkeleton = ({ hasBudget }: { hasBudget: boolean }) => (
+  <div className="space-y-3 rounded-xl border border-border bg-card p-4" aria-hidden>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-6 w-32" />
+          <SkeletonBadge />
+        </div>
+        <Skeleton className="mt-1 h-5 w-64 max-w-full" />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {COUPON_ACTION_LABELS.map((label) => (
+          <SkeletonButton key={label} size="sm" label={label} />
+        ))}
+      </div>
+    </div>
+    {hasBudget && (
+      <div>
+        <div className="mb-1 flex items-center justify-between">
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-4 w-8" />
+        </div>
+        <ProgressBar label="Loading budget" value={0} max={1} />
+      </div>
+    )}
+  </div>
+);
+
 export const CouponsListSection = () => {
   const [tab, setTab] = useSearchFilter("status", COUPON_STATUS_FILTER);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -51,26 +85,24 @@ export const CouponsListSection = () => {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin-coupons"] });
 
-  const updateStatus = useMutation({
+  const updateStatus = useApiMutation({
     mutationFn: ({ id, status }: { id: string; status: CouponStatusValue }) =>
       couponsApi.updateStatus(id, status),
-    onSuccess: invalidate,
+    invalidateKeys: [["admin-coupons"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const approve = useMutation({
+  const approve = useApiMutation({
     mutationFn: (id: string) => couponsApi.approve(id),
-    onSuccess: invalidate,
+    invalidateKeys: [["admin-coupons"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const updateBudget = useMutation({
+  const updateBudget = useApiMutation({
     mutationFn: ({ id, totalBudgetAmount }: { id: string; totalBudgetAmount: number | null }) =>
       couponsApi.updateBudget(id, { totalBudgetAmount, maxRedemptions: null }),
-    onSuccess: () => {
-      invalidate();
-      setBudgetEditCoupon(null);
-    },
+    invalidateKeys: [["admin-coupons"]],
+    onSuccess: () => setBudgetEditCoupon(null),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -108,8 +140,11 @@ export const CouponsListSection = () => {
 
       <div className="mt-4 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          Array.from({ length: COUPON_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
+            <CouponRowSkeleton
+              key={rowIndex}
+              hasBudget={rowIndex % BUDGET_BAR_EVERY_NTH_ROW === 0}
+            />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load coupons.</p>}
         {!isLoading && coupons.length === 0 && (

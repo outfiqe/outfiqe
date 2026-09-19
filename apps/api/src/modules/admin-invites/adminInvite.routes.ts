@@ -3,8 +3,10 @@
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
-import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
-import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
+import {
+  requireCoFounder,
+  requirePlatformNavItem,
+} from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import { adminInviteController } from "./adminInvite.controller.js";
 import { createAdminInviteSchema } from "./adminInvite.schemas.js";
@@ -15,7 +17,7 @@ adminInviteRoutes.use(requireAuth, requirePlatformAccess, requirePlatformNavItem
 
 adminInviteRoutes.post(
   "/",
-  ...requirePlatformRole("platform:team:manage"),
+  ...requireCoFounder,
   validate({ body: createAdminInviteSchema }),
   adminInviteController.create,
 );

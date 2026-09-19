@@ -6,11 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Fragment, useState } from "react";
 import Masonry from "react-masonry-css";
 
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { useIsHydrated } from "@/shared/hooks/useIsHydrated";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
 
 import {
+  ADMIN_LOCKED_EXPLORE_TABS,
+  ADMIN_LOCKED_TAB_TOOLTIP,
   EXPLORE_GRID_BREAKPOINT_COLUMNS,
   EXPLORE_QUERY_PARAM,
   EXPLORE_TAB,
@@ -44,6 +47,7 @@ const Sidebar = dynamic(() => import("./Sidebar").then((m) => m.Sidebar), { ssr:
 
 export const ExploreFeed = () => {
   const { isAuthenticated, isAuthResolved, viewerId, goToSignIn } = useExploreAuthGate();
+  const { isAdmin } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
@@ -56,7 +60,13 @@ export const ExploreFeed = () => {
     setHasJustDismissedForYouHint(true);
   };
 
-  const committedTab = searchParams.get(EXPLORE_QUERY_PARAM.TAB) ?? EXPLORE_TAB.FOR_YOU;
+  const adminLockedTabs: readonly string[] = isAdmin ? ADMIN_LOCKED_EXPLORE_TABS : [];
+  const lockedTabs: readonly string[] = isAuthResolved
+    ? adminLockedTabs
+    : ADMIN_LOCKED_EXPLORE_TABS;
+  const lockedTabTooltip = isAdmin ? ADMIN_LOCKED_TAB_TOOLTIP : undefined;
+  const requestedTab = searchParams.get(EXPLORE_QUERY_PARAM.TAB) ?? EXPLORE_TAB.FOR_YOU;
+  const committedTab = adminLockedTabs.includes(requestedTab) ? EXPLORE_TAB.TRENDING : requestedTab;
   const committedLayout: FeedLayout =
     searchParams.get(EXPLORE_QUERY_PARAM.LAYOUT) === FEED_LAYOUT.LIST
       ? FEED_LAYOUT.LIST
@@ -133,12 +143,26 @@ export const ExploreFeed = () => {
       <HeaderBackdrop />
 
       <div className="lg:hidden">
-        <FeedFilterTabs tab={tab} onChange={setTab} layout={layout} onLayoutChange={setLayout} />
+        <FeedFilterTabs
+          tab={tab}
+          onChange={setTab}
+          layout={layout}
+          onLayoutChange={setLayout}
+          lockedTabs={lockedTabs}
+          lockedTabTooltip={lockedTabTooltip}
+        />
       </div>
       <AddPostButton />
 
       <div className="grid grid-cols-1 gap-9 px-4 pb-16 pt-6 sm:px-6 lg:grid-cols-[224px_1fr_296px]">
-        <ExploreSidebarNav tab={tab} onChange={setTab} layout={layout} onLayoutChange={setLayout} />
+        <ExploreSidebarNav
+          tab={tab}
+          onChange={setTab}
+          layout={layout}
+          onLayoutChange={setLayout}
+          lockedTabs={lockedTabs}
+          lockedTabTooltip={lockedTabTooltip}
+        />
 
         <div>
           {showForYouPersonalizationHint && (

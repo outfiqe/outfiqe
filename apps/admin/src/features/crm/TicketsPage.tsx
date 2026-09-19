@@ -1,11 +1,13 @@
-import { Badge, Button, FormBanner, Input, Modal, Select, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Badge, Button, FormBanner, Input, Modal, Select } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { crmApi } from "./api";
+import { CompactRowSkeleton } from "./CompactRowSkeleton";
 import { CustomerSearchField, type SelectedCustomer } from "./CustomerSearchField";
 import { formatDate } from "./format.utils";
 import { PlanGateBanner } from "./PlanGateBanner";
@@ -27,13 +29,12 @@ const TICKET_STATUS_FILTER = oneOfFilter<TicketStatusValue | typeof NO_STATUS_FI
 );
 
 const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const queryClient = useQueryClient();
   const [type, setType] = useState<TicketTypeValue>("COMPLAINT");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [customer, setCustomer] = useState<SelectedCustomer | null>(null);
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () =>
       crmTicketsApi.createTicket({
         type,
@@ -42,10 +43,8 @@ const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void 
         subjectType: "customer",
         subjectId: customer?.userId ?? "",
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TICKETS_QUERY_KEY });
-      onClose();
-    },
+    invalidateKeys: [TICKETS_QUERY_KEY],
+    onSuccess: () => onClose(),
   });
 
   const submit = (event: FormEvent) => {
@@ -190,7 +189,7 @@ export const TicketsPage = () => {
       </div>
 
       <div className="mt-6 space-y-4">
-        {isLoading && <Skeleton className="h-40 w-full" />}
+        {isLoading && <CompactRowSkeleton hasTrailingBadge />}
         {error && <FormBanner>{getErrorMessage(error)}</FormBanner>}
 
         {tickets && tickets.length === 0 && (

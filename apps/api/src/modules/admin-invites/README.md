@@ -2,25 +2,61 @@
 
 ## Purpose
 
-Lets an existing platform staffer invite someone new into the admin dashboard by email, and lists the invites sent so far. Registration itself (accepting the invite and creating the account) lives in the `auth` module, not here.
+Lets a co-founder invite someone new into the admin dashboard by email, on a specific platform
+role, and lists the invites sent so far. Registration itself (accepting the invite and creating the
+account) lives in the `auth` module, not here; the role catalog itself lives in `platform-roles`.
 
 ## Structure
 
 - `adminInvite.routes.ts` — `POST /api/admin/invites` (send an invite), `GET /api/admin/invites` (list sent invites).
 - `adminInvite.controller.ts` — reads the validated body/principal, calls the service, sends the response.
-- `adminInvite.service.ts` — creates the invite record, emails the invite link, rejects an email that already has an account.
-- `adminInvite.repository.ts` — Prisma access for `AdminInvite`, plus the co-founder lookup `list` uses to flag rows.
-- `adminInvite.types.ts` — `AdminInviteRecord`, `CreateAdminInviteInput`, `AdminInviteSummary`, `AdminInviteStatus`, `AdminInviteListResult`.
-- `adminInvite.schemas.ts` — Zod body schema for `POST /`.
-- `adminInvite.utils.ts` — `toSummary`, mapping a record + co-founder flag to the list response shape.
+- `adminInvite.service.ts` — validates the chosen role exists in the platform org, creates the invite record, emails the invite link, rejects an email that already has an account or already has a pending invite.
+- `adminInvite.repository.ts` — Prisma access for `AdminInvite`, the co-founder lookup `list` uses to flag rows, `findPendingByEmail` (blocks a duplicate pending invite), and `countPendingByRoleId` (used by `platform-roles` to block deleting a role still referenced by an unaccepted invite).
+- `adminInvite.types.ts` — `AdminInviteRecord`, `AdminInviteWithRoleName`, `CreateAdminInviteInput`, `AdminInviteSummary`, `AdminInviteStatus`, `AdminInviteListResult`.
+- `adminInvite.schemas.ts` — Zod body schema for `POST /`, including the required `roleId`.
+- `adminInvite.utils.ts` — `toSummary`, mapping a record + role name + co-founder flag to the list response shape.
 
 ## Funnel
 
-**User-facing:** a platform staffer with team-management access opens the admin Team page, enters an email and name, and sends the invite. The invitee gets an email with a registration link; opening it and setting a password (handled by `auth`) creates their admin account. The Team page also lists every invite sent, its status (pending/accepted/expired), and whether it belongs to one of the platform's co-founders.
+**User-facing:** a co-founder opens the admin Team page, enters an email and name, picks a platform
+role from the same list `platform-roles` manages, and sends the invite. The invitee gets an email
+with a registration link; opening it and setting a password (handled by `auth`) creates their admin
+account already enrolled on that exact role — not on a default. The Team page also lists every
+invite sent, its status (pending/accepted/expired), which role it grants, and whether it belongs to
+one of the platform's co-founders.
 
-**Technical:** `adminInviteRoutes` → `adminInviteController.create`/`list` → `adminInviteService` → `adminInviteRepository` → Postgres via Prisma. `create` also calls `userRepository` (reject if the email already has an account) and `sendEmail` (best-effort; a delivery failure is logged, not thrown, so the invite record still exists even if the email didn't send). `list` also calls `platformAccessService.permissionKeysFor` and returns the caller's own platform permission keys alongside the invites, so the admin frontend can decide whether to show the invite form (`apps/admin/src/features/team`) without a separate "my permissions" endpoint. Acceptance is handled entirely by `auth.service.ts`, which reads the invite by hashed token and marks it accepted inside the same transaction that creates the user.
+**Technical:** `adminInviteRoutes` → `adminInviteController.create`/`list` → `adminInviteService` →
+`adminInviteRepository` → Postgres via Prisma. `create` also calls `userRepository` (reject if the
+email already has an account, `409 USER_EXISTS`), `adminInviteRepository.findPendingByEmail`
+(reject if that email already has an unaccepted, unexpired invite, `409 INVITE_ALREADY_PENDING` —
+an expired invite doesn't block a fresh one), `crmAccessRepository` (resolve the platform org and
+confirm the role belongs to it — `404 ROLE_NOT_FOUND` otherwise), and `sendEmail` (best-effort; a
+delivery failure is logged, not thrown, so the invite record still exists even if the email didn't
+send). `list` also calls `platformAccessService.permissionKeysFor` and returns the caller's own
+platform permission keys alongside the invites. Acceptance is handled entirely by `auth.service.ts`,
+which reads the invite by hashed token, marks it accepted, and grants a platform-org `Membership` on
+the invite's `roleId` (via `crmAccessService.grantPlatformStaffMembership`) inside the same
+transaction that creates the user.
 
 ## Non-obvious rationale
 
-- `POST /` requires the fine-grained `platform:team:manage` permission (via `requirePlatformRole`), on top of the router-level `requirePlatformAccess` + `requirePlatformNavItem("team")` gate that already covers both routes. Without it, any platform staffer with dashboard access at all — regardless of their assigned role's permissions — could create new admin accounts, which is a privilege-escalation path (invite yourself in with a more powerful role, or invite an outside collaborator). `GET /` stays behind the router-level gate only: listing pending invites doesn't grant anything, so it isn't worth requiring the extra permission.
-- The built-in platform Admin role gets every `PLATFORM_PERMISSION_CATALOG` key, including `platform:team:manage`, automatically on every deploy (`prisma/seed-crm.ts`) — so this gate doesn't lock out existing admins, it only starts mattering for a custom, narrower role.
+- `POST /` requires `requireCoFounder`, not the delegable `platform:team:manage` permission it used
+  before roles existed. Once an invite carries a role, sending one is itself a privilege grant — a
+  role that holds `platform:team:manage` must never be able to invite someone onto an even more
+  powerful role, which only a fixed, capped co-founder set (not a permission key) can guarantee.
+  `GET /` stays behind the router-level `requirePlatformAccess` + `requirePlatformNavItem("team")`
+  gate only: listing pending invites doesn't grant anything.
+- The built-in platform "Admin" role still gets every `PLATFORM_PERMISSION_CATALOG` key
+  automatically on every deploy (`prisma/seed-crm.ts`) and remains a selectable option when
+  inviting — for when a co-founder deliberately wants to grant someone full access. It's just no
+  longer the _only_ option, or the silent default.
+- **The `add_admin_invite_role` migration backfills every existing invite onto the platform org's
+  built-in "Admin" role before making `role_id` `NOT NULL`.** Invites already in flight were sent
+  under the old rule where every new admin got full access, so they keep exactly that behavior; only
+  invites created after this change carry an explicitly chosen role. On an empty database the
+  backfill touches zero rows and the constraint applies cleanly.
+- **`findPendingByEmail` mirrors `crm-access`'s `findPendingInviteByEmail` / `INVITE_ALREADY_PENDING`
+  exactly** — same check, same error code, same message — so a co-founder can't fire off two invite
+  emails (two live tokens) to the same address before either is used. Only unexpired,
+  not-yet-accepted invites count; once an invite expires, that email is free to be re-invited
+  without waiting on anything.

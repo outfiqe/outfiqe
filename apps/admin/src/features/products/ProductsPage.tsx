@@ -1,6 +1,6 @@
 import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
 import { THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
@@ -21,10 +21,24 @@ const STATUS_TONE: Record<ProductStatusValue, "neutral" | "positive" | "negative
   REJECTED: "negative",
 };
 
+const PRODUCT_ROW_SKELETON_COUNT = 6;
+const PRODUCT_ROW_CLASS =
+  "flex flex-wrap items-start gap-4 rounded-xl border border-border bg-card p-4";
+
+const ProductRowSkeleton = () => (
+  <div className={PRODUCT_ROW_CLASS} aria-hidden>
+    <Skeleton className="size-16 shrink-0 rounded-lg" />
+    <div className="flex-1">
+      <Skeleton className="h-6 w-48" />
+      <Skeleton className="mt-1 h-5 w-40" />
+      <Skeleton className="mt-1 h-5 w-56" />
+    </div>
+  </div>
+);
+
 export const ProductsPage = () => {
   const [tab, setTab] = useSearchFilter("status", PRODUCTS_STATUS_FILTER);
   const [thriftFilter, setThriftFilter] = useSearchFilter("thrift", PRODUCTS_THRIFT_FILTER);
-  const queryClient = useQueryClient();
 
   const {
     data: productsQuery,
@@ -36,15 +50,15 @@ export const ProductsPage = () => {
   } = useInfiniteProducts(tab, thriftFilter === "thrift" ? true : undefined);
   const products = productsQuery?.pages.flatMap((page) => page.products) ?? [];
 
-  const approve = useMutation({
+  const approve = useApiMutation({
     mutationFn: (id: string) => productsApi.approve(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    invalidateKeys: [["products"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const reject = useMutation({
+  const reject = useApiMutation({
     mutationFn: (id: string) => productsApi.reject(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    invalidateKeys: [["products"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -85,8 +99,8 @@ export const ProductsPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+          Array.from({ length: PRODUCT_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
+            <ProductRowSkeleton key={rowIndex} />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load products.</p>}
         {!isLoading && products.length === 0 && (
@@ -110,10 +124,7 @@ export const ProductsPage = () => {
           } = product;
 
           return (
-            <div
-              key={id}
-              className="flex flex-wrap items-start gap-4 rounded-xl border border-border bg-card p-4"
-            >
+            <div key={id} className={PRODUCT_ROW_CLASS}>
               {imageUrl ? (
                 <img src={imageUrl} alt="" className="size-16 shrink-0 rounded-lg object-cover" />
               ) : (

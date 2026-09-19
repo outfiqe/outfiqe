@@ -31,7 +31,7 @@ describe("EditPostModal", () => {
     expect(container.querySelector('[role="dialog"]')).not.toBeInTheDocument();
   });
 
-  it("shows a loading skeleton before the look detail arrives", () => {
+  it("shows a loading skeleton before the look detail arrives", async () => {
     mswServer.use(
       http.get("/api/creator-looks/look-1", async () => {
         await new Promise((resolve) => setTimeout(resolve, 50));
@@ -53,6 +53,8 @@ describe("EditPostModal", () => {
 
     expect(screen.getByRole("dialog", { name: "Edit post" })).toBeInTheDocument();
     expect(screen.queryByText(/Editing look-1/)).not.toBeInTheDocument();
+
+    expect(await screen.findByText(/Editing look-1/)).toBeInTheDocument();
   });
 
   it("mounts the edit form once the look detail has loaded", async () => {

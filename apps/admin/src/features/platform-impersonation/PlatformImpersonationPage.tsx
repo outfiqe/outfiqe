@@ -1,7 +1,9 @@
-import { Button, FormBanner, Input, Select, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, FormBanner, Input, Select, toast } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformMetricsApi } from "../platform-metrics/api";
@@ -70,8 +72,18 @@ const SessionTable = ({
   </div>
 );
 
+const SESSION_TABLE_HEADERS = [
+  "Tenant",
+  "Acting as",
+  "Staff",
+  "Scope",
+  "Started",
+  "Expires",
+  "State",
+];
+const ACTIVE_SESSION_TABLE_HEADERS = [...SESSION_TABLE_HEADERS, "Actions"];
+
 export const PlatformImpersonationPage = () => {
-  const queryClient = useQueryClient();
   const [organizationId, setOrganizationId] = useState("");
   const [targetUserId, setTargetUserId] = useState("");
   const [reason, setReason] = useState("");
@@ -101,12 +113,9 @@ export const PlatformImpersonationPage = () => {
     queryFn: () => platformImpersonationApi.listHistory(),
   });
 
-  const refreshSessions = () => {
-    queryClient.invalidateQueries({ queryKey: ACTIVE_SESSIONS_QUERY_KEY });
-    queryClient.invalidateQueries({ queryKey: HISTORY_QUERY_KEY });
-  };
+  const IMPERSONATION_INVALIDATE_KEYS = [ACTIVE_SESSIONS_QUERY_KEY, HISTORY_QUERY_KEY];
 
-  const startSession = useMutation({
+  const startSession = useApiMutation({
     mutationFn: () =>
       platformImpersonationApi.start({
         organizationId,
@@ -115,22 +124,20 @@ export const PlatformImpersonationPage = () => {
         scope,
         ttlMinutes: ttlMinutes ? Number(ttlMinutes) : undefined,
       }),
+    invalidateKeys: IMPERSONATION_INVALIDATE_KEYS,
     onSuccess: (result) => {
       setLastResult(result);
       setTokenRevealed(false);
       setReason("");
-      refreshSessions();
       toast.success("Impersonation session started.");
     },
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const revokeSession = useMutation({
+  const revokeSession = useApiMutation({
     mutationFn: (sessionId: string) => platformImpersonationApi.revoke(sessionId),
-    onSuccess: () => {
-      refreshSessions();
-      toast.success("Session revoked.");
-    },
+    invalidateKeys: IMPERSONATION_INVALIDATE_KEYS,
+    onSuccess: () => toast.success("Session revoked."),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -286,7 +293,7 @@ export const PlatformImpersonationPage = () => {
       <section className="mt-10">
         <h2 className="font-display text-lg font-semibold text-foreground">Active sessions</h2>
         <div className="mt-3">
-          {activeSessions.isLoading && <Skeleton className="h-24 w-full" />}
+          {activeSessions.isLoading && <TableSkeleton headers={ACTIVE_SESSION_TABLE_HEADERS} />}
           {activeSessions.error && <FormBanner>{getErrorMessage(activeSessions.error)}</FormBanner>}
           {activeSessions.data && activeSessions.data.length === 0 && (
             <p className="text-sm text-muted-foreground">No active impersonation sessions.</p>
@@ -304,7 +311,7 @@ export const PlatformImpersonationPage = () => {
       <section className="mt-10">
         <h2 className="font-display text-lg font-semibold text-foreground">Recent history</h2>
         <div className="mt-3">
-          {history.isLoading && <Skeleton className="h-24 w-full" />}
+          {history.isLoading && <TableSkeleton headers={SESSION_TABLE_HEADERS} />}
           {history.error && <FormBanner>{getErrorMessage(history.error)}</FormBanner>}
           {history.data && history.data.length === 0 && (
             <p className="text-sm text-muted-foreground">Nothing recorded yet.</p>

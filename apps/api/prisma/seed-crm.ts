@@ -224,12 +224,12 @@ async function seedPlatformCoFounders(organizationId: string) {
 }
 
 async function seedPlatformStaffMemberships(organizationId: string) {
-  const adminRole = await prisma.role.findFirst({
-    where: { organizationId, name: BUILT_IN_ROLE_NAME.ADMIN },
+  const memberRole = await prisma.role.findFirst({
+    where: { organizationId, name: BUILT_IN_ROLE_NAME.MEMBER },
   });
-  if (!adminRole) {
+  if (!memberRole) {
     console.warn(
-      "Skipping platform staff membership backfill — built-in Admin role wasn't seeded yet.",
+      "Skipping platform staff membership backfill — built-in Member role wasn't seeded yet.",
     );
     return;
   }
@@ -242,7 +242,7 @@ async function seedPlatformStaffMemberships(organizationId: string) {
     await prisma.membership.upsert({
       where: { userId_organizationId: { userId: admin.id, organizationId } },
       update: {},
-      create: { userId: admin.id, organizationId, roleId: adminRole.id, status: "ACTIVE" },
+      create: { userId: admin.id, organizationId, roleId: memberRole.id, status: "ACTIVE" },
     });
   }
 }

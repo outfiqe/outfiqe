@@ -1,8 +1,9 @@
-import { Button, FormBanner, Select, Skeleton } from "@outfiqe/design-system";
+import { Button, FormBanner, Select, StatCardSkeleton } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformMetricsApi } from "./api";
@@ -21,6 +22,17 @@ const StatCard = ({ label, value }: { label: string; value: number }) => (
     <p className="mt-1 font-display text-2xl font-bold text-foreground">{compactNumber(value)}</p>
   </div>
 );
+
+const OVERVIEW_STAT_COUNT = 6;
+const TENANT_TABLE_HEADERS = [
+  "Tenant",
+  "Plan",
+  "Members",
+  "Contacts",
+  "Deals",
+  "Tickets",
+  "Last activity",
+];
 
 export const PlatformMetricsPage = () => {
   const [planFilter, setPlanFilter] = useState("");
@@ -53,7 +65,17 @@ export const PlatformMetricsPage = () => {
       </p>
 
       <div className="mt-6">
-        {overview.isLoading && <Skeleton className="h-24 w-full" />}
+        {overview.isLoading && (
+          <div
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
+            role="status"
+            aria-label="Loading"
+          >
+            {Array.from({ length: OVERVIEW_STAT_COUNT }, (_unused, statIndex) => (
+              <StatCardSkeleton key={statIndex} />
+            ))}
+          </div>
+        )}
         {overview.error && <FormBanner>{getErrorMessage(overview.error)}</FormBanner>}
         {overview.data && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -97,7 +119,7 @@ export const PlatformMetricsPage = () => {
       </div>
 
       <div className="mt-4">
-        {tenants.isLoading && <Skeleton className="h-40 w-full" />}
+        {tenants.isLoading && <TableSkeleton headers={TENANT_TABLE_HEADERS} />}
         {tenants.error && <FormBanner>{getErrorMessage(tenants.error)}</FormBanner>}
         {tenants.data && tenants.data.items.length === 0 && (
           <p className="text-sm text-muted-foreground">No tenants match this filter.</p>

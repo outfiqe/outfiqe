@@ -1,8 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { EXPLORE_TAB, FEED_LAYOUT } from "../explore.constants";
+import { ADMIN_LOCKED_TAB_TOOLTIP, EXPLORE_TAB, FEED_LAYOUT } from "../explore.constants";
 import { useTrendingTags } from "../hooks/useTrendingTags";
 import { FeedFilterTabs } from "./FeedFilterTabs";
 
@@ -73,6 +73,48 @@ describe("FeedFilterTabs", () => {
     expect(onChange).toHaveBeenNthCalledWith(1, EXPLORE_TAB.TRENDING);
     expect(onChange).toHaveBeenNthCalledWith(2, "denim");
     expect(onLayoutChange).toHaveBeenCalledWith(FEED_LAYOUT.LIST);
+  });
+
+  it("keeps locked tabs visible but inert and explains why on hover", async () => {
+    mockTrendingTags({ data: [] });
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+
+    renderTabs({
+      onChange,
+      tab: EXPLORE_TAB.TRENDING,
+      lockedTabs: [EXPLORE_TAB.FOR_YOU, EXPLORE_TAB.FOLLOWING],
+      lockedTabTooltip: ADMIN_LOCKED_TAB_TOOLTIP,
+    });
+
+    const forYouTab = screen.getByRole("button", { name: "For you" });
+    expect(forYouTab).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("button", { name: "Following" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Trending" })).not.toHaveAttribute("aria-disabled");
+
+    await user.click(forYouTab);
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.focus(forYouTab);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(ADMIN_LOCKED_TAB_TOOLTIP);
+  });
+
+  it("keeps locked tabs inert without a tooltip while no explanation is given", async () => {
+    mockTrendingTags({ data: [] });
+    const onChange = vi.fn();
+
+    renderTabs({ onChange, lockedTabs: [EXPLORE_TAB.FOR_YOU] });
+
+    const forYouTab = screen.getByRole("button", { name: "For you" });
+    await userEvent.click(forYouTab);
+    fireEvent.focus(forYouTab);
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(forYouTab).toHaveAttribute("aria-disabled", "true");
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 
   it("marks the active fixed tab and layout as pressed", () => {

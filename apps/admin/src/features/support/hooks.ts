@@ -1,6 +1,6 @@
 import { toast } from "@outfiqe/design-system";
-import { useInfiniteCursorPage } from "@outfiqe/hooks";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation, useInfiniteCursorPage } from "@outfiqe/hooks";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -35,12 +35,11 @@ const useTicketMutation = <TArgs>(
   successMessage: string,
 ) => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useApiMutation({
     mutationFn,
+    invalidateKeys: [[INBOX_KEY], STATS_KEY],
     onSuccess: (ticket) => {
       queryClient.setQueryData([TICKET_KEY, id], ticket);
-      void queryClient.invalidateQueries({ queryKey: [INBOX_KEY] });
-      void queryClient.invalidateQueries({ queryKey: STATS_KEY });
       toast.success(successMessage);
     },
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),

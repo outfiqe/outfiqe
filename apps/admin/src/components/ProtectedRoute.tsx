@@ -23,9 +23,5 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
   if (status === "signed-in") return <>{children}</>;
 
-  return (
-    <div className="flex min-h-dvh items-center justify-center text-sm text-muted-foreground">
-      {status === "loading" ? "Loading…" : "Redirecting to sign in…"}
-    </div>
-  );
+  return null;
 };

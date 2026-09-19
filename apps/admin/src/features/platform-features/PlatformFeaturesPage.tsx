@@ -1,7 +1,9 @@
-import { Button, FormBanner, Select, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, FormBanner, Select } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformMetricsApi } from "../platform-metrics/api";
@@ -13,8 +15,9 @@ const SOURCE_LABEL: Record<string, string> = {
   default: "Registry default",
 };
 
+const FEATURE_TABLE_HEADERS = ["Feature", "State", "Source", "Actions"];
+
 export const PlatformFeaturesPage = () => {
-  const queryClient = useQueryClient();
   const [orgId, setOrgId] = useState("");
 
   const tenants = useQuery({
@@ -33,15 +36,14 @@ export const PlatformFeaturesPage = () => {
     enabled: orgId !== "",
   });
 
-  const mutate = useMutation({
+  const mutate = useApiMutation({
     mutationFn: (
       action: { key: string; kind: "set"; enabled: boolean } | { key: string; kind: "clear" },
     ) =>
       action.kind === "set"
         ? platformFeaturesApi.setOverride(orgId, action.key, action.enabled)
         : platformFeaturesApi.clearOverride(orgId, action.key),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["platform-features-resolved", orgId] }),
+    invalidateKeys: [["platform-features-resolved", orgId]],
   });
 
   const labelByKey = new Map(
@@ -79,7 +81,7 @@ export const PlatformFeaturesPage = () => {
         {orgId === "" && (
           <p className="text-sm text-muted-foreground">Pick a tenant to see its features.</p>
         )}
-        {orgId !== "" && resolved.isLoading && <Skeleton className="h-40 w-full" />}
+        {orgId !== "" && resolved.isLoading && <TableSkeleton headers={FEATURE_TABLE_HEADERS} />}
         {resolved.error && <FormBanner>{getErrorMessage(resolved.error)}</FormBanner>}
 
         {resolved.data && (

@@ -2,6 +2,7 @@ import { Badge, Button, Input, Select, Skeleton } from "@outfiqe/design-system";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
+import { SkeletonBadge } from "@/components/SkeletonControls";
 import { useAuth } from "@/features/auth/AuthContext";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
@@ -42,6 +43,22 @@ const StatCard = ({ label, value }: { label: string; value: string | number }) =
   <div className="rounded-xl border border-border bg-card px-4 py-3">
     <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
     <p className="mt-1 font-display text-xl font-bold text-foreground">{value}</p>
+  </div>
+);
+
+const TICKET_ROW_SKELETON_COUNT = 6;
+const TICKET_ROW_CLASS = "block rounded-xl border border-border bg-card p-4";
+
+const TicketRowSkeleton = () => (
+  <div className={TICKET_ROW_CLASS} aria-hidden>
+    <div className="flex flex-wrap items-center gap-2">
+      <Skeleton className="h-4 w-20" />
+      <SkeletonBadge />
+      <SkeletonBadge />
+      <Skeleton className="h-4 w-16" />
+    </div>
+    <Skeleton className="mt-1.5 h-6 w-72 max-w-full" />
+    <Skeleton className="mt-1 h-5 w-64 max-w-full" />
   </div>
 );
 
@@ -142,8 +159,8 @@ export const SupportInboxPage = () => {
 
       <div className="space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          Array.from({ length: TICKET_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
+            <TicketRowSkeleton key={rowIndex} />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load support requests.</p>}
         {!isLoading && tickets.length === 0 && (

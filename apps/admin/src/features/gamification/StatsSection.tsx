@@ -1,4 +1,4 @@
-import { Skeleton } from "@outfiqe/design-system";
+import { StatCardSkeleton } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 
 import { StatCard } from "@/features/trending/TrendStatCards";
@@ -25,7 +25,7 @@ export const StatsSection = () => {
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {isLoading ? (
           Array.from({ length: OVERVIEW_STAT_COUNT }).map((_, index) => (
-            <Skeleton key={index} className="h-[88px] rounded-xl" />
+            <StatCardSkeleton key={index} />
           ))
         ) : (
           <>

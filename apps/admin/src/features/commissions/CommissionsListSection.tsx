@@ -1,7 +1,8 @@
-import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Badge, Button, toast } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
 import { useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
@@ -30,7 +31,6 @@ const SOURCE_LABEL: Record<string, string> = {
 export const CommissionsListSection = () => {
   const [tab, setTab] = useSearchFilter("status", COMMISSIONS_STATUS_FILTER);
   const [voidTargetId, setVoidTargetId] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
   const {
     data: commissionsQuery,
@@ -42,26 +42,24 @@ export const CommissionsListSection = () => {
   } = useInfiniteCommissions(tab);
   const commissions = commissionsQuery?.pages.flatMap((page) => page.items) ?? [];
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["commissions"] });
+  const COMMISSIONS_QUERY_KEY = ["commissions"];
 
-  const approve = useMutation({
+  const approve = useApiMutation({
     mutationFn: (id: string) => commissionsApi.approve(id),
-    onSuccess: invalidate,
+    invalidateKeys: [COMMISSIONS_QUERY_KEY],
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
-  const voidCommission = useMutation({
+  const voidCommission = useApiMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) => commissionsApi.void(id, reason),
-    onSuccess: () => {
-      invalidate();
-      setVoidTargetId(null);
-    },
+    invalidateKeys: [COMMISSIONS_QUERY_KEY],
+    onSuccess: () => setVoidTargetId(null),
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
-  const markPaid = useMutation({
+  const markPaid = useApiMutation({
     mutationFn: (id: string) => commissionsApi.markPaid(id),
-    onSuccess: invalidate,
+    invalidateKeys: [COMMISSIONS_QUERY_KEY],
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
@@ -90,7 +88,7 @@ export const CommissionsListSection = () => {
       <div className="mt-4 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+            <CardRowSkeleton key={index} textLineCount={2} actionCount={2} />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load commissions.</p>}
         {!isLoading && commissions.length === 0 && (

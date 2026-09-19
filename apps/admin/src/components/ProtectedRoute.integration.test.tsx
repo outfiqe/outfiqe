@@ -1,5 +1,5 @@
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
@@ -56,11 +56,11 @@ const renderProtected = () =>
   );
 
 describe("ProtectedRoute", () => {
-  it("shows a loading state while the session is still being restored", () => {
+  it("renders nothing while the session is still being restored, leaving the page loader in place", () => {
     mockRestoredAdminSession();
-    renderProtected();
+    const { container } = renderProtected();
 
-    expect(screen.getByText("Loading…")).toBeInTheDocument();
+    expect(container).toBeEmptyDOMElement();
     expect(screen.queryByText("protected dashboard")).not.toBeInTheDocument();
   });
 
@@ -71,11 +71,11 @@ describe("ProtectedRoute", () => {
     expect(await screen.findByText("protected dashboard")).toBeInTheDocument();
   });
 
-  it("withholds the content and shows the redirect notice when there is no session", async () => {
+  it("withholds the content when there is no session", async () => {
     mockNoSession();
-    renderProtected();
+    const { container } = renderProtected();
 
-    expect(await screen.findByText("Redirecting to sign in…")).toBeInTheDocument();
+    await waitFor(() => expect(container).toBeEmptyDOMElement());
     expect(screen.queryByText("protected dashboard")).not.toBeInTheDocument();
   });
 });

@@ -41,7 +41,7 @@ describe("LeaderboardSection", () => {
 
     const { container } = render(<LeaderboardSection />, { wrapper });
 
-    expect(container.querySelectorAll(".animate-pulse")).toHaveLength(5);
+    expect(container.querySelectorAll(".rounded-xl.border")).toHaveLength(5);
   });
 
   it("renders a labelled toggle per category once loaded", async () => {

@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { CrmSearchBox } from "@/features/crm/CrmSearchBox";
 import { ImpersonationActivityBanner } from "@/features/crm/ImpersonationActivityBanner";
 import { AdminNotificationBell } from "@/features/notifications";
+import { useHideBootLoader } from "@/lib/bootLoader";
 
 import { AccountMenu } from "./AccountMenu";
 import { AdminSidebar } from "./AdminSidebar";
@@ -15,6 +16,7 @@ const isCrmAreaPath = (pathname: string) =>
   pathname.startsWith("/crm") && !pathname.startsWith("/crm/invites/accept");
 
 export const AppShell = ({ children }: { children: ReactNode }) => {
+  useHideBootLoader();
   const pathname = useRouterState({ select: (routerState) => routerState.location.pathname });
   const inCrmArea = isCrmAreaPath(pathname);
 

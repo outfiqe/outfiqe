@@ -1,9 +1,10 @@
 import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
+import { SkeletonBadge } from "@/components/SkeletonControls";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -24,31 +25,76 @@ type OrderDetailPageProps = {
   orderId: string;
 };
 
+const ORDER_ITEM_SKELETON_COUNT = 2;
+const ORDER_TOTALS_SKELETON_COUNT = 4;
+const ORDER_BUYER_SKELETON_COUNT = 3;
+const ORDER_CARD_CLASS = "rounded-xl border border-border bg-card p-4";
+
+const OrderDetailSkeleton = () => (
+  <div role="status" aria-label="Loading">
+    <Skeleton className="h-5 w-16" />
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <Skeleton className="h-8 w-72 max-w-full" />
+        <Skeleton className="mt-1 h-5 w-48" />
+      </div>
+      <div className="flex gap-1.5">
+        <SkeletonBadge />
+        <SkeletonBadge />
+      </div>
+    </div>
+
+    <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      <div className={ORDER_CARD_CLASS}>
+        <h2 className="font-display text-sm font-bold text-foreground">Buyer</h2>
+        <div className="mt-2 space-y-1">
+          {Array.from({ length: ORDER_BUYER_SKELETON_COUNT }, (_unused, lineIndex) => (
+            <Skeleton key={lineIndex} className="h-5 w-56 max-w-full" />
+          ))}
+        </div>
+      </div>
+      <div className={ORDER_CARD_CLASS}>
+        <h2 className="font-display text-sm font-bold text-foreground">Totals</h2>
+        <div className="mt-2 space-y-1">
+          {Array.from({ length: ORDER_TOTALS_SKELETON_COUNT }, (_unused, rowIndex) => (
+            <div key={rowIndex} className="flex justify-between gap-3">
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-5 w-20" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <div className={`mt-4 ${ORDER_CARD_CLASS}`}>
+      <h2 className="font-display text-sm font-bold text-foreground">Items</h2>
+      <div className="mt-2 space-y-2">
+        {Array.from({ length: ORDER_ITEM_SKELETON_COUNT }, (_unused, itemIndex) => (
+          <Skeleton key={itemIndex} className="h-12 w-full rounded-lg" />
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
-  const queryClient = useQueryClient();
   const { data: order, isLoading, error } = useOrder(orderId);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
-  const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
-  };
-
-  const advance = useMutation({
+  const advance = useApiMutation({
     mutationFn: (status: FulfilmentStatusValue) => ordersApi.advanceFulfilment(orderId, status),
-    onSuccess: invalidate,
+    invalidateKeys: [["admin-orders"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const cancel = useMutation({
+  const cancel = useApiMutation({
     mutationFn: (reason: string) => ordersApi.cancel(orderId, reason),
-    onSuccess: () => {
-      invalidate();
-      setIsCancelModalOpen(false);
-    },
+    invalidateKeys: [["admin-orders"]],
+    onSuccess: () => setIsCancelModalOpen(false),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  if (isLoading) return <Skeleton className="h-64 w-full rounded-xl" />;
+  if (isLoading) return <OrderDetailSkeleton />;
   if (error || !order) return <p className="text-sm text-destructive">Couldn&apos;t load order.</p>;
 
   const {

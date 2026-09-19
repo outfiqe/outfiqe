@@ -1,8 +1,11 @@
 import { Badge, Button, FormBanner, Input, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { ImageUpload } from "@/components/ImageUpload";
+import { ImageUploadSkeleton } from "@/components/ImageUploadSkeleton";
+import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { heroSlidesApi } from "./api";
@@ -13,10 +16,28 @@ const STATUS_TONE: Record<HeroSlideStatusValue, "neutral" | "positive"> = {
   PUBLISHED: "positive",
 };
 
+const HERO_SLIDES_QUERY_KEY = ["admin-hero-slides"];
+
+const HeroSlideRowSkeleton = () => (
+  <div
+    className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4"
+    aria-hidden
+  >
+    <ImageUploadSkeleton />
+    <div className="min-w-0 flex-1">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-6 w-40" />
+        <SkeletonBadge />
+      </div>
+      <Skeleton className="mt-1 h-5 w-72 max-w-full" />
+    </div>
+    <SkeletonButton variant="ghost" label="Unpublish" />
+  </div>
+);
+
 export const HeroSlidesPage = () => {
-  const queryClient = useQueryClient();
   const { data: heroSlides, isLoading } = useQuery({
-    queryKey: ["admin-hero-slides"],
+    queryKey: HERO_SLIDES_QUERY_KEY,
     queryFn: heroSlidesApi.list,
   });
 
@@ -29,7 +50,7 @@ export const HeroSlidesPage = () => {
   const [imageAssetId, setImageAssetId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () =>
       heroSlidesApi.create({
         tag,
@@ -40,6 +61,7 @@ export const HeroSlidesPage = () => {
         imageUrl: imageUrl ?? undefined,
         imageAssetId: imageAssetId ?? undefined,
       }),
+    invalidateKeys: [HERO_SLIDES_QUERY_KEY],
     onSuccess: () => {
       setTag("");
       setTitle("");
@@ -49,19 +71,18 @@ export const HeroSlidesPage = () => {
       setImageUrl(null);
       setImageAssetId(null);
       setError(null);
-      queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const toggleStatus = useMutation({
+  const toggleStatus = useApiMutation({
     mutationFn: (slide: HeroSlide) =>
       heroSlidesApi.setStatus(slide.id, slide.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED"),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] }),
+    invalidateKeys: [HERO_SLIDES_QUERY_KEY],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const setSlideImage = useMutation({
+  const setSlideImage = useApiMutation({
     mutationFn: ({
       id,
       imageUrl: url,
@@ -71,7 +92,7 @@ export const HeroSlidesPage = () => {
       imageUrl: string;
       imageAssetId: string;
     }) => heroSlidesApi.setImage(id, url, assetId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-hero-slides"] }),
+    invalidateKeys: [HERO_SLIDES_QUERY_KEY],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -173,9 +194,7 @@ export const HeroSlidesPage = () => {
 
       <div className="mt-6 space-y-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
-          ))}
+          Array.from({ length: 3 }).map((_, index) => <HeroSlideRowSkeleton key={index} />)}
         {heroSlides?.length === 0 && (
           <p className="text-sm text-muted-foreground">No hero slides yet.</p>
         )}

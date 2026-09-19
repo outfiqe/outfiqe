@@ -64,6 +64,22 @@ const renderPage = () => {
 };
 
 describe("PlatformOverviewPage", () => {
+  it("shows a skeleton with the same sections as the loaded page while the overview loads", async () => {
+    mswServer.use(
+      http.get(OVERVIEW_URL, () => new Promise<Response>(() => {})),
+      http.get(TREND_URL, () => HttpResponse.json({ success: true, data: TREND })),
+      http.get(ROLLUP_URL, () => HttpResponse.json({ success: true, data: ROLLUP })),
+    );
+
+    renderPage();
+
+    expect(await screen.findByRole("status", { name: "Loading" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Quick access" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Activity" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Settlement reconciliation" })).toBeInTheDocument();
+    expect(screen.queryByText("Tenants")).not.toBeInTheDocument();
+  });
+
   it("renders totals, the activity chart and the settlement gap", async () => {
     mswServer.use(
       http.get(OVERVIEW_URL, () => HttpResponse.json({ success: true, data: OVERVIEW })),

@@ -1,7 +1,9 @@
 import { Button, FormBanner, Input, Select, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useRef, useState } from "react";
 
+import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { type CreateTierInput, platformCommissionApi } from "./api";
@@ -81,6 +83,29 @@ const validateLadder = (tierRows: TierRowState[]): string | null => {
   return null;
 };
 
+const TIER_ROW_SKELETON_COUNT = 3;
+const TIER_FIELD_SKELETONS = [
+  { label: "Min price (Rs.)", inputClass: "w-28" },
+  { label: "Max price (Rs.)", inputClass: "w-28" },
+  { label: "Fee type", inputClass: "w-32" },
+  { label: "Commission (Rs.)", inputClass: "w-28" },
+];
+
+const TierRowSkeleton = () => (
+  <div
+    className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
+    aria-hidden
+  >
+    {TIER_FIELD_SKELETONS.map(({ label, inputClass }) => (
+      <div key={label} className="space-y-1.5">
+        <label className="block text-xs text-muted-foreground">{label}</label>
+        <Skeleton className={`h-11 rounded-lg ${inputClass}`} />
+      </div>
+    ))}
+    <SkeletonButton variant="ghost" size="sm" label="Remove" />
+  </div>
+);
+
 const TierRowFields = ({
   tierRow,
   onChange,
@@ -157,7 +182,6 @@ const TierRowFields = ({
 );
 
 export const CommissionTiersSection = () => {
-  const queryClient = useQueryClient();
   const nextTierRowKey = useRef(0);
 
   const { data: rules, isLoading } = useQuery({
@@ -174,12 +198,12 @@ export const CommissionTiersSection = () => {
       ? activeRule.tiers.map(tierRowFor)
       : [emptyTierRow("new-0", String(LADDER_FLOOR_PRICE))]);
 
-  const createRule = useMutation({
+  const createRule = useApiMutation({
     mutationFn: (tiers: CreateTierInput[]) => platformCommissionApi.createRule(tiers),
+    invalidateKeys: [RULES_QUERY_KEY],
     onSuccess: (rule) => {
       setTierRows(rule.tiers.map(tierRowFor));
       setError(null);
-      queryClient.invalidateQueries({ queryKey: RULES_QUERY_KEY });
     },
     onError: (mutationError) => setError(getErrorMessage(mutationError)),
   });
@@ -229,7 +253,10 @@ export const CommissionTiersSection = () => {
       )}
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-        {isLoading && <Skeleton className="h-24 w-full rounded-xl" />}
+        {isLoading &&
+          Array.from({ length: TIER_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
+            <TierRowSkeleton key={rowIndex} />
+          ))}
 
         {!isLoading &&
           activeTierRows.map((tierRow) => (

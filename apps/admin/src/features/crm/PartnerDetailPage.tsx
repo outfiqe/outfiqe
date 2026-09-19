@@ -2,6 +2,7 @@ import { FormBanner, Skeleton } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi, Link } from "@tanstack/react-router";
 
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { formatDate, formatRupees } from "./format.utils";
@@ -9,6 +10,27 @@ import { crmRelationshipsApi } from "./relationshipsApi";
 import { TimelineSection } from "./TimelineSection";
 
 const routeApi = getRouteApi("/_authenticated/crm/partners/$creatorId");
+
+const PRODUCT_BREAKDOWN_HEADERS = ["Product", "Tag clicks", "Orders", "Revenue"];
+const PRODUCT_BREAKDOWN_SKELETON_ROW_COUNT = 4;
+
+const PartnerDetailSkeleton = () => (
+  <div className="mt-4 space-y-6">
+    <div>
+      <Skeleton className="h-8 w-56" />
+      <Skeleton className="mt-1 h-5 w-96 max-w-full" />
+    </div>
+    <section>
+      <h2 className="font-display text-base font-bold text-foreground">Per product</h2>
+      <div className="mt-2">
+        <TableSkeleton
+          headers={PRODUCT_BREAKDOWN_HEADERS}
+          rowCount={PRODUCT_BREAKDOWN_SKELETON_ROW_COUNT}
+        />
+      </div>
+    </section>
+  </div>
+);
 
 export const PartnerDetailPage = () => {
   const { creatorId } = routeApi.useParams();
@@ -27,7 +49,7 @@ export const PartnerDetailPage = () => {
         ← Back to partners
       </Link>
 
-      {isLoading && <Skeleton className="mt-4 h-40 w-full" />}
+      {isLoading && <PartnerDetailSkeleton />}
       {error && <FormBanner className="mt-4">{getErrorMessage(error)}</FormBanner>}
 
       {partner && (

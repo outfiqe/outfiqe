@@ -1,8 +1,10 @@
 import { Badge, Button, FormBanner, Input, Modal, Skeleton, toast } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { type DeliveryZoneInput, deliveryZonesApi, type UpdateDeliveryZoneInput } from "./api";
@@ -112,11 +114,11 @@ const EditZoneModal = ({ zone, onClose }: { zone: DeliveryZone; onClose: () => v
   const [form, setForm] = useState<ZoneFormState>(() => formForZone(zone));
   const [error, setError] = useState<string | null>(null);
 
-  const update = useMutation({
+  const update = useApiMutation({
     mutationFn: (input: UpdateDeliveryZoneInput) => deliveryZonesApi.update(zone.id, input),
+    invalidateKeys: [DELIVERY_ZONE_HISTORY_QUERY_KEY],
     onSuccess: (updatedZone) => {
       upsertZoneInCache(queryClient, updatedZone);
-      queryClient.invalidateQueries({ queryKey: DELIVERY_ZONE_HISTORY_QUERY_KEY });
       onClose();
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
@@ -139,6 +141,29 @@ const EditZoneModal = ({ zone, onClose }: { zone: DeliveryZone; onClose: () => v
     </Modal>
   );
 };
+
+const ZONE_CITY_CHIP_COUNT = 3;
+
+const ZoneRowSkeleton = () => (
+  <div className="rounded-xl border border-border bg-card p-4" aria-hidden>
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <Skeleton className="h-6 w-40" />
+        <Skeleton className="mt-1 h-5 w-96 max-w-full" />
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {Array.from({ length: ZONE_CITY_CHIP_COUNT }, (_unused, chipIndex) => (
+            <Skeleton key={chipIndex} className="h-6 w-16 rounded-full" />
+          ))}
+        </div>
+      </div>
+      <div className="flex shrink-0 gap-2">
+        <SkeletonButton size="sm" label="Set as default" />
+        <SkeletonButton size="sm" label="Edit" />
+        <SkeletonButton size="sm" variant="ghost" label="Delete" />
+      </div>
+    </div>
+  </div>
+);
 
 export const DeliveryZonesSection = () => {
   const queryClient = useQueryClient();
@@ -167,12 +192,10 @@ export const DeliveryZonesSection = () => {
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const setDefault = useMutation({
+  const setDefault = useApiMutation({
     mutationFn: (id: string) => deliveryZonesApi.setDefault(id),
-    onSuccess: (updatedZone) => {
-      applyDefaultZoneInCache(queryClient, updatedZone);
-      queryClient.invalidateQueries({ queryKey: DELIVERY_ZONE_HISTORY_QUERY_KEY });
-    },
+    invalidateKeys: [DELIVERY_ZONE_HISTORY_QUERY_KEY],
+    onSuccess: (updatedZone) => applyDefaultZoneInCache(queryClient, updatedZone),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -208,10 +231,7 @@ export const DeliveryZonesSection = () => {
       {error && <FormBanner className="mt-3">{error}</FormBanner>}
 
       <div className="mt-4 space-y-2">
-        {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
-          ))}
+        {isLoading && Array.from({ length: 3 }).map((_, index) => <ZoneRowSkeleton key={index} />)}
 
         {isError && (
           <FormBanner className="flex items-center justify-between gap-3">

@@ -11,10 +11,10 @@ const CREATED_STATUS = 201;
 
 export const adminInviteController = {
   async create(_req: Request, res: Response) {
-    const { email, name } = validated.body<CreateAdminInviteBody>(res);
+    const { email, name, roleId } = validated.body<CreateAdminInviteBody>(res);
     const principal = requireAuthPrincipal(res);
 
-    await adminInviteService.invite(email, name, principal.userId);
+    await adminInviteService.invite(email, name, roleId, principal.userId);
     sendSuccess(res, null, "Invite sent.", CREATED_STATUS);
   },
 

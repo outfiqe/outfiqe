@@ -6,9 +6,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { BankType, BrandRole, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
-import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { redis } from "#redis/redis.client.js";
-import { ensurePlatformOrganizationExists } from "#test/integration/crmFixtures.js";
+import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -42,8 +41,7 @@ const createUser = async (overrides: Partial<{ role: UserRole }> = {}) => {
 
 const createAdmin = async () => {
   const admin = await createUser({ role: UserRole.ADMIN });
-  await ensurePlatformOrganizationExists();
-  await crmAccessService.grantPlatformStaffMembership(admin.id);
+  await grantPlatformStaffMembership(admin.id);
   return admin;
 };
 

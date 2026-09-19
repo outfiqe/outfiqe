@@ -1,5 +1,5 @@
 import { Button, Checkbox, FormBanner, Modal } from "@outfiqe/design-system";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
 import { type FormEvent, useState } from "react";
 
 import type { UpdateChallengeFormInput } from "../api";
@@ -17,7 +17,6 @@ export const EditChallengeModal = ({
   challenge: ChallengeAdmin;
   onClose: () => void;
 }) => {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState<ChallengeFormState>(() => formForChallenge(challenge));
   const [isActive, setIsActive] = useState(challenge.isActive);
   const [achievementIsActive, setAchievementIsActive] = useState(challenge.achievement.isActive);
@@ -25,13 +24,11 @@ export const EditChallengeModal = ({
 
   const formId = `edit-challenge-${challenge.id}-form`;
 
-  const update = useMutation({
+  const update = useApiMutation({
     mutationFn: (input: UpdateChallengeFormInput) =>
       gamificationApi.updateChallenge(challenge.id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: CHALLENGES_QUERY_KEY });
-      onClose();
-    },
+    invalidateKeys: [CHALLENGES_QUERY_KEY],
+    onSuccess: () => onClose(),
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 

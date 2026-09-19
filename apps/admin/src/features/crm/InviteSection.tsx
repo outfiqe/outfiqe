@@ -1,7 +1,9 @@
-import { Badge, Button, FormBanner, Input, Select, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Badge, Button, FormBanner, Input, Select, toast } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
@@ -20,8 +22,6 @@ type InviteSectionProps = {
 };
 
 export const InviteSection = ({ viewerIsSuperAdmin, viewerPermissionKeys }: InviteSectionProps) => {
-  const queryClient = useQueryClient();
-
   const {
     data: invites,
     isLoading,
@@ -40,21 +40,19 @@ export const InviteSection = ({ viewerIsSuperAdmin, viewerPermissionKeys }: Invi
   const [roleId, setRoleId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
-  const invalidateInvites = () => queryClient.invalidateQueries({ queryKey: ["crm-invites"] });
-
-  const invite = useMutation({
+  const invite = useApiMutation({
     mutationFn: () => crmApi.createInvite(email, roleId),
+    invalidateKeys: [["crm-invites"]],
     onSuccess: () => {
       setEmail("");
       setFormError(null);
-      invalidateInvites();
     },
     onError: (mutationError) => setFormError(getErrorMessage(mutationError)),
   });
 
-  const revoke = useMutation({
+  const revoke = useApiMutation({
     mutationFn: (inviteId: string) => crmApi.revokeInvite(inviteId),
-    onSuccess: invalidateInvites,
+    invalidateKeys: [["crm-invites"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -125,7 +123,7 @@ export const InviteSection = ({ viewerIsSuperAdmin, viewerPermissionKeys }: Invi
       <div className="mt-3 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+            <CardRowSkeleton key={index} hasSmallTitle textLineCount={1} actionCount={1} />
           ))}
         {error && <p className="text-sm text-destructive">{getErrorMessage(error)}</p>}
         {!isLoading && !error && invites?.length === 0 && (

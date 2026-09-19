@@ -49,6 +49,41 @@ const Row = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
+const METRIC_CARD_TITLES = [
+  "Brand review latency (submit → decision)",
+  "Time to first shoppable tag (post → live)",
+  "Approval source mix",
+  "Rejection reasons",
+];
+const METRIC_ROW_SKELETON_COUNT = 2;
+
+const RowSkeleton = () => (
+  <div className="flex items-center justify-between gap-3 border-b border-border/60 py-2 text-sm last:border-0">
+    <Skeleton className="h-5 w-40" />
+    <Skeleton className="h-5 w-24" />
+  </div>
+);
+
+const TagReviewMetricsSkeleton = () => (
+  <div className="space-y-6" role="status" aria-label="Loading">
+    <div>
+      <h1 className="font-display text-2xl font-bold text-foreground">Tag reviews</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        How the Brand Tag Review funnel is running across every brand. All-time unless noted.
+      </p>
+    </div>
+    <div className="grid gap-4 md:grid-cols-2">
+      {METRIC_CARD_TITLES.map((title) => (
+        <Card key={title} title={title}>
+          {Array.from({ length: METRIC_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
+            <RowSkeleton key={rowIndex} />
+          ))}
+        </Card>
+      ))}
+    </div>
+  </div>
+);
+
 export const TagReviewMetricsPage = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["tag-review-metrics"],
@@ -56,7 +91,7 @@ export const TagReviewMetricsPage = () => {
   });
 
   if (isLoading) {
-    return <Skeleton className="h-64 w-full rounded-xl" />;
+    return <TagReviewMetricsSkeleton />;
   }
   if (error || !data) {
     return <p className="text-sm text-destructive">Couldn&apos;t load tag review metrics.</p>;
