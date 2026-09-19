@@ -95,6 +95,7 @@ describe("admin ProtectedRoute", () => {
     );
 
     expect(fakeLocation.href).toMatch(/^https?:\/\/[^/]+\/login$/);
+    expect(screen.getByRole("status")).toHaveTextContent("Redirecting to login…");
     expect(screen.queryByText("Secret dashboard")).not.toBeInTheDocument();
   });
 });
