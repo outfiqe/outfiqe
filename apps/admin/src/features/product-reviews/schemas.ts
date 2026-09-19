@@ -24,7 +24,7 @@ export const productReviewSchema = z.object({
   helpfulCount: z.number(),
   createdAt: z.string(),
   author: reviewAuthorSchema,
-  images: z.array(z.string()),
+  images: z.array(z.object({ url: z.string() })),
 });
 export type ProductReview = z.infer<typeof productReviewSchema>;
 

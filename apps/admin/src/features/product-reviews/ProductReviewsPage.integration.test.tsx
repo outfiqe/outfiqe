@@ -52,6 +52,53 @@ const selectProduct = async (user: ReturnType<typeof userEvent.setup>) => {
 };
 
 describe("ProductReviewsPage", () => {
+  it("lists a review that has photos attached", async () => {
+    const user = userEvent.setup();
+    mswServer.use(
+      http.get(`${API_BASE}/products/autocomplete`, () =>
+        HttpResponse.json({ success: true, data: [PRODUCT] }),
+      ),
+      http.get(`${API_BASE}/products/product-1/reviews`, () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            reviews: [
+              {
+                ...REVIEW,
+                images: [{ url: "https://cdn.outfiqe.test/review.jpg", lqip: null, sources: [] }],
+              },
+            ],
+            nextCursor: null,
+          },
+        }),
+      ),
+    );
+
+    render(<ProductReviewsPage />, { wrapper });
+    await user.type(screen.getByPlaceholderText("Search products by name…"), "Everyday");
+    await user.click(await screen.findByText("Everyday Tee"));
+
+    expect(await screen.findByText("Runs true to size.")).toBeInTheDocument();
+  });
+
+  it("shows an error message when a product's reviews fail to load", async () => {
+    const user = userEvent.setup();
+    mswServer.use(
+      http.get(`${API_BASE}/products/autocomplete`, () =>
+        HttpResponse.json({ success: true, data: [PRODUCT] }),
+      ),
+      http.get(`${API_BASE}/products/product-1/reviews`, () =>
+        HttpResponse.json({ success: false, message: "Too many requests" }, { status: 429 }),
+      ),
+    );
+
+    render(<ProductReviewsPage />, { wrapper });
+    await user.type(screen.getByPlaceholderText("Search products by name…"), "Everyday");
+    await user.click(await screen.findByText("Everyday Tee"));
+
+    expect(await screen.findByText("Couldn't load reviews.")).toBeInTheDocument();
+  });
+
   it("does not delete a review until the confirmation dialog is accepted", async () => {
     let deleteCalled = false;
     mswServer.use(
