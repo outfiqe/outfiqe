@@ -49,13 +49,13 @@ const Row = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
-const METRIC_CARD_TITLES = [
-  "Brand review latency (submit → decision)",
-  "Time to first shoppable tag (post → live)",
-  "Approval source mix",
-  "Rejection reasons",
+const METRIC_CARDS = [
+  { title: "Brand review latency (submit → decision)", rowCount: 2 },
+  { title: "Time to first shoppable tag (post → live)", rowCount: 2 },
+  { title: "Approval source mix", rowCount: 2 },
+  { title: "Rejection reasons", rowCount: 2 },
+  { title: "Watch list", rowCount: 3 },
 ];
-const METRIC_ROW_SKELETON_COUNT = 2;
 
 const RowSkeleton = () => (
   <div className="flex items-center justify-between gap-3 border-b border-border/60 py-2 text-sm last:border-0">
@@ -73,9 +73,9 @@ const TagReviewMetricsSkeleton = () => (
       </p>
     </div>
     <div className="grid gap-4 md:grid-cols-2">
-      {METRIC_CARD_TITLES.map((title) => (
+      {METRIC_CARDS.map(({ title, rowCount }) => (
         <Card key={title} title={title}>
-          {Array.from({ length: METRIC_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
+          {Array.from({ length: rowCount }, (_unused, rowIndex) => (
             <RowSkeleton key={rowIndex} />
           ))}
         </Card>
