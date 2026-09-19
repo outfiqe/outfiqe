@@ -4,12 +4,7 @@ import { Skeleton, Tooltip } from "@outfiqe/design-system";
 
 import { cn } from "@/shared/lib/cn";
 
-import {
-  ADMIN_LOCKED_TAB_TOOLTIP,
-  EXPLORE_FIXED_TABS,
-  FEED_LAYOUT_OPTIONS,
-  type FeedLayout,
-} from "../explore.constants";
+import { EXPLORE_FIXED_TABS, FEED_LAYOUT_OPTIONS, type FeedLayout } from "../explore.constants";
 import { useTrendingTags } from "../hooks/useTrendingTags";
 
 const TRENDING_TAG_PLACEHOLDER_COUNT = 4;
@@ -20,6 +15,7 @@ interface FeedFilterTabsProps {
   layout: FeedLayout;
   onLayoutChange: (layout: FeedLayout) => void;
   lockedTabs?: readonly string[];
+  lockedTabTooltip?: string;
 }
 
 export const FeedFilterTabs = ({
@@ -28,6 +24,7 @@ export const FeedFilterTabs = ({
   layout,
   onLayoutChange,
   lockedTabs = [],
+  lockedTabTooltip,
 }: FeedFilterTabsProps) => {
   const { data: trendingTags, isLoading: isTrendingTagsLoading } = useTrendingTags();
 
@@ -57,8 +54,8 @@ export const FeedFilterTabs = ({
                 {label}
               </button>
             );
-            return isLocked ? (
-              <Tooltip key={value} content={ADMIN_LOCKED_TAB_TOOLTIP}>
+            return isLocked && lockedTabTooltip ? (
+              <Tooltip key={value} content={lockedTabTooltip}>
                 {tabButton}
               </Tooltip>
             ) : (

@@ -84,6 +84,7 @@ describe("FeedFilterTabs", () => {
       onChange,
       tab: EXPLORE_TAB.TRENDING,
       lockedTabs: [EXPLORE_TAB.FOR_YOU, EXPLORE_TAB.FOLLOWING],
+      lockedTabTooltip: ADMIN_LOCKED_TAB_TOOLTIP,
     });
 
     const forYouTab = screen.getByRole("button", { name: "For you" });
@@ -99,6 +100,21 @@ describe("FeedFilterTabs", () => {
 
     fireEvent.focus(forYouTab);
     expect(await screen.findByRole("tooltip")).toHaveTextContent(ADMIN_LOCKED_TAB_TOOLTIP);
+  });
+
+  it("keeps locked tabs inert without a tooltip while no explanation is given", async () => {
+    mockTrendingTags({ data: [] });
+    const onChange = vi.fn();
+
+    renderTabs({ onChange, lockedTabs: [EXPLORE_TAB.FOR_YOU] });
+
+    const forYouTab = screen.getByRole("button", { name: "For you" });
+    await userEvent.click(forYouTab);
+    fireEvent.focus(forYouTab);
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(forYouTab).toHaveAttribute("aria-disabled", "true");
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 
   it("marks the active fixed tab and layout as pressed", () => {

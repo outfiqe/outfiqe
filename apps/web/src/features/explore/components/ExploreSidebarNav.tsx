@@ -7,12 +7,7 @@ import Link, { useLinkStatus } from "next/link";
 import { SAVED_QUERY_PARAM, SAVED_TAB } from "@/features/wishlist";
 import { cn } from "@/shared/lib/cn";
 
-import {
-  ADMIN_LOCKED_TAB_TOOLTIP,
-  EXPLORE_FIXED_TABS,
-  FEED_LAYOUT_OPTIONS,
-  type FeedLayout,
-} from "../explore.constants";
+import { EXPLORE_FIXED_TABS, FEED_LAYOUT_OPTIONS, type FeedLayout } from "../explore.constants";
 
 type ExploreSidebarNavProps = {
   tab: string;
@@ -20,6 +15,7 @@ type ExploreSidebarNavProps = {
   layout: FeedLayout;
   onLayoutChange: (layout: FeedLayout) => void;
   lockedTabs?: readonly string[];
+  lockedTabTooltip?: string;
 };
 
 const NAV_ITEM_CLASS =
@@ -54,6 +50,7 @@ export const ExploreSidebarNav = ({
   layout,
   onLayoutChange,
   lockedTabs = [],
+  lockedTabTooltip,
 }: ExploreSidebarNavProps) => {
   return (
     <aside className="sticky top-[76px] hidden h-fit w-56 shrink-0 flex-col gap-1 rounded-xl border border-border p-3 lg:flex">
@@ -76,8 +73,8 @@ export const ExploreSidebarNav = ({
             {label}
           </button>
         );
-        return isLocked ? (
-          <Tooltip key={value} content={ADMIN_LOCKED_TAB_TOOLTIP} side="right">
+        return isLocked && lockedTabTooltip ? (
+          <Tooltip key={value} content={lockedTabTooltip} side="right">
             {navButton}
           </Tooltip>
         ) : (

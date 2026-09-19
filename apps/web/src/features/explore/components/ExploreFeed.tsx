@@ -12,6 +12,7 @@ import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
 
 import {
   ADMIN_LOCKED_EXPLORE_TABS,
+  ADMIN_LOCKED_TAB_TOOLTIP,
   EXPLORE_QUERY_PARAM,
   EXPLORE_TAB,
   type ExploreQueryParamKey,
@@ -57,9 +58,13 @@ export const ExploreFeed = () => {
     setHasJustDismissedForYouHint(true);
   };
 
-  const lockedTabs: readonly string[] = isAdmin ? ADMIN_LOCKED_EXPLORE_TABS : [];
+  const adminLockedTabs: readonly string[] = isAdmin ? ADMIN_LOCKED_EXPLORE_TABS : [];
+  const lockedTabs: readonly string[] = isAuthResolved
+    ? adminLockedTabs
+    : ADMIN_LOCKED_EXPLORE_TABS;
+  const lockedTabTooltip = isAdmin ? ADMIN_LOCKED_TAB_TOOLTIP : undefined;
   const requestedTab = searchParams.get(EXPLORE_QUERY_PARAM.TAB) ?? EXPLORE_TAB.FOR_YOU;
-  const committedTab = lockedTabs.includes(requestedTab) ? EXPLORE_TAB.TRENDING : requestedTab;
+  const committedTab = adminLockedTabs.includes(requestedTab) ? EXPLORE_TAB.TRENDING : requestedTab;
   const committedLayout: FeedLayout =
     searchParams.get(EXPLORE_QUERY_PARAM.LAYOUT) === FEED_LAYOUT.LIST
       ? FEED_LAYOUT.LIST
@@ -138,6 +143,7 @@ export const ExploreFeed = () => {
           layout={layout}
           onLayoutChange={setLayout}
           lockedTabs={lockedTabs}
+          lockedTabTooltip={lockedTabTooltip}
         />
       </div>
       <AddPostButton />
@@ -149,6 +155,7 @@ export const ExploreFeed = () => {
           layout={layout}
           onLayoutChange={setLayout}
           lockedTabs={lockedTabs}
+          lockedTabTooltip={lockedTabTooltip}
         />
 
         <div>

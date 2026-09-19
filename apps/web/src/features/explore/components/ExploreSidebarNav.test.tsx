@@ -77,6 +77,7 @@ describe("ExploreSidebarNav", () => {
       onChange,
       tab: EXPLORE_TAB.TRENDING,
       lockedTabs: [EXPLORE_TAB.FOR_YOU, EXPLORE_TAB.FOLLOWING],
+      lockedTabTooltip: ADMIN_LOCKED_TAB_TOOLTIP,
     });
 
     const followingTab = screen.getByRole("button", { name: "Following" });
