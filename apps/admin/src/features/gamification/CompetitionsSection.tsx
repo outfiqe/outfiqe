@@ -1,13 +1,6 @@
-import {
-  Button,
-  Checkbox,
-  FormBanner,
-  Input,
-  Modal,
-  Select,
-  Skeleton,
-} from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, Checkbox, FormBanner, Input, Modal, Select } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import {
@@ -34,6 +27,7 @@ import type {
   CreatorCompetitionAdmin,
   CreatorLeaderboardCategoryValue,
 } from "./schemas";
+import { TitleActionCardSkeleton } from "./skeletons";
 
 const COMPETITIONS_QUERY_KEY = ["admin-creator-competitions"];
 const MIN_WINNERS = 1;
@@ -320,18 +314,15 @@ const EditCompetitionModal = ({
   competition: CreatorCompetitionAdmin;
   onClose: () => void;
 }) => {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState<CompetitionFormState>(() => formForCompetition(competition));
   const [isActive, setIsActive] = useState(competition.isActive);
   const [error, setError] = useState<string | null>(null);
 
-  const update = useMutation({
+  const update = useApiMutation({
     mutationFn: (input: UpdateCreatorCompetitionFormInput) =>
       gamificationApi.updateCreatorCompetition(competition.id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: COMPETITIONS_QUERY_KEY });
-      onClose();
-    },
+    invalidateKeys: [COMPETITIONS_QUERY_KEY],
+    onSuccess: () => onClose(),
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
@@ -366,7 +357,6 @@ const EditCompetitionModal = ({
 };
 
 export const CompetitionsSection = () => {
-  const queryClient = useQueryClient();
   const { data: competitions, isLoading } = useQuery({
     queryKey: COMPETITIONS_QUERY_KEY,
     queryFn: gamificationApi.listCreatorCompetitionsAdmin,
@@ -378,12 +368,12 @@ export const CompetitionsSection = () => {
     null,
   );
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () => gamificationApi.createCreatorCompetition(toFormInput(form)),
+    invalidateKeys: [COMPETITIONS_QUERY_KEY],
     onSuccess: () => {
       setForm(EMPTY_FORM);
       setError(null);
-      queryClient.invalidateQueries({ queryKey: COMPETITIONS_QUERY_KEY });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
@@ -416,9 +406,7 @@ export const CompetitionsSection = () => {
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
-          ))}
+          Array.from({ length: 3 }).map((_, index) => <TitleActionCardSkeleton key={index} />)}
         {competitions?.length === 0 && (
           <p className="text-sm text-muted-foreground">No competitions yet.</p>
         )}

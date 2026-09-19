@@ -68,11 +68,13 @@ import { impersonationRequestAudit } from "./modules/platform-impersonation/plat
 import { platformImpersonationRoutes } from "./modules/platform-impersonation/platform-impersonation.routes.js";
 import { platformMetricsRoutes } from "./modules/platform-metrics/platform-metrics.routes.js";
 import { platformNavAccessRoutes } from "./modules/platform-nav-access/platform-nav-access.routes.js";
+import { platformRolesRoutes } from "./modules/platform-roles/platform-roles.routes.js";
 import { platformSuspensionsRoutes } from "./modules/platform-suspensions/platform-suspensions.routes.js";
 import { productReviewRoutes } from "./modules/product-reviews/product-review.routes.js";
 import { productTypeRoutes } from "./modules/product-types/product-type.routes.js";
 import { productRoutes } from "./modules/products/product.routes.js";
 import { pushRoutes } from "./modules/push/push.routes.js";
+import { saleRoutes } from "./modules/sale/sale.routes.js";
 import { sizeOptionRoutes } from "./modules/size-options/size-option.routes.js";
 import { supportRoutes } from "./modules/support/support.routes.js";
 import { tagReportRoutes } from "./modules/tag-reports/tagReport.routes.js";
@@ -200,6 +202,7 @@ export const createApp = () => {
   app.use("/api/platform", platformFeaturesRoutes);
   app.use("/api/platform", platformImpersonationRoutes);
   app.use("/api/platform", platformNavAccessRoutes);
+  app.use("/api/platform", platformRolesRoutes);
   app.use("/api/platform", platformSuspensionsRoutes);
   app.use("/api/creator-links", creatorLinkRoutes);
   app.use("/api/creator-looks", creatorLookRoutes);
@@ -211,6 +214,7 @@ export const createApp = () => {
   app.use("/api/hero-slides", heroSlideRoutes);
   app.use("/api/image-processing", imageProcessingRoutes);
   app.use("/api/admin/trending", trendingRoutes);
+  app.use("/api/admin/sale", saleRoutes);
   app.use("/api/leaderboard", leaderboardRoutes);
   app.use("/api/creator-leaderboard", creatorLeaderboardRoutes);
   app.use("/api/xp", xpRoutes);

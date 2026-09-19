@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
 
 import type { ApiClientError } from "@/shared/lib/apiClient";
 
@@ -11,13 +11,8 @@ import type {
   OwnerTypeValue,
 } from "../api/bankAccountSchemas";
 
-export const useAddBankAccount = (ownerType: OwnerTypeValue) => {
-  const queryClient = useQueryClient();
-
-  return useMutation<CreateBankAccountResult, ApiClientError, AddBankAccountInput>({
+export const useAddBankAccount = (ownerType: OwnerTypeValue) =>
+  useApiMutation<CreateBankAccountResult, ApiClientError, AddBankAccountInput>({
     mutationFn: (input) => bankAccountApi.create(ownerType, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bank-accounts", ownerType] });
-    },
+    invalidateKeys: [["bank-accounts", ownerType]],
   });
-};

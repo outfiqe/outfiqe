@@ -1,6 +1,7 @@
 import { Badge, Button, FormBanner, Select, Skeleton, Switch } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
 import { MAX_PLATFORM_CO_FOUNDERS, PLATFORM_NAV_KEYS, type PlatformNavKey } from "@outfiqe/utils";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth/AuthContext";
@@ -48,9 +49,26 @@ const TOGGLEABLE_NAV_KEYS = PLATFORM_NAV_KEYS.filter((key) => key !== "platform-
 const OVERVIEW_QUERY_KEY = ["platform-nav-access"] as const;
 const CANDIDATES_QUERY_KEY = ["platform-nav-access-candidates"] as const;
 
+const NavItemsSkeleton = () => (
+  <ul
+    className="mt-3 divide-y divide-border rounded-lg border border-border"
+    role="status"
+    aria-label="Loading"
+  >
+    {TOGGLEABLE_NAV_KEYS.map((navKey) => (
+      <li key={navKey} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
+        <Skeleton className="h-5 w-32" />
+        <span className="flex items-center gap-2">
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-6 w-11 rounded-full" />
+        </span>
+      </li>
+    ))}
+  </ul>
+);
+
 export const PlatformNavAccessPage = () => {
   const { state } = useAuth();
-  const queryClient = useQueryClient();
   const [selectedMembershipId, setSelectedMembershipId] = useState("");
 
   const isCoFounder = state.status === "signed-in" && state.user.isCoFounder;
@@ -67,26 +85,20 @@ export const PlatformNavAccessPage = () => {
     enabled: isCoFounder,
   });
 
-  const saveHidden = useMutation({
+  const saveHidden = useApiMutation({
     mutationFn: platformNavAccessApi.setHiddenNavKeys,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: OVERVIEW_QUERY_KEY }),
+    invalidateKeys: [OVERVIEW_QUERY_KEY],
   });
 
-  const promote = useMutation({
+  const promote = useApiMutation({
     mutationFn: platformNavAccessApi.promoteCoFounder,
-    onSuccess: () => {
-      setSelectedMembershipId("");
-      queryClient.invalidateQueries({ queryKey: OVERVIEW_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: CANDIDATES_QUERY_KEY });
-    },
+    invalidateKeys: [OVERVIEW_QUERY_KEY, CANDIDATES_QUERY_KEY],
+    onSuccess: () => setSelectedMembershipId(""),
   });
 
-  const demote = useMutation({
+  const demote = useApiMutation({
     mutationFn: platformNavAccessApi.demoteCoFounder,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: OVERVIEW_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: CANDIDATES_QUERY_KEY });
-    },
+    invalidateKeys: [OVERVIEW_QUERY_KEY, CANDIDATES_QUERY_KEY],
   });
 
   if (!isCoFounder) {
@@ -131,7 +143,7 @@ export const PlatformNavAccessPage = () => {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Navigation items
         </h2>
-        {overview.isLoading && <Skeleton className="mt-3 h-64 w-full" />}
+        {overview.isLoading && <NavItemsSkeleton />}
         {overview.error && (
           <div className="mt-3">
             <FormBanner>{getErrorMessage(overview.error)}</FormBanner>

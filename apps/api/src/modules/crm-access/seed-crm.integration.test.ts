@@ -51,7 +51,7 @@ describe("seedPlatformCrm", () => {
     expect(platformAccessGrant).not.toBeNull();
   });
 
-  it("makes the first admin the SUPERADMIN and grants every other admin platform access", async () => {
+  it("makes the first admin the SUPERADMIN and enrols every other admin on the zero-access Member role", async () => {
     const founder = await createAdminUser("founder");
     const teammate = await createAdminUser("teammate");
 
@@ -71,7 +71,7 @@ describe("seedPlatformCrm", () => {
     expect(superAdminMemberships).toHaveLength(1);
 
     await expect(crmAccessService.resolveHasPlatformAccess(founder.id)).resolves.toBe(true);
-    await expect(crmAccessService.resolveHasPlatformAccess(teammate.id)).resolves.toBe(true);
+    await expect(crmAccessService.resolveHasPlatformAccess(teammate.id)).resolves.toBe(false);
   });
 
   it("leaves a non-admin account without platform access", async () => {

@@ -75,7 +75,7 @@ const PolicyForm = ({ ownerType }: { ownerType: OwnerTypeValue }) => {
   };
 
   if (isLoading || !activeForm) {
-    return <Skeleton className="h-64 w-full rounded-xl" />;
+    return <WithdrawPolicySkeleton />;
   }
 
   return (
@@ -169,6 +169,26 @@ const PolicyForm = ({ ownerType }: { ownerType: OwnerTypeValue }) => {
     </form>
   );
 };
+
+const POLICY_FIELD_SKELETON_COUNT = 4;
+
+const WithdrawPolicySkeleton = () => (
+  <div
+    className="space-y-4 rounded-xl border border-border bg-card p-5"
+    role="status"
+    aria-label="Loading"
+  >
+    <div className="grid gap-3 sm:grid-cols-2">
+      {Array.from({ length: POLICY_FIELD_SKELETON_COUNT }, (_unused, fieldIndex) => (
+        <div key={fieldIndex} className="space-y-1.5">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-10 w-full rounded-lg" />
+        </div>
+      ))}
+    </div>
+    <Skeleton className="h-10 w-28 rounded-lg" />
+  </div>
+);
 
 export const WithdrawPolicyPage = () => {
   const [ownerType, setOwnerType] = useState<OwnerTypeValue>("CREATOR");

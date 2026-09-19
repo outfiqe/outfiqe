@@ -1,6 +1,7 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 
 import type { ApiClientError } from "@/shared/lib/apiClient";
 
@@ -12,11 +13,9 @@ import { BRAND_SHIPMENTS_QUERY_KEY } from "./useBrandShipments";
 export const useAdvanceShipment = (groupId: string) => {
   const queryClient = useQueryClient();
 
-  return useMutation<BrandShipmentDetail, ApiClientError, AdvanceShipmentInput>({
+  return useApiMutation<BrandShipmentDetail, ApiClientError, AdvanceShipmentInput>({
     mutationFn: (input) => brandFulfilmentApi.advance(groupId, input),
-    onSuccess: (shipment) => {
-      queryClient.setQueryData(brandShipmentQueryKey(groupId), shipment);
-      void queryClient.invalidateQueries({ queryKey: BRAND_SHIPMENTS_QUERY_KEY });
-    },
+    invalidateKeys: [BRAND_SHIPMENTS_QUERY_KEY],
+    onSuccess: (shipment) => queryClient.setQueryData(brandShipmentQueryKey(groupId), shipment),
   });
 };

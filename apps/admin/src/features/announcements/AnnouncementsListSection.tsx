@@ -1,7 +1,9 @@
-import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Badge, Button, toast } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
@@ -73,9 +75,9 @@ export const AnnouncementsListSection = () => {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin-announcements"] });
 
-  const cancelAnnouncement = useMutation({
+  const cancelAnnouncement = useApiMutation({
     mutationFn: (id: string) => announcementsApi.cancel(id),
-    onSuccess: invalidate,
+    invalidateKeys: [["admin-announcements"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -108,7 +110,13 @@ export const AnnouncementsListSection = () => {
       <div className="mt-4 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+            <CardRowSkeleton
+              key={index}
+              textLineCount={1}
+              hasMetaLine
+              actionCount={2}
+              hasSpacedSections
+            />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load announcements.</p>}
         {!isLoading && announcements.length === 0 && (
@@ -199,8 +207,8 @@ export const AnnouncementsListSection = () => {
           }
           announcement={composeTarget === NEW_ANNOUNCEMENT_TARGET ? null : composeTarget}
           onClose={closeCompose}
-          onSaved={() => {
-            invalidate();
+          onSaved={async () => {
+            await invalidate();
             closeCompose();
           }}
         />
@@ -210,8 +218,8 @@ export const AnnouncementsListSection = () => {
           key={sendTarget.id}
           announcement={sendTarget}
           onClose={closeSend}
-          onSent={() => {
-            invalidate();
+          onSent={async () => {
+            await invalidate();
             closeSend();
           }}
         />

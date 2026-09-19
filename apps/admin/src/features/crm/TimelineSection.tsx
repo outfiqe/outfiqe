@@ -1,5 +1,6 @@
 import { Button, FormBanner, Select, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -29,8 +30,23 @@ type TimelineSectionProps = {
   subjectId: string;
 };
 
+const TIMELINE_SKELETON_ROW_COUNT = 4;
+
+const TimelineSkeleton = () => (
+  <ul className="space-y-2 text-sm" aria-hidden>
+    {Array.from({ length: TIMELINE_SKELETON_ROW_COUNT }, (_unused, rowIndex) => (
+      <li
+        key={rowIndex}
+        className="flex items-start justify-between gap-3 rounded-lg border border-border p-3"
+      >
+        <Skeleton className="h-5 w-72 max-w-full" />
+        <Skeleton className="h-4 w-32 shrink-0" />
+      </li>
+    ))}
+  </ul>
+);
+
 export const TimelineSection = ({ subjectType, subjectId }: TimelineSectionProps) => {
-  const queryClient = useQueryClient();
   const subject = { subjectType, subjectId };
   const queryKey = ["crm-timeline", subjectType, subjectId];
 
@@ -46,13 +62,11 @@ export const TimelineSection = ({ subjectType, subjectId }: TimelineSectionProps
   const [activityType, setActivityType] = useState<CrmActivityTypeValue>("NOTE");
   const [body, setBody] = useState("");
 
-  const logActivity = useMutation({
+  const logActivity = useApiMutation({
     mutationFn: () =>
       crmActivitiesApi.logActivity(subject, { type: activityType, body: body.trim() }),
-    onSuccess: () => {
-      setBody("");
-      queryClient.invalidateQueries({ queryKey });
-    },
+    invalidateKeys: [queryKey],
+    onSuccess: () => setBody(""),
   });
 
   const submit = (event: FormEvent) => {
@@ -99,7 +113,7 @@ export const TimelineSection = ({ subjectType, subjectId }: TimelineSectionProps
       )}
 
       <div className="mt-4">
-        {isLoading && <Skeleton className="h-32 w-full" />}
+        {isLoading && <TimelineSkeleton />}
         {error && <FormBanner>{getErrorMessage(error)}</FormBanner>}
 
         {timeline && timeline.partial && (

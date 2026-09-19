@@ -1,5 +1,6 @@
-import { Badge, Button, FormBanner, Input, Modal, Select, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Badge, Button, FormBanner, Input, Modal, Select } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -7,6 +8,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { crmActivitiesApi } from "./activitiesApi";
 import type { Task } from "./activitiesSchemas";
 import { crmApi } from "./api";
+import { CompactRowSkeleton } from "./CompactRowSkeleton";
 import { formatDate } from "./format.utils";
 import { PlanGateBanner } from "./PlanGateBanner";
 
@@ -23,22 +25,19 @@ const NewTaskModal = ({
   onClose: () => void;
   members: { id: string; userName: string }[];
 }) => {
-  const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [assigneeMembershipId, setAssigneeMembershipId] = useState(members[0]?.id ?? "");
   const [dueAt, setDueAt] = useState("");
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () =>
       crmActivitiesApi.createTask({
         title: title.trim(),
         assigneeMembershipId,
         ...(dueAt ? { dueAt: new Date(dueAt).toISOString() } : {}),
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY });
-      onClose();
-    },
+    invalidateKeys: [TASKS_QUERY_KEY],
+    onSuccess: () => onClose(),
   });
 
   const submit = (event: FormEvent) => {
@@ -108,7 +107,6 @@ const NewTaskModal = ({
 };
 
 export const TasksPage = () => {
-  const queryClient = useQueryClient();
   const { data: organization } = useQuery({
     queryKey: ["crm-organization"],
     queryFn: crmApi.getOrganization,
@@ -134,10 +132,10 @@ export const TasksPage = () => {
 
   const [modalOpen, setModalOpen] = useState(false);
 
-  const toggleTask = useMutation({
+  const toggleTask = useApiMutation({
     mutationFn: (task: Task) =>
       crmActivitiesApi.updateTask(task.id, { status: task.status === "OPEN" ? "DONE" : "OPEN" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY }),
+    invalidateKeys: [TASKS_QUERY_KEY],
   });
 
   return (
@@ -156,7 +154,7 @@ export const TasksPage = () => {
       </div>
 
       <div className="mt-6">
-        {isLoading && <Skeleton className="h-40 w-full" />}
+        {isLoading && <CompactRowSkeleton hasCheckbox />}
         {error && <FormBanner>{getErrorMessage(error)}</FormBanner>}
 
         {tasks && tasks.length === 0 && (

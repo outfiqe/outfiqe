@@ -3,10 +3,17 @@
 ## Purpose
 
 Shared React hooks reused across `apps/web` and `apps/admin` — generic data-fetching helpers
-(debounce, infinite cursor pagination) and the notification feed's fetch/mutate/socket-sync logic.
+(debounce, infinite cursor pagination, mutation-with-invalidation) and the notification feed's
+fetch/mutate/socket-sync logic.
 
 ## Structure
 
+- `useApiMutation.ts` — drop-in replacement for react-query's `useMutation`, taking an extra
+  `invalidateKeys` option (an array of query keys, or a function of `(data, variables)` returning
+  one). It awaits every invalidated query's refetch, then the caller's own `onSuccess`, before its
+  own `onSuccess` resolves — so `mutation.isPending` (and therefore any `Button isLoading={...}`
+  bound to it) stays true until the UI has something fresh to show, not just until the network
+  request finished.
 - `useDebouncedValue.ts` — generic debounced-value hook (search inputs, autocomplete).
 - `useDragReorder.ts` — `arrayMove` plus `useDragReorder`: native HTML5 drag-and-drop reordering
   for any ordered list. Returns `getDragProps(id)` to spread on each row (drag source + drop
@@ -40,6 +47,20 @@ Shared React hooks reused across `apps/web` and `apps/admin` — generic data-fe
 - `index.ts` — re-exports everything above; both apps only ever import from `@outfiqe/hooks`.
 
 ## Non-obvious rationale
+
+**`useApiMutation` exists because `queryClient.invalidateQueries(...)` is easy to fire-and-forget
+inside a mutation's `onSuccess`, and doing so is a real, repeated bug, not a style nit.**
+`mutation.isPending` only clears once `onSuccess` (and anything it awaits/returns) resolves —
+react-query's own mutation executor awaits `onSuccess` before dispatching the `"success"` state
+change. A plain `onSuccess: () => { queryClient.invalidateQueries(...); onClose(); }` block body
+discards `invalidateQueries`' return value, so `isPending` flips false — and the button stops
+showing its spinner — the instant the network request settles, not once the invalidated query's
+background refetch has actually landed and the UI has fresh data to show. The visible symptom: a
+button's spinner stops, then there's a beat of nothing happening before the list/row actually
+updates. This was found to be a repeated, codebase-wide pattern (roughly 70 files, 110+ call sites
+across both apps) rather than a handful of one-off mistakes, so it's fixed structurally here — a
+mutation declares `invalidateKeys` and gets the await for free — instead of relying on every call
+site remembering to `await`/`return` the invalidation itself.
 
 **`useDragReorder` keeps the up/down arrow buttons rather than replacing them.** Native HTML5
 drag has no keyboard or screen-reader story and is unreliable on touch, so `moveEntry` drives the

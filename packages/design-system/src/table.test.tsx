@@ -66,4 +66,32 @@ describe("Table", () => {
     expect(screen.getByText("Total")).toBeInTheDocument();
     expect(screen.getByText("300")).toBeInTheDocument();
   });
+
+  it("keeps the real headers and shows placeholder rows while loading", () => {
+    const { container } = render(
+      <Table columns={columns} rows={[]} rowKey={(row) => row.id} isLoading loadingRowCount={3} />,
+    );
+
+    expect(screen.getByRole("columnheader", { name: "Name" })).toBeInTheDocument();
+    expect(container.querySelectorAll("tbody tr")).toHaveLength(3);
+    expect(screen.queryByText("Nothing to show.")).not.toBeInTheDocument();
+  });
+
+  it("hides the footer while loading", () => {
+    render(
+      <Table
+        columns={columns}
+        rows={rows}
+        rowKey={(row) => row.id}
+        isLoading
+        footer={
+          <tr>
+            <td>Totals</td>
+          </tr>
+        }
+      />,
+    );
+
+    expect(screen.queryByText("Totals")).not.toBeInTheDocument();
+  });
 });

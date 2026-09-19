@@ -11,9 +11,14 @@ const productPageSchema = z.object({
 export type ProductPage = z.infer<typeof productPageSchema>;
 
 export const productsApi = {
-  async list(status: ProductStatusValue, cursor?: string): Promise<ProductPage> {
+  async list(
+    status: ProductStatusValue,
+    cursor?: string,
+    isThrift?: boolean,
+  ): Promise<ProductPage> {
     const params = new URLSearchParams({ status });
     if (cursor) params.set("cursor", cursor);
+    if (isThrift !== undefined) params.set("isThrift", String(isThrift));
 
     const res = await apiClient.get<ProductPage>(`/products/review?${params.toString()}`);
     return productPageSchema.parse(res.data);

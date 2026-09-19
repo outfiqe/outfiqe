@@ -9,7 +9,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useBlocker, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { type FormEvent, useMemo, useRef, useState } from "react";
@@ -53,7 +54,6 @@ const BadgeForm = ({
   badge: BadgeAdmin | null;
   initialForm: BadgeFormState;
 }) => {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const [form, setForm] = useState<BadgeFormState>(initialForm);
@@ -65,7 +65,7 @@ const BadgeForm = ({
   const [error, setError] = useState<string | null>(null);
   const hasSavedRef = useRef(false);
 
-  const save = useMutation({
+  const save = useApiMutation({
     mutationFn: () => {
       if (mode === "edit" && badge) {
         const input: UpdateBadgeFormInput = {
@@ -77,10 +77,9 @@ const BadgeForm = ({
       }
       return gamificationApi.createBadge(toFormInput(form));
     },
-    onSuccess: (saved) => {
+    invalidateKeys: (saved) => [BADGES_QUERY_KEY, badgeQueryKey(saved.id)],
+    onSuccess: () => {
       hasSavedRef.current = true;
-      void queryClient.invalidateQueries({ queryKey: BADGES_QUERY_KEY });
-      void queryClient.invalidateQueries({ queryKey: badgeQueryKey(saved.id) });
       void navigate({ to: "/gamification/badges" });
     },
     onError: (mutationError) => setError(getErrorMessage(mutationError)),
@@ -193,6 +192,46 @@ const BadgeForm = ({
   );
 };
 
+const BADGE_FIELD_SKELETON_COUNT = 4;
+const BADGE_FOOTER_BUTTON_COUNT = 2;
+
+const BadgeFormSkeleton = () => (
+  <div role="status" aria-label="Loading">
+    <Skeleton className="h-5 w-16" />
+    <div className="mt-3 flex flex-wrap items-center gap-3">
+      <Skeleton className="size-12 rounded-full" />
+      <Skeleton className="h-8 w-64 max-w-full" />
+    </div>
+
+    <div aria-hidden>
+      <Tabs value={TAB.DETAILS} className="mt-6">
+        <TabsList>
+          <TabsTrigger value={TAB.DETAILS}>Details</TabsTrigger>
+          <TabsTrigger value={TAB.DESIGN} disabled>
+            Design
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value={TAB.DETAILS} className="mt-4 space-y-4">
+          {Array.from({ length: BADGE_FIELD_SKELETON_COUNT }, (_unused, fieldIndex) => (
+            <div key={fieldIndex} className="space-y-1.5">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+            </div>
+          ))}
+        </TabsContent>
+      </Tabs>
+    </div>
+
+    <div className="mt-6 space-y-3 border-t border-border pt-4">
+      <div className="flex justify-end gap-2">
+        {Array.from({ length: BADGE_FOOTER_BUTTON_COUNT }, (_unused, buttonIndex) => (
+          <Skeleton key={buttonIndex} className="h-10 w-28 rounded-lg" />
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 type BadgeFormPageProps =
   { mode: "create"; duplicateFromId?: string } | { mode: "edit"; badgeId: string };
 
@@ -210,7 +249,7 @@ export const BadgeFormPage = (props: BadgeFormPageProps) => {
   }
 
   if (badgeQuery.isLoading) {
-    return <Skeleton className="h-64 w-full rounded-xl" />;
+    return <BadgeFormSkeleton />;
   }
 
   if (badgeQuery.error || !badgeQuery.data) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
 
 import type { ApiClientError } from "@/shared/lib/apiClient";
 
@@ -8,15 +8,8 @@ import { creatorLooksApi } from "../api/creatorLooksApi";
 import type { CreatorLook } from "../api/creatorLooksSchemas";
 import type { LookFormInput } from "../schemas/lookForm.schema";
 
-export const useCreateLook = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation<CreatorLook, ApiClientError, LookFormInput>({
+export const useCreateLook = () =>
+  useApiMutation<CreatorLook, ApiClientError, LookFormInput>({
     mutationFn: creatorLooksApi.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["creator-looks"] });
-      queryClient.invalidateQueries({ queryKey: ["explore-feed"] });
-      queryClient.invalidateQueries({ queryKey: ["saved-posts"] });
-    },
+    invalidateKeys: [["creator-looks"], ["explore-feed"], ["saved-posts"]],
   });
-};

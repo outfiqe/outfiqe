@@ -132,7 +132,7 @@ describe("PostCard for a platform admin viewer", () => {
     expect(screen.queryByRole("button", { name: "Post options" })).not.toBeInTheDocument();
 
     const likeButton = screen.getByRole("button", { name: "5" });
-    expect(likeButton).toBeDisabled();
+    expect(likeButton).toHaveAttribute("aria-disabled", "true");
 
     expect(screen.queryByRole("button", { name: "3" })).not.toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();

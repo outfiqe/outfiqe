@@ -16,6 +16,14 @@ export const EXPLORE_TAB = {
 
 export type ExploreTabValue = (typeof EXPLORE_TAB)[keyof typeof EXPLORE_TAB];
 
+export const ADMIN_LOCKED_EXPLORE_TABS: readonly ExploreTabValue[] = [
+  EXPLORE_TAB.FOR_YOU,
+  EXPLORE_TAB.FOLLOWING,
+];
+
+export const ADMIN_LOCKED_TAB_TOOLTIP =
+  "For you and Following are built from a member's own follows and likes, which admin accounts don't have. Browse Trending to see what's popular.";
+
 export const FEED_LAYOUT = {
   GRID: "grid",
   LIST: "list",

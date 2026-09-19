@@ -1,7 +1,8 @@
-import { Badge, Button, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Badge, Button, toast } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
 import { useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { ApiClientError } from "@/lib/apiClient";
@@ -42,7 +43,6 @@ export const WithdrawRequestsListSection = () => {
   const [crossCheckTargetId, setCrossCheckTargetId] = useState<string | null>(null);
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
   const [markPaidTargetId, setMarkPaidTargetId] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
   const {
     data: requestsQuery,
@@ -54,9 +54,9 @@ export const WithdrawRequestsListSection = () => {
   } = useInfiniteWithdrawRequests(tab);
   const requests = requestsQuery?.pages.flatMap((page) => page.items) ?? [];
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["withdraw-requests"] });
+  const WITHDRAW_REQUESTS_QUERY_KEY = ["withdraw-requests"];
 
-  const approve = useMutation({
+  const approve = useApiMutation({
     mutationFn: ({
       id,
       identityCrossCheckConfirmed,
@@ -64,10 +64,8 @@ export const WithdrawRequestsListSection = () => {
       id: string;
       identityCrossCheckConfirmed?: boolean;
     }) => withdrawRequestsApi.approve(id, identityCrossCheckConfirmed),
-    onSuccess: () => {
-      invalidate();
-      setCrossCheckTargetId(null);
-    },
+    invalidateKeys: [WITHDRAW_REQUESTS_QUERY_KEY],
+    onSuccess: () => setCrossCheckTargetId(null),
     onError: (mutationError, variables) => {
       if (
         mutationError instanceof ApiClientError &&
@@ -80,23 +78,19 @@ export const WithdrawRequestsListSection = () => {
     },
   });
 
-  const reject = useMutation({
+  const reject = useApiMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       withdrawRequestsApi.reject(id, reason),
-    onSuccess: () => {
-      invalidate();
-      setRejectTargetId(null);
-    },
+    invalidateKeys: [WITHDRAW_REQUESTS_QUERY_KEY],
+    onSuccess: () => setRejectTargetId(null),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const markPaid = useMutation({
+  const markPaid = useApiMutation({
     mutationFn: ({ id, referenceNote }: { id: string; referenceNote: string }) =>
       withdrawRequestsApi.markPaid(id, referenceNote),
-    onSuccess: () => {
-      invalidate();
-      setMarkPaidTargetId(null);
-    },
+    invalidateKeys: [WITHDRAW_REQUESTS_QUERY_KEY],
+    onSuccess: () => setMarkPaidTargetId(null),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -123,7 +117,7 @@ export const WithdrawRequestsListSection = () => {
       <div className="mt-4 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+            <CardRowSkeleton key={index} textLineCount={1} actionCount={2} />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load requests.</p>}
         {!isLoading && requests.length === 0 && (

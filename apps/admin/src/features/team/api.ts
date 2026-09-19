@@ -8,7 +8,7 @@ export const teamApi = {
     return adminInviteListResultSchema.parse(res.data);
   },
 
-  async invite(email: string, name: string): Promise<void> {
-    await apiClient.post("/admin/invites", { email, name });
+  async invite(email: string, name: string, roleId: string): Promise<void> {
+    await apiClient.post("/admin/invites", { email, name, roleId });
   },
 };

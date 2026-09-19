@@ -1,7 +1,9 @@
-import { Button, FormBanner, Input, Modal, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, FormBanner, Input, Modal, toast } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -87,16 +89,13 @@ const formForTier = (tier: CommissionTier): TierFormState => ({
 });
 
 const EditTierModal = ({ tier, onClose }: { tier: CommissionTier; onClose: () => void }) => {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState<TierFormState>(() => formForTier(tier));
   const [error, setError] = useState<string | null>(null);
 
-  const update = useMutation({
+  const update = useApiMutation({
     mutationFn: (input: UpdateTierInput) => commissionsApi.updateTier(tier.id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TIERS_QUERY_KEY });
-      onClose();
-    },
+    invalidateKeys: [TIERS_QUERY_KEY],
+    onSuccess: () => onClose(),
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
@@ -119,7 +118,6 @@ const EditTierModal = ({ tier, onClose }: { tier: CommissionTier; onClose: () =>
 };
 
 export const CommissionTiersSection = () => {
-  const queryClient = useQueryClient();
   const { data: tiers, isLoading } = useQuery({
     queryKey: TIERS_QUERY_KEY,
     queryFn: commissionsApi.listTiers,
@@ -130,22 +128,20 @@ export const CommissionTiersSection = () => {
   const [editingTier, setEditingTier] = useState<CommissionTier | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CommissionTier | null>(null);
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () => commissionsApi.createTier(toTierInput(form)),
+    invalidateKeys: [TIERS_QUERY_KEY],
     onSuccess: () => {
       setForm(EMPTY_FORM);
       setError(null);
-      queryClient.invalidateQueries({ queryKey: TIERS_QUERY_KEY });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const remove = useMutation({
+  const remove = useApiMutation({
     mutationFn: (id: string) => commissionsApi.deleteTier(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TIERS_QUERY_KEY });
-      setDeleteTarget(null);
-    },
+    invalidateKeys: [TIERS_QUERY_KEY],
+    onSuccess: () => setDeleteTarget(null),
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
@@ -176,7 +172,7 @@ export const CommissionTiersSection = () => {
       <div className="mt-4 space-y-2">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-16 w-full rounded-xl" />
+            <ActionRowSkeleton key={index} actionCount={2} />
           ))}
         {tiers?.length === 0 && <p className="text-sm text-muted-foreground">No tiers yet.</p>}
 

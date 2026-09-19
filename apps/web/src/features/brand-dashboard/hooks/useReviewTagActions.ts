@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
 
 import type { ApiClientError } from "@/shared/lib/apiClient";
 
@@ -9,23 +9,21 @@ import type { RejectTagInput } from "../api/tagReviewSchemas";
 import { TAG_REVIEW_PENDING_COUNT_KEY } from "./useTagReviewPendingCount";
 import { TAG_REVIEW_QUEUE_KEY } from "./useTagReviewQueue";
 
+const TAG_REVIEW_INVALIDATE_KEYS = [
+  [TAG_REVIEW_QUEUE_KEY],
+  [TAG_REVIEW_PENDING_COUNT_KEY],
+  ["explore-feed"],
+];
+
 export const useReviewTagActions = () => {
-  const queryClient = useQueryClient();
-
-  const refreshQueues = () => {
-    queryClient.invalidateQueries({ queryKey: [TAG_REVIEW_QUEUE_KEY] });
-    queryClient.invalidateQueries({ queryKey: [TAG_REVIEW_PENDING_COUNT_KEY] });
-    queryClient.invalidateQueries({ queryKey: ["explore-feed"] });
-  };
-
-  const approve = useMutation<void, ApiClientError, { tagId: string; trustCreator: boolean }>({
+  const approve = useApiMutation<void, ApiClientError, { tagId: string; trustCreator: boolean }>({
     mutationFn: ({ tagId, trustCreator }) => tagReviewApi.approve(tagId, trustCreator),
-    onSuccess: refreshQueues,
+    invalidateKeys: TAG_REVIEW_INVALIDATE_KEYS,
   });
 
-  const reject = useMutation<void, ApiClientError, { tagId: string; input: RejectTagInput }>({
+  const reject = useApiMutation<void, ApiClientError, { tagId: string; input: RejectTagInput }>({
     mutationFn: ({ tagId, input }) => tagReviewApi.reject(tagId, input),
-    onSuccess: refreshQueues,
+    invalidateKeys: TAG_REVIEW_INVALIDATE_KEYS,
   });
 
   return { approve, reject };

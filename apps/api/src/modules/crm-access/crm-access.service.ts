@@ -134,7 +134,7 @@ export const crmAccessService = {
     const hasPlatformPermission = platformMembership.role.permissionKeys.includes(
       PLATFORM_ACCESS_PERMISSION_KEY,
     );
-    return isSuperAdmin || hasPlatformPermission;
+    return isSuperAdmin || platformMembership.isPlatformSuperAdmin || hasPlatformPermission;
   },
 
   async resolveHasCrmAccess(userId: string): Promise<boolean> {
@@ -143,9 +143,10 @@ export const crmAccessService = {
 
   async grantPlatformStaffMembership(
     userId: string,
+    roleId: string,
     client?: DbClient,
   ): Promise<MembershipRecord | null> {
-    return crmAccessRepository.grantPlatformStaffMembership(userId, client);
+    return crmAccessRepository.grantPlatformStaffMembership(userId, roleId, client);
   },
 
   async createOrganization(input: CreateOrganizationInput): Promise<OrganizationRecord> {

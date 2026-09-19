@@ -45,6 +45,8 @@ import { PLATFORM_METRICS_SNAPSHOT_INTERVAL_MS } from "#modules/platform-metrics
 import { platformMetricsService } from "#modules/platform-metrics/platform-metrics.service.js";
 import { SUSPENSION_EXPIRY_SWEEP_INTERVAL_MS } from "#modules/platform-suspensions/platform-suspensions.constants.js";
 import { runSuspensionExpirySweep } from "#modules/platform-suspensions/platform-suspensions.expiry.js";
+import { SALE_SCORING_INTERVAL_MS } from "#modules/sale/sale.constants.js";
+import { saleService } from "#modules/sale/sale.service.js";
 import { SUPPORT_AUTO_CLOSE_JOB_INTERVAL_MS } from "#modules/support/support.constants.js";
 import { runSupportAutoCloseSweep } from "#modules/support/support.lifecycle.js";
 import {
@@ -107,6 +109,11 @@ export const INTERVAL_JOBS: RecurringJob[] = [
     name: "trending-scoring",
     run: trendingService.runScoring,
     intervalMs: SCORING_INTERVAL_MS,
+  },
+  {
+    name: "sale-scoring",
+    run: saleService.runScoring,
+    intervalMs: SALE_SCORING_INTERVAL_MS,
   },
   {
     name: "explore-trending-aggregation",

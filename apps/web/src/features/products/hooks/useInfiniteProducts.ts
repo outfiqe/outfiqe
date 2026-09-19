@@ -13,6 +13,7 @@ type UseInfiniteProductsParams = {
   minPrice?: number;
   maxPrice?: number;
   inStock?: boolean;
+  thrift?: boolean;
   enabled?: boolean;
 };
 
@@ -24,11 +25,13 @@ export const useInfiniteProducts = ({
   minPrice,
   maxPrice,
   inStock,
+  thrift,
   enabled = true,
 }: UseInfiniteProductsParams) => {
   return useInfiniteCursorPage(
-    ["products", category, type, sort, q, minPrice, maxPrice, inStock],
-    (cursor) => productsApi.list({ category, type, sort, q, minPrice, maxPrice, inStock, cursor }),
+    ["products", category, type, sort, q, minPrice, maxPrice, inStock, thrift],
+    (cursor) =>
+      productsApi.list({ category, type, sort, q, minPrice, maxPrice, inStock, thrift, cursor }),
     enabled,
   );
 };

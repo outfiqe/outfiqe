@@ -1,5 +1,6 @@
 import { Button, FormBanner, Input, Modal, Select } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -38,7 +39,6 @@ const parseTags = (raw: string): string[] =>
     .filter((tag) => tag.length > 0);
 
 export const ContactFormModal = ({ open, onClose, contact }: ContactFormModalProps) => {
-  const queryClient = useQueryClient();
   const isEditing = contact !== null;
 
   const [name, setName] = useState(contact?.name ?? "");
@@ -71,15 +71,13 @@ export const ContactFormModal = ({ open, onClose, contact }: ContactFormModalPro
     ownerMembershipId: ownerMembershipId || null,
   });
 
-  const save = useMutation({
+  const save = useApiMutation({
     mutationFn: () =>
       isEditing
         ? crmContactsApi.updateContact(contact.id, buildBody())
         : crmContactsApi.createContact(buildBody()),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: CONTACTS_QUERY_KEY });
-      onClose();
-    },
+    invalidateKeys: [CONTACTS_QUERY_KEY],
+    onSuccess: () => onClose(),
   });
 
   const submit = (event: FormEvent) => {

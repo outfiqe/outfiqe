@@ -89,6 +89,14 @@ export const PostDetailModal = ({
             images={images}
             fallbackColor={getAvatarColor(id)}
             aspectRatio={PHOTO_ASPECT_CSS}
+            onDoubleTapLike={
+              likeDisabledReason
+                ? undefined
+                : () =>
+                    gated(() => {
+                      if (!isLiked && !isLiking) toggleLike({ lookId: id, liked: isLiked });
+                    })
+            }
           />
         </div>
 

@@ -904,11 +904,12 @@ export const authService = {
 
       const platformMembership = await crmAccessService.grantPlatformStaffMembership(
         createdUser.id,
+        invite.roleId,
         tx,
       );
       if (!platformMembership) {
         logger.warn(
-          `Registered admin ${createdUser.id} without a platform staff membership — platform organization or built-in Admin role is missing`,
+          `Registered admin ${createdUser.id} without a platform staff membership — platform organization is missing`,
         );
       }
 

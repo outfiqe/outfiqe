@@ -1,7 +1,9 @@
-import { Badge, Button, FormBanner, Input, Modal, Skeleton, toast } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner, Input, Modal, toast } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -112,11 +114,11 @@ const EditZoneModal = ({ zone, onClose }: { zone: DeliveryZone; onClose: () => v
   const [form, setForm] = useState<ZoneFormState>(() => formForZone(zone));
   const [error, setError] = useState<string | null>(null);
 
-  const update = useMutation({
+  const update = useApiMutation({
     mutationFn: (input: UpdateDeliveryZoneInput) => deliveryZonesApi.update(zone.id, input),
+    invalidateKeys: [DELIVERY_ZONE_HISTORY_QUERY_KEY],
     onSuccess: (updatedZone) => {
       upsertZoneInCache(queryClient, updatedZone);
-      queryClient.invalidateQueries({ queryKey: DELIVERY_ZONE_HISTORY_QUERY_KEY });
       onClose();
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
@@ -167,12 +169,10 @@ export const DeliveryZonesSection = () => {
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const setDefault = useMutation({
+  const setDefault = useApiMutation({
     mutationFn: (id: string) => deliveryZonesApi.setDefault(id),
-    onSuccess: (updatedZone) => {
-      applyDefaultZoneInCache(queryClient, updatedZone);
-      queryClient.invalidateQueries({ queryKey: DELIVERY_ZONE_HISTORY_QUERY_KEY });
-    },
+    invalidateKeys: [DELIVERY_ZONE_HISTORY_QUERY_KEY],
+    onSuccess: (updatedZone) => applyDefaultZoneInCache(queryClient, updatedZone),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -210,7 +210,13 @@ export const DeliveryZonesSection = () => {
       <div className="mt-4 space-y-2">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+            <CardRowSkeleton
+              key={index}
+              hasBadge={false}
+              textLineCount={1}
+              hasChipRow
+              actionCount={2}
+            />
           ))}
 
         {isError && (

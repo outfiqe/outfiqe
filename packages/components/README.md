@@ -21,7 +21,7 @@ passed in.
   `SidebarNavigationAdapter` an app passes carries `pathname` + `isActive` and either lets the
   widget render a plain `<a>` that calls `navigate(href)` on click, or supplies a `LinkComponent`
   the widget renders instead (see rationale below).
-- `kanban/` — `KanbanBoard<TCard>`, a generic pipeline board: `columns` + `cards` +
+- `kanban/` — `KanbanBoardSkeleton` (same column width, border and card styling as the real board, for the loading state) and `KanbanBoard<TCard>`, a generic pipeline board: `columns` + `cards` +
   `renderCard` + `onCardMove(cardId, toColumnId)`. Cards move two ways, both keyboard-accessible —
   native HTML5 drag-and-drop and a "Move to" `<select>` on every card — so it needs **no
   drag-and-drop library dependency** (a deliberate call for an internal-tool board; revisit if a

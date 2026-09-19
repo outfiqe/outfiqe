@@ -1,6 +1,7 @@
-import { Badge, Button, FormBanner, Skeleton } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner } from "@outfiqe/design-system";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmAuditApi } from "./auditApi";
@@ -46,6 +47,8 @@ const AuditRow = ({ entry }: { entry: CrmAuditEntry }) => (
   </tr>
 );
 
+const AUDIT_TABLE_HEADERS = ["When", "Who", "Action", "Details"];
+
 export const AuditPage = () => {
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
@@ -65,7 +68,7 @@ export const AuditPage = () => {
       </p>
 
       <div className="mt-6">
-        {isLoading && <Skeleton className="h-48 w-full" />}
+        {isLoading && <TableSkeleton headers={AUDIT_TABLE_HEADERS} />}
         {error && <FormBanner>{getErrorMessage(error)}</FormBanner>}
 
         {data && entries.length === 0 && (

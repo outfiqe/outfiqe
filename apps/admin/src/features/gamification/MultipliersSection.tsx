@@ -1,6 +1,9 @@
-import { Button, Checkbox, FormBanner, Input, Modal, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, Checkbox, FormBanner, Input, Modal } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
+
+import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 
 import { type CreateXpMultiplierInput, gamificationApi, type UpdateXpMultiplierInput } from "./api";
 import { toDatetimeLocalValue, toIsoOrNull } from "./datetime.utils";
@@ -119,18 +122,15 @@ const EditMultiplierModal = ({
   multiplierRow: XpMultiplier;
   onClose: () => void;
 }) => {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState<MultiplierFormState>(() => formForMultiplier(multiplierRow));
   const [isActive, setIsActive] = useState(multiplierRow.isActive);
   const [error, setError] = useState<string | null>(null);
 
-  const update = useMutation({
+  const update = useApiMutation({
     mutationFn: (input: UpdateXpMultiplierInput) =>
       gamificationApi.updateXpMultiplier(multiplierRow.id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MULTIPLIERS_QUERY_KEY });
-      onClose();
-    },
+    invalidateKeys: [MULTIPLIERS_QUERY_KEY],
+    onSuccess: () => onClose(),
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
@@ -165,7 +165,6 @@ const EditMultiplierModal = ({
 };
 
 export const MultipliersSection = () => {
-  const queryClient = useQueryClient();
   const { data: multipliers, isLoading } = useQuery({
     queryKey: MULTIPLIERS_QUERY_KEY,
     queryFn: gamificationApi.listXpMultipliers,
@@ -175,12 +174,12 @@ export const MultipliersSection = () => {
   const [error, setError] = useState<string | null>(null);
   const [editingMultiplier, setEditingMultiplier] = useState<XpMultiplier | null>(null);
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () => gamificationApi.createXpMultiplier(toCreateInput(form)),
+    invalidateKeys: [MULTIPLIERS_QUERY_KEY],
     onSuccess: () => {
       setForm(EMPTY_FORM);
       setError(null);
-      queryClient.invalidateQueries({ queryKey: MULTIPLIERS_QUERY_KEY });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
@@ -213,9 +212,7 @@ export const MultipliersSection = () => {
 
       <div className="mt-4 space-y-2">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-16 w-full rounded-xl" />
-          ))}
+          Array.from({ length: 3 }).map((_, index) => <ActionRowSkeleton key={index} />)}
         {multipliers?.length === 0 && (
           <p className="text-sm text-muted-foreground">No XP multipliers yet.</p>
         )}

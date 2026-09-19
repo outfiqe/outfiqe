@@ -1,7 +1,9 @@
-import { Button, FormBanner, Input, Skeleton } from "@outfiqe/design-system";
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, FormBanner, Input } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { organizationsApi } from "./api";
@@ -10,8 +12,6 @@ import { BusinessOwnerField } from "./BusinessOwnerField";
 const ORGANIZATIONS_QUERY_KEY = ["organizations"];
 
 export const OrganizationsPage = () => {
-  const queryClient = useQueryClient();
-
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
       queryKey: ORGANIZATIONS_QUERY_KEY,
@@ -53,7 +53,7 @@ export const OrganizationsPage = () => {
     setFormError(null);
   };
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () => {
       if (!suggestion) throw new Error("No business selected yet.");
       return organizationsApi.create({
@@ -63,10 +63,8 @@ export const OrganizationsPage = () => {
         linkedBrandId: suggestion.brandId,
       });
     },
-    onSuccess: () => {
-      resetForm();
-      queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY });
-    },
+    invalidateKeys: [ORGANIZATIONS_QUERY_KEY],
+    onSuccess: () => resetForm(),
     onError: (mutationError) => setFormError(getErrorMessage(mutationError)),
   });
 
@@ -141,7 +139,7 @@ export const OrganizationsPage = () => {
       <div className="mt-6 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-xl" />
+            <CardRowSkeleton key={index} hasBadge={false} textLineCount={1} />
           ))}
         {error && <p className="text-sm text-destructive">{getErrorMessage(error)}</p>}
         {!isLoading && !error && organizations?.length === 0 && (

@@ -1,7 +1,9 @@
-import { Button, FormBanner, Input, Select, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, FormBanner, Input, Select, toast } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
+import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -12,7 +14,6 @@ const BADGES_QUERY_KEY = ["admin-badges"];
 const MANUAL_AWARDS_QUERY_KEY = ["admin-manual-awards"];
 
 const AwardBadgeForm = () => {
-  const queryClient = useQueryClient();
   const { data: badges } = useQuery({
     queryKey: BADGES_QUERY_KEY,
     queryFn: gamificationApi.listBadgesAdmin,
@@ -24,8 +25,10 @@ const AwardBadgeForm = () => {
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const award = useMutation({
+  const award = useApiMutation({
     mutationFn: (recipientId: string) => gamificationApi.awardBadge(badgeId, recipientId, reason),
+    invalidateKeys: (result) =>
+      result.awarded ? [MANUAL_AWARDS_QUERY_KEY, ["admin-badge-stats"]] : [],
     onSuccess: (result) => {
       if (!result.awarded) {
         setError(result.reason);
@@ -34,8 +37,6 @@ const AwardBadgeForm = () => {
       setRecipient(null);
       setReason("");
       setError(null);
-      queryClient.invalidateQueries({ queryKey: MANUAL_AWARDS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ["admin-badge-stats"] });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
@@ -169,7 +170,6 @@ const AdjustXpForm = () => {
 };
 
 const ManualAwardsList = () => {
-  const queryClient = useQueryClient();
   const { data: awards, isLoading } = useQuery({
     queryKey: MANUAL_AWARDS_QUERY_KEY,
     queryFn: gamificationApi.listManualAwards,
@@ -179,23 +179,17 @@ const ManualAwardsList = () => {
     null,
   );
 
-  const remove = useMutation({
+  const remove = useApiMutation({
     mutationFn: ({ userBadgeId, reason }: { userBadgeId: string; reason: string }) =>
       gamificationApi.removeUserBadge(userBadgeId, reason),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MANUAL_AWARDS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ["admin-badge-stats"] });
-      setRemoveTarget(null);
-    },
+    invalidateKeys: [MANUAL_AWARDS_QUERY_KEY, ["admin-badge-stats"]],
+    onSuccess: () => setRemoveTarget(null),
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   return (
     <div className="mt-4 space-y-2">
-      {isLoading &&
-        Array.from({ length: 3 }).map((_, index) => (
-          <Skeleton key={index} className="h-16 w-full rounded-xl" />
-        ))}
+      {isLoading && Array.from({ length: 3 }).map((_, index) => <ActionRowSkeleton key={index} />)}
       {awards?.length === 0 && (
         <p className="text-sm text-muted-foreground">No manual awards yet.</p>
       )}

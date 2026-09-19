@@ -1,6 +1,5 @@
 import { Badge, Button, cn, FormBanner, Input, Modal } from "@outfiqe/design-system";
-import { useDragReorder } from "@outfiqe/hooks";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation, useDragReorder } from "@outfiqe/hooks";
 import { GripVertical } from "lucide-react";
 import { useState } from "react";
 
@@ -20,25 +19,20 @@ export const StageConfigModal = ({
   onClose: () => void;
   stages: PipelineStage[];
 }) => {
-  const queryClient = useQueryClient();
   const [newStageName, setNewStageName] = useState("");
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: STAGES_QUERY_KEY });
-
-  const addStage = useMutation({
+  const addStage = useApiMutation({
     mutationFn: () => crmPipelineApi.createStage({ name: newStageName.trim() }),
-    onSuccess: () => {
-      setNewStageName("");
-      invalidate();
-    },
+    invalidateKeys: [STAGES_QUERY_KEY],
+    onSuccess: () => setNewStageName(""),
   });
-  const removeStage = useMutation({
+  const removeStage = useApiMutation({
     mutationFn: (stageId: string) => crmPipelineApi.deleteStage(stageId),
-    onSuccess: invalidate,
+    invalidateKeys: [STAGES_QUERY_KEY],
   });
-  const reorder = useMutation({
+  const reorder = useApiMutation({
     mutationFn: (orderedStageIds: string[]) => crmPipelineApi.reorderStages(orderedStageIds),
-    onSuccess: invalidate,
+    invalidateKeys: [STAGES_QUERY_KEY],
   });
 
   const { getDragProps, moveEntry, draggingId, dragOverId } = useDragReorder({

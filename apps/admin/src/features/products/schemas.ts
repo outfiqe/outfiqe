@@ -1,9 +1,12 @@
 import type { ProductStatus } from "@outfiqe/types";
+import { THRIFT_CONDITION_VALUES } from "@outfiqe/utils";
 import { z } from "zod";
 
 const statusValues = ["PENDING", "APPROVED", "REJECTED"] satisfies ProductStatus[];
 export const productStatusSchema = z.enum(statusValues);
 export type ProductStatusValue = z.infer<typeof productStatusSchema>;
+
+export const thriftConditionSchema = z.enum(THRIFT_CONDITION_VALUES);
 
 export const productSchema = z.object({
   id: z.string(),
@@ -16,5 +19,8 @@ export const productSchema = z.object({
   status: productStatusSchema,
   createdAt: z.string(),
   brand: z.object({ name: z.string() }),
+  isThrift: z.boolean(),
+  thriftConditionRating: thriftConditionSchema.nullable(),
+  thriftConditionNotes: z.string().nullable(),
 });
 export type Product = z.infer<typeof productSchema>;

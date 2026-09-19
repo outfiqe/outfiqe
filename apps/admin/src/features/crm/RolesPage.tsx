@@ -1,10 +1,13 @@
-import { FormBanner, Skeleton } from "@outfiqe/design-system";
+import { FormBanner } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
 import { RolesSection } from "./RolesSection";
+
+const ROLE_SKELETON_COUNT = 3;
 
 export const RolesPage = () => {
   const {
@@ -21,7 +24,13 @@ export const RolesPage = () => {
       </p>
 
       <div className="mt-6">
-        {isLoading && <Skeleton className="h-48 w-full rounded-xl" />}
+        {isLoading && (
+          <div className="space-y-3" role="status" aria-label="Loading">
+            {Array.from({ length: ROLE_SKELETON_COUNT }, (_unused, roleIndex) => (
+              <CardRowSkeleton key={roleIndex} textLineCount={1} actionCount={2} />
+            ))}
+          </div>
+        )}
         {error && <FormBanner>{getErrorMessage(error)}</FormBanner>}
         {organization && (
           <RolesSection

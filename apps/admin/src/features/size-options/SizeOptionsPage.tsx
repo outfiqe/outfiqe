@@ -1,5 +1,6 @@
 import { Badge, Button, FormBanner, Input, Skeleton, toast } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -9,8 +10,17 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { sizeOptionsApi } from "./api";
 import type { SizeOption } from "./schemas";
 
+const SizeOptionRowSkeleton = () => (
+  <div
+    className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
+    aria-hidden
+  >
+    <Skeleton className="h-5 w-14 rounded-full" />
+    <Skeleton className="h-8 w-16 rounded-lg" />
+  </div>
+);
+
 export const SizeOptionsPage = () => {
-  const queryClient = useQueryClient();
   const { data: productTypes } = useQuery({
     queryKey: ["admin-product-types"],
     queryFn: productTypesApi.list,
@@ -31,23 +41,21 @@ export const SizeOptionsPage = () => {
 
   const sizesForType = (sizeOptions ?? []).filter((sizeOption) => sizeOption.type === type);
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () =>
       sizeOptionsApi.create({ type: type ?? "", label, sortOrder: sizesForType.length }),
+    invalidateKeys: [["admin-size-options"]],
     onSuccess: () => {
       setLabel("");
       setError(null);
-      queryClient.invalidateQueries({ queryKey: ["admin-size-options"] });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const remove = useMutation({
+  const remove = useApiMutation({
     mutationFn: (sizeOption: SizeOption) => sizeOptionsApi.remove(sizeOption.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-size-options"] });
-      setDeleteTarget(null);
-    },
+    invalidateKeys: [["admin-size-options"]],
+    onSuccess: () => setDeleteTarget(null),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -109,9 +117,7 @@ export const SizeOptionsPage = () => {
 
           <div className="mt-6 space-y-3">
             {isLoading &&
-              Array.from({ length: 3 }).map((_, index) => (
-                <Skeleton key={index} className="h-14 w-full rounded-xl" />
-              ))}
+              Array.from({ length: 3 }).map((_, index) => <SizeOptionRowSkeleton key={index} />)}
             {!isLoading && sizesForType.length === 0 && (
               <p className="text-sm text-muted-foreground">
                 No sizes yet for {labelForType(type)}.

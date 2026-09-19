@@ -1,6 +1,5 @@
 import { Badge, Button, Input, Skeleton } from "@outfiqe/design-system";
-import { useDebouncedValue } from "@outfiqe/hooks";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
 import { useState } from "react";
 
 import { ApiClientError } from "@/lib/apiClient";
@@ -12,6 +11,26 @@ import { useInfiniteUsers } from "./hooks/useInfiniteUsers";
 import type { AccountStatusValue } from "./schemas";
 
 const SEARCH_DEBOUNCE_MS = 300;
+const USER_ROW_SKELETON_COUNT = 6;
+const USER_ROW_CLASS = "rounded-xl border border-border bg-card p-4";
+
+const UserRowSkeleton = () => (
+  <div className={USER_ROW_CLASS} aria-hidden>
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-6 w-36" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+        <Skeleton className="mt-1 h-5 w-80 max-w-full" />
+      </div>
+      <div className="flex gap-2">
+        <Skeleton className="h-10 w-24 rounded-lg" />
+        <Skeleton className="h-10 w-16 rounded-lg" />
+      </div>
+    </div>
+  </div>
+);
 
 const STATUS_TONE: Record<AccountStatusValue, "success" | "neutral" | "negative"> = {
   ACTIVE: "success",
@@ -36,7 +55,6 @@ export const UsersPage = () => {
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
   const [suspendTargetId, setSuspendTargetId] = useState<string | null>(null);
   const [banTargetId, setBanTargetId] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
   const {
     data: usersQuery,
@@ -48,9 +66,9 @@ export const UsersPage = () => {
   } = useInfiniteUsers(debouncedQuery.trim());
   const users = usersQuery?.pages.flatMap((page) => page.items) ?? [];
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["users"] });
+  const USERS_QUERY_KEY = ["users"];
 
-  const suspend = useMutation({
+  const suspend = useApiMutation({
     mutationFn: ({
       userId,
       reason,
@@ -60,29 +78,25 @@ export const UsersPage = () => {
       reason: string;
       durationHours?: number;
     }) => usersApi.suspend(userId, reason, durationHours),
-    onSuccess: () => {
-      invalidate();
-      setSuspendTargetId(null);
-    },
+    invalidateKeys: [USERS_QUERY_KEY],
+    onSuccess: () => setSuspendTargetId(null),
   });
 
-  const ban = useMutation({
+  const ban = useApiMutation({
     mutationFn: ({ userId, reason }: { userId: string; reason: string }) =>
       usersApi.ban(userId, reason),
-    onSuccess: () => {
-      invalidate();
-      setBanTargetId(null);
-    },
+    invalidateKeys: [USERS_QUERY_KEY],
+    onSuccess: () => setBanTargetId(null),
   });
 
-  const unsuspend = useMutation({
+  const unsuspend = useApiMutation({
     mutationFn: (userId: string) => usersApi.unsuspend(userId),
-    onSuccess: invalidate,
+    invalidateKeys: [USERS_QUERY_KEY],
   });
 
-  const unban = useMutation({
+  const unban = useApiMutation({
     mutationFn: (userId: string) => usersApi.unban(userId),
-    onSuccess: invalidate,
+    invalidateKeys: [USERS_QUERY_KEY],
   });
 
   const actionErrorFor = (userId: string): string | null => {
@@ -126,8 +140,8 @@ export const UsersPage = () => {
         )}
         {debouncedQuery.trim() &&
           isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          Array.from({ length: USER_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
+            <UserRowSkeleton key={rowIndex} />
           ))}
         {error && <p className="text-sm text-destructive">Couldn&apos;t load users.</p>}
         {debouncedQuery.trim() && !isLoading && users.length === 0 && (
@@ -141,7 +155,7 @@ export const UsersPage = () => {
           const isAdmin = user.role === "ADMIN";
 
           return (
-            <div key={user.id} className="rounded-xl border border-border bg-card p-4">
+            <div key={user.id} className={USER_ROW_CLASS}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">

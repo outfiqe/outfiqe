@@ -1,16 +1,9 @@
-import {
-  Badge,
-  Button,
-  Checkbox,
-  FormBanner,
-  Input,
-  Modal,
-  Skeleton,
-  toast,
-} from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Badge, Button, Checkbox, FormBanner, Input, Modal, toast } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useMemo, useState } from "react";
 
+import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
@@ -55,7 +48,6 @@ const RoleFormModal = ({
   viewerPermissionKeys,
   onClose,
 }: RoleFormModalProps) => {
-  const queryClient = useQueryClient();
   const [name, setName] = useState(editingRole?.name ?? "");
   const rolesOwnOriginalPermissionKeys = useMemo(
     () => new Set(editingRole?.permissionKeys ?? []),
@@ -79,13 +71,13 @@ const RoleFormModal = ({
     });
   };
 
-  const save = useMutation({
+  const save = useApiMutation({
     mutationFn: () => {
       const body = { name: name.trim(), permissionKeys: [...selectedKeys] };
       return editingRole ? crmApi.updateRole(editingRole.id, body) : crmApi.createRole(body);
     },
+    invalidateKeys: [ROLES_QUERY_KEY],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
       toast.success(editingRole ? "Role updated." : "Role created.");
       onClose();
     },
@@ -158,12 +150,10 @@ const RoleFormModal = ({
 };
 
 const DeleteRoleModal = ({ role, onClose }: { role: Role; onClose: () => void }) => {
-  const queryClient = useQueryClient();
-
-  const remove = useMutation({
+  const remove = useApiMutation({
     mutationFn: () => crmApi.deleteRole(role.id),
+    invalidateKeys: [ROLES_QUERY_KEY],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
       toast.success("Role deleted.");
       onClose();
     },
@@ -195,15 +185,12 @@ const DeleteRoleModal = ({ role, onClose }: { role: Role; onClose: () => void })
 };
 
 const OrganizationNameCard = ({ currentName }: { currentName: string }) => {
-  const queryClient = useQueryClient();
   const [name, setName] = useState(currentName);
 
-  const rename = useMutation({
+  const rename = useApiMutation({
     mutationFn: () => crmApi.updateOrganization({ name: name.trim() }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ORGANIZATION_QUERY_KEY });
-      toast.success("Organization name updated.");
-    },
+    invalidateKeys: [ORGANIZATION_QUERY_KEY],
+    onSuccess: () => toast.success("Organization name updated."),
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
@@ -290,7 +277,7 @@ export const RolesSection = ({
         </div>
 
         <div className="mt-3 space-y-3">
-          {rolesLoading && <Skeleton className="h-32 w-full" />}
+          {rolesLoading && <CardRowSkeleton textLineCount={1} actionCount={2} />}
           {rolesError && <FormBanner>{getErrorMessage(rolesError)}</FormBanner>}
 
           {roles?.map((role) => (

@@ -1,6 +1,9 @@
-import { Button, Checkbox, FormBanner, Input, Modal, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, Checkbox, FormBanner, Input, Modal } from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
+
+import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 
 import { type CreateLevelInput, gamificationApi, type UpdateLevelInput } from "./api";
 import type { Level } from "./schemas";
@@ -98,17 +101,14 @@ const formForLevel = (level: Level): LevelFormState => ({
 });
 
 const EditLevelModal = ({ level, onClose }: { level: Level; onClose: () => void }) => {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState<LevelFormState>(() => formForLevel(level));
   const [isActive, setIsActive] = useState(level.isActive);
   const [error, setError] = useState<string | null>(null);
 
-  const update = useMutation({
+  const update = useApiMutation({
     mutationFn: (input: UpdateLevelInput) => gamificationApi.updateLevel(level.id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: LEVELS_QUERY_KEY });
-      onClose();
-    },
+    invalidateKeys: [LEVELS_QUERY_KEY],
+    onSuccess: () => onClose(),
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
@@ -149,7 +149,6 @@ const EditLevelModal = ({ level, onClose }: { level: Level; onClose: () => void 
 };
 
 export const LevelsSection = () => {
-  const queryClient = useQueryClient();
   const { data: levels, isLoading } = useQuery({
     queryKey: LEVELS_QUERY_KEY,
     queryFn: gamificationApi.listLevels,
@@ -159,12 +158,12 @@ export const LevelsSection = () => {
   const [error, setError] = useState<string | null>(null);
   const [editingLevel, setEditingLevel] = useState<Level | null>(null);
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () => gamificationApi.createLevel(toCreateInput(form)),
+    invalidateKeys: [LEVELS_QUERY_KEY],
     onSuccess: () => {
       setForm(EMPTY_FORM);
       setError(null);
-      queryClient.invalidateQueries({ queryKey: LEVELS_QUERY_KEY });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
@@ -196,9 +195,7 @@ export const LevelsSection = () => {
 
       <div className="mt-4 space-y-2">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-16 w-full rounded-xl" />
-          ))}
+          Array.from({ length: 3 }).map((_, index) => <ActionRowSkeleton key={index} />)}
         {levels?.length === 0 && <p className="text-sm text-muted-foreground">No levels yet.</p>}
 
         {levels?.map((level) => (

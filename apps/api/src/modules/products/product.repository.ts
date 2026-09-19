@@ -41,7 +41,7 @@ export type { DbClient } from "#types/db.types.js";
 const NEW_ARRIVALS_LIMIT = 10;
 const SEEN_ON_CREATORS_LIMIT = 5;
 
-const withActiveDiscount = () => {
+export const withActiveDiscount = () => {
   const now = new Date();
   return {
     discounts: {
@@ -91,7 +91,19 @@ type PublicFilter = {
   minPrice?: number;
   maxPrice?: number;
   inStockOnly?: boolean;
+  thrift?: boolean;
   sort?: ProductSort;
+};
+
+/**
+ * A thrift product is one-of-a-kind — once its last unit sells it can never restock, so it's
+ * excluded from every shopper-facing listing the moment it hits zero stock (its own product page
+ * stays reachable and shows a "sold" state instead). `every` is vacuously true for a product with
+ * no sizes at all, which correctly excludes it too.
+ */
+const excludeSoldOutThrift: Prisma.ProductWhereInput = {
+  isThrift: true,
+  sizes: { every: { stock: { lte: 0 } } },
 };
 
 const buildPublicWhere = (filter: PublicFilter): Prisma.ProductWhereInput => ({
@@ -101,6 +113,7 @@ const buildPublicWhere = (filter: PublicFilter): Prisma.ProductWhereInput => ({
   categories: filter.categoryId ? { some: { id: filter.categoryId } } : undefined,
   productTypeId: filter.productTypeId,
   brandId: filter.brandId,
+  isThrift: filter.thrift,
   price:
     filter.minPrice !== undefined || filter.maxPrice !== undefined
       ? { gte: filter.minPrice, lte: filter.maxPrice }
@@ -110,6 +123,11 @@ const buildPublicWhere = (filter: PublicFilter): Prisma.ProductWhereInput => ({
     filter.sort === PRODUCT_SORT.NEW_ARRIVALS
       ? { gte: new Date(Date.now() - NEW_ARRIVAL_WINDOW_MS) }
       : undefined,
+  discounts:
+    filter.sort === PRODUCT_SORT.ON_SALE
+      ? { some: withActiveDiscount().discounts.where }
+      : undefined,
+  NOT: excludeSoldOutThrift,
 });
 
 const withTotalStock = <T extends { sizes: { stock: number }[] }>(
@@ -300,10 +318,10 @@ export const productRepository = {
 
   async listForReview(
     status: ProductStatus,
-    params: { cursor?: string; limit: number },
+    params: { cursor?: string; limit: number; isThrift?: boolean },
   ): Promise<ProductWithStock[]> {
     const rows = await prisma.product.findMany({
-      where: { status, deletedAt: null },
+      where: { status, deletedAt: null, isThrift: params.isThrift },
       include: withBrandAndCategories,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
@@ -343,7 +361,8 @@ export const productRepository = {
         ${params.brandId ?? null}::uuid,
         ${params.minPrice ?? null}::int,
         ${params.maxPrice ?? null}::int,
-        ${params.inStockOnly ?? false}
+        ${params.inStockOnly ?? false},
+        ${params.thrift ?? null}
       )
     `);
 
@@ -372,6 +391,7 @@ export const productRepository = {
         status: ProductStatus.APPROVED,
         deletedAt: null,
         brand: { accountStatus: AccountStatus.ACTIVE },
+        NOT: excludeSoldOutThrift,
       },
       include: { ...withBrandAndCategories, ...withFirstImageAsset, ...withActiveDiscount() },
       orderBy: { reviewedAt: "desc" },
@@ -389,6 +409,7 @@ export const productRepository = {
         status: ProductStatus.APPROVED,
         deletedAt: null,
         brand: { accountStatus: AccountStatus.ACTIVE },
+        NOT: excludeSoldOutThrift,
       },
       include: { ...withBrandAndCategories, ...withFirstImageAsset, ...withActiveDiscount() },
     });
@@ -407,6 +428,7 @@ export const productRepository = {
         deletedAt: null,
         brand: { accountStatus: AccountStatus.ACTIVE },
         createdAt: { gte: new Date(Date.now() - NEW_ARRIVAL_WINDOW_MS) },
+        NOT: excludeSoldOutThrift,
       },
       include: { ...withBrandAndCategories, ...withFirstImageAsset, ...withActiveDiscount() },
       orderBy: { createdAt: "desc" },

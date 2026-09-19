@@ -1,6 +1,7 @@
-import { Skeleton } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+
+import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 
 import { gamificationApi } from "../api";
 import type { ActivityXpConfig } from "../schemas";
@@ -24,9 +25,7 @@ export const ActivityConfigSection = () => {
 
       <div className="mt-4 space-y-2">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={index} className="h-14 w-full rounded-xl" />
-          ))}
+          Array.from({ length: 3 }).map((_, index) => <ActionRowSkeleton key={index} hasSubLine />)}
 
         {configs?.map((config) => (
           <ActivityConfigCard key={config.activityType} config={config} onEdit={setEditingConfig} />

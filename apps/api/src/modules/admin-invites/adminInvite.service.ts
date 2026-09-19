@@ -4,6 +4,7 @@ import { sendEmail } from "#lib/email.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
 import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
@@ -13,9 +14,10 @@ import { toSummary } from "./adminInvite.utils.js";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const CONFLICT_STATUS = 409;
+const NOT_FOUND_STATUS = 404;
 
 export const adminInviteService = {
-  async invite(email: string, name: string, invitedById: string): Promise<void> {
+  async invite(email: string, name: string, roleId: string, invitedById: string): Promise<void> {
     const existingUser = await userRepository.findByEmail(email);
     if (existingUser) {
       throw new AppError(
@@ -25,10 +27,28 @@ export const adminInviteService = {
       );
     }
 
+    const pendingInvite = await adminInviteRepository.findPendingByEmail(email);
+    if (pendingInvite) {
+      throw new AppError(
+        "INVITE_ALREADY_PENDING",
+        "An invite is already pending for this email.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const platformOrganization = await crmAccessRepository.findPlatformOrganization();
+    const role =
+      platformOrganization &&
+      (await crmAccessRepository.findRoleById(platformOrganization.id, roleId));
+    if (!role) {
+      throw new AppError("ROLE_NOT_FOUND", "That role could not be found.", NOT_FOUND_STATUS);
+    }
+
     const rawToken = generateOpaqueToken();
     await adminInviteRepository.create({
       email,
       name,
+      roleId,
       tokenHash: hashToken(rawToken),
       expiresAt: new Date(Date.now() + INVITE_TTL_MS),
       invitedById,

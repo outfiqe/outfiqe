@@ -14,6 +14,7 @@ type ProductFixture = Omit<ProductWithStockSizesAndImages, "images"> & {
 import {
   isLowStock,
   isNew,
+  isThriftSoldOut,
   isUuid,
   sumStock,
   toBrandSummary,
@@ -55,6 +56,9 @@ const buildProduct = (overrides: Partial<ProductFixture> = {}): ProductFixture =
   rating3Count: 0,
   rating4Count: 0,
   rating5Count: 0,
+  isThrift: false,
+  thriftConditionRating: null,
+  thriftConditionNotes: null,
   brand: { name: "Acme" },
   categories: [{ slug: "outerwear", name: "Outerwear" }],
   productType: { slug: "jacket", label: "Jacket" },
@@ -106,6 +110,24 @@ describe("isLowStock", () => {
 
   it("is false above the threshold", () => {
     expect(isLowStock(6)).toBe(false);
+  });
+});
+
+describe("isThriftSoldOut", () => {
+  it("is false for a non-thrift product regardless of stock", () => {
+    expect(isThriftSoldOut(false, 0)).toBe(false);
+  });
+
+  it("is true for a thrift product with zero stock", () => {
+    expect(isThriftSoldOut(true, 0)).toBe(true);
+  });
+
+  it("is false for a thrift product that still has stock", () => {
+    expect(isThriftSoldOut(true, 1)).toBe(false);
+  });
+
+  it("is false when totalStock isn't known", () => {
+    expect(isThriftSoldOut(true, undefined)).toBe(false);
   });
 });
 
@@ -182,6 +204,31 @@ describe("toPublicProduct", () => {
     expect(view.image).toBeNull();
   });
 
+  it("carries the thrift fields and marks a sold-out thrift item", () => {
+    const view = toPublicProduct(
+      buildProduct({
+        isThrift: true,
+        thriftConditionRating: "GOOD",
+        thriftConditionNotes: "Small mark on the left cuff.",
+        totalStock: 0,
+      }),
+    );
+    expect(view.isThrift).toBe(true);
+    expect(view.thriftConditionRating).toBe("GOOD");
+    expect(view.thriftConditionNotes).toBe("Small mark on the left cuff.");
+    expect(view.isSoldOut).toBe(true);
+  });
+
+  it("is not sold out for a thrift item that still has stock", () => {
+    const view = toPublicProduct(buildProduct({ isThrift: true, totalStock: 3 }));
+    expect(view.isSoldOut).toBe(false);
+  });
+
+  it("is never sold out for a non-thrift item at zero stock", () => {
+    const view = toPublicProduct(buildProduct({ isThrift: false, totalStock: 0 }));
+    expect(view.isSoldOut).toBe(false);
+  });
+
   it("builds per-format srcSet and lqip from a completed image asset", () => {
     const view = toPublicProduct(
       buildProduct({
@@ -242,5 +289,11 @@ describe("toBrandSummary", () => {
     expect(summary.imageUrls).toEqual(["jacket.png"]);
     expect(summary.type).toBe("jacket");
     expect(summary.lowStock).toBe(false);
+  });
+
+  it("marks a sold-out thrift listing so the brand can see it was their only unit", () => {
+    const summary = toBrandSummary(buildProduct({ isThrift: true, totalStock: 0 }));
+    expect(summary.isThrift).toBe(true);
+    expect(summary.isSoldOut).toBe(true);
   });
 });

@@ -9,7 +9,7 @@ import { type Announcement, AnnouncementAudience } from "./schemas";
 type SendConfirmationModalProps = {
   announcement: Announcement;
   onClose: () => void;
-  onSent: () => void;
+  onSent: () => Promise<unknown>;
 };
 
 const SendMode = {
@@ -52,7 +52,7 @@ export const SendConfirmationModal = ({
         scheduledAt: mode === SendMode.SCHEDULE ? new Date(scheduledAt).toISOString() : undefined,
       });
       toast.success(mode === SendMode.SCHEDULE ? "Announcement scheduled" : "Announcement sent");
-      onSent();
+      await onSent();
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {

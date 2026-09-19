@@ -14,6 +14,7 @@ import { isLockedOut, recordFailedLogin, resetFailedLogins } from "../auth.locko
 import { issueTokens } from "../auth.service.js";
 import type { IssuedTokens } from "../auth.types.js";
 import {
+  GOOGLE_OAUTH_PROMPT,
   OAUTH_STATE_TTL_MS,
   OAuthCallbackStatus,
   OAuthFlowIntent,
@@ -88,7 +89,7 @@ const buildAuthorizationUrl = (
     state,
     code_challenge: codeChallenge,
     code_challenge_method: "S256",
-    ...(isGoogle ? { access_type: "online" } : {}),
+    ...(isGoogle ? { access_type: "online", prompt: GOOGLE_OAUTH_PROMPT } : {}),
   });
 
   return `${baseUrl}?${params.toString()}`;
