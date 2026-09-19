@@ -17,15 +17,28 @@ describe("SkeletonControls", () => {
   });
 
   it("keeps the placeholder button out of the tab order and out of the accessibility tree", () => {
-    render(<SkeletonButton label="Delete" />);
+    const { container } = render(<SkeletonButton label="Delete" />);
 
     expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
-    expect(screen.getByText("Delete", { selector: "button" })).toBeDisabled();
+    expect(container.querySelector("button")).toBeDisabled();
   });
 
   it("draws the placeholder badge with the real badge padding", () => {
     const { container } = render(<SkeletonBadge label="Active" />);
 
     expect(container.firstElementChild).toHaveClass("px-3", "py-1.5", "skeleton-pill");
+  });
+
+  it("keeps the placeholder label out of the page text so queries never find a fake button", () => {
+    const { container } = render(
+      <>
+        <SkeletonButton label="Suspend" />
+        <SkeletonBadge label="Active" />
+      </>,
+    );
+
+    expect(screen.queryByText("Suspend")).not.toBeInTheDocument();
+    expect(screen.queryByText("Active")).not.toBeInTheDocument();
+    expect(container.querySelector("button")).toHaveAttribute("data-label", "Suspend");
   });
 });
