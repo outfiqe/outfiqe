@@ -2,6 +2,7 @@ import type { ResponsiveImage } from "@outfiqe/types";
 
 import type {
   BrandTagReviewPolicy,
+  PostLayout,
   TagApprovalSource,
   TagRejectionReason,
   TagReviewStatus,
@@ -17,6 +18,7 @@ export type CreatorLookRecord = {
   id: string;
   creatorId: string;
   imageUrl: string;
+  layout: PostLayout;
   caption: string | null;
   createdAt: Date;
 };
@@ -42,6 +44,7 @@ export type CreateCreatorLookInput = {
   imageUrls: [string, ...string[]];
   imageAssetIds?: (string | null)[];
   caption?: string;
+  layout?: PostLayout;
   taggedProducts: TaggedProductCreateInput[];
   hashtags: string[];
 };
@@ -85,6 +88,7 @@ export type CreatorLookEditTaggedProduct = TaggedProductInput & {
 export type CreatorLookEditDetail = {
   id: string;
   imageUrls: string[];
+  layout: PostLayout;
   caption: string | null;
   taggedProducts: CreatorLookEditTaggedProduct[];
 };
@@ -115,6 +119,7 @@ export type CreatorLookFeedPost = {
   imageUrl: string;
   images: string[];
   image: ResponsiveImage;
+  layout: PostLayout;
   caption: string | null;
   likeCount: number;
   commentCount: number;

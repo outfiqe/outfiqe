@@ -139,6 +139,7 @@ const toFeedPost = (
     creator,
     imageUrl,
     images,
+    layout,
     caption,
     likeCount,
     commentCount,
@@ -161,6 +162,7 @@ const toFeedPost = (
   imageUrl,
   images: images.length > 0 ? images.map((image) => image.url) : [imageUrl],
   image: toResponsiveImage(imageUrl, images[0]?.imageAsset ?? null),
+  layout,
   caption,
   likeCount,
   commentCount,
@@ -1185,6 +1187,7 @@ export const creatorLookRepository = {
     imageUrls,
     imageAssetIds,
     caption,
+    layout,
     taggedProducts,
     hashtags,
   }: CreateCreatorLookInput): Promise<CreatorLookSummary> {
@@ -1193,6 +1196,7 @@ export const creatorLookRepository = {
         data: {
           creatorId,
           imageUrl: imageUrls[0],
+          layout,
           caption,
           images: {
             create: imageUrls.map((url, sortOrder) => ({
