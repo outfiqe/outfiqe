@@ -203,22 +203,24 @@ const BadgeFormSkeleton = () => (
       <Skeleton className="h-8 w-64 max-w-full" />
     </div>
 
-    <Tabs value={TAB.DETAILS} className="mt-6">
-      <TabsList>
-        <TabsTrigger value={TAB.DETAILS}>Details</TabsTrigger>
-        <TabsTrigger value={TAB.DESIGN} disabled>
-          Design
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value={TAB.DETAILS} className="mt-4 space-y-4">
-        {Array.from({ length: BADGE_FIELD_SKELETON_COUNT }, (_unused, fieldIndex) => (
-          <div key={fieldIndex} className="space-y-1.5">
-            <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-10 w-full rounded-lg" />
-          </div>
-        ))}
-      </TabsContent>
-    </Tabs>
+    <div aria-hidden>
+      <Tabs value={TAB.DETAILS} className="mt-6">
+        <TabsList>
+          <TabsTrigger value={TAB.DETAILS}>Details</TabsTrigger>
+          <TabsTrigger value={TAB.DESIGN} disabled>
+            Design
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value={TAB.DETAILS} className="mt-4 space-y-4">
+          {Array.from({ length: BADGE_FIELD_SKELETON_COUNT }, (_unused, fieldIndex) => (
+            <div key={fieldIndex} className="space-y-1.5">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+            </div>
+          ))}
+        </TabsContent>
+      </Tabs>
+    </div>
 
     <div className="mt-6 space-y-3 border-t border-border pt-4">
       <div className="flex justify-end gap-2">
