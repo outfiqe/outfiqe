@@ -57,6 +57,7 @@ export default defineConfig({
         "src/components/ProtectedRoute.tsx",
         "src/components/RoutePendingScreen.tsx",
         "src/components/PagePendingSkeleton.tsx",
+        "src/components/TableSkeleton.tsx",
         "src/components/page-skeletons/**",
         "src/components/ProtectedRoute.utils.ts",
         "src/components/AdminSidebar.utils.ts",

@@ -1,9 +1,10 @@
-import { Button, FormBanner, Input, Skeleton } from "@outfiqe/design-system";
+import { Button, FormBanner, Input } from "@outfiqe/design-system";
 import { useDebouncedValue } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { formatDate, formatRupees } from "./format.utils";
@@ -11,6 +12,14 @@ import { crmRelationshipsApi } from "./relationshipsApi";
 
 const PAGE_SIZE = 25;
 const SEARCH_DEBOUNCE_MS = 300;
+
+const PARTNER_TABLE_HEADERS = [
+  "Creator",
+  "Tag clicks",
+  "Attributed orders",
+  "Attributed revenue",
+  "Last activity",
+];
 
 export const PartnersPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -48,7 +57,7 @@ export const PartnersPage = () => {
       </p>
 
       <div className="mt-6">
-        {isLoading && <Skeleton className="h-40 w-full" />}
+        {isLoading && <TableSkeleton headers={PARTNER_TABLE_HEADERS} />}
         {error && <FormBanner>{getErrorMessage(error)}</FormBanner>}
 
         {partnerPage && partnerPage.reason === "ORGANIZATION_NOT_LINKED_TO_BRAND" && (
