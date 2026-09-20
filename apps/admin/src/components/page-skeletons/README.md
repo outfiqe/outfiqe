@@ -8,6 +8,7 @@ that is about to appear so nothing jumps when the real content arrives.
 ## Structure
 
 - `RoutePendingSkeleton.tsx` — the router's default pending component; picks a skeleton from the URL being navigated to.
+- `resolveCrmRouteSkeleton.ts` — pure mapping from a CRM pathname to the key of that page's own skeleton (`features/crm/skeletons.tsx`); `RoutePendingSkeleton` checks it before the layout kinds below.
 - `resolvePageSkeletonKind.ts` — pure mapping from a pathname to one of five layout kinds (dashboard, list, kanban, detail-form, generic).
 - `DashboardPageSkeleton.tsx`, `ListPageSkeleton.tsx`, `KanbanPageSkeleton.tsx`, `DetailFormPageSkeleton.tsx` — one skeleton per layout kind.
 - `ShimmerBlock.tsx` — the design-system `Skeleton` with the admin shimmer instead of the pulse (the shimmer styles live in `src/index.css`).
@@ -51,6 +52,10 @@ data arrives:
   placeholder rows) and, in `@outfiqe/design-system`, `StatCardSkeleton` and `Table`'s `isLoading`.
 - **Page-specific skeletons** live in the page's own file (or a `skeletons.tsx` next to it, as in
   `features/gamification`) when the real layout is unique to that page.
+- **CRM pages have their own route skeleton.** While a CRM page's code loads, the placeholder shows
+  that page's real heading, description, filter controls and table headers (from
+  `features/crm/crmPageContent.ts`) with placeholder rows, instead of the generic list or dashboard
+  blocks. A new CRM page is added there and to `resolveCrmRouteSkeleton.ts`.
 - **Left generic on purpose:** the CRM home page (its content depends on the viewer's permissions,
   which are unknown until the organization loads) and the typeahead dropdown option rows, which
   already match the option height.
