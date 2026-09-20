@@ -1912,6 +1912,37 @@ describe("GET /api/creator-looks/feed", () => {
     expect(ids).toContain(trendingLook.id);
   });
 
+  it("pads a signed-in for_you feed with recent posts when few posts are trending, matching what an anonymous visitor sees", async () => {
+    const trendingCreator = await createCreator("Pad Trending Creator", "pad-trending-creator");
+    const recentCreator = await createCreator("Pad Recent Creator", "pad-recent-creator");
+    const engager = await createCreator("Pad Engager", "pad-engager");
+    const viewer = await createCreator("Pad Viewer", "pad-viewer");
+
+    const trendingLook = await createLook(trendingCreator.id, "Pad trending post");
+    await prisma.creatorLookLike.create({
+      data: { creatorLookId: trendingLook.id, userId: engager.id },
+    });
+    const recentLook = await createLook(recentCreator.id, "Pad recent untrended post");
+
+    await creatorLookService.runTrendingAggregation();
+    await creatorLookService.runTrendingScoring();
+
+    const signedInResponse = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you", limit: 30 })
+      .set("Authorization", authHeaderFor(viewer.id));
+    const anonymousResponse = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "for_you", limit: 30 });
+
+    expect(signedInResponse.status).toBe(200);
+    const signedInIds = signedInResponse.body.data.posts.map((post: { id: string }) => post.id);
+    const anonymousIds = anonymousResponse.body.data.posts.map((post: { id: string }) => post.id);
+    expect(signedInIds).toContain(trendingLook.id);
+    expect(signedInIds).toContain(recentLook.id);
+    expect(anonymousIds).toContain(recentLook.id);
+  });
+
   it("only flags genuinely-scored posts as trending in for_you, not the followed posts interleaved in for personalization", async () => {
     const trendingCreator = await createCreator("Rank Discovery Creator", "rank-discovery-creator");
     const followedCreator = await createCreator(
