@@ -626,6 +626,23 @@ const scorePersonalized = (
   return candidate.score * multiplier;
 };
 
+const padWithRecentLooksWhenPoolIsSmall = async (
+  scored: PostTrendingEntry[],
+): Promise<PostTrendingEntry[]> => {
+  if (scored.length >= TRENDING_HYBRID_MIN_SCORED_POOL_SIZE) return scored;
+
+  const scoredIdSet = new Set(scored.map((entry) => entry.lookId));
+  const recentLookIds = (await buildLegacyTrendingSnapshot()).filter(
+    (lookId) => !scoredIdSet.has(lookId),
+  );
+  const lowestScoredScore = scored.length > 0 ? Math.min(...scored.map((entry) => entry.score)) : 1;
+  const recentEntries = recentLookIds.map((lookId, index) => ({
+    lookId,
+    score: lowestScoredScore * FOR_YOU_LEGACY_POSITION_DECAY ** (index + 1),
+  }));
+  return [...scored, ...recentEntries];
+};
+
 const buildPersonalizedSnapshot = async (
   viewerId: string,
   followedCreatorIds: string[],
@@ -637,13 +654,8 @@ const buildPersonalizedSnapshot = async (
   );
 
   const scored = await getOrRecomputeTrendingScores();
-  const usingRealScores = scored.length > 0;
-  const candidatePool: PostTrendingEntry[] = usingRealScores
-    ? scored
-    : (await buildLegacyTrendingSnapshot()).map((lookId, index) => ({
-        lookId,
-        score: FOR_YOU_LEGACY_POSITION_DECAY ** index,
-      }));
+  const scoredIdSet = new Set(scored.map((entry) => entry.lookId));
+  const candidatePool = await padWithRecentLooksWhenPoolIsSmall(scored);
 
   if (candidatePool.length === 0) {
     return {
@@ -687,7 +699,7 @@ const buildPersonalizedSnapshot = async (
   const discoveryIds = diversified.map((entry) => entry.lookId);
   return {
     ids: interleaveFollowedLooks(discoveryIds, followedLookIds, FOR_YOU_FOLLOWED_SLOT_INTERVAL),
-    trendingIds: usingRealScores ? discoveryIds : [],
+    trendingIds: discoveryIds.filter((lookId) => scoredIdSet.has(lookId)),
   };
 };
 

@@ -86,6 +86,24 @@ describe("isTransactionConflictError", () => {
     expect(isTransactionConflictError(buildDriverAdapterSerializationFailureError())).toBe(true);
   });
 
+  it("is true for an unwrapped driver adapter TransactionWriteConflict error", () => {
+    const unwrappedWriteConflict = Object.assign(new Error("Transaction write conflict"), {
+      name: "DriverAdapterError",
+      cause: { kind: "TransactionWriteConflict" },
+    });
+
+    expect(isTransactionConflictError(unwrappedWriteConflict)).toBe(true);
+  });
+
+  it("is false for an unwrapped driver adapter error of a different kind", () => {
+    const otherDriverAdapterError = Object.assign(new Error("Other"), {
+      name: "DriverAdapterError",
+      cause: { kind: "UniqueConstraintViolation" },
+    });
+
+    expect(isTransactionConflictError(otherDriverAdapterError)).toBe(false);
+  });
+
   it("is false for a different Prisma error code and for non-Prisma errors", () => {
     expect(isTransactionConflictError(buildPrismaError("P2002"))).toBe(false);
     expect(isTransactionConflictError(new Error("boom"))).toBe(false);
