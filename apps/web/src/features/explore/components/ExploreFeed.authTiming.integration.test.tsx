@@ -182,4 +182,35 @@ describe("ExploreFeed auth-resolution timing", () => {
       pageParams: [undefined],
     });
   });
+
+  it("shows a follow-creators empty state, not other creators' posts, on the following tab when it has no posts", async () => {
+    setHasSessionCookie();
+    mockAncillaryFeedEndpoints();
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams("tab=following") as ReturnType<typeof useSearchParams>,
+    );
+    mswServer.use(
+      http.post(SESSION_URL, () =>
+        HttpResponse.json({
+          success: true,
+          message: "Session is valid.",
+          data: { accessToken: "access-token" },
+        }),
+      ),
+      http.get(CURRENT_USER_URL, () =>
+        HttpResponse.json({ success: true, message: "Current user.", data: currentUser }),
+      ),
+      http.get(FEED_URL, () =>
+        HttpResponse.json({
+          success: true,
+          message: "Feed.",
+          data: { posts: [], nextCursor: null },
+        }),
+      ),
+    );
+
+    render(<ExploreFeed />, { wrapper: createAuthQueryClientWrapper() });
+
+    expect(await screen.findByText(/No posts from creators you follow yet/)).toBeInTheDocument();
+  });
 });

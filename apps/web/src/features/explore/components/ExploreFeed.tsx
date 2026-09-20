@@ -200,6 +200,11 @@ export const ExploreFeed = () => {
             <p className="py-16 text-center text-sm text-muted-foreground">
               Nothing is trending right now. Check back soon.
             </p>
+          ) : posts.length === 0 && isFollowingTab ? (
+            <p className="py-16 text-center text-sm text-muted-foreground">
+              No posts from creators you follow yet. Follow creators from &ldquo;Creators to
+              follow&rdquo; to fill this tab.
+            </p>
           ) : posts.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
               Nothing here yet — try a different tab.
