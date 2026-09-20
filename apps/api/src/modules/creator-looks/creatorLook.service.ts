@@ -431,14 +431,7 @@ export const creatorLookService = {
         FollowTargetType.USER,
       );
       if (followingCreatorIds.length === 0) {
-        // Nobody followed yet: fall back to trending rather than showing an empty feed.
-        return creatorLookRepository.feed({
-          tab: TRENDING_TAB,
-          cursor,
-          limit,
-          viewerId,
-          followingCreatorIds: [],
-        });
+        return { posts: [], nextCursor: null };
       }
 
       return creatorLookRepository.feed({

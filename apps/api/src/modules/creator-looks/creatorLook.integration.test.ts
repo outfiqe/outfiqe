@@ -1739,8 +1739,10 @@ describe("GET /api/creator-looks/feed", () => {
     expect(response.status).toBe(401);
   });
 
-  it("falls back to trending when the viewer follows nobody on the following tab", async () => {
+  it("returns an empty following tab, not trending posts, when the viewer follows nobody", async () => {
     const viewer = await createCreator("No Follows Viewer", "no-follows-viewer");
+    const strangerCreator = await createCreator("Unfollowed Poster", "unfollowed-poster");
+    await createLook(strangerCreator.id, "Post from a creator nobody follows");
 
     const response = await request(testApp)
       .get("/api/creator-looks/feed")
@@ -1748,7 +1750,8 @@ describe("GET /api/creator-looks/feed", () => {
       .set("Authorization", authHeaderFor(viewer.id));
 
     expect(response.status).toBe(200);
-    expect(response.body.data).toHaveProperty("posts");
+    expect(response.body.data.posts).toEqual([]);
+    expect(response.body.data.nextCursor).toBeNull();
   });
 
   it("restricts the following tab to posts from followed creators", async () => {
