@@ -6,6 +6,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmAuditApi } from "./auditApi";
 import type { CrmAuditEntry } from "./auditSchemas";
+import { AUDIT_TABLE_HEADERS, CRM_PAGE_TEXT } from "./crmPageContent";
 import { formatDateTime } from "./format.utils";
 
 const AUDIT_QUERY_KEY = ["crm-audit"];
@@ -47,8 +48,6 @@ const AuditRow = ({ entry }: { entry: CrmAuditEntry }) => (
   </tr>
 );
 
-const AUDIT_TABLE_HEADERS = ["When", "Who", "Action", "Details"];
-
 export const AuditPage = () => {
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
@@ -62,10 +61,10 @@ export const AuditPage = () => {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold text-foreground">Audit log</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Every membership, role, ownership and billing change on this organization.
-      </p>
+      <h1 className="font-display text-2xl font-bold text-foreground">
+        {CRM_PAGE_TEXT.audit.title}
+      </h1>
+      <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.audit.description}</p>
 
       <div className="mt-6">
         {isLoading && <TableSkeleton headers={AUDIT_TABLE_HEADERS} />}

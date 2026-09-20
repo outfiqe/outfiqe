@@ -7,13 +7,12 @@ import { useState } from "react";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { CRM_PAGE_TEXT, CUSTOMER_TABLE_HEADERS } from "./crmPageContent";
 import { formatDate, formatRupees } from "./format.utils";
 import { crmRelationshipsApi } from "./relationshipsApi";
 
 const PAGE_SIZE = 25;
 const SEARCH_DEBOUNCE_MS = 300;
-
-const CUSTOMER_TABLE_HEADERS = ["Shopper", "Orders", "Items", "Total paid", "Last order"];
 
 export const CustomersPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -33,7 +32,9 @@ export const CustomersPage = () => {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-bold text-foreground">Customers</h1>
+        <h1 className="font-display text-2xl font-bold text-foreground">
+          {CRM_PAGE_TEXT.customers.title}
+        </h1>
         <Input
           type="search"
           placeholder="Search shoppers"
@@ -46,9 +47,7 @@ export const CustomersPage = () => {
         />
       </div>
 
-      <p className="mt-1 text-sm text-muted-foreground">
-        Shoppers who have bought your brand&apos;s products.
-      </p>
+      <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.customers.description}</p>
 
       <div className="mt-6">
         {isLoading && <TableSkeleton headers={CUSTOMER_TABLE_HEADERS} />}

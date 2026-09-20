@@ -9,6 +9,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { ContactFormModal } from "./ContactFormModal";
 import { crmContactsApi } from "./contactsApi";
 import { type Contact, contactLifecycleStageSchema } from "./contactsSchemas";
+import { CONTACT_TABLE_HEADERS, CRM_PAGE_TEXT } from "./crmPageContent";
 import { formatDate } from "./format.utils";
 
 const PAGE_SIZE = 25;
@@ -22,8 +23,6 @@ const STAGE_LABELS: Record<string, string> = {
   PARTNER: "Partner",
   OTHER: "Other",
 };
-
-const CONTACT_TABLE_HEADERS = ["Name", "Company", "Stage", "Owner", "Added", ""];
 
 export const ContactsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -67,7 +66,9 @@ export const ContactsPage = () => {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-bold text-foreground">Contacts</h1>
+        <h1 className="font-display text-2xl font-bold text-foreground">
+          {CRM_PAGE_TEXT.contacts.title}
+        </h1>
         <div className="flex flex-wrap items-center gap-2">
           <Select
             value={stageFilter}
@@ -101,9 +102,7 @@ export const ContactsPage = () => {
         </div>
       </div>
 
-      <p className="mt-1 text-sm text-muted-foreground">
-        People your team tracks by hand — leads, prospects, and other contacts.
-      </p>
+      <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.contacts.description}</p>
 
       <div className="mt-6">
         {isLoading && <TableSkeleton headers={CONTACT_TABLE_HEADERS} />}

@@ -1,10 +1,8 @@
-import { Badge, Button, FormBanner, Skeleton } from "@outfiqe/design-system";
+import { Badge, Button, FormBanner } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
-import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmBillingApi } from "./billingApi";
@@ -16,6 +14,7 @@ import {
 } from "./billingSchemas";
 import { formatDate, formatRupees } from "./format.utils";
 import { PlanCheckoutModal } from "./PlanCheckoutModal";
+import { BillingSkeleton } from "./skeletons";
 
 const BILLING_OVERVIEW_KEY = ["crm-billing-overview"];
 const BILLING_INVOICES_KEY = ["crm-billing-invoices"];
@@ -176,28 +175,6 @@ const InvoiceHistory = ({ invoices }: { invoices: SubscriptionInvoice[] }) => {
     </div>
   );
 };
-
-const INVOICE_TABLE_HEADERS = ["Period", "Amount", "Status", "Paid"];
-const INVOICE_SKELETON_ROW_COUNT = 3;
-
-const BillingSkeleton = () => (
-  <div className="space-y-6">
-    <div className="rounded-xl border border-border bg-card p-4" aria-hidden>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Skeleton className="h-7 w-40" />
-          <Skeleton className="mt-1 h-5 w-72 max-w-full" />
-        </div>
-        <SkeletonBadge />
-      </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <SkeletonButton size="sm" variant="default" label="Change plan or seats" />
-        <SkeletonButton size="sm" label="Cancel renewal" />
-      </div>
-    </div>
-    <TableSkeleton headers={INVOICE_TABLE_HEADERS} rowCount={INVOICE_SKELETON_ROW_COUNT} />
-  </div>
-);
 
 export const BillingSection = () => {
   const {
