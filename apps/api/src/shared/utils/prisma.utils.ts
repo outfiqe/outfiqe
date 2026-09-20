@@ -54,8 +54,19 @@ const isPrismaClassifiedTransactionConflict = (error: unknown): boolean =>
 const isRawSerializationFailure = (error: unknown): boolean =>
   originalPostgresErrorCode(error) === POSTGRES_SERIALIZATION_FAILURE_SQLSTATE;
 
+const DRIVER_ADAPTER_ERROR_NAME = "DriverAdapterError";
+const DRIVER_ADAPTER_WRITE_CONFLICT_KIND = "TransactionWriteConflict";
+
+const isUnwrappedDriverAdapterWriteConflict = (error: unknown): boolean => {
+  const errorRecord = asRecord(error);
+  if (errorRecord?.name !== DRIVER_ADAPTER_ERROR_NAME) return false;
+  return asRecord(errorRecord.cause)?.kind === DRIVER_ADAPTER_WRITE_CONFLICT_KIND;
+};
+
 export const isTransactionConflictError = (error: unknown): boolean =>
-  isPrismaClassifiedTransactionConflict(error) || isRawSerializationFailure(error);
+  isPrismaClassifiedTransactionConflict(error) ||
+  isRawSerializationFailure(error) ||
+  isUnwrappedDriverAdapterWriteConflict(error);
 
 const POSTGRES_DEADLOCK_SQLSTATE = "40P01";
 
