@@ -441,4 +441,89 @@ describe("GET /api/tag-reviews/metrics", () => {
     expect(data.stuckApprovalRequiredCount).toBe(1);
     expect(data.reports.open).toBe(1);
   });
+
+  it("computes a this-week-vs-last-week overview trend from real timestamps", async () => {
+    const { authHeader } = await createAdminSession();
+    const hourMs = 60 * 60 * 1000;
+    const { brand, creator } = await seedPendingTag();
+
+    const approveAt = async (
+      hoursAgoApproved: number,
+      hoursAgoCreated: number,
+      approvalSource: "BRAND" | "SLA",
+    ) => {
+      const product = await createProduct(brand.id);
+      const { look, tag } = await createTag(creator.id, product.id);
+      const reviewedAt = new Date(Date.now() - hoursAgoApproved * hourMs);
+      await prisma.creatorLook.update({
+        where: { id: look.id },
+        data: { createdAt: new Date(Date.now() - hoursAgoCreated * hourMs) },
+      });
+      await prisma.creatorLookProduct.update({
+        where: { id: tag.id },
+        data: {
+          reviewStatus: "APPROVED",
+          approvalSource,
+          reviewedById: approvalSource === "BRAND" ? creator.id : null,
+          submittedAt: reviewedAt,
+          reviewedAt,
+        },
+      });
+    };
+
+    await approveAt(9 * 24, 9 * 24 + 6, "BRAND");
+    await approveAt(8 * 24, 8 * 24 + 6, "SLA");
+    await approveAt(2 * 24, 2 * 24 + 3, "BRAND");
+    await approveAt(1 * 24, 1 * 24 + 3, "BRAND");
+
+    await prisma.tagReviewReport.create({
+      data: {
+        creatorLookProductId: (await seedPendingTag()).tag.id,
+        source: "PUBLIC_REPORT",
+        reason: "MISLEADING",
+        status: "OPEN",
+      },
+    });
+
+    const response = await request(testApp)
+      .get("/api/tag-reviews/metrics")
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(200);
+    const { overview } = response.body.data;
+
+    expect(overview.tagsLive.value).toBe(4);
+    expect(overview.tagsLive.previousValue).toBe(2);
+    expect(overview.tagsLive.deltaPercent).toBe(100);
+
+    expect(overview.manualReviewRatePercent.value).toBe(100);
+    expect(overview.manualReviewRatePercent.previousValue).toBe(50);
+    expect(overview.manualReviewRatePercent.deltaPercent).toBe(100);
+
+    expect(overview.medianTimeToLiveHours.value).toBe(3);
+    expect(overview.medianTimeToLiveHours.previousValue).toBe(6);
+    expect(overview.medianTimeToLiveHours.deltaPercent).toBe(-50);
+
+    expect(overview.openIssues.count).toBeGreaterThanOrEqual(1);
+    expect(overview.openIssues.newLast7d).toBeGreaterThanOrEqual(1);
+  });
+
+  it("reports no prior-period data as null instead of a false 0% or NaN delta", async () => {
+    const { authHeader } = await createAdminSession();
+
+    const response = await request(testApp)
+      .get("/api/tag-reviews/metrics")
+      .set("Authorization", authHeader);
+
+    expect(response.status).toBe(200);
+    const { overview } = response.body.data;
+
+    expect(overview.tagsLive.value).toBe(0);
+    expect(overview.tagsLive.previousValue).toBe(0);
+    expect(overview.tagsLive.deltaPercent).toBeNull();
+    expect(overview.manualReviewRatePercent.value).toBeNull();
+    expect(overview.manualReviewRatePercent.deltaPercent).toBeNull();
+    expect(overview.medianTimeToLiveHours.value).toBeNull();
+    expect(overview.medianTimeToLiveHours.deltaPercent).toBeNull();
+  });
 });

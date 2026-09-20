@@ -18,7 +18,20 @@ const reasonValues = [
   "OTHER",
 ] satisfies TagRejectionReason[];
 
+const periodTrendSchema = z.object({
+  value: z.number().nullable(),
+  previousValue: z.number().nullable(),
+  deltaPercent: z.number().nullable(),
+});
+export type PeriodTrend = z.infer<typeof periodTrendSchema>;
+
 export const tagReviewMetricsSchema = z.object({
+  overview: z.object({
+    tagsLive: periodTrendSchema,
+    manualReviewRatePercent: periodTrendSchema,
+    medianTimeToLiveHours: periodTrendSchema,
+    openIssues: z.object({ count: z.number(), newLast7d: z.number() }),
+  }),
   reviewLatencyByPolicy: z.array(
     z.object({
       policy: z.enum(policyValues),
