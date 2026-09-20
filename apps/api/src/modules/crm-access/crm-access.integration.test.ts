@@ -20,6 +20,7 @@ import { uniquePhone } from "#test/integration/uniqueValues.js";
 import {
   BUILT_IN_ROLE_NAME,
   BUILT_IN_ROLE_PERMISSIONS,
+  CRM_TRIAL_LENGTH_DAYS,
   PERMISSION_CATALOG,
 } from "./crm-access.constants.js";
 import { crmAccessRepository } from "./crm-access.repository.js";
@@ -172,7 +173,7 @@ describe("POST /api/crm/organizations", () => {
     );
   });
 
-  it("starts a 14-day advanced-features trial for a newly created organization", async () => {
+  it("starts a 60-day advanced-features trial for a newly created organization", async () => {
     await prisma.permission.createMany({ data: PERMISSION_CATALOG, skipDuplicates: true });
     const creator = await createPlatformStaffUser("Trial Org Creator");
     const subdomain = `trial-${randomUUID().slice(0, 8)}`;
@@ -188,8 +189,8 @@ describe("POST /api/crm/organizations", () => {
     });
     const daysUntilTrialEnd =
       (organization.trialEndsAt!.getTime() - Date.now()) / (24 * 60 * 60 * 1000);
-    expect(daysUntilTrialEnd).toBeGreaterThan(13);
-    expect(daysUntilTrialEnd).toBeLessThanOrEqual(14);
+    expect(daysUntilTrialEnd).toBeGreaterThan(CRM_TRIAL_LENGTH_DAYS - 1);
+    expect(daysUntilTrialEnd).toBeLessThanOrEqual(CRM_TRIAL_LENGTH_DAYS);
 
     const orgContext = await request(testApp)
       .get("/api/crm/organization")

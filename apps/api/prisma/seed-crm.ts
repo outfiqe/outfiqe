@@ -19,7 +19,7 @@ import { PLATFORM_PERMISSION_CATALOG } from "../src/modules/platform-access/plat
 import { prisma } from "../src/shared/db/prisma.js";
 import { hashPassword } from "../src/shared/utils/password.utils.js";
 
-const TRIAL_LENGTH_DAYS = 14;
+const TRIAL_LENGTH_DAYS = 60;
 const DEFAULT_ORGANIZATION_SUBDOMAIN = "outfiqe";
 const DEMO_ACCOUNT_PASSWORD = "demo-password-123";
 
