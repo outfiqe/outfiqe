@@ -116,6 +116,10 @@ describe("TicketsPage", () => {
     );
 
     renderTicketsPage();
+
+    expect(
+      await screen.findByText(/requests and problems raised by your customers/i),
+    ).toBeInTheDocument();
     const user = userEvent.setup({ delay: null });
 
     await user.click(await screen.findByRole("button", { name: /Damaged package/ }));

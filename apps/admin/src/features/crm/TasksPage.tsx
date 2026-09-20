@@ -145,7 +145,13 @@ export const TasksPage = () => {
       )}
 
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-foreground">Tasks</h1>
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Tasks</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your team’s to-do list. Add a task, give it an owner and a due date, and tick it off
+            when it is done.
+          </p>
+        </div>
         {members && members.length > 0 && (
           <Button size="sm" onClick={() => setModalOpen(true)}>
             New task

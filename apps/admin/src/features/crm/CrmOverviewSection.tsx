@@ -16,6 +16,17 @@ import type { CrmOverviewReport } from "./reportingSchemas";
 
 const OVERVIEW_REPORT_KEY = ["crm-report-overview"];
 const KPI_CARD_COUNT = 6;
+const KPI_HINT = {
+  openPipelineValue:
+    "Total value of deals that are still being worked, across every pipeline stage. Won and lost deals are not counted.",
+  openDealCount: "Number of deals that are still being worked. Won and lost deals are not counted.",
+  wonDealValue: "Total value of deals you have moved to a won stage.",
+  openTicketCount: "Support tickets that still need attention: tickets marked open or in progress.",
+  meanTimeToResolve:
+    "Average time between a ticket being created and being resolved, across all resolved tickets. Shows a dash until a ticket has been resolved.",
+  tasksDueToday:
+    "Open tasks due by the end of today. This includes open tasks that are already overdue.",
+} as const;
 const KPI_GRID_CLASS = "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6";
 const CHART_GRID_CLASS = "grid gap-4 lg:grid-cols-2";
 const ACTIVITY_CHART_TITLE = "Activity";
@@ -31,15 +42,36 @@ const OverviewKpiRow = ({ report }: { report: CrmOverviewReport }) => {
 
   return (
     <div className={KPI_GRID_CLASS}>
-      <StatCard label="Open pipeline" value={formatRupees(pipeline.totals.openValue)} />
-      <StatCard label="Open deals" value={String(pipeline.totals.openDealCount)} />
-      <StatCard label="Won value" value={formatRupees(pipeline.totals.wonValue)} />
-      <StatCard label="Open tickets" value={String(tickets.openCount)} />
+      <StatCard
+        label="Open pipeline"
+        value={formatRupees(pipeline.totals.openValue)}
+        hint={KPI_HINT.openPipelineValue}
+      />
+      <StatCard
+        label="Open deals"
+        value={String(pipeline.totals.openDealCount)}
+        hint={KPI_HINT.openDealCount}
+      />
+      <StatCard
+        label="Won value"
+        value={formatRupees(pipeline.totals.wonValue)}
+        hint={KPI_HINT.wonDealValue}
+      />
+      <StatCard
+        label="Open tickets"
+        value={String(tickets.openCount)}
+        hint={KPI_HINT.openTicketCount}
+      />
       <StatCard
         label="Mean time to resolve"
         value={formatDuration(tickets.meanResolutionSeconds)}
+        hint={KPI_HINT.meanTimeToResolve}
       />
-      <StatCard label="Tasks due today" value={String(openTasksDueTodayCount)} />
+      <StatCard
+        label="Tasks due today"
+        value={String(openTasksDueTodayCount)}
+        hint={KPI_HINT.tasksDueToday}
+      />
     </div>
   );
 };

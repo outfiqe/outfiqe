@@ -100,6 +100,8 @@ describe("PlatformOverviewPage", () => {
     expect(screen.getByText("Ledger owed (30d)")).toBeInTheDocument();
     expect(screen.getByText("Rs. 60,000")).toBeInTheDocument();
     expect(screen.getByText("Needs review")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "How Tenants is calculated" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "How Gap is calculated" })).toBeInTheDocument();
   });
 
   it("shows quick-access shortcuts to the most-used admin pages", async () => {
