@@ -1,7 +1,7 @@
 import { Toaster } from "@outfiqe/design-system";
 import { mswServer } from "@test/integration/msw/server";
 import { renderWithRouter } from "@test/renderWithRouter";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
@@ -193,7 +193,75 @@ describe("ProductsPage", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: "Thrift" }));
 
-    await waitFor(() => expect(router.state.location.search).toEqual({ thrift: "thrift" }));
+    await waitFor(() => expect(router.state.location.search).toEqual({ thrift: "true" }));
     await waitFor(() => expect(requestedIsThrift).toContain("true"));
+  });
+
+  it("opens a detail modal with the full product info when a row is clicked", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/products/review`, () =>
+        okJson({
+          products: [
+            product("product-1", "Everyday Tee", {
+              isThrift: true,
+              thriftConditionRating: "GOOD",
+              thriftConditionNotes: "Small mark on the left cuff.",
+            }),
+          ],
+          nextCursor: null,
+        }),
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "View Everyday Tee" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Everyday Tee" });
+    expect(within(dialog).getByText("Studio Nine")).toBeInTheDocument();
+    expect(within(dialog).getByText("Rs. 1,000")).toBeInTheDocument();
+    expect(within(dialog).getByText("Small mark on the left cuff.")).toBeInTheDocument();
+  });
+
+  it("closes the detail modal", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/products/review`, () =>
+        okJson({ products: [product("product-1", "Everyday Tee")], nextCursor: null }),
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "View Everyday Tee" }));
+    await screen.findByRole("dialog", { name: "Everyday Tee" });
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("approves a product from inside the detail modal", async () => {
+    let approveCalled = false;
+    mswServer.use(
+      http.get(`${API_BASE}/products/review`, () =>
+        okJson({ products: [product("product-1", "Everyday Tee")], nextCursor: null }),
+      ),
+      http.post(`${API_BASE}/products/product-1/approve`, () => {
+        approveCalled = true;
+        return okJson(null);
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "View Everyday Tee" }));
+    const dialog = await screen.findByRole("dialog", { name: "Everyday Tee" });
+
+    await user.click(within(dialog).getByRole("button", { name: "Approve" }));
+
+    expect(approveCalled).toBe(true);
   });
 });

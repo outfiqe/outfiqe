@@ -182,4 +182,73 @@ describe("ExploreFeed auth-resolution timing", () => {
       pageParams: [undefined],
     });
   });
+
+  it("shows a follow-creators empty state, not other creators' posts, on the following tab when it has no posts", async () => {
+    setHasSessionCookie();
+    mockAncillaryFeedEndpoints();
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams("tab=following") as ReturnType<typeof useSearchParams>,
+    );
+    mswServer.use(
+      http.post(SESSION_URL, () =>
+        HttpResponse.json({
+          success: true,
+          message: "Session is valid.",
+          data: { accessToken: "access-token" },
+        }),
+      ),
+      http.get(CURRENT_USER_URL, () =>
+        HttpResponse.json({ success: true, message: "Current user.", data: currentUser }),
+      ),
+      http.get(FEED_URL, () =>
+        HttpResponse.json({
+          success: true,
+          message: "Feed.",
+          data: { posts: [], nextCursor: null },
+        }),
+      ),
+    );
+
+    render(<ExploreFeed />, { wrapper: createAuthQueryClientWrapper() });
+
+    expect(await screen.findByText(/No posts from creators you follow yet/)).toBeInTheDocument();
+  });
+
+  it("rewrites a locked tab in the URL to tab=trending for an admin, so the address matches the tab shown", async () => {
+    setHasSessionCookie();
+    mockAncillaryFeedEndpoints();
+    const { replace } = mockNextRouter();
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams("tab=for_you&layout=list") as ReturnType<typeof useSearchParams>,
+    );
+    mswServer.use(
+      http.post(SESSION_URL, () =>
+        HttpResponse.json({
+          success: true,
+          message: "Session is valid.",
+          data: { accessToken: "access-token" },
+        }),
+      ),
+      http.get(CURRENT_USER_URL, () =>
+        HttpResponse.json({
+          success: true,
+          message: "Current user.",
+          data: { ...currentUser, role: "ADMIN" },
+        }),
+      ),
+      http.get(FEED_URL, () =>
+        HttpResponse.json({
+          success: true,
+          message: "Feed.",
+          data: { posts: [], nextCursor: null },
+        }),
+      ),
+    );
+
+    render(<ExploreFeed />, { wrapper: createAuthQueryClientWrapper() });
+
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith("/explore?tab=trending&layout=list", { scroll: false }),
+    );
+  });
 });

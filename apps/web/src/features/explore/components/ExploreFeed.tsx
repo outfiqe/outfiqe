@@ -3,7 +3,7 @@
 import { FormBanner } from "@outfiqe/design-system";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Masonry from "react-masonry-css";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -71,6 +71,15 @@ export const ExploreFeed = () => {
     searchParams.get(EXPLORE_QUERY_PARAM.LAYOUT) === FEED_LAYOUT.LIST
       ? FEED_LAYOUT.LIST
       : FEED_LAYOUT.GRID;
+
+  const isRequestedTabLockedForAdmin =
+    isAuthResolved && isAdmin && lockedTabs.includes(requestedTab);
+  useEffect(() => {
+    if (!isRequestedTabLockedForAdmin) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(EXPLORE_QUERY_PARAM.TAB, EXPLORE_TAB.TRENDING);
+    router.replace(`/explore?${params.toString()}`, { scroll: false });
+  }, [isRequestedTabLockedForAdmin, router, searchParams]);
 
   const { pendingValue: pendingTab, markPending: markTabPending } =
     usePendingSelection<string>(committedTab);
@@ -199,6 +208,11 @@ export const ExploreFeed = () => {
           ) : posts.length === 0 && isTrendingTab ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
               Nothing is trending right now. Check back soon.
+            </p>
+          ) : posts.length === 0 && isFollowingTab ? (
+            <p className="py-16 text-center text-sm text-muted-foreground">
+              No posts from creators you follow yet. Follow creators from &ldquo;Creators to
+              follow&rdquo; to fill this tab.
             </p>
           ) : posts.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
