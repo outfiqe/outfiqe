@@ -57,12 +57,14 @@ export const ProductsPage = () => {
     : null;
 
   const approve = useApiMutation({
+    successMessage: "Product approved.",
     mutationFn: (id: string) => productsApi.approve(id),
     invalidateKeys: [["products"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const reject = useApiMutation({
+    successMessage: "Product rejected.",
     mutationFn: (id: string) => productsApi.reject(id),
     invalidateKeys: [["products"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
@@ -181,6 +183,7 @@ export const ProductsPage = () => {
                   <Button
                     onClick={() => approve.mutate(id)}
                     disabled={approve.isPending || reject.isPending}
+                    isLoading={approve.isPending && approve.variables === id}
                   >
                     Approve
                   </Button>
@@ -188,6 +191,7 @@ export const ProductsPage = () => {
                     variant="outline"
                     onClick={() => reject.mutate(id)}
                     disabled={approve.isPending || reject.isPending}
+                    isLoading={reject.isPending && reject.variables === id}
                   >
                     Reject
                   </Button>

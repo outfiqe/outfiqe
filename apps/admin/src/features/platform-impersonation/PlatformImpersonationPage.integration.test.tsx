@@ -140,4 +140,49 @@ describe("PlatformImpersonationPage", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Reveal access token" }));
     expect(screen.getByDisplayValue("minted-access-token")).toBeInTheDocument();
   });
+
+  it("shows inline messages, not a browser popup, and sends nothing for an empty form", async () => {
+    let startRequested = false;
+    mswServer.use(
+      http.get(`${API_BASE}/platform/metrics/tenants`, () => HttpResponse.json(tenantsResponse)),
+      http.get(`${API_BASE}/platform/impersonation/active`, () =>
+        HttpResponse.json({ success: true, data: [] }),
+      ),
+      http.get(`${API_BASE}/platform/impersonation`, () =>
+        HttpResponse.json({ success: true, data: [] }),
+      ),
+      http.post(`${API_BASE}/platform/impersonation`, () => {
+        startRequested = true;
+        return HttpResponse.json({ success: true, data: {} });
+      }),
+    );
+
+    renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Start session" }));
+
+    expect(await screen.findByText("Pick a tenant.")).toBeInTheDocument();
+    expect(screen.getByText("Pick a member to act as.")).toBeInTheDocument();
+    expect(screen.getByText("Enter a reason for the audit trail.")).toBeInTheDocument();
+    expect(startRequested).toBe(false);
+  });
+
+  it("explains minutes outside the allowed range", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/platform/metrics/tenants`, () => HttpResponse.json(tenantsResponse)),
+      http.get(`${API_BASE}/platform/impersonation/active`, () =>
+        HttpResponse.json({ success: true, data: [] }),
+      ),
+      http.get(`${API_BASE}/platform/impersonation`, () =>
+        HttpResponse.json({ success: true, data: [] }),
+      ),
+    );
+
+    renderPage();
+
+    await userEvent.type(await screen.findByLabelText("Minutes (optional)"), "90");
+    await userEvent.click(screen.getByRole("button", { name: "Start session" }));
+
+    expect(await screen.findByText("Use a number from 1 to 60 minutes.")).toBeInTheDocument();
+  });
 });

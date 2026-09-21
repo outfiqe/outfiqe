@@ -1,7 +1,23 @@
-import { Badge, Button, FormBanner, Input, Modal, Skeleton, toast } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Badge,
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Modal,
+  Skeleton,
+  toast,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useForm, type UseFormReturn } from "react-hook-form";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { SkeletonButton } from "@/components/SkeletonControls";
@@ -17,32 +33,19 @@ import {
 } from "./deliveryZonesCacheUpdate";
 import { DELIVERY_ZONE_HISTORY_QUERY_KEY } from "./hooks/useDeliveryZoneHistory";
 import type { DeliveryZone } from "./schemas";
+import { EMPTY_ZONE_FORM, zoneFormSchema, type ZoneFormValues } from "./zoneForm.schema";
 
-type ZoneFormState = {
-  name: string;
-  cities: string[];
-  standardDeliveryFee: string;
-  freeDeliveryThreshold: string;
-  codHandlingFee: string;
-};
+const LABEL_CLASS = "text-xs font-normal text-muted-foreground";
 
-const EMPTY_FORM: ZoneFormState = {
-  name: "",
-  cities: [],
-  standardDeliveryFee: "",
-  freeDeliveryThreshold: "",
-  codHandlingFee: "",
-};
-
-const toZoneInput = (form: ZoneFormState): DeliveryZoneInput => ({
-  name: form.name,
-  cities: form.cities,
-  standardDeliveryFee: Number(form.standardDeliveryFee),
-  freeDeliveryThreshold: Number(form.freeDeliveryThreshold),
-  codHandlingFee: Number(form.codHandlingFee),
+const toZoneInput = (values: ZoneFormValues): DeliveryZoneInput => ({
+  name: values.name.trim(),
+  cities: values.cities,
+  standardDeliveryFee: Number(values.standardDeliveryFee),
+  freeDeliveryThreshold: Number(values.freeDeliveryThreshold),
+  codHandlingFee: Number(values.codHandlingFee),
 });
 
-const formForZone = (zone: DeliveryZone): ZoneFormState => ({
+const formValuesForZone = (zone: DeliveryZone): ZoneFormValues => ({
   name: zone.name,
   cities: zone.cities,
   standardDeliveryFee: String(zone.standardDeliveryFee),
@@ -50,94 +53,91 @@ const formForZone = (zone: DeliveryZone): ZoneFormState => ({
   codHandlingFee: String(zone.codHandlingFee),
 });
 
-const ZoneFields = ({
-  form,
-  onChange,
-}: {
-  form: ZoneFormState;
-  onChange: (form: ZoneFormState) => void;
-}) => (
-  <div className="space-y-3">
-    <div className="space-y-1.5">
-      <label className="block text-xs text-muted-foreground">Zone name</label>
-      <Input
-        required
-        value={form.name}
-        onChange={(e) => onChange({ ...form, name: e.target.value })}
-        className="w-64"
+type FeeFieldName = "standardDeliveryFee" | "freeDeliveryThreshold" | "codHandlingFee";
+
+const ZoneFields = ({ form }: { form: UseFormReturn<ZoneFormValues> }) => {
+  const feeField = (name: FeeFieldName, label: string, widthClass: string) => (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className={`${widthClass} space-y-1.5`}>
+          <FormLabel className={LABEL_CLASS}>{label}</FormLabel>
+          <FormControl>
+            <Input inputMode="numeric" {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+
+  return (
+    <div className="space-y-3">
+      <FormField
+        control={form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem className="w-64 space-y-1.5">
+            <FormLabel className={LABEL_CLASS}>Zone name</FormLabel>
+            <FormControl>
+              <Input {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
       />
-    </div>
-    <div className="space-y-1.5">
-      <label className="block text-xs text-muted-foreground">Cities</label>
-      <CityListInput cities={form.cities} onChange={(cities) => onChange({ ...form, cities })} />
-    </div>
-    <div className="flex flex-wrap items-end gap-3">
-      <div className="space-y-1.5">
-        <label className="block text-xs text-muted-foreground">Standard delivery fee (Rs.)</label>
-        <Input
-          type="number"
-          required
-          min={0}
-          value={form.standardDeliveryFee}
-          onChange={(e) => onChange({ ...form, standardDeliveryFee: e.target.value })}
-          className="w-40"
-        />
-      </div>
-      <div className="space-y-1.5">
-        <label className="block text-xs text-muted-foreground">Free delivery threshold (Rs.)</label>
-        <Input
-          type="number"
-          required
-          min={0}
-          value={form.freeDeliveryThreshold}
-          onChange={(e) => onChange({ ...form, freeDeliveryThreshold: e.target.value })}
-          className="w-44"
-        />
-      </div>
-      <div className="space-y-1.5">
-        <label className="block text-xs text-muted-foreground">COD handling fee (Rs.)</label>
-        <Input
-          type="number"
-          required
-          min={0}
-          value={form.codHandlingFee}
-          onChange={(e) => onChange({ ...form, codHandlingFee: e.target.value })}
-          className="w-36"
-        />
+      <FormField
+        control={form.control}
+        name="cities"
+        render={({ field }) => (
+          <FormItem className="space-y-1.5">
+            <FormLabel className={LABEL_CLASS}>Cities</FormLabel>
+            <CityListInput cities={field.value} onChange={field.onChange} />
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <div className="flex flex-wrap items-start gap-3">
+        {feeField("standardDeliveryFee", "Standard delivery fee (Rs.)", "w-40")}
+        {feeField("freeDeliveryThreshold", "Free delivery threshold (Rs.)", "w-44")}
+        {feeField("codHandlingFee", "COD handling fee (Rs.)", "w-36")}
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const EditZoneModal = ({ zone, onClose }: { zone: DeliveryZone; onClose: () => void }) => {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState<ZoneFormState>(() => formForZone(zone));
-  const [error, setError] = useState<string | null>(null);
+  const form = useForm<ZoneFormValues>({
+    resolver: zodResolver(zoneFormSchema),
+    defaultValues: formValuesForZone(zone),
+    mode: "onTouched",
+  });
 
   const update = useApiMutation({
     mutationFn: (input: UpdateDeliveryZoneInput) => deliveryZonesApi.update(zone.id, input),
     invalidateKeys: [DELIVERY_ZONE_HISTORY_QUERY_KEY],
+    successMessage: "Delivery zone saved.",
     onSuccess: (updatedZone) => {
       upsertZoneInCache(queryClient, updatedZone);
       onClose();
     },
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    update.mutate(toZoneInput(form));
-  };
+  const submitZone = form.handleSubmit((values) => update.mutate(toZoneInput(values)));
 
   return (
     <Modal open onClose={onClose} title="Edit delivery zone">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <ZoneFields form={form} onChange={setForm} />
-        {error && <FormBanner>{error}</FormBanner>}
-        <Button type="submit" isLoading={update.isPending}>
-          Save changes
-        </Button>
-      </form>
+      <Form {...form}>
+        <form onSubmit={submitZone} noValidate className="space-y-4">
+          <ZoneFields form={form} />
+          {update.isError && <FormBanner>{getErrorMessage(update.error)}</FormBanner>}
+          <Button type="submit" isLoading={update.isPending}>
+            Save changes
+          </Button>
+        </form>
+      </Form>
     </Modal>
   );
 };
@@ -177,30 +177,34 @@ export const DeliveryZonesSection = () => {
     queryFn: deliveryZonesApi.list,
   });
 
-  const [form, setForm] = useState<ZoneFormState>(EMPTY_FORM);
-  const [error, setError] = useState<string | null>(null);
+  const form = useForm<ZoneFormValues>({
+    resolver: zodResolver(zoneFormSchema),
+    defaultValues: EMPTY_ZONE_FORM,
+    mode: "onTouched",
+  });
   const [editingZone, setEditingZone] = useState<DeliveryZone | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeliveryZone | null>(null);
 
-  const create = useMutation({
-    mutationFn: () => deliveryZonesApi.create(toZoneInput(form)),
+  const create = useApiMutation({
+    mutationFn: (values: ZoneFormValues) => deliveryZonesApi.create(toZoneInput(values)),
+    successMessage: "Delivery zone added.",
     onSuccess: (createdZone) => {
-      setForm(EMPTY_FORM);
-      setError(null);
+      form.reset(EMPTY_ZONE_FORM);
       upsertZoneInCache(queryClient, createdZone);
     },
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
   const setDefault = useApiMutation({
     mutationFn: (id: string) => deliveryZonesApi.setDefault(id),
     invalidateKeys: [DELIVERY_ZONE_HISTORY_QUERY_KEY],
+    successMessage: "Default zone changed.",
     onSuccess: (updatedZone) => applyDefaultZoneInCache(queryClient, updatedZone),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const remove = useMutation({
+  const remove = useApiMutation({
     mutationFn: (id: string) => deliveryZonesApi.remove(id),
+    successMessage: "Delivery zone deleted.",
     onSuccess: (_data, zoneId) => {
       removeZoneFromCache(queryClient, zoneId);
       setDeleteTarget(null);
@@ -208,10 +212,7 @@ export const DeliveryZonesSection = () => {
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    create.mutate();
-  };
+  const submitZone = form.handleSubmit((values) => create.mutate(values));
 
   return (
     <div>
@@ -221,14 +222,20 @@ export const DeliveryZonesSection = () => {
         match any zone uses the default zone&apos;s rates.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-4 rounded-xl border border-border bg-card p-4">
-        <ZoneFields form={form} onChange={setForm} />
-        <Button type="submit" isLoading={create.isPending} className="mt-3">
-          Add zone
-        </Button>
-      </form>
+      <Form {...form}>
+        <form
+          onSubmit={submitZone}
+          noValidate
+          className="mt-4 rounded-xl border border-border bg-card p-4"
+        >
+          <ZoneFields form={form} />
+          <Button type="submit" isLoading={create.isPending} className="mt-3">
+            Add zone
+          </Button>
+        </form>
+      </Form>
 
-      {error && <FormBanner className="mt-3">{error}</FormBanner>}
+      {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
       <div className="mt-4 space-y-2">
         {isLoading && Array.from({ length: 3 }).map((_, index) => <ZoneRowSkeleton key={index} />)}

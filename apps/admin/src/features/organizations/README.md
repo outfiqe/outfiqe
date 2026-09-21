@@ -97,3 +97,7 @@ verbatim rather than inventing a second acceptance mechanism.
   existed; adding a third local copy here would have made that worse. This is the first time it's
   been pulled into a proper shared location — the other two call sites haven't been migrated to it,
   since consolidating pre-existing duplicates wasn't in scope for this change.
+
+## Form validation
+
+The create form uses react-hook-form with `organizationForm.schema.ts`: a business must be picked and the subdomain must match the tenant subdomain rules from `@outfiqe/utils` (lowercase letters, numbers and hyphens, no hyphen at either end, up to 63 characters, not a reserved name). Picking a business fills the subdomain with the suggested one until the person edits it themselves. Messages show under the fields and a success toast follows a create.

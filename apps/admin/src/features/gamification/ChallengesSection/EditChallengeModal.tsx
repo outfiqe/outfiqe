@@ -2,11 +2,15 @@ import { Button, Checkbox, FormBanner, Modal } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { type FormEvent, useState } from "react";
 
+import { getErrorMessage } from "@/lib/errorMessages";
+import { validateWithSchema } from "@/lib/zodFieldErrors";
+
 import type { UpdateChallengeFormInput } from "../api";
 import { gamificationApi } from "../api";
 import type { ChallengeAdmin } from "../schemas";
 import { ChallengeFields } from "./ChallengeFields";
 import { CHALLENGES_QUERY_KEY } from "./challengeForm.constants";
+import { challengeFormSchema } from "./challengeForm.schema";
 import type { ChallengeFormState } from "./challengeForm.types";
 import { formForChallenge, toChallengeFormInput } from "./challengeForm.utils";
 
@@ -20,7 +24,8 @@ export const EditChallengeModal = ({
   const [form, setForm] = useState<ChallengeFormState>(() => formForChallenge(challenge));
   const [isActive, setIsActive] = useState(challenge.isActive);
   const [achievementIsActive, setAchievementIsActive] = useState(challenge.achievement.isActive);
-  const [error, setError] = useState<string | null>(null);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  const errors = hasAttemptedSubmit ? validateWithSchema(challengeFormSchema, form) : {};
 
   const formId = `edit-challenge-${challenge.id}-form`;
 
@@ -28,12 +33,14 @@ export const EditChallengeModal = ({
     mutationFn: (input: UpdateChallengeFormInput) =>
       gamificationApi.updateChallenge(challenge.id, input),
     invalidateKeys: [CHALLENGES_QUERY_KEY],
+    successMessage: "Challenge updated.",
     onSuccess: () => onClose(),
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
+  const submitChallengeEdit = (event: FormEvent) => {
+    event.preventDefault();
+    setHasAttemptedSubmit(true);
+    if (Object.keys(validateWithSchema(challengeFormSchema, form)).length > 0) return;
     update.mutate({ ...toChallengeFormInput(form), isActive, achievementIsActive });
   };
 
@@ -45,7 +52,7 @@ export const EditChallengeModal = ({
       className="sm:max-w-3xl"
       footer={
         <div className="space-y-3">
-          {error && <FormBanner>{error}</FormBanner>}
+          {update.isError && <FormBanner>{getErrorMessage(update.error)}</FormBanner>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
@@ -57,11 +64,12 @@ export const EditChallengeModal = ({
         </div>
       }
     >
-      <form id={formId} onSubmit={handleSubmit} className="space-y-4">
+      <form id={formId} noValidate onSubmit={submitChallengeEdit} className="space-y-4">
         <ChallengeFields
           idPrefix={`edit-challenge-${challenge.id}`}
           form={form}
           onChange={setForm}
+          errors={errors}
         />
         <label className="flex items-center gap-2 text-sm text-foreground">
           <Checkbox checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />

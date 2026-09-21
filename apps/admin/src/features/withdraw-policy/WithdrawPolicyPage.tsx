@@ -1,11 +1,27 @@
-import { Button, FormBanner, Input, Select, Skeleton } from "@outfiqe/design-system";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Select,
+  Skeleton,
+} from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { type UpdateWithdrawPolicyInput, withdrawPolicyApi } from "./api";
+import { policyFormSchema, type PolicyFormValues } from "./policyForm.schema";
 import { type OwnerTypeValue, type WindowTypeValue, type WithdrawPolicy } from "./schemas";
 
 const OWNER_TABS: OwnerTypeValue[] = ["CREATOR", "BUSINESS"];
@@ -15,17 +31,9 @@ const OWNER_TAB_LABEL: Record<OwnerTypeValue, string> = {
 };
 const WINDOW_TYPES: WindowTypeValue[] = ["MONTHLY", "WEEKLY", "CUSTOM_DAYS"];
 
-type PolicyFormState = {
-  minAmount: string;
-  maxAmount: string;
-  windowType: WindowTypeValue;
-  windowValue: string;
-  maxAttemptsPerWindow: string;
-  cooldownAfterRejectionDays: string;
-  processingNoteText: string;
-};
+const LABEL_CLASS = "text-xs font-normal text-muted-foreground";
 
-const formForPolicy = (policy: WithdrawPolicy): PolicyFormState => ({
+const formValuesForPolicy = (policy: WithdrawPolicy): PolicyFormValues => ({
   minAmount: String(policy.minAmount),
   maxAmount: String(policy.maxAmount),
   windowType: policy.windowType,
@@ -37,137 +45,132 @@ const formForPolicy = (policy: WithdrawPolicy): PolicyFormState => ({
 
 const toUpdateInput = (
   ownerType: OwnerTypeValue,
-  form: PolicyFormState,
+  values: PolicyFormValues,
 ): UpdateWithdrawPolicyInput => ({
   ownerType,
-  minAmount: Number(form.minAmount),
-  maxAmount: Number(form.maxAmount),
-  windowType: form.windowType,
-  windowValue: Number(form.windowValue),
-  maxAttemptsPerWindow: Number(form.maxAttemptsPerWindow),
-  cooldownAfterRejectionDays: Number(form.cooldownAfterRejectionDays),
-  processingNoteText: form.processingNoteText,
+  minAmount: Number(values.minAmount),
+  maxAmount: Number(values.maxAmount),
+  windowType: values.windowType,
+  windowValue: Number(values.windowValue),
+  maxAttemptsPerWindow: Number(values.maxAttemptsPerWindow),
+  cooldownAfterRejectionDays: Number(values.cooldownAfterRejectionDays),
+  processingNoteText: values.processingNoteText.trim(),
 });
 
-const PolicyForm = ({ ownerType }: { ownerType: OwnerTypeValue }) => {
-  const queryClient = useQueryClient();
-  const queryKey = ["withdraw-policy", ownerType];
+type NumberFieldName =
+  "minAmount" | "maxAmount" | "windowValue" | "maxAttemptsPerWindow" | "cooldownAfterRejectionDays";
 
+const PolicyForm = ({ ownerType }: { ownerType: OwnerTypeValue }) => {
   const { data: policy, isLoading } = useQuery({
-    queryKey,
+    queryKey: ["withdraw-policy", ownerType],
     queryFn: () => withdrawPolicyApi.get(ownerType),
   });
 
-  const [form, setForm] = useState<PolicyFormState | null>(null);
-  const activeForm = form ?? (policy ? formForPolicy(policy) : null);
+  if (isLoading || !policy) return <WithdrawPolicySkeleton />;
 
-  const update = useMutation({
+  return <PolicyFormFields ownerType={ownerType} policy={policy} />;
+};
+
+const PolicyFormFields = ({
+  ownerType,
+  policy,
+}: {
+  ownerType: OwnerTypeValue;
+  policy: WithdrawPolicy;
+}) => {
+  const queryClient = useQueryClient();
+  const queryKey = ["withdraw-policy", ownerType];
+
+  const form = useForm<PolicyFormValues>({
+    resolver: zodResolver(policyFormSchema),
+    defaultValues: formValuesForPolicy(policy),
+    mode: "onTouched",
+  });
+
+  const update = useApiMutation({
     mutationFn: (input: UpdateWithdrawPolicyInput) => withdrawPolicyApi.update(input),
+    successMessage: "Withdrawal policy saved.",
     onSuccess: (updatedPolicy) => {
       queryClient.setQueryData(queryKey, updatedPolicy);
-      setForm(formForPolicy(updatedPolicy));
+      form.reset(formValuesForPolicy(updatedPolicy));
     },
   });
 
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    if (!activeForm) return;
-    update.mutate(toUpdateInput(ownerType, activeForm));
-  };
+  const submitPolicy = form.handleSubmit((values) =>
+    update.mutate(toUpdateInput(ownerType, values)),
+  );
 
-  if (isLoading || !activeForm) {
-    return <WithdrawPolicySkeleton />;
-  }
+  const numberField = (name: NumberFieldName, label: string) => (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className="space-y-1.5">
+          <FormLabel className={LABEL_CLASS}>{label}</FormLabel>
+          <FormControl>
+            <Input inputMode="numeric" {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-card p-5">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label className="block text-xs text-muted-foreground">Min amount (Rs.)</label>
-          <Input
-            type="number"
-            required
-            min={0}
-            value={activeForm.minAmount}
-            onChange={(e) => setForm({ ...activeForm, minAmount: e.target.value })}
+    <Form {...form}>
+      <form
+        onSubmit={submitPolicy}
+        noValidate
+        className="space-y-4 rounded-xl border border-border bg-card p-5"
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          {numberField("minAmount", "Min amount (Rs.)")}
+          {numberField("maxAmount", "Max amount (Rs.)")}
+          <FormField
+            control={form.control}
+            name="windowType"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel className={LABEL_CLASS}>Window type</FormLabel>
+                <FormControl>
+                  <Select {...field}>
+                    {WINDOW_TYPES.map((windowType) => (
+                      <option key={windowType} value={windowType}>
+                        {windowType}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
+          {numberField("windowValue", "Window value (days before month end / every N days)")}
+          {numberField("maxAttemptsPerWindow", "Attempts per window")}
+          {numberField("cooldownAfterRejectionDays", "Cooldown after rejection (days)")}
         </div>
-        <div className="space-y-1.5">
-          <label className="block text-xs text-muted-foreground">Max amount (Rs.)</label>
-          <Input
-            type="number"
-            required
-            min={1}
-            value={activeForm.maxAmount}
-            onChange={(e) => setForm({ ...activeForm, maxAmount: e.target.value })}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label className="block text-xs text-muted-foreground">Window type</label>
-          <Select
-            value={activeForm.windowType}
-            onChange={(e) =>
-              setForm({ ...activeForm, windowType: e.target.value as WindowTypeValue })
-            }
-          >
-            {WINDOW_TYPES.map((windowType) => (
-              <option key={windowType} value={windowType}>
-                {windowType}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <label className="block text-xs text-muted-foreground">
-            Window value (days before month end / every N days)
-          </label>
-          <Input
-            type="number"
-            required
-            min={1}
-            value={activeForm.windowValue}
-            onChange={(e) => setForm({ ...activeForm, windowValue: e.target.value })}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label className="block text-xs text-muted-foreground">Attempts per window</label>
-          <Input
-            type="number"
-            required
-            min={1}
-            value={activeForm.maxAttemptsPerWindow}
-            onChange={(e) => setForm({ ...activeForm, maxAttemptsPerWindow: e.target.value })}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label className="block text-xs text-muted-foreground">
-            Cooldown after rejection (days)
-          </label>
-          <Input
-            type="number"
-            required
-            min={0}
-            value={activeForm.cooldownAfterRejectionDays}
-            onChange={(e) => setForm({ ...activeForm, cooldownAfterRejectionDays: e.target.value })}
-          />
-        </div>
-      </div>
 
-      <div className="space-y-1.5">
-        <label className="block text-xs text-muted-foreground">Processing note</label>
-        <Input
-          required
-          value={activeForm.processingNoteText}
-          onChange={(e) => setForm({ ...activeForm, processingNoteText: e.target.value })}
+        <FormField
+          control={form.control}
+          name="processingNoteText"
+          render={({ field }) => (
+            <FormItem className="space-y-1.5">
+              <FormLabel className={LABEL_CLASS}>Processing note</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      {update.isError && <FormBanner>{getErrorMessage(update.error)}</FormBanner>}
+        {update.isError && <FormBanner>{getErrorMessage(update.error)}</FormBanner>}
 
-      <Button type="submit" isLoading={update.isPending}>
-        Save policy
-      </Button>
-    </form>
+        <Button type="submit" isLoading={update.isPending}>
+          Save policy
+        </Button>
+      </form>
+    </Form>
   );
 };
 

@@ -3,7 +3,6 @@ import {
   Button,
   Checkbox,
   FormBanner,
-  Skeleton,
   Tabs,
   TabsContent,
   TabsList,
@@ -16,8 +15,8 @@ import { ArrowLeft } from "lucide-react";
 import { type FormEvent, useMemo, useRef, useState } from "react";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
-import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { validateWithSchema } from "@/lib/zodFieldErrors";
 
 import type { UpdateBadgeFormInput } from "../api";
 import { gamificationApi } from "../api";
@@ -25,8 +24,10 @@ import { BADGE_DESIGN_MODE, DEFAULT_BADGE_ICON } from "../badgeOptions.constants
 import type { BadgeAdmin } from "../schemas";
 import { BadgeDetailsFields } from "./BadgeDetailsFields";
 import { BADGES_QUERY_KEY, EMPTY_FORM } from "./badgeForm.constants";
+import { pickBadgeFormSchema } from "./badgeForm.schema";
 import type { BadgeFormState } from "./badgeForm.types";
 import { formForBadge, toFormInput, toPreviewDesignConfig } from "./badgeForm.utils";
+import { BadgeFormSkeleton } from "./BadgeFormSkeleton";
 import { BadgeDesignSection } from "./DesignStudio/BadgeDesignSection";
 import { BADGE_LAYER_TYPE } from "./DesignStudio/studioLayer.constants";
 
@@ -64,6 +65,7 @@ const BadgeForm = ({
   );
   const [activeTab, setActiveTab] = useState<string>(TAB.DETAILS);
   const [error, setError] = useState<string | null>(null);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const hasSavedRef = useRef(false);
 
   const save = useApiMutation({
@@ -79,6 +81,7 @@ const BadgeForm = ({
       return gamificationApi.createBadge(toFormInput(form));
     },
     invalidateKeys: (saved) => [BADGES_QUERY_KEY, badgeQueryKey(saved.id)],
+    successMessage: mode === "edit" ? "Badge updated." : "Badge created.",
     onSuccess: () => {
       hasSavedRef.current = true;
       void navigate({ to: "/gamification/badges" });
@@ -99,9 +102,20 @@ const BadgeForm = ({
   });
 
   const designIssue = describeDesignIncompleteness(form);
+  const detailErrors = hasAttemptedSubmit
+    ? validateWithSchema(pickBadgeFormSchema(form.isAdminAward), form)
+    : {};
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
+  const submitBadge = (event: FormEvent) => {
+    event.preventDefault();
+    setHasAttemptedSubmit(true);
+    const hasDetailErrors =
+      Object.keys(validateWithSchema(pickBadgeFormSchema(form.isAdminAward), form)).length > 0;
+    if (hasDetailErrors) {
+      setActiveTab(TAB.DETAILS);
+      setError(null);
+      return;
+    }
     if (designIssue) {
       setActiveTab(TAB.DESIGN);
       setError(designIssue);
@@ -114,7 +128,7 @@ const BadgeForm = ({
   const title = mode === "edit" ? (badge?.name ?? "Edit badge") : "New badge";
 
   return (
-    <form id={BADGE_FORM_ID} onSubmit={handleSubmit}>
+    <form id={BADGE_FORM_ID} noValidate onSubmit={submitBadge}>
       <Link
         to="/gamification/badges"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -140,7 +154,12 @@ const BadgeForm = ({
         </TabsList>
 
         <TabsContent value={TAB.DETAILS} className="mt-4">
-          <BadgeDetailsFields idPrefix="badge" form={form} onChange={setForm} />
+          <BadgeDetailsFields
+            idPrefix="badge"
+            form={form}
+            onChange={setForm}
+            errors={detailErrors}
+          />
           {mode === "edit" && (
             <div className="mt-4 space-y-2 rounded-xl border border-border p-4">
               <p className="text-sm font-medium text-foreground">Status</p>
@@ -192,44 +211,6 @@ const BadgeForm = ({
     </form>
   );
 };
-
-const BADGE_FIELD_SKELETON_COUNT = 4;
-
-const BadgeFormSkeleton = () => (
-  <div role="status" aria-label="Loading">
-    <Skeleton className="h-5 w-16" />
-    <div className="mt-3 flex flex-wrap items-center gap-3">
-      <Skeleton className="size-12 rounded-full" />
-      <Skeleton className="h-8 w-64 max-w-full" />
-    </div>
-
-    <div aria-hidden>
-      <Tabs value={TAB.DETAILS} className="mt-6">
-        <TabsList>
-          <TabsTrigger value={TAB.DETAILS}>Details</TabsTrigger>
-          <TabsTrigger value={TAB.DESIGN} disabled>
-            Design
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value={TAB.DETAILS} className="mt-4 space-y-4">
-          {Array.from({ length: BADGE_FIELD_SKELETON_COUNT }, (_unused, fieldIndex) => (
-            <div key={fieldIndex} className="space-y-1.5">
-              <Skeleton className="h-4 w-28" />
-              <Skeleton className="h-11 w-full rounded-lg" />
-            </div>
-          ))}
-        </TabsContent>
-      </Tabs>
-    </div>
-
-    <div className="mt-6 space-y-3 border-t border-border pt-4">
-      <div className="flex justify-end gap-2">
-        <SkeletonButton label="Cancel" />
-        <SkeletonButton variant="default" label="Create badge" />
-      </div>
-    </div>
-  </div>
-);
 
 type BadgeFormPageProps =
   { mode: "create"; duplicateFromId?: string } | { mode: "edit"; badgeId: string };

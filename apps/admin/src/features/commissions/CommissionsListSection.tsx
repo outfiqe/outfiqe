@@ -45,12 +45,14 @@ export const CommissionsListSection = () => {
   const COMMISSIONS_QUERY_KEY = ["commissions"];
 
   const approve = useApiMutation({
+    successMessage: "Commission approved.",
     mutationFn: (id: string) => commissionsApi.approve(id),
     invalidateKeys: [COMMISSIONS_QUERY_KEY],
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
   const voidCommission = useApiMutation({
+    successMessage: "Commission voided.",
     mutationFn: ({ id, reason }: { id: string; reason: string }) => commissionsApi.void(id, reason),
     invalidateKeys: [COMMISSIONS_QUERY_KEY],
     onSuccess: () => setVoidTargetId(null),
@@ -58,6 +60,7 @@ export const CommissionsListSection = () => {
   });
 
   const markPaid = useApiMutation({
+    successMessage: "Commission marked as paid.",
     mutationFn: (id: string) => commissionsApi.markPaid(id),
     invalidateKeys: [COMMISSIONS_QUERY_KEY],
     onError: (error) => toast.error(getErrorMessage(error)),
@@ -130,12 +133,22 @@ export const CommissionsListSection = () => {
 
               <div className="flex gap-2">
                 {status === "PENDING" && (
-                  <Button size="sm" onClick={() => approve.mutate(id)} disabled={isActing}>
+                  <Button
+                    size="sm"
+                    onClick={() => approve.mutate(id)}
+                    disabled={isActing}
+                    isLoading={approve.isPending && approve.variables === id}
+                  >
                     Approve
                   </Button>
                 )}
                 {status === "AVAILABLE" && (
-                  <Button size="sm" onClick={() => markPaid.mutate(id)} disabled={isActing}>
+                  <Button
+                    size="sm"
+                    onClick={() => markPaid.mutate(id)}
+                    disabled={isActing}
+                    isLoading={markPaid.isPending && markPaid.variables === id}
+                  >
                     Mark paid
                   </Button>
                 )}

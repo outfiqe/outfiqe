@@ -10,6 +10,8 @@ type TextPromptModalProps = {
   defaultValue?: string;
   inputType?: "text" | "number";
   required?: boolean;
+  requiredMessage?: string;
+  validate?: (trimmedValue: string) => string | null;
   confirmLabel?: string;
   pendingLabel?: string;
   isPending?: boolean;
@@ -26,6 +28,8 @@ export const TextPromptModal = ({
   defaultValue = "",
   inputType = "text",
   required = true,
+  requiredMessage = "Enter a value to continue.",
+  validate,
   confirmLabel = "Confirm",
   pendingLabel = "Working…",
   isPending = false,
@@ -33,19 +37,30 @@ export const TextPromptModal = ({
   onCancel,
 }: TextPromptModalProps) => {
   const [value, setValue] = useState(defaultValue);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [wasOpen, setWasOpen] = useState(open);
   const inputId = useId();
+  const errorId = useId();
 
   if (open !== wasOpen) {
     setWasOpen(open);
-    if (open) setValue(defaultValue);
+    if (open) {
+      setValue(defaultValue);
+      setErrorMessage(null);
+    }
   }
 
-  const trimmed = value.trim();
-  const canConfirm = !isPending && (!required || trimmed.length > 0);
+  const findProblem = (trimmedValue: string): string | null => {
+    if (required && trimmedValue.length === 0) return requiredMessage;
+    return validate?.(trimmedValue) ?? null;
+  };
 
   const submit = () => {
-    if (!canConfirm) return;
+    if (isPending) return;
+    const trimmed = value.trim();
+    const problem = findProblem(trimmed);
+    setErrorMessage(problem);
+    if (problem) return;
     onConfirm(trimmed);
   };
 
@@ -60,7 +75,7 @@ export const TextPromptModal = ({
           <Button variant="outline" onClick={onCancel} disabled={isPending}>
             Cancel
           </Button>
-          <Button onClick={submit} disabled={!canConfirm}>
+          <Button onClick={submit} isLoading={isPending}>
             {isPending ? pendingLabel : confirmLabel}
           </Button>
         </div>
@@ -75,12 +90,22 @@ export const TextPromptModal = ({
           type={inputType}
           value={value}
           placeholder={placeholder}
-          onChange={(event) => setValue(event.target.value)}
+          aria-invalid={errorMessage !== null}
+          aria-describedby={errorMessage ? errorId : undefined}
+          onChange={(event) => {
+            setValue(event.target.value);
+            if (errorMessage) setErrorMessage(null);
+          }}
           onKeyDown={(event) => {
             if (event.key === "Enter") submit();
           }}
           autoFocus
         />
+        {errorMessage && (
+          <p id={errorId} role="alert" className="mt-1.5 text-xs font-medium text-destructive">
+            {errorMessage}
+          </p>
+        )}
       </div>
     </Modal>
   );

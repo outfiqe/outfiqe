@@ -26,3 +26,7 @@ mutation in this codebase is a `POST`/`PATCH`, so `put` didn't exist on the shar
 Added it the same way `get`/`post`/`patch`/`del` are already implemented, since `PUT
 /withdraw/admin/policy` (a full-replace of the active policy, matching REST conventions for
 "replace this resource") was already built and tested on the API side in an earlier chunk.
+
+## Form validation
+
+The policy form uses react-hook-form with `policyForm.schema.ts`. Numbers are kept as text in the form so a person can clear a field, and are converted when the form is sent. Max amount must be above min amount, and the window value and attempts per window must be at least 1, matching the API. Saving shows a success toast. The page shows a skeleton until the current policy has loaded so the form never starts with placeholder values.

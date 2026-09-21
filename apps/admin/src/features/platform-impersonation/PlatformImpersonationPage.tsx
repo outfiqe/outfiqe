@@ -1,18 +1,36 @@
-import { Button, FormBanner, Input, Select, toast } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Select,
+  toast,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformMetricsApi } from "../platform-metrics/api";
 import { platformImpersonationApi } from "./api";
-import type { ImpersonationScope, ImpersonationSession, StartImpersonationResult } from "./schemas";
+import {
+  EMPTY_IMPERSONATION_FORM,
+  impersonationFormSchema,
+  type ImpersonationFormValues,
+} from "./impersonationForm.schema";
+import type { ImpersonationSession, StartImpersonationResult } from "./schemas";
 
 const ACTIVE_SESSIONS_QUERY_KEY = ["platform-impersonation-active"];
 const HISTORY_QUERY_KEY = ["platform-impersonation-history"];
-const MIN_REASON_LENGTH = 3;
 
 const formatMoment = (value: string | null) => (value ? new Date(value).toLocaleString() : "—");
 
@@ -86,11 +104,12 @@ const ACTIVE_SESSION_ACTION_COLUMN = { header: "Actions", label: "Revoke" };
 const ACTIVE_SESSION_SKELETON_ROW_COUNT = 3;
 
 export const PlatformImpersonationPage = () => {
-  const [organizationId, setOrganizationId] = useState("");
-  const [targetUserId, setTargetUserId] = useState("");
-  const [reason, setReason] = useState("");
-  const [scope, setScope] = useState<ImpersonationScope>("read");
-  const [ttlMinutes, setTtlMinutes] = useState("");
+  const form = useForm<ImpersonationFormValues>({
+    resolver: zodResolver(impersonationFormSchema),
+    defaultValues: EMPTY_IMPERSONATION_FORM,
+    mode: "onTouched",
+  });
+  const organizationId = form.watch("organizationId");
   const [lastResult, setLastResult] = useState<StartImpersonationResult | null>(null);
   const [tokenRevealed, setTokenRevealed] = useState(false);
 
@@ -118,23 +137,24 @@ export const PlatformImpersonationPage = () => {
   const IMPERSONATION_INVALIDATE_KEYS = [ACTIVE_SESSIONS_QUERY_KEY, HISTORY_QUERY_KEY];
 
   const startSession = useApiMutation({
-    mutationFn: () =>
+    mutationFn: (values: ImpersonationFormValues) =>
       platformImpersonationApi.start({
-        organizationId,
-        targetUserId,
-        reason: reason.trim(),
-        scope,
-        ttlMinutes: ttlMinutes ? Number(ttlMinutes) : undefined,
+        organizationId: values.organizationId,
+        targetUserId: values.targetUserId,
+        reason: values.reason,
+        scope: values.scope,
+        ttlMinutes: values.ttlMinutes ? Number(values.ttlMinutes) : undefined,
       }),
     invalidateKeys: IMPERSONATION_INVALIDATE_KEYS,
+    successMessage: "Impersonation session started.",
     onSuccess: (result) => {
       setLastResult(result);
       setTokenRevealed(false);
-      setReason("");
-      toast.success("Impersonation session started.");
+      form.resetField("reason");
     },
-    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
+
+  const submitImpersonation = form.handleSubmit((values) => startSession.mutate(values));
 
   const revokeSession = useApiMutation({
     mutationFn: (sessionId: string) => platformImpersonationApi.revoke(sessionId),
@@ -142,15 +162,6 @@ export const PlatformImpersonationPage = () => {
     onSuccess: () => toast.success("Session revoked."),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
-
-  const canSubmit = useMemo(
-    () =>
-      organizationId !== "" &&
-      targetUserId !== "" &&
-      reason.trim().length >= MIN_REASON_LENGTH &&
-      !startSession.isPending,
-    [organizationId, targetUserId, reason, startSession.isPending],
-  );
 
   return (
     <div>
@@ -160,111 +171,125 @@ export const PlatformImpersonationPage = () => {
         session is logged, visible to the tenant, and expires on its own.
       </p>
 
-      <section className="mt-6 max-w-xl space-y-4">
-        <div>
-          <label htmlFor="impersonation-tenant" className="text-xs text-muted-foreground">
-            Tenant
-          </label>
-          <Select
-            id="impersonation-tenant"
-            value={organizationId}
-            className="mt-1"
-            onChange={(event) => {
-              setOrganizationId(event.target.value);
-              setTargetUserId("");
-            }}
-          >
-            <option value="">Select a tenant…</option>
-            {(tenants.data?.items ?? [])
-              .filter((tenant) => !tenant.isPlatformOrg)
-              .map((tenant) => (
-                <option key={tenant.organizationId} value={tenant.organizationId}>
-                  {tenant.name} ({tenant.plan})
-                </option>
-              ))}
-          </Select>
-        </div>
-
-        <div>
-          <label htmlFor="impersonation-target" className="text-xs text-muted-foreground">
-            Act as
-          </label>
-          <Select
-            id="impersonation-target"
-            value={targetUserId}
-            className="mt-1"
-            disabled={organizationId === "" || candidates.isLoading}
-            onChange={(event) => setTargetUserId(event.target.value)}
-          >
-            <option value="">
-              {organizationId === "" ? "Pick a tenant first" : "Select a member…"}
-            </option>
-            {(candidates.data ?? []).map((candidate) => (
-              <option key={candidate.userId} value={candidate.userId}>
-                {candidate.name} · {candidate.roleName} ({candidate.email})
-              </option>
-            ))}
-          </Select>
-          {candidates.error && (
-            <p className="mt-1 text-xs text-destructive">{getErrorMessage(candidates.error)}</p>
-          )}
-        </div>
-
-        <div>
-          <label htmlFor="impersonation-reason" className="text-xs text-muted-foreground">
-            Reason (shown in the audit trail)
-          </label>
-          <Input
-            id="impersonation-reason"
-            value={reason}
-            className="mt-1"
-            placeholder="e.g. Investigating a reported billing discrepancy"
-            onChange={(event) => setReason(event.target.value)}
+      <Form {...form}>
+        <form onSubmit={submitImpersonation} noValidate className="mt-6 max-w-xl space-y-4">
+          <FormField
+            control={form.control}
+            name="organizationId"
+            render={({ field }) => (
+              <FormItem className="space-y-1">
+                <FormLabel className="text-xs font-normal text-muted-foreground">Tenant</FormLabel>
+                <FormControl>
+                  <Select
+                    {...field}
+                    onChange={(event) => {
+                      field.onChange(event);
+                      form.setValue("targetUserId", "");
+                    }}
+                  >
+                    <option value="">Select a tenant…</option>
+                    {(tenants.data?.items ?? [])
+                      .filter((tenant) => !tenant.isPlatformOrg)
+                      .map((tenant) => (
+                        <option key={tenant.organizationId} value={tenant.organizationId}>
+                          {tenant.name} ({tenant.plan})
+                        </option>
+                      ))}
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <label htmlFor="impersonation-scope" className="text-xs text-muted-foreground">
-              Scope
-            </label>
-            <Select
-              id="impersonation-scope"
-              value={scope}
-              className="mt-1"
-              onChange={(event) => setScope(event.target.value === "write" ? "write" : "read")}
-            >
-              <option value="read">Read-only</option>
-              <option value="write">Read &amp; write</option>
-            </Select>
-          </div>
-          <div className="w-32">
-            <label htmlFor="impersonation-ttl" className="text-xs text-muted-foreground">
-              Minutes (optional)
-            </label>
-            <Input
-              id="impersonation-ttl"
-              type="number"
-              min={1}
-              max={60}
-              value={ttlMinutes}
-              className="mt-1"
-              placeholder="30"
-              onChange={(event) => setTtlMinutes(event.target.value)}
+          <FormField
+            control={form.control}
+            name="targetUserId"
+            render={({ field }) => (
+              <FormItem className="space-y-1">
+                <FormLabel className="text-xs font-normal text-muted-foreground">Act as</FormLabel>
+                <FormControl>
+                  <Select {...field} disabled={organizationId === "" || candidates.isLoading}>
+                    <option value="">
+                      {organizationId === "" ? "Pick a tenant first" : "Select a member…"}
+                    </option>
+                    {(candidates.data ?? []).map((candidate) => (
+                      <option key={candidate.userId} value={candidate.userId}>
+                        {candidate.name} · {candidate.roleName} ({candidate.email})
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+                {candidates.error && (
+                  <p className="mt-1 text-xs text-destructive">
+                    {getErrorMessage(candidates.error)}
+                  </p>
+                )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="reason"
+            render={({ field }) => (
+              <FormItem className="space-y-1">
+                <FormLabel className="text-xs font-normal text-muted-foreground">
+                  Reason (shown in the audit trail)
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="e.g. Investigating a reported billing discrepancy"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="flex items-start gap-4">
+            <FormField
+              control={form.control}
+              name="scope"
+              render={({ field }) => (
+                <FormItem className="flex-1 space-y-1">
+                  <FormLabel className="text-xs font-normal text-muted-foreground">Scope</FormLabel>
+                  <FormControl>
+                    <Select {...field}>
+                      <option value="read">Read-only</option>
+                      <option value="write">Read &amp; write</option>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="ttlMinutes"
+              render={({ field }) => (
+                <FormItem className="w-32 space-y-1">
+                  <FormLabel className="text-xs font-normal text-muted-foreground">
+                    Minutes (optional)
+                  </FormLabel>
+                  <FormControl>
+                    <Input inputMode="numeric" placeholder="30" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
-        </div>
 
-        {startSession.isError && <FormBanner>{getErrorMessage(startSession.error)}</FormBanner>}
+          {startSession.isError && <FormBanner>{getErrorMessage(startSession.error)}</FormBanner>}
 
-        <Button
-          disabled={!canSubmit}
-          isLoading={startSession.isPending}
-          onClick={() => startSession.mutate()}
-        >
-          Start session
-        </Button>
-      </section>
+          <Button type="submit" isLoading={startSession.isPending}>
+            Start session
+          </Button>
+        </form>
+      </Form>
 
       {lastResult && (
         <section className="mt-6 max-w-xl rounded-lg border border-border bg-muted p-4">

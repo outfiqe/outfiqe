@@ -1,3 +1,4 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor, within } from "@testing-library/react";
@@ -50,7 +51,12 @@ const mockLists = () => {
 
 const wrapper = ({ children }: { children: ReactNode }) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <Toaster />
+    </QueryClientProvider>
+  );
 };
 
 describe("PlatformRolesSection", () => {
@@ -141,5 +147,47 @@ describe("PlatformRolesSection", () => {
         "Reassign every member and pending invite off this role before deleting it.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("shows inline messages, not a browser popup, and sends nothing for an empty role", async () => {
+    mockLists();
+    let createRequested = false;
+    mswServer.use(
+      http.post(`${API_BASE}/platform/roles`, () => {
+        createRequested = true;
+        return HttpResponse.json({ success: true, data: ROLES[1] }, { status: 201 });
+      }),
+    );
+
+    render(<PlatformRolesSection />, { wrapper });
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("button", { name: "New role" }));
+    const dialog = screen.getByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Create role" }));
+
+    expect(await within(dialog).findByText("Enter a name for the role.")).toBeInTheDocument();
+    expect(within(dialog).getByText("Choose at least one permission.")).toBeInTheDocument();
+    expect(createRequested).toBe(false);
+  });
+
+  it("shows a success toast when a role is created", async () => {
+    mockLists();
+    mswServer.use(
+      http.post(`${API_BASE}/platform/roles`, () =>
+        HttpResponse.json({ success: true, data: ROLES[1] }, { status: 201 }),
+      ),
+    );
+
+    render(<PlatformRolesSection />, { wrapper });
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("button", { name: "New role" }));
+    const dialog = screen.getByRole("dialog");
+    await user.type(within(dialog).getByLabelText("Role name"), "Support only");
+    await user.click(within(dialog).getByRole("checkbox", { name: "Read support requests" }));
+    await user.click(within(dialog).getByRole("button", { name: "Create role" }));
+
+    expect(await screen.findByText("Platform role created.")).toBeInTheDocument();
   });
 });

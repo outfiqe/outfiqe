@@ -65,6 +65,7 @@ describe("ProductsPage", () => {
     await user.click(await screen.findByRole("button", { name: "Approve" }));
 
     expect(approveCalled).toBe(true);
+    expect(await screen.findByText("Product approved.")).toBeInTheDocument();
   });
 
   it("shows an error toast when approving a product fails", async () => {

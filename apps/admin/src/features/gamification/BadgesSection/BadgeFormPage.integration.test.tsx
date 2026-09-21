@@ -263,4 +263,52 @@ describe("BadgeFormPage", () => {
       await screen.findByText("Add at least one layer on the Design tab."),
     ).toBeInTheDocument();
   });
+
+  it("shows inline messages, not a browser popup, and sends nothing for an empty badge form", async () => {
+    const createHandler = vi.fn(async () =>
+      HttpResponse.json({ success: true, data: badgeFixture }),
+    );
+    mswServer.use(http.post(`${API_BASE}/badges`, createHandler));
+
+    renderFormPage(<BadgeFormPage mode="create" />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Create badge" }));
+
+    expect(await screen.findByText("Enter a badge name.")).toBeInTheDocument();
+    expect(screen.getByText("Enter a description.")).toBeInTheDocument();
+    expect(screen.getByText("Enter a value.")).toBeInTheDocument();
+    expect(createHandler).not.toHaveBeenCalled();
+  });
+
+  it("checks the assignment limit only for admin-award badges", async () => {
+    renderFormPage(<BadgeFormPage mode="create" />);
+
+    await userEvent.type(await screen.findByLabelText("Name"), "Special");
+    await userEvent.type(screen.getByLabelText("Description"), "Handed out by hand");
+    await userEvent.click(
+      screen.getByLabelText("Admin-award only (no automatic rule — awarded by hand)"),
+    );
+    await userEvent.type(screen.getByLabelText("Assignment limit (blank = unlimited)"), "0");
+    await userEvent.click(screen.getByRole("button", { name: "Create badge" }));
+
+    expect(
+      await screen.findByText("Use a number that is at least 1, or leave blank for unlimited."),
+    ).toBeInTheDocument();
+  });
+
+  it("explains a season that ends before it starts", async () => {
+    renderFormPage(<BadgeFormPage mode="create" />);
+
+    await userEvent.type(await screen.findByLabelText("Name"), "Seasonal");
+    await userEvent.type(screen.getByLabelText("Description"), "Limited run");
+    await userEvent.type(screen.getByLabelText("Value"), "5");
+    await userEvent.type(
+      screen.getByLabelText("Active from (optional — seasonal window)"),
+      "2030-02-01T10:00",
+    );
+    await userEvent.type(screen.getByLabelText("Active until (optional)"), "2030-01-01T10:00");
+    await userEvent.click(screen.getByRole("button", { name: "Create badge" }));
+
+    expect(await screen.findByText("The season must end after it starts.")).toBeInTheDocument();
+  });
 });

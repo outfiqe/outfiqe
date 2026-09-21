@@ -24,6 +24,25 @@ const STATUS_TONE: Record<CouponStatusValue, "neutral" | "positive" | "negative"
   ARCHIVED: "negative",
 };
 
+const STATUS_CHANGE_MESSAGE: Record<CouponStatusValue, string> = {
+  ACTIVE: "Coupon activated.",
+  PAUSED: "Coupon paused.",
+  ARCHIVED: "Coupon archived.",
+};
+const MAX_COUPON_BUDGET = 10_000_000;
+const WHOLE_NUMBER_PATTERN = /^\d+$/;
+
+const validateBudgetText = (trimmedValue: string): string | null => {
+  if (trimmedValue === "") return null;
+  if (!WHOLE_NUMBER_PATTERN.test(trimmedValue))
+    return "Use a whole number with no decimals or minus sign.";
+  const budget = Number(trimmedValue);
+  if (budget < 1) return "Use a number that is at least 1, or leave blank for no cap.";
+  if (budget > MAX_COUPON_BUDGET)
+    return `Use a number up to ${MAX_COUPON_BUDGET.toLocaleString()}.`;
+  return null;
+};
+
 const describeAmount = (coupon: Coupon): string => {
   if (coupon.type === "PERCENT") {
     const percent = (coupon.percentBasisPoints ?? 0) / 100;
@@ -89,12 +108,14 @@ export const CouponsListSection = () => {
     mutationFn: ({ id, status }: { id: string; status: CouponStatusValue }) =>
       couponsApi.updateStatus(id, status),
     invalidateKeys: [["admin-coupons"]],
+    successMessage: (_updated, { status }) => STATUS_CHANGE_MESSAGE[status],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const approve = useApiMutation({
     mutationFn: (id: string) => couponsApi.approve(id),
     invalidateKeys: [["admin-coupons"]],
+    successMessage: "Coupon approved.",
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -102,6 +123,7 @@ export const CouponsListSection = () => {
     mutationFn: ({ id, totalBudgetAmount }: { id: string; totalBudgetAmount: number | null }) =>
       couponsApi.updateBudget(id, { totalBudgetAmount, maxRedemptions: null }),
     invalidateKeys: [["admin-coupons"]],
+    successMessage: "Coupon budget updated.",
     onSuccess: () => setBudgetEditCoupon(null),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
@@ -111,7 +133,6 @@ export const CouponsListSection = () => {
   const submitBudgetEdit = (value: string) => {
     if (!budgetEditCoupon) return;
     const totalBudgetAmount = value === "" ? null : Number(value);
-    if (totalBudgetAmount !== null && Number.isNaN(totalBudgetAmount)) return;
     updateBudget.mutate({ id: budgetEditCoupon.id, totalBudgetAmount });
   };
 
@@ -270,6 +291,7 @@ export const CouponsListSection = () => {
         label="Total budget (Rs.)"
         inputType="number"
         required={false}
+        validate={validateBudgetText}
         defaultValue={budgetEditCoupon?.totalBudgetAmount?.toString() ?? ""}
         confirmLabel="Save"
         pendingLabel="Saving…"

@@ -57,6 +57,7 @@ export const WithdrawRequestsListSection = () => {
   const WITHDRAW_REQUESTS_QUERY_KEY = ["withdraw-requests"];
 
   const approve = useApiMutation({
+    successMessage: "Withdrawal approved.",
     mutationFn: ({
       id,
       identityCrossCheckConfirmed,
@@ -79,6 +80,7 @@ export const WithdrawRequestsListSection = () => {
   });
 
   const reject = useApiMutation({
+    successMessage: "Withdrawal rejected.",
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       withdrawRequestsApi.reject(id, reason),
     invalidateKeys: [WITHDRAW_REQUESTS_QUERY_KEY],
@@ -87,6 +89,7 @@ export const WithdrawRequestsListSection = () => {
   });
 
   const markPaid = useApiMutation({
+    successMessage: "Withdrawal marked as paid.",
     mutationFn: ({ id, referenceNote }: { id: string; referenceNote: string }) =>
       withdrawRequestsApi.markPaid(id, referenceNote),
     invalidateKeys: [WITHDRAW_REQUESTS_QUERY_KEY],
@@ -182,7 +185,12 @@ export const WithdrawRequestsListSection = () => {
               <div className="flex gap-2">
                 {(status === "PENDING" || status === "UNDER_REVIEW") && (
                   <>
-                    <Button size="sm" onClick={() => approve.mutate({ id })} disabled={isActing}>
+                    <Button
+                      size="sm"
+                      onClick={() => approve.mutate({ id })}
+                      disabled={isActing}
+                      isLoading={approve.isPending && approve.variables?.id === id}
+                    >
                       Approve
                     </Button>
                     <Button

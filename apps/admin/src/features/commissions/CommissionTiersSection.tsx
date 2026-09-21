@@ -1,7 +1,21 @@
-import { Button, FormBanner, Input, Modal, toast } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Modal,
+  toast,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
+import { useForm, type UseFormReturn } from "react-hook-form";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -9,110 +23,87 @@ import { getErrorMessage } from "@/lib/errorMessages";
 
 import { commissionsApi, type CreateTierInput, type UpdateTierInput } from "./api";
 import type { CommissionTier } from "./schemas";
+import { EMPTY_TIER_FORM, tierFormSchema, type TierFormValues } from "./tierForm.schema";
 
 const TIERS_QUERY_KEY = ["admin-commission-tiers"];
 
-type TierFormState = {
-  minPrice: string;
-  maxPrice: string;
-  amount: string;
-  sortOrder: string;
-};
+const LABEL_CLASS = "text-xs font-normal text-muted-foreground";
 
-const EMPTY_FORM: TierFormState = { minPrice: "", maxPrice: "", amount: "", sortOrder: "" };
-
-const toTierInput = (form: TierFormState): CreateTierInput => ({
-  minPrice: Number(form.minPrice),
-  amount: Number(form.amount),
-  ...(form.maxPrice ? { maxPrice: Number(form.maxPrice) } : {}),
-  ...(form.sortOrder ? { sortOrder: Number(form.sortOrder) } : {}),
+const toTierInput = (values: TierFormValues): CreateTierInput => ({
+  minPrice: Number(values.minPrice),
+  amount: Number(values.amount),
+  ...(values.maxPrice ? { maxPrice: Number(values.maxPrice) } : {}),
+  ...(values.sortOrder ? { sortOrder: Number(values.sortOrder) } : {}),
 });
 
-const TierFields = ({
-  form,
-  onChange,
-}: {
-  form: TierFormState;
-  onChange: (form: TierFormState) => void;
-}) => (
-  <div className="flex flex-wrap items-end gap-3">
-    <div className="space-y-1.5">
-      <label className="block text-xs text-muted-foreground">Min price (Rs.)</label>
-      <Input
-        type="number"
-        required
-        min={0}
-        value={form.minPrice}
-        onChange={(e) => onChange({ ...form, minPrice: e.target.value })}
-        className="w-32"
-      />
-    </div>
-    <div className="space-y-1.5">
-      <label className="block text-xs text-muted-foreground">Max price (Rs.)</label>
-      <Input
-        type="number"
-        min={0}
-        placeholder="No limit"
-        value={form.maxPrice}
-        onChange={(e) => onChange({ ...form, maxPrice: e.target.value })}
-        className="w-32"
-      />
-    </div>
-    <div className="space-y-1.5">
-      <label className="block text-xs text-muted-foreground">Commission (Rs.)</label>
-      <Input
-        type="number"
-        required
-        min={1}
-        value={form.amount}
-        onChange={(e) => onChange({ ...form, amount: e.target.value })}
-        className="w-28"
-      />
-    </div>
-    <div className="space-y-1.5">
-      <label className="block text-xs text-muted-foreground">Sort order</label>
-      <Input
-        type="number"
-        value={form.sortOrder}
-        onChange={(e) => onChange({ ...form, sortOrder: e.target.value })}
-        className="w-24"
-      />
-    </div>
-  </div>
-);
-
-const formForTier = (tier: CommissionTier): TierFormState => ({
+const formValuesForTier = (tier: CommissionTier): TierFormValues => ({
   minPrice: String(tier.minPrice),
   maxPrice: tier.maxPrice === null ? "" : String(tier.maxPrice),
   amount: String(tier.amount),
   sortOrder: String(tier.sortOrder),
 });
 
+type TierFieldName = "minPrice" | "maxPrice" | "amount" | "sortOrder";
+
+const TierFields = ({ form }: { form: UseFormReturn<TierFormValues> }) => {
+  const tierField = (
+    name: TierFieldName,
+    label: string,
+    widthClass: string,
+    placeholder?: string,
+  ) => (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className={`${widthClass} space-y-1.5`}>
+          <FormLabel className={LABEL_CLASS}>{label}</FormLabel>
+          <FormControl>
+            <Input inputMode="numeric" placeholder={placeholder} {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+
+  return (
+    <div className="flex flex-wrap items-start gap-3">
+      {tierField("minPrice", "Min price (Rs.)", "w-32")}
+      {tierField("maxPrice", "Max price (Rs.)", "w-32", "No limit")}
+      {tierField("amount", "Commission (Rs.)", "w-28")}
+      {tierField("sortOrder", "Sort order", "w-24")}
+    </div>
+  );
+};
+
 const EditTierModal = ({ tier, onClose }: { tier: CommissionTier; onClose: () => void }) => {
-  const [form, setForm] = useState<TierFormState>(() => formForTier(tier));
-  const [error, setError] = useState<string | null>(null);
+  const form = useForm<TierFormValues>({
+    resolver: zodResolver(tierFormSchema),
+    defaultValues: formValuesForTier(tier),
+    mode: "onTouched",
+  });
 
   const update = useApiMutation({
     mutationFn: (input: UpdateTierInput) => commissionsApi.updateTier(tier.id, input),
     invalidateKeys: [TIERS_QUERY_KEY],
+    successMessage: "Commission tier saved.",
     onSuccess: () => onClose(),
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    update.mutate(toTierInput(form));
-  };
+  const submitTier = form.handleSubmit((values) => update.mutate(toTierInput(values)));
 
   return (
     <Modal open onClose={onClose} title="Edit commission tier">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <TierFields form={form} onChange={setForm} />
-        {error && <FormBanner>{error}</FormBanner>}
-        <Button type="submit" isLoading={update.isPending}>
-          Save changes
-        </Button>
-      </form>
+      <Form {...form}>
+        <form onSubmit={submitTier} noValidate className="space-y-4">
+          <TierFields form={form} />
+          {update.isError && <FormBanner>{getErrorMessage(update.error)}</FormBanner>}
+          <Button type="submit" isLoading={update.isPending}>
+            Save changes
+          </Button>
+        </form>
+      </Form>
     </Modal>
   );
 };
@@ -123,32 +114,30 @@ export const CommissionTiersSection = () => {
     queryFn: commissionsApi.listTiers,
   });
 
-  const [form, setForm] = useState<TierFormState>(EMPTY_FORM);
-  const [error, setError] = useState<string | null>(null);
+  const form = useForm<TierFormValues>({
+    resolver: zodResolver(tierFormSchema),
+    defaultValues: EMPTY_TIER_FORM,
+    mode: "onTouched",
+  });
   const [editingTier, setEditingTier] = useState<CommissionTier | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CommissionTier | null>(null);
 
   const create = useApiMutation({
-    mutationFn: () => commissionsApi.createTier(toTierInput(form)),
+    mutationFn: (values: TierFormValues) => commissionsApi.createTier(toTierInput(values)),
     invalidateKeys: [TIERS_QUERY_KEY],
-    onSuccess: () => {
-      setForm(EMPTY_FORM);
-      setError(null);
-    },
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
+    successMessage: "Commission tier added.",
+    onSuccess: () => form.reset(EMPTY_TIER_FORM),
   });
 
   const remove = useApiMutation({
     mutationFn: (id: string) => commissionsApi.deleteTier(id),
     invalidateKeys: [TIERS_QUERY_KEY],
+    successMessage: "Commission tier deleted.",
     onSuccess: () => setDeleteTarget(null),
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    create.mutate();
-  };
+  const submitTier = form.handleSubmit((values) => create.mutate(values));
 
   return (
     <div>
@@ -157,17 +146,20 @@ export const CommissionTiersSection = () => {
         Fixed commission a creator earns per attributed sale, by the sold item&apos;s price band.
       </p>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-      >
-        <TierFields form={form} onChange={setForm} />
-        <Button type="submit" isLoading={create.isPending}>
-          Add tier
-        </Button>
-      </form>
+      <Form {...form}>
+        <form
+          onSubmit={submitTier}
+          noValidate
+          className="mt-4 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+        >
+          <TierFields form={form} />
+          <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+            Add tier
+          </Button>
+        </form>
+      </Form>
 
-      {error && <FormBanner className="mt-3">{error}</FormBanner>}
+      {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
       <div className="mt-4 space-y-2">
         {isLoading &&

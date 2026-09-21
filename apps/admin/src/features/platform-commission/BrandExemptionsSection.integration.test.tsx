@@ -5,7 +5,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { BrandExemptionsSection } from "./BrandExemptionsSection";
 
@@ -89,5 +89,42 @@ describe("BrandExemptionsSection", () => {
     renderSection();
 
     expect(await screen.findByText("No exemptions yet.")).toBeInTheDocument();
+  });
+
+  it("names each missing field inline, not in a browser popup, and sends nothing", async () => {
+    const createRequested = vi.fn();
+    mswServer.use(
+      http.get(`${API_BASE}/brand-payouts/exemptions`, () => okJson([])),
+      http.post(`${API_BASE}/brand-payouts/exemptions`, () => {
+        createRequested();
+        return okJson(exemption("new", "Acme"));
+      }),
+    );
+
+    renderSection();
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Add exemption" }));
+
+    expect(await screen.findByText("Pick the brand this exemption is for.")).toBeInTheDocument();
+    expect(screen.getByText("Choose a start date.")).toBeInTheDocument();
+    expect(screen.getByText("Choose an end date.")).toBeInTheDocument();
+    expect(screen.getByText("Explain why this brand is exempt.")).toBeInTheDocument();
+    expect(createRequested).not.toHaveBeenCalled();
+  });
+
+  it("explains an end date that is not after the start date", async () => {
+    mswServer.use(http.get(`${API_BASE}/brand-payouts/exemptions`, () => okJson([])));
+
+    renderSection();
+    const user = userEvent.setup();
+
+    await user.type(await screen.findByLabelText("Starts"), "2026-10-10");
+    await user.type(screen.getByLabelText("Ends"), "2026-10-01");
+    await user.click(screen.getByRole("button", { name: "Add exemption" }));
+
+    expect(
+      await screen.findByText("The end date must be after the start date."),
+    ).toBeInTheDocument();
   });
 });
