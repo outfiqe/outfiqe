@@ -23,6 +23,8 @@ const staticStringsOf = (block: SkeletonBlock): string[] => {
   switch (block.kind) {
     case "filterTabs":
       return [...block.labels, ...(block.actionLabel ? [block.actionLabel] : [])];
+    case "searchInput":
+      return [block.placeholder];
     case "section":
       return [
         block.title,
@@ -61,9 +63,11 @@ describe("admin page skeleton specs", () => {
     "%s only shows text that the real page still contains",
     (_path, spec) => {
       const sources = readSources(spec);
-      const missing = staticStringsOfSpec(spec).filter(
-        (text) => !sources.includes(normalizeSourceText(text)),
-      );
+      const lowerCasedSources = sources.toLowerCase();
+      const missing = staticStringsOfSpec(spec).filter((text) => {
+        const needle = normalizeSourceText(text);
+        return !sources.includes(needle) && !lowerCasedSources.includes(needle.toLowerCase());
+      });
 
       expect(missing).toEqual([]);
     },

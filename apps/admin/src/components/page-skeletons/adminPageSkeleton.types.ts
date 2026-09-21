@@ -22,6 +22,11 @@ export type SkeletonBlock =
       actionLabels: readonly string[];
       hasMetaLine?: boolean;
       hasChipRow?: boolean;
+      hasBadge?: boolean;
+      hasTrailingBadge?: boolean;
+      textLineCount?: number;
+      leadingImageClass?: string;
+      actionSize?: "default" | "sm";
     }
   | {
       kind: "actionRows";
@@ -34,6 +39,7 @@ export type SkeletonBlock =
   | { kind: "reorderRows"; count: number; hasImage?: boolean; actionLabel?: string }
   | { kind: "imageRows"; count: number; actionLabels: readonly string[] }
   | { kind: "pills"; count: number }
+  | { kind: "searchInput"; placeholder: string }
   | { kind: "text"; text: string }
   | { kind: "table"; headers: readonly string[]; rowCount?: number }
   | { kind: "badgeGrid"; count: number }

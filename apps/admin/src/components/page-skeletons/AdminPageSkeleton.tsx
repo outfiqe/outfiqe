@@ -1,4 +1,4 @@
-import { Skeleton, StatCardSkeleton } from "@outfiqe/design-system";
+import { Input, Skeleton, StatCardSkeleton } from "@outfiqe/design-system";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
@@ -26,6 +26,8 @@ const FIRST_TAB_INDEX = 0;
 const HISTORY_ROW_LINE_COUNT = 2;
 const PILL_WIDTH_CLASSES = ["w-20", "w-24", "w-16", "w-28", "w-20"] as const;
 const FORM_IMAGE_LABEL = "Upload image";
+const DEFAULT_TEXT_LINE_COUNT = 1;
+const DEFAULT_ACTION_SIZE = "sm";
 
 const FIELD_WIDTH_CLASS: Record<FormFieldWidth, string> = {
   small: "w-32",
@@ -104,10 +106,16 @@ const BlockSkeleton = ({ block }: { block: SkeletonBlock }) => {
           {Array.from({ length: block.count }, (_unused, rowIndex) => (
             <CardRowSkeleton
               key={rowIndex}
-              textLineCount={1}
+              textLineCount={block.textLineCount ?? DEFAULT_TEXT_LINE_COUNT}
               hasMetaLine={block.hasMetaLine}
               hasChipRow={block.hasChipRow}
-              actions={block.actionLabels.map((label) => ({ label, size: "sm" as const }))}
+              hasBadge={block.hasBadge}
+              hasTrailingBadge={block.hasTrailingBadge}
+              leadingImageClass={block.leadingImageClass}
+              actions={block.actionLabels.map((label) => ({
+                label,
+                size: block.actionSize ?? DEFAULT_ACTION_SIZE,
+              }))}
             />
           ))}
         </div>
@@ -161,6 +169,17 @@ const BlockSkeleton = ({ block }: { block: SkeletonBlock }) => {
             />
           ))}
         </div>
+      );
+    case "searchInput":
+      return (
+        <Input
+          type="search"
+          placeholder={block.placeholder}
+          disabled
+          aria-hidden
+          tabIndex={-1}
+          className="max-w-sm"
+        />
       );
     case "text":
       return <p className="text-sm text-muted-foreground">{block.text}</p>;

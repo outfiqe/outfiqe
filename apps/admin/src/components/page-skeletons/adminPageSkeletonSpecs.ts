@@ -8,6 +8,76 @@ const GRID_CARD_COUNT = 6;
 const PILL_COUNT = 5;
 
 export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = {
+  "/products": {
+    title: "Products",
+    blocks: [
+      { kind: "filterTabs", labels: ["Pending", "Approved", "Rejected"] },
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        hasBadge: false,
+        textLineCount: 2,
+        leadingImageClass: "size-16",
+        actionLabels: [],
+      },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/products/ProductsPage.tsx`],
+  },
+
+  "/users": {
+    title: "Users",
+    description: "Search for an account to suspend, ban, or restore it.",
+    blocks: [
+      { kind: "searchInput", placeholder: "Search by name, username, or email…" },
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        actionSize: "default",
+        actionLabels: ["Suspend", "Ban"],
+      },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/users/UsersPage.tsx`],
+  },
+
+  "/creators": {
+    title: "Creators",
+    blocks: [
+      { kind: "filterTabs", labels: ["Pending", "Approved", "Rejected"] },
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        hasBadge: false,
+        actionSize: "default",
+        actionLabels: ["Approve", "Reject"],
+      },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/creators/CreatorsPage.tsx`],
+  },
+
+  "/orders": {
+    title: "Orders",
+    blocks: [
+      {
+        kind: "filterTabs",
+        labels: ["All", "Placed", "Packed", "Shipped", "Delivered", "Cancelled"],
+      },
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        hasBadge: false,
+        hasTrailingBadge: true,
+        actionLabels: [],
+      },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/orders/OrdersPage.tsx`],
+  },
+
+  "/product-reviews": {
+    title: "Product Reviews",
+    description: "Search a product to view and moderate its customer reviews.",
+    blocks: [{ kind: "searchInput", placeholder: "Search products by name…" }],
+    sourceFiles: [`${FEATURES_DIR}/product-reviews/ProductReviewsPage.tsx`],
+  },
   "/categories": {
     title: "Categories",
     blocks: [
