@@ -30,3 +30,7 @@ Route: `_authenticated.platform.impersonation.index.tsx` (`/platform/impersonati
 - **Candidates come from a dedicated platform endpoint**, not a tenant member list — the operator
   is never inside the tenant, and platform staff are filtered out server-side so they can't be
   impersonation targets.
+
+## Form validation
+
+The start form uses react-hook-form with `impersonationForm.schema.ts`: a tenant, a member to act as, a reason of at least 3 characters (the audit trail needs it), and optional minutes from 1 to 60 (the API's own cap). Picking a different tenant clears the chosen member.

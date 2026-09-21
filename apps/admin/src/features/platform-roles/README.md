@@ -30,3 +30,7 @@ renders for a non-co-founder.
 (`requireCoFounder` on every write); hiding this UI for non-co-founders in `TeamPage.tsx` is just
 UX, the same "hiding the form is UX, not the security boundary" stance `features/team/README.md`
 already states for the invite form.
+
+## Form validation
+
+The role modal uses react-hook-form with `platformRoleForm.schema.ts` (name 2-50 characters, at least one permission), so an empty form shows its messages instead of a silently disabled button. Create, edit and delete each show a success toast.
