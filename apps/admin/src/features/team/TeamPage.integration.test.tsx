@@ -1,6 +1,8 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 
@@ -34,6 +36,7 @@ const renderPage = () => {
   render(
     <QueryClientProvider client={queryClient}>
       <TeamPage />
+      <Toaster />
     </QueryClientProvider>,
   );
 };
@@ -54,7 +57,12 @@ const mockInvitesEndpoint = (
 
 const mockCoFounderOnlyEndpoints = () =>
   mswServer.use(
-    http.get(`${API_BASE}/platform/roles`, () => HttpResponse.json({ success: true, data: [] })),
+    http.get(`${API_BASE}/platform/roles`, () =>
+      HttpResponse.json({
+        success: true,
+        data: [{ id: "role-1", name: "Support", isBuiltIn: false, permissionKeys: [] }],
+      }),
+    ),
     http.get(`${API_BASE}/platform/permissions`, () =>
       HttpResponse.json({ success: true, data: [] }),
     ),
@@ -118,5 +126,100 @@ describe("TeamPage", () => {
     expect(screen.queryByRole("button", { name: "Invite admin" })).not.toBeInTheDocument();
     expect(screen.queryByText("Platform roles")).not.toBeInTheDocument();
     expect(screen.queryByText("Platform team")).not.toBeInTheDocument();
+  });
+
+  it("shows inline messages, not a browser popup, when the invite form is submitted empty", async () => {
+    mockAuthState.current = { isCoFounder: true };
+    mockCoFounderOnlyEndpoints();
+    mockInvitesEndpoint([]);
+    const inviteRequested = vi.fn();
+    mswServer.use(
+      http.post(`${API_BASE}/admin/invites`, () => {
+        inviteRequested();
+        return HttpResponse.json({ success: true, data: null });
+      }),
+    );
+
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Invite admin" }));
+
+    expect(await screen.findByText("Enter the person's name.")).toBeInTheDocument();
+    expect(screen.getByText("Enter an email address.")).toBeInTheDocument();
+    expect(screen.getByText("Choose a platform role for this invite.")).toBeInTheDocument();
+    expect(inviteRequested).not.toHaveBeenCalled();
+  });
+
+  it("explains an invalid email address and does not send the invite", async () => {
+    mockAuthState.current = { isCoFounder: true };
+    mockCoFounderOnlyEndpoints();
+    mockInvitesEndpoint([]);
+    const inviteRequested = vi.fn();
+    mswServer.use(
+      http.post(`${API_BASE}/admin/invites`, () => {
+        inviteRequested();
+        return HttpResponse.json({ success: true, data: null });
+      }),
+    );
+
+    renderPage();
+    await userEvent.type(await screen.findByLabelText("Name"), "Tara Tenant");
+    await userEvent.type(screen.getByLabelText("Email"), "not-an-email");
+    await userEvent.selectOptions(await screen.findByLabelText("Role"), "role-1");
+    await userEvent.click(screen.getByRole("button", { name: "Invite admin" }));
+
+    expect(await screen.findByText("Enter a valid email address.")).toBeInTheDocument();
+    expect(inviteRequested).not.toHaveBeenCalled();
+  });
+
+  it("sends the invite, clears the form and shows a success toast", async () => {
+    mockAuthState.current = { isCoFounder: true };
+    mockCoFounderOnlyEndpoints();
+    mockInvitesEndpoint([]);
+    let inviteBody: unknown;
+    mswServer.use(
+      http.post(`${API_BASE}/admin/invites`, async ({ request }) => {
+        inviteBody = await request.json();
+        return HttpResponse.json({ success: true, data: null });
+      }),
+    );
+
+    renderPage();
+    const nameField = await screen.findByLabelText("Name");
+    await userEvent.type(nameField, "Tara Tenant");
+    await userEvent.type(screen.getByLabelText("Email"), "tara@outfiqe.test");
+    await userEvent.selectOptions(await screen.findByLabelText("Role"), "role-1");
+    await userEvent.click(screen.getByRole("button", { name: "Invite admin" }));
+
+    await waitFor(() =>
+      expect(inviteBody).toEqual({
+        email: "tara@outfiqe.test",
+        name: "Tara Tenant",
+        roleId: "role-1",
+      }),
+    );
+    expect(await screen.findByText("Invite sent to tara@outfiqe.test.")).toBeInTheDocument();
+    await waitFor(() => expect(nameField).toHaveValue(""));
+  });
+
+  it("shows the server's reason when the invite is rejected", async () => {
+    mockAuthState.current = { isCoFounder: true };
+    mockCoFounderOnlyEndpoints();
+    mockInvitesEndpoint([]);
+    mswServer.use(
+      http.post(`${API_BASE}/admin/invites`, () =>
+        HttpResponse.json(
+          { success: false, message: "That email already has an account." },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    renderPage();
+    await userEvent.type(await screen.findByLabelText("Name"), "Tara Tenant");
+    await userEvent.type(screen.getByLabelText("Email"), "tara@outfiqe.test");
+    await userEvent.selectOptions(await screen.findByLabelText("Role"), "role-1");
+    await userEvent.click(screen.getByRole("button", { name: "Invite admin" }));
+
+    expect(await screen.findByText("That email already has an account.")).toBeInTheDocument();
   });
 });
