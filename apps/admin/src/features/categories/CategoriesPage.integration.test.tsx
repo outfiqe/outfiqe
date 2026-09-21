@@ -41,6 +41,11 @@ const renderPage = () => {
 const stubPopularity = (rows: { slug: string; userCount: number }[] = []) =>
   mswServer.use(http.get(`${API_BASE}/taste-preferences/popularity`, () => okJson(rows)));
 
+const stubEmptyList = () => {
+  mswServer.use(http.get(`${API_BASE}/categories/admin`, () => okJson([])));
+  stubPopularity();
+};
+
 describe("CategoriesPage", () => {
   it("posts the swapped id order when a category is moved down", async () => {
     let reorderBody: unknown;
@@ -149,5 +154,103 @@ describe("CategoriesPage", () => {
     expect(
       await screen.findByText("Only platform staff can publish categories."),
     ).toBeInTheDocument();
+  });
+
+  it("shows inline messages instead of a browser popup when the form is submitted empty", async () => {
+    stubEmptyList();
+    const createRequested = vi.fn();
+    mswServer.use(
+      http.post(`${API_BASE}/categories`, () => {
+        createRequested();
+        return okJson(category("new", "New", 0));
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "Create category" }));
+
+    expect(await screen.findByText("Enter a name for the category.")).toBeInTheDocument();
+    expect(screen.getByText("Enter a slug for the category.")).toBeInTheDocument();
+    expect(createRequested).not.toHaveBeenCalled();
+  });
+
+  it("explains a slug with capitals or spaces and does not send it", async () => {
+    stubEmptyList();
+    const createRequested = vi.fn();
+    mswServer.use(
+      http.post(`${API_BASE}/categories`, () => {
+        createRequested();
+        return okJson(category("new", "New", 0));
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.type(await screen.findByLabelText("Name"), "Old Money");
+    const slugField = screen.getByLabelText("Slug");
+    await user.clear(slugField);
+    await user.type(slugField, "x");
+    await user.click(screen.getByRole("button", { name: "Create category" }));
+
+    expect(await screen.findByText("Use at least 2 characters.")).toBeInTheDocument();
+    expect(createRequested).not.toHaveBeenCalled();
+  });
+
+  it("fills the slug from the name, creates the category and shows a success toast", async () => {
+    stubEmptyList();
+    let createBody: unknown;
+    mswServer.use(
+      http.post(`${API_BASE}/categories`, async ({ request }) => {
+        createBody = await request.json();
+        return okJson(category("new", "Old Money", 0));
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.type(await screen.findByLabelText("Name"), "Old Money");
+    expect(screen.getByLabelText("Slug")).toHaveValue("old-money");
+    await user.click(screen.getByRole("button", { name: "Create category" }));
+
+    await waitFor(() => expect(createBody).toEqual({ name: "Old Money", slug: "old-money" }));
+    expect(await screen.findByText("Category created.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText("Name")).toHaveValue(""));
+  });
+
+  it("keeps what was typed and shows the server's reason when creating fails", async () => {
+    stubEmptyList();
+    mswServer.use(
+      http.post(`${API_BASE}/categories`, () =>
+        HttpResponse.json(
+          { success: false, message: "This slug is already in use." },
+          { status: 409 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.type(await screen.findByLabelText("Name"), "Old Money");
+    await user.click(screen.getByRole("button", { name: "Create category" }));
+
+    expect(await screen.findByText("This slug is already in use.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Name")).toHaveValue("Old Money");
+  });
+
+  it("shows a success toast when a category is published or unpublished", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/categories/admin`, () => okJson([category("id-a", "Alpha", 0)])),
+      http.patch(`${API_BASE}/categories/id-a`, () =>
+        okJson({ ...category("id-a", "Alpha", 0), status: "DRAFT" }),
+      ),
+    );
+    stubPopularity();
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "Unpublish" }));
+
+    expect(await screen.findByText("Category unpublished.")).toBeInTheDocument();
   });
 });

@@ -21,6 +21,7 @@
     "db:generate": "echo 'no database in admin app'"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.7.1",
     "@outfiqe/client": "workspace:*",
     "@outfiqe/components": "workspace:*",
     "@outfiqe/design-system": "workspace:*",
@@ -34,6 +35,7 @@
     "lucide-react": "^1.29.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-hook-form": "^7.84.0",
     "react-rnd": "^10.5.2",
     "socket.io-client": "^4.8.3",
     "zod": "^4.4.3"
