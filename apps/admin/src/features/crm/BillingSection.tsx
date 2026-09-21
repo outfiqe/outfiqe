@@ -1,6 +1,6 @@
 import { Badge, Button, FormBanner } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -46,10 +46,18 @@ const SubscriptionCard = ({
 }) => {
   const { subscription, planCatalog, activeSeatCount } = overview;
 
-  const { data: invoicePage } = useQuery({
+  const {
+    data: invoicePages,
+    fetchNextPage: fetchMoreInvoices,
+    hasNextPage: hasMoreInvoices,
+    isFetchingNextPage: isFetchingMoreInvoices,
+  } = useInfiniteQuery({
     queryKey: BILLING_INVOICES_KEY,
-    queryFn: () => crmBillingApi.listInvoices(),
+    queryFn: ({ pageParam }) => crmBillingApi.listInvoices(pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
+  const invoices = invoicePages?.pages.flatMap((page) => page.invoices) ?? [];
 
   const cancelRenewal = useApiMutation({
     mutationFn: crmBillingApi.cancel,
@@ -58,7 +66,7 @@ const SubscriptionCard = ({
 
   const planName =
     planCatalog.find((plan) => plan.id === subscription?.plan)?.name ?? subscription?.plan ?? "—";
-  const outstandingInvoice = invoicePage?.invoices.find((invoice) => invoice.status === "OPEN");
+  const outstandingInvoice = invoices.find((invoice) => invoice.status === "OPEN");
 
   return (
     <div className="space-y-6">
@@ -134,7 +142,20 @@ const SubscriptionCard = ({
         </FormBanner>
       )}
 
-      <InvoiceHistory invoices={invoicePage?.invoices ?? []} />
+      <div>
+        <InvoiceHistory invoices={invoices} />
+        {hasMoreInvoices && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            isLoading={isFetchingMoreInvoices}
+            onClick={() => fetchMoreInvoices()}
+          >
+            Load more
+          </Button>
+        )}
+      </div>
     </div>
   );
 };

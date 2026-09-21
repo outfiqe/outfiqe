@@ -171,4 +171,50 @@ describe("BillingSection", () => {
 
     await waitFor(() => expect(screen.getByText("Forbidden")).toBeInTheDocument());
   });
+
+  it("loads older invoices with a Load more button", async () => {
+    mockOverview({
+      subscription: null,
+      advancedFeaturesEnabled: true,
+      planCatalog: PLAN_CATALOG,
+      activeSeatCount: 1,
+    });
+    const invoice = (id: string, amount: number) => ({
+      id,
+      plan: "starter",
+      seats: 1,
+      amount,
+      status: "VOID",
+      periodStart: "2026-09-01T00:00:00.000Z",
+      periodEnd: "2026-10-01T00:00:00.000Z",
+      provider: "ESEWA",
+      initiatedAt: null,
+      paidAt: null,
+      voidedAt: "2026-09-02T00:00:00.000Z",
+      createdAt: "2026-09-01T00:00:00.000Z",
+    });
+    const requestedCursors: (string | null)[] = [];
+    mswServer.use(
+      http.get(`${API_BASE}/crm/billing/invoices`, ({ request }) => {
+        const cursor = new URL(request.url).searchParams.get("cursor");
+        requestedCursors.push(cursor);
+        return HttpResponse.json({
+          success: true,
+          data: cursor
+            ? { invoices: [invoice("inv-2", 1200)], nextCursor: null }
+            : { invoices: [invoice("inv-1", 900)], nextCursor: "inv-1" },
+        });
+      }),
+    );
+
+    render(<BillingSection />, { wrapper });
+    const user = userEvent.setup();
+
+    expect(await screen.findByText("Rs. 900")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Load more" }));
+
+    expect(await screen.findByText("Rs. 1,200")).toBeInTheDocument();
+    expect(requestedCursors).toEqual([null, "inv-1"]);
+    expect(screen.queryByRole("button", { name: "Load more" })).not.toBeInTheDocument();
+  });
 });
