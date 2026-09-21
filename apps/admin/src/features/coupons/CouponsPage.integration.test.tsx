@@ -1,9 +1,10 @@
+import { Toaster } from "@outfiqe/design-system";
 import { mswServer } from "@test/integration/msw/server";
 import { renderWithRouter } from "@test/renderWithRouter";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { CouponsPage } from "@/features/coupons/CouponsPage";
 
@@ -39,7 +40,21 @@ const buildCoupon = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const renderPage = () => renderWithRouter(<CouponsPage />, { path: "/coupons" });
+const renderPage = () =>
+  renderWithRouter(
+    <>
+      <CouponsPage />
+      <Toaster />
+    </>,
+    { path: "/coupons" },
+  );
+
+const stubEmptyCouponList = () =>
+  mswServer.use(
+    http.get(`${API_BASE}/admin/coupons`, () =>
+      HttpResponse.json({ success: true, message: "ok", data: { coupons: [], nextCursor: null } }),
+    ),
+  );
 
 describe("CouponsPage", () => {
   it("shows a coupon's budget utilization and a pending-approval badge", async () => {
@@ -153,6 +168,111 @@ describe("CouponsPage", () => {
     await waitFor(() =>
       expect(screen.queryByRole("dialog", { name: /new coupon/i })).not.toBeInTheDocument(),
     );
+  });
+
+  it("shows inline messages, not a browser popup, and sends nothing for an empty coupon form", async () => {
+    stubEmptyCouponList();
+    const createRequested = vi.fn();
+    mswServer.use(
+      http.post(`${API_BASE}/admin/coupons`, () => {
+        createRequested();
+        return HttpResponse.json({ success: true, message: "ok", data: buildCoupon() });
+      }),
+    );
+
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "New coupon" }));
+    await userEvent.click(screen.getByRole("button", { name: "Create coupon" }));
+
+    expect(await screen.findByText("Enter a coupon code.")).toBeInTheDocument();
+    expect(createRequested).not.toHaveBeenCalled();
+  });
+
+  it("explains a percentage above 100 and a code that is too short", async () => {
+    stubEmptyCouponList();
+
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "New coupon" }));
+    await userEvent.type(screen.getByLabelText("Code"), "ab");
+    const percentField = screen.getByLabelText("Percent off");
+    await userEvent.clear(percentField);
+    await userEvent.type(percentField, "150");
+    await userEvent.click(screen.getByRole("button", { name: "Create coupon" }));
+
+    expect(await screen.findByText("Use at least 4 characters.")).toBeInTheDocument();
+    expect(screen.getByText("Use a number up to 100.")).toBeInTheDocument();
+  });
+
+  it("shows a success toast when a coupon is created", async () => {
+    stubEmptyCouponList();
+    mswServer.use(
+      http.post(`${API_BASE}/admin/coupons`, () =>
+        HttpResponse.json(
+          { success: true, message: "ok", data: buildCoupon({ code: "SPRING10" }) },
+          { status: 201 },
+        ),
+      ),
+    );
+
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "New coupon" }));
+    await userEvent.type(screen.getByLabelText("Code"), "SPRING10");
+    await userEvent.click(screen.getByRole("button", { name: "Create coupon" }));
+
+    expect(await screen.findByText("Coupon created.")).toBeInTheDocument();
+  });
+
+  it("rejects a decimal budget inline and shows a toast when a valid budget is saved", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/admin/coupons`, () =>
+        HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: { coupons: [buildCoupon()], nextCursor: null },
+        }),
+      ),
+      http.patch(`${API_BASE}/admin/coupons/coupon-1/budget`, () =>
+        HttpResponse.json({ success: true, message: "ok", data: buildCoupon() }),
+      ),
+    );
+
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Edit budget" }));
+    const budgetField = screen.getByLabelText("Total budget (Rs.)");
+    await userEvent.clear(budgetField);
+    await userEvent.type(budgetField, "0");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText(/at least 1/)).toBeInTheDocument();
+
+    await userEvent.clear(budgetField);
+    await userEvent.type(budgetField, "2500");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Coupon budget updated.")).toBeInTheDocument();
+  });
+
+  it("shows a success toast when a coupon is paused", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/admin/coupons`, () =>
+        HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: { coupons: [buildCoupon()], nextCursor: null },
+        }),
+      ),
+      http.patch(`${API_BASE}/admin/coupons/coupon-1/status`, () =>
+        HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: buildCoupon({ status: "PAUSED" }),
+        }),
+      ),
+    );
+
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Pause" }));
+
+    expect(await screen.findByText("Coupon paused.")).toBeInTheDocument();
   });
 
   it("looks up a redemption by coupon code", async () => {

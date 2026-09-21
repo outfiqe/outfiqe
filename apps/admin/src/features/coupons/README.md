@@ -20,7 +20,8 @@ per-coupon performance report, and look up a redemption for support.
   as `?status=`, so a filtered view survives a refresh and is shareable; the default `ACTIVE` is
   omitted from the URL — `_authenticated.coupons.tsx` declares the `validateSearch`), budget
   progress bar, and the approve/pause-activate/archive/edit-budget/performance actions.
-- `CreateCouponModal.tsx` — the new-coupon form.
+- `CreateCouponModal.tsx` — the new-coupon form (react-hook-form, inline messages, success toast).
+- `couponForm.schema.ts` — the form's zod schema: string-typed number fields, code length 4-24, percent 1-100 or fixed amount depending on the discount type.
 - `CouponPerformanceModal.tsx` — `StatCard` grid over `GET /:id/performance`.
 - `RedemptionLookupSection.tsx` — search by coupon code or order id; a released redemption shows its
   `releasedReason` inline as the support-facing refusal/reversal reason, and a velocity-flagged
