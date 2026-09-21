@@ -8,10 +8,18 @@ import { platformMetricsApi } from "./api";
 import type { TenantSparklinePoint } from "./schemas";
 
 const MIN_TREND_POINTS = 2;
+const NO_ACTIVITY = 0;
 
 const Sparkline = ({ points }: { points: TenantSparklinePoint[] }) => {
   if (points.length < MIN_TREND_POINTS) {
     return <p className="text-sm text-muted-foreground">Not enough history yet for a trend.</p>;
+  }
+
+  const hasAnyActivity = points.some((point) => point.activityCount > NO_ACTIVITY);
+  if (!hasAnyActivity) {
+    return (
+      <p className="text-sm text-muted-foreground">No activity recorded in this window yet.</p>
+    );
   }
 
   return (
