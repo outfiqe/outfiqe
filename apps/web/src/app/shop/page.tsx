@@ -12,7 +12,7 @@ import { getQueryClient } from "@/shared/lib/getQueryClient";
 import { buildPageMetadata, collectionPageSchema, JsonLd } from "@/shared/seo";
 
 interface ShopPageProps {
-  searchParams: Promise<{ category?: string; type?: string; sort?: string }>;
+  searchParams: Promise<{ category?: string; type?: string; sort?: string; thrift?: string }>;
 }
 
 const SORT_LABEL: Record<string, string> = {
@@ -88,6 +88,8 @@ const ShopPage = async ({ searchParams }: ShopPageProps) => {
 
   const heading =
     categoryName ?? (params.sort ? SORT_HEADING[params.sort] : undefined) ?? DEFAULT_HEADING;
+  const visibleHeading =
+    params.thrift === "true" ? (categoryName ? `Thrift ${categoryName}` : "Thrift") : heading;
   const schemaDescription = categoryName
     ? `Every ${categoryName.toLowerCase()} piece from a Nepali brand on Outfiqe, shown in a creator look.`
     : "Every piece from every Nepali brand on Outfiqe, shown in a creator look, in one cart.";
@@ -103,7 +105,7 @@ const ShopPage = async ({ searchParams }: ShopPageProps) => {
                 Shop
               </span>
               <h1 className="mt-2 font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl lg:text-4xl">
-                {heading}
+                {visibleHeading}
               </h1>
             </header>
             <div className="mt-6">

@@ -12,6 +12,7 @@ import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProduc
 import { ALL_TYPE_ID, CategoryTypeFilters } from "@/shared/components/CategoryTypeFilters";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
+import { formatResultCount } from "@/shared/lib/formatCount";
 
 import { useCategorySelection } from "../../lib/CategorySelectionContext";
 import { resolveDisplayCategories } from "../../lib/resolveTasteCategories";
@@ -89,8 +90,8 @@ export const CategoryResults = () => {
             In {name}
           </h2>
           {firstPage ? (
-            <p className="mt-1 text-sm text-muted-foreground">
-              {firstPage.total} pieces from {firstPage.brandCount} brands
+            <p className="mt-1 min-h-5 text-sm text-muted-foreground">
+              {formatResultCount(firstPage.total, firstPage.brandCount)}
             </p>
           ) : (
             <Skeleton className="mt-2 h-4 w-40" />
@@ -122,7 +123,20 @@ export const CategoryResults = () => {
       {showLoadingGrid ? (
         <ProductGridSkeleton className="mt-8" />
       ) : products.length === 0 ? (
-        <p className="mt-12 text-sm text-muted-foreground">No pieces in this filter yet.</p>
+        <div className="mt-12 flex flex-col items-start gap-3">
+          {effectiveActiveType === ALL_TYPE_ID ? (
+            <p className="text-sm text-muted-foreground">
+              No pieces in {name} yet. Check back soon.
+            </p>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground">No pieces of this type yet.</p>
+              <Button variant="outline" size="sm" onClick={() => selectType(ALL_TYPE_ID)}>
+                Show all {name}
+              </Button>
+            </>
+          )}
+        </div>
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
           {products.map((product) => (

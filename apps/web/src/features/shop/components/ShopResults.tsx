@@ -1,6 +1,6 @@
 "use client";
 
-import { Skeleton } from "@outfiqe/design-system";
+import { Button, Skeleton } from "@outfiqe/design-system";
 import { PRODUCT_SORT, PRODUCT_SORT_VALUES, type ProductSort } from "@outfiqe/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -14,6 +14,7 @@ import { ALL_TYPE_ID, CategoryTypeFilters } from "@/shared/components/CategoryTy
 import { TRENDING_RANKS } from "@/shared/components/TrendingRankBadge";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
+import { formatResultCount } from "@/shared/lib/formatCount";
 
 import { ThriftOnlyToggle } from "./ThriftOnlyToggle";
 
@@ -93,8 +94,8 @@ export const ShopResults = () => {
   return (
     <div>
       {firstPage ? (
-        <p className="text-sm text-muted-foreground">
-          {firstPage.total} pieces from {firstPage.brandCount} brands
+        <p className="min-h-5 text-sm text-muted-foreground">
+          {formatResultCount(firstPage.total, firstPage.brandCount)}
         </p>
       ) : (
         <Skeleton className="h-4 w-40" />
@@ -114,7 +115,16 @@ export const ShopResults = () => {
       {showLoadingGrid ? (
         <ProductGridSkeleton className="mt-8" />
       ) : products.length === 0 ? (
-        <p className="mt-12 text-sm text-muted-foreground">Nothing here yet.</p>
+        <div className="mt-12 flex flex-col items-start gap-3">
+          <p className="text-sm text-muted-foreground">
+            {thriftOnly ? "No thrift pieces here yet." : "No pieces here yet. Check back soon."}
+          </p>
+          {thriftOnly && (
+            <Button variant="outline" size="sm" onClick={toggleThriftOnly}>
+              Show all pieces
+            </Button>
+          )}
+        </div>
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
           {products.map((product, index) => (
