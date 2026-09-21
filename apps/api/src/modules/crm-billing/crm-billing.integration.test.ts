@@ -549,6 +549,6 @@ describe("GET /api/crm/billing/invoices", () => {
       .set("Host", host)
       .set("Authorization", authHeaderFor(staff.id));
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(422);
   });
 });
