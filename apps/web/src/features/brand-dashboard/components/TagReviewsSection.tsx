@@ -1,12 +1,17 @@
 "use client";
 
 import { Button, Skeleton, Tabs, TabsList, TabsTrigger, toast } from "@outfiqe/design-system";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+import { cn } from "@/shared/lib/cn";
 import { getErrorMessage } from "@/shared/lib/errorMessages";
 
 import type { RejectTagInput, TagReviewQueueItem } from "../api/tagReviewSchemas";
+import {
+  usePrefetchOtherTagReviewQueues,
+  usePrefetchTagReviewQueue,
+} from "../hooks/usePrefetchTagReviewQueues";
 import { useReviewTagActions } from "../hooks/useReviewTagActions";
 import { useTagReviewPendingCount } from "../hooks/useTagReviewPendingCount";
 import { useTagReviewQueue } from "../hooks/useTagReviewQueue";
@@ -20,20 +25,41 @@ const EMPTY_COPY: Record<string, string> = {
   REJECTED: "You haven't declined any creator tags.",
 };
 
+const DEFAULT_TAB = TAG_REVIEW_QUEUE_TABS[0]!.status;
+
+const TabRefreshHint = ({ isRefreshing }: { isRefreshing: boolean }) => (
+  <span
+    aria-hidden
+    className={cn(
+      "ml-1.5 inline-block size-1.5 rounded-full bg-current transition-opacity duration-150",
+      isRefreshing ? "opacity-70 motion-safe:animate-pulse" : "opacity-0",
+    )}
+  />
+);
+
 export const TagReviewsSection = () => {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const tabFromParam = TAG_REVIEW_QUEUE_TABS.find(
-    ({ status }) => status === searchParams.get(TAG_REVIEW_QUERY_PARAM.STATUS),
-  )?.status;
-  const tab = tabFromParam ?? TAG_REVIEW_QUEUE_TABS[0]!.status;
-  const setTab = (nextTab: typeof tab) =>
-    router.replace(`?${TAG_REVIEW_QUERY_PARAM.STATUS}=${nextTab}`, { scroll: false });
+  const initialTab =
+    TAG_REVIEW_QUEUE_TABS.find(
+      ({ status }) => status === searchParams.get(TAG_REVIEW_QUERY_PARAM.STATUS),
+    )?.status ?? DEFAULT_TAB;
+  const [tab, setTab] = useState(initialTab);
+  const selectTab = (nextTab: typeof tab) => {
+    setTab(nextTab);
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `?${TAG_REVIEW_QUERY_PARAM.STATUS}=${nextTab}`,
+    );
+  };
 
   const [rejectingItem, setRejectingItem] = useState<TagReviewQueueItem | null>(null);
 
   const pendingCount = useTagReviewPendingCount();
   const queue = useTagReviewQueue(tab);
+  const prefetchQueue = usePrefetchTagReviewQueue();
+  usePrefetchOtherTagReviewQueues(tab, queue.isSuccess);
+  const isRefreshingCachedTab = queue.isFetching && !queue.isPending && !queue.isFetchingNextPage;
   const { approve, reject } = useReviewTagActions();
 
   const items = queue.data?.pages.flatMap((page) => page.items) ?? [];
@@ -81,19 +107,25 @@ export const TagReviewsSection = () => {
         </p>
       </div>
 
-      <Tabs value={tab} onValueChange={(value) => setTab(value as typeof tab)} className="mt-5">
+      <Tabs value={tab} onValueChange={(value) => selectTab(value as typeof tab)} className="mt-5">
         <TabsList>
           {TAG_REVIEW_QUEUE_TABS.map(({ status, label }) => (
-            <TabsTrigger key={status} value={status}>
+            <TabsTrigger
+              key={status}
+              value={status}
+              onPointerEnter={() => prefetchQueue(status)}
+              onFocus={() => prefetchQueue(status)}
+            >
               {label}
               {status === "PENDING" && pendingCount.data ? ` (${pendingCount.data})` : ""}
+              {status === tab && <TabRefreshHint isRefreshing={isRefreshingCachedTab} />}
             </TabsTrigger>
           ))}
         </TabsList>
       </Tabs>
 
       {queue.isPending && (
-        <div className="mt-5 space-y-3">
+        <div className="mt-5 space-y-3" role="status" aria-label="Loading tags">
           {Array.from({ length: 3 }).map((_, index) => (
             <Skeleton key={index} className="h-28 w-full rounded-2xl" />
           ))}

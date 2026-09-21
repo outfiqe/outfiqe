@@ -94,6 +94,7 @@ export default defineConfig({
         "src/features/brand-dashboard/api/tagReviewSchemas.ts",
         "src/features/brand-dashboard/tagReview.constants.ts",
         "src/features/brand-dashboard/hooks/useTagReviewQueue.ts",
+        "src/features/brand-dashboard/hooks/usePrefetchTagReviewQueues.ts",
         "src/features/brand-dashboard/hooks/useTagReviewPendingCount.ts",
         "src/features/brand-dashboard/hooks/useReviewTagActions.ts",
         "src/features/brand-profile/hooks/useInfiniteBrandProducts.ts",
