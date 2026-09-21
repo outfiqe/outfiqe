@@ -45,7 +45,7 @@ const LevelFields = ({
       control={form.control}
       name="level"
       render={({ field }) => (
-        <FormItem className="w-24 space-y-1.5">
+        <FormItem className="mt-0 w-24 space-y-1.5">
           <FormLabel className="text-xs font-normal text-muted-foreground">Level number</FormLabel>
           <FormControl>
             <Input inputMode="numeric" disabled={!levelEditable} {...field} />
@@ -58,7 +58,7 @@ const LevelFields = ({
       control={form.control}
       name="name"
       render={({ field }) => (
-        <FormItem className="w-48 space-y-1.5">
+        <FormItem className="mt-0 w-48 space-y-1.5">
           <FormLabel className="text-xs font-normal text-muted-foreground">Name</FormLabel>
           <FormControl>
             <Input {...field} />
@@ -71,7 +71,7 @@ const LevelFields = ({
       control={form.control}
       name="requiredXp"
       render={({ field }) => (
-        <FormItem className="w-32 space-y-1.5">
+        <FormItem className="mt-0 w-32 space-y-1.5">
           <FormLabel className="text-xs font-normal text-muted-foreground">Required XP</FormLabel>
           <FormControl>
             <Input inputMode="numeric" {...field} />
@@ -84,7 +84,7 @@ const LevelFields = ({
       control={form.control}
       name="icon"
       render={({ field }) => (
-        <FormItem className="w-24 space-y-1.5">
+        <FormItem className="mt-0 w-24 space-y-1.5">
           <FormLabel className="text-xs font-normal text-muted-foreground">Icon (emoji)</FormLabel>
           <FormControl>
             <Input {...field} />

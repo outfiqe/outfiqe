@@ -95,7 +95,7 @@ export const OrganizationsPage = () => {
             control={form.control}
             name="brand"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="mt-0">
                 <BusinessOwnerField
                   selectedBrandId={field.value?.id ?? null}
                   selectedBrandName={field.value?.name ?? ""}
@@ -112,7 +112,7 @@ export const OrganizationsPage = () => {
             control={form.control}
             name="subdomain"
             render={({ field }) => (
-              <FormItem className="w-48 space-y-1.5">
+              <FormItem className="mt-0 w-48 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">
                   Subdomain
                 </FormLabel>

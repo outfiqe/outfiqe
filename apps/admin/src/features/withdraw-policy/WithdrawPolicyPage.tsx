@@ -105,7 +105,7 @@ const PolicyFormFields = ({
       control={form.control}
       name={name}
       render={({ field }) => (
-        <FormItem className="space-y-1.5">
+        <FormItem className="mt-0 space-y-1.5">
           <FormLabel className={LABEL_CLASS}>{label}</FormLabel>
           <FormControl>
             <Input inputMode="numeric" {...field} />
@@ -130,7 +130,7 @@ const PolicyFormFields = ({
             control={form.control}
             name="windowType"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className={LABEL_CLASS}>Window type</FormLabel>
                 <FormControl>
                   <Select {...field}>
@@ -154,7 +154,7 @@ const PolicyFormFields = ({
           control={form.control}
           name="processingNoteText"
           render={({ field }) => (
-            <FormItem className="space-y-1.5">
+            <FormItem className="mt-0 space-y-1.5">
               <FormLabel className={LABEL_CLASS}>Processing note</FormLabel>
               <FormControl>
                 <Input {...field} />

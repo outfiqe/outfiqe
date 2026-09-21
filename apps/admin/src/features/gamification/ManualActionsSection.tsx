@@ -82,7 +82,7 @@ const AwardBadgeForm = () => {
           control={form.control}
           name="badgeId"
           render={({ field }) => (
-            <FormItem className="w-full space-y-1.5 sm:w-56">
+            <FormItem className="mt-0 w-full space-y-1.5 sm:w-56">
               <FormLabel className="text-xs font-normal text-muted-foreground">Badge</FormLabel>
               <FormControl>
                 <Select {...field} className="w-full">
@@ -102,7 +102,7 @@ const AwardBadgeForm = () => {
           control={form.control}
           name="recipient"
           render={({ field }) => (
-            <FormItem className="w-full sm:w-72">
+            <FormItem className="mt-0 w-full sm:w-72">
               <UserSearchField
                 id="award-user"
                 label="User"
@@ -117,7 +117,7 @@ const AwardBadgeForm = () => {
           control={form.control}
           name="reason"
           render={({ field }) => (
-            <FormItem className="min-w-0 flex-1 space-y-1.5">
+            <FormItem className="mt-0 min-w-0 flex-1 space-y-1.5">
               <FormLabel className="text-xs font-normal text-muted-foreground">Reason</FormLabel>
               <FormControl>
                 <Input {...field} />
@@ -180,7 +180,7 @@ const AdjustXpForm = () => {
           control={form.control}
           name="target"
           render={({ field }) => (
-            <FormItem className="w-full sm:w-72">
+            <FormItem className="mt-0 w-full sm:w-72">
               <UserSearchField
                 id="adjust-xp-user"
                 label="User"
@@ -195,7 +195,7 @@ const AdjustXpForm = () => {
           control={form.control}
           name="amount"
           render={({ field }) => (
-            <FormItem className="w-full space-y-1.5 sm:w-32">
+            <FormItem className="mt-0 w-full space-y-1.5 sm:w-32">
               <FormLabel className="text-xs font-normal text-muted-foreground">
                 Amount (negative to dock XP)
               </FormLabel>
@@ -210,7 +210,7 @@ const AdjustXpForm = () => {
           control={form.control}
           name="reason"
           render={({ field }) => (
-            <FormItem className="min-w-0 flex-1 space-y-1.5">
+            <FormItem className="mt-0 min-w-0 flex-1 space-y-1.5">
               <FormLabel className="text-xs font-normal text-muted-foreground">Reason</FormLabel>
               <FormControl>
                 <Input {...field} />

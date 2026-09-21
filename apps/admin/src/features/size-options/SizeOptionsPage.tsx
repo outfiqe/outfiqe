@@ -124,7 +124,7 @@ export const SizeOptionsPage = () => {
                 control={form.control}
                 name="label"
                 render={({ field }) => (
-                  <FormItem className="w-32 space-y-1.5">
+                  <FormItem className="mt-0 w-32 space-y-1.5">
                     <FormLabel className="text-xs font-normal text-muted-foreground">
                       Size label
                     </FormLabel>

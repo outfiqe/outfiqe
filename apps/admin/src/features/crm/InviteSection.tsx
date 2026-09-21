@@ -91,7 +91,7 @@ export const InviteSection = ({ viewerIsSuperAdmin, viewerPermissionKeys }: Invi
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem className="w-64 space-y-1.5">
+              <FormItem className="mt-0 w-64 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">Email</FormLabel>
                 <FormControl>
                   <Input type="email" {...field} />
@@ -104,7 +104,7 @@ export const InviteSection = ({ viewerIsSuperAdmin, viewerPermissionKeys }: Invi
             control={form.control}
             name="roleId"
             render={({ field }) => (
-              <FormItem className="w-40 space-y-1.5">
+              <FormItem className="mt-0 w-40 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">Role</FormLabel>
                 <FormControl>
                   <Select {...field}>

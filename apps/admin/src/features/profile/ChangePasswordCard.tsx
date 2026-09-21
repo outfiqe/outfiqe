@@ -66,7 +66,7 @@ export const ChangePasswordCard = () => {
           control={form.control}
           name="currentPassword"
           render={({ field }) => (
-            <FormItem className="space-y-1.5">
+            <FormItem className="mt-0 space-y-1.5">
               <FormLabel className="text-xs font-normal text-muted-foreground">
                 Current password
               </FormLabel>
@@ -81,7 +81,7 @@ export const ChangePasswordCard = () => {
           control={form.control}
           name="newPassword"
           render={({ field }) => (
-            <FormItem className="space-y-1.5">
+            <FormItem className="mt-0 space-y-1.5">
               <FormLabel className="text-xs font-normal text-muted-foreground">
                 New password
               </FormLabel>
@@ -96,7 +96,7 @@ export const ChangePasswordCard = () => {
           control={form.control}
           name="confirmNewPassword"
           render={({ field }) => (
-            <FormItem className="space-y-1.5">
+            <FormItem className="mt-0 space-y-1.5">
               <FormLabel className="text-xs font-normal text-muted-foreground">
                 Confirm new password
               </FormLabel>

@@ -104,7 +104,7 @@ const CompetitionFields = ({ form }: { form: UseFormReturn<CompetitionFormValues
         control={form.control}
         name="name"
         render={({ field }) => (
-          <FormItem className="min-w-48 flex-1 space-y-1.5">
+          <FormItem className="mt-0 min-w-48 flex-1 space-y-1.5">
             <FormLabel className="text-xs font-normal text-muted-foreground">
               Competition name
             </FormLabel>
@@ -119,7 +119,7 @@ const CompetitionFields = ({ form }: { form: UseFormReturn<CompetitionFormValues
         control={form.control}
         name="icon"
         render={({ field }) => (
-          <FormItem className="w-24 space-y-1.5">
+          <FormItem className="mt-0 w-24 space-y-1.5">
             <FormLabel className="text-xs font-normal text-muted-foreground">
               Icon (emoji)
             </FormLabel>
@@ -137,7 +137,7 @@ const CompetitionFields = ({ form }: { form: UseFormReturn<CompetitionFormValues
         control={form.control}
         name="leaderboardCategory"
         render={({ field }) => (
-          <FormItem className="w-40 space-y-1.5">
+          <FormItem className="mt-0 w-40 space-y-1.5">
             <FormLabel className="text-xs font-normal text-muted-foreground">Ranks by</FormLabel>
             <FormControl>
               <Select {...field}>
@@ -156,7 +156,7 @@ const CompetitionFields = ({ form }: { form: UseFormReturn<CompetitionFormValues
         control={form.control}
         name="topN"
         render={({ field }) => (
-          <FormItem className="w-28 space-y-1.5">
+          <FormItem className="mt-0 w-28 space-y-1.5">
             <FormLabel className="text-xs font-normal text-muted-foreground">
               Winners each week
             </FormLabel>
@@ -171,7 +171,7 @@ const CompetitionFields = ({ form }: { form: UseFormReturn<CompetitionFormValues
         control={form.control}
         name="xpReward"
         render={({ field }) => (
-          <FormItem className="w-28 space-y-1.5">
+          <FormItem className="mt-0 w-28 space-y-1.5">
             <FormLabel className="text-xs font-normal text-muted-foreground">XP reward</FormLabel>
             <FormControl>
               <Input inputMode="numeric" {...field} />
@@ -189,7 +189,7 @@ const CompetitionFields = ({ form }: { form: UseFormReturn<CompetitionFormValues
           control={form.control}
           name="category"
           render={({ field }) => (
-            <FormItem className="w-36 space-y-1.5">
+            <FormItem className="mt-0 w-36 space-y-1.5">
               <FormLabel className="text-xs font-normal text-muted-foreground">Category</FormLabel>
               <FormControl>
                 <Select {...field}>
@@ -208,7 +208,7 @@ const CompetitionFields = ({ form }: { form: UseFormReturn<CompetitionFormValues
           control={form.control}
           name="rarity"
           render={({ field }) => (
-            <FormItem className="w-36 space-y-1.5">
+            <FormItem className="mt-0 w-36 space-y-1.5">
               <FormLabel className="text-xs font-normal text-muted-foreground">Rarity</FormLabel>
               <FormControl>
                 <Select {...field}>
@@ -227,7 +227,7 @@ const CompetitionFields = ({ form }: { form: UseFormReturn<CompetitionFormValues
           control={form.control}
           name="shape"
           render={({ field }) => (
-            <FormItem className="w-32 space-y-1.5">
+            <FormItem className="mt-0 w-32 space-y-1.5">
               <FormLabel className="text-xs font-normal text-muted-foreground">Shape</FormLabel>
               <FormControl>
                 <Select {...field}>
@@ -246,7 +246,7 @@ const CompetitionFields = ({ form }: { form: UseFormReturn<CompetitionFormValues
           control={form.control}
           name="primaryColor"
           render={({ field }) => (
-            <FormItem className="space-y-1.5">
+            <FormItem className="mt-0 space-y-1.5">
               <FormLabel className="text-xs font-normal text-muted-foreground">Color</FormLabel>
               <FormControl>
                 <Input type="color" className="h-11 w-16 p-1" {...field} />
@@ -259,7 +259,7 @@ const CompetitionFields = ({ form }: { form: UseFormReturn<CompetitionFormValues
           control={form.control}
           name="animation"
           render={({ field }) => (
-            <FormItem className="w-36 space-y-1.5">
+            <FormItem className="mt-0 w-36 space-y-1.5">
               <FormLabel className="text-xs font-normal text-muted-foreground">Animation</FormLabel>
               <FormControl>
                 <Select {...field}>

@@ -122,7 +122,7 @@ export const HeroSlidesPage = () => {
             control={form.control}
             name="tag"
             render={({ field }) => (
-              <FormItem className="w-56 space-y-1.5">
+              <FormItem className="mt-0 w-56 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">Tag</FormLabel>
                 <FormControl>
                   <Input placeholder="Collection 01: Festive" {...field} />
@@ -135,7 +135,7 @@ export const HeroSlidesPage = () => {
             control={form.control}
             name="title"
             render={({ field }) => (
-              <FormItem className="w-56 space-y-1.5">
+              <FormItem className="mt-0 w-56 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">Title</FormLabel>
                 <FormControl>
                   <Input placeholder="Dashain Edit '26" {...field} />
@@ -148,7 +148,7 @@ export const HeroSlidesPage = () => {
             control={form.control}
             name="description"
             render={({ field }) => (
-              <FormItem className="w-72 space-y-1.5">
+              <FormItem className="mt-0 w-72 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">
                   Description
                 </FormLabel>
@@ -163,7 +163,7 @@ export const HeroSlidesPage = () => {
             control={form.control}
             name="ctaLabel"
             render={({ field }) => (
-              <FormItem className="w-44 space-y-1.5">
+              <FormItem className="mt-0 w-44 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">
                   CTA label
                 </FormLabel>
@@ -178,7 +178,7 @@ export const HeroSlidesPage = () => {
             control={form.control}
             name="ctaHref"
             render={({ field }) => (
-              <FormItem className="w-56 space-y-1.5">
+              <FormItem className="mt-0 w-56 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">
                   CTA link
                 </FormLabel>
@@ -193,7 +193,7 @@ export const HeroSlidesPage = () => {
             control={form.control}
             name="imageUrl"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <span className="block text-xs text-muted-foreground">Image</span>
                 <ImageUpload
                   value={field.value}

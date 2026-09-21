@@ -56,7 +56,7 @@ const MultiplierFields = ({ form }: { form: UseFormReturn<MultiplierFormValues> 
       control={form.control}
       name="label"
       render={({ field }) => (
-        <FormItem className="min-w-48 flex-1 space-y-1.5">
+        <FormItem className="mt-0 min-w-48 flex-1 space-y-1.5">
           <FormLabel className="text-xs font-normal text-muted-foreground">Label</FormLabel>
           <FormControl>
             <Input placeholder="Founders Weekend" {...field} />
@@ -69,7 +69,7 @@ const MultiplierFields = ({ form }: { form: UseFormReturn<MultiplierFormValues> 
       control={form.control}
       name="multiplier"
       render={({ field }) => (
-        <FormItem className="w-24 space-y-1.5">
+        <FormItem className="mt-0 w-24 space-y-1.5">
           <FormLabel className="text-xs font-normal text-muted-foreground">Multiplier</FormLabel>
           <FormControl>
             <Input inputMode="decimal" {...field} />
@@ -82,7 +82,7 @@ const MultiplierFields = ({ form }: { form: UseFormReturn<MultiplierFormValues> 
       control={form.control}
       name="startsAt"
       render={({ field }) => (
-        <FormItem className="w-full space-y-1.5 sm:w-56">
+        <FormItem className="mt-0 w-full space-y-1.5 sm:w-56">
           <FormLabel className="text-xs font-normal text-muted-foreground">Starts</FormLabel>
           <FormControl>
             <Input type="datetime-local" {...field} />
@@ -95,7 +95,7 @@ const MultiplierFields = ({ form }: { form: UseFormReturn<MultiplierFormValues> 
       control={form.control}
       name="endsAt"
       render={({ field }) => (
-        <FormItem className="w-full space-y-1.5 sm:w-56">
+        <FormItem className="mt-0 w-full space-y-1.5 sm:w-56">
           <FormLabel className="text-xs font-normal text-muted-foreground">Ends</FormLabel>
           <FormControl>
             <Input type="datetime-local" {...field} />

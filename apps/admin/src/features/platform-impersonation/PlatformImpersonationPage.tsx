@@ -177,7 +177,7 @@ export const PlatformImpersonationPage = () => {
             control={form.control}
             name="organizationId"
             render={({ field }) => (
-              <FormItem className="space-y-1">
+              <FormItem className="mt-0 space-y-1">
                 <FormLabel className="text-xs font-normal text-muted-foreground">Tenant</FormLabel>
                 <FormControl>
                   <Select
@@ -206,7 +206,7 @@ export const PlatformImpersonationPage = () => {
             control={form.control}
             name="targetUserId"
             render={({ field }) => (
-              <FormItem className="space-y-1">
+              <FormItem className="mt-0 space-y-1">
                 <FormLabel className="text-xs font-normal text-muted-foreground">Act as</FormLabel>
                 <FormControl>
                   <Select {...field} disabled={organizationId === "" || candidates.isLoading}>
@@ -234,7 +234,7 @@ export const PlatformImpersonationPage = () => {
             control={form.control}
             name="reason"
             render={({ field }) => (
-              <FormItem className="space-y-1">
+              <FormItem className="mt-0 space-y-1">
                 <FormLabel className="text-xs font-normal text-muted-foreground">
                   Reason (shown in the audit trail)
                 </FormLabel>
@@ -254,7 +254,7 @@ export const PlatformImpersonationPage = () => {
               control={form.control}
               name="scope"
               render={({ field }) => (
-                <FormItem className="flex-1 space-y-1">
+                <FormItem className="mt-0 flex-1 space-y-1">
                   <FormLabel className="text-xs font-normal text-muted-foreground">Scope</FormLabel>
                   <FormControl>
                     <Select {...field}>
@@ -270,7 +270,7 @@ export const PlatformImpersonationPage = () => {
               control={form.control}
               name="ttlMinutes"
               render={({ field }) => (
-                <FormItem className="w-32 space-y-1">
+                <FormItem className="mt-0 w-32 space-y-1">
                   <FormLabel className="text-xs font-normal text-muted-foreground">
                     Minutes (optional)
                   </FormLabel>
