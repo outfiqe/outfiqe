@@ -1,16 +1,33 @@
-import { Button, FormBanner, Input } from "@outfiqe/design-system";
-import { NEPAL_PHONE_REGEX } from "@outfiqe/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+} from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
 import { getRouteApi, Navigate, useNavigate } from "@tanstack/react-router";
-import { type FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { setAccessToken } from "@/lib/apiClient";
 import { useHideBootLoader } from "@/lib/bootLoader";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { authApi } from "./api";
 import { useAuth } from "./AuthContext";
+import {
+  adminRegisterFormSchema,
+  type AdminRegisterFormValues,
+  EMPTY_ADMIN_REGISTER_FORM,
+} from "./registerForm.schema";
 import type { AdminInviteInfo } from "./schemas";
 
-const PASSWORD_MIN_LENGTH = 8;
 const routeApi = getRouteApi("/register");
 
 type InviteLoadState =
@@ -29,11 +46,21 @@ export const RegisterInvitePage = () => {
       ? { status: "loading" }
       : { status: "invalid", message: "This invite link is missing a token." },
   );
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const form = useForm<AdminRegisterFormValues>({
+    resolver: zodResolver(adminRegisterFormSchema),
+    defaultValues: EMPTY_ADMIN_REGISTER_FORM,
+    mode: "onTouched",
+  });
+
+  const register = useApiMutation({
+    mutationFn: (values: AdminRegisterFormValues) =>
+      authApi.registerAdmin({ inviteToken: token, ...values }),
+    onSuccess: ({ accessToken, user }) => {
+      setAccessToken(accessToken);
+      setSession(user);
+      navigate({ to: "/", replace: true });
+    },
+  });
 
   useEffect(() => {
     if (!token) return;
@@ -51,39 +78,7 @@ export const RegisterInvitePage = () => {
 
   if (authState.status === "signed-in") return <Navigate to="/" replace />;
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!NEPAL_PHONE_REGEX.test(phone)) {
-      setError("Enter a valid Nepali phone number starting with 98.");
-      return;
-    }
-    if (password.length < PASSWORD_MIN_LENGTH) {
-      setError(`Password must be at least ${PASSWORD_MIN_LENGTH} characters.`);
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const { accessToken, user } = await authApi.registerAdmin({
-        inviteToken: token,
-        phone,
-        password,
-        confirmPassword,
-      });
-      setAccessToken(accessToken);
-      setSession(user);
-      navigate({ to: "/", replace: true });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-      setIsSubmitting(false);
-    }
-  };
+  const submitRegistration = form.handleSubmit((values) => register.mutate(values));
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-8 px-4 py-10">
@@ -108,55 +103,63 @@ export const RegisterInvitePage = () => {
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">{inviteState.invite.email}</p>
 
-            <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-              {error && <FormBanner>{error}</FormBanner>}
+            <Form {...form}>
+              <form className="mt-5 space-y-4" noValidate onSubmit={submitRegistration}>
+                {register.isError && <FormBanner>{getErrorMessage(register.error)}</FormBanner>}
 
-              <div className="space-y-1.5">
-                <label htmlFor="phone" className="text-xs text-muted-foreground">
-                  Phone
-                </label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="98XXXXXXXX"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-xs font-normal text-muted-foreground">
+                        Phone
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="tel" placeholder="98XXXXXXXX" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="space-y-1.5">
-                <label htmlFor="password" className="text-xs text-muted-foreground">
-                  Password
-                </label>
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-xs font-normal text-muted-foreground">
+                        Password
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="password" autoComplete="new-password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="space-y-1.5">
-                <label htmlFor="confirmPassword" className="text-xs text-muted-foreground">
-                  Confirm password
-                </label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-xs font-normal text-muted-foreground">
+                        Confirm password
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="password" autoComplete="new-password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <Button type="submit" className="w-full" isLoading={isSubmitting}>
-                Create admin account
-              </Button>
-            </form>
+                <Button type="submit" className="w-full" isLoading={register.isPending}>
+                  Create admin account
+                </Button>
+              </form>
+            </Form>
           </>
         )}
       </div>
