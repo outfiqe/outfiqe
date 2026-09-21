@@ -1,14 +1,30 @@
-import { Button, FormBanner, Input, Modal, Select } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Modal,
+  Select,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { buildDealFormSchema, type DealFormValues, dealValueFrom } from "./dealForm.schema";
 import { PartnerSearchField, type SelectedPartner } from "./PartnerSearchField";
 import { crmPipelineApi } from "./pipelineApi";
 import type { Deal, PipelineStage } from "./pipelineSchemas";
 
 const DEALS_QUERY_KEY = ["crm-deals"];
+const LABEL_CLASS = "text-xs font-normal text-muted-foreground";
 
 type DealFormModalProps = {
   open: boolean;
@@ -19,98 +35,127 @@ type DealFormModalProps = {
 
 export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProps) => {
   const isEditing = deal !== null;
-
-  const [title, setTitle] = useState(deal?.title ?? "");
-  const [stageId, setStageId] = useState(deal?.stageId ?? stages[0]?.id ?? "");
-  const [value, setValue] = useState(deal?.value ?? 0);
   const [partner, setPartner] = useState<SelectedPartner | null>(null);
 
+  const form = useForm<DealFormValues>({
+    resolver: zodResolver(buildDealFormSchema(isEditing)),
+    defaultValues: {
+      title: deal?.title ?? "",
+      stageId: deal?.stageId ?? stages[0]?.id ?? "",
+      value: String(deal?.value ?? 0),
+      partnerCreatorId: "",
+    },
+    mode: "onTouched",
+  });
+
   const save = useApiMutation({
-    mutationFn: () =>
+    mutationFn: (values: DealFormValues) =>
       isEditing
-        ? crmPipelineApi.updateDeal(deal.id, { title, stageId, value })
+        ? crmPipelineApi.updateDeal(deal.id, {
+            title: values.title,
+            stageId: values.stageId,
+            value: dealValueFrom(values.value),
+          })
         : crmPipelineApi.createDeal({
-            title,
-            stageId,
-            value,
-            partnerCreatorId: partner?.creatorId ?? "",
+            title: values.title,
+            stageId: values.stageId,
+            value: dealValueFrom(values.value),
+            partnerCreatorId: values.partnerCreatorId,
           }),
     invalidateKeys: [DEALS_QUERY_KEY],
+    successMessage: isEditing ? "Deal saved." : "Deal created.",
     onSuccess: () => onClose(),
   });
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    save.mutate();
-  };
-
-  const canSubmit = title.trim().length > 0 && stageId !== "" && (isEditing || partner !== null);
+  const submitDeal = form.handleSubmit((values) => save.mutate(values));
 
   return (
     <Modal open={open} onClose={onClose} title={isEditing ? "Edit deal" : "New deal"}>
-      <form onSubmit={submit} className="space-y-4">
-        <div className="space-y-1.5">
-          <label htmlFor="deal-title" className="text-xs text-muted-foreground">
-            Title
-          </label>
-          <Input
-            id="deal-title"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            required
+      <Form {...form}>
+        <form onSubmit={submitDeal} noValidate className="space-y-4">
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel className={LABEL_CLASS}>Title</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <div className="space-y-1.5">
-          <label htmlFor="deal-stage" className="text-xs text-muted-foreground">
-            Stage
-          </label>
-          <Select
-            id="deal-stage"
-            value={stageId}
-            onChange={(event) => setStageId(event.target.value)}
-          >
-            {stages.map((stage) => (
-              <option key={stage.id} value={stage.id}>
-                {stage.name}
-              </option>
-            ))}
-          </Select>
-        </div>
-
-        <div className="space-y-1.5">
-          <label htmlFor="deal-value" className="text-xs text-muted-foreground">
-            Value (Rs.)
-          </label>
-          <Input
-            id="deal-value"
-            type="number"
-            min={0}
-            value={value}
-            onChange={(event) => setValue(Number(event.target.value))}
+          <FormField
+            control={form.control}
+            name="stageId"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel className={LABEL_CLASS}>Stage</FormLabel>
+                <FormControl>
+                  <Select {...field}>
+                    {stages.map((stage) => (
+                      <option key={stage.id} value={stage.id}>
+                        {stage.name}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        {!isEditing && (
-          <div className="space-y-1.5">
-            <label htmlFor="deal-partner" className="text-xs text-muted-foreground">
-              Partner
-            </label>
-            <PartnerSearchField id="deal-partner" value={partner} onChange={setPartner} />
+          <FormField
+            control={form.control}
+            name="value"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel className={LABEL_CLASS}>Value (Rs.)</FormLabel>
+                <FormControl>
+                  <Input inputMode="numeric" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {!isEditing && (
+            <FormField
+              control={form.control}
+              name="partnerCreatorId"
+              render={({ field }) => (
+                <FormItem className="space-y-1.5">
+                  <FormLabel htmlFor="deal-partner" className={LABEL_CLASS}>
+                    Partner
+                  </FormLabel>
+                  <PartnerSearchField
+                    id="deal-partner"
+                    value={partner}
+                    onChange={(selected) => {
+                      setPartner(selected);
+                      field.onChange(selected?.creatorId ?? "");
+                    }}
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {save.isError && <FormBanner>{getErrorMessage(save.error)}</FormBanner>}
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={save.isPending}>
+              {isEditing ? "Save deal" : "Create deal"}
+            </Button>
           </div>
-        )}
-
-        {save.isError && <FormBanner>{getErrorMessage(save.error)}</FormBanner>}
-
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={!canSubmit} isLoading={save.isPending}>
-            {isEditing ? "Save deal" : "Create deal"}
-          </Button>
-        </div>
-      </form>
+        </form>
+      </Form>
     </Modal>
   );
 };
