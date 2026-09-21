@@ -1,3 +1,4 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
@@ -10,7 +11,7 @@ import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { TasksPage } from "./TasksPage";
 
@@ -78,6 +79,7 @@ const renderTasksPage = () => {
   render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
+      <Toaster />
     </QueryClientProvider>,
   );
 };
@@ -166,7 +168,28 @@ describe("TasksPage", () => {
       http.get(`${API_BASE}/crm/tasks`, () => HttpResponse.json({ success: true, data: [] })),
       http.post(`${API_BASE}/crm/tasks`, async ({ request }) => {
         createBody = await request.json();
-        return HttpResponse.json({ success: true, data: {} }, { status: 201 });
+        return HttpResponse.json(
+          {
+            success: true,
+            data: {
+              id: "t-9",
+              organizationId: "o-1",
+              title: "Prep deck",
+              description: null,
+              dueAt: "2026-09-30T00:00:00.000Z",
+              status: "OPEN",
+              assigneeMembershipId: "mem-1",
+              assigneeName: "Bipin Karki",
+              createdByMembershipId: "mem-1",
+              partnerCreatorId: null,
+              customerUserId: null,
+              dealId: null,
+              completedAt: null,
+              createdAt: "2026-09-01T00:00:00.000Z",
+            },
+          },
+          { status: 201 },
+        );
       }),
     );
 
@@ -181,5 +204,27 @@ describe("TasksPage", () => {
     await waitFor(() =>
       expect(createBody).toMatchObject({ title: "Prep deck", assigneeMembershipId: "mem-1" }),
     );
+    expect(await screen.findByText("Task created.")).toBeInTheDocument();
+  });
+
+  it("shows an inline message, not a browser popup, when a task has no title", async () => {
+    mockCommon();
+    const createRequested = vi.fn();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/tasks`, () => HttpResponse.json({ success: true, data: [] })),
+      http.post(`${API_BASE}/crm/tasks`, () => {
+        createRequested();
+        return HttpResponse.json({ success: true, data: {} }, { status: 201 });
+      }),
+    );
+
+    renderTasksPage();
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("button", { name: "New task" }));
+    await user.click(await screen.findByRole("button", { name: "Create task" }));
+
+    expect(await screen.findByText("Enter a title for the task.")).toBeInTheDocument();
+    expect(createRequested).not.toHaveBeenCalled();
   });
 });
