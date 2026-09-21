@@ -1,13 +1,35 @@
-import { Badge, Button, FormBanner, Input, Skeleton } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Badge,
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Skeleton,
+  toast,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { ImageUpload } from "@/components/ImageUpload";
 import { ImageUploadSkeleton } from "@/components/ImageUploadSkeleton";
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
+import { getErrorMessage } from "@/lib/errorMessages";
+import { slugify } from "@/lib/slugify";
 
 import { collectionsApi } from "./api";
+import {
+  collectionFormSchema,
+  type CollectionFormValues,
+  EMPTY_COLLECTION_FORM,
+} from "./collectionForm.schema";
 import { ProductPicker } from "./ProductPicker";
 import type { Collection, CollectionStatusValue } from "./schemas";
 
@@ -15,13 +37,6 @@ const STATUS_TONE: Record<CollectionStatusValue, "neutral" | "positive"> = {
   DRAFT: "neutral",
   PUBLISHED: "positive",
 };
-
-const slugify = (value: string): string =>
-  value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 
 const COLLECTIONS_QUERY_KEY = ["admin-collections"];
 
@@ -48,35 +63,29 @@ export const CollectionsPage = () => {
     queryFn: collectionsApi.list,
   });
 
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
+  const form = useForm<CollectionFormValues>({
+    resolver: zodResolver(collectionFormSchema),
+    defaultValues: EMPTY_COLLECTION_FORM,
+    mode: "onTouched",
+  });
   const [slugTouched, setSlugTouched] = useState(false);
-  const [description, setDescription] = useState("");
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageAssetId, setImageAssetId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [managingId, setManagingId] = useState<string | null>(null);
 
   const create = useApiMutation({
-    mutationFn: () =>
+    mutationFn: (values: CollectionFormValues) =>
       collectionsApi.create({
-        name,
-        slug,
-        description: description || undefined,
-        imageUrl: imageUrl ?? undefined,
-        imageAssetId: imageAssetId ?? undefined,
+        name: values.name,
+        slug: values.slug,
+        description: values.description || undefined,
+        imageUrl: values.imageUrl ?? undefined,
+        imageAssetId: values.imageAssetId ?? undefined,
       }),
     invalidateKeys: [COLLECTIONS_QUERY_KEY],
+    successMessage: "Collection created.",
     onSuccess: () => {
-      setName("");
-      setSlug("");
+      form.reset(EMPTY_COLLECTION_FORM);
       setSlugTouched(false);
-      setDescription("");
-      setImageUrl(null);
-      setImageAssetId(null);
-      setError(null);
     },
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
   const toggleStatus = useApiMutation({
@@ -86,6 +95,9 @@ export const CollectionsPage = () => {
         collection.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED",
       ),
     invalidateKeys: [COLLECTIONS_QUERY_KEY],
+    successMessage: (updated) =>
+      updated.status === "PUBLISHED" ? "Collection published." : "Collection unpublished.",
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const setCollectionImage = useApiMutation({
@@ -99,82 +111,105 @@ export const CollectionsPage = () => {
       imageAssetId: string;
     }) => collectionsApi.setImage(id, url, assetId),
     invalidateKeys: [COLLECTIONS_QUERY_KEY],
+    successMessage: "Collection image updated.",
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    create.mutate();
-  };
+  const submitCollection = form.handleSubmit((values) => create.mutate(values));
 
   return (
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Collections</h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-      >
-        <div className="space-y-1.5">
-          <label htmlFor="collection-name" className="text-xs text-muted-foreground">
-            Name
-          </label>
-          <Input
-            id="collection-name"
-            required
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              if (!slugTouched) setSlug(slugify(e.target.value));
-            }}
-            placeholder="Dashain Edit"
-            className="w-56"
+      <Form {...form}>
+        <form
+          onSubmit={submitCollection}
+          noValidate
+          className="mt-5 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+        >
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem className="w-56 space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">Name</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Dashain Edit"
+                    {...field}
+                    onChange={(event) => {
+                      field.onChange(event);
+                      if (!slugTouched) {
+                        form.setValue("slug", slugify(event.target.value), {
+                          shouldValidate: form.formState.touchedFields.slug === true,
+                        });
+                      }
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="collection-slug" className="text-xs text-muted-foreground">
-            Slug
-          </label>
-          <Input
-            id="collection-slug"
-            required
-            value={slug}
-            onChange={(e) => {
-              setSlug(slugify(e.target.value));
-              setSlugTouched(true);
-            }}
-            placeholder="dashain-edit"
-            className="w-48"
+          <FormField
+            control={form.control}
+            name="slug"
+            render={({ field }) => (
+              <FormItem className="w-48 space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">Slug</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="dashain-edit"
+                    {...field}
+                    onChange={(event) => {
+                      field.onChange(slugify(event.target.value));
+                      setSlugTouched(true);
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="collection-description" className="text-xs text-muted-foreground">
-            Description
-          </label>
-          <Input
-            id="collection-description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Optional"
-            className="w-72"
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem className="w-72 space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">
+                  Description
+                </FormLabel>
+                <FormControl>
+                  <Input placeholder="Optional" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <span className="block text-xs text-muted-foreground">Image</span>
-          <ImageUpload
-            value={imageUrl}
-            onUploaded={({ url, imageAssetId: assetId }) => {
-              setImageUrl(url);
-              setImageAssetId(assetId);
-            }}
+          <FormField
+            control={form.control}
+            name="imageUrl"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <span className="block text-xs text-muted-foreground">Image</span>
+                <ImageUpload
+                  value={field.value}
+                  onUploaded={({ url, imageAssetId: assetId }) => {
+                    field.onChange(url);
+                    form.setValue("imageAssetId", assetId);
+                  }}
+                />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <Button type="submit" isLoading={create.isPending}>
-          Create collection
-        </Button>
-      </form>
+          <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+            Create collection
+          </Button>
+        </form>
+      </Form>
 
-      {error && <FormBanner className="mt-3">{error}</FormBanner>}
+      {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
       <div className="mt-6 space-y-3">
         {isLoading &&
