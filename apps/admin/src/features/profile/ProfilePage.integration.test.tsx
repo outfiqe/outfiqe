@@ -1,9 +1,10 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { AuthProvider } from "@/features/auth/AuthContext";
 
@@ -42,6 +43,7 @@ const renderProfilePage = () => {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ProfilePage />
+        <Toaster />
       </AuthProvider>
     </QueryClientProvider>,
   );
@@ -127,5 +129,24 @@ describe("admin ProfilePage", () => {
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 
     expect(await screen.findByText("That name is not allowed.")).toBeInTheDocument();
+  });
+
+  it("shows an inline message, not a browser popup, when the name is cleared", async () => {
+    const patchRequested = vi.fn();
+    mswServer.use(
+      http.patch(`${API_BASE}/users/me`, () => {
+        patchRequested();
+        return HttpResponse.json({ success: true, message: "ok", data: {} });
+      }),
+    );
+    const user = userEvent.setup();
+    renderProfilePage();
+
+    const nameInput = await screen.findByLabelText("Name");
+    await user.clear(nameInput);
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(await screen.findByText("Enter your name.")).toBeInTheDocument();
+    expect(patchRequested).not.toHaveBeenCalled();
   });
 });
