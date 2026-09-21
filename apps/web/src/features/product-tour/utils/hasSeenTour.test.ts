@@ -1,13 +1,13 @@
-import { TourOutcome } from "@outfiqe/types";
 import { describe, expect, it } from "vitest";
 
 import type { TourProgress } from "../api/toursSchemas";
+import { TOUR_OUTCOME } from "../constants/tourOutcome";
 import { hasSeenTour } from "./hasSeenTour";
 
 const buildProgress = (overrides: Partial<TourProgress> = {}): TourProgress => ({
   tourKey: "brand-dashboard",
   version: 1,
-  outcome: TourOutcome.COMPLETED,
+  outcome: TOUR_OUTCOME.COMPLETED,
   updatedAt: "2026-09-21T00:00:00.000Z",
   ...overrides,
 });
@@ -22,7 +22,7 @@ describe("hasSeenTour", () => {
   });
 
   it("is true when the same version was skipped", () => {
-    const skipped = buildProgress({ outcome: TourOutcome.DISMISSED });
+    const skipped = buildProgress({ outcome: TOUR_OUTCOME.DISMISSED });
 
     expect(hasSeenTour([skipped], "brand-dashboard", 1)).toBe(true);
   });

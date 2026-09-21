@@ -10,9 +10,10 @@ Remembers, per signed-in user, how each guided product tour ended — finished o
 - `tour.controller.ts` — reads the signed-in user and validated input, calls the service, sends the standard `{ success, message, data }` envelope.
 - `tour.service.ts` — lists a user's progress and records an outcome.
 - `tour.repository.ts` — Prisma reads/writes on `user_tour_progress`.
-- `tour.schemas.ts` — Zod: `tourKey` must be one of `TourKey` (`@outfiqe/types`), `version` is a whole number from 1 to 1000, `outcome` is `COMPLETED` or `DISMISSED`.
+- `tour.schemas.ts` — Zod: `tourKey` must be one of `KNOWN_TOUR_KEYS`, `version` is a whole number from 1 to 1000, `outcome` is `COMPLETED` or `DISMISSED`.
 - `tour.types.ts` — the response shapes.
-- `tour.utils.ts` — `KNOWN_TOUR_KEYS` and the `isKnownTourKey` guard.
+- `tour.constants.ts` — `KNOWN_TOUR_KEYS`, the tour keys this API accepts, checked against `TourKey` from `@outfiqe/types`.
+- `tour.utils.ts` — the `isKnownTourKey` guard.
 
 ## Funnel
 
@@ -22,6 +23,7 @@ Remembers, per signed-in user, how each guided product tour ended — finished o
 
 ## Non-obvious rationale
 
+- **Tour keys and outcomes are listed here as plain values, not imported from `@outfiqe/types`.** That package is types-only: it is loaded as CommonJS at runtime, so a named value import from it fails when the API process starts, even though it type-checks and passes under Vitest. The API imports only its types and lists the values itself, checked with `satisfies TourKey[]` / `satisfies TourOutcome[]`, the same way `category.schemas.ts` and `collection.schemas.ts` do. `satisfies` catches a value that is not a real key or outcome, but not a newly added key that is missing here, so a new tour key is added in `@outfiqe/types` and in `tour.constants.ts`.
 - **The version lives in the web app, not here.** Each tour's current version is a constant next to its steps in the web app. The API only stores the version the user last saw. When the dashboard changes enough to need a new walkthrough, bumping that constant makes the tour open again for everyone whose stored version is lower — no migration or backfill needed.
 - **One row per user per tour, enforced by the database.** The `(user_id, tour_key)` unique index plus an upsert means two saves arriving at the same moment (a double click, two tabs) can't create two rows.
 - **No pagination on `GET /me`.** A user has at most one row per tour key, and tour keys are a short fixed list in `@outfiqe/types`, so the response is always small.

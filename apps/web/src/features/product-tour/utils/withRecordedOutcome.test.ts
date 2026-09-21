@@ -1,6 +1,6 @@
-import { TourOutcome } from "@outfiqe/types";
 import { describe, expect, it } from "vitest";
 
+import { TOUR_OUTCOME } from "../constants/tourOutcome";
 import { withRecordedOutcome } from "./withRecordedOutcome";
 
 const RECORDED_AT = new Date("2026-09-21T10:00:00.000Z");
@@ -9,7 +9,7 @@ describe("withRecordedOutcome", () => {
   it("creates the list when nothing was loaded yet", () => {
     const progress = withRecordedOutcome(
       undefined,
-      { tourKey: "brand-dashboard", version: 1, outcome: TourOutcome.COMPLETED },
+      { tourKey: "brand-dashboard", version: 1, outcome: TOUR_OUTCOME.COMPLETED },
       RECORDED_AT,
     );
 
@@ -18,7 +18,7 @@ describe("withRecordedOutcome", () => {
         {
           tourKey: "brand-dashboard",
           version: 1,
-          outcome: TourOutcome.COMPLETED,
+          outcome: TOUR_OUTCOME.COMPLETED,
           updatedAt: "2026-09-21T10:00:00.000Z",
         },
       ],
@@ -32,18 +32,18 @@ describe("withRecordedOutcome", () => {
           {
             tourKey: "brand-dashboard",
             version: 1,
-            outcome: TourOutcome.DISMISSED,
+            outcome: TOUR_OUTCOME.DISMISSED,
             updatedAt: "2026-09-01T00:00:00.000Z",
           },
           {
             tourKey: "creator-dashboard",
             version: 1,
-            outcome: TourOutcome.COMPLETED,
+            outcome: TOUR_OUTCOME.COMPLETED,
             updatedAt: "2026-09-02T00:00:00.000Z",
           },
         ],
       },
-      { tourKey: "brand-dashboard", version: 2, outcome: TourOutcome.COMPLETED },
+      { tourKey: "brand-dashboard", version: 2, outcome: TOUR_OUTCOME.COMPLETED },
       RECORDED_AT,
     );
 
@@ -54,7 +54,7 @@ describe("withRecordedOutcome", () => {
     expect(progress.tours).toContainEqual({
       tourKey: "brand-dashboard",
       version: 2,
-      outcome: TourOutcome.COMPLETED,
+      outcome: TOUR_OUTCOME.COMPLETED,
       updatedAt: "2026-09-21T10:00:00.000Z",
     });
   });

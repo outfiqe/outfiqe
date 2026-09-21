@@ -1,4 +1,3 @@
-﻿import { TourOutcome } from "@outfiqe/types";
 import { mswServer } from "@test/integration/msw/server";
 import { createQueryClientWrapper } from "@test/integration/queryClientWrapper";
 import { act, renderHook, waitFor } from "@testing-library/react";
@@ -7,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "@/features/auth";
 
+import { TOUR_OUTCOME } from "../constants/tourOutcome";
 import { useRecordTourOutcome } from "./useRecordTourOutcome";
 import { useTourProgress } from "./useTourProgress";
 
@@ -15,7 +15,7 @@ vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
 const SAVED_TOUR = {
   tourKey: "brand-dashboard",
   version: 1,
-  outcome: TourOutcome.COMPLETED,
+  outcome: TOUR_OUTCOME.COMPLETED,
   updatedAt: "2026-09-01T00:00:00.000Z",
 };
 
@@ -78,7 +78,7 @@ describe("useRecordTourOutcome", () => {
       http.get("/api/tours/me", () => HttpResponse.json(envelope({ tours: [] }))),
       http.put("/api/tours/me/brand-dashboard", async ({ request }) => {
         receivedBodies.push(await request.json());
-        return HttpResponse.json(envelope({ ...SAVED_TOUR, outcome: TourOutcome.DISMISSED }));
+        return HttpResponse.json(envelope({ ...SAVED_TOUR, outcome: TOUR_OUTCOME.DISMISSED }));
       }),
     );
     const { result } = renderProgressAndRecorder();
@@ -88,17 +88,17 @@ describe("useRecordTourOutcome", () => {
       result.current.recorder.mutate({
         tourKey: "brand-dashboard",
         version: 1,
-        outcome: TourOutcome.DISMISSED,
+        outcome: TOUR_OUTCOME.DISMISSED,
       }),
     );
 
     await waitFor(() =>
       expect(result.current.progress.data?.tours).toEqual([
-        expect.objectContaining({ tourKey: "brand-dashboard", outcome: TourOutcome.DISMISSED }),
+        expect.objectContaining({ tourKey: "brand-dashboard", outcome: TOUR_OUTCOME.DISMISSED }),
       ]),
     );
     await waitFor(() =>
-      expect(receivedBodies).toEqual([{ version: 1, outcome: TourOutcome.DISMISSED }]),
+      expect(receivedBodies).toEqual([{ version: 1, outcome: TOUR_OUTCOME.DISMISSED }]),
     );
   });
 
@@ -116,13 +116,13 @@ describe("useRecordTourOutcome", () => {
       result.current.recorder.mutate({
         tourKey: "brand-dashboard",
         version: 1,
-        outcome: TourOutcome.COMPLETED,
+        outcome: TOUR_OUTCOME.COMPLETED,
       }),
     );
 
     await waitFor(() => expect(result.current.recorder.isError).toBe(true));
     expect(result.current.progress.data?.tours).toEqual([
-      expect.objectContaining({ tourKey: "brand-dashboard", outcome: TourOutcome.COMPLETED }),
+      expect.objectContaining({ tourKey: "brand-dashboard", outcome: TOUR_OUTCOME.COMPLETED }),
     ]);
   });
 });

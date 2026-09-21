@@ -1,7 +1,7 @@
 import type { TourStep } from "@outfiqe/design-system";
-import { TourKey } from "@outfiqe/types";
+import type { TourKey } from "@outfiqe/types";
 
-export const BRAND_DASHBOARD_TOUR_KEY = TourKey.BRAND_DASHBOARD;
+export const BRAND_DASHBOARD_TOUR_KEY = "brand-dashboard" satisfies TourKey;
 export const BRAND_DASHBOARD_TOUR_VERSION = 1;
 
 export const TOUR_REPLAY_QUERY_PARAM = "tour";

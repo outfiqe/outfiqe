@@ -2,8 +2,9 @@ import type { TourKey, TourOutcome } from "@outfiqe/types";
 
 import { prisma } from "#db/prisma.js";
 
+import { KNOWN_TOUR_KEYS } from "./tour.constants.js";
 import type { TourProgressView } from "./tour.types.js";
-import { isKnownTourKey, KNOWN_TOUR_KEYS } from "./tour.utils.js";
+import { isKnownTourKey } from "./tour.utils.js";
 
 const TOUR_PROGRESS_SELECT = {
   tourKey: true,

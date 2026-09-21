@@ -1,7 +1,7 @@
 "use client";
 
 import { Tour, type TourCloseReason } from "@outfiqe/design-system";
-import { TourOutcome } from "@outfiqe/types";
+import type { TourOutcome } from "@outfiqe/types";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -13,6 +13,7 @@ import {
   BRAND_DASHBOARD_TOUR_VERSION,
   TOUR_REPLAY_QUERY_PARAM,
 } from "../constants/brandDashboardTour";
+import { TOUR_OUTCOME } from "../constants/tourOutcome";
 import { useRecordTourOutcome } from "../hooks/useRecordTourOutcome";
 import { useTourProgress } from "../hooks/useTourProgress";
 import { hasSeenTour } from "../utils/hasSeenTour";
@@ -20,8 +21,8 @@ import { hasSeenTour } from "../utils/hasSeenTour";
 const FIRST_STEP_INDEX = 0;
 
 const OUTCOME_BY_CLOSE_REASON: Record<TourCloseReason, TourOutcome> = {
-  completed: TourOutcome.COMPLETED,
-  dismissed: TourOutcome.DISMISSED,
+  completed: TOUR_OUTCOME.COMPLETED,
+  dismissed: TOUR_OUTCOME.DISMISSED,
 };
 
 export const BrandDashboardTour = () => {

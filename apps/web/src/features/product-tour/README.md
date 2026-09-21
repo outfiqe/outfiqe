@@ -8,6 +8,7 @@ A short guided walkthrough that shows a new brand owner where things live on the
 
 - `components/BrandDashboardTour.tsx` — decides whether the tour is open and feeds it the steps. Mounted by `brand-dashboard`'s `BrandOverview` once the overview has loaded. Renders the design-system `Tour` (`@outfiqe/design-system`), which knows nothing about brands or this content.
 - `constants/brandDashboardTour.ts` — the tour's key and **version**, its eight steps (title, body, and which element each one points at), and the replay link (`/overview?tour=brand-dashboard`) and its label.
+- `constants/tourOutcome.ts` � the two outcome values (`COMPLETED`, `DISMISSED`) as a constant, checked against the `TourOutcome` type from `@outfiqe/types`. That package is types-only, so values are defined in the app.
 - `constants/tourProgressQueryKey.ts` — the React Query key for the saved progress, shared by the read and write hooks.
 - `api/toursApi.ts` + `api/toursSchemas.ts` — `GET /api/tours/me` and `PUT /api/tours/me/:tourKey`, with the response parsed through Zod.
 - `hooks/useTourProgress.ts` — reads the saved progress (signed-in only).

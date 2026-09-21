@@ -1,10 +1,12 @@
-import { TourOutcome } from "@outfiqe/types";
+import type { TourOutcome } from "@outfiqe/types";
 import { z } from "zod";
+
+import { TOUR_OUTCOME } from "../constants/tourOutcome";
 
 export const tourProgressSchema = z.object({
   tourKey: z.string(),
   version: z.number().int(),
-  outcome: z.enum(TourOutcome),
+  outcome: z.enum(TOUR_OUTCOME),
   updatedAt: z.string(),
 });
 

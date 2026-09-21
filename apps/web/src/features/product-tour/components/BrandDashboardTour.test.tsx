@@ -1,4 +1,3 @@
-import { TourOutcome } from "@outfiqe/types";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -6,6 +5,7 @@ import { useAuth } from "@/features/auth";
 
 import type { TourProgress } from "../api/toursSchemas";
 import type * as BrandDashboardTourConstants from "../constants/brandDashboardTour";
+import { TOUR_OUTCOME } from "../constants/tourOutcome";
 import { useRecordTourOutcome } from "../hooks/useRecordTourOutcome";
 import { useTourProgress } from "../hooks/useTourProgress";
 import { BrandDashboardTour } from "./BrandDashboardTour";
@@ -37,7 +37,7 @@ const recordOutcome = vi.fn();
 const buildProgress = (overrides: Partial<TourProgress> = {}): TourProgress => ({
   tourKey: "brand-dashboard",
   version: CURRENT_TOUR_VERSION,
-  outcome: TourOutcome.COMPLETED,
+  outcome: TOUR_OUTCOME.COMPLETED,
   updatedAt: "2026-09-01T00:00:00.000Z",
   ...overrides,
 });
@@ -100,7 +100,7 @@ describe("BrandDashboardTour — starting", () => {
   });
 
   it("stays closed once the current version was skipped", () => {
-    mockTourProgress({ tours: [buildProgress({ outcome: TourOutcome.DISMISSED })] });
+    mockTourProgress({ tours: [buildProgress({ outcome: TOUR_OUTCOME.DISMISSED })] });
 
     render(<BrandDashboardTour />);
 
@@ -156,7 +156,7 @@ describe("BrandDashboardTour — finishing", () => {
     expect(recordOutcome).toHaveBeenCalledExactlyOnceWith({
       tourKey: "brand-dashboard",
       version: CURRENT_TOUR_VERSION,
-      outcome: TourOutcome.COMPLETED,
+      outcome: TOUR_OUTCOME.COMPLETED,
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
@@ -170,7 +170,7 @@ describe("BrandDashboardTour — finishing", () => {
     expect(recordOutcome).toHaveBeenCalledExactlyOnceWith({
       tourKey: "brand-dashboard",
       version: CURRENT_TOUR_VERSION,
-      outcome: TourOutcome.DISMISSED,
+      outcome: TOUR_OUTCOME.DISMISSED,
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
@@ -181,7 +181,7 @@ describe("BrandDashboardTour — finishing", () => {
     fireEvent.keyDown(document, { key: "Escape" });
 
     expect(recordOutcome).toHaveBeenCalledWith(
-      expect.objectContaining({ outcome: TourOutcome.DISMISSED }),
+      expect.objectContaining({ outcome: TOUR_OUTCOME.DISMISSED }),
     );
   });
 
@@ -255,7 +255,7 @@ describe("BrandDashboardTour — replay", () => {
     fireEvent.click(screen.getByRole("button", { name: "Skip tour" }));
 
     expect(recordOutcome).toHaveBeenCalledExactlyOnceWith(
-      expect.objectContaining({ outcome: TourOutcome.DISMISSED }),
+      expect.objectContaining({ outcome: TOUR_OUTCOME.DISMISSED }),
     );
   });
 });

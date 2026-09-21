@@ -1,14 +1,14 @@
-import { TourOutcome } from "@outfiqe/types";
 import { mswServer } from "@test/integration/msw/server";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
+import { TOUR_OUTCOME } from "../constants/tourOutcome";
 import { toursApi } from "./toursApi";
 
 const SAVED_TOUR = {
   tourKey: "brand-dashboard",
   version: 1,
-  outcome: TourOutcome.COMPLETED,
+  outcome: TOUR_OUTCOME.COMPLETED,
   updatedAt: "2026-09-01T00:00:00.000Z",
 };
 
@@ -55,10 +55,10 @@ describe("toursApi.recordOutcome", () => {
     const savedTour = await toursApi.recordOutcome({
       tourKey: "brand-dashboard",
       version: 1,
-      outcome: TourOutcome.COMPLETED,
+      outcome: TOUR_OUTCOME.COMPLETED,
     });
 
-    expect(receivedBodies).toEqual([{ version: 1, outcome: TourOutcome.COMPLETED }]);
+    expect(receivedBodies).toEqual([{ version: 1, outcome: TOUR_OUTCOME.COMPLETED }]);
     expect(savedTour).toEqual(SAVED_TOUR);
   });
 });

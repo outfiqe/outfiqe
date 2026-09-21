@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 
-import { TourKey, TourOutcome } from "@outfiqe/types";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -11,7 +10,10 @@ import { redis } from "#redis/redis.client.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
-const BRAND_TOUR_PATH = `/api/tours/me/${TourKey.BRAND_DASHBOARD}`;
+const BRAND_TOUR_KEY = "brand-dashboard";
+const BRAND_TOUR_PATH = `/api/tours/me/${BRAND_TOUR_KEY}`;
+const COMPLETED = "COMPLETED";
+const DISMISSED = "DISMISSED";
 
 beforeEach(async () => {
   await redis.flushdb();
@@ -70,7 +72,7 @@ describe("GET /api/tours/me", () => {
     await request(testApp)
       .put(BRAND_TOUR_PATH)
       .set("Authorization", authHeaderFor(owner.id))
-      .send({ version: 1, outcome: TourOutcome.COMPLETED });
+      .send({ version: 1, outcome: COMPLETED });
 
     const response = await request(testApp)
       .get("/api/tours/me")
@@ -84,7 +86,7 @@ describe("PUT /api/tours/me/:tourKey", () => {
   it("requires authentication", async () => {
     const response = await request(testApp)
       .put(BRAND_TOUR_PATH)
-      .send({ version: 1, outcome: TourOutcome.COMPLETED });
+      .send({ version: 1, outcome: COMPLETED });
     expect(response.status).toBe(401);
   });
 
@@ -95,21 +97,21 @@ describe("PUT /api/tours/me/:tourKey", () => {
     const put = await request(testApp)
       .put(BRAND_TOUR_PATH)
       .set("Authorization", authHeader)
-      .send({ version: 1, outcome: TourOutcome.DISMISSED });
+      .send({ version: 1, outcome: DISMISSED });
 
     expect(put.status).toBe(200);
     expect(put.body.data).toMatchObject({
-      tourKey: TourKey.BRAND_DASHBOARD,
+      tourKey: BRAND_TOUR_KEY,
       version: 1,
-      outcome: TourOutcome.DISMISSED,
+      outcome: DISMISSED,
     });
 
     const get = await request(testApp).get("/api/tours/me").set("Authorization", authHeader);
     expect(get.body.data.tours).toEqual([
       expect.objectContaining({
-        tourKey: TourKey.BRAND_DASHBOARD,
+        tourKey: BRAND_TOUR_KEY,
         version: 1,
-        outcome: TourOutcome.DISMISSED,
+        outcome: DISMISSED,
       }),
     ]);
   });
@@ -121,15 +123,15 @@ describe("PUT /api/tours/me/:tourKey", () => {
     await request(testApp)
       .put(BRAND_TOUR_PATH)
       .set("Authorization", authHeader)
-      .send({ version: 1, outcome: TourOutcome.DISMISSED });
+      .send({ version: 1, outcome: DISMISSED });
     await request(testApp)
       .put(BRAND_TOUR_PATH)
       .set("Authorization", authHeader)
-      .send({ version: 2, outcome: TourOutcome.COMPLETED });
+      .send({ version: 2, outcome: COMPLETED });
 
     const savedRows = await prisma.userTourProgress.findMany({ where: { userId: user.id } });
     expect(savedRows).toHaveLength(1);
-    expect(savedRows[0]).toMatchObject({ version: 2, outcome: TourOutcome.COMPLETED });
+    expect(savedRows[0]).toMatchObject({ version: 2, outcome: COMPLETED });
   });
 
   it("keeps one row when the same save arrives twice at once", async () => {
@@ -139,7 +141,7 @@ describe("PUT /api/tours/me/:tourKey", () => {
       request(testApp)
         .put(BRAND_TOUR_PATH)
         .set("Authorization", authHeader)
-        .send({ version: 1, outcome: TourOutcome.COMPLETED });
+        .send({ version: 1, outcome: COMPLETED });
 
     const responses = await Promise.all([sendSave(), sendSave()]);
 
@@ -153,17 +155,17 @@ describe("PUT /api/tours/me/:tourKey", () => {
     const response = await request(testApp)
       .put("/api/tours/me/not-a-tour")
       .set("Authorization", authHeaderFor(user.id))
-      .send({ version: 1, outcome: TourOutcome.COMPLETED });
+      .send({ version: 1, outcome: COMPLETED });
 
     expect(response.status).toBe(422);
   });
 
   it.each([
-    { version: 0, outcome: TourOutcome.COMPLETED },
-    { version: 1.5, outcome: TourOutcome.COMPLETED },
-    { version: 1001, outcome: TourOutcome.COMPLETED },
+    { version: 0, outcome: COMPLETED },
+    { version: 1.5, outcome: COMPLETED },
+    { version: 1001, outcome: COMPLETED },
     { version: 1, outcome: "SKIPPED" },
-    { outcome: TourOutcome.COMPLETED },
+    { outcome: COMPLETED },
   ])("rejects an invalid body %o", async (invalidBody) => {
     const user = await createUser();
 
@@ -181,7 +183,7 @@ describe("PUT /api/tours/me/:tourKey", () => {
     const response = await request(testApp)
       .put(BRAND_TOUR_PATH)
       .set("Authorization", authHeaderFor(shopper.id, UserRole.CUSTOMER))
-      .send({ version: 1, outcome: TourOutcome.COMPLETED });
+      .send({ version: 1, outcome: COMPLETED });
 
     expect(response.status).toBe(200);
   });
