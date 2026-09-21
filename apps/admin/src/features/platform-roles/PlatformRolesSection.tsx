@@ -1,13 +1,29 @@
-import { Badge, Button, Checkbox, FormBanner, Input, Modal, toast } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Modal,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformRolesApi } from "./api";
+import { platformRoleFormSchema, type PlatformRoleFormValues } from "./platformRoleForm.schema";
 import type { PlatformPermission, PlatformRole } from "./schemas";
 
 const ROLES_QUERY_KEY = ["platform-roles"];
@@ -39,90 +55,102 @@ const PlatformRoleFormModal = ({
   editingRole,
   onClose,
 }: PlatformRoleFormModalProps) => {
-  const [name, setName] = useState(editingRole?.name ?? "");
-  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(
-    new Set(editingRole?.permissionKeys ?? []),
-  );
-
-  const toggleKey = (key: string) => {
-    setSelectedKeys((current) => {
-      const next = new Set(current);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
-
-  const save = useApiMutation({
-    mutationFn: () => {
-      const body = { name: name.trim(), permissionKeys: [...selectedKeys] };
-      return editingRole
-        ? platformRolesApi.updateRole(editingRole.id, body)
-        : platformRolesApi.createRole(body);
+  const form = useForm<PlatformRoleFormValues>({
+    resolver: zodResolver(platformRoleFormSchema),
+    defaultValues: {
+      name: editingRole?.name ?? "",
+      permissionKeys: editingRole?.permissionKeys ?? [],
     },
-    invalidateKeys: [ROLES_QUERY_KEY],
-    onSuccess: () => {
-      toast.success(editingRole ? "Platform role updated." : "Platform role created.");
-      onClose();
-    },
+    mode: "onTouched",
   });
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    save.mutate();
-  };
+  const save = useApiMutation({
+    mutationFn: (values: PlatformRoleFormValues) =>
+      editingRole
+        ? platformRolesApi.updateRole(editingRole.id, values)
+        : platformRolesApi.createRole(values),
+    invalidateKeys: [ROLES_QUERY_KEY],
+    successMessage: editingRole ? "Platform role updated." : "Platform role created.",
+    onSuccess: () => onClose(),
+  });
 
-  const canSubmit = name.trim().length >= 2 && selectedKeys.size > 0 && !save.isPending;
+  const submitRole = form.handleSubmit((values) => save.mutate(values));
 
   return (
     <Modal open onClose={onClose} title={editingRole ? "Edit platform role" : "New platform role"}>
-      <form onSubmit={submit} className="space-y-4">
-        <div className="space-y-1.5">
-          <label htmlFor="platform-role-name" className="text-xs text-muted-foreground">
-            Role name
-          </label>
-          <Input
-            id="platform-role-name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            required
+      <Form {...form}>
+        <form onSubmit={submitRole} noValidate className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">
+                  Role name
+                </FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <fieldset className="space-y-4">
-          <legend className="text-xs text-muted-foreground">Permissions</legend>
-          {permissionGroups.map((permissionGroup) => (
-            <div key={permissionGroup.group} className="space-y-2">
-              <p className="text-sm font-semibold text-foreground">{permissionGroup.group}</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {permissionGroup.permissions.map((permission) => (
-                  <label
-                    key={permission.key}
-                    className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
-                  >
-                    <Checkbox
-                      checked={selectedKeys.has(permission.key)}
-                      onChange={() => toggleKey(permission.key)}
-                    />
-                    {permission.label}
-                  </label>
-                ))}
-              </div>
-            </div>
-          ))}
-        </fieldset>
+          <FormField
+            control={form.control}
+            name="permissionKeys"
+            render={({ field }) => {
+              const toggleKey = (key: string) =>
+                field.onChange(
+                  field.value.includes(key)
+                    ? field.value.filter((selectedKey) => selectedKey !== key)
+                    : [...field.value, key],
+                );
 
-        {save.isError && <FormBanner>{getErrorMessage(save.error)}</FormBanner>}
+              return (
+                <FormItem>
+                  <fieldset className="space-y-4">
+                    <legend className="text-xs text-muted-foreground">Permissions</legend>
+                    {permissionGroups.map((permissionGroup) => (
+                      <div key={permissionGroup.group} className="space-y-2">
+                        <p className="text-sm font-semibold text-foreground">
+                          {permissionGroup.group}
+                        </p>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {permissionGroup.permissions.map((permission) => (
+                            <label
+                              key={permission.key}
+                              className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
+                            >
+                              <Checkbox
+                                checked={field.value.includes(permission.key)}
+                                onChange={() => toggleKey(permission.key)}
+                              />
+                              {permission.label}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </fieldset>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
+          />
 
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={!canSubmit} isLoading={save.isPending}>
-            {editingRole ? "Save role" : "Create role"}
-          </Button>
-        </div>
-      </form>
+          {save.isError && <FormBanner>{getErrorMessage(save.error)}</FormBanner>}
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={save.isPending}>
+              {editingRole ? "Save role" : "Create role"}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </Modal>
   );
 };
@@ -137,10 +165,8 @@ const DeletePlatformRoleModal = ({
   const remove = useApiMutation({
     mutationFn: () => platformRolesApi.deleteRole(role.id),
     invalidateKeys: [ROLES_QUERY_KEY],
-    onSuccess: () => {
-      toast.success("Platform role deleted.");
-      onClose();
-    },
+    successMessage: "Platform role deleted.",
+    onSuccess: () => onClose(),
   });
 
   return (
