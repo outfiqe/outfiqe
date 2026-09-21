@@ -217,4 +217,55 @@ describe("BillingSection", () => {
     expect(requestedCursors).toEqual([null, "inv-1"]);
     expect(screen.queryByRole("button", { name: "Load more" })).not.toBeInTheDocument();
   });
+
+  it("hides voided invoices until the toggle is switched on", async () => {
+    mockOverview({
+      subscription: null,
+      advancedFeaturesEnabled: true,
+      planCatalog: PLAN_CATALOG,
+      activeSeatCount: 1,
+    });
+    const invoice = (id: string, amount: number, status: string) => ({
+      id,
+      plan: "starter",
+      seats: 1,
+      amount,
+      status,
+      periodStart: "2026-09-01T00:00:00.000Z",
+      periodEnd: "2026-10-01T00:00:00.000Z",
+      provider: "ESEWA",
+      initiatedAt: null,
+      paidAt: null,
+      voidedAt: null,
+      createdAt: "2026-09-01T00:00:00.000Z",
+    });
+    const requestedFlags: (string | null)[] = [];
+    mswServer.use(
+      http.get(`${API_BASE}/crm/billing/invoices`, ({ request }) => {
+        const includeVoided = new URL(request.url).searchParams.get("includeVoided");
+        requestedFlags.push(includeVoided);
+        return HttpResponse.json({
+          success: true,
+          data: {
+            invoices:
+              includeVoided === "true"
+                ? [invoice("inv-2", 700, "VOID"), invoice("inv-1", 900, "PAID")]
+                : [invoice("inv-1", 900, "PAID")],
+            nextCursor: null,
+          },
+        });
+      }),
+    );
+
+    render(<BillingSection />, { wrapper });
+    const user = userEvent.setup();
+
+    expect(await screen.findByText("Rs. 900")).toBeInTheDocument();
+    expect(screen.queryByText("Rs. 700")).not.toBeInTheDocument();
+
+    await user.click(screen.getByLabelText("Show voided invoices"));
+
+    expect(await screen.findByText("Rs. 700")).toBeInTheDocument();
+    expect(requestedFlags).toEqual([null, "true"]);
+  });
 });

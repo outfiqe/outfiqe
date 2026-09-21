@@ -99,10 +99,13 @@ export const crmBillingRepository = {
 
   async listInvoicesForOrganization(
     organizationId: string,
-    params: { cursor?: string; limit: number },
+    params: { cursor?: string; limit: number; includeVoided: boolean },
   ): Promise<SubscriptionInvoiceRecord[]> {
     const invoices = await prisma.subscriptionInvoice.findMany({
-      where: { subscription: { organizationId } },
+      where: {
+        subscription: { organizationId },
+        ...(params.includeVoided ? {} : { status: { not: SubscriptionInvoiceStatus.VOID } }),
+      },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),

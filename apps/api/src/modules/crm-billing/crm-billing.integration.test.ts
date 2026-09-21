@@ -480,3 +480,75 @@ describe("GET /api/crm/billing/invoices", () => {
     expect(secondPage.body.data.nextCursor).toBeNull();
   });
 });
+
+describe("GET /api/crm/billing/invoices", () => {
+  const seedInvoices = async (organizationId: string) => {
+    const subscription = await prisma.subscription.create({
+      data: {
+        organizationId,
+        plan: "starter",
+        seats: 2,
+        status: "ACTIVE",
+        currentPeriodEnd: addDays(new Date(), 30),
+      },
+    });
+    const periodStart = new Date();
+    const periodEnd = addDays(periodStart, 30);
+    const invoice = (status: "OPEN" | "PAID" | "VOID") =>
+      prisma.subscriptionInvoice.create({
+        data: {
+          subscriptionId: subscription.id,
+          plan: "starter",
+          seats: 2,
+          amount: 1800,
+          periodStart,
+          periodEnd,
+          status,
+        },
+      });
+    await invoice("VOID");
+    await invoice("PAID");
+    await invoice("VOID");
+    await invoice("OPEN");
+  };
+
+  it("leaves voided invoices out by default", async () => {
+    const { organization, staff, host } = await setUpTenantWithSuperAdmin();
+    await seedInvoices(organization.id);
+
+    const response = await request(testApp)
+      .get("/api/crm/billing/invoices")
+      .set("Host", host)
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+    const statuses = response.body.data.invoices.map(
+      (invoice: { status: string }) => invoice.status,
+    );
+    expect(statuses.sort()).toEqual(["OPEN", "PAID"]);
+  });
+
+  it("includes voided invoices when asked to", async () => {
+    const { organization, staff, host } = await setUpTenantWithSuperAdmin();
+    await seedInvoices(organization.id);
+
+    const response = await request(testApp)
+      .get("/api/crm/billing/invoices?includeVoided=true")
+      .set("Host", host)
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.invoices).toHaveLength(4);
+  });
+
+  it("rejects an includeVoided value that is not true or false", async () => {
+    const { staff, host } = await setUpTenantWithSuperAdmin();
+
+    const response = await request(testApp)
+      .get("/api/crm/billing/invoices?includeVoided=maybe")
+      .set("Host", host)
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(400);
+  });
+});

@@ -18,9 +18,12 @@ export const crmBillingApi = {
     return billingOverviewSchema.parse(res.data);
   },
 
-  async listInvoices(cursor?: string): Promise<InvoicePage> {
+  async listInvoices(cursor?: string, includeVoided = false): Promise<InvoicePage> {
     const res = await apiClient.get<InvoicePage>("/crm/billing/invoices", {
-      params: cursor ? { cursor } : undefined,
+      params: {
+        ...(cursor ? { cursor } : {}),
+        ...(includeVoided ? { includeVoided: "true" } : {}),
+      },
     });
     return invoicePageSchema.parse(res.data);
   },

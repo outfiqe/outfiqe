@@ -7,6 +7,10 @@ import { CRM_PLAN_IDS, MAX_INVOICE_PAGE_SIZE } from "./crm-billing.constants.js"
 export const listInvoicesQuerySchema = z.object({
   cursor: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_INVOICE_PAGE_SIZE).optional(),
+  includeVoided: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((includeVoided) => includeVoided === "true"),
 });
 
 export const billingCheckoutSchema = z.object({

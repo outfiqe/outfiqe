@@ -92,3 +92,4 @@ after a grace window, `CANCELED` — at which point advanced CRM features are ga
   route is `_authenticated.crm.billing.return.$invoiceId.tsx` and `BillingReturnPage` reads the
   param, never a search param. `successUrl` and `failureUrl` are the same URL here (no
   failed-redirect UX like the storefront's `/failed`).
+- **`GET /billing/invoices` leaves voided invoices out unless `includeVoided=true`.** Every checkout attempt creates its own invoice, and one that is never paid ends up `VOID` (the gateway failed, the charge failed, or the 60-minute expiry passed). Those rows are an audit trail, not something a customer needs in their history, so the default list shows only open and paid invoices. The admin billing page has a "Show voided invoices" checkbox that sends the flag. The unpaid-invoice banner only looks at open invoices, so it is unaffected.
