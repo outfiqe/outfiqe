@@ -18,6 +18,7 @@ import { type FormEvent, useMemo, useRef, useState } from "react";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { validateWithSchema } from "@/lib/zodFieldErrors";
 
 import type { UpdateBadgeFormInput } from "../api";
 import { gamificationApi } from "../api";
@@ -25,6 +26,7 @@ import { BADGE_DESIGN_MODE, DEFAULT_BADGE_ICON } from "../badgeOptions.constants
 import type { BadgeAdmin } from "../schemas";
 import { BadgeDetailsFields } from "./BadgeDetailsFields";
 import { BADGES_QUERY_KEY, EMPTY_FORM } from "./badgeForm.constants";
+import { pickBadgeFormSchema } from "./badgeForm.schema";
 import type { BadgeFormState } from "./badgeForm.types";
 import { formForBadge, toFormInput, toPreviewDesignConfig } from "./badgeForm.utils";
 import { BadgeDesignSection } from "./DesignStudio/BadgeDesignSection";
@@ -64,6 +66,7 @@ const BadgeForm = ({
   );
   const [activeTab, setActiveTab] = useState<string>(TAB.DETAILS);
   const [error, setError] = useState<string | null>(null);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const hasSavedRef = useRef(false);
 
   const save = useApiMutation({
@@ -79,6 +82,7 @@ const BadgeForm = ({
       return gamificationApi.createBadge(toFormInput(form));
     },
     invalidateKeys: (saved) => [BADGES_QUERY_KEY, badgeQueryKey(saved.id)],
+    successMessage: mode === "edit" ? "Badge updated." : "Badge created.",
     onSuccess: () => {
       hasSavedRef.current = true;
       void navigate({ to: "/gamification/badges" });
@@ -99,9 +103,20 @@ const BadgeForm = ({
   });
 
   const designIssue = describeDesignIncompleteness(form);
+  const detailErrors = hasAttemptedSubmit
+    ? validateWithSchema(pickBadgeFormSchema(form.isAdminAward), form)
+    : {};
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
+  const submitBadge = (event: FormEvent) => {
+    event.preventDefault();
+    setHasAttemptedSubmit(true);
+    const hasDetailErrors =
+      Object.keys(validateWithSchema(pickBadgeFormSchema(form.isAdminAward), form)).length > 0;
+    if (hasDetailErrors) {
+      setActiveTab(TAB.DETAILS);
+      setError(null);
+      return;
+    }
     if (designIssue) {
       setActiveTab(TAB.DESIGN);
       setError(designIssue);
@@ -114,7 +129,7 @@ const BadgeForm = ({
   const title = mode === "edit" ? (badge?.name ?? "Edit badge") : "New badge";
 
   return (
-    <form id={BADGE_FORM_ID} onSubmit={handleSubmit}>
+    <form id={BADGE_FORM_ID} noValidate onSubmit={submitBadge}>
       <Link
         to="/gamification/badges"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -140,7 +155,12 @@ const BadgeForm = ({
         </TabsList>
 
         <TabsContent value={TAB.DETAILS} className="mt-4">
-          <BadgeDetailsFields idPrefix="badge" form={form} onChange={setForm} />
+          <BadgeDetailsFields
+            idPrefix="badge"
+            form={form}
+            onChange={setForm}
+            errors={detailErrors}
+          />
           {mode === "edit" && (
             <div className="mt-4 space-y-2 rounded-xl border border-border p-4">
               <p className="text-sm font-medium text-foreground">Status</p>

@@ -1,11 +1,15 @@
-import { Button, FormBanner, Modal } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, Form, FormBanner, Modal } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
-import { type FormEvent, useState } from "react";
+import { useForm } from "react-hook-form";
+
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { gamificationApi } from "../api";
 import type { ActivityXpConfig } from "../schemas";
 import { ActivityConfigFields } from "./ActivityConfigFields";
 import { ACTIVITY_CONFIG_QUERY_KEY } from "./activityConfigForm.constants";
+import { activityConfigFormSchema } from "./activityConfigForm.schema";
 import type { ActivityConfigFormState } from "./activityConfigForm.types";
 import { formForActivityConfig, toUpdateActivityConfigInput } from "./activityConfigForm.utils";
 
@@ -16,31 +20,36 @@ export const EditActivityConfigModal = ({
   config: ActivityXpConfig;
   onClose: () => void;
 }) => {
-  const [form, setForm] = useState<ActivityConfigFormState>(() => formForActivityConfig(config));
-  const [error, setError] = useState<string | null>(null);
-
-  const update = useApiMutation({
-    mutationFn: () =>
-      gamificationApi.updateActivityConfig(config.activityType, toUpdateActivityConfigInput(form)),
-    invalidateKeys: [ACTIVITY_CONFIG_QUERY_KEY],
-    onSuccess: () => onClose(),
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
+  const form = useForm<ActivityConfigFormState>({
+    resolver: zodResolver(activityConfigFormSchema),
+    defaultValues: formForActivityConfig(config),
+    mode: "onTouched",
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    update.mutate();
-  };
+  const update = useApiMutation({
+    mutationFn: (values: ActivityConfigFormState) =>
+      gamificationApi.updateActivityConfig(
+        config.activityType,
+        toUpdateActivityConfigInput(values),
+      ),
+    invalidateKeys: [ACTIVITY_CONFIG_QUERY_KEY],
+    successMessage: "Activity XP settings saved.",
+    onSuccess: () => onClose(),
+  });
+
+  const submitActivityConfig = form.handleSubmit((values) => update.mutate(values));
 
   return (
     <Modal open onClose={onClose} title={`Edit ${config.activityType}`}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <ActivityConfigFields idPrefix="activity-config" form={form} onChange={setForm} />
-        {error && <FormBanner>{error}</FormBanner>}
-        <Button type="submit" isLoading={update.isPending}>
-          Save changes
-        </Button>
-      </form>
+      <Form {...form}>
+        <form onSubmit={submitActivityConfig} noValidate className="space-y-4">
+          <ActivityConfigFields form={form} />
+          {update.isError && <FormBanner>{getErrorMessage(update.error)}</FormBanner>}
+          <Button type="submit" isLoading={update.isPending}>
+            Save changes
+          </Button>
+        </form>
+      </Form>
     </Modal>
   );
 };

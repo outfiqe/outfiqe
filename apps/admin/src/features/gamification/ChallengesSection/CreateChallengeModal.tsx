@@ -2,9 +2,13 @@ import { Button, FormBanner, Modal } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { type FormEvent, useState } from "react";
 
+import { getErrorMessage } from "@/lib/errorMessages";
+import { validateWithSchema } from "@/lib/zodFieldErrors";
+
 import { gamificationApi } from "../api";
 import { ChallengeFields } from "./ChallengeFields";
 import { CHALLENGES_QUERY_KEY } from "./challengeForm.constants";
+import { challengeFormSchema } from "./challengeForm.schema";
 import type { ChallengeFormState } from "./challengeForm.types";
 import { toChallengeFormInput } from "./challengeForm.utils";
 
@@ -18,17 +22,20 @@ export const CreateChallengeModal = ({
   onClose: () => void;
 }) => {
   const [form, setForm] = useState<ChallengeFormState>(initialForm);
-  const [error, setError] = useState<string | null>(null);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  const errors = hasAttemptedSubmit ? validateWithSchema(challengeFormSchema, form) : {};
 
   const create = useApiMutation({
     mutationFn: () => gamificationApi.createChallenge(toChallengeFormInput(form)),
     invalidateKeys: [CHALLENGES_QUERY_KEY],
+    successMessage: "Challenge created.",
     onSuccess: () => onClose(),
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
+  const submitChallenge = (event: FormEvent) => {
+    event.preventDefault();
+    setHasAttemptedSubmit(true);
+    if (Object.keys(validateWithSchema(challengeFormSchema, form)).length > 0) return;
     create.mutate();
   };
 
@@ -40,7 +47,7 @@ export const CreateChallengeModal = ({
       className="sm:max-w-3xl"
       footer={
         <div className="space-y-3">
-          {error && <FormBanner>{error}</FormBanner>}
+          {create.isError && <FormBanner>{getErrorMessage(create.error)}</FormBanner>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
@@ -52,8 +59,13 @@ export const CreateChallengeModal = ({
         </div>
       }
     >
-      <form id={CREATE_CHALLENGE_FORM_ID} onSubmit={handleSubmit}>
-        <ChallengeFields idPrefix="create-challenge" form={form} onChange={setForm} />
+      <form id={CREATE_CHALLENGE_FORM_ID} noValidate onSubmit={submitChallenge}>
+        <ChallengeFields
+          idPrefix="create-challenge"
+          form={form}
+          onChange={setForm}
+          errors={errors}
+        />
       </form>
     </Modal>
   );
