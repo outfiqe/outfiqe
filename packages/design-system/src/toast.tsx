@@ -31,10 +31,16 @@ const push = (message: string) => {
   setTimeout(() => dismiss(id), AUTO_DISMISS_MS);
 };
 
+const clear = () => {
+  toasts = [];
+  notify();
+};
+
 export const toast = {
   error: push,
   success: push,
   warning: push,
+  clear,
 };
 
 export const Toaster = () => {

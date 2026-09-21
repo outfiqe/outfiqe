@@ -257,7 +257,11 @@ export const PlatformImpersonationPage = () => {
 
         {startSession.isError && <FormBanner>{getErrorMessage(startSession.error)}</FormBanner>}
 
-        <Button disabled={!canSubmit} onClick={() => startSession.mutate()}>
+        <Button
+          disabled={!canSubmit}
+          isLoading={startSession.isPending}
+          onClick={() => startSession.mutate()}
+        >
           Start session
         </Button>
       </section>
