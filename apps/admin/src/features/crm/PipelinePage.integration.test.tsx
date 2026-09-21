@@ -118,6 +118,7 @@ describe("PipelinePage", () => {
     expect(await screen.findByText("Spring collab")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Lead" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Won" })).toBeInTheDocument();
+    expect(screen.getByText(/follow every deal from first contact/i)).toBeInTheDocument();
   });
 
   it("moves a deal to another stage from the card control", async () => {

@@ -80,7 +80,7 @@ const LIST_PATHS = new Set([
   "/withdraw-requests",
 ]);
 
-const normalizePathname = (pathname: string): string => {
+export const normalizePathname = (pathname: string): string => {
   const withoutBasePath = pathname.startsWith(ADMIN_BASE_PATH)
     ? pathname.slice(ADMIN_BASE_PATH.length)
     : pathname;

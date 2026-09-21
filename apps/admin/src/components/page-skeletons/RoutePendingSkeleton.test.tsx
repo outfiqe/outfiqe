@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { RoutePendingSkeleton } from "./RoutePendingSkeleton";
@@ -6,6 +7,7 @@ import { RoutePendingSkeleton } from "./RoutePendingSkeleton";
 const routerState = vi.hoisted(() => ({ pathname: "/" }));
 
 vi.mock("@tanstack/react-router", () => ({
+  Link: ({ children }: { children: ReactNode }) => <a href="/">{children}</a>,
   useRouterState: ({ select }: { select: (state: { location: { pathname: string } }) => string }) =>
     select({ location: { pathname: routerState.pathname } }),
 }));
@@ -24,12 +26,66 @@ describe("RoutePendingSkeleton", () => {
     expect(container.querySelectorAll(".rounded-full").length).toBeGreaterThan(0);
   });
 
-  it("shows the kanban skeleton for the pipeline", () => {
+  it("shows the pipeline heading and description above the board while the pipeline loads", () => {
     routerState.pathname = "/admin/crm/pipeline";
+
+    render(<RoutePendingSkeleton />);
+
+    expect(screen.getByRole("heading", { level: 1, name: "Pipeline" })).toBeInTheDocument();
+    expect(screen.getByText(/follow every deal from first contact/i)).toBeInTheDocument();
+  });
+
+  it.each([
+    ["/admin/crm/contacts", "Contacts"],
+    ["/admin/crm/customers", "Customers"],
+    ["/admin/crm/partners", "Partners"],
+    ["/admin/crm/audit", "Audit log"],
+    ["/admin/crm/roles", "Roles & settings"],
+    ["/admin/crm/reports", "Reports"],
+    ["/admin/crm/billing", "Billing"],
+    ["/admin/crm/tasks", "Tasks"],
+    ["/admin/crm/support", "Support"],
+  ])("shows the real heading of the CRM page at %s", (pathname, heading) => {
+    routerState.pathname = pathname;
+
+    render(<RoutePendingSkeleton />);
+
+    expect(screen.getByRole("heading", { level: 1, name: heading })).toBeInTheDocument();
+  });
+
+  it("shows the real table headers of the contacts list while it loads", () => {
+    routerState.pathname = "/admin/crm/contacts";
+
+    render(<RoutePendingSkeleton />);
+
+    expect(screen.getByText("Company")).toBeInTheDocument();
+    expect(screen.getByText("Owner")).toBeInTheDocument();
+  });
+
+  it("shows the back link and the recent orders section for a customer detail page", () => {
+    routerState.pathname = "/admin/crm/customers/user-1";
+
+    render(<RoutePendingSkeleton />);
+
+    expect(screen.getByText("← Back to customers")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Recent orders" })).toBeInTheDocument();
+  });
+
+  it("shows the back link and the per product section for a partner detail page", () => {
+    routerState.pathname = "/admin/crm/partners/creator-1";
+
+    render(<RoutePendingSkeleton />);
+
+    expect(screen.getByText("← Back to partners")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Per product" })).toBeInTheDocument();
+  });
+
+  it("keeps the generic dashboard skeleton for the CRM home page", () => {
+    routerState.pathname = "/admin/crm";
 
     const { container } = render(<RoutePendingSkeleton />);
 
-    expect(container.querySelector(String.raw`.xl\:grid-cols-4`)).not.toBeNull();
+    expect(container.querySelector(String.raw`.xl\:grid-cols-6`)).not.toBeNull();
   });
 
   it("shows the dashboard skeleton for the platform overview", () => {

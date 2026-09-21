@@ -8,6 +8,7 @@ import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
+import { CRM_PAGE_TEXT } from "./crmPageContent";
 import { DealFormModal } from "./DealFormModal";
 import { formatRupees } from "./format.utils";
 import { crmPipelineApi } from "./pipelineApi";
@@ -72,7 +73,12 @@ export const PipelinePage = () => {
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-bold text-foreground">Pipeline</h1>
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">
+            {CRM_PAGE_TEXT.pipeline.title}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.pipeline.description}</p>
+        </div>
         <div className="flex gap-2">
           {canConfigure && (
             <Button size="sm" variant="outline" onClick={() => setStageModalOpen(true)}>

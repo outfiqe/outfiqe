@@ -99,6 +99,10 @@ describe("CreatorOverview", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Product c1")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "View all" })).toHaveAttribute("href", "/earnings");
+    expect(screen.getByRole("button", { name: "How Available is calculated" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "How Total likes is calculated" }),
+    ).toBeInTheDocument();
   });
 
   it("shows the chart empty state when the creator has no earnings", () => {

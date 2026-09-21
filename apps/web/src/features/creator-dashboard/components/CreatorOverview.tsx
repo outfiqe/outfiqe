@@ -17,6 +17,17 @@ import { EarningsLedgerRow } from "./EarningsLedgerRow";
 const KPI_CARD_COUNT = 6;
 const RECENT_ROW_COUNT = 5;
 
+const KPI_HINT = {
+  totalEarnings:
+    "Everything you have earned in commission from sales of the looks you tagged: still pending, available to withdraw, and already paid out.",
+  availableEarnings: "Commission that has cleared and can be withdrawn now.",
+  pendingEarnings:
+    "Commission from recent sales that is still maturing. It moves to available once it clears.",
+  followerCount: "People who currently follow you.",
+  lookCount: "Looks you have posted that are still live. Deleted looks are not counted.",
+  totalLikes: "Likes across all of your live looks.",
+} as const;
+
 const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
 
 const formatShortDate = (isoDate: string) =>
@@ -46,12 +57,36 @@ const OverviewKpiRow = ({ overview }: { overview: CreatorOverviewData }) => {
         value={formatRupees(kpis.totalEarnings)}
         icon={Wallet}
         delta={earningsDeltaFor(overview)}
+        hint={KPI_HINT.totalEarnings}
       />
-      <StatCard label="Available" value={formatRupees(kpis.availableEarnings)} />
-      <StatCard label="Pending" value={formatRupees(kpis.pendingEarnings)} />
-      <StatCard label="Followers" value={kpis.followerCount.toLocaleString()} icon={Users} />
-      <StatCard label="Looks" value={kpis.lookCount.toLocaleString()} icon={ImageIcon} />
-      <StatCard label="Total likes" value={kpis.totalLikes.toLocaleString()} icon={Heart} />
+      <StatCard
+        label="Available"
+        value={formatRupees(kpis.availableEarnings)}
+        hint={KPI_HINT.availableEarnings}
+      />
+      <StatCard
+        label="Pending"
+        value={formatRupees(kpis.pendingEarnings)}
+        hint={KPI_HINT.pendingEarnings}
+      />
+      <StatCard
+        label="Followers"
+        value={kpis.followerCount.toLocaleString()}
+        icon={Users}
+        hint={KPI_HINT.followerCount}
+      />
+      <StatCard
+        label="Looks"
+        value={kpis.lookCount.toLocaleString()}
+        icon={ImageIcon}
+        hint={KPI_HINT.lookCount}
+      />
+      <StatCard
+        label="Total likes"
+        value={kpis.totalLikes.toLocaleString()}
+        icon={Heart}
+        hint={KPI_HINT.totalLikes}
+      />
     </div>
   );
 };

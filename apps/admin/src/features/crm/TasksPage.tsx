@@ -9,6 +9,7 @@ import { crmActivitiesApi } from "./activitiesApi";
 import type { Task } from "./activitiesSchemas";
 import { crmApi } from "./api";
 import { CompactRowSkeleton } from "./CompactRowSkeleton";
+import { CRM_PAGE_TEXT } from "./crmPageContent";
 import { formatDate } from "./format.utils";
 import { PlanGateBanner } from "./PlanGateBanner";
 
@@ -145,7 +146,12 @@ export const TasksPage = () => {
       )}
 
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-foreground">Tasks</h1>
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">
+            {CRM_PAGE_TEXT.tasks.title}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.tasks.description}</p>
+        </div>
         {members && members.length > 0 && (
           <Button size="sm" onClick={() => setModalOpen(true)}>
             New task

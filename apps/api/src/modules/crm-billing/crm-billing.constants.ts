@@ -7,8 +7,6 @@ export const CRM_PLAN_ID = {
   GROWTH: "growth",
 } as const;
 
-export const TRIAL_LENGTH_DAYS = 14;
-
 export const BILLING_PERIOD_MONTHS = 1;
 
 export const RENEWAL_LOOKAHEAD_DAYS = 3;

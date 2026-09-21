@@ -29,6 +29,21 @@ const OVERVIEW_KEY = ["platform-metrics-overview"];
 const ACTIVITY_TREND_KEY = ["platform-metrics-activity-trend"];
 const ROLLUP_KEY = ["platform-metrics-rollup-gap"];
 const KPI_CARD_COUNT = 6;
+const KPI_HINT = {
+  tenantCount: "Customer organizations using the CRM. Internal platform accounts are not counted.",
+  totalMembers: "People who belong to a customer organization, added up across every organization.",
+  totalContacts: "Contacts stored in the CRM, added up across every customer organization.",
+  totalDeals: "Pipeline deals created, added up across every customer organization.",
+  totalTickets: "Support tickets created, added up across every customer organization.",
+  totalActivities:
+    "Calls, notes and other activities logged, added up across every customer organization.",
+  gatewayNetHeld:
+    "Money the payment gateways collected in the last 30 days, minus refunds. This is what should be sitting with us.",
+  ledgerOwed:
+    "What the ledger says we still owe to brands and creators from the last 30 days, in payouts and commissions that have not been paid out yet.",
+  settlementGap:
+    "Gateway money held minus what the ledger owes. Under 2% counts as reconciled; anything larger needs a review.",
+} as const;
 const SETTLEMENT_CARD_COUNT = 3;
 const KPI_GRID_CLASS = "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6";
 const SETTLEMENT_GRID_CLASS = "grid grid-cols-1 gap-3 sm:grid-cols-3";
@@ -92,12 +107,36 @@ const formatShortDate = (isoDate: string) =>
 
 const OverviewKpiRow = ({ overview }: { overview: PlatformOverview }) => (
   <div className={KPI_GRID_CLASS}>
-    <StatCard label="Tenants" value={overview.tenantCount.toLocaleString()} />
-    <StatCard label="Members" value={overview.totalMembers.toLocaleString()} />
-    <StatCard label="Contacts" value={overview.totalContacts.toLocaleString()} />
-    <StatCard label="Deals" value={overview.totalDeals.toLocaleString()} />
-    <StatCard label="Tickets" value={overview.totalTickets.toLocaleString()} />
-    <StatCard label="Activities" value={overview.totalActivities.toLocaleString()} />
+    <StatCard
+      label="Tenants"
+      value={overview.tenantCount.toLocaleString()}
+      hint={KPI_HINT.tenantCount}
+    />
+    <StatCard
+      label="Members"
+      value={overview.totalMembers.toLocaleString()}
+      hint={KPI_HINT.totalMembers}
+    />
+    <StatCard
+      label="Contacts"
+      value={overview.totalContacts.toLocaleString()}
+      hint={KPI_HINT.totalContacts}
+    />
+    <StatCard
+      label="Deals"
+      value={overview.totalDeals.toLocaleString()}
+      hint={KPI_HINT.totalDeals}
+    />
+    <StatCard
+      label="Tickets"
+      value={overview.totalTickets.toLocaleString()}
+      hint={KPI_HINT.totalTickets}
+    />
+    <StatCard
+      label="Activities"
+      value={overview.totalActivities.toLocaleString()}
+      hint={KPI_HINT.totalActivities}
+    />
   </div>
 );
 
@@ -152,11 +191,20 @@ const SettlementGap = () => {
 
   return (
     <div className={SETTLEMENT_GRID_CLASS}>
-      <StatCard label="Gateway net held (30d)" value={formatRupees(netHeld)} />
-      <StatCard label="Ledger owed (30d)" value={formatRupees(ledgerOwed)} />
+      <StatCard
+        label="Gateway net held (30d)"
+        value={formatRupees(netHeld)}
+        hint={KPI_HINT.gatewayNetHeld}
+      />
+      <StatCard
+        label="Ledger owed (30d)"
+        value={formatRupees(ledgerOwed)}
+        hint={KPI_HINT.ledgerOwed}
+      />
       <StatCard
         label="Gap"
         value={formatRupees(gap)}
+        hint={KPI_HINT.settlementGap}
         delta={{
           value: isHealthy ? "Reconciled" : "Needs review",
           tone: isHealthy ? "positive" : "negative",
