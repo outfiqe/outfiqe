@@ -1,8 +1,9 @@
-import { Input, Skeleton, StatCardSkeleton } from "@outfiqe/design-system";
+import { Input, Select, Skeleton, StatCard, StatCardSkeleton } from "@outfiqe/design-system";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { ReorderRowSkeleton } from "@/components/ReorderRowSkeleton";
+import { ReportRowSkeleton } from "@/components/ReportRowSkeleton";
 import { SkeletonButton } from "@/components/SkeletonControls";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import {
@@ -180,6 +181,46 @@ const BlockSkeleton = ({ block }: { block: SkeletonBlock }) => {
           tabIndex={-1}
           className="max-w-sm"
         />
+      );
+    case "selectBar":
+      return (
+        <div className="flex flex-wrap items-center gap-2">
+          {block.options.map((optionLabel) => (
+            <Select key={optionLabel} disabled aria-hidden tabIndex={-1} className="w-44">
+              <option>{optionLabel}</option>
+            </Select>
+          ))}
+        </div>
+      );
+    case "labeledStats":
+      return (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-hidden>
+          {block.labels.map((label) => (
+            <StatCard key={label} label={label} value={<Skeleton className="h-7 w-10" />} />
+          ))}
+        </div>
+      );
+    case "posterGrid":
+      return (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {Array.from({ length: block.count }, (_unused, posterIndex) => (
+            <div key={posterIndex} aria-hidden>
+              <Skeleton className="aspect-[4/5] w-full rounded-2xl" />
+              <Skeleton className="mt-2 h-4 w-24" />
+              <div className="min-h-[2.25rem]">
+                <Skeleton className="mt-1 h-3.5 w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    case "reportRows":
+      return (
+        <div className="space-y-3">
+          {Array.from({ length: block.count }, (_unused, rowIndex) => (
+            <ReportRowSkeleton key={rowIndex} hasLeadingName={block.hasLeadingName} />
+          ))}
+        </div>
       );
     case "text":
       return <p className="text-sm text-muted-foreground">{block.text}</p>;

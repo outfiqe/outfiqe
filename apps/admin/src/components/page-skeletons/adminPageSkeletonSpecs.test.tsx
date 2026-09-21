@@ -25,6 +25,10 @@ const staticStringsOf = (block: SkeletonBlock): string[] => {
       return [...block.labels, ...(block.actionLabel ? [block.actionLabel] : [])];
     case "searchInput":
       return [block.placeholder];
+    case "selectBar":
+      return [...block.options];
+    case "labeledStats":
+      return [...block.labels];
     case "section":
       return [
         block.title,

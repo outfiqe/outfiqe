@@ -7,7 +7,82 @@ const GRID_CARD_COUNT = 6;
 
 const PILL_COUNT = 5;
 
+const POSTER_COUNT = 10;
+
 export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = {
+  "/content-browser": {
+    title: "Browse posts",
+    description:
+      "Search creator posts and comments directly and take one down without waiting for a report.",
+    blocks: [
+      { kind: "searchInput", placeholder: "Search by caption or creator…" },
+      { kind: "posterGrid", count: POSTER_COUNT },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/content-browser/ContentBrowserPage.tsx`],
+  },
+
+  "/content-reports": {
+    title: "Content reports",
+    description: "Posts and comments flagged by viewers.",
+    blocks: [
+      { kind: "filterTabs", labels: ["Open", "Actioned", "Dismissed"] },
+      { kind: "reportRows", count: ROW_COUNT },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/content-reports/ContentReportsPage.tsx`],
+  },
+
+  "/tag-reports": {
+    title: "Tag reports",
+    description: "Counterfeit and misleading-tag reports from viewers and brands.",
+    blocks: [
+      { kind: "filterTabs", labels: ["Open", "Actioned", "Dismissed"] },
+      { kind: "reportRows", count: ROW_COUNT, hasLeadingName: true },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/tag-reports/TagReportsPage.tsx`],
+  },
+
+  "/platform/brand-applications": {
+    title: "Brand applications",
+    blocks: [
+      { kind: "filterTabs", labels: ["Pending", "Approved", "Rejected"] },
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        textLineCount: 2,
+        actionSize: "default",
+        actionLabels: ["Approve", "Reject"],
+      },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/brand-applications/BrandApplicationsPage.tsx`],
+  },
+
+  "/support": {
+    title: "Support requests",
+    blocks: [
+      { kind: "labeledStats", labels: ["Open", "Unassigned", "Awaiting us", "Oldest waiting"] },
+      { kind: "selectBar", options: ["All assignees", "All statuses"] },
+      { kind: "cardRows", count: ROW_COUNT, hasBadge: false, textLineCount: 2, actionLabels: [] },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/support/SupportInboxPage.tsx`],
+  },
+
+  "/organizations": {
+    title: "Organizations",
+    description:
+      "Each organization is a fully independent CRM tenant — its own members, roles, and data. Pick a business already on Outfiqe; they become the new organization's owner once they accept.",
+    blocks: [
+      {
+        kind: "formCard",
+        fields: [
+          { label: "Business", width: "large" },
+          { label: "Subdomain", width: "medium" },
+        ],
+        submitLabel: "Create organization",
+      },
+      { kind: "cardRows", count: ROW_COUNT, hasBadge: false, actionLabels: [] },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/organizations/OrganizationsPage.tsx`],
+  },
   "/products": {
     title: "Products",
     blocks: [

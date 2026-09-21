@@ -40,6 +40,10 @@ export type SkeletonBlock =
   | { kind: "imageRows"; count: number; actionLabels: readonly string[] }
   | { kind: "pills"; count: number }
   | { kind: "searchInput"; placeholder: string }
+  | { kind: "selectBar"; options: readonly string[] }
+  | { kind: "labeledStats"; labels: readonly string[] }
+  | { kind: "posterGrid"; count: number }
+  | { kind: "reportRows"; count: number; hasLeadingName?: boolean }
   | { kind: "text"; text: string }
   | { kind: "table"; headers: readonly string[]; rowCount?: number }
   | { kind: "badgeGrid"; count: number }
