@@ -19,7 +19,95 @@ const SESSION_TABLE_HEADERS = [
   "State",
 ];
 
+const KPI_CARD_COUNT = 6;
+const OVERVIEW_TILE_COUNT = 4;
+const GAMIFICATION_STAT_COUNT = 5;
+
 export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = {
+  "/platform": {
+    title: "Overview",
+    description: "Platform-wide totals, activity trend and settlement reconciliation.",
+    blocks: [
+      { kind: "statCards", count: KPI_CARD_COUNT, columns: "six" },
+      {
+        kind: "tiles",
+        title: "Quick access",
+        labels: [
+          "Orders",
+          "Products",
+          "Brand applications",
+          "Coupons",
+          "Withdrawal requests",
+          "Support requests",
+        ],
+      },
+      {
+        kind: "chartCard",
+        title: "Activity",
+        description: "Platform-wide CRM activity per day",
+      },
+      {
+        kind: "section",
+        title: "Settlement reconciliation",
+        description: "Gateway money held vs. what the ledger says is owed, last 30 days.",
+        blocks: [{ kind: "statCards", count: 3, columns: "four" }],
+      },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/platform-metrics/PlatformOverviewPage.tsx`],
+  },
+
+  "/gamification": {
+    title: "Gamification",
+    spacing: "loose",
+    blocks: [
+      {
+        kind: "section",
+        title: "Overview",
+        blocks: [{ kind: "statCards", count: GAMIFICATION_STAT_COUNT, columns: "five" }],
+      },
+    ],
+    sourceFiles: [
+      `${FEATURES_DIR}/gamification/GamificationOverviewPage.tsx`,
+      `${FEATURES_DIR}/gamification/StatsSection.tsx`,
+    ],
+  },
+
+  "/financial-rollup": {
+    title: "Financial rollup",
+    blocks: [
+      { kind: "filterTabs", labels: ["This cycle", "Last 30 days", "All time"] },
+      { kind: "statCards", count: 1, columns: "four", hasDelta: true },
+      {
+        kind: "infoCards",
+        cards: [
+          {
+            title: "Gateway",
+            description: "Money actually collected via payment gateways.",
+            rowCount: 3,
+          },
+          {
+            title: "Ledger",
+            description: "What's owed to creators and brands per the settlement ledger.",
+            rowCount: 4,
+          },
+        ],
+      },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/financial-rollup/FinancialRollupPage.tsx`],
+  },
+
+  "/tag-reviews": {
+    title: "Tag reviews",
+    description:
+      "How the Brand Tag Review funnel is running across every brand. All-time unless noted.",
+    blocks: [
+      { kind: "bar" },
+      { kind: "statCards", count: OVERVIEW_TILE_COUNT, columns: "four", hasDelta: true },
+      { kind: "bar" },
+      { kind: "infoCards", cards: [{ rowCount: 2 }, { rowCount: 2 }, { rowCount: 3 }] },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/tag-reviews/TagReviewMetricsPage.tsx`],
+  },
   "/profile": {
     title: "Edit profile",
     isNarrow: true,

@@ -1,4 +1,11 @@
-import { Input, Select, Skeleton, StatCard, StatCardSkeleton } from "@outfiqe/design-system";
+import {
+  ChartCard,
+  Input,
+  Select,
+  Skeleton,
+  StatCard,
+  StatCardSkeleton,
+} from "@outfiqe/design-system";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
@@ -17,6 +24,7 @@ import type {
   FormCardLayout,
   FormFieldWidth,
   SkeletonBlock,
+  StatCardColumns,
 } from "./adminPageSkeleton.types";
 
 const HEADING_CLASS = "font-display text-2xl font-bold text-foreground";
@@ -42,6 +50,16 @@ const FORM_CARD_CLASS: Record<FormCardLayout, string> = {
   stacked: "space-y-5 rounded-xl border border-border bg-card p-5",
   grid: "grid gap-3 rounded-xl border border-border bg-card p-5 sm:grid-cols-2",
 };
+
+const STAT_GRID_CLASS: Record<StatCardColumns, string> = {
+  four: "grid grid-cols-2 gap-3 lg:grid-cols-4",
+  five: "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5",
+  six: "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6",
+};
+const TILE_CLASS =
+  "flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4 text-center";
+const INFO_CARD_ROW_CLASS =
+  "flex items-center justify-between gap-3 border-b border-border/60 py-2 last:border-0";
 
 const SPACING_CLASS = { tight: "space-y-6", loose: "space-y-10" } as const;
 
@@ -220,6 +238,64 @@ const BlockSkeleton = ({ block }: { block: SkeletonBlock }) => {
           </Select>
         </div>
       );
+    case "statCards":
+      return (
+        <div className={STAT_GRID_CLASS[block.columns]}>
+          {Array.from({ length: block.count }, (_unused, cardIndex) => (
+            <StatCardSkeleton key={cardIndex} hasDelta={block.hasDelta} />
+          ))}
+        </div>
+      );
+    case "tiles":
+      return (
+        <section>
+          {block.title && <h2 className={SECTION_HEADING_CLASS}>{block.title}</h2>}
+          <div className={`${block.title ? "mt-3 " : ""}${STAT_GRID_CLASS.six}`}>
+            {block.labels.map((label) => (
+              <div key={label} className={TILE_CLASS} aria-hidden>
+                <Skeleton className="size-5 rounded-md" />
+                <Skeleton className="h-5 w-24" />
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+    case "chartCard":
+      return (
+        <ChartCard title={block.title} description={block.description} isLoading>
+          {null}
+        </ChartCard>
+      );
+    case "infoCards":
+      return (
+        <div className="grid gap-4 md:grid-cols-2">
+          {block.cards.map((card, cardIndex) => (
+            <div
+              key={card.title ?? cardIndex}
+              className="rounded-xl border border-border bg-card p-5"
+            >
+              {card.title && (
+                <h2 className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
+                  {card.title}
+                </h2>
+              )}
+              {card.description && (
+                <p className="mt-1 text-xs text-muted-foreground">{card.description}</p>
+              )}
+              <div className={card.title ? "mt-3" : undefined}>
+                {Array.from({ length: card.rowCount }, (_unused, rowIndex) => (
+                  <div key={rowIndex} className={INFO_CARD_ROW_CLASS}>
+                    <Skeleton className="h-5 w-28" />
+                    <Skeleton className="h-5 w-20" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    case "bar":
+      return <Skeleton className="h-14 w-full rounded-lg" />;
     case "posterGrid":
       return (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">

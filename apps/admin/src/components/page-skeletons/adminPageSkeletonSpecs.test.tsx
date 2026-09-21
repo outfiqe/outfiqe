@@ -32,6 +32,15 @@ const staticStringsOf = (block: SkeletonBlock): string[] => {
       return [...block.labels];
     case "labeledSelect":
       return [block.label];
+    case "tiles":
+      return [...(block.title ? [block.title] : []), ...block.labels];
+    case "chartCard":
+      return [block.title, block.description];
+    case "infoCards":
+      return block.cards.flatMap((card) => [
+        ...(card.title ? [card.title] : []),
+        ...(card.description ? [card.description] : []),
+      ]);
     case "section":
       return [
         block.title,

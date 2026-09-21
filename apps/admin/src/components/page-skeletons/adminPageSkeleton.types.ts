@@ -1,5 +1,13 @@
 export type FormFieldWidth = "small" | "medium" | "large";
 
+export type StatCardColumns = "four" | "five" | "six";
+
+export type SkeletonInfoCard = {
+  title?: string;
+  description?: string;
+  rowCount: number;
+};
+
 export type FormCardLayout = "inline" | "stacked" | "grid";
 
 export type SkeletonFormField = {
@@ -50,6 +58,11 @@ export type SkeletonBlock =
   | { kind: "selectBar"; options: readonly string[] }
   | { kind: "labeledStats"; labels: readonly string[]; isWide?: boolean }
   | { kind: "labeledSelect"; label: string; option: string }
+  | { kind: "statCards"; count: number; columns: StatCardColumns; hasDelta?: boolean }
+  | { kind: "tiles"; labels: readonly string[]; title?: string }
+  | { kind: "chartCard"; title: string; description: string }
+  | { kind: "infoCards"; cards: readonly SkeletonInfoCard[] }
+  | { kind: "bar" }
   | { kind: "posterGrid"; count: number }
   | { kind: "reportRows"; count: number; hasLeadingName?: boolean }
   | { kind: "table"; headers: readonly string[]; rowCount?: number }
