@@ -1,4 +1,4 @@
-import { FormBanner, Skeleton, StatCardSkeleton } from "@outfiqe/design-system";
+import { FormBanner } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
@@ -7,6 +7,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { formatDuration, formatRupees } from "./format.utils";
 import { crmReportingApi } from "./reportingApi";
 import type { PipelineReport, TicketReport } from "./reportingSchemas";
+import { ReportSkeleton } from "./skeletons";
 
 const PIPELINE_REPORT_KEY = ["crm-report-pipeline"];
 const TICKET_REPORT_KEY = ["crm-report-tickets"];
@@ -15,28 +16,6 @@ const StatTile = ({ label, value }: { label: string; value: string }) => (
   <div className="rounded-xl border border-border bg-card p-4">
     <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
     <p className="mt-1 font-display text-2xl font-bold text-foreground">{value}</p>
-  </div>
-);
-
-const REPORT_TILE_COUNT = 3;
-const REPORT_BAR_ROW_COUNT = 4;
-
-const ReportSkeleton = () => (
-  <div className="space-y-4" role="status" aria-label="Loading">
-    <div className="grid gap-3 sm:grid-cols-3">
-      {Array.from({ length: REPORT_TILE_COUNT }, (_unused, tileIndex) => (
-        <StatCardSkeleton key={tileIndex} />
-      ))}
-    </div>
-    <ul className="space-y-2">
-      {Array.from({ length: REPORT_BAR_ROW_COUNT }, (_unused, rowIndex) => (
-        <li key={rowIndex} className="grid grid-cols-[8rem_1fr_auto] items-center gap-3 text-sm">
-          <Skeleton className="h-5 w-24" />
-          <Skeleton className="h-6 w-full rounded" />
-          <Skeleton className="h-5 w-16" />
-        </li>
-      ))}
-    </ul>
   </div>
 );
 

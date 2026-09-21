@@ -7,19 +7,12 @@ import { useState } from "react";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
+import { CRM_PAGE_TEXT, PARTNER_TABLE_HEADERS } from "./crmPageContent";
 import { formatDate, formatRupees } from "./format.utils";
 import { crmRelationshipsApi } from "./relationshipsApi";
 
 const PAGE_SIZE = 25;
 const SEARCH_DEBOUNCE_MS = 300;
-
-const PARTNER_TABLE_HEADERS = [
-  "Creator",
-  "Tag clicks",
-  "Attributed orders",
-  "Attributed revenue",
-  "Last activity",
-];
 
 export const PartnersPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,7 +32,9 @@ export const PartnersPage = () => {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-bold text-foreground">Partners</h1>
+        <h1 className="font-display text-2xl font-bold text-foreground">
+          {CRM_PAGE_TEXT.partners.title}
+        </h1>
         <Input
           type="search"
           placeholder="Search creators"
@@ -52,9 +47,7 @@ export const PartnersPage = () => {
         />
       </div>
 
-      <p className="mt-1 text-sm text-muted-foreground">
-        Creators who have linked, tagged, or driven a sale of your brand&apos;s products.
-      </p>
+      <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.partners.description}</p>
 
       <div className="mt-6">
         {isLoading && <TableSkeleton headers={PARTNER_TABLE_HEADERS} />}

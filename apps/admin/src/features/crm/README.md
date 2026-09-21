@@ -18,6 +18,11 @@ support reports, and review the organization's audit log — against the `/api/c
 
 ## Structure
 
+- `crmPageContent.ts` — the title, description and table headers of each CRM page. A page and its
+  loading skeleton both read from here, so the two cannot drift apart.
+- `skeletons.tsx` — the loading placeholders that copy each CRM page's real layout: the in-page ones
+  (billing, reports, roles, detail pages) plus one route-level skeleton per page. It is light on
+  purpose: it imports no page, so the router can show it while the page code is still downloading.
 - `schemas.ts` — Zod schemas/types mirroring the API's response shapes
   (`Organization`, `Role`, `MembershipSummary`, `OrganizationInviteSummary`), the same "mirror
   the backend, parse on the way in" pattern as `features/team/schemas.ts`.

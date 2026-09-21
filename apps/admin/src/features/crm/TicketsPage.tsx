@@ -8,6 +8,7 @@ import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { crmApi } from "./api";
 import { CompactRowSkeleton } from "./CompactRowSkeleton";
+import { CRM_PAGE_TEXT } from "./crmPageContent";
 import { CustomerSearchField, type SelectedCustomer } from "./CustomerSearchField";
 import { formatDate } from "./format.utils";
 import { PlanGateBanner } from "./PlanGateBanner";
@@ -166,11 +167,10 @@ export const TicketsPage = () => {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Support</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Requests and problems raised by your customers. Work each ticket through to resolved,
-            and filter by status to see what still needs attention.
-          </p>
+          <h1 className="font-display text-2xl font-bold text-foreground">
+            {CRM_PAGE_TEXT.tickets.title}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">{CRM_PAGE_TEXT.tickets.description}</p>
         </div>
         <div className="flex items-center gap-2">
           <Select
