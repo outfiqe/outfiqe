@@ -72,7 +72,13 @@ export const PipelinePage = () => {
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-bold text-foreground">Pipeline</h1>
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Pipeline</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Follow every deal from first contact to won or lost. Drag a deal card to the next stage
+            as the sale moves forward.
+          </p>
+        </div>
         <div className="flex gap-2">
           {canConfigure && (
             <Button size="sm" variant="outline" onClick={() => setStageModalOpen(true)}>

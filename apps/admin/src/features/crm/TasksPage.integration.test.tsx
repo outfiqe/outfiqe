@@ -115,6 +115,7 @@ describe("TasksPage", () => {
 
     expect(await screen.findByText("Chase invoice")).toBeInTheDocument();
     expect(screen.getByText("overdue")).toBeInTheDocument();
+    expect(screen.getByText(/your team.s to-do list/i)).toBeInTheDocument();
   });
 
   it("toggles a task to done", async () => {

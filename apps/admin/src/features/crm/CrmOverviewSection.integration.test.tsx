@@ -68,6 +68,12 @@ describe("CrmOverviewSection", () => {
     expect(screen.getByText("5")).toBeInTheDocument();
     expect(screen.getByText("2h")).toBeInTheDocument();
     expect(
+      screen.getByRole("button", { name: "How Tasks due today is calculated" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "How Mean time to resolve is calculated" }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("figure", { name: /crm activities logged per day/i }),
     ).toBeInTheDocument();
     expect(

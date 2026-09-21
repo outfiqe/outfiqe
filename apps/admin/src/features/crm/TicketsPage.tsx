@@ -165,7 +165,13 @@ export const TicketsPage = () => {
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-bold text-foreground">Support</h1>
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Support</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Requests and problems raised by your customers. Work each ticket through to resolved,
+            and filter by status to see what still needs attention.
+          </p>
+        </div>
         <div className="flex items-center gap-2">
           <Select
             aria-label="Filter by status"
