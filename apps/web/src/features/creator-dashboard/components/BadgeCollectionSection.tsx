@@ -43,14 +43,17 @@ export const BadgeCollectionSection = () => {
 
   const collectedCount = (collection ?? []).filter((entry) => entry.isCollected).length;
   const totalCount = collection?.length ?? 0;
+  const collectionProgressLabel = isPending
+    ? "Loading your collection…"
+    : !isError && totalCount > 0
+      ? `${collectedCount} / ${totalCount} collected`
+      : "";
 
   return (
     <div>
       <div>
         <h1 className="font-display text-2xl font-bold text-foreground">Badge collection</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {isPending ? "Loading your collection…" : `${collectedCount} / ${totalCount} collected`}
-        </p>
+        <p className="mt-1 min-h-5 text-sm text-muted-foreground">{collectionProgressLabel}</p>
       </div>
 
       <div className="mt-4">

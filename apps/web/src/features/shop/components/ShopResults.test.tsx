@@ -199,7 +199,50 @@ describe("ShopResults", () => {
 
     render(<ShopResults />);
 
-    expect(screen.getByText("Nothing here yet.")).toBeInTheDocument();
+    expect(screen.getByText("No pieces here yet. Check back soon.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Shirts" })).not.toBeInTheDocument();
+  });
+
+  it("does not print a zero count above an empty result, only the empty message", () => {
+    mockSearchParams({});
+    mockInfiniteProducts({
+      data: {
+        pages: [{ products: [], nextCursor: null, total: 0, brandCount: 0 }],
+        pageParams: [undefined],
+      },
+    });
+
+    render(<ShopResults />);
+
+    expect(screen.queryByText(/0 pieces/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/from 0 brands/)).not.toBeInTheDocument();
+  });
+
+  it("uses singular wording when there is one piece from one brand", () => {
+    mockInfiniteProducts({});
+
+    render(<ShopResults />);
+
+    expect(screen.getByText("1 piece from 1 brand")).toBeInTheDocument();
+  });
+
+  it("offers a way back to everything when the thrift filter finds nothing", async () => {
+    const user = userEvent.setup();
+    mockSearchParams({ thrift: "true" });
+    mockInfiniteProducts({
+      data: {
+        pages: [{ products: [], nextCursor: null, total: 0, brandCount: 0 }],
+        pageParams: [undefined],
+      },
+    });
+
+    render(<ShopResults />);
+
+    expect(screen.getByText("No thrift pieces here yet.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Show all pieces" }));
+
+    expect(replace).toHaveBeenCalledWith(expect.not.stringContaining("thrift=true"), {
+      scroll: false,
+    });
   });
 });

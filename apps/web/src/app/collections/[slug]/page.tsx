@@ -22,7 +22,7 @@ const describeCollection = (collection: {
   productCount: number;
 }): string =>
   collection.description ??
-  `${collection.productCount} pieces from Nepali brands in the ${collection.name} collection, styled in real creator looks.`;
+  `${collection.productCount > 0 ? `${collection.productCount} pieces` : "Pieces"} from Nepali brands in the ${collection.name} collection, styled in real creator looks.`;
 
 export const generateMetadata = async ({ params }: CollectionPageProps): Promise<Metadata> => {
   const { slug } = await params;

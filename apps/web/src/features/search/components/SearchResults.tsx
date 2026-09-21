@@ -8,6 +8,7 @@ import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { useInfiniteProducts } from "@/features/products/hooks/useInfiniteProducts";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
+import { formatResultCount } from "@/shared/lib/formatCount";
 
 import { MIN_QUERY_LENGTH } from "../search.constants";
 
@@ -41,17 +42,16 @@ export const SearchResults = () => {
 
   const products = productsPages?.pages.flatMap((page) => page.products) ?? [];
   const firstPage = productsPages?.pages[0];
+  const resultCountLabel = firstPage
+    ? formatResultCount(firstPage.total, firstPage.brandCount)
+    : "";
 
   return (
     <div>
       <h1 className="font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl lg:text-4xl">
         {query}
       </h1>
-      {firstPage && (
-        <p className="mt-2 text-sm text-muted-foreground">
-          {firstPage.total} pieces from {firstPage.brandCount} brands
-        </p>
-      )}
+      {resultCountLabel && <p className="mt-2 text-sm text-muted-foreground">{resultCountLabel}</p>}
 
       {isLoading ? (
         <ProductGridSkeleton className="mt-8" />

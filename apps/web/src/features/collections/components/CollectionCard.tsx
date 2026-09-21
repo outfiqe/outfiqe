@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
+import { formatCountLabel } from "@/shared/lib/formatCount";
 
 import type { PublicCollection } from "../api/collectionSchemas";
 
@@ -32,9 +33,11 @@ export const CollectionCard = ({ collection }: CollectionCardProps) => {
           <p className="font-display text-lg font-extrabold uppercase leading-tight tracking-tight text-white">
             {collection.name}
           </p>
-          <p className="mt-1 text-xs text-white/80">
-            {collection.productCount} {collection.productCount === 1 ? "piece" : "pieces"}
-          </p>
+          {collection.productCount > 0 && (
+            <p className="mt-1 text-xs text-white/80">
+              {formatCountLabel(collection.productCount, "piece", "pieces")}
+            </p>
+          )}
         </div>
       </div>
     </Link>

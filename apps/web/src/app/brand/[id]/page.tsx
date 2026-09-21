@@ -11,8 +11,10 @@ interface BrandPageProps {
   params: Promise<{ id: string }>;
 }
 
-const describeBrand = (brand: { name: string; productCount: number }): string =>
-  `${brand.productCount} pieces from ${brand.name}, a Nepali brand, each shown in real creator looks. Follow the brand and shop the full range with one checkout.`;
+const describeBrand = (brand: { name: string; productCount: number }): string => {
+  const pieceCount = brand.productCount > 0 ? `${brand.productCount} pieces from` : "Pieces from";
+  return `${pieceCount} ${brand.name}, a Nepali brand, each shown in real creator looks. Follow the brand and shop the full range with one checkout.`;
+};
 
 export const generateMetadata = async ({ params }: BrandPageProps): Promise<Metadata> => {
   const { id } = await params;
