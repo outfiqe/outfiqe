@@ -8,6 +8,7 @@ that is about to appear so nothing jumps when the real content arrives.
 ## Structure
 
 - `RoutePendingSkeleton.tsx` — the router's default pending component; picks a skeleton from the URL being navigated to.
+- `adminPageSkeletonSpecs.ts` — one entry per admin page: its real heading, description, tabs, form labels, button labels and table headers, plus the source files those strings come from. `AdminPageSkeleton.tsx` draws a spec from a few block kinds (`adminPageSkeleton.types.ts`) and `resolveAdminPageSkeleton.ts` finds the spec for a path. `RoutePendingSkeleton` uses it after the CRM check.
 - `resolveCrmRouteSkeleton.ts` — pure mapping from a CRM pathname to the key of that page's own skeleton (`features/crm/skeletons.tsx`); `RoutePendingSkeleton` checks it before the layout kinds below.
 - `resolvePageSkeletonKind.ts` — pure mapping from a pathname to one of five layout kinds (dashboard, list, kanban, detail-form, generic).
 - `DashboardPageSkeleton.tsx`, `ListPageSkeleton.tsx`, `KanbanPageSkeleton.tsx`, `DetailFormPageSkeleton.tsx` — one skeleton per layout kind.
@@ -56,6 +57,7 @@ data arrives:
   that page's real heading, description, filter controls and table headers (from
   `features/crm/crmPageContent.ts`) with placeholder rows, instead of the generic list or dashboard
   blocks. A new CRM page is added there and to `resolveCrmRouteSkeleton.ts`.
+- **Admin pages have a spec, and a test keeps it honest.** Each spec lists its `sourceFiles`, and `adminPageSkeletonSpecs.test.tsx` fails if any title, description, tab, label or button text in the spec is no longer in those files. So renaming a heading or a button without updating its skeleton is caught in CI instead of showing up as a jump. Tab labels are compared ignoring case because the pages capitalise their uppercase status values. Add a new admin page to `adminPageSkeletonSpecs.ts`; a page with no spec falls back to the generic layout kinds below.
 - **Left generic on purpose:** the CRM home page (its content depends on the viewer's permissions,
   which are unknown until the organization loads) and the typeahead dropdown option rows, which
   already match the option height.
