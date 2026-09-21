@@ -20,6 +20,79 @@ const SESSION_TABLE_HEADERS = [
 ];
 
 export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = {
+  "/profile": {
+    title: "Edit profile",
+    isNarrow: true,
+    blocks: [
+      {
+        kind: "formCard",
+        layout: "stacked",
+        fields: [
+          { label: "Avatar", isImage: true },
+          { label: "Name", width: "large" },
+          { label: "Email", width: "large" },
+        ],
+        submitLabel: "Save changes",
+      },
+      {
+        kind: "section",
+        title: "Change password",
+        description: "Changing your password signs out your other devices.",
+        blocks: [
+          {
+            kind: "formCard",
+            layout: "stacked",
+            fields: [
+              { label: "Current password", width: "large" },
+              { label: "New password", width: "large" },
+              { label: "Confirm new password", width: "large" },
+            ],
+            submitLabel: "Update password",
+          },
+        ],
+      },
+    ],
+    sourceFiles: [
+      `${FEATURES_DIR}/profile/ProfilePage.tsx`,
+      `${FEATURES_DIR}/profile/ChangePasswordCard.tsx`,
+    ],
+  },
+
+  "/withdraw-policy": {
+    title: "Withdrawal policy",
+    blocks: [
+      { kind: "filterTabs", labels: ["Creator", "Business"] },
+      {
+        kind: "formCard",
+        layout: "grid",
+        fields: [
+          { label: "Min amount (Rs.)", width: "large" },
+          { label: "Max amount (Rs.)", width: "large" },
+          { label: "Window type", width: "large" },
+          { label: "Window value (days before month end / every N days)", width: "large" },
+          { label: "Attempts per window", width: "large" },
+          { label: "Cooldown after rejection (days)", width: "large" },
+          { label: "Processing note", width: "large" },
+        ],
+        submitLabel: "Save policy",
+      },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/withdraw-policy/WithdrawPolicyPage.tsx`],
+  },
+
+  "/trending": {
+    title: "Trending debug",
+    description:
+      "See what's trending right now, or look up any approved product to see exactly why it is, or isn't, trending.",
+    blocks: [
+      {
+        kind: "labeledSelect",
+        label: "Search for a specific product",
+        option: "Search by product name",
+      },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/trending/TrendingDebugPage.tsx`],
+  },
   "/team": {
     title: "Team",
     blocks: [

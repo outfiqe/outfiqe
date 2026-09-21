@@ -1,5 +1,7 @@
 export type FormFieldWidth = "small" | "medium" | "large";
 
+export type FormCardLayout = "inline" | "stacked" | "grid";
+
 export type SkeletonFormField = {
   label: string;
   width?: FormFieldWidth;
@@ -15,7 +17,12 @@ export type SkeletonBlock =
       actionLabel?: string;
       blocks: readonly SkeletonBlock[];
     }
-  | { kind: "formCard"; fields: readonly SkeletonFormField[]; submitLabel?: string }
+  | {
+      kind: "formCard";
+      fields: readonly SkeletonFormField[];
+      submitLabel?: string;
+      layout?: FormCardLayout;
+    }
   | {
       kind: "cardRows";
       count: number;
@@ -57,6 +64,7 @@ export type AdminPageSkeletonSpec = {
   description?: string;
   headerActionLabel?: string;
   spacing?: "tight" | "loose";
+  isNarrow?: boolean;
   blocks: readonly SkeletonBlock[];
   sourceFiles: readonly string[];
 };

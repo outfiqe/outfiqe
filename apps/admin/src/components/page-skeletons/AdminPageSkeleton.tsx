@@ -14,6 +14,7 @@ import {
 
 import type {
   AdminPageSkeletonSpec,
+  FormCardLayout,
   FormFieldWidth,
   SkeletonBlock,
 } from "./adminPageSkeleton.types";
@@ -34,6 +35,12 @@ const FIELD_WIDTH_CLASS: Record<FormFieldWidth, string> = {
   small: "w-32",
   medium: "w-48",
   large: "w-72 max-w-full",
+};
+
+const FORM_CARD_CLASS: Record<FormCardLayout, string> = {
+  inline: "flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4",
+  stacked: "space-y-5 rounded-xl border border-border bg-card p-5",
+  grid: "grid gap-3 rounded-xl border border-border bg-card p-5 sm:grid-cols-2",
 };
 
 const SPACING_CLASS = { tight: "space-y-6", loose: "space-y-10" } as const;
@@ -81,10 +88,7 @@ const BlockSkeleton = ({ block }: { block: SkeletonBlock }) => {
       );
     case "formCard":
       return (
-        <div
-          className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-          aria-hidden
-        >
+        <div className={FORM_CARD_CLASS[block.layout ?? "inline"]} aria-hidden>
           {block.fields.map(({ label, width = "medium", isImage = false }) => (
             <div key={label} className="space-y-1.5">
               <span className="block text-xs text-muted-foreground">{label}</span>
@@ -289,7 +293,11 @@ const BlockSkeleton = ({ block }: { block: SkeletonBlock }) => {
 };
 
 export const AdminPageSkeleton = ({ spec }: { spec: AdminPageSkeletonSpec }) => (
-  <div role="status" aria-label="Loading" className={SPACING_CLASS[spec.spacing ?? "tight"]}>
+  <div
+    role="status"
+    aria-label="Loading"
+    className={`${SPACING_CLASS[spec.spacing ?? "tight"]}${spec.isNarrow ? " max-w-lg" : ""}`}
+  >
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h1 className={HEADING_CLASS}>{spec.title}</h1>
