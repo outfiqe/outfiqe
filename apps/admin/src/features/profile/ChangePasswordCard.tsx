@@ -1,12 +1,30 @@
-import { Button, FormBanner, Input } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  toast,
+} from "@outfiqe/design-system";
 import { useMutation } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { authApi } from "@/features/auth/api";
 import { ApiClientError } from "@/lib/apiClient";
 
-const PASSWORD_MIN_LENGTH = 8;
+import {
+  changePasswordFormSchema,
+  type ChangePasswordFormValues,
+  EMPTY_CHANGE_PASSWORD_FORM,
+} from "./profileForms.schema";
+
 const FALLBACK_ERROR = "Something went wrong. Please try again.";
+const PASSWORD_UPDATED_MESSAGE = "Password updated. Other devices were signed out.";
 
 const errorMessageFor = (error: unknown): string => {
   if (error instanceof ApiClientError) return error.message;
@@ -14,106 +32,88 @@ const errorMessageFor = (error: unknown): string => {
 };
 
 export const ChangePasswordCard = () => {
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const form = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordFormSchema),
+    defaultValues: EMPTY_CHANGE_PASSWORD_FORM,
+    mode: "onTouched",
+  });
 
   const changePassword = useMutation({
     mutationFn: authApi.changePassword,
     onSuccess: () => {
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmNewPassword("");
-      setValidationError(null);
-      setSaved(true);
+      form.reset(EMPTY_CHANGE_PASSWORD_FORM);
+      toast.success(PASSWORD_UPDATED_MESSAGE);
     },
-    onError: () => setSaved(false),
   });
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    setSaved(false);
-
-    if (newPassword.length < PASSWORD_MIN_LENGTH) {
-      setValidationError(`New password must be at least ${PASSWORD_MIN_LENGTH} characters.`);
-      return;
-    }
-    if (newPassword !== confirmNewPassword) {
-      setValidationError("Passwords do not match.");
-      return;
-    }
-
-    setValidationError(null);
-    changePassword.mutate({ currentPassword, newPassword, confirmNewPassword });
-  };
-
-  const errorMessage =
-    validationError ?? (changePassword.isError ? errorMessageFor(changePassword.error) : null);
+  const submitPasswordChange = form.handleSubmit((values) => changePassword.mutate(values));
 
   return (
-    <form
-      onSubmit={submit}
-      className="mt-5 max-w-lg space-y-4 rounded-xl border border-border bg-card p-5"
-    >
-      <div>
-        <h2 className="font-display text-lg font-bold text-foreground">Change password</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Changing your password signs out your other devices.
-        </p>
-      </div>
+    <Form {...form}>
+      <form
+        onSubmit={submitPasswordChange}
+        noValidate
+        className="mt-5 max-w-lg space-y-4 rounded-xl border border-border bg-card p-5"
+      >
+        <div>
+          <h2 className="font-display text-lg font-bold text-foreground">Change password</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Changing your password signs out your other devices.
+          </p>
+        </div>
 
-      <div className="space-y-1.5">
-        <label htmlFor="current-password" className="text-xs text-muted-foreground">
-          Current password
-        </label>
-        <Input
-          id="current-password"
-          type="password"
-          autoComplete="current-password"
-          required
-          value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
+        <FormField
+          control={form.control}
+          name="currentPassword"
+          render={({ field }) => (
+            <FormItem className="space-y-1.5">
+              <FormLabel className="text-xs font-normal text-muted-foreground">
+                Current password
+              </FormLabel>
+              <FormControl>
+                <Input type="password" autoComplete="current-password" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-
-      <div className="space-y-1.5">
-        <label htmlFor="new-password" className="text-xs text-muted-foreground">
-          New password
-        </label>
-        <Input
-          id="new-password"
-          type="password"
-          autoComplete="new-password"
-          required
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
+        <FormField
+          control={form.control}
+          name="newPassword"
+          render={({ field }) => (
+            <FormItem className="space-y-1.5">
+              <FormLabel className="text-xs font-normal text-muted-foreground">
+                New password
+              </FormLabel>
+              <FormControl>
+                <Input type="password" autoComplete="new-password" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-
-      <div className="space-y-1.5">
-        <label htmlFor="confirm-new-password" className="text-xs text-muted-foreground">
-          Confirm new password
-        </label>
-        <Input
-          id="confirm-new-password"
-          type="password"
-          autoComplete="new-password"
-          required
-          value={confirmNewPassword}
-          onChange={(e) => setConfirmNewPassword(e.target.value)}
+        <FormField
+          control={form.control}
+          name="confirmNewPassword"
+          render={({ field }) => (
+            <FormItem className="space-y-1.5">
+              <FormLabel className="text-xs font-normal text-muted-foreground">
+                Confirm new password
+              </FormLabel>
+              <FormControl>
+                <Input type="password" autoComplete="new-password" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      {errorMessage && <FormBanner>{errorMessage}</FormBanner>}
-      {saved && (
-        <p className="text-sm text-primary">Password updated. Other devices were signed out.</p>
-      )}
+        {changePassword.isError && <FormBanner>{errorMessageFor(changePassword.error)}</FormBanner>}
 
-      <Button type="submit" isLoading={changePassword.isPending}>
-        Update password
-      </Button>
-    </form>
+        <Button type="submit" isLoading={changePassword.isPending}>
+          Update password
+        </Button>
+      </form>
+    </Form>
   );
 };

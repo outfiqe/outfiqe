@@ -42,3 +42,7 @@ token on `@/lib/apiClient`, `authApi.me()` loads the user → `useAuth()` state 
   out" implies. `logout()` therefore sets `reason: "user-signed-out"`, and `ProtectedRoute` omits
   the `redirect` for that case, letting the web app pick its default post-login destination
   (the admin app root, which routes on to `/platform` or `/crm`).
+
+## Form validation
+
+The admin and CRM invite registration pages use react-hook-form with `registerForm.schema.ts`: a Nepali mobile number (`NEPAL_PHONE_REGEX` from `@outfiqe/utils`), a password of 8 to 128 characters, and a matching confirmation; the CRM page also asks for a full name. Messages show under each field. Both pages go straight to the app on success, so there is no toast.

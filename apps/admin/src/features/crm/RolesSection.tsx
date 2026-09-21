@@ -1,12 +1,34 @@
-import { Badge, Button, Checkbox, FormBanner, Input, Modal, toast } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Modal,
+  toast,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
+import {
+  organizationNameFormSchema,
+  type OrganizationNameFormValues,
+  roleFormSchema,
+  type RoleFormValues,
+} from "./roleForm.schema";
 import type { Permission, Role } from "./schemas";
 
 const ROLES_QUERY_KEY = ["crm-roles"];
@@ -48,103 +70,108 @@ const RoleFormModal = ({
   viewerPermissionKeys,
   onClose,
 }: RoleFormModalProps) => {
-  const [name, setName] = useState(editingRole?.name ?? "");
+  const form = useForm<RoleFormValues>({
+    resolver: zodResolver(roleFormSchema),
+    defaultValues: {
+      name: editingRole?.name ?? "",
+      permissionKeys: editingRole?.permissionKeys ?? [],
+    },
+    mode: "onTouched",
+  });
   const rolesOwnOriginalPermissionKeys = useMemo(
     () => new Set(editingRole?.permissionKeys ?? []),
     [editingRole],
   );
-  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(
-    new Set(editingRole?.permissionKeys ?? []),
-  );
-
   const isPermissionBeyondViewersOwnGrant = (permissionKey: string) =>
     !viewerIsSuperAdmin &&
     !viewerPermissionKeys.includes(permissionKey) &&
     !rolesOwnOriginalPermissionKeys.has(permissionKey);
 
   const toggleKey = (key: string) => {
-    setSelectedKeys((current) => {
-      const next = new Set(current);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+    const current = form.getValues("permissionKeys");
+    const next = current.includes(key)
+      ? current.filter((existingKey) => existingKey !== key)
+      : [...current, key];
+    form.setValue("permissionKeys", next, { shouldValidate: true, shouldTouch: true });
   };
 
   const save = useApiMutation({
-    mutationFn: () => {
-      const body = { name: name.trim(), permissionKeys: [...selectedKeys] };
+    mutationFn: (values: RoleFormValues) => {
+      const body = { name: values.name.trim(), permissionKeys: values.permissionKeys };
       return editingRole ? crmApi.updateRole(editingRole.id, body) : crmApi.createRole(body);
     },
     invalidateKeys: [ROLES_QUERY_KEY],
-    onSuccess: () => {
-      toast.success(editingRole ? "Role updated." : "Role created.");
-      onClose();
-    },
+    successMessage: editingRole ? "Role updated." : "Role created.",
+    onSuccess: () => onClose(),
   });
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    save.mutate();
-  };
-
-  const canSubmit = name.trim().length >= 2 && selectedKeys.size > 0 && !save.isPending;
+  const submitRole = form.handleSubmit((values) => save.mutate(values));
+  const selectedKeys = form.watch("permissionKeys");
 
   return (
     <Modal open onClose={onClose} title={editingRole ? "Edit role" : "New role"}>
-      <form onSubmit={submit} className="space-y-4">
-        <div className="space-y-1.5">
-          <label htmlFor="role-name" className="text-xs text-muted-foreground">
-            Role name
-          </label>
-          <Input
-            id="role-name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            required
+      <Form {...form}>
+        <form onSubmit={submitRole} noValidate className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">
+                  Role name
+                </FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <fieldset className="space-y-4">
-          <legend className="text-xs text-muted-foreground">Permissions</legend>
-          {permissionGroups.map((permissionGroup) => (
-            <div key={permissionGroup.group} className="space-y-2">
-              <p className="text-sm font-semibold text-foreground">{permissionGroup.group}</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {permissionGroup.permissions.map((permission) => {
-                  const disabled = isPermissionBeyondViewersOwnGrant(permission.key);
-                  return (
-                    <label
-                      key={permission.key}
-                      className="flex cursor-pointer items-center gap-2 text-sm text-foreground aria-disabled:cursor-not-allowed aria-disabled:text-muted-foreground"
-                      aria-disabled={disabled}
-                      title={disabled ? "You don't have this permission yourself" : undefined}
-                    >
-                      <Checkbox
-                        checked={selectedKeys.has(permission.key)}
-                        disabled={disabled}
-                        onChange={() => toggleKey(permission.key)}
-                      />
-                      {permission.label}
-                    </label>
-                  );
-                })}
+          <fieldset className="space-y-4">
+            <legend className="text-xs text-muted-foreground">Permissions</legend>
+            {permissionGroups.map((permissionGroup) => (
+              <div key={permissionGroup.group} className="space-y-2">
+                <p className="text-sm font-semibold text-foreground">{permissionGroup.group}</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {permissionGroup.permissions.map((permission) => {
+                    const disabled = isPermissionBeyondViewersOwnGrant(permission.key);
+                    return (
+                      <label
+                        key={permission.key}
+                        className="flex cursor-pointer items-center gap-2 text-sm text-foreground aria-disabled:cursor-not-allowed aria-disabled:text-muted-foreground"
+                        aria-disabled={disabled}
+                        title={disabled ? "You don't have this permission yourself" : undefined}
+                      >
+                        <Checkbox
+                          checked={selectedKeys.includes(permission.key)}
+                          disabled={disabled}
+                          onChange={() => toggleKey(permission.key)}
+                        />
+                        {permission.label}
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
-        </fieldset>
+            ))}
+            <p className="text-sm text-destructive" role="alert">
+              {form.formState.errors.permissionKeys?.message}
+            </p>
+          </fieldset>
 
-        {save.isError && <FormBanner>{getErrorMessage(save.error)}</FormBanner>}
+          {save.isError && <FormBanner>{getErrorMessage(save.error)}</FormBanner>}
 
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={!canSubmit} isLoading={save.isPending}>
-            {editingRole ? "Save role" : "Create role"}
-          </Button>
-        </div>
-      </form>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={save.isPending}>
+              {editingRole ? "Save role" : "Create role"}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </Modal>
   );
 };
@@ -153,10 +180,8 @@ const DeleteRoleModal = ({ role, onClose }: { role: Role; onClose: () => void })
   const remove = useApiMutation({
     mutationFn: () => crmApi.deleteRole(role.id),
     invalidateKeys: [ROLES_QUERY_KEY],
-    onSuccess: () => {
-      toast.success("Role deleted.");
-      onClose();
-    },
+    successMessage: "Role deleted.",
+    onSuccess: () => onClose(),
   });
 
   return (
@@ -185,44 +210,55 @@ const DeleteRoleModal = ({ role, onClose }: { role: Role; onClose: () => void })
 };
 
 const OrganizationNameCard = ({ currentName }: { currentName: string }) => {
-  const [name, setName] = useState(currentName);
+  const form = useForm<OrganizationNameFormValues>({
+    resolver: zodResolver(organizationNameFormSchema),
+    defaultValues: { name: currentName },
+    mode: "onTouched",
+  });
 
   const rename = useApiMutation({
-    mutationFn: () => crmApi.updateOrganization({ name: name.trim() }),
+    mutationFn: (values: OrganizationNameFormValues) =>
+      crmApi.updateOrganization({ name: values.name.trim() }),
     invalidateKeys: [ORGANIZATION_QUERY_KEY],
-    onSuccess: () => toast.success("Organization name updated."),
+    successMessage: "Organization name updated.",
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    rename.mutate();
-  };
+  const submitName = form.handleSubmit((values) => rename.mutate(values));
+  const isUnchanged = form.watch("name").trim() === currentName;
 
   return (
-    <form
-      onSubmit={submit}
-      className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-    >
-      <div className="min-w-56 flex-1 space-y-1.5">
-        <label htmlFor="org-name" className="text-xs text-muted-foreground">
-          Organization name
-        </label>
-        <Input
-          id="org-name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          required
-        />
-      </div>
-      <Button
-        type="submit"
-        disabled={name.trim().length < 2 || name.trim() === currentName}
-        isLoading={rename.isPending}
+    <Form {...form}>
+      <form
+        onSubmit={submitName}
+        noValidate
+        className="flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
       >
-        Save
-      </Button>
-    </form>
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem className="min-w-56 flex-1 space-y-1.5">
+              <FormLabel className="text-xs font-normal text-muted-foreground">
+                Organization name
+              </FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button
+          type="submit"
+          disabled={isUnchanged}
+          isLoading={rename.isPending}
+          className="mt-[22px]"
+        >
+          Save
+        </Button>
+      </form>
+    </Form>
   );
 };
 

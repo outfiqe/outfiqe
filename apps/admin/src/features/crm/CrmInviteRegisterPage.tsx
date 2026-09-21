@@ -1,15 +1,32 @@
-import { Button, FormBanner, Input } from "@outfiqe/design-system";
-import { NEPAL_PHONE_REGEX } from "@outfiqe/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+} from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import { type FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { authApi } from "@/features/auth/api";
 import { useAuth } from "@/features/auth/AuthContext";
+import {
+  crmRegisterFormSchema,
+  type CrmRegisterFormValues,
+  EMPTY_CRM_REGISTER_FORM,
+} from "@/features/auth/registerForm.schema";
 import type { CrmInviteInfo } from "@/features/auth/schemas";
 import { setAccessToken } from "@/lib/apiClient";
 import { useHideBootLoader } from "@/lib/bootLoader";
+import { getErrorMessage } from "@/lib/errorMessages";
 
-const PASSWORD_MIN_LENGTH = 8;
 const routeApi = getRouteApi("/crm/invites/register");
 
 type InviteLoadState =
@@ -28,12 +45,21 @@ export const CrmInviteRegisterPage = () => {
       ? { status: "loading" }
       : { status: "invalid", message: "This invite link is missing a token." },
   );
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const form = useForm<CrmRegisterFormValues>({
+    resolver: zodResolver(crmRegisterFormSchema),
+    defaultValues: EMPTY_CRM_REGISTER_FORM,
+    mode: "onTouched",
+  });
+
+  const register = useApiMutation({
+    mutationFn: (values: CrmRegisterFormValues) =>
+      authApi.registerFromCrmInvite({ inviteToken: token, ...values, name: values.name.trim() }),
+    onSuccess: ({ accessToken, user }) => {
+      setAccessToken(accessToken);
+      setSession(user);
+      navigate({ to: "/crm", replace: true });
+    },
+  });
 
   useEffect(() => {
     if (!token) return;
@@ -49,44 +75,7 @@ export const CrmInviteRegisterPage = () => {
       );
   }, [token]);
 
-  const submitRegistration = async (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (name.trim().length < 2) {
-      setError("Enter your full name.");
-      return;
-    }
-    if (!NEPAL_PHONE_REGEX.test(phone)) {
-      setError("Enter a valid Nepali phone number starting with 98.");
-      return;
-    }
-    if (password.length < PASSWORD_MIN_LENGTH) {
-      setError(`Password must be at least ${PASSWORD_MIN_LENGTH} characters.`);
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const { accessToken, user } = await authApi.registerFromCrmInvite({
-        inviteToken: token,
-        name: name.trim(),
-        phone,
-        password,
-        confirmPassword,
-      });
-      setAccessToken(accessToken);
-      setSession(user);
-      navigate({ to: "/crm", replace: true });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-      setIsSubmitting(false);
-    }
-  };
+  const submitRegistration = form.handleSubmit((values) => register.mutate(values));
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-8 px-4 py-10">
@@ -113,69 +102,79 @@ export const CrmInviteRegisterPage = () => {
               {inviteState.invite.email} · {inviteState.invite.roleName}
             </p>
 
-            <form className="mt-5 space-y-4" onSubmit={submitRegistration}>
-              {error && <FormBanner>{error}</FormBanner>}
+            <Form {...form}>
+              <form className="mt-5 space-y-4" noValidate onSubmit={submitRegistration}>
+                {register.isError && <FormBanner>{getErrorMessage(register.error)}</FormBanner>}
 
-              <div className="space-y-1.5">
-                <label htmlFor="name" className="text-xs text-muted-foreground">
-                  Full name
-                </label>
-                <Input
-                  id="name"
-                  type="text"
-                  autoComplete="name"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-xs font-normal text-muted-foreground">
+                        Full name
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="text" autoComplete="name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="space-y-1.5">
-                <label htmlFor="phone" className="text-xs text-muted-foreground">
-                  Phone
-                </label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="98XXXXXXXX"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-xs font-normal text-muted-foreground">
+                        Phone
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="tel" placeholder="98XXXXXXXX" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="space-y-1.5">
-                <label htmlFor="password" className="text-xs text-muted-foreground">
-                  Password
-                </label>
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-xs font-normal text-muted-foreground">
+                        Password
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="password" autoComplete="new-password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="space-y-1.5">
-                <label htmlFor="confirmPassword" className="text-xs text-muted-foreground">
-                  Confirm password
-                </label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-xs font-normal text-muted-foreground">
+                        Confirm password
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="password" autoComplete="new-password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <Button type="submit" className="w-full" isLoading={isSubmitting}>
-                Create account & join
-              </Button>
-            </form>
+                <Button type="submit" className="w-full" isLoading={register.isPending}>
+                  Create account & join
+                </Button>
+              </form>
+            </Form>
           </>
         )}
       </div>

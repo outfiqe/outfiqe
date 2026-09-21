@@ -1,3 +1,4 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -31,7 +32,10 @@ const activeUser = {
 const renderPage = () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <Toaster />
+    </QueryClientProvider>
   );
   return render(<UsersPage />, { wrapper });
 };
@@ -88,6 +92,7 @@ describe("UsersPage", () => {
         screen.queryByRole("heading", { name: "Suspend Ava Martinez" }),
       ).not.toBeInTheDocument(),
     );
+    expect(await screen.findByText("Account suspended.")).toBeInTheDocument();
   });
 
   it("surfaces a server error inline when suspending fails", async () => {

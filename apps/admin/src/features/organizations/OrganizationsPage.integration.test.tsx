@@ -1,3 +1,4 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -12,7 +13,12 @@ const API_BASE = "http://localhost:3000/api";
 
 const wrapper = ({ children }: { children: ReactNode }) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <Toaster />
+    </QueryClientProvider>
+  );
 };
 
 const renderOrganizationsPage = () => render(<OrganizationsPage />, { wrapper });
@@ -226,6 +232,7 @@ describe("OrganizationsPage", () => {
       }),
     );
     await waitFor(() => expect(screen.getByLabelText("Business")).toHaveValue(""));
+    expect(await screen.findByText("Organization created.")).toBeInTheDocument();
   });
 
   it("snaps the business field back to the picked name when an uncommitted edit is abandoned", async () => {
@@ -318,5 +325,52 @@ describe("OrganizationsPage", () => {
 
     expect(await screen.findByText(/already linked to the organization/)).toBeInTheDocument();
     expect(screen.getByText(/Acme CRM/)).toBeInTheDocument();
+  });
+
+  it("shows inline messages, not a browser popup, and sends nothing for an empty form", async () => {
+    let createRequested = false;
+    mswServer.use(
+      http.get(`${API_BASE}/crm/organizations`, () =>
+        HttpResponse.json({ success: true, data: { organizations: [], nextCursor: null } }),
+      ),
+      http.post(`${API_BASE}/crm/organizations`, () => {
+        createRequested = true;
+        return HttpResponse.json({ success: true, data: {} }, { status: 201 });
+      }),
+    );
+
+    renderOrganizationsPage();
+    await screen.findByText("No organizations yet.");
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Create organization" }));
+
+    expect(await screen.findByText("Choose a business.")).toBeInTheDocument();
+    expect(screen.getByText("Enter a subdomain.")).toBeInTheDocument();
+    expect(createRequested).toBe(false);
+  });
+
+  it("explains a subdomain with capital letters or a reserved name", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/crm/organizations`, () =>
+        HttpResponse.json({ success: true, data: { organizations: [], nextCursor: null } }),
+      ),
+    );
+    mockBrandSearch();
+    mockSuggestion();
+
+    renderOrganizationsPage();
+    await screen.findByText("No organizations yet.");
+
+    const user = userEvent.setup();
+    await selectAcme(user);
+    const subdomainField = screen.getByLabelText("Subdomain");
+    await user.clear(subdomainField);
+    await user.type(subdomainField, "www");
+    await user.click(screen.getByRole("button", { name: "Create organization" }));
+
+    expect(
+      await screen.findByText("This subdomain is reserved and can't be used."),
+    ).toBeInTheDocument();
   });
 });

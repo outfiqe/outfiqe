@@ -1,7 +1,21 @@
-import { Badge, Button, FormBanner, Input, toast } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Badge,
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  toast,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
@@ -10,6 +24,11 @@ import { getErrorMessage } from "@/lib/errorMessages";
 
 import { sizeOptionsApi } from "./api";
 import type { SizeOption } from "./schemas";
+import {
+  EMPTY_SIZE_OPTION_FORM,
+  sizeOptionFormSchema,
+  type SizeOptionFormValues,
+} from "./sizeOptionForm.schema";
 
 const SizeOptionRowSkeleton = () => (
   <div
@@ -33,8 +52,11 @@ export const SizeOptionsPage = () => {
 
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const type = selectedType ?? productTypes?.[0]?.slug ?? null;
-  const [label, setLabel] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const form = useForm<SizeOptionFormValues>({
+    resolver: zodResolver(sizeOptionFormSchema),
+    defaultValues: EMPTY_SIZE_OPTION_FORM,
+    mode: "onTouched",
+  });
   const [deleteTarget, setDeleteTarget] = useState<SizeOption | null>(null);
 
   const labelForType = (slug: string) =>
@@ -43,27 +65,28 @@ export const SizeOptionsPage = () => {
   const sizesForType = (sizeOptions ?? []).filter((sizeOption) => sizeOption.type === type);
 
   const create = useApiMutation({
-    mutationFn: () =>
-      sizeOptionsApi.create({ type: type ?? "", label, sortOrder: sizesForType.length }),
+    mutationFn: (values: SizeOptionFormValues) =>
+      sizeOptionsApi.create({
+        type: type ?? "",
+        label: values.label,
+        sortOrder: sizesForType.length,
+      }),
     invalidateKeys: [["admin-size-options"]],
-    onSuccess: () => {
-      setLabel("");
-      setError(null);
-    },
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
+    successMessage: "Size added.",
+    onSuccess: () => form.reset(EMPTY_SIZE_OPTION_FORM),
   });
 
   const remove = useApiMutation({
     mutationFn: (sizeOption: SizeOption) => sizeOptionsApi.remove(sizeOption.id),
     invalidateKeys: [["admin-size-options"]],
+    successMessage: "Size deleted.",
     onSuccess: () => setDeleteTarget(null),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (type) create.mutate();
-  };
+  const submitSizeOption = form.handleSubmit((values) => {
+    if (type) create.mutate(values);
+  });
 
   return (
     <div>
@@ -91,30 +114,37 @@ export const SizeOptionsPage = () => {
 
       {type && (
         <>
-          <form
-            onSubmit={handleSubmit}
-            className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-          >
-            <div className="space-y-1.5">
-              <label htmlFor="size-label" className="text-xs text-muted-foreground">
-                Size label
-              </label>
-              <Input
-                id="size-label"
-                required
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-                placeholder="M"
-                className="w-32"
+          <Form {...form}>
+            <form
+              onSubmit={submitSizeOption}
+              noValidate
+              className="mt-5 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+            >
+              <FormField
+                control={form.control}
+                name="label"
+                render={({ field }) => (
+                  <FormItem className="w-32 space-y-1.5">
+                    <FormLabel className="text-xs font-normal text-muted-foreground">
+                      Size label
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder="M" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <Button type="submit" disabled={!label.trim()} isLoading={create.isPending}>
-              Add to {labelForType(type)}
-            </Button>
-          </form>
+              <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+                Add to {labelForType(type)}
+              </Button>
+            </form>
+          </Form>
 
-          {error && <FormBanner className="mt-3">{error}</FormBanner>}
+          {create.isError && (
+            <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>
+          )}
 
           <div className="mt-6 space-y-3">
             {isLoading &&

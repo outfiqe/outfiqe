@@ -51,6 +51,7 @@ export const TagReportsPage = () => {
   const reports = data?.pages.flatMap((page) => page.items) ?? [];
 
   const resolve = useApiMutation({
+    successMessage: "Report resolved.",
     mutationFn: ({ id, input }: { id: string; input: ResolveTagReportInput }) =>
       tagReportsApi.resolve(id, input),
     invalidateKeys: [["tag-reports"]],

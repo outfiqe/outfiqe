@@ -1,15 +1,30 @@
-import { Badge, Button, FormBanner, Input, Select } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Badge,
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Select,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { useAuth } from "@/features/auth/AuthContext";
 import { platformRolesApi } from "@/features/platform-roles/api";
 import { PlatformRolesSection } from "@/features/platform-roles/PlatformRolesSection";
 import { PlatformTeamSection } from "@/features/platform-roles/PlatformTeamSection";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { teamApi } from "./api";
+import { EMPTY_INVITE_FORM, inviteFormSchema, type InviteFormValues } from "./inviteForm.schema";
 import type { AdminInviteSummary } from "./schemas";
 
 const STATUS_TONE: Record<AdminInviteSummary["status"], "neutral" | "positive" | "negative"> = {
@@ -34,31 +49,21 @@ export const TeamPage = () => {
     enabled: isCoFounder,
   });
 
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [roleId, setRoleId] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  const invite = useApiMutation({
-    mutationFn: () => teamApi.invite(email, name, roleId),
-    invalidateKeys: [["admin-invites"]],
-    onSuccess: () => {
-      setEmail("");
-      setName("");
-      setRoleId("");
-      setError(null);
-    },
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
+  const form = useForm<InviteFormValues>({
+    resolver: zodResolver(inviteFormSchema),
+    defaultValues: EMPTY_INVITE_FORM,
+    mode: "onTouched",
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!roleId) {
-      setError("Choose a platform role for this invite.");
-      return;
-    }
-    invite.mutate();
-  };
+  const invite = useApiMutation({
+    mutationFn: (values: InviteFormValues) =>
+      teamApi.invite(values.email, values.name, values.roleId),
+    invalidateKeys: [["admin-invites"]],
+    successMessage: (_result, values) => `Invite sent to ${values.email}.`,
+    onSuccess: () => form.reset(EMPTY_INVITE_FORM),
+  });
+
+  const submitInvite = form.handleSubmit((values) => invite.mutate(values));
 
   return (
     <div className="space-y-8">
@@ -66,60 +71,69 @@ export const TeamPage = () => {
         <h1 className="font-display text-2xl font-bold text-foreground">Team</h1>
 
         {isCoFounder ? (
-          <form
-            onSubmit={handleSubmit}
-            className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-          >
-            <div className="space-y-1.5">
-              <label htmlFor="invite-name" className="text-xs text-muted-foreground">
-                Name
-              </label>
-              <Input
-                id="invite-name"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-48"
+          <Form {...form}>
+            <form
+              onSubmit={submitInvite}
+              noValidate
+              className="mt-5 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+            >
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem className="w-48 space-y-1.5">
+                    <FormLabel className="text-xs font-normal text-muted-foreground">
+                      Name
+                    </FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="invite-email" className="text-xs text-muted-foreground">
-                Email
-              </label>
-              <Input
-                id="invite-email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-64"
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="w-64 space-y-1.5">
+                    <FormLabel className="text-xs font-normal text-muted-foreground">
+                      Email
+                    </FormLabel>
+                    <FormControl>
+                      <Input type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="invite-role" className="text-xs text-muted-foreground">
-                Role
-              </label>
-              <Select
-                id="invite-role"
-                required
-                value={roleId}
-                onChange={(e) => setRoleId(e.target.value)}
-                className="w-40"
-              >
-                <option value="" disabled>
-                  Select a role
-                </option>
-                {roles?.map((role) => (
-                  <option key={role.id} value={role.id}>
-                    {role.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <Button type="submit" isLoading={invite.isPending}>
-              Invite admin
-            </Button>
-          </form>
+              <FormField
+                control={form.control}
+                name="roleId"
+                render={({ field }) => (
+                  <FormItem className="w-40 space-y-1.5">
+                    <FormLabel className="text-xs font-normal text-muted-foreground">
+                      Role
+                    </FormLabel>
+                    <FormControl>
+                      <Select {...field}>
+                        <option value="">Select a role</option>
+                        {roles?.map((role) => (
+                          <option key={role.id} value={role.id}>
+                            {role.name}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" isLoading={invite.isPending} className="mt-[22px]">
+                Invite admin
+              </Button>
+            </form>
+          </Form>
         ) : (
           !isLoading && (
             <p className="mt-5 text-sm text-muted-foreground">
@@ -127,8 +141,9 @@ export const TeamPage = () => {
             </p>
           )
         )}
-
-        {error && <FormBanner className="mt-3">{error}</FormBanner>}
+        {invite.isError && (
+          <FormBanner className="mt-3">{getErrorMessage(invite.error)}</FormBanner>
+        )}
 
         <div className="mt-6 space-y-3">
           {isLoading &&

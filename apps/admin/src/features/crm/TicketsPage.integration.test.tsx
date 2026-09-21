@@ -1,3 +1,4 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
@@ -10,7 +11,7 @@ import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { TicketsPage } from "./TicketsPage";
 
@@ -101,6 +102,7 @@ const renderTicketsPage = (initialEntry = "/crm/support") => {
   render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
+      <Toaster />
     </QueryClientProvider>,
   );
   return router;
@@ -237,6 +239,7 @@ describe("TicketsPage", () => {
         subjectId: "c-1",
       }),
     );
+    expect(await screen.findByText("Ticket created.")).toBeInTheDocument();
   });
 
   it("hides write controls for a viewer with only tickets:read", async () => {
@@ -293,5 +296,27 @@ describe("TicketsPage", () => {
 
     await screen.findByRole("button", { name: /Damaged package/ });
     await waitFor(() => expect(lastStatusParam).toBe("CLOSED"));
+  });
+
+  it("names each missing field inline, not in a browser popup, when a ticket is submitted empty", async () => {
+    mockCommon();
+    const createRequested = vi.fn();
+    mswServer.use(
+      http.post(`${API_BASE}/crm/tickets`, () => {
+        createRequested();
+        return HttpResponse.json({ success: true, data: TICKET }, { status: 201 });
+      }),
+    );
+
+    renderTicketsPage();
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("button", { name: "New ticket" }));
+    await user.click(await screen.findByRole("button", { name: "Create ticket" }));
+
+    expect(await screen.findByText("Enter a title for the ticket.")).toBeInTheDocument();
+    expect(screen.getByText("Describe the problem or request.")).toBeInTheDocument();
+    expect(screen.getByText("Choose the customer this ticket is about.")).toBeInTheDocument();
+    expect(createRequested).not.toHaveBeenCalled();
   });
 });

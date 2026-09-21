@@ -23,18 +23,45 @@ describe("TextPromptModal", () => {
     expect(onConfirm).toHaveBeenCalledWith("Out of stock");
   });
 
-  it("disables confirm when required and empty", () => {
+  it("shows an inline message and sends nothing when required and empty", async () => {
+    const onConfirm = vi.fn();
     render(
       <TextPromptModal
         open
         title="Reject request"
         label="Reason"
-        onConfirm={vi.fn()}
+        requiredMessage="Enter a reason."
+        onConfirm={onConfirm}
         onCancel={vi.fn()}
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Enter a reason.");
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("shows the message from a custom validator and clears it when typing", async () => {
+    const onConfirm = vi.fn();
+    render(
+      <TextPromptModal
+        open
+        title="Edit budget"
+        label="Total budget"
+        validate={(trimmedValue) => (trimmedValue === "0" ? "Use at least 1." : null)}
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    await userEvent.type(screen.getByLabelText("Total budget"), "0");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Use at least 1.");
+    expect(onConfirm).not.toHaveBeenCalled();
+
+    await userEvent.type(screen.getByLabelText("Total budget"), "5");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("allows an empty submission when not required", async () => {

@@ -1,5 +1,8 @@
 import { Checkbox, Input, Select } from "@outfiqe/design-system";
 
+import { FieldErrorMessage } from "@/components/FieldErrorMessage";
+import type { FieldErrorMap } from "@/lib/zodFieldErrors";
+
 import {
   CATEGORY_OPTIONS,
   DEFAULT_BADGE_ICON,
@@ -15,10 +18,12 @@ export const BadgeDetailsFields = ({
   idPrefix,
   form,
   onChange,
+  errors = {},
 }: {
   idPrefix: string;
   form: BadgeFormState;
   onChange: (form: BadgeFormState) => void;
+  errors?: FieldErrorMap;
 }) => {
   return (
     <div className="space-y-4">
@@ -26,17 +31,18 @@ export const BadgeDetailsFields = ({
         <div className="rounded-xl border border-border p-4">
           <p className="mb-3 text-sm font-medium text-foreground">Identity</p>
           <div className="space-y-3">
-            <div className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-wrap items-start gap-3">
               <div className="min-w-32 flex-1 space-y-1.5">
                 <label htmlFor={`${idPrefix}-name`} className="block text-xs text-muted-foreground">
                   Name
                 </label>
                 <Input
                   id={`${idPrefix}-name`}
-                  required
+                  aria-invalid={"name" in errors}
                   value={form.name}
                   onChange={(e) => onChange({ ...form, name: e.target.value })}
                 />
+                <FieldErrorMessage message={errors.name} />
               </div>
               <div className="space-y-1.5">
                 <label htmlFor={`${idPrefix}-icon`} className="block text-xs text-muted-foreground">
@@ -44,11 +50,13 @@ export const BadgeDetailsFields = ({
                 </label>
                 <Input
                   id={`${idPrefix}-icon`}
+                  aria-invalid={"icon" in errors}
                   value={form.icon}
                   onChange={(e) => onChange({ ...form, icon: e.target.value })}
                   placeholder={DEFAULT_BADGE_ICON}
-                  className="w-20"
+                  className="w-24"
                 />
+                <FieldErrorMessage message={errors.icon} />
               </div>
             </div>
             <div className="space-y-1.5">
@@ -60,10 +68,11 @@ export const BadgeDetailsFields = ({
               </label>
               <Input
                 id={`${idPrefix}-description`}
-                required
+                aria-invalid={"description" in errors}
                 value={form.description}
                 onChange={(e) => onChange({ ...form, description: e.target.value })}
               />
+              <FieldErrorMessage message={errors.description} />
             </div>
             <p className="text-xs text-muted-foreground">
               The emoji is the badge&apos;s text fallback (defaults to {DEFAULT_BADGE_ICON}) — its
@@ -74,7 +83,7 @@ export const BadgeDetailsFields = ({
 
         <div className="rounded-xl border border-border p-4">
           <p className="mb-3 text-sm font-medium text-foreground">Classification</p>
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-wrap items-start gap-3">
             <div className="space-y-1.5">
               <label
                 htmlFor={`${idPrefix}-category`}
@@ -123,12 +132,13 @@ export const BadgeDetailsFields = ({
               </label>
               <Input
                 id={`${idPrefix}-xp-reward`}
-                type="number"
-                min={0}
+                inputMode="numeric"
+                aria-invalid={"xpReward" in errors}
                 value={form.xpReward}
                 onChange={(e) => onChange({ ...form, xpReward: e.target.value })}
-                className="w-24"
+                className="w-28"
               />
+              <FieldErrorMessage message={errors.xpReward} />
             </div>
           </div>
         </div>
@@ -216,13 +226,14 @@ export const BadgeDetailsFields = ({
             </label>
             <Input
               id={`${idPrefix}-assignment-limit`}
-              type="number"
-              min={1}
+              inputMode="numeric"
+              aria-invalid={"assignmentLimit" in errors}
               placeholder="Unlimited"
               value={form.assignmentLimit}
               onChange={(e) => onChange({ ...form, assignmentLimit: e.target.value })}
               className="w-32"
             />
+            <FieldErrorMessage message={errors.assignmentLimit} />
           </div>
         ) : (
           <div className="mt-3 space-y-3">
@@ -255,6 +266,7 @@ export const BadgeDetailsFields = ({
               idPrefix={`${idPrefix}-condition`}
               conditions={form.conditions}
               onChange={(conditions) => onChange({ ...form, conditions })}
+              errors={errors}
             />
             <div className="flex flex-wrap gap-3">
               <div className="space-y-1.5">
@@ -282,10 +294,12 @@ export const BadgeDetailsFields = ({
                 <Input
                   id={`${idPrefix}-active-until`}
                   type="datetime-local"
+                  aria-invalid={"activeUntil" in errors}
                   value={form.activeUntil}
                   onChange={(e) => onChange({ ...form, activeUntil: e.target.value })}
                   className="w-full sm:w-56"
                 />
+                <FieldErrorMessage message={errors.activeUntil} />
               </div>
             </div>
           </div>

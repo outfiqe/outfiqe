@@ -11,7 +11,7 @@ import { mswServer } from "@test/integration/msw/server";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ProductTypesPage } from "./ProductTypesPage";
 
@@ -159,6 +159,80 @@ describe("ProductTypesPage", () => {
 
     await waitFor(() => expect(createBody).toEqual({ label: "Party Wear", slug: "party-wear" }));
     await waitFor(() => expect(nameField).toHaveValue(""));
+  });
+
+  it("shows inline messages, not a browser popup, when the form is submitted empty", async () => {
+    const createRequested = vi.fn();
+    mswServer.use(
+      http.get(`${API_BASE}/product-types/admin`, () => okJson([])),
+      http.post(`${API_BASE}/product-types`, () => {
+        createRequested();
+        return okJson(productType("id-new", "New", 0));
+      }),
+    );
+
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Create type" }));
+
+    expect(await screen.findByText("Enter a name for the garment type.")).toBeInTheDocument();
+    expect(screen.getByText("Enter a slug for the garment type.")).toBeInTheDocument();
+    expect(createRequested).not.toHaveBeenCalled();
+  });
+
+  it("explains a slug that is too short and does not send it", async () => {
+    const createRequested = vi.fn();
+    mswServer.use(
+      http.get(`${API_BASE}/product-types/admin`, () => okJson([])),
+      http.post(`${API_BASE}/product-types`, () => {
+        createRequested();
+        return okJson(productType("id-new", "New", 0));
+      }),
+    );
+
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.type(await screen.findByLabelText("Name"), "Shoes");
+    const slugField = screen.getByLabelText("Slug");
+    await user.clear(slugField);
+    await user.type(slugField, "x");
+    await user.click(screen.getByRole("button", { name: "Create type" }));
+
+    expect(await screen.findByText("Use at least 2 characters.")).toBeInTheDocument();
+    expect(createRequested).not.toHaveBeenCalled();
+  });
+
+  it("shows a success toast when a garment type is created", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/product-types/admin`, () => okJson([])),
+      http.post(`${API_BASE}/product-types`, () => okJson(productType("id-new", "Hats", 0))),
+    );
+
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.type(await screen.findByLabelText("Name"), "Hats");
+    await user.click(screen.getByRole("button", { name: "Create type" }));
+
+    expect(await screen.findByText("Garment type created.")).toBeInTheDocument();
+  });
+
+  it("shows a success toast when a garment type is switched off", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/product-types/admin`, () => okJson([productType("id-a", "Alpha", 0)])),
+      http.patch(`${API_BASE}/product-types/id-a`, () =>
+        okJson(productType("id-a", "Alpha", 0, false)),
+      ),
+    );
+
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Switch off" }));
+
+    expect(await screen.findByText("Garment type switched off.")).toBeInTheDocument();
   });
 
   it("keeps a hand-edited slug when the name changes afterwards", async () => {

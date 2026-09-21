@@ -1,14 +1,36 @@
-import { Button, FormBanner, Input, Select, toast } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Select,
+  toast,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { TextPromptModal } from "@/components/TextPromptModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { gamificationApi } from "./api";
-import { type SelectedUser, UserSearchField } from "./UserSearchField";
+import {
+  adjustXpFormSchema,
+  type AdjustXpFormValues,
+  awardBadgeFormSchema,
+  type AwardBadgeFormValues,
+  EMPTY_ADJUST_XP_FORM,
+  EMPTY_AWARD_BADGE_FORM,
+} from "./manualActionForm.schema";
+import { UserSearchField } from "./UserSearchField";
 
 const BADGES_QUERY_KEY = ["admin-badges"];
 const MANUAL_AWARDS_QUERY_KEY = ["admin-manual-awards"];
@@ -20,152 +42,192 @@ const AwardBadgeForm = () => {
   });
   const activeBadges = badges?.filter((badge) => badge.isActive) ?? [];
 
-  const [badgeId, setBadgeId] = useState("");
-  const [recipient, setRecipient] = useState<SelectedUser | null>(null);
-  const [reason, setReason] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [declinedReason, setDeclinedReason] = useState<string | null>(null);
+  const form = useForm<AwardBadgeFormValues>({
+    resolver: zodResolver(awardBadgeFormSchema),
+    defaultValues: EMPTY_AWARD_BADGE_FORM,
+    mode: "onTouched",
+  });
 
   const award = useApiMutation({
-    mutationFn: (recipientId: string) => gamificationApi.awardBadge(badgeId, recipientId, reason),
+    mutationFn: ({ badgeId, recipient, reason }: AwardBadgeFormValues) =>
+      gamificationApi.awardBadge(badgeId, recipient?.id ?? "", reason),
     invalidateKeys: (result) =>
       result.awarded ? [MANUAL_AWARDS_QUERY_KEY, ["admin-badge-stats"]] : [],
     onSuccess: (result) => {
       if (!result.awarded) {
-        setError(result.reason);
+        setDeclinedReason(result.reason);
         return;
       }
-      setRecipient(null);
-      setReason("");
-      setError(null);
+      setDeclinedReason(null);
+      form.reset(EMPTY_AWARD_BADGE_FORM);
+      toast.success("Badge awarded.");
     },
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (recipient) award.mutate(recipient.id);
-  };
+  const submitAward = form.handleSubmit((values) => {
+    setDeclinedReason(null);
+    award.mutate(values);
+  });
+  const bannerMessage = declinedReason ?? (award.isError ? getErrorMessage(award.error) : null);
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-    >
-      <div className="w-full space-y-1.5 sm:w-56">
-        <label htmlFor="award-badge-select" className="block text-xs text-muted-foreground">
-          Badge
-        </label>
-        <Select
-          id="award-badge-select"
-          required
-          value={badgeId}
-          onChange={(e) => setBadgeId(e.target.value)}
-          className="w-full"
-        >
-          <option value="" disabled>
-            Select a badge…
-          </option>
-          {activeBadges.map((badge) => (
-            <option key={badge.id} value={badge.id}>
-              {badge.icon} {badge.name}
-            </option>
-          ))}
-        </Select>
-      </div>
-      <div className="w-full sm:w-72">
-        <UserSearchField id="award-user" label="User" value={recipient} onChange={setRecipient} />
-      </div>
-      <div className="min-w-0 flex-1 space-y-1.5">
-        <label htmlFor="award-reason" className="block text-xs text-muted-foreground">
-          Reason
-        </label>
-        <Input
-          id="award-reason"
-          required
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
+    <Form {...form}>
+      <form
+        onSubmit={submitAward}
+        noValidate
+        className="flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+      >
+        <FormField
+          control={form.control}
+          name="badgeId"
+          render={({ field }) => (
+            <FormItem className="w-full space-y-1.5 sm:w-56">
+              <FormLabel className="text-xs font-normal text-muted-foreground">Badge</FormLabel>
+              <FormControl>
+                <Select {...field} className="w-full">
+                  <option value="">Select a badge…</option>
+                  {activeBadges.map((badge) => (
+                    <option key={badge.id} value={badge.id}>
+                      {badge.icon} {badge.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      <Button type="submit" disabled={!recipient || !badgeId} isLoading={award.isPending}>
-        Award badge
-      </Button>
-      {error && <FormBanner className="w-full">{error}</FormBanner>}
-    </form>
+        <FormField
+          control={form.control}
+          name="recipient"
+          render={({ field }) => (
+            <FormItem className="w-full sm:w-72">
+              <UserSearchField
+                id="award-user"
+                label="User"
+                value={field.value}
+                onChange={field.onChange}
+              />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="reason"
+          render={({ field }) => (
+            <FormItem className="min-w-0 flex-1 space-y-1.5">
+              <FormLabel className="text-xs font-normal text-muted-foreground">Reason</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" isLoading={award.isPending} className="mt-[22px]">
+          Award badge
+        </Button>
+        {bannerMessage && <FormBanner className="w-full">{bannerMessage}</FormBanner>}
+      </form>
+    </Form>
   );
 };
 
 const AdjustXpForm = () => {
-  const [target, setTarget] = useState<SelectedUser | null>(null);
-  const [amount, setAmount] = useState("");
-  const [reason, setReason] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<string | null>(null);
+  const [declinedReason, setDeclinedReason] = useState<string | null>(null);
+  const [adjustmentSummary, setAdjustmentSummary] = useState<string | null>(null);
+  const form = useForm<AdjustXpFormValues>({
+    resolver: zodResolver(adjustXpFormSchema),
+    defaultValues: EMPTY_ADJUST_XP_FORM,
+    mode: "onTouched",
+  });
 
-  const adjust = useMutation({
-    mutationFn: (targetId: string) => gamificationApi.adjustXp(targetId, Number(amount), reason),
+  const adjust = useApiMutation({
+    mutationFn: ({ target, amount, reason }: AdjustXpFormValues) =>
+      gamificationApi.adjustXp(target?.id ?? "", Number(amount), reason),
     onSuccess: (outcome) => {
       if (!outcome.awarded) {
-        setError(outcome.reason);
-        setResult(null);
+        setDeclinedReason(outcome.reason);
+        setAdjustmentSummary(null);
         return;
       }
-      setError(null);
-      setResult(
+      setDeclinedReason(null);
+      setAdjustmentSummary(
         `New total: ${outcome.totalXp} XP${outcome.leveledUp ? ` — leveled up to Level ${outcome.currentLevel.level} (${outcome.currentLevel.name})!` : ""}`,
       );
-      setTarget(null);
-      setAmount("");
-      setReason("");
-    },
-    onError: (err) => {
-      setResult(null);
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      form.reset(EMPTY_ADJUST_XP_FORM);
+      toast.success("XP adjusted.");
     },
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (target) adjust.mutate(target.id);
-  };
+  const submitAdjustment = form.handleSubmit((values) => {
+    setDeclinedReason(null);
+    setAdjustmentSummary(null);
+    adjust.mutate(values);
+  });
+  const bannerMessage = declinedReason ?? (adjust.isError ? getErrorMessage(adjust.error) : null);
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-    >
-      <div className="w-full sm:w-72">
-        <UserSearchField id="adjust-xp-user" label="User" value={target} onChange={setTarget} />
-      </div>
-      <div className="w-full space-y-1.5 sm:w-32">
-        <label htmlFor="adjust-xp-amount" className="block text-xs text-muted-foreground">
-          Amount (negative to dock XP)
-        </label>
-        <Input
-          id="adjust-xp-amount"
-          type="number"
-          required
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="w-full"
+    <Form {...form}>
+      <form
+        onSubmit={submitAdjustment}
+        noValidate
+        className="flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+      >
+        <FormField
+          control={form.control}
+          name="target"
+          render={({ field }) => (
+            <FormItem className="w-full sm:w-72">
+              <UserSearchField
+                id="adjust-xp-user"
+                label="User"
+                value={field.value}
+                onChange={field.onChange}
+              />
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      <div className="min-w-0 flex-1 space-y-1.5">
-        <label htmlFor="adjust-xp-reason" className="block text-xs text-muted-foreground">
-          Reason
-        </label>
-        <Input
-          id="adjust-xp-reason"
-          required
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem className="w-full space-y-1.5 sm:w-32">
+              <FormLabel className="text-xs font-normal text-muted-foreground">
+                Amount (negative to dock XP)
+              </FormLabel>
+              <FormControl>
+                <Input inputMode="numeric" className="w-full" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      <Button type="submit" disabled={!target} isLoading={adjust.isPending}>
-        Adjust XP
-      </Button>
-      {error && <FormBanner className="w-full">{error}</FormBanner>}
-      {result && <p className="w-full text-sm text-muted-foreground">{result}</p>}
-    </form>
+        <FormField
+          control={form.control}
+          name="reason"
+          render={({ field }) => (
+            <FormItem className="min-w-0 flex-1 space-y-1.5">
+              <FormLabel className="text-xs font-normal text-muted-foreground">Reason</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" isLoading={adjust.isPending} className="mt-[22px]">
+          Adjust XP
+        </Button>
+        {bannerMessage && <FormBanner className="w-full">{bannerMessage}</FormBanner>}
+        {adjustmentSummary && (
+          <p className="w-full text-sm text-muted-foreground">{adjustmentSummary}</p>
+        )}
+      </form>
+    </Form>
   );
 };
 
@@ -183,6 +245,7 @@ const ManualAwardsList = () => {
     mutationFn: ({ userBadgeId, reason }: { userBadgeId: string; reason: string }) =>
       gamificationApi.removeUserBadge(userBadgeId, reason),
     invalidateKeys: [MANUAL_AWARDS_QUERY_KEY, ["admin-badge-stats"]],
+    successMessage: "Manual award removed.",
     onSuccess: () => setRemoveTarget(null),
     onError: (error) => toast.error(getErrorMessage(error)),
   });
@@ -228,6 +291,7 @@ const ManualAwardsList = () => {
         open={removeTarget !== null}
         title="Remove manual award"
         label={removeTarget ? `Reason for removing "${removeTarget.label}"` : ""}
+        requiredMessage="Enter a reason for removing this award."
         confirmLabel="Remove"
         pendingLabel="Removing…"
         isPending={remove.isPending}

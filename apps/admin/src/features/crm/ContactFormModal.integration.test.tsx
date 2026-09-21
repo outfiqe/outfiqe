@@ -1,3 +1,4 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -15,6 +16,7 @@ const renderModal = (contact: Parameters<typeof ContactFormModal>[0]["contact"] 
   render(
     <QueryClientProvider client={queryClient}>
       <ContactFormModal open onClose={onClose} contact={contact} />
+      <Toaster />
     </QueryClientProvider>,
   );
   return { onClose };
@@ -62,6 +64,7 @@ describe("ContactFormModal", () => {
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(postedBody).toMatchObject({ name: "Rojina Magar", lifecycleStage: "LEAD" });
+    expect(await screen.findByText("Contact created.")).toBeInTheDocument();
   });
 
   it("surfaces the backend error and stays open", async () => {
@@ -82,5 +85,48 @@ describe("ContactFormModal", () => {
 
     expect(await screen.findByText(/that email is already used/i)).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("shows inline messages, not a browser popup, when the name is missing", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/crm/members`, () => HttpResponse.json({ success: true, data: [] })),
+    );
+    const postRequested = vi.fn();
+    mswServer.use(
+      http.post(`${API_BASE}/crm/contacts`, () => {
+        postRequested();
+        return HttpResponse.json({ success: true, data: {} });
+      }),
+    );
+
+    const { onClose } = renderModal();
+
+    await userEvent.click(screen.getByRole("button", { name: "Create contact" }));
+
+    expect(await screen.findByText("Enter the contact's name.")).toBeInTheDocument();
+    expect(postRequested).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("explains an email that is not an address and does not send it", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/crm/members`, () => HttpResponse.json({ success: true, data: [] })),
+    );
+    const postRequested = vi.fn();
+    mswServer.use(
+      http.post(`${API_BASE}/crm/contacts`, () => {
+        postRequested();
+        return HttpResponse.json({ success: true, data: {} });
+      }),
+    );
+
+    renderModal();
+
+    await userEvent.type(screen.getByLabelText("Name"), "Rojina Magar");
+    await userEvent.type(screen.getByLabelText("Email"), "not-an-email");
+    await userEvent.click(screen.getByRole("button", { name: "Create contact" }));
+
+    expect(await screen.findByText("Enter a valid email address.")).toBeInTheDocument();
+    expect(postRequested).not.toHaveBeenCalled();
   });
 });

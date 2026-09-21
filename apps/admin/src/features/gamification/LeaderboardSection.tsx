@@ -19,6 +19,8 @@ export const LeaderboardSection = () => {
   const [error, setError] = useState<string | null>(null);
 
   const toggle = useApiMutation({
+    successMessage: (_updated, { enabled }) =>
+      enabled ? "Leaderboard category shown." : "Leaderboard category hidden.",
     mutationFn: ({ category, enabled }: { category: string; enabled: boolean }) =>
       gamificationApi.updateCreatorLeaderboardCategory(category, enabled),
     invalidateKeys: [LEADERBOARD_CATEGORIES_QUERY_KEY],

@@ -119,6 +119,7 @@ describe("CommissionsListSection", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Approve" }));
 
     await waitFor(() => expect(approveCalled).toBe(true));
+    expect(await screen.findByText("Commission approved.")).toBeInTheDocument();
   });
 
   it("shows an error toast when approving a commission fails", async () => {

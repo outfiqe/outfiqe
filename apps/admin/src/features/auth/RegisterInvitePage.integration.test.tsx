@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
   createRootRoute,
@@ -50,7 +51,12 @@ const renderPage = (initialPath: string) => {
     routeTree,
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   });
-  render(<RouterProvider router={router} />);
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
 };
 
 describe("RegisterInvitePage", () => {
@@ -132,6 +138,29 @@ describe("RegisterInvitePage", () => {
     expect(await screen.findByText("Passwords do not match.")).toBeInTheDocument();
 
     expect(setAccessToken).not.toHaveBeenCalled();
+  });
+
+  it("shows inline messages, not a browser popup, and sends nothing for an empty form", async () => {
+    let registerRequested = false;
+    mswServer.use(
+      http.get(`${API_BASE}/auth/invite/admin`, () =>
+        HttpResponse.json({ success: true, data: validInvite }),
+      ),
+      http.post(`${API_BASE}/auth/register/admin`, () => {
+        registerRequested = true;
+        return HttpResponse.json({ success: true, data: {} });
+      }),
+    );
+
+    renderPage("/register?token=raw-token-value");
+    await screen.findByText(validInvite.email);
+
+    fireEvent.click(screen.getByRole("button", { name: "Create admin account" }));
+
+    expect(await screen.findByText("Enter your phone number.")).toBeInTheDocument();
+    expect(screen.getByText("Enter a password.")).toBeInTheDocument();
+    expect(screen.getByText("Confirm your password.")).toBeInTheDocument();
+    expect(registerRequested).toBe(false);
   });
 
   it("shows the server's error message for an invalid invite", async () => {

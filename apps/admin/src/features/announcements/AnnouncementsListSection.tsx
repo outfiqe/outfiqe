@@ -76,6 +76,7 @@ export const AnnouncementsListSection = () => {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin-announcements"] });
 
   const cancelAnnouncement = useApiMutation({
+    successMessage: "Announcement cancelled.",
     mutationFn: (id: string) => announcementsApi.cancel(id),
     invalidateKeys: [["admin-announcements"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
@@ -172,6 +173,10 @@ export const AnnouncementsListSection = () => {
                       variant="outline"
                       onClick={() => cancelAnnouncement.mutate(announcement.id)}
                       disabled={cancelAnnouncement.isPending}
+                      isLoading={
+                        cancelAnnouncement.isPending &&
+                        cancelAnnouncement.variables === announcement.id
+                      }
                     >
                       Discard
                     </Button>
@@ -183,6 +188,10 @@ export const AnnouncementsListSection = () => {
                     variant="outline"
                     onClick={() => cancelAnnouncement.mutate(announcement.id)}
                     disabled={cancelAnnouncement.isPending}
+                    isLoading={
+                      cancelAnnouncement.isPending &&
+                      cancelAnnouncement.variables === announcement.id
+                    }
                   >
                     Cancel
                   </Button>

@@ -102,6 +102,7 @@ export const ProductReviewsPage = () => {
   const reviews = reviewPages?.pages.flatMap((page) => page.reviews);
 
   const removeReview = useApiMutation({
+    successMessage: "Review deleted.",
     mutationFn: (reviewId: string) => productReviewsApi.remove(selectedProduct?.id ?? "", reviewId),
     invalidateKeys: [reviewsQueryKey],
     onSuccess: () => setDeleteTarget(null),

@@ -7,19 +7,11 @@ import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { type CreateTierInput, platformCommissionApi } from "./api";
+import { type TierRowErrors, type TierRowState, validateLadder } from "./ladder.schema";
 import type { FeeTypeValue, PlatformCommissionTier } from "./schemas";
 
 const RULES_QUERY_KEY = ["admin-platform-commission-rules"];
 const LADDER_FLOOR_PRICE = 0;
-
-type TierRowState = {
-  key: string;
-  minPrice: string;
-  maxPrice: string;
-  feeType: FeeTypeValue;
-  flatAmount: string;
-  ratePercent: string;
-};
 
 const tierRowFor = (tier: PlatformCommissionTier): TierRowState => ({
   key: tier.id,
@@ -48,41 +40,6 @@ const toCreateTierInput = (tierRow: TierRowState): CreateTierInput => ({
     : { ratePercent: Number(tierRow.ratePercent) }),
 });
 
-const validateLadder = (tierRows: TierRowState[]): string | null => {
-  if (tierRows.length === 0) return "Add at least one price band.";
-
-  const sortedTierRows = [...tierRows].sort((a, b) => Number(a.minPrice) - Number(b.minPrice));
-  const firstTierRow = sortedTierRows[0];
-  const lastTierRow = sortedTierRows[sortedTierRows.length - 1];
-  if (!firstTierRow || !lastTierRow) return "Add at least one price band.";
-
-  if (Number(firstTierRow.minPrice) !== LADDER_FLOOR_PRICE) {
-    return "The lowest band must start at Rs. 0.";
-  }
-  if (lastTierRow.maxPrice !== "") {
-    return "The highest band must be open-ended — leave its max price blank.";
-  }
-
-  for (let index = 0; index < sortedTierRows.length - 1; index += 1) {
-    const currentTierRow = sortedTierRows[index];
-    const nextTierRow = sortedTierRows[index + 1];
-    if (Number(currentTierRow?.maxPrice) !== Number(nextTierRow?.minPrice)) {
-      return "Bands must be contiguous, with no gaps or overlaps between them.";
-    }
-  }
-
-  for (const tierRow of tierRows) {
-    if (tierRow.feeType === "FLAT" && tierRow.flatAmount === "") {
-      return "Every FLAT band needs a commission amount.";
-    }
-    if (tierRow.feeType === "PERCENT" && tierRow.ratePercent === "") {
-      return "Every PERCENT band needs a commission rate.";
-    }
-  }
-
-  return null;
-};
-
 const TIER_ROW_SKELETON_COUNT = 3;
 const TIER_FIELD_SKELETONS = [
   { label: "Min price (Rs.)", inputClass: "w-28" },
@@ -106,80 +63,76 @@ const TierRowSkeleton = () => (
   </div>
 );
 
+const FIELD_LABEL_CLASS = "block text-xs text-muted-foreground";
+const FIELD_ERROR_CLASS = "text-xs text-destructive";
+
 const TierRowFields = ({
   tierRow,
+  errors,
   onChange,
   onRemove,
 }: {
   tierRow: TierRowState;
+  errors: TierRowErrors;
   onChange: (tierRow: TierRowState) => void;
   onRemove: () => void;
-}) => (
-  <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4">
+}) => {
+  const idPrefix = `tier-${tierRow.key}`;
+
+  const numberField = (
+    field: "minPrice" | "maxPrice" | "flatAmount" | "ratePercent",
+    label: string,
+    widthClass: string,
+    placeholder?: string,
+  ) => (
     <div className="space-y-1.5">
-      <label className="block text-xs text-muted-foreground">Min price (Rs.)</label>
+      <label htmlFor={`${idPrefix}-${field}`} className={FIELD_LABEL_CLASS}>
+        {label}
+      </label>
       <Input
-        type="number"
-        required
-        min={0}
-        value={tierRow.minPrice}
-        onChange={(e) => onChange({ ...tierRow, minPrice: e.target.value })}
-        className="w-28"
+        id={`${idPrefix}-${field}`}
+        inputMode="decimal"
+        placeholder={placeholder}
+        value={tierRow[field]}
+        aria-invalid={errors[field] ? true : undefined}
+        onChange={(e) => onChange({ ...tierRow, [field]: e.target.value })}
+        className={widthClass}
       />
+      {errors[field] && (
+        <p className={FIELD_ERROR_CLASS} role="alert">
+          {errors[field]}
+        </p>
+      )}
     </div>
-    <div className="space-y-1.5">
-      <label className="block text-xs text-muted-foreground">Max price (Rs.)</label>
-      <Input
-        type="number"
-        min={0}
-        placeholder="No limit"
-        value={tierRow.maxPrice}
-        onChange={(e) => onChange({ ...tierRow, maxPrice: e.target.value })}
-        className="w-28"
-      />
-    </div>
-    <div className="space-y-1.5">
-      <label className="block text-xs text-muted-foreground">Fee type</label>
-      <Select
-        value={tierRow.feeType}
-        onChange={(e) => onChange({ ...tierRow, feeType: e.target.value as FeeTypeValue })}
-        className="w-32"
-      >
-        <option value="FLAT">Flat (Rs.)</option>
-        <option value="PERCENT">Percent (%)</option>
-      </Select>
-    </div>
-    {tierRow.feeType === "FLAT" ? (
+  );
+
+  return (
+    <div className="flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4">
+      {numberField("minPrice", "Min price (Rs.)", "w-28")}
+      {numberField("maxPrice", "Max price (Rs.)", "w-28", "No limit")}
       <div className="space-y-1.5">
-        <label className="block text-xs text-muted-foreground">Commission (Rs.)</label>
-        <Input
-          type="number"
-          required
-          min={1}
-          value={tierRow.flatAmount}
-          onChange={(e) => onChange({ ...tierRow, flatAmount: e.target.value })}
-          className="w-28"
-        />
+        <label htmlFor={`${idPrefix}-feeType`} className={FIELD_LABEL_CLASS}>
+          Fee type
+        </label>
+        <Select
+          id={`${idPrefix}-feeType`}
+          value={tierRow.feeType}
+          onChange={(e) => onChange({ ...tierRow, feeType: e.target.value as FeeTypeValue })}
+          className="w-32"
+        >
+          <option value="FLAT">Flat (Rs.)</option>
+          <option value="PERCENT">Percent (%)</option>
+        </Select>
       </div>
-    ) : (
-      <div className="space-y-1.5">
-        <label className="block text-xs text-muted-foreground">Commission (%)</label>
-        <Input
-          type="number"
-          required
-          min={0.01}
-          step={0.01}
-          value={tierRow.ratePercent}
-          onChange={(e) => onChange({ ...tierRow, ratePercent: e.target.value })}
-          className="w-24"
-        />
-      </div>
-    )}
-    <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
-      Remove
-    </Button>
-  </div>
-);
+      {tierRow.feeType === "FLAT"
+        ? numberField("flatAmount", "Commission (Rs.)", "w-28")
+        : numberField("ratePercent", "Commission (%)", "w-24")}
+      <Button type="button" variant="ghost" size="sm" onClick={onRemove} className="mt-[22px]">
+        Remove
+      </Button>
+    </div>
+  );
+};
 
 export const CommissionTiersSection = () => {
   const nextTierRowKey = useRef(0);
@@ -191,7 +144,8 @@ export const CommissionTiersSection = () => {
   const activeRule = rules?.find((rule) => rule.isActive) ?? null;
 
   const [tierRows, setTierRows] = useState<TierRowState[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [rowErrorsByKey, setRowErrorsByKey] = useState<Record<string, TierRowErrors>>({});
+  const [ladderError, setLadderError] = useState<string | null>(null);
   const activeTierRows =
     tierRows ??
     (activeRule
@@ -201,11 +155,12 @@ export const CommissionTiersSection = () => {
   const createRule = useApiMutation({
     mutationFn: (tiers: CreateTierInput[]) => platformCommissionApi.createRule(tiers),
     invalidateKeys: [RULES_QUERY_KEY],
+    successMessage: "New commission ladder saved.",
     onSuccess: (rule) => {
       setTierRows(rule.tiers.map(tierRowFor));
-      setError(null);
+      setRowErrorsByKey({});
+      setLadderError(null);
     },
-    onError: (mutationError) => setError(getErrorMessage(mutationError)),
   });
 
   const updateTierRow = (key: string, updatedTierRow: TierRowState) => {
@@ -230,11 +185,12 @@ export const CommissionTiersSection = () => {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const validationError = validateLadder(activeTierRows);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
+    const { rowErrorsByKey: foundRowErrors, ladderError: foundLadderError } =
+      validateLadder(activeTierRows);
+    setRowErrorsByKey(foundRowErrors);
+    setLadderError(foundLadderError);
+    if (Object.keys(foundRowErrors).length > 0 || foundLadderError) return;
+
     createRule.mutate(activeTierRows.map(toCreateTierInput));
   };
 
@@ -252,7 +208,7 @@ export const CommissionTiersSection = () => {
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+      <form onSubmit={handleSubmit} noValidate className="mt-4 space-y-3">
         {isLoading &&
           Array.from({ length: TIER_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
             <TierRowSkeleton key={rowIndex} />
@@ -263,6 +219,7 @@ export const CommissionTiersSection = () => {
             <TierRowFields
               key={tierRow.key}
               tierRow={tierRow}
+              errors={rowErrorsByKey[tierRow.key] ?? {}}
               onChange={(updatedTierRow) => updateTierRow(tierRow.key, updatedTierRow)}
               onRemove={() => removeTierRow(tierRow.key)}
             />
@@ -279,7 +236,8 @@ export const CommissionTiersSection = () => {
           </div>
         )}
 
-        {error && <FormBanner>{error}</FormBanner>}
+        {ladderError && <FormBanner>{ladderError}</FormBanner>}
+        {createRule.isError && <FormBanner>{getErrorMessage(createRule.error)}</FormBanner>}
       </form>
     </div>
   );

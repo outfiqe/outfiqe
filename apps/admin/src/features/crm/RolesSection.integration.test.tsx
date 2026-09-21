@@ -4,7 +4,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { RolesSection } from "./RolesSection";
 
@@ -250,5 +250,53 @@ describe("RolesSection", () => {
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(renameBody).toEqual({ name: "Meridian Apparel" }));
+  });
+
+  it("shows inline messages, not a browser popup, when a role is submitted empty", async () => {
+    mockLists();
+    const createRequested = vi.fn();
+    mswServer.use(
+      http.post(`${API_BASE}/crm/roles`, () => {
+        createRequested();
+        return HttpResponse.json({ success: true, data: {} }, { status: 201 });
+      }),
+    );
+
+    renderRolesSection({ viewerPermissionKeys: ["roles:read", "roles:manage", "reports:read"] });
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("button", { name: "New role" }));
+    const dialog = screen.getByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Create role" }));
+
+    expect(await within(dialog).findByText("Enter a name for the role.")).toBeInTheDocument();
+    expect(
+      within(dialog).getByText("Choose at least one permission for this role."),
+    ).toBeInTheDocument();
+    expect(createRequested).not.toHaveBeenCalled();
+  });
+
+  it("asks for a permission when only a name was entered", async () => {
+    mockLists();
+    const createRequested = vi.fn();
+    mswServer.use(
+      http.post(`${API_BASE}/crm/roles`, () => {
+        createRequested();
+        return HttpResponse.json({ success: true, data: {} }, { status: 201 });
+      }),
+    );
+
+    renderRolesSection({ viewerPermissionKeys: ["roles:read", "roles:manage", "reports:read"] });
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(await screen.findByRole("button", { name: "New role" }));
+    const dialog = screen.getByRole("dialog");
+    await user.type(within(dialog).getByLabelText("Role name"), "Analyst");
+    await user.click(within(dialog).getByRole("button", { name: "Create role" }));
+
+    expect(
+      await within(dialog).findByText("Choose at least one permission for this role."),
+    ).toBeInTheDocument();
+    expect(createRequested).not.toHaveBeenCalled();
   });
 });

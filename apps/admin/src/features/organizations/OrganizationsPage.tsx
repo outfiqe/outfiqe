@@ -1,13 +1,30 @@
-import { Button, FormBanner, Input } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { organizationsApi } from "./api";
 import { BusinessOwnerField } from "./BusinessOwnerField";
+import {
+  EMPTY_ORGANIZATION_FORM,
+  organizationFormSchema,
+  type OrganizationFormValues,
+} from "./organizationForm.schema";
 
 const ORGANIZATIONS_QUERY_KEY = ["organizations"];
 
@@ -21,57 +38,43 @@ export const OrganizationsPage = () => {
     });
   const organizations = data?.pages.flatMap((page) => page.organizations);
 
-  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
-  const [selectedBrandName, setSelectedBrandName] = useState("");
-  const [subdomain, setSubdomain] = useState("");
-  const [subdomainTouchedByUser, setSubdomainTouchedByUser] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const form = useForm<OrganizationFormValues>({
+    resolver: zodResolver(organizationFormSchema),
+    defaultValues: EMPTY_ORGANIZATION_FORM,
+    mode: "onTouched",
+  });
+  const pickedBrand = form.watch("brand");
+  const pickedBrandId = pickedBrand?.id ?? null;
 
   const { data: suggestion, isFetching: isSuggesting } = useQuery({
-    queryKey: ["organization-suggestion", selectedBrandId],
-    queryFn: () => organizationsApi.suggestFromBrand(selectedBrandId as string),
-    enabled: selectedBrandId !== null,
+    queryKey: ["organization-suggestion", pickedBrandId],
+    queryFn: () => organizationsApi.suggestFromBrand(pickedBrandId ?? ""),
+    enabled: pickedBrandId !== null,
   });
 
-  if (suggestion && !subdomainTouchedByUser && subdomain !== suggestion.suggestedSubdomain) {
-    setSubdomain(suggestion.suggestedSubdomain);
-  }
-
-  const selectBusiness = (brand: { id: string; name: string } | null) => {
-    setSelectedBrandId(brand?.id ?? null);
-    setSelectedBrandName(brand?.name ?? "");
-    setSubdomainTouchedByUser(false);
-    if (!brand) setSubdomain("");
-    setFormError(null);
-  };
-
-  const resetForm = () => {
-    setSelectedBrandId(null);
-    setSelectedBrandName("");
-    setSubdomain("");
-    setSubdomainTouchedByUser(false);
-    setFormError(null);
-  };
+  const suggestedSubdomain = suggestion?.suggestedSubdomain;
+  useEffect(() => {
+    if (suggestedSubdomain === undefined) return;
+    if (form.getFieldState("subdomain").isDirty) return;
+    form.setValue("subdomain", suggestedSubdomain, { shouldValidate: true });
+  }, [suggestedSubdomain, form]);
 
   const create = useApiMutation({
-    mutationFn: () => {
+    mutationFn: (values: OrganizationFormValues) => {
       if (!suggestion) throw new Error("No business selected yet.");
       return organizationsApi.create({
         name: suggestion.brandName,
-        subdomain,
+        subdomain: values.subdomain,
         targetOwnerUserId: suggestion.ownerUserId,
         linkedBrandId: suggestion.brandId,
       });
     },
     invalidateKeys: [ORGANIZATIONS_QUERY_KEY],
-    onSuccess: () => resetForm(),
-    onError: (mutationError) => setFormError(getErrorMessage(mutationError)),
+    successMessage: "Organization created.",
+    onSuccess: () => form.reset(EMPTY_ORGANIZATION_FORM),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    create.mutate();
-  };
+  const submitOrganization = form.handleSubmit((values) => create.mutate(values));
 
   return (
     <div>
@@ -82,40 +85,58 @@ export const OrganizationsPage = () => {
         accept.
       </p>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-      >
-        <BusinessOwnerField
-          selectedBrandId={selectedBrandId}
-          selectedBrandName={selectedBrandName}
-          onSelect={selectBusiness}
-        />
-        <div className="space-y-1.5">
-          <label htmlFor="org-subdomain" className="text-xs text-muted-foreground">
-            Subdomain
-          </label>
-          <Input
-            id="org-subdomain"
-            required
-            pattern="[a-z0-9-]+"
-            disabled={!selectedBrandId || isSuggesting}
-            value={subdomain}
-            onChange={(e) => {
-              setSubdomainTouchedByUser(true);
-              setSubdomain(e.target.value.toLowerCase());
-            }}
-            className="w-48"
-          />
-        </div>
-        <Button
-          type="submit"
-          disabled={!selectedBrandId || isSuggesting}
-          isLoading={create.isPending}
+      <Form {...form}>
+        <form
+          onSubmit={submitOrganization}
+          noValidate
+          className="mt-5 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
         >
-          Create organization
-        </Button>
-      </form>
+          <FormField
+            control={form.control}
+            name="brand"
+            render={({ field }) => (
+              <FormItem>
+                <BusinessOwnerField
+                  selectedBrandId={field.value?.id ?? null}
+                  selectedBrandName={field.value?.name ?? ""}
+                  onSelect={(brand) => {
+                    field.onChange(brand ? { id: brand.id, name: brand.name } : null);
+                    form.resetField("subdomain");
+                  }}
+                />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="subdomain"
+            render={({ field }) => (
+              <FormItem className="w-48 space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">
+                  Subdomain
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    disabled={!pickedBrandId || isSuggesting}
+                    {...field}
+                    onChange={(event) => field.onChange(event.target.value.toLowerCase())}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button
+            type="submit"
+            disabled={isSuggesting}
+            isLoading={create.isPending}
+            className="mt-[22px]"
+          >
+            Create organization
+          </Button>
+        </form>
+      </Form>
 
       {suggestion && suggestion.existingOrganizationForBrand && (
         <FormBanner tone="neutral" className="mt-3">
@@ -134,7 +155,7 @@ export const OrganizationsPage = () => {
         </FormBanner>
       )}
 
-      {formError && <FormBanner className="mt-3">{formError}</FormBanner>}
+      {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
       <div className="mt-6 space-y-3">
         {isLoading &&

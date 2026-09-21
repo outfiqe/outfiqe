@@ -38,6 +38,7 @@ export const ContentBrowserPage = () => {
   const detailPost = detailPostId ? (looks.find((look) => look.id === detailPostId) ?? null) : null;
 
   const deleteLook = useApiMutation({
+    successMessage: "Post deleted.",
     mutationFn: (lookId: string) => contentBrowserApi.deleteLook(lookId),
     invalidateKeys: [["content-browser", "looks"]],
     onSuccess: (_result, lookId) => {
@@ -48,6 +49,7 @@ export const ContentBrowserPage = () => {
   });
 
   const deleteComment = useApiMutation({
+    successMessage: "Comment deleted.",
     mutationFn: ({ lookId, commentId }: DeleteCommentTarget) =>
       contentBrowserApi.deleteComment(lookId, commentId),
     invalidateKeys: (_result, { lookId }) => [

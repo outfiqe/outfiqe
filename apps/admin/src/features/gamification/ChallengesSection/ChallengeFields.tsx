@@ -1,6 +1,8 @@
 import { Checkbox, Input, Select } from "@outfiqe/design-system";
 
+import { FieldErrorMessage } from "@/components/FieldErrorMessage";
 import { ImageUpload } from "@/components/ImageUpload";
+import type { FieldErrorMap } from "@/lib/zodFieldErrors";
 
 import {
   ANIMATION_OPTION_LABEL,
@@ -19,10 +21,12 @@ export const ChallengeFields = ({
   idPrefix,
   form,
   onChange,
+  errors = {},
 }: {
   idPrefix: string;
   form: ChallengeFormState;
   onChange: (form: ChallengeFormState) => void;
+  errors?: FieldErrorMap;
 }) => (
   <div className="space-y-4">
     <div className="rounded-xl border border-border p-4">
@@ -37,10 +41,11 @@ export const ChallengeFields = ({
           </label>
           <Input
             id={`${idPrefix}-challenge-name`}
-            required
+            aria-invalid={"challengeName" in errors}
             value={form.challengeName}
             onChange={(e) => onChange({ ...form, challengeName: e.target.value })}
           />
+          <FieldErrorMessage message={errors.challengeName} />
         </div>
         <div className="space-y-1.5">
           <label
@@ -51,10 +56,11 @@ export const ChallengeFields = ({
           </label>
           <Input
             id={`${idPrefix}-challenge-description`}
-            required
+            aria-invalid={"challengeDescription" in errors}
             value={form.challengeDescription}
             onChange={(e) => onChange({ ...form, challengeDescription: e.target.value })}
           />
+          <FieldErrorMessage message={errors.challengeDescription} />
         </div>
         <div className="space-y-1.5">
           <p className="text-xs text-muted-foreground">Banner</p>
@@ -74,11 +80,12 @@ export const ChallengeFields = ({
             <Input
               id={`${idPrefix}-active-from`}
               type="datetime-local"
-              required
+              aria-invalid={"activeFrom" in errors}
               value={form.activeFrom}
               onChange={(e) => onChange({ ...form, activeFrom: e.target.value })}
               className="w-full sm:w-56"
             />
+            <FieldErrorMessage message={errors.activeFrom} />
           </div>
           <div className="space-y-1.5">
             <label
@@ -90,11 +97,12 @@ export const ChallengeFields = ({
             <Input
               id={`${idPrefix}-active-until`}
               type="datetime-local"
-              required
+              aria-invalid={"activeUntil" in errors}
               value={form.activeUntil}
               onChange={(e) => onChange({ ...form, activeUntil: e.target.value })}
               className="w-full sm:w-56"
             />
+            <FieldErrorMessage message={errors.activeUntil} />
           </div>
         </div>
       </div>
@@ -103,17 +111,18 @@ export const ChallengeFields = ({
     <div className="rounded-xl border border-border p-4">
       <p className="mb-3 text-sm font-medium text-foreground">Badge awarded on completion</p>
       <div className="space-y-4">
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-wrap items-start gap-3">
           <div className="min-w-48 flex-1 space-y-1.5">
             <label htmlFor={`${idPrefix}-name`} className="block text-xs text-muted-foreground">
               Badge name
             </label>
             <Input
               id={`${idPrefix}-name`}
-              required
+              aria-invalid={"name" in errors}
               value={form.name}
               onChange={(e) => onChange({ ...form, name: e.target.value })}
             />
+            <FieldErrorMessage message={errors.name} />
           </div>
           <div className="space-y-1.5">
             <label htmlFor={`${idPrefix}-icon`} className="block text-xs text-muted-foreground">
@@ -121,11 +130,12 @@ export const ChallengeFields = ({
             </label>
             <Input
               id={`${idPrefix}-icon`}
-              required
+              aria-invalid={"icon" in errors}
               value={form.icon}
               onChange={(e) => onChange({ ...form, icon: e.target.value })}
-              className="w-20"
+              className="w-24"
             />
+            <FieldErrorMessage message={errors.icon} />
           </div>
         </div>
 
@@ -138,13 +148,14 @@ export const ChallengeFields = ({
           </label>
           <Input
             id={`${idPrefix}-description`}
-            required
+            aria-invalid={"description" in errors}
             value={form.description}
             onChange={(e) => onChange({ ...form, description: e.target.value })}
           />
+          <FieldErrorMessage message={errors.description} />
         </div>
 
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-wrap items-start gap-3">
           <div className="space-y-1.5">
             <label htmlFor={`${idPrefix}-category`} className="block text-xs text-muted-foreground">
               Category
@@ -245,12 +256,13 @@ export const ChallengeFields = ({
             </label>
             <Input
               id={`${idPrefix}-xp-reward`}
-              type="number"
-              min={0}
+              inputMode="numeric"
+              aria-invalid={"xpReward" in errors}
               value={form.xpReward}
               onChange={(e) => onChange({ ...form, xpReward: e.target.value })}
-              className="w-24"
+              className="w-28"
             />
+            <FieldErrorMessage message={errors.xpReward} />
           </div>
         </div>
 
@@ -312,6 +324,7 @@ export const ChallengeFields = ({
           idPrefix={`${idPrefix}-condition`}
           conditions={form.conditions}
           onChange={(conditions) => onChange({ ...form, conditions })}
+          errors={errors}
         />
       </div>
     </div>

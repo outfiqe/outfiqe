@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
   createRootRoute,
@@ -55,7 +56,12 @@ const renderPage = (initialPath: string) => {
     routeTree,
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   });
-  render(<RouterProvider router={router} />);
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
 };
 
 describe("CrmInviteRegisterPage", () => {
@@ -139,6 +145,29 @@ describe("CrmInviteRegisterPage", () => {
     expect(await screen.findByText("Passwords do not match.")).toBeInTheDocument();
 
     expect(setAccessToken).not.toHaveBeenCalled();
+  });
+
+  it("shows inline messages, not a browser popup, and sends nothing for an empty form", async () => {
+    let registerRequested = false;
+    mswServer.use(
+      http.get(`${API_BASE}/auth/invite/crm`, () =>
+        HttpResponse.json({ success: true, data: validInvite }),
+      ),
+      http.post(`${API_BASE}/auth/register/crm-invite`, () => {
+        registerRequested = true;
+        return HttpResponse.json({ success: true, data: {} });
+      }),
+    );
+
+    renderPage("/crm/invites/register?token=raw-token-value");
+    await screen.findByText(/Join Meridian Apparel/);
+
+    fireEvent.click(screen.getByRole("button", { name: "Create account & join" }));
+
+    expect(await screen.findByText("Enter your full name.")).toBeInTheDocument();
+    expect(screen.getByText("Enter your phone number.")).toBeInTheDocument();
+    expect(screen.getByText("Enter a password.")).toBeInTheDocument();
+    expect(registerRequested).toBe(false);
   });
 
   it("shows the server's error message for an invalid invite", async () => {

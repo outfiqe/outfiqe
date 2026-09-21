@@ -1,10 +1,17 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Autocomplete,
   AutocompleteContent,
   AutocompleteInput,
   AutocompleteItem,
   Button,
+  Form,
   FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
   Input,
   Skeleton,
   toast,
@@ -12,13 +19,19 @@ import {
 import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformCommissionApi } from "./api";
+import {
+  EMPTY_EXEMPTION_FORM,
+  exemptionFormSchema,
+  type ExemptionFormValues,
+} from "./exemptionForm.schema";
 import type { BrandCommissionExemption } from "./schemas";
 
 const EXEMPTIONS_QUERY_KEY = ["admin-brand-commission-exemptions"];
@@ -115,21 +128,7 @@ const BrandPickerField = ({
   );
 };
 
-type ExemptionFormState = {
-  brandId: string | null;
-  brandName: string;
-  startsAt: string;
-  endsAt: string;
-  reason: string;
-};
-
-const EMPTY_FORM: ExemptionFormState = {
-  brandId: null,
-  brandName: "",
-  startsAt: "",
-  endsAt: "",
-  reason: "",
-};
+const LABEL_CLASS = "text-xs font-normal text-muted-foreground";
 
 export const BrandExemptionsSection = () => {
   const { data: exemptions, isLoading } = useQuery({
@@ -137,43 +136,39 @@ export const BrandExemptionsSection = () => {
     queryFn: platformCommissionApi.listExemptions,
   });
 
-  const [form, setForm] = useState<ExemptionFormState>(EMPTY_FORM);
-  const [error, setError] = useState<string | null>(null);
+  const form = useForm<ExemptionFormValues>({
+    resolver: zodResolver(exemptionFormSchema),
+    defaultValues: EMPTY_EXEMPTION_FORM,
+    mode: "onTouched",
+  });
+  const [pickedBrandName, setPickedBrandName] = useState("");
   const [revokeTarget, setRevokeTarget] = useState<BrandCommissionExemption | null>(null);
 
   const create = useApiMutation({
-    mutationFn: () => {
-      if (!form.brandId) throw new Error("Pick a brand first.");
-      return platformCommissionApi.createExemption({
-        brandId: form.brandId,
-        startsAt: new Date(form.startsAt).toISOString(),
-        endsAt: new Date(form.endsAt).toISOString(),
-        reason: form.reason,
-      });
-    },
+    mutationFn: (values: ExemptionFormValues) =>
+      platformCommissionApi.createExemption({
+        brandId: values.brandId,
+        startsAt: new Date(values.startsAt).toISOString(),
+        endsAt: new Date(values.endsAt).toISOString(),
+        reason: values.reason.trim(),
+      }),
     invalidateKeys: [EXEMPTIONS_QUERY_KEY],
+    successMessage: "Exemption added.",
     onSuccess: () => {
-      setForm(EMPTY_FORM);
-      setError(null);
+      form.reset(EMPTY_EXEMPTION_FORM);
+      setPickedBrandName("");
     },
-    onError: (mutationError) => setError(getErrorMessage(mutationError)),
   });
 
   const revoke = useApiMutation({
     mutationFn: (id: string) => platformCommissionApi.revokeExemption(id),
     invalidateKeys: [EXEMPTIONS_QUERY_KEY],
+    successMessage: "Exemption revoked.",
     onSuccess: () => setRevokeTarget(null),
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!form.brandId) {
-      setError("Pick a brand first.");
-      return;
-    }
-    create.mutate();
-  };
+  const submitExemption = form.handleSubmit((values) => create.mutate(values));
 
   return (
     <div>
@@ -185,50 +180,75 @@ export const BrandExemptionsSection = () => {
         estimate still applies for non-cash payments.
       </p>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-      >
-        <BrandPickerField
-          brandId={form.brandId}
-          brandName={form.brandName}
-          onChange={(brand) =>
-            setForm({ ...form, brandId: brand?.id ?? null, brandName: brand?.name ?? "" })
-          }
-        />
-        <div className="space-y-1.5">
-          <label className="block text-xs text-muted-foreground">Starts</label>
-          <Input
-            type="date"
-            required
-            value={form.startsAt}
-            onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
+      <Form {...form}>
+        <form
+          onSubmit={submitExemption}
+          noValidate
+          className="mt-4 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+        >
+          <FormField
+            control={form.control}
+            name="brandId"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <BrandPickerField
+                  brandId={field.value || null}
+                  brandName={pickedBrandName}
+                  onChange={(brand) => {
+                    setPickedBrandName(brand?.name ?? "");
+                    field.onChange(brand?.id ?? "");
+                  }}
+                />
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <label className="block text-xs text-muted-foreground">Ends</label>
-          <Input
-            type="date"
-            required
-            value={form.endsAt}
-            onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
+          <FormField
+            control={form.control}
+            name="startsAt"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel className={LABEL_CLASS}>Starts</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="min-w-[14rem] flex-1 space-y-1.5">
-          <label className="block text-xs text-muted-foreground">Reason</label>
-          <Input
-            required
-            placeholder="e.g. Launch-cohort waiver, first 10 brands"
-            value={form.reason}
-            onChange={(e) => setForm({ ...form, reason: e.target.value })}
+          <FormField
+            control={form.control}
+            name="endsAt"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel className={LABEL_CLASS}>Ends</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <Button type="submit" isLoading={create.isPending}>
-          Add exemption
-        </Button>
-      </form>
+          <FormField
+            control={form.control}
+            name="reason"
+            render={({ field }) => (
+              <FormItem className="min-w-[14rem] flex-1 space-y-1.5">
+                <FormLabel className={LABEL_CLASS}>Reason</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. Launch-cohort waiver, first 10 brands" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+            Add exemption
+          </Button>
+        </form>
+      </Form>
 
-      {error && <FormBanner className="mt-3">{error}</FormBanner>}
+      {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
       <div className="mt-4 space-y-2">
         {isLoading &&

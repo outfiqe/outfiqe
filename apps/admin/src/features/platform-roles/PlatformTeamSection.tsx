@@ -37,6 +37,7 @@ export const PlatformTeamSection = () => {
   });
 
   const changeRole = useApiMutation({
+    successMessage: "Team member's role updated.",
     mutationFn: ({ membershipId, roleId }: { membershipId: string; roleId: string }) =>
       platformRolesApi.updateTeamMember(membershipId, { roleId }),
     invalidateKeys: [TEAM_QUERY_KEY],
@@ -45,6 +46,8 @@ export const PlatformTeamSection = () => {
   });
 
   const toggleStatus = useApiMutation({
+    successMessage: (_updated, { status }) =>
+      status === "ACTIVE" ? "Team member reactivated." : "Team member deactivated.",
     mutationFn: ({
       membershipId,
       status,
@@ -136,6 +139,9 @@ export const PlatformTeamSection = () => {
                 variant="outline"
                 size="sm"
                 disabled={member.isSuperAdmin || isViewersOwnRow(member) || isActing}
+                isLoading={
+                  toggleStatus.isPending && toggleStatus.variables?.membershipId === member.id
+                }
                 onClick={() =>
                   toggleStatus.mutate({
                     membershipId: member.id,

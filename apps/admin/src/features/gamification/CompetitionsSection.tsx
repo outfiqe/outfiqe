@@ -1,7 +1,24 @@
-import { Button, Checkbox, FormBanner, Input, Modal, Select } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Button,
+  Checkbox,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Modal,
+  Select,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
+import { useForm, type UseFormReturn } from "react-hook-form";
+
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import {
   type CreatorCompetitionFormInput,
@@ -18,73 +35,37 @@ import {
   RARITY_OPTIONS,
   SHAPE_OPTIONS,
 } from "./badgeOptions.constants";
+import {
+  competitionFormSchema,
+  type CompetitionFormValues,
+  EMPTY_COMPETITION_FORM,
+} from "./competitionForm.schema";
 import { legacyShapeAndColorOf } from "./designConfig.utils";
-import type {
-  BadgeAnimationValue,
-  BadgeCategoryValue,
-  BadgeRarityValue,
-  BadgeShapeValue,
-  CreatorCompetitionAdmin,
-  CreatorLeaderboardCategoryValue,
-} from "./schemas";
+import type { CreatorCompetitionAdmin } from "./schemas";
 import { TitleActionCardSkeleton } from "./skeletons";
 
 const COMPETITIONS_QUERY_KEY = ["admin-creator-competitions"];
-const MIN_WINNERS = 1;
-const MAX_WINNERS = 10;
 
-type CompetitionFormState = {
-  name: string;
-  category: BadgeCategoryValue;
-  rarity: BadgeRarityValue;
-  icon: string;
-  shape: BadgeShapeValue;
-  primaryColor: string;
-  animation: BadgeAnimationValue | typeof AUTO_ANIMATION_OPTION;
-  xpReward: string;
-  isPermanent: boolean;
-  isPublic: boolean;
-  isTitleEligible: boolean;
-  leaderboardCategory: CreatorLeaderboardCategoryValue;
-  topN: string;
-};
-
-const EMPTY_FORM: CompetitionFormState = {
-  name: "",
-  category: "SPECIAL",
-  rarity: "RARE",
-  icon: "🏆",
-  shape: "star",
-  primaryColor: "#f97316",
-  animation: AUTO_ANIMATION_OPTION,
-  xpReward: "50",
-  isPermanent: true,
-  isPublic: true,
-  isTitleEligible: false,
-  leaderboardCategory: "MOST_LIKES",
-  topN: "3",
-};
-
-const toFormInput = (form: CompetitionFormState): CreatorCompetitionFormInput => ({
-  name: form.name,
-  description: `Awarded weekly to the top ${form.topN} in ${LEADERBOARD_CATEGORY_LABEL[form.leaderboardCategory]}.`,
-  category: form.category,
-  rarity: form.rarity,
-  icon: form.icon,
+const toFormInput = (values: CompetitionFormValues): CreatorCompetitionFormInput => ({
+  name: values.name,
+  description: `Awarded weekly to the top ${values.topN} in ${LEADERBOARD_CATEGORY_LABEL[values.leaderboardCategory]}.`,
+  category: values.category,
+  rarity: values.rarity,
+  icon: values.icon,
   designConfig: {
-    shape: form.shape,
-    primaryColor: form.primaryColor,
-    ...(form.animation === AUTO_ANIMATION_OPTION ? {} : { animation: form.animation }),
+    shape: values.shape,
+    primaryColor: values.primaryColor,
+    ...(values.animation === AUTO_ANIMATION_OPTION ? {} : { animation: values.animation }),
   },
-  xpReward: Number(form.xpReward),
-  isPermanent: form.isPermanent,
-  isPublic: form.isPublic,
-  isTitleEligible: form.isTitleEligible,
-  leaderboardCategory: form.leaderboardCategory,
-  topN: Number(form.topN),
+  xpReward: Number(values.xpReward),
+  isPermanent: values.isPermanent,
+  isPublic: values.isPublic,
+  isTitleEligible: values.isTitleEligible,
+  leaderboardCategory: values.leaderboardCategory,
+  topN: Number(values.topN),
 });
 
-const formForCompetition = (competition: CreatorCompetitionAdmin): CompetitionFormState => ({
+const formForCompetition = (competition: CreatorCompetitionAdmin): CompetitionFormValues => ({
   name: competition.name,
   category: competition.badge.category,
   rarity: competition.badge.rarity,
@@ -99,209 +80,207 @@ const formForCompetition = (competition: CreatorCompetitionAdmin): CompetitionFo
   topN: String(competition.topN),
 });
 
-const CompetitionFields = ({
-  idPrefix,
+type CompetitionCheckboxName = "isPermanent" | "isPublic" | "isTitleEligible";
+
+const CompetitionCheckbox = ({
   form,
-  onChange,
+  name,
+  label,
 }: {
-  idPrefix: string;
-  form: CompetitionFormState;
-  onChange: (form: CompetitionFormState) => void;
+  form: UseFormReturn<CompetitionFormValues>;
+  name: CompetitionCheckboxName;
+  label: string;
 }) => (
+  <label className="flex items-center gap-2 text-sm text-foreground">
+    <Checkbox {...form.register(name)} />
+    {label}
+  </label>
+);
+
+const CompetitionFields = ({ form }: { form: UseFormReturn<CompetitionFormValues> }) => (
   <div className="space-y-4">
-    <div className="flex flex-wrap items-end gap-3">
-      <div className="min-w-48 flex-1 space-y-1.5">
-        <label htmlFor={`${idPrefix}-name`} className="block text-xs text-muted-foreground">
-          Competition name
-        </label>
-        <Input
-          id={`${idPrefix}-name`}
-          required
-          placeholder="Weekly Style Sprint"
-          value={form.name}
-          onChange={(e) => onChange({ ...form, name: e.target.value })}
-        />
-      </div>
-      <div className="space-y-1.5">
-        <label htmlFor={`${idPrefix}-icon`} className="block text-xs text-muted-foreground">
-          Icon (emoji)
-        </label>
-        <Input
-          id={`${idPrefix}-icon`}
-          required
-          value={form.icon}
-          onChange={(e) => onChange({ ...form, icon: e.target.value })}
-          className="w-20"
-        />
-      </div>
+    <div className="flex flex-wrap items-start gap-3">
+      <FormField
+        control={form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem className="min-w-48 flex-1 space-y-1.5">
+            <FormLabel className="text-xs font-normal text-muted-foreground">
+              Competition name
+            </FormLabel>
+            <FormControl>
+              <Input placeholder="Weekly Style Sprint" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="icon"
+        render={({ field }) => (
+          <FormItem className="w-24 space-y-1.5">
+            <FormLabel className="text-xs font-normal text-muted-foreground">
+              Icon (emoji)
+            </FormLabel>
+            <FormControl>
+              <Input {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
 
-    <div className="flex flex-wrap items-end gap-3">
-      <div className="space-y-1.5">
-        <label
-          htmlFor={`${idPrefix}-leaderboard-category`}
-          className="block text-xs text-muted-foreground"
-        >
-          Ranks by
-        </label>
-        <Select
-          id={`${idPrefix}-leaderboard-category`}
-          value={form.leaderboardCategory}
-          onChange={(e) =>
-            onChange({
-              ...form,
-              leaderboardCategory: e.target.value as CreatorLeaderboardCategoryValue,
-            })
-          }
-          className="w-40"
-        >
-          {LEADERBOARD_CATEGORY_OPTIONS.map((category) => (
-            <option key={category} value={category}>
-              {LEADERBOARD_CATEGORY_LABEL[category]}
-            </option>
-          ))}
-        </Select>
-      </div>
-      <div className="space-y-1.5">
-        <label htmlFor={`${idPrefix}-top-n`} className="block text-xs text-muted-foreground">
-          Winners each week
-        </label>
-        <Input
-          id={`${idPrefix}-top-n`}
-          type="number"
-          required
-          min={MIN_WINNERS}
-          max={MAX_WINNERS}
-          value={form.topN}
-          onChange={(e) => onChange({ ...form, topN: e.target.value })}
-          className="w-24"
-        />
-      </div>
-      <div className="space-y-1.5">
-        <label htmlFor={`${idPrefix}-xp-reward`} className="block text-xs text-muted-foreground">
-          XP reward
-        </label>
-        <Input
-          id={`${idPrefix}-xp-reward`}
-          type="number"
-          min={0}
-          value={form.xpReward}
-          onChange={(e) => onChange({ ...form, xpReward: e.target.value })}
-          className="w-24"
-        />
-      </div>
+    <div className="flex flex-wrap items-start gap-3">
+      <FormField
+        control={form.control}
+        name="leaderboardCategory"
+        render={({ field }) => (
+          <FormItem className="w-40 space-y-1.5">
+            <FormLabel className="text-xs font-normal text-muted-foreground">Ranks by</FormLabel>
+            <FormControl>
+              <Select {...field}>
+                {LEADERBOARD_CATEGORY_OPTIONS.map((category) => (
+                  <option key={category} value={category}>
+                    {LEADERBOARD_CATEGORY_LABEL[category]}
+                  </option>
+                ))}
+              </Select>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="topN"
+        render={({ field }) => (
+          <FormItem className="w-28 space-y-1.5">
+            <FormLabel className="text-xs font-normal text-muted-foreground">
+              Winners each week
+            </FormLabel>
+            <FormControl>
+              <Input inputMode="numeric" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="xpReward"
+        render={({ field }) => (
+          <FormItem className="w-28 space-y-1.5">
+            <FormLabel className="text-xs font-normal text-muted-foreground">XP reward</FormLabel>
+            <FormControl>
+              <Input inputMode="numeric" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
 
     <div className="rounded-xl border border-border p-4">
       <p className="mb-3 text-sm font-medium text-foreground">Trophy badge</p>
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="space-y-1.5">
-          <label htmlFor={`${idPrefix}-category`} className="block text-xs text-muted-foreground">
-            Category
-          </label>
-          <Select
-            id={`${idPrefix}-category`}
-            value={form.category}
-            onChange={(e) => onChange({ ...form, category: e.target.value as BadgeCategoryValue })}
-            className="w-36"
-          >
-            {CATEGORY_OPTIONS.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor={`${idPrefix}-rarity`} className="block text-xs text-muted-foreground">
-            Rarity
-          </label>
-          <Select
-            id={`${idPrefix}-rarity`}
-            value={form.rarity}
-            onChange={(e) => onChange({ ...form, rarity: e.target.value as BadgeRarityValue })}
-            className="w-36"
-          >
-            {RARITY_OPTIONS.map((rarity) => (
-              <option key={rarity} value={rarity}>
-                {rarity}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor={`${idPrefix}-shape`} className="block text-xs text-muted-foreground">
-            Shape
-          </label>
-          <Select
-            id={`${idPrefix}-shape`}
-            value={form.shape}
-            onChange={(e) => onChange({ ...form, shape: e.target.value as BadgeShapeValue })}
-            className="w-32"
-          >
-            {SHAPE_OPTIONS.map((shape) => (
-              <option key={shape} value={shape}>
-                {shape}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor={`${idPrefix}-color`} className="block text-xs text-muted-foreground">
-            Color
-          </label>
-          <Input
-            id={`${idPrefix}-color`}
-            type="color"
-            value={form.primaryColor}
-            onChange={(e) => onChange({ ...form, primaryColor: e.target.value })}
-            className="h-11 w-16 p-1"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor={`${idPrefix}-animation`} className="block text-xs text-muted-foreground">
-            Animation
-          </label>
-          <Select
-            id={`${idPrefix}-animation`}
-            value={form.animation}
-            onChange={(e) =>
-              onChange({ ...form, animation: e.target.value as CompetitionFormState["animation"] })
-            }
-            className="w-36"
-          >
-            <option value={AUTO_ANIMATION_OPTION}>Auto (by rarity)</option>
-            {ANIMATION_OPTIONS.map((animation) => (
-              <option key={animation} value={animation}>
-                {ANIMATION_OPTION_LABEL[animation]}
-              </option>
-            ))}
-          </Select>
-        </div>
+      <div className="flex flex-wrap items-start gap-3">
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem className="w-36 space-y-1.5">
+              <FormLabel className="text-xs font-normal text-muted-foreground">Category</FormLabel>
+              <FormControl>
+                <Select {...field}>
+                  {CATEGORY_OPTIONS.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="rarity"
+          render={({ field }) => (
+            <FormItem className="w-36 space-y-1.5">
+              <FormLabel className="text-xs font-normal text-muted-foreground">Rarity</FormLabel>
+              <FormControl>
+                <Select {...field}>
+                  {RARITY_OPTIONS.map((rarity) => (
+                    <option key={rarity} value={rarity}>
+                      {rarity}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="shape"
+          render={({ field }) => (
+            <FormItem className="w-32 space-y-1.5">
+              <FormLabel className="text-xs font-normal text-muted-foreground">Shape</FormLabel>
+              <FormControl>
+                <Select {...field}>
+                  {SHAPE_OPTIONS.map((shape) => (
+                    <option key={shape} value={shape}>
+                      {shape}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="primaryColor"
+          render={({ field }) => (
+            <FormItem className="space-y-1.5">
+              <FormLabel className="text-xs font-normal text-muted-foreground">Color</FormLabel>
+              <FormControl>
+                <Input type="color" className="h-11 w-16 p-1" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="animation"
+          render={({ field }) => (
+            <FormItem className="w-36 space-y-1.5">
+              <FormLabel className="text-xs font-normal text-muted-foreground">Animation</FormLabel>
+              <FormControl>
+                <Select {...field}>
+                  <option value={AUTO_ANIMATION_OPTION}>Auto (by rarity)</option>
+                  {ANIMATION_OPTIONS.map((animation) => (
+                    <option key={animation} value={animation}>
+                      {ANIMATION_OPTION_LABEL[animation]}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
 
       <div className="mt-3 flex flex-wrap gap-4">
-        <label className="flex items-center gap-2 text-sm text-foreground">
-          <Checkbox
-            checked={form.isPermanent}
-            onChange={(e) => onChange({ ...form, isPermanent: e.target.checked })}
-          />
-          Permanent
-        </label>
-        <label className="flex items-center gap-2 text-sm text-foreground">
-          <Checkbox
-            checked={form.isPublic}
-            onChange={(e) => onChange({ ...form, isPublic: e.target.checked })}
-          />
-          Visible while locked
-        </label>
-        <label className="flex items-center gap-2 text-sm text-foreground">
-          <Checkbox
-            checked={form.isTitleEligible}
-            onChange={(e) => onChange({ ...form, isTitleEligible: e.target.checked })}
-          />
-          Title-eligible
-        </label>
+        <CompetitionCheckbox form={form} name="isPermanent" label="Permanent" />
+        <CompetitionCheckbox form={form} name="isPublic" label="Visible while locked" />
+        <CompetitionCheckbox form={form} name="isTitleEligible" label="Title-eligible" />
       </div>
     </div>
   </div>
@@ -314,44 +293,44 @@ const EditCompetitionModal = ({
   competition: CreatorCompetitionAdmin;
   onClose: () => void;
 }) => {
-  const [form, setForm] = useState<CompetitionFormState>(() => formForCompetition(competition));
   const [isActive, setIsActive] = useState(competition.isActive);
-  const [error, setError] = useState<string | null>(null);
+  const form = useForm<CompetitionFormValues>({
+    resolver: zodResolver(competitionFormSchema),
+    defaultValues: formForCompetition(competition),
+    mode: "onTouched",
+  });
 
   const update = useApiMutation({
     mutationFn: (input: UpdateCreatorCompetitionFormInput) =>
       gamificationApi.updateCreatorCompetition(competition.id, input),
     invalidateKeys: [COMPETITIONS_QUERY_KEY],
+    successMessage: "Competition updated.",
     onSuccess: () => onClose(),
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    update.mutate({ ...toFormInput(form), isActive });
-  };
+  const submitCompetitionEdit = form.handleSubmit((values) =>
+    update.mutate({ ...toFormInput(values), isActive }),
+  );
 
   return (
     <Modal open onClose={onClose} title="Edit competition">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <CompetitionFields
-          idPrefix={`edit-competition-${competition.id}`}
-          form={form}
-          onChange={setForm}
-        />
-        <label className="flex items-center gap-2 text-sm text-foreground">
-          <Checkbox
-            id={`edit-competition-${competition.id}-active`}
-            checked={isActive}
-            onChange={(e) => setIsActive(e.target.checked)}
-          />
-          Active
-        </label>
-        {error && <FormBanner>{error}</FormBanner>}
-        <Button type="submit" isLoading={update.isPending}>
-          Save changes
-        </Button>
-      </form>
+      <Form {...form}>
+        <form onSubmit={submitCompetitionEdit} noValidate className="space-y-4">
+          <CompetitionFields form={form} />
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <Checkbox
+              id={`edit-competition-${competition.id}-active`}
+              checked={isActive}
+              onChange={(event) => setIsActive(event.target.checked)}
+            />
+            Active
+          </label>
+          {update.isError && <FormBanner>{getErrorMessage(update.error)}</FormBanner>}
+          <Button type="submit" isLoading={update.isPending}>
+            Save changes
+          </Button>
+        </form>
+      </Form>
     </Modal>
   );
 };
@@ -362,26 +341,24 @@ export const CompetitionsSection = () => {
     queryFn: gamificationApi.listCreatorCompetitionsAdmin,
   });
 
-  const [form, setForm] = useState<CompetitionFormState>(EMPTY_FORM);
-  const [error, setError] = useState<string | null>(null);
   const [editingCompetition, setEditingCompetition] = useState<CreatorCompetitionAdmin | null>(
     null,
   );
-
-  const create = useApiMutation({
-    mutationFn: () => gamificationApi.createCreatorCompetition(toFormInput(form)),
-    invalidateKeys: [COMPETITIONS_QUERY_KEY],
-    onSuccess: () => {
-      setForm(EMPTY_FORM);
-      setError(null);
-    },
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
+  const form = useForm<CompetitionFormValues>({
+    resolver: zodResolver(competitionFormSchema),
+    defaultValues: EMPTY_COMPETITION_FORM,
+    mode: "onTouched",
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    create.mutate();
-  };
+  const create = useApiMutation({
+    mutationFn: (values: CompetitionFormValues) =>
+      gamificationApi.createCreatorCompetition(toFormInput(values)),
+    invalidateKeys: [COMPETITIONS_QUERY_KEY],
+    successMessage: "Competition created.",
+    onSuccess: () => form.reset(EMPTY_COMPETITION_FORM),
+  });
+
+  const submitCompetition = form.handleSubmit((values) => create.mutate(values));
 
   return (
     <div>
@@ -392,17 +369,20 @@ export const CompetitionsSection = () => {
         Deactivating a competition stops future settlements without taking back badges already won.
       </p>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-4 space-y-4 rounded-xl border border-border bg-card p-4"
-      >
-        <CompetitionFields idPrefix="create-competition" form={form} onChange={setForm} />
-        <Button type="submit" isLoading={create.isPending}>
-          Create competition
-        </Button>
-      </form>
+      <Form {...form}>
+        <form
+          onSubmit={submitCompetition}
+          noValidate
+          className="mt-4 space-y-4 rounded-xl border border-border bg-card p-4"
+        >
+          <CompetitionFields form={form} />
+          <Button type="submit" isLoading={create.isPending}>
+            Create competition
+          </Button>
+        </form>
+      </Form>
 
-      {error && <FormBanner className="mt-3">{error}</FormBanner>}
+      {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading &&

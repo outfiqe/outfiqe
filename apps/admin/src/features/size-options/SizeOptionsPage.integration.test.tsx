@@ -5,7 +5,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { SizeOptionsPage } from "./SizeOptionsPage";
 
@@ -90,6 +90,65 @@ describe("SizeOptionsPage", () => {
 
     await waitFor(() => expect(deleteCalled).toBe(true));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("shows a success toast once the size is deleted", async () => {
+    mswServer.use(
+      http.delete(`${API_BASE}/size-options/size-1`, () =>
+        HttpResponse.json({ success: true, data: null }),
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderWithSizes();
+
+    await user.click(await screen.findByRole("button", { name: "Delete" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Delete" }));
+
+    expect(await screen.findByText("Size deleted.")).toBeInTheDocument();
+  });
+
+  it("shows an inline message, not a browser popup, when a size is added without a label", async () => {
+    const createRequested = vi.fn();
+    mswServer.use(
+      http.post(`${API_BASE}/size-options`, () => {
+        createRequested();
+        return HttpResponse.json({ success: true, data: SIZE_OPTION });
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderWithSizes();
+
+    await user.click(await screen.findByRole("button", { name: "Add to Tops" }));
+
+    expect(await screen.findByText("Enter a size label, such as M or XL.")).toBeInTheDocument();
+    expect(createRequested).not.toHaveBeenCalled();
+  });
+
+  it("adds a size, clears the field and shows a success toast", async () => {
+    let createBody: unknown;
+    mswServer.use(
+      http.post(`${API_BASE}/size-options`, async ({ request }) => {
+        createBody = await request.json();
+        return HttpResponse.json({
+          success: true,
+          data: { id: "size-2", type: "tops", label: "XL", sortOrder: 1 },
+        });
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderWithSizes();
+
+    const labelField = await screen.findByLabelText("Size label");
+    await user.type(labelField, "XL");
+    await user.click(screen.getByRole("button", { name: "Add to Tops" }));
+
+    await waitFor(() => expect(createBody).toEqual({ type: "tops", label: "XL", sortOrder: 1 }));
+    expect(await screen.findByText("Size added.")).toBeInTheDocument();
+    await waitFor(() => expect(labelField).toHaveValue(""));
   });
 
   it("shows an error toast and keeps the size when deletion fails", async () => {

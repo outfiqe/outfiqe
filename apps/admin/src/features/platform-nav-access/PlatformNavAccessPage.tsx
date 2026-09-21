@@ -86,17 +86,20 @@ export const PlatformNavAccessPage = () => {
   });
 
   const saveHidden = useApiMutation({
+    successMessage: "Navigation access saved.",
     mutationFn: platformNavAccessApi.setHiddenNavKeys,
     invalidateKeys: [OVERVIEW_QUERY_KEY],
   });
 
   const promote = useApiMutation({
+    successMessage: "Co-founder added.",
     mutationFn: platformNavAccessApi.promoteCoFounder,
     invalidateKeys: [OVERVIEW_QUERY_KEY, CANDIDATES_QUERY_KEY],
     onSuccess: () => setSelectedMembershipId(""),
   });
 
   const demote = useApiMutation({
+    successMessage: "Co-founder removed.",
     mutationFn: platformNavAccessApi.demoteCoFounder,
     invalidateKeys: [OVERVIEW_QUERY_KEY, CANDIDATES_QUERY_KEY],
   });
@@ -204,6 +207,7 @@ export const PlatformNavAccessPage = () => {
                   size="sm"
                   variant="ghost"
                   disabled={demote.isPending || isLastCoFounder}
+                  isLoading={demote.isPending && demote.variables === coFounder.membershipId}
                   title={
                     isLastCoFounder
                       ? "Promote another member before removing the last one"
@@ -238,6 +242,7 @@ export const PlatformNavAccessPage = () => {
             </label>
             <Button
               disabled={selectedMembershipId === "" || promote.isPending}
+              isLoading={promote.isPending}
               onClick={() => promote.mutate(selectedMembershipId)}
             >
               Add

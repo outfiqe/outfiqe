@@ -1,4 +1,4 @@
-import { FormBanner, Skeleton, TrendChart } from "@outfiqe/design-system";
+import { FormBanner, TrendChart } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 
@@ -6,6 +6,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformMetricsApi } from "./api";
 import type { TenantSparklinePoint } from "./schemas";
+import { TenantMetricsSkeleton } from "./TenantMetricsSkeleton";
 
 const MIN_TREND_POINTS = 2;
 const NO_ACTIVITY = 0;
@@ -38,29 +39,6 @@ const Metric = ({ label, value }: { label: string; value: string | number }) => 
   <div>
     <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
     <p className="mt-0.5 text-lg font-semibold text-foreground">{value}</p>
-  </div>
-);
-
-const TENANT_METRIC_SKELETON_COUNT = 8;
-
-const TenantMetricsSkeleton = () => (
-  <div className="mt-4" role="status" aria-label="Loading">
-    <Skeleton className="h-8 w-56" />
-    <Skeleton className="mt-1 h-5 w-48" />
-    <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-      {Array.from({ length: TENANT_METRIC_SKELETON_COUNT }, (_unused, metricIndex) => (
-        <div key={metricIndex}>
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="mt-0.5 h-7 w-16" />
-        </div>
-      ))}
-    </div>
-    <div className="mt-8">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">Activity trend</p>
-      <div className="mt-2 max-w-sm">
-        <Skeleton className="h-20 w-full rounded-lg" />
-      </div>
-    </div>
   </div>
 );
 

@@ -1,7 +1,22 @@
-import { Badge, Button, FormBanner, Input, Modal, Select } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Badge,
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Modal,
+  Select,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
@@ -13,13 +28,9 @@ import { CustomerSearchField, type SelectedCustomer } from "./CustomerSearchFiel
 import { formatDate } from "./format.utils";
 import { PlanGateBanner } from "./PlanGateBanner";
 import { TicketDetail } from "./TicketDetail";
+import { ticketFormSchema, type TicketFormValues } from "./ticketForm.schema";
 import { crmTicketsApi } from "./ticketsApi";
-import {
-  TICKET_STATUSES,
-  TICKET_TYPES,
-  type TicketStatusValue,
-  type TicketTypeValue,
-} from "./ticketsSchemas";
+import { TICKET_STATUSES, TICKET_TYPES, type TicketStatusValue } from "./ticketsSchemas";
 
 const TICKETS_QUERY_KEY = ["crm-tickets"];
 
@@ -29,99 +40,119 @@ const TICKET_STATUS_FILTER = oneOfFilter<TicketStatusValue | typeof NO_STATUS_FI
   NO_STATUS_FILTER,
 );
 
+const LABEL_CLASS = "text-xs font-normal text-muted-foreground";
+
 const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const [type, setType] = useState<TicketTypeValue>("COMPLAINT");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
   const [customer, setCustomer] = useState<SelectedCustomer | null>(null);
 
+  const form = useForm<TicketFormValues>({
+    resolver: zodResolver(ticketFormSchema),
+    defaultValues: { type: "COMPLAINT", title: "", description: "", customerUserId: "" },
+    mode: "onTouched",
+  });
+
   const create = useApiMutation({
-    mutationFn: () =>
+    mutationFn: (values: TicketFormValues) =>
       crmTicketsApi.createTicket({
-        type,
-        title: title.trim(),
-        description: description.trim(),
+        type: values.type,
+        title: values.title.trim(),
+        description: values.description.trim(),
         subjectType: "customer",
-        subjectId: customer?.userId ?? "",
+        subjectId: values.customerUserId,
       }),
     invalidateKeys: [TICKETS_QUERY_KEY],
+    successMessage: "Ticket created.",
     onSuccess: () => onClose(),
   });
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    create.mutate();
-  };
+  const submitTicket = form.handleSubmit((values) => create.mutate(values));
 
   return (
     <Modal open={open} onClose={onClose} title="New ticket">
-      <form onSubmit={submit} className="space-y-4">
-        <div className="space-y-1.5">
-          <label htmlFor="ticket-type" className="text-xs text-muted-foreground">
-            Type
-          </label>
-          <Select
-            id="ticket-type"
-            value={type}
-            onChange={(event) =>
-              setType(event.target.value === "REQUEST" ? "REQUEST" : "COMPLAINT")
-            }
-          >
-            {TICKET_TYPES.map((value) => (
-              <option key={value} value={value}>
-                {value.toLowerCase()}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="ticket-title" className="text-xs text-muted-foreground">
-            Title
-          </label>
-          <Input
-            id="ticket-title"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            required
+      <Form {...form}>
+        <form onSubmit={submitTicket} noValidate className="space-y-4">
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel className={LABEL_CLASS}>Type</FormLabel>
+                <FormControl>
+                  <Select {...field}>
+                    {TICKET_TYPES.map((value) => (
+                      <option key={value} value={value}>
+                        {value.toLowerCase()}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="ticket-desc" className="text-xs text-muted-foreground">
-            Description
-          </label>
-          <textarea
-            id="ticket-desc"
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            required
-            rows={3}
-            className="w-full rounded-lg border border-border bg-background px-3.5 py-2 text-sm text-foreground"
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel className={LABEL_CLASS}>Title</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="ticket-customer" className="text-xs text-muted-foreground">
-            Customer
-          </label>
-          <CustomerSearchField id="ticket-customer" value={customer} onChange={setCustomer} />
-        </div>
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel className={LABEL_CLASS}>Description</FormLabel>
+                <FormControl>
+                  <textarea
+                    rows={3}
+                    className="w-full rounded-lg border border-border bg-background px-3.5 py-2 text-sm text-foreground"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="customerUserId"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel htmlFor="ticket-customer" className={LABEL_CLASS}>
+                  Customer
+                </FormLabel>
+                <CustomerSearchField
+                  id="ticket-customer"
+                  value={customer}
+                  onChange={(selected) => {
+                    setCustomer(selected);
+                    field.onChange(selected?.userId ?? "");
+                  }}
+                />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        {create.isError && <FormBanner>{getErrorMessage(create.error)}</FormBanner>}
+          {create.isError && <FormBanner>{getErrorMessage(create.error)}</FormBanner>}
 
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={
-              title.trim().length === 0 || description.trim().length === 0 || customer === null
-            }
-            isLoading={create.isPending}
-          >
-            Create ticket
-          </Button>
-        </div>
-      </form>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={create.isPending}>
+              Create ticket
+            </Button>
+          </div>
+        </form>
+      </Form>
     </Modal>
   );
 };

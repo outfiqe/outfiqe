@@ -1,10 +1,26 @@
-import { Button, Checkbox, Modal, Select, toast } from "@outfiqe/design-system";
-import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Button,
+  Checkbox,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Modal,
+  Select,
+} from "@outfiqe/design-system";
+import { useApiMutation } from "@outfiqe/hooks";
+import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { couponsApi } from "./api";
-import type { CouponTypeValue } from "./schemas";
+import type { CouponFormValues } from "./couponForm.schema";
+import { couponFormSchema, EMPTY_COUPON_FORM } from "./couponForm.schema";
 
 type CreateCouponModalProps = {
   open: boolean;
@@ -13,266 +29,237 @@ type CreateCouponModalProps = {
 };
 
 const PERCENT_BASIS_POINTS_PER_PERCENT = 100;
-const DEFAULT_PERCENT_OFF = "10";
-const DEFAULT_FIXED_AMOUNT = "200";
-const DEFAULT_MIN_SUBTOTAL = "0";
 const COD_COUPON_VALUE_THRESHOLD = 200;
+const CREATE_COUPON_FORM_ID = "create-coupon-form";
 
-const inputClassName =
-  "h-11 w-full rounded-lg border border-border bg-background px-3.5 text-sm text-foreground outline-none transition-colors focus-visible:border-foreground";
-const labelClassName = "mb-1.5 block text-sm font-medium text-foreground";
+const optionalNumber = (raw: string) => (raw === "" ? undefined : Number(raw));
+
+const buildCreateInput = (values: CouponFormValues) => ({
+  code: values.code,
+  type: values.type,
+  percentBasisPoints:
+    values.type === "PERCENT"
+      ? Number(values.percentOff) * PERCENT_BASIS_POINTS_PER_PERCENT
+      : undefined,
+  fixedAmount: values.type === "FIXED" ? Number(values.fixedAmount) : undefined,
+  maxDiscountAmount: optionalNumber(values.maxDiscountAmount),
+  minSubtotal: Number(values.minSubtotal),
+  startsAt: new Date().toISOString(),
+  endsAt: values.endsAt ? new Date(values.endsAt).toISOString() : null,
+  totalBudgetAmount: optionalNumber(values.totalBudgetAmount),
+  maxRedemptions: optionalNumber(values.maxRedemptions),
+  firstOrderOnly: values.firstOrderOnly,
+  prepaidOnly: values.prepaidOnly,
+  stacksWithBrandDiscount: values.stacksWithBrandDiscount,
+});
 
 export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModalProps) => {
-  const [code, setCode] = useState("");
-  const [type, setType] = useState<CouponTypeValue>("PERCENT");
-  const [percentOff, setPercentOff] = useState(DEFAULT_PERCENT_OFF);
-  const [fixedAmount, setFixedAmount] = useState(DEFAULT_FIXED_AMOUNT);
-  const [maxDiscountAmount, setMaxDiscountAmount] = useState("");
-  const [minSubtotal, setMinSubtotal] = useState(DEFAULT_MIN_SUBTOTAL);
-  const [endsAt, setEndsAt] = useState("");
-  const [totalBudgetAmount, setTotalBudgetAmount] = useState("");
-  const [maxRedemptions, setMaxRedemptions] = useState("");
-  const [firstOrderOnly, setFirstOrderOnly] = useState(false);
-  const [prepaidOnly, setPrepaidOnly] = useState(false);
-  const [stacksWithBrandDiscount, setStacksWithBrandDiscount] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const form = useForm<CouponFormValues>({
+    resolver: zodResolver(couponFormSchema),
+    defaultValues: EMPTY_COUPON_FORM,
+    mode: "onTouched",
+  });
+  const { control, watch, register } = form;
+  const couponType = watch("type");
+  const isPrepaidOnly = watch("prepaidOnly");
 
-  const reset = () => {
-    setCode("");
-    setType("PERCENT");
-    setPercentOff(DEFAULT_PERCENT_OFF);
-    setFixedAmount(DEFAULT_FIXED_AMOUNT);
-    setMaxDiscountAmount("");
-    setMinSubtotal(DEFAULT_MIN_SUBTOTAL);
-    setEndsAt("");
-    setTotalBudgetAmount("");
-    setMaxRedemptions("");
-    setFirstOrderOnly(false);
-    setPrepaidOnly(false);
-    setStacksWithBrandDiscount(true);
-  };
+  const createCoupon = useApiMutation({
+    mutationFn: (values: CouponFormValues) => couponsApi.create(buildCreateInput(values)),
+    successMessage: "Coupon created.",
+    onSuccess: async () => {
+      await onCreated();
+      closeAndReset();
+    },
+  });
 
-  const close = () => {
-    reset();
+  const closeAndReset = () => {
+    form.reset(EMPTY_COUPON_FORM);
+    createCoupon.reset();
     onClose();
   };
 
-  const submit = async () => {
-    setIsSubmitting(true);
-    try {
-      await couponsApi.create({
-        code,
-        type,
-        percentBasisPoints:
-          type === "PERCENT"
-            ? Math.round(Number(percentOff) * PERCENT_BASIS_POINTS_PER_PERCENT)
-            : undefined,
-        fixedAmount: type === "FIXED" ? Number(fixedAmount) : undefined,
-        maxDiscountAmount: maxDiscountAmount ? Number(maxDiscountAmount) : undefined,
-        minSubtotal: Number(minSubtotal || 0),
-        startsAt: new Date().toISOString(),
-        endsAt: endsAt ? new Date(endsAt).toISOString() : null,
-        totalBudgetAmount: totalBudgetAmount ? Number(totalBudgetAmount) : undefined,
-        maxRedemptions: maxRedemptions ? Number(maxRedemptions) : undefined,
-        firstOrderOnly,
-        prepaidOnly,
-        stacksWithBrandDiscount,
-      });
-      toast.success("Coupon created");
-      await onCreated();
-      close();
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const submitCoupon = form.handleSubmit((values) => createCoupon.mutate(values));
 
   return (
     <Modal
       open={open}
-      onClose={close}
+      onClose={closeAndReset}
       title="New coupon"
       description="A platform-funded discount, deducted from the customer's total. Brand payouts are unaffected."
       footer={
         <div className="flex w-full justify-end gap-2">
-          <Button variant="outline" onClick={close}>
+          <Button variant="outline" onClick={closeAndReset}>
             Cancel
           </Button>
-          <Button
-            onClick={() => void submit()}
-            disabled={code.trim().length < 4}
-            isLoading={isSubmitting}
-          >
+          <Button type="submit" form={CREATE_COUPON_FORM_ID} isLoading={createCoupon.isPending}>
             Create coupon
           </Button>
         </div>
       }
     >
-      <div className="space-y-4">
-        <div>
-          <label className={labelClassName} htmlFor="coupon-code">
-            Code
-          </label>
-          <input
-            id="coupon-code"
-            value={code}
-            onChange={(event) => setCode(event.target.value)}
-            placeholder="WELCOME300"
-            className={inputClassName}
+      <Form {...form}>
+        <form id={CREATE_COUPON_FORM_ID} noValidate onSubmit={submitCoupon} className="space-y-4">
+          <FormField
+            control={control}
+            name="code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Code</FormLabel>
+                <FormControl>
+                  <Input placeholder="WELCOME300" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <div>
-          <label className={labelClassName} htmlFor="coupon-type">
-            Discount type
-          </label>
-          <Select
-            id="coupon-type"
-            value={type}
-            onChange={(event) => setType(event.target.value as CouponTypeValue)}
-          >
-            <option value="PERCENT">Percent off</option>
-            <option value="FIXED">Fixed amount off</option>
-          </Select>
-        </div>
+          <FormField
+            control={control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Discount type</FormLabel>
+                <FormControl>
+                  <Select {...field}>
+                    <option value="PERCENT">Percent off</option>
+                    <option value="FIXED">Fixed amount off</option>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        {type === "PERCENT" ? (
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelClassName} htmlFor="coupon-percent">
-                Percent off
-              </label>
-              <input
-                id="coupon-percent"
-                type="number"
-                min={1}
-                max={100}
-                value={percentOff}
-                onChange={(event) => setPercentOff(event.target.value)}
-                className={inputClassName}
+          {couponType === "PERCENT" ? (
+            <div className="grid grid-cols-2 items-start gap-3">
+              <FormField
+                control={control}
+                name="percentOff"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Percent off</FormLabel>
+                    <FormControl>
+                      <Input inputMode="numeric" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name="maxDiscountAmount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cap (Rs., optional)</FormLabel>
+                    <FormControl>
+                      <Input inputMode="numeric" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-            <div>
-              <label className={labelClassName} htmlFor="coupon-max-discount">
-                Cap (Rs., optional)
-              </label>
-              <input
-                id="coupon-max-discount"
-                type="number"
-                min={1}
-                value={maxDiscountAmount}
-                onChange={(event) => setMaxDiscountAmount(event.target.value)}
-                className={inputClassName}
-              />
-            </div>
-          </div>
-        ) : (
-          <div>
-            <label className={labelClassName} htmlFor="coupon-fixed-amount">
-              Amount off (Rs.)
-            </label>
-            <input
-              id="coupon-fixed-amount"
-              type="number"
-              min={1}
-              value={fixedAmount}
-              onChange={(event) => setFixedAmount(event.target.value)}
-              className={inputClassName}
+          ) : (
+            <FormField
+              control={control}
+              name="fixedAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount off (Rs.)</FormLabel>
+                  <FormControl>
+                    <Input inputMode="numeric" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className={labelClassName} htmlFor="coupon-min-subtotal">
-              Minimum subtotal (Rs.)
-            </label>
-            <input
-              id="coupon-min-subtotal"
-              type="number"
-              min={0}
-              value={minSubtotal}
-              onChange={(event) => setMinSubtotal(event.target.value)}
-              className={inputClassName}
-            />
-          </div>
-          <div>
-            <label className={labelClassName} htmlFor="coupon-ends-at">
-              Ends on (optional)
-            </label>
-            <input
-              id="coupon-ends-at"
-              type="date"
-              value={endsAt}
-              onChange={(event) => setEndsAt(event.target.value)}
-              className={inputClassName}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className={labelClassName} htmlFor="coupon-total-budget">
-              Total budget (Rs., optional)
-            </label>
-            <input
-              id="coupon-total-budget"
-              type="number"
-              min={1}
-              value={totalBudgetAmount}
-              onChange={(event) => setTotalBudgetAmount(event.target.value)}
-              className={inputClassName}
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Budgets over Rs. 50,000 need a second admin&apos;s approval before going live.
-            </p>
-          </div>
-          <div>
-            <label className={labelClassName} htmlFor="coupon-max-redemptions">
-              Max redemptions (optional)
-            </label>
-            <input
-              id="coupon-max-redemptions"
-              type="number"
-              min={1}
-              value={maxRedemptions}
-              onChange={(event) => setMaxRedemptions(event.target.value)}
-              className={inputClassName}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm text-foreground">
-            <Checkbox
-              checked={firstOrderOnly}
-              onChange={(event) => setFirstOrderOnly(event.target.checked)}
-            />
-            First order only
-          </label>
-          <label className="flex items-center gap-2 text-sm text-foreground">
-            <Checkbox
-              checked={prepaidOnly}
-              onChange={(event) => setPrepaidOnly(event.target.checked)}
-            />
-            Requires prepaid checkout (eSewa or Khalti)
-          </label>
-          {!prepaidOnly && (
-            <p className="pl-6 text-xs text-muted-foreground">
-              Recommended above Rs. {COD_COUPON_VALUE_THRESHOLD} — a refused COD delivery still
-              spends the coupon.
-            </p>
           )}
-          <label className="flex items-center gap-2 text-sm text-foreground">
-            <Checkbox
-              checked={stacksWithBrandDiscount}
-              onChange={(event) => setStacksWithBrandDiscount(event.target.checked)}
+
+          <div className="grid grid-cols-2 items-start gap-3">
+            <FormField
+              control={control}
+              name="minSubtotal"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Minimum subtotal (Rs.)</FormLabel>
+                  <FormControl>
+                    <Input inputMode="numeric" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            Stacks with an active brand sale price
-          </label>
-        </div>
-      </div>
+            <FormField
+              control={control}
+              name="endsAt"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ends on (optional)</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 items-start gap-3">
+            <FormField
+              control={control}
+              name="totalBudgetAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Total budget (Rs., optional)</FormLabel>
+                  <FormControl>
+                    <Input inputMode="numeric" {...field} />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Budgets over Rs. 50,000 need a second admin&apos;s approval before going live.
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name="maxRedemptions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Max redemptions (optional)</FormLabel>
+                  <FormControl>
+                    <Input inputMode="numeric" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <Checkbox {...register("firstOrderOnly")} />
+              First order only
+            </label>
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <Checkbox {...register("prepaidOnly")} />
+              Requires prepaid checkout (eSewa or Khalti)
+            </label>
+            {!isPrepaidOnly && (
+              <p className="pl-6 text-xs text-muted-foreground">
+                Recommended above Rs. {COD_COUPON_VALUE_THRESHOLD} — a refused COD delivery still
+                spends the coupon.
+              </p>
+            )}
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <Checkbox {...register("stacksWithBrandDiscount")} />
+              Stacks with an active brand sale price
+            </label>
+          </div>
+
+          {createCoupon.isError && <FormBanner>{getErrorMessage(createCoupon.error)}</FormBanner>}
+        </form>
+      </Form>
     </Modal>
   );
 };

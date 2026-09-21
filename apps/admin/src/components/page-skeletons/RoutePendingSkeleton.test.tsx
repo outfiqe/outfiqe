@@ -88,20 +88,51 @@ describe("RoutePendingSkeleton", () => {
     expect(container.querySelector(String.raw`.xl\:grid-cols-6`)).not.toBeNull();
   });
 
-  it("shows the dashboard skeleton for the platform overview", () => {
+  it("shows the real heading and sections of the platform overview while it loads", () => {
     routerState.pathname = "/admin/platform";
 
-    const { container } = render(<RoutePendingSkeleton />);
+    render(<RoutePendingSkeleton />);
 
-    expect(container.querySelector(String.raw`.xl\:grid-cols-6`)).not.toBeNull();
+    expect(screen.getByRole("heading", { level: 1, name: "Overview" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Quick access" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Settlement reconciliation" })).toBeInTheDocument();
   });
 
-  it("shows the form skeleton for a detail page", () => {
+  it("shows the back link and the real card titles of an order while it loads", () => {
     routerState.pathname = "/admin/orders/9c1d";
 
-    const { container } = render(<RoutePendingSkeleton />);
+    render(<RoutePendingSkeleton />);
 
-    expect(container.querySelector(".max-w-3xl")).not.toBeNull();
+    expect(screen.getByText("Orders")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Buyer" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Totals" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Items" })).toBeInTheDocument();
+  });
+
+  it("shows the back link of a tenant's metrics while it loads", () => {
+    routerState.pathname = "/admin/platform/metrics/org-1";
+
+    render(<RoutePendingSkeleton />);
+
+    expect(screen.getByText("← All tenants")).toBeInTheDocument();
+    expect(screen.getByText("Activity trend")).toBeInTheDocument();
+  });
+
+  it("shows the Details and Design tabs of the badge form while it loads", () => {
+    routerState.pathname = "/admin/gamification/badges/new";
+
+    render(<RoutePendingSkeleton />);
+
+    expect(screen.getByText("Details")).toBeInTheDocument();
+    expect(screen.getByText("Design")).toBeInTheDocument();
+  });
+
+  it("shows a status skeleton for a support ticket while it loads", () => {
+    routerState.pathname = "/admin/support/ticket-1";
+
+    render(<RoutePendingSkeleton />);
+
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
   });
 
   it("falls back to the generic skeleton for an unknown page", () => {
