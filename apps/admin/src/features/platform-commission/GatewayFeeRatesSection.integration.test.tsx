@@ -83,7 +83,7 @@ describe("GatewayFeeRatesSection", () => {
 
     await screen.findByText("No rate configured yet.");
     const khaltiForm = getProviderForm("Khalti");
-    await user.type(khaltiForm.getByRole("spinbutton"), "3");
+    await user.type(khaltiForm.getByLabelText("New rate (%)"), "3");
     await user.click(khaltiForm.getByRole("button", { name: "Update" }));
 
     await waitFor(() =>
@@ -108,9 +108,44 @@ describe("GatewayFeeRatesSection", () => {
 
     await screen.findByText("No rate configured yet.");
     const khaltiForm = getProviderForm("Khalti");
-    await user.type(khaltiForm.getByRole("spinbutton"), "9");
+    await user.type(khaltiForm.getByLabelText("New rate (%)"), "9");
     await user.click(khaltiForm.getByRole("button", { name: "Update" }));
 
     expect(await khaltiForm.findByText("Rate too high")).toBeInTheDocument();
+  });
+
+  it("shows an inline message, not a browser popup, when the rate is empty, and sends nothing", async () => {
+    const user = userEvent.setup();
+    const postBody = vi.fn();
+    stubRates();
+    mswServer.use(
+      http.post(`${API_BASE}/brand-payouts/gateway-fee-rates`, async ({ request }) => {
+        postBody(await request.json());
+        return HttpResponse.json({ success: true, data: {} });
+      }),
+    );
+
+    render(<GatewayFeeRatesSection />, { wrapper });
+
+    await screen.findByText("No rate configured yet.");
+    const khaltiForm = getProviderForm("Khalti");
+    await user.click(khaltiForm.getByRole("button", { name: "Update" }));
+
+    expect(await khaltiForm.findByText("Enter a rate.")).toBeInTheDocument();
+    expect(postBody).not.toHaveBeenCalled();
+  });
+
+  it("rejects a rate above 100 under the field", async () => {
+    const user = userEvent.setup();
+    stubRates();
+
+    render(<GatewayFeeRatesSection />, { wrapper });
+
+    await screen.findByText("No rate configured yet.");
+    const khaltiForm = getProviderForm("Khalti");
+    await user.type(khaltiForm.getByLabelText("New rate (%)"), "150");
+    await user.click(khaltiForm.getByRole("button", { name: "Update" }));
+
+    expect(await khaltiForm.findByText("Use a number up to 100.")).toBeInTheDocument();
   });
 });
