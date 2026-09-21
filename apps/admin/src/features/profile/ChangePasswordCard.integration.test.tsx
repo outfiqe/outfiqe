@@ -1,10 +1,11 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ChangePasswordCard } from "./ChangePasswordCard";
 
@@ -13,7 +14,10 @@ const CHANGE_PASSWORD_URL = "http://localhost:3000/api/auth/change-password";
 const renderCard = () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <Toaster />
+    </QueryClientProvider>
   );
   return render(<ChangePasswordCard />, { wrapper });
 };
@@ -54,6 +58,7 @@ describe("admin ChangePasswordCard", () => {
       }),
     );
     expect(await screen.findByText(/other devices were signed out/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText("Current password")).toHaveValue(""));
   });
 
   it("does not call the API when the confirmation does not match", async () => {
@@ -92,5 +97,41 @@ describe("admin ChangePasswordCard", () => {
     await fillAndSubmit(user, { current: "wrong", next: "new-secret-2", confirm: "new-secret-2" });
 
     expect(await screen.findByText("Your current password is incorrect.")).toBeInTheDocument();
+  });
+
+  it("shows inline messages, not a browser popup, when the form is submitted empty", async () => {
+    const called = vi.fn();
+    mswServer.use(
+      http.post(CHANGE_PASSWORD_URL, () => {
+        called();
+        return HttpResponse.json({ success: true, message: "ok", data: null });
+      }),
+    );
+    const user = userEvent.setup();
+    renderCard();
+
+    await user.click(screen.getByRole("button", { name: "Update password" }));
+
+    expect(await screen.findByText("Enter your current password.")).toBeInTheDocument();
+    expect(screen.getByText("Enter a new password.")).toBeInTheDocument();
+    expect(screen.getByText("Confirm your new password.")).toBeInTheDocument();
+    expect(called).not.toHaveBeenCalled();
+  });
+
+  it("explains a new password that is too short and does not call the API", async () => {
+    const called = vi.fn();
+    mswServer.use(
+      http.post(CHANGE_PASSWORD_URL, () => {
+        called();
+        return HttpResponse.json({ success: true, message: "ok", data: null });
+      }),
+    );
+    const user = userEvent.setup();
+    renderCard();
+
+    await fillAndSubmit(user, { current: "old-secret-1", next: "short", confirm: "short" });
+
+    expect(await screen.findByText("Password must be at least 8 characters.")).toBeInTheDocument();
+    expect(called).not.toHaveBeenCalled();
   });
 });
