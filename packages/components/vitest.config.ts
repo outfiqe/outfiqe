@@ -14,6 +14,7 @@ export default defineConfig({
         "src/notifications/NotificationBell.tsx",
         "src/kanban/KanbanBoard.tsx",
         "src/sidebar/useExpandedGroups.ts",
+        "src/sidebar/SidebarNavItemView.tsx",
       ],
       exclude: ["src/**/*.test.tsx", "src/testing/**"],
       thresholds: {
