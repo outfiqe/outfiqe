@@ -12,9 +12,10 @@ type ShareLinkRowProps = {
   label: string;
   url: string;
   meta?: string;
+  onDelete?: () => void;
 };
 
-export const ShareLinkRow = ({ label, url, meta }: ShareLinkRowProps) => {
+export const ShareLinkRow = ({ label, url, meta, onDelete }: ShareLinkRowProps) => {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
       <div className="min-w-0 flex-1">
@@ -26,6 +27,11 @@ export const ShareLinkRow = ({ label, url, meta }: ShareLinkRowProps) => {
         <Copy className="size-3.5" />
         Copy
       </Button>
+      {onDelete && (
+        <Button size="sm" variant="outline" aria-label={`Delete ${label}`} onClick={onDelete}>
+          Delete
+        </Button>
+      )}
     </div>
   );
 };

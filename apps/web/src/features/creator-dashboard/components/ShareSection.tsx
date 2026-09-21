@@ -11,6 +11,7 @@ import type { CreatorLink } from "../api/creatorLinksSchemas";
 import { useCreateInternalLink, useGetOrCreateExternalLink } from "../hooks/useCreateCreatorLink";
 import { useMyCreatorLinks } from "../hooks/useMyCreatorLinks";
 import { CreatorStatusGate } from "./CreatorStatusGate";
+import { DeleteLinkModal } from "./DeleteLinkModal";
 import { ShareLinkRow } from "./ShareLinkRow";
 import { ShareProductPicker } from "./ShareProductPicker";
 
@@ -26,6 +27,7 @@ type ShareSectionProps = {
 export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
   const [selectedProduct, setSelectedProduct] = useState<PublicProduct | null>(null);
   const [newLink, setNewLink] = useState<CreatorLink | null>(null);
+  const [linkPendingDeletion, setLinkPendingDeletion] = useState<CreatorLink | null>(null);
 
   const selectProduct = (product: PublicProduct | null) => {
     setSelectedProduct(product);
@@ -47,6 +49,12 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
   const createInternal = useCreateInternalLink();
   const getOrCreateExternal = useGetOrCreateExternalLink();
   const profileLink = useGetOrCreateExternalLink();
+
+  const forgetDeletedLink = (deletedLink: CreatorLink) => {
+    setLinkPendingDeletion(null);
+    if (newLink?.id === deletedLink.id) setNewLink(null);
+    if (profileLink.data?.id === deletedLink.id) profileLink.reset();
+  };
 
   if (creatorStatus !== CreatorStatus.APPROVED) {
     return (
@@ -180,10 +188,19 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
                 key={link.id}
                 label={link.productName ?? "Your profile"}
                 url={link.shareUrl}
+                onDelete={() => setLinkPendingDeletion(link)}
                 meta={`${LINK_TYPE_LABEL[link.type]} · ${link.clickCount} click${link.clickCount === 1 ? "" : "s"}${link.status !== "ACTIVE" ? ` · ${link.status.toLowerCase()}` : ""}`}
               />
             ))}
           </div>
+        )}
+
+        {linkPendingDeletion && (
+          <DeleteLinkModal
+            link={linkPendingDeletion}
+            onClose={() => setLinkPendingDeletion(null)}
+            onDeleted={forgetDeletedLink}
+          />
         )}
 
         {hasNextPage && (

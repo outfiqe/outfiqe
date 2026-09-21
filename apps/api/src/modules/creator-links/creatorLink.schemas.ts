@@ -20,6 +20,9 @@ export type ListMyLinksQuery = z.infer<typeof listMyLinksQuerySchema>;
 export const linkTokenParamSchema = z.object({ token: z.string().min(1) });
 export type LinkTokenParam = z.infer<typeof linkTokenParamSchema>;
 
+export const linkIdParamSchema = z.object({ id: z.uuid() });
+export type LinkIdParam = z.infer<typeof linkIdParamSchema>;
+
 export const recordLinkClickSchema = z.object({
   sessionId: z.string().min(1).max(SESSION_ID_MAX),
 });

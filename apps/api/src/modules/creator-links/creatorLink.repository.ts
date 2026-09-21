@@ -37,6 +37,17 @@ export const creatorLinkRepository = {
     });
   },
 
+  async findOwned(id: string, creatorId: string): Promise<CreatorLinkRecord | null> {
+    return prisma.creatorLink.findFirst({ where: { id, creatorId } });
+  },
+
+  async revoke(id: string): Promise<void> {
+    await prisma.creatorLink.updateMany({
+      where: { id, status: { not: CreatorLinkStatus.REVOKED } },
+      data: { status: CreatorLinkStatus.REVOKED },
+    });
+  },
+
   async consumeSingleUse(id: string): Promise<boolean> {
     const result = await prisma.creatorLink.updateMany({
       where: { id, status: CreatorLinkStatus.ACTIVE },
@@ -54,7 +65,7 @@ export const creatorLinkRepository = {
     params: { cursor?: string; limit: number },
   ): Promise<CreatorLinkWithClickCount[]> {
     return prisma.creatorLink.findMany({
-      where: { creatorId },
+      where: { creatorId, status: { not: CreatorLinkStatus.REVOKED } },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: params.limit + 1,
       ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),

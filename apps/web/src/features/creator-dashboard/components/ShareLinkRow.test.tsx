@@ -52,4 +52,27 @@ describe("ShareLinkRow", () => {
 
     await waitFor(() => expect(writeText).toHaveBeenCalledWith("https://outfiqe.test/r/abc"));
   });
+
+  it("offers a delete button only when a delete handler is given", () => {
+    const { rerender } = render(
+      <ShareLinkRow label="Your link" url="https://outfiqe.test/r/abc" />,
+    );
+    expect(screen.queryByRole("button", { name: /Delete/ })).not.toBeInTheDocument();
+
+    rerender(
+      <ShareLinkRow label="Your link" url="https://outfiqe.test/r/abc" onDelete={vi.fn()} />,
+    );
+
+    expect(screen.getByRole("button", { name: "Delete Your link" })).toBeInTheDocument();
+  });
+
+  it("calls the delete handler when Delete is clicked", async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+    render(<ShareLinkRow label="Your link" url="https://outfiqe.test/r/abc" onDelete={onDelete} />);
+
+    await user.click(screen.getByRole("button", { name: "Delete Your link" }));
+
+    expect(onDelete).toHaveBeenCalledOnce();
+  });
 });

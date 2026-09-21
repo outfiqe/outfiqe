@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -371,5 +371,81 @@ describe("ShareSection", () => {
     expect(
       screen.queryByText("No links generated yet — share a product above to get started."),
     ).not.toBeInTheDocument();
+  });
+
+  describe("deleting a link", () => {
+    const mockOneLink = () =>
+      mockMyCreatorLinks({
+        data: { pages: [{ items: [buildLink("l1")], nextCursor: null }], pageParams: [undefined] },
+      });
+
+    it("asks for confirmation and deletes the link once confirmed", async () => {
+      mockOneLink();
+      const deleteRequested = vi.fn();
+      mswServer.use(
+        http.delete("/api/creator-links/l1", () => {
+          deleteRequested();
+          return HttpResponse.json({ success: true, message: "Link deleted.", data: null });
+        }),
+      );
+      const user = userEvent.setup();
+      renderSection();
+
+      await user.click(screen.getByRole("button", { name: "Delete Denim Jacket" }));
+      expect(screen.getByRole("dialog", { name: "Delete link" })).toBeInTheDocument();
+      expect(deleteRequested).not.toHaveBeenCalled();
+
+      await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete" }));
+
+      await waitFor(() => expect(deleteRequested).toHaveBeenCalledOnce());
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    });
+
+    it("does not delete anything when the confirmation is cancelled", async () => {
+      mockOneLink();
+      const deleteRequested = vi.fn();
+      mswServer.use(
+        http.delete("/api/creator-links/l1", () => {
+          deleteRequested();
+          return HttpResponse.json({ success: true, message: "Link deleted.", data: null });
+        }),
+      );
+      const user = userEvent.setup();
+      renderSection();
+
+      await user.click(screen.getByRole("button", { name: "Delete Denim Jacket" }));
+      await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(deleteRequested).not.toHaveBeenCalled();
+    });
+
+    it("keeps the confirmation open when the server rejects the delete", async () => {
+      mockOneLink();
+      mswServer.use(
+        http.delete("/api/creator-links/l1", () =>
+          HttpResponse.json(
+            {
+              success: false,
+              message: "This link is no longer available.",
+              code: "LINK_NOT_FOUND",
+            },
+            { status: 404 },
+          ),
+        ),
+      );
+      const user = userEvent.setup();
+      renderSection();
+
+      await user.click(screen.getByRole("button", { name: "Delete Denim Jacket" }));
+      await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete" }));
+
+      await waitFor(() =>
+        expect(
+          within(screen.getByRole("dialog")).getByRole("button", { name: "Delete" }),
+        ).toBeEnabled(),
+      );
+      expect(screen.getByRole("dialog", { name: "Delete link" })).toBeInTheDocument();
+    });
   });
 });
