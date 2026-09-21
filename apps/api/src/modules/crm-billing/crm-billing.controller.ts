@@ -26,12 +26,13 @@ export const crmBillingController = {
   },
 
   async listInvoices(_req: Request, res: Response) {
-    const { cursor, limit } = validated.query<ListInvoicesQuery>(res);
+    const { cursor, limit, includeVoided } = validated.query<ListInvoicesQuery>(res);
     const organization = getResolvedOrganization(res);
 
     const page = await crmBillingService.listInvoices(organization.id, {
       cursor,
       limit: limit ?? DEFAULT_INVOICE_PAGE_SIZE,
+      includeVoided,
     });
     sendSuccess(res, page, "CRM billing invoices.");
   },

@@ -1,6 +1,6 @@
-import { Badge, Button, FormBanner } from "@outfiqe/design-system";
+import { Badge, Button, Checkbox, FormBanner } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -46,15 +46,17 @@ const SubscriptionCard = ({
 }) => {
   const { subscription, planCatalog, activeSeatCount } = overview;
 
+  const [showVoidedInvoices, setShowVoidedInvoices] = useState(false);
   const {
     data: invoicePages,
     fetchNextPage: fetchMoreInvoices,
     hasNextPage: hasMoreInvoices,
     isFetchingNextPage: isFetchingMoreInvoices,
   } = useInfiniteQuery({
-    queryKey: BILLING_INVOICES_KEY,
-    queryFn: ({ pageParam }) => crmBillingApi.listInvoices(pageParam),
+    queryKey: [...BILLING_INVOICES_KEY, showVoidedInvoices],
+    queryFn: ({ pageParam }) => crmBillingApi.listInvoices(pageParam, showVoidedInvoices),
     initialPageParam: undefined as string | undefined,
+    placeholderData: keepPreviousData,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
   const invoices = invoicePages?.pages.flatMap((page) => page.invoices) ?? [];
@@ -143,6 +145,13 @@ const SubscriptionCard = ({
       )}
 
       <div>
+        <label className="mb-3 flex cursor-pointer items-center gap-2 text-sm text-foreground">
+          <Checkbox
+            checked={showVoidedInvoices}
+            onChange={(event) => setShowVoidedInvoices(event.target.checked)}
+          />
+          Show voided invoices
+        </label>
         <InvoiceHistory invoices={invoices} />
         {hasMoreInvoices && (
           <Button
