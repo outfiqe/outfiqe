@@ -35,6 +35,7 @@ import type {
   OrganizationCreationSuggestion,
   OrganizationInviteRecord,
   OrganizationInviteSummary,
+  OrganizationListItem,
   OrganizationListPage,
   OrganizationRecord,
   OwnershipTransferRequestRecord,
@@ -121,6 +122,15 @@ const asRoleNameConflict = (err: unknown): unknown =>
     ? new AppError("ROLE_NAME_TAKEN", "A role with that name already exists.", CONFLICT_STATUS)
     : err;
 
+const withLinkedBrandName = async (
+  organization: OrganizationRecord,
+): Promise<OrganizationListItem> => {
+  if (!organization.linkedBrandId) return { ...organization, linkedBrandName: null };
+
+  const linkedBrand = await brandRepository.findById(organization.linkedBrandId);
+  return { ...organization, linkedBrandName: linkedBrand?.name ?? null };
+};
+
 export const crmAccessService = {
   async resolveHasPlatformAccess(userId: string): Promise<boolean> {
     const platformOrganization = await crmAccessRepository.findPlatformOrganization();
@@ -149,7 +159,7 @@ export const crmAccessService = {
     return crmAccessRepository.grantPlatformStaffMembership(userId, roleId, client);
   },
 
-  async createOrganization(input: CreateOrganizationInput): Promise<OrganizationRecord> {
+  async createOrganization(input: CreateOrganizationInput): Promise<OrganizationListItem> {
     const { name, subdomain, creatingUserId, targetOwnerUserId, linkedBrandId } = input;
 
     if (RESERVED_SUBDOMAINS.includes(subdomain)) {
@@ -187,7 +197,7 @@ export const crmAccessService = {
 
     const isHandingOffToSomeoneElse =
       targetOwnerUserId !== undefined && targetOwnerUserId !== creatingUserId;
-    if (!isHandingOffToSomeoneElse) return organization;
+    if (!isHandingOffToSomeoneElse) return withLinkedBrandName(organization);
 
     const roles = await crmAccessRepository.listRoles(organization.id);
     const adminRole = roles.find((role) => role.name === BUILT_IN_ROLE_NAME.ADMIN);
@@ -207,7 +217,7 @@ export const crmAccessService = {
       true,
     );
 
-    return organization;
+    return withLinkedBrandName(organization);
   },
 
   async suggestOrganizationFromBrand(brandId: string): Promise<OrganizationCreationSuggestion> {
