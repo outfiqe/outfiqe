@@ -3,7 +3,6 @@ import {
   Button,
   Checkbox,
   FormBanner,
-  Skeleton,
   Tabs,
   TabsContent,
   TabsList,
@@ -16,7 +15,6 @@ import { ArrowLeft } from "lucide-react";
 import { type FormEvent, useMemo, useRef, useState } from "react";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
-import { SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { validateWithSchema } from "@/lib/zodFieldErrors";
 
@@ -29,6 +27,7 @@ import { BADGES_QUERY_KEY, EMPTY_FORM } from "./badgeForm.constants";
 import { pickBadgeFormSchema } from "./badgeForm.schema";
 import type { BadgeFormState } from "./badgeForm.types";
 import { formForBadge, toFormInput, toPreviewDesignConfig } from "./badgeForm.utils";
+import { BadgeFormSkeleton } from "./BadgeFormSkeleton";
 import { BadgeDesignSection } from "./DesignStudio/BadgeDesignSection";
 import { BADGE_LAYER_TYPE } from "./DesignStudio/studioLayer.constants";
 
@@ -212,44 +211,6 @@ const BadgeForm = ({
     </form>
   );
 };
-
-const BADGE_FIELD_SKELETON_COUNT = 4;
-
-const BadgeFormSkeleton = () => (
-  <div role="status" aria-label="Loading">
-    <Skeleton className="h-5 w-16" />
-    <div className="mt-3 flex flex-wrap items-center gap-3">
-      <Skeleton className="size-12 rounded-full" />
-      <Skeleton className="h-8 w-64 max-w-full" />
-    </div>
-
-    <div aria-hidden>
-      <Tabs value={TAB.DETAILS} className="mt-6">
-        <TabsList>
-          <TabsTrigger value={TAB.DETAILS}>Details</TabsTrigger>
-          <TabsTrigger value={TAB.DESIGN} disabled>
-            Design
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value={TAB.DETAILS} className="mt-4 space-y-4">
-          {Array.from({ length: BADGE_FIELD_SKELETON_COUNT }, (_unused, fieldIndex) => (
-            <div key={fieldIndex} className="space-y-1.5">
-              <Skeleton className="h-4 w-28" />
-              <Skeleton className="h-11 w-full rounded-lg" />
-            </div>
-          ))}
-        </TabsContent>
-      </Tabs>
-    </div>
-
-    <div className="mt-6 space-y-3 border-t border-border pt-4">
-      <div className="flex justify-end gap-2">
-        <SkeletonButton label="Cancel" />
-        <SkeletonButton variant="default" label="Create badge" />
-      </div>
-    </div>
-  </div>
-);
 
 type BadgeFormPageProps =
   { mode: "create"; duplicateFromId?: string } | { mode: "edit"; badgeId: string };
