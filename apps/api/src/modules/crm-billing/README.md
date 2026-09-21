@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Per-seat subscription billing for a CRM tenant organization: a 14-day no-card trial, paid plans
+Per-seat subscription billing for a CRM tenant organization: a 60-day (two-month) no-card trial, paid plans
 that unlock the advanced CRM features (pipeline, deals, tickets, reporting), and monthly renewal —
 all on Outfiqe's existing eSewa/Khalti payment gateways, not Stripe. Nothing about _access_ to the
 CRM is gated here; only the advanced feature set is.

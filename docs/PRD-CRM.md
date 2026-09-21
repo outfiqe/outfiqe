@@ -26,19 +26,19 @@ pipeline, activities and tasks, support tickets, reporting, custom roles, and an
 
 ### The sections
 
-| Section   | Route                             | In one line                                              |
-| --------- | --------------------------------- | -------------------------------------------------------- |
-| Overview  | `/crm`                            | Who has access, invite a colleague, transfer ownership   |
-| Billing   | `/crm/billing`                    | Subscription, seats, invoices, the 14-day trial          |
-| Partners  | `/crm/partners`                   | Creators who promote or sell the linked brand            |
-| Customers | `/crm/customers`                  | Shoppers who have bought the linked brand                |
-| Pipeline  | `/crm/pipeline`                   | A configurable stage board of deals                      |
-| Tasks     | `/crm/tasks`                      | Due-dated tasks; activities and timeline on detail pages |
-| Support   | `/crm/support`                    | Complaint / request tickets with an internal thread      |
-| Reports   | `/crm/reports`                    | Pipeline value and support health                        |
-| Roles     | `/crm/roles`                      | Build custom roles; rename the organization              |
-| Audit     | `/crm/audit`                      | An append-only trail of who changed what                 |
-| Search    | header box on every `/crm/*` page | Find a partner, customer, deal, or ticket                |
+| Section   | Route                             | In one line                                                 |
+| --------- | --------------------------------- | ----------------------------------------------------------- |
+| Overview  | `/crm`                            | Who has access, invite a colleague, transfer ownership      |
+| Billing   | `/crm/billing`                    | Subscription, seats, invoices, the 60-day (two-month) trial |
+| Partners  | `/crm/partners`                   | Creators who promote or sell the linked brand               |
+| Customers | `/crm/customers`                  | Shoppers who have bought the linked brand                   |
+| Pipeline  | `/crm/pipeline`                   | A configurable stage board of deals                         |
+| Tasks     | `/crm/tasks`                      | Due-dated tasks; activities and timeline on detail pages    |
+| Support   | `/crm/support`                    | Complaint / request tickets with an internal thread         |
+| Reports   | `/crm/reports`                    | Pipeline value and support health                           |
+| Roles     | `/crm/roles`                      | Build custom roles; rename the organization                 |
+| Audit     | `/crm/audit`                      | An append-only trail of who changed what                    |
+| Search    | header box on every `/crm/*` page | Find a partner, customer, deal, or ticket                   |
 
 ---
 
@@ -66,7 +66,7 @@ every request, so hiding a link is a convenience, not the security boundary.
 ### The advanced-features gate
 
 Partners, Customers, Pipeline, Tasks, Support, Reports, and Search are **advanced features**.
-They're available during the 14-day trial and while a subscription is active. If the trial lapses
+They're available during the 60-day (two-month) trial and while a subscription is active. If the trial lapses
 with no active subscription, those sections show a "subscribe to keep using…" banner instead of
 their content, and their API calls return a 402. Overview, Billing, Roles, and the Audit log
 stay available regardless — a lapsed organization can still manage its account and review its
@@ -124,7 +124,7 @@ single transaction.
 **Who can see it.** `billing:read` to view; `billing:manage` to change the plan, change seats, or
 cancel.
 
-**The trial.** A new organization gets a 14-day trial with no card. During the trial — and while
+**The trial.** A new organization gets a 60-day (two-month) trial with no card. During the trial — and while
 a subscription is active — the advanced features are on. When the trial ends with no
 subscription, the advanced sections show the subscribe banner.
 
