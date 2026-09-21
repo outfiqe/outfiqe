@@ -5,7 +5,92 @@ const FEATURES_DIR = "src/features";
 const ROW_COUNT = 3;
 const GRID_CARD_COUNT = 6;
 
+const PILL_COUNT = 5;
+
 export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = {
+  "/categories": {
+    title: "Categories",
+    blocks: [
+      {
+        kind: "formCard",
+        fields: [
+          { label: "Name", width: "large" },
+          { label: "Slug", width: "medium" },
+          { label: "Image", isImage: true },
+        ],
+        submitLabel: "Create category",
+      },
+      { kind: "reorderRows", count: ROW_COUNT, hasImage: true, actionLabel: "Unpublish" },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/categories/CategoriesPage.tsx`],
+  },
+
+  "/collections": {
+    title: "Collections",
+    blocks: [
+      {
+        kind: "formCard",
+        fields: [
+          { label: "Name", width: "medium" },
+          { label: "Slug", width: "medium" },
+          { label: "Description", width: "large" },
+          { label: "Image", isImage: true },
+        ],
+        submitLabel: "Create collection",
+      },
+      { kind: "imageRows", count: ROW_COUNT, actionLabels: ["Manage products", "Unpublish"] },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/collections/CollectionsPage.tsx`],
+  },
+
+  "/hero-slides": {
+    title: "Hero slides",
+    blocks: [
+      {
+        kind: "formCard",
+        fields: [
+          { label: "Tag", width: "large" },
+          { label: "Title", width: "large" },
+          { label: "Description", width: "large" },
+          { label: "CTA label", width: "medium" },
+          { label: "CTA link", width: "large" },
+          { label: "Image", isImage: true },
+        ],
+        submitLabel: "Create slide",
+      },
+      { kind: "imageRows", count: ROW_COUNT, actionLabels: ["Unpublish"] },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/hero-slides/HeroSlidesPage.tsx`],
+  },
+
+  "/product-types": {
+    title: "Garment types",
+    description:
+      "The list of clothing types a product can be. A new type reaches brands once it is on and has at least one size.",
+    blocks: [
+      {
+        kind: "formCard",
+        fields: [
+          { label: "Name", width: "medium" },
+          { label: "Slug", width: "medium" },
+        ],
+        submitLabel: "Create type",
+      },
+      { kind: "reorderRows", count: ROW_COUNT, actionLabel: "Switch off" },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/product-types/ProductTypesPage.tsx`],
+  },
+
+  "/size-options": {
+    title: "Sizes",
+    description: "The size list a brand picks from when adding a product, per garment type.",
+    blocks: [
+      { kind: "pills", count: PILL_COUNT },
+      { kind: "formCard", fields: [{ label: "Size label", width: "small" }] },
+      { kind: "actionRows", count: ROW_COUNT, actionLabel: "Delete" },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/size-options/SizeOptionsPage.tsx`],
+  },
   "/announcements": {
     title: "Announcements",
     blocks: [

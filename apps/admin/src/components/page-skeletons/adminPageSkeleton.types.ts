@@ -3,6 +3,7 @@ export type FormFieldWidth = "small" | "medium" | "large";
 export type SkeletonFormField = {
   label: string;
   width?: FormFieldWidth;
+  isImage?: boolean;
 };
 
 export type SkeletonBlock =
@@ -30,6 +31,10 @@ export type SkeletonBlock =
       hasSubLine?: boolean;
       bodyLineCount?: number;
     }
+  | { kind: "reorderRows"; count: number; hasImage?: boolean; actionLabel?: string }
+  | { kind: "imageRows"; count: number; actionLabels: readonly string[] }
+  | { kind: "pills"; count: number }
+  | { kind: "text"; text: string }
   | { kind: "table"; headers: readonly string[]; rowCount?: number }
   | { kind: "badgeGrid"; count: number }
   | { kind: "titleActionGrid"; count: number }

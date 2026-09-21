@@ -2,6 +2,7 @@ import { Skeleton, StatCardSkeleton } from "@outfiqe/design-system";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
+import { ReorderRowSkeleton } from "@/components/ReorderRowSkeleton";
 import { SkeletonButton } from "@/components/SkeletonControls";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import {
@@ -23,6 +24,8 @@ const FILTER_TAB_CLASS =
   "rounded-full border border-border px-4 py-1.5 text-sm font-medium text-muted-foreground";
 const FIRST_TAB_INDEX = 0;
 const HISTORY_ROW_LINE_COUNT = 2;
+const PILL_WIDTH_CLASSES = ["w-20", "w-24", "w-16", "w-28", "w-20"] as const;
+const FORM_IMAGE_LABEL = "Upload image";
 
 const FIELD_WIDTH_CLASS: Record<FormFieldWidth, string> = {
   small: "w-32",
@@ -79,10 +82,17 @@ const BlockSkeleton = ({ block }: { block: SkeletonBlock }) => {
           className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
           aria-hidden
         >
-          {block.fields.map(({ label, width = "medium" }) => (
+          {block.fields.map(({ label, width = "medium", isImage = false }) => (
             <div key={label} className="space-y-1.5">
               <span className="block text-xs text-muted-foreground">{label}</span>
-              <Skeleton className={`h-11 rounded-lg ${FIELD_WIDTH_CLASS[width]}`} />
+              {isImage ? (
+                <div className="flex items-center gap-3">
+                  <Skeleton className="size-14 shrink-0 rounded-lg" />
+                  <SkeletonButton label={FORM_IMAGE_LABEL} />
+                </div>
+              ) : (
+                <Skeleton className={`h-11 rounded-lg ${FIELD_WIDTH_CLASS[width]}`} />
+              )}
             </div>
           ))}
           {block.submitLabel && <SkeletonButton variant="default" label={block.submitLabel} />}
@@ -116,6 +126,44 @@ const BlockSkeleton = ({ block }: { block: SkeletonBlock }) => {
           ))}
         </div>
       );
+    case "reorderRows":
+      return (
+        <div className="space-y-3">
+          {Array.from({ length: block.count }, (_unused, rowIndex) => (
+            <ReorderRowSkeleton
+              key={rowIndex}
+              hasImage={block.hasImage}
+              actionLabel={block.actionLabel}
+            />
+          ))}
+        </div>
+      );
+    case "imageRows":
+      return (
+        <div className="space-y-3">
+          {Array.from({ length: block.count }, (_unused, rowIndex) => (
+            <CardRowSkeleton
+              key={rowIndex}
+              textLineCount={1}
+              leadingImageClass="size-14"
+              actions={block.actionLabels.map((label) => ({ label, size: "default" as const }))}
+            />
+          ))}
+        </div>
+      );
+    case "pills":
+      return (
+        <div className="flex flex-wrap gap-2">
+          {Array.from({ length: block.count }, (_unused, pillIndex) => (
+            <Skeleton
+              key={pillIndex}
+              className={`h-9 rounded-full ${PILL_WIDTH_CLASSES[pillIndex % PILL_WIDTH_CLASSES.length]}`}
+            />
+          ))}
+        </div>
+      );
+    case "text":
+      return <p className="text-sm text-muted-foreground">{block.text}</p>;
     case "table":
       return <TableSkeleton headers={block.headers} rowCount={block.rowCount} />;
     case "badgeGrid":
