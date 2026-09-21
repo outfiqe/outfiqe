@@ -23,6 +23,7 @@ import { useForm } from "react-hook-form";
 import { ImageUpload } from "@/components/ImageUpload";
 import { ReorderRowSkeleton } from "@/components/ReorderRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { slugify } from "@/lib/slugify";
 
 import { categoriesApi } from "./api";
 import {
@@ -36,13 +37,6 @@ const STATUS_TONE: Record<CategoryStatusValue, "neutral" | "positive"> = {
   DRAFT: "neutral",
   PUBLISHED: "positive",
 };
-
-const slugify = (value: string): string =>
-  value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 
 export const CategoriesPage = () => {
   const queryClient = useQueryClient();

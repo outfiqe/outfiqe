@@ -1,24 +1,38 @@
-import { Badge, Button, cn, FormBanner, Input, toast } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Badge,
+  Button,
+  cn,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  toast,
+} from "@outfiqe/design-system";
 import { useApiMutation, useDragReorder } from "@outfiqe/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { ReorderRowSkeleton } from "@/components/ReorderRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { slugify } from "@/lib/slugify";
 
 import { productTypesApi } from "./api";
+import {
+  EMPTY_PRODUCT_TYPE_FORM,
+  productTypeFormSchema,
+  type ProductTypeFormValues,
+} from "./productTypeForm.schema";
 import type { ProductType } from "./schemas";
 
 const QUERY_KEY = ["admin-product-types"];
-
-const slugify = (value: string): string =>
-  value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 
 export const ProductTypesPage = () => {
   const queryClient = useQueryClient();
@@ -27,29 +41,31 @@ export const ProductTypesPage = () => {
     queryFn: productTypesApi.list,
   });
 
-  const [label, setLabel] = useState("");
-  const [slug, setSlug] = useState("");
+  const form = useForm<ProductTypeFormValues>({
+    resolver: zodResolver(productTypeFormSchema),
+    defaultValues: EMPTY_PRODUCT_TYPE_FORM,
+    mode: "onTouched",
+  });
   const [slugTouched, setSlugTouched] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: QUERY_KEY });
 
   const create = useApiMutation({
-    mutationFn: () => productTypesApi.create({ label, slug }),
+    mutationFn: (values: ProductTypeFormValues) => productTypesApi.create(values),
     invalidateKeys: [QUERY_KEY],
+    successMessage: "Garment type created.",
     onSuccess: () => {
-      setLabel("");
-      setSlug("");
+      form.reset(EMPTY_PRODUCT_TYPE_FORM);
       setSlugTouched(false);
-      setError(null);
     },
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
   const toggleActive = useApiMutation({
     mutationFn: (productType: ProductType) =>
       productTypesApi.setActive(productType.id, !productType.isActive),
     invalidateKeys: [QUERY_KEY],
+    successMessage: (updated) =>
+      updated.isActive ? "Garment type switched on." : "Garment type switched off.",
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -81,10 +97,7 @@ export const ProductTypesPage = () => {
     onReorder: (nextOrder) => reorder.mutate(nextOrder.map((productType) => productType.id)),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    create.mutate();
-  };
+  const submitProductType = form.handleSubmit((values) => create.mutate(values));
 
   return (
     <div>
@@ -94,49 +107,64 @@ export const ProductTypesPage = () => {
         at least one size.
       </p>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-      >
-        <div className="space-y-1.5">
-          <label htmlFor="product-type-label" className="text-xs text-muted-foreground">
-            Name
-          </label>
-          <Input
-            id="product-type-label"
-            required
-            value={label}
-            onChange={(e) => {
-              setLabel(e.target.value);
-              if (!slugTouched) setSlug(slugify(e.target.value));
-            }}
-            placeholder="Shoes"
-            className="w-56"
+      <Form {...form}>
+        <form
+          onSubmit={submitProductType}
+          noValidate
+          className="mt-5 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+        >
+          <FormField
+            control={form.control}
+            name="label"
+            render={({ field }) => (
+              <FormItem className="w-56 space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">Name</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Shoes"
+                    {...field}
+                    onChange={(event) => {
+                      field.onChange(event);
+                      if (!slugTouched) {
+                        form.setValue("slug", slugify(event.target.value), {
+                          shouldValidate: form.formState.touchedFields.slug === true,
+                        });
+                      }
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="product-type-slug" className="text-xs text-muted-foreground">
-            Slug
-          </label>
-          <Input
-            id="product-type-slug"
-            required
-            value={slug}
-            onChange={(e) => {
-              setSlug(slugify(e.target.value));
-              setSlugTouched(true);
-            }}
-            placeholder="shoes"
-            className="w-48"
+          <FormField
+            control={form.control}
+            name="slug"
+            render={({ field }) => (
+              <FormItem className="w-48 space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">Slug</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="shoes"
+                    {...field}
+                    onChange={(event) => {
+                      field.onChange(slugify(event.target.value));
+                      setSlugTouched(true);
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <Button type="submit" isLoading={create.isPending}>
-          Create type
-        </Button>
-      </form>
+          <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+            Create type
+          </Button>
+        </form>
+      </Form>
 
-      {error && <FormBanner className="mt-3">{error}</FormBanner>}
+      {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
       <div className="mt-6 space-y-3">
         {isLoading &&
