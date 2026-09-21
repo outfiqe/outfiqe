@@ -1,10 +1,11 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { DealFormModal } from "./DealFormModal";
 import type { Deal } from "./pipelineSchemas";
@@ -37,7 +38,12 @@ const DEAL: Deal = {
 
 const wrapper = ({ children }: { children: ReactNode }) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <Toaster />
+    </QueryClientProvider>
+  );
 };
 
 describe("DealFormModal", () => {
@@ -139,5 +145,48 @@ describe("DealFormModal", () => {
     await user.click(screen.getByRole("button", { name: "Save deal" }));
 
     await waitFor(() => expect(body).toMatchObject({ stageId: "s2", title: "Spring collab" }));
+    expect(await screen.findByText("Deal saved.")).toBeInTheDocument();
+  });
+
+  it("shows inline messages, not a browser popup, when a new deal is submitted empty", async () => {
+    const postRequested = vi.fn();
+    mswServer.use(
+      http.post(`${API_BASE}/crm/deals`, () => {
+        postRequested();
+        return HttpResponse.json({ success: true, data: DEAL });
+      }),
+    );
+
+    render(<DealFormModal open onClose={() => {}} stages={STAGES} deal={null} />, { wrapper });
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(screen.getByRole("button", { name: "Create deal" }));
+
+    expect(await screen.findByText("Enter a title for the deal.")).toBeInTheDocument();
+    expect(screen.getByText("Choose the partner for this deal.")).toBeInTheDocument();
+    expect(postRequested).not.toHaveBeenCalled();
+  });
+
+  it("explains a value with decimals and does not save the deal", async () => {
+    const patchRequested = vi.fn();
+    mswServer.use(
+      http.patch(`${API_BASE}/crm/deals/d1`, () => {
+        patchRequested();
+        return HttpResponse.json({ success: true, data: DEAL });
+      }),
+    );
+
+    render(<DealFormModal open onClose={() => {}} stages={STAGES} deal={DEAL} />, { wrapper });
+    const user = userEvent.setup({ delay: null });
+
+    const valueField = screen.getByLabelText("Value (Rs.)");
+    await user.clear(valueField);
+    await user.type(valueField, "12.5");
+    await user.click(screen.getByRole("button", { name: "Save deal" }));
+
+    expect(
+      await screen.findByText("Enter a whole number of rupees, with no decimals or minus sign."),
+    ).toBeInTheDocument();
+    expect(patchRequested).not.toHaveBeenCalled();
   });
 });

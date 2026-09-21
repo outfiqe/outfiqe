@@ -1,12 +1,31 @@
-import { Badge, Button, FormBanner, Input, Select, toast } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Badge,
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Select,
+  toast,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmApi } from "./api";
+import {
+  crmInviteFormSchema,
+  type CrmInviteFormValues,
+  EMPTY_CRM_INVITE_FORM,
+} from "./crmInviteForm.schema";
 import type { OrganizationInviteStatusValue } from "./schemas";
 
 const STATUS_TONE: Record<OrganizationInviteStatusValue, "neutral" | "positive" | "negative"> = {
@@ -36,88 +55,83 @@ export const InviteSection = ({ viewerIsSuperAdmin, viewerPermissionKeys }: Invi
         role.permissionKeys.every((key) => viewerPermissionKeys.includes(key)),
     ) ?? [];
 
-  const [email, setEmail] = useState("");
-  const [roleId, setRoleId] = useState("");
-  const [formError, setFormError] = useState<string | null>(null);
+  const form = useForm<CrmInviteFormValues>({
+    resolver: zodResolver(crmInviteFormSchema),
+    defaultValues: EMPTY_CRM_INVITE_FORM,
+    mode: "onTouched",
+  });
 
   const invite = useApiMutation({
-    mutationFn: () => crmApi.createInvite(email, roleId),
+    mutationFn: (values: CrmInviteFormValues) => crmApi.createInvite(values.email, values.roleId),
     invalidateKeys: [["crm-invites"]],
-    onSuccess: () => {
-      setEmail("");
-      setFormError(null);
-    },
-    onError: (mutationError) => setFormError(getErrorMessage(mutationError)),
+    successMessage: (_result, values) => `Invite sent to ${values.email}.`,
+    onSuccess: () => form.resetField("email"),
   });
 
   const revoke = useApiMutation({
     mutationFn: (inviteId: string) => crmApi.revokeInvite(inviteId),
     invalidateKeys: [["crm-invites"]],
+    successMessage: "Invite revoked.",
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!roleId) {
-      setFormError("Choose a role for this invite.");
-      return;
-    }
-    invite.mutate();
-  };
+  const submitInvite = form.handleSubmit((values) => invite.mutate(values));
 
   return (
     <div>
       <h2 className="font-display text-lg font-bold text-foreground">Invite a staff member</h2>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-3 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-      >
-        <div className="space-y-1.5">
-          <label htmlFor="crm-invite-email" className="text-xs text-muted-foreground">
-            Email
-          </label>
-          <Input
-            id="crm-invite-email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-64"
+      <Form {...form}>
+        <form
+          onSubmit={submitInvite}
+          noValidate
+          className="mt-3 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+        >
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem className="w-64 space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">Email</FormLabel>
+                <FormControl>
+                  <Input type="email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="crm-invite-role" className="text-xs text-muted-foreground">
-            Role
-          </label>
-          <Select
-            id="crm-invite-role"
-            required
-            value={roleId}
-            onChange={(e) => setRoleId(e.target.value)}
-            className="w-40"
-          >
-            <option value="" disabled>
-              Select a role
-            </option>
-            {assignableRoles.map((role) => (
-              <option key={role.id} value={role.id}>
-                {role.name}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <Button type="submit" isLoading={invite.isPending}>
-          Send invite
-        </Button>
-      </form>
+          <FormField
+            control={form.control}
+            name="roleId"
+            render={({ field }) => (
+              <FormItem className="w-40 space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">Role</FormLabel>
+                <FormControl>
+                  <Select {...field}>
+                    <option value="">Select a role</option>
+                    {assignableRoles.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.name}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" isLoading={invite.isPending} className="mt-[22px]">
+            Send invite
+          </Button>
+        </form>
+      </Form>
 
       <p className="mt-2 text-xs text-muted-foreground">
         If they don&rsquo;t have an Outfiqe account yet, they&rsquo;ll set a name and password from
         the invite email before joining.
       </p>
 
-      {formError && <FormBanner className="mt-3">{formError}</FormBanner>}
+      {invite.isError && <FormBanner className="mt-3">{getErrorMessage(invite.error)}</FormBanner>}
 
       <h3 className="mt-6 font-display text-base font-bold text-foreground">Pending invites</h3>
       <div className="mt-3 space-y-3">

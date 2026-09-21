@@ -1,10 +1,11 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { StageConfigModal } from "./StageConfigModal";
 
@@ -17,7 +18,12 @@ const STAGES = [
 
 const wrapper = ({ children }: { children: ReactNode }) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <Toaster />
+    </QueryClientProvider>
+  );
 };
 
 describe("StageConfigModal", () => {
@@ -46,6 +52,7 @@ describe("StageConfigModal", () => {
     await user.type(screen.getByPlaceholderText("New stage name"), "Negotiating");
     await user.click(screen.getByRole("button", { name: "Add" }));
     await waitFor(() => expect(addBody).toEqual({ name: "Negotiating" }));
+    expect(await screen.findByText("Stage added.")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Move Won up" }));
     await waitFor(() => expect(reorderBody).toEqual({ orderedStageIds: ["s2", "s1"] }));
@@ -90,5 +97,23 @@ describe("StageConfigModal", () => {
 
     await user.click(screen.getByRole("button", { name: "Delete Lead" }));
     expect(await screen.findByText("Stage has deals.")).toBeInTheDocument();
+  });
+
+  it("shows an inline message when Add is pressed with no stage name, and sends nothing", async () => {
+    const addRequested = vi.fn();
+    mswServer.use(
+      http.post(`${API_BASE}/crm/pipeline/stages`, () => {
+        addRequested();
+        return HttpResponse.json({ success: true, data: STAGES[0] }, { status: 201 });
+      }),
+    );
+
+    render(<StageConfigModal open onClose={() => {}} stages={STAGES} />, { wrapper });
+    const user = userEvent.setup({ delay: null });
+
+    await user.click(screen.getByRole("button", { name: "Add" }));
+
+    expect(await screen.findByText("Enter a name for the stage.")).toBeInTheDocument();
+    expect(addRequested).not.toHaveBeenCalled();
   });
 });

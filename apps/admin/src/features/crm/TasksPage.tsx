@@ -1,7 +1,23 @@
-import { Badge, Button, FormBanner, Input, Modal, Select } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Badge,
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Modal,
+  Select,
+  toast,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -12,6 +28,7 @@ import { CompactRowSkeleton } from "./CompactRowSkeleton";
 import { CRM_PAGE_TEXT } from "./crmPageContent";
 import { formatDate } from "./format.utils";
 import { PlanGateBanner } from "./PlanGateBanner";
+import { taskFormSchema, type TaskFormValues } from "./taskForm.schema";
 
 const TASKS_QUERY_KEY = ["crm-tasks"];
 
@@ -26,83 +43,92 @@ const NewTaskModal = ({
   onClose: () => void;
   members: { id: string; userName: string }[];
 }) => {
-  const [title, setTitle] = useState("");
-  const [assigneeMembershipId, setAssigneeMembershipId] = useState(members[0]?.id ?? "");
-  const [dueAt, setDueAt] = useState("");
+  const form = useForm<TaskFormValues>({
+    resolver: zodResolver(taskFormSchema),
+    defaultValues: { title: "", assigneeMembershipId: members[0]?.id ?? "", dueAt: "" },
+    mode: "onTouched",
+  });
 
   const create = useApiMutation({
-    mutationFn: () =>
+    mutationFn: (values: TaskFormValues) =>
       crmActivitiesApi.createTask({
-        title: title.trim(),
-        assigneeMembershipId,
-        ...(dueAt ? { dueAt: new Date(dueAt).toISOString() } : {}),
+        title: values.title.trim(),
+        assigneeMembershipId: values.assigneeMembershipId,
+        ...(values.dueAt ? { dueAt: new Date(values.dueAt).toISOString() } : {}),
       }),
     invalidateKeys: [TASKS_QUERY_KEY],
+    successMessage: "Task created.",
     onSuccess: () => onClose(),
   });
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    create.mutate();
-  };
+  const submitTask = form.handleSubmit((values) => create.mutate(values));
 
   return (
     <Modal open={open} onClose={onClose} title="New task">
-      <form onSubmit={submit} className="space-y-4">
-        <div className="space-y-1.5">
-          <label htmlFor="task-title" className="text-xs text-muted-foreground">
-            Title
-          </label>
-          <Input
-            id="task-title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
+      <Form {...form}>
+        <form onSubmit={submitTask} noValidate className="space-y-4">
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">Title</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="task-assignee" className="text-xs text-muted-foreground">
-            Assignee
-          </label>
-          <Select
-            id="task-assignee"
-            value={assigneeMembershipId}
-            onChange={(e) => setAssigneeMembershipId(e.target.value)}
-          >
-            {members.map((member) => (
-              <option key={member.id} value={member.id}>
-                {member.userName}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="task-due" className="text-xs text-muted-foreground">
-            Due date (optional)
-          </label>
-          <Input
-            id="task-due"
-            type="date"
-            value={dueAt}
-            onChange={(e) => setDueAt(e.target.value)}
+          <FormField
+            control={form.control}
+            name="assigneeMembershipId"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">
+                  Assignee
+                </FormLabel>
+                <FormControl>
+                  <Select {...field}>
+                    {members.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.userName}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
+          <FormField
+            control={form.control}
+            name="dueAt"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">
+                  Due date (optional)
+                </FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        {create.isError && <FormBanner>{getErrorMessage(create.error)}</FormBanner>}
+          {create.isError && <FormBanner>{getErrorMessage(create.error)}</FormBanner>}
 
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={title.trim().length === 0 || assigneeMembershipId === ""}
-            isLoading={create.isPending}
-          >
-            Create task
-          </Button>
-        </div>
-      </form>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={create.isPending}>
+              Create task
+            </Button>
+          </div>
+        </form>
+      </Form>
     </Modal>
   );
 };
@@ -137,6 +163,7 @@ export const TasksPage = () => {
     mutationFn: (task: Task) =>
       crmActivitiesApi.updateTask(task.id, { status: task.status === "OPEN" ? "DONE" : "OPEN" }),
     invalidateKeys: [TASKS_QUERY_KEY],
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   return (

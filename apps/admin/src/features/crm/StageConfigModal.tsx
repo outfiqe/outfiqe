@@ -1,12 +1,26 @@
-import { Badge, Button, cn, FormBanner, Input, Modal } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Badge,
+  Button,
+  cn,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+  Input,
+  Modal,
+} from "@outfiqe/design-system";
 import { useApiMutation, useDragReorder } from "@outfiqe/hooks";
 import { GripVertical } from "lucide-react";
-import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { crmPipelineApi } from "./pipelineApi";
 import type { PipelineStage } from "./pipelineSchemas";
+import { stageFormSchema, type StageFormValues } from "./stageForm.schema";
 
 const STAGES_QUERY_KEY = ["crm-pipeline-stages"];
 
@@ -19,17 +33,26 @@ export const StageConfigModal = ({
   onClose: () => void;
   stages: PipelineStage[];
 }) => {
-  const [newStageName, setNewStageName] = useState("");
+  const form = useForm<StageFormValues>({
+    resolver: zodResolver(stageFormSchema),
+    defaultValues: { name: "" },
+    mode: "onTouched",
+  });
 
   const addStage = useApiMutation({
-    mutationFn: () => crmPipelineApi.createStage({ name: newStageName.trim() }),
+    mutationFn: (values: StageFormValues) =>
+      crmPipelineApi.createStage({ name: values.name.trim() }),
     invalidateKeys: [STAGES_QUERY_KEY],
-    onSuccess: () => setNewStageName(""),
+    successMessage: "Stage added.",
+    onSuccess: () => form.reset({ name: "" }),
   });
   const removeStage = useApiMutation({
     mutationFn: (stageId: string) => crmPipelineApi.deleteStage(stageId),
     invalidateKeys: [STAGES_QUERY_KEY],
+    successMessage: "Stage deleted.",
   });
+
+  const submitStage = form.handleSubmit((values) => addStage.mutate(values));
   const reorder = useApiMutation({
     mutationFn: (orderedStageIds: string[]) => crmPipelineApi.reorderStages(orderedStageIds),
     invalidateKeys: [STAGES_QUERY_KEY],
@@ -103,19 +126,25 @@ export const StageConfigModal = ({
           ))}
         </ul>
 
-        <div className="flex gap-2">
-          <Input
-            value={newStageName}
-            onChange={(event) => setNewStageName(event.target.value)}
-            placeholder="New stage name"
-          />
-          <Button
-            disabled={newStageName.trim().length === 0 || addStage.isPending}
-            onClick={() => addStage.mutate()}
-          >
-            Add
-          </Button>
-        </div>
+        <Form {...form}>
+          <form onSubmit={submitStage} noValidate className="flex items-start gap-2">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem className="flex-1 space-y-1.5">
+                  <FormControl>
+                    <Input placeholder="New stage name" aria-label="New stage name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" isLoading={addStage.isPending}>
+              Add
+            </Button>
+          </form>
+        </Form>
 
         <div className="flex justify-end">
           <Button variant="outline" onClick={onClose}>
