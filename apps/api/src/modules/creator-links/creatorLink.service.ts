@@ -72,6 +72,16 @@ export const creatorLinkService = {
     };
   },
 
+  async deleteMine(creatorId: string, linkId: string): Promise<void> {
+    await requireApprovedCreator(creatorId, "Only approved creators can manage links.");
+    const link = await creatorLinkRepository.findOwned(linkId, creatorId);
+    if (!link) {
+      throw new AppError("LINK_NOT_FOUND", "This link is no longer available.", NOT_FOUND_STATUS);
+    }
+
+    await creatorLinkRepository.revoke(link.id);
+  },
+
   async recordClick(
     token: string,
     sessionId: string,

@@ -8,6 +8,7 @@ import { creatorLinkController } from "./creatorLink.controller.js";
 import {
   createExternalLinkSchema,
   createInternalLinkSchema,
+  linkIdParamSchema,
   linkTokenParamSchema,
   listMyLinksQuerySchema,
   recordLinkClickSchema,
@@ -34,6 +35,13 @@ creatorLinkRoutes.post(
   requireAuth,
   validate({ body: createExternalLinkSchema }),
   creatorLinkController.getOrCreateExternal,
+);
+
+creatorLinkRoutes.delete(
+  "/:id",
+  requireAuth,
+  validate({ params: linkIdParamSchema }),
+  creatorLinkController.remove,
 );
 
 creatorLinkRoutes.post(
