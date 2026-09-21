@@ -6,6 +6,7 @@ import { ProductCard } from "@/features/landing/components/ProductCard";
 import { toExploreProduct } from "@/features/products/api/toExploreProduct";
 import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor } from "@/shared/lib/avatarColor";
+import { formatCountLabel } from "@/shared/lib/formatCount";
 
 const COLLECTION_HERO_SIZES = "(min-width: 1152px) 1088px, 100vw";
 
@@ -46,9 +47,11 @@ export const CollectionDetail = ({ collection }: CollectionDetailProps) => {
             {name}
           </h1>
           {description && <p className="mt-2 max-w-lg text-sm text-white/85">{description}</p>}
-          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-white/70">
-            {productCount} {productCount === 1 ? "piece" : "pieces"}
-          </p>
+          {productCount > 0 && (
+            <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-white/70">
+              {formatCountLabel(productCount, "piece", "pieces")}
+            </p>
+          )}
         </div>
       </div>
 

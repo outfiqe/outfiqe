@@ -1,4 +1,4 @@
-import { Badge, Button } from "@outfiqe/design-system";
+import { Badge, Button, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useState } from "react";
 
@@ -46,13 +46,17 @@ export const BrandApplicationsPage = () => {
   const approve = useApiMutation({
     mutationFn: (id: string) => brandApplicationsApi.approve(id),
     invalidateKeys: [["brand-applications"]],
+    onSuccess: () => toast.success("Application approved."),
   });
 
   const reject = useApiMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       brandApplicationsApi.reject(id, reason),
     invalidateKeys: [["brand-applications"]],
-    onSuccess: () => setRejectTargetId(null),
+    onSuccess: () => {
+      setRejectTargetId(null);
+      toast.success("Application rejected.");
+    },
   });
 
   const actionErrorFor = (applicationId: string): string | null => {
@@ -131,6 +135,7 @@ export const BrandApplicationsPage = () => {
                   <div className="flex gap-2">
                     <Button
                       onClick={() => approve.mutate(id)}
+                      isLoading={approve.isPending && approve.variables === id}
                       disabled={approve.isPending || reject.isPending}
                     >
                       Approve

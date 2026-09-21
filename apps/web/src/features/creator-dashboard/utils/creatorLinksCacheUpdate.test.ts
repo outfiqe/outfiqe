@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import type { CreatorLink, CreatorLinkPage } from "../api/creatorLinksSchemas";
 import { CreatorLinkStatus, CreatorLinkType } from "../api/creatorLinksSchemas";
-import { CREATOR_LINKS_QUERY_KEY, prependCreatorLinkToCache } from "./creatorLinksCacheUpdate";
+import {
+  CREATOR_LINKS_QUERY_KEY,
+  prependCreatorLinkToCache,
+  removeCreatorLinkFromCache,
+} from "./creatorLinksCacheUpdate";
 
 const buildLink = (id: string): CreatorLink => ({
   id,
@@ -72,5 +76,33 @@ describe("prependCreatorLinkToCache", () => {
 
     const cached = queryClient.getQueryData<{ pages: CreatorLinkPage[] }>(CREATOR_LINKS_QUERY_KEY);
     expect(cached?.pages[0]?.items).toHaveLength(1);
+  });
+
+  describe("removeCreatorLinkFromCache", () => {
+    it("removes the link from whichever cached page holds it and leaves the rest", () => {
+      const queryClient = new QueryClient();
+      queryClient.setQueryData(CREATOR_LINKS_QUERY_KEY, {
+        pages: [buildPage([buildLink("a"), buildLink("b")], "b"), buildPage([buildLink("c")])],
+        pageParams: [undefined, "b"],
+      });
+
+      removeCreatorLinkFromCache(queryClient, "c");
+
+      const cached = queryClient.getQueryData<{ pages: CreatorLinkPage[] }>(
+        CREATOR_LINKS_QUERY_KEY,
+      );
+      expect(cached?.pages.map((page) => page.items.map((item) => item.id))).toEqual([
+        ["a", "b"],
+        [],
+      ]);
+    });
+
+    it("does nothing when no links are cached", () => {
+      const queryClient = new QueryClient();
+
+      removeCreatorLinkFromCache(queryClient, "a");
+
+      expect(queryClient.getQueryData(CREATOR_LINKS_QUERY_KEY)).toBeUndefined();
+    });
   });
 });

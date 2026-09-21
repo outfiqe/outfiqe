@@ -92,4 +92,16 @@ describe("CollectionDetail", () => {
 
     expect(screen.getByText("No products in this collection yet.")).toBeInTheDocument();
   });
+
+  it("shows the piece count, with singular wording for one", () => {
+    render(<CollectionDetail collection={COLLECTION} />);
+
+    expect(screen.getByText("1 piece")).toBeInTheDocument();
+  });
+
+  it("hides the piece count when the collection has no pieces", () => {
+    render(<CollectionDetail collection={{ ...COLLECTION, productCount: 0 }} />);
+
+    expect(screen.queryByText(/0 pieces/)).not.toBeInTheDocument();
+  });
 });

@@ -30,6 +30,10 @@ export const creatorLinksApi = {
     return creatorLinkSchema.parse(res.data);
   },
 
+  async remove(linkId: string): Promise<void> {
+    await apiClient.del(`/creator-links/${linkId}`);
+  },
+
   async recordClick(token: string): Promise<RecordClickResult> {
     const res = await apiClient.post<RecordClickResult>(`/creator-links/${token}/click`, {
       sessionId: getSessionId(),

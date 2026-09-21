@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { http, HttpResponse } from "msw";
+import { delay, http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
 import { PlatformImpersonationPage } from "./PlatformImpersonationPage";
@@ -111,6 +111,7 @@ describe("PlatformImpersonationPage", () => {
       ),
       http.post(`${API_BASE}/platform/impersonation`, async ({ request }) => {
         startBody = (await request.json()) as Record<string, unknown>;
+        await delay(100);
         return HttpResponse.json({
           success: true,
           data: {
@@ -129,8 +130,10 @@ describe("PlatformImpersonationPage", () => {
     await screen.findByRole("option", { name: /Tara Tenant/ });
     await userEvent.selectOptions(screen.getByLabelText("Act as"), "user-9");
     await userEvent.type(screen.getByLabelText(/Reason/), "confirming a refund was applied");
-    await userEvent.click(screen.getByRole("button", { name: "Start session" }));
+    const startButton = screen.getByRole("button", { name: "Start session" });
+    await userEvent.click(startButton);
 
+    await waitFor(() => expect(startButton).toHaveAttribute("aria-busy", "true"));
     await waitFor(() =>
       expect(startBody).toMatchObject({ organizationId: "org-1", scope: "read" }),
     );

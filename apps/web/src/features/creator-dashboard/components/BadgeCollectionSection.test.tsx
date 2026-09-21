@@ -61,4 +61,17 @@ describe("BadgeCollectionSection", () => {
 
     expect(screen.getByText(/No badges match this filter/)).toBeInTheDocument();
   });
+
+  it("does not show a 0 / 0 progress line when there are no badges to collect", () => {
+    renderSection();
+
+    expect(screen.queryByText(/collected/)).not.toBeInTheDocument();
+  });
+
+  it("does not show a 0 / 0 progress line when the collection failed to load", () => {
+    mockCollection({ isError: true, error: new Error("Network error"), data: undefined });
+    renderSection();
+
+    expect(screen.queryByText(/collected/)).not.toBeInTheDocument();
+  });
 });

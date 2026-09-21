@@ -46,3 +46,7 @@ tracking for an anonymous visitor arriving from a raw top-level navigation.
 No rate limiting on the public click endpoint, matching the existing (also public, also
 unauthenticated) creator-look tag-click endpoint's precedent — recording an extra click is low
 stakes, and internal-link abuse is already capped by single-use consumption.
+
+## Deleting a link revokes it
+
+`DELETE /:id` (approved creators, own links only) sets the link's status to `REVOKED` instead of removing the row. Orders and click history point at the link, so a real delete would break commission attribution for sales that already happened. A revoked link is hidden from `GET /mine`, and `POST /:token/click` already answers `LINK_NOT_FOUND` for it, so the link stops working right away. A link that belongs to someone else, or does not exist, answers `404` so ids cannot be probed. Deleting a link that is already revoked succeeds, so a double click or a retry is harmless. Because `getOrCreateExternal` only reuses `ACTIVE` links, a creator who deletes their reusable link gets a fresh one the next time they ask.

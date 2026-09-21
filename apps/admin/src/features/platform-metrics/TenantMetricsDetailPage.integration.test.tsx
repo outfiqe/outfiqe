@@ -98,6 +98,29 @@ describe("TenantMetricsDetailPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows a plain message, not a flat line, when every day in the window had no activity", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/platform/metrics/tenants/org-1`, () =>
+        HttpResponse.json({
+          success: true,
+          data: detail({
+            series: [
+              { ...sparkPoint("2026-08-30"), activityCount: 0 },
+              { ...sparkPoint("2026-08-31"), activityCount: 0 },
+            ],
+          }),
+        }),
+      ),
+    );
+
+    renderPage();
+
+    expect(await screen.findByText("No activity recorded in this window yet.")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("img", { name: "Activity per day over the recorded window" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("omits the subscription status and dashes the last-activity when they are absent", async () => {
     mswServer.use(
       http.get(`${API_BASE}/platform/metrics/tenants/org-1`, () =>

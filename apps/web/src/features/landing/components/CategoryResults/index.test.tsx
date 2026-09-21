@@ -253,4 +253,46 @@ describe("CategoryResults", () => {
 
     expect(push).toHaveBeenCalledWith("/shop?category=tops&type=shirts");
   });
+
+  it("does not print a zero count above an empty category, only the empty message", () => {
+    mockInfiniteProducts({
+      data: {
+        pages: [{ products: [], nextCursor: null, total: 0, brandCount: 0 }],
+        pageParams: [undefined],
+      },
+    });
+
+    renderCategoryResults();
+
+    expect(screen.queryByText(/0 pieces/)).not.toBeInTheDocument();
+    expect(screen.getByText("No pieces in Tops yet. Check back soon.")).toBeInTheDocument();
+  });
+
+  it("offers to show the whole category when a chosen type has no pieces", async () => {
+    const user = userEvent.setup();
+    mockSearchParams({ category: "tops", type: "shirts" });
+    vi.mocked(useProductTypes).mockReturnValue({
+      data: [{ id: "pt-shirts", slug: "shirts", label: "Shirts" }],
+      isLoading: false,
+    } as ReturnType<typeof useProductTypes>);
+    mockInfiniteProducts({
+      data: {
+        pages: [{ products: [], nextCursor: null, total: 0, brandCount: 0 }],
+        pageParams: [undefined],
+      },
+    });
+
+    renderCategoryResults();
+
+    expect(screen.getByText("No pieces of this type yet.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Show all Tops" }));
+
+    expect(replace).toHaveBeenCalledWith("/?category=tops", { scroll: false });
+  });
+
+  it("describes the results with singular wording for one piece from one brand", () => {
+    renderCategoryResults();
+
+    expect(screen.getByText("1 piece from 1 brand")).toBeInTheDocument();
+  });
 });

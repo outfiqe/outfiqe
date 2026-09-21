@@ -7,6 +7,7 @@ import { validated } from "#middlewares/validate.js";
 import type {
   CreateExternalLinkBody,
   CreateInternalLinkBody,
+  LinkIdParam,
   LinkTokenParam,
   ListMyLinksQuery,
   RecordLinkClickBody,
@@ -35,6 +36,13 @@ export const creatorLinkController = {
     const query = validated.query<ListMyLinksQuery>(res);
     const page = await creatorLinkService.listMine(userId, query);
     sendSuccess(res, page, "Your links.");
+  },
+
+  async remove(_req: Request, res: Response) {
+    const { userId } = requireAuthPrincipal(res);
+    const { id } = validated.params<LinkIdParam>(res);
+    await creatorLinkService.deleteMine(userId, id);
+    sendSuccess(res, null, "Link deleted.");
   },
 
   async recordClick(_req: Request, res: Response) {

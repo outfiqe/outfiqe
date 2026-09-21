@@ -51,7 +51,7 @@ const OverviewKpiRow = ({ overview }: { overview: CreatorOverviewData }) => {
   const { kpis } = overview;
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       <StatCard
         label="Total earnings"
         value={formatRupees(kpis.totalEarnings)}
@@ -167,7 +167,7 @@ const RecentCommissions = ({ overview }: { overview: CreatorOverviewData }) => {
 
 const OverviewSkeleton = () => (
   <div role="status" aria-label="Loading">
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       {Array.from({ length: KPI_CARD_COUNT }).map((_, index) => (
         <Skeleton key={index} className="h-24 rounded-xl" />
       ))}

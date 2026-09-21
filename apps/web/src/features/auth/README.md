@@ -140,3 +140,5 @@ feature only picks back up if that redirect instead lands on `/auth/oauth-callba
   scope decision made in `apps/api/src/modules/auth/README.md` (brand/admin invite registration
   deferred to a later pass). In particular, `LoginForm`/`RegisterForm` themselves (now including
   the OAuth buttons row) are still untested.
+
+**Google sign-in with no requested page lands on `/overview`, the same as password sign-in.** `LoginForm` used to default the OAuth redirect to `/profile`, so a creator who signed in with Google landed on their profile while a password sign-in landed on the overview. An admin who arrives at `/overview` is still sent on to the admin app by `requireDashboardSession`.

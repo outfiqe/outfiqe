@@ -1,9 +1,13 @@
 import type { ConversationPreview, Message } from "@outfiqe/types";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
-import { createQueryClientWrapper } from "@test/integration/queryClientWrapper";
+import {
+  createQueryClientWrapper,
+  createTestQueryClient,
+} from "@test/integration/queryClientWrapper";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { http, HttpResponse } from "msw";
+import { delay, http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
 import { MessageThread } from "./MessageThread";
@@ -151,5 +155,66 @@ describe("MessageThread", () => {
 
     await waitFor(() => expect(screen.getByText("Hello Jane")).toBeInTheDocument());
     expect(input).toHaveValue("");
+  });
+
+  it("shows a loading placeholder, not the word Conversation, until the participant is known", async () => {
+    mswServer.use(
+      http.get(`/api/conversations/${CONVERSATION_ID}`, async () => {
+        await delay(150);
+        return HttpResponse.json({
+          success: true,
+          message: "Conversation.",
+          data: buildConversation(),
+        });
+      }),
+    );
+    mockMessages([]);
+    mockMarkRead();
+    renderThread();
+
+    expect(screen.getByRole("status", { name: "Loading conversation" })).toBeInTheDocument();
+    expect(screen.queryByText("Conversation")).not.toBeInTheDocument();
+
+    expect(await screen.findByText("Jane Doe")).toBeInTheDocument();
+    expect(screen.queryByRole("status", { name: "Loading conversation" })).not.toBeInTheDocument();
+  });
+
+  it("shows the name straight away from the conversation list the shopper just clicked in", async () => {
+    mswServer.use(
+      http.get(`/api/conversations/${CONVERSATION_ID}`, async () => {
+        await delay(150);
+        return HttpResponse.json({
+          success: true,
+          message: "Conversation.",
+          data: buildConversation(),
+        });
+      }),
+    );
+    mockMessages([]);
+    mockMarkRead();
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(["conversations"], {
+      pages: [{ items: [buildConversation()], nextCursor: null }],
+      pageParams: [undefined],
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MessageThread conversationId={CONVERSATION_ID} onBack={() => {}} />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByText("Jane Doe")).toBeInTheDocument();
+    expect(screen.queryByText("Conversation")).not.toBeInTheDocument();
+    expect(screen.queryByRole("status", { name: "Loading conversation" })).not.toBeInTheDocument();
+  });
+
+  it("falls back to a generic title when the conversation has no other participant", async () => {
+    mockConversation(buildConversation({ otherParticipant: null }));
+    mockMessages([]);
+    mockMarkRead();
+    renderThread();
+
+    expect(await screen.findByText("Conversation")).toBeInTheDocument();
   });
 });

@@ -1,15 +1,35 @@
-import { Badge, Button, cn, FormBanner, Input, toast } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Badge,
+  Button,
+  cn,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  toast,
+} from "@outfiqe/design-system";
 import { useApiMutation, useDragReorder } from "@outfiqe/hooks";
 import { LANDING_TASTE_CATEGORY_COUNT } from "@outfiqe/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { ImageUpload } from "@/components/ImageUpload";
 import { ReorderRowSkeleton } from "@/components/ReorderRowSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { categoriesApi } from "./api";
+import {
+  categoryFormSchema,
+  type CategoryFormValues,
+  EMPTY_CATEGORY_FORM,
+} from "./categoryForm.schema";
 import type { Category, CategoryStatusValue } from "./schemas";
 
 const STATUS_TONE: Record<CategoryStatusValue, "neutral" | "positive"> = {
@@ -36,31 +56,36 @@ export const CategoriesPage = () => {
   });
   const shopperCountBySlug = new Map((popularity ?? []).map((row) => [row.slug, row.userCount]));
 
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
+  const form = useForm<CategoryFormValues>({
+    resolver: zodResolver(categoryFormSchema),
+    defaultValues: EMPTY_CATEGORY_FORM,
+    mode: "onTouched",
+  });
   const [slugTouched, setSlugTouched] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const CATEGORIES_QUERY_KEY = ["admin-categories"];
 
   const create = useApiMutation({
-    mutationFn: () => categoriesApi.create({ name, slug, imageUrl: imageUrl ?? undefined }),
+    mutationFn: (values: CategoryFormValues) =>
+      categoriesApi.create({
+        name: values.name,
+        slug: values.slug,
+        imageUrl: values.imageUrl ?? undefined,
+      }),
     invalidateKeys: [CATEGORIES_QUERY_KEY],
+    successMessage: "Category created.",
     onSuccess: () => {
-      setName("");
-      setSlug("");
+      form.reset(EMPTY_CATEGORY_FORM);
       setSlugTouched(false);
-      setImageUrl(null);
-      setError(null);
     },
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
   const toggleStatus = useApiMutation({
     mutationFn: (category: Category) =>
       categoriesApi.setStatus(category.id, category.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED"),
     invalidateKeys: [CATEGORIES_QUERY_KEY],
+    successMessage: (category) =>
+      category.status === "PUBLISHED" ? "Category published." : "Category unpublished.",
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -68,6 +93,7 @@ export const CategoriesPage = () => {
     mutationFn: ({ id, imageUrl: url }: { id: string; imageUrl: string }) =>
       categoriesApi.setImage(id, url),
     invalidateKeys: [CATEGORIES_QUERY_KEY],
+    successMessage: "Category image updated.",
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -109,62 +135,80 @@ export const CategoriesPage = () => {
         ]?.id
       : null;
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    create.mutate();
-  };
+  const submitCategory = form.handleSubmit((values) => create.mutate(values));
 
   return (
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Categories</h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-      >
-        <div className="space-y-1.5">
-          <label htmlFor="category-name" className="text-xs text-muted-foreground">
-            Name
-          </label>
-          <Input
-            id="category-name"
-            required
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              if (!slugTouched) setSlug(slugify(e.target.value));
-            }}
-            placeholder="Old Money"
-            className="w-56"
+      <Form {...form}>
+        <form
+          onSubmit={submitCategory}
+          noValidate
+          className="mt-5 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+        >
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem className="w-56 space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">Name</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Old Money"
+                    {...field}
+                    onChange={(event) => {
+                      field.onChange(event);
+                      if (!slugTouched) {
+                        form.setValue("slug", slugify(event.target.value), {
+                          shouldValidate: form.formState.touchedFields.slug === true,
+                        });
+                      }
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="category-slug" className="text-xs text-muted-foreground">
-            Slug
-          </label>
-          <Input
-            id="category-slug"
-            required
-            value={slug}
-            onChange={(e) => {
-              setSlug(slugify(e.target.value));
-              setSlugTouched(true);
-            }}
-            placeholder="old-money"
-            className="w-48"
+          <FormField
+            control={form.control}
+            name="slug"
+            render={({ field }) => (
+              <FormItem className="w-48 space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">Slug</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="old-money"
+                    {...field}
+                    onChange={(event) => {
+                      field.onChange(slugify(event.target.value));
+                      setSlugTouched(true);
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <span className="block text-xs text-muted-foreground">Image</span>
-          <ImageUpload value={imageUrl} onChange={setImageUrl} />
-        </div>
+          <FormField
+            control={form.control}
+            name="imageUrl"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <span className="block text-xs text-muted-foreground">Image</span>
+                <ImageUpload value={field.value} onChange={field.onChange} />
+              </FormItem>
+            )}
+          />
 
-        <Button type="submit" isLoading={create.isPending}>
-          Create category
-        </Button>
-      </form>
+          <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+            Create category
+          </Button>
+        </form>
+      </Form>
 
-      {error && <FormBanner className="mt-3">{error}</FormBanner>}
+      {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
       <p className="mt-6 text-sm text-muted-foreground">
         New visitors see the first {LANDING_TASTE_CATEGORY_COUNT} categories on the landing page.

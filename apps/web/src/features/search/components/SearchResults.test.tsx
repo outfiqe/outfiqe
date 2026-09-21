@@ -102,4 +102,23 @@ describe("SearchResults", () => {
 
     expect(screen.getByText("No pieces matched. Try a different search.")).toBeInTheDocument();
   });
+
+  it("does not print a zero count when the search comes back empty", () => {
+    mockInfiniteProducts({
+      data: {
+        pages: [{ products: [], nextCursor: null, total: 0, brandCount: 0 }],
+        pageParams: [undefined],
+      },
+    });
+
+    render(<SearchResults />);
+
+    expect(screen.queryByText(/0 pieces/)).not.toBeInTheDocument();
+  });
+
+  it("describes the results with singular wording for one piece from one brand", () => {
+    render(<SearchResults />);
+
+    expect(screen.getByText("1 piece from 1 brand")).toBeInTheDocument();
+  });
 });
