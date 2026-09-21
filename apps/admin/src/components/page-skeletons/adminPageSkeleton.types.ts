@@ -45,7 +45,6 @@ export type SkeletonBlock =
   | { kind: "labeledSelect"; label: string; option: string }
   | { kind: "posterGrid"; count: number }
   | { kind: "reportRows"; count: number; hasLeadingName?: boolean }
-  | { kind: "text"; text: string }
   | { kind: "table"; headers: readonly string[]; rowCount?: number }
   | { kind: "badgeGrid"; count: number }
   | { kind: "titleActionGrid"; count: number }

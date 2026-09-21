@@ -238,8 +238,6 @@ const BlockSkeleton = ({ block }: { block: SkeletonBlock }) => {
           ))}
         </div>
       );
-    case "text":
-      return <p className="text-sm text-muted-foreground">{block.text}</p>;
     case "table":
       return <TableSkeleton headers={block.headers} rowCount={block.rowCount} />;
     case "badgeGrid":
