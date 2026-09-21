@@ -1,99 +1,102 @@
-import { Button, Checkbox, FormBanner, Input, Modal } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Button,
+  Checkbox,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Modal,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
+import { useForm, type UseFormReturn } from "react-hook-form";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { type CreateLevelInput, gamificationApi, type UpdateLevelInput } from "./api";
+import { EMPTY_LEVEL_FORM, levelFormSchema, type LevelFormValues } from "./levelForm.schema";
 import type { Level } from "./schemas";
 
 const LEVELS_QUERY_KEY = ["admin-levels"];
 
-type LevelFormState = {
-  level: string;
-  name: string;
-  requiredXp: string;
-  icon: string;
-};
-
-const EMPTY_FORM: LevelFormState = { level: "", name: "", requiredXp: "", icon: "" };
-
-const toCreateInput = (form: LevelFormState): CreateLevelInput => ({
-  level: Number(form.level),
-  name: form.name,
-  requiredXp: Number(form.requiredXp),
-  ...(form.icon ? { icon: form.icon } : {}),
+const toCreateInput = (values: LevelFormValues): CreateLevelInput => ({
+  level: Number(values.level),
+  name: values.name,
+  requiredXp: Number(values.requiredXp),
+  ...(values.icon ? { icon: values.icon } : {}),
 });
 
 const LevelFields = ({
-  idPrefix,
   form,
-  onChange,
   levelEditable,
 }: {
-  idPrefix: string;
-  form: LevelFormState;
-  onChange: (form: LevelFormState) => void;
+  form: UseFormReturn<LevelFormValues>;
   levelEditable: boolean;
 }) => (
-  <div className="flex flex-wrap items-end gap-3">
-    <div className="space-y-1.5">
-      <label htmlFor={`${idPrefix}-level`} className="block text-xs text-muted-foreground">
-        Level number
-      </label>
-      <Input
-        id={`${idPrefix}-level`}
-        type="number"
-        required
-        min={1}
-        disabled={!levelEditable}
-        value={form.level}
-        onChange={(e) => onChange({ ...form, level: e.target.value })}
-        className="w-24"
-      />
-    </div>
-    <div className="space-y-1.5">
-      <label htmlFor={`${idPrefix}-name`} className="block text-xs text-muted-foreground">
-        Name
-      </label>
-      <Input
-        id={`${idPrefix}-name`}
-        required
-        value={form.name}
-        onChange={(e) => onChange({ ...form, name: e.target.value })}
-        className="w-48"
-      />
-    </div>
-    <div className="space-y-1.5">
-      <label htmlFor={`${idPrefix}-required-xp`} className="block text-xs text-muted-foreground">
-        Required XP
-      </label>
-      <Input
-        id={`${idPrefix}-required-xp`}
-        type="number"
-        required
-        min={0}
-        value={form.requiredXp}
-        onChange={(e) => onChange({ ...form, requiredXp: e.target.value })}
-        className="w-32"
-      />
-    </div>
-    <div className="space-y-1.5">
-      <label htmlFor={`${idPrefix}-icon`} className="block text-xs text-muted-foreground">
-        Icon (emoji)
-      </label>
-      <Input
-        id={`${idPrefix}-icon`}
-        value={form.icon}
-        onChange={(e) => onChange({ ...form, icon: e.target.value })}
-        className="w-20"
-      />
-    </div>
+  <div className="flex flex-wrap items-start gap-3">
+    <FormField
+      control={form.control}
+      name="level"
+      render={({ field }) => (
+        <FormItem className="w-24 space-y-1.5">
+          <FormLabel className="text-xs font-normal text-muted-foreground">Level number</FormLabel>
+          <FormControl>
+            <Input inputMode="numeric" disabled={!levelEditable} {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+    <FormField
+      control={form.control}
+      name="name"
+      render={({ field }) => (
+        <FormItem className="w-48 space-y-1.5">
+          <FormLabel className="text-xs font-normal text-muted-foreground">Name</FormLabel>
+          <FormControl>
+            <Input {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+    <FormField
+      control={form.control}
+      name="requiredXp"
+      render={({ field }) => (
+        <FormItem className="w-32 space-y-1.5">
+          <FormLabel className="text-xs font-normal text-muted-foreground">Required XP</FormLabel>
+          <FormControl>
+            <Input inputMode="numeric" {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+    <FormField
+      control={form.control}
+      name="icon"
+      render={({ field }) => (
+        <FormItem className="w-24 space-y-1.5">
+          <FormLabel className="text-xs font-normal text-muted-foreground">Icon (emoji)</FormLabel>
+          <FormControl>
+            <Input {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   </div>
 );
 
-const formForLevel = (level: Level): LevelFormState => ({
+const formForLevel = (level: Level): LevelFormValues => ({
   level: String(level.level),
   name: level.name,
   requiredXp: String(level.requiredXp),
@@ -101,49 +104,48 @@ const formForLevel = (level: Level): LevelFormState => ({
 });
 
 const EditLevelModal = ({ level, onClose }: { level: Level; onClose: () => void }) => {
-  const [form, setForm] = useState<LevelFormState>(() => formForLevel(level));
   const [isActive, setIsActive] = useState(level.isActive);
-  const [error, setError] = useState<string | null>(null);
+  const form = useForm<LevelFormValues>({
+    resolver: zodResolver(levelFormSchema),
+    defaultValues: formForLevel(level),
+    mode: "onTouched",
+  });
 
   const update = useApiMutation({
     mutationFn: (input: UpdateLevelInput) => gamificationApi.updateLevel(level.id, input),
     invalidateKeys: [LEVELS_QUERY_KEY],
+    successMessage: "Level updated.",
     onSuccess: () => onClose(),
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
+  const submitLevelEdit = form.handleSubmit((values) =>
     update.mutate({
-      name: form.name,
-      requiredXp: Number(form.requiredXp),
-      ...(form.icon ? { icon: form.icon } : {}),
+      name: values.name,
+      requiredXp: Number(values.requiredXp),
+      ...(values.icon ? { icon: values.icon } : {}),
       isActive,
-    });
-  };
+    }),
+  );
 
   return (
     <Modal open onClose={onClose} title="Edit level">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <LevelFields
-          idPrefix={`edit-level-${level.id}`}
-          form={form}
-          onChange={setForm}
-          levelEditable={false}
-        />
-        <label className="flex items-center gap-2 text-sm text-foreground">
-          <Checkbox
-            id={`edit-level-${level.id}-active`}
-            checked={isActive}
-            onChange={(e) => setIsActive(e.target.checked)}
-          />
-          Active
-        </label>
-        {error && <FormBanner>{error}</FormBanner>}
-        <Button type="submit" isLoading={update.isPending}>
-          Save changes
-        </Button>
-      </form>
+      <Form {...form}>
+        <form onSubmit={submitLevelEdit} noValidate className="space-y-4">
+          <LevelFields form={form} levelEditable={false} />
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <Checkbox
+              id={`edit-level-${level.id}-active`}
+              checked={isActive}
+              onChange={(event) => setIsActive(event.target.checked)}
+            />
+            Active
+          </label>
+          {update.isError && <FormBanner>{getErrorMessage(update.error)}</FormBanner>}
+          <Button type="submit" isLoading={update.isPending}>
+            Save changes
+          </Button>
+        </form>
+      </Form>
     </Modal>
   );
 };
@@ -154,24 +156,21 @@ export const LevelsSection = () => {
     queryFn: gamificationApi.listLevels,
   });
 
-  const [form, setForm] = useState<LevelFormState>(EMPTY_FORM);
-  const [error, setError] = useState<string | null>(null);
   const [editingLevel, setEditingLevel] = useState<Level | null>(null);
-
-  const create = useApiMutation({
-    mutationFn: () => gamificationApi.createLevel(toCreateInput(form)),
-    invalidateKeys: [LEVELS_QUERY_KEY],
-    onSuccess: () => {
-      setForm(EMPTY_FORM);
-      setError(null);
-    },
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
+  const form = useForm<LevelFormValues>({
+    resolver: zodResolver(levelFormSchema),
+    defaultValues: EMPTY_LEVEL_FORM,
+    mode: "onTouched",
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    create.mutate();
-  };
+  const create = useApiMutation({
+    mutationFn: (values: LevelFormValues) => gamificationApi.createLevel(toCreateInput(values)),
+    invalidateKeys: [LEVELS_QUERY_KEY],
+    successMessage: "Level added.",
+    onSuccess: () => form.reset(EMPTY_LEVEL_FORM),
+  });
+
+  const submitLevel = form.handleSubmit((values) => create.mutate(values));
 
   return (
     <div>
@@ -181,17 +180,20 @@ export const LevelsSection = () => {
         already there — it just stops it from being assigned going forward.
       </p>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-      >
-        <LevelFields idPrefix="create-level" form={form} onChange={setForm} levelEditable />
-        <Button type="submit" isLoading={create.isPending}>
-          Add level
-        </Button>
-      </form>
+      <Form {...form}>
+        <form
+          onSubmit={submitLevel}
+          noValidate
+          className="mt-4 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+        >
+          <LevelFields form={form} levelEditable />
+          <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+            Add level
+          </Button>
+        </form>
+      </Form>
 
-      {error && <FormBanner className="mt-3">{error}</FormBanner>}
+      {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
       <div className="mt-4 space-y-2">
         {isLoading &&

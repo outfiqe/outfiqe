@@ -1,35 +1,44 @@
-import { Button, Checkbox, FormBanner, Input, Modal } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Button,
+  Checkbox,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Modal,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
+import { useForm, type UseFormReturn } from "react-hook-form";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 import { type CreateXpMultiplierInput, gamificationApi, type UpdateXpMultiplierInput } from "./api";
 import { toDatetimeLocalValue, toIsoOrNull } from "./datetime.utils";
+import {
+  buildEmptyMultiplierForm,
+  multiplierFormSchema,
+  type MultiplierFormValues,
+} from "./multiplierForm.schema";
 import type { XpMultiplier } from "./schemas";
 
 const MULTIPLIERS_QUERY_KEY = ["admin-xp-multipliers"];
 
-type MultiplierFormState = {
-  label: string;
-  multiplier: string;
-  startsAt: string;
-  endsAt: string;
-};
+const buildCurrentEmptyForm = () =>
+  buildEmptyMultiplierForm(toDatetimeLocalValue(new Date().toISOString()));
 
-const EMPTY_FORM: MultiplierFormState = {
-  label: "",
-  multiplier: "2",
-  startsAt: toDatetimeLocalValue(new Date().toISOString()),
-  endsAt: "",
-};
-
-const toCreateInput = (form: MultiplierFormState): CreateXpMultiplierInput => ({
-  label: form.label,
-  multiplier: Number(form.multiplier),
-  startsAt: toIsoOrNull(form.startsAt) ?? new Date().toISOString(),
-  endsAt: toIsoOrNull(form.endsAt) ?? new Date().toISOString(),
+const toCreateInput = (values: MultiplierFormValues): CreateXpMultiplierInput => ({
+  label: values.label,
+  multiplier: Number(values.multiplier),
+  startsAt: toIsoOrNull(values.startsAt) ?? new Date().toISOString(),
+  endsAt: toIsoOrNull(values.endsAt) ?? new Date().toISOString(),
 });
 
 const isCurrentlyActive = (multiplierRow: XpMultiplier) => {
@@ -41,74 +50,64 @@ const isCurrentlyActive = (multiplierRow: XpMultiplier) => {
   );
 };
 
-const MultiplierFields = ({
-  idPrefix,
-  form,
-  onChange,
-}: {
-  idPrefix: string;
-  form: MultiplierFormState;
-  onChange: (form: MultiplierFormState) => void;
-}) => (
-  <div className="flex flex-wrap items-end gap-3">
-    <div className="min-w-48 flex-1 space-y-1.5">
-      <label htmlFor={`${idPrefix}-label`} className="block text-xs text-muted-foreground">
-        Label
-      </label>
-      <Input
-        id={`${idPrefix}-label`}
-        required
-        placeholder="Founders Weekend"
-        value={form.label}
-        onChange={(e) => onChange({ ...form, label: e.target.value })}
-      />
-    </div>
-    <div className="space-y-1.5">
-      <label htmlFor={`${idPrefix}-multiplier`} className="block text-xs text-muted-foreground">
-        Multiplier
-      </label>
-      <Input
-        id={`${idPrefix}-multiplier`}
-        type="number"
-        required
-        min={1}
-        max={10}
-        step={0.1}
-        value={form.multiplier}
-        onChange={(e) => onChange({ ...form, multiplier: e.target.value })}
-        className="w-24"
-      />
-    </div>
-    <div className="space-y-1.5">
-      <label htmlFor={`${idPrefix}-starts-at`} className="block text-xs text-muted-foreground">
-        Starts
-      </label>
-      <Input
-        id={`${idPrefix}-starts-at`}
-        type="datetime-local"
-        required
-        value={form.startsAt}
-        onChange={(e) => onChange({ ...form, startsAt: e.target.value })}
-        className="w-full sm:w-56"
-      />
-    </div>
-    <div className="space-y-1.5">
-      <label htmlFor={`${idPrefix}-ends-at`} className="block text-xs text-muted-foreground">
-        Ends
-      </label>
-      <Input
-        id={`${idPrefix}-ends-at`}
-        type="datetime-local"
-        required
-        value={form.endsAt}
-        onChange={(e) => onChange({ ...form, endsAt: e.target.value })}
-        className="w-full sm:w-56"
-      />
-    </div>
+const MultiplierFields = ({ form }: { form: UseFormReturn<MultiplierFormValues> }) => (
+  <div className="flex flex-wrap items-start gap-3">
+    <FormField
+      control={form.control}
+      name="label"
+      render={({ field }) => (
+        <FormItem className="min-w-48 flex-1 space-y-1.5">
+          <FormLabel className="text-xs font-normal text-muted-foreground">Label</FormLabel>
+          <FormControl>
+            <Input placeholder="Founders Weekend" {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+    <FormField
+      control={form.control}
+      name="multiplier"
+      render={({ field }) => (
+        <FormItem className="w-24 space-y-1.5">
+          <FormLabel className="text-xs font-normal text-muted-foreground">Multiplier</FormLabel>
+          <FormControl>
+            <Input inputMode="decimal" {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+    <FormField
+      control={form.control}
+      name="startsAt"
+      render={({ field }) => (
+        <FormItem className="w-full space-y-1.5 sm:w-56">
+          <FormLabel className="text-xs font-normal text-muted-foreground">Starts</FormLabel>
+          <FormControl>
+            <Input type="datetime-local" {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+    <FormField
+      control={form.control}
+      name="endsAt"
+      render={({ field }) => (
+        <FormItem className="w-full space-y-1.5 sm:w-56">
+          <FormLabel className="text-xs font-normal text-muted-foreground">Ends</FormLabel>
+          <FormControl>
+            <Input type="datetime-local" {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   </div>
 );
 
-const formForMultiplier = (multiplierRow: XpMultiplier): MultiplierFormState => ({
+const formForMultiplier = (multiplierRow: XpMultiplier): MultiplierFormValues => ({
   label: multiplierRow.label,
   multiplier: String(multiplierRow.multiplier),
   startsAt: toDatetimeLocalValue(multiplierRow.startsAt),
@@ -122,44 +121,44 @@ const EditMultiplierModal = ({
   multiplierRow: XpMultiplier;
   onClose: () => void;
 }) => {
-  const [form, setForm] = useState<MultiplierFormState>(() => formForMultiplier(multiplierRow));
   const [isActive, setIsActive] = useState(multiplierRow.isActive);
-  const [error, setError] = useState<string | null>(null);
+  const form = useForm<MultiplierFormValues>({
+    resolver: zodResolver(multiplierFormSchema),
+    defaultValues: formForMultiplier(multiplierRow),
+    mode: "onTouched",
+  });
 
   const update = useApiMutation({
     mutationFn: (input: UpdateXpMultiplierInput) =>
       gamificationApi.updateXpMultiplier(multiplierRow.id, input),
     invalidateKeys: [MULTIPLIERS_QUERY_KEY],
+    successMessage: "XP multiplier updated.",
     onSuccess: () => onClose(),
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    update.mutate({ ...toCreateInput(form), isActive });
-  };
+  const submitMultiplierEdit = form.handleSubmit((values) =>
+    update.mutate({ ...toCreateInput(values), isActive }),
+  );
 
   return (
     <Modal open onClose={onClose} title="Edit XP multiplier">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <MultiplierFields
-          idPrefix={`edit-multiplier-${multiplierRow.id}`}
-          form={form}
-          onChange={setForm}
-        />
-        <label className="flex items-center gap-2 text-sm text-foreground">
-          <Checkbox
-            id={`edit-multiplier-${multiplierRow.id}-active`}
-            checked={isActive}
-            onChange={(e) => setIsActive(e.target.checked)}
-          />
-          Active
-        </label>
-        {error && <FormBanner>{error}</FormBanner>}
-        <Button type="submit" isLoading={update.isPending}>
-          Save changes
-        </Button>
-      </form>
+      <Form {...form}>
+        <form onSubmit={submitMultiplierEdit} noValidate className="space-y-4">
+          <MultiplierFields form={form} />
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <Checkbox
+              id={`edit-multiplier-${multiplierRow.id}-active`}
+              checked={isActive}
+              onChange={(event) => setIsActive(event.target.checked)}
+            />
+            Active
+          </label>
+          {update.isError && <FormBanner>{getErrorMessage(update.error)}</FormBanner>}
+          <Button type="submit" isLoading={update.isPending}>
+            Save changes
+          </Button>
+        </form>
+      </Form>
     </Modal>
   );
 };
@@ -170,24 +169,22 @@ export const MultipliersSection = () => {
     queryFn: gamificationApi.listXpMultipliers,
   });
 
-  const [form, setForm] = useState<MultiplierFormState>(EMPTY_FORM);
-  const [error, setError] = useState<string | null>(null);
   const [editingMultiplier, setEditingMultiplier] = useState<XpMultiplier | null>(null);
-
-  const create = useApiMutation({
-    mutationFn: () => gamificationApi.createXpMultiplier(toCreateInput(form)),
-    invalidateKeys: [MULTIPLIERS_QUERY_KEY],
-    onSuccess: () => {
-      setForm(EMPTY_FORM);
-      setError(null);
-    },
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
+  const form = useForm<MultiplierFormValues>({
+    resolver: zodResolver(multiplierFormSchema),
+    defaultValues: buildCurrentEmptyForm(),
+    mode: "onTouched",
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    create.mutate();
-  };
+  const create = useApiMutation({
+    mutationFn: (values: MultiplierFormValues) =>
+      gamificationApi.createXpMultiplier(toCreateInput(values)),
+    invalidateKeys: [MULTIPLIERS_QUERY_KEY],
+    successMessage: "XP multiplier added.",
+    onSuccess: () => form.reset(buildCurrentEmptyForm()),
+  });
+
+  const submitMultiplier = form.handleSubmit((values) => create.mutate(values));
 
   return (
     <div>
@@ -198,17 +195,20 @@ export const MultipliersSection = () => {
         adjustments and achievement/badge rewards are never multiplied.
       </p>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-      >
-        <MultiplierFields idPrefix="create-multiplier" form={form} onChange={setForm} />
-        <Button type="submit" isLoading={create.isPending}>
-          Add multiplier
-        </Button>
-      </form>
+      <Form {...form}>
+        <form
+          onSubmit={submitMultiplier}
+          noValidate
+          className="mt-4 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+        >
+          <MultiplierFields form={form} />
+          <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+            Add multiplier
+          </Button>
+        </form>
+      </Form>
 
-      {error && <FormBanner className="mt-3">{error}</FormBanner>}
+      {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
       <div className="mt-4 space-y-2">
         {isLoading &&
