@@ -1,10 +1,11 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { InviteSection } from "./InviteSection";
 
@@ -17,7 +18,12 @@ const ROLES = [
 
 const wrapper = ({ children }: { children: ReactNode }) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <Toaster />
+    </QueryClientProvider>
+  );
 };
 
 const renderInviteSection = (
@@ -111,6 +117,7 @@ describe("InviteSection", () => {
       expect(requestBody).toEqual({ email: "colleague@outfiqe.test", roleId: "role-member" }),
     );
     await waitFor(() => expect(screen.getByLabelText("Email")).toHaveValue(""));
+    expect(await screen.findByText("Invite sent to colleague@outfiqe.test.")).toBeInTheDocument();
   });
 
   it("hides a role the viewer can't grant from the invite form's role picker", async () => {
@@ -125,5 +132,50 @@ describe("InviteSection", () => {
     const roleSelect = screen.getByLabelText("Role");
     expect(within(roleSelect).getByRole("option", { name: "Member" })).toBeInTheDocument();
     expect(within(roleSelect).queryByRole("option", { name: "Admin" })).not.toBeInTheDocument();
+  });
+
+  it("shows inline messages, not a browser popup, when the invite form is submitted empty", async () => {
+    const postRequested = vi.fn();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/roles`, () => HttpResponse.json({ success: true, data: ROLES })),
+      http.get(`${API_BASE}/crm/invites`, () => HttpResponse.json({ success: true, data: [] })),
+      http.post(`${API_BASE}/crm/invites`, () => {
+        postRequested();
+        return HttpResponse.json({ success: true, data: null }, { status: 201 });
+      }),
+    );
+
+    renderInviteSection();
+    await screen.findByText("No invites yet.");
+
+    const user = userEvent.setup({ delay: null });
+    await user.click(screen.getByRole("button", { name: "Send invite" }));
+
+    expect(await screen.findByText("Enter an email address.")).toBeInTheDocument();
+    expect(screen.getByText("Choose a role for this invite.")).toBeInTheDocument();
+    expect(postRequested).not.toHaveBeenCalled();
+  });
+
+  it("explains an email that is not an address and does not send the invite", async () => {
+    const postRequested = vi.fn();
+    mswServer.use(
+      http.get(`${API_BASE}/crm/roles`, () => HttpResponse.json({ success: true, data: ROLES })),
+      http.get(`${API_BASE}/crm/invites`, () => HttpResponse.json({ success: true, data: [] })),
+      http.post(`${API_BASE}/crm/invites`, () => {
+        postRequested();
+        return HttpResponse.json({ success: true, data: null }, { status: 201 });
+      }),
+    );
+
+    renderInviteSection();
+    await screen.findByText("No invites yet.");
+
+    const user = userEvent.setup({ delay: null });
+    await user.type(screen.getByLabelText("Email"), "nope");
+    await user.selectOptions(screen.getByLabelText("Role"), "role-member");
+    await user.click(screen.getByRole("button", { name: "Send invite" }));
+
+    expect(await screen.findByText("Enter a valid email address.")).toBeInTheDocument();
+    expect(postRequested).not.toHaveBeenCalled();
   });
 });
