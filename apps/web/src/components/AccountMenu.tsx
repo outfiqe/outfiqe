@@ -10,11 +10,15 @@ import { AppImage } from "@/shared/components/AppImage";
 import { useTenantHost } from "@/shared/hooks/useTenantHost";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 
+const OVERVIEW_PATH = "/overview";
+const PROFILE_PATH = "/profile";
+
 export const AccountMenu = () => {
   const { state, isAuthenticated, isBrandOwner, isAdmin, isCreator, isShopper, hasCrmAccess } =
     useAuth();
   const logout = useLogout();
   const isOnTenantHost = useTenantHost();
+  const dashboardHref = isBrandOwner || isCreator ? OVERVIEW_PATH : PROFILE_PATH;
 
   if (state.status === AuthStatus.IDLE || state.status === AuthStatus.LOADING) {
     return <Skeleton aria-hidden className="hidden size-9 rounded-full lg:block" />;
@@ -64,7 +68,7 @@ export const AccountMenu = () => {
         </a>
       ) : (
         <Link
-          href="/profile"
+          href={dashboardHref}
           aria-label="Your account"
           className="block size-9 shrink-0 overflow-hidden rounded-full bg-muted transition-opacity hover:opacity-80"
         >
@@ -85,7 +89,7 @@ export const AccountMenu = () => {
             </a>
           ) : (
             <Link
-              href={isBrandOwner ? "/overview" : "/profile"}
+              href={dashboardHref}
               className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
             >
               Dashboard

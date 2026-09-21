@@ -5,7 +5,7 @@ import { cn } from "./cn";
 import { Skeleton } from "./skeleton";
 import { Tooltip } from "./tooltip";
 
-const STAT_CARD_CLASS = "rounded-xl border border-border bg-card p-4";
+const STAT_CARD_CLASS = "flex flex-col rounded-xl border border-border bg-card p-4";
 
 const DELTA_TONE_CLASS = {
   positive: "text-success",
@@ -31,15 +31,15 @@ type StatCardProps = {
 export const StatCard = ({ label, value, icon: Icon, delta, hint, className }: StatCardProps) => {
   return (
     <div className={cn(STAT_CARD_CLASS, className)}>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start gap-1">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
           {hint && (
             <Tooltip content={hint}>
               <button
                 type="button"
                 aria-label={`How ${label} is calculated`}
-                className="inline-flex cursor-help text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                className="mt-px inline-flex shrink-0 cursor-help text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
                 <Info className="size-3.5" aria-hidden />
               </button>
@@ -48,7 +48,7 @@ export const StatCard = ({ label, value, icon: Icon, delta, hint, className }: S
         </div>
         {Icon && <Icon className="size-4 shrink-0 text-muted-foreground" />}
       </div>
-      <p className="mt-1 font-display text-2xl font-bold text-foreground">{value}</p>
+      <p className="mt-auto pt-1 font-display text-2xl font-bold text-foreground">{value}</p>
       {delta && (
         <p className={cn("mt-1 text-xs font-medium", DELTA_TONE_CLASS[delta.tone ?? "neutral"])}>
           {delta.value}
