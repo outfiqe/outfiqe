@@ -1,7 +1,21 @@
-import { Badge, Button, FormBanner, Input, Skeleton, toast } from "@outfiqe/design-system";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Badge,
+  Button,
+  Form,
+  FormBanner,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Skeleton,
+  toast,
+} from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { ImageUpload } from "@/components/ImageUpload";
 import { ImageUploadSkeleton } from "@/components/ImageUploadSkeleton";
@@ -9,6 +23,11 @@ import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { heroSlidesApi } from "./api";
+import {
+  EMPTY_HERO_SLIDE_FORM,
+  heroSlideFormSchema,
+  type HeroSlideFormValues,
+} from "./heroSlideForm.schema";
 import type { HeroSlide, HeroSlideStatusValue } from "./schemas";
 
 const STATUS_TONE: Record<HeroSlideStatusValue, "neutral" | "positive"> = {
@@ -41,44 +60,34 @@ export const HeroSlidesPage = () => {
     queryFn: heroSlidesApi.list,
   });
 
-  const [tag, setTag] = useState("");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [ctaLabel, setCtaLabel] = useState("");
-  const [ctaHref, setCtaHref] = useState("");
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageAssetId, setImageAssetId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const form = useForm<HeroSlideFormValues>({
+    resolver: zodResolver(heroSlideFormSchema),
+    defaultValues: EMPTY_HERO_SLIDE_FORM,
+    mode: "onTouched",
+  });
 
   const create = useApiMutation({
-    mutationFn: () =>
+    mutationFn: (values: HeroSlideFormValues) =>
       heroSlidesApi.create({
-        tag,
-        title,
-        description,
-        ctaLabel,
-        ctaHref,
-        imageUrl: imageUrl ?? undefined,
-        imageAssetId: imageAssetId ?? undefined,
+        tag: values.tag,
+        title: values.title,
+        description: values.description,
+        ctaLabel: values.ctaLabel,
+        ctaHref: values.ctaHref,
+        imageUrl: values.imageUrl ?? undefined,
+        imageAssetId: values.imageAssetId ?? undefined,
       }),
     invalidateKeys: [HERO_SLIDES_QUERY_KEY],
-    onSuccess: () => {
-      setTag("");
-      setTitle("");
-      setDescription("");
-      setCtaLabel("");
-      setCtaHref("");
-      setImageUrl(null);
-      setImageAssetId(null);
-      setError(null);
-    },
-    onError: (err) => setError(err instanceof Error ? err.message : "Something went wrong."),
+    successMessage: "Hero slide created.",
+    onSuccess: () => form.reset(EMPTY_HERO_SLIDE_FORM),
   });
 
   const toggleStatus = useApiMutation({
     mutationFn: (slide: HeroSlide) =>
       heroSlidesApi.setStatus(slide.id, slide.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED"),
     invalidateKeys: [HERO_SLIDES_QUERY_KEY],
+    successMessage: (updated) =>
+      updated.status === "PUBLISHED" ? "Hero slide published." : "Hero slide unpublished.",
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -93,104 +102,117 @@ export const HeroSlidesPage = () => {
       imageAssetId: string;
     }) => heroSlidesApi.setImage(id, url, assetId),
     invalidateKeys: [HERO_SLIDES_QUERY_KEY],
+    successMessage: "Hero slide image updated.",
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    create.mutate();
-  };
+  const submitHeroSlide = form.handleSubmit((values) => create.mutate(values));
 
   return (
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Hero slides</h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-5 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
-      >
-        <div className="space-y-1.5">
-          <label htmlFor="slide-tag" className="text-xs text-muted-foreground">
-            Tag
-          </label>
-          <Input
-            id="slide-tag"
-            required
-            value={tag}
-            onChange={(e) => setTag(e.target.value)}
-            placeholder="Collection 01: Festive"
-            className="w-56"
+      <Form {...form}>
+        <form
+          onSubmit={submitHeroSlide}
+          noValidate
+          className="mt-5 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+        >
+          <FormField
+            control={form.control}
+            name="tag"
+            render={({ field }) => (
+              <FormItem className="w-56 space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">Tag</FormLabel>
+                <FormControl>
+                  <Input placeholder="Collection 01: Festive" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="slide-title" className="text-xs text-muted-foreground">
-            Title
-          </label>
-          <Input
-            id="slide-title"
-            required
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Dashain Edit '26"
-            className="w-56"
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem className="w-56 space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">Title</FormLabel>
+                <FormControl>
+                  <Input placeholder="Dashain Edit '26" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="slide-description" className="text-xs text-muted-foreground">
-            Description
-          </label>
-          <Input
-            id="slide-description"
-            required
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Styled full looks from Kathmandu labels."
-            className="w-72"
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem className="w-72 space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">
+                  Description
+                </FormLabel>
+                <FormControl>
+                  <Input placeholder="Styled full looks from Kathmandu labels." {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="slide-cta-label" className="text-xs text-muted-foreground">
-            CTA label
-          </label>
-          <Input
-            id="slide-cta-label"
-            required
-            value={ctaLabel}
-            onChange={(e) => setCtaLabel(e.target.value)}
-            placeholder="Explore collection"
-            className="w-44"
+          <FormField
+            control={form.control}
+            name="ctaLabel"
+            render={({ field }) => (
+              <FormItem className="w-44 space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">
+                  CTA label
+                </FormLabel>
+                <FormControl>
+                  <Input placeholder="Explore collection" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="slide-cta-href" className="text-xs text-muted-foreground">
-            CTA link
-          </label>
-          <Input
-            id="slide-cta-href"
-            required
-            value={ctaHref}
-            onChange={(e) => setCtaHref(e.target.value)}
-            placeholder="/collections/dashain-edit-26"
-            className="w-56"
+          <FormField
+            control={form.control}
+            name="ctaHref"
+            render={({ field }) => (
+              <FormItem className="w-56 space-y-1.5">
+                <FormLabel className="text-xs font-normal text-muted-foreground">
+                  CTA link
+                </FormLabel>
+                <FormControl>
+                  <Input placeholder="/collections/dashain-edit-26" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div className="space-y-1.5">
-          <span className="block text-xs text-muted-foreground">Image</span>
-          <ImageUpload
-            value={imageUrl}
-            onUploaded={({ url, imageAssetId: assetId }) => {
-              setImageUrl(url);
-              setImageAssetId(assetId);
-            }}
+          <FormField
+            control={form.control}
+            name="imageUrl"
+            render={({ field }) => (
+              <FormItem className="space-y-1.5">
+                <span className="block text-xs text-muted-foreground">Image</span>
+                <ImageUpload
+                  value={field.value}
+                  onUploaded={({ url, imageAssetId: assetId }) => {
+                    field.onChange(url);
+                    form.setValue("imageAssetId", assetId);
+                  }}
+                />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <Button type="submit" isLoading={create.isPending}>
-          Create slide
-        </Button>
-      </form>
+          <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+            Create slide
+          </Button>
+        </form>
+      </Form>
 
-      {error && <FormBanner className="mt-3">{error}</FormBanner>}
+      {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
       <div className="mt-6 space-y-3">
         {isLoading &&
