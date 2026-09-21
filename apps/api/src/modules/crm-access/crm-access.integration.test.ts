@@ -155,6 +155,8 @@ describe("POST /api/crm/organizations", () => {
       .send({ name: "Acme", subdomain: `acme-${randomUUID().slice(0, 8)}` });
 
     expect(response.status).toBe(201);
+    expect(response.body.data.linkedBrandId).toBeNull();
+    expect(response.body.data.linkedBrandName).toBeNull();
 
     const organization = await prisma.organization.findUniqueOrThrow({
       where: { id: response.body.data.id },
@@ -329,6 +331,7 @@ describe("POST /api/crm/organizations", () => {
 
     expect(response.status).toBe(201);
     expect(response.body.data.linkedBrandId).toBe(brand.id);
+    expect(response.body.data.linkedBrandName).toBe(brand.name);
 
     const organization = await prisma.organization.findUniqueOrThrow({
       where: { id: response.body.data.id },

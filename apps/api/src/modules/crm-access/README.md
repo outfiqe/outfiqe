@@ -412,3 +412,5 @@ transfers to Membership B`. Rather than guessing, the person initiating the tran
   is what owns deciding what a caller-facing retry should see, via its own pre-check
   (`findAcceptableInvite` rejects an already-accepted invite outright) before ever reaching the
   repository.
+
+**Creating an organization returns the same shape as the organization list.** `createOrganization` now returns the linked business name (`linkedBrandName`, or `null`) as well as the stored row. The admin Organizations page validates the create response against the list-row shape, so when the field was missing the check failed after the organization had already been saved and the form showed "Something went wrong" until the page was refreshed.
