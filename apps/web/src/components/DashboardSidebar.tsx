@@ -7,10 +7,12 @@ import {
   sidebarWidthClass,
   useSidebarCollapse,
 } from "@outfiqe/components";
-import { LogOut } from "lucide-react";
+import { Compass, LogOut } from "lucide-react";
+import Link from "next/link";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
+import { BRAND_TOUR_REPLAY_HREF, BRAND_TOUR_REPLAY_LABEL } from "@/features/product-tour";
 import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
@@ -69,20 +71,38 @@ export const DashboardSidebar = () => {
     </div>
   );
 
+  const footerButtonClassName = cn(
+    "flex items-center gap-3 rounded-2xl border border-border bg-card text-sm font-medium text-muted-foreground shadow-sm transition-colors disabled:opacity-60",
+    collapsed ? "size-11 justify-center" : "w-full px-3.5 py-2.5",
+  );
+
   const footer = (
-    <button
-      type="button"
-      onClick={() => logout.mutate()}
-      disabled={logout.isPending}
-      title={collapsed ? "Sign out" : undefined}
-      className={cn(
-        "flex items-center gap-3 rounded-2xl border border-border bg-card text-sm font-medium text-muted-foreground shadow-sm transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-60",
-        collapsed ? "size-11 justify-center" : "w-full px-3.5 py-2.5",
+    <div className="space-y-2">
+      {isBrand && (
+        <Link
+          href={BRAND_TOUR_REPLAY_HREF}
+          title={collapsed ? BRAND_TOUR_REPLAY_LABEL : undefined}
+          className={cn(footerButtonClassName, "hover:bg-muted hover:text-foreground")}
+        >
+          <Compass className="size-[18px] shrink-0" aria-hidden="true" />
+          {collapsed ? (
+            <span className="sr-only">{BRAND_TOUR_REPLAY_LABEL}</span>
+          ) : (
+            BRAND_TOUR_REPLAY_LABEL
+          )}
+        </Link>
       )}
-    >
-      <LogOut className="size-[18px] shrink-0" />
-      {!collapsed && (logout.isPending ? "Signing out…" : "Sign out")}
-    </button>
+      <button
+        type="button"
+        onClick={() => logout.mutate()}
+        disabled={logout.isPending}
+        title={collapsed ? "Sign out" : undefined}
+        className={cn(footerButtonClassName, "hover:bg-destructive/10 hover:text-destructive")}
+      >
+        <LogOut className="size-[18px] shrink-0" />
+        {!collapsed && (logout.isPending ? "Signing out…" : "Sign out")}
+      </button>
+    </div>
   );
 
   return (
