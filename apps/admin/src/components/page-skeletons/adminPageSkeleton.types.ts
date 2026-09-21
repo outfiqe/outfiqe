@@ -41,7 +41,8 @@ export type SkeletonBlock =
   | { kind: "pills"; count: number }
   | { kind: "searchInput"; placeholder: string }
   | { kind: "selectBar"; options: readonly string[] }
-  | { kind: "labeledStats"; labels: readonly string[] }
+  | { kind: "labeledStats"; labels: readonly string[]; isWide?: boolean }
+  | { kind: "labeledSelect"; label: string; option: string }
   | { kind: "posterGrid"; count: number }
   | { kind: "reportRows"; count: number; hasLeadingName?: boolean }
   | { kind: "text"; text: string }

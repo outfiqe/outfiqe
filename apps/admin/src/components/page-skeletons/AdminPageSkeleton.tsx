@@ -194,10 +194,26 @@ const BlockSkeleton = ({ block }: { block: SkeletonBlock }) => {
       );
     case "labeledStats":
       return (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-hidden>
+        <div
+          className={
+            block.isWide
+              ? "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
+              : "grid grid-cols-2 gap-3 sm:grid-cols-4"
+          }
+          aria-hidden
+        >
           {block.labels.map((label) => (
             <StatCard key={label} label={label} value={<Skeleton className="h-7 w-10" />} />
           ))}
+        </div>
+      );
+    case "labeledSelect":
+      return (
+        <div className="max-w-sm space-y-1.5" aria-hidden>
+          <span className="block text-xs text-muted-foreground">{block.label}</span>
+          <Select disabled tabIndex={-1}>
+            <option>{block.option}</option>
+          </Select>
         </div>
       );
     case "posterGrid":

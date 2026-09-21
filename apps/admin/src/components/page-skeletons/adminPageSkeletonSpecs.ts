@@ -9,7 +9,115 @@ const PILL_COUNT = 5;
 
 const POSTER_COUNT = 10;
 
+const SESSION_TABLE_HEADERS = [
+  "Tenant",
+  "Acting as",
+  "Staff",
+  "Scope",
+  "Started",
+  "Expires",
+  "State",
+];
+
 export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = {
+  "/team": {
+    title: "Team",
+    blocks: [
+      {
+        kind: "formCard",
+        fields: [
+          { label: "Name", width: "medium" },
+          { label: "Email", width: "large" },
+          { label: "Role", width: "medium" },
+        ],
+        submitLabel: "Invite admin",
+      },
+      {
+        kind: "cardRows",
+        count: ROW_COUNT,
+        hasBadge: false,
+        hasMetaLine: true,
+        hasTrailingBadge: true,
+        actionLabels: [],
+      },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/team/TeamPage.tsx`],
+  },
+
+  "/platform/features": {
+    title: "Feature flags",
+    description:
+      "Override a plan default for one tenant. Clearing an override reverts to the plan.",
+    blocks: [
+      { kind: "labeledSelect", label: "Tenant", option: "Select a tenant" },
+      { kind: "table", headers: ["Feature", "State", "Source", "Actions"] },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/platform-features/PlatformFeaturesPage.tsx`],
+  },
+
+  "/platform/impersonation": {
+    title: "Impersonation",
+    description:
+      "Start a time-boxed, audited support session that acts as a specific tenant member. Every session is logged, visible to the tenant, and expires on its own.",
+    spacing: "loose",
+    blocks: [
+      {
+        kind: "formCard",
+        fields: [
+          { label: "Tenant", width: "large" },
+          { label: "Act as", width: "large" },
+          { label: "Reason", width: "large" },
+          { label: "Scope", width: "small" },
+          { label: "Minutes (optional)", width: "small" },
+        ],
+        submitLabel: "Start session",
+      },
+      {
+        kind: "section",
+        title: "Active sessions",
+        blocks: [{ kind: "table", headers: [...SESSION_TABLE_HEADERS, "Actions"], rowCount: 3 }],
+      },
+      {
+        kind: "section",
+        title: "Recent history",
+        blocks: [{ kind: "table", headers: SESSION_TABLE_HEADERS, rowCount: 3 }],
+      },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/platform-impersonation/PlatformImpersonationPage.tsx`],
+  },
+
+  "/platform/metrics": {
+    title: "Tenant metrics",
+    description:
+      "Aggregate activity across every CRM tenant. Counts only — no tenant records are shown here.",
+    blocks: [
+      {
+        kind: "labeledStats",
+        isWide: true,
+        labels: ["Tenants", "Members", "Contacts", "Deals", "Tickets", "Activities"],
+      },
+      { kind: "selectBar", options: ["All plans", "Recent activity"] },
+      {
+        kind: "table",
+        headers: ["Tenant", "Plan", "Members", "Contacts", "Deals", "Tickets", "Last activity"],
+      },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/platform-metrics/PlatformMetricsPage.tsx`],
+  },
+
+  "/platform/nav-access": {
+    title: "Navigation access",
+    description:
+      "Choose which platform navigation items every non-co-founder admin can see and reach. Co-founders always see everything.",
+    blocks: [
+      {
+        kind: "section",
+        title: "Navigation items",
+        blocks: [{ kind: "toggleRows", count: 6 }],
+      },
+    ],
+    sourceFiles: [`${FEATURES_DIR}/platform-nav-access/PlatformNavAccessPage.tsx`],
+  },
   "/content-browser": {
     title: "Browse posts",
     description:

@@ -29,6 +29,8 @@ const staticStringsOf = (block: SkeletonBlock): string[] => {
       return [...block.options];
     case "labeledStats":
       return [...block.labels];
+    case "labeledSelect":
+      return [block.label];
     case "section":
       return [
         block.title,
