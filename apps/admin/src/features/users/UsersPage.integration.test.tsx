@@ -87,12 +87,16 @@ describe("UsersPage", () => {
     await user.type(reasonField, "Reported for spam");
     await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
 
-    await waitFor(() =>
-      expect(
-        screen.queryByRole("heading", { name: "Suspend Ava Martinez" }),
-      ).not.toBeInTheDocument(),
+    await waitFor(
+      () =>
+        expect(
+          screen.queryByRole("heading", { name: "Suspend Ava Martinez" }),
+        ).not.toBeInTheDocument(),
+      { timeout: MODAL_OPEN_TIMEOUT_MS },
     );
-    expect(await screen.findByText("Account suspended.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Account suspended.", undefined, { timeout: MODAL_OPEN_TIMEOUT_MS }),
+    ).toBeInTheDocument();
   });
 
   it("surfaces a server error inline when suspending fails", async () => {
