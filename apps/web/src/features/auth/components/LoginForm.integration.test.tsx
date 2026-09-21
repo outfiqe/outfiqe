@@ -43,6 +43,21 @@ const fillAndSubmit = async () => {
 };
 
 describe("LoginForm", () => {
+  it("sends a Google sign-in with no requested page to the overview by default", () => {
+    const Wrapper = createAuthQueryClientWrapper();
+
+    render(
+      <Wrapper>
+        <LoginForm />
+      </Wrapper>,
+    );
+
+    expect(screen.getByRole("link", { name: /google/i })).toHaveAttribute(
+      "href",
+      "/api/auth/oauth/google/start?redirect=%2Foverview",
+    );
+  });
+
   it("keeps the sign-in button disabled after a successful login while the redirect is under way", async () => {
     mswServer.use(
       http.post(LOGIN_URL, () =>

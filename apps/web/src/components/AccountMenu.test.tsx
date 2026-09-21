@@ -117,7 +117,7 @@ describe("AccountMenu", () => {
     expect(screen.getByRole("button", { name: "Signing out…" })).toBeDisabled();
   });
 
-  it("links a signed-in creator's avatar and Dashboard entry to their profile", () => {
+  it("links a signed-in shopper's avatar and Dashboard entry to their profile", () => {
     const user = buildUser();
     mockAuth({
       state: { status: AuthStatus.AUTHENTICATED, user, accessToken: "token" },
@@ -128,6 +128,21 @@ describe("AccountMenu", () => {
 
     const profileLinks = screen.getAllByRole("link", { name: /Your account|Dashboard/ });
     expect(profileLinks.every((link) => link.getAttribute("href") === "/profile")).toBe(true);
+  });
+
+  it("sends a creator's avatar and Dashboard entry to the overview page", () => {
+    const creator = buildUser({ isCreator: true });
+    mockAuth({
+      state: { status: AuthStatus.AUTHENTICATED, user: creator, accessToken: "token" },
+      isAuthenticated: true,
+      isCreator: true,
+    });
+
+    render(<AccountMenu />);
+
+    const dashboardLinks = screen.getAllByRole("link", { name: /Your account|Dashboard/ });
+    expect(dashboardLinks.length).toBeGreaterThan(0);
+    expect(dashboardLinks.every((link) => link.getAttribute("href") === "/overview")).toBe(true);
   });
 
   it("sends a brand owner's Dashboard entry to the overview page", () => {
