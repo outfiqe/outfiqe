@@ -81,7 +81,7 @@ export const TeamPage = () => {
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem className="w-48 space-y-1.5">
+                  <FormItem className="mt-0 w-48 space-y-1.5">
                     <FormLabel className="text-xs font-normal text-muted-foreground">
                       Name
                     </FormLabel>
@@ -96,7 +96,7 @@ export const TeamPage = () => {
                 control={form.control}
                 name="email"
                 render={({ field }) => (
-                  <FormItem className="w-64 space-y-1.5">
+                  <FormItem className="mt-0 w-64 space-y-1.5">
                     <FormLabel className="text-xs font-normal text-muted-foreground">
                       Email
                     </FormLabel>
@@ -111,7 +111,7 @@ export const TeamPage = () => {
                 control={form.control}
                 name="roleId"
                 render={({ field }) => (
-                  <FormItem className="w-40 space-y-1.5">
+                  <FormItem className="mt-0 w-40 space-y-1.5">
                     <FormLabel className="text-xs font-normal text-muted-foreground">
                       Role
                     </FormLabel>

@@ -132,7 +132,7 @@ export const StageConfigModal = ({
               control={form.control}
               name="name"
               render={({ field }) => (
-                <FormItem className="flex-1 space-y-1.5">
+                <FormItem className="mt-0 flex-1 space-y-1.5">
                   <FormControl>
                     <Input placeholder="New stage name" aria-label="New stage name" {...field} />
                   </FormControl>

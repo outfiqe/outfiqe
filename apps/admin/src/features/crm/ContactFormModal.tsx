@@ -118,7 +118,7 @@ export const ContactFormModal = ({ open, onClose, contact }: ContactFormModalPro
       control={form.control}
       name={name}
       render={({ field }) => (
-        <FormItem className="space-y-1.5">
+        <FormItem className="mt-0 space-y-1.5">
           <FormLabel className={LABEL_CLASS}>{label}</FormLabel>
           <FormControl>
             <Input type={type} {...field} />
@@ -147,7 +147,7 @@ export const ContactFormModal = ({ open, onClose, contact }: ContactFormModalPro
               control={form.control}
               name="lifecycleStage"
               render={({ field }) => (
-                <FormItem className="space-y-1.5">
+                <FormItem className="mt-0 space-y-1.5">
                   <FormLabel className={LABEL_CLASS}>Lifecycle stage</FormLabel>
                   <FormControl>
                     <Select {...field}>
@@ -166,7 +166,7 @@ export const ContactFormModal = ({ open, onClose, contact }: ContactFormModalPro
               control={form.control}
               name="ownerMembershipId"
               render={({ field }) => (
-                <FormItem className="space-y-1.5">
+                <FormItem className="mt-0 space-y-1.5">
                   <FormLabel className={LABEL_CLASS}>Owner</FormLabel>
                   <FormControl>
                     <Select {...field}>
@@ -191,7 +191,7 @@ export const ContactFormModal = ({ open, onClose, contact }: ContactFormModalPro
             control={form.control}
             name="notes"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className={LABEL_CLASS}>Notes</FormLabel>
                 <FormControl>
                   <textarea

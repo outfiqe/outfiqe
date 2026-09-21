@@ -61,7 +61,7 @@ const ZoneFields = ({ form }: { form: UseFormReturn<ZoneFormValues> }) => {
       control={form.control}
       name={name}
       render={({ field }) => (
-        <FormItem className={`${widthClass} space-y-1.5`}>
+        <FormItem className={`mt-0 ${widthClass} space-y-1.5`}>
           <FormLabel className={LABEL_CLASS}>{label}</FormLabel>
           <FormControl>
             <Input inputMode="numeric" {...field} />
@@ -78,7 +78,7 @@ const ZoneFields = ({ form }: { form: UseFormReturn<ZoneFormValues> }) => {
         control={form.control}
         name="name"
         render={({ field }) => (
-          <FormItem className="w-64 space-y-1.5">
+          <FormItem className="mt-0 w-64 space-y-1.5">
             <FormLabel className={LABEL_CLASS}>Zone name</FormLabel>
             <FormControl>
               <Input {...field} />
@@ -91,7 +91,7 @@ const ZoneFields = ({ form }: { form: UseFormReturn<ZoneFormValues> }) => {
         control={form.control}
         name="cities"
         render={({ field }) => (
-          <FormItem className="space-y-1.5">
+          <FormItem className="mt-0 space-y-1.5">
             <FormLabel className={LABEL_CLASS}>Cities</FormLabel>
             <CityListInput cities={field.value} onChange={field.onChange} />
             <FormMessage />

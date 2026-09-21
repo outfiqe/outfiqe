@@ -77,7 +77,7 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
             control={form.control}
             name="title"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className={LABEL_CLASS}>Title</FormLabel>
                 <FormControl>
                   <Input {...field} />
@@ -91,7 +91,7 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
             control={form.control}
             name="stageId"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className={LABEL_CLASS}>Stage</FormLabel>
                 <FormControl>
                   <Select {...field}>
@@ -111,7 +111,7 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
             control={form.control}
             name="value"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className={LABEL_CLASS}>Value (Rs.)</FormLabel>
                 <FormControl>
                   <Input inputMode="numeric" {...field} />
@@ -126,7 +126,7 @@ export const DealFormModal = ({ open, onClose, stages, deal }: DealFormModalProp
               control={form.control}
               name="partnerCreatorId"
               render={({ field }) => (
-                <FormItem className="space-y-1.5">
+                <FormItem className="mt-0 space-y-1.5">
                   <FormLabel htmlFor="deal-partner" className={LABEL_CLASS}>
                     Partner
                   </FormLabel>

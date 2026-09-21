@@ -56,7 +56,7 @@ const TierFields = ({ form }: { form: UseFormReturn<TierFormValues> }) => {
       control={form.control}
       name={name}
       render={({ field }) => (
-        <FormItem className={`${widthClass} space-y-1.5`}>
+        <FormItem className={`mt-0 ${widthClass} space-y-1.5`}>
           <FormLabel className={LABEL_CLASS}>{label}</FormLabel>
           <FormControl>
             <Input inputMode="numeric" placeholder={placeholder} {...field} />

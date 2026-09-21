@@ -28,7 +28,7 @@ const NumberField = ({
     control={form.control}
     name={name}
     render={({ field }) => (
-      <FormItem className="w-32 space-y-1.5">
+      <FormItem className="mt-0 w-32 space-y-1.5">
         <FormLabel className="text-xs font-normal text-muted-foreground">{label}</FormLabel>
         <FormControl>
           <Input inputMode="numeric" placeholder={placeholder} {...field} />

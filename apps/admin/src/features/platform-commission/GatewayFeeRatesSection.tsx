@@ -79,7 +79,7 @@ const ProviderRateForm = ({ paymentMethod }: { paymentMethod: GatewayPaymentMeth
           control={form.control}
           name="ratePercent"
           render={({ field }) => (
-            <FormItem className="w-28 space-y-1.5">
+            <FormItem className="mt-0 w-28 space-y-1.5">
               <FormLabel className="text-xs font-normal text-muted-foreground">
                 New rate (%)
               </FormLabel>

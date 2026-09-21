@@ -71,7 +71,7 @@ const NewTaskModal = ({
             control={form.control}
             name="title"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">Title</FormLabel>
                 <FormControl>
                   <Input {...field} />
@@ -84,7 +84,7 @@ const NewTaskModal = ({
             control={form.control}
             name="assigneeMembershipId"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">
                   Assignee
                 </FormLabel>
@@ -105,7 +105,7 @@ const NewTaskModal = ({
             control={form.control}
             name="dueAt"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">
                   Due date (optional)
                 </FormLabel>
