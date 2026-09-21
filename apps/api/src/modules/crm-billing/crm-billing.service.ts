@@ -149,7 +149,7 @@ export const crmBillingService = {
 
   async listInvoices(
     organizationId: string,
-    params: { cursor?: string; limit: number },
+    params: { cursor?: string; limit: number; includeVoided: boolean },
   ): Promise<InvoicePage> {
     const invoices = await crmBillingRepository.listInvoicesForOrganization(organizationId, params);
 
