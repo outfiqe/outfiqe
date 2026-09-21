@@ -1,4 +1,4 @@
-﻿import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -272,14 +272,30 @@ describe("Tour", () => {
       return { scrollIntoView };
     };
 
-    it("highlights the anchor with padding and scrolls it into view", () => {
-      const { scrollIntoView } = renderWithAnchor({ width: 1200, height: 800 });
+    it("highlights the anchor with padding", () => {
+      renderWithAnchor({ width: 1200, height: 800 });
 
       const spotlight = screen
         .getByRole("dialog")
         .parentElement?.querySelector<HTMLElement>(".ring-2");
       expect(spotlight).toHaveStyle({ top: "92px", left: "32px", width: "216px", height: "56px" });
-      expect(scrollIntoView).toHaveBeenCalledWith({ block: "center" });
+    });
+
+    it("leaves the page where it is when the anchor is already fully on screen", () => {
+      const { scrollIntoView } = renderWithAnchor({ width: 1200, height: 800 });
+
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      { edge: "below the fold", rect: { ...ANCHOR_RECT, top: 900, bottom: 940 } },
+      { edge: "above the top", rect: { ...ANCHOR_RECT, top: -60, bottom: -20 } },
+      { edge: "cut off on the left", rect: { ...ANCHOR_RECT, left: -50, right: 150 } },
+      { edge: "cut off on the right", rect: { ...ANCHOR_RECT, left: 1100, right: 1300 } },
+    ])("scrolls the anchor to the middle when it is $edge", ({ rect }) => {
+      const { scrollIntoView } = renderWithAnchor({ width: 1200, height: 800 }, rect);
+
+      expect(scrollIntoView).toHaveBeenCalledExactlyOnceWith({ block: "center" });
     });
 
     it("places the card below the anchor when there is room", () => {

@@ -53,6 +53,9 @@ const findVisibleAnchor = (anchorSelector?: string): Element | null => {
   );
 };
 
+const isFullyInViewport = ({ top, left, bottom, right }: DOMRect): boolean =>
+  top >= 0 && left >= 0 && bottom <= window.innerHeight && right <= window.innerWidth;
+
 const useAnchorRect = (anchorSelector: string | undefined, isActive: boolean): DOMRect | null => {
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
 
@@ -63,7 +66,10 @@ const useAnchorRect = (anchorSelector: string | undefined, isActive: boolean): D
       setAnchorRect(findVisibleAnchor(anchorSelector)?.getBoundingClientRect() ?? null);
     };
 
-    findVisibleAnchor(anchorSelector)?.scrollIntoView?.({ block: "center" });
+    const anchor = findVisibleAnchor(anchorSelector);
+    if (anchor && !isFullyInViewport(anchor.getBoundingClientRect())) {
+      anchor.scrollIntoView?.({ block: "center" });
+    }
     refreshAnchorRect();
     window.addEventListener("resize", refreshAnchorRect);
     window.addEventListener("scroll", refreshAnchorRect, true);
