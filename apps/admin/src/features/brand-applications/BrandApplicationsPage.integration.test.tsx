@@ -1,9 +1,10 @@
+import { toast, Toaster } from "@outfiqe/design-system";
 import { mswServer } from "@test/integration/msw/server";
 import { renderWithRouter } from "@test/renderWithRouter";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { delay, http, HttpResponse } from "msw";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { BrandApplicationsPage } from "@/features/brand-applications/BrandApplicationsPage";
 
@@ -24,7 +25,17 @@ const pendingApplication = {
 };
 
 const renderPage = () =>
-  renderWithRouter(<BrandApplicationsPage />, { path: "/platform/brand-applications" });
+  renderWithRouter(
+    <>
+      <BrandApplicationsPage />
+      <Toaster />
+    </>,
+    { path: "/platform/brand-applications" },
+  );
+
+afterEach(() => {
+  toast.clear();
+});
 
 describe("BrandApplicationsPage", () => {
   it("shows the server's reason when approval is blocked for a registered email", async () => {
@@ -145,6 +156,54 @@ describe("BrandApplicationsPage", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Approve" }));
 
     await waitFor(() => expect(approveCalled).toBe(true));
+    expect(await screen.findByText("Application approved.")).toBeInTheDocument();
+  });
+
+  it("shows a loading spinner on the Approve button while the approval is under way", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/brand-applications`, () =>
+        HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: { applications: [pendingApplication], nextCursor: null },
+        }),
+      ),
+      http.post(`${API_BASE}/brand-applications/app-1/approve`, async () => {
+        await delay(150);
+        return HttpResponse.json({ success: true, message: "ok", data: null });
+      }),
+    );
+
+    renderPage();
+
+    const approveButton = await screen.findByRole("button", { name: "Approve" });
+    await userEvent.click(approveButton);
+
+    await waitFor(() => expect(approveButton).toHaveAttribute("aria-busy", "true"));
+    expect(approveButton).toBeDisabled();
+    await waitFor(() => expect(screen.queryByText("Application approved.")).toBeInTheDocument());
+  });
+
+  it("does not show a success toast when the approval fails", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/brand-applications`, () =>
+        HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: { applications: [pendingApplication], nextCursor: null },
+        }),
+      ),
+      http.post(`${API_BASE}/brand-applications/app-1/approve`, () =>
+        HttpResponse.json({ success: false, message: "Nope." }, { status: 409 }),
+      ),
+    );
+
+    renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Approve" }));
+
+    expect(await screen.findByText("Nope.")).toBeInTheDocument();
+    expect(screen.queryByText("Application approved.")).not.toBeInTheDocument();
   });
 
   it("rejects an application with a reason through the prompt modal", async () => {
@@ -174,6 +233,7 @@ describe("BrandApplicationsPage", () => {
     await userEvent.click(within(dialog).getByRole("button", { name: "Reject" }));
 
     await waitFor(() => expect(rejectBody).toEqual({ reason: "Doesn't make its own pieces." }));
+    expect(await screen.findByText("Application rejected.")).toBeInTheDocument();
   });
 
   it("shows an error when rejecting an application fails", async () => {
