@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -9,7 +6,11 @@ import type { AdminPageSkeletonSpec, SkeletonBlock } from "./adminPageSkeleton.t
 import { ADMIN_PAGE_SKELETON_SPECS } from "./adminPageSkeletonSpecs";
 import { resolveAdminPageSkeletonSpec } from "./resolveAdminPageSkeleton";
 
-const ADMIN_APP_ROOT = resolve(__dirname, "../../..");
+const PAGE_SOURCES_BY_PATH = import.meta.glob("/src/features/**/*.tsx", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
 
 const normalizeSourceText = (source: string): string =>
   source
@@ -59,10 +60,14 @@ const staticStringsOfSpec = (spec: AdminPageSkeletonSpec): string[] => [
   ...spec.blocks.flatMap(staticStringsOf),
 ];
 
+const sourceFor = (file: string): string => {
+  const source = PAGE_SOURCES_BY_PATH[`/${file}`];
+  if (source === undefined) throw new Error(`Skeleton spec points at a missing file: ${file}`);
+  return source;
+};
+
 const readSources = (spec: AdminPageSkeletonSpec): string =>
-  normalizeSourceText(
-    spec.sourceFiles.map((file) => readFileSync(resolve(ADMIN_APP_ROOT, file), "utf8")).join("\n"),
-  );
+  normalizeSourceText(spec.sourceFiles.map(sourceFor).join("\n"));
 
 describe("admin page skeleton specs", () => {
   it.each(Object.entries(ADMIN_PAGE_SKELETON_SPECS))(
