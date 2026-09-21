@@ -69,6 +69,20 @@ const DateSeparator = ({ isoDate }: { isoDate: string }) => (
   </div>
 );
 
+const ThreadHeaderSkeleton = () => (
+  <div
+    role="status"
+    aria-label="Loading conversation"
+    className="flex min-w-0 flex-1 items-center gap-2"
+  >
+    <Skeleton className="size-9 shrink-0 rounded-full" />
+    <span className="min-w-0 flex-1 space-y-1.5">
+      <Skeleton className="h-3.5 w-28" />
+      <Skeleton className="h-2.5 w-16" />
+    </span>
+  </div>
+);
+
 export const MessageThread = ({ conversationId, onBack }: MessageThreadProps) => {
   const conversationQuery = useConversation(conversationsApi, conversationId);
   const threadQuery = useConversationThread(conversationsApi, conversationId);
@@ -126,6 +140,7 @@ export const MessageThread = ({ conversationId, onBack }: MessageThreadProps) =>
   }, [newestMessageId]);
 
   const participant = conversationQuery.data?.otherParticipant;
+  const isParticipantLoading = conversationQuery.isPending;
 
   return (
     <div className="flex h-full flex-col">
@@ -138,39 +153,45 @@ export const MessageThread = ({ conversationId, onBack }: MessageThreadProps) =>
         >
           <ArrowLeft className="size-4" />
         </button>
-        <span className="relative shrink-0">
-          <span
-            aria-hidden
-            className="relative flex size-9 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white"
-            style={
-              participant?.avatarUrl
-                ? undefined
-                : { backgroundColor: getAvatarColor(participant?.id ?? conversationId) }
-            }
-          >
-            {participant?.avatarUrl ? (
-              <AppImage src={participant.avatarUrl} alt="" fill sizes="36px" />
-            ) : (
-              initialsFor(participant?.name ?? "?")
-            )}
-          </span>
-          {participant?.isOnline && (
-            <span
-              aria-hidden
-              className="absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-card bg-emerald-500"
-            />
-          )}
-        </span>
-        <span className="min-w-0 flex-1 leading-tight">
-          <span className="block truncate text-[13.5px] font-semibold text-foreground">
-            {participant?.name ?? "Conversation"}
-          </span>
-          {participant && (
-            <span className="block truncate text-[11px] text-muted-foreground">
-              {participant.isOnline ? "Active now" : formatLastSeen(participant.lastSeenAt)}
+        {isParticipantLoading ? (
+          <ThreadHeaderSkeleton />
+        ) : (
+          <>
+            <span className="relative shrink-0">
+              <span
+                aria-hidden
+                className="relative flex size-9 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-white"
+                style={
+                  participant?.avatarUrl
+                    ? undefined
+                    : { backgroundColor: getAvatarColor(participant?.id ?? conversationId) }
+                }
+              >
+                {participant?.avatarUrl ? (
+                  <AppImage src={participant.avatarUrl} alt="" fill sizes="36px" />
+                ) : (
+                  initialsFor(participant?.name ?? "?")
+                )}
+              </span>
+              {participant?.isOnline && (
+                <span
+                  aria-hidden
+                  className="absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-card bg-emerald-500"
+                />
+              )}
             </span>
-          )}
-        </span>
+            <span className="min-w-0 flex-1 leading-tight">
+              <span className="block truncate text-[13.5px] font-semibold text-foreground">
+                {participant?.name ?? "Conversation"}
+              </span>
+              {participant && (
+                <span className="block truncate text-[11px] text-muted-foreground">
+                  {participant.isOnline ? "Active now" : formatLastSeen(participant.lastSeenAt)}
+                </span>
+              )}
+            </span>
+          </>
+        )}
       </div>
 
       <div

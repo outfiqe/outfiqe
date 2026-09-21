@@ -155,3 +155,5 @@ the persistent bottom nav's hub button show through underneath it was confusing,
 bubbles, the typing/date-separator chips, and the composer are deliberately kept as local,
 chat-specific markup rather than forced into generic design-system primitives, per the explicit call
 on this build to keep bespoke chat UI local.
+
+**The thread header never shows a placeholder word for a name.** `MessageThread` used to print "Conversation" and a "?" avatar until the conversation request came back. `useConversation` (in `@outfiqe/hooks`) now uses the matching item from any cached conversation list as placeholder data, so opening a thread from the list shows the real name at once, and `useStartConversation` seeds the conversation cache with the conversation it just created. When neither is available yet the header shows a name-and-avatar skeleton. "Conversation" is only used once the request has finished and the conversation truly has no other participant.
