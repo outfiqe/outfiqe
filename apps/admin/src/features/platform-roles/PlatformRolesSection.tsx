@@ -84,7 +84,7 @@ const PlatformRoleFormModal = ({
             control={form.control}
             name="name"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">
                   Role name
                 </FormLabel>
@@ -108,7 +108,7 @@ const PlatformRoleFormModal = ({
                 );
 
               return (
-                <FormItem>
+                <FormItem className="mt-0">
                   <fieldset className="space-y-4">
                     <legend className="text-xs text-muted-foreground">Permissions</legend>
                     {permissionGroups.map((permissionGroup) => (

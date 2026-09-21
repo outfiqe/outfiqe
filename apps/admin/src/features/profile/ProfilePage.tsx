@@ -60,7 +60,7 @@ export const ProfilePage = () => {
             control={form.control}
             name="avatarUrl"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <span className="block text-xs text-muted-foreground">Avatar</span>
                 <ImageUpload value={field.value} onChange={field.onChange} />
               </FormItem>
@@ -71,7 +71,7 @@ export const ProfilePage = () => {
             control={form.control}
             name="name"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">Name</FormLabel>
                 <FormControl>
                   <Input {...field} />

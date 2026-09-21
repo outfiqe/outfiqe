@@ -117,7 +117,7 @@ export const ProductTypesPage = () => {
             control={form.control}
             name="label"
             render={({ field }) => (
-              <FormItem className="w-56 space-y-1.5">
+              <FormItem className="mt-0 w-56 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">Name</FormLabel>
                 <FormControl>
                   <Input
@@ -141,7 +141,7 @@ export const ProductTypesPage = () => {
             control={form.control}
             name="slug"
             render={({ field }) => (
-              <FormItem className="w-48 space-y-1.5">
+              <FormItem className="mt-0 w-48 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">Slug</FormLabel>
                 <FormControl>
                   <Input

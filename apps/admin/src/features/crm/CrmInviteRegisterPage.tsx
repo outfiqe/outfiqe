@@ -110,7 +110,7 @@ export const CrmInviteRegisterPage = () => {
                   control={form.control}
                   name="name"
                   render={({ field }) => (
-                    <FormItem className="space-y-1.5">
+                    <FormItem className="mt-0 space-y-1.5">
                       <FormLabel className="text-xs font-normal text-muted-foreground">
                         Full name
                       </FormLabel>
@@ -126,7 +126,7 @@ export const CrmInviteRegisterPage = () => {
                   control={form.control}
                   name="phone"
                   render={({ field }) => (
-                    <FormItem className="space-y-1.5">
+                    <FormItem className="mt-0 space-y-1.5">
                       <FormLabel className="text-xs font-normal text-muted-foreground">
                         Phone
                       </FormLabel>
@@ -142,7 +142,7 @@ export const CrmInviteRegisterPage = () => {
                   control={form.control}
                   name="password"
                   render={({ field }) => (
-                    <FormItem className="space-y-1.5">
+                    <FormItem className="mt-0 space-y-1.5">
                       <FormLabel className="text-xs font-normal text-muted-foreground">
                         Password
                       </FormLabel>
@@ -158,7 +158,7 @@ export const CrmInviteRegisterPage = () => {
                   control={form.control}
                   name="confirmPassword"
                   render={({ field }) => (
-                    <FormItem className="space-y-1.5">
+                    <FormItem className="mt-0 space-y-1.5">
                       <FormLabel className="text-xs font-normal text-muted-foreground">
                         Confirm password
                       </FormLabel>

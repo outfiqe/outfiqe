@@ -75,7 +75,7 @@ const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void 
             control={form.control}
             name="type"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className={LABEL_CLASS}>Type</FormLabel>
                 <FormControl>
                   <Select {...field}>
@@ -94,7 +94,7 @@ const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void 
             control={form.control}
             name="title"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className={LABEL_CLASS}>Title</FormLabel>
                 <FormControl>
                   <Input {...field} />
@@ -107,7 +107,7 @@ const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void 
             control={form.control}
             name="description"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className={LABEL_CLASS}>Description</FormLabel>
                 <FormControl>
                   <textarea
@@ -124,7 +124,7 @@ const NewTicketModal = ({ open, onClose }: { open: boolean; onClose: () => void 
             control={form.control}
             name="customerUserId"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel htmlFor="ticket-customer" className={LABEL_CLASS}>
                   Customer
                 </FormLabel>

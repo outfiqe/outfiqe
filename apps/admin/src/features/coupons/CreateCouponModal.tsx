@@ -103,7 +103,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
             control={control}
             name="code"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="mt-0">
                 <FormLabel>Code</FormLabel>
                 <FormControl>
                   <Input placeholder="WELCOME300" {...field} />
@@ -117,7 +117,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
             control={control}
             name="type"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="mt-0">
                 <FormLabel>Discount type</FormLabel>
                 <FormControl>
                   <Select {...field}>
@@ -136,7 +136,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
                 control={control}
                 name="percentOff"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="mt-0">
                     <FormLabel>Percent off</FormLabel>
                     <FormControl>
                       <Input inputMode="numeric" {...field} />
@@ -149,7 +149,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
                 control={control}
                 name="maxDiscountAmount"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="mt-0">
                     <FormLabel>Cap (Rs., optional)</FormLabel>
                     <FormControl>
                       <Input inputMode="numeric" {...field} />
@@ -164,7 +164,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
               control={control}
               name="fixedAmount"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="mt-0">
                   <FormLabel>Amount off (Rs.)</FormLabel>
                   <FormControl>
                     <Input inputMode="numeric" {...field} />
@@ -180,7 +180,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
               control={control}
               name="minSubtotal"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="mt-0">
                   <FormLabel>Minimum subtotal (Rs.)</FormLabel>
                   <FormControl>
                     <Input inputMode="numeric" {...field} />
@@ -193,7 +193,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
               control={control}
               name="endsAt"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="mt-0">
                   <FormLabel>Ends on (optional)</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
@@ -209,7 +209,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
               control={control}
               name="totalBudgetAmount"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="mt-0">
                   <FormLabel>Total budget (Rs., optional)</FormLabel>
                   <FormControl>
                     <Input inputMode="numeric" {...field} />
@@ -225,7 +225,7 @@ export const CreateCouponModal = ({ open, onClose, onCreated }: CreateCouponModa
               control={control}
               name="maxRedemptions"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="mt-0">
                   <FormLabel>Max redemptions (optional)</FormLabel>
                   <FormControl>
                     <Input inputMode="numeric" {...field} />

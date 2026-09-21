@@ -48,6 +48,19 @@ const mockUsersList = (users: unknown[]) => {
   );
 };
 
+const mockUsersOnlyWhenSearching = (users: unknown[]) => {
+  mswServer.use(
+    http.get(`${API_BASE}/users`, ({ request }) => {
+      const isSearching = new URL(request.url).searchParams.has("q");
+      return HttpResponse.json({
+        success: true,
+        message: "ok",
+        data: { items: isSearching ? users : [], nextCursor: null },
+      });
+    }),
+  );
+};
+
 describe("UsersPage", () => {
   it("lists recent accounts without the start-typing hint before anything is searched", async () => {
     mockUsersList([activeUser]);
@@ -68,7 +81,7 @@ describe("UsersPage", () => {
 
   it("finds a user by search and suspends them with a reason", async () => {
     const user = userEvent.setup();
-    mockUsersList([activeUser]);
+    mockUsersOnlyWhenSearching([activeUser]);
     mswServer.use(
       http.post(`${API_BASE}/platform/users/user-1/suspend`, () =>
         HttpResponse.json({ success: true, message: "Account suspended.", data: null }),
@@ -87,17 +100,21 @@ describe("UsersPage", () => {
     await user.type(reasonField, "Reported for spam");
     await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
 
-    await waitFor(() =>
-      expect(
-        screen.queryByRole("heading", { name: "Suspend Ava Martinez" }),
-      ).not.toBeInTheDocument(),
+    await waitFor(
+      () =>
+        expect(
+          screen.queryByRole("heading", { name: "Suspend Ava Martinez" }),
+        ).not.toBeInTheDocument(),
+      { timeout: MODAL_OPEN_TIMEOUT_MS },
     );
-    expect(await screen.findByText("Account suspended.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Account suspended.", undefined, { timeout: MODAL_OPEN_TIMEOUT_MS }),
+    ).toBeInTheDocument();
   });
 
   it("surfaces a server error inline when suspending fails", async () => {
     const user = userEvent.setup();
-    mockUsersList([activeUser]);
+    mockUsersOnlyWhenSearching([activeUser]);
     mswServer.use(
       http.post(`${API_BASE}/platform/users/user-1/suspend`, () =>
         HttpResponse.json(

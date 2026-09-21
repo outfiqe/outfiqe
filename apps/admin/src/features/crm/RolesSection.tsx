@@ -116,7 +116,7 @@ const RoleFormModal = ({
             control={form.control}
             name="name"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className="text-xs font-normal text-muted-foreground">
                   Role name
                 </FormLabel>
@@ -238,7 +238,7 @@ const OrganizationNameCard = ({ currentName }: { currentName: string }) => {
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem className="min-w-56 flex-1 space-y-1.5">
+            <FormItem className="mt-0 min-w-56 flex-1 space-y-1.5">
               <FormLabel className="text-xs font-normal text-muted-foreground">
                 Organization name
               </FormLabel>

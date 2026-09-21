@@ -190,7 +190,7 @@ export const BrandExemptionsSection = () => {
             control={form.control}
             name="brandId"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <BrandPickerField
                   brandId={field.value || null}
                   brandName={pickedBrandName}
@@ -207,7 +207,7 @@ export const BrandExemptionsSection = () => {
             control={form.control}
             name="startsAt"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className={LABEL_CLASS}>Starts</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
@@ -220,7 +220,7 @@ export const BrandExemptionsSection = () => {
             control={form.control}
             name="endsAt"
             render={({ field }) => (
-              <FormItem className="space-y-1.5">
+              <FormItem className="mt-0 space-y-1.5">
                 <FormLabel className={LABEL_CLASS}>Ends</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
@@ -233,7 +233,7 @@ export const BrandExemptionsSection = () => {
             control={form.control}
             name="reason"
             render={({ field }) => (
-              <FormItem className="min-w-[14rem] flex-1 space-y-1.5">
+              <FormItem className="mt-0 min-w-[14rem] flex-1 space-y-1.5">
                 <FormLabel className={LABEL_CLASS}>Reason</FormLabel>
                 <FormControl>
                   <Input placeholder="e.g. Launch-cohort waiver, first 10 brands" {...field} />
