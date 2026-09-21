@@ -3,10 +3,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { http, HttpResponse } from "msw";
-import { useRouter, useSearchParams } from "next/navigation";
+import { delay, http, HttpResponse } from "msw";
+import { useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "@/features/auth";
 
@@ -16,7 +16,6 @@ import { TagReviewsSection } from "./TagReviewsSection";
 vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(),
   useSearchParams: vi.fn(),
 }));
 
@@ -65,10 +64,7 @@ const stubQueue = (
 };
 
 let currentSearchParams = new URLSearchParams();
-const replace = vi.fn((url: string) => {
-  const [, queryString = ""] = url.split("?");
-  currentSearchParams = new URLSearchParams(queryString);
-});
+let replaceStateSpy: ReturnType<typeof vi.spyOn>;
 
 const renderSection = () => {
   const queryClient = new QueryClient({
@@ -83,7 +79,6 @@ const renderSection = () => {
   const utils = render(<TagReviewsSection />, { wrapper });
   const clickTab = async (name: string) => {
     await userEvent.click(await screen.findByRole("tab", { name }));
-    utils.rerender(<TagReviewsSection />);
   };
   return { ...utils, clickTab };
 };
@@ -98,16 +93,11 @@ beforeEach(() => {
   vi.mocked(useSearchParams).mockImplementation(
     () => currentSearchParams as ReturnType<typeof useSearchParams>,
   );
-  vi.mocked(useRouter).mockReturnValue({
-    push: vi.fn(),
-    replace,
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-    prefetch: vi.fn(),
-    bfcacheId: "test-bfcache-id",
-  });
-  replace.mockClear();
+  replaceStateSpy = vi.spyOn(window.history, "replaceState");
+});
+
+afterEach(() => {
+  replaceStateSpy.mockRestore();
 });
 
 describe("TagReviewsSection", () => {
@@ -211,7 +201,7 @@ describe("TagReviewsSection", () => {
 
     await clickTab("Approved");
 
-    expect(replace).toHaveBeenCalledWith("?status=APPROVED", { scroll: false });
+    expect(replaceStateSpy).toHaveBeenCalledWith(window.history.state, "", "?status=APPROVED");
     expect(await screen.findByText(/bought on outfiqe/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Remove tag" }));
 
@@ -250,6 +240,72 @@ describe("TagReviewsSection", () => {
     expect(
       await screen.findByRole("tab", { name: "Declined", selected: true }),
     ).toBeInTheDocument();
+  });
+
+  it("highlights the clicked tab immediately and shows a skeleton while that tab's first load is in flight", async () => {
+    mswServer.use(
+      http.get("/api/tag-reviews/pending-count", () =>
+        HttpResponse.json({ success: true, message: "ok", data: { pendingCount: 0 } }),
+      ),
+      http.get("/api/tag-reviews", async ({ request }) => {
+        const status = new URL(request.url).searchParams.get("status");
+        if (status !== "PENDING") await delay(200);
+        return queueResponse([]);
+      }),
+    );
+    const { clickTab } = renderSection();
+    await screen.findByText(/no tags waiting for review/i);
+
+    await clickTab("Declined");
+
+    expect(screen.getByRole("tab", { name: "Declined", selected: true })).toBeInTheDocument();
+    expect(await screen.findByRole("status", { name: "Loading tags" })).toBeInTheDocument();
+    expect(await screen.findByText(/haven't declined any creator tags/i)).toBeInTheDocument();
+  });
+
+  it("preloads the other tabs after the first one loads, so switching shows data with no skeleton", async () => {
+    const requestedStatuses: string[] = [];
+    mswServer.use(
+      http.get("/api/tag-reviews/pending-count", () =>
+        HttpResponse.json({ success: true, message: "ok", data: { pendingCount: 1 } }),
+      ),
+      http.get("/api/tag-reviews", ({ request }) => {
+        const status = new URL(request.url).searchParams.get("status") ?? "PENDING";
+        requestedStatuses.push(status);
+        return queueResponse(
+          status === "APPROVED"
+            ? [anItem({ id: "tag-live", reviewStatus: "APPROVED", approvalSource: "BRAND" })]
+            : [anItem()],
+        );
+      }),
+    );
+    const { clickTab } = renderSection();
+    await screen.findByText("Asha Rai");
+    await waitFor(() =>
+      expect(requestedStatuses).toEqual(expect.arrayContaining(["APPROVED", "REJECTED"])),
+    );
+
+    await clickTab("Approved");
+
+    expect(screen.queryByRole("status", { name: "Loading tags" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Remove tag" })).toBeInTheDocument();
+  });
+
+  it("switches tabs without a router navigation, keeping the status in the address bar", async () => {
+    stubQueue({ PENDING: [], APPROVED: [], REJECTED: [] });
+    const { clickTab } = renderSection();
+    await screen.findByText(/no tags waiting for review/i);
+
+    await clickTab("Approved");
+    await clickTab("Waiting");
+
+    expect(replaceStateSpy).toHaveBeenNthCalledWith(
+      1,
+      window.history.state,
+      "",
+      "?status=APPROVED",
+    );
+    expect(replaceStateSpy).toHaveBeenNthCalledWith(2, window.history.state, "", "?status=PENDING");
   });
 
   it("surfaces a load error with a retry", async () => {
