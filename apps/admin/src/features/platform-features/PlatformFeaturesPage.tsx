@@ -39,6 +39,10 @@ export const PlatformFeaturesPage = () => {
   });
 
   const mutate = useApiMutation({
+    successMessage: (_updated, action) => {
+      if (action.kind === "clear") return "Feature override cleared.";
+      return action.enabled ? "Feature turned on." : "Feature turned off.";
+    },
     mutationFn: (
       action: { key: string; kind: "set"; enabled: boolean } | { key: string; kind: "clear" },
     ) =>

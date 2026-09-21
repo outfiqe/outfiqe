@@ -45,12 +45,14 @@ export const CreatorsPage = () => {
   const creators = creatorsQuery?.pages.flatMap((page) => page.creators) ?? [];
 
   const approve = useApiMutation({
+    successMessage: "Creator approved.",
     mutationFn: (userId: string) => creatorsApi.approve(userId),
     invalidateKeys: [["creators"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const reject = useApiMutation({
+    successMessage: "Creator rejected.",
     mutationFn: (userId: string) => creatorsApi.reject(userId),
     invalidateKeys: [["creators"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
@@ -102,6 +104,7 @@ export const CreatorsPage = () => {
                   <Button
                     onClick={() => approve.mutate(userId)}
                     disabled={approve.isPending || reject.isPending}
+                    isLoading={approve.isPending && approve.variables === userId}
                   >
                     Approve
                   </Button>
@@ -109,6 +112,7 @@ export const CreatorsPage = () => {
                     variant="outline"
                     onClick={() => reject.mutate(userId)}
                     disabled={approve.isPending || reject.isPending}
+                    isLoading={reject.isPending && reject.variables === userId}
                   >
                     Reject
                   </Button>

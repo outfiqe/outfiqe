@@ -70,6 +70,7 @@ export const UsersPage = () => {
   const USERS_QUERY_KEY = ["users"];
 
   const suspend = useApiMutation({
+    successMessage: "Account suspended.",
     mutationFn: ({
       userId,
       reason,
@@ -84,6 +85,7 @@ export const UsersPage = () => {
   });
 
   const ban = useApiMutation({
+    successMessage: "Account banned.",
     mutationFn: ({ userId, reason }: { userId: string; reason: string }) =>
       usersApi.ban(userId, reason),
     invalidateKeys: [USERS_QUERY_KEY],
@@ -91,11 +93,13 @@ export const UsersPage = () => {
   });
 
   const unsuspend = useApiMutation({
+    successMessage: "Account unsuspended.",
     mutationFn: (userId: string) => usersApi.unsuspend(userId),
     invalidateKeys: [USERS_QUERY_KEY],
   });
 
   const unban = useApiMutation({
+    successMessage: "Account unbanned.",
     mutationFn: (userId: string) => usersApi.unban(userId),
     invalidateKeys: [USERS_QUERY_KEY],
   });
@@ -207,6 +211,7 @@ export const UsersPage = () => {
                         <Button
                           onClick={() => unsuspend.mutate(user.id)}
                           disabled={anyActionPending}
+                          isLoading={unsuspend.isPending && unsuspend.variables === user.id}
                         >
                           {unsuspend.isPending && unsuspend.variables === user.id
                             ? "Unsuspending…"
@@ -222,7 +227,11 @@ export const UsersPage = () => {
                       </>
                     )}
                     {user.accountStatus === "BANNED" && (
-                      <Button onClick={() => unban.mutate(user.id)} disabled={anyActionPending}>
+                      <Button
+                        onClick={() => unban.mutate(user.id)}
+                        disabled={anyActionPending}
+                        isLoading={unban.isPending && unban.variables === user.id}
+                      >
                         {unban.isPending && unban.variables === user.id
                           ? "Lifting ban…"
                           : "Lift ban"}

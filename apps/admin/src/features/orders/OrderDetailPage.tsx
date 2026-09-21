@@ -30,12 +30,14 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   const advance = useApiMutation({
+    successMessage: (_updated, status) => `Order marked as ${status.toLowerCase()}.`,
     mutationFn: (status: FulfilmentStatusValue) => ordersApi.advanceFulfilment(orderId, status),
     invalidateKeys: [["admin-orders"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const cancel = useApiMutation({
+    successMessage: "Order cancelled.",
     mutationFn: (reason: string) => ordersApi.cancel(orderId, reason),
     invalidateKeys: [["admin-orders"]],
     onSuccess: () => setIsCancelModalOpen(false),
@@ -104,7 +106,11 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
 
       <div className="mt-6 flex flex-wrap gap-2">
         {nextStatus && (
-          <Button onClick={() => advance.mutate(nextStatus)} disabled={isActing}>
+          <Button
+            onClick={() => advance.mutate(nextStatus)}
+            disabled={isActing}
+            isLoading={advance.isPending}
+          >
             Mark as {nextStatus.toLowerCase()}
           </Button>
         )}

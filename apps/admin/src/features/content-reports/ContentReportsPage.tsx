@@ -51,6 +51,7 @@ export const ContentReportsPage = () => {
   const reports = data?.pages.flatMap((page) => page.items) ?? [];
 
   const resolve = useApiMutation({
+    successMessage: "Report resolved.",
     mutationFn: ({ id, input }: { id: string; input: ResolveContentReportInput }) =>
       contentReportsApi.resolve(id, input),
     invalidateKeys: [["content-reports"]],

@@ -126,6 +126,7 @@ describe("WithdrawRequestsListSection", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Approve" }));
 
     await waitFor(() => expect(approveBody).toEqual({}));
+    expect(await screen.findByText("Withdrawal approved.")).toBeInTheDocument();
   });
 
   it("prompts for an identity cross-check when the server requires it, then approves", async () => {
