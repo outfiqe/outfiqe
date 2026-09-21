@@ -88,12 +88,14 @@ describe("RoutePendingSkeleton", () => {
     expect(container.querySelector(String.raw`.xl\:grid-cols-6`)).not.toBeNull();
   });
 
-  it("shows the dashboard skeleton for the platform overview", () => {
+  it("shows the real heading and sections of the platform overview while it loads", () => {
     routerState.pathname = "/admin/platform";
 
-    const { container } = render(<RoutePendingSkeleton />);
+    render(<RoutePendingSkeleton />);
 
-    expect(container.querySelector(String.raw`.xl\:grid-cols-6`)).not.toBeNull();
+    expect(screen.getByRole("heading", { level: 1, name: "Overview" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Quick access" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Settlement reconciliation" })).toBeInTheDocument();
   });
 
   it("shows the form skeleton for a detail page", () => {
