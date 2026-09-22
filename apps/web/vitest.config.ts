@@ -22,6 +22,7 @@ export default defineConfig({
         "src/features/auth/components/CaptchaChallenge.tsx",
         "src/features/auth/hooks/**/*.{ts,tsx}",
         "src/features/auth/api/oauthApi.ts",
+        "src/features/auth/api/serverAuth.ts",
         "src/features/auth/components/ConnectedAccounts/**/*.{ts,tsx}",
         "src/features/auth/components/AddPhoneNumberBanner.tsx",
         "src/features/auth/components/NotAShopperNotice.tsx",

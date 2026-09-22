@@ -8,7 +8,7 @@ import {
   StatCard,
   TrendChart,
 } from "@outfiqe/design-system";
-import { AlertTriangle, Clock, Compass, Package, Wallet } from "lucide-react";
+import { AlertTriangle, Clock, Package, Wallet } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -16,7 +16,7 @@ import {
   BRAND_KPI_TOUR_ANCHOR,
   BRAND_TOUR_REPLAY_HREF,
   BrandDashboardTour,
-  TOUR_REPLAY_LABEL,
+  TourReplayLink,
 } from "@/features/product-tour";
 
 import type {
@@ -213,10 +213,7 @@ export const BrandOverview = () => {
           </p>
         </div>
         <Button asChild variant="outline" size="sm">
-          <Link href={BRAND_TOUR_REPLAY_HREF}>
-            <Compass aria-hidden="true" />
-            {TOUR_REPLAY_LABEL}
-          </Link>
+          <TourReplayLink href={BRAND_TOUR_REPLAY_HREF} />
         </Button>
       </div>
 

@@ -29,6 +29,7 @@ vi.mock("next/link", () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
     <a href={href}>{children}</a>
   ),
+  useLinkStatus: () => ({ pending: false }),
 }));
 
 const buildShipment = (id: string): BrandShipmentSummary => ({

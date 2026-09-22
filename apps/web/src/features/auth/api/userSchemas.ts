@@ -34,6 +34,11 @@ export type BrandInviteInfo = z.infer<typeof brandInviteInfoSchema>;
 
 export const validateTokenResponseSchema = z.object({ valid: z.boolean() });
 
+export const sessionResponseSchema = z.object({
+  accessToken: z.string(),
+  user: currentUserSchema,
+});
+
 export const toUserSession = (
   user: z.infer<typeof customerUserSchema> | z.infer<typeof brandUserSchema>,
 ): UserSession => {

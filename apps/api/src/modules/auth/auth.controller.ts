@@ -88,9 +88,9 @@ export const authController = {
   },
 
   async session(req: Request, res: Response) {
-    const { accessToken } = await authService.validateSession(getRefreshTokenCookie(req));
+    const { accessToken, user } = await authService.validateSession(getRefreshTokenCookie(req));
 
-    sendSuccess(res, { accessToken }, "Session is valid.");
+    sendSuccess(res, { accessToken, user }, "Session is valid.");
   },
 
   async logout(req: Request, res: Response) {

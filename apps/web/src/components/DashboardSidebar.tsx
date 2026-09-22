@@ -7,8 +7,7 @@ import {
   sidebarWidthClass,
   useSidebarCollapse,
 } from "@outfiqe/components";
-import { Compass, LogOut } from "lucide-react";
-import Link from "next/link";
+import { LogOut } from "lucide-react";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
@@ -16,6 +15,7 @@ import {
   BRAND_TOUR_REPLAY_HREF,
   CREATOR_TOUR_REPLAY_HREF,
   TOUR_REPLAY_LABEL,
+  TourReplayLink,
 } from "@/features/product-tour";
 import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
@@ -89,14 +89,13 @@ export const DashboardSidebar = () => {
   const footer = (
     <div className="space-y-2">
       {tourReplayHref && (
-        <Link
+        <TourReplayLink
           href={tourReplayHref}
           title={collapsed ? TOUR_REPLAY_LABEL : undefined}
           className={cn(footerButtonClassName, "hover:bg-muted hover:text-foreground")}
-        >
-          <Compass className="size-[18px] shrink-0" aria-hidden="true" />
-          {collapsed ? <span className="sr-only">{TOUR_REPLAY_LABEL}</span> : TOUR_REPLAY_LABEL}
-        </Link>
+          iconClassName="size-[18px] shrink-0"
+          showLabel={!collapsed}
+        />
       )}
       <button
         type="button"

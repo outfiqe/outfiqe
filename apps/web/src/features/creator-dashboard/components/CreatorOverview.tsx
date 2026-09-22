@@ -8,7 +8,7 @@ import {
   StatCard,
   TrendChart,
 } from "@outfiqe/design-system";
-import { Compass, Heart, Image as ImageIcon, Users, Wallet } from "lucide-react";
+import { Heart, Image as ImageIcon, Users, Wallet } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -17,7 +17,7 @@ import {
   CREATOR_KPI_TOUR_ANCHOR,
   CREATOR_TOUR_REPLAY_HREF,
   CreatorDashboardTour,
-  TOUR_REPLAY_LABEL,
+  TourReplayLink,
 } from "@/features/product-tour";
 
 import type {
@@ -224,10 +224,7 @@ export const CreatorOverview = ({ creatorStatus }: CreatorOverviewProps) => {
           </p>
         </div>
         <Button asChild variant="outline" size="sm">
-          <Link href={CREATOR_TOUR_REPLAY_HREF}>
-            <Compass aria-hidden="true" />
-            {TOUR_REPLAY_LABEL}
-          </Link>
+          <TourReplayLink href={CREATOR_TOUR_REPLAY_HREF} />
         </Button>
       </div>
 
