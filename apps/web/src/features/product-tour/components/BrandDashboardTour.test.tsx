@@ -22,15 +22,14 @@ vi.mock("../constants/brandDashboardTour", async (importOriginal) => {
   return { ...actual, BRAND_DASHBOARD_TOUR_VERSION: CURRENT_TOUR_VERSION };
 });
 
-const replace = vi.fn();
-const stableRouter = { replace };
 let searchParams = new URLSearchParams();
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => stableRouter,
   usePathname: () => "/overview",
   useSearchParams: () => searchParams,
 }));
+
+const replaceState = vi.spyOn(window.history, "replaceState");
 
 const recordOutcome = vi.fn();
 
@@ -77,6 +76,7 @@ const openedTour = () => screen.queryByRole("dialog", { name: WELCOME_TITLE });
 
 beforeEach(() => {
   vi.clearAllMocks();
+  replaceState.mockClear();
   searchParams = new URLSearchParams();
   mockAuth(true);
   mockTourProgress({});
@@ -201,11 +201,11 @@ describe("BrandDashboardTour — replay", () => {
     mockTourProgress({ tours: [buildProgress()] });
   });
 
-  it("opens from the first step even though the tour was already seen, and cleans the URL", () => {
+  it("opens from the first step even though the tour was already seen, and cleans the URL without a router navigation", () => {
     render(<BrandDashboardTour />);
 
     expect(openedTour()).toBeInTheDocument();
-    expect(replace).toHaveBeenCalledExactlyOnceWith("/overview");
+    expect(replaceState).toHaveBeenCalledExactlyOnceWith(null, "", "/overview");
   });
 
   it("does not save anything when a replay is closed, because the tour was already seen", () => {
@@ -237,7 +237,7 @@ describe("BrandDashboardTour — replay", () => {
     render(<BrandDashboardTour />);
 
     expect(openedTour()).not.toBeInTheDocument();
-    expect(replace).not.toHaveBeenCalled();
+    expect(replaceState).not.toHaveBeenCalled();
   });
 
   it("does not open for a non-brand owner even if the link is followed", () => {

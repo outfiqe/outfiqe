@@ -8,9 +8,18 @@ import {
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { PlatformOverviewPage } from "./PlatformOverviewPage";
+
+vi.mock("@/features/auth/AuthContext", () => ({
+  useAuth: () => ({
+    state: {
+      status: "signed-in",
+      user: { hasPlatformAccess: true, isCoFounder: false, hiddenPlatformNavKeys: [] },
+    },
+  }),
+}));
 
 const API_BASE = "http://localhost:3000/api";
 const OVERVIEW_URL = `${API_BASE}/platform/metrics/overview`;

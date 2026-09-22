@@ -12,7 +12,11 @@ import Link from "next/link";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
-import { BRAND_TOUR_REPLAY_HREF, BRAND_TOUR_REPLAY_LABEL } from "@/features/product-tour";
+import {
+  BRAND_TOUR_REPLAY_HREF,
+  CREATOR_TOUR_REPLAY_HREF,
+  TOUR_REPLAY_LABEL,
+} from "@/features/product-tour";
 import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
@@ -23,7 +27,7 @@ import { useIdlePrefetchSidebarLinks } from "./useIdlePrefetchSidebarLinks";
 import { useNextSidebarNavigation } from "./useNextSidebarNavigation";
 
 export const DashboardSidebar = () => {
-  const { state } = useAuth();
+  const { state, isCreator } = useAuth();
   const logout = useLogout();
   const navigation = useNextSidebarNavigation();
   const { collapsed, toggle } = useSidebarCollapse("outfiqe:web-sidebar-collapsed");
@@ -76,20 +80,22 @@ export const DashboardSidebar = () => {
     collapsed ? "size-11 justify-center" : "w-full px-3.5 py-2.5",
   );
 
+  const tourReplayHref = isBrand
+    ? BRAND_TOUR_REPLAY_HREF
+    : isCreator
+      ? CREATOR_TOUR_REPLAY_HREF
+      : null;
+
   const footer = (
     <div className="space-y-2">
-      {isBrand && (
+      {tourReplayHref && (
         <Link
-          href={BRAND_TOUR_REPLAY_HREF}
-          title={collapsed ? BRAND_TOUR_REPLAY_LABEL : undefined}
+          href={tourReplayHref}
+          title={collapsed ? TOUR_REPLAY_LABEL : undefined}
           className={cn(footerButtonClassName, "hover:bg-muted hover:text-foreground")}
         >
           <Compass className="size-[18px] shrink-0" aria-hidden="true" />
-          {collapsed ? (
-            <span className="sr-only">{BRAND_TOUR_REPLAY_LABEL}</span>
-          ) : (
-            BRAND_TOUR_REPLAY_LABEL
-          )}
+          {collapsed ? <span className="sr-only">{TOUR_REPLAY_LABEL}</span> : TOUR_REPLAY_LABEL}
         </Link>
       )}
       <button
