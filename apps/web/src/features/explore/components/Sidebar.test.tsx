@@ -220,9 +220,6 @@ describe("Sidebar", () => {
   it("still shows the loading skeleton for a non-admin while auth is resolving", () => {
     mockAuthGate(false, false);
     vi.mocked(useAuth).mockReturnValue({ isAdmin: false } as ReturnType<typeof useAuth>);
-    vi.mocked(useSuggestedCreators).mockReturnValue(
-      buildQuerySuccessResult(undefined) as ReturnType<typeof useSuggestedCreators>,
-    );
 
     render(<Sidebar activeTag="" onTagClick={vi.fn()} />);
 
