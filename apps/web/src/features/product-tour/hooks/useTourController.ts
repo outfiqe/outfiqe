@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 
 import { TOUR_OUTCOME } from "../constants/tourOutcome";
 import { TOUR_REPLAY_QUERY_PARAM } from "../constants/tourReplay";
+import { useTourLaunch } from "../context/TourLaunchContext";
 import { hasSeenTour } from "../utils/hasSeenTour";
 import { useRecordTourOutcome } from "./useRecordTourOutcome";
 import { useTourProgress } from "./useTourProgress";
@@ -32,6 +33,7 @@ export const useTourController = (
 ): TourController => {
   const { data: tourProgress, isSuccess: isProgressLoaded } = useTourProgress();
   const recordOutcome = useRecordTourOutcome();
+  const { finishTourLoading } = useTourLaunch();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [stepIndex, setStepIndex] = useState(FIRST_STEP_INDEX);
@@ -61,6 +63,10 @@ export const useTourController = (
     const query = remainingParams.toString();
     window.history.replaceState(null, "", `${pathname}${query ? `?${query}` : ""}`);
   }, [isReplayRequested, pathname, searchParams]);
+
+  useEffect(() => {
+    if (isOpen) finishTourLoading();
+  }, [isOpen, finishTourLoading]);
 
   const closeTour = (reason: TourCloseReason) => {
     setIsReplaying(false);

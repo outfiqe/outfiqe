@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { TourProgress } from "../api/toursSchemas";
 import { TOUR_OUTCOME } from "../constants/tourOutcome";
+import { useTourLaunch } from "../context/TourLaunchContext";
 import { useRecordTourOutcome } from "./useRecordTourOutcome";
 import { useTourController } from "./useTourController";
 import { useTourProgress } from "./useTourProgress";
@@ -12,6 +13,7 @@ const CURRENT_VERSION = 3;
 
 vi.mock("./useTourProgress", () => ({ useTourProgress: vi.fn() }));
 vi.mock("./useRecordTourOutcome", () => ({ useRecordTourOutcome: vi.fn() }));
+vi.mock("../context/TourLaunchContext", () => ({ useTourLaunch: vi.fn() }));
 
 let searchParams = new URLSearchParams();
 
@@ -23,6 +25,7 @@ vi.mock("next/navigation", () => ({
 const replaceState = vi.spyOn(window.history, "replaceState");
 
 const recordOutcome = vi.fn();
+const finishTourLoading = vi.fn();
 
 const buildProgress = (overrides: Partial<TourProgress> = {}): TourProgress => ({
   tourKey: TEST_TOUR_KEY,
@@ -68,6 +71,11 @@ beforeEach(() => {
   searchParams = new URLSearchParams();
   mockTourProgress({});
   vi.mocked(useRecordTourOutcome).mockReturnValue(buildIdleRecordMutation());
+  vi.mocked(useTourLaunch).mockReturnValue({
+    pendingTourHref: null,
+    startTourLoading: vi.fn(),
+    finishTourLoading,
+  });
 });
 
 describe("useTourController — starting", () => {
@@ -114,6 +122,18 @@ describe("useTourController — starting", () => {
     const { result } = renderController(true);
 
     expect(result.current.isOpen).toBe(false);
+  });
+
+  it("tells the tour-launch context the tour is ready once it opens", () => {
+    renderController(true);
+
+    expect(finishTourLoading).toHaveBeenCalled();
+  });
+
+  it("never tells the tour-launch context anything while staying closed", () => {
+    renderController(false);
+
+    expect(finishTourLoading).not.toHaveBeenCalled();
   });
 });
 
@@ -171,6 +191,12 @@ describe("useTourController — replay", () => {
 
     expect(result.current.isOpen).toBe(true);
     expect(result.current.stepIndex).toBe(0);
+  });
+
+  it("tells the tour-launch context the replayed tour is ready", () => {
+    renderController(true);
+
+    expect(finishTourLoading).toHaveBeenCalled();
   });
 
   it("removes the replay param from the URL without a router navigation", () => {

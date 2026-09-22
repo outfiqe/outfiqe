@@ -1,7 +1,9 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { TourLaunchProvider, useTourLaunch } from "../context/TourLaunchContext";
 import { TourReplayLink } from "./TourReplayLink";
 
 const useLinkStatus = vi.fn(() => ({ pending: false }));
@@ -10,13 +12,22 @@ vi.mock("next/link", () => ({
   default: ({
     href,
     children,
+    onNavigate,
     ...rest
   }: {
     href: string;
     children: ReactNode;
+    onNavigate?: () => void;
     [key: string]: unknown;
   }) => (
-    <a href={href} {...rest}>
+    <a
+      href={href}
+      onClick={(event) => {
+        event.preventDefault();
+        onNavigate?.();
+      }}
+      {...rest}
+    >
       {children}
     </a>
   ),
@@ -26,6 +37,11 @@ vi.mock("next/link", () => ({
 beforeEach(() => {
   useLinkStatus.mockReturnValue({ pending: false });
 });
+
+const PendingTourHrefDisplay = () => {
+  const { pendingTourHref } = useTourLaunch();
+  return <p>{pendingTourHref ?? "idle"}</p>;
+};
 
 describe("TourReplayLink", () => {
   it("renders a link to the given href with the visible label", () => {
@@ -65,5 +81,21 @@ describe("TourReplayLink", () => {
     const dot = screen.getByRole("link", { name: "Take the tour" }).querySelector(".rounded-full");
     expect(dot).toHaveClass("opacity-0");
     expect(dot).not.toHaveClass("motion-safe:animate-pulse");
+  });
+
+  it("tells the shared tour-launch context loading has started as soon as it's clicked", async () => {
+    const user = userEvent.setup();
+    render(
+      <TourLaunchProvider>
+        <TourReplayLink href="/overview?tour=brand-dashboard" />
+        <PendingTourHrefDisplay />
+      </TourLaunchProvider>,
+    );
+
+    expect(screen.getByText("idle")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("link", { name: "Take the tour" }));
+
+    expect(screen.getByText("/overview?tour=brand-dashboard")).toBeInTheDocument();
   });
 });
