@@ -9,8 +9,6 @@ export const BRAND_DASHBOARD_TOUR_VERSION = 1;
 
 export const BRAND_TOUR_REPLAY_HREF = buildTourReplayHref("/overview", BRAND_DASHBOARD_TOUR_KEY);
 
-export const BRAND_TOUR_REPLAY_LABEL = "Take the tour";
-
 export const BRAND_KPI_TOUR_ANCHOR = "brand-kpis";
 
 export const BRAND_DASHBOARD_TOUR_STEPS: TourStep[] = [

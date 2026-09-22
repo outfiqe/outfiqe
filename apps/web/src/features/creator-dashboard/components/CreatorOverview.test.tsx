@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CreatorStatus } from "@/features/auth/types";
+import type * as ProductTour from "@/features/product-tour";
 
 import {
   CommissionSource,
@@ -28,6 +29,11 @@ vi.mock("./CreatorStatusGate", () => ({
     <div>Status gate for {creatorStatus}</div>
   ),
 }));
+
+vi.mock("@/features/product-tour", async (importOriginal) => {
+  const actual = await importOriginal<typeof ProductTour>();
+  return { ...actual, CreatorDashboardTour: () => <div data-testid="creator-dashboard-tour" /> };
+});
 
 vi.mock("next/link", () => ({
   __esModule: true,
@@ -103,6 +109,39 @@ describe("CreatorOverview", () => {
     expect(
       screen.getByRole("button", { name: "How Total likes is calculated" }),
     ).toBeInTheDocument();
+  });
+
+  it("lets an approved creator replay the dashboard tour from the header", () => {
+    render(<CreatorOverview creatorStatus={CreatorStatus.APPROVED} />);
+
+    expect(screen.getByRole("link", { name: "Take the tour" })).toHaveAttribute(
+      "href",
+      "/overview?tour=creator-dashboard",
+    );
+  });
+
+  it("marks the KPI row so the tour can point at it", () => {
+    const { container } = render(<CreatorOverview creatorStatus={CreatorStatus.APPROVED} />);
+
+    const kpiRow = container.querySelector('[data-tour-anchor="creator-kpis"]');
+    expect(kpiRow).toContainElement(screen.getByText("Total earnings"));
+  });
+
+  it("mounts the tour once the overview has loaded", () => {
+    render(<CreatorOverview creatorStatus={CreatorStatus.APPROVED} />);
+
+    expect(screen.getByTestId("creator-dashboard-tour")).toBeInTheDocument();
+  });
+
+  it("does not mount the tour while loading or when the overview failed", () => {
+    mockOverview({ isPending: true });
+    const { rerender } = render(<CreatorOverview creatorStatus={CreatorStatus.APPROVED} />);
+    expect(screen.queryByTestId("creator-dashboard-tour")).not.toBeInTheDocument();
+
+    mockOverview({ isError: true });
+    rerender(<CreatorOverview creatorStatus={CreatorStatus.APPROVED} />);
+
+    expect(screen.queryByTestId("creator-dashboard-tour")).not.toBeInTheDocument();
   });
 
   it("shows the chart empty state when the creator has no earnings", () => {

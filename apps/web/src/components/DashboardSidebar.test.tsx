@@ -193,7 +193,7 @@ describe("DashboardSidebar", () => {
     );
   });
 
-  it("does not offer the brand tour to a shopper", () => {
+  it("does not offer any tour to a shopper who is not an approved creator", () => {
     mockAuth({
       state: {
         status: AuthStatus.AUTHENTICATED,
@@ -208,12 +208,57 @@ describe("DashboardSidebar", () => {
     expect(screen.queryByRole("link", { name: "Take the tour" })).not.toBeInTheDocument();
   });
 
-  it("marks each nav row with its id so the tour can point at it", () => {
+  it("offers an approved creator a Take the tour link for the creator dashboard tour", () => {
+    mockAuth({
+      state: {
+        status: AuthStatus.AUTHENTICATED,
+        user: buildUser({ role: UserRole.CUSTOMER, isCreator: true }),
+        accessToken: "token",
+      },
+      isBrandOwner: false,
+      isCreator: true,
+    });
+
+    render(<DashboardSidebar />);
+
+    expect(screen.getByRole("link", { name: "Take the tour" })).toHaveAttribute(
+      "href",
+      "/overview?tour=creator-dashboard",
+    );
+  });
+
+  it("marks each brand nav row with its id so the tour can point at it", () => {
     mockAuth({});
 
     const { container } = render(<DashboardSidebar />);
 
     for (const sidebarItemId of ["products", "tag-reviews", "orders", "wallet", "profile"]) {
+      expect(container.querySelector(`[data-sidebar-item-id="${sidebarItemId}"]`)).not.toBeNull();
+    }
+  });
+
+  it("marks each creator nav row with its id so the tour can point at it", () => {
+    mockAuth({
+      state: {
+        status: AuthStatus.AUTHENTICATED,
+        user: buildUser({ role: UserRole.CUSTOMER, isCreator: true }),
+        accessToken: "token",
+      },
+      isBrandOwner: false,
+      isCreator: true,
+    });
+
+    const { container } = render(<DashboardSidebar />);
+
+    for (const sidebarItemId of [
+      "profile",
+      "share",
+      "earnings",
+      "withdraw",
+      "progress",
+      "badges",
+      "challenges",
+    ]) {
       expect(container.querySelector(`[data-sidebar-item-id="${sidebarItemId}"]`)).not.toBeNull();
     }
   });

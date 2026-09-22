@@ -15,8 +15,8 @@ import { Suspense } from "react";
 import {
   BRAND_KPI_TOUR_ANCHOR,
   BRAND_TOUR_REPLAY_HREF,
-  BRAND_TOUR_REPLAY_LABEL,
   BrandDashboardTour,
+  TOUR_REPLAY_LABEL,
 } from "@/features/product-tour";
 
 import type {
@@ -215,7 +215,7 @@ export const BrandOverview = () => {
         <Button asChild variant="outline" size="sm">
           <Link href={BRAND_TOUR_REPLAY_HREF}>
             <Compass aria-hidden="true" />
-            {BRAND_TOUR_REPLAY_LABEL}
+            {TOUR_REPLAY_LABEL}
           </Link>
         </Button>
       </div>

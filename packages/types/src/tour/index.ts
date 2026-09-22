@@ -1,4 +1,4 @@
-export type TourKey = "brand-dashboard";
+export type TourKey = "brand-dashboard" | "creator-dashboard";
 
 export type TourOutcome = "COMPLETED" | "DISMISSED";
 

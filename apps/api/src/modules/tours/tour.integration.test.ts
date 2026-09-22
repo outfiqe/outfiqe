@@ -187,4 +187,39 @@ describe("PUT /api/tours/me/:tourKey", () => {
 
     expect(response.status).toBe(200);
   });
+
+  it("accepts every tour key this build knows about, not just brand-dashboard", async () => {
+    const user = await createUser();
+
+    const response = await request(testApp)
+      .put("/api/tours/me/creator-dashboard")
+      .set("Authorization", authHeaderFor(user.id))
+      .send({ version: 1, outcome: COMPLETED });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({ tourKey: "creator-dashboard" });
+  });
+
+  it("keeps each tour's progress separate for the same user", async () => {
+    const user = await createUser();
+    const authHeader = authHeaderFor(user.id);
+
+    await request(testApp)
+      .put(BRAND_TOUR_PATH)
+      .set("Authorization", authHeader)
+      .send({ version: 1, outcome: COMPLETED });
+    await request(testApp)
+      .put("/api/tours/me/creator-dashboard")
+      .set("Authorization", authHeader)
+      .send({ version: 1, outcome: DISMISSED });
+
+    const get = await request(testApp).get("/api/tours/me").set("Authorization", authHeader);
+    expect(get.body.data.tours).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ tourKey: "brand-dashboard", outcome: COMPLETED }),
+        expect.objectContaining({ tourKey: "creator-dashboard", outcome: DISMISSED }),
+      ]),
+    );
+    expect(get.body.data.tours).toHaveLength(2);
+  });
 });
