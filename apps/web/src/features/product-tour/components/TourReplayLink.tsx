@@ -7,6 +7,7 @@ import { type ComponentPropsWithoutRef, forwardRef } from "react";
 import { cn } from "@/shared/lib/cn";
 
 import { TOUR_REPLAY_LABEL } from "../constants/tourReplay";
+import { useTourLaunch } from "../context/TourLaunchContext";
 
 const TourReplayPendingDot = () => {
   const { pending } = useLinkStatus();
@@ -28,12 +29,25 @@ export type TourReplayLinkProps = Omit<ComponentPropsWithoutRef<typeof Link>, "h
 };
 
 export const TourReplayLink = forwardRef<HTMLAnchorElement, TourReplayLinkProps>(
-  ({ href, iconClassName, showLabel = true, className, ...props }, ref) => (
-    <Link ref={ref} href={href} className={className} {...props}>
-      <Compass aria-hidden="true" className={iconClassName} />
-      {showLabel ? TOUR_REPLAY_LABEL : <span className="sr-only">{TOUR_REPLAY_LABEL}</span>}
-      <TourReplayPendingDot />
-    </Link>
-  ),
+  ({ href, iconClassName, showLabel = true, className, onNavigate, ...props }, ref) => {
+    const { startTourLoading } = useTourLaunch();
+
+    return (
+      <Link
+        ref={ref}
+        href={href}
+        className={className}
+        onNavigate={(event) => {
+          startTourLoading(href);
+          onNavigate?.(event);
+        }}
+        {...props}
+      >
+        <Compass aria-hidden="true" className={iconClassName} />
+        {showLabel ? TOUR_REPLAY_LABEL : <span className="sr-only">{TOUR_REPLAY_LABEL}</span>}
+        <TourReplayPendingDot />
+      </Link>
+    );
+  },
 );
 TourReplayLink.displayName = "TourReplayLink";

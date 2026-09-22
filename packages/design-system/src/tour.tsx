@@ -14,6 +14,7 @@ import { createPortal } from "react-dom";
 
 import { Button } from "./button";
 import { cn } from "./cn";
+import { Skeleton } from "./skeleton";
 
 export type TourStep = {
   id: string;
@@ -27,6 +28,7 @@ export type TourCloseReason = "completed" | "dismissed";
 export type TourProps = {
   steps: readonly TourStep[];
   isOpen: boolean;
+  isLoading?: boolean;
   stepIndex: number;
   onStepChange: (nextStepIndex: number) => void;
   onClose: (reason: TourCloseReason) => void;
@@ -122,15 +124,24 @@ const useIsClient = (): boolean =>
 const isTourKeyEvent = (event: KeyboardEvent): boolean =>
   event.key === "Escape" || event.key === "ArrowRight" || event.key === "ArrowLeft";
 
-export const Tour = ({ steps, isOpen, stepIndex, onStepChange, onClose }: TourProps) => {
+export const Tour = ({
+  steps,
+  isOpen,
+  isLoading = false,
+  stepIndex,
+  onStepChange,
+  onClose,
+}: TourProps) => {
   const isClient = useIsClient();
   const cardRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const bodyId = useId();
 
   const step = steps[stepIndex];
-  const isShowing = isClient && isOpen && step !== undefined;
-  const anchorRect = useAnchorRect(step?.anchorSelector, isShowing);
+  const isShowingStep = isClient && isOpen && !isLoading && step !== undefined;
+  const isShowingLoading = isClient && isOpen && isLoading;
+  const isShowing = isShowingStep || isShowingLoading;
+  const anchorRect = useAnchorRect(step?.anchorSelector, isShowingStep);
   const isFirstStep = stepIndex === FIRST_STEP_INDEX;
   const isLastStep = stepIndex === steps.length - ONE_STEP;
 
@@ -167,6 +178,7 @@ export const Tour = ({ steps, isOpen, stepIndex, onStepChange, onClose }: TourPr
       if (!isTourKeyEvent(event)) return;
       event.preventDefault();
       if (event.key === "Escape") skipTour();
+      else if (isShowingLoading) return;
       else if (event.key === "ArrowRight") goToNextStep();
       else goToPreviousStep();
     };
@@ -229,9 +241,13 @@ export const Tour = ({ steps, isOpen, stepIndex, onStepChange, onClose }: TourPr
         style={buildCardStyle(anchorRect)}
       >
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-semibold text-muted-foreground">
-            {stepIndex + HUMAN_STEP_OFFSET} of {steps.length}
-          </p>
+          {isShowingLoading ? (
+            <Skeleton className="h-3 w-14" />
+          ) : (
+            <p className="text-xs font-semibold text-muted-foreground">
+              {stepIndex + HUMAN_STEP_OFFSET} of {steps.length}
+            </p>
+          )}
           <button
             type="button"
             onClick={skipTour}
@@ -241,22 +257,45 @@ export const Tour = ({ steps, isOpen, stepIndex, onStepChange, onClose }: TourPr
             <X className="size-4" aria-hidden="true" />
           </button>
         </div>
-        <h2 id={titleId} className="mt-2 text-base font-semibold text-foreground">
-          {step.title}
-        </h2>
-        <p id={bodyId} className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-          {step.body}
-        </p>
-        <div className="mt-5 flex items-center justify-end gap-2">
-          {!isFirstStep && (
-            <Button type="button" variant="outline" size="sm" onClick={goToPreviousStep}>
-              Back
-            </Button>
-          )}
-          <Button type="button" size="sm" onClick={goToNextStep}>
-            {isLastStep ? "Finish" : "Next"}
-          </Button>
-        </div>
+        {isShowingLoading ? (
+          <>
+            <h2 id={titleId} className="sr-only">
+              Loading your tour
+            </h2>
+            <p id={bodyId} className="sr-only">
+              Your tour is on its way.
+            </p>
+            <Skeleton className="mt-2 h-5 w-3/4" aria-hidden="true" />
+            <div className="mt-1.5 space-y-1.5" aria-hidden="true">
+              <Skeleton className="h-3.5 w-full" />
+              <Skeleton className="h-3.5 w-5/6" />
+            </div>
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <Skeleton className="h-9 w-20 rounded-full" />
+            </div>
+          </>
+        ) : (
+          step && (
+            <>
+              <h2 id={titleId} className="mt-2 text-base font-semibold text-foreground">
+                {step.title}
+              </h2>
+              <p id={bodyId} className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                {step.body}
+              </p>
+              <div className="mt-5 flex items-center justify-end gap-2">
+                {!isFirstStep && (
+                  <Button type="button" variant="outline" size="sm" onClick={goToPreviousStep}>
+                    Back
+                  </Button>
+                )}
+                <Button type="button" size="sm" onClick={goToNextStep}>
+                  {isLastStep ? "Finish" : "Next"}
+                </Button>
+              </div>
+            </>
+          )
+        )}
       </div>
     </div>,
     document.body,
