@@ -100,7 +100,13 @@ const mockSearchParams = (params: Record<string, string> = {}) => {
 
 const buildPost = (id: string) => ({
   id,
-  creator: { id: "creator-9", name: "Ava Martinez", handle: "ava", isApproved: true },
+  creator: {
+    id: "creator-9",
+    name: "Ava Martinez",
+    handle: "ava",
+    isApproved: true,
+    heightCm: null,
+  },
   imageUrl: `https://cdn.test/${id}.jpg`,
   images: [`https://cdn.test/${id}.jpg`],
   layout: "PORTRAIT",

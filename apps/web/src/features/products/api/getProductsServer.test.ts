@@ -18,7 +18,7 @@ const rawFeedPage = {
   posts: [
     {
       id: "look-1",
-      creator: { id: "creator-1", name: "Ava", handle: "ava", isApproved: true },
+      creator: { id: "creator-1", name: "Ava", handle: "ava", isApproved: true, heightCm: null },
       imageUrl: "https://example.test/look.jpg",
       images: [],
       image: null,
