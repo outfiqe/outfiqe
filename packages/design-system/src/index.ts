@@ -40,6 +40,7 @@ export * from "./theme-init";
 export * from "./theme-toggle";
 export * from "./toast";
 export * from "./tooltip";
+export * from "./tour";
 export * from "./trend-chart";
 export * from "./use-image-crop-upload";
 export * from "./use-media-query";

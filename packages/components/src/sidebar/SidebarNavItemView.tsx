@@ -107,14 +107,14 @@ export const SidebarNavItemView = ({
   );
 
   if (!hasChildren) {
-    return <li>{link}</li>;
+    return <li data-sidebar-item-id={id}>{link}</li>;
   }
 
   const expanded = expandedGroups.isExpanded(id);
   const submenuId = `${id}-submenu`;
 
   return (
-    <li>
+    <li data-sidebar-item-id={id}>
       <div className="flex items-center gap-1">
         {link}
         <button

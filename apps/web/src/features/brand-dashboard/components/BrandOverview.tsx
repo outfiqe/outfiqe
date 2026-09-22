@@ -1,8 +1,23 @@
 "use client";
 
-import { ChartCard, FormBanner, Skeleton, StatCard, TrendChart } from "@outfiqe/design-system";
-import { AlertTriangle, Clock, Package, Wallet } from "lucide-react";
+import {
+  Button,
+  ChartCard,
+  FormBanner,
+  Skeleton,
+  StatCard,
+  TrendChart,
+} from "@outfiqe/design-system";
+import { AlertTriangle, Clock, Compass, Package, Wallet } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
+
+import {
+  BRAND_KPI_TOUR_ANCHOR,
+  BRAND_TOUR_REPLAY_HREF,
+  BRAND_TOUR_REPLAY_LABEL,
+  BrandDashboardTour,
+} from "@/features/product-tour";
 
 import type {
   BrandOverview as BrandOverviewData,
@@ -51,7 +66,10 @@ const BrandKpiRow = ({ overview }: { overview: BrandOverviewData }) => {
   const { kpis } = overview;
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+    <div
+      data-tour-anchor={BRAND_KPI_TOUR_ANCHOR}
+      className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
+    >
       <StatCard
         label="Revenue (30 days)"
         value={formatRupees(kpis.last30DaysRevenue)}
@@ -187,11 +205,19 @@ export const BrandOverview = () => {
 
   return (
     <div>
-      <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">Overview</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Your revenue, payouts and recent orders at a glance.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Overview</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your revenue, payouts and recent orders at a glance.
+          </p>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link href={BRAND_TOUR_REPLAY_HREF}>
+            <Compass aria-hidden="true" />
+            {BRAND_TOUR_REPLAY_LABEL}
+          </Link>
+        </Button>
       </div>
 
       <div className="mt-6">
@@ -206,6 +232,9 @@ export const BrandOverview = () => {
               <RevenueTrendCard overview={overview} />
             </div>
             <RecentOrders overview={overview} />
+            <Suspense fallback={null}>
+              <BrandDashboardTour />
+            </Suspense>
           </>
         )}
       </div>

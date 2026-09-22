@@ -92,6 +92,7 @@ export default defineConfig({
         "src/modules/categories/**/*.ts",
         "src/modules/product-types/**/*.ts",
         "src/modules/taste-preferences/**/*.ts",
+        "src/modules/tours/**/*.ts",
         "src/modules/follows/**/*.ts",
         "src/modules/wishlist/**/*.ts",
         "src/shared/utils/engagement-guard.utils.ts",

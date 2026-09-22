@@ -16,6 +16,7 @@ export * from "./notification";
 export * from "./order";
 export * from "./product";
 export * from "./tag-review";
+export * from "./tour";
 export * from "./user";
 export * from "./withdraw";
 export * from "./xp";

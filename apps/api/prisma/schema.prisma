@@ -101,6 +101,7 @@ model User {
   oauthIdentities                          OAuthIdentity[]
   chatSettings                             ChatSettings?
   tastePreference                          TastePreference?
+  tourProgress                             UserTourProgress[]
   chatBlocksInitiated                      ChatBlock[]                 @relation("ChatBlocksInitiated")
   chatBlocksReceived                       ChatBlock[]                 @relation("ChatBlocksReceived")
   conversationParticipants                 ConversationParticipant[]
@@ -634,6 +635,24 @@ model TastePreference {
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("taste_preferences")
+}
+
+enum TourOutcome {
+  COMPLETED
+  DISMISSED
+}
+
+model UserTourProgress {
+  id        String      @id @default(uuid()) @db.Uuid
+  userId    String      @map("user_id") @db.Uuid
+  tourKey   String      @map("tour_key")
+  version   Int
+  outcome   TourOutcome
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tourKey])
+  @@map("user_tour_progress")
 }
 
 model HeroSlide {

@@ -80,6 +80,7 @@ import { supportRoutes } from "./modules/support/support.routes.js";
 import { tagReportRoutes } from "./modules/tag-reports/tagReport.routes.js";
 import { tagReviewRoutes } from "./modules/tag-reviews/tagReview.routes.js";
 import { tastePreferenceRoutes } from "./modules/taste-preferences/tastePreference.routes.js";
+import { tourRoutes } from "./modules/tours/tour.routes.js";
 import { trendingRoutes } from "./modules/trending/trending.routes.js";
 import { uploadRoutes } from "./modules/uploads/upload.routes.js";
 import { userRoutes } from "./modules/users/user.routes.js";
@@ -211,6 +212,7 @@ export const createApp = () => {
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/categories", categoryRoutes);
   app.use("/api/taste-preferences", tastePreferenceRoutes);
+  app.use("/api/tours", tourRoutes);
   app.use("/api/hero-slides", heroSlideRoutes);
   app.use("/api/image-processing", imageProcessingRoutes);
   app.use("/api/admin/trending", trendingRoutes);
