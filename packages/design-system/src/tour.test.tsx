@@ -342,4 +342,88 @@ describe("Tour", () => {
       expect(spotlight()).toHaveStyle({ top: "292px" });
     });
   });
+
+  describe("loading state", () => {
+    it("shows a centered dialog with no real step content while isLoading is true", () => {
+      render(
+        <Tour steps={[]} isOpen isLoading stepIndex={0} onStepChange={vi.fn()} onClose={vi.fn()} />,
+      );
+
+      const dialog = screen.getByRole("dialog");
+      expect(dialog.style.top).toBe("50%");
+      expect(screen.queryByRole("button", { name: "Next" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Finish" })).not.toBeInTheDocument();
+    });
+
+    it("still lets Skip close the tour while loading", () => {
+      const onClose = vi.fn();
+      render(
+        <Tour steps={[]} isOpen isLoading stepIndex={0} onStepChange={vi.fn()} onClose={onClose} />,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Skip tour" }));
+
+      expect(onClose).toHaveBeenCalledWith("dismissed");
+    });
+
+    it("still closes on Escape while loading, but ignores arrow keys", () => {
+      const onClose = vi.fn();
+      const onStepChange = vi.fn();
+      render(
+        <Tour
+          steps={[]}
+          isOpen
+          isLoading
+          stepIndex={0}
+          onStepChange={onStepChange}
+          onClose={onClose}
+        />,
+      );
+
+      fireEvent.keyDown(document, { key: "ArrowRight" });
+      expect(onStepChange).not.toHaveBeenCalled();
+      expect(onClose).not.toHaveBeenCalled();
+
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(onClose).toHaveBeenCalledWith("dismissed");
+    });
+
+    it("renders nothing when isLoading is true but isOpen is false", () => {
+      render(
+        <Tour
+          steps={[]}
+          isOpen={false}
+          isLoading
+          stepIndex={0}
+          onStepChange={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      );
+
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("shows the real step once isLoading turns false", () => {
+      const { rerender } = render(
+        <Tour steps={[]} isOpen isLoading stepIndex={0} onStepChange={vi.fn()} onClose={vi.fn()} />,
+      );
+
+      expect(screen.queryByText("Welcome")).not.toBeInTheDocument();
+
+      rerender(
+        <Tour
+          steps={TOUR_STEPS}
+          isOpen
+          isLoading={false}
+          stepIndex={0}
+          onStepChange={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByText("Welcome")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Next" })).toBeInTheDocument();
+    });
+  });
 });
