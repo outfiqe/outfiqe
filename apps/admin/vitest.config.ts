@@ -69,6 +69,8 @@ export default defineConfig({
         "src/components/page-skeletons/**",
         "src/components/ProtectedRoute.utils.ts",
         "src/components/AdminSidebar.utils.ts",
+        "src/components/AdminModuleSearch.tsx",
+        "src/components/AdminModuleSearch.utils.ts",
         "src/features/notifications/resolveNotificationHref.ts",
         "src/features/coupons/**/*.{ts,tsx}",
         "src/features/product-reviews/**/*.{ts,tsx}",
