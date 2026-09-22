@@ -47,7 +47,13 @@ vi.mock("next/link", () => ({
 const aPost = (overrides: Partial<FeedPost> = {}): FeedPost =>
   ({
     id: "look-1",
-    creator: { id: "creator-1", handle: "ram-shrestha", name: "Ram Shrestha", isApproved: true },
+    creator: {
+      id: "creator-1",
+      handle: "ram-shrestha",
+      name: "Ram Shrestha",
+      isApproved: true,
+      heightCm: null,
+    },
     imageUrl: "",
     images: [],
     layout: "PORTRAIT",

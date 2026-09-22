@@ -11,7 +11,13 @@ const HANDLE = "ava-martinez";
 
 const buildPost = (id: string) => ({
   id,
-  creator: { id: "creator-1", name: "Ava Martinez", handle: HANDLE, isApproved: true },
+  creator: {
+    id: "creator-1",
+    name: "Ava Martinez",
+    handle: HANDLE,
+    isApproved: true,
+    heightCm: null,
+  },
   imageUrl: `https://cdn.test/${id}.jpg`,
   images: [`https://cdn.test/${id}.jpg`],
   layout: "PORTRAIT",

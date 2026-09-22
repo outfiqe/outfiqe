@@ -112,7 +112,16 @@ const editDetailInclude = {
 } as const;
 
 const feedRelationsInclude = {
-  creator: { select: { id: true, name: true, handle: true, creatorStatus: true } },
+  creator: {
+    select: {
+      id: true,
+      name: true,
+      handle: true,
+      creatorStatus: true,
+      heightCm: true,
+      showHeight: true,
+    },
+  },
   images: {
     orderBy: { sortOrder: "asc" },
     select: { url: true, imageAsset: { select: RESPONSIVE_IMAGE_ASSET_SELECT } },
@@ -158,6 +167,7 @@ const toFeedPost = (
     name: creator.name,
     handle: creator.handle,
     isApproved: creator.creatorStatus === CreatorStatus.APPROVED,
+    heightCm: creator.showHeight ? creator.heightCm : null,
   },
   imageUrl,
   images: images.length > 0 ? images.map((image) => image.url) : [imageUrl],
@@ -170,12 +180,13 @@ const toFeedPost = (
   isLiked: viewer.likedIds.has(id),
   isSaved: viewer.savedIds.has(id),
   isFollowingCreator: viewer.followingIds.has(creatorId),
-  taggedProducts: taggedProducts.map(({ product }) => ({
+  taggedProducts: taggedProducts.map(({ product, sizeWorn }) => ({
     id: product.id,
     name: product.name,
     brand: product.brand.name,
     price: product.price,
     imageUrl: product.imageUrl,
+    sizeWorn,
   })),
   hashtags: hashtags.map((hashtag) => hashtag.tag),
   createdAt,

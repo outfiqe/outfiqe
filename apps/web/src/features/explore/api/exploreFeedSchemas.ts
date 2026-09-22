@@ -37,6 +37,7 @@ export const feedTaggedProductSchema = z.object({
   brand: z.string(),
   price: z.number(),
   imageUrl: z.string().nullable(),
+  sizeWorn: z.string().nullable(),
 });
 export type FeedTaggedProduct = z.infer<typeof feedTaggedProductSchema>;
 
@@ -45,6 +46,7 @@ export const feedCreatorSchema = z.object({
   name: z.string(),
   handle: z.string(),
   isApproved: z.boolean(),
+  heightCm: z.number().nullable(),
 });
 export type FeedCreator = z.infer<typeof feedCreatorSchema>;
 

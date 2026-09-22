@@ -35,7 +35,12 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
     commentCount,
     isSaved,
   } = post;
-  const { id: creatorId, handle: creatorHandle, name: creatorName } = creator;
+  const {
+    id: creatorId,
+    handle: creatorHandle,
+    name: creatorName,
+    heightCm: creatorHeightCm,
+  } = creator;
 
   const {
     isAuthenticated,
@@ -108,7 +113,7 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
         {taggedProducts.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-1.5">
             {taggedProducts.map((tag) => (
-              <PostTagPill key={tag.id} lookId={id} tag={tag} />
+              <PostTagPill key={tag.id} lookId={id} tag={tag} creatorHeightCm={creatorHeightCm} />
             ))}
           </div>
         )}

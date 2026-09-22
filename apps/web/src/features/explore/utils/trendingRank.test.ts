@@ -5,7 +5,7 @@ import { buildTrendingRankByPostId, findTrendingFallbackBoundary } from "./trend
 
 const buildPost = (overrides: Partial<FeedPost> = {}): FeedPost => ({
   id: "look-1",
-  creator: { id: "creator-1", name: "Asha", handle: "asha", isApproved: true },
+  creator: { id: "creator-1", name: "Asha", handle: "asha", isApproved: true, heightCm: null },
   imageUrl: "https://img.test/1.jpg",
   images: ["https://img.test/1.jpg"],
   image: null,

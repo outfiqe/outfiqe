@@ -64,6 +64,7 @@ export default defineConfig({
         "src/features/explore/components/PostDetailModal.tsx",
         "src/features/explore/components/PostGridCard.tsx",
         "src/features/explore/components/PostReportMenu.tsx",
+        "src/features/explore/components/PostTagPill.tsx",
         "src/features/explore/components/Sidebar.tsx",
         "src/features/explore/components/ReportContentModal.tsx",
         "src/features/explore/components/ConfirmDeleteCommentModal.tsx",

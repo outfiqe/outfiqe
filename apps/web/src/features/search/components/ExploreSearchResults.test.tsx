@@ -32,7 +32,7 @@ vi.mock("../hooks/useExploreSearch", () => ({
 
 const POST = {
   id: "post-1",
-  creator: { id: "creator-1", name: "Ava", handle: "ava", isApproved: true },
+  creator: { id: "creator-1", name: "Ava", handle: "ava", isApproved: true, heightCm: null },
   imageUrl: "https://cdn.outfiqe.test/post-1.jpg",
   images: ["https://cdn.outfiqe.test/post-1.jpg"],
   layout: "PORTRAIT",

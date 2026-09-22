@@ -32,7 +32,7 @@ const renderUseLikeLook = () => {
 
 const buildPost = (overrides: Partial<FeedPost> = {}): FeedPost => ({
   id: "1",
-  creator: { id: "c1", name: "Asha", handle: "asha", isApproved: true },
+  creator: { id: "c1", name: "Asha", handle: "asha", isApproved: true, heightCm: null },
   imageUrl: "https://img.test/1.jpg",
   images: ["https://img.test/1.jpg"],
   image: null,

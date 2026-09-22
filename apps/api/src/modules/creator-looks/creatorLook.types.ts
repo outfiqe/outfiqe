@@ -104,6 +104,7 @@ export type FeedTaggedProduct = {
   brand: string;
   price: number;
   imageUrl: string | null;
+  sizeWorn: string | null;
 };
 
 export type FeedCreator = {
@@ -111,6 +112,7 @@ export type FeedCreator = {
   name: string;
   handle: string;
   isApproved: boolean;
+  heightCm: number | null;
 };
 
 export type CreatorLookFeedPost = {

@@ -1798,6 +1798,47 @@ describe("GET /api/creator-looks/feed", () => {
     expect(second.body.data.posts[0].id).toBe(lookOne.id);
   });
 
+  it("carries the tagged product's size and the creator's height when the creator shows it", async () => {
+    const creator = await createCreator("Height Visible Creator", "height-visible-creator");
+    await prisma.user.update({
+      where: { id: creator.id },
+      data: { heightCm: 168, showHeight: true },
+    });
+    const viewer = await createCreator("Height Feed Viewer", "height-feed-viewer");
+    const look = await createLook(creator.id, "Post with a sized tag");
+    const product = await createApprovedProduct("Sized Product");
+    await tagProduct(look.id, product.id, "M");
+    await followCreator(viewer.id, creator.id);
+
+    const response = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "following" })
+      .set("Authorization", authHeaderFor(viewer.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.posts[0].creator.heightCm).toBe(168);
+    expect(response.body.data.posts[0].taggedProducts[0].sizeWorn).toBe("M");
+  });
+
+  it("hides the creator's height on the feed when they have chosen not to show it", async () => {
+    const creator = await createCreator("Height Hidden Creator", "height-hidden-creator");
+    await prisma.user.update({
+      where: { id: creator.id },
+      data: { heightCm: 168, showHeight: false },
+    });
+    const viewer = await createCreator("Height Hidden Feed Viewer", "height-hidden-feed-viewer");
+    await createLook(creator.id, "Post from a creator hiding their height");
+    await followCreator(viewer.id, creator.id);
+
+    const response = await request(testApp)
+      .get("/api/creator-looks/feed")
+      .query({ tab: "following" })
+      .set("Authorization", authHeaderFor(viewer.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.posts[0].creator.heightCm).toBeNull();
+  });
+
   it("filters the feed by an arbitrary hashtag tab", async () => {
     const creator = await createCreator("Hashtag Tab Creator", "hashtag-tab-creator");
     const marker = randomUUID().slice(0, 6);
