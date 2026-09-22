@@ -67,6 +67,7 @@ describe("toSuggestion", () => {
           name: "Ada",
           handle: "ada",
           isApproved: true,
+          heightCm: null,
         },
         images: [],
         image: { url: "https://cdn.example.com/look.png", lqip: null, sources: [] },
