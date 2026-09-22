@@ -1,6 +1,14 @@
-import { FormBanner, Skeleton } from "@outfiqe/design-system";
+import { Button, FormBanner, Skeleton } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { Compass } from "lucide-react";
 
+import {
+  CRM_TOUR_REPLAY_SEARCH,
+  CRM_TOUR_REPLAY_TO,
+  CrmDashboardTour,
+  TOUR_REPLAY_LABEL,
+} from "@/features/product-tour";
 import { ApiClientError } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -46,14 +54,24 @@ export const CrmPage = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-foreground">CRM</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">CRM</h1>
+          {organization && (
+            <p className="text-sm text-muted-foreground">
+              {organization.name} · {organization.plan}
+              {organization.trialEndsAt &&
+                ` · trial ends ${new Date(organization.trialEndsAt).toLocaleDateString()}`}
+            </p>
+          )}
+        </div>
         {organization && (
-          <p className="text-sm text-muted-foreground">
-            {organization.name} · {organization.plan}
-            {organization.trialEndsAt &&
-              ` · trial ends ${new Date(organization.trialEndsAt).toLocaleDateString()}`}
-          </p>
+          <Button asChild variant="outline" size="sm">
+            <Link to={CRM_TOUR_REPLAY_TO} search={CRM_TOUR_REPLAY_SEARCH}>
+              <Compass aria-hidden="true" />
+              {TOUR_REPLAY_LABEL}
+            </Link>
+          </Button>
         )}
       </div>
 
@@ -96,6 +114,8 @@ export const CrmPage = () => {
               There&apos;s nothing here for your role yet.
             </p>
           )}
+
+          <CrmDashboardTour organization={organization} />
         </div>
       )}
     </div>

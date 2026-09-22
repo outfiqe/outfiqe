@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { CrmSearchBox } from "@/features/crm/CrmSearchBox";
 import { ImpersonationActivityBanner } from "@/features/crm/ImpersonationActivityBanner";
 import { AdminNotificationBell } from "@/features/notifications";
+import { CRM_SEARCH_TOUR_ANCHOR } from "@/features/product-tour";
 import { useHideBootLoader } from "@/lib/bootLoader";
 
 import { AccountMenu } from "./AccountMenu";
@@ -29,7 +30,10 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
         </span>
 
         {inCrmArea && (
-          <div className="ml-auto flex items-center gap-3 sm:ml-0 sm:flex-1 sm:justify-center">
+          <div
+            data-tour-anchor={CRM_SEARCH_TOUR_ANCHOR}
+            className="ml-auto flex items-center gap-3 sm:ml-0 sm:flex-1 sm:justify-center"
+          >
             <span className="hidden font-display text-lg font-bold tracking-tight sm:inline">
               <span className="text-primary">C</span>
               <span className="text-secondary">RM</span>

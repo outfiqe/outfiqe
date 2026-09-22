@@ -1,10 +1,24 @@
 "use client";
 
-import { ChartCard, FormBanner, Skeleton, StatCard, TrendChart } from "@outfiqe/design-system";
-import { Heart, Image as ImageIcon, Users, Wallet } from "lucide-react";
+import {
+  Button,
+  ChartCard,
+  FormBanner,
+  Skeleton,
+  StatCard,
+  TrendChart,
+} from "@outfiqe/design-system";
+import { Compass, Heart, Image as ImageIcon, Users, Wallet } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { CreatorStatus } from "@/features/auth/types";
+import {
+  CREATOR_KPI_TOUR_ANCHOR,
+  CREATOR_TOUR_REPLAY_HREF,
+  CreatorDashboardTour,
+  TOUR_REPLAY_LABEL,
+} from "@/features/product-tour";
 
 import type {
   CreatorOverview as CreatorOverviewData,
@@ -51,7 +65,10 @@ const OverviewKpiRow = ({ overview }: { overview: CreatorOverviewData }) => {
   const { kpis } = overview;
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div
+      data-tour-anchor={CREATOR_KPI_TOUR_ANCHOR}
+      className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+    >
       <StatCard
         label="Total earnings"
         value={formatRupees(kpis.totalEarnings)}
@@ -199,11 +216,19 @@ export const CreatorOverview = ({ creatorStatus }: CreatorOverviewProps) => {
 
   return (
     <div>
-      <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">Overview</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Your earnings, reach and recent activity at a glance.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Overview</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your earnings, reach and recent activity at a glance.
+          </p>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link href={CREATOR_TOUR_REPLAY_HREF}>
+            <Compass aria-hidden="true" />
+            {TOUR_REPLAY_LABEL}
+          </Link>
+        </Button>
       </div>
 
       <div className="mt-6">
@@ -218,6 +243,9 @@ export const CreatorOverview = ({ creatorStatus }: CreatorOverviewProps) => {
               <EarningsTrendCard overview={overview} />
             </div>
             <RecentCommissions overview={overview} />
+            <Suspense fallback={null}>
+              <CreatorDashboardTour />
+            </Suspense>
           </>
         )}
       </div>
