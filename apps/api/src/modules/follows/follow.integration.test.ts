@@ -200,6 +200,16 @@ describe("GET /api/follows/suggested-creators", () => {
     expect(response.status).toBe(401);
   });
 
+  it("rejects a platform admin viewer", async () => {
+    const admin = await createCreator("Admin Viewer", "admin-viewer");
+
+    const response = await request(testApp)
+      .get("/api/follows/suggested-creators")
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
+
+    expect(response.status).toBe(403);
+  });
+
   it("paginates through the full ranked pool with a stable session snapshot, without repeating a creator", async () => {
     const viewer = await createCreator("Pagination Viewer", "pagination-viewer");
     const fan = await createCreator("Pagination Fan", "pagination-fan");

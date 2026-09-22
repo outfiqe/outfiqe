@@ -225,6 +225,7 @@ export default defineConfig({
         "src/features/explore/hooks/useLikeLook.ts",
         "src/features/explore/hooks/useSaveLook.ts",
         "src/features/explore/hooks/useFollowCreator.ts",
+        "src/features/explore/hooks/useSuggestedCreators.ts",
         "src/features/explore/hooks/useDeleteComment.ts",
         "src/features/explore/hooks/useReportContent.ts",
         "src/features/explore/utils/offlineActionTypes.ts",
