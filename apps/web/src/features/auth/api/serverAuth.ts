@@ -10,13 +10,13 @@ import type { TokenPurpose, UserSession } from "../types";
 import {
   type BrandInviteInfo,
   brandInviteInfoSchema,
-  currentUserSchema,
+  sessionResponseSchema,
   toUserSession,
   validateTokenResponseSchema,
 } from "./userSchemas";
 
-type CurrentUser = z.infer<typeof currentUserSchema>;
 type ValidateTokenResponse = z.infer<typeof validateTokenResponseSchema>;
+type SessionResponse = z.infer<typeof sessionResponseSchema>;
 
 export { getDefaultRouteForUser } from "../utils/getDefaultRoute";
 
@@ -24,7 +24,7 @@ const REFRESH_COOKIE_NAME = "refresh_token";
 
 export type ServerSession = { user: UserSession; accessToken: string };
 
-export const getServerAccessToken = cache(async (): Promise<string | null> => {
+const fetchServerSession = cache(async (): Promise<SessionResponse | null> => {
   const cookieStore = await cookies();
   const refreshToken = cookieStore.get(REFRESH_COOKIE_NAME)?.value;
   if (!refreshToken) return null;
@@ -32,26 +32,26 @@ export const getServerAccessToken = cache(async (): Promise<string | null> => {
   const cookieHeader = `${REFRESH_COOKIE_NAME}=${refreshToken}`;
 
   try {
-    const { accessToken } = await serverApiRequest<{ accessToken: string }>("/auth/session", {
+    const raw = await serverApiRequest<SessionResponse>("/auth/session", {
       method: "POST",
       cookie: cookieHeader,
     });
-    return accessToken;
+    return sessionResponseSchema.parse(raw);
   } catch {
     return null;
   }
 });
 
-export const getServerSessionWithToken = cache(async (): Promise<ServerSession | null> => {
-  const accessToken = await getServerAccessToken();
-  if (!accessToken) return null;
+export const getServerAccessToken = cache(async (): Promise<string | null> => {
+  const session = await fetchServerSession();
+  return session?.accessToken ?? null;
+});
 
-  try {
-    const rawUser = await serverApiRequest<CurrentUser>("/auth/me", { accessToken });
-    return { user: toUserSession(currentUserSchema.parse(rawUser)), accessToken };
-  } catch {
-    return null;
-  }
+export const getServerSessionWithToken = cache(async (): Promise<ServerSession | null> => {
+  const session = await fetchServerSession();
+  if (!session) return null;
+
+  return { user: toUserSession(session.user), accessToken: session.accessToken };
 });
 
 export const getServerSession = async (): Promise<UserSession | null> => {

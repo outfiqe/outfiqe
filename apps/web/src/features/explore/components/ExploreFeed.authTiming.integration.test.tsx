@@ -20,7 +20,6 @@ vi.mock("@/shared/lib/socketClient", () => ({
 }));
 
 const SESSION_URL = "/api/auth/session";
-const CURRENT_USER_URL = "/api/auth/me";
 const FEED_URL = "/api/creator-looks/feed";
 const TRENDING_TAGS_URL = "/api/creator-looks/tags/trending";
 const SUGGESTED_CREATORS_URL = "/api/follows/suggested-creators";
@@ -85,12 +84,9 @@ describe("ExploreFeed auth-resolution timing", () => {
         return HttpResponse.json({
           success: true,
           message: "Session is valid.",
-          data: { accessToken: "access-token" },
+          data: { accessToken: "access-token", user: currentUser },
         });
       }),
-      http.get(CURRENT_USER_URL, () =>
-        HttpResponse.json({ success: true, message: "Current user.", data: currentUser }),
-      ),
       http.get(FEED_URL, ({ request }) => {
         feedAuthorizationHeaders.push(request.headers.get("Authorization"));
         return HttpResponse.json({
@@ -144,11 +140,8 @@ describe("ExploreFeed auth-resolution timing", () => {
         HttpResponse.json({
           success: true,
           message: "Session is valid.",
-          data: { accessToken: "access-token" },
+          data: { accessToken: "access-token", user: currentUser },
         }),
-      ),
-      http.get(CURRENT_USER_URL, () =>
-        HttpResponse.json({ success: true, message: "Current user.", data: currentUser }),
       ),
       http.get(FEED_URL, ({ request }) => {
         feedAuthorizationHeaders.push(request.headers.get("Authorization"));
@@ -194,11 +187,8 @@ describe("ExploreFeed auth-resolution timing", () => {
         HttpResponse.json({
           success: true,
           message: "Session is valid.",
-          data: { accessToken: "access-token" },
+          data: { accessToken: "access-token", user: currentUser },
         }),
-      ),
-      http.get(CURRENT_USER_URL, () =>
-        HttpResponse.json({ success: true, message: "Current user.", data: currentUser }),
       ),
       http.get(FEED_URL, () =>
         HttpResponse.json({
@@ -226,14 +216,7 @@ describe("ExploreFeed auth-resolution timing", () => {
         HttpResponse.json({
           success: true,
           message: "Session is valid.",
-          data: { accessToken: "access-token" },
-        }),
-      ),
-      http.get(CURRENT_USER_URL, () =>
-        HttpResponse.json({
-          success: true,
-          message: "Current user.",
-          data: { ...currentUser, role: "ADMIN" },
+          data: { accessToken: "access-token", user: { ...currentUser, role: "ADMIN" } },
         }),
       ),
       http.get(FEED_URL, () =>

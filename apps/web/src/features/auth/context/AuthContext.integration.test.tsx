@@ -47,17 +47,18 @@ describe("AuthProvider session bootstrap", () => {
   it("restores the session from /auth/session without touching the rotating /auth/refresh", async () => {
     setHasSessionCookie();
     const rotateSession = vi.fn(() => new HttpResponse(null, { status: 500 }));
+    const fetchCurrentUser = vi.fn(() =>
+      HttpResponse.json({ success: true, message: "Current user.", data: currentUser }),
+    );
     mswServer.use(
       http.post(SESSION_URL, () =>
         HttpResponse.json({
           success: true,
           message: "Session is valid.",
-          data: { accessToken: "access-token" },
+          data: { accessToken: "access-token", user: currentUser },
         }),
       ),
-      http.get(CURRENT_USER_URL, () =>
-        HttpResponse.json({ success: true, message: "Current user.", data: currentUser }),
-      ),
+      http.get(CURRENT_USER_URL, fetchCurrentUser),
       http.post(REFRESH_URL, rotateSession),
     );
 
@@ -67,6 +68,7 @@ describe("AuthProvider session bootstrap", () => {
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.state.user).toMatchObject({ id: currentUser.id });
     expect(rotateSession).not.toHaveBeenCalled();
+    expect(fetchCurrentUser).not.toHaveBeenCalled();
   });
 
   it("resolves to unauthenticated when /auth/session rejects the cookie", async () => {

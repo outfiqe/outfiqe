@@ -40,6 +40,7 @@ vi.mock("next/link", () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
     <a href={href}>{children}</a>
   ),
+  useLinkStatus: () => ({ pending: false }),
 }));
 
 const buildCommission = (id: string): CreatorCommission => ({
