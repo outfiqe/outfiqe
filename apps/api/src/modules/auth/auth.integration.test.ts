@@ -892,6 +892,24 @@ describe("POST /api/auth/session", () => {
     expect(first.body.data).toHaveProperty("accessToken");
   });
 
+  it("returns the current user's profile alongside the access token", async () => {
+    const { user } = await createUser({ emailVerified: true });
+    const rawToken = await insertRefreshToken(user.id);
+
+    const response = await request(testApp)
+      .post("/api/auth/session")
+      .set("Cookie", [`refresh_token=${rawToken}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.user).toMatchObject({
+      id: user.id,
+      email: user.email,
+      phone: user.phone,
+      role: UserRole.CUSTOMER,
+      hasPassword: true,
+    });
+  });
+
   it("rejects a token that has already been rotated out", async () => {
     const { user } = await createUser();
     const rawToken = await insertRefreshToken(user.id, { revoked: true });

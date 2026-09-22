@@ -481,7 +481,9 @@ export const authService = {
     };
   },
 
-  async validateSession(rawRefreshToken: string | undefined): Promise<{ accessToken: string }> {
+  async validateSession(
+    rawRefreshToken: string | undefined,
+  ): Promise<{ accessToken: string; user: AuthUser | BrandAuthUser }> {
     if (!rawRefreshToken) {
       throw new AppError("MISSING_TOKEN", "No refresh token provided.", UNAUTHORIZED_STATUS);
     }
@@ -499,12 +501,17 @@ export const authService = {
       );
     }
 
-    const user = await userRepository.findById(stored.userId);
-    if (!user) {
+    const userExists = await userRepository.findById(stored.userId);
+    if (!userExists) {
       throw new AppError("INVALID_TOKEN", "Refresh token is invalid.", UNAUTHORIZED_STATUS);
     }
 
-    return { accessToken: generateToken({ sub: user.id, role: user.role }, TokenTypeEnum.ACCESS) };
+    const user = await authService.getCurrentUser(stored.userId);
+
+    return {
+      accessToken: generateToken({ sub: user.id, role: user.role }, TokenTypeEnum.ACCESS),
+      user,
+    };
   },
 
   async logout(rawRefreshToken: string | undefined, remoteIp?: string): Promise<void> {

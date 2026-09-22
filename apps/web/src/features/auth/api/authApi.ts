@@ -22,11 +22,11 @@ import {
 const registerResponseSchema = z.object({ userId: z.string() });
 const loginResponseSchema = z.object({ accessToken: z.string(), user: customerUserSchema });
 const brandLoginResponseSchema = z.object({ accessToken: z.string(), user: brandUserSchema });
-const sessionResponseSchema = z.object({ accessToken: z.string() });
+const sessionResponseSchema = z.object({ accessToken: z.string(), user: currentUserSchema });
 
 export type RegisterResponse = z.infer<typeof registerResponseSchema>;
 export type LoginResponse = { accessToken: string; user: UserSession };
-export type SessionResponse = z.infer<typeof sessionResponseSchema>;
+export type SessionResponse = { accessToken: string; user: UserSession };
 export type { BrandInviteInfo };
 export type MessageResponse = { message: string };
 
@@ -59,7 +59,8 @@ export const authApi = {
 
   async session(): Promise<SessionResponse> {
     const res = await apiClient.post<unknown>("/auth/session", undefined, { skipAuthRetry: true });
-    return sessionResponseSchema.parse(res.data);
+    const { accessToken, user } = sessionResponseSchema.parse(res.data);
+    return { accessToken, user: toUserSession(user) };
   },
 
   async getCurrentUser(): Promise<UserSession> {
