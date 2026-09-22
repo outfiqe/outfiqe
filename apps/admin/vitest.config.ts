@@ -39,6 +39,7 @@ export default defineConfig({
         "src/features/gamification/LeaderboardSection.tsx",
         "src/features/platform-commission/GatewayFeeRatesSection.tsx",
         "src/features/crm/**/*.{ts,tsx}",
+        "src/features/product-tour/**/*.{ts,tsx}",
         "src/features/organizations/**/*.{ts,tsx}",
         "src/features/platform-metrics/**/*.{ts,tsx}",
         "src/features/financial-rollup/**/*.{ts,tsx}",

@@ -10,6 +10,8 @@ import { redis } from "#redis/redis.client.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
+import { KNOWN_TOUR_KEYS } from "./tour.constants.js";
+
 const BRAND_TOUR_KEY = "brand-dashboard";
 const BRAND_TOUR_PATH = `/api/tours/me/${BRAND_TOUR_KEY}`;
 const COMPLETED = "COMPLETED";
@@ -188,16 +190,16 @@ describe("PUT /api/tours/me/:tourKey", () => {
     expect(response.status).toBe(200);
   });
 
-  it("accepts every tour key this build knows about, not just brand-dashboard", async () => {
+  it.each(KNOWN_TOUR_KEYS)("accepts %s, a tour key this build knows about", async (tourKey) => {
     const user = await createUser();
 
     const response = await request(testApp)
-      .put("/api/tours/me/creator-dashboard")
+      .put(`/api/tours/me/${tourKey}`)
       .set("Authorization", authHeaderFor(user.id))
       .send({ version: 1, outcome: COMPLETED });
 
     expect(response.status).toBe(200);
-    expect(response.body.data).toMatchObject({ tourKey: "creator-dashboard" });
+    expect(response.body.data).toMatchObject({ tourKey });
   });
 
   it("keeps each tour's progress separate for the same user", async () => {

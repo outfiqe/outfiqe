@@ -32,7 +32,9 @@ support reports, and review the organization's audit log — against the `/api/c
   shown only if the viewer's own CRM role actually carries `members:read`/`members:invite`
   (`organization.viewerIsSuperAdmin`/`viewerPermissionKeys` from `GET /api/crm/organization` —
   see "Non-obvious rationale"). A role with neither (e.g. the built-in Member role) sees an
-  explicit "nothing here for your role yet" message instead of a blank page.
+  explicit "nothing here for your role yet" message instead of a blank page. Once the organization
+  has loaded it also shows a "Take the tour" link in the header and mounts
+  `features/product-tour`'s `CrmDashboardTour` — see that feature's own README.
 - `MembersSection.tsx` — member list, role `Select`, deactivate/reactivate button per row, plus a
   "Transfer ownership" button on any `ACTIVE`, non-SUPERADMIN row (shown only when the viewer
   themselves is the SUPERADMIN and no transfer is already pending — takes `viewerIsSuperAdmin`/
