@@ -1,16 +1,17 @@
 import type { TourStep } from "@outfiqe/design-system";
 import type { TourKey } from "@outfiqe/types";
 
+import { sidebarItemSelector } from "../utils/sidebarItemSelector";
+import { buildTourReplayHref } from "./tourReplay";
+
 export const BRAND_DASHBOARD_TOUR_KEY = "brand-dashboard" satisfies TourKey;
 export const BRAND_DASHBOARD_TOUR_VERSION = 1;
 
-export const TOUR_REPLAY_QUERY_PARAM = "tour";
-export const BRAND_TOUR_REPLAY_HREF = `/overview?${TOUR_REPLAY_QUERY_PARAM}=${BRAND_DASHBOARD_TOUR_KEY}`;
+export const BRAND_TOUR_REPLAY_HREF = buildTourReplayHref("/overview", BRAND_DASHBOARD_TOUR_KEY);
+
 export const BRAND_TOUR_REPLAY_LABEL = "Take the tour";
 
 export const BRAND_KPI_TOUR_ANCHOR = "brand-kpis";
-
-const sidebarItemSelector = (sidebarItemId: string) => `[data-sidebar-item-id="${sidebarItemId}"]`;
 
 export const BRAND_DASHBOARD_TOUR_STEPS: TourStep[] = [
   {
