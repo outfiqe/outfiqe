@@ -20,6 +20,7 @@ export default defineConfig({
         "src/drawer.tsx",
         "src/modal.tsx",
         "src/table.tsx",
+        "src/tour.tsx",
         "src/use-media-query.ts",
         "src/theme.ts",
         "src/theme-init.ts",

@@ -182,6 +182,42 @@ describe("DashboardSidebar", () => {
     expect(links[0]).toHaveAttribute("href", "/overview");
   });
 
+  it("offers a brand owner a Take the tour link that reopens the dashboard tour", () => {
+    mockAuth({});
+
+    render(<DashboardSidebar />);
+
+    expect(screen.getByRole("link", { name: "Take the tour" })).toHaveAttribute(
+      "href",
+      "/overview?tour=brand-dashboard",
+    );
+  });
+
+  it("does not offer the brand tour to a shopper", () => {
+    mockAuth({
+      state: {
+        status: AuthStatus.AUTHENTICATED,
+        user: buildUser({ role: UserRole.CUSTOMER, isCreator: false }),
+        accessToken: "token",
+      },
+      isBrandOwner: false,
+    });
+
+    render(<DashboardSidebar />);
+
+    expect(screen.queryByRole("link", { name: "Take the tour" })).not.toBeInTheDocument();
+  });
+
+  it("marks each nav row with its id so the tour can point at it", () => {
+    mockAuth({});
+
+    const { container } = render(<DashboardSidebar />);
+
+    for (const sidebarItemId of ["products", "tag-reviews", "orders", "wallet", "profile"]) {
+      expect(container.querySelector(`[data-sidebar-item-id="${sidebarItemId}"]`)).not.toBeNull();
+    }
+  });
+
   it("shows Overview to a shopper who is not an approved creator", () => {
     mockAuth({
       state: {

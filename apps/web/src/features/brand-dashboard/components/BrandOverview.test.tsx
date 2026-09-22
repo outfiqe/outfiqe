@@ -3,6 +3,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type * as ProductTour from "@/features/product-tour";
+
 import type { BrandShipmentSummary } from "../api/brandFulfilmentSchemas";
 import type { BrandOverview as BrandOverviewData } from "../api/brandOverviewSchemas";
 import { useBrandOverview } from "../hooks/useBrandOverview";
@@ -15,6 +17,11 @@ vi.mock("../hooks/useBrandOverview", () => ({
 vi.mock("@outfiqe/design-system", async (importOriginal) => {
   const actual = await importOriginal<typeof DesignSystem>();
   return { ...actual, TrendChart: () => <div data-testid="trend-chart" /> };
+});
+
+vi.mock("@/features/product-tour", async (importOriginal) => {
+  const actual = await importOriginal<typeof ProductTour>();
+  return { ...actual, BrandDashboardTour: () => <div data-testid="brand-dashboard-tour" /> };
 });
 
 vi.mock("next/link", () => ({
@@ -92,6 +99,39 @@ describe("BrandOverview", () => {
       "href",
       "/manage-orders",
     );
+  });
+
+  it("lets the brand replay the dashboard tour from the header", () => {
+    render(<BrandOverview />);
+
+    expect(screen.getByRole("link", { name: "Take the tour" })).toHaveAttribute(
+      "href",
+      "/overview?tour=brand-dashboard",
+    );
+  });
+
+  it("marks the KPI row so the tour can point at it", () => {
+    const { container } = render(<BrandOverview />);
+
+    const kpiRow = container.querySelector('[data-tour-anchor="brand-kpis"]');
+    expect(kpiRow).toContainElement(screen.getByText("Revenue (30 days)"));
+  });
+
+  it("mounts the tour once the overview has loaded", () => {
+    render(<BrandOverview />);
+
+    expect(screen.getByTestId("brand-dashboard-tour")).toBeInTheDocument();
+  });
+
+  it("does not mount the tour while loading or when the overview failed", () => {
+    mockOverview({ isPending: true });
+    const { rerender } = render(<BrandOverview />);
+    expect(screen.queryByTestId("brand-dashboard-tour")).not.toBeInTheDocument();
+
+    mockOverview({ isError: true });
+    rerender(<BrandOverview />);
+
+    expect(screen.queryByTestId("brand-dashboard-tour")).not.toBeInTheDocument();
   });
 
   it("shows a positive revenue delta when the last 30 days beat the previous 30", () => {

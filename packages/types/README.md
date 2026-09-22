@@ -11,7 +11,7 @@ types are derived from.
 
 One folder per domain, each re-exported from `src/index.ts`: `admin`, `api`, `badges`, `bank`,
 `brand`, `brand-payout`, `category`, `chat`, `collection`, `commission`, `hero-slide`, `image`,
-`leaderboard`, `notification`, `order`, `product`, `user`, `withdraw`, `xp`.
+`leaderboard`, `notification`, `order`, `product`, `tour`, `user`, `withdraw`, `xp`.
 
 - `image/` — `ResponsiveImage` (`{ url, lqip, sources }`): the shape a public API response uses to
   carry an original image URL plus optional per-format (`avif`/`webp`/`jpeg`) `srcSet` strings and
