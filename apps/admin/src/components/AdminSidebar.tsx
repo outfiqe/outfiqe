@@ -164,7 +164,7 @@ const PLATFORM_OVERVIEW_NAV_ITEM: SidebarNavItem = {
   icon: LayoutDashboard,
 };
 
-const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
+export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
   {
     id: "brand-applications",
     href: "/platform/brand-applications",
@@ -376,7 +376,7 @@ const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
   { id: "team", href: "/team", label: "Team", icon: UserCog, group: "brand-tenants" },
 ];
 
-const PLATFORM_NAV_GROUP_ICONS: Record<PlatformNavGroupKey, SidebarIcon> = {
+export const PLATFORM_NAV_GROUP_ICONS: Record<PlatformNavGroupKey, SidebarIcon> = {
   "brand-tenants": Building2,
   catalog: LayoutGrid,
   commerce: ShoppingBag,

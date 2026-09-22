@@ -1,4 +1,5 @@
 import {
+  Button,
   ChartCard,
   FormBanner,
   Skeleton,
@@ -11,6 +12,7 @@ import { Link, type LinkProps } from "@tanstack/react-router";
 import {
   BanknoteArrowUp,
   ClipboardList,
+  Compass,
   LifeBuoy,
   type LucideIcon,
   Package,
@@ -20,6 +22,13 @@ import {
 import type { ReactNode } from "react";
 
 import { financialRollupApi } from "@/features/financial-rollup/api";
+import {
+  PLATFORM_KPI_TOUR_ANCHOR,
+  PLATFORM_TOUR_REPLAY_SEARCH,
+  PLATFORM_TOUR_REPLAY_TO,
+  PlatformDashboardTour,
+  TOUR_REPLAY_LABEL,
+} from "@/features/product-tour";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 import { platformMetricsApi } from "./api";
@@ -106,7 +115,7 @@ const formatShortDate = (isoDate: string) =>
   new Date(isoDate).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 const OverviewKpiRow = ({ overview }: { overview: PlatformOverview }) => (
-  <div className={KPI_GRID_CLASS}>
+  <div data-tour-anchor={PLATFORM_KPI_TOUR_ANCHOR} className={KPI_GRID_CLASS}>
     <StatCard
       label="Tenants"
       value={overview.tenantCount.toLocaleString()}
@@ -253,10 +262,20 @@ export const PlatformOverviewPage = () => {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold text-foreground">Overview</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Platform-wide totals, activity trend and settlement reconciliation.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Overview</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Platform-wide totals, activity trend and settlement reconciliation.
+          </p>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link to={PLATFORM_TOUR_REPLAY_TO} search={PLATFORM_TOUR_REPLAY_SEARCH}>
+            <Compass aria-hidden="true" />
+            {TOUR_REPLAY_LABEL}
+          </Link>
+        </Button>
+      </div>
 
       <div className="mt-6 space-y-8">
         {overview.error ? (
@@ -292,6 +311,8 @@ export const PlatformOverviewPage = () => {
             <SettlementSection>
               <SettlementGap />
             </SettlementSection>
+
+            <PlatformDashboardTour />
           </>
         )}
       </div>

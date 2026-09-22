@@ -23,7 +23,9 @@ section).
   per day (`getActivityTrend`), and a settlement-reconciliation section that compares gateway
   net-held against total ledger owed for the last 30 days (`financialRollupApi.get("30d")`). The
   reconciliation query is independent and `retry: false` — if the caller's role can't read the
-  rollup it degrades to a one-line note instead of a page-level error.
+  rollup it degrades to a one-line note instead of a page-level error. Once the overview has
+  loaded it also mounts `features/product-tour`'s `PlatformDashboardTour` and shows a "Take the
+  tour" link in the header that replays it — see that feature's own README.
 - `PlatformMetricsPage.tsx` — six overview stat cards + a plan filter, a sort control, and a
   paginated tenant table. Each row links to the detail.
 - `TenantMetricsDetailPage.tsx` — the tenant's current metrics, its live partner/customer totals,
