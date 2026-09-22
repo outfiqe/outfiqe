@@ -16,7 +16,13 @@ beforeAll(() => {
 
 const buildPost = (overrides: Partial<FeedPost> = {}): FeedPost => ({
   id: "post-1",
-  creator: { id: "creator-1", name: "Ava Martinez", handle: "ava", isApproved: true },
+  creator: {
+    id: "creator-1",
+    name: "Ava Martinez",
+    handle: "ava",
+    isApproved: true,
+    heightCm: null,
+  },
   imageUrl: "https://cdn.test/post-1.jpg",
   images: ["https://cdn.test/post-1.jpg"],
   layout: "PORTRAIT",
