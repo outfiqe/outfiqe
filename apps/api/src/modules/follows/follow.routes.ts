@@ -1,7 +1,9 @@
 import { Router } from "express";
 
+import { UserRole } from "#generated/prisma/enums.js";
 import { optionalAuth } from "#middlewares/optional-auth.js";
 import { requireAuth } from "#middlewares/require-auth.js";
+import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
 
 import { followController } from "./follow.controller.js";
@@ -14,9 +16,11 @@ import {
 
 export const followRoutes = Router();
 
+const requireNonAdminViewer = [requireAuth, requireRole(UserRole.CUSTOMER, UserRole.BRAND_OWNER)];
+
 followRoutes.get(
   "/suggested-creators",
-  requireAuth,
+  requireNonAdminViewer,
   validate({ query: listSuggestedCreatorsQuerySchema }),
   followController.suggestedCreators,
 );

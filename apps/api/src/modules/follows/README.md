@@ -3,8 +3,9 @@
 ## Purpose
 
 Following/unfollowing users and brands, listing followers/following, and the "Creators to
-follow" recommendation rail (`GET /follows/suggested-creators`). Owns the `Follow` graph edge
-itself; the entities being followed (`User`, `Brand`) are owned by their own modules.
+follow" recommendation rail (`GET /follows/suggested-creators`, customer/creator/brand-owner
+viewers only — a platform admin has no feed to personalize and gets a 403). Owns the `Follow`
+graph edge itself; the entities being followed (`User`, `Brand`) are owned by their own modules.
 
 ## Structure
 
@@ -52,6 +53,19 @@ the Follow control entirely for an admin viewer everywhere it appears (post card
 profiles, brand cards, the followers-list modal, and the "Creators to follow" sidebar rail, which
 is hidden as a whole widget since every row in it would otherwise be a dead end) rather than
 letting them hit this error.
+
+**`GET /suggested-creators` itself is `requireRole(CUSTOMER, BRAND_OWNER)`, not just
+`requireAuth`.** The widget was already hidden client-side for an admin viewer, but nothing
+stopped the endpoint itself from being called directly — the same "hide it in the UI and also
+restrict it at the API" pattern used everywhere else an admin shouldn't touch a real-user feature.
+On the client, `useSuggestedCreators` also skips the query entirely for an admin (`enabled: ...
+&& !isAdmin`), so this 403 is never actually hit through the app; it only matters for a direct
+API call. Separately, the widget's own `isAdmin` check briefly read `false` while auth was still
+resolving (before `state.user` loads), showing its loading skeleton for a moment before
+disappearing — `Sidebar.tsx` now also consults `useAdminViewerHint` (the same localStorage
+"was the last session on this browser an admin" signal `ExploreFeed.tsx` already uses for its
+locked-tab check) so a _returning_ admin skips the flash too; a brand-new admin session on a
+fresh browser still sees one flash, since there is nothing to persist yet.
 
 ### "Creators to follow" — multi-signal ranking
 

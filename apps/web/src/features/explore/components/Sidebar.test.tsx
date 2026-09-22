@@ -1,8 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { ADMIN_VIEWER_HINT_KEY } from "@/features/auth/utils/adminViewerHint";
 
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 import { useFollowCreator } from "../hooks/useFollowCreator";
@@ -35,10 +36,10 @@ vi.mock("./SuggestedCreatorsModal", () => ({
   ),
 }));
 
-const mockAuthGate = (isAuthenticated: boolean) => {
+const mockAuthGate = (isAuthenticated: boolean, isAuthResolved = true) => {
   vi.mocked(useExploreAuthGate).mockReturnValue({
     isAuthenticated,
-    isAuthResolved: true,
+    isAuthResolved,
     viewerId: null,
     goToSignIn: vi.fn(),
     gated: vi.fn(),
@@ -125,6 +126,10 @@ beforeEach(() => {
   );
 });
 
+afterEach(() => {
+  localStorage.removeItem(ADMIN_VIEWER_HINT_KEY);
+});
+
 describe("Sidebar", () => {
   it("does not show a Find more trigger for an unauthenticated visitor", () => {
     mockAuthGate(false);
@@ -200,5 +205,27 @@ describe("Sidebar", () => {
 
     expect(screen.queryByText("Creators to follow")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Find more" })).not.toBeInTheDocument();
+  });
+
+  it("hides the widget immediately for a returning admin, before auth has resolved", () => {
+    localStorage.setItem(ADMIN_VIEWER_HINT_KEY, "1");
+    mockAuthGate(false, false);
+    vi.mocked(useAuth).mockReturnValue({ isAdmin: false } as ReturnType<typeof useAuth>);
+
+    render(<Sidebar activeTag="" onTagClick={vi.fn()} />);
+
+    expect(screen.queryByText("Creators to follow")).not.toBeInTheDocument();
+  });
+
+  it("still shows the loading skeleton for a non-admin while auth is resolving", () => {
+    mockAuthGate(false, false);
+    vi.mocked(useAuth).mockReturnValue({ isAdmin: false } as ReturnType<typeof useAuth>);
+    vi.mocked(useSuggestedCreators).mockReturnValue(
+      buildQuerySuccessResult(undefined) as ReturnType<typeof useSuggestedCreators>,
+    );
+
+    render(<Sidebar activeTag="" onTagClick={vi.fn()} />);
+
+    expect(screen.getByText("Creators to follow")).toBeInTheDocument();
   });
 });
