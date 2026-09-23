@@ -1,4 +1,4 @@
-import { Badge, Button, toast } from "@outfiqe/design-system";
+import { Badge, Button, Select, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 import { useState } from "react";
 
@@ -60,39 +60,51 @@ export const BankAccountsListSection = () => {
 
   return (
     <div>
-      <div className="flex flex-wrap gap-2">
-        {OWNER_TABS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setOwnerType(tab)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              ownerType === tab
-                ? "bg-foreground text-background"
-                : "border border-border text-muted-foreground hover:text-foreground"
-            }`}
+      <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
+        <div>
+          <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Account type
+          </span>
+          <div className="flex gap-2">
+            {OWNER_TABS.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setOwnerType(tab)}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                  ownerType === tab
+                    ? "bg-foreground text-background"
+                    : "border border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {OWNER_TAB_LABEL[tab]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor="bank-accounts-status-filter"
+            className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground"
           >
-            {OWNER_TAB_LABEL[tab]}
-          </button>
-        ))}
+            Status
+          </label>
+          <Select
+            id="bank-accounts-status-filter"
+            className="h-9 w-40"
+            value={verifiedFilter}
+            onChange={(event) => setVerifiedFilter(event.target.value as VerifiedFilterValue)}
+          >
+            {VERIFIED_FILTER_VALUES.map((filter) => (
+              <option key={filter} value={filter}>
+                {VERIFIED_FILTER_LABEL[filter]}
+              </option>
+            ))}
+          </Select>
+        </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {VERIFIED_FILTER_VALUES.map((filter) => (
-          <button
-            key={filter}
-            onClick={() => setVerifiedFilter(filter)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              verifiedFilter === filter
-                ? "bg-foreground text-background"
-                : "border border-border text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {VERIFIED_FILTER_LABEL[filter]}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-4 space-y-3">
+      <div className="mt-6 space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, index) => (
             <CardRowSkeleton
