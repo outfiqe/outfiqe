@@ -212,7 +212,7 @@ export const BrandOverview = () => {
             Your revenue, payouts and recent orders at a glance.
           </p>
         </div>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
           <TourReplayLink href={BRAND_TOUR_REPLAY_HREF} />
         </Button>
       </div>

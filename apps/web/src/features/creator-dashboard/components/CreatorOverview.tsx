@@ -223,7 +223,7 @@ export const CreatorOverview = ({ creatorStatus }: CreatorOverviewProps) => {
             Your earnings, reach and recent activity at a glance.
           </p>
         </div>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
           <TourReplayLink href={CREATOR_TOUR_REPLAY_HREF} />
         </Button>
       </div>
