@@ -104,6 +104,14 @@ export const platformImpersonationRepository = {
       }));
   },
 
+  async findOrganizationSubdomain(organizationId: string): Promise<string | null> {
+    const organization = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { subdomain: true },
+    });
+    return organization?.subdomain ?? null;
+  },
+
   async isPlatformStaff(userId: string): Promise<boolean> {
     const platformOrg = await prisma.organization.findFirst({
       where: { isPlatformOrg: true },

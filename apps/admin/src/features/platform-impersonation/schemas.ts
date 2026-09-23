@@ -25,6 +25,7 @@ export const impersonationSessionSchema = z.object({
   expiresAt: z.string(),
   lastSeenAt: z.string().nullable(),
   revokedAt: z.string().nullable(),
+  revokedById: z.string().nullable(),
   active: z.boolean(),
 });
 export type ImpersonationSession = z.infer<typeof impersonationSessionSchema>;
@@ -35,3 +36,10 @@ export const startImpersonationResultSchema = z.object({
   session: impersonationSessionSchema,
 });
 export type StartImpersonationResult = z.infer<typeof startImpersonationResultSchema>;
+
+export const openImpersonationSessionResultSchema = z.object({
+  code: z.string(),
+  tenantSubdomain: z.string(),
+  expiresInSeconds: z.number(),
+});
+export type OpenImpersonationSessionResult = z.infer<typeof openImpersonationSessionResultSchema>;

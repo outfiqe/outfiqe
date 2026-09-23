@@ -20,6 +20,7 @@ export type PendingOwnershipTransfer = z.infer<typeof pendingOwnershipTransferSc
 export const activeImpersonationSchema = z.object({
   byName: z.string().nullable(),
   since: z.string(),
+  targetUserName: z.string().nullable(),
 });
 export type ActiveImpersonation = z.infer<typeof activeImpersonationSchema>;
 
@@ -48,6 +49,7 @@ export const organizationSchema = z.object({
   advancedFeaturesEnabled: z.boolean(),
   features: z.record(z.string(), z.boolean()).optional(),
   activeImpersonation: activeImpersonationSchema.nullable().optional(),
+  viewerIsImpersonating: z.boolean().optional(),
 });
 export type Organization = z.infer<typeof organizationSchema>;
 

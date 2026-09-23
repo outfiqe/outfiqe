@@ -9,7 +9,7 @@ import { ImpersonationActivityBanner } from "./ImpersonationActivityBanner";
 
 const API_BASE = "http://localhost:3000/api";
 
-const organization = (activeImpersonation: unknown) => ({
+const organization = (activeImpersonation: unknown, viewerIsImpersonating = false) => ({
   id: "org-1",
   name: "Meridian",
   plan: "starter",
@@ -22,6 +22,7 @@ const organization = (activeImpersonation: unknown) => ({
   advancedFeaturesEnabled: true,
   features: {},
   activeImpersonation,
+  viewerIsImpersonating,
 });
 
 const renderBanner = () => {
@@ -44,13 +45,17 @@ describe("ImpersonationActivityBanner", () => {
     await waitFor(() => expect(screen.queryByText(/support/i)).not.toBeInTheDocument());
   });
 
-  it("shows the active session and ends it on request", async () => {
+  it("shows the active session to an ordinary tenant member and ends it on request", async () => {
     let ended = false;
     mswServer.use(
       http.get(`${API_BASE}/crm/organization`, () =>
         HttpResponse.json({
           success: true,
-          data: organization({ byName: "Sam Staff", since: "2026-06-02T10:00:00.000Z" }),
+          data: organization({
+            byName: "Sam Staff",
+            since: "2026-06-02T10:00:00.000Z",
+            targetUserName: "Tara Tenant",
+          }),
         }),
       ),
       http.get(`${API_BASE}/crm/organization/impersonation-log`, () =>
@@ -77,10 +82,58 @@ describe("ImpersonationActivityBanner", () => {
     renderBanner();
 
     expect(await screen.findByText(/Sam Staff/)).toBeInTheDocument();
+    expect(screen.queryByText(/viewing this workspace as/)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "View activity" }));
     expect(await screen.findByText(/billing check/)).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "End session" }));
     await waitFor(() => expect(ended).toBe(true));
+  });
+
+  it("tells the impersonator themself they're viewing as the tenant, not that someone else is", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/crm/organization`, () =>
+        HttpResponse.json({
+          success: true,
+          data: organization(
+            {
+              byName: "Sam Staff",
+              since: "2026-06-02T10:00:00.000Z",
+              targetUserName: "Tara Tenant",
+            },
+            true,
+          ),
+        }),
+      ),
+    );
+
+    renderBanner();
+
+    expect(await screen.findByText(/viewing this workspace as/)).toBeInTheDocument();
+    expect(screen.getByText("Tara Tenant")).toBeInTheDocument();
+    expect(screen.queryByText(/Sam Staff.*is currently accessing/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "End session" })).toBeInTheDocument();
+  });
+
+  it("still offers End session to the impersonator even without an org permission", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/crm/organization`, () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            ...organization(
+              { byName: "Sam Staff", since: "2026-06-02T10:00:00.000Z", targetUserName: null },
+              true,
+            ),
+            viewerIsSuperAdmin: false,
+            viewerPermissionKeys: [],
+          },
+        }),
+      ),
+    );
+
+    renderBanner();
+
+    expect(await screen.findByRole("button", { name: "End session" })).toBeInTheDocument();
   });
 });

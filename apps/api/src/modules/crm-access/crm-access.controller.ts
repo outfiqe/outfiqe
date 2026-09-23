@@ -81,6 +81,7 @@ export const crmAccessController = {
         advancedFeaturesEnabled,
         features,
         activeImpersonation,
+        requireAuthPrincipal(res).impersonation !== undefined,
       ),
       "CRM organization.",
     );

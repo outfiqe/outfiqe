@@ -2,7 +2,7 @@ import { mswServer } from "@test/integration/msw/server";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { AuthProvider, useAuth } from "./AuthContext";
 import type { AdminUser } from "./schemas";
@@ -47,6 +47,11 @@ const mockSessionFor = (role: "ADMIN" | "BRAND_OWNER" | "CUSTOMER") => {
 const StatusProbe = () => {
   const { state } = useAuth();
   return <p>{state.status}</p>;
+};
+
+const SignedOutReasonProbe = () => {
+  const { state } = useAuth();
+  return <p>{state.status === "signed-out" ? `reason:${state.reason}` : state.status}</p>;
 };
 
 const SessionProbe = () => {
@@ -240,6 +245,75 @@ describe("AuthProvider session actions", () => {
     await userEvent.click(screen.getByRole("button", { name: "rename" }));
 
     expect(screen.getByText("status:signed-out")).toBeInTheDocument();
+  });
+});
+
+describe("AuthProvider impersonation hand-off", () => {
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
+  });
+
+  it("signs in from a one-time impersonation code instead of refreshing normally", async () => {
+    window.history.pushState(null, "", "/admin/crm?impersonation_code=one-time-code");
+    mswServer.use(
+      http.post(`${API_BASE}/platform/impersonation/redeem`, async ({ request }) => {
+        const body = (await request.json()) as { code: string };
+        expect(body.code).toBe("one-time-code");
+        return HttpResponse.json({
+          success: true,
+          message: "Redeemed.",
+          data: { accessToken: "impersonation-token" },
+        });
+      }),
+      http.get(`${API_BASE}/auth/me`, () =>
+        HttpResponse.json({
+          success: true,
+          message: "Current user.",
+          data: {
+            id: "target-1",
+            name: "Tara Tenant",
+            email: "tara@meridian.test",
+            avatarUrl: null,
+            role: "BRAND_OWNER",
+            hasPlatformAccess: false,
+            isCoFounder: false,
+            hiddenPlatformNavKeys: [],
+          },
+        }),
+      ),
+    );
+
+    renderAuthProvider();
+
+    expect(await screen.findByText("signed-in")).toBeInTheDocument();
+    expect(window.location.search).toBe("");
+  });
+
+  it("signs out with an explanatory reason when the code is invalid or already used", async () => {
+    window.history.pushState(null, "", "/admin/crm?impersonation_code=stale-code");
+    mswServer.use(
+      http.post(
+        `${API_BASE}/platform/impersonation/redeem`,
+        () =>
+          new HttpResponse(
+            JSON.stringify({
+              success: false,
+              message: "Expired.",
+              code: "IMPERSONATION_CODE_INVALID",
+            }),
+            { status: 410 },
+          ),
+      ),
+    );
+
+    render(
+      <AuthProvider>
+        <SignedOutReasonProbe />
+      </AuthProvider>,
+    );
+
+    expect(await screen.findByText("reason:impersonation-code-invalid")).toBeInTheDocument();
+    expect(window.location.search).toBe("");
   });
 });
 

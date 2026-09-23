@@ -1,6 +1,5 @@
 import { Router } from "express";
 
-import { denyDuringImpersonation } from "#middlewares/deny-during-impersonation.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
@@ -48,7 +47,6 @@ crmBillingRoutes.get(
 
 crmBillingRoutes.post(
   "/checkout",
-  denyDuringImpersonation,
   requirePermission(BILLING_MANAGE_PERMISSION),
   checkoutRateLimit,
   validate({ body: billingCheckoutSchema }),
@@ -57,7 +55,6 @@ crmBillingRoutes.post(
 
 crmBillingRoutes.post(
   "/invoices/:invoiceId/pay",
-  denyDuringImpersonation,
   requirePermission(BILLING_MANAGE_PERMISSION),
   checkoutRateLimit,
   validate({ params: invoiceIdParamsSchema, body: payInvoiceSchema }),
@@ -66,7 +63,6 @@ crmBillingRoutes.post(
 
 crmBillingRoutes.post(
   "/invoices/:invoiceId/verify",
-  denyDuringImpersonation,
   requirePermission(BILLING_MANAGE_PERMISSION),
   validate({ params: invoiceIdParamsSchema }),
   crmBillingController.verifyInvoice,
@@ -74,7 +70,6 @@ crmBillingRoutes.post(
 
 crmBillingRoutes.post(
   "/cancel",
-  denyDuringImpersonation,
   requirePermission(BILLING_MANAGE_PERMISSION),
   crmBillingController.cancel,
 );

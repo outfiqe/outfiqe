@@ -35,18 +35,30 @@ export const ImpersonationActivityBanner = () => {
 
   if (!organization || !activeImpersonation) return null;
 
+  const viewerIsImpersonating = organization.viewerIsImpersonating ?? false;
   const canEndSession =
+    viewerIsImpersonating ||
     organization.viewerIsSuperAdmin ||
     organization.viewerPermissionKeys.includes(END_SESSION_PERMISSION_KEY);
   const startedBy = activeImpersonation.byName ?? "An Outfiqe staff member";
   const startedAt = new Date(activeImpersonation.since).toLocaleString();
+  const actingAsName = activeImpersonation.targetUserName ?? "this tenant's account";
 
   return (
     <FormBanner tone="negative">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span>
-          <strong>{startedBy}</strong> from Outfiqe support is currently accessing this workspace
-          (started {startedAt}).
+          {viewerIsImpersonating ? (
+            <>
+              You&apos;re viewing this workspace as <strong>{actingAsName}</strong> (started{" "}
+              {startedAt}). Every action you take here is logged.
+            </>
+          ) : (
+            <>
+              <strong>{startedBy}</strong> from Outfiqe support is currently accessing this
+              workspace (started {startedAt}).
+            </>
+          )}
         </span>
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={() => setHistoryOpen((open) => !open)}>

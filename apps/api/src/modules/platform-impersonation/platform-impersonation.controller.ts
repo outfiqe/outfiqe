@@ -7,6 +7,7 @@ import { getPlatformPrincipal } from "#modules/platform-access/platform-access.m
 import type {
   CandidatesQuery,
   HistoryQuery,
+  RedeemExchangeCodeBody,
   SessionIdParams,
   StartImpersonationBody,
 } from "./platform-impersonation.schemas.js";
@@ -64,6 +65,26 @@ export const platformImpersonationController = {
       res,
       await platformImpersonationService.listHistory({ organizationId, impersonatorId, limit }),
       "Impersonation history.",
+    );
+  },
+
+  async openSession(_req: Request, res: Response) {
+    const { sessionId } = validated.params<SessionIdParams>(res);
+    const { actorUserId, permissionKeys } = getPlatformPrincipal(res);
+    const result = await platformImpersonationService.createExchangeCode(
+      sessionId,
+      actorUserId,
+      permissionKeys.includes(MANAGE_ANY_KEY),
+    );
+    sendSuccess(res, result, "Single-use hand-off code minted.");
+  },
+
+  async redeem(_req: Request, res: Response) {
+    const { code } = validated.body<RedeemExchangeCodeBody>(res);
+    sendSuccess(
+      res,
+      await platformImpersonationService.redeemExchangeCode(code),
+      "Impersonation session redeemed.",
     );
   },
 };

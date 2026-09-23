@@ -87,6 +87,9 @@ export default defineConfig({
         "src/features/products/ProductsPage.tsx",
         "src/features/products/ProductDetailModal.tsx",
         "src/features/announcements/**/*.{ts,tsx}",
+        "src/components/ImpersonationLinkExpired.tsx",
+        "src/lib/tenantHost.ts",
+        "src/lib/impersonationHandoff.ts",
       ],
       thresholds: {
         lines: 80,

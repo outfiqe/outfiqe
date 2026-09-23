@@ -3,20 +3,24 @@
 ## Purpose
 
 The platform-admin screen for starting and overseeing support impersonation sessions. Pick a
-tenant and one of its members, give a reason and a scope, and start a time-boxed session; watch
-every active session and revoke it; and review recent history. In the sidebar's Platform section
-(needs `platform:access` plus `platform:impersonate`).
+tenant and one of its members, give a reason and a scope, and start a time-boxed session; open it
+in a new tab as that member, watch every active session and revoke it, and review recent history.
+In the sidebar's Platform section (needs `platform:access` plus `platform:impersonate`).
 
 ## Structure
 
-- `schemas.ts` — Zod mirrors of the impersonation candidate, session summary, and start result.
+- `schemas.ts` — Zod mirrors of the impersonation candidate, session summary, start result, and
+  open (hand-off) result.
 - `api.ts` — `platformImpersonationApi` (`listCandidates`, `listActive`, `listHistory`, `start`,
-  `revoke`).
+  `revoke`, `open`).
 - `PlatformImpersonationPage.tsx` — the start form (tenant `<Select>` reusing
   `platformMetricsApi.listTenants`, a member `<Select>` from `listCandidates`, a reason `<Input>`,
   a scope `<Select>`, an optional minutes `<Input>`), a result panel that reveals the minted
-  access token behind a toggle, an active-sessions table with per-row revoke, and a recent-history
-  table. `SessionTable` is a local, unexported sub-component shared by both tables.
+  access token behind a toggle, an active-sessions table with a per-row "Open" and "Revoke", and a
+  recent-history table. `SessionTable` is a local, unexported sub-component shared by both tables.
+  "Open" calls `platformImpersonationApi.open`, then `buildImpersonationHandoffUrl`
+  (`@/lib/impersonationHandoff`) to open a new tab at the tenant's own subdomain with a one-time
+  code in the query string — never the token itself.
 - `PlatformImpersonationPage.integration.test.tsx`.
 
 Route: `_authenticated.platform.impersonation.index.tsx` (`/platform/impersonation`); the
@@ -24,9 +28,11 @@ Route: `_authenticated.platform.impersonation.index.tsx` (`/platform/impersonati
 
 ## Non-obvious rationale
 
-- **The minted token is shown, not auto-applied.** The admin app can't hand the token to a tenant
-  subdomain in-browser yet (see the API module's README), so the page reveals it for use with
-  trusted support tooling instead of silently swapping the operator's own session.
+- **"Open" and the revealed token are two different paths for two different needs**, not one
+  superseding the other. "Open" is the fast path for browsing the tenant's CRM as that member
+  (see `@/lib/impersonationHandoff` and the API module's README for the code-exchange design);
+  the revealed token is for trusted support tooling that isn't a browser at all (curl, an internal
+  script) and stays behind its own reveal toggle so it's never shown by accident.
 - **Candidates come from a dedicated platform endpoint**, not a tenant member list — the operator
   is never inside the tenant, and platform staff are filtered out server-side so they can't be
   impersonation targets.

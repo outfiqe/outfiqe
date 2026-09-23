@@ -14,6 +14,8 @@ import { AppError } from "./error-handler.js";
 const BEARER_PREFIX = "Bearer ";
 const UNAUTHORIZED_STATUS = 401;
 const UNAUTHORIZED_MESSAGE = "Authentication required.";
+const FORBIDDEN_STATUS = 403;
+const SAFE_HTTP_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 const resolveImpersonation = async (
   actor: ImpersonationActor,
@@ -84,6 +86,16 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       principal.impersonation = await resolveImpersonation(decoded.act, decoded.sub);
     } catch (error) {
       return next(error);
+    }
+
+    if (principal.impersonation.scope !== "write" && !SAFE_HTTP_METHODS.has(req.method)) {
+      return next(
+        new AppError(
+          "IMPERSONATION_READ_ONLY",
+          "This action isn't allowed during a read-only impersonation session.",
+          FORBIDDEN_STATUS,
+        ),
+      );
     }
   }
 

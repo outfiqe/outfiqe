@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
+import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
 import {
   PLATFORM_PERMISSION_CATALOG,
   PLATFORM_PERMISSION_KEYS,
@@ -196,5 +197,70 @@ describe("platform impersonation", () => {
       .get("/api/platform/impersonation/active")
       .set("Authorization", authHeaderFor(shopper.id));
     expect(res.status).toBe(403);
+  });
+
+  it("mints a single-use hand-off code that redeems into the same session's token, not a raw JWT", async () => {
+    const { auth } = await seedPlatformAdmin();
+    const { organization, target } = await seedTenantTarget();
+
+    const start = await request(testApp)
+      .post("/api/platform/impersonation")
+      .set("Authorization", auth)
+      .send({ organizationId: organization.id, targetUserId: target.id, reason: "opening it" });
+    const sessionId = start.body.data.session.id;
+
+    const open = await request(testApp)
+      .post(`/api/platform/impersonation/${sessionId}/open`)
+      .set("Authorization", auth);
+    expect(open.status).toBe(200);
+    expect(open.body.data.tenantSubdomain).toBe(organization.subdomain);
+    expect(typeof open.body.data.code).toBe("string");
+    expect(open.body.data.code).not.toBe(start.body.data.token);
+
+    const redeem = await request(testApp)
+      .post("/api/platform/impersonation/redeem")
+      .send({ code: open.body.data.code });
+    expect(redeem.status).toBe(200);
+    const decoded = jwt.decode(redeem.body.data.accessToken) as { sub: string };
+    expect(decoded.sub).toBe(target.id);
+
+    const reuse = await request(testApp)
+      .post("/api/platform/impersonation/redeem")
+      .send({ code: open.body.data.code });
+    expect(reuse.status).toBe(410);
+    expect(reuse.body.code).toBe("IMPERSONATION_CODE_INVALID");
+  });
+
+  it("refuses to open someone else's session without platform:impersonate:manage", async () => {
+    const { auth, platformOrg } = await seedPlatformAdmin();
+    const { organization, target } = await seedTenantTarget();
+
+    const limitedRole = await crmAccessRepository.createRole({
+      organizationId: platformOrg.id,
+      name: "Limited Support",
+      isBuiltIn: false,
+      permissionKeys: ["platform:access", "platform:impersonate"],
+    });
+    const otherStaff = await createUser(UserRole.ADMIN);
+    await crmAccessRepository.grantPlatformStaffMembership(otherStaff.id, limitedRole.id);
+
+    const start = await request(testApp)
+      .post("/api/platform/impersonation")
+      .set("Authorization", auth)
+      .send({ organizationId: organization.id, targetUserId: target.id, reason: "mine only" });
+
+    const open = await request(testApp)
+      .post(`/api/platform/impersonation/${start.body.data.session.id}/open`)
+      .set("Authorization", authHeaderFor(otherStaff.id));
+    expect(open.status).toBe(403);
+    expect(open.body.code).toBe("NOT_YOUR_SESSION");
+  });
+
+  it("refuses an unknown or already-used redeem code", async () => {
+    const res = await request(testApp)
+      .post("/api/platform/impersonation/redeem")
+      .send({ code: "never-issued" });
+    expect(res.status).toBe(410);
+    expect(res.body.code).toBe("IMPERSONATION_CODE_INVALID");
   });
 });
