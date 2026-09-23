@@ -175,6 +175,7 @@ export default defineConfig({
         "src/shared/lib/heicImage.ts",
         "src/features/bank-accounts/components/AddBankAccountModal.tsx",
         "src/features/bank-accounts/components/BankAccountsList.tsx",
+        "src/features/bank-accounts/components/BankAccountCard.tsx",
         "src/features/withdraw/components/WithdrawRequestForm.tsx",
         "src/features/withdraw/components/WithdrawRequestStatusBadge.tsx",
         "src/features/withdraw/components/WithdrawSectionSkeleton.tsx",

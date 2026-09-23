@@ -38,8 +38,8 @@ export const toWithdrawRequestView = (request: WithdrawRequestRecord): WithdrawR
 type AdminWithdrawRequestRow = WithdrawRequestRecord & {
   creator: { name: string } | null;
   brand: { name: string } | null;
-  bankAccount: { accountNumberLast4: string } | null;
-  brandBankAccount: { accountNumberLast4: string } | null;
+  bankAccount: { accountNumberLast4: string; qrCodeImageUrl: string | null } | null;
+  brandBankAccount: { accountNumberLast4: string; qrCodeImageUrl: string | null } | null;
 };
 
 export const toAdminWithdrawRequestView = (
@@ -47,7 +47,9 @@ export const toAdminWithdrawRequestView = (
 ): AdminWithdrawRequestView => ({
   ...toWithdrawRequestView(row),
   ownerName: row.creator?.name ?? row.brand?.name ?? "Unknown",
+  bankAccountId: row.bankAccountId ?? row.brandBankAccountId ?? "",
   bankAccountLast4:
     row.bankAccount?.accountNumberLast4 ?? row.brandBankAccount?.accountNumberLast4 ?? "----",
+  qrCodeImageUrl: row.bankAccount?.qrCodeImageUrl ?? row.brandBankAccount?.qrCodeImageUrl ?? null,
   firstApprovedById: row.firstApprovedById,
 });

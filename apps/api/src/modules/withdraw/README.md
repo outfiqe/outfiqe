@@ -40,6 +40,12 @@ and sees it move through their request history with a status badge. Admin review
 
 ## Non-obvious rationale
 
+- **`AdminWithdrawRequestView` carries `bankAccountId` and `qrCodeImageUrl`, not just
+  `bankAccountLast4`,** so the admin `withdraw-requests` screen can reveal the same account and
+  show the same QR code the `bank-accounts` admin feature uses, without a separate lookup —
+  `bankAccountId` resolves to whichever of `bankAccountId`/`brandBankAccountId` is set (mirroring
+  how `ownerType` already tells the caller which one), and `qrCodeImageUrl` is read straight off
+  the joined `bankAccount`/`brandBankAccount` row.
 - **The `CREATOR` owner side is gated to approved creators, not every signed-in user.**
   `resolveOwner` calls `requireApprovedCreator` (`#lib/creator-guard.utils.js`) before returning a
   `{ ownerType: "CREATOR", creatorId }` context, so `GET /eligibility`, `POST /requests`, and

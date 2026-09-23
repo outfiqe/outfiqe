@@ -6,6 +6,8 @@ const ACCOUNT_NUMBER_MIN_DIGITS = 6;
 const ACCOUNT_NUMBER_MAX_DIGITS = 20;
 const BRANCH_NAME_MIN = 2;
 const BRANCH_NAME_MAX = 120;
+const DEFAULT_ADMIN_PAGE_SIZE = 20;
+const MAX_ADMIN_PAGE_SIZE = 50;
 
 const accountNumbersMatch = (fields: { accountNumber: string; confirmAccountNumber: string }) =>
   fields.accountNumber === fields.confirmAccountNumber;
@@ -44,6 +46,7 @@ export const bankAccountBodySchema = z
       .trim()
       .min(BRANCH_NAME_MIN, "Enter the branch name.")
       .max(BRANCH_NAME_MAX, `Branch name can't be longer than ${BRANCH_NAME_MAX} characters.`),
+    qrCodeImageUrl: z.url("Upload a photo of your bank QR."),
   })
   .refine(accountNumbersMatch, CONFIRM_ACCOUNT_NUMBER_ISSUE);
 
@@ -51,3 +54,13 @@ export type BankAccountBody = z.infer<typeof bankAccountBodySchema>;
 
 export const bankAccountIdParamSchema = z.object({ id: z.uuid() });
 export type BankAccountIdParam = z.infer<typeof bankAccountIdParamSchema>;
+
+export const listAdminBankAccountsQuerySchema = z.object({
+  verified: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === "true")),
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_ADMIN_PAGE_SIZE).default(DEFAULT_ADMIN_PAGE_SIZE),
+});
+export type ListAdminBankAccountsQuery = z.infer<typeof listAdminBankAccountsQuerySchema>;
