@@ -33,7 +33,7 @@ const renderModal = (onClose = vi.fn()) => {
 };
 
 const uploadQrCode = async (user: ReturnType<typeof userEvent.setup>, container: HTMLElement) => {
-  const fileInput = container.querySelector('input[type="file"]');
+  const fileInput = container.querySelector<HTMLInputElement>('input[type="file"]');
   if (!fileInput) throw new Error("QR upload input not found");
   const qrFile = new File(["qr"], "bank-qr.png", { type: "image/png" });
   await user.upload(fileInput, qrFile);
