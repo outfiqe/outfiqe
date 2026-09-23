@@ -2,7 +2,6 @@ import type { z } from "zod";
 
 import { apiClient } from "@/lib/apiClient";
 
-import type { refreshResponseSchema } from "./schemas";
 import {
   type AdminInviteInfo,
   adminInviteInfoSchema,
@@ -12,6 +11,7 @@ import {
   type CrmInviteInfo,
   crmInviteInfoSchema,
   loginResponseSchema,
+  refreshResponseSchema,
   type UpdateProfileInput,
   updateProfileResponseSchema,
   type UpdateProfileResult,
@@ -28,6 +28,11 @@ export const authApi = {
   async me(): Promise<AdminUser> {
     const res = await apiClient.get<AdminUser>("/auth/me");
     return adminUserSchema.parse(res.data);
+  },
+
+  async redeemImpersonationCode(code: string): Promise<RefreshResult> {
+    const res = await apiClient.post<RefreshResult>("/platform/impersonation/redeem", { code });
+    return refreshResponseSchema.parse(res.data);
   },
 
   async logout(): Promise<void> {

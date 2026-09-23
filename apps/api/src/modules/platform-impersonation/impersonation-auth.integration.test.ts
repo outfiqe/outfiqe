@@ -120,6 +120,31 @@ describe("impersonation auth path", () => {
     expect(transfer.body.code).toBe("IMPERSONATION_READ_ONLY");
   });
 
+  it("blocks any mutating route under a read-scope session, not just an explicit allowlist", async () => {
+    const scene = await seedScene();
+    const { token } = await startSession(scene, "read");
+
+    const renameOrg = await request(testApp)
+      .patch("/api/crm/organization")
+      .set("Host", scene.host)
+      .set("Authorization", token)
+      .send({ name: "Renamed while impersonating" });
+    expect(renameOrg.status).toBe(403);
+    expect(renameOrg.body.code).toBe("IMPERSONATION_READ_ONLY");
+  });
+
+  it("still allows a write-scope session to reach the same route", async () => {
+    const scene = await seedScene();
+    const { token } = await startSession(scene, "write");
+
+    const renameOrg = await request(testApp)
+      .patch("/api/crm/organization")
+      .set("Host", scene.host)
+      .set("Authorization", token)
+      .send({ name: "Renamed while impersonating with write scope" });
+    expect(renameOrg.status).toBe(200);
+  });
+
   it("mints the token with the target's real role, not a hardcoded admin role", async () => {
     const scene = await seedScene(UserRole.CUSTOMER);
     const { token } = await startSession(scene);

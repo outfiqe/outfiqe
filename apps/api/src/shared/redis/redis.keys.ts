@@ -10,6 +10,7 @@ export const redisKeys = {
   suspendedUser: (userId: string) => `suspension:user:${userId}`,
   oauthState: (state: string) => `auth:oauth-state:${state}`,
   oauthLinkPending: (linkToken: string) => `auth:oauth-link-pending:${linkToken}`,
+  impersonationExchangeCode: (code: string) => `impersonation:exchange:${code}`,
   leaderboard: (category: LeaderboardCategory, week: string) =>
     `leaderboard:brand:${category}:${week}`,
   leaderboardComputed: (category: LeaderboardCategory, week: string) =>

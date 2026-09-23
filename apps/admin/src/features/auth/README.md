@@ -8,12 +8,16 @@ exposes, and clears the resulting session.
 
 ## Structure
 
-- `AuthContext.tsx` — `AuthProvider` restores the session on mount (`authApi.refresh()` →
-  `authApi.me()`), holds the `AuthState` (`loading` | `signed-out` | `signed-in`), and exposes
-  `logout`, `updateUser`, `setSession` through `useAuth()`. The `signed-out` state carries a
-  `reason` (`"session-ended"` vs `"user-signed-out"`) — see rationale below.
-- `api.ts` — `authApi`: refresh, me, logout, profile/password updates, and the admin- and
-  CRM-invite registration calls.
+- `AuthContext.tsx` — `AuthProvider` restores the session on mount. If the URL carries an
+  `impersonation_code` query param (the platform Impersonation screen's "Open" hand-off, see
+  `platform-impersonation`'s README), it redeems that instead of the normal
+  `authApi.refresh()` → `authApi.me()` path, then strips the param from the address bar with
+  `window.history.replaceState`. It holds the `AuthState` (`loading` | `signed-out` |
+  `signed-in`), and exposes `logout`, `updateUser`, `setSession` through `useAuth()`. The
+  `signed-out` state carries a `reason` (`"session-ended"` | `"user-signed-out"` |
+  `"impersonation-code-invalid"`) — see rationale below.
+- `api.ts` — `authApi`: refresh, me, logout, profile/password updates, the admin- and
+  CRM-invite registration calls, and `redeemImpersonationCode`.
 - `schemas.ts` — Zod schemas / types for the admin user, invites, and profile/password inputs.
 - `RegisterInvitePage.tsx` — the one auth screen the admin app does own: completing an
   admin/CRM invite (`/register?token=…`).
@@ -42,6 +46,11 @@ token on `@/lib/apiClient`, `authApi.me()` loads the user → `useAuth()` state 
   out" implies. `logout()` therefore sets `reason: "user-signed-out"`, and `ProtectedRoute` omits
   the `redirect` for that case, letting the web app pick its default post-login destination
   (the admin app root, which routes on to `/platform` or `/crm`).
+- **`"impersonation-code-invalid"` skips the web-login redirect entirely.** A stale or reused
+  hand-off code isn't "no session" — sending that tab to the web login and back would sign the
+  platform admin into their own account on the tenant's subdomain, not into the impersonation
+  they were trying to open. `ProtectedRoute` shows `ImpersonationLinkExpired` in place instead of
+  redirecting, and points back at the Impersonation screen for a fresh link.
 
 ## Form validation
 

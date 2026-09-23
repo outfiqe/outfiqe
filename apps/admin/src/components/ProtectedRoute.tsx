@@ -2,6 +2,7 @@ import { type ReactNode, useEffect } from "react";
 
 import { useAuth } from "@/features/auth/AuthContext";
 
+import { ImpersonationLinkExpired } from "./ImpersonationLinkExpired";
 import { resolveLoginOrigin } from "./ProtectedRoute.utils";
 import { RedirectingToLogin } from "./RedirectingToLogin";
 
@@ -14,6 +15,7 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (status !== "signed-out") return;
+    if (signedOutReason === "impersonation-code-invalid") return;
     const loginOrigin = resolveLoginOrigin(CONFIGURED_WEB_URL, window.location.hostname);
     const returnQuery =
       signedOutReason === "user-signed-out"
@@ -24,6 +26,7 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
   if (status === "signed-in") return <>{children}</>;
   if (signedOutReason === "user-signed-out") return <RedirectingToLogin />;
+  if (signedOutReason === "impersonation-code-invalid") return <ImpersonationLinkExpired />;
 
   return null;
 };

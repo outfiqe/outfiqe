@@ -11,7 +11,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 
 const authState = (
   status: "loading" | "signed-out" | "signed-in",
-  reason: "session-ended" | "user-signed-out" = "session-ended",
+  reason: "session-ended" | "user-signed-out" | "impersonation-code-invalid" = "session-ended",
 ) => ({
   state: status === "signed-out" ? { status, reason } : { status },
 });
@@ -96,6 +96,29 @@ describe("admin ProtectedRoute", () => {
 
     expect(fakeLocation.href).toMatch(/^https?:\/\/[^/]+\/login$/);
     expect(screen.getByRole("status")).toHaveTextContent("Redirecting to login…");
+    expect(screen.queryByText("Secret dashboard")).not.toBeInTheDocument();
+  });
+
+  it("explains an expired hand-off link instead of bouncing to the web login", () => {
+    const fakeLocation = {
+      href: "http://studio.outfiqe.local:3000/crm?impersonation_code=stale",
+      pathname: "/crm",
+      search: "?impersonation_code=stale",
+      hostname: "studio.outfiqe.local",
+    };
+    vi.stubGlobal("location", fakeLocation);
+    useAuthMock.mockReturnValue(authState("signed-out", "impersonation-code-invalid"));
+
+    render(
+      <ProtectedRoute>
+        <p>Secret dashboard</p>
+      </ProtectedRoute>,
+    );
+
+    expect(fakeLocation.href).toBe("http://studio.outfiqe.local:3000/crm?impersonation_code=stale");
+    expect(
+      screen.getByText("This support link has expired or was already used."),
+    ).toBeInTheDocument();
     expect(screen.queryByText("Secret dashboard")).not.toBeInTheDocument();
   });
 });

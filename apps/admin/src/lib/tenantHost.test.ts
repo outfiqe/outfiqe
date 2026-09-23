@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { isOnTenantHost } from "./tenantHost";
+import { buildTenantOrigin, isOnTenantHost } from "./tenantHost";
 
 const BASE_DOMAIN = import.meta.env.VITE_TENANT_BASE_DOMAIN ?? "localhost";
 
@@ -34,5 +34,30 @@ describe("isOnTenantHost", () => {
     setHostname(`admin.${BASE_DOMAIN}`);
 
     expect(isOnTenantHost()).toBe(false);
+  });
+});
+
+describe("buildTenantOrigin", () => {
+  it("swaps the hostname for the given subdomain, keeping the current protocol and port", () => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: {
+        ...originalLocation,
+        protocol: "https:",
+        port: "",
+        hostname: `admin.${BASE_DOMAIN}`,
+      },
+    });
+
+    expect(buildTenantOrigin("studio")).toBe(`https://studio.${BASE_DOMAIN}`);
+  });
+
+  it("preserves a non-default port for local development", () => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, protocol: "http:", port: "5173", hostname: BASE_DOMAIN },
+    });
+
+    expect(buildTenantOrigin("studio")).toBe(`http://studio.${BASE_DOMAIN}:5173`);
   });
 });
