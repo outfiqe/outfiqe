@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { env } from "#config/env.config.js";
 import { NotificationSurface, NotificationType } from "#generated/prisma/enums.js";
+import { buildOrganizationAdminUrl } from "#modules/crm-access/crm-access.utils.js";
 
 import { resolveNotificationTarget } from "./notification.targets.js";
 import type { NotificationMetadata } from "./notification.types.js";
@@ -169,6 +171,33 @@ describe("resolveNotificationTarget", () => {
       surface: NotificationSurface.ADMIN,
       path: "/orders/order-4",
     });
+  });
+
+  it("points a CRM item assignment at the tenant's own subdomain, not a same-origin relative path", () => {
+    const expectedUrl = buildOrganizationAdminUrl(
+      { subdomain: "acme", isPlatformOrg: false },
+      "/crm/tasks",
+      env.ADMIN_URL,
+      env.TENANT_BASE_DOMAIN,
+    );
+
+    expect(
+      resolve(NotificationType.CRM_ITEM_ASSIGNED, "task-1", {
+        crmItemKind: "task",
+        crmOrganizationSubdomain: "acme",
+        crmOrganizationIsPlatformOrg: false,
+      }),
+    ).toEqual({ surface: NotificationSurface.ADMIN, path: expectedUrl });
+    expect(expectedUrl).not.toBe("/crm/tasks");
+  });
+
+  it("falls back to the plain relative path when no organization subdomain is known", () => {
+    expect(
+      resolve(NotificationType.CRM_ITEM_ASSIGNED, "task-1", {
+        crmItemKind: "task",
+        crmOrganizationSubdomain: null,
+      }),
+    ).toEqual({ surface: NotificationSurface.ADMIN, path: "/crm/tasks" });
   });
 
   it("branches a support ticket reply by whether the recipient is staff", () => {
