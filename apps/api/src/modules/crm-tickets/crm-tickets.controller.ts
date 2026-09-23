@@ -22,14 +22,15 @@ const CREATED_STATUS = 201;
 
 export const crmTicketsController = {
   async listTickets(_req: Request, res: Response) {
-    const { status, assigneeMembershipId, type } = validated.query<ListTicketsQuery>(res);
+    const { status, assigneeMembershipId, type, cursor, limit } =
+      validated.query<ListTicketsQuery>(res);
     const organization = getResolvedOrganization(res);
-    const tickets = await crmTicketsService.listTickets(organization.id, {
-      status,
-      assigneeMembershipId,
-      type,
-    });
-    sendSuccess(res, tickets, "CRM tickets.");
+    const page = await crmTicketsService.listTickets(
+      organization.id,
+      { status, assigneeMembershipId, type },
+      { cursor, limit },
+    );
+    sendSuccess(res, page, "CRM tickets.");
   },
 
   async createTicket(_req: Request, res: Response) {

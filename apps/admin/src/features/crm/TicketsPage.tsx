@@ -13,7 +13,7 @@ import {
   Modal,
   Select,
 } from "@outfiqe/design-system";
-import { useApiMutation } from "@outfiqe/hooks";
+import { useApiMutation, useInfiniteCursorPage } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -178,14 +178,11 @@ export const TicketsPage = () => {
   });
 
   const [statusFilter, setStatusFilter] = useSearchFilter("status", TICKET_STATUS_FILTER);
-  const {
-    data: tickets,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: [...TICKETS_QUERY_KEY, statusFilter],
-    queryFn: () => crmTicketsApi.listTickets(statusFilter ? { status: statusFilter } : {}),
-  });
+  const { data, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
+    useInfiniteCursorPage([...TICKETS_QUERY_KEY, statusFilter], (cursor) =>
+      crmTicketsApi.listTickets({ ...(statusFilter ? { status: statusFilter } : {}), cursor }),
+    );
+  const tickets = data?.pages.flatMap((page) => page.tickets);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
@@ -270,6 +267,17 @@ export const TicketsPage = () => {
               </li>
             ))}
           </ul>
+        )}
+
+        {hasNextPage && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void fetchNextPage()}
+            isLoading={isFetchingNextPage}
+          >
+            Load more
+          </Button>
         )}
       </div>
 

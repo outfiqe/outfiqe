@@ -39,13 +39,14 @@ activities/tasks, support/ticketing, reporting, audit log) lives in the sibling 
   one definition of a valid tenant subdomain — unit-tested via `extractSubdomain` in
   `crm-access.utils.test.ts`), and `buildOrganizationAdminUrl` (see "Non-obvious rationale" for why
   invite/ownership-transfer emails need it instead of the raw `env.ADMIN_URL`).
-- `crm-access.service.ts` — business rules: invite target must already be an existing staff
-  account, one pending invite per email, accept requires the invite's email to match the accepting
-  account, the SUPERADMIN membership can't be edited via `updateMembership` (use ownership transfer
-  instead — see Non-obvious rationale), a member can't edit their **own** membership via
-  `updateMembership` (`MEMBERSHIP_SELF_UPDATE_FORBIDDEN` — the acting membership id comes from
-  `res.locals.crmMembership` via the controller; stops an admin demoting or deactivating themselves
-  into a lockout), one pending ownership-transfer request per organization at a time. Custom-role rules live here too — `createRole`/`updateRole`/`deleteRole`/
+- `crm-access.service.ts` — business rules: one pending invite per email, a seat-limit check
+  against the org's `crm-billing` subscription (see Non-obvious rationale), accept requires the
+  invite's email to match the accepting account, the SUPERADMIN membership can't be edited via
+  `updateMembership` (use ownership transfer instead — see Non-obvious rationale), a member can't
+  edit their **own** membership via `updateMembership` (`MEMBERSHIP_SELF_UPDATE_FORBIDDEN` — the
+  acting membership id comes from `res.locals.crmMembership` via the controller; stops an admin
+  demoting or deactivating themselves into a lockout), one pending ownership-transfer request per
+  organization at a time. Custom-role rules live here too — `createRole`/`updateRole`/`deleteRole`/
   `updateOrganization` (see the custom-role-builder bullet in Non-obvious rationale).
 - `crm-access.middleware.ts` — `resolveTenant` (resolves the request's `Organization` by
   subdomain, stores it on `res.locals.crmOrganization`), `requirePermission(key)` (reads that
@@ -105,6 +106,33 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   values can always be recomputed from the tenant's own rows by
   `prisma/backfill-crm-counters.ts` (`pnpm --filter @outfiqe/api db:backfill:crm-counters`),
   which is what the reconcile job runs.
+- **Sending an invite is serialized per organization with a Postgres advisory lock, not a bare
+  check-then-write.** `inviteMember` needs three reads to agree with each other — no existing
+  membership, no already-pending invite for that email, and the org hasn't used every seat its
+  `crm-billing` subscription paid for — and none of those three can be expressed as a single DB
+  constraint (the pending-invite check is time-bounded by `expiresAt`, which a partial unique index
+  can't encode, unlike the partial-unique pattern this codebase otherwise reaches for first — see
+  `crm-billing`, `withdraw-policies`, `coupon-redemptions`). Two concurrent invites for the same
+  email, or two concurrent invites that would each individually fit under the seat limit but not
+  together, would otherwise both read "safe" and both write. `crmAccessRepository
+.acquireOrganizationInviteLock` runs `pg_advisory_xact_lock(hashtext(organizationId))` as the
+  first statement inside the same `prisma.$transaction` that then does the checks and the
+  `organizationInvite.create` — the lock is released automatically when the transaction commits or
+  rolls back, and a second concurrent request for the same organization simply waits for the first
+  to finish rather than racing it. Seats in use counts active memberships plus other still-pending
+  invites, so reserving a seat by inviting doesn't let a second invite double-book it before the
+  first is even accepted. An organization with no `Subscription` row yet (still on its trial) has
+  no seat limit to check — `crm-billing`'s own trial/advanced-feature gate is what limits a trial,
+  not this.
+- **A failed invite email no longer leaves a phantom "pending" invite behind.** The invite row and
+  the email used to happen back to back with nothing catching a `sendEmail` failure; if the email
+  provider hiccuped, the caller got a 500 for what looked like a failed invite, but the invite row
+  had already committed — the next attempt would 409 with `INVITE_ALREADY_PENDING` for an invite
+  the sender never saw succeed. The DB write now happens first and is the only thing that can fail
+  the request; `sendEmail` is wrapped in its own try/catch that logs and swallows, the same
+  fire-and-forget treatment `platform-impersonation`'s session-started email already gets, since an
+  invite that exists but didn't get emailed is a recoverable ops issue (resend, or the invitee finds
+  the tenant's own `Pending invites` list), while a phantom invite blocking every future one is not.
 - **SUPERADMIN is not a `Role` row.** It's `Organization.superAdminMembershipId`, a direct FK to
   one `Membership` — so it can't be edited down, duplicated, or granted through the invite flow
   (`OrganizationInvite.roleId` only ever points at a real `Role`). It's set once by the seed
@@ -117,7 +145,12 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   subdomain is a `404`, never a silent fallback to the default org, since that would let a
   mistyped/malicious subdomain reach the wrong tenant's data. Only the _absence_ of a subdomain
   (today's only real traffic — `apps/admin` calls a single fixed API host) falls back to
-  `findDefaultOrganization()`. The result is stored once on `res.locals.crmOrganization`
+  `findDefaultOrganization()`, which is scoped to `TENANT_ORGANIZATION_SCOPE`
+  (`isPlatformOrg: false`) so it can never resolve to the platform organization itself — without
+  that filter, `ORDER BY createdAt ASC` would pick the platform org in practice, since it's always
+  the very first `Organization` row any environment ever seeds (`admin.<baseDomain>` and other
+  reserved hosts never carry a tenant subdomain, so every request against them used to hit exactly
+  this fallback). The result is stored once on `res.locals.crmOrganization`
   (`getResolvedOrganization`), so `requirePermission` and every controller method read it instead
   of re-querying — the same "resolve once, read from `res.locals`" shape `requireAuth`/
   `res.locals.auth` already uses.

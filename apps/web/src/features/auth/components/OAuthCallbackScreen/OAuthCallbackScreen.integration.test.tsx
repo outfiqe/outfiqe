@@ -76,6 +76,56 @@ describe("OAuthCallbackScreen", () => {
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/overview"));
   });
 
+  it("sends an admin to the admin app with a full navigation, not the in-app router", async () => {
+    mockCallbackParams({
+      linkToken: "link-token-456",
+      email: "staff@outfiqe.test",
+      provider: "google",
+    });
+    mswServer.use(
+      http.post(CONFIRM_LINK_URL, () =>
+        HttpResponse.json({
+          success: true,
+          message: "Account connected. You're now signed in.",
+          data: { accessToken: "access-token" },
+        }),
+      ),
+      http.get(CURRENT_USER_URL, () =>
+        HttpResponse.json({
+          success: true,
+          message: "Current user.",
+          data: {
+            id: "user-2",
+            name: "Staff Member",
+            email: "staff@outfiqe.test",
+            phone: null,
+            avatarUrl: null,
+            role: "ADMIN",
+            isCreator: false,
+            creatorStatus: "NONE",
+            hasPassword: true,
+          },
+        }),
+      ),
+    );
+    const originalLocation = window.location;
+    const locationReplace = vi.fn();
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, replace: locationReplace },
+    });
+    const user = userEvent.setup();
+
+    renderScreen();
+    await user.type(screen.getByLabelText("Password"), "correct-horse-battery");
+    await user.click(screen.getByRole("button", { name: "Connect Google" }));
+
+    await waitFor(() => expect(locationReplace).toHaveBeenCalledWith("/admin"));
+    expect(replace).not.toHaveBeenCalled();
+
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+  });
+
   it("surfaces an incorrect password without redirecting", async () => {
     mockCallbackParams({
       linkToken: "link-token-123",

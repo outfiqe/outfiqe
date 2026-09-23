@@ -6,6 +6,7 @@ import {
   SubscriptionInvoiceStatus,
   SubscriptionStatus,
 } from "#generated/prisma/enums.js";
+import type { DbClient } from "#types/db.types.js";
 
 import { PAST_DUE_GRACE_DAYS } from "./crm-billing.constants.js";
 import type {
@@ -36,8 +37,9 @@ const invoiceRecordSelect = {
 export const crmBillingRepository = {
   async findSubscriptionByOrganizationId(
     organizationId: string,
+    client: DbClient = prisma,
   ): Promise<SubscriptionRecord | null> {
-    return prisma.subscription.findUnique({ where: { organizationId } });
+    return client.subscription.findUnique({ where: { organizationId } });
   },
 
   async upsertSubscriptionPlan(input: {
@@ -197,8 +199,8 @@ export const crmBillingRepository = {
     });
   },
 
-  async countActiveMemberships(organizationId: string): Promise<number> {
-    return prisma.membership.count({ where: { organizationId, status: "ACTIVE" } });
+  async countActiveMemberships(organizationId: string, client: DbClient = prisma): Promise<number> {
+    return client.membership.count({ where: { organizationId, status: "ACTIVE" } });
   },
 
   async findSubscriptionsDueForRenewal(

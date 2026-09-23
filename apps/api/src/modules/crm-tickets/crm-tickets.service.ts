@@ -1,6 +1,7 @@
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import type { CrmTicketStatus } from "#generated/prisma/enums.js";
 import { applyCrmCounterDelta } from "#lib/crm-counters.js";
+import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { crmRelationshipsService } from "#modules/crm-relationships/crm-relationships.service.js";
 
@@ -9,6 +10,7 @@ import { crmTicketsRepository } from "./crm-tickets.repository.js";
 import type {
   CreateTicketInput,
   TicketCommentRecord,
+  TicketPage,
   TicketRecord,
   TicketSubjectRef,
   TicketWithComments,
@@ -91,15 +93,18 @@ export const crmTicketsService = {
     return ticket;
   },
 
-  listTickets(
+  async listTickets(
     organizationId: string,
     filters: {
       status?: CrmTicketStatus;
       assigneeMembershipId?: string;
       type?: TicketRecord["type"];
     },
-  ): Promise<TicketRecord[]> {
-    return crmTicketsRepository.listTickets(organizationId, filters);
+    page: { cursor?: string; limit: number },
+  ): Promise<TicketPage> {
+    const rows = await crmTicketsRepository.listTickets(organizationId, filters, page);
+    const { items, nextCursor } = buildCursorPage(rows, page.limit, (ticket) => ticket.id);
+    return { tickets: items, nextCursor };
   },
 
   async getTicket(organizationId: string, ticketId: string): Promise<TicketWithComments> {

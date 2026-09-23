@@ -10,19 +10,27 @@ notification.
 ## Structure
 
 - `crm-tickets.constants.ts` — `TICKET_SUBJECT_TYPES`, `ALLOWED_TICKET_TRANSITIONS` (the status
-  state machine), `RESOLVED_TICKET_STATUSES`.
-- `crm-tickets.types.ts` — `TicketRecord`, `TicketCommentRecord`, `TicketWithComments`.
+  state machine), `RESOLVED_TICKET_STATUSES`, `DEFAULT_TICKET_PAGE_SIZE` / `MAX_TICKET_PAGE_SIZE`
+  (50 / 200, the list endpoint's page size).
+- `crm-tickets.types.ts` — `TicketRecord`, `TicketCommentRecord`, `TicketWithComments`,
+  `TicketPage` (`{ tickets, nextCursor }`).
 - `crm-tickets.repository.ts` — Prisma CRUD; `transitionStatus` is a status-guarded `updateMany`
-  that stamps/clears `resolvedAt`, so a concurrent status change loses cleanly.
+  that stamps/clears `resolvedAt`, so a concurrent status change loses cleanly. `listTickets`
+  cursor-paginates (`take: limit + 1`, `orderBy` ending in `{ id: "desc" }` for a stable tiebreaker
+  under the status-then-recency sort) instead of returning every matching row — see Non-obvious
+  rationale.
 - `crm-tickets.service.ts` — subject validation (`isPartner`/`isCustomer` from
   `crm-relationships`), the transition-legality check against `ALLOWED_TICKET_TRANSITIONS`, and
   the `CRM_ITEM_ASSIGNED` domain-event publish on create-with-assignee and reassignment.
+  `listTickets` slices the over-fetched row with `buildCursorPage` (`#lib/pagination.utils.js`),
+  the same helper every other cursor-paginated list in this codebase uses.
 - `crm-tickets.controller.ts` / `crm-tickets.routes.ts` — `/api/crm/tickets` (+ `/:id/status`,
   `/:id/assignee`, `/:id/comments`), behind the tenant / auth / advanced-features chain and
   `tickets:read` / `tickets:write` / `tickets:manage` (assignment) permissions.
 - `crm-tickets.schemas.ts` — Zod validation.
 - `crm-tickets.integration.test.ts` — the forward-only lifecycle + `resolvedAt` stamp, the
-  comment thread, the assignment event (spied), subject and cross-tenant isolation.
+  comment thread, the assignment event (spied), subject and cross-tenant isolation, and
+  cursor pagination across two pages.
 
 ## Funnel
 
@@ -36,6 +44,16 @@ assignment.
 
 ## Non-obvious rationale
 
+- **`GET /tickets` is cursor-paginated.** `DEFAULT_TICKET_PAGE_SIZE`/`MAX_TICKET_PAGE_SIZE` existed
+  in `crm-tickets.constants.ts` from early on but were never actually wired into the query — the
+  endpoint fetched every ticket matching the filter with no `take` at all, getting slower as a
+  tenant's ticket history grew. `TicketsPage.tsx` already had a single-status filter, so paginating
+  was a drop-in fit: the repository now over-fetches by one row (`take: limit + 1`) and appends
+  `{ id: "desc" }` to the existing `[{ status: "asc" }, { createdAt: "desc" }]` sort as a stable
+  tiebreaker (Prisma's cursor pagination works with any `orderBy`, keyed off the cursor row's
+  position in that exact order, not just `id`), and the admin page now uses
+  `useInfiniteCursorPage` with a "Load more" button — the same pattern `support`'s ticket inbox
+  already uses.
 - **The status lifecycle is a declared state machine, not free-form.** `ALLOWED_TICKET_TRANSITIONS`
   lists the legal next states per status (forward `OPEN → IN_PROGRESS → RESOLVED → CLOSED`, plus
   reopen paths back to `IN_PROGRESS`/`OPEN`). An illegal jump is a `409 INVALID_TICKET_TRANSITION`;
