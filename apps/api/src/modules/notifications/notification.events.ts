@@ -8,6 +8,7 @@ import {
   UserRole,
   WithdrawRequestStatus,
 } from "#generated/prisma/enums.js";
+import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { NOTIFICATION_CONSUMER_GROUP, NOTIFICATION_GROUP_KEYS } from "./notification.constants.js";
@@ -315,6 +316,7 @@ export const registerNotificationEventConsumers = (): void => {
     event: DomainEvents.CRM_ITEM_ASSIGNED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
     handler: async ({
+      organizationId,
       itemKind,
       itemId,
       title,
@@ -322,6 +324,8 @@ export const registerNotificationEventConsumers = (): void => {
       assignedByUserId,
     }): Promise<void> => {
       if (assigneeUserId === assignedByUserId) return;
+
+      const organization = await crmAccessRepository.findOrganizationById(organizationId);
 
       await notificationService.notifyIndividual({
         recipientId: assigneeUserId,
@@ -332,7 +336,12 @@ export const registerNotificationEventConsumers = (): void => {
             ? NotificationEntityType.CRM_TICKET
             : NotificationEntityType.CRM_TASK,
         entityId: itemId,
-        metadata: { crmItemKind: itemKind, crmItemTitle: title },
+        metadata: {
+          crmItemKind: itemKind,
+          crmItemTitle: title,
+          crmOrganizationSubdomain: organization?.subdomain ?? null,
+          crmOrganizationIsPlatformOrg: organization?.isPlatformOrg ?? false,
+        },
       });
     },
   });

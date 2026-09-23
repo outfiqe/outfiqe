@@ -31,7 +31,9 @@ recipientIsStaff })`: pure, the single place that decides where a notification c
   computed once — where the recipient's context is known — instead of re-guessed by each client.
   Clients read those two fields and just navigate; each app treats the other surface's target as a
   cross-origin full-page navigation. `recipientIsStaff` is passed by the two support-reply
-  handlers whose recipient can be either the customer or an agent.
+  handlers whose recipient can be either the customer or an agent. `CRM_ITEM_ASSIGNED` is the one
+  `ADMIN`-surface target that also needs to cross a _tenant_ boundary, not just an app boundary —
+  see Non-obvious rationale.
 - `notification.repository.ts` — Prisma queries only. `createIndividual` (plain insert, ungrouped
   types) and `upsertGroup`/`retractGroupActor` (the race-safe grouped write/retraction — see
   rationale below) own the `notifications` table's write side; `findMutedRecipientIds` reads
@@ -109,6 +111,25 @@ profile, else `/brand/<brandId>` if they own a brand, else the recipient's own `
 this three-way check (`/creator/<handle>` 404s for a non-creator, so a plain shopper who owns no
 brand is the only case that falls through to `/profile`). Clients navigate to the stored path
 and delete their own type→route guessing.
+
+**`CRM_ITEM_ASSIGNED` resolves to an absolute, tenant-qualified URL, not a bare admin path.**
+`apps/admin`'s CRM area resolves its organization from the _request's hostname_
+(`resolveTenant` in `crm-access.middleware.ts`), not from the viewer's own membership — a plain
+`/crm/tasks` router link only lands on the right tenant's data if the recipient happens to already
+be on that tenant's subdomain when they click it, which is not guaranteed (a CRM member can belong
+to more than one tenant, or be browsing the platform's own host, or a different tenant's subdomain,
+at the time). `notification.events.ts`'s `CRM_ITEM_ASSIGNED` consumer looks up the assigning
+organization's `subdomain`/`isPlatformOrg` and stores them on the notification's `metadata`;
+`resolveNotificationTarget` then builds the link with `crm-access`'s `buildOrganizationAdminUrl` —
+the same helper the billing return-URL and invite/ownership-transfer emails already use for this
+exact problem — instead of the bare relative path. `AdminNotificationBell` needed no change: it
+already treats any `target_path` starting with `http(s)://` as external and opens it in a new tab
+(`isExternalNotificationPath`, from `@outfiqe/utils`), the same path an `ANNOUNCEMENT`'s explicit
+`announcementTargetPath` already takes — `CRM_ITEM_ASSIGNED` just never populated the field that
+would trigger it. A click always opens in a new tab now, even when the recipient happens to
+already be on the right subdomain, because the write path can't know that in advance; correctness
+(never showing the wrong tenant's board) outweighs occasionally opening a tab that wasn't strictly
+needed.
 
 `target_path` is a cache, and it goes stale when the resolver or the denormalized metadata it
 reads changes — a row written before `isCreator`/`brandId`/`lookOwnerHandle` were added keeps

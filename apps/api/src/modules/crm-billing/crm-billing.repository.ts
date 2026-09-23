@@ -75,6 +75,37 @@ export const crmBillingRepository = {
     return toSubscriptionInvoiceRecord(invoice);
   },
 
+  async findOpenInvoiceForSubscription(
+    subscriptionId: string,
+  ): Promise<SubscriptionInvoiceRecord | null> {
+    const invoice = await prisma.subscriptionInvoice.findFirst({
+      where: { subscriptionId, status: SubscriptionInvoiceStatus.OPEN },
+      select: invoiceRecordSelect,
+    });
+    return invoice ? toSubscriptionInvoiceRecord(invoice) : null;
+  },
+
+  async refreshOpenInvoice(
+    invoiceId: string,
+    input: Omit<CreateInvoiceInput, "subscriptionId">,
+  ): Promise<SubscriptionInvoiceRecord> {
+    const invoice = await prisma.subscriptionInvoice.update({
+      where: { id: invoiceId },
+      data: {
+        plan: input.plan,
+        seats: input.seats,
+        amount: input.amount,
+        periodStart: input.periodStart,
+        periodEnd: input.periodEnd,
+        provider: null,
+        providerRef: null,
+        initiatedAt: null,
+      },
+      select: invoiceRecordSelect,
+    });
+    return toSubscriptionInvoiceRecord(invoice);
+  },
+
   async markInvoiceInitiated(
     invoiceId: string,
     provider: CrmBillingProvider,
