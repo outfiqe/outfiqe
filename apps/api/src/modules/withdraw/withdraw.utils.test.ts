@@ -99,7 +99,10 @@ describe("toWithdrawRequestView", () => {
 describe("toAdminWithdrawRequestView", () => {
   it("names a creator-owned request after the creator and their bank account", () => {
     const view = toAdminWithdrawRequestView(
-      adminRow({ creator: { name: "Priya" }, bankAccount: { accountNumberLast4: "1234" } }),
+      adminRow({
+        creator: { name: "Priya" },
+        bankAccount: { accountNumberLast4: "1234", qrCodeImageUrl: null },
+      }),
     );
     expect(view.ownerName).toBe("Priya");
     expect(view.bankAccountLast4).toBe("1234");
@@ -107,7 +110,10 @@ describe("toAdminWithdrawRequestView", () => {
 
   it("falls back to the brand name and brand bank account when there is no creator", () => {
     const view = toAdminWithdrawRequestView(
-      adminRow({ brand: { name: "Kastha" }, brandBankAccount: { accountNumberLast4: "9876" } }),
+      adminRow({
+        brand: { name: "Kastha" },
+        brandBankAccount: { accountNumberLast4: "9876", qrCodeImageUrl: null },
+      }),
     );
     expect(view.ownerName).toBe("Kastha");
     expect(view.bankAccountLast4).toBe("9876");

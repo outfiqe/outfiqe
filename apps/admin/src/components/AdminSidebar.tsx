@@ -37,6 +37,7 @@ import {
   Package,
   Percent,
   PiggyBank,
+  QrCode,
   Ruler,
   ScrollText,
   ShieldAlert,
@@ -297,6 +298,13 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     href: "/withdraw-requests",
     label: "Withdrawal requests",
     icon: BanknoteArrowUp,
+    group: "finance",
+  },
+  {
+    id: "bank-accounts",
+    href: "/bank-accounts",
+    label: "Bank accounts",
+    icon: QrCode,
     group: "finance",
   },
   {

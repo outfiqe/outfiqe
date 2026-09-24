@@ -78,6 +78,7 @@ const validBody = (bankId: string, overrides: Partial<Record<string, string>> = 
   accountNumber: "1234567890",
   confirmAccountNumber: "1234567890",
   branchName: "Kamaladi",
+  qrCodeImageUrl: "https://cdn.outfiqe.test/brand-bank-qr.png",
   ...overrides,
 });
 
@@ -271,5 +272,50 @@ describe("admin brand bank account actions", () => {
       .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
 
     expect(response.status).toBe(NOT_FOUND_STATUS);
+  });
+});
+
+describe("GET /api/brand-bank-accounts/admin", () => {
+  it("lists accounts with the brand's name and the uploaded QR code, filterable by verified", async () => {
+    const brand = await createBrand();
+    const member = await createMember(brand.id);
+    const admin = await createAdmin();
+    const bank = await createBank();
+
+    const created = await request(testApp)
+      .post("/api/brand-bank-accounts")
+      .set("Authorization", authHeaderFor(member.id, UserRole.BRAND_OWNER))
+      .send(validBody(bank.id));
+    const id = created.body.data.bankAccount.id;
+
+    const pending = await request(testApp)
+      .get("/api/brand-bank-accounts/admin?verified=false")
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
+    expect(pending.status).toBe(OK_STATUS);
+    const row = pending.body.data.items.find((item: { id: string }) => item.id === id);
+    expect(row).toMatchObject({
+      ownerName: brand.name,
+      qrCodeImageUrl: "https://cdn.outfiqe.test/brand-bank-qr.png",
+      isVerified: false,
+    });
+
+    await request(testApp)
+      .patch(`/api/brand-bank-accounts/${id}/verify`)
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
+
+    const verified = await request(testApp)
+      .get("/api/brand-bank-accounts/admin?verified=true")
+      .set("Authorization", authHeaderFor(admin.id, UserRole.ADMIN));
+    expect(verified.body.data.items.some((item: { id: string }) => item.id === id)).toBe(true);
+  });
+
+  it("requires platform access", async () => {
+    const outsider = await createUser();
+
+    const response = await request(testApp)
+      .get("/api/brand-bank-accounts/admin")
+      .set("Authorization", authHeaderFor(outsider.id, UserRole.BRAND_OWNER));
+
+    expect(response.status).toBe(FORBIDDEN_STATUS);
   });
 });

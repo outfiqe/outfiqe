@@ -6,6 +6,7 @@ export type BankAccountRecord = {
   accountNumberCiphertext: string;
   accountNumberLast4: string;
   branchName: string;
+  qrCodeImageUrl: string | null;
   isDefault: boolean;
   isVerified: boolean;
   verifiedAt: Date | null;
@@ -22,6 +23,7 @@ export type PublicBankAccount = {
   accountName: string;
   accountNumberLast4: string;
   branchName: string;
+  qrCodeImageUrl: string | null;
   isDefault: boolean;
   isVerified: boolean;
 };
@@ -33,10 +35,28 @@ export type CreateBankAccountRepositoryInput = {
   accountNumberCiphertext: string;
   accountNumberLast4: string;
   branchName: string;
+  qrCodeImageUrl: string;
   isDefault: boolean;
 };
 
 export type CreateBankAccountResult = {
   bankAccount: PublicBankAccount;
   nameMismatch: boolean;
+};
+
+export type AdminBankAccountView = {
+  id: string;
+  ownerName: string;
+  bankName: string;
+  accountName: string;
+  accountNumberLast4: string;
+  branchName: string;
+  qrCodeImageUrl: string | null;
+  isVerified: boolean;
+  verifiedAt: string | null;
+  createdAt: string;
+};
+
+export type RevealedBankAccount = {
+  accountNumber: string;
 };

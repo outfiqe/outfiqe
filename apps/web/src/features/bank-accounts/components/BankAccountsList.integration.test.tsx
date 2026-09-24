@@ -58,6 +58,7 @@ describe("BankAccountsList", () => {
               branchName: "Kathmandu",
               isDefault: true,
               isVerified: true,
+              qrCodeImageUrl: null,
             },
           ],
         }),

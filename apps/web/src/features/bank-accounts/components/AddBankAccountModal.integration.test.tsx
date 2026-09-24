@@ -23,26 +23,44 @@ const mockBanks = () => {
 
 const renderModal = (onClose = vi.fn()) => {
   const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
-  render(
+  const utils = render(
     <QueryClientProvider client={queryClient}>
       <AddBankAccountModal ownerType="CREATOR" onClose={onClose} />
       <Toaster />
     </QueryClientProvider>,
   );
-  return onClose;
+  return { onClose, container: utils.container };
 };
 
-const fillValidForm = async (user: ReturnType<typeof userEvent.setup>) => {
+const uploadQrCode = async (user: ReturnType<typeof userEvent.setup>, container: HTMLElement) => {
+  const fileInput = container.querySelector<HTMLInputElement>('input[type="file"]');
+  if (!fileInput) throw new Error("QR upload input not found");
+  const qrFile = new File(["qr"], "bank-qr.png", { type: "image/png" });
+  await user.upload(fileInput, qrFile);
+  await screen.findByRole("button", { name: "Remove image" });
+};
+
+const fillValidForm = async (user: ReturnType<typeof userEvent.setup>, container: HTMLElement) => {
   await user.selectOptions(screen.getByLabelText("Bank"), "bank-1");
   await user.type(screen.getByLabelText("Account holder name"), "Sabin Shrestha");
   await user.type(screen.getByLabelText("Account number"), "1234567890");
   await user.type(screen.getByLabelText("Confirm account number"), "1234567890");
   await user.type(screen.getByLabelText("Branch"), "Kathmandu");
+  await uploadQrCode(user, container);
 };
 
 describe("AddBankAccountModal", () => {
   beforeEach(() => {
     mockBanks();
+    mswServer.use(
+      http.post("/api/uploads", () =>
+        HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: { files: [{ url: "https://cdn.test/bank-qr.png", key: "bank-qr" }] },
+        }),
+      ),
+    );
   });
 
   it("rejects mismatched account numbers before submitting", async () => {
@@ -92,6 +110,7 @@ describe("AddBankAccountModal", () => {
               branchName: "Kathmandu",
               isDefault: true,
               isVerified: false,
+              qrCodeImageUrl: null,
             },
             nameMismatch: true,
           },
@@ -100,8 +119,8 @@ describe("AddBankAccountModal", () => {
     );
 
     const user = userEvent.setup();
-    const onClose = renderModal();
-    await fillValidForm(user);
+    const { onClose, container } = renderModal();
+    await fillValidForm(user, container);
     await user.click(screen.getByRole("button", { name: "Add bank account" }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
@@ -123,8 +142,8 @@ describe("AddBankAccountModal", () => {
     );
 
     const user = userEvent.setup();
-    renderModal();
-    await fillValidForm(user);
+    const { container } = renderModal();
+    await fillValidForm(user, container);
     await user.click(screen.getByRole("button", { name: "Add bank account" }));
 
     expect(await screen.findByText("This bank isn't available for selection.")).toBeInTheDocument();

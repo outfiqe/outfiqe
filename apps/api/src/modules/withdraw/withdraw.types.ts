@@ -90,6 +90,8 @@ export type WithdrawRequestView = {
 
 export type AdminWithdrawRequestView = WithdrawRequestView & {
   ownerName: string;
+  bankAccountId: string;
   bankAccountLast4: string;
+  qrCodeImageUrl: string | null;
   firstApprovedById: string | null;
 };
