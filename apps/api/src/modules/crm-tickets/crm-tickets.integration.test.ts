@@ -145,6 +145,50 @@ describe("CRM tickets", () => {
     expect(finalTicket.resolvedAt).not.toBeNull();
   });
 
+  it("cursor-paginates the ticket list instead of returning every row unbounded", async () => {
+    const tenant = await seedTicketsTenant();
+    const createTicket = (title: string) =>
+      request(testApp)
+        .post("/api/crm/tickets")
+        .set("Host", tenant.host)
+        .set("Authorization", tenant.auth)
+        .send({
+          type: "REQUEST",
+          title,
+          description: "d",
+          subjectType: "customer",
+          subjectId: tenant.customer.id,
+        });
+
+    for (const title of ["First", "Second", "Third"]) {
+      await createTicket(title);
+    }
+
+    const firstPage = await request(testApp)
+      .get("/api/crm/tickets")
+      .query({ limit: 2 })
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+    expect(firstPage.status).toBe(200);
+    expect(firstPage.body.data.tickets).toHaveLength(2);
+    expect(firstPage.body.data.nextCursor).not.toBeNull();
+
+    const secondPage = await request(testApp)
+      .get("/api/crm/tickets")
+      .query({ limit: 2, cursor: firstPage.body.data.nextCursor })
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth);
+    expect(secondPage.status).toBe(200);
+    expect(secondPage.body.data.tickets).toHaveLength(1);
+    expect(secondPage.body.data.nextCursor).toBeNull();
+
+    const seenIds = new Set([
+      ...firstPage.body.data.tickets.map((ticket: { id: string }) => ticket.id),
+      ...secondPage.body.data.tickets.map((ticket: { id: string }) => ticket.id),
+    ]);
+    expect(seenIds.size).toBe(3);
+  });
+
   it("adds an internal comment thread", async () => {
     const tenant = await seedTicketsTenant();
     const created = await request(testApp)
@@ -262,6 +306,6 @@ describe("CRM tickets", () => {
       .get("/api/crm/tickets")
       .set("Host", other.host)
       .set("Authorization", other.auth);
-    expect(listOther.body.data).toEqual([]);
+    expect(listOther.body.data).toEqual({ tickets: [], nextCursor: null });
   });
 });

@@ -6,6 +6,7 @@ import {
   BanknoteArrowUp,
   LayoutDashboard,
   LayoutGrid,
+  LifeBuoy,
   MapPin,
   MessageCircleOff,
   Package,
@@ -52,6 +53,13 @@ const OVERVIEW_NAV_ITEM: SidebarNavItem = {
   icon: LayoutDashboard,
 };
 
+const SUPPORT_NAV_ITEM: SidebarNavItem = {
+  id: "support",
+  href: "/support",
+  label: "Support",
+  icon: LifeBuoy,
+};
+
 const CREATOR_NAV: SidebarNavItem[] = [
   OVERVIEW_NAV_ITEM,
   { id: "profile", href: "/profile", label: "Profile", icon: User },
@@ -64,6 +72,7 @@ const CREATOR_NAV: SidebarNavItem[] = [
   ADDRESSES_NAV_ITEM,
   CHAT_SETTINGS_NAV_ITEM,
   SECURITY_NAV_ITEM,
+  SUPPORT_NAV_ITEM,
 ];
 
 const APPROVED_CREATOR_ONLY_NAV_IDS = new Set(["share", "earnings", "withdraw"]);
@@ -77,6 +86,7 @@ const BRAND_NAV: SidebarNavItem[] = [
   { id: "wallet", href: "/wallet", label: "Wallet", icon: Wallet },
   CHAT_SETTINGS_NAV_ITEM,
   SECURITY_NAV_ITEM,
+  SUPPORT_NAV_ITEM,
 ];
 
 const CRM_NAV_ITEM: SidebarNavItem = {

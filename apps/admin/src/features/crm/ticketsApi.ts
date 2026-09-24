@@ -2,7 +2,8 @@ import { apiClient } from "@/lib/apiClient";
 
 import {
   type Ticket,
-  ticketListSchema,
+  type TicketPage,
+  ticketPageSchema,
   ticketSchema,
   type TicketStatusValue,
   type TicketTypeValue,
@@ -11,9 +12,11 @@ import {
 } from "./ticketsSchemas";
 
 export const crmTicketsApi = {
-  async listTickets(filters: { status?: TicketStatusValue } = {}): Promise<Ticket[]> {
-    const res = await apiClient.get<Ticket[]>("/crm/tickets", { params: filters });
-    return ticketListSchema.parse(res.data);
+  async listTickets(
+    filters: { status?: TicketStatusValue; cursor?: string } = {},
+  ): Promise<TicketPage> {
+    const res = await apiClient.get<TicketPage>("/crm/tickets", { params: filters });
+    return ticketPageSchema.parse(res.data);
   },
 
   async getTicket(ticketId: string): Promise<TicketWithComments> {

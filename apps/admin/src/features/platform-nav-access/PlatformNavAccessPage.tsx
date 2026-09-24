@@ -35,6 +35,7 @@ const NAV_KEY_LABELS: Record<PlatformNavKey, string> = {
   "platform-commission": "Platform commission",
   "withdraw-requests": "Withdrawal requests",
   "withdraw-policy": "Withdrawal policy",
+  "bank-accounts": "Bank accounts",
   "financial-rollup": "Financial rollup",
   coupons: "Coupons",
   announcements: "Announcements",

@@ -6,6 +6,7 @@ import {
   SubscriptionInvoiceStatus,
   SubscriptionStatus,
 } from "#generated/prisma/enums.js";
+import type { DbClient } from "#types/db.types.js";
 
 import { PAST_DUE_GRACE_DAYS } from "./crm-billing.constants.js";
 import type {
@@ -36,8 +37,9 @@ const invoiceRecordSelect = {
 export const crmBillingRepository = {
   async findSubscriptionByOrganizationId(
     organizationId: string,
+    client: DbClient = prisma,
   ): Promise<SubscriptionRecord | null> {
-    return prisma.subscription.findUnique({ where: { organizationId } });
+    return client.subscription.findUnique({ where: { organizationId } });
   },
 
   async upsertSubscriptionPlan(input: {
@@ -69,6 +71,37 @@ export const crmBillingRepository = {
         periodStart: input.periodStart,
         periodEnd: input.periodEnd,
         status: SubscriptionInvoiceStatus.OPEN,
+      },
+      select: invoiceRecordSelect,
+    });
+    return toSubscriptionInvoiceRecord(invoice);
+  },
+
+  async findOpenInvoiceForSubscription(
+    subscriptionId: string,
+  ): Promise<SubscriptionInvoiceRecord | null> {
+    const invoice = await prisma.subscriptionInvoice.findFirst({
+      where: { subscriptionId, status: SubscriptionInvoiceStatus.OPEN },
+      select: invoiceRecordSelect,
+    });
+    return invoice ? toSubscriptionInvoiceRecord(invoice) : null;
+  },
+
+  async refreshOpenInvoice(
+    invoiceId: string,
+    input: Omit<CreateInvoiceInput, "subscriptionId">,
+  ): Promise<SubscriptionInvoiceRecord> {
+    const invoice = await prisma.subscriptionInvoice.update({
+      where: { id: invoiceId },
+      data: {
+        plan: input.plan,
+        seats: input.seats,
+        amount: input.amount,
+        periodStart: input.periodStart,
+        periodEnd: input.periodEnd,
+        provider: null,
+        providerRef: null,
+        initiatedAt: null,
       },
       select: invoiceRecordSelect,
     });
@@ -166,8 +199,8 @@ export const crmBillingRepository = {
     });
   },
 
-  async countActiveMemberships(organizationId: string): Promise<number> {
-    return prisma.membership.count({ where: { organizationId, status: "ACTIVE" } });
+  async countActiveMemberships(organizationId: string, client: DbClient = prisma): Promise<number> {
+    return client.membership.count({ where: { organizationId, status: "ACTIVE" } });
   },
 
   async findSubscriptionsDueForRenewal(

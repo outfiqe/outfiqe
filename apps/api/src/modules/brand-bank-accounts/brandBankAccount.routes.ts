@@ -1,6 +1,10 @@
 ﻿import { Router } from "express";
 
-import { bankAccountBodySchema, bankAccountIdParamSchema } from "#lib/bank-account-body.schemas.js";
+import {
+  bankAccountBodySchema,
+  bankAccountIdParamSchema,
+  listAdminBankAccountsQuerySchema,
+} from "#lib/bank-account-body.schemas.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
@@ -52,4 +56,11 @@ brandBankAccountRoutes.get(
   ...requireAdmin,
   validate({ params: bankAccountIdParamSchema }),
   brandBankAccountController.reveal,
+);
+
+brandBankAccountRoutes.get(
+  "/admin",
+  ...requireAdmin,
+  validate({ query: listAdminBankAccountsQuerySchema }),
+  brandBankAccountController.listAllAdmin,
 );

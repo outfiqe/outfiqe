@@ -73,7 +73,9 @@ const mockCommon = (
         ],
       }),
     ),
-    http.get(`${API_BASE}/crm/tickets`, () => HttpResponse.json({ success: true, data: [TICKET] })),
+    http.get(`${API_BASE}/crm/tickets`, () =>
+      HttpResponse.json({ success: true, data: { tickets: [TICKET], nextCursor: null } }),
+    ),
   );
 };
 
@@ -268,7 +270,7 @@ describe("TicketsPage", () => {
     mswServer.use(
       http.get(`${API_BASE}/crm/tickets`, ({ request }) => {
         lastStatusParam = new URL(request.url).searchParams.get("status");
-        return HttpResponse.json({ success: true, data: [TICKET] });
+        return HttpResponse.json({ success: true, data: { tickets: [TICKET], nextCursor: null } });
       }),
     );
 
@@ -288,7 +290,7 @@ describe("TicketsPage", () => {
     mswServer.use(
       http.get(`${API_BASE}/crm/tickets`, ({ request }) => {
         lastStatusParam = new URL(request.url).searchParams.get("status");
-        return HttpResponse.json({ success: true, data: [TICKET] });
+        return HttpResponse.json({ success: true, data: { tickets: [TICKET], nextCursor: null } });
       }),
     );
 

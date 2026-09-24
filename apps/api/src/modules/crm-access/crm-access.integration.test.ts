@@ -742,6 +742,22 @@ describe("Tenant resolution via subdomain", () => {
     expect(response.body.data.id).toBe(organization.id);
   });
 
+  it("never falls back to the platform organization itself, even though it's always seeded first", async () => {
+    await ensurePlatformOrganizationExists();
+    const { organization, adminRole } = await seedOrganization();
+    const staff = await createStaffUser("Default Org User Two");
+    const membership = await addMembership(organization.id, staff.id, adminRole.id);
+    await makeSuperAdmin(organization.id, membership.id);
+
+    const response = await request(testApp)
+      .get("/api/crm/organization")
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.id).toBe(organization.id);
+    expect(response.body.data.isPlatformOrg).not.toBe(true);
+  });
+
   it("prefers X-Forwarded-Host over the literal Host header, matching a real proxy chain", async () => {
     const { organization, adminRole } = await seedOrganization({ subdomain: "proxied-corp" });
     const staff = await createStaffUser("Proxied Owner");
@@ -993,6 +1009,95 @@ describe("CRM invites", () => {
 
     const strangerUser = await prisma.user.findUnique({ where: { email: strangerEmail } });
     expect(strangerUser).toBeNull();
+  });
+
+  it("enforces the subscription's seat limit when inviting a new member", async () => {
+    const { organization, adminRole, memberRole } = await seedOrganization();
+    const superAdminUser = await createStaffUser("Seat Limit Inviter");
+    const superAdminMembership = await addMembership(
+      organization.id,
+      superAdminUser.id,
+      adminRole.id,
+    );
+    await makeSuperAdmin(organization.id, superAdminMembership.id);
+
+    await prisma.subscription.create({
+      data: {
+        organizationId: organization.id,
+        plan: "starter",
+        seats: 1,
+        status: "ACTIVE",
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    const response = await request(testApp)
+      .post("/api/crm/invites")
+      .set("Authorization", authHeaderFor(superAdminUser.id))
+      .send({ email: `over-seat-${randomUUID()}@outfiqe.test`, roleId: memberRole.id });
+
+    expect(response.status).toBe(409);
+    expect(response.body.code).toBe("SEAT_LIMIT_REACHED");
+    expect(
+      await prisma.organizationInvite.count({ where: { organizationId: organization.id } }),
+    ).toBe(0);
+  });
+
+  it("does not enforce a seat limit while the organization has no subscription yet", async () => {
+    const { organization, adminRole, memberRole } = await seedOrganization();
+    const superAdminUser = await createStaffUser("Trial Inviter");
+    const superAdminMembership = await addMembership(
+      organization.id,
+      superAdminUser.id,
+      adminRole.id,
+    );
+    await makeSuperAdmin(organization.id, superAdminMembership.id);
+
+    const response = await request(testApp)
+      .post("/api/crm/invites")
+      .set("Authorization", authHeaderFor(superAdminUser.id))
+      .send({ email: `trial-invite-${randomUUID()}@outfiqe.test`, roleId: memberRole.id });
+
+    expect(response.status).toBe(201);
+  });
+
+  it("never oversells seats under two concurrent invite requests at the limit", async () => {
+    const { organization, adminRole, memberRole } = await seedOrganization();
+    const superAdminUser = await createStaffUser("Concurrent Seat Inviter");
+    const superAdminMembership = await addMembership(
+      organization.id,
+      superAdminUser.id,
+      adminRole.id,
+    );
+    await makeSuperAdmin(organization.id, superAdminMembership.id);
+
+    await prisma.subscription.create({
+      data: {
+        organizationId: organization.id,
+        plan: "starter",
+        seats: 2,
+        status: "ACTIVE",
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    const inviteOnce = () =>
+      request(testApp)
+        .post("/api/crm/invites")
+        .set("Authorization", authHeaderFor(superAdminUser.id))
+        .send({ email: `concurrent-seat-${randomUUID()}@outfiqe.test`, roleId: memberRole.id });
+
+    const [first, second] = await Promise.all([inviteOnce(), inviteOnce()]);
+    const statuses = [first.status, second.status].sort();
+
+    expect(statuses).toEqual([201, 409]);
+    const rejected = first.status === 409 ? first : second;
+    expect(rejected.body.code).toBe("SEAT_LIMIT_REACHED");
+
+    const pendingInvites = await prisma.organizationInvite.count({
+      where: { organizationId: organization.id, acceptedAt: null, revokedAt: null },
+    });
+    expect(pendingInvites).toBe(1);
   });
 
   it("resolves two concurrent accepts of the same invite cleanly, without a raw server error", async () => {

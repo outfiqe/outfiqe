@@ -1,6 +1,7 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 import { setAccessToken, setUnauthorizedHandler } from "@/lib/apiClient";
+import { IMPERSONATION_CODE_QUERY_PARAM } from "@/lib/impersonationHandoff";
 
 import { authApi } from "./api";
 import type { AdminUser } from "./schemas";
@@ -8,7 +9,7 @@ import type { AdminUser } from "./schemas";
 const canAccessAdminApp = (role: AdminUser["role"]): boolean =>
   role === "ADMIN" || role === "BRAND_OWNER";
 
-export type SignedOutReason = "session-ended" | "user-signed-out";
+export type SignedOutReason = "session-ended" | "user-signed-out" | "impersonation-code-invalid";
 
 type AuthState =
   | { status: "loading" }
@@ -30,7 +31,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setUnauthorizedHandler(() => setState({ status: "signed-out", reason: "session-ended" }));
 
+    const stripImpersonationCodeFromUrl = () => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete(IMPERSONATION_CODE_QUERY_PARAM);
+      window.history.replaceState(null, "", url);
+    };
+
+    const redeemImpersonationCode = async (code: string): Promise<void> => {
+      try {
+        const { accessToken } = await authApi.redeemImpersonationCode(code);
+        setAccessToken(accessToken);
+        const user = await authApi.me();
+        stripImpersonationCodeFromUrl();
+        setState(
+          canAccessAdminApp(user.role)
+            ? { status: "signed-in", user }
+            : { status: "signed-out", reason: "session-ended" },
+        );
+      } catch {
+        stripImpersonationCodeFromUrl();
+        setState({ status: "signed-out", reason: "impersonation-code-invalid" });
+      }
+    };
+
     const restoreSession = async () => {
+      const impersonationCode = new URLSearchParams(window.location.search).get(
+        IMPERSONATION_CODE_QUERY_PARAM,
+      );
+      if (impersonationCode) {
+        await redeemImpersonationCode(impersonationCode);
+        return;
+      }
+
       try {
         const { accessToken } = await authApi.refresh();
         setAccessToken(accessToken);

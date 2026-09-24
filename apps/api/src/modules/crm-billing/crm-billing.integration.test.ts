@@ -154,6 +154,78 @@ describe("POST /api/crm/billing/checkout", () => {
     expect(invoice.amount).toBe(2700);
   });
 
+  it("reuses the existing open invoice instead of creating a duplicate on a second checkout", async () => {
+    const { organization, staff, host } = await setUpTenantWithSuperAdmin();
+
+    const first = await request(testApp)
+      .post("/api/crm/billing/checkout")
+      .set("Host", host)
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({ plan: "starter", seats: 3, provider: "ESEWA" });
+    expect(first.status).toBe(200);
+
+    const second = await request(testApp)
+      .post("/api/crm/billing/checkout")
+      .set("Host", host)
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({ plan: "starter", seats: 5, provider: "KHALTI" });
+    expect(second.status).toBe(200);
+
+    expect(second.body.data.invoiceId).toBe(first.body.data.invoiceId);
+
+    const invoices = await prisma.subscriptionInvoice.findMany({
+      where: { subscription: { organizationId: organization.id } },
+    });
+    expect(invoices).toHaveLength(1);
+    expect(invoices[0]).toMatchObject({ seats: 5, status: "OPEN", provider: "KHALTI" });
+    expect(khaltiInitiate).toHaveBeenCalledOnce();
+  });
+
+  it("still ends up with exactly one open invoice under two concurrent checkout requests", async () => {
+    const { organization, staff, host } = await setUpTenantWithSuperAdmin();
+
+    const fireCheckout = () =>
+      request(testApp)
+        .post("/api/crm/billing/checkout")
+        .set("Host", host)
+        .set("Authorization", authHeaderFor(staff.id))
+        .send({ plan: "starter", seats: 3, provider: "ESEWA" });
+
+    const [first, second] = await Promise.all([fireCheckout(), fireCheckout()]);
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+
+    const openInvoices = await prisma.subscriptionInvoice.findMany({
+      where: { subscription: { organizationId: organization.id }, status: "OPEN" },
+    });
+    expect(openInvoices).toHaveLength(1);
+  });
+
+  it("starts a fresh invoice once the previous one was voided", async () => {
+    const { organization, staff, host } = await setUpTenantWithSuperAdmin();
+    esewaInitiate.mockRejectedValueOnce(new Error("ECONNREFUSED esewa.example"));
+
+    const first = await request(testApp)
+      .post("/api/crm/billing/checkout")
+      .set("Host", host)
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({ plan: "starter", seats: 3, provider: "ESEWA" });
+    expect(first.status).toBe(502);
+
+    const second = await request(testApp)
+      .post("/api/crm/billing/checkout")
+      .set("Host", host)
+      .set("Authorization", authHeaderFor(staff.id))
+      .send({ plan: "starter", seats: 3, provider: "ESEWA" });
+    expect(second.status).toBe(200);
+
+    const invoices = await prisma.subscriptionInvoice.findMany({
+      where: { subscription: { organizationId: organization.id } },
+    });
+    expect(invoices).toHaveLength(2);
+    expect(invoices.map((invoice) => invoice.status).sort()).toEqual(["OPEN", "VOID"]);
+  });
+
   it("never sells fewer seats than the organization has active members", async () => {
     const { organization, staff, host } = await setUpTenantWithSuperAdmin();
     await addActiveMembers(organization.id, 4);

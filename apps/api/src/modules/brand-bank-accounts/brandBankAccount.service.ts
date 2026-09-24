@@ -4,18 +4,24 @@ import {
   encryptAccountNumber,
   lastFourDigits,
 } from "#lib/account-number-encryption.utils.js";
-import type { BankAccountBody } from "#lib/bank-account-body.schemas.js";
+import type {
+  BankAccountBody,
+  ListAdminBankAccountsQuery,
+} from "#lib/bank-account-body.schemas.js";
 import { isNameMismatch } from "#lib/name-mismatch.utils.js";
+import { buildCursorPage } from "#lib/pagination.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
 import { nepalBankService } from "#modules/nepal-banks/nepalBank.service.js";
 
 import { brandBankAccountRepository } from "./brandBankAccount.repository.js";
 import type {
+  AdminBrandBankAccountView,
   CreateBrandBankAccountResult,
   PublicBrandBankAccount,
+  RevealedBrandBankAccount,
 } from "./brandBankAccount.types.js";
-import { toPublicBrandBankAccount } from "./brandBankAccount.utils.js";
+import { toAdminBrandBankAccountView, toPublicBrandBankAccount } from "./brandBankAccount.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 
@@ -36,6 +42,7 @@ export const brandBankAccountService = {
           accountNumberCiphertext: encryptAccountNumber(body.accountNumber),
           accountNumberLast4: lastFourDigits(body.accountNumber),
           branchName: body.branchName,
+          qrCodeImageUrl: body.qrCodeImageUrl,
           isDefault: existingCount === 0,
         },
         tx,
@@ -66,11 +73,20 @@ export const brandBankAccountService = {
     await brandBankAccountRepository.verify(id, adminId);
   },
 
-  async reveal(id: string, adminId: string): Promise<{ accountNumber: string }> {
+  async reveal(id: string, adminId: string): Promise<RevealedBrandBankAccount> {
     const account = await brandBankAccountRepository.findById(id);
     if (!account) throw new AppError("NOT_FOUND", "Bank account not found.", NOT_FOUND_STATUS);
 
     await brandBankAccountRepository.createAccessLog(id, adminId);
     return { accountNumber: decryptAccountNumber(account.accountNumberCiphertext) };
+  },
+
+  async listAllAdmin(
+    query: ListAdminBankAccountsQuery,
+  ): Promise<{ items: AdminBrandBankAccountView[]; nextCursor: string | null }> {
+    const rows = await brandBankAccountRepository.listAllAdmin(query);
+    const { items: pagedRows, nextCursor } = buildCursorPage(rows, query.limit, (row) => row.id);
+
+    return { items: pagedRows.map(toAdminBrandBankAccountView), nextCursor };
   },
 };

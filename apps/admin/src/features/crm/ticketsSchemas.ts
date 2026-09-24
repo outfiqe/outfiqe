@@ -39,4 +39,8 @@ export const ticketWithCommentsSchema = ticketSchema.extend({
 });
 export type TicketWithComments = z.infer<typeof ticketWithCommentsSchema>;
 
-export const ticketListSchema = z.array(ticketSchema);
+export const ticketPageSchema = z.object({
+  tickets: z.array(ticketSchema),
+  nextCursor: z.string().nullable(),
+});
+export type TicketPage = z.infer<typeof ticketPageSchema>;

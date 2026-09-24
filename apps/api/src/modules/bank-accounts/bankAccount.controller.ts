@@ -1,7 +1,11 @@
 import type { Request, Response } from "express";
 
 import { sendSuccess } from "#lib/api-response.utils.js";
-import type { BankAccountBody, BankAccountIdParam } from "#lib/bank-account-body.schemas.js";
+import type {
+  BankAccountBody,
+  BankAccountIdParam,
+  ListAdminBankAccountsQuery,
+} from "#lib/bank-account-body.schemas.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 
@@ -42,5 +46,11 @@ export const bankAccountController = {
     const { id } = validated.params<BankAccountIdParam>(res);
     const revealed = await bankAccountService.reveal(id, adminId);
     sendSuccess(res, revealed, "Bank account number revealed.");
+  },
+
+  async listAllAdmin(_req: Request, res: Response) {
+    const query = validated.query<ListAdminBankAccountsQuery>(res);
+    const page = await bankAccountService.listAllAdmin(query);
+    sendSuccess(res, page, "Bank accounts.");
   },
 };

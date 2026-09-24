@@ -100,4 +100,4 @@ jobs:
       - name: Setup workspace
         uses: ./.github/actions/setup-workspace
       - name: Run full suite with coverage (fails below the 80% thresholds in vitest.config.ts)
-        run: pnpm test:coverage
+        run: pnpm exec turbo run test:coverage --concurrency=1

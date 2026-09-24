@@ -176,8 +176,8 @@ export const withdrawRepository = {
       include: {
         creator: { select: { name: true } },
         brand: { select: { name: true } },
-        bankAccount: { select: { accountNumberLast4: true } },
-        brandBankAccount: { select: { accountNumberLast4: true } },
+        bankAccount: { select: { accountNumberLast4: true, qrCodeImageUrl: true } },
+        brandBankAccount: { select: { accountNumberLast4: true, qrCodeImageUrl: true } },
       },
     });
   },

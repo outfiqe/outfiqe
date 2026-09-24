@@ -90,35 +90,40 @@ const HowItWorksPage = () => (
       <StepList steps={shopperSteps} />
     </MarketingSection>
 
-    <MarketingSection heading="For creators">
-      <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-        Approved creators post looks using products from our brands and tag the pieces. When someone
-        taps a tagged product or follows a creator&apos;s link and buys it within the attribution
-        window, the creator earns a commission. It&apos;s tracked automatically and paid out to a
-        verified bank account. See{" "}
-        <Link
-          href="/for-creators/how-commissions-work"
-          className="font-medium text-foreground underline underline-offset-2"
-        >
-          how commissions work
-        </Link>
-        .
-      </p>
-    </MarketingSection>
-
-    <MarketingSection heading="For brands">
-      <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-        Brands list their catalogue, set stock and pricing, and manage orders from a dashboard.
-        Listing is free. Outfiqe takes a small commission on completed sales, and a share of that
-        funds the creator who sourced the sale. More on the{" "}
-        <Link
-          href="/for-brands"
-          className="font-medium text-foreground underline underline-offset-2"
-        >
-          Sell on Outfiqe
-        </Link>{" "}
-        page.
-      </p>
+    <MarketingSection heading="For creators & brands">
+      <div className="grid gap-10 sm:grid-cols-2">
+        <div>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-foreground">Creators</h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
+            Approved creators post looks using products from our brands and tag the pieces. When
+            someone taps a tagged product or follows a creator&apos;s link and buys it within the
+            attribution window, the creator earns a commission. It&apos;s tracked automatically and
+            paid out to a verified bank account. See{" "}
+            <Link
+              href="/for-creators/how-commissions-work"
+              className="font-medium text-foreground underline underline-offset-2"
+            >
+              how commissions work
+            </Link>
+            .
+          </p>
+        </div>
+        <div>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-foreground">Brands</h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
+            Brands list their catalogue, set stock and pricing, and manage orders from a dashboard.
+            Listing is free. Outfiqe takes a small commission on completed sales, and a share of
+            that funds the creator who sourced the sale. More on the{" "}
+            <Link
+              href="/for-brands"
+              className="font-medium text-foreground underline underline-offset-2"
+            >
+              Sell on Outfiqe
+            </Link>{" "}
+            page.
+          </p>
+        </div>
+      </div>
     </MarketingSection>
 
     <MarketingSection heading="Common questions">

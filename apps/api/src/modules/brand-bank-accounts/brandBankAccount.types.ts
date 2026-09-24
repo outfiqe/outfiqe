@@ -6,6 +6,7 @@ export type BrandBankAccountRecord = {
   accountNumberCiphertext: string;
   accountNumberLast4: string;
   branchName: string;
+  qrCodeImageUrl: string | null;
   isDefault: boolean;
   isVerified: boolean;
   verifiedAt: Date | null;
@@ -22,6 +23,7 @@ export type PublicBrandBankAccount = {
   accountName: string;
   accountNumberLast4: string;
   branchName: string;
+  qrCodeImageUrl: string | null;
   isDefault: boolean;
   isVerified: boolean;
 };
@@ -33,10 +35,28 @@ export type CreateBrandBankAccountRepositoryInput = {
   accountNumberCiphertext: string;
   accountNumberLast4: string;
   branchName: string;
+  qrCodeImageUrl: string;
   isDefault: boolean;
 };
 
 export type CreateBrandBankAccountResult = {
   bankAccount: PublicBrandBankAccount;
   nameMismatch: boolean;
+};
+
+export type AdminBrandBankAccountView = {
+  id: string;
+  ownerName: string;
+  bankName: string;
+  accountName: string;
+  accountNumberLast4: string;
+  branchName: string;
+  qrCodeImageUrl: string | null;
+  isVerified: boolean;
+  verifiedAt: string | null;
+  createdAt: string;
+};
+
+export type RevealedBrandBankAccount = {
+  accountNumber: string;
 };

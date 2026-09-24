@@ -1,6 +1,5 @@
 import { Router } from "express";
 
-import { denyDuringImpersonation } from "#middlewares/deny-during-impersonation.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
@@ -158,7 +157,6 @@ crmAccessRoutes.delete(
 crmAccessRoutes.get("/members", requirePermission("members:read"), crmAccessController.listMembers);
 crmAccessRoutes.patch(
   "/members/:membershipId",
-  denyDuringImpersonation,
   requirePermission("members:manage"),
   crmRoleRateLimit,
   validate({ params: membershipIdParamsSchema, body: updateMembershipSchema }),
@@ -192,7 +190,6 @@ crmAccessRoutes.post(
 
 crmAccessRoutes.post(
   "/ownership-transfer",
-  denyDuringImpersonation,
   requirePermission("org:transfer_ownership"),
   crmOwnershipTransferRateLimit,
   validate({ body: createOwnershipTransferSchema }),
@@ -200,19 +197,16 @@ crmAccessRoutes.post(
 );
 crmAccessRoutes.post(
   "/ownership-transfer/:requestId/accept",
-  denyDuringImpersonation,
   validate({ params: ownershipTransferIdParamsSchema }),
   crmAccessController.acceptOwnershipTransfer,
 );
 crmAccessRoutes.post(
   "/ownership-transfer/:requestId/decline",
-  denyDuringImpersonation,
   validate({ params: ownershipTransferIdParamsSchema }),
   crmAccessController.declineOwnershipTransfer,
 );
 crmAccessRoutes.delete(
   "/ownership-transfer/:requestId",
-  denyDuringImpersonation,
   requirePermission("org:transfer_ownership"),
   validate({ params: ownershipTransferIdParamsSchema }),
   crmAccessController.revokeOwnershipTransfer,

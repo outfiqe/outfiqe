@@ -15,8 +15,16 @@ type BankAccountCardProps = {
 
 export const BankAccountCard = ({ ownerType, bankAccount }: BankAccountCardProps) => {
   const setDefault = useSetDefaultBankAccount(ownerType);
-  const { id, bankName, accountName, accountNumberLast4, branchName, isDefault, isVerified } =
-    bankAccount;
+  const {
+    id,
+    bankName,
+    accountName,
+    accountNumberLast4,
+    branchName,
+    qrCodeImageUrl,
+    isDefault,
+    isVerified,
+  } = bankAccount;
 
   const makeDefault = async () => {
     try {
@@ -28,9 +36,20 @@ export const BankAccountCard = ({ ownerType, bankAccount }: BankAccountCardProps
 
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-border p-4">
-      <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-muted">
-        <Landmark className="size-5 text-foreground/60" strokeWidth={1.5} />
-      </div>
+      {qrCodeImageUrl ? (
+        <a
+          href={qrCodeImageUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="size-11 shrink-0 overflow-hidden rounded-lg border border-border bg-cover bg-center"
+          style={{ backgroundImage: `url(${qrCodeImageUrl})` }}
+          aria-label="View bank QR code"
+        />
+      ) : (
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-muted">
+          <Landmark className="size-5 text-foreground/60" strokeWidth={1.5} />
+        </div>
+      )}
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">

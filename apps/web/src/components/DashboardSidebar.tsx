@@ -11,12 +11,6 @@ import { LogOut } from "lucide-react";
 
 import { useAuth, useLogout } from "@/features/auth";
 import { AuthStatus } from "@/features/auth/types";
-import {
-  BRAND_TOUR_REPLAY_HREF,
-  CREATOR_TOUR_REPLAY_HREF,
-  TOUR_REPLAY_LABEL,
-  TourReplayLink,
-} from "@/features/product-tour";
 import { AppImage } from "@/shared/components/AppImage";
 import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
@@ -27,7 +21,7 @@ import { useIdlePrefetchSidebarLinks } from "./useIdlePrefetchSidebarLinks";
 import { useNextSidebarNavigation } from "./useNextSidebarNavigation";
 
 export const DashboardSidebar = () => {
-  const { state, isCreator } = useAuth();
+  const { state } = useAuth();
   const logout = useLogout();
   const navigation = useNextSidebarNavigation();
   const { collapsed, toggle } = useSidebarCollapse("outfiqe:web-sidebar-collapsed");
@@ -80,34 +74,17 @@ export const DashboardSidebar = () => {
     collapsed ? "size-11 justify-center" : "w-full px-3.5 py-2.5",
   );
 
-  const tourReplayHref = isBrand
-    ? BRAND_TOUR_REPLAY_HREF
-    : isCreator
-      ? CREATOR_TOUR_REPLAY_HREF
-      : null;
-
   const footer = (
-    <div className="space-y-2">
-      {tourReplayHref && (
-        <TourReplayLink
-          href={tourReplayHref}
-          title={collapsed ? TOUR_REPLAY_LABEL : undefined}
-          className={cn(footerButtonClassName, "hover:bg-muted hover:text-foreground")}
-          iconClassName="size-[18px] shrink-0"
-          showLabel={!collapsed}
-        />
-      )}
-      <button
-        type="button"
-        onClick={() => logout.mutate()}
-        disabled={logout.isPending}
-        title={collapsed ? "Sign out" : undefined}
-        className={cn(footerButtonClassName, "hover:bg-destructive/10 hover:text-destructive")}
-      >
-        <LogOut className="size-[18px] shrink-0" />
-        {!collapsed && (logout.isPending ? "Signing out…" : "Sign out")}
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={() => logout.mutate()}
+      disabled={logout.isPending}
+      title={collapsed ? "Sign out" : undefined}
+      className={cn(footerButtonClassName, "hover:bg-destructive/10 hover:text-destructive")}
+    >
+      <LogOut className="size-[18px] shrink-0" />
+      {!collapsed && (logout.isPending ? "Signing out…" : "Sign out")}
+    </button>
   );
 
   return (

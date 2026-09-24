@@ -1,3 +1,4 @@
+import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
@@ -9,7 +10,7 @@ import {
 import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { http, HttpResponse } from "msw";
+import { delay, http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 
 import { SupportTicketPage } from "./SupportTicketPage";
@@ -75,6 +76,7 @@ const renderTicket = () => {
   render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
+      <Toaster />
     </QueryClientProvider>,
   );
 };
@@ -103,6 +105,96 @@ describe("SupportTicketPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Resolved" }));
 
     await waitFor(() => expect(statusBody).toEqual({ status: "RESOLVED", expectedStatus: "OPEN" }));
+  });
+
+  it("shows the new status right away, before the server confirms it", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/support/admin/tickets/t-1`, () =>
+        HttpResponse.json({ success: true, data: ticket() }),
+      ),
+      http.get(`${API_BASE}/support/admin/agents`, () =>
+        HttpResponse.json({ success: true, data: [] }),
+      ),
+      http.patch(`${API_BASE}/support/admin/tickets/t-1/status`, async () => {
+        await delay(50);
+        return HttpResponse.json({ success: true, data: ticket({ status: "RESOLVED" }) });
+      }),
+    );
+
+    renderTicket();
+
+    await screen.findByRole("heading", { name: "Order never arrived" });
+    await userEvent.click(screen.getByRole("button", { name: "Resolved" }));
+
+    expect(screen.getByText("Resolved")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Resolved" })).not.toBeInTheDocument();
+
+    await waitFor(() => expect(screen.getByText("Resolved")).toBeInTheDocument());
+  });
+
+  it("rolls a status change back to its prior value on a stale-conflict response", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/support/admin/tickets/t-1`, () =>
+        HttpResponse.json({ success: true, data: ticket() }),
+      ),
+      http.get(`${API_BASE}/support/admin/agents`, () =>
+        HttpResponse.json({ success: true, data: [] }),
+      ),
+      http.patch(`${API_BASE}/support/admin/tickets/t-1/status`, () =>
+        HttpResponse.json(
+          {
+            success: false,
+            message: "This request's status changed under you.",
+            code: "SUPPORT_STATUS_CHANGED",
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    renderTicket();
+
+    await screen.findByRole("heading", { name: "Order never arrived" });
+    await userEvent.click(screen.getByRole("button", { name: "Resolved" }));
+
+    expect(await screen.findByText("This request's status changed under you.")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Resolved" })).toBeInTheDocument();
+  });
+
+  it("rolls an assignee change back on a stale-conflict response", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/support/admin/tickets/t-1`, () =>
+        HttpResponse.json({ success: true, data: ticket() }),
+      ),
+      http.get(`${API_BASE}/support/admin/agents`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [{ userId: "agent-1", name: "Agent One" }],
+        }),
+      ),
+      http.patch(`${API_BASE}/support/admin/tickets/t-1/assignee`, () =>
+        HttpResponse.json(
+          {
+            success: false,
+            message: "This request's assignee changed under you.",
+            code: "SUPPORT_ASSIGNEE_CHANGED",
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    renderTicket();
+
+    await screen.findByRole("heading", { name: "Order never arrived" });
+    await userEvent.selectOptions(screen.getByLabelText("Assignee"), "agent-1");
+
+    expect(
+      await screen.findByText("This request's assignee changed under you."),
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByLabelText<HTMLSelectElement>("Assignee").value).toBe(""),
+    );
   });
 
   it("sends an internal note without the customer-visible toggle", async () => {

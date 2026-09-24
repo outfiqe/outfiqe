@@ -3,7 +3,7 @@ import { mswServer } from "@test/integration/msw/server";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { PlatformImpersonationPage } from "./PlatformImpersonationPage";
 
@@ -49,6 +49,7 @@ const buildSession = (overrides: Record<string, unknown> = {}) => ({
   expiresAt: "2026-06-02T10:30:00.000Z",
   lastSeenAt: null,
   revokedAt: null,
+  revokedById: null,
   active: true,
   ...overrides,
 });
@@ -63,6 +64,10 @@ const renderPage = () => {
 };
 
 describe("PlatformImpersonationPage", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("lists active sessions and revokes one", async () => {
     let revokedId: string | null = null;
     mswServer.use(
@@ -84,6 +89,35 @@ describe("PlatformImpersonationPage", () => {
     expect(await screen.findByText("Tara Tenant")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Revoke" }));
     await waitFor(() => expect(revokedId).toBe("sess-1"));
+  });
+
+  it("opens a hand-off tab with a one-time code, not the raw token, in the URL", async () => {
+    const openSpy = vi.spyOn(window, "open").mockReturnValue(null);
+    mswServer.use(
+      http.get(`${API_BASE}/platform/metrics/tenants`, () => HttpResponse.json(tenantsResponse)),
+      http.get(`${API_BASE}/platform/impersonation/active`, () =>
+        HttpResponse.json({ success: true, data: [buildSession()] }),
+      ),
+      http.get(`${API_BASE}/platform/impersonation`, () =>
+        HttpResponse.json({ success: true, data: [] }),
+      ),
+      http.post(`${API_BASE}/platform/impersonation/sess-1/open`, () =>
+        HttpResponse.json({
+          success: true,
+          data: { code: "one-time-code", tenantSubdomain: "meridian", expiresInSeconds: 60 },
+        }),
+      ),
+    );
+
+    renderPage();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Open" }));
+
+    await waitFor(() => expect(openSpy).toHaveBeenCalled());
+    const [handoffUrl] = openSpy.mock.calls[0] ?? [];
+    expect(String(handoffUrl)).toContain("meridian");
+    expect(String(handoffUrl)).toContain("impersonation_code=one-time-code");
+    expect(String(handoffUrl)).not.toContain("minted-access-token");
   });
 
   it("starts a session and reveals the minted token", async () => {
@@ -165,6 +199,43 @@ describe("PlatformImpersonationPage", () => {
     expect(screen.getByText("Pick a member to act as.")).toBeInTheDocument();
     expect(screen.getByText("Enter a reason for the audit trail.")).toBeInTheDocument();
     expect(startRequested).toBe(false);
+  });
+
+  it("tells a naturally expired session apart from one someone revoked", async () => {
+    mswServer.use(
+      http.get(`${API_BASE}/platform/metrics/tenants`, () => HttpResponse.json(tenantsResponse)),
+      http.get(`${API_BASE}/platform/impersonation/active`, () =>
+        HttpResponse.json({ success: true, data: [] }),
+      ),
+      http.get(`${API_BASE}/platform/impersonation`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [
+            buildSession({
+              id: "sess-expired",
+              targetUserName: "Expired Tenant",
+              active: false,
+              revokedAt: "2026-06-02T10:30:00.000Z",
+              revokedById: null,
+            }),
+            buildSession({
+              id: "sess-revoked",
+              targetUserName: "Revoked Tenant",
+              active: false,
+              revokedAt: "2026-06-02T10:15:00.000Z",
+              revokedById: "staff-1",
+            }),
+          ],
+        }),
+      ),
+    );
+
+    renderPage();
+
+    const expiredRow = (await screen.findByText("Expired Tenant")).closest("tr");
+    const revokedRow = (await screen.findByText("Revoked Tenant")).closest("tr");
+    expect(expiredRow).toHaveTextContent("Expired");
+    expect(revokedRow).toHaveTextContent("Revoked");
   });
 
   it("explains minutes outside the allowed range", async () => {

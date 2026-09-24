@@ -253,7 +253,7 @@ describe("triage lifecycle", () => {
     const claimed = await request(testApp)
       .patch(`/api/support/admin/tickets/${ticketId}/assignee`)
       .set("Authorization", staffHeader)
-      .send({ assigneeUserId: staff.id });
+      .send({ assigneeUserId: staff.id, expectedAssigneeUserId: null });
     expect(claimed.status).toBe(200);
     expect(claimed.body.data.status).toBe("OPEN");
     expect(publishSpy).not.toHaveBeenCalledWith(
@@ -316,13 +316,32 @@ describe("triage lifecycle", () => {
     const response = await request(testApp)
       .patch(`/api/support/admin/tickets/${ticketId}/assignee`)
       .set("Authorization", authHeaderFor(lead.id, UserRole.ADMIN))
-      .send({ assigneeUserId: agent.id });
+      .send({ assigneeUserId: agent.id, expectedAssigneeUserId: null });
 
     expect(response.status).toBe(200);
     expect(publishSpy).toHaveBeenCalledWith(
       DomainEvents.SUPPORT_TICKET_ASSIGNED,
       expect.objectContaining({ ticketId, assigneeUserId: agent.id }),
     );
+  });
+
+  it("rejects an assign request whose expected assignee is stale", async () => {
+    const requester = await createUser();
+    const { addStaff } = await seedPlatform();
+    const lead = await addStaff();
+    const agent = await addStaff();
+    const ticketId = await openTicket(authHeaderFor(requester.id));
+
+    const staleAssign = await request(testApp)
+      .patch(`/api/support/admin/tickets/${ticketId}/assignee`)
+      .set("Authorization", authHeaderFor(lead.id, UserRole.ADMIN))
+      .send({ assigneeUserId: agent.id, expectedAssigneeUserId: agent.id });
+
+    expect(staleAssign.status).toBe(409);
+    expect(staleAssign.body.code).toBe("SUPPORT_ASSIGNEE_CHANGED");
+
+    const ticket = await prisma.supportTicket.findUniqueOrThrow({ where: { id: ticketId } });
+    expect(ticket.assigneeUserId).toBeNull();
   });
 });
 
@@ -394,10 +413,27 @@ describe("admin ticket detail, priority, stats and agents", () => {
     const response = await request(testApp)
       .patch(`/api/support/admin/tickets/${ticketId}/priority`)
       .set("Authorization", authHeaderFor(staff.id, UserRole.ADMIN))
-      .send({ priority: "HIGH" });
+      .send({ priority: "HIGH", expectedPriority: "NORMAL" });
 
     expect(response.status).toBe(200);
     expect(response.body.data.priority).toBe("HIGH");
+  });
+
+  it("rejects a priority change whose expected priority is stale", async () => {
+    const requester = await createUser();
+    const staff = await seedSupportStaff();
+    const ticketId = await openTicket(authHeaderFor(requester.id));
+
+    const staleChange = await request(testApp)
+      .patch(`/api/support/admin/tickets/${ticketId}/priority`)
+      .set("Authorization", authHeaderFor(staff.id, UserRole.ADMIN))
+      .send({ priority: "HIGH", expectedPriority: "LOW" });
+
+    expect(staleChange.status).toBe(409);
+    expect(staleChange.body.code).toBe("SUPPORT_PRIORITY_CHANGED");
+
+    const ticket = await prisma.supportTicket.findUniqueOrThrow({ where: { id: ticketId } });
+    expect(ticket.priority).toBe("NORMAL");
   });
 
   it("returns inbox stats", async () => {

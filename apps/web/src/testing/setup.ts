@@ -16,6 +16,24 @@ if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = ResizeObserverStub;
 }
 
+class IntersectionObserverStub implements IntersectionObserver {
+  readonly root: Element | Document | null = null;
+  readonly rootMargin: string = "";
+  readonly scrollMargin: string = "";
+  readonly thresholds: ReadonlyArray<number> = [];
+  constructor(_callback: IntersectionObserverCallback, _options?: IntersectionObserverInit) {}
+  observe(_target: Element): void {}
+  unobserve(_target: Element): void {}
+  disconnect(): void {}
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+}
+
+if (!globalThis.IntersectionObserver) {
+  globalThis.IntersectionObserver = IntersectionObserverStub;
+}
+
 class ProgressEventStub<T extends EventTarget = EventTarget>
   extends Event
   implements ProgressEvent<T>

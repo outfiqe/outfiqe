@@ -11,14 +11,17 @@ ceiling).
 
 - `api.ts` / `schemas.ts` — `GET /withdraw/admin/requests`, `PATCH /:id/approve|reject|mark-paid`.
 - `hooks/useInfiniteWithdrawRequests.ts` — the paginated, status-tabbed queue.
-- `WithdrawRequestsListSection.tsx` — the queue: tabs by status, per-row actions.
+- `WithdrawRequestsListSection.tsx` — the queue: tabs by status, per-row actions, and a
+  "View bank details" reveal borrowed from `../bank-accounts` (see below).
 - `WithdrawRequestsPage.tsx` — the route's top-level wrapper.
 
 ## Funnel
 
-**Admin-facing:** filter by status, approve/reject/mark-paid a request from its row. Reject and
-mark-paid prompt for a reason/reference via the shared `TextPromptModal`
-(`apps/admin/src/components`) rather than a native browser prompt.
+**Admin-facing:** filter by status, approve/reject/mark-paid a request from its row. Each row
+already shows the owner's uploaded bank QR code; "View bank details" reveals the real account
+number next to it, so an admin keying a manual bank transfer for a payout doesn't have to leave
+this screen to look the account up. Reject and mark-paid prompt for a reason/reference via the
+shared `TextPromptModal` (`apps/admin/src/components`) rather than a native browser prompt.
 
 ## Non-obvious rationale
 
@@ -34,3 +37,9 @@ request's first-or-second sign-off** — the backend's state machine (`withdraw.
 already decides which transition applies from the request's current `status`/
 `firstApprovedById`; the UI doesn't need to special-case it beyond showing the explanatory note
 and letting a same-admin double-click fail with the backend's own `SAME_ADMIN_SIGN_OFF` error.
+
+**"View bank details" reuses `../bank-accounts`' own `reveal` call rather than a copy.** Every
+reveal writes an access-log row server-side (see that feature's README), so the revealed account
+number is kept in local component state keyed by `bankAccountId`, not in React Query's cache — a
+background refetch of this queue should never re-trigger a decrypt-and-log the admin didn't ask
+for.

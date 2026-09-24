@@ -2,22 +2,28 @@ import { addMinutes } from "date-fns/addMinutes";
 
 import { prisma } from "#db/prisma.js";
 import { sendEmail } from "#lib/email.utils.js";
+import { generateOpaqueToken } from "#lib/opaque-token.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 import { platformFeaturesService } from "#modules/platform-features/platform-features.service.js";
+import { redis } from "#redis/redis.client.js";
+import { redisKeys } from "#redis/redis.keys.js";
 import { describeError } from "#redis/redis.utils.js";
 
 import {
   IMPERSONATION_DEFAULT_TTL_MINUTES,
+  IMPERSONATION_EXCHANGE_CODE_TTL_SECONDS,
   IMPERSONATION_MAX_TTL_MINUTES,
 } from "./platform-impersonation.constants.js";
 import { platformImpersonationRepository } from "./platform-impersonation.repository.js";
 import { mintImpersonationToken } from "./platform-impersonation.token.js";
 import type {
+  ActiveOrganizationImpersonation,
   ImpersonationCandidate,
   ImpersonationSessionSummary,
+  OpenImpersonationSessionResult,
   StartImpersonationInput,
   StartImpersonationResult,
   TenantImpersonationLogEntry,
@@ -27,7 +33,9 @@ const CONFLICT_STATUS = 409;
 const FORBIDDEN_STATUS = 403;
 const NOT_FOUND_STATUS = 404;
 const BAD_REQUEST_STATUS = 400;
+const GONE_STATUS = 410;
 const SECONDS_PER_MINUTE = 60;
+const MS_PER_SECOND = 1000;
 const TENANT_LOG_LIMIT = 50;
 
 const ttlMinutes = (requested?: number): number => {
@@ -149,11 +157,15 @@ export const platformImpersonationService = {
 
   async findActiveForOrganization(
     organizationId: string,
-  ): Promise<{ byName: string | null; since: Date } | null> {
+  ): Promise<ActiveOrganizationImpersonation | null> {
     const session = await platformImpersonationRepository.findActiveForOrganization(organizationId);
     if (!session) return null;
     const [summary] = await platformImpersonationRepository.hydrate([session]);
-    return { byName: summary?.impersonatorName ?? null, since: session.createdAt };
+    return {
+      byName: summary?.impersonatorName ?? null,
+      since: session.createdAt,
+      targetUserName: summary?.targetUserName ?? null,
+    };
   },
 
   tenantLog(organizationId: string): Promise<TenantImpersonationLogEntry[]> {
@@ -220,5 +232,83 @@ export const platformImpersonationService = {
 
   reapExpiredSessions(): Promise<number> {
     return platformImpersonationRepository.reapExpired();
+  },
+
+  async createExchangeCode(
+    sessionId: string,
+    requesterId: string,
+    canManageAny: boolean,
+  ): Promise<OpenImpersonationSessionResult> {
+    const session = await platformImpersonationRepository.findById(sessionId);
+    if (!session) {
+      throw new AppError("SESSION_NOT_FOUND", "Impersonation session not found.", NOT_FOUND_STATUS);
+    }
+    if (!canManageAny && session.impersonatorId !== requesterId) {
+      throw new AppError(
+        "NOT_YOUR_SESSION",
+        "You can only open your own impersonation sessions.",
+        FORBIDDEN_STATUS,
+      );
+    }
+
+    const remainingMs = session.expiresAt.getTime() - Date.now();
+    if (session.revokedAt !== null || remainingMs <= 0) {
+      throw new AppError(
+        "IMPERSONATION_ENDED",
+        "This impersonation session is no longer active.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const tenantSubdomain = await platformImpersonationRepository.findOrganizationSubdomain(
+      session.organizationId,
+    );
+    if (!tenantSubdomain) {
+      throw new AppError(
+        "ORGANIZATION_NOT_FOUND",
+        "The tenant organization no longer exists.",
+        NOT_FOUND_STATUS,
+      );
+    }
+
+    const targetRole = await platformImpersonationRepository.findUserRole(session.targetUserId);
+    if (!targetRole) {
+      throw new AppError(
+        "TARGET_NOT_A_MEMBER",
+        "The target account no longer exists.",
+        BAD_REQUEST_STATUS,
+      );
+    }
+
+    const token = mintImpersonationToken({
+      targetUserId: session.targetUserId,
+      targetRole,
+      impersonatorId: session.impersonatorId,
+      sessionId: session.id,
+      scope: session.scope,
+      ttlSeconds: Math.ceil(remainingMs / MS_PER_SECOND),
+    });
+
+    const code = generateOpaqueToken();
+    await redis.set(
+      redisKeys.impersonationExchangeCode(code),
+      token,
+      "EX",
+      IMPERSONATION_EXCHANGE_CODE_TTL_SECONDS,
+    );
+
+    return { code, tenantSubdomain, expiresInSeconds: IMPERSONATION_EXCHANGE_CODE_TTL_SECONDS };
+  },
+
+  async redeemExchangeCode(code: string): Promise<{ accessToken: string }> {
+    const accessToken = await redis.getdel(redisKeys.impersonationExchangeCode(code));
+    if (!accessToken) {
+      throw new AppError(
+        "IMPERSONATION_CODE_INVALID",
+        "This support link has expired or was already used.",
+        GONE_STATUS,
+      );
+    }
+    return { accessToken };
   },
 };
