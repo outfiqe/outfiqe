@@ -71,18 +71,26 @@ export const supportApi = {
     return supportTicketWithThreadSchema.parse(res.data);
   },
 
-  async assign(id: string, assigneeUserId: string | null): Promise<SupportTicketWithThread> {
+  async assign(
+    id: string,
+    assigneeUserId: string | null,
+    expectedAssigneeUserId: string | null,
+  ): Promise<SupportTicketWithThread> {
     const res = await apiClient.patch<SupportTicketWithThread>(
       `/support/admin/tickets/${id}/assignee`,
-      { assigneeUserId },
+      { assigneeUserId, expectedAssigneeUserId },
     );
     return supportTicketWithThreadSchema.parse(res.data);
   },
 
-  async setPriority(id: string, priority: SupportPriorityValue): Promise<SupportTicketWithThread> {
+  async setPriority(
+    id: string,
+    priority: SupportPriorityValue,
+    expectedPriority: SupportPriorityValue,
+  ): Promise<SupportTicketWithThread> {
     const res = await apiClient.patch<SupportTicketWithThread>(
       `/support/admin/tickets/${id}/priority`,
-      { priority },
+      { priority, expectedPriority },
     );
     return supportTicketWithThreadSchema.parse(res.data);
   },

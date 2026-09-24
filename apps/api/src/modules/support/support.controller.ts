@@ -122,9 +122,15 @@ export const supportController = {
   async adminAssign(_req: Request, res: Response) {
     const { actorUserId, permissionKeys } = getPlatformPrincipal(res);
     const { id } = validated.params<TicketIdParams>(res);
-    const { assigneeUserId } = validated.body<AdminAssignBody>(res);
+    const { assigneeUserId, expectedAssigneeUserId } = validated.body<AdminAssignBody>(res);
     const canManageOthers = permissionKeys.includes(SUPPORT_PERMISSION.MANAGE);
-    const ticket = await supportService.assign(actorUserId, id, assigneeUserId, canManageOthers);
+    const ticket = await supportService.assign(
+      actorUserId,
+      id,
+      assigneeUserId,
+      expectedAssigneeUserId,
+      canManageOthers,
+    );
 
     await platformAudit.record({
       actorUserId,
@@ -142,8 +148,8 @@ export const supportController = {
   async adminSetPriority(_req: Request, res: Response) {
     const { actorUserId } = getPlatformPrincipal(res);
     const { id } = validated.params<TicketIdParams>(res);
-    const { priority } = validated.body<AdminPriorityBody>(res);
-    const ticket = await supportService.setPriority(id, priority);
+    const { priority, expectedPriority } = validated.body<AdminPriorityBody>(res);
+    const ticket = await supportService.setPriority(id, priority, expectedPriority);
 
     await platformAudit.record({
       actorUserId,

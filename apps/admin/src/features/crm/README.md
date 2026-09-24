@@ -80,10 +80,16 @@ support reports, and review the organization's audit log — against the `/api/c
 - `PlanGateBanner.tsx` — shown above CRM content when `organization.advancedFeaturesEnabled` is
   false (trial ended, no active subscription), linking to `/crm/billing`.
 - `ImpersonationActivityBanner.tsx` — mounted in `AppShell` for the whole CRM area (not just
-  `CrmPage`). Renders from `organization.activeImpersonation`: names the Outfiqe staff member and
-  start time, expands the `/crm/organization/impersonation-log` history on demand, and (for a
-  viewer with `org:update`) offers "End session" → `POST /crm/organization/end-impersonation`.
-  Renders nothing when no session is active.
+  `CrmPage`). Renders from `organization.activeImpersonation`, branching on
+  `organization.viewerIsImpersonating` since the same active session looks different depending on
+  who's looking: an ordinary tenant member sees "**X** from Outfiqe support is currently
+  accessing this workspace" (viewer isn't the one impersonating); the platform staff member
+  themself — landed here via the Impersonation screen's "Open" hand-off — sees "You're viewing
+  this workspace as **X**" instead, and always gets "End session" regardless of their own
+  permissions, since ending your own support session isn't an org permission. Either way,
+  "View activity" expands the `/crm/organization/impersonation-log` history on demand, and a
+  tenant member with `org:update` (or the impersonator) can end it →
+  `POST /crm/organization/end-impersonation`. Renders nothing when no session is active.
 - **Navigation lives in the app shell, not a per-page strip.** `AdminSidebar`
   (`components/AdminSidebar.tsx`) renders a flat "CRM" section — Overview / Partners / Customers /
   Pipeline / Tasks / Support / Reports / Roles / Audit / Billing — filtered by

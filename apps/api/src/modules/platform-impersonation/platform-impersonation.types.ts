@@ -59,3 +59,15 @@ export type TenantImpersonationLogEntry = {
   reason: string | null;
   scope: string | null;
 };
+
+export type ActiveOrganizationImpersonation = {
+  byName: string | null;
+  since: Date;
+  targetUserName: string | null;
+};
+
+export type OpenImpersonationSessionResult = {
+  code: string;
+  tenantSubdomain: string;
+  expiresInSeconds: number;
+};

@@ -227,6 +227,7 @@ describe("toOrganizationWithViewerContext", () => {
       true,
       { advancedReports: true },
       null,
+      false,
     );
 
     expect(result.viewerIsSuperAdmin).toBe(true);
@@ -236,6 +237,7 @@ describe("toOrganizationWithViewerContext", () => {
     expect(result.features).toEqual({ advancedReports: true });
     expect(result.pendingOwnershipTransfer).toBeNull();
     expect(result.activeImpersonation).toBeNull();
+    expect(result.viewerIsImpersonating).toBe(false);
   });
 
   it("does not mark a non-owning membership as super admin and carries impersonation context", () => {
@@ -246,11 +248,31 @@ describe("toOrganizationWithViewerContext", () => {
       null,
       false,
       {},
-      { byName: "Staff Member", since },
+      { byName: "Staff Member", since, targetUserName: "Tenant Person" },
+      false,
     );
 
     expect(result.viewerIsSuperAdmin).toBe(false);
-    expect(result.activeImpersonation).toEqual({ byName: "Staff Member", since });
+    expect(result.activeImpersonation).toEqual({
+      byName: "Staff Member",
+      since,
+      targetUserName: "Tenant Person",
+    });
+  });
+
+  it("marks the viewer as impersonating when the auth principal carries an impersonation context", () => {
+    const since = new Date("2026-02-01T00:00:00Z");
+    const result = toOrganizationWithViewerContext(
+      organization,
+      superAdminMembership,
+      null,
+      true,
+      {},
+      { byName: "Staff Member", since, targetUserName: "Tenant Person" },
+      true,
+    );
+
+    expect(result.viewerIsImpersonating).toBe(true);
   });
 });
 

@@ -2,12 +2,24 @@ import { z } from "zod";
 
 import { CrmTicketStatus, CrmTicketType } from "#generated/prisma/enums.js";
 
-import { TICKET_SUBJECT_TYPES } from "./crm-tickets.constants.js";
+import {
+  DEFAULT_TICKET_PAGE_SIZE,
+  MAX_TICKET_PAGE_SIZE,
+  TICKET_SUBJECT_TYPES,
+} from "./crm-tickets.constants.js";
 
 export const listTicketsQuerySchema = z.object({
   status: z.enum(CrmTicketStatus).optional(),
   assigneeMembershipId: z.uuid().optional(),
   type: z.enum(CrmTicketType).optional(),
+  cursor: z.uuid().optional(),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(MAX_TICKET_PAGE_SIZE)
+    .optional()
+    .default(DEFAULT_TICKET_PAGE_SIZE),
 });
 
 export const createTicketSchema = z.object({

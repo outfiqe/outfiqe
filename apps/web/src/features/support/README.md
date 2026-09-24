@@ -28,14 +28,15 @@ email and see the request in the list. A staff reply arrives by email and appear
 replying there reopens the request. A resolved request's email links to `/support/reopen?token=…`,
 a small public page that POSTs the token.
 
-**Technical:** page (`app/support`) &rarr; `SupportRequestsView` &rarr; `hooks/useSupportRequests`
-&rarr; `api/supportApi` &rarr; `/api/support/tickets/mine*`.
+**Technical:** page (`app/(dashboard)/support`) &rarr; `SupportRequestsView` &rarr;
+`hooks/useSupportRequests` &rarr; `api/supportApi` &rarr; `/api/support/tickets/mine*`.
 
 ## Non-obvious rationale
 
-- **`/support` is a standalone page (site header + footer, no dashboard nav rail), not part of
-  `(dashboard)`.** It's just a request list and thread view — the dashboard chrome added nothing.
-  It still gates on a session (`getServerSessionWithToken`): logged-out users are bounced to
-  sign-in and back, admins are sent to the admin console. Guest (no-account) support is PRD M3.
-- **`/support/reopen` is a separate public route** — the reopen token is the only credential, so
-  that page can't sit behind the session guard.
+- **`/support` lives in the `(dashboard)` route group** so it's a normal sidebar destination
+  ("Support" in `useDashboardNav.ts`, for shoppers, creators and brands alike) instead of a
+  separate page a user has to already know about. It uses `requireDashboardSession`, same as every
+  other dashboard route, rather than the page inventing its own admin-redirect check.
+- **`/support/reopen` stays a separate, ungrouped public route** — the reopen token is the only
+  credential, so that page can't sit behind the session guard. It's unaffected by the page above
+  moving into `(dashboard)`.

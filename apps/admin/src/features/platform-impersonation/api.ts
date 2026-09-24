@@ -8,6 +8,8 @@ import {
   type ImpersonationScope,
   type ImpersonationSession,
   impersonationSessionSchema,
+  type OpenImpersonationSessionResult,
+  openImpersonationSessionResultSchema,
   type StartImpersonationResult,
   startImpersonationResultSchema,
 } from "./schemas";
@@ -59,5 +61,12 @@ export const platformImpersonationApi = {
 
   async revoke(sessionId: string): Promise<void> {
     await apiClient.del(`/platform/impersonation/${sessionId}`);
+  },
+
+  async open(sessionId: string): Promise<OpenImpersonationSessionResult> {
+    const res = await apiClient.post<OpenImpersonationSessionResult>(
+      `/platform/impersonation/${sessionId}/open`,
+    );
+    return openImpersonationSessionResultSchema.parse(res.data);
   },
 };

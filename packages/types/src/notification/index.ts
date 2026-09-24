@@ -99,6 +99,8 @@ export type NotificationMetadata = {
   messagePreview?: string;
   crmItemKind?: CrmItemKind;
   crmItemTitle?: string;
+  crmOrganizationSubdomain?: string | null;
+  crmOrganizationIsPlatformOrg?: boolean;
   supportSubject?: string;
   couponCode?: string;
   totalBudgetAmount?: number;
