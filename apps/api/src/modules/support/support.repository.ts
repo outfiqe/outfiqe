@@ -261,12 +261,28 @@ export const supportRepository = {
     return result.count > 0;
   },
 
-  async assign(ticketId: string, assigneeUserId: string | null): Promise<void> {
-    await prisma.supportTicket.update({ where: { id: ticketId }, data: { assigneeUserId } });
+  async assign(
+    ticketId: string,
+    fromAssigneeUserId: string | null,
+    toAssigneeUserId: string | null,
+  ): Promise<boolean> {
+    const result = await prisma.supportTicket.updateMany({
+      where: { id: ticketId, assigneeUserId: fromAssigneeUserId },
+      data: { assigneeUserId: toAssigneeUserId },
+    });
+    return result.count > 0;
   },
 
-  async setPriority(ticketId: string, priority: SupportPriority): Promise<void> {
-    await prisma.supportTicket.update({ where: { id: ticketId }, data: { priority } });
+  async setPriority(
+    ticketId: string,
+    fromPriority: SupportPriority,
+    toPriority: SupportPriority,
+  ): Promise<boolean> {
+    const result = await prisma.supportTicket.updateMany({
+      where: { id: ticketId, priority: fromPriority },
+      data: { priority: toPriority },
+    });
+    return result.count > 0;
   },
 
   async stampFirstResponded(ticketId: string): Promise<void> {

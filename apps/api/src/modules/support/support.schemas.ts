@@ -87,10 +87,12 @@ export const adminChangeStatusSchema = z.object({
 
 export const adminAssignSchema = z.object({
   assigneeUserId: z.uuid().nullable(),
+  expectedAssigneeUserId: z.uuid().nullable(),
 });
 
 export const adminPrioritySchema = z.object({
   priority: supportPrioritySchema,
+  expectedPriority: supportPrioritySchema,
 });
 
 export type CreateSupportTicketBody = z.infer<typeof createSupportTicketSchema>;
