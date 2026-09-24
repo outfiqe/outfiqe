@@ -38,6 +38,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reportOnFailure: true,
+      exclude: ["**/*.types.ts"],
       include: [
         "src/app.ts",
         "src/config/app-env.ts",
