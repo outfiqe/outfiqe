@@ -1,13 +1,31 @@
-import { emailButtonHtml, escapeHtml, paragraphsHtml, renderEmailLayout, SUB } from "./layout.js";
+import {
+  emailButtonHtml,
+  emailDivider,
+  emailEyebrow,
+  emailHeading,
+  emailInfoPanel,
+  emailLede,
+  emailMetaTable,
+  emailMuted,
+  emailSecurityNote,
+  emailStatusPill,
+  emailSubheading,
+  emailText,
+  escapeHtml,
+  paragraphsHtml,
+  renderEmailLayout,
+} from "./layout.js";
 
 export const verifyEmailTemplate = (url: string): { subject: string; html: string } => ({
   subject: "Verify your Outfiqe account",
   html: renderEmailLayout({
     preheader: "Verify your email to start using Outfiqe.",
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Welcome to Outfiqe</h1>
-      <p style="color:${SUB};margin:0;">Confirm this is your email address to finish setting up your account.</p>
+      ${emailEyebrow("Account")}
+      ${emailHeading("Welcome to Outfiqe")}
+      ${emailLede("Confirm this is your email address to finish setting up your account.")}
       ${emailButtonHtml("Verify email", url)}
+      ${emailSecurityNote("If you didn't create an Outfiqe account, you can safely ignore this email.")}
     `,
   }),
 });
@@ -17,9 +35,11 @@ export const passwordResetTemplate = (url: string): { subject: string; html: str
   html: renderEmailLayout({
     preheader: "Reset your Outfiqe password.",
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Reset your password</h1>
-      <p style="color:${SUB};margin:0;">This link expires in 1 hour. If you didn't request this, ignore this email.</p>
+      ${emailEyebrow("Account")}
+      ${emailHeading("Reset your password")}
+      ${emailLede("This link expires in 1 hour.")}
       ${emailButtonHtml("Reset password", url)}
+      ${emailSecurityNote("If you didn't request this, you can safely ignore this email. Your password won't change.")}
     `,
   }),
 });
@@ -41,12 +61,15 @@ export const brandApplicationReceivedInternalTemplate = (
   html: renderEmailLayout({
     preheader: `${input.brandName} applied to list on Outfiqe.`,
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 12px;">${input.brandName}</h1>
-      <p style="margin:4px 0;"><strong>Contact:</strong> ${input.contactName}</p>
-      <p style="margin:4px 0;"><strong>Email:</strong> ${input.email}</p>
-      <p style="margin:4px 0;"><strong>Phone:</strong> ${input.phone}</p>
-      <p style="margin:4px 0;"><strong>Instagram:</strong> ${input.instagram}</p>
-      <p style="margin:4px 0;"><strong>Makes own pieces:</strong> ${input.makesOwnPieces}</p>
+      ${emailEyebrow("New application")}
+      ${emailHeading(input.brandName)}
+      ${emailMetaTable([
+        { label: "Contact", value: input.contactName },
+        { label: "Email", value: input.email },
+        { label: "Phone", value: input.phone },
+        { label: "Instagram", value: input.instagram },
+        { label: "Makes own pieces", value: input.makesOwnPieces },
+      ])}
       ${emailButtonHtml("Review in admin panel", input.reviewUrl)}
     `,
   }),
@@ -56,12 +79,13 @@ export const brandApprovedTemplate = (
   brandName: string,
   inviteUrl: string,
 ): { subject: string; html: string } => ({
-  subject: `You're approved — set up ${brandName} on Outfiqe`,
+  subject: `You're approved: set up ${brandName} on Outfiqe`,
   html: renderEmailLayout({
     preheader: `${brandName} is approved on Outfiqe.`,
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">${brandName} is approved</h1>
-      <p style="color:${SUB};margin:0;">Set up your account to start listing. This link expires in 7 days.</p>
+      ${emailStatusPill("Approved", "success")}
+      ${emailHeading(`${brandName} is approved`)}
+      ${emailLede("Set up your account to start listing. This link expires in 7 days.")}
       ${emailButtonHtml("Set up your account", inviteUrl)}
     `,
   }),
@@ -73,13 +97,11 @@ export const brandRejectedTemplate = (
 ): { subject: string; html: string } => ({
   subject: `About your Outfiqe application for ${brandName}`,
   html: renderEmailLayout({
-    preheader: `An update on your Outfiqe application.`,
+    preheader: "An update on your Outfiqe application.",
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Not quite a fit right now</h1>
-      <p style="color:${SUB};margin:0;">
-        We looked at ${brandName} and it isn't a fit for Outfiqe at the moment.
-        ${reason ? reason : "You're welcome to apply again in the future."}
-      </p>
+      ${emailHeading("Not quite a fit right now")}
+      ${emailText(`We looked at ${brandName} and it isn't a fit for Outfiqe at the moment.`)}
+      ${reason ? paragraphsHtml(reason) : emailMuted("You're welcome to apply again in the future.")}
     `,
   }),
 });
@@ -89,8 +111,9 @@ export const creatorApprovedTemplate = (): { subject: string; html: string } => 
   html: renderEmailLayout({
     preheader: "You're approved as an Outfiqe creator.",
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">You're in</h1>
-      <p style="color:${SUB};margin:0;">Your creator account is approved. You can now post fits and tag products.</p>
+      ${emailStatusPill("Approved", "success")}
+      ${emailHeading("You're in")}
+      ${emailLede("Your creator account is approved. You can now post fits and tag products.")}
     `,
   }),
 });
@@ -100,8 +123,8 @@ export const creatorRejectedTemplate = (): { subject: string; html: string } => 
   html: renderEmailLayout({
     preheader: "An update on your creator application.",
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Not quite a fit right now</h1>
-      <p style="color:${SUB};margin:0;">Your creator application isn't a fit at the moment. You're welcome to apply again later.</p>
+      ${emailHeading("Not quite a fit right now")}
+      ${emailLede("Your creator application isn't a fit at the moment. You're welcome to apply again later.")}
     `,
   }),
 });
@@ -113,8 +136,9 @@ export const productApprovedTemplate = (
   html: renderEmailLayout({
     preheader: `${productName} is now live on Outfiqe.`,
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">${productName} is live</h1>
-      <p style="color:${SUB};margin:0;">Your listing is approved and now visible to shoppers.</p>
+      ${emailStatusPill("Approved", "success")}
+      ${emailHeading(`${productName} is live`)}
+      ${emailLede("Your listing is approved and now visible to shoppers.")}
     `,
   }),
 });
@@ -126,8 +150,8 @@ export const productRejectedTemplate = (
   html: renderEmailLayout({
     preheader: "An update on your product listing.",
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Not quite ready to list</h1>
-      <p style="color:${SUB};margin:0;">${productName} wasn't approved this time. You're welcome to update it and resubmit.</p>
+      ${emailHeading("Not quite ready to list")}
+      ${emailLede(`${productName} wasn't approved this time. You're welcome to update it and resubmit.`)}
     `,
   }),
 });
@@ -141,12 +165,18 @@ type OrderConfirmationInput = {
 export const orderConfirmationTemplate = (
   input: OrderConfirmationInput,
 ): { subject: string; html: string } => ({
-  subject: `Order placed — ${input.orderId}`,
+  subject: `Order placed: ${input.orderId}`,
   html: renderEmailLayout({
     preheader: `Your Outfiqe order ${input.orderId} has been placed.`,
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Order placed</h1>
-      <p style="color:${SUB};margin:0;">Order ${input.orderId} — Rs. ${input.total.toLocaleString()} via ${input.paymentMethod}.</p>
+      ${emailEyebrow("Order")}
+      ${emailHeading("Order placed")}
+      ${emailLede("We've got your order and it's being prepared.")}
+      ${emailMetaTable([
+        { label: "Order ID", value: input.orderId },
+        { label: "Amount", value: `Rs. ${input.total.toLocaleString()}` },
+        { label: "Payment method", value: input.paymentMethod },
+      ])}
     `,
   }),
 });
@@ -163,8 +193,12 @@ export const newOrderNotificationTemplate = (
   html: renderEmailLayout({
     preheader: `A new order came in.`,
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">New order</h1>
-      <p style="color:${SUB};margin:0;">Order ${input.orderId} — Rs. ${input.total.toLocaleString()}.</p>
+      ${emailEyebrow("New order")}
+      ${emailHeading("New order")}
+      ${emailMetaTable([
+        { label: "Order ID", value: input.orderId },
+        { label: "Amount", value: `Rs. ${input.total.toLocaleString()}` },
+      ])}
     `,
   }),
 });
@@ -177,12 +211,16 @@ type PaymentSettledInput = {
 export const paymentSettledTemplate = (
   input: PaymentSettledInput,
 ): { subject: string; html: string } => ({
-  subject: `Payment received — ${input.orderId}`,
+  subject: `Payment received: ${input.orderId}`,
   html: renderEmailLayout({
     preheader: `Payment received for order ${input.orderId}.`,
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Payment received</h1>
-      <p style="color:${SUB};margin:0;">Rs. ${input.total.toLocaleString()} received for order ${input.orderId}.</p>
+      ${emailStatusPill("Payment received", "success")}
+      ${emailHeading("Payment received")}
+      ${emailMetaTable([
+        { label: "Order ID", value: input.orderId },
+        { label: "Amount", value: `Rs. ${input.total.toLocaleString()}` },
+      ])}
     `,
   }),
 });
@@ -195,15 +233,17 @@ type ManualRefundNeededInput = {
 export const manualRefundNeededTemplate = (
   input: ManualRefundNeededInput,
 ): { subject: string; html: string } => ({
-  subject: `Action needed — refund order ${input.orderId}`,
+  subject: `Action needed: refund order ${input.orderId}`,
   html: renderEmailLayout({
     preheader: `Order ${input.orderId} needs a manual refund.`,
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Manual refund needed</h1>
-      <p style="color:${SUB};margin:0;">
-        Order ${input.orderId} was paid (Rs. ${input.total.toLocaleString()}) but the item sold out before
-        we could confirm it. Refund this order by hand through the gateway dashboard.
-      </p>
+      ${emailStatusPill("Action needed", "destructive")}
+      ${emailHeading("Manual refund needed")}
+      ${emailText("This order was paid but the item sold out before we could confirm it. Refund it by hand through the gateway dashboard.")}
+      ${emailMetaTable([
+        { label: "Order ID", value: input.orderId },
+        { label: "Amount", value: `Rs. ${input.total.toLocaleString()}` },
+      ])}
     `,
   }),
 });
@@ -217,14 +257,17 @@ type OrderCancelledInput = {
 export const orderCancelledTemplate = (
   input: OrderCancelledInput,
 ): { subject: string; html: string } => ({
-  subject: `Order cancelled — ${input.orderId}`,
+  subject: `Order cancelled: ${input.orderId}`,
   html: renderEmailLayout({
     preheader: `Order ${input.orderId} has been cancelled.`,
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Order cancelled</h1>
-      <p style="color:${SUB};margin:0;">
-        Order ${input.orderId} has been cancelled.${input.refunded ? ` Rs. ${input.total.toLocaleString()} has been refunded to you.` : ""}
-      </p>
+      ${emailStatusPill("Cancelled", "destructive")}
+      ${emailHeading("Order cancelled")}
+      ${emailMetaTable([
+        { label: "Order ID", value: input.orderId },
+        { label: "Amount", value: `Rs. ${input.total.toLocaleString()}` },
+        ...(input.refunded ? [{ label: "Refund", value: "Refunded to you" }] : []),
+      ])}
     `,
   }),
 });
@@ -237,15 +280,17 @@ type RefundFailedInput = {
 export const refundFailedTemplate = (
   input: RefundFailedInput,
 ): { subject: string; html: string } => ({
-  subject: `Action needed — refund order ${input.orderId}`,
+  subject: `Action needed: refund order ${input.orderId}`,
   html: renderEmailLayout({
     preheader: `The automatic refund for order ${input.orderId} failed.`,
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Automatic refund failed</h1>
-      <p style="color:${SUB};margin:0;">
-        Order ${input.orderId} was cancelled, but the automatic gateway refund of
-        Rs. ${input.total.toLocaleString()} failed. Refund this order by hand.
-      </p>
+      ${emailStatusPill("Action needed", "destructive")}
+      ${emailHeading("Automatic refund failed")}
+      ${emailText("This order was cancelled, but the automatic gateway refund failed. Refund it by hand.")}
+      ${emailMetaTable([
+        { label: "Order ID", value: input.orderId },
+        { label: "Amount", value: `Rs. ${input.total.toLocaleString()}` },
+      ])}
     `,
   }),
 });
@@ -264,9 +309,13 @@ export const withdrawRequestReceivedInternalTemplate = (
   html: renderEmailLayout({
     preheader: `${input.ownerName} requested a withdrawal of Rs. ${input.amount}.`,
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 12px;">New withdrawal request</h1>
-      <p style="margin:4px 0;"><strong>From:</strong> ${input.ownerName} (${input.ownerType})</p>
-      <p style="margin:4px 0;"><strong>Amount:</strong> Rs. ${input.amount}</p>
+      ${emailEyebrow("Withdrawal request")}
+      ${emailHeading(`Rs. ${input.amount.toLocaleString()}`)}
+      ${emailMetaTable([
+        { label: "From", value: input.ownerName },
+        { label: "Type", value: input.ownerType },
+        { label: "Amount", value: `Rs. ${input.amount.toLocaleString()}` },
+      ])}
       ${emailButtonHtml("Review in admin panel", input.reviewUrl)}
     `,
   }),
@@ -280,8 +329,9 @@ export const adminInviteTemplate = (
   html: renderEmailLayout({
     preheader: "You've been invited as an Outfiqe admin.",
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Hi ${name}</h1>
-      <p style="color:${SUB};margin:0;">You've been invited to the Outfiqe admin panel. This link expires in 7 days.</p>
+      ${emailEyebrow("Admin invite")}
+      ${emailHeading(`Hi ${name}`)}
+      ${emailLede("You've been invited to the Outfiqe admin panel. This link expires in 7 days.")}
       ${emailButtonHtml("Set up your admin account", inviteUrl)}
     `,
   }),
@@ -295,8 +345,9 @@ export const crmOrganizationInviteTemplate = (
   html: renderEmailLayout({
     preheader: "You've been invited to the Outfiqe CRM.",
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">You're invited</h1>
-      <p style="color:${SUB};margin:0;">You've been granted "${roleName}" access to the Outfiqe CRM. This link expires in 7 days.</p>
+      ${emailEyebrow("CRM invite")}
+      ${emailHeading("You're invited")}
+      ${emailLede(`You've been granted "${roleName}" access to the Outfiqe CRM. This link expires in 7 days.`)}
       ${emailButtonHtml("Accept invite", inviteUrl)}
     `,
   }),
@@ -310,8 +361,9 @@ export const crmOwnershipTransferRequestTemplate = (
   html: renderEmailLayout({
     preheader: `You've been asked to become the owner of ${organizationName} on the Outfiqe CRM.`,
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Ownership transfer requested</h1>
-      <p style="color:${SUB};margin:0;">The current owner of "${organizationName}" wants to make you its owner on the Outfiqe CRM. Sign in and open the CRM to accept or decline.</p>
+      ${emailEyebrow("CRM")}
+      ${emailHeading("Ownership transfer requested")}
+      ${emailLede(`The current owner of "${organizationName}" wants to make you its owner on the Outfiqe CRM. Sign in and open the CRM to accept or decline.`)}
       ${emailButtonHtml("Open CRM", crmUrl)}
     `,
   }),
@@ -326,8 +378,13 @@ export const crmSubscriptionRenewalDueTemplate = (
   html: renderEmailLayout({
     preheader: `Renew the ${organizationName} CRM subscription to keep advanced features.`,
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Renewal due</h1>
-      <p style="color:${SUB};margin:0;">The Outfiqe CRM subscription for "${organizationName}" is up for renewal. Pay Rs. ${amount} to keep pipeline, deals, tickets and reporting available for your team.</p>
+      ${emailStatusPill("Renewal due", "neutral")}
+      ${emailHeading("Renewal due")}
+      ${emailLede("Renew to keep pipeline, deals, tickets and reporting available for your team.")}
+      ${emailMetaTable([
+        { label: "Organization", value: organizationName },
+        { label: "Amount due", value: `Rs. ${amount.toLocaleString()}` },
+      ])}
       ${emailButtonHtml("Review billing", billingUrl)}
     `,
   }),
@@ -345,13 +402,11 @@ export const supportRequestReceivedTemplate = (
   html: renderEmailLayout({
     preheader: `We've received your support request ${input.reference}.`,
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">We're on it</h1>
-      <p style="color:${SUB};margin:0 0 16px;">
-        Thanks for reaching out. Your request <strong>${escapeHtml(input.reference)}</strong> is with our
-        team and we'll reply by email. You can also follow it in your account under Settings &rsaquo; Support.
-      </p>
-      <p style="margin:0 0 4px;"><strong>${escapeHtml(input.subject)}</strong></p>
-      ${paragraphsHtml(input.message)}
+      ${emailEyebrow(input.reference)}
+      ${emailHeading("We're on it")}
+      ${emailLede("Thanks for reaching out. Our team will reply by email. You can also follow this in your account under Settings > Support.")}
+      ${emailSubheading(input.subject)}
+      ${emailInfoPanel(paragraphsHtml(input.message))}
     `,
   }),
 });
@@ -363,10 +418,11 @@ export const supportStaffReplyTemplate = (
   html: renderEmailLayout({
     preheader: `A reply on your support request ${input.reference}.`,
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 12px;">Outfiqe Support replied</h1>
-      ${paragraphsHtml(input.reply)}
-      <p style="color:${SUB};margin:16px 0 0;">Reply to this email or open the thread to respond.</p>
+      ${emailEyebrow(input.reference)}
+      ${emailHeading("Outfiqe Support replied")}
+      ${emailInfoPanel(paragraphsHtml(input.reply))}
       ${emailButtonHtml("View the thread", input.threadUrl)}
+      ${emailMuted("Reply to this email or open the thread to respond.")}
     `,
   }),
 });
@@ -382,14 +438,13 @@ export const staleShipmentReminderTemplate = (input: {
     html: renderEmailLayout({
       preheader: `Mark your shipped orders as delivered.`,
       bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Confirm your deliveries</h1>
-      <p style="color:${SUB};margin:0 0 4px;">
-        <strong>${escapeHtml(input.brandName)}</strong> has <strong>${input.shipmentCount}</strong>
-        ${noun} that have been shipped for over a week but not yet marked delivered. Marking them
-        keeps buyers informed and releases your payout for those items.
-      </p>
-      ${emailButtonHtml("Open your orders", input.ordersUrl)}
-    `,
+        ${emailEyebrow("Orders")}
+        ${emailHeading("Confirm your deliveries")}
+        ${emailText(
+          `${escapeHtml(input.brandName)} has ${input.shipmentCount} ${noun} that shipped over a week ago but aren't marked delivered yet. Marking them keeps buyers informed and releases your payout for those items.`,
+        )}
+        ${emailButtonHtml("Open your orders", input.ordersUrl)}
+      `,
     }),
   };
 };
@@ -401,11 +456,11 @@ export const supportResolvedTemplate = (
   html: renderEmailLayout({
     preheader: `Your support request ${input.reference} was marked resolved.`,
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Marked resolved</h1>
-      <p style="color:${SUB};margin:0 0 4px;">
-        We've marked <strong>${escapeHtml(input.reference)}</strong> (&ldquo;${escapeHtml(input.subject)}&rdquo;)
-        resolved. If this didn't fully sort things out, you can reopen it within 14 days.
-      </p>
+      ${emailStatusPill("Resolved", "success")}
+      ${emailHeading("Marked resolved")}
+      ${emailText(
+        `We've marked "${escapeHtml(input.reference)}" (${escapeHtml(input.subject)}) resolved. If this didn't fully sort things out, you can reopen it within 14 days.`,
+      )}
       ${emailButtonHtml("Reopen this request", input.reopenUrl)}
     `,
   }),
@@ -424,18 +479,16 @@ export const accountSuspendedTemplate = (
   html: renderEmailLayout({
     preheader: "Your account has been temporarily suspended.",
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Your account has been suspended</h1>
-      <p style="color:${SUB};margin:0 0 12px;">
-        ${
-          input.expiresAtLabel
-            ? `This is temporary and lifts automatically on ${escapeHtml(input.expiresAtLabel)}.`
-            : "This suspension has no set end date."
-        }
-      </p>
+      ${emailStatusPill("Suspended", "destructive")}
+      ${emailHeading("Your account has been suspended")}
+      ${emailLede(
+        input.expiresAtLabel
+          ? `This is temporary and lifts automatically on ${input.expiresAtLabel}.`
+          : "This suspension has no set end date.",
+      )}
       ${paragraphsHtml(input.reason)}
-      <p style="color:${SUB};margin:12px 0 0;">
-        If you think this is a mistake, you can reach our support team.
-      </p>
+      ${emailDivider()}
+      ${emailText("If you think this is a mistake, you can reach our support team.")}
       ${emailButtonHtml("Contact support", input.supportUrl)}
     `,
   }),
@@ -453,11 +506,11 @@ export const accountBannedTemplate = (
   html: renderEmailLayout({
     preheader: "Your account has been banned.",
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Your account has been banned</h1>
+      ${emailStatusPill("Banned", "destructive")}
+      ${emailHeading("Your account has been banned")}
       ${paragraphsHtml(input.reason)}
-      <p style="color:${SUB};margin:12px 0 0;">
-        If you think this is a mistake, you can reach our support team.
-      </p>
+      ${emailDivider()}
+      ${emailText("If you think this is a mistake, you can reach our support team.")}
       ${emailButtonHtml("Contact support", input.supportUrl)}
     `,
   }),
@@ -468,10 +521,9 @@ export const accountRestoredTemplate = (): { subject: string; html: string } => 
   html: renderEmailLayout({
     preheader: "Your account access has been restored.",
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Welcome back</h1>
-      <p style="color:${SUB};margin:0;">
-        Your account is active again and everything is back to normal.
-      </p>
+      ${emailStatusPill("Restored", "success")}
+      ${emailHeading("Welcome back")}
+      ${emailLede("Your account is active again and everything is back to normal.")}
     `,
   }),
 });
@@ -490,19 +542,18 @@ export const brandSuspendedTemplate = (
   html: renderEmailLayout({
     preheader: "Your brand's storefront has been temporarily suspended.",
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">${escapeHtml(input.brandName)} has been suspended</h1>
-      <p style="color:${SUB};margin:0 0 12px;">
-        Your listings are hidden from the storefront and order fulfilment is paused.
-        ${
+      ${emailStatusPill("Suspended", "destructive")}
+      ${emailHeading(`${escapeHtml(input.brandName)} has been suspended`)}
+      ${emailLede(
+        `Your listings are hidden from the storefront and order fulfilment is paused. ${
           input.expiresAtLabel
-            ? `This is temporary and lifts automatically on ${escapeHtml(input.expiresAtLabel)}.`
+            ? `This is temporary and lifts automatically on ${input.expiresAtLabel}.`
             : "This suspension has no set end date."
-        }
-      </p>
+        }`,
+      )}
       ${paragraphsHtml(input.reason)}
-      <p style="color:${SUB};margin:12px 0 0;">
-        If you think this is a mistake, you can reach our support team.
-      </p>
+      ${emailDivider()}
+      ${emailText("If you think this is a mistake, you can reach our support team.")}
       ${emailButtonHtml("Contact support", input.supportUrl)}
     `,
   }),
@@ -513,10 +564,9 @@ export const brandRestoredTemplate = (brandName: string): { subject: string; htm
   html: renderEmailLayout({
     preheader: "Your brand's storefront access has been restored.",
     bodyHtml: `
-      <h1 style="font-size:20px;margin:0 0 4px;">Welcome back</h1>
-      <p style="color:${SUB};margin:0;">
-        ${escapeHtml(brandName)} is active again — listings are visible and fulfilment can resume.
-      </p>
+      ${emailStatusPill("Restored", "success")}
+      ${emailHeading("Welcome back")}
+      ${emailLede(`${escapeHtml(brandName)} is active again. Listings are visible and fulfilment can resume.`)}
     `,
   }),
 });
