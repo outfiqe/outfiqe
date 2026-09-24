@@ -577,11 +577,12 @@ describe("GET /api/crm/organizations", () => {
 
 describe("GET /api/crm/organization", () => {
   it("rejects a staff account with no CRM membership", async () => {
-    await seedOrganization();
+    const { organization } = await seedOrganization();
     const staff = await createStaffUser("No Membership");
 
     const response = await request(testApp)
       .get("/api/crm/organization")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(staff.id));
 
     expect(response.status).toBe(403);
@@ -595,6 +596,7 @@ describe("GET /api/crm/organization", () => {
 
     const response = await request(testApp)
       .get("/api/crm/organization")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(staff.id));
 
     expect(response.status).toBe(200);
@@ -609,6 +611,7 @@ describe("GET /api/crm/organization", () => {
 
     const response = await request(testApp)
       .get("/api/crm/organization")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(staff.id));
 
     expect(response.status).toBe(200);
@@ -621,6 +624,7 @@ describe("GET /api/crm/organization", () => {
 
     const response = await request(testApp)
       .get("/api/crm/organization")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(staff.id));
 
     expect(response.status).toBe(403);
@@ -635,6 +639,7 @@ describe("PATCH /api/crm/members/:membershipId", () => {
 
     const response = await request(testApp)
       .patch(`/api/crm/members/${adminMembership.id}`)
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(admin.id))
       .send({ roleId: memberRole.id });
 
@@ -654,6 +659,7 @@ describe("PATCH /api/crm/members/:membershipId", () => {
 
     const response = await request(testApp)
       .patch(`/api/crm/members/${adminMembership.id}`)
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(admin.id))
       .send({ status: "DEACTIVATED" });
 
@@ -670,6 +676,7 @@ describe("PATCH /api/crm/members/:membershipId", () => {
 
     const response = await request(testApp)
       .patch(`/api/crm/members/${teammateMembership.id}`)
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(admin.id))
       .send({ roleId: adminRole.id });
 
@@ -728,9 +735,9 @@ describe("Tenant resolution via subdomain", () => {
     expect(response.body.code).toBe("ORGANIZATION_NOT_FOUND");
   });
 
-  it("falls back to the single seeded organization when no subdomain is present", async () => {
-    const { organization, adminRole } = await seedOrganization();
-    const staff = await createStaffUser("Default Org User");
+  it("falls back to the platform organization when no subdomain is present", async () => {
+    const { organization, adminRole } = await seedPlatformOrganization();
+    const staff = await createStaffUser("Platform Org User");
     const membership = await addMembership(organization.id, staff.id, adminRole.id);
     await makeSuperAdmin(organization.id, membership.id);
 
@@ -740,12 +747,13 @@ describe("Tenant resolution via subdomain", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data.id).toBe(organization.id);
+    expect(response.body.data.isPlatformOrg).toBe(true);
   });
 
-  it("never falls back to the platform organization itself, even though it's always seeded first", async () => {
-    await ensurePlatformOrganizationExists();
-    const { organization, adminRole } = await seedOrganization();
-    const staff = await createStaffUser("Default Org User Two");
+  it("resolves to the platform organization when no subdomain is present, even alongside tenant organizations", async () => {
+    const { organization, adminRole } = await seedPlatformOrganization();
+    await seedOrganization();
+    const staff = await createStaffUser("Platform Org User Two");
     const membership = await addMembership(organization.id, staff.id, adminRole.id);
     await makeSuperAdmin(organization.id, membership.id);
 
@@ -755,7 +763,19 @@ describe("Tenant resolution via subdomain", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data.id).toBe(organization.id);
-    expect(response.body.data.isPlatformOrg).not.toBe(true);
+    expect(response.body.data.isPlatformOrg).toBe(true);
+  });
+
+  it("returns 404 when no subdomain is present and no platform organization exists yet", async () => {
+    await seedOrganization();
+    const staff = await createStaffUser("No Platform Org User");
+
+    const response = await request(testApp)
+      .get("/api/crm/organization")
+      .set("Authorization", authHeaderFor(staff.id));
+
+    expect(response.status).toBe(404);
+    expect(response.body.code).toBe("ORGANIZATION_NOT_FOUND");
   });
 
   it("prefers X-Forwarded-Host over the literal Host header, matching a real proxy chain", async () => {
@@ -808,6 +828,7 @@ describe("CRM invites", () => {
 
     const inviteResponse = await request(testApp)
       .post("/api/crm/invites")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(superAdminUser.id))
       .send({ email: invitee.email, roleId: memberRole.id });
 
@@ -826,6 +847,7 @@ describe("CRM invites", () => {
 
     const acceptResponse = await request(testApp)
       .post("/api/crm/invites/accept")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(invitee.id))
       .send({ token: rawToken });
 
@@ -884,6 +906,7 @@ describe("CRM invites", () => {
 
     const response = await request(testApp)
       .post("/api/crm/invites/accept")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(invitee.id))
       .send({ token: rawToken });
 
@@ -908,6 +931,7 @@ describe("CRM invites", () => {
 
     const response = await request(testApp)
       .post("/api/crm/invites/accept")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(invitee.id))
       .send({ token: rawToken });
 
@@ -934,6 +958,7 @@ describe("CRM invites", () => {
 
     const response = await request(testApp)
       .post("/api/crm/invites/accept")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(wrongAccepter.id))
       .send({ token: rawToken });
 
@@ -955,6 +980,7 @@ describe("CRM invites", () => {
 
     const response = await request(testApp)
       .post("/api/crm/invites")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(superAdminUser.id))
       .send({ email: existingMember.email, roleId: memberRole.id });
 
@@ -975,6 +1001,7 @@ describe("CRM invites", () => {
 
     const response = await request(testApp)
       .post("/api/crm/invites")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(superAdminUser.id))
       .send({ email: shopper.email, roleId: memberRole.id });
 
@@ -996,6 +1023,7 @@ describe("CRM invites", () => {
 
     const response = await request(testApp)
       .post("/api/crm/invites")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(superAdminUser.id))
       .send({ email: strangerEmail, roleId: memberRole.id });
 
@@ -1033,6 +1061,7 @@ describe("CRM invites", () => {
 
     const response = await request(testApp)
       .post("/api/crm/invites")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(superAdminUser.id))
       .send({ email: `over-seat-${randomUUID()}@outfiqe.test`, roleId: memberRole.id });
 
@@ -1055,6 +1084,7 @@ describe("CRM invites", () => {
 
     const response = await request(testApp)
       .post("/api/crm/invites")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(superAdminUser.id))
       .send({ email: `trial-invite-${randomUUID()}@outfiqe.test`, roleId: memberRole.id });
 
@@ -1084,6 +1114,7 @@ describe("CRM invites", () => {
     const inviteOnce = () =>
       request(testApp)
         .post("/api/crm/invites")
+        .set("Host", `${organization.subdomain}.localhost`)
         .set("Authorization", authHeaderFor(superAdminUser.id))
         .send({ email: `concurrent-seat-${randomUUID()}@outfiqe.test`, roleId: memberRole.id });
 
@@ -1119,6 +1150,7 @@ describe("CRM invites", () => {
     const acceptOnce = () =>
       request(testApp)
         .post("/api/crm/invites/accept")
+        .set("Host", `${organization.subdomain}.localhost`)
         .set("Authorization", authHeaderFor(invitee.id))
         .send({ token: rawToken });
 
@@ -1248,6 +1280,7 @@ describe("Ownership transfer", () => {
 
     const createResponse = await request(testApp)
       .post("/api/crm/ownership-transfer")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(owner.id))
       .send({ toMembershipId: recipientMembership.id });
     expect(createResponse.status).toBe(201);
@@ -1258,6 +1291,7 @@ describe("Ownership transfer", () => {
 
     const acceptResponse = await request(testApp)
       .post(`/api/crm/ownership-transfer/${pendingRequest.id}/accept`)
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(recipient.id));
     expect(acceptResponse.status).toBe(200);
 
@@ -1283,6 +1317,7 @@ describe("Ownership transfer", () => {
 
     const createResponse = await request(testApp)
       .post("/api/crm/ownership-transfer")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(owner.id))
       .send({ toMembershipId: recipientMembership.id, removeSenderMembership: true });
     expect(createResponse.status).toBe(201);
@@ -1294,6 +1329,7 @@ describe("Ownership transfer", () => {
 
     const acceptResponse = await request(testApp)
       .post(`/api/crm/ownership-transfer/${pendingRequest.id}/accept`)
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(recipient.id));
     expect(acceptResponse.status).toBe(200);
 
@@ -1318,6 +1354,7 @@ describe("Ownership transfer", () => {
 
     const response = await request(testApp)
       .post("/api/crm/ownership-transfer")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(staff.id))
       .send({ toMembershipId: otherMembership.id });
 
@@ -1341,11 +1378,13 @@ describe("Ownership transfer", () => {
 
     await request(testApp)
       .post("/api/crm/ownership-transfer")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(owner.id))
       .send({ toMembershipId: firstMembership.id });
 
     const response = await request(testApp)
       .post("/api/crm/ownership-transfer")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(owner.id))
       .send({ toMembershipId: secondMembership.id });
 
@@ -1366,6 +1405,7 @@ describe("Ownership transfer", () => {
 
     await request(testApp)
       .post("/api/crm/ownership-transfer")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(owner.id))
       .send({ toMembershipId: recipientMembership.id });
 
@@ -1375,11 +1415,13 @@ describe("Ownership transfer", () => {
 
     const acceptResponse = await request(testApp)
       .post(`/api/crm/ownership-transfer/${pendingRequest.id}/accept`)
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(bystander.id));
     expect(acceptResponse.status).toBe(403);
 
     const declineResponse = await request(testApp)
       .post(`/api/crm/ownership-transfer/${pendingRequest.id}/decline`)
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(bystander.id));
     expect(declineResponse.status).toBe(403);
   });
@@ -1395,6 +1437,7 @@ describe("Ownership transfer", () => {
 
     await request(testApp)
       .post("/api/crm/ownership-transfer")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(owner.id))
       .send({ toMembershipId: recipientMembership.id });
 
@@ -1404,11 +1447,13 @@ describe("Ownership transfer", () => {
 
     const revokeResponse = await request(testApp)
       .delete(`/api/crm/ownership-transfer/${pendingRequest.id}`)
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(owner.id));
     expect(revokeResponse.status).toBe(200);
 
     const acceptResponse = await request(testApp)
       .post(`/api/crm/ownership-transfer/${pendingRequest.id}/accept`)
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(recipient.id));
     expect(acceptResponse.status).toBe(409);
     expect(acceptResponse.body.code).toBe("TRANSFER_INVALID");
@@ -1430,6 +1475,7 @@ describe("Ownership transfer", () => {
 
     const response = await request(testApp)
       .post("/api/crm/ownership-transfer")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(owner.id))
       .send({ toMembershipId: deactivatedMembership.id });
 
@@ -1444,6 +1490,7 @@ describe("Ownership transfer", () => {
 
     const response = await request(testApp)
       .post("/api/crm/ownership-transfer")
+      .set("Host", `${organization.subdomain}.localhost`)
       .set("Authorization", authHeaderFor(owner.id))
       .send({ toMembershipId: ownerMembership.id });
 

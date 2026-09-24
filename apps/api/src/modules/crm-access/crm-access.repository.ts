@@ -54,13 +54,6 @@ const toRoleWithPermissions = (role: {
 });
 
 export const crmAccessRepository = {
-  async findDefaultOrganization(): Promise<OrganizationRecord | null> {
-    return prisma.organization.findFirst({
-      where: TENANT_ORGANIZATION_SCOPE,
-      orderBy: { createdAt: "asc" },
-    });
-  },
-
   async listOrganizations(params: {
     cursor?: string;
     limit: number;
