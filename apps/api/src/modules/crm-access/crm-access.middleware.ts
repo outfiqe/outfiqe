@@ -20,7 +20,7 @@ export const resolveTenant = async (req: Request, res: Response, next: NextFunct
 
   const organization = subdomain
     ? await crmAccessRepository.findOrganizationBySubdomain(subdomain)
-    : await crmAccessRepository.findDefaultOrganization();
+    : await crmAccessRepository.findPlatformOrganization();
 
   if (!organization) {
     return next(

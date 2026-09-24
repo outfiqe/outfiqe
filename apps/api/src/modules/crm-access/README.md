@@ -137,20 +137,31 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   one `Membership` — so it can't be edited down, duplicated, or granted through the invite flow
   (`OrganizationInvite.roleId` only ever points at a real `Role`). It's set once by the seed
   script or by `createOrganization`, and moved only through the ownership-transfer flow below.
-- **Tenant resolution is subdomain-first, single-org-fallback, resolved once per request.**
+- **Tenant resolution is subdomain-first, platform-org-fallback, resolved once per request.**
   `resolveTenant` extracts a subdomain from `resolveTenantHostname` (which prefers `X-Forwarded-Host`
   over `req.hostname` when present — see the bullet below) against `env.TENANT_BASE_DOMAIN`
   (`extractSubdomain` — rejects malformed labels and a reserved list: `www`, `api`, `admin`, `app`,
   `crm`, etc.). If a subdomain is present, the organization **must** match it exactly — an unknown
-  subdomain is a `404`, never a silent fallback to the default org, since that would let a
-  mistyped/malicious subdomain reach the wrong tenant's data. Only the _absence_ of a subdomain
-  (today's only real traffic — `apps/admin` calls a single fixed API host) falls back to
-  `findDefaultOrganization()`, which is scoped to `TENANT_ORGANIZATION_SCOPE`
-  (`isPlatformOrg: false`) so it can never resolve to the platform organization itself — without
-  that filter, `ORDER BY createdAt ASC` would pick the platform org in practice, since it's always
-  the very first `Organization` row any environment ever seeds (`admin.<baseDomain>` and other
-  reserved hosts never carry a tenant subdomain, so every request against them used to hit exactly
-  this fallback). The result is stored once on `res.locals.crmOrganization`
+  subdomain is a `404`, never a silent fallback, since that would let a mistyped/malicious subdomain
+  reach the wrong tenant's data. Only the _absence_ of a subdomain (today's only real traffic —
+  `apps/admin` calls a single fixed API host, whether that's a platform staff member's own login or
+  a tenant staff member browsing without ever hitting their org's subdomain) falls back to
+  `findPlatformOrganization()` — this **is** meant to resolve to the platform organization, not away
+  from it. Outfiqe's own staff dogfood the CRM against their own platform `Organization` row (its own
+  contacts/deals/tickets), and `AdminSidebar`'s `shouldShowCrmSection`/`shouldShowPlatformSection`
+  (`apps/admin/src/components/AdminSidebar.utils.ts`) depend on this resolving to the platform org
+  specifically to hide the redundant "CRM" nav section for platform staff. An earlier pass scoped
+  this fallback to `TENANT_ORGANIZATION_SCOPE` instead, meaning to stop a no-subdomain request from
+  resolving to the platform org — but that was the one caller where resolving to the platform org was
+  correct; scoping it away instead made every subdomain-less request resolve to an arbitrary real
+  tenant (`ORDER BY createdAt ASC`, i.e. whichever tenant happened to be oldest), which is both a
+  cross-tenant correctness bug and the cause of platform staff seeing a broken, duplicated
+  CRM-plus-Platform sidebar after a failed/403'd organization lookup. `findDefaultOrganization` was
+  removed entirely rather than re-scoped, since it's now identical to `findPlatformOrganization`
+  and keeping both invited the same mistake again. `TENANT_ORGANIZATION_SCOPE` is still correct and
+  still used elsewhere (`listOrganizations`, `platform-metrics`) — those callers genuinely want "every
+  real tenant, never the platform org itself," which is a different question than "who does a
+  subdomain-less request belong to." The result is stored once on `res.locals.crmOrganization`
   (`getResolvedOrganization`), so `requirePermission` and every controller method read it instead
   of re-querying — the same "resolve once, read from `res.locals`" shape `requireAuth`/
   `res.locals.auth` already uses.
