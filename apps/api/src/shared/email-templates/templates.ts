@@ -39,7 +39,7 @@ export const passwordResetTemplate = (url: string): { subject: string; html: str
       ${emailHeading("Reset your password")}
       ${emailLede("This link expires in 1 hour.")}
       ${emailButtonHtml("Reset password", url)}
-      ${emailSecurityNote("If you didn't request this, you can safely ignore this email — your password won't change.")}
+      ${emailSecurityNote("If you didn't request this, you can safely ignore this email. Your password won't change.")}
     `,
   }),
 });
@@ -79,7 +79,7 @@ export const brandApprovedTemplate = (
   brandName: string,
   inviteUrl: string,
 ): { subject: string; html: string } => ({
-  subject: `You're approved — set up ${brandName} on Outfiqe`,
+  subject: `You're approved: set up ${brandName} on Outfiqe`,
   html: renderEmailLayout({
     preheader: `${brandName} is approved on Outfiqe.`,
     bodyHtml: `
@@ -165,7 +165,7 @@ type OrderConfirmationInput = {
 export const orderConfirmationTemplate = (
   input: OrderConfirmationInput,
 ): { subject: string; html: string } => ({
-  subject: `Order placed — ${input.orderId}`,
+  subject: `Order placed: ${input.orderId}`,
   html: renderEmailLayout({
     preheader: `Your Outfiqe order ${input.orderId} has been placed.`,
     bodyHtml: `
@@ -211,7 +211,7 @@ type PaymentSettledInput = {
 export const paymentSettledTemplate = (
   input: PaymentSettledInput,
 ): { subject: string; html: string } => ({
-  subject: `Payment received — ${input.orderId}`,
+  subject: `Payment received: ${input.orderId}`,
   html: renderEmailLayout({
     preheader: `Payment received for order ${input.orderId}.`,
     bodyHtml: `
@@ -233,7 +233,7 @@ type ManualRefundNeededInput = {
 export const manualRefundNeededTemplate = (
   input: ManualRefundNeededInput,
 ): { subject: string; html: string } => ({
-  subject: `Action needed — refund order ${input.orderId}`,
+  subject: `Action needed: refund order ${input.orderId}`,
   html: renderEmailLayout({
     preheader: `Order ${input.orderId} needs a manual refund.`,
     bodyHtml: `
@@ -257,7 +257,7 @@ type OrderCancelledInput = {
 export const orderCancelledTemplate = (
   input: OrderCancelledInput,
 ): { subject: string; html: string } => ({
-  subject: `Order cancelled — ${input.orderId}`,
+  subject: `Order cancelled: ${input.orderId}`,
   html: renderEmailLayout({
     preheader: `Order ${input.orderId} has been cancelled.`,
     bodyHtml: `
@@ -280,7 +280,7 @@ type RefundFailedInput = {
 export const refundFailedTemplate = (
   input: RefundFailedInput,
 ): { subject: string; html: string } => ({
-  subject: `Action needed — refund order ${input.orderId}`,
+  subject: `Action needed: refund order ${input.orderId}`,
   html: renderEmailLayout({
     preheader: `The automatic refund for order ${input.orderId} failed.`,
     bodyHtml: `
@@ -404,7 +404,7 @@ export const supportRequestReceivedTemplate = (
     bodyHtml: `
       ${emailEyebrow(input.reference)}
       ${emailHeading("We're on it")}
-      ${emailLede("Thanks for reaching out. Our team will reply by email — you can also follow this in your account under Settings > Support.")}
+      ${emailLede("Thanks for reaching out. Our team will reply by email. You can also follow this in your account under Settings > Support.")}
       ${emailSubheading(input.subject)}
       ${emailInfoPanel(paragraphsHtml(input.message))}
     `,
@@ -566,7 +566,7 @@ export const brandRestoredTemplate = (brandName: string): { subject: string; htm
     bodyHtml: `
       ${emailStatusPill("Restored", "success")}
       ${emailHeading("Welcome back")}
-      ${emailLede(`${escapeHtml(brandName)} is active again — listings are visible and fulfilment can resume.`)}
+      ${emailLede(`${escapeHtml(brandName)} is active again. Listings are visible and fulfilment can resume.`)}
     `,
   }),
 });

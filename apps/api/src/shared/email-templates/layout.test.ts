@@ -131,7 +131,7 @@ describe("renderEmailLayout", () => {
     expect(html).toContain(">out</span>");
     expect(html).toContain(">fiqe.</span>");
     expect(html).toContain("<p>Body content</p>");
-    expect(html).toContain("Outfiqe &mdash; Fashion discovery, made in Nepal.");
+    expect(html).toContain("Outfiqe. Fashion discovery, made in Nepal.");
   });
 
   it("never nests a double-quoted font name inside a double-quoted style attribute", () => {

@@ -136,7 +136,7 @@ export const renderEmailLayout = ({
           ${bodyHtml}
         </td></tr>
         <tr><td style="padding:18px 32px;border-top:1px solid ${COLOR.border};color:${COLOR.muted};font-size:12px;">
-          Outfiqe &mdash; Fashion discovery, made in Nepal.
+          Outfiqe. Fashion discovery, made in Nepal.
         </td></tr>
       </table>
     </td></tr>
