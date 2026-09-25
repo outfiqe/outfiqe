@@ -30,7 +30,7 @@ type BrandProfileProps = {
 
 export const BrandProfile = ({ brand }: BrandProfileProps) => {
   const router = useRouter();
-  const { isAuthenticated, isAuthResolved, isAdmin, state } = useAuth();
+  const { isAuthenticated, isAuthResolved, isStaff, state } = useAuth();
   const productTypes = useProductTypes();
   const { openConversationWith, isStartingConversation } = useChatPanel();
 
@@ -171,7 +171,7 @@ export const BrandProfile = ({ brand }: BrandProfileProps) => {
           </div>
 
           <div className="mt-5 flex gap-2">
-            {!isAdmin && (
+            {!isStaff && (
               <Button
                 variant="outline"
                 aria-pressed={isFollowing}

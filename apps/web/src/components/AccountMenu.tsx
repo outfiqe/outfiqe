@@ -14,7 +14,7 @@ const OVERVIEW_PATH = "/overview";
 const PROFILE_PATH = "/profile";
 
 export const AccountMenu = () => {
-  const { state, isAuthenticated, isBrandOwner, isAdmin, isCreator, isShopper, hasCrmAccess } =
+  const { state, isAuthenticated, isBrandOwner, isStaff, isCreator, isShopper, hasCrmAccess } =
     useAuth();
   const logout = useLogout();
   const isOnTenantHost = useTenantHost();
@@ -58,7 +58,7 @@ export const AccountMenu = () => {
 
   return (
     <div className="group relative hidden lg:block">
-      {isAdmin ? (
+      {isStaff ? (
         <a
           href={ADMIN_URL}
           aria-label="Dashboard"
@@ -80,7 +80,7 @@ export const AccountMenu = () => {
         <div className="mt-2 rounded-xl border border-border bg-card p-2 shadow-lg">
           <p className="truncate px-3 py-2 text-sm font-semibold text-foreground">{name}</p>
 
-          {isAdmin ? (
+          {isStaff ? (
             <a
               href={ADMIN_URL}
               className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
@@ -95,7 +95,7 @@ export const AccountMenu = () => {
               Dashboard
             </Link>
           )}
-          {hasCrmAccess && !isAdmin && isOnTenantHost && (
+          {hasCrmAccess && !isStaff && isOnTenantHost && (
             <a
               href={`${ADMIN_URL}/crm`}
               className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
@@ -126,7 +126,7 @@ export const AccountMenu = () => {
             </>
           )}
 
-          {!isBrandOwner && !isAdmin && !isCreator && (
+          {!isBrandOwner && !isStaff && !isCreator && (
             <>
               <div className="my-1.5 h-px bg-border" />
               <Link

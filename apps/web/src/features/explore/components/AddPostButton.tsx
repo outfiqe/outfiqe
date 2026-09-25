@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal } from "@outfiqe/design-system";
+import { isStaffUserRole } from "@outfiqe/utils";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
@@ -31,10 +32,10 @@ export const AddPostButton = () => {
   const creatorStatus = state.user?.creatorStatus ?? CreatorStatus.NONE;
   const isApprovedCreator = creatorStatus === CreatorStatus.APPROVED;
   const isBrandOwner = state.user?.role === UserRole.BRAND_OWNER;
-  const isAdmin = state.user?.role === UserRole.ADMIN;
+  const isStaff = isStaffUserRole(state.user?.role);
   const close = () => setTarget(null);
 
-  if (isBrandOwner || isAdmin) return null;
+  if (isBrandOwner || isStaff) return null;
 
   const handleClick = () => {
     if (!isAuthenticated) {

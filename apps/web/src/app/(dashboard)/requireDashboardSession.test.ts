@@ -64,6 +64,11 @@ describe("requireDashboardSession", () => {
     await expect(requireDashboardSession("/earnings")).rejects.toThrow("REDIRECT:/admin");
   });
 
+  it("sends tenant staff with no creator or brand dashboard to the admin app", async () => {
+    getServerSessionWithToken.mockResolvedValue(sessionFor({ role: UserRole.TENANT_STAFF }));
+    await expect(requireDashboardSession("/earnings")).rejects.toThrow("REDIRECT:/admin");
+  });
+
   it("lets an admin who is also an approved creator reach the dashboard", async () => {
     getServerSessionWithToken.mockResolvedValue(
       sessionFor({

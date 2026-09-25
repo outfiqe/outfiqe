@@ -208,7 +208,7 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   it has no way to know the admin SPA's `/admin` basepath is mandatory.** The admin app's own
   `vite.config.ts` (`base: "/admin/"`) and `main.tsx` (`basepath: "/admin"`) hard-require every URL
   that reaches it to include `/admin`, on any hostname. A bare `ADMIN_URL` (no path at all, e.g.
-  `https://admin.outfiqe.com`) produces a link that is missing `/admin` entirely
+  `https://outfiqe.com`) produces a link that is missing `/admin` entirely
   (`daraz.outfiqe.com/crm`) rather than doubled — same root cause as the bug above, just without a
   trailing slash to trigger it. `deploy/.env.prod.example` and `deploy/.env.dev.example` previously
   set exactly this bare form; they're fixed to include `/admin` now, but an already-deployed
@@ -261,7 +261,7 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   run more than one business, but never silent.
 - **Tenant organizations must never reach Outfiqe's own commerce-admin sections** (Products,
   Orders, Brand applications, Commissions, Withdrawals, etc.). Once real tenant orgs exist with
-  their own `UserRole.ADMIN` staff (e.g. a Meridian Apparel employee), gating every non-CRM
+  their own `UserRole.TENANT_STAFF` staff (e.g. a Meridian Apparel employee), gating every non-CRM
   `apps/admin` route on a flat `requireRole(UserRole.ADMIN)` — the same check CRM membership
   eligibility uses — would let that staff member see Outfiqe's own data. `requirePlatformAccess`
   fixes this as PBAC, not a hardcoded organization-id check: `Organization.isPlatformOrg` marks
@@ -303,7 +303,7 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   `PLATFORM_PERMISSION_CATALOG` key regardless of their assigned role. Without this, a co-founder
   freshly bootstrapped onto the now-zero-access "Member" role (see above) would have no real
   platform access despite being flagged a co-founder.
-- **Inviting an existing `UserRole.ADMIN` account** takes the logged-in accept path: `acceptInvite`
+- **Inviting an existing staff account (`UserRole.ADMIN` or `UserRole.TENANT_STAFF`)** takes the logged-in accept path: `acceptInvite`
   checks the accepting account's email matches the invite's email, so a valid token can't be
   redeemed by a different logged-in staff member than the one it was addressed to. An email that
   already belongs to a **non-staff** account (a storefront shopper/creator) is rejected outright

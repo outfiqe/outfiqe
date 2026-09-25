@@ -7,9 +7,9 @@ import { shareOrCopyLink } from "@/features/pwa";
 import type { FeedPost } from "../api/exploreFeedSchemas";
 import { usePostCardState } from "./usePostCardState";
 
-const { authState } = vi.hoisted(() => ({ authState: { isAdmin: false } }));
+const { authState } = vi.hoisted(() => ({ authState: { isStaff: false } }));
 vi.mock("@/features/auth/context/AuthContext", () => ({
-  useAuth: () => ({ state: { user: { id: "viewer-1" } }, isAdmin: authState.isAdmin }),
+  useAuth: () => ({ state: { user: { id: "viewer-1" } }, isStaff: authState.isStaff }),
 }));
 
 vi.mock("@/features/pwa", () => ({
@@ -50,24 +50,24 @@ afterEach(() => {
   vi.mocked(shareOrCopyLink).mockReset().mockResolvedValue("shared");
   vi.spyOn(toast, "success").mockImplementation(() => "");
   vi.spyOn(toast, "error").mockImplementation(() => "");
-  authState.isAdmin = false;
+  authState.isStaff = false;
 });
 
 describe("usePostCardState admin gating", () => {
   it("exposes no like-disabled reason for an ordinary viewer", () => {
     const { result } = renderHook(() => usePostCardState(aPost()));
 
-    expect(result.current.isAdmin).toBe(false);
+    expect(result.current.isStaff).toBe(false);
     expect(result.current.likeDisabledReason).toBeUndefined();
   });
 
   it("exposes a readable like-disabled reason for a platform admin viewer", () => {
-    authState.isAdmin = true;
+    authState.isStaff = true;
     const { result } = renderHook(() => usePostCardState(aPost()));
 
-    expect(result.current.isAdmin).toBe(true);
+    expect(result.current.isStaff).toBe(true);
     expect(result.current.likeDisabledReason).toBe(
-      "Platform staff accounts can't like posts — this keeps trending and payouts based on real audience activity.",
+      "Staff accounts can't like posts — this keeps trending and payouts based on real audience activity.",
     );
   });
 });

@@ -71,6 +71,32 @@ describe("AuthProvider session bootstrap", () => {
     expect(fetchCurrentUser).not.toHaveBeenCalled();
   });
 
+  it.each([
+    { role: "ADMIN", expectedIsStaff: true },
+    { role: "TENANT_STAFF", expectedIsStaff: true },
+    { role: "BRAND_OWNER", expectedIsStaff: false },
+    { role: "CUSTOMER", expectedIsStaff: false },
+  ])(
+    "reports isStaff as $expectedIsStaff for a $role account",
+    async ({ role, expectedIsStaff }) => {
+      setHasSessionCookie();
+      mswServer.use(
+        http.post(SESSION_URL, () =>
+          HttpResponse.json({
+            success: true,
+            message: "Session is valid.",
+            data: { accessToken: "access-token", user: { ...currentUser, role } },
+          }),
+        ),
+      );
+
+      const { result } = renderAuth();
+
+      await waitFor(() => expect(result.current.state.status).toBe(AuthStatus.AUTHENTICATED));
+      expect(result.current.isStaff).toBe(expectedIsStaff);
+    },
+  );
+
   it("resolves to unauthenticated when /auth/session rejects the cookie", async () => {
     setHasSessionCookie();
     mswServer.use(

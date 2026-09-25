@@ -10,5 +10,6 @@ export * from "./product-sort";
 export * from "./product-type";
 export * from "./tenant";
 export * from "./thrift-condition";
+export * from "./user-role";
 export * from "./uuid";
 export * from "./web-cache";

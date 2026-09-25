@@ -12,7 +12,7 @@ import { useAddToCart } from "@/features/cart";
 import { saveBuyNowPayload } from "@/features/checkout";
 import { ReviewsSection } from "@/features/product-reviews";
 import { shareOrCopyLink } from "@/features/pwa";
-import { ADMIN_CANNOT_SAVE_PRODUCT_MESSAGE, useToggleWishlist } from "@/features/wishlist";
+import { STAFF_CANNOT_SAVE_PRODUCT_MESSAGE, useToggleWishlist } from "@/features/wishlist";
 import { AppImage } from "@/shared/components/AppImage";
 import { cn } from "@/shared/lib/cn";
 
@@ -35,8 +35,8 @@ type ProductDetailProps = {
 
 export const ProductDetail = ({ product }: ProductDetailProps) => {
   const router = useRouter();
-  const { isAuthenticated, isBrandOwner, isAdmin } = useAuth();
-  const canShop = !isBrandOwner && !isAdmin;
+  const { isAuthenticated, isBrandOwner, isStaff } = useAuth();
+  const canShop = !isBrandOwner && !isStaff;
   const wishlistMutation = useToggleWishlist();
   const addToCartMutation = useAddToCart();
 
@@ -267,8 +267,8 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
                 </Button>
               </>
             )}
-            {isAdmin ? (
-              <Tooltip content={ADMIN_CANNOT_SAVE_PRODUCT_MESSAGE}>
+            {isStaff ? (
+              <Tooltip content={STAFF_CANNOT_SAVE_PRODUCT_MESSAGE}>
                 <Button
                   variant="outline"
                   size="icon"

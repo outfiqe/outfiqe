@@ -11,10 +11,12 @@ import { TokenPurpose, TokenTypeEnum } from "#constants/enums/auth.enum.js";
 import { prisma } from "#db/prisma.js";
 import { passwordResetTemplate, verifyEmailTemplate } from "#email-templates/templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
+import type { Prisma } from "#generated/prisma/client.js";
 import { AccountStatus, BrandRole, UserRole } from "#generated/prisma/enums.js";
 import { parseDurationMs } from "#lib/duration.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { generateToken } from "#lib/generate-token.utils.js";
+import { runWithHandleCollisionRetry } from "#lib/handle.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { hashPassword, needsRehash, verifyPassword } from "#lib/password.utils.js";
 import { isPasswordBreached } from "#lib/password-breach.utils.js";
@@ -181,6 +183,10 @@ const auditLog = (
   const level = outcome === "success" ? "info" : "warn";
   logger[level](message, { ...fields, outcome });
 };
+
+const runRegistrationTransaction = <Result>(
+  createAccount: (transaction: Prisma.TransactionClient) => Promise<Result>,
+): Promise<Result> => runWithHandleCollisionRetry(() => prisma.$transaction(createAccount));
 
 const resolvePlatformFields = async (
   userId: string,
@@ -766,7 +772,7 @@ export const authService = {
     }
 
     const passwordHash = await hashPassword(password);
-    const user = await prisma.$transaction(async (tx) => {
+    const user = await runRegistrationTransaction(async (tx) => {
       const createdUser = await userRepository.create(
         {
           name,
@@ -893,7 +899,7 @@ export const authService = {
     }
 
     const passwordHash = await hashPassword(password);
-    const user = await prisma.$transaction(async (tx) => {
+    const user = await runRegistrationTransaction(async (tx) => {
       const createdUser = await userRepository.create(
         {
           name: inviteName,
@@ -967,7 +973,7 @@ export const authService = {
     }
 
     const passwordHash = await hashPassword(password);
-    const { user, membership } = await prisma.$transaction(async (tx) => {
+    const { user, membership } = await runRegistrationTransaction(async (tx) => {
       const createdUser = await userRepository.create(
         {
           name,
@@ -975,7 +981,7 @@ export const authService = {
           phone,
           password,
           passwordHash,
-          role: UserRole.ADMIN,
+          role: UserRole.TENANT_STAFF,
           emailVerified: true,
         },
         tx,

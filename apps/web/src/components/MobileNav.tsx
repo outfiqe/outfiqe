@@ -67,7 +67,7 @@ const AccountRow = ({
 export const MobileNav = () => {
   const [open, setOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
-  const { state, isAuthenticated, isAdmin, isCreator, isShopper } = useAuth();
+  const { state, isAuthenticated, isStaff, isCreator, isShopper } = useAuth();
   const logout = useLogout();
   const { data: cart } = useCart();
   const cartCount = cart?.itemCount ?? 0;
@@ -195,7 +195,7 @@ export const MobileNav = () => {
                     avatarUrl={state.user.avatarUrl}
                     userId={state.user.id}
                     subtitle={
-                      isAdmin
+                      isStaff
                         ? "Admin console"
                         : state.user.role === UserRole.BRAND_OWNER
                           ? "Manage your brand"
@@ -203,8 +203,8 @@ export const MobileNav = () => {
                             ? "Your creator space"
                             : "Your account"
                     }
-                    href={isAdmin ? ADMIN_URL : "/overview"}
-                    isExternal={isAdmin}
+                    href={isStaff ? ADMIN_URL : "/overview"}
+                    isExternal={isStaff}
                     onNavigate={() => setOpen(false)}
                   />
                   <Button

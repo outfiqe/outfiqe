@@ -9,7 +9,7 @@ export const adminUserSchema = z.object({
   name: z.string(),
   handle: z.string(),
   avatarUrl: z.string().nullable(),
-  role: z.enum(["CUSTOMER", "BRAND_OWNER", "ADMIN"]),
+  role: z.enum(["CUSTOMER", "BRAND_OWNER", "ADMIN", "TENANT_STAFF"]),
   isCreator: z.boolean(),
   emailVerified: z.boolean(),
   accountStatus: accountStatusSchema,

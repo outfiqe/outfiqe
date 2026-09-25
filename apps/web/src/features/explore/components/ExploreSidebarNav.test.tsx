@@ -13,7 +13,7 @@ vi.mock("next/link", () => ({
   useLinkStatus: () => linkStatus,
 }));
 
-import { ADMIN_LOCKED_TAB_TOOLTIP, EXPLORE_TAB, FEED_LAYOUT } from "../explore.constants";
+import { EXPLORE_TAB, FEED_LAYOUT, STAFF_LOCKED_TAB_TOOLTIP } from "../explore.constants";
 import { ExploreSidebarNav } from "./ExploreSidebarNav";
 
 const renderNav = (props?: Partial<Parameters<typeof ExploreSidebarNav>[0]>) =>
@@ -77,7 +77,7 @@ describe("ExploreSidebarNav", () => {
       onChange,
       tab: EXPLORE_TAB.TRENDING,
       lockedTabs: [EXPLORE_TAB.FOR_YOU, EXPLORE_TAB.FOLLOWING],
-      lockedTabTooltip: ADMIN_LOCKED_TAB_TOOLTIP,
+      lockedTabTooltip: STAFF_LOCKED_TAB_TOOLTIP,
     });
 
     const followingTab = screen.getByRole("button", { name: "Following" });
@@ -92,7 +92,7 @@ describe("ExploreSidebarNav", () => {
     expect(onChange).not.toHaveBeenCalled();
 
     fireEvent.focus(followingTab);
-    expect(await screen.findByRole("tooltip")).toHaveTextContent(ADMIN_LOCKED_TAB_TOOLTIP);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(STAFF_LOCKED_TAB_TOOLTIP);
   });
 
   it("highlights Saved and shows its pending dot while its navigation is pending", () => {

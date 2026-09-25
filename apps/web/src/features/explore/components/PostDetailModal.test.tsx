@@ -5,11 +5,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../api/exploreFeedSchemas";
 import { PostDetailModal } from "./PostDetailModal";
 
-const { authState } = vi.hoisted(() => ({ authState: { isAdmin: false } }));
+const { authState } = vi.hoisted(() => ({ authState: { isStaff: false } }));
 vi.mock("@/features/auth/context/AuthContext", () => ({
   useAuth: () => ({
     state: { user: { id: "viewer-1", name: "Viewer" } },
-    isAdmin: authState.isAdmin,
+    isStaff: authState.isStaff,
   }),
 }));
 vi.mock("@/features/pwa", () => ({ shareOrCopyLink: vi.fn() }));
@@ -76,7 +76,7 @@ const aPost = (overrides: Partial<FeedPost> = {}): FeedPost =>
   }) as FeedPost;
 
 afterEach(() => {
-  authState.isAdmin = false;
+  authState.isStaff = false;
 });
 
 describe("PostDetailModal caption spacing", () => {
@@ -103,7 +103,7 @@ describe("PostDetailModal caption spacing", () => {
 
 describe("PostDetailModal for a platform admin viewer", () => {
   it("hides follow, report, and the comment compose form, and disables like", () => {
-    authState.isAdmin = true;
+    authState.isStaff = true;
     render(<PostDetailModal post={aPost({ likeCount: 5 })} onClose={vi.fn()} />);
 
     expect(screen.queryByRole("button", { name: "Follow" })).not.toBeInTheDocument();

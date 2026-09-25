@@ -57,7 +57,7 @@ const mockAuth = (overrides: Partial<ReturnType<typeof useAuth>>) => {
     isAuthenticated: false,
     isAuthResolved: true,
     isBrandOwner: false,
-    isAdmin: false,
+    isStaff: false,
     isCreator: false,
     hasCrmAccess: false,
     dispatch: vi.fn(),
@@ -234,7 +234,7 @@ describe("AccountMenu", () => {
     mockAuth({
       state: { status: AuthStatus.AUTHENTICATED, user: admin, accessToken: "token" },
       isAuthenticated: true,
-      isAdmin: true,
+      isStaff: true,
     });
 
     render(<AccountMenu />);

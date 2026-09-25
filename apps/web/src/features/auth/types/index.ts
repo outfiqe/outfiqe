@@ -5,6 +5,7 @@ export const UserRole = {
   CUSTOMER: "CUSTOMER",
   BRAND_OWNER: "BRAND_OWNER",
   ADMIN: "ADMIN",
+  TENANT_STAFF: "TENANT_STAFF",
 } as const satisfies Record<string, UserRoleType>;
 export type UserRole = UserRoleType;
 

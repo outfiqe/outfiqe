@@ -5,7 +5,7 @@ import type { ProductDetail as ProductDetailType } from "../api/productDetailSch
 import { ProductDetail } from "./ProductDetail";
 
 const addToCart = vi.fn();
-const authState = { isAuthenticated: true, isBrandOwner: false, isAdmin: false };
+const authState = { isAuthenticated: true, isBrandOwner: false, isStaff: false };
 
 vi.mock("@/features/auth/context/AuthContext", () => ({
   useAuth: () => authState,
@@ -19,7 +19,7 @@ const wishlistMutationState = { isPending: false };
 
 vi.mock("@/features/wishlist", () => ({
   useToggleWishlist: () => ({ mutate: vi.fn(), isPending: wishlistMutationState.isPending }),
-  ADMIN_CANNOT_SAVE_PRODUCT_MESSAGE: "Platform staff accounts can't save products.",
+  STAFF_CANNOT_SAVE_PRODUCT_MESSAGE: "Staff accounts can't save products.",
 }));
 
 vi.mock("@/features/checkout", () => ({
@@ -248,7 +248,7 @@ describe("ProductDetail thrift purchase consent", () => {
 describe("ProductDetail buy controls by account type", () => {
   beforeEach(() => {
     authState.isBrandOwner = false;
-    authState.isAdmin = false;
+    authState.isStaff = false;
   });
 
   it("hides Add to cart and Buy now from a brand owner and explains why", () => {
@@ -262,7 +262,7 @@ describe("ProductDetail buy controls by account type", () => {
   });
 
   it("hides the buy controls from an admin too, and disables saving", () => {
-    authState.isAdmin = true;
+    authState.isStaff = true;
     render(<ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />);
 
     expect(screen.queryByRole("button", { name: /add to cart/i })).not.toBeInTheDocument();
