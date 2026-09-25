@@ -5,6 +5,7 @@ import { prisma } from "#db/prisma.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { BUILT_IN_ROLE_NAME } from "#modules/crm-access/crm-access.constants.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
+import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
 import { PLATFORM_PERMISSION_CATALOG } from "#modules/platform-access/platform-access.constants.js";
 import { createAdminSession } from "#test/integration/authHelpers.js";
 import { testApp } from "#test/integration/testApp.js";
@@ -31,6 +32,15 @@ const makeCoFounder = async (userId: string): Promise<void> => {
   await prisma.membership.update({
     where: { userId_organizationId: { userId, organizationId: platformOrganization.id } },
     data: { isPlatformSuperAdmin: true },
+  });
+};
+
+const assignPlatformRole = async (userId: string, roleId: string): Promise<void> => {
+  const platformOrganization = await crmAccessRepository.findPlatformOrganization();
+  if (!platformOrganization) throw new Error("platform organization missing in fixture");
+  await prisma.membership.update({
+    where: { userId_organizationId: { userId, organizationId: platformOrganization.id } },
+    data: { roleId },
   });
 };
 
@@ -79,9 +89,47 @@ describe("POST /api/platform/roles", () => {
       where: { organizationId: platformOrganization!.id, name: "Finance only" },
       include: { permissions: true },
     });
-    expect(stored.permissions.map((permission) => permission.permissionKey)).toEqual([
+    expect(stored.permissions.map((permission) => permission.permissionKey).sort()).toEqual([
+      "platform:access",
       "platform:withdraw:manage",
     ]);
+  });
+
+  it("gives a member holding the new role platform access even though only one platform permission was picked", async () => {
+    const founder = await createAdminSession();
+    await makeCoFounder(founder.userId);
+    const supportStaffer = await createAdminSession();
+
+    const created = await request(testApp)
+      .post("/api/platform/roles")
+      .set("Authorization", founder.authHeader)
+      .send({ name: "Support only", permissionKeys: ["platform:support:read"] })
+      .expect(201);
+    await assignPlatformRole(supportStaffer.userId, created.body.data.id);
+
+    await expect(crmAccessService.resolveHasPlatformAccess(supportStaffer.userId)).resolves.toBe(
+      true,
+    );
+  });
+
+  it("does not reveal the system-managed platform:access key in the role list", async () => {
+    const founder = await createAdminSession();
+    await makeCoFounder(founder.userId);
+    await request(testApp)
+      .post("/api/platform/roles")
+      .set("Authorization", founder.authHeader)
+      .send({ name: "Finance only", permissionKeys: ["platform:withdraw:manage"] })
+      .expect(201);
+
+    const response = await request(testApp)
+      .get("/api/platform/roles")
+      .set("Authorization", founder.authHeader)
+      .expect(200);
+
+    const listedKeys = (response.body.data as { permissionKeys: string[] }[]).flatMap(
+      (role) => role.permissionKeys,
+    );
+    expect(listedKeys).not.toContain("platform:access");
   });
 
   it("rejects a CRM-only permission key", async () => {
@@ -111,6 +159,44 @@ describe("PATCH /api/platform/roles/:roleId", () => {
 
     expect(response.status).toBe(403);
     expect(response.body.code).toBe("ROLE_IS_BUILT_IN");
+  });
+
+  it("keeps platform access on a custom role after its permissions are replaced", async () => {
+    const founder = await createAdminSession();
+    await makeCoFounder(founder.userId);
+    const created = await request(testApp)
+      .post("/api/platform/roles")
+      .set("Authorization", founder.authHeader)
+      .send({ name: "Finance only", permissionKeys: ["platform:withdraw:manage"] })
+      .expect(201);
+
+    const response = await request(testApp)
+      .patch(`/api/platform/roles/${created.body.data.id}`)
+      .set("Authorization", founder.authHeader)
+      .send({ permissionKeys: ["platform:coupons:manage"] })
+      .expect(200);
+
+    expect(response.body.data.permissionKeys).toEqual(["platform:coupons:manage"]);
+    const stored = await prisma.rolePermission.findMany({
+      where: { roleId: created.body.data.id },
+    });
+    expect(stored.map((permission) => permission.permissionKey).sort()).toEqual([
+      "platform:access",
+      "platform:coupons:manage",
+    ]);
+  });
+
+  it("rejects a client that tries to grant platform:access directly", async () => {
+    const founder = await createAdminSession();
+    await makeCoFounder(founder.userId);
+
+    const response = await request(testApp)
+      .post("/api/platform/roles")
+      .set("Authorization", founder.authHeader)
+      .send({ name: "Direct grant", permissionKeys: ["platform:access"] });
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("INVALID_PERMISSION_KEYS");
   });
 });
 
