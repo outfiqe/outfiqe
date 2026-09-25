@@ -97,6 +97,8 @@ domain write.
 
 ## Non-obvious rationale
 
+**Tenant staff are unreachable in chat, except by platform staff.** `computeChatAvailability` returns `RECIPIENT_UNREACHABLE` whenever either side is `UserRole.TENANT_STAFF`, after the platform-staff bypass has already returned true. A tenant's employees therefore can't message customers or creators, and can't be found in the contact search (`searchContacts` excludes both staff types), while Outfiqe support can still reach a tenant's staff to help them. Chat between tenant staff and customers is a deliberate later product decision, not a side effect of an account type.
+
 **A single `ChatBlock` row represents a mutual block, not two** (Phase 1) — see `findBlockBetween`'s
 `OR` lookup; unchanged by Phase 2, the availability check is called as-is from `sendMessage`.
 

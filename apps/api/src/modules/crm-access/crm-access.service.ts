@@ -1,9 +1,11 @@
+import { isStaffUserRole } from "@outfiqe/utils";
+
 import { env } from "#config/env.config.js";
 import {
   crmOrganizationInviteTemplate,
   crmOwnershipTransferRequestTemplate,
 } from "#email-templates/templates.js";
-import { type MembershipStatus, UserRole } from "#generated/prisma/enums.js";
+import type { MembershipStatus } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
@@ -432,7 +434,7 @@ export const crmAccessService = {
     assertPermissionKeysWithinActorGrant(role.permissionKeys, actingGrant);
 
     const invitedUser = await userRepository.findByEmail(email);
-    if (invitedUser && invitedUser.role !== UserRole.ADMIN) {
+    if (invitedUser && !isStaffUserRole(invitedUser.role)) {
       throw new AppError(
         "EMAIL_IN_USE",
         "That email already belongs to a non-staff Outfiqe account and can't be added as staff.",

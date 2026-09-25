@@ -379,7 +379,7 @@ describe("POST /api/auth/register/crm-invite", () => {
 
     const { accessToken, user } = response.body.data;
     expect(user).toMatchObject({
-      role: UserRole.ADMIN,
+      role: UserRole.TENANT_STAFF,
       hasPlatformAccess: false,
       hasCrmAccess: true,
     });

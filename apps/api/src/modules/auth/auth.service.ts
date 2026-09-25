@@ -981,7 +981,7 @@ export const authService = {
           phone,
           password,
           passwordHash,
-          role: UserRole.ADMIN,
+          role: UserRole.TENANT_STAFF,
           emailVerified: true,
         },
         tx,

@@ -148,6 +148,7 @@ enum UserRole {
   CUSTOMER
   BRAND_OWNER
   ADMIN
+  TENANT_STAFF
 }
 
 enum AccountStatus {
