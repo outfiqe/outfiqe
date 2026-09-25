@@ -88,11 +88,11 @@ const buildProduct = () => ({
   reviewCount: 0,
 });
 
-const mockAuth = (isAuthenticated: boolean, isAdmin = false) => {
+const mockAuth = (isAuthenticated: boolean, isStaff = false) => {
   vi.mocked(useAuth).mockReturnValue({
     isAuthenticated,
     isAuthResolved: true,
-    isAdmin,
+    isStaff,
     state: { user: isAuthenticated ? { id: "viewer-1" } : null },
   } as ReturnType<typeof useAuth>);
 };

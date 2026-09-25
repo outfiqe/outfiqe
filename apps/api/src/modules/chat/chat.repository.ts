@@ -65,7 +65,7 @@ export const chatRepository = {
     return prisma.user.findMany({
       where: {
         id: { not: callerId },
-        role: { not: UserRole.ADMIN },
+        role: { notIn: [UserRole.ADMIN, UserRole.TENANT_STAFF] },
         OR: [
           { name: { contains: query, mode: "insensitive" } },
           { handle: { contains: query, mode: "insensitive" } },

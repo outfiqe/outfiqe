@@ -54,7 +54,7 @@ export const contentReportService = {
       await assertCanEngage(reporterUserId, {
         code: "ADMIN_CANNOT_REPORT",
         message:
-          "Platform staff accounts can't file public reports — use the moderation tools directly instead.",
+          "Staff accounts can't file public reports — use the moderation tools directly instead.",
       });
     }
 

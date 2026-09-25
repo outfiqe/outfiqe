@@ -55,6 +55,12 @@ transaction that creates the user.
   under the old rule where every new admin got full access, so they keep exactly that behavior; only
   invites created after this change carry an explicitly chosen role. On an empty database the
   backfill touches zero rows and the constraint applies cleanly.
+- **The emailed link is built from `ADMIN_URL`, which must be the bare base domain.** Production
+  once had `ADMIN_URL=https://admin.outfiqe.com/admin`, so platform invites pointed at an `admin.`
+  host that staff never use. It is now `https://outfiqe.com/admin`, and `env.config.ts` refuses to
+  boot when `ADMIN_URL` sits on a reserved subdomain of `TENANT_BASE_DOMAIN`. Tenant CRM invites are
+  unaffected — they build their own subdomain link (`buildOrganizationAdminUrl`) from the same
+  value and land on `/crm`, while platform invitees land on `/platform`.
 - **`findPendingByEmail` mirrors `crm-access`'s `findPendingInviteByEmail` / `INVITE_ALREADY_PENDING`
   exactly** — same check, same error code, same message — so a co-founder can't fire off two invite
   emails (two live tokens) to the same address before either is used. Only unexpired,

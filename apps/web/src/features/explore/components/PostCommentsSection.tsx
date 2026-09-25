@@ -53,7 +53,7 @@ export const PostCommentsSection = ({
   onSubmit,
   className,
 }: PostCommentsSectionProps) => {
-  const { state, isAdmin } = useAuth();
+  const { state, isStaff } = useAuth();
   const currentUser = state.user;
 
   return (
@@ -78,7 +78,7 @@ export const PostCommentsSection = ({
         ))}
       </ul>
 
-      {!isAdmin && (
+      {!isStaff && (
         <form
           onSubmit={(event) => {
             event.preventDefault();

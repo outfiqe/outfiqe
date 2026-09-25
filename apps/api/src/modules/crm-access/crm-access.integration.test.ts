@@ -46,6 +46,20 @@ const createPlatformStaffUser = async (name: string) => {
   return staff;
 };
 
+const createTenantStaffUser = async (name: string) => {
+  const slug = name.toLowerCase().replace(/\s+/g, "-");
+  return prisma.user.create({
+    data: {
+      email: `${slug}-${randomUUID()}@outfiqe.test`,
+      name,
+      handle: `${slug}-${randomUUID().slice(0, 8)}`,
+      phone: uniquePhone(),
+      passwordHash: "not-used-in-tests",
+      role: UserRole.TENANT_STAFF,
+    },
+  });
+};
+
 const createCustomerUser = async (name: string) => {
   const slug = name.toLowerCase().replace(/\s+/g, "-");
   return prisma.user.create({
@@ -1007,6 +1021,27 @@ describe("CRM invites", () => {
 
     expect(response.status).toBe(409);
     expect(response.body.code).toBe("EMAIL_IN_USE");
+  });
+
+  it("creates a pending invite for an existing tenant staff account from another organization", async () => {
+    const { organization, adminRole, memberRole } = await seedOrganization();
+    const superAdminUser = await createStaffUser("Inviter Tenant Staff");
+    const superAdminMembership = await addMembership(
+      organization.id,
+      superAdminUser.id,
+      adminRole.id,
+    );
+    await makeSuperAdmin(organization.id, superAdminMembership.id);
+
+    const existingTenantStaff = await createTenantStaffUser("Existing Tenant Staff");
+
+    const response = await request(testApp)
+      .post("/api/crm/invites")
+      .set("Host", `${organization.subdomain}.localhost`)
+      .set("Authorization", authHeaderFor(superAdminUser.id))
+      .send({ email: existingTenantStaff.email, roleId: memberRole.id });
+
+    expect(response.status).toBe(201);
   });
 
   it("creates a pending invite for an email with no Outfiqe account yet", async () => {

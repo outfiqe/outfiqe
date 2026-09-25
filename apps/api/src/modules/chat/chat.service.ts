@@ -51,6 +51,9 @@ const computeChatAvailability = async (
   if (caller.role === UserRole.ADMIN || recipient.role === UserRole.ADMIN) {
     return { isAvailable: true };
   }
+  if (caller.role === UserRole.TENANT_STAFF || recipient.role === UserRole.TENANT_STAFF) {
+    return { isAvailable: false, reason: ChatUnavailableReason.RECIPIENT_UNREACHABLE };
+  }
 
   if (
     caller.accountStatus !== AccountStatus.ACTIVE ||

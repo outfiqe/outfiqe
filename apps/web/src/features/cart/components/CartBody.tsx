@@ -31,12 +31,12 @@ const EmptyBag = ({ message }: { message: string }) => (
 
 export const CartBody = () => {
   const router = useRouter();
-  const { isAuthenticated, isAuthResolved, isBrandOwner, isAdmin } = useAuth();
+  const { isAuthenticated, isAuthResolved, isBrandOwner, isStaff } = useAuth();
   const cartQuery = useCart();
 
   if (!isAuthResolved) return null;
 
-  if (isBrandOwner || isAdmin) return <NotAShopperNotice />;
+  if (isBrandOwner || isStaff) return <NotAShopperNotice />;
 
   if (!isAuthenticated) {
     return (

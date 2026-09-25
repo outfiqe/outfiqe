@@ -22,7 +22,7 @@ const getSocketSnapshot = (): NotificationSocket => toNotificationSocket(getSock
 const getServerSocketSnapshot = (): null => null;
 
 export const SiteNotificationBell = () => {
-  const { isAuthenticated, isAuthResolved, isAdmin, state } = useAuth();
+  const { isAuthenticated, isAuthResolved, isStaff, state } = useAuth();
   const { state: pushState } = usePushSubscription();
   const router = useRouter();
 
@@ -45,7 +45,7 @@ export const SiteNotificationBell = () => {
   if (!isAuthenticated) return null;
 
   const handleSelect = (notification: Notification): void => {
-    const navigation = resolveNotificationNavigation(notification, state.user?.handle, isAdmin);
+    const navigation = resolveNotificationNavigation(notification, state.user?.handle, isStaff);
     if (!navigation) return;
     if (navigation.external) window.open(navigation.href, "_blank", "noopener,noreferrer");
     else if (navigation.fullPage) window.location.assign(navigation.href);

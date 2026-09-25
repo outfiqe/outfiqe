@@ -16,7 +16,7 @@ feature only owns what's genuinely app-local (see the root `CLAUDE.md`'s Turbore
   handler calls `resolveNotificationNavigation` and then `router.push` for a same-app path or
   `window.location.assign` for one the resolver flags as `fullPage` (a cross-origin URL, or an
   `${ADMIN_URL}/…` path into the admin app).
-- `resolveNotificationHref.ts` — `resolveNotificationNavigation(notification, ownHandle, isAdmin)`
+- `resolveNotificationHref.ts` — `resolveNotificationNavigation(notification, ownHandle, isStaff)`
   returns `{ href, fullPage }`. When the API stored a `targetPath` on the notification (the normal
   case — see `apps/api/src/modules/notifications/README.md`), it just prefixes an `ADMIN`-surface
   path with `ADMIN_URL` and marks it `fullPage`. `resolveNotificationHref` (the old per-`type`
@@ -33,7 +33,7 @@ authenticated), passes it to `NotificationBell`, which uses `useNotificationSock
 to keep the react-query cache in sync with live `notification:created`/`updated`/`read`/`read-all`
 events. The navigation is pure — everything it needs (`targetSurface`/`targetPath`, or the
 denormalized `metadata` the legacy fallback reads) is already on the notification, plus the
-`handle`/`isAdmin` the bell reads from `useAuth` for the fallback path.
+`handle`/`isStaff` the bell reads from `useAuth` for the fallback path.
 
 ## Non-obvious rationale
 

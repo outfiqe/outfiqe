@@ -7,20 +7,20 @@ import { Fragment, useEffect, useState } from "react";
 import Masonry from "react-masonry-css";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { useAdminViewerHint } from "@/features/auth/utils/adminViewerHint";
+import { useStaffViewerHint } from "@/features/auth/utils/staffViewerHint";
 import { useIsHydrated } from "@/shared/hooks/useIsHydrated";
 import { useLoadMoreOnVisible } from "@/shared/hooks/useLoadMoreOnVisible";
 import { usePendingSelection } from "@/shared/hooks/usePendingSelection";
 
 import {
-  ADMIN_LOCKED_EXPLORE_TABS,
-  ADMIN_LOCKED_TAB_TOOLTIP,
   EXPLORE_GRID_BREAKPOINT_COLUMNS,
   EXPLORE_QUERY_PARAM,
   EXPLORE_TAB,
   type ExploreQueryParamKey,
   FEED_LAYOUT,
   type FeedLayout,
+  STAFF_LOCKED_EXPLORE_TABS,
+  STAFF_LOCKED_TAB_TOOLTIP,
 } from "../explore.constants";
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 import { useExploreFeedSocket } from "../hooks/useExploreFeedSocket";
@@ -48,8 +48,8 @@ const Sidebar = dynamic(() => import("./Sidebar").then((m) => m.Sidebar), { ssr:
 
 export const ExploreFeed = () => {
   const { isAuthenticated, isAuthResolved, viewerId, goToSignIn } = useExploreAuthGate();
-  const { isAdmin } = useAuth();
-  const isLastViewerAdmin = useAdminViewerHint();
+  const { isStaff } = useAuth();
+  const isLastViewerStaff = useStaffViewerHint();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
@@ -62,9 +62,9 @@ export const ExploreFeed = () => {
     setHasJustDismissedForYouHint(true);
   };
 
-  const isAdminViewer = isAuthResolved ? isAdmin : isLastViewerAdmin;
-  const lockedTabs: readonly string[] = isAdminViewer ? ADMIN_LOCKED_EXPLORE_TABS : [];
-  const lockedTabTooltip = isAdminViewer ? ADMIN_LOCKED_TAB_TOOLTIP : undefined;
+  const isStaffViewer = isAuthResolved ? isStaff : isLastViewerStaff;
+  const lockedTabs: readonly string[] = isStaffViewer ? STAFF_LOCKED_EXPLORE_TABS : [];
+  const lockedTabTooltip = isStaffViewer ? STAFF_LOCKED_TAB_TOOLTIP : undefined;
   const requestedTab = searchParams.get(EXPLORE_QUERY_PARAM.TAB) ?? EXPLORE_TAB.FOR_YOU;
   const committedTab = lockedTabs.includes(requestedTab) ? EXPLORE_TAB.TRENDING : requestedTab;
   const committedLayout: FeedLayout =
@@ -73,7 +73,7 @@ export const ExploreFeed = () => {
       : FEED_LAYOUT.GRID;
 
   const isRequestedTabLockedForAdmin =
-    isAuthResolved && isAdmin && lockedTabs.includes(requestedTab);
+    isAuthResolved && isStaff && lockedTabs.includes(requestedTab);
   useEffect(() => {
     if (!isRequestedTabLockedForAdmin) return;
     const params = new URLSearchParams(searchParams.toString());
