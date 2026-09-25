@@ -1,5 +1,6 @@
 "use client";
 
+import { isStaffUserRole } from "@outfiqe/utils";
 import { useRouter } from "next/navigation";
 import {
   createContext,
@@ -27,7 +28,7 @@ import {
   type UserSession,
 } from "../types";
 import { buildAccountSuspendedPath } from "../utils/accountSuspended";
-import { rememberViewerIsAdmin } from "../utils/adminViewerHint";
+import { rememberViewerIsStaff } from "../utils/staffViewerHint";
 import { authReducer, initialAuthState } from "./authReducer";
 
 // Mirrors the non-httpOnly companion cookie the API sets/clears alongside
@@ -40,7 +41,7 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   isAuthResolved: boolean;
   isBrandOwner: boolean;
-  isAdmin: boolean;
+  isStaff: boolean;
   isCreator: boolean;
   isShopper: boolean;
   hasCrmAccess: boolean;
@@ -60,9 +61,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (state.status === AuthStatus.AUTHENTICATED) {
-      rememberViewerIsAdmin(state.user?.role === UserRole.ADMIN);
+      rememberViewerIsStaff(isStaffUserRole(state.user?.role));
     }
-    if (state.status === AuthStatus.UNAUTHENTICATED) rememberViewerIsAdmin(false);
+    if (state.status === AuthStatus.UNAUTHENTICATED) rememberViewerIsStaff(false);
   }, [state.status, state.user?.role]);
 
   useEffect(() => {
@@ -126,7 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isAuthResolved:
       state.status === AuthStatus.AUTHENTICATED || state.status === AuthStatus.UNAUTHENTICATED,
     isBrandOwner: state.user?.role === UserRole.BRAND_OWNER,
-    isAdmin: state.user?.role === UserRole.ADMIN,
+    isStaff: isStaffUserRole(state.user?.role),
     isCreator: state.user?.isCreator === true,
     isShopper: state.user?.role === UserRole.CUSTOMER,
     hasCrmAccess: state.user?.hasCrmAccess === true,

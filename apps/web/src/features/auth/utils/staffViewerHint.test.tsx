@@ -2,29 +2,29 @@ import { renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
-  ADMIN_VIEWER_HINT_KEY,
-  rememberViewerIsAdmin,
-  useAdminViewerHint,
-} from "./adminViewerHint";
+  rememberViewerIsStaff,
+  STAFF_VIEWER_HINT_KEY,
+  useStaffViewerHint,
+} from "./staffViewerHint";
 
 afterEach(() => {
   localStorage.clear();
 });
 
-describe("adminViewerHint", () => {
+describe("staffViewerHint", () => {
   it("is off for a browser that has never had an admin sign in", () => {
-    const { result } = renderHook(() => useAdminViewerHint());
+    const { result } = renderHook(() => useStaffViewerHint());
 
     expect(result.current).toBe(false);
   });
 
   it("turns on after an admin signs in and off again when someone else does", () => {
-    rememberViewerIsAdmin(true);
-    expect(localStorage.getItem(ADMIN_VIEWER_HINT_KEY)).not.toBeNull();
-    expect(renderHook(() => useAdminViewerHint()).result.current).toBe(true);
+    rememberViewerIsStaff(true);
+    expect(localStorage.getItem(STAFF_VIEWER_HINT_KEY)).not.toBeNull();
+    expect(renderHook(() => useStaffViewerHint()).result.current).toBe(true);
 
-    rememberViewerIsAdmin(false);
-    expect(localStorage.getItem(ADMIN_VIEWER_HINT_KEY)).toBeNull();
-    expect(renderHook(() => useAdminViewerHint()).result.current).toBe(false);
+    rememberViewerIsStaff(false);
+    expect(localStorage.getItem(STAFF_VIEWER_HINT_KEY)).toBeNull();
+    expect(renderHook(() => useStaffViewerHint()).result.current).toBe(false);
   });
 });

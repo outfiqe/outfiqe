@@ -1,9 +1,9 @@
+import { isStaffUserRole } from "@outfiqe/utils";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { getServerSessionWithToken } from "@/features/auth/api/serverAuth";
-import { UserRole } from "@/features/auth/types";
 import { SupportPageShell, SupportRequestsSkeleton, SupportRequestsView } from "@/features/support";
 
 const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:5173";
@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Support", robots: { index: false, fo
 const SupportPage = async () => {
   const session = await getServerSessionWithToken();
   if (!session) redirect("/login?redirect=/support");
-  if (session.user.role === UserRole.ADMIN) redirect(ADMIN_URL);
+  if (isStaffUserRole(session.user.role)) redirect(ADMIN_URL);
 
   return (
     <SupportPageShell>

@@ -20,7 +20,7 @@ export const CheckoutBody = () => {
   const searchParams = useSearchParams();
   const isBuyNow = searchParams.get("buyNow") === "1";
 
-  const { isAuthenticated, isAuthResolved, isBrandOwner, isAdmin } = useAuth();
+  const { isAuthenticated, isAuthResolved, isBrandOwner, isStaff } = useAuth();
   const cartQuery = useCart();
   const deliveryZonesQuery = useDeliveryZones();
   const buyNow = useBuyNowPayload(isBuyNow);
@@ -28,7 +28,7 @@ export const CheckoutBody = () => {
 
   if (!isAuthResolved) return null;
 
-  if (isBrandOwner || isAdmin) return <NotAShopperNotice />;
+  if (isBrandOwner || isStaff) return <NotAShopperNotice />;
 
   if (!isAuthenticated) {
     return (

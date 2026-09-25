@@ -1,26 +1,26 @@
 import { useSyncExternalStore } from "react";
 
-export const ADMIN_VIEWER_HINT_KEY = "outfiqe-last-viewer-was-admin";
+export const STAFF_VIEWER_HINT_KEY = "outfiqe-last-viewer-was-staff";
 const HINT_ON = "1";
 
 const subscribeToNothing = () => () => undefined;
 
-export const rememberViewerIsAdmin = (isAdmin: boolean) => {
+export const rememberViewerIsStaff = (isStaff: boolean) => {
   try {
-    if (isAdmin) localStorage.setItem(ADMIN_VIEWER_HINT_KEY, HINT_ON);
-    else localStorage.removeItem(ADMIN_VIEWER_HINT_KEY);
+    if (isStaff) localStorage.setItem(STAFF_VIEWER_HINT_KEY, HINT_ON);
+    else localStorage.removeItem(STAFF_VIEWER_HINT_KEY);
   } catch {
     return;
   }
 };
 
-const readAdminViewerHint = (): boolean => {
+const readStaffViewerHint = (): boolean => {
   try {
-    return localStorage.getItem(ADMIN_VIEWER_HINT_KEY) === HINT_ON;
+    return localStorage.getItem(STAFF_VIEWER_HINT_KEY) === HINT_ON;
   } catch {
     return false;
   }
 };
 
-export const useAdminViewerHint = (): boolean =>
-  useSyncExternalStore(subscribeToNothing, readAdminViewerHint, () => false);
+export const useStaffViewerHint = (): boolean =>
+  useSyncExternalStore(subscribeToNothing, readStaffViewerHint, () => false);

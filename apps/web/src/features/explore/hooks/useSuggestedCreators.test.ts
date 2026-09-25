@@ -15,7 +15,7 @@ vi.mock("../api/exploreFeedApi", () => ({
 const mockAuth = (overrides: {
   isAuthenticated: boolean;
   isAuthResolved: boolean;
-  isAdmin: boolean;
+  isStaff: boolean;
 }) => {
   vi.mocked(useAuth).mockReturnValue(overrides as ReturnType<typeof useAuth>);
 };
@@ -27,7 +27,7 @@ beforeEach(() => {
 
 describe("useSuggestedCreators", () => {
   it("fetches suggestions for an authenticated non-admin viewer", async () => {
-    mockAuth({ isAuthenticated: true, isAuthResolved: true, isAdmin: false });
+    mockAuth({ isAuthenticated: true, isAuthResolved: true, isStaff: false });
 
     renderHook(() => useSuggestedCreators(), { wrapper: createQueryClientWrapper() });
 
@@ -35,7 +35,7 @@ describe("useSuggestedCreators", () => {
   });
 
   it("never fetches suggestions for an admin viewer", async () => {
-    mockAuth({ isAuthenticated: true, isAuthResolved: true, isAdmin: true });
+    mockAuth({ isAuthenticated: true, isAuthResolved: true, isStaff: true });
 
     renderHook(() => useSuggestedCreators(), { wrapper: createQueryClientWrapper() });
 
@@ -44,7 +44,7 @@ describe("useSuggestedCreators", () => {
   });
 
   it("does not fetch before auth has resolved", async () => {
-    mockAuth({ isAuthenticated: false, isAuthResolved: false, isAdmin: false });
+    mockAuth({ isAuthenticated: false, isAuthResolved: false, isStaff: false });
 
     renderHook(() => useSuggestedCreators(), { wrapper: createQueryClientWrapper() });
 
@@ -53,7 +53,7 @@ describe("useSuggestedCreators", () => {
   });
 
   it("does not fetch for a signed-out visitor", async () => {
-    mockAuth({ isAuthenticated: false, isAuthResolved: true, isAdmin: false });
+    mockAuth({ isAuthenticated: false, isAuthResolved: true, isStaff: false });
 
     renderHook(() => useSuggestedCreators(), { wrapper: createQueryClientWrapper() });
 

@@ -8,7 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { ADMIN_CANNOT_SAVE_PRODUCT_MESSAGE, useToggleWishlist } from "@/features/wishlist";
+import { STAFF_CANNOT_SAVE_PRODUCT_MESSAGE, useToggleWishlist } from "@/features/wishlist";
 import { AppImage } from "@/shared/components/AppImage";
 import { type TrendingRank, TrendingRankBadge } from "@/shared/components/TrendingRankBadge";
 import { cn } from "@/shared/lib/cn";
@@ -67,7 +67,7 @@ type ProductCardProps = {
 export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCardProps) => {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isStaff } = useAuth();
   const wishlistMutation = useToggleWishlist();
   const {
     id,
@@ -143,8 +143,8 @@ export const ProductCard = ({ product, onToggleSaved, trendingRank }: ProductCar
           )
         )}
 
-        {isAdmin ? (
-          <Tooltip content={ADMIN_CANNOT_SAVE_PRODUCT_MESSAGE}>
+        {isStaff ? (
+          <Tooltip content={STAFF_CANNOT_SAVE_PRODUCT_MESSAGE}>
             <Button
               variant="ghost"
               size="icon"

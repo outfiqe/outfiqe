@@ -82,7 +82,7 @@ beforeEach(() => {
     isAuthResolved: true,
     isShopper: true,
     isBrandOwner: false,
-    isAdmin: false,
+    isStaff: false,
   } as ReturnType<typeof useAuth>);
 });
 
@@ -93,7 +93,7 @@ describe("AddressList", () => {
       isAuthResolved: true,
       isShopper: false,
       isBrandOwner: true,
-      isAdmin: false,
+      isStaff: false,
     } as ReturnType<typeof useAuth>);
 
     renderList();

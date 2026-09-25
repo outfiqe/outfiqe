@@ -29,7 +29,7 @@ type BrandCardProps = {
 export const BrandCard = ({ brand }: BrandCardProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isStaff } = useAuth();
 
   const { id, name, avatarUrl, bannerUrl, madeInNepal, productCount } = brand;
   const { isFollowing, followerCount, isTogglingFollow, toggleFollow } = useOptimisticFollow(
@@ -89,7 +89,7 @@ export const BrandCard = ({ brand }: BrandCardProps) => {
             )}
           </div>
 
-          {!isAdmin && (
+          {!isStaff && (
             <button
               type="button"
               onClick={followBrand}

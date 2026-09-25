@@ -22,7 +22,7 @@ type FollowerRowProps = {
 
 const FollowerRow = ({ follower, viewerId }: FollowerRowProps) => {
   const router = useRouter();
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isStaff } = useAuth();
   const followMutation = useToggleFollow("user");
   const [isFollowing, setIsFollowing] = useState(follower.isFollowedByViewer);
   const isSelf = follower.id === viewerId;
@@ -76,7 +76,7 @@ const FollowerRow = ({ follower, viewerId }: FollowerRowProps) => {
         <span className="flex min-w-0 flex-1 items-center gap-3">{identity}</span>
       )}
 
-      {!isSelf && !isAdmin && (
+      {!isSelf && !isStaff && (
         <button
           type="button"
           onClick={toggleFollow}
