@@ -10,6 +10,7 @@ import { TokenPurpose } from "#constants/enums/auth.enum.js";
 import { prisma } from "#db/prisma.js";
 import { BrandRole, UserRole } from "#generated/prisma/enums.js";
 import { generateToken } from "#lib/generate-token.utils.js";
+import { slugifyHandle } from "#lib/handle.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { hashPassword } from "#lib/password.utils.js";
 import { signPurposeToken } from "#lib/purpose-token.utils.js";
@@ -81,6 +82,18 @@ const createUser = async (overrides: { emailVerified?: boolean; password?: strin
 
   return { user, password };
 };
+
+const createUserHoldingHandle = async (handle: string) =>
+  prisma.user.create({
+    data: {
+      email: `handle-holder-${randomUUID()}@outfiqe.test`,
+      name: "Handle Holder",
+      handle,
+      phone: uniquePhone(),
+      passwordHash: await hashPassword(DEFAULT_TEST_PASSWORD),
+      emailVerified: true,
+    },
+  });
 
 const registerBody = (overrides: Partial<Record<string, string>> = {}) => ({
   name: "Ava Martinez",
@@ -293,6 +306,29 @@ describe("POST /api/auth/register/admin", () => {
 
     expect(platformResponse.status).toBe(403);
   });
+
+  it("registers an admin whose name's handle is already taken by giving them a suffixed handle", async () => {
+    await seedPlatformOrganization();
+    const inviteeName = `Taken Handle ${randomUUID().slice(0, 6)}`;
+    const takenHandle = slugifyHandle(inviteeName);
+    await createUserHoldingHandle(takenHandle);
+    const inviteToken = await createAdminInvite({ name: inviteeName });
+
+    const response = await request(testApp).post("/api/auth/register/admin").send({
+      inviteToken,
+      phone: uniquePhone(),
+      password: DEFAULT_TEST_PASSWORD,
+      confirmPassword: DEFAULT_TEST_PASSWORD,
+    });
+
+    expect(response.status).toBe(201);
+
+    const registeredUser = await prisma.user.findUniqueOrThrow({
+      where: { id: response.body.data.user.id },
+    });
+    expect(registeredUser.handle).not.toBe(takenHandle);
+    expect(registeredUser.handle.startsWith(takenHandle)).toBe(true);
+  });
 });
 
 describe("GET /api/auth/invite/crm", () => {
@@ -365,6 +401,27 @@ describe("POST /api/auth/register/crm-invite", () => {
       .get("/api/admin/financial-rollup")
       .set("Authorization", `Bearer ${accessToken}`);
     expect(platformResponse.status).toBe(403);
+  });
+
+  it("registers a CRM invitee whose name's handle is already taken by giving them a suffixed handle", async () => {
+    const { rawToken, invite } = await createCrmInvite();
+    const inviteeName = `Taken Handle ${randomUUID().slice(0, 6)}`;
+    const takenHandle = slugifyHandle(inviteeName);
+    await createUserHoldingHandle(takenHandle);
+
+    const response = await request(testApp).post("/api/auth/register/crm-invite").send({
+      inviteToken: rawToken,
+      name: inviteeName,
+      phone: uniquePhone(),
+      password: DEFAULT_TEST_PASSWORD,
+      confirmPassword: DEFAULT_TEST_PASSWORD,
+    });
+
+    expect(response.status).toBe(201);
+
+    const registeredUser = await prisma.user.findUniqueOrThrow({ where: { email: invite.email } });
+    expect(registeredUser.handle).not.toBe(takenHandle);
+    expect(registeredUser.handle.startsWith(takenHandle)).toBe(true);
   });
 
   it("rejects a second registration with the same invite token", async () => {
