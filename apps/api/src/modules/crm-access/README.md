@@ -162,7 +162,7 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   it has no way to know the admin SPA's `/admin` basepath is mandatory.** The admin app's own
   `vite.config.ts` (`base: "/admin/"`) and `main.tsx` (`basepath: "/admin"`) hard-require every URL
   that reaches it to include `/admin`, on any hostname. A bare `ADMIN_URL` (no path at all, e.g.
-  `https://admin.outfiqe.com`) produces a link that is missing `/admin` entirely
+  `https://outfiqe.com`) produces a link that is missing `/admin` entirely
   (`daraz.outfiqe.com/crm`) rather than doubled — same root cause as the bug above, just without a
   trailing slash to trigger it. `deploy/.env.prod.example` and `deploy/.env.dev.example` previously
   set exactly this bare form; they're fixed to include `/admin` now, but an already-deployed

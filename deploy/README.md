@@ -147,8 +147,13 @@ When clearing space by hand, never pass `--volumes` to `docker system prune`. It
 - The runtime image runs the app with `tsx` (no compile-to-`dist` step). This sidesteps the `#alias -> ./src/*` import map and the Prisma 7 TypeScript client both needing a build. Compiling to `dist` is a later optimisation.
 - `prisma migrate deploy` cannot run through the pooled connection — always use `DIRECT_DATABASE_URL`.
 - On a 1 GB droplet, cap `sharp` concurrency and set BullMQ worker concurrency low via the `IMAGE_*_WORKER_CONCURRENCY` env vars; keep the 2 GB swap.
-- **`ADMIN_URL` must always carry the `/admin` path** (`https://admin.outfiqe.com/admin`, not
-  `https://admin.outfiqe.com`) — the admin SPA's own `vite.config.ts`/router hard-code that basepath,
+- **`ADMIN_URL` is `https://outfiqe.com/admin` — the bare base domain, never a reserved subdomain
+  such as `admin.` or `www.`.** The API refuses to boot if it sits on one, because platform
+  invite and notification emails are built straight from it and would otherwise send staff to a
+  host that isn't the platform's real address. Tenant links are unaffected: they keep only the
+  protocol, port and path from this value and swap in the tenant's own subdomain.
+- **`ADMIN_URL` must always carry the `/admin` path** (`https://outfiqe.com/admin`, not
+  `https://outfiqe.com`) — the admin SPA's own `vite.config.ts`/router hard-code that basepath,
   so it 404s or fails to route on any URL missing it, on any hostname. `buildOrganizationAdminUrl`
   (`apps/api/src/modules/crm-access`) builds every CRM invite/notification link straight from this
   env var and has no way to add the path back in if it's missing — a bare `ADMIN_URL` silently
