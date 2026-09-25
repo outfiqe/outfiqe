@@ -201,6 +201,7 @@ export default defineConfig({
         "src/features/landing/components/TasteCategories/CustomizeTasteModal.tsx",
         "src/features/support/schemas/support.schema.ts",
         "src/features/support/components/SupportRequestForm.tsx",
+        "src/features/support/components/SupportRequestsSkeleton.tsx",
         "src/features/pwa/**/*.{ts,tsx}",
         "src/features/product-tour/**/*.{ts,tsx}",
         "src/app/manifest.ts",

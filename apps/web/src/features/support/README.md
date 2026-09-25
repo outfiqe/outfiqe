@@ -16,6 +16,8 @@ follows every reply, backed by `apps/api`'s `support` module. Staff handling hap
 - `components/SupportRequestForm.tsx` — react-hook-form + zod: category, subject, message. Shows
   the `OFQ-…` reference on success. Takes `defaultCategory` / `relatedOrderId` for prefilled entry
   points.
+- `components/SupportPageShell.tsx` — the standalone page chrome (site header, heading, footer, mobile tab bar) shared by the real page and its loading state, so the two can't drift apart.
+- `components/SupportRequestsSkeleton.tsx` — the placeholder rows shown while the request list loads.
 - `components/SupportRequestsView.tsx` — the account view: list &harr; new-request form &harr;
   thread, driven by a `?ticket=` search param so a notification can deep-link straight to a thread.
 - `components/SupportThread.tsx` — the read-only thread + inline reply box (hidden when closed).
@@ -28,7 +30,7 @@ email and see the request in the list. A staff reply arrives by email and appear
 replying there reopens the request. A resolved request's email links to `/support/reopen?token=…`,
 a small public page that POSTs the token.
 
-**Technical:** page (`app/support`) &rarr; `SupportRequestsView` &rarr; `hooks/useSupportRequests`
+**Technical:** page (`app/support/(requests)`) &rarr; `SupportRequestsView` &rarr; `hooks/useSupportRequests`
 &rarr; `api/supportApi` &rarr; `/api/support/tickets/mine*`.
 
 ## Non-obvious rationale
@@ -39,3 +41,4 @@ a small public page that POSTs the token.
   sign-in and back, admins are sent to the admin console. Guest (no-account) support is PRD M3.
 - **`/support/reopen` is a separate public route** — the reopen token is the only credential, so
   that page can't sit behind the session guard.
+- **`/support` has its own `loading.tsx`, inside a `(requests)` route group.** The page awaits the server session before it can render anything, and without a loading boundary Next.js keeps showing the previous page until that finishes, so clicking Support felt frozen. The loading file paints the page shell with skeleton rows straight away. The route group keeps that boundary off `/support/reopen`, which is a public page that never waits on a session.
