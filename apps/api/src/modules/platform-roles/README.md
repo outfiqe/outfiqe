@@ -18,8 +18,7 @@ or access.
   `SELECTABLE_ROLE_PERMISSION_KEYS` — the two catalogs are deliberately never merged (see
   `crm-access/README.md` and the CRM role-picker fix that preceded this module).
 - `platform-roles.utils.ts` — `findUnselectablePlatformPermissionKeys`, the platform-catalog analog
-  of `crm-access.utils.ts`'s `findUnselectablePermissionKeys`, plus the helpers that add
-  `platform:access` to a role being saved and hide it from role responses.
+  of `crm-access.utils.ts`'s `findUnselectablePermissionKeys`.
 - `platform-roles.controller.ts` — thin: validate → service → `sendSuccess`, then
   `platformAudit.record` for every mutation (role create/update/delete, team member role/status
   change).
@@ -50,16 +49,6 @@ beyond the actor's own grant) apply unchanged.
 
 ## Non-obvious rationale
 
-- **Every role saved here silently carries `platform:access`, and the key is never shown back.**
-  `resolveHasPlatformAccess` and `requirePlatformAccess` only let a member into the platform side
-  if their role holds `platform:access` (or they are a co-founder). That key is deliberately not in
-  the selectable catalog, so a custom role created from the editor used to hold only its picked
-  `platform:*` keys and its members were sent to `/crm` and refused by every platform route.
-  `createRole` and `updateRole` now add the key whenever the permissions are written, and responses
-  strip it so the editor's checkboxes and permission counts only reflect what a co-founder picked.
-  A client that submits `platform:access` itself is still rejected as an unselectable key. A
-  migration granted the key to the custom platform roles that already existed. Built-in "Member"
-  is untouched: it stays a CRM-only role on the platform organization.
 - **Co-founder-gated, not permission-gated.** Every write here requires `requireCoFounder`, not the
   delegable `platform:team:manage` permission that gates sending an invite's _email_. A role that
   carries `platform:team:manage` must never be able to grant itself or anyone else more power —

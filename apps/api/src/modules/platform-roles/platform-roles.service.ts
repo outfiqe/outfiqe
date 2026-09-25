@@ -19,12 +19,7 @@ import type {
   UpdatePlatformRoleInput,
   UpdatePlatformTeamMemberInput,
 } from "./platform-roles.types.js";
-import {
-  findUnselectablePlatformPermissionKeys,
-  withoutPlatformAccessKey,
-  withPlatformAccessKey,
-  withPlatformAccessKeyOnPermissionChange,
-} from "./platform-roles.utils.js";
+import { findUnselectablePlatformPermissionKeys } from "./platform-roles.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 const FORBIDDEN_STATUS = 403;
@@ -77,21 +72,19 @@ export const platformRolesService = {
 
   async listRoles(): Promise<PlatformRoleWithPermissions[]> {
     const organizationId = await requirePlatformOrganizationId();
-    const roles = await crmAccessRepository.listRoles(organizationId);
-    return roles.map(withoutPlatformAccessKey);
+    return crmAccessRepository.listRoles(organizationId);
   },
 
   async createRole(input: CreatePlatformRoleInput): Promise<PlatformRoleWithPermissions> {
     assertPermissionKeysSelectable(input.permissionKeys);
     const organizationId = await requirePlatformOrganizationId();
     try {
-      const createdRole = await crmAccessRepository.createRole({
+      return await crmAccessRepository.createRole({
         organizationId,
         name: input.name,
         isBuiltIn: false,
-        permissionKeys: withPlatformAccessKey(input.permissionKeys),
+        permissionKeys: input.permissionKeys,
       });
-      return withoutPlatformAccessKey(createdRole);
     } catch (err) {
       throw asPlatformRoleNameConflict(err);
     }
@@ -114,12 +107,7 @@ export const platformRolesService = {
     }
 
     try {
-      const updatedRole = await crmAccessRepository.updateRole(
-        organizationId,
-        roleId,
-        withPlatformAccessKeyOnPermissionChange(input),
-      );
-      return withoutPlatformAccessKey(updatedRole);
+      return await crmAccessRepository.updateRole(organizationId, roleId, input);
     } catch (err) {
       throw asPlatformRoleNameConflict(err);
     }
