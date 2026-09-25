@@ -5,6 +5,8 @@ import { useState } from "react";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { TextPromptModal } from "@/components/TextPromptModal";
+import { bankAccountsAdminApi } from "@/features/bank-accounts/api";
+import type { RevealedBankAccount } from "@/features/bank-accounts/schemas";
 import { ApiClientError } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
@@ -43,6 +45,7 @@ export const WithdrawRequestsListSection = () => {
   const [crossCheckTargetId, setCrossCheckTargetId] = useState<string | null>(null);
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
   const [markPaidTargetId, setMarkPaidTargetId] = useState<string | null>(null);
+  const [revealedById, setRevealedById] = useState<Record<string, RevealedBankAccount>>({});
 
   const {
     data: requestsQuery,
@@ -97,6 +100,14 @@ export const WithdrawRequestsListSection = () => {
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
+  const reveal = useApiMutation({
+    mutationFn: ({ bankAccountId, ownerType }: { bankAccountId: string; ownerType: string }) =>
+      bankAccountsAdminApi.reveal(ownerType === "CREATOR" ? "CREATOR" : "BUSINESS", bankAccountId),
+    onSuccess: (revealed, { bankAccountId }) =>
+      setRevealedById((current) => ({ ...current, [bankAccountId]: revealed })),
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
+  });
+
   const isActing = approve.isPending || reject.isPending || markPaid.isPending;
 
   return (
@@ -139,7 +150,9 @@ export const WithdrawRequestsListSection = () => {
             id,
             ownerType,
             ownerName,
+            bankAccountId,
             bankAccountLast4,
+            qrCodeImageUrl,
             amount,
             status,
             rejectionReason,
@@ -148,67 +161,94 @@ export const WithdrawRequestsListSection = () => {
             firstApprovedById,
             createdAt,
           } = request;
+          const revealed = revealedById[bankAccountId];
 
           return (
-            <div
-              key={id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4"
-            >
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-display text-base font-bold text-foreground">
-                    {OWNER_TYPE_LABEL[ownerType]}: {ownerName}
-                  </h3>
-                  <Badge tone={STATUS_TONE[status]} showDot={false}>
-                    {status.replace("_", " ")}
-                  </Badge>
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Rs. {amount.toLocaleString()} · Bank account •••• {bankAccountLast4} ·{" "}
-                  {new Date(createdAt).toLocaleDateString()}
-                </p>
-                {status === "UNDER_REVIEW" && requiresSecondSignOff && (
-                  <p className="mt-1 text-sm text-amber-700">
-                    {firstApprovedById
-                      ? "Signed off once — needs a different admin to approve."
-                      : "Above the standard limit — needs sign-off from two admins."}
+            <div key={id} className="rounded-xl border border-border bg-card p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display text-base font-bold text-foreground">
+                      {OWNER_TYPE_LABEL[ownerType]}: {ownerName}
+                    </h3>
+                    <Badge tone={STATUS_TONE[status]} showDot={false}>
+                      {status.replace("_", " ")}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Rs. {amount.toLocaleString()} · Bank account ••••{" "}
+                    {revealed?.accountNumber ?? bankAccountLast4} ·{" "}
+                    {new Date(createdAt).toLocaleDateString()}
                   </p>
-                )}
-                {status === "REJECTED" && rejectionReason && (
-                  <p className="mt-1 text-sm text-destructive">Reason: {rejectionReason}</p>
-                )}
-                {status === "PAID" && referenceNote && (
-                  <p className="mt-1 text-sm text-muted-foreground">Reference: {referenceNote}</p>
-                )}
+                  {status === "UNDER_REVIEW" && requiresSecondSignOff && (
+                    <p className="mt-1 text-sm text-amber-700">
+                      {firstApprovedById
+                        ? "Signed off once — needs a different admin to approve."
+                        : "Above the standard limit — needs sign-off from two admins."}
+                    </p>
+                  )}
+                  {status === "REJECTED" && rejectionReason && (
+                    <p className="mt-1 text-sm text-destructive">Reason: {rejectionReason}</p>
+                  )}
+                  {status === "PAID" && referenceNote && (
+                    <p className="mt-1 text-sm text-muted-foreground">Reference: {referenceNote}</p>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => reveal.mutate({ bankAccountId, ownerType })}
+                    disabled={reveal.isPending || !bankAccountId}
+                    isLoading={
+                      reveal.isPending && reveal.variables?.bankAccountId === bankAccountId
+                    }
+                  >
+                    {revealed ? "Refresh bank details" : "View bank details"}
+                  </Button>
+                  {(status === "PENDING" || status === "UNDER_REVIEW") && (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={() => approve.mutate({ id })}
+                        disabled={isActing}
+                        isLoading={approve.isPending && approve.variables?.id === id}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setRejectTargetId(id)}
+                        disabled={isActing}
+                      >
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                  {status === "APPROVED" && (
+                    <Button size="sm" onClick={() => setMarkPaidTargetId(id)} disabled={isActing}>
+                      Mark paid
+                    </Button>
+                  )}
+                </div>
               </div>
 
-              <div className="flex gap-2">
-                {(status === "PENDING" || status === "UNDER_REVIEW") && (
-                  <>
-                    <Button
-                      size="sm"
-                      onClick={() => approve.mutate({ id })}
-                      disabled={isActing}
-                      isLoading={approve.isPending && approve.variables?.id === id}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setRejectTargetId(id)}
-                      disabled={isActing}
-                    >
-                      Reject
-                    </Button>
-                  </>
-                )}
-                {status === "APPROVED" && (
-                  <Button size="sm" onClick={() => setMarkPaidTargetId(id)} disabled={isActing}>
-                    Mark paid
-                  </Button>
-                )}
-              </div>
+              {qrCodeImageUrl && (
+                <a
+                  href={qrCodeImageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-block"
+                >
+                  <img
+                    src={qrCodeImageUrl}
+                    alt={`${ownerName}'s bank QR code`}
+                    className="size-32 rounded-lg border border-border object-cover"
+                  />
+                </a>
+              )}
             </div>
           );
         })}

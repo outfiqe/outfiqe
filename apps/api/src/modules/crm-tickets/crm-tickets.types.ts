@@ -34,6 +34,11 @@ export type TicketWithComments = TicketRecord & {
   comments: TicketCommentRecord[];
 };
 
+export type TicketPage = {
+  tickets: TicketRecord[];
+  nextCursor: string | null;
+};
+
 export type CreateTicketInput = {
   organizationId: string;
   type: CrmTicketType;

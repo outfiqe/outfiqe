@@ -10,7 +10,9 @@ keyed by `brandId`, not a reuse of the creator-scoped `BankAccount.userId` table
 ## Structure
 
 - `brandBankAccount.routes.ts` — `POST /`, `GET /`, `PATCH /:id/default` (any member of the
-  caller's brand); `PATCH /:id/verify`, `GET /:id/reveal` (admin-only).
+  caller's brand); `GET /admin`, `PATCH /:id/verify`, `GET /:id/reveal` (admin-only). `GET /admin`
+  is the cursor-paginated queue the admin `bank-accounts` feature reads, filterable by
+  `?verified=`.
 - `brandBankAccount.controller.ts` — resolves the caller's brand via `requireBrandId`
   (`#lib/brand-guard.utils.js`), reads validated input, calls the service.
 - `brandBankAccount.service.ts` — same rules as `bank-accounts`' service, checked against the
@@ -40,5 +42,8 @@ whichever member happened to add it.
 - Same encryption/audit-log design as `bank-accounts` (see that module's README) — account
   numbers are never stored in plaintext, and the only decrypt path (`GET /:id/reveal`,
   admin-only) writes a `BrandBankAccountAccessLog` row every time.
+- Same `qrCodeImageUrl`-for-manual-verification rationale as `bank-accounts` — there's no
+  automated way to confirm a Nepali bank account belongs to whoever submitted it, so the QR photo
+  uploaded at add-time is what an admin actually checks against in the review screen.
 - The account-holder-name mismatch check compares against `Brand.contactName`, not any
   individual member's name — the account belongs to the brand as an entity.

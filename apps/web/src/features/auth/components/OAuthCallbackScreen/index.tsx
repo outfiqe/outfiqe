@@ -26,6 +26,7 @@ import {
 import { OAuthProvider } from "../../types";
 import { getAuthErrorMessage } from "../../utils/authErrors";
 import { getDefaultRouteForUser } from "../../utils/getDefaultRoute";
+import { isAdminAppTarget } from "../../utils/safeRedirect";
 
 const PROVIDER_LABELS: Record<OAuthProvider, string> = {
   [OAuthProvider.GOOGLE]: "Google",
@@ -69,7 +70,12 @@ export const OAuthCallbackScreen = () => {
           linkToken,
           password: values.password,
         });
-        router.replace(getDefaultRouteForUser(user));
+        const destination = getDefaultRouteForUser(user);
+        if (isAdminAppTarget(destination)) {
+          window.location.replace(destination);
+          return;
+        }
+        router.replace(destination);
       } catch {
         // Surfaced below via confirmLink.error.
       }

@@ -54,10 +54,6 @@ const toRoleWithPermissions = (role: {
 });
 
 export const crmAccessRepository = {
-  async findDefaultOrganization(): Promise<OrganizationRecord | null> {
-    return prisma.organization.findFirst({ orderBy: { createdAt: "asc" } });
-  },
-
   async listOrganizations(params: {
     cursor?: string;
     limit: number;
@@ -261,8 +257,9 @@ export const crmAccessRepository = {
   async findMembershipByUserAndOrg(
     userId: string,
     organizationId: string,
+    client: DbClient = prisma,
   ): Promise<MembershipWithRole | null> {
-    const membership = await prisma.membership.findUnique({
+    const membership = await client.membership.findUnique({
       where: { userId_organizationId: { userId, organizationId } },
       include: { role: { include: roleWithPermissionsInclude } },
     });
@@ -324,8 +321,11 @@ export const crmAccessRepository = {
     return prisma.membership.update({ where: { id: membershipId, organizationId }, data });
   },
 
-  async createInvite(input: CreateOrganizationInviteInput): Promise<OrganizationInviteRecord> {
-    return prisma.organizationInvite.create({ data: input });
+  async createInvite(
+    input: CreateOrganizationInviteInput,
+    client: DbClient = prisma,
+  ): Promise<OrganizationInviteRecord> {
+    return client.organizationInvite.create({ data: input });
   },
 
   async findInviteByTokenHash(tokenHash: string): Promise<OrganizationInviteRecord | null> {
@@ -335,8 +335,9 @@ export const crmAccessRepository = {
   async findPendingInviteByEmail(
     organizationId: string,
     email: string,
+    client: DbClient = prisma,
   ): Promise<OrganizationInviteRecord | null> {
-    return prisma.organizationInvite.findFirst({
+    return client.organizationInvite.findFirst({
       where: {
         organizationId,
         email,
@@ -345,6 +346,21 @@ export const crmAccessRepository = {
         expiresAt: { gt: new Date() },
       },
     });
+  },
+
+  async countPendingInvites(organizationId: string, client: DbClient = prisma): Promise<number> {
+    return client.organizationInvite.count({
+      where: {
+        organizationId,
+        acceptedAt: null,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+  },
+
+  async acquireOrganizationInviteLock(client: DbClient, organizationId: string): Promise<void> {
+    await client.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${organizationId}))`;
   },
 
   async listInvites(

@@ -182,18 +182,23 @@ describe("DashboardSidebar", () => {
     expect(links[0]).toHaveAttribute("href", "/overview");
   });
 
-  it("offers a brand owner a Take the tour link that reopens the dashboard tour", () => {
+  it("does not duplicate the tour replay link in the sidebar footer", () => {
     mockAuth({});
 
     render(<DashboardSidebar />);
 
-    expect(screen.getByRole("link", { name: "Take the tour" })).toHaveAttribute(
-      "href",
-      "/overview?tour=brand-dashboard",
-    );
+    expect(screen.queryByRole("link", { name: "Take the tour" })).not.toBeInTheDocument();
   });
 
-  it("does not offer any tour to a shopper who is not an approved creator", () => {
+  it("offers a brand owner a Support entry", () => {
+    mockAuth({});
+
+    render(<DashboardSidebar />);
+
+    expect(screen.getByRole("link", { name: "Support" })).toHaveAttribute("href", "/support");
+  });
+
+  it("offers a shopper a Support entry", () => {
     mockAuth({
       state: {
         status: AuthStatus.AUTHENTICATED,
@@ -205,26 +210,7 @@ describe("DashboardSidebar", () => {
 
     render(<DashboardSidebar />);
 
-    expect(screen.queryByRole("link", { name: "Take the tour" })).not.toBeInTheDocument();
-  });
-
-  it("offers an approved creator a Take the tour link for the creator dashboard tour", () => {
-    mockAuth({
-      state: {
-        status: AuthStatus.AUTHENTICATED,
-        user: buildUser({ role: UserRole.CUSTOMER, isCreator: true }),
-        accessToken: "token",
-      },
-      isBrandOwner: false,
-      isCreator: true,
-    });
-
-    render(<DashboardSidebar />);
-
-    expect(screen.getByRole("link", { name: "Take the tour" })).toHaveAttribute(
-      "href",
-      "/overview?tour=creator-dashboard",
-    );
+    expect(screen.getByRole("link", { name: "Support" })).toHaveAttribute("href", "/support");
   });
 
   it("marks each brand nav row with its id so the tour can point at it", () => {

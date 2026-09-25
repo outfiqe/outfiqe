@@ -19,6 +19,7 @@ import { useForm } from "react-hook-form";
 
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { buildImpersonationHandoffUrl } from "@/lib/impersonationHandoff";
 
 import { platformMetricsApi } from "../platform-metrics/api";
 import { platformImpersonationApi } from "./api";
@@ -38,10 +39,14 @@ const SessionTable = ({
   sessions,
   onRevoke,
   revokingId,
+  onOpen,
+  openingId,
 }: {
   sessions: ImpersonationSession[];
   onRevoke?: (sessionId: string) => void;
   revokingId?: string;
+  onOpen?: (sessionId: string) => void;
+  openingId?: string;
 }) => (
   <div className="overflow-x-auto">
     <table className="w-full text-left text-sm">
@@ -67,19 +72,31 @@ const SessionTable = ({
             <td className="py-2 pr-4">{formatMoment(session.createdAt)}</td>
             <td className="py-2 pr-4">{formatMoment(session.expiresAt)}</td>
             <td className="py-2 pr-4">
-              {session.active ? "Active" : session.revokedAt ? "Revoked" : "Expired"}
+              {session.active ? "Active" : session.revokedById ? "Revoked" : "Expired"}
             </td>
             {onRevoke && (
               <td className="py-2">
                 {session.active && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={revokingId === session.id}
-                    onClick={() => onRevoke(session.id)}
-                  >
-                    Revoke
-                  </Button>
+                  <div className="flex gap-2">
+                    {onOpen && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={openingId === session.id}
+                        onClick={() => onOpen(session.id)}
+                      >
+                        Open
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={revokingId === session.id}
+                      onClick={() => onRevoke(session.id)}
+                    >
+                      Revoke
+                    </Button>
+                  </div>
                 )}
               </td>
             )}
@@ -160,6 +177,15 @@ export const PlatformImpersonationPage = () => {
     mutationFn: (sessionId: string) => platformImpersonationApi.revoke(sessionId),
     invalidateKeys: IMPERSONATION_INVALIDATE_KEYS,
     onSuccess: () => toast.success("Session revoked."),
+    onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
+  });
+
+  const openSession = useApiMutation({
+    mutationFn: (sessionId: string) => platformImpersonationApi.open(sessionId),
+    onSuccess: (result) => {
+      const handoffUrl = buildImpersonationHandoffUrl(result.tenantSubdomain, result.code);
+      window.open(handoffUrl, "_blank", "noopener");
+    },
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
@@ -340,6 +366,8 @@ export const PlatformImpersonationPage = () => {
               sessions={activeSessions.data}
               onRevoke={(sessionId) => revokeSession.mutate(sessionId)}
               revokingId={revokeSession.isPending ? revokeSession.variables : undefined}
+              onOpen={(sessionId) => openSession.mutate(sessionId)}
+              openingId={openSession.isPending ? openSession.variables : undefined}
             />
           )}
         </div>

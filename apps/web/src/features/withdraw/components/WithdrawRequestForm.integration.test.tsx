@@ -19,6 +19,7 @@ const bankAccount: BankAccount = {
   branchName: "Kathmandu",
   isDefault: true,
   isVerified: true,
+  qrCodeImageUrl: null,
 };
 
 const eligibility: WithdrawEligibility = {

@@ -341,9 +341,18 @@ export const supportService = {
     actorUserId: string,
     ticketId: string,
     assigneeUserId: string | null,
+    expectedAssigneeUserId: string | null,
     canManageOthers: boolean,
   ): Promise<SupportTicketWithThread> {
     const ticket = await this.getForAdmin(ticketId);
+
+    if (ticket.assigneeUserId !== expectedAssigneeUserId) {
+      throw new AppError(
+        "SUPPORT_ASSIGNEE_CHANGED",
+        "This request's assignee changed under you — reload and try again.",
+        CONFLICT_STATUS,
+      );
+    }
 
     if (assigneeUserId && assigneeUserId !== actorUserId && !canManageOthers) {
       throw new AppError(
@@ -364,7 +373,18 @@ export const supportService = {
       }
     }
 
-    await supportRepository.assign(ticketId, assigneeUserId);
+    const claimed = await supportRepository.assign(
+      ticketId,
+      expectedAssigneeUserId,
+      assigneeUserId,
+    );
+    if (!claimed) {
+      throw new AppError(
+        "SUPPORT_ASSIGNEE_CHANGED",
+        "This request's assignee changed under you — reload and try again.",
+        CONFLICT_STATUS,
+      );
+    }
 
     if (assigneeUserId && ticket.status === SupportStatus.NEW) {
       await moveStatusBestEffort(ticketId, SupportStatus.NEW, SupportStatus.OPEN);
@@ -382,9 +402,30 @@ export const supportService = {
     return this.getForAdmin(ticketId);
   },
 
-  async setPriority(ticketId: string, priority: SupportPriority): Promise<SupportTicketWithThread> {
-    await this.getForAdmin(ticketId);
-    await supportRepository.setPriority(ticketId, priority);
+  async setPriority(
+    ticketId: string,
+    priority: SupportPriority,
+    expectedPriority: SupportPriority,
+  ): Promise<SupportTicketWithThread> {
+    const ticket = await this.getForAdmin(ticketId);
+
+    if (ticket.priority !== expectedPriority) {
+      throw new AppError(
+        "SUPPORT_PRIORITY_CHANGED",
+        "This request's priority changed under you — reload and try again.",
+        CONFLICT_STATUS,
+      );
+    }
+
+    const claimed = await supportRepository.setPriority(ticketId, expectedPriority, priority);
+    if (!claimed) {
+      throw new AppError(
+        "SUPPORT_PRIORITY_CHANGED",
+        "This request's priority changed under you — reload and try again.",
+        CONFLICT_STATUS,
+      );
+    }
+
     return this.getForAdmin(ticketId);
   },
 

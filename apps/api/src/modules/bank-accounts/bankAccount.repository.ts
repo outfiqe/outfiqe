@@ -31,6 +31,7 @@ export const bankAccountRepository = {
         accountNumberCiphertext: input.accountNumberCiphertext,
         accountNumberLast4: input.accountNumberLast4,
         branchName: input.branchName,
+        qrCodeImageUrl: input.qrCodeImageUrl,
         isDefault: input.isDefault,
       },
       include: withBankName,
@@ -45,6 +46,21 @@ export const bankAccountRepository = {
       orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
     });
     return rows.map(flattenBankName);
+  },
+
+  async listAllAdmin(params: { verified?: boolean; cursor?: string; limit: number }) {
+    const rows = await prisma.bankAccount.findMany({
+      where: params.verified === undefined ? undefined : { isVerified: params.verified },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: params.limit + 1,
+      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
+      include: { ...withBankName, user: { select: { name: true } } },
+    });
+    return rows.map(({ bank, user, ...record }) => ({
+      ...record,
+      bankName: bank.name,
+      ownerName: user.name,
+    }));
   },
 
   async findById(id: string): Promise<BankAccountRecord | null> {

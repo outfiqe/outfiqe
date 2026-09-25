@@ -2,6 +2,7 @@ import { addMonths } from "date-fns/addMonths";
 
 import { env } from "#config/env.config.js";
 import { CrmBillingProvider } from "#generated/prisma/enums.js";
+import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { buildOrganizationAdminUrl } from "#modules/crm-access/crm-access.utils.js";
@@ -17,6 +18,7 @@ import type {
   AdvancedFeatureGateInput,
   BillingCheckoutRedirect,
   BillingOverview,
+  CreateInvoiceInput,
   CrmPlanId,
   InvoicePage,
   SubscriptionInvoiceRecord,
@@ -94,6 +96,25 @@ const startProviderPaymentForInvoice = async (
         invoiceId: invoice.id,
       }
     : { mode: "REDIRECT", redirectUrl: redirect.redirectUrl, invoiceId: invoice.id };
+};
+
+const openInvoiceForSubscription = async (
+  subscriptionId: string,
+  input: Omit<CreateInvoiceInput, "subscriptionId">,
+): Promise<SubscriptionInvoiceRecord> => {
+  const existing = await crmBillingRepository.findOpenInvoiceForSubscription(subscriptionId);
+  if (existing) {
+    return crmBillingRepository.refreshOpenInvoice(existing.id, input);
+  }
+
+  try {
+    return await crmBillingRepository.createInvoice({ subscriptionId, ...input });
+  } catch (error) {
+    if (!isUniqueConstraintError(error)) throw error;
+    const raceWinner = await crmBillingRepository.findOpenInvoiceForSubscription(subscriptionId);
+    if (!raceWinner) throw error;
+    return crmBillingRepository.refreshOpenInvoice(raceWinner.id, input);
+  }
 };
 
 const verifyOpenInvoiceAgainstProvider = async (
@@ -183,14 +204,8 @@ export const crmBillingService = {
       fallbackCurrentPeriodEnd: periodEnd,
     });
 
-    const invoice = await crmBillingRepository.createInvoice({
-      subscriptionId: subscription.id,
-      plan: input.planId,
-      seats,
-      amount,
-      periodStart,
-      periodEnd,
-    });
+    const invoiceInput = { plan: input.planId, seats, amount, periodStart, periodEnd };
+    const invoice = await openInvoiceForSubscription(subscription.id, invoiceInput);
 
     return startProviderPaymentForInvoice(organization, invoice, input.provider);
   },

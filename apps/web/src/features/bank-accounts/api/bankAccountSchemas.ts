@@ -14,6 +14,7 @@ export const bankAccountSchema = z.object({
   accountName: z.string(),
   accountNumberLast4: z.string(),
   branchName: z.string(),
+  qrCodeImageUrl: z.string().nullable(),
   isDefault: z.boolean(),
   isVerified: z.boolean(),
 });
@@ -66,6 +67,7 @@ export const addBankAccountSchema = z
       .trim()
       .min(BRANCH_NAME_MIN, "Enter the branch name.")
       .max(BRANCH_NAME_MAX, `Branch name can't be longer than ${BRANCH_NAME_MAX} characters.`),
+    qrCodeImageUrl: z.url("Upload a photo of your bank QR."),
   })
   .refine(accountNumbersMatch, {
     message: "Account numbers do not match.",

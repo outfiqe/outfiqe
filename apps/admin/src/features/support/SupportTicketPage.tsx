@@ -224,7 +224,12 @@ export const SupportTicketPage = () => {
             <Select
               value={ticket.assigneeUserId ?? ""}
               disabled={assign.isPending}
-              onChange={(event) => assign.mutate(event.target.value || null)}
+              onChange={(event) =>
+                assign.mutate({
+                  assigneeUserId: event.target.value || null,
+                  expectedAssigneeUserId: ticket.assigneeUserId,
+                })
+              }
               aria-label="Assignee"
             >
               <option value="">Unassigned</option>
@@ -244,7 +249,12 @@ export const SupportTicketPage = () => {
             <Select
               value={ticket.priority}
               disabled={setPriority.isPending}
-              onChange={(event) => setPriority.mutate(event.target.value as SupportPriorityValue)}
+              onChange={(event) =>
+                setPriority.mutate({
+                  priority: event.target.value as SupportPriorityValue,
+                  expectedPriority: ticket.priority,
+                })
+              }
               aria-label="Priority"
             >
               {PRIORITY_VALUES.map((value) => (

@@ -18,8 +18,8 @@ This is **not** `crm-tickets` — that module is a CRM _tenant's_ support desk, 
 - `support.types.ts` — `SupportTicketRecord`, `SupportMessageRecord`, `SupportTicketWithThread`,
   `CreateSupportTicketInput`, filter/stats shapes.
 - `support.schemas.ts` — Zod for the public create/reply bodies, the admin action bodies (reply
-  with `visibility`, status with an `expectedStatus` for optimistic concurrency, assignee,
-  priority) and the admin list query.
+  with `visibility`; status, assignee, and priority each take the new value plus an `expected...`
+  value for optimistic concurrency) and the admin list query.
 - `support.repository.ts` — Prisma CRUD + the `toSupportTicketRecord` mapper (derives `reference`
   from `ticketNumber`, flattens the assignee/brand names). `transitionStatus` is a
   status-guarded `updateMany` that stamps/clears `resolvedAt`, so a concurrent status change
@@ -60,6 +60,17 @@ requester on a staff reply / resolve).
   lists the legal next states (`NEW &rarr; OPEN &rarr; WAITING_ON_CUSTOMER &rarr; RESOLVED &rarr;
 CLOSED`, with reopen paths). An illegal jump is `409 INVALID_SUPPORT_TRANSITION`; a lost race is
   `409 SUPPORT_STATUS_CHANGED`. Same shape as `crm-tickets` and `orders` fulfilment.
+- **Assignee and priority changes are guarded the same way status is**, not just status. `assign`/
+  `setPriority` both take an `expected...` value, throw the matching `409` (`SUPPORT_ASSIGNEE_CHANGED`
+  / `SUPPORT_PRIORITY_CHANGED`) on a stale read, and the actual write is a `WHERE` -guarded
+  `updateMany` (`supportRepository.assign`/`.setPriority` now return whether they claimed a row),
+  the same compare-and-swap `transitionStatus` already used — two staff members changing the same
+  ticket's assignee or priority within the same stale view can no longer silently overwrite each
+  other. `apps/admin`'s `SupportTicketPage` applies the change to its local cache optimistically
+  (`useSupportStatus`/`useSupportAssign`/`useSupportPriority`/`useSupportReply` in
+  `apps/admin/src/features/support/hooks.ts`) and rolls back to the pre-mutation ticket if the
+  server rejects it, so a conflict shows as "your change didn't take, here's what's actually
+  there" rather than a silent no-op or a stale value sitting in the UI.
 - **`reference` is derived, not stored** — the model has `ticketNumber Int @unique
 @default(autoincrement())`; the human `OFQ-1042` is computed in the mapper. Search-by-reference
   parses the integer back out.

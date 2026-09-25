@@ -94,6 +94,7 @@ const createVerifiedBankAccount = async (userId: string) => {
       accountNumberCiphertext: "fake.fake.fake",
       accountNumberLast4: "1234",
       branchName: "Branch",
+      qrCodeImageUrl: "https://cdn.outfiqe.test/bank-qr.png",
       isDefault: true,
       isVerified: true,
     },
@@ -643,6 +644,8 @@ describe("GET /api/withdraw/admin/requests", () => {
     expect(response.body.data.items).toHaveLength(1);
     expect(response.body.data.items[0].ownerName).toBe(creator.name);
     expect(response.body.data.items[0].bankAccountLast4).toBe("1234");
+    expect(response.body.data.items[0].bankAccountId).toBe(bankAccount.id);
+    expect(response.body.data.items[0].qrCodeImageUrl).toBe("https://cdn.outfiqe.test/bank-qr.png");
   });
 
   it("lists every owner type's requests when no status filter is given", async () => {

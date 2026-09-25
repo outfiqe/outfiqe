@@ -1,13 +1,12 @@
 "use client";
 
-import { Button } from "@outfiqe/design-system";
+import { Button, Skeleton } from "@outfiqe/design-system";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { useMySupportRequests } from "../hooks/useSupportRequests";
 import { CATEGORY_LABELS, STATUS_LABELS } from "../schemas/support.schema";
 import { SupportRequestForm } from "./SupportRequestForm";
-import { SupportRequestsSkeleton } from "./SupportRequestsSkeleton";
 import { SupportThread } from "./SupportThread";
 
 export const SupportRequestsView = () => {
@@ -54,7 +53,10 @@ export const SupportRequestsView = () => {
       </div>
 
       <div className="mt-4 space-y-2.5">
-        {isLoading && <SupportRequestsSkeleton />}
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-16 w-full rounded-xl" />
+          ))}
         {!isLoading && tickets.length === 0 && (
           <p className="text-sm text-muted-foreground">
             You haven&apos;t raised any support requests yet.

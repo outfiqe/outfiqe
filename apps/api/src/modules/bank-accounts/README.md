@@ -9,10 +9,12 @@ rest and only ever decrypted through one narrow, audited admin path.
 
 ## Structure
 
-- `bankAccount.routes.ts` — `POST /`, `GET /`, `PATCH /:id/default` (owner-only); `PATCH
-/:id/verify`, `GET /:id/reveal` need `platform:withdraw:manage` (`requirePlatformRole`, see
-  `platform-access/README.md` — reused from the withdraw module, since verifying/revealing a bank
-  account is part of the same "clear money out to a real bank" workflow, not a separate concern).
+- `bankAccount.routes.ts` — `POST /`, `GET /`, `PATCH /:id/default` (owner-only); `GET /admin`,
+  `PATCH /:id/verify`, `GET /:id/reveal` need `platform:withdraw:manage` (`requirePlatformRole`,
+  see `platform-access/README.md` — reused from the withdraw module, since verifying/revealing a
+  bank account is part of the same "clear money out to a real bank" workflow, not a separate
+  concern). `GET /admin` is the cursor-paginated queue the admin `bank-accounts` feature reads,
+  filterable by `?verified=`.
 - `bankAccount.controller.ts` — reads validated input + the auth principal, calls the service.
 - `bankAccount.service.ts` — business rules: validates the bank is active/known
   (`nepalBankService.requireActiveBank`), encrypts the account number on create, flags an
@@ -33,9 +35,12 @@ brand's bank account, so it lives in `shared/utils` rather than being duplicated
 ## Funnel
 
 **User-facing:** a user adds a bank account from their dashboard (bank picked from a searchable
-dropdown backed by `nepal-banks`, account number entered twice to confirm), sees it in their
-list masked as `•••• 1234`, can mark one as default. An admin later verifies it (and, separately,
-can reveal the full number only when actually processing a payout).
+dropdown backed by `nepal-banks`, account number entered twice to confirm, a photo of the bank's
+QR code required alongside), sees it in their list masked as `•••• 1234`, can mark one as
+default. An admin reviews it in the admin `bank-accounts` feature — the QR shows straight from
+the list, and revealing the number lets them compare it against the submitted fields — before
+verifying it; the same reveal is also surfaced from the `withdraw-requests` admin screen when
+actually processing a payout, so an admin never has to retype account details by hand.
 
 **Technical:** `bankAccount.routes.ts` → `bankAccount.controller.ts` → `bankAccount.service.ts` →
 `bankAccount.repository.ts` → Postgres. `POST /` runs inside a transaction that counts the
@@ -49,6 +54,14 @@ user's existing accounts and creates the new one, marking it `isDefault` only if
   every call writes a `BankAccountAccessLog` row (admin id + timestamp) — this is deliberate:
   an admin needs the real number once, to key it into their bank portal for a manual transfer,
   but nothing else in the system should ever see it, and every time something does, it's audited.
+- **`qrCodeImageUrl` exists because verification has no automated check to lean on.** No bank in
+  Nepal exposes a public account-verification API (no penny-drop/name-match service the way
+  India's do), so `isVerified` can only ever be a human judgment call. Before this field, an admin
+  clicking "verify" had nothing to check beyond the self-reported form fields — `isNameMismatch`
+  only compares the account name against the same user's own profile name, not third-party
+  evidence. The QR photo, uploaded once at add-time (required going forward; existing rows before
+  this field predate it and have `qrCodeImageUrl: null`), gives the admin something independent
+  of the typed fields to compare against.
 - A name mismatch between `accountName` and the user's `name` doesn't block account creation — it
   comes back as a `nameMismatch` flag in the create response, per the design doc's "flag, don't
   block outright" rule. The comparison is case/whitespace-insensitive only; no fuzzy matching.

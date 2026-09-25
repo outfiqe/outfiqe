@@ -1,6 +1,7 @@
 import { isStaffUserRole } from "@outfiqe/utils";
 
 import { env } from "#config/env.config.js";
+import { prisma } from "#db/prisma.js";
 import {
   crmOrganizationInviteTemplate,
   crmOwnershipTransferRequestTemplate,
@@ -12,12 +13,15 @@ import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import {
   isForeignKeyConstraintError,
   isUniqueConstraintError,
+  runWithDeadlockRetry,
   uniqueConstraintTargetIncludes,
 } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
+import { crmBillingRepository } from "#modules/crm-billing/crm-billing.repository.js";
 import { userRepository } from "#modules/users/user.repository.js";
+import { describeError } from "#redis/redis.utils.js";
 import type { DbClient } from "#types/db.types.js";
 
 import {
@@ -442,37 +446,72 @@ export const crmAccessService = {
       );
     }
 
-    if (invitedUser) {
-      const existingMembership = await crmAccessRepository.findMembershipByUserAndOrg(
-        invitedUser.id,
-        organization.id,
-      );
-      if (existingMembership) {
-        throw new AppError("MEMBER_EXISTS", "This person already has CRM access.", CONFLICT_STATUS);
-      }
-    }
-
-    const pendingInvite = await crmAccessRepository.findPendingInviteByEmail(
-      organization.id,
-      email,
-    );
-    if (pendingInvite) {
-      throw new AppError(
-        "INVITE_ALREADY_PENDING",
-        "An invite is already pending for this email.",
-        CONFLICT_STATUS,
-      );
-    }
-
     const rawToken = generateOpaqueToken();
-    await crmAccessRepository.createInvite({
-      organizationId: organization.id,
-      email,
-      roleId,
-      tokenHash: hashToken(rawToken),
-      expiresAt: new Date(Date.now() + ORGANIZATION_INVITE_TTL_MS),
-      invitedById,
-    });
+
+    await runWithDeadlockRetry(() =>
+      prisma.$transaction(async (tx) => {
+        await crmAccessRepository.acquireOrganizationInviteLock(tx, organization.id);
+
+        if (invitedUser) {
+          const existingMembership = await crmAccessRepository.findMembershipByUserAndOrg(
+            invitedUser.id,
+            organization.id,
+            tx,
+          );
+          if (existingMembership) {
+            throw new AppError(
+              "MEMBER_EXISTS",
+              "This person already has CRM access.",
+              CONFLICT_STATUS,
+            );
+          }
+        }
+
+        const pendingInvite = await crmAccessRepository.findPendingInviteByEmail(
+          organization.id,
+          email,
+          tx,
+        );
+        if (pendingInvite) {
+          throw new AppError(
+            "INVITE_ALREADY_PENDING",
+            "An invite is already pending for this email.",
+            CONFLICT_STATUS,
+          );
+        }
+
+        const subscription = await crmBillingRepository.findSubscriptionByOrganizationId(
+          organization.id,
+          tx,
+        );
+        if (subscription) {
+          const [activeMemberCount, pendingInviteCount] = await Promise.all([
+            crmBillingRepository.countActiveMemberships(organization.id, tx),
+            crmAccessRepository.countPendingInvites(organization.id, tx),
+          ]);
+          const seatsInUse = activeMemberCount + pendingInviteCount;
+          if (seatsInUse >= subscription.seats) {
+            throw new AppError(
+              "SEAT_LIMIT_REACHED",
+              "You've used every seat on your current plan. Upgrade your plan or free up a seat to invite someone new.",
+              CONFLICT_STATUS,
+            );
+          }
+        }
+
+        return crmAccessRepository.createInvite(
+          {
+            organizationId: organization.id,
+            email,
+            roleId,
+            tokenHash: hashToken(rawToken),
+            expiresAt: new Date(Date.now() + ORGANIZATION_INVITE_TTL_MS),
+            invitedById,
+          },
+          tx,
+        );
+      }),
+    );
 
     const inviteeNeedsAccount = !invitedUser;
     const invitePath = inviteeNeedsAccount
@@ -486,12 +525,16 @@ export const crmAccessService = {
     );
     const { subject, html } = crmOrganizationInviteTemplate(role.name, inviteUrl);
 
-    await sendEmail({
-      to: email,
-      subject,
-      body: `You've been invited to the Outfiqe CRM as ${role.name}: ${inviteUrl}`,
-      html,
-    });
+    try {
+      await sendEmail({
+        to: email,
+        subject,
+        body: `You've been invited to the Outfiqe CRM as ${role.name}: ${inviteUrl}`,
+        html,
+      });
+    } catch (error) {
+      logger.error(`CRM invite email to ${email} failed to send: ${describeError(error)}`);
+    }
 
     logger.info(`CRM invite sent to ${email} by ${invitedById}`);
   },

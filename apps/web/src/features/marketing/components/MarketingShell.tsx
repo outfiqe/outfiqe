@@ -14,7 +14,7 @@ export const MarketingShell = ({ breadcrumbs, children, width = "wide" }: Market
   <div className="pb-20 lg:pb-0">
     <SiteHeader />
     <main
-      className={`mx-auto px-6 pb-20 pt-6 sm:pt-10 lg:px-10 ${
+      className={`mx-auto px-6 pb-24 pt-10 sm:pt-16 lg:px-10 ${
         width === "prose" ? "max-w-3xl" : "max-w-5xl"
       }`}
     >

@@ -145,7 +145,7 @@ describe("crmTicketsApi", () => {
     let seenAssignee: unknown;
     let seenComment: unknown;
     mswServer.use(
-      http.get(`${API_BASE}/crm/tickets`, () => ok([ticket])),
+      http.get(`${API_BASE}/crm/tickets`, () => ok({ tickets: [ticket], nextCursor: null })),
       http.get(`${API_BASE}/crm/tickets/t1`, () => ok({ ...ticket, comments: [] })),
       http.post(`${API_BASE}/crm/tickets`, () => ok(ticket, 201)),
       http.patch(`${API_BASE}/crm/tickets/t1/status`, async ({ request }) => {
@@ -162,7 +162,7 @@ describe("crmTicketsApi", () => {
       }),
     );
 
-    expect(await crmTicketsApi.listTickets({ status: "OPEN" })).toHaveLength(1);
+    expect((await crmTicketsApi.listTickets({ status: "OPEN" })).tickets).toHaveLength(1);
     expect((await crmTicketsApi.getTicket("t1")).comments).toEqual([]);
     await crmTicketsApi.createTicket({
       type: "COMPLAINT",

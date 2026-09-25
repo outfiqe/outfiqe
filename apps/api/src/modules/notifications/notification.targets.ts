@@ -1,4 +1,6 @@
+import { env } from "#config/env.config.js";
 import { NotificationSurface, NotificationType } from "#generated/prisma/enums.js";
+import { buildOrganizationAdminUrl } from "#modules/crm-access/crm-access.utils.js";
 
 import type { NotificationMetadata } from "./notification.types.js";
 
@@ -74,6 +76,24 @@ const announcementTarget = (metadata: NotificationMetadata): NotificationTarget 
   };
 };
 
+const crmItemAssignedTarget = (metadata: NotificationMetadata): NotificationTarget => {
+  const path = metadata.crmItemKind === "task" ? ADMIN_ROUTES.crmTasks : ADMIN_ROUTES.crmSupport;
+
+  if (!metadata.crmOrganizationSubdomain) return admin(path);
+
+  return admin(
+    buildOrganizationAdminUrl(
+      {
+        subdomain: metadata.crmOrganizationSubdomain,
+        isPlatformOrg: metadata.crmOrganizationIsPlatformOrg ?? false,
+      },
+      path,
+      env.ADMIN_URL,
+      env.TENANT_BASE_DOMAIN,
+    ),
+  );
+};
+
 const supportTicketTarget = (
   entityId: string | null,
   recipientIsStaff: boolean,
@@ -134,9 +154,7 @@ export const resolveNotificationTarget = ({
     case NotificationType.BRAND_APPLICATION_SUBMITTED:
       return admin(ADMIN_ROUTES.brandApplications);
     case NotificationType.CRM_ITEM_ASSIGNED:
-      return admin(
-        metadata.crmItemKind === "task" ? ADMIN_ROUTES.crmTasks : ADMIN_ROUTES.crmSupport,
-      );
+      return crmItemAssignedTarget(metadata);
     case NotificationType.COUPON_APPROVAL_REQUESTED:
     case NotificationType.COUPON_BUDGET_ALERT:
       return admin(ADMIN_ROUTES.coupons);

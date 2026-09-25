@@ -112,6 +112,7 @@ export const crmTicketsRepository = {
       assigneeMembershipId?: string;
       type?: TicketRecord["type"];
     },
+    page: { cursor?: string; limit: number },
   ): Promise<TicketRecord[]> {
     const rows = await prisma.crmTicket.findMany({
       where: {
@@ -122,7 +123,9 @@ export const crmTicketsRepository = {
           : {}),
         ...(filters.type ? { type: filters.type } : {}),
       },
-      orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+      orderBy: [{ status: "asc" }, { createdAt: "desc" }, { id: "desc" }],
+      take: page.limit + 1,
+      ...(page.cursor ? { cursor: { id: page.cursor }, skip: 1 } : {}),
       select: ticketSelect,
     });
     return rows.map(toTicketRecord);

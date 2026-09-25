@@ -18,6 +18,8 @@ CRM is gated here; only the advanced feature set is.
 - `crm-billing.repository.ts` — every Prisma query, scoped to a tenant via
   `subscription: { organizationId }` on invoice reads. `settleInvoiceAsPaid` claims the invoice
   with a status-guarded `updateMany` before advancing the subscription, inside one transaction.
+  `findOpenInvoiceForSubscription` / `refreshOpenInvoice` back the one-open-invoice-per-subscription
+  rule (see Non-obvious rationale).
 - `crm-billing.service.ts` — checkout / pay-outstanding-invoice / verify / cancel business rules,
   the `CrmBillingProvider → PaymentProvider` registry, and `resolveAdvancedFeaturesForOrganization`
   (called by `crm-access`'s `GET /crm/organization` so the admin UI can gate without guessing).
@@ -92,4 +94,16 @@ after a grace window, `CANCELED` — at which point advanced CRM features are ga
   route is `_authenticated.crm.billing.return.$invoiceId.tsx` and `BillingReturnPage` reads the
   param, never a search param. `successUrl` and `failureUrl` are the same URL here (no
   failed-redirect UX like the storefront's `/failed`).
-- **`GET /billing/invoices` leaves voided invoices out unless `includeVoided=true`.** Every checkout attempt creates its own invoice, and one that is never paid ends up `VOID` (the gateway failed, the charge failed, or the 60-minute expiry passed). Those rows are an audit trail, not something a customer needs in their history, so the default list shows only open and paid invoices. The admin billing page has a "Show voided invoices" checkbox that sends the flag. The unpaid-invoice banner only looks at open invoices, so it is unaffected.
+- **`GET /billing/invoices` leaves voided invoices out unless `includeVoided=true`.** A checkout whose provider call fails ends up `VOID` (the gateway was unreachable, the charge failed, or the 60-minute expiry passed). Those rows are an audit trail, not something a customer needs in their history, so the default list shows only open and paid invoices. The admin billing page has a "Show voided invoices" checkbox that sends the flag. The unpaid-invoice banner only looks at open invoices, so it is unaffected.
+- **A subscription can only ever have one `OPEN` invoice at a time**, enforced by a partial unique
+  index (`subscription_invoices_one_open_per_subscription_key` on `subscription_id WHERE status =
+'OPEN'`, hand-written into its migration since Prisma's schema DSL can't express a partial
+  unique — same pattern as `withdraw_policies`/`gateway_fee_rates`/`coupon_redemptions`).
+  `checkout()` checks for an existing open invoice first and reuses it (`refreshOpenInvoice`,
+  updating its plan/seats/amount to the new request and clearing the stale `provider`/`providerRef`
+  so a fresh payment attempt starts clean) instead of creating a second one; the `createInvoice`
+  call is still wrapped in a catch for the constraint itself, so two truly concurrent checkout
+  requests can't both slip past the initial check and create duplicates either. Before this, a
+  double-click, a stale second tab, or a retried request each created their own `OPEN` invoice,
+  and nothing ever voided the sibling once one of them got paid — the tenant would see a paid
+  invoice and a stray still-open one side by side.
