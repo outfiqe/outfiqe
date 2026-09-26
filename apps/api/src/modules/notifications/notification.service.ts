@@ -32,7 +32,7 @@ import type {
   StaffNotificationInput,
   UpsertGroupInput,
 } from "./notification.types.js";
-import { toBroadcastPayload } from "./notification.utils.js";
+import { canReceiveNotificationType, toBroadcastPayload } from "./notification.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 
@@ -272,8 +272,14 @@ export const notificationService = {
   },
 
   async listPreferences(userId: string): Promise<NotificationPreferenceView[]> {
-    const overrides = await notificationRepository.listPreferenceOverrides(userId);
-    return Object.values(NotificationType).map((type) => ({
+    const [overrides, membershipGrants] = await Promise.all([
+      notificationRepository.listPreferenceOverrides(userId),
+      notificationRepository.findActiveMembershipGrants(userId),
+    ]);
+    const receivableTypes = Object.values(NotificationType).filter((type) =>
+      canReceiveNotificationType(type, membershipGrants),
+    );
+    return receivableTypes.map((type) => ({
       type,
       enabled: overrides.get(type)?.enabled ?? true,
       pushEnabled: overrides.get(type)?.pushEnabled ?? true,

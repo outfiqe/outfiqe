@@ -94,6 +94,12 @@ export type StaffNotificationInput = Omit<
   "recipientId" | "organizationId"
 >;
 
+export type NotificationMembershipGrant = {
+  isPlatformOrganization: boolean;
+  isOwner: boolean;
+  permissionKeys: readonly string[];
+};
+
 export type NotificationOrganizationFilter = {
   organizationId?: string;
 };

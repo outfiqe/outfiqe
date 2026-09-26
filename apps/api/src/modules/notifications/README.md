@@ -320,11 +320,13 @@ true`, so a user who never opens the panel doesn't silently lose activity they h
 **Notification preferences are opt-out, not opt-in.** No `NotificationPreference` row for a
 `(userId, type)` pair means that type is enabled — most users will never have any rows here at
 all. `findMutedRecipientIds` is the only read on the in-app path; a missing row is never treated
-as "muted." `GET /preferences` returns every `NotificationType` value (not filtered by the
-caller's role) — toggling a type that could never apply to that user (e.g. a plain customer
-muting `NEW_ORDER`) is harmless, and skipping per-role filtering avoids a second "which types
-apply to which surface" classification that would have to be kept in sync with the frontend's own
-per-app type usage.
+as "muted." `GET /preferences` leaves out staff notification types the caller can never
+receive. It checks the same rule lists delivery uses (`canReceiveNotificationType`, with
+`PLATFORM_STAFF_ONLY_NOTIFICATION_PERMISSIONS` for platform staff types and
+`TENANT_STAFF_NOTIFICATION_PERMISSIONS` for tenant ones), so a shopper never sees "New brand
+applications" and a billing manager sees billing alerts but not ticket alerts. Personal
+notification types stay listed for everyone. `SUPPORT_TICKET_REPLY` counts as personal, because
+customers receive it too. Adding a staff type to a rule list updates the mute list automatically.
 
 **`pushEnabled` is a second channel on the same row, read only by the `push` module.** The row
 carries `enabled` (in-app) and `pushEnabled` (phone), both defaulting to true. The in-app path

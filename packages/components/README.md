@@ -56,6 +56,8 @@ passed in.
   - `resolveNotificationMessage.ts` / `notificationTypeLabels.ts` / `formatNotificationTimestamp.ts`
     — pure formatting helpers: the row's display text, its type label, and its relative timestamp
     (`"2m"` / `"3h"` / `"Aug 20"`).
+- `pnpm typecheck` (`tsc --noEmit`) checks the whole package, tests included. The apps only
+  typecheck the files they import, so test files here were never checked before.
 - `testing/setup.tsx` — vitest jsdom setup for this package's own component tests (`jest-dom`
   matchers, RTL `cleanup`, and a `ResizeObserver` stub). Unlike a plain stub, this one keeps a
   registry of the observer callbacks so a test can drive them: `triggerResizeObservers()` fires
