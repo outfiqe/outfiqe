@@ -204,6 +204,7 @@ export default defineConfig({
         "src/features/categories/lib/resolveStoredTasteSlugs.ts",
         "src/features/categories/lib/tasteSlugs.ts",
         "src/features/landing/lib/resolveTasteCategories.ts",
+        "src/features/landing/lib/scrollToTasteResults.ts",
         "src/shared/hooks/useIsHydrated.ts",
         "src/features/landing/components/TasteCategories/CustomizeTasteModal.tsx",
         "src/features/support/schemas/support.schema.ts",

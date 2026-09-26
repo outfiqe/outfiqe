@@ -1,8 +1,10 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { useCategories } from "@/features/categories/hooks/useCategories";
 
+import { scrollToTasteResults } from "../../lib/scrollToTasteResults";
 import { TasteCategories } from "./index";
 
 vi.mock("next/navigation", () => ({
@@ -11,6 +13,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/features/categories/hooks/useCategories", () => ({ useCategories: vi.fn() }));
+
+vi.mock("../../lib/scrollToTasteResults", () => ({ scrollToTasteResults: vi.fn() }));
 
 const buildCategory = (slug: string, name: string) => ({
   id: slug,
@@ -114,5 +118,19 @@ describe("TasteCategories", () => {
     render(<TasteCategories />);
 
     expect(screen.getByText("No categories yet — check back soon.")).toBeInTheDocument();
+  });
+
+  it("scrolls the results into view when a taste is picked so the change is noticed", async () => {
+    vi.mocked(useCategories).mockReturnValue(
+      buildQuerySuccessResult([
+        buildCategory("formal", "Formal"),
+        buildCategory("casual", "Casual"),
+      ]) as ReturnType<typeof useCategories>,
+    );
+
+    render(<TasteCategories />);
+    await userEvent.click(screen.getByRole("button", { name: "Casual" }));
+
+    expect(scrollToTasteResults).toHaveBeenCalledTimes(1);
   });
 });
