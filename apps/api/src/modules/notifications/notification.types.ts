@@ -100,6 +100,14 @@ export type NotificationMembershipGrant = {
   permissionKeys: readonly string[];
 };
 
+export type NotificationRecipientAudience = {
+  isStaffAccount: boolean;
+  isShopperAccount: boolean;
+  isApprovedCreator: boolean;
+  isBrandMember: boolean;
+  membershipGrants: readonly NotificationMembershipGrant[];
+};
+
 export type NotificationOrganizationFilter = {
   organizationId?: string;
 };

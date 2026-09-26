@@ -1,3 +1,5 @@
+import { isStaffUserRole } from "@outfiqe/utils";
+
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import type {
@@ -5,7 +7,7 @@ import type {
   NotificationSurface,
   NotificationType,
 } from "#generated/prisma/enums.js";
-import { CreatorStatus, MembershipStatus } from "#generated/prisma/enums.js";
+import { CreatorStatus, MembershipStatus, UserRole } from "#generated/prisma/enums.js";
 import { decodeCursor } from "#lib/pagination.utils.js";
 import { isForeignKeyConstraintError, isUniqueConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
@@ -21,6 +23,7 @@ import type {
   NotificationMembershipGrant,
   NotificationMetadata,
   NotificationOrganizationFilter,
+  NotificationRecipientAudience,
   NotificationRecord,
   RetractGroupActorInput,
   UpsertGroupInput,
@@ -495,21 +498,38 @@ export const notificationRepository = {
     return readAt;
   },
 
-  async findActiveMembershipGrants(userId: string): Promise<NotificationMembershipGrant[]> {
-    const memberships = await prisma.membership.findMany({
-      where: { userId, status: MembershipStatus.ACTIVE },
-      select: {
-        id: true,
-        isPlatformSuperAdmin: true,
-        organization: { select: { isPlatformOrg: true, superAdminMembershipId: true } },
-        role: { select: { permissions: { select: { permissionKey: true } } } },
-      },
-    });
-    return memberships.map(({ id, isPlatformSuperAdmin, organization, role }) => ({
-      isPlatformOrganization: organization.isPlatformOrg,
-      isOwner: isPlatformSuperAdmin || organization.superAdminMembershipId === id,
-      permissionKeys: role.permissions.map(({ permissionKey }) => permissionKey),
-    }));
+  async findRecipientAudience(userId: string): Promise<NotificationRecipientAudience> {
+    const [account, brandMembership, memberships] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true, isCreator: true, creatorStatus: true },
+      }),
+      prisma.brandMembership.findFirst({ where: { userId }, select: { brandId: true } }),
+      prisma.membership.findMany({
+        where: { userId, status: MembershipStatus.ACTIVE },
+        select: {
+          id: true,
+          isPlatformSuperAdmin: true,
+          organization: { select: { isPlatformOrg: true, superAdminMembershipId: true } },
+          role: { select: { permissions: { select: { permissionKey: true } } } },
+        },
+      }),
+    ]);
+    const membershipGrants: NotificationMembershipGrant[] = memberships.map(
+      ({ id, isPlatformSuperAdmin, organization, role }) => ({
+        isPlatformOrganization: organization.isPlatformOrg,
+        isOwner: isPlatformSuperAdmin || organization.superAdminMembershipId === id,
+        permissionKeys: role.permissions.map(({ permissionKey }) => permissionKey),
+      }),
+    );
+    return {
+      isStaffAccount: isStaffUserRole(account?.role),
+      isShopperAccount: account?.role === UserRole.CUSTOMER,
+      isApprovedCreator:
+        Boolean(account?.isCreator) && account?.creatorStatus === CreatorStatus.APPROVED,
+      isBrandMember: brandMembership !== null,
+      membershipGrants,
+    };
   },
 
   async deleteForRecipientInOrganization(
