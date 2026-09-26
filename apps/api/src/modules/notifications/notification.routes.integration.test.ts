@@ -5,14 +5,21 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
-import { NotificationType, UserRole } from "#generated/prisma/enums.js";
+import { CreatorStatus, NotificationType, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
+import {
+  createAdminSession,
+  createRoleLimitedStaffSession,
+} from "#test/integration/authHelpers.js";
 import { seedPlatformOrganization, seedTenantOrganization } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
-const createUserSession = async (): Promise<{ userId: string; authHeader: string }> => {
+const createUserSession = async (
+  overrides: Partial<{ role: UserRole; isApprovedCreator: boolean }> = {},
+): Promise<{ userId: string; authHeader: string }> => {
   const suffix = randomUUID().slice(0, 8);
+  const role = overrides.role ?? UserRole.CUSTOMER;
   const user = await prisma.user.create({
     data: {
       email: `notif-rest-${suffix}@outfiqe.test`,
@@ -20,10 +27,13 @@ const createUserSession = async (): Promise<{ userId: string; authHeader: string
       handle: `notif-rest-${suffix}`,
       phone: `95${suffix.replace(/\D/g, "0").padEnd(8, "0").slice(0, 8)}`,
       passwordHash: "not-used-in-tests",
-      role: UserRole.CUSTOMER,
+      role,
+      ...(overrides.isApprovedCreator
+        ? { isCreator: true, creatorStatus: CreatorStatus.APPROVED }
+        : {}),
     },
   });
-  const { accessToken } = generateTokenpair({ sub: user.id, role: UserRole.CUSTOMER });
+  const { accessToken } = generateTokenpair({ sub: user.id, role });
   return { userId: user.id, authHeader: `Bearer ${accessToken}` };
 };
 
@@ -225,15 +235,29 @@ describe("notification preferences", () => {
 
     const types = await listPreferenceTypes(authHeader);
 
-    expect(types).toContain(NotificationType.LOOK_LIKED);
+    expect(types).toContain(NotificationType.ORDER_STATUS_CHANGED);
     expect(types).toContain(NotificationType.SUPPORT_TICKET_REPLY);
+    expect(types).not.toContain(NotificationType.LOOK_LIKED);
+    expect(types).not.toContain(NotificationType.COMMISSION_EARNED);
+    expect(types).not.toContain(NotificationType.NEW_ORDER);
     expect(types).not.toContain(NotificationType.BRAND_APPLICATION_SUBMITTED);
     expect(types).not.toContain(NotificationType.CRM_INVOICE_DUE);
     expect(types).not.toContain(NotificationType.CRM_ITEM_ASSIGNED);
   });
 
+  it("adds the creator notifications for an approved creator", async () => {
+    const { authHeader } = await createUserSession({ isApprovedCreator: true });
+
+    const types = await listPreferenceTypes(authHeader);
+
+    expect(types).toContain(NotificationType.LOOK_LIKED);
+    expect(types).toContain(NotificationType.COMMISSION_EARNED);
+    expect(types).toContain(NotificationType.WITHDRAW_REQUEST_PAID);
+    expect(types).not.toContain(NotificationType.NEW_ORDER);
+  });
+
   it("shows tenant staff the notifications their role receives, and no others", async () => {
-    const { userId, authHeader } = await createUserSession();
+    const { userId, authHeader } = await createUserSession({ role: UserRole.TENANT_STAFF });
     const { organization } = await seedTenantOrganization();
     const billingRole = await crmAccessRepository.createRole({
       organizationId: organization.id,
@@ -247,9 +271,42 @@ describe("notification preferences", () => {
     const types = await listPreferenceTypes(authHeader);
 
     expect(types).toContain(NotificationType.CRM_INVOICE_DUE);
-    expect(types).toContain(NotificationType.CRM_ITEM_ASSIGNED);
+    expect(types).not.toContain(NotificationType.CRM_ITEM_ASSIGNED);
     expect(types).not.toContain(NotificationType.CRM_TICKET_UNASSIGNED);
     expect(types).not.toContain(NotificationType.BRAND_APPLICATION_SUBMITTED);
+    expect(types).not.toContain(NotificationType.ORDER_STATUS_CHANGED);
+  });
+
+  it("shows a support-only staff member just support, messages and announcements", async () => {
+    const supportAgent = await createRoleLimitedStaffSession(
+      "platform:support:read",
+      "platform:support:respond",
+    );
+
+    const types = await listPreferenceTypes(supportAgent.authHeader);
+
+    expect(types.sort()).toEqual(
+      [
+        NotificationType.NEW_MESSAGE,
+        NotificationType.SUPPORT_TICKET_CREATED,
+        NotificationType.SUPPORT_TICKET_ASSIGNED,
+        NotificationType.SUPPORT_TICKET_REPLY,
+        NotificationType.ANNOUNCEMENT,
+      ].sort(),
+    );
+  });
+
+  it("never shows an admin account storefront activity like likes, orders or withdrawals", async () => {
+    const admin = await createAdminSession();
+
+    const types = await listPreferenceTypes(admin.authHeader);
+
+    expect(types).toContain(NotificationType.BRAND_APPLICATION_SUBMITTED);
+    expect(types).not.toContain(NotificationType.LOOK_LIKED);
+    expect(types).not.toContain(NotificationType.NEW_ORDER);
+    expect(types).not.toContain(NotificationType.COMMISSION_EARNED);
+    expect(types).not.toContain(NotificationType.WITHDRAW_REQUEST_PAID);
+    expect(types).not.toContain(NotificationType.SUPPORT_TICKET_RESOLVED);
   });
 
   it("mutes and unmutes a single type", async () => {

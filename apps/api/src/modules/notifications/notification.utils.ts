@@ -1,16 +1,22 @@
 import type { NotificationBroadcastPayload } from "#events/event-bus.types.js";
 import type { NotificationEntityType, NotificationSurface } from "#generated/prisma/enums.js";
 import { NotificationType } from "#generated/prisma/enums.js";
+import { CRM_ASSIGNMENT_VIEW_PERMISSION_KEYS } from "#modules/crm-access/crm-access.constants.js";
+import {
+  BRAND_REVIEW_PERMISSION_KEYS,
+  COUPON_MANAGEMENT_PERMISSION_KEYS,
+  SUPPORT_AGENT_PERMISSION_KEYS,
+} from "#modules/platform-access/platform-access.constants.js";
 
 import {
   MAX_RECENT_ACTORS,
-  PLATFORM_STAFF_ONLY_NOTIFICATION_PERMISSIONS,
   TENANT_STAFF_NOTIFICATION_PERMISSIONS,
 } from "./notification.constants.js";
 import type {
   NotificationActorSnapshot,
   NotificationMembershipGrant,
   NotificationMetadata,
+  NotificationRecipientAudience,
   NotificationRecord,
 } from "./notification.types.js";
 
@@ -52,39 +58,95 @@ export const toNotificationRecord = (row: PrismaNotificationRow): NotificationRe
   updatedAt: row.updatedAt,
 });
 
-const readPermissionKeysFor = (
-  permissionsByType: Partial<Record<NotificationType, readonly string[]>>,
-  type: NotificationType,
-): readonly string[] | undefined => permissionsByType[type];
+type AudienceRule = (audience: NotificationRecipientAudience) => boolean;
 
 const grantHoldsAnyOf = (
   grant: NotificationMembershipGrant,
   permissionKeys: readonly string[],
 ): boolean => grant.isOwner || permissionKeys.some((key) => grant.permissionKeys.includes(key));
 
+const everyAccount: AudienceRule = () => true;
+const storefrontAccounts: AudienceRule = ({ isStaffAccount }) => !isStaffAccount;
+const shopperAccounts: AudienceRule = ({ isShopperAccount }) => isShopperAccount;
+const approvedCreators: AudienceRule = ({ isApprovedCreator }) => isApprovedCreator;
+const businessAccounts: AudienceRule = ({ isBrandMember }) => isBrandMember;
+const creatorsAndBusinesses: AudienceRule = (audience) =>
+  approvedCreators(audience) || businessAccounts(audience);
+
+const platformStaffHolding =
+  (permissionKeys: readonly string[]): AudienceRule =>
+  ({ membershipGrants }) =>
+    membershipGrants.some(
+      (grant) => grant.isPlatformOrganization && grantHoldsAnyOf(grant, permissionKeys),
+    );
+
+const organizationStaffHolding =
+  (permissionKeys: readonly string[]): AudienceRule =>
+  ({ membershipGrants }) =>
+    membershipGrants.some((grant) => grantHoldsAnyOf(grant, permissionKeys));
+
+const RECEIVING_AUDIENCE_BY_TYPE: Record<NotificationType, AudienceRule> = {
+  [NotificationType.LOOK_LIKED]: approvedCreators,
+  [NotificationType.LOOK_COMMENTED]: approvedCreators,
+  [NotificationType.COMMENT_REPLIED]: storefrontAccounts,
+  [NotificationType.NEW_FOLLOWER]: approvedCreators,
+  [NotificationType.NEW_BRAND_FOLLOWER]: businessAccounts,
+  [NotificationType.ACHIEVEMENT_UNLOCKED]: storefrontAccounts,
+  [NotificationType.LEVEL_UP]: storefrontAccounts,
+  [NotificationType.COMMISSION_EARNED]: approvedCreators,
+  [NotificationType.NEW_ORDER]: businessAccounts,
+  [NotificationType.ORDER_STATUS_CHANGED]: shopperAccounts,
+  [NotificationType.BRAND_APPLICATION_SUBMITTED]: platformStaffHolding(
+    BRAND_REVIEW_PERMISSION_KEYS,
+  ),
+  [NotificationType.PRODUCT_REVIEWED]: businessAccounts,
+  [NotificationType.REVIEW_REQUESTED]: shopperAccounts,
+  [NotificationType.WITHDRAW_REQUEST_APPROVED]: creatorsAndBusinesses,
+  [NotificationType.WITHDRAW_REQUEST_REJECTED]: creatorsAndBusinesses,
+  [NotificationType.WITHDRAW_REQUEST_PAID]: creatorsAndBusinesses,
+  [NotificationType.NEW_MESSAGE]: everyAccount,
+  [NotificationType.CRM_ITEM_ASSIGNED]: organizationStaffHolding(
+    CRM_ASSIGNMENT_VIEW_PERMISSION_KEYS,
+  ),
+  [NotificationType.SUPPORT_TICKET_CREATED]: platformStaffHolding(SUPPORT_AGENT_PERMISSION_KEYS),
+  [NotificationType.SUPPORT_TICKET_ASSIGNED]: platformStaffHolding(SUPPORT_AGENT_PERMISSION_KEYS),
+  [NotificationType.SUPPORT_TICKET_REPLY]: (audience) =>
+    storefrontAccounts(audience) || platformStaffHolding(SUPPORT_AGENT_PERMISSION_KEYS)(audience),
+  [NotificationType.SUPPORT_TICKET_RESOLVED]: storefrontAccounts,
+  [NotificationType.COUPON_APPROVAL_REQUESTED]: platformStaffHolding(
+    COUPON_MANAGEMENT_PERMISSION_KEYS,
+  ),
+  [NotificationType.COUPON_BUDGET_ALERT]: platformStaffHolding(COUPON_MANAGEMENT_PERMISSION_KEYS),
+  [NotificationType.COUPON_REDEMPTION_FLAGGED]: platformStaffHolding(
+    COUPON_MANAGEMENT_PERMISSION_KEYS,
+  ),
+  [NotificationType.PRODUCT_TAG_SUBMITTED]: businessAccounts,
+  [NotificationType.PRODUCT_TAG_APPROVED]: approvedCreators,
+  [NotificationType.PRODUCT_TAG_REJECTED]: approvedCreators,
+  [NotificationType.PRODUCT_TAG_REVOKED]: approvedCreators,
+  [NotificationType.PRODUCT_TAG_REVIEW_REMINDER]: businessAccounts,
+  [NotificationType.ANNOUNCEMENT]: everyAccount,
+  [NotificationType.CRM_TICKET_UNASSIGNED]: organizationStaffHolding(
+    TENANT_STAFF_NOTIFICATION_PERMISSIONS[NotificationType.CRM_TICKET_UNASSIGNED],
+  ),
+  [NotificationType.CRM_MEMBER_JOINED]: organizationStaffHolding(
+    TENANT_STAFF_NOTIFICATION_PERMISSIONS[NotificationType.CRM_MEMBER_JOINED],
+  ),
+  [NotificationType.CRM_INVOICE_DUE]: organizationStaffHolding(
+    TENANT_STAFF_NOTIFICATION_PERMISSIONS[NotificationType.CRM_INVOICE_DUE],
+  ),
+  [NotificationType.CRM_SUBSCRIPTION_PAST_DUE]: organizationStaffHolding(
+    TENANT_STAFF_NOTIFICATION_PERMISSIONS[NotificationType.CRM_SUBSCRIPTION_PAST_DUE],
+  ),
+  [NotificationType.CRM_SUBSCRIPTION_CANCELED]: organizationStaffHolding(
+    TENANT_STAFF_NOTIFICATION_PERMISSIONS[NotificationType.CRM_SUBSCRIPTION_CANCELED],
+  ),
+};
+
 export const canReceiveNotificationType = (
   type: NotificationType,
-  membershipGrants: readonly NotificationMembershipGrant[],
-): boolean => {
-  const platformPermissionKeys = readPermissionKeysFor(
-    PLATFORM_STAFF_ONLY_NOTIFICATION_PERMISSIONS,
-    type,
-  );
-  if (platformPermissionKeys) {
-    return membershipGrants.some(
-      (grant) => grant.isPlatformOrganization && grantHoldsAnyOf(grant, platformPermissionKeys),
-    );
-  }
-
-  const tenantPermissionKeys = readPermissionKeysFor(TENANT_STAFF_NOTIFICATION_PERMISSIONS, type);
-  if (tenantPermissionKeys) {
-    return membershipGrants.some((grant) => grantHoldsAnyOf(grant, tenantPermissionKeys));
-  }
-
-  if (type === NotificationType.CRM_ITEM_ASSIGNED) return membershipGrants.length > 0;
-
-  return true;
-};
+  audience: NotificationRecipientAudience,
+): boolean => RECEIVING_AUDIENCE_BY_TYPE[type](audience);
 
 export const buildNotificationDedupeKey = (
   sourceEventId: string,

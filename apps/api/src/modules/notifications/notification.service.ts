@@ -272,12 +272,12 @@ export const notificationService = {
   },
 
   async listPreferences(userId: string): Promise<NotificationPreferenceView[]> {
-    const [overrides, membershipGrants] = await Promise.all([
+    const [overrides, audience] = await Promise.all([
       notificationRepository.listPreferenceOverrides(userId),
-      notificationRepository.findActiveMembershipGrants(userId),
+      notificationRepository.findRecipientAudience(userId),
     ]);
     const receivableTypes = Object.values(NotificationType).filter((type) =>
-      canReceiveNotificationType(type, membershipGrants),
+      canReceiveNotificationType(type, audience),
     );
     return receivableTypes.map((type) => ({
       type,

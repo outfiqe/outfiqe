@@ -326,13 +326,28 @@ true`, so a user who never opens the panel doesn't silently lose activity they h
 **Notification preferences are opt-out, not opt-in.** No `NotificationPreference` row for a
 `(userId, type)` pair means that type is enabled — most users will never have any rows here at
 all. `findMutedRecipientIds` is the only read on the in-app path; a missing row is never treated
-as "muted." `GET /preferences` leaves out staff notification types the caller can never
-receive. It checks the same rule lists delivery uses (`canReceiveNotificationType`, with
-`PLATFORM_STAFF_ONLY_NOTIFICATION_PERMISSIONS` for platform staff types and
-`TENANT_STAFF_NOTIFICATION_PERMISSIONS` for tenant ones), so a shopper never sees "New brand
-applications" and a billing manager sees billing alerts but not ticket alerts. Personal
-notification types stay listed for everyone. `SUPPORT_TICKET_REPLY` counts as personal, because
-customers receive it too. Adding a staff type to a rule list updates the mute list automatically.
+as "muted." `GET /preferences` lists only the types the
+caller can actually receive, so each kind of login gets its own settings list.
+`notification.utils.ts`'s `RECEIVING_AUDIENCE_BY_TYPE` gives every `NotificationType` a rule, and
+TypeScript refuses to compile if a type has none, so a new type must decide who gets it.
+`notificationRepository.findRecipientAudience` describes the caller: a staff account (`ADMIN` or
+`TENANT_STAFF`), a shopper (`CUSTOMER`), an approved creator, a brand member, and their
+organization memberships with role permissions.
+
+| Who                                                       | Types                                                                            |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Approved creators                                         | likes and comments on looks, new followers, commissions, tag results             |
+| Brand members (business accounts)                         | new orders, brand followers, product reviews, tags to review                     |
+| Approved creators and brand members                       | withdrawal updates                                                               |
+| Shoppers (creators included)                              | order updates, review requests                                                   |
+| Any storefront account                                    | replies to your comments, badges, level-ups, "your support request was resolved" |
+| Platform staff whose role holds the permission            | brand applications, support requests, coupon alerts                              |
+| Staff in any organization whose role holds the permission | CRM tickets, members, billing; assignments need `tasks:read` or `tickets:read`   |
+| Storefront accounts and support agents                    | support replies                                                                  |
+| Everyone                                                  | messages, announcements                                                          |
+
+A type stays listed whenever the code does not rule it out for that account. Hiding a type someone
+can receive would stop them from muting it, which is worse than showing one they never get.
 
 **`pushEnabled` is a second channel on the same row, read only by the `push` module.** The row
 carries `enabled` (in-app) and `pushEnabled` (phone), both defaulting to true. The in-app path
