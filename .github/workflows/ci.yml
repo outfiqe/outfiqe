@@ -201,6 +201,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
+      NODE_ENV: production
       DATABASE_URL: postgresql://outfiqe:outfiqe@localhost:5432/outfiqe_boot_db
       REDIS_URL: redis://localhost:6379
       PORT: "4000"
