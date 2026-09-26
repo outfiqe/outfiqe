@@ -5,7 +5,7 @@ import type {
   NotificationSurface,
   NotificationType,
 } from "#generated/prisma/enums.js";
-import { CreatorStatus } from "#generated/prisma/enums.js";
+import { CreatorStatus, MembershipStatus } from "#generated/prisma/enums.js";
 import { decodeCursor } from "#lib/pagination.utils.js";
 import { isForeignKeyConstraintError, isUniqueConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
@@ -18,6 +18,7 @@ import type {
   NotificationActorSnapshot,
   NotificationChannelChanges,
   NotificationFeedCursor,
+  NotificationMembershipGrant,
   NotificationMetadata,
   NotificationOrganizationFilter,
   NotificationRecord,
@@ -492,6 +493,23 @@ export const notificationRepository = {
       data: { isRead: true, readAt },
     });
     return readAt;
+  },
+
+  async findActiveMembershipGrants(userId: string): Promise<NotificationMembershipGrant[]> {
+    const memberships = await prisma.membership.findMany({
+      where: { userId, status: MembershipStatus.ACTIVE },
+      select: {
+        id: true,
+        isPlatformSuperAdmin: true,
+        organization: { select: { isPlatformOrg: true, superAdminMembershipId: true } },
+        role: { select: { permissions: { select: { permissionKey: true } } } },
+      },
+    });
+    return memberships.map(({ id, isPlatformSuperAdmin, organization, role }) => ({
+      isPlatformOrganization: organization.isPlatformOrg,
+      isOwner: isPlatformSuperAdmin || organization.superAdminMembershipId === id,
+      permissionKeys: role.permissions.map(({ permissionKey }) => permissionKey),
+    }));
   },
 
   async deleteForRecipientInOrganization(
