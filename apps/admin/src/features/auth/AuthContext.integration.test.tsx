@@ -18,6 +18,8 @@ const FALLBACK_USER: AdminUser = {
   hasPlatformAccess: false,
   isCoFounder: false,
   hiddenPlatformNavKeys: [],
+  platformPermissionKeys: [],
+  crmHomeSubdomain: null,
 };
 
 const mockSessionFor = (role: "ADMIN" | "BRAND_OWNER" | "CUSTOMER") => {
@@ -72,6 +74,8 @@ const SessionProbe = () => {
             hasPlatformAccess: true,
             isCoFounder: false,
             hiddenPlatformNavKeys: [],
+            platformPermissionKeys: [],
+            crmHomeSubdomain: null,
           })
         }
       >

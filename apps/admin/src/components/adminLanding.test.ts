@@ -1,13 +1,12 @@
-import { readdirSync } from "node:fs";
-import path from "node:path";
-
 import { describe, expect, it } from "vitest";
 
 import type { AdminUser } from "@/features/auth/schemas";
 
 import { resolveAdminLanding, resolvePlatformPathAccess } from "./adminLanding";
 
-const ROUTES_DIRECTORY = path.resolve(import.meta.dirname, "../routes");
+const ROUTE_FILE_NAMES = Object.keys(import.meta.glob("/src/routes/*.tsx")).map((routeFilePath) =>
+  routeFilePath.slice(routeFilePath.lastIndexOf("/") + 1),
+);
 const AUTHENTICATED_ROUTE_PREFIX = "_authenticated.";
 const AUTHENTICATED_LAYOUT_FILE = "_authenticated.tsx";
 const PATHS_OUTSIDE_THE_PLATFORM = ["/", "/profile", "/platform"];
@@ -177,8 +176,9 @@ describe("resolvePlatformPathAccess", () => {
   });
 
   it("covers every platform page in the app with a menu section, so no page is left unguarded", () => {
-    const platformPagePaths = readdirSync(ROUTES_DIRECTORY)
-      .filter((fileName) => fileName.startsWith(AUTHENTICATED_ROUTE_PREFIX))
+    const platformPagePaths = ROUTE_FILE_NAMES.filter((fileName) =>
+      fileName.startsWith(AUTHENTICATED_ROUTE_PREFIX),
+    )
       .filter((fileName) => fileName !== AUTHENTICATED_LAYOUT_FILE)
       .filter((fileName) => !fileName.startsWith(`${AUTHENTICATED_ROUTE_PREFIX}crm.`))
       .map(routeFileToPath)
