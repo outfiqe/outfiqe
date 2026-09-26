@@ -74,6 +74,7 @@ export default defineConfig({
         "src/components/AdminModuleSearch.tsx",
         "src/components/AdminModuleSearch.utils.ts",
         "src/features/notifications/resolveNotificationHref.ts",
+        "src/features/notifications/adminNotificationBell.utils.ts",
         "src/features/coupons/**/*.{ts,tsx}",
         "src/features/product-reviews/**/*.{ts,tsx}",
         "src/features/size-options/**/*.{ts,tsx}",

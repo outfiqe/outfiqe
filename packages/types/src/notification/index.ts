@@ -67,6 +67,14 @@ export const NotificationSurface = {
 
 export type NotificationSurface = (typeof NotificationSurface)[keyof typeof NotificationSurface];
 
+export const NotificationFeedScope = {
+  ALL: "all",
+  TENANT: "tenant",
+} as const;
+
+export type NotificationFeedScope =
+  (typeof NotificationFeedScope)[keyof typeof NotificationFeedScope];
+
 export type RecentActor = {
   id: string;
   name: string;
@@ -127,6 +135,7 @@ export type Notification = {
   entityId: string | null;
   targetSurface: NotificationSurface | null;
   targetPath: string | null;
+  organizationId: string | null;
   metadata: NotificationMetadata;
   groupKey: string | null;
   actorCount: number;

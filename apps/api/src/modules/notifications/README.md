@@ -70,7 +70,10 @@ recipientIsStaff })`: pure, the single place that decides where a notification c
   swallow them: `GET /` (cursor-paginated feed), `GET /unread-count`, `PATCH /:id/read` (404s for a
   notification that isn't the caller's, same as any other id-not-found — never a distinguishable
   403, which would leak that the id exists), `PATCH /read-all` (idempotent), plus the mute
-  preferences pair `GET /preferences` / `PATCH /preferences/:type`.
+  preferences pair `GET /preferences` / `PATCH /preferences/:type`. The feed, unread count and
+  read-all accept `?scope=all|tenant` (see the tenant bell note below).
+- `notification.middleware.ts` — `resolveTenantForTenantScope`: runs `resolveTenant` only when the
+  request asks for `scope=tenant`.
 - `notification.retention.ts` — `runNotificationRetentionSweep()`: deletes read notifications past
   their retention window (`STANDARD_READ_RETENTION_DAYS`/`CRITICAL_READ_RETENTION_DAYS`, plan §13's
   answer). Composed into `apps/api/src/jobs/scheduled-jobs.ts`'s `INTERVAL_JOBS` (daily), same
@@ -230,6 +233,37 @@ for. A currently-open panel showing a like-group that gets fully unliked will sh
 until the next REST fetch (panel reopen, pagination, or the existing reconnect-sync path) —
 accepted as a narrow, self-healing gap consistent with this build's own "resilience" bar (plan
 §10: "a missed live event self-heals within one interaction"), not a silent oversight.
+
+**`updatedAt` is the notification's activity time, not "the row last changed".** The bell shows
+it and the feed is sorted by it. So it moves only when something new happens: a row is created, a
+group gains or loses a person, or a reminder's count is refreshed. It does not move when a
+notification is marked read. It used to be a Prisma `@updatedAt`, which moved on every write. That
+made a notification opened today show "1m ago" and jump to the top, even if it was sent days
+earlier. Every write that counts as new activity now sets `updatedAt` itself. Migration
+`20260926130000_notification_activity_time` reset the times that marking read had already moved,
+for rows with no `groupKey`. Those rows are only ever changed by marking read, so their creation
+time is their true activity time.
+
+**The staff permission check happens once, when a notification is sent.** Before role-based
+platform access existed, the staff notifications listed at the top of this section went to every
+admin account, so a support-only person could hold a brand application. Migration
+`20260926130000_notification_activity_time` deleted those leftovers wherever the recipient does not
+hold the matching permission today. If someone's role later loses a permission, notifications they
+already received stay in their bell. Opening one lands on a page that shows the "no access" screen,
+so nothing is exposed.
+
+**A tenant's admin bell shows only that tenant's notifications.** A row written for one
+organization's CRM carries `organizationId` (today only `CRM_ITEM_ASSIGNED` sets it). `GET /`,
+`GET /unread-count` and `PATCH /read-all` take `?scope=tenant`. With it,
+`notification.middleware.ts`'s `resolveTenantForTenantScope` runs the same host-based
+`resolveTenant` the CRM routes use, and the query keeps only rows for that organization. It fails
+closed: an unknown tenant host is a 404, never the unfiltered feed. Without a scope, or with
+`scope=all`, the feed is unchanged, so the storefront and the platform admin still see everything.
+Filtering only narrows the caller's own rows, so no membership check is needed. A scoped
+`read-all` sends `organizationId` in its `notification:read-all` socket payload. Other open bells
+then mark only that tenant's cards read and refetch their count, instead of clearing everything.
+Storefront notifications (likes, orders, messages) stay in the storefront bell. Before this, the
+tenant bell showed them and sent the click to the main domain.
 
 **Retention is two-tiered, and unread rows are exempt from both tiers.** Read notifications for
 money/business-decision types (`NEW_ORDER`, `ORDER_STATUS_CHANGED`, `COMMISSION_EARNED`,

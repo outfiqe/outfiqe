@@ -21,6 +21,7 @@ type PrismaNotificationRow = {
   entityId: string | null;
   targetSurface: NotificationSurface | null;
   targetPath: string | null;
+  organizationId: string | null;
   metadata: unknown;
   groupKey: string | null;
   actorCount: number;
@@ -39,6 +40,7 @@ export const toNotificationRecord = (row: PrismaNotificationRow): NotificationRe
   entityId: row.entityId,
   targetSurface: row.targetSurface,
   targetPath: row.targetPath,
+  organizationId: row.organizationId,
   metadata: (row.metadata ?? {}) as NotificationMetadata,
   groupKey: row.groupKey,
   actorCount: row.actorCount,
@@ -71,6 +73,7 @@ export const toBroadcastPayload = (record: NotificationRecord): NotificationBroa
   entityId: record.entityId,
   targetSurface: record.targetSurface,
   targetPath: record.targetPath,
+  organizationId: record.organizationId,
   metadata: record.metadata,
   groupKey: record.groupKey,
   actorCount: record.actorCount,

@@ -6,12 +6,14 @@ type CrmItemVisibilityRules = {
   requiresLinkedBrand?: boolean;
 };
 
-type CrmOrganizationQueryStatus = "pending" | "error" | "success";
-
 export const isAdminNavReady = (
   isAuthResolved: boolean,
-  crmOrganizationQueryStatus: CrmOrganizationQueryStatus,
-): boolean => isAuthResolved && crmOrganizationQueryStatus !== "pending";
+  hasCrmOrganizationAnswered: boolean,
+): boolean => isAuthResolved && hasCrmOrganizationAnswered;
+
+export const shouldRefetchCrmOrganizationOnFocus = (query: {
+  state: { status: "pending" | "error" | "success" };
+}): boolean => query.state.status !== "error";
 
 export const PLATFORM_NAV_GROUP_ORDER = [
   "brand-tenants",

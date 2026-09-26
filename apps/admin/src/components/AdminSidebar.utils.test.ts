@@ -7,6 +7,7 @@ import {
   isCrmSubItemVisible,
   type PlatformNavItem,
   resolveAccountLabel,
+  shouldRefetchCrmOrganizationOnFocus,
   shouldShowCrmSection,
   shouldShowPlatformSection,
 } from "./AdminSidebar.utils";
@@ -98,19 +99,25 @@ describe("shouldShowPlatformSection", () => {
 
 describe("isAdminNavReady", () => {
   it("is not ready while the session is still restoring", () => {
-    expect(isAdminNavReady(false, "success")).toBe(false);
+    expect(isAdminNavReady(false, true)).toBe(false);
   });
 
-  it("is not ready while the crm-organization query is still pending", () => {
-    expect(isAdminNavReady(true, "pending")).toBe(false);
+  it("is not ready before the crm-organization lookup has answered for the first time", () => {
+    expect(isAdminNavReady(true, false)).toBe(false);
   });
 
-  it("is ready once the session is resolved and the crm-organization query has succeeded", () => {
-    expect(isAdminNavReady(true, "success")).toBe(true);
+  it("stays ready once the lookup has answered, even while it refetches in the background", () => {
+    expect(isAdminNavReady(true, true)).toBe(true);
+  });
+});
+
+describe("shouldRefetchCrmOrganizationOnFocus", () => {
+  it("does not re-ask on focus after the server refused the lookup", () => {
+    expect(shouldRefetchCrmOrganizationOnFocus({ state: { status: "error" } })).toBe(false);
   });
 
-  it("is ready once the crm-organization query has errored so a failed lookup never blocks the nav", () => {
-    expect(isAdminNavReady(true, "error")).toBe(true);
+  it("keeps a successful lookup fresh on focus", () => {
+    expect(shouldRefetchCrmOrganizationOnFocus({ state: { status: "success" } })).toBe(true);
   });
 });
 

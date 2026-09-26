@@ -26,6 +26,7 @@ export type NotificationBroadcastPayload = {
   entityId: string | null;
   targetSurface: NotificationSurface | null;
   targetPath: string | null;
+  organizationId: string | null;
   metadata: Record<string, unknown>;
   groupKey: string | null;
   actorCount: number;

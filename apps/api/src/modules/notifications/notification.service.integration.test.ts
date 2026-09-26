@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { subDays } from "date-fns/subDays";
 import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
@@ -286,6 +287,37 @@ describe("notificationService.notifySystemReminder", () => {
     });
     expect(rows).toHaveLength(1);
     expect((rows[0]?.metadata as { pendingTagReviewCount?: number }).pendingTagReviewCount).toBe(5);
+  });
+
+  it("moves a refreshed reminder back to the top of the feed", async () => {
+    const recipient = await createUser();
+    const brandId = randomUUID();
+    const groupKey = `tag-review-reminder:${brandId}`;
+    const reminderInput = {
+      recipientId: recipient.id,
+      type: NotificationType.PRODUCT_TAG_REVIEW_REMINDER,
+      entityId: brandId,
+      groupKey,
+    };
+
+    await notificationService.notifySystemReminder({
+      ...reminderInput,
+      metadata: { pendingTagReviewCount: 1 },
+    });
+    const staleActivityTime = subDays(new Date(), 2);
+    await prisma.notification.updateMany({
+      where: { recipientId: recipient.id, groupKey },
+      data: { updatedAt: staleActivityTime },
+    });
+    await notificationService.notifySystemReminder({
+      ...reminderInput,
+      metadata: { pendingTagReviewCount: 2 },
+    });
+
+    const refreshed = await prisma.notification.findFirstOrThrow({
+      where: { recipientId: recipient.id, groupKey },
+    });
+    expect(refreshed.updatedAt.getTime()).toBeGreaterThan(staleActivityTime.getTime());
   });
 
   it("starts a fresh row once the previous reminder is read", async () => {
