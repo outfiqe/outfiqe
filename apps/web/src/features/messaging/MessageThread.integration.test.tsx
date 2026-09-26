@@ -207,6 +207,11 @@ describe("MessageThread", () => {
     expect(screen.getByText("Jane Doe")).toBeInTheDocument();
     expect(screen.queryByText("Conversation")).not.toBeInTheDocument();
     expect(screen.queryByRole("status", { name: "Loading conversation" })).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(queryClient.isFetching()).toBe(0);
+      expect(queryClient.isMutating()).toBe(0);
+    });
   });
 
   it("falls back to a generic title when the conversation has no other participant", async () => {
