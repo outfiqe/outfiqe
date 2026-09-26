@@ -51,6 +51,10 @@ export const SUPERADMIN_ONLY_PERMISSION_KEYS = ["org:transfer_ownership"];
 export const TICKET_ASSIGNMENT_PERMISSION_KEYS: readonly string[] = ["tickets:manage"];
 export const MEMBER_MANAGEMENT_PERMISSION_KEYS: readonly string[] = ["members:manage"];
 export const BILLING_MANAGEMENT_PERMISSION_KEYS: readonly string[] = ["billing:manage"];
+export const CRM_ASSIGNMENT_VIEW_PERMISSION_KEYS: readonly string[] = [
+  "tasks:read",
+  "tickets:read",
+];
 
 export const PLATFORM_ACCESS_PERMISSION_KEY = "platform:access";
 

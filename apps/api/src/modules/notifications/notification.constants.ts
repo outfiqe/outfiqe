@@ -29,15 +29,6 @@ export const TENANT_STAFF_NOTIFICATION_PERMISSIONS = {
   [NotificationType.CRM_SUBSCRIPTION_CANCELED]: BILLING_MANAGEMENT_PERMISSION_KEYS,
 } as const satisfies Partial<Record<NotificationType, readonly string[]>>;
 
-export const PLATFORM_STAFF_ONLY_NOTIFICATION_PERMISSIONS = {
-  [NotificationType.BRAND_APPLICATION_SUBMITTED]: BRAND_REVIEW_PERMISSION_KEYS,
-  [NotificationType.SUPPORT_TICKET_CREATED]: SUPPORT_AGENT_PERMISSION_KEYS,
-  [NotificationType.SUPPORT_TICKET_ASSIGNED]: SUPPORT_AGENT_PERMISSION_KEYS,
-  [NotificationType.COUPON_APPROVAL_REQUESTED]: COUPON_MANAGEMENT_PERMISSION_KEYS,
-  [NotificationType.COUPON_REDEMPTION_FLAGGED]: COUPON_MANAGEMENT_PERMISSION_KEYS,
-  [NotificationType.COUPON_BUDGET_ALERT]: COUPON_MANAGEMENT_PERMISSION_KEYS,
-} as const satisfies Partial<Record<NotificationType, readonly string[]>>;
-
 export const NotificationFeedScope = {
   ALL: "all",
   TENANT: "tenant",
