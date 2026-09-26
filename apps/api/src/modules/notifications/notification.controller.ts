@@ -1,4 +1,3 @@
-import { NotificationFeedScope } from "@outfiqe/types";
 import type { Request, Response } from "express";
 
 import { sendSuccess } from "#lib/api-response.utils.js";
@@ -6,6 +5,7 @@ import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
 import { getResolvedOrganization } from "#modules/crm-access/crm-access.middleware.js";
 
+import { NotificationFeedScope } from "./notification.constants.js";
 import type {
   ListNotificationsQuery,
   NotificationIdParam,

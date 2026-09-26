@@ -1,9 +1,9 @@
-import { NotificationFeedScope } from "@outfiqe/types";
 import type { NextFunction, Request, Response } from "express";
 
 import { validated } from "#middlewares/validate.js";
 import { resolveTenant } from "#modules/crm-access/crm-access.middleware.js";
 
+import { NotificationFeedScope } from "./notification.constants.js";
 import type { NotificationScopeQuery } from "./notification.schemas.js";
 
 export const resolveTenantForTenantScope = (req: Request, res: Response, next: NextFunction) => {

@@ -1,7 +1,8 @@
-import { NotificationFeedScope } from "@outfiqe/types";
 import { z } from "zod";
 
 import { NotificationType } from "#generated/prisma/enums.js";
+
+import { NotificationFeedScope } from "./notification.constants.js";
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 50;

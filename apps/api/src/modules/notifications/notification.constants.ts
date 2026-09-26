@@ -1,3 +1,5 @@
+import type { NotificationFeedScope as SharedNotificationFeedScope } from "@outfiqe/types";
+
 import { NotificationType } from "#generated/prisma/enums.js";
 import {
   BILLING_MANAGEMENT_PERMISSION_KEYS,
@@ -35,6 +37,14 @@ export const PLATFORM_STAFF_ONLY_NOTIFICATION_PERMISSIONS = {
   [NotificationType.COUPON_REDEMPTION_FLAGGED]: COUPON_MANAGEMENT_PERMISSION_KEYS,
   [NotificationType.COUPON_BUDGET_ALERT]: COUPON_MANAGEMENT_PERMISSION_KEYS,
 } as const satisfies Partial<Record<NotificationType, readonly string[]>>;
+
+export const NotificationFeedScope = {
+  ALL: "all",
+  TENANT: "tenant",
+} as const satisfies Record<string, SharedNotificationFeedScope>;
+
+export type NotificationFeedScope =
+  (typeof NotificationFeedScope)[keyof typeof NotificationFeedScope];
 
 export type PlatformStaffNotificationType = keyof typeof PLATFORM_STAFF_NOTIFICATION_PERMISSIONS;
 export type TenantStaffNotificationType = keyof typeof TENANT_STAFF_NOTIFICATION_PERMISSIONS;

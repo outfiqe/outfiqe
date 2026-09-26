@@ -298,6 +298,12 @@ hold the matching permission today. If someone's role later loses a permission, 
 already received stay in their bell. Opening one lands on a page that shows the "no access" screen,
 so nothing is exposed.
 
+**`NotificationFeedScope` is defined in `notification.constants.ts`, not imported from
+`@outfiqe/types`.** The API runs its TypeScript source directly (`node --import tsx`), and
+`@outfiqe/types` is not an ES module package, so Node cannot read a runtime value from it. Importing
+one crashed the API on startup in production. The API only imports types from that package. The
+local constant is checked against the shared type with `satisfies`, so the two cannot drift apart.
+
 **A tenant's admin bell shows only that tenant's notifications.** A row written for one
 organization's CRM carries `organizationId` (today only `CRM_ITEM_ASSIGNED` sets it). `GET /`,
 `GET /unread-count` and `PATCH /read-all` take `?scope=tenant`. With it,
