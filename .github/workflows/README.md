@@ -7,15 +7,15 @@ is the release branch and the only thing that deploys to production.
 
 ## Structure
 
-| File                  | Trigger                                                      | What it owns                                                                                                                                                                                                                                |
-| --------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yml`              | `pull_request` -> `main`, `dev`, excluding docs-only diffs   | The core gate: lint & format, typecheck, build, unit tests, browser (Playwright) tests, integration tests, Lighthouse. A final `CI` job fans in on the required subset of those and is the one status check the `outfiqe` ruleset requires. |
-| `ci-docs.yml`         | `pull_request` -> `main`, `dev`, docs-only diffs             | A single `CI` job that passes instantly, so a documentation-only PR is mergeable without running the real gate.                                                                                                                             |
-| `commit-messages.yml` | `pull_request` -> `main`, `dev`                              | commitlint over the PR's `base..head` range.                                                                                                                                                                                                |
-| `coverage.yml`        | `pull_request` -> `main`, excluding docs-only diffs          | Full `pnpm test:coverage` run with the 80% v8 thresholds. Non-blocking (`continue-on-error`).                                                                                                                                               |
-| `validate-branch.yml` | `pull_request` -> `main`, `dev`                              | Branch-name convention + "only `dev` may PR into `main`".                                                                                                                                                                                   |
-| `deploy.yml`          | `push` -> `main` touching backend paths, `workflow_dispatch` | Build the API image, push to GHCR, migrate and roll the droplet, wait for `/ready`.                                                                                                                                                         |
-| `keepalive.yml`       | `schedule`, `workflow_dispatch`                              | Pings `/ready` every few days so Supabase doesn't idle-sleep.                                                                                                                                                                               |
+| File                  | Trigger                                                      | What it owns                                                                                                                                                                                                                                                       |
+| --------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ci.yml`              | `pull_request` -> `main`, `dev`, excluding docs-only diffs   | The core gate: lint & format, typecheck, build, unit tests, browser (Playwright) tests, integration tests, an API start-up check, Lighthouse. A final `CI` job fans in on the required subset of those and is the one status check the `outfiqe` ruleset requires. |
+| `ci-docs.yml`         | `pull_request` -> `main`, `dev`, docs-only diffs             | A single `CI` job that passes instantly, so a documentation-only PR is mergeable without running the real gate.                                                                                                                                                    |
+| `commit-messages.yml` | `pull_request` -> `main`, `dev`                              | commitlint over the PR's `base..head` range.                                                                                                                                                                                                                       |
+| `coverage.yml`        | `pull_request` -> `main`, excluding docs-only diffs          | Full `pnpm test:coverage` run with the 80% v8 thresholds. Non-blocking (`continue-on-error`).                                                                                                                                                                      |
+| `validate-branch.yml` | `pull_request` -> `main`, `dev`                              | Branch-name convention + "only `dev` may PR into `main`".                                                                                                                                                                                                          |
+| `deploy.yml`          | `push` -> `main` touching backend paths, `workflow_dispatch` | Build the API image, push to GHCR, migrate and roll the droplet, wait for `/ready`.                                                                                                                                                                                |
+| `keepalive.yml`       | `schedule`, `workflow_dispatch`                              | Pings `/ready` every few days so Supabase doesn't idle-sleep.                                                                                                                                                                                                      |
 
 "Docs-only diffs" means every changed file matches `**/*.md`, `docs/**`, `LICENSE`, `.gitignore`,
 or `.gitattributes`. A PR that touches one of those _and_ a code file runs the real `ci.yml`.
@@ -80,6 +80,14 @@ lint can't sneak a merge through). `browser` and `lighthouse` still run on every
 not part of the fan-in, same as when they were never in the required list; `lighthouse` is
 `continue-on-error` regardless. Adding or renaming a job inside `ci.yml` no longer means touching
 branch protection -- only the `CI` job's `needs` list.
+
+**`api-boot` starts the real API before anything merges.** It applies the migrations to an empty
+Postgres, starts the API with the exact command the production image runs (`node --import tsx
+--import ./src/instrument.ts src/index.ts`), and fails unless `/ready` answers within 90 seconds.
+Tests load modules through Vitest, which is more forgiving than Node, so they cannot catch a module
+that fails to load at startup. That happened once: the API imported a runtime value from
+`@outfiqe/types`, every test passed, and production returned 502 until a fix was deployed. The
+final `CI` job requires `api-boot`, so a PR that breaks startup cannot merge.
 
 **Why a docs fast-path exists.** A GitHub workflow skipped by a `paths` filter never reports its
 checks, and a required check that never reports blocks the PR from merging forever. So `ci.yml`
