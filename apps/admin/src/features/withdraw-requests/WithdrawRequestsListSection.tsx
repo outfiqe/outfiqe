@@ -5,10 +5,12 @@ import { useState } from "react";
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { TextPromptModal } from "@/components/TextPromptModal";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { bankAccountsAdminApi } from "@/features/bank-accounts/api";
 import type { RevealedBankAccount } from "@/features/bank-accounts/schemas";
 import { ApiClientError } from "@/lib/apiClient";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { withdrawRequestsApi } from "./api";
@@ -41,6 +43,8 @@ const CROSS_CHECK_CONFIRM_MESSAGE =
   "This is the first payout to this bank account. Confirm the identity/bank-name cross-check to approve it.";
 
 export const WithdrawRequestsListSection = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageWithdrawals = canUse(PLATFORM_MANAGE_PERMISSION.WITHDRAWALS);
   const [tab, setTab] = useSearchFilter("status", WITHDRAW_REQUESTS_STATUS_FILTER);
   const [crossCheckTargetId, setCrossCheckTargetId] = useState<string | null>(null);
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
@@ -195,44 +199,46 @@ export const WithdrawRequestsListSection = () => {
                   )}
                 </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => reveal.mutate({ bankAccountId, ownerType })}
-                    disabled={reveal.isPending || !bankAccountId}
-                    isLoading={
-                      reveal.isPending && reveal.variables?.bankAccountId === bankAccountId
-                    }
-                  >
-                    {revealed ? "Refresh bank details" : "View bank details"}
-                  </Button>
-                  {(status === "PENDING" || status === "UNDER_REVIEW") && (
-                    <>
-                      <Button
-                        size="sm"
-                        onClick={() => approve.mutate({ id })}
-                        disabled={isActing}
-                        isLoading={approve.isPending && approve.variables?.id === id}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setRejectTargetId(id)}
-                        disabled={isActing}
-                      >
-                        Reject
-                      </Button>
-                    </>
-                  )}
-                  {status === "APPROVED" && (
-                    <Button size="sm" onClick={() => setMarkPaidTargetId(id)} disabled={isActing}>
-                      Mark paid
+                {canManageWithdrawals && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => reveal.mutate({ bankAccountId, ownerType })}
+                      disabled={reveal.isPending || !bankAccountId}
+                      isLoading={
+                        reveal.isPending && reveal.variables?.bankAccountId === bankAccountId
+                      }
+                    >
+                      {revealed ? "Refresh bank details" : "View bank details"}
                     </Button>
-                  )}
-                </div>
+                    {(status === "PENDING" || status === "UNDER_REVIEW") && (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={() => approve.mutate({ id })}
+                          disabled={isActing}
+                          isLoading={approve.isPending && approve.variables?.id === id}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setRejectTargetId(id)}
+                          disabled={isActing}
+                        >
+                          Reject
+                        </Button>
+                      </>
+                    )}
+                    {status === "APPROVED" && (
+                      <Button size="sm" onClick={() => setMarkPaidTargetId(id)} disabled={isActing}>
+                        Mark paid
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {qrCodeImageUrl && (

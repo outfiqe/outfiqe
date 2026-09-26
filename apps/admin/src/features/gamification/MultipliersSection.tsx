@@ -18,7 +18,9 @@ import { useState } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { type CreateXpMultiplierInput, gamificationApi, type UpdateXpMultiplierInput } from "./api";
 import { toDatetimeLocalValue, toIsoOrNull } from "./datetime.utils";
@@ -164,6 +166,8 @@ const EditMultiplierModal = ({
 };
 
 export const MultipliersSection = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageGamification = canUse(PLATFORM_MANAGE_PERMISSION.GAMIFICATION);
   const { data: multipliers, isLoading } = useQuery({
     queryKey: MULTIPLIERS_QUERY_KEY,
     queryFn: gamificationApi.listXpMultipliers,
@@ -195,18 +199,20 @@ export const MultipliersSection = () => {
         adjustments and achievement/badge rewards are never multiplied.
       </p>
 
-      <Form {...form}>
-        <form
-          onSubmit={submitMultiplier}
-          noValidate
-          className="mt-4 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
-        >
-          <MultiplierFields form={form} />
-          <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
-            Add multiplier
-          </Button>
-        </form>
-      </Form>
+      {canManageGamification && (
+        <Form {...form}>
+          <form
+            onSubmit={submitMultiplier}
+            noValidate
+            className="mt-4 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+          >
+            <MultiplierFields form={form} />
+            <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+              Add multiplier
+            </Button>
+          </form>
+        </Form>
+      )}
 
       {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
@@ -235,9 +241,15 @@ export const MultipliersSection = () => {
                 {new Date(multiplierRow.endsAt).toLocaleString()}
               </span>
             </p>
-            <Button variant="outline" size="sm" onClick={() => setEditingMultiplier(multiplierRow)}>
-              Edit
-            </Button>
+            {canManageGamification && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingMultiplier(multiplierRow)}
+              >
+                Edit
+              </Button>
+            )}
           </div>
         ))}
       </div>

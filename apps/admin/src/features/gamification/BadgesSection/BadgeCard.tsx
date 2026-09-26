@@ -31,9 +31,11 @@ const summariseBadge = (badge: BadgeAdmin): string => {
 export const BadgeCard = ({
   badge,
   onDuplicate,
+  canManage,
 }: {
   badge: BadgeAdmin;
   onDuplicate: (badge: BadgeAdmin) => void;
+  canManage: boolean;
 }) => (
   <div className="flex flex-col rounded-xl border border-border bg-card p-4">
     <div className="flex min-w-0 items-start gap-2.5">
@@ -49,15 +51,17 @@ export const BadgeCard = ({
         <p className="mt-1 text-xs text-muted-foreground">{summariseBadge(badge)}</p>
       </div>
     </div>
-    <div className="mt-auto flex gap-1.5 pt-3">
-      <Button variant="outline" size="sm" className="flex-1" onClick={() => onDuplicate(badge)}>
-        Duplicate
-      </Button>
-      <Button variant="outline" size="sm" className="flex-1" asChild>
-        <Link to="/gamification/badges/$badgeId/edit" params={{ badgeId: badge.id }}>
-          Edit
-        </Link>
-      </Button>
-    </div>
+    {canManage && (
+      <div className="mt-auto flex gap-1.5 pt-3">
+        <Button variant="outline" size="sm" className="flex-1" onClick={() => onDuplicate(badge)}>
+          Duplicate
+        </Button>
+        <Button variant="outline" size="sm" className="flex-1" asChild>
+          <Link to="/gamification/badges/$badgeId/edit" params={{ badgeId: badge.id }}>
+            Edit
+          </Link>
+        </Button>
+      </div>
+    )}
   </div>
 );

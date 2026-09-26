@@ -8,7 +8,7 @@ import {
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 
 import { brandBankAccountController } from "./brandBankAccount.controller.js";
 
@@ -22,8 +22,6 @@ const createBrandBankAccountRateLimit = rateLimit({
   keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
   message: "Too many bank account changes. Please wait a moment and try again.",
 });
-
-const requireAdmin = [requireAuth, requirePlatformAccess];
 
 export const brandBankAccountRoutes = Router();
 
@@ -46,21 +44,21 @@ brandBankAccountRoutes.patch(
 
 brandBankAccountRoutes.patch(
   "/:id/verify",
-  ...requireAdmin,
+  ...platformGuards.withdrawManage,
   validate({ params: bankAccountIdParamSchema }),
   brandBankAccountController.verify,
 );
 
 brandBankAccountRoutes.get(
   "/:id/reveal",
-  ...requireAdmin,
+  ...platformGuards.withdrawManage,
   validate({ params: bankAccountIdParamSchema }),
   brandBankAccountController.reveal,
 );
 
 brandBankAccountRoutes.get(
   "/admin",
-  ...requireAdmin,
+  ...platformGuards.withdrawRead,
   validate({ query: listAdminBankAccountsQuerySchema }),
   brandBankAccountController.listAllAdmin,
 );

@@ -1,8 +1,7 @@
 ﻿import { Router } from "express";
 
-import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 import {
   requireCoFounder,
   requirePlatformNavItem,
@@ -13,7 +12,7 @@ import { createAdminInviteSchema } from "./adminInvite.schemas.js";
 
 export const adminInviteRoutes = Router();
 
-adminInviteRoutes.use(requireAuth, requirePlatformAccess, requirePlatformNavItem("team"));
+adminInviteRoutes.use(...platformGuards.teamManage, requirePlatformNavItem("team"));
 
 adminInviteRoutes.post(
   "/",

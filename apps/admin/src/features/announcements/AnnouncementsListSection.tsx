@@ -4,7 +4,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { announcementsApi } from "./api";
@@ -62,6 +64,8 @@ export const AnnouncementsListSection = () => {
   const [composeTarget, setComposeTarget] = useState<ComposeTarget | null>(null);
   const [sendTarget, setSendTarget] = useState<Announcement | null>(null);
   const queryClient = useQueryClient();
+  const { canUse } = usePlatformPermissions();
+  const canManageAnnouncements = canUse(PLATFORM_MANAGE_PERMISSION.ANNOUNCEMENTS);
 
   const {
     data: announcementsQuery,
@@ -103,9 +107,11 @@ export const AnnouncementsListSection = () => {
             </button>
           ))}
         </div>
-        <Button size="sm" onClick={() => setComposeTarget(NEW_ANNOUNCEMENT_TARGET)}>
-          New announcement
-        </Button>
+        {canManageAnnouncements && (
+          <Button size="sm" onClick={() => setComposeTarget(NEW_ANNOUNCEMENT_TARGET)}>
+            New announcement
+          </Button>
+        )}
       </div>
 
       <div className="mt-4 space-y-3">
@@ -156,7 +162,7 @@ export const AnnouncementsListSection = () => {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {announcement.status === AnnouncementStatus.DRAFT && (
+                {canManageAnnouncements && announcement.status === AnnouncementStatus.DRAFT && (
                   <>
                     <Button
                       size="sm"
@@ -182,7 +188,7 @@ export const AnnouncementsListSection = () => {
                     </Button>
                   </>
                 )}
-                {announcement.status === AnnouncementStatus.SCHEDULED && (
+                {canManageAnnouncements && announcement.status === AnnouncementStatus.SCHEDULED && (
                   <Button
                     size="sm"
                     variant="outline"

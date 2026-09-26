@@ -4,7 +4,9 @@ import { useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { TextPromptModal } from "@/components/TextPromptModal";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { ApiClientError } from "@/lib/apiClient";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { brandApplicationsApi } from "./api";
@@ -30,6 +32,8 @@ const reviewFailureMessage = (mutationError: unknown, fallback: string): string 
   mutationError instanceof ApiClientError ? mutationError.message : fallback;
 
 export const BrandApplicationsPage = () => {
+  const { canUse } = usePlatformPermissions();
+  const canReviewBrands = canUse(PLATFORM_MANAGE_PERMISSION.BRANDS);
   const [tab, setTab] = useSearchFilter("status", BRAND_APPLICATIONS_STATUS_FILTER);
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
 
@@ -131,7 +135,7 @@ export const BrandApplicationsPage = () => {
                   </p>
                 </div>
 
-                {status === "PENDING" && (
+                {canReviewBrands && status === "PENDING" && (
                   <div className="flex gap-2">
                     <Button
                       onClick={() => approve.mutate(id)}

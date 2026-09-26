@@ -7,7 +7,7 @@ export const ActivityConfigCard = ({
   onEdit,
 }: {
   config: ActivityXpConfig;
-  onEdit: (config: ActivityXpConfig) => void;
+  onEdit?: (config: ActivityXpConfig) => void;
 }) => (
   <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4">
     <div>
@@ -22,8 +22,10 @@ export const ActivityConfigCard = ({
         {config.maxPerEntity !== null && ` · max ${config.maxPerEntity}/entity`}
       </p>
     </div>
-    <Button variant="outline" size="sm" onClick={() => onEdit(config)}>
-      Edit
-    </Button>
+    {onEdit && (
+      <Button variant="outline" size="sm" onClick={() => onEdit(config)}>
+        Edit
+      </Button>
+    )}
   </div>
 );

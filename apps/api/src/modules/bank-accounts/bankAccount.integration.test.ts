@@ -8,6 +8,7 @@ import { BankType, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
+import { grantLimitedPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
@@ -289,7 +290,7 @@ describe("admin bank account actions", () => {
   it("blocks a platform staffer without platform:withdraw:manage", async () => {
     const owner = await createUser();
     const staffer = await createUser({ role: UserRole.ADMIN });
-    await grantPlatformStaffMembership(staffer.id);
+    await grantLimitedPlatformStaffMembership(staffer.id);
     const bank = await createBank();
 
     const created = await request(testApp)
@@ -350,7 +351,7 @@ describe("GET /api/bank-accounts/admin", () => {
 
   it("blocks a platform staffer without platform:withdraw:manage", async () => {
     const staffer = await createUser({ role: UserRole.ADMIN });
-    await grantPlatformStaffMembership(staffer.id);
+    await grantLimitedPlatformStaffMembership(staffer.id);
 
     const response = await request(testApp)
       .get("/api/bank-accounts/admin")

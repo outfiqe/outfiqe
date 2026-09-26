@@ -8,6 +8,7 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { mswServer } from "@test/integration/msw/server";
+import { grantOnlyPlatformPermissions } from "@test/platformPermissionsMock";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
@@ -82,6 +83,26 @@ const renderTicket = () => {
 };
 
 describe("SupportTicketPage", () => {
+  it("lets a view-only support role read the request without replying or changing it", async () => {
+    grantOnlyPlatformPermissions("platform:support:read");
+    mswServer.use(
+      http.get(`${API_BASE}/support/admin/tickets/t-1`, () =>
+        HttpResponse.json({ success: true, data: ticket() }),
+      ),
+      http.get(`${API_BASE}/support/admin/agents`, () =>
+        HttpResponse.json({ success: true, data: [] }),
+      ),
+    );
+
+    renderTicket();
+
+    expect(await screen.findByRole("heading", { name: "Order never arrived" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Send reply" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Resolved" })).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Assignee" })).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Priority" })).toBeDisabled();
+  });
+
   it("only offers legal status transitions and posts the expected status", async () => {
     let statusBody: unknown;
     mswServer.use(

@@ -2,9 +2,8 @@
 
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { requireActiveAuth } from "#middlewares/require-active-account.js";
-import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
+import { getAuthPrincipal } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
@@ -32,8 +31,10 @@ const createWithdrawRequestRateLimit = rateLimit({
   message: "Too many withdrawal attempts. Please wait a moment and try again.",
 });
 
-const requireAdmin = [requireAuth, requirePlatformAccess];
-const requireWithdrawRequestsAdmin = [...requireAdmin, requirePlatformNavItem("withdraw-requests")];
+const requireWithdrawRequestsRead = [
+  ...requirePlatformRole("platform:withdraw:read", "platform:withdraw:manage"),
+  requirePlatformNavItem("withdraw-requests"),
+];
 const requireWithdrawRequestsMutationAdmin = [
   ...requirePlatformRole("platform:withdraw:manage"),
   requirePlatformNavItem("withdraw-requests"),
@@ -47,7 +48,7 @@ export const withdrawRoutes = Router();
 
 withdrawRoutes.get(
   "/admin/requests",
-  ...requireWithdrawRequestsAdmin,
+  ...requireWithdrawRequestsRead,
   validate({ query: listAdminWithdrawRequestsQuerySchema }),
   withdrawController.listAllAdmin,
 );

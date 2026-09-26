@@ -18,7 +18,9 @@ import { useState } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { type CreateLevelInput, gamificationApi, type UpdateLevelInput } from "./api";
 import { EMPTY_LEVEL_FORM, levelFormSchema, type LevelFormValues } from "./levelForm.schema";
@@ -151,6 +153,8 @@ const EditLevelModal = ({ level, onClose }: { level: Level; onClose: () => void 
 };
 
 export const LevelsSection = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageGamification = canUse(PLATFORM_MANAGE_PERMISSION.GAMIFICATION);
   const { data: levels, isLoading } = useQuery({
     queryKey: LEVELS_QUERY_KEY,
     queryFn: gamificationApi.listLevels,
@@ -180,18 +184,20 @@ export const LevelsSection = () => {
         already there — it just stops it from being assigned going forward.
       </p>
 
-      <Form {...form}>
-        <form
-          onSubmit={submitLevel}
-          noValidate
-          className="mt-4 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
-        >
-          <LevelFields form={form} levelEditable />
-          <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
-            Add level
-          </Button>
-        </form>
-      </Form>
+      {canManageGamification && (
+        <Form {...form}>
+          <form
+            onSubmit={submitLevel}
+            noValidate
+            className="mt-4 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+          >
+            <LevelFields form={form} levelEditable />
+            <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+              Add level
+            </Button>
+          </form>
+        </Form>
+      )}
 
       {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
@@ -212,9 +218,11 @@ export const LevelsSection = () => {
                 <span className="ml-2 text-xs text-muted-foreground">(inactive)</span>
               )}
             </p>
-            <Button variant="outline" size="sm" onClick={() => setEditingLevel(level)}>
-              Edit
-            </Button>
+            {canManageGamification && (
+              <Button variant="outline" size="sm" onClick={() => setEditingLevel(level)}>
+                Edit
+              </Button>
+            )}
           </div>
         ))}
       </div>

@@ -8,6 +8,7 @@ import { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { badgeRepository } from "#modules/badges/badge.repository.js";
 import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
+import { grantLimitedPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -380,7 +381,7 @@ describe("POST /api/badges (admin)", () => {
 
   it("blocks a platform staffer without platform:gamification:manage", async () => {
     const staffer = await createUser("No Gamification Permission");
-    await grantPlatformStaffMembership(staffer.id);
+    await grantLimitedPlatformStaffMembership(staffer.id);
 
     const response = await request(testApp)
       .post("/api/badges")

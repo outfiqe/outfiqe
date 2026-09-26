@@ -13,6 +13,8 @@ export const adminUserSchema = z.object({
   hasPlatformAccess: z.boolean(),
   isCoFounder: z.boolean(),
   hiddenPlatformNavKeys: z.array(z.string()),
+  platformPermissionKeys: z.array(z.string()).default([]),
+  crmHomeSubdomain: z.string().nullable().default(null),
 });
 export type AdminUser = z.infer<typeof adminUserSchema>;
 

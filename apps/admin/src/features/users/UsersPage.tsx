@@ -3,7 +3,9 @@ import { useApiMutation, useDebouncedValue } from "@outfiqe/hooks";
 import { useState } from "react";
 
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { ApiClientError } from "@/lib/apiClient";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { usersApi } from "./api";
 import { BanAccountModal } from "./components/BanAccountModal";
@@ -52,6 +54,8 @@ const actionFailureMessage = (error: unknown, fallback: string): string =>
   error instanceof ApiClientError ? error.message : fallback;
 
 export const UsersPage = () => {
+  const { canUse } = usePlatformPermissions();
+  const canModerateAccounts = canUse(PLATFORM_MANAGE_PERMISSION.SUSPENSIONS);
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
   const [suspendTargetId, setSuspendTargetId] = useState<string | null>(null);
@@ -186,7 +190,7 @@ export const UsersPage = () => {
                   )}
                 </div>
 
-                {!isAdmin && (
+                {canModerateAccounts && !isAdmin && (
                   <div className="flex gap-2">
                     {user.accountStatus === "ACTIVE" && (
                       <>

@@ -51,8 +51,8 @@ carries a 14-day reopen link.
 **Technical:** `support.routes` &rarr; `requireAuth` / `requirePlatformRole` &rarr; controller
 &rarr; service &rarr; repository &rarr; Postgres, plus `eventBus.publish` on create / assign /
 reply / resolve. The notification consumers in `notifications/notification.events.ts` turn those
-events into `Notification` rows (all `UserRole.ADMIN` on create; the assignee on assign; the
-requester on a staff reply / resolve).
+events into `Notification` rows (on create, every platform staff member who can respond to or
+manage support; the assignee on assign; the requester on a staff reply / resolve).
 
 ## Non-obvious rationale
 
@@ -74,9 +74,12 @@ CLOSED`, with reopen paths). An illegal jump is `409 INVALID_SUPPORT_TRANSITION`
 - **`reference` is derived, not stored** — the model has `ticketNumber Int @unique
 @default(autoincrement())`; the human `OFQ-1042` is computed in the mapper. Search-by-reference
   parses the integer back out.
-- **Create notifications fan out to every `UserRole.ADMIN`** (the `BRAND_APPLICATION_SUBMITTED`
-  precedent), not just holders of `platform:support:respond`. Narrowing to key-holders — and
-  per-category routing — is a deferred refinement (PRD M3).
+- **Create notifications and the agent list go to permission holders, not to every admin.**
+  `SUPPORT_AGENT_PERMISSION_KEYS` (`platform:support:respond`, `platform:support:manage`) picks
+  both the recipients of a new-request notification and the people `GET /admin/agents` lists, and
+  assigning a request checks the assignee holds one of them. Before, every `UserRole.ADMIN` was an
+  agent, which included tenant staff and staff whose role had nothing to do with support.
+  Read-only support staff (`platform:support:read`) can open the inbox but are not agents.
 - **`packages/types` and the shared `NotificationBell` label map both had to gain the four
   `SUPPORT_TICKET_*` types** — the hand-maintained union is a subset of the Prisma enum and the
   admin/web `resolveNotificationHref` switches are exhaustive-by-convention.

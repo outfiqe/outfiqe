@@ -3,7 +3,9 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
 import { useState } from "react";
 
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { productsApi } from "./api";
@@ -39,6 +41,8 @@ const ProductRowSkeleton = () => (
 );
 
 export const ProductsPage = () => {
+  const { canUse } = usePlatformPermissions();
+  const canReviewProducts = canUse(PLATFORM_MANAGE_PERMISSION.CATALOG);
   const [tab, setTab] = useSearchFilter("status", PRODUCTS_STATUS_FILTER);
   const [thriftFilter, setThriftFilter] = useSearchFilter("thrift", PRODUCTS_THRIFT_FILTER);
   const [detailProductId, setDetailProductId] = useState<string | null>(null);
@@ -178,7 +182,7 @@ export const ProductsPage = () => {
                 </div>
               </button>
 
-              {status === "PENDING" && (
+              {canReviewProducts && status === "PENDING" && (
                 <div className="flex gap-2">
                   <Button
                     onClick={() => approve.mutate(id)}
@@ -220,6 +224,7 @@ export const ProductsPage = () => {
           onApprove={() => approve.mutate(detailProduct.id)}
           onReject={() => reject.mutate(detailProduct.id)}
           isMutating={approve.isPending || reject.isPending}
+          canReview={canReviewProducts}
         />
       )}
     </div>

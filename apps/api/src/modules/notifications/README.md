@@ -99,6 +99,14 @@ primary delivery mechanism.
 
 ## Non-obvious rationale
 
+- **Staff notifications go to permission holders, never to every admin account.** Brand
+  applications notify holders of `platform:brands:manage`, support requests notify holders of
+  `platform:support:respond` or `platform:support:manage`, and coupon approvals, flagged
+  redemptions and budget alerts notify holders of `platform:coupons:manage`
+  (`platformAccessService.findUserIdsHoldingAnyPermission`). Co-founders and the platform super
+  admin are always included. Tenant staff never receive these, because they have no
+  platform-organization membership.
+
 **The click destination is authored server-side, not by the client.** A notification stream
 mixes platform-wide (`NEW_MESSAGE`), creator, brand, and staff events, and where a recipient
 should land depends on their role/capabilities and which app they're in — context only the write

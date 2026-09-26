@@ -30,5 +30,7 @@ export const toAuthUser = (user: UserRecord): AuthUser => {
     hasPlatformAccess: false,
     isCoFounder: false,
     hiddenPlatformNavKeys: [],
+    platformPermissionKeys: [],
+    crmHomeSubdomain: null,
   };
 };

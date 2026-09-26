@@ -29,6 +29,8 @@ const refreshedUser = {
   hasPlatformAccess: false,
   isCoFounder: false,
   hiddenPlatformNavKeys: [],
+  platformPermissionKeys: [],
+  crmHomeSubdomain: null,
 };
 
 const renderAcceptInvitePage = (initialPath: string) => {

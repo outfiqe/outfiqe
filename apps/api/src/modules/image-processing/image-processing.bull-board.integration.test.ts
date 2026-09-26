@@ -6,6 +6,8 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
+import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
+import { createAdminSession } from "#test/integration/authHelpers.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -54,12 +56,32 @@ describe("the internal queue dashboard", () => {
     expect(response.status).toBe(403);
   });
 
-  it("lets platform staff through", async () => {
-    const authorization = await createAccountWithRole(UserRole.ADMIN);
+  it("rejects platform staff who are not co-founders, whatever permissions their role holds", async () => {
+    const platformAdmin = await createAdminSession();
 
     const response = await request(testApp)
       .get(QUEUE_DASHBOARD_PATH)
-      .set("Authorization", authorization);
+      .set("Authorization", platformAdmin.authHeader);
+
+    expect(response.status).toBe(403);
+  });
+
+  it("lets a co-founder through", async () => {
+    const coFounder = await createAdminSession();
+    const platformOrganization = await crmAccessRepository.findPlatformOrganization();
+    await prisma.membership.update({
+      where: {
+        userId_organizationId: {
+          userId: coFounder.userId,
+          organizationId: platformOrganization!.id,
+        },
+      },
+      data: { isPlatformSuperAdmin: true },
+    });
+
+    const response = await request(testApp)
+      .get(QUEUE_DASHBOARD_PATH)
+      .set("Authorization", coFounder.authHeader);
 
     expect(response.status).not.toBe(401);
     expect(response.status).not.toBe(403);

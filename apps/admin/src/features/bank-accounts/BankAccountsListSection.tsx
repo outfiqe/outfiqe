@@ -3,7 +3,9 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { bankAccountsAdminApi } from "./api";
@@ -29,6 +31,8 @@ const OWNER_TYPE_FILTER = oneOfFilter<OwnerTypeValue>(OWNER_TABS, "CREATOR");
 const VERIFIED_TYPE_FILTER = oneOfFilter<VerifiedFilterValue>(VERIFIED_FILTER_VALUES, "pending");
 
 export const BankAccountsListSection = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageWithdrawals = canUse(PLATFORM_MANAGE_PERMISSION.WITHDRAWALS);
   const [ownerType, setOwnerType] = useSearchFilter("owner", OWNER_TYPE_FILTER);
   const [verifiedFilter, setVerifiedFilter] = useSearchFilter("verified", VERIFIED_TYPE_FILTER);
   const [revealedById, setRevealedById] = useState<Record<string, RevealedBankAccount>>({});
@@ -156,27 +160,29 @@ export const BankAccountsListSection = () => {
                   </p>
                 </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => reveal.mutate(id)}
-                    disabled={reveal.isPending}
-                    isLoading={reveal.isPending && reveal.variables === id}
-                  >
-                    {revealed ? "Refresh" : "Reveal"}
-                  </Button>
-                  {!isVerified && (
+                {canManageWithdrawals && (
+                  <div className="flex gap-2">
                     <Button
+                      variant="outline"
                       size="sm"
-                      onClick={() => verify.mutate(id)}
-                      disabled={verify.isPending}
-                      isLoading={verify.isPending && verify.variables === id}
+                      onClick={() => reveal.mutate(id)}
+                      disabled={reveal.isPending}
+                      isLoading={reveal.isPending && reveal.variables === id}
                     >
-                      Verify
+                      {revealed ? "Refresh" : "Reveal"}
                     </Button>
-                  )}
-                </div>
+                    {!isVerified && (
+                      <Button
+                        size="sm"
+                        onClick={() => verify.mutate(id)}
+                        disabled={verify.isPending}
+                        isLoading={verify.isPending && verify.variables === id}
+                      >
+                        Verify
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {qrCodeImageUrl && (
