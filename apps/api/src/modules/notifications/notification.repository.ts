@@ -19,6 +19,7 @@ import type {
   NotificationChannelChanges,
   NotificationFeedCursor,
   NotificationMetadata,
+  NotificationOrganizationFilter,
   NotificationRecord,
   RetractGroupActorInput,
   UpsertGroupInput,
@@ -34,6 +35,7 @@ type RawGroupRow = {
   entity_id: string | null;
   target_surface: NotificationSurface | null;
   target_path: string | null;
+  organization_id: string | null;
   metadata: unknown;
   group_key: string | null;
   actor_count: number;
@@ -55,6 +57,7 @@ const toRecordFromRaw = (row: RawGroupRow): NotificationRecord => ({
   entityId: row.entity_id,
   targetSurface: row.target_surface,
   targetPath: row.target_path,
+  organizationId: row.organization_id,
   metadata: (row.metadata ?? {}) as NotificationMetadata,
   groupKey: row.group_key,
   actorCount: row.actor_count,
@@ -63,6 +66,9 @@ const toRecordFromRaw = (row: RawGroupRow): NotificationRecord => ({
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
+
+const toOrganizationWhere = ({ organizationId }: NotificationOrganizationFilter) =>
+  organizationId ? { organizationId } : {};
 
 export const notificationRepository = {
   async createIndividual(
@@ -84,6 +90,7 @@ export const notificationRepository = {
           entityId: input.entityId ?? undefined,
           targetSurface: target?.surface ?? undefined,
           targetPath: target?.path ?? undefined,
+          organizationId: input.organizationId ?? undefined,
           metadata: input.metadata as Prisma.InputJsonValue,
         },
       });
@@ -286,7 +293,7 @@ export const notificationRepository = {
           };
           const updated = await tx.notification.update({
             where: { id: existing.id },
-            data: { metadata: merged as Prisma.InputJsonValue },
+            data: { metadata: merged as Prisma.InputJsonValue, updatedAt: new Date() },
           });
           return { record: toNotificationRecord(updated), wasCreated: false };
         }
@@ -416,13 +423,14 @@ export const notificationRepository = {
 
   async listForRecipient(
     recipientId: string,
-    params: { cursor?: string; limit: number },
+    params: NotificationOrganizationFilter & { cursor?: string; limit: number },
   ): Promise<NotificationRecord[]> {
     const decoded = decodeCursor<NotificationFeedCursor>(params.cursor);
 
     const rows = await prisma.notification.findMany({
       where: {
         recipientId,
+        ...toOrganizationWhere(params),
         ...(decoded
           ? {
               OR: [
@@ -438,8 +446,13 @@ export const notificationRepository = {
     return rows.map(toNotificationRecord);
   },
 
-  async countUnread(recipientId: string): Promise<number> {
-    return prisma.notification.count({ where: { recipientId, isRead: false } });
+  async countUnread(
+    recipientId: string,
+    filter: NotificationOrganizationFilter = {},
+  ): Promise<number> {
+    return prisma.notification.count({
+      where: { recipientId, isRead: false, ...toOrganizationWhere(filter) },
+    });
   },
 
   async markRead(recipientId: string, notificationId: string): Promise<NotificationRecord | null> {
@@ -456,10 +469,13 @@ export const notificationRepository = {
     return toNotificationRecord(updated);
   },
 
-  async markAllRead(recipientId: string): Promise<Date> {
+  async markAllRead(
+    recipientId: string,
+    filter: NotificationOrganizationFilter = {},
+  ): Promise<Date> {
     const readAt = new Date();
     await prisma.notification.updateMany({
-      where: { recipientId, isRead: false },
+      where: { recipientId, isRead: false, ...toOrganizationWhere(filter) },
       data: { isRead: true, readAt },
     });
     return readAt;

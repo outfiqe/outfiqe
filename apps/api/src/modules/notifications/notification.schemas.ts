@@ -1,3 +1,4 @@
+import { NotificationFeedScope } from "@outfiqe/types";
 import { z } from "zod";
 
 import { NotificationType } from "#generated/prisma/enums.js";
@@ -5,7 +6,11 @@ import { NotificationType } from "#generated/prisma/enums.js";
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 50;
 
-export const listNotificationsQuerySchema = z.object({
+export const notificationScopeQuerySchema = z.object({
+  scope: z.enum(NotificationFeedScope).default(NotificationFeedScope.ALL),
+});
+
+export const listNotificationsQuerySchema = notificationScopeQuerySchema.extend({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
@@ -27,6 +32,7 @@ export const updateNotificationPreferenceBodySchema = z
     message: "Provide enabled, pushEnabled, or both.",
   });
 
+export type NotificationScopeQuery = z.infer<typeof notificationScopeQuerySchema>;
 export type ListNotificationsQuery = z.infer<typeof listNotificationsQuerySchema>;
 export type NotificationIdParam = z.infer<typeof notificationIdParamSchema>;
 export type NotificationPreferenceTypeParam = z.infer<typeof notificationPreferenceTypeParamSchema>;

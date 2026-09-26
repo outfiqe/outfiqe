@@ -83,7 +83,7 @@ export type LevelUpPayload = {
 };
 
 export type NotificationReadPayload = { id: string };
-export type NotificationReadAllPayload = { readAt: string };
+export type NotificationReadAllPayload = { readAt: string; organizationId?: string };
 
 export type ChatSettingsUpdatedPayload = { isChatEnabled: boolean };
 export type ChatBlockListUpdatedPayload = { updatedAt: string };

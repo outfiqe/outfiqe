@@ -43,7 +43,12 @@ passed in.
   `SiteNotificationBell` and `apps/admin`'s `AdminNotificationBell` (each app supplies its own
   `NotificationsApi`, socket, and `type -> route` resolver — see those features' own READMEs):
   - `NotificationBell.tsx` — the header icon + unread badge + popover trigger. Owns its own
-    `unreadCount` react-query fetch independent of the panel's queries below.
+    `unreadCount` react-query fetch independent of the panel's queries below. Its optional
+    `acceptsNotification` prop is passed to `useNotificationSocket` and also keeps the screen-reader
+    announcement quiet for notifications this bell doesn't show.
+  - `useNotificationSocket.test.tsx` — tests for `@outfiqe/hooks`' `useNotificationSocket` cache
+    updates. They live here because `packages/hooks` has no test runner of its own, and this
+    package is where the hook is used.
   - `NotificationPanel.tsx` — the open popover's list: infinite-scroll feed, mark-read/mark-all-read.
   - `NotificationRow.tsx` / `NotificationAvatar.tsx` — one notification row and its actor avatar
     (or avatar stack, for a grouped notification).

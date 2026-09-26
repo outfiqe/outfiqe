@@ -16,6 +16,7 @@ import type {
   NotificationChannelChanges,
   NotificationFeedCursor,
   NotificationMetadata,
+  NotificationOrganizationFilter,
   NotificationPage,
   NotificationPreferenceView,
   NotificationRecord,
@@ -143,7 +144,7 @@ export const notificationService = {
 
   async listFeed(
     recipientId: string,
-    params: { cursor?: string; limit: number },
+    params: NotificationOrganizationFilter & { cursor?: string; limit: number },
   ): Promise<NotificationPage> {
     const rows = await notificationRepository.listForRecipient(recipientId, params);
     const { items, nextCursor } = buildCursorPage(rows, params.limit, (row) =>
@@ -152,8 +153,11 @@ export const notificationService = {
     return { notifications: items, nextCursor };
   },
 
-  async getUnreadCount(recipientId: string): Promise<number> {
-    return notificationRepository.countUnread(recipientId);
+  async getUnreadCount(
+    recipientId: string,
+    filter: NotificationOrganizationFilter = {},
+  ): Promise<number> {
+    return notificationRepository.countUnread(recipientId, filter);
   },
 
   async markRead(recipientId: string, notificationId: string): Promise<void> {
@@ -169,13 +173,19 @@ export const notificationService = {
     }
   },
 
-  async markAllRead(recipientId: string): Promise<void> {
-    const readAt = await notificationRepository.markAllRead(recipientId);
+  async markAllRead(
+    recipientId: string,
+    filter: NotificationOrganizationFilter = {},
+  ): Promise<void> {
+    const readAt = await notificationRepository.markAllRead(recipientId, filter);
 
     try {
       getIO()
         .to(userRoom(recipientId))
-        .emit(SOCKET_EVENTS.NOTIFICATION_READ_ALL, { readAt: readAt.toISOString() });
+        .emit(SOCKET_EVENTS.NOTIFICATION_READ_ALL, {
+          readAt: readAt.toISOString(),
+          ...(filter.organizationId ? { organizationId: filter.organizationId } : {}),
+        });
     } catch (error) {
       logger.error(
         `Failed to broadcast notification:read-all for user ${recipientId}: ${describeError(error)}`,

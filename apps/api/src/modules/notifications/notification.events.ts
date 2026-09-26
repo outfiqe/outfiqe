@@ -345,6 +345,7 @@ export const registerNotificationEventConsumers = (): void => {
             ? NotificationEntityType.CRM_TICKET
             : NotificationEntityType.CRM_TASK,
         entityId: itemId,
+        organizationId,
         metadata: {
           crmItemKind: itemKind,
           crmItemTitle: title,

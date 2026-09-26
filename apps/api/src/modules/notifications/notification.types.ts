@@ -64,6 +64,7 @@ export type NotificationRecord = {
   entityId: string | null;
   targetSurface: NotificationSurface | null;
   targetPath: string | null;
+  organizationId: string | null;
   metadata: NotificationMetadata;
   groupKey: string | null;
   actorCount: number;
@@ -81,6 +82,11 @@ export type CreateIndividualNotificationInput = {
   entityId?: string | null;
   metadata: NotificationMetadata;
   recipientIsStaff?: boolean;
+  organizationId?: string | null;
+};
+
+export type NotificationOrganizationFilter = {
+  organizationId?: string;
 };
 
 export type PersistNotificationTarget = {
