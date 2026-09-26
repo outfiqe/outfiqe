@@ -3,7 +3,11 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import type { NotificationBroadcastPayload } from "#events/event-bus.types.js";
-import { NotificationEntityType, NotificationType } from "#generated/prisma/enums.js";
+import {
+  NotificationEntityType,
+  NotificationSurface,
+  NotificationType,
+} from "#generated/prisma/enums.js";
 
 import { toPushMessage } from "./push.messages.js";
 
@@ -178,6 +182,20 @@ describe("toPushMessage", () => {
     );
 
     expect(message.url).toBe("/notifications");
+  });
+
+  it("opens a tenant notification on that tenant's own admin address", () => {
+    const message = toPushMessage(
+      aNotification({
+        type: NotificationType.CRM_SUBSCRIPTION_PAST_DUE,
+        targetSurface: NotificationSurface.ADMIN,
+        targetPath: "https://acme.outfiqe.com/admin/crm/billing",
+        metadata: { crmOrganizationName: "Acme" },
+      }),
+    );
+
+    expect(message.url).toBe("https://acme.outfiqe.com/admin/crm/billing");
+    expect(message.body).toBe("The Acme subscription payment is overdue");
   });
 
   it("gives every notification type a title and a body", () => {

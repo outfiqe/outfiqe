@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
 
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { prisma } from "#db/prisma.js";
+import { eventBus } from "#events/event-bus.js";
 import { BrandRole, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
@@ -667,6 +668,49 @@ describe("PATCH /api/crm/members/:membershipId", () => {
     expect(unchanged.roleId).toBe(adminRole.id);
   });
 
+  it("announces that a member lost access when they are deactivated", async () => {
+    const { organization, adminRole, memberRole } = await seedOrganization();
+    const owner = await createStaffUser("Deactivating Owner");
+    const ownerMembership = await addMembership(organization.id, owner.id, adminRole.id);
+    await makeSuperAdmin(organization.id, ownerMembership.id);
+    const leaver = await createStaffUser("Leaving Member");
+    const leaverMembership = await addMembership(organization.id, leaver.id, memberRole.id);
+
+    const publishSpy = vi.spyOn(eventBus, "publish").mockResolvedValue(undefined);
+    const response = await request(testApp)
+      .patch(`/api/crm/members/${leaverMembership.id}`)
+      .set("Host", `${organization.subdomain}.localhost`)
+      .set("Authorization", authHeaderFor(owner.id))
+      .send({ status: "DEACTIVATED" });
+
+    expect(response.status).toBe(200);
+    expect(publishSpy).toHaveBeenCalledWith("crm.membership.ended", {
+      organizationId: organization.id,
+      userId: leaver.id,
+    });
+    publishSpy.mockRestore();
+  });
+
+  it("does not announce a lost membership when only the role changes", async () => {
+    const { organization, adminRole, memberRole } = await seedOrganization();
+    const owner = await createStaffUser("Role Changing Owner");
+    const ownerMembership = await addMembership(organization.id, owner.id, adminRole.id);
+    await makeSuperAdmin(organization.id, ownerMembership.id);
+    const promoted = await createStaffUser("Promoted Member");
+    const promotedMembership = await addMembership(organization.id, promoted.id, memberRole.id);
+
+    const publishSpy = vi.spyOn(eventBus, "publish").mockResolvedValue(undefined);
+    const response = await request(testApp)
+      .patch(`/api/crm/members/${promotedMembership.id}`)
+      .set("Host", `${organization.subdomain}.localhost`)
+      .set("Authorization", authHeaderFor(owner.id))
+      .send({ roleId: adminRole.id });
+
+    expect(response.status).toBe(200);
+    expect(publishSpy).not.toHaveBeenCalledWith("crm.membership.ended", expect.anything());
+    publishSpy.mockRestore();
+  });
+
   it("blocks an admin from deactivating their own membership", async () => {
     const { organization, adminRole } = await seedOrganization();
     const admin = await createStaffUser("Self Deactivating Admin");
@@ -860,6 +904,7 @@ describe("CRM invites", () => {
       data: { tokenHash: hashToken(rawToken) },
     });
 
+    const publishSpy = vi.spyOn(eventBus, "publish").mockResolvedValue(undefined);
     const acceptResponse = await request(testApp)
       .post("/api/crm/invites/accept")
       .set("Host", `${organization.subdomain}.localhost`)
@@ -873,6 +918,12 @@ describe("CRM invites", () => {
     });
     expect(membership.roleId).toBe(memberRole.id);
     expect(membership.status).toBe("ACTIVE");
+    expect(publishSpy).toHaveBeenCalledWith("crm.member.joined", {
+      organizationId: organization.id,
+      membershipId: membership.id,
+      userId: invitee.id,
+    });
+    publishSpy.mockRestore();
   });
 
   it("rejects calling acceptInvite again for a membership it already granted", async () => {
@@ -1363,6 +1414,7 @@ describe("Ownership transfer", () => {
     });
     expect(pendingRequest.removeSenderMembershipOnAccept).toBe(true);
 
+    const publishSpy = vi.spyOn(eventBus, "publish").mockResolvedValue(undefined);
     const acceptResponse = await request(testApp)
       .post(`/api/crm/ownership-transfer/${pendingRequest.id}/accept`)
       .set("Host", `${organization.subdomain}.localhost`)
@@ -1378,6 +1430,11 @@ describe("Ownership transfer", () => {
       where: { id: ownerMembership.id },
     });
     expect(previousOwnerMembership).toBeNull();
+    expect(publishSpy).toHaveBeenCalledWith("crm.membership.ended", {
+      organizationId: organization.id,
+      userId: owner.id,
+    });
+    publishSpy.mockRestore();
   });
 
   it("rejects a non-SUPERADMIN member trying to create a transfer", async () => {

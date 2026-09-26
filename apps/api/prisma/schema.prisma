@@ -1846,6 +1846,11 @@ enum NotificationType {
   PRODUCT_TAG_REVOKED
   PRODUCT_TAG_REVIEW_REMINDER
   ANNOUNCEMENT
+  CRM_TICKET_UNASSIGNED
+  CRM_MEMBER_JOINED
+  CRM_INVOICE_DUE
+  CRM_SUBSCRIPTION_PAST_DUE
+  CRM_SUBSCRIPTION_CANCELED
 }
 
 enum NotificationEntityType {
@@ -1862,6 +1867,8 @@ enum NotificationEntityType {
   CRM_TICKET
   SUPPORT_TICKET
   ANNOUNCEMENT
+  CRM_SUBSCRIPTION
+  CRM_SUBSCRIPTION_INVOICE
 }
 
 enum NotificationSurface {
@@ -1885,6 +1892,7 @@ model Notification {
   metadata       Json                    @default("{}")
   groupKey       String?                 @map("group_key")
   actorCount     Int                     @default(1) @map("actor_count")
+  dedupeKey      String?                 @map("dedupe_key")
   isRead         Boolean                 @default(false) @map("is_read")
   readAt         DateTime?               @map("read_at")
   createdAt      DateTime                @default(now()) @map("created_at")
@@ -1892,6 +1900,7 @@ model Notification {
 
   @@index([recipientId, updatedAt])
   @@index([recipientId, isRead])
+  @@unique([recipientId, dedupeKey])
   @@index([recipientId, organizationId, updatedAt])
   @@map("notifications")
 }

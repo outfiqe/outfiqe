@@ -30,6 +30,11 @@ export const NotificationType = {
   PRODUCT_TAG_REVOKED: "PRODUCT_TAG_REVOKED",
   PRODUCT_TAG_REVIEW_REMINDER: "PRODUCT_TAG_REVIEW_REMINDER",
   ANNOUNCEMENT: "ANNOUNCEMENT",
+  CRM_TICKET_UNASSIGNED: "CRM_TICKET_UNASSIGNED",
+  CRM_MEMBER_JOINED: "CRM_MEMBER_JOINED",
+  CRM_INVOICE_DUE: "CRM_INVOICE_DUE",
+  CRM_SUBSCRIPTION_PAST_DUE: "CRM_SUBSCRIPTION_PAST_DUE",
+  CRM_SUBSCRIPTION_CANCELED: "CRM_SUBSCRIPTION_CANCELED",
 } as const;
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
@@ -48,6 +53,8 @@ export const NotificationEntityType = {
   CRM_TICKET: "CRM_TICKET",
   SUPPORT_TICKET: "SUPPORT_TICKET",
   ANNOUNCEMENT: "ANNOUNCEMENT",
+  CRM_SUBSCRIPTION: "CRM_SUBSCRIPTION",
+  CRM_SUBSCRIPTION_INVOICE: "CRM_SUBSCRIPTION_INVOICE",
 } as const;
 
 export type NotificationEntityType =
@@ -109,6 +116,9 @@ export type NotificationMetadata = {
   crmItemTitle?: string;
   crmOrganizationSubdomain?: string | null;
   crmOrganizationIsPlatformOrg?: boolean;
+  crmOrganizationName?: string;
+  crmMemberName?: string;
+  crmInvoiceAmount?: number;
   supportSubject?: string;
   couponCode?: string;
   totalBudgetAmount?: number;

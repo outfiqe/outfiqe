@@ -32,8 +32,10 @@ const WEB_ROUTES = {
 const ADMIN_ROUTES = {
   brandApplications: "/platform/brand-applications",
   supportList: "/support",
+  crmHome: "/crm",
   crmTasks: "/crm/tasks",
   crmSupport: "/crm/support",
+  crmBilling: "/crm/billing",
   coupons: "/coupons",
   ordersList: "/orders",
 } as const;
@@ -76,9 +78,10 @@ const announcementTarget = (metadata: NotificationMetadata): NotificationTarget 
   };
 };
 
-const crmItemAssignedTarget = (metadata: NotificationMetadata): NotificationTarget => {
-  const path = metadata.crmItemKind === "task" ? ADMIN_ROUTES.crmTasks : ADMIN_ROUTES.crmSupport;
-
+const organizationAdminTarget = (
+  metadata: NotificationMetadata,
+  path: string,
+): NotificationTarget => {
   if (!metadata.crmOrganizationSubdomain) return admin(path);
 
   return admin(
@@ -93,6 +96,12 @@ const crmItemAssignedTarget = (metadata: NotificationMetadata): NotificationTarg
     ),
   );
 };
+
+const crmItemAssignedTarget = (metadata: NotificationMetadata): NotificationTarget =>
+  organizationAdminTarget(
+    metadata,
+    metadata.crmItemKind === "task" ? ADMIN_ROUTES.crmTasks : ADMIN_ROUTES.crmSupport,
+  );
 
 const supportTicketTarget = (
   entityId: string | null,
@@ -155,6 +164,14 @@ export const resolveNotificationTarget = ({
       return admin(ADMIN_ROUTES.brandApplications);
     case NotificationType.CRM_ITEM_ASSIGNED:
       return crmItemAssignedTarget(metadata);
+    case NotificationType.CRM_TICKET_UNASSIGNED:
+      return organizationAdminTarget(metadata, ADMIN_ROUTES.crmSupport);
+    case NotificationType.CRM_MEMBER_JOINED:
+      return organizationAdminTarget(metadata, ADMIN_ROUTES.crmHome);
+    case NotificationType.CRM_INVOICE_DUE:
+    case NotificationType.CRM_SUBSCRIPTION_PAST_DUE:
+    case NotificationType.CRM_SUBSCRIPTION_CANCELED:
+      return organizationAdminTarget(metadata, ADMIN_ROUTES.crmBilling);
     case NotificationType.COUPON_APPROVAL_REQUESTED:
     case NotificationType.COUPON_BUDGET_ALERT:
       return admin(ADMIN_ROUTES.coupons);

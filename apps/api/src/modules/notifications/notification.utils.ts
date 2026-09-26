@@ -50,6 +50,12 @@ export const toNotificationRecord = (row: PrismaNotificationRow): NotificationRe
   updatedAt: row.updatedAt,
 });
 
+export const buildNotificationDedupeKey = (
+  sourceEventId: string,
+  type: NotificationType,
+  entityId: string | null | undefined,
+): string => [sourceEventId, type, entityId ?? ""].join("|");
+
 export const mergeRecentActors = (
   existing: NotificationActorSnapshot[],
   newActor: NotificationActorSnapshot,

@@ -38,6 +38,9 @@ export type NotificationMetadata = {
   crmItemTitle?: string;
   crmOrganizationSubdomain?: string | null;
   crmOrganizationIsPlatformOrg?: boolean;
+  crmOrganizationName?: string;
+  crmMemberName?: string;
+  crmInvoiceAmount?: number;
   supportSubject?: string;
   couponCode?: string;
   totalBudgetAmount?: number | null;
@@ -83,7 +86,13 @@ export type CreateIndividualNotificationInput = {
   metadata: NotificationMetadata;
   recipientIsStaff?: boolean;
   organizationId?: string | null;
+  sourceEventId?: string;
 };
+
+export type StaffNotificationInput = Omit<
+  CreateIndividualNotificationInput,
+  "recipientId" | "organizationId"
+>;
 
 export type NotificationOrganizationFilter = {
   organizationId?: string;

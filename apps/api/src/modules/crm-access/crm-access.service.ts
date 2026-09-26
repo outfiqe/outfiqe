@@ -6,7 +6,8 @@ import {
   crmOrganizationInviteTemplate,
   crmOwnershipTransferRequestTemplate,
 } from "#email-templates/templates.js";
-import type { MembershipStatus } from "#generated/prisma/enums.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
+import { MembershipStatus } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
@@ -410,7 +411,23 @@ export const crmAccessService = {
       assertPermissionKeysWithinActorGrant(role.permissionKeys, actingGrant);
     }
 
-    return crmAccessRepository.updateMembership(organization.id, membershipId, data);
+    const updatedMembership = await crmAccessRepository.updateMembership(
+      organization.id,
+      membershipId,
+      data,
+    );
+
+    const hasLostAccess =
+      membership.status === MembershipStatus.ACTIVE &&
+      updatedMembership.status !== MembershipStatus.ACTIVE;
+    if (hasLostAccess) {
+      await eventBus.publish(DomainEvents.CRM_MEMBERSHIP_ENDED, {
+        organizationId: organization.id,
+        userId: membership.userId,
+      });
+    }
+
+    return updatedMembership;
   },
 
   async listInvites(organizationId: string): Promise<OrganizationInviteSummary[]> {
@@ -575,6 +592,14 @@ export const crmAccessService = {
     return crmAccessRepository.acceptInviteWithClient(invite, acceptingUserId, client);
   },
 
+  async announceMemberJoined(membership: MembershipRecord): Promise<void> {
+    await eventBus.publish(DomainEvents.CRM_MEMBER_JOINED, {
+      organizationId: membership.organizationId,
+      membershipId: membership.id,
+      userId: membership.userId,
+    });
+  },
+
   async acceptInvite(rawToken: string, acceptingUserId: string): Promise<MembershipRecord> {
     const invite = await crmAccessService.findAcceptableInvite(rawToken);
 
@@ -595,14 +620,18 @@ export const crmAccessService = {
       throw new AppError("MEMBER_EXISTS", "You already have CRM access.", CONFLICT_STATUS);
     }
 
+    let membership: MembershipRecord;
     try {
-      return await crmAccessRepository.acceptInvite(invite, acceptingUserId);
+      membership = await crmAccessRepository.acceptInvite(invite, acceptingUserId);
     } catch (err) {
       if (isUniqueConstraintError(err)) {
         throw new AppError("MEMBER_EXISTS", "You already have CRM access.", CONFLICT_STATUS);
       }
       throw err;
     }
+
+    await crmAccessService.announceMemberJoined(membership);
+    return membership;
   },
 
   async getPendingOwnershipTransfer(
@@ -712,7 +741,19 @@ export const crmAccessService = {
       );
     }
 
+    const previousOwnerMembership = await crmAccessRepository.findMembershipById(
+      organization.id,
+      request.fromMembershipId,
+    );
+
     await crmAccessRepository.acceptOwnershipTransfer(request);
+
+    if (request.removeSenderMembershipOnAccept && previousOwnerMembership) {
+      await eventBus.publish(DomainEvents.CRM_MEMBERSHIP_ENDED, {
+        organizationId: organization.id,
+        userId: previousOwnerMembership.userId,
+      });
+    }
   },
 
   async declineOwnershipTransfer(
