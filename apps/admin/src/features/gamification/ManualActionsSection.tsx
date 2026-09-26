@@ -19,7 +19,9 @@ import { useForm } from "react-hook-form";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { TextPromptModal } from "@/components/TextPromptModal";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { gamificationApi } from "./api";
 import {
@@ -231,7 +233,7 @@ const AdjustXpForm = () => {
   );
 };
 
-const ManualAwardsList = () => {
+const ManualAwardsList = ({ canRemoveAwards }: { canRemoveAwards: boolean }) => {
   const { data: awards, isLoading } = useQuery({
     queryKey: MANUAL_AWARDS_QUERY_KEY,
     queryFn: gamificationApi.listManualAwards,
@@ -271,19 +273,21 @@ const ManualAwardsList = () => {
               <span className="block text-xs text-muted-foreground">{award.awardReason}</span>
             )}
           </p>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={remove.isPending}
-            onClick={() =>
-              setRemoveTarget({
-                userBadgeId: award.id,
-                label: `${award.badgeName} → ${award.userName}`,
-              })
-            }
-          >
-            Remove
-          </Button>
+          {canRemoveAwards && (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={remove.isPending}
+              onClick={() =>
+                setRemoveTarget({
+                  userBadgeId: award.id,
+                  label: `${award.badgeName} → ${award.userName}`,
+                })
+              }
+            >
+              Remove
+            </Button>
+          )}
         </div>
       ))}
 
@@ -305,31 +309,39 @@ const ManualAwardsList = () => {
 };
 
 export const ManualActionsSection = () => {
+  const { canUse } = usePlatformPermissions();
+  const canAwardBadges = canUse(PLATFORM_MANAGE_PERMISSION.GAMIFICATION);
+  const canAdjustXp = canUse(PLATFORM_MANAGE_PERMISSION.XP_ADJUSTMENTS);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="font-display text-lg font-bold text-foreground">Manual award</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Hand-award a badge to a specific user, with a mandatory reason for the audit trail.
-        </p>
-        <div className="mt-4">
-          <AwardBadgeForm />
+      {canAwardBadges && (
+        <div>
+          <h2 className="font-display text-lg font-bold text-foreground">Manual award</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Hand-award a badge to a specific user, with a mandatory reason for the audit trail.
+          </p>
+          <div className="mt-4">
+            <AwardBadgeForm />
+          </div>
         </div>
-      </div>
+      )}
 
-      <div>
-        <h2 className="font-display text-lg font-bold text-foreground">Manual XP adjustment</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Grant or dock XP for a specific user. Docking below zero is rejected.
-        </p>
-        <div className="mt-4">
-          <AdjustXpForm />
+      {canAdjustXp && (
+        <div>
+          <h2 className="font-display text-lg font-bold text-foreground">Manual XP adjustment</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Grant or dock XP for a specific user. Docking below zero is rejected.
+          </p>
+          <div className="mt-4">
+            <AdjustXpForm />
+          </div>
         </div>
-      </div>
+      )}
 
       <div>
         <h2 className="font-display text-lg font-bold text-foreground">Manually awarded badges</h2>
-        <ManualAwardsList />
+        <ManualAwardsList canRemoveAwards={canAwardBadges} />
       </div>
     </div>
   );

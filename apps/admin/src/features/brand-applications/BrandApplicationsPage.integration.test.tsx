@@ -1,5 +1,6 @@
 import { toast, Toaster } from "@outfiqe/design-system";
 import { mswServer } from "@test/integration/msw/server";
+import { grantOnlyPlatformPermissions } from "@test/platformPermissionsMock";
 import { renderWithRouter } from "@test/renderWithRouter";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -350,5 +351,24 @@ describe("BrandApplicationsPage", () => {
     renderPage();
 
     expect(await screen.findByText("Nothing here right now.")).toBeInTheDocument();
+  });
+
+  it("shows a view-only role pending applications without approve or reject", async () => {
+    grantOnlyPlatformPermissions("platform:brands:read");
+    mswServer.use(
+      http.get(`${API_BASE}/brand-applications`, () =>
+        HttpResponse.json({
+          success: true,
+          message: "ok",
+          data: { applications: [pendingApplication], nextCursor: null },
+        }),
+      ),
+    );
+
+    renderPage();
+
+    expect(await screen.findByText("Instyle Nepal")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reject" })).not.toBeInTheDocument();
   });
 });

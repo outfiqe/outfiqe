@@ -9,9 +9,15 @@ type ImageUploadProps = {
   value: string | null;
   onChange?: (url: string) => void;
   onUploaded?: (result: PipelineUpload) => void;
+  isReadOnly?: boolean;
 };
 
-export const ImageUpload = ({ value, onChange, onUploaded }: ImageUploadProps) => {
+export const ImageUpload = ({
+  value,
+  onChange,
+  onUploaded,
+  isReadOnly = false,
+}: ImageUploadProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,25 +55,29 @@ export const ImageUpload = ({ value, onChange, onUploaded }: ImageUploadProps) =
         <div className="size-14 shrink-0 rounded-lg border border-dashed border-border" />
       )}
 
-      <div>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => inputRef.current?.click()}
-          isLoading={isUploading}
-        >
-          {value ? "Change image" : "Upload image"}
-        </Button>
-        {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
-      </div>
+      {!isReadOnly && (
+        <>
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => inputRef.current?.click()}
+              isLoading={isUploading}
+            >
+              {value ? "Change image" : "Upload image"}
+            </Button>
+            {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+          </div>
 
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        className="hidden"
-        onChange={(event) => void handleFile(event.target.files)}
-      />
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(event) => void handleFile(event.target.files)}
+          />
+        </>
+      )}
     </div>
   );
 };

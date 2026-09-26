@@ -46,10 +46,37 @@ type PlatformNavViewer = {
   hiddenNavKeys: string[];
 };
 
-const isPlatformNavItemVisible = (item: PlatformNavItem, viewer: PlatformNavViewer): boolean => {
+export const isPlatformNavItemVisible = (
+  item: PlatformNavItem,
+  viewer: PlatformNavViewer,
+): boolean => {
   if (item.coFounderOnly && !viewer.isCoFounder) return false;
   if (viewer.isCoFounder) return true;
   return !viewer.hiddenNavKeys.includes(item.id);
+};
+
+const pathBelongsToHref = (pathname: string, href: string): boolean =>
+  pathname === href || pathname.startsWith(`${href}/`);
+
+export const findPlatformNavItemForPath = (
+  items: readonly PlatformNavItem[],
+  pathname: string,
+): PlatformNavItem | undefined =>
+  items
+    .filter((item) => pathBelongsToHref(pathname, item.href))
+    .sort((longer, shorter) => shorter.href.length - longer.href.length)[0];
+
+export const findFirstVisiblePlatformHref = (
+  items: readonly PlatformNavItem[],
+  viewer: PlatformNavViewer,
+): string | undefined => {
+  for (const groupKey of PLATFORM_NAV_GROUP_ORDER) {
+    const firstVisibleItem = items.find(
+      (item) => item.group === groupKey && isPlatformNavItemVisible(item, viewer),
+    );
+    if (firstVisibleItem) return firstVisibleItem.href;
+  }
+  return undefined;
 };
 
 const toSidebarNavItem = ({
@@ -90,7 +117,7 @@ type CrmOrganizationContext = {
 
 export const shouldShowCrmSection = (
   crmOrganization: { isPlatformOrg?: boolean } | undefined,
-): boolean => crmOrganization?.isPlatformOrg !== true;
+): boolean => crmOrganization !== undefined && crmOrganization.isPlatformOrg !== true;
 
 export const shouldShowPlatformSection = (
   hasPlatformAccess: boolean,
@@ -111,11 +138,9 @@ export const isCrmSubItemVisible = (
   item: CrmItemVisibilityRules,
   crmOrganization: CrmOrganizationContext | undefined,
 ): boolean => {
-  if (item.requiresLinkedBrand && crmOrganization && crmOrganization.linkedBrandId === null) {
-    return false;
-  }
+  if (!crmOrganization) return false;
+  if (item.requiresLinkedBrand && crmOrganization.linkedBrandId === null) return false;
   if (item.permissionKey === null) return true;
-  if (!crmOrganization) return true;
   return (
     crmOrganization.viewerIsSuperAdmin ||
     crmOrganization.viewerPermissionKeys.includes(item.permissionKey)

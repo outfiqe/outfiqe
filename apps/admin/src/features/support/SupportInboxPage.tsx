@@ -4,6 +4,8 @@ import { type ReactNode, useMemo, useState } from "react";
 
 import { SkeletonBadge } from "@/components/SkeletonControls";
 import { useAuth } from "@/features/auth/AuthContext";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { useSupportAgents, useSupportInbox, useSupportStats } from "./hooks";
@@ -67,6 +69,8 @@ const TicketRowSkeleton = () => (
 export const SupportInboxPage = () => {
   const { state } = useAuth();
   const meId = state.status === "signed-in" ? state.user.id : undefined;
+  const { canUse } = usePlatformPermissions();
+  const canViewSupportStats = canUse(PLATFORM_MANAGE_PERMISSION.SUPPORT_SETTINGS);
 
   const [assigneeMode, setAssigneeMode] = useSearchFilter("assignee", ASSIGNEE_MODE_FILTER);
   const [status, setStatus] = useSearchFilter("status", SUPPORT_STATUS_FILTER);
@@ -86,7 +90,7 @@ export const SupportInboxPage = () => {
 
   const { data, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
     useSupportInbox(filters);
-  const stats = useSupportStats();
+  const stats = useSupportStats({ isEnabled: canViewSupportStats });
   const agents = useSupportAgents();
   const agentName = (id: string | null) =>
     id ? (agents.data?.find((agent) => agent.userId === id)?.name ?? "Assigned") : null;
@@ -97,7 +101,7 @@ export const SupportInboxPage = () => {
     <div className="space-y-6">
       <h1 className="font-display text-2xl font-bold text-foreground">Support requests</h1>
 
-      {stats.isLoading && (
+      {canViewSupportStats && stats.isLoading && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-hidden>
           {STAT_CARD_LABELS.map((label) => (
             <StatCard key={label} label={label} value={<Skeleton className="h-7 w-10" />} />

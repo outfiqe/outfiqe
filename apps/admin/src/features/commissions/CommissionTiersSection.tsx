@@ -19,7 +19,9 @@ import { useForm, type UseFormReturn } from "react-hook-form";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { commissionsApi, type CreateTierInput, type UpdateTierInput } from "./api";
 import type { CommissionTier } from "./schemas";
@@ -109,6 +111,8 @@ const EditTierModal = ({ tier, onClose }: { tier: CommissionTier; onClose: () =>
 };
 
 export const CommissionTiersSection = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageCommissions = canUse(PLATFORM_MANAGE_PERMISSION.COMMISSIONS);
   const { data: tiers, isLoading } = useQuery({
     queryKey: TIERS_QUERY_KEY,
     queryFn: commissionsApi.listTiers,
@@ -146,18 +150,20 @@ export const CommissionTiersSection = () => {
         Fixed commission a creator earns per attributed sale, by the sold item&apos;s price band.
       </p>
 
-      <Form {...form}>
-        <form
-          onSubmit={submitTier}
-          noValidate
-          className="mt-4 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
-        >
-          <TierFields form={form} />
-          <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
-            Add tier
-          </Button>
-        </form>
-      </Form>
+      {canManageCommissions && (
+        <Form {...form}>
+          <form
+            onSubmit={submitTier}
+            noValidate
+            className="mt-4 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+          >
+            <TierFields form={form} />
+            <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+              Add tier
+            </Button>
+          </form>
+        </Form>
+      )}
 
       {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
@@ -178,19 +184,21 @@ export const CommissionTiersSection = () => {
               {tier.maxPrice === null ? "+" : ` – Rs. ${tier.maxPrice.toLocaleString()}`} → Rs.{" "}
               {tier.amount.toLocaleString()} commission
             </p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setEditingTier(tier)}>
-                Edit
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setDeleteTarget(tier)}
-                disabled={remove.isPending}
-              >
-                Delete
-              </Button>
-            </div>
+            {canManageCommissions && (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setEditingTier(tier)}>
+                  Edit
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDeleteTarget(tier)}
+                  disabled={remove.isPending}
+                >
+                  Delete
+                </Button>
+              </div>
+            )}
           </div>
         ))}
       </div>

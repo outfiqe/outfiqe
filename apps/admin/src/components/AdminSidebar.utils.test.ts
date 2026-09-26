@@ -24,9 +24,13 @@ const brandLinkedOrg = {
 };
 
 describe("isCrmSubItemVisible", () => {
-  it("always shows an item with no permission key", () => {
-    expect(isCrmSubItemVisible({ permissionKey: null }, undefined)).toBe(true);
+  it("shows an item with no permission key once the organization is known", () => {
     expect(isCrmSubItemVisible({ permissionKey: null }, brandlessOrg)).toBe(true);
+  });
+
+  it("hides every item when the organization could not be identified", () => {
+    expect(isCrmSubItemVisible({ permissionKey: null }, undefined)).toBe(false);
+    expect(isCrmSubItemVisible({ permissionKey: "customers:read" }, undefined)).toBe(false);
   });
 
   it("hides a brand-scoped item when the resolved org has no linked brand", () => {
@@ -43,15 +47,6 @@ describe("isCrmSubItemVisible", () => {
       isCrmSubItemVisible(
         { permissionKey: "customers:read", requiresLinkedBrand: true },
         brandLinkedOrg,
-      ),
-    ).toBe(true);
-  });
-
-  it("does not hide a brand-scoped item before the org has loaded", () => {
-    expect(
-      isCrmSubItemVisible(
-        { permissionKey: "customers:read", requiresLinkedBrand: true },
-        undefined,
       ),
     ).toBe(true);
   });
@@ -78,8 +73,8 @@ describe("shouldShowCrmSection", () => {
     expect(shouldShowCrmSection({ isPlatformOrg: true })).toBe(false);
   });
 
-  it("shows the section while the organization is still loading", () => {
-    expect(shouldShowCrmSection(undefined)).toBe(true);
+  it("hides the section when the organization could not be identified", () => {
+    expect(shouldShowCrmSection(undefined)).toBe(false);
   });
 });
 

@@ -16,7 +16,9 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { organizationsApi } from "./api";
 import { BusinessOwnerField } from "./BusinessOwnerField";
@@ -29,6 +31,8 @@ import {
 const ORGANIZATIONS_QUERY_KEY = ["organizations"];
 
 export const OrganizationsPage = () => {
+  const { canUse } = usePlatformPermissions();
+  const canCreateOrganizations = canUse(PLATFORM_MANAGE_PERMISSION.ORGANIZATIONS);
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
       queryKey: ORGANIZATIONS_QUERY_KEY,
@@ -85,58 +89,60 @@ export const OrganizationsPage = () => {
         accept.
       </p>
 
-      <Form {...form}>
-        <form
-          onSubmit={submitOrganization}
-          noValidate
-          className="mt-5 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
-        >
-          <FormField
-            control={form.control}
-            name="brand"
-            render={({ field }) => (
-              <FormItem className="mt-0">
-                <BusinessOwnerField
-                  selectedBrandId={field.value?.id ?? null}
-                  selectedBrandName={field.value?.name ?? ""}
-                  onSelect={(brand) => {
-                    field.onChange(brand ? { id: brand.id, name: brand.name } : null);
-                    form.resetField("subdomain");
-                  }}
-                />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="subdomain"
-            render={({ field }) => (
-              <FormItem className="mt-0 w-48 space-y-1.5">
-                <FormLabel className="text-xs font-normal text-muted-foreground">
-                  Subdomain
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    disabled={!pickedBrandId || isSuggesting}
-                    {...field}
-                    onChange={(event) => field.onChange(event.target.value.toLowerCase())}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button
-            type="submit"
-            disabled={isSuggesting}
-            isLoading={create.isPending}
-            className="mt-[22px]"
+      {canCreateOrganizations && (
+        <Form {...form}>
+          <form
+            onSubmit={submitOrganization}
+            noValidate
+            className="mt-5 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
           >
-            Create organization
-          </Button>
-        </form>
-      </Form>
+            <FormField
+              control={form.control}
+              name="brand"
+              render={({ field }) => (
+                <FormItem className="mt-0">
+                  <BusinessOwnerField
+                    selectedBrandId={field.value?.id ?? null}
+                    selectedBrandName={field.value?.name ?? ""}
+                    onSelect={(brand) => {
+                      field.onChange(brand ? { id: brand.id, name: brand.name } : null);
+                      form.resetField("subdomain");
+                    }}
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="subdomain"
+              render={({ field }) => (
+                <FormItem className="mt-0 w-48 space-y-1.5">
+                  <FormLabel className="text-xs font-normal text-muted-foreground">
+                    Subdomain
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={!pickedBrandId || isSuggesting}
+                      {...field}
+                      onChange={(event) => field.onChange(event.target.value.toLowerCase())}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button
+              type="submit"
+              disabled={isSuggesting}
+              isLoading={create.isPending}
+              className="mt-[22px]"
+            >
+              Create organization
+            </Button>
+          </form>
+        </Form>
+      )}
 
       {suggestion && suggestion.existingOrganizationForBrand && (
         <FormBanner tone="neutral" className="mt-3">

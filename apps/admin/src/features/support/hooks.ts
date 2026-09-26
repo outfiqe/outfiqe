@@ -24,8 +24,8 @@ export const useSupportInbox = (filters: SupportInboxFilters) =>
 export const useSupportTicket = (id: string) =>
   useQuery({ queryKey: [TICKET_KEY, id], queryFn: () => supportApi.get(id) });
 
-export const useSupportStats = () =>
-  useQuery({ queryKey: STATS_KEY, queryFn: () => supportApi.stats() });
+export const useSupportStats = ({ isEnabled }: { isEnabled: boolean }) =>
+  useQuery({ queryKey: STATS_KEY, queryFn: () => supportApi.stats(), enabled: isEnabled });
 
 export const useSupportAgents = () =>
   useQuery({ queryKey: ["support-agents"], queryFn: () => supportApi.agents() });
