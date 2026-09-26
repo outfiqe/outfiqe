@@ -4,10 +4,18 @@ import { NotificationType } from "#generated/prisma/enums.js";
 import { buildCursorPage, encodeCursor } from "#lib/pagination.utils.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
+import type { OrganizationRecord } from "#modules/crm-access/crm-access.types.js";
 import { describeError } from "#redis/redis.utils.js";
 import { SOCKET_EVENTS, userRoom } from "#socket/socket.keys.js";
 import { getIO } from "#socket/socket.server.js";
 
+import {
+  PLATFORM_STAFF_NOTIFICATION_PERMISSIONS,
+  type PlatformStaffNotificationType,
+  TENANT_STAFF_NOTIFICATION_PERMISSIONS,
+  type TenantStaffNotificationType,
+} from "./notification.constants.js";
 import { notificationRepository } from "./notification.repository.js";
 import { resolveNotificationTarget } from "./notification.targets.js";
 import type {
@@ -21,9 +29,10 @@ import type {
   NotificationPreferenceView,
   NotificationRecord,
   RetractGroupActorInput,
+  StaffNotificationInput,
   UpsertGroupInput,
 } from "./notification.types.js";
-import { toBroadcastPayload } from "./notification.utils.js";
+import { canReceiveNotificationType, toBroadcastPayload } from "./notification.utils.js";
 
 const NOT_FOUND_STATUS = 404;
 
@@ -32,6 +41,24 @@ const broadcastCreated = (record: NotificationRecord): Promise<void> =>
 
 const broadcastUpdated = (record: NotificationRecord): Promise<void> =>
   eventBus.publish(DomainEvents.NOTIFICATION_UPDATED, toBroadcastPayload(record));
+
+const notifyOrganizationPermissionHolders = async (
+  organization: OrganizationRecord,
+  permissionKeys: readonly string[],
+  input: StaffNotificationInput,
+): Promise<void> => {
+  const recipientIds = await crmAccessRepository.findActiveMemberUserIdsHoldingAnyPermission(
+    organization,
+    permissionKeys,
+  );
+  await notificationService.notifyManyIndividual(
+    recipientIds.map((recipientId) => ({
+      ...input,
+      recipientId,
+      organizationId: organization.id,
+    })),
+  );
+};
 
 export const notificationService = {
   async notifyIndividual(input: CreateIndividualNotificationInput): Promise<void> {
@@ -64,6 +91,57 @@ export const notificationService = {
       const record = await notificationRepository.createIndividual(input);
       if (record) await broadcastCreated(record);
     }
+  },
+
+  async notifyPlatformStaff(
+    input: StaffNotificationInput & { type: PlatformStaffNotificationType },
+  ): Promise<void> {
+    const platformOrganization = await crmAccessRepository.findPlatformOrganization();
+    if (!platformOrganization) return;
+
+    await notifyOrganizationPermissionHolders(
+      platformOrganization,
+      PLATFORM_STAFF_NOTIFICATION_PERMISSIONS[input.type],
+      input,
+    );
+  },
+
+  async notifyPlatformStaffMember(
+    recipientId: string,
+    input: StaffNotificationInput,
+  ): Promise<void> {
+    const platformOrganization = await crmAccessRepository.findPlatformOrganization();
+    await notificationService.notifyIndividual({
+      ...input,
+      recipientId,
+      organizationId: platformOrganization?.id ?? null,
+    });
+  },
+
+  async notifyTenantStaff(
+    organizationId: string,
+    input: StaffNotificationInput & { type: TenantStaffNotificationType },
+  ): Promise<void> {
+    const organization = await crmAccessRepository.findOrganizationById(organizationId);
+    if (!organization) return;
+
+    await notifyOrganizationPermissionHolders(
+      organization,
+      TENANT_STAFF_NOTIFICATION_PERMISSIONS[input.type],
+      {
+        ...input,
+        metadata: {
+          ...input.metadata,
+          crmOrganizationName: organization.name,
+          crmOrganizationSubdomain: organization.subdomain,
+          crmOrganizationIsPlatformOrg: organization.isPlatformOrg,
+        },
+      },
+    );
+  },
+
+  async clearOrganizationNotificationsFor(userId: string, organizationId: string): Promise<void> {
+    await notificationRepository.deleteForRecipientInOrganization(userId, organizationId);
   },
 
   async notifyBroadcast(input: BroadcastNotificationInput): Promise<number> {
@@ -194,8 +272,14 @@ export const notificationService = {
   },
 
   async listPreferences(userId: string): Promise<NotificationPreferenceView[]> {
-    const overrides = await notificationRepository.listPreferenceOverrides(userId);
-    return Object.values(NotificationType).map((type) => ({
+    const [overrides, membershipGrants] = await Promise.all([
+      notificationRepository.listPreferenceOverrides(userId),
+      notificationRepository.findActiveMembershipGrants(userId),
+    ]);
+    const receivableTypes = Object.values(NotificationType).filter((type) =>
+      canReceiveNotificationType(type, membershipGrants),
+    );
+    return receivableTypes.map((type) => ({
       type,
       enabled: overrides.get(type)?.enabled ?? true,
       pushEnabled: overrides.get(type)?.pushEnabled ?? true,

@@ -89,6 +89,13 @@ export const crmTicketsService = {
     });
     await applyCrmCounterDelta(organization.id, "ticketCount", 1);
 
+    await eventBus.publish(DomainEvents.CRM_TICKET_CREATED, {
+      organizationId: organization.id,
+      ticketId: ticket.id,
+      title: ticket.title,
+      assigneeUserId,
+      createdByUserId: actorUserId,
+    });
     if (assigneeUserId) await emitAssignment(organization.id, ticket, assigneeUserId, actorUserId);
     return ticket;
   },

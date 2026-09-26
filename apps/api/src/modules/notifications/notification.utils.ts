@@ -1,13 +1,15 @@
 import type { NotificationBroadcastPayload } from "#events/event-bus.types.js";
-import type {
-  NotificationEntityType,
-  NotificationSurface,
-  NotificationType,
-} from "#generated/prisma/enums.js";
+import type { NotificationEntityType, NotificationSurface } from "#generated/prisma/enums.js";
+import { NotificationType } from "#generated/prisma/enums.js";
 
-import { MAX_RECENT_ACTORS } from "./notification.constants.js";
+import {
+  MAX_RECENT_ACTORS,
+  PLATFORM_STAFF_ONLY_NOTIFICATION_PERMISSIONS,
+  TENANT_STAFF_NOTIFICATION_PERMISSIONS,
+} from "./notification.constants.js";
 import type {
   NotificationActorSnapshot,
+  NotificationMembershipGrant,
   NotificationMetadata,
   NotificationRecord,
 } from "./notification.types.js";
@@ -49,6 +51,46 @@ export const toNotificationRecord = (row: PrismaNotificationRow): NotificationRe
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,
 });
+
+const readPermissionKeysFor = (
+  permissionsByType: Partial<Record<NotificationType, readonly string[]>>,
+  type: NotificationType,
+): readonly string[] | undefined => permissionsByType[type];
+
+const grantHoldsAnyOf = (
+  grant: NotificationMembershipGrant,
+  permissionKeys: readonly string[],
+): boolean => grant.isOwner || permissionKeys.some((key) => grant.permissionKeys.includes(key));
+
+export const canReceiveNotificationType = (
+  type: NotificationType,
+  membershipGrants: readonly NotificationMembershipGrant[],
+): boolean => {
+  const platformPermissionKeys = readPermissionKeysFor(
+    PLATFORM_STAFF_ONLY_NOTIFICATION_PERMISSIONS,
+    type,
+  );
+  if (platformPermissionKeys) {
+    return membershipGrants.some(
+      (grant) => grant.isPlatformOrganization && grantHoldsAnyOf(grant, platformPermissionKeys),
+    );
+  }
+
+  const tenantPermissionKeys = readPermissionKeysFor(TENANT_STAFF_NOTIFICATION_PERMISSIONS, type);
+  if (tenantPermissionKeys) {
+    return membershipGrants.some((grant) => grantHoldsAnyOf(grant, tenantPermissionKeys));
+  }
+
+  if (type === NotificationType.CRM_ITEM_ASSIGNED) return membershipGrants.length > 0;
+
+  return true;
+};
+
+export const buildNotificationDedupeKey = (
+  sourceEventId: string,
+  type: NotificationType,
+  entityId: string | null | undefined,
+): string => [sourceEventId, type, entityId ?? ""].join("|");
 
 export const mergeRecentActors = (
   existing: NotificationActorSnapshot[],

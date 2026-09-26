@@ -1,29 +1,21 @@
 import { subscribeToDomainEvent } from "#events/event-bus.consumer.js";
 import { DomainEvents } from "#events/event-bus.js";
+import type { CrmLapsedSubscriptionStatus } from "#events/event-bus.types.js";
 import {
   CreatorStatus,
   FulfilmentStatus,
   NotificationEntityType,
   NotificationType,
+  SubscriptionStatus,
   WithdrawRequestStatus,
 } from "#generated/prisma/enums.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
-import {
-  BRAND_REVIEW_PERMISSION_KEYS,
-  COUPON_MANAGEMENT_PERMISSION_KEYS,
-  type PlatformPermissionKey,
-  SUPPORT_AGENT_PERMISSION_KEYS,
-} from "#modules/platform-access/platform-access.constants.js";
-import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { NOTIFICATION_CONSUMER_GROUP, NOTIFICATION_GROUP_KEYS } from "./notification.constants.js";
 import { notificationRepository } from "./notification.repository.js";
 import { notificationService } from "./notification.service.js";
 import type { CreateIndividualNotificationInput } from "./notification.types.js";
-
-const findPlatformRecipientIds = (permissionKeys: readonly PlatformPermissionKey[]) =>
-  platformAccessService.findUserIdsHoldingAnyPermission(permissionKeys);
 
 const isApprovedCreator = async (userId: string): Promise<boolean> => {
   const user = await userRepository.findById(userId);
@@ -37,6 +29,11 @@ const WITHDRAW_REQUEST_NOTIFICATION_TYPES: Partial<
   [WithdrawRequestStatus.REJECTED]: NotificationType.WITHDRAW_REQUEST_REJECTED,
   [WithdrawRequestStatus.PAID]: NotificationType.WITHDRAW_REQUEST_PAID,
 };
+
+const LAPSED_SUBSCRIPTION_NOTIFICATION_TYPES = {
+  [SubscriptionStatus.PAST_DUE]: NotificationType.CRM_SUBSCRIPTION_PAST_DUE,
+  [SubscriptionStatus.CANCELED]: NotificationType.CRM_SUBSCRIPTION_CANCELED,
+} as const satisfies Record<CrmLapsedSubscriptionStatus, NotificationType>;
 
 export const registerNotificationEventConsumers = (): void => {
   subscribeToDomainEvent({
@@ -85,7 +82,7 @@ export const registerNotificationEventConsumers = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.LOOK_COMMENTED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ lookId, creatorId, userId: commenterId }): Promise<void> => {
+    handler: async ({ lookId, creatorId, userId: commenterId }, { eventId }): Promise<void> => {
       if (commenterId === creatorId) return;
 
       const [actor, look] = await Promise.all([
@@ -98,6 +95,7 @@ export const registerNotificationEventConsumers = (): void => {
         recipientId: creatorId,
         actorId: commenterId,
         type: NotificationType.LOOK_COMMENTED,
+        sourceEventId: eventId,
         entityType: NotificationEntityType.LOOK,
         entityId: lookId,
         metadata: {
@@ -113,7 +111,10 @@ export const registerNotificationEventConsumers = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.LOOK_COMMENT_REPLIED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ lookId, parentCommentAuthorId, userId: replierId }): Promise<void> => {
+    handler: async (
+      { lookId, parentCommentAuthorId, userId: replierId },
+      { eventId },
+    ): Promise<void> => {
       if (replierId === parentCommentAuthorId) return;
 
       const [actor, look] = await Promise.all([
@@ -126,6 +127,7 @@ export const registerNotificationEventConsumers = (): void => {
         recipientId: parentCommentAuthorId,
         actorId: replierId,
         type: NotificationType.COMMENT_REPLIED,
+        sourceEventId: eventId,
         entityType: NotificationEntityType.LOOK,
         entityId: lookId,
         metadata: {
@@ -191,10 +193,14 @@ export const registerNotificationEventConsumers = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.ACHIEVEMENT_UNLOCKED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ userId, badgeId, badgeName, badgeIcon, xpReward }): Promise<void> => {
+    handler: async (
+      { userId, badgeId, badgeName, badgeIcon, xpReward },
+      { eventId },
+    ): Promise<void> => {
       await notificationService.notifyIndividual({
         recipientId: userId,
         type: NotificationType.ACHIEVEMENT_UNLOCKED,
+        sourceEventId: eventId,
         entityType: NotificationEntityType.BADGE,
         entityId: badgeId,
         metadata: { badgeName, badgeIcon, xpReward },
@@ -205,10 +211,11 @@ export const registerNotificationEventConsumers = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.LEVEL_UP,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ userId, currentLevel }): Promise<void> => {
+    handler: async ({ userId, currentLevel }, { eventId }): Promise<void> => {
       await notificationService.notifyIndividual({
         recipientId: userId,
         type: NotificationType.LEVEL_UP,
+        sourceEventId: eventId,
         metadata: { levelName: currentLevel.name, levelIcon: currentLevel.icon },
       });
     },
@@ -217,10 +224,11 @@ export const registerNotificationEventConsumers = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.SALE_GENERATED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ creatorId, commissionAmount }): Promise<void> => {
+    handler: async ({ creatorId, commissionAmount }, { eventId }): Promise<void> => {
       await notificationService.notifyIndividual({
         recipientId: creatorId,
         type: NotificationType.COMMISSION_EARNED,
+        sourceEventId: eventId,
         metadata: { commissionAmount },
       });
     },
@@ -229,7 +237,7 @@ export const registerNotificationEventConsumers = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.PRODUCT_PURCHASED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ orderId }): Promise<void> => {
+    handler: async ({ orderId }, { eventId }): Promise<void> => {
       const context = await notificationRepository.findOrderNotificationContext(orderId);
       if (!context) return;
 
@@ -243,6 +251,7 @@ export const registerNotificationEventConsumers = (): void => {
       const inputs: CreateIndividualNotificationInput[] = [...recipientIds].map((recipientId) => ({
         recipientId,
         type: NotificationType.NEW_ORDER,
+        sourceEventId: eventId,
         entityType: NotificationEntityType.ORDER,
         entityId: orderId,
         metadata: { orderTotal: context.total },
@@ -254,10 +263,11 @@ export const registerNotificationEventConsumers = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.ORDER_STATUS_CHANGED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ orderId, userId, status }): Promise<void> => {
+    handler: async ({ orderId, userId, status }, { eventId }): Promise<void> => {
       await notificationService.notifyIndividual({
         recipientId: userId,
         type: NotificationType.ORDER_STATUS_CHANGED,
+        sourceEventId: eventId,
         entityType: NotificationEntityType.ORDER,
         entityId: orderId,
         metadata: { status },
@@ -270,6 +280,7 @@ export const registerNotificationEventConsumers = (): void => {
         ({ productId, productName, imageUrl }) => ({
           recipientId: userId,
           type: NotificationType.REVIEW_REQUESTED,
+          sourceEventId: eventId,
           entityType: NotificationEntityType.PRODUCT,
           entityId: productId,
           metadata: { productName, productImageUrl: imageUrl },
@@ -282,7 +293,7 @@ export const registerNotificationEventConsumers = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.PRODUCT_REVIEWED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ productId, userId: reviewerId, rating }): Promise<void> => {
+    handler: async ({ productId, userId: reviewerId, rating }, { eventId }): Promise<void> => {
       const [actor, product] = await Promise.all([
         notificationRepository.findActorSnapshot(reviewerId),
         notificationRepository.findProductReviewSnapshot(productId),
@@ -295,6 +306,7 @@ export const registerNotificationEventConsumers = (): void => {
         recipientId,
         actorId: reviewerId,
         type: NotificationType.PRODUCT_REVIEWED,
+        sourceEventId: eventId,
         entityType: NotificationEntityType.PRODUCT,
         entityId: productId,
         metadata: { actor, productName, productImageUrl, rating },
@@ -306,32 +318,24 @@ export const registerNotificationEventConsumers = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.BRAND_APPLICATION_SUBMITTED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ applicationId, brandName }): Promise<void> => {
-      const adminIds = await findPlatformRecipientIds(BRAND_REVIEW_PERMISSION_KEYS);
-      if (adminIds.length === 0) return;
-
-      const inputs: CreateIndividualNotificationInput[] = adminIds.map((recipientId) => ({
-        recipientId,
+    handler: async ({ applicationId, brandName }, { eventId }): Promise<void> => {
+      await notificationService.notifyPlatformStaff({
         type: NotificationType.BRAND_APPLICATION_SUBMITTED,
+        sourceEventId: eventId,
         entityType: NotificationEntityType.BRAND_APPLICATION,
         entityId: applicationId,
         metadata: { brandName },
-      }));
-      await notificationService.notifyManyIndividual(inputs);
+      });
     },
   });
 
   subscribeToDomainEvent({
     event: DomainEvents.CRM_ITEM_ASSIGNED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({
-      organizationId,
-      itemKind,
-      itemId,
-      title,
-      assigneeUserId,
-      assignedByUserId,
-    }): Promise<void> => {
+    handler: async (
+      { organizationId, itemKind, itemId, title, assigneeUserId, assignedByUserId },
+      { eventId },
+    ): Promise<void> => {
       if (assigneeUserId === assignedByUserId) return;
 
       const organization = await crmAccessRepository.findOrganizationById(organizationId);
@@ -340,6 +344,7 @@ export const registerNotificationEventConsumers = (): void => {
         recipientId: assigneeUserId,
         actorId: assignedByUserId,
         type: NotificationType.CRM_ITEM_ASSIGNED,
+        sourceEventId: eventId,
         entityType:
           itemKind === "ticket"
             ? NotificationEntityType.CRM_TICKET
@@ -357,16 +362,86 @@ export const registerNotificationEventConsumers = (): void => {
   });
 
   subscribeToDomainEvent({
+    event: DomainEvents.CRM_TICKET_CREATED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async (
+      { organizationId, ticketId, title, assigneeUserId, createdByUserId },
+      { eventId },
+    ): Promise<void> => {
+      if (assigneeUserId) return;
+
+      await notificationService.notifyTenantStaff(organizationId, {
+        actorId: createdByUserId,
+        type: NotificationType.CRM_TICKET_UNASSIGNED,
+        sourceEventId: eventId,
+        entityType: NotificationEntityType.CRM_TICKET,
+        entityId: ticketId,
+        metadata: { crmItemKind: "ticket", crmItemTitle: title },
+      });
+    },
+  });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.CRM_MEMBER_JOINED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ organizationId, userId }, { eventId }): Promise<void> => {
+      const member = await userRepository.findById(userId);
+      if (!member) return;
+
+      await notificationService.notifyTenantStaff(organizationId, {
+        actorId: userId,
+        type: NotificationType.CRM_MEMBER_JOINED,
+        sourceEventId: eventId,
+        entityType: NotificationEntityType.USER,
+        entityId: userId,
+        metadata: { crmMemberName: member.name },
+      });
+    },
+  });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.CRM_MEMBERSHIP_ENDED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ organizationId, userId }): Promise<void> => {
+      await notificationService.clearOrganizationNotificationsFor(userId, organizationId);
+    },
+  });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.CRM_INVOICE_OPENED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ organizationId, invoiceId, amount }, { eventId }): Promise<void> => {
+      await notificationService.notifyTenantStaff(organizationId, {
+        type: NotificationType.CRM_INVOICE_DUE,
+        sourceEventId: eventId,
+        entityType: NotificationEntityType.CRM_SUBSCRIPTION_INVOICE,
+        entityId: invoiceId,
+        metadata: { crmInvoiceAmount: amount },
+      });
+    },
+  });
+
+  subscribeToDomainEvent({
+    event: DomainEvents.CRM_SUBSCRIPTION_LAPSED,
+    groupName: NOTIFICATION_CONSUMER_GROUP,
+    handler: async ({ organizationId, subscriptionId, status }, { eventId }): Promise<void> => {
+      await notificationService.notifyTenantStaff(organizationId, {
+        type: LAPSED_SUBSCRIPTION_NOTIFICATION_TYPES[status],
+        sourceEventId: eventId,
+        entityType: NotificationEntityType.CRM_SUBSCRIPTION,
+        entityId: subscriptionId,
+        metadata: {},
+      });
+    },
+  });
+
+  subscribeToDomainEvent({
     event: DomainEvents.WITHDRAW_REQUEST_STATUS_CHANGED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({
-      requestId,
-      requestedById,
-      actorId,
-      status,
-      amount,
-      rejectionReason,
-    }): Promise<void> => {
+    handler: async (
+      { requestId, requestedById, actorId, status, amount, rejectionReason },
+      { eventId },
+    ): Promise<void> => {
       const type = WITHDRAW_REQUEST_NOTIFICATION_TYPES[status];
       if (!type) return;
 
@@ -374,6 +449,7 @@ export const registerNotificationEventConsumers = (): void => {
         recipientId: requestedById,
         actorId,
         type,
+        sourceEventId: eventId,
         entityType: NotificationEntityType.WITHDRAW_REQUEST,
         entityId: requestId,
         metadata: {
@@ -387,32 +463,30 @@ export const registerNotificationEventConsumers = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.SUPPORT_TICKET_CREATED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ ticketId, subject }): Promise<void> => {
-      const adminIds = await findPlatformRecipientIds(SUPPORT_AGENT_PERMISSION_KEYS);
-      if (adminIds.length === 0) return;
-
-      await notificationService.notifyManyIndividual(
-        adminIds.map((recipientId) => ({
-          recipientId,
-          type: NotificationType.SUPPORT_TICKET_CREATED,
-          entityType: NotificationEntityType.SUPPORT_TICKET,
-          entityId: ticketId,
-          metadata: { supportSubject: subject },
-        })),
-      );
+    handler: async ({ ticketId, subject }, { eventId }): Promise<void> => {
+      await notificationService.notifyPlatformStaff({
+        type: NotificationType.SUPPORT_TICKET_CREATED,
+        sourceEventId: eventId,
+        entityType: NotificationEntityType.SUPPORT_TICKET,
+        entityId: ticketId,
+        metadata: { supportSubject: subject },
+      });
     },
   });
 
   subscribeToDomainEvent({
     event: DomainEvents.SUPPORT_TICKET_ASSIGNED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ ticketId, subject, assigneeUserId, assignedByUserId }): Promise<void> => {
+    handler: async (
+      { ticketId, subject, assigneeUserId, assignedByUserId },
+      { eventId },
+    ): Promise<void> => {
       if (assigneeUserId === assignedByUserId) return;
 
-      await notificationService.notifyIndividual({
-        recipientId: assigneeUserId,
+      await notificationService.notifyPlatformStaffMember(assigneeUserId, {
         actorId: assignedByUserId,
         type: NotificationType.SUPPORT_TICKET_ASSIGNED,
+        sourceEventId: eventId,
         entityType: NotificationEntityType.SUPPORT_TICKET,
         entityId: ticketId,
         metadata: { supportSubject: subject },
@@ -423,12 +497,13 @@ export const registerNotificationEventConsumers = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.SUPPORT_TICKET_STAFF_REPLIED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ ticketId, subject, requesterUserId }): Promise<void> => {
+    handler: async ({ ticketId, subject, requesterUserId }, { eventId }): Promise<void> => {
       if (!requesterUserId) return;
 
       await notificationService.notifyIndividual({
         recipientId: requesterUserId,
         type: NotificationType.SUPPORT_TICKET_REPLY,
+        sourceEventId: eventId,
         entityType: NotificationEntityType.SUPPORT_TICKET,
         entityId: ticketId,
         metadata: { supportSubject: subject },
@@ -439,34 +514,32 @@ export const registerNotificationEventConsumers = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.SUPPORT_TICKET_CUSTOMER_REPLIED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ ticketId, subject, assigneeUserId }): Promise<void> => {
-      const recipientIds = assigneeUserId
-        ? [assigneeUserId]
-        : await findPlatformRecipientIds(SUPPORT_AGENT_PERMISSION_KEYS);
-      if (recipientIds.length === 0) return;
+    handler: async ({ ticketId, subject, assigneeUserId }, { eventId }): Promise<void> => {
+      const staffReplyNotification = {
+        type: NotificationType.SUPPORT_TICKET_REPLY,
+        sourceEventId: eventId,
+        entityType: NotificationEntityType.SUPPORT_TICKET,
+        entityId: ticketId,
+        metadata: { supportSubject: subject },
+        recipientIsStaff: true,
+      };
 
-      await notificationService.notifyManyIndividual(
-        recipientIds.map((recipientId) => ({
-          recipientId,
-          type: NotificationType.SUPPORT_TICKET_REPLY,
-          entityType: NotificationEntityType.SUPPORT_TICKET,
-          entityId: ticketId,
-          metadata: { supportSubject: subject },
-          recipientIsStaff: true,
-        })),
-      );
+      await (assigneeUserId
+        ? notificationService.notifyPlatformStaffMember(assigneeUserId, staffReplyNotification)
+        : notificationService.notifyPlatformStaff(staffReplyNotification));
     },
   });
 
   subscribeToDomainEvent({
     event: DomainEvents.SUPPORT_TICKET_RESOLVED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ ticketId, subject, requesterUserId }): Promise<void> => {
+    handler: async ({ ticketId, subject, requesterUserId }, { eventId }): Promise<void> => {
       if (!requesterUserId) return;
 
       await notificationService.notifyIndividual({
         recipientId: requesterUserId,
         type: NotificationType.SUPPORT_TICKET_RESOLVED,
+        sourceEventId: eventId,
         entityType: NotificationEntityType.SUPPORT_TICKET,
         entityId: ticketId,
         metadata: { supportSubject: subject },
@@ -477,64 +550,49 @@ export const registerNotificationEventConsumers = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.COUPON_APPROVAL_REQUESTED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ couponId, code, createdById, totalBudgetAmount }): Promise<void> => {
-      const adminIds = await findPlatformRecipientIds(COUPON_MANAGEMENT_PERMISSION_KEYS);
-      const recipientIds = adminIds.filter((adminId) => adminId !== createdById);
-      if (recipientIds.length === 0) return;
-
-      await notificationService.notifyManyIndividual(
-        recipientIds.map((recipientId) => ({
-          recipientId,
-          type: NotificationType.COUPON_APPROVAL_REQUESTED,
-          entityType: NotificationEntityType.COUPON,
-          entityId: couponId,
-          metadata: { couponCode: code, totalBudgetAmount },
-        })),
-      );
+    handler: async (
+      { couponId, code, createdById, totalBudgetAmount },
+      { eventId },
+    ): Promise<void> => {
+      await notificationService.notifyPlatformStaff({
+        actorId: createdById,
+        type: NotificationType.COUPON_APPROVAL_REQUESTED,
+        sourceEventId: eventId,
+        entityType: NotificationEntityType.COUPON,
+        entityId: couponId,
+        metadata: { couponCode: code, totalBudgetAmount },
+      });
     },
   });
 
   subscribeToDomainEvent({
     event: DomainEvents.COUPON_REDEMPTION_FLAGGED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ orderId, flagReason }): Promise<void> => {
-      const adminIds = await findPlatformRecipientIds(COUPON_MANAGEMENT_PERMISSION_KEYS);
-      if (adminIds.length === 0) return;
-
-      await notificationService.notifyManyIndividual(
-        adminIds.map((recipientId) => ({
-          recipientId,
-          type: NotificationType.COUPON_REDEMPTION_FLAGGED,
-          entityType: NotificationEntityType.ORDER,
-          entityId: orderId,
-          metadata: { flagReason },
-        })),
-      );
+    handler: async ({ orderId, flagReason }, { eventId }): Promise<void> => {
+      await notificationService.notifyPlatformStaff({
+        type: NotificationType.COUPON_REDEMPTION_FLAGGED,
+        sourceEventId: eventId,
+        entityType: NotificationEntityType.ORDER,
+        entityId: orderId,
+        metadata: { flagReason },
+      });
     },
   });
 
   subscribeToDomainEvent({
     event: DomainEvents.COUPON_BUDGET_ALERT,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({
-      couponId,
-      code,
-      thresholdPercent,
-      spentAmount,
-      totalBudgetAmount,
-    }): Promise<void> => {
-      const adminIds = await findPlatformRecipientIds(COUPON_MANAGEMENT_PERMISSION_KEYS);
-      if (adminIds.length === 0) return;
-
-      await notificationService.notifyManyIndividual(
-        adminIds.map((recipientId) => ({
-          recipientId,
-          type: NotificationType.COUPON_BUDGET_ALERT,
-          entityType: NotificationEntityType.COUPON,
-          entityId: couponId,
-          metadata: { couponCode: code, thresholdPercent, spentAmount, totalBudgetAmount },
-        })),
-      );
+    handler: async (
+      { couponId, code, thresholdPercent, spentAmount, totalBudgetAmount },
+      { eventId },
+    ): Promise<void> => {
+      await notificationService.notifyPlatformStaff({
+        type: NotificationType.COUPON_BUDGET_ALERT,
+        sourceEventId: eventId,
+        entityType: NotificationEntityType.COUPON,
+        entityId: couponId,
+        metadata: { couponCode: code, thresholdPercent, spentAmount, totalBudgetAmount },
+      });
     },
   });
 
@@ -569,12 +627,13 @@ export const registerNotificationEventConsumers = (): void => {
   subscribeToDomainEvent({
     event: DomainEvents.PRODUCT_TAG_APPROVED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
-    handler: async ({ lookId, creatorId, auto }): Promise<void> => {
+    handler: async ({ lookId, creatorId, auto }, { eventId }): Promise<void> => {
       const look = await notificationRepository.findLookSnapshot(lookId);
 
       await notificationService.notifyIndividual({
         recipientId: creatorId,
         type: NotificationType.PRODUCT_TAG_APPROVED,
+        sourceEventId: eventId,
         entityType: NotificationEntityType.LOOK,
         entityId: lookId,
         metadata: { lookImageUrl: look?.imageUrl, tagAutoApproved: auto },
@@ -589,12 +648,13 @@ export const registerNotificationEventConsumers = (): void => {
     subscribeToDomainEvent({
       event,
       groupName: NOTIFICATION_CONSUMER_GROUP,
-      handler: async ({ lookId, creatorId, reason, note }): Promise<void> => {
+      handler: async ({ lookId, creatorId, reason, note }, { eventId }): Promise<void> => {
         const look = await notificationRepository.findLookSnapshot(lookId);
 
         await notificationService.notifyIndividual({
           recipientId: creatorId,
           type,
+          sourceEventId: eventId,
           entityType: NotificationEntityType.LOOK,
           entityId: lookId,
           metadata: {

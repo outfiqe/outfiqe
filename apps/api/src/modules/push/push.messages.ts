@@ -1,3 +1,5 @@
+import { isExternalNotificationPath } from "@outfiqe/utils";
+
 import type { NotificationBroadcastPayload } from "#events/event-bus.types.js";
 import { NotificationSurface, NotificationType } from "#generated/prisma/enums.js";
 
@@ -21,6 +23,11 @@ const withOthers = (payload: NotificationBroadcastPayload, singular: string): st
 
 const couponCodeFrom = (payload: NotificationBroadcastPayload): string =>
   typeof payload.metadata.couponCode === "string" ? payload.metadata.couponCode : "A coupon";
+
+const organizationNameFrom = (payload: NotificationBroadcastPayload): string =>
+  typeof payload.metadata.crmOrganizationName === "string"
+    ? payload.metadata.crmOrganizationName
+    : "your organization";
 
 const thresholdPercentFrom = (payload: NotificationBroadcastPayload): string =>
   typeof payload.metadata.thresholdPercent === "number"
@@ -161,6 +168,27 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
         ? payload.metadata.announcementBody
         : "You have a new announcement",
   },
+  [NotificationType.CRM_TICKET_UNASSIGNED]: {
+    title: "New ticket needs an owner",
+    body: (payload) => `A new ticket in ${organizationNameFrom(payload)} has no one assigned`,
+  },
+  [NotificationType.CRM_MEMBER_JOINED]: {
+    title: "New team member",
+    body: (payload) => `Someone joined ${organizationNameFrom(payload)}`,
+  },
+  [NotificationType.CRM_INVOICE_DUE]: {
+    title: "Subscription renewal due",
+    body: (payload) => `The ${organizationNameFrom(payload)} subscription is due for renewal`,
+  },
+  [NotificationType.CRM_SUBSCRIPTION_PAST_DUE]: {
+    title: "Subscription payment overdue",
+    body: (payload) => `The ${organizationNameFrom(payload)} subscription payment is overdue`,
+  },
+  [NotificationType.CRM_SUBSCRIPTION_CANCELED]: {
+    title: "Subscription canceled",
+    body: (payload) =>
+      `The ${organizationNameFrom(payload)} subscription was canceled because it wasn't renewed`,
+  },
 };
 
 const urlFor = (payload: NotificationBroadcastPayload): string => {
@@ -208,6 +236,9 @@ const urlFor = (payload: NotificationBroadcastPayload): string => {
 const webPushUrl = (payload: NotificationBroadcastPayload): string => {
   if (payload.type === NotificationType.ANNOUNCEMENT) {
     return payload.targetPath ?? NOTIFICATIONS_PATH;
+  }
+  if (payload.targetPath && isExternalNotificationPath(payload.targetPath)) {
+    return payload.targetPath;
   }
   return payload.targetSurface === NotificationSurface.WEB && payload.targetPath
     ? payload.targetPath

@@ -22,6 +22,8 @@ activities/tasks, support/ticketing, reporting, audit log) lives in the sibling 
   `SELECTABLE_ROLE_PERMISSION_KEYS` (the catalog minus `platform:access` and
   `org:transfer_ownership` — the set a custom role is allowed to grant), and
   `BUILT_IN_ROLE_PERMISSIONS` (the Admin/Member built-in role presets derived from it).
+  `TICKET_ASSIGNMENT_PERMISSION_KEYS`, `MEMBER_MANAGEMENT_PERMISSION_KEYS` and
+  `BILLING_MANAGEMENT_PERMISSION_KEYS` name the tenant permissions the notification rules use.
 - `crm-access.repository.ts` — Prisma queries, every one scoped by `organizationId` where
   applicable. `acceptInvite` wraps the Membership-create + invite-accept pair in a transaction, as
   does `acceptOwnershipTransfer` (moves `Organization.superAdminMembershipId` + marks the request
@@ -462,3 +464,11 @@ transfers to Membership B`. Rather than guessing, the person initiating the tran
   repository.
 
 **Creating an organization returns the same shape as the organization list.** `createOrganization` now returns the linked business name (`linkedBrandName`, or `null`) as well as the stored row. The admin Organizations page validates the create response against the list-row shape, so when the field was missing the check failed after the organization had already been saved and the form showed "Something went wrong" until the page was refreshed.
+
+**Joining and leaving are announced as events.** Accepting an invite, whether as an existing
+account or while registering, publishes `CRM_MEMBER_JOINED` (`crmAccessService.announceMemberJoined`),
+so people who manage members are notified. Deactivating a membership, or removing the previous
+owner after an ownership transfer, publishes `CRM_MEMBERSHIP_ENDED`, which clears that
+organization's notifications from the person's bell. A role change alone publishes nothing. The
+notifications module listens for these; this module never imports it, which keeps the dependency
+one-way.

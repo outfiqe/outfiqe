@@ -86,7 +86,7 @@ export const subscribeToDomainEvent = <E extends DomainEvent>({
     }
 
     try {
-      await handler(parseEventPayload<E>(rawPayload));
+      await handler(parseEventPayload<E>(rawPayload), { eventId: `${event}:${id}` });
       await streamClient.xack(streamKey, groupName, id);
     } catch (error) {
       logger.error(

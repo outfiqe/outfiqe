@@ -5,9 +5,9 @@ import type {
   NotificationSurface,
   NotificationType,
 } from "#generated/prisma/enums.js";
-import { CreatorStatus } from "#generated/prisma/enums.js";
+import { CreatorStatus, MembershipStatus } from "#generated/prisma/enums.js";
 import { decodeCursor } from "#lib/pagination.utils.js";
-import { isForeignKeyConstraintError } from "#lib/prisma.utils.js";
+import { isForeignKeyConstraintError, isUniqueConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import { describeError } from "#redis/redis.utils.js";
 
@@ -18,13 +18,18 @@ import type {
   NotificationActorSnapshot,
   NotificationChannelChanges,
   NotificationFeedCursor,
+  NotificationMembershipGrant,
   NotificationMetadata,
   NotificationOrganizationFilter,
   NotificationRecord,
   RetractGroupActorInput,
   UpsertGroupInput,
 } from "./notification.types.js";
-import { removeRecentActor, toNotificationRecord } from "./notification.utils.js";
+import {
+  buildNotificationDedupeKey,
+  removeRecentActor,
+  toNotificationRecord,
+} from "./notification.utils.js";
 
 type RawGroupRow = {
   id: string;
@@ -91,11 +96,20 @@ export const notificationRepository = {
           targetSurface: target?.surface ?? undefined,
           targetPath: target?.path ?? undefined,
           organizationId: input.organizationId ?? undefined,
+          dedupeKey: input.sourceEventId
+            ? buildNotificationDedupeKey(input.sourceEventId, input.type, input.entityId)
+            : undefined,
           metadata: input.metadata as Prisma.InputJsonValue,
         },
       });
       return toNotificationRecord(created);
     } catch (error) {
+      if (input.sourceEventId && isUniqueConstraintError(error)) {
+        logger.info(
+          `Skipped a repeat notification for an already-handled event: type=${input.type} recipient=${input.recipientId}`,
+        );
+        return null;
+      }
       if (!isForeignKeyConstraintError(error)) throw error;
       logger.warn(
         `Skipped notification for a since-deleted recipient or actor: type=${input.type} recipient=${input.recipientId}`,
@@ -479,6 +493,33 @@ export const notificationRepository = {
       data: { isRead: true, readAt },
     });
     return readAt;
+  },
+
+  async findActiveMembershipGrants(userId: string): Promise<NotificationMembershipGrant[]> {
+    const memberships = await prisma.membership.findMany({
+      where: { userId, status: MembershipStatus.ACTIVE },
+      select: {
+        id: true,
+        isPlatformSuperAdmin: true,
+        organization: { select: { isPlatformOrg: true, superAdminMembershipId: true } },
+        role: { select: { permissions: { select: { permissionKey: true } } } },
+      },
+    });
+    return memberships.map(({ id, isPlatformSuperAdmin, organization, role }) => ({
+      isPlatformOrganization: organization.isPlatformOrg,
+      isOwner: isPlatformSuperAdmin || organization.superAdminMembershipId === id,
+      permissionKeys: role.permissions.map(({ permissionKey }) => permissionKey),
+    }));
+  },
+
+  async deleteForRecipientInOrganization(
+    recipientId: string,
+    organizationId: string,
+  ): Promise<number> {
+    const { count } = await prisma.notification.deleteMany({
+      where: { recipientId, organizationId },
+    });
+    return count;
   },
 
   async listPreferenceOverrides(
