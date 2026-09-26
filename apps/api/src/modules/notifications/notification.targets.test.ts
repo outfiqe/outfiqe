@@ -191,6 +191,39 @@ describe("resolveNotificationTarget", () => {
     expect(expectedUrl).not.toBe("/crm/tasks");
   });
 
+  it("points each tenant staff notification at the right page on that tenant's admin", () => {
+    const tenantMetadata = {
+      crmOrganizationSubdomain: "acme",
+      crmOrganizationIsPlatformOrg: false,
+    };
+    const tenantAdminUrl = (path: string) =>
+      buildOrganizationAdminUrl(
+        { subdomain: "acme", isPlatformOrg: false },
+        path,
+        env.ADMIN_URL,
+        env.TENANT_BASE_DOMAIN,
+      );
+
+    expect(resolve(NotificationType.CRM_TICKET_UNASSIGNED, "ticket-1", tenantMetadata)).toEqual({
+      surface: NotificationSurface.ADMIN,
+      path: tenantAdminUrl("/crm/support"),
+    });
+    expect(resolve(NotificationType.CRM_MEMBER_JOINED, "user-1", tenantMetadata)).toEqual({
+      surface: NotificationSurface.ADMIN,
+      path: tenantAdminUrl("/crm"),
+    });
+    for (const billingType of [
+      NotificationType.CRM_INVOICE_DUE,
+      NotificationType.CRM_SUBSCRIPTION_PAST_DUE,
+      NotificationType.CRM_SUBSCRIPTION_CANCELED,
+    ]) {
+      expect(resolve(billingType, "invoice-1", tenantMetadata)).toEqual({
+        surface: NotificationSurface.ADMIN,
+        path: tenantAdminUrl("/crm/billing"),
+      });
+    }
+  });
+
   it("falls back to the plain relative path when no organization subdomain is known", () => {
     expect(
       resolve(NotificationType.CRM_ITEM_ASSIGNED, "task-1", {

@@ -48,6 +48,10 @@ export const PERMISSION_CATALOG: PermissionRecord[] = [
 
 export const SUPERADMIN_ONLY_PERMISSION_KEYS = ["org:transfer_ownership"];
 
+export const TICKET_ASSIGNMENT_PERMISSION_KEYS: readonly string[] = ["tickets:manage"];
+export const MEMBER_MANAGEMENT_PERMISSION_KEYS: readonly string[] = ["members:manage"];
+export const BILLING_MANAGEMENT_PERMISSION_KEYS: readonly string[] = ["billing:manage"];
+
 export const PLATFORM_ACCESS_PERMISSION_KEY = "platform:access";
 
 export const SELECTABLE_ROLE_PERMISSION_KEYS = PERMISSION_CATALOG.map(

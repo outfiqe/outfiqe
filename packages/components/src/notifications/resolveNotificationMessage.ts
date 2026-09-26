@@ -88,6 +88,20 @@ export const resolveNotificationMessage = (notification: Notification): string =
         : "A brand removed a live product tag from your look";
     case NotificationType.ANNOUNCEMENT:
       return metadata.announcementTitle ?? "New announcement";
+    case NotificationType.CRM_TICKET_UNASSIGNED:
+      return metadata.crmItemTitle
+        ? `New ticket with no one assigned: "${metadata.crmItemTitle}"`
+        : "A new ticket has no one assigned";
+    case NotificationType.CRM_MEMBER_JOINED:
+      return `${metadata.crmMemberName ?? "Someone"} joined ${metadata.crmOrganizationName ?? "your team"}`;
+    case NotificationType.CRM_INVOICE_DUE:
+      return metadata.crmInvoiceAmount
+        ? `Your subscription renewal of Rs. ${metadata.crmInvoiceAmount} is due`
+        : "Your subscription renewal is due";
+    case NotificationType.CRM_SUBSCRIPTION_PAST_DUE:
+      return "Your subscription payment is overdue. Pay now to keep advanced features";
+    case NotificationType.CRM_SUBSCRIPTION_CANCELED:
+      return "Your subscription was canceled because it wasn't renewed";
     default:
       return "You have a new notification";
   }

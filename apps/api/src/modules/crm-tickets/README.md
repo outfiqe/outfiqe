@@ -21,7 +21,8 @@ notification.
   rationale.
 - `crm-tickets.service.ts` — subject validation (`isPartner`/`isCustomer` from
   `crm-relationships`), the transition-legality check against `ALLOWED_TICKET_TRANSITIONS`, and
-  the `CRM_ITEM_ASSIGNED` domain-event publish on create-with-assignee and reassignment.
+  the `CRM_ITEM_ASSIGNED` domain-event publish on create-with-assignee and reassignment, and
+  `CRM_TICKET_CREATED` on every new ticket.
   `listTickets` slices the over-fetched row with `buildCursorPage` (`#lib/pagination.utils.js`),
   the same helper every other cursor-paginated list in this codebase uses.
 - `crm-tickets.controller.ts` / `crm-tickets.routes.ts` — `/api/crm/tickets` (+ `/:id/status`,
@@ -66,6 +67,11 @@ assigneeUserId, assignedByUserId }`) is published on the existing Redis Streams 
   consumer in `notifications/notification.events.ts` turns it into a `Notification` for the
   assignee (`NotificationType.CRM_ITEM_ASSIGNED`, entity `CRM_TASK` / `CRM_TICKET`), skipping
   self-assignment. `crm-activities`' task assignment emits the same event — one path, two callers.
+- **A new ticket announces itself, so an unassigned one isn't missed.** `createTicket` publishes
+  `DomainEvents.CRM_TICKET_CREATED` with the assignee (or `null`). When no one is assigned, the
+  notifications consumer tells everyone in the tenant whose role holds `tickets:manage`
+  (`CRM_TICKET_UNASSIGNED`), except the person who created it. See
+  `notifications/README.md` for the shared tenant notification rules.
 - **`resolveAt` is stamped by the transition, not a separate action.** Moving to `RESOLVED` or
   `CLOSED` sets `resolvedAt`; reopening to `IN_PROGRESS`/`OPEN` clears it — there's no standalone
   "resolve" endpoint to keep in sync with the board state.

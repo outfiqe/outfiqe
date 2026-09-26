@@ -17,13 +17,17 @@ activity to an open bell/panel live.
   module registers — write path and socket relay), `CRITICAL_RETENTION_NOTIFICATION_TYPES` +
   `STANDARD_READ_RETENTION_DAYS`/`CRITICAL_READ_RETENTION_DAYS` (chunk 10's retention job reads
   these), `NOTIFICATION_GROUP_KEYS` (the three `groupKey` builders — see rationale below).
+  `PLATFORM_STAFF_NOTIFICATION_PERMISSIONS` and `TENANT_STAFF_NOTIFICATION_PERMISSIONS` are the
+  notification rules: for each staff notification type, the permissions whose holders receive it.
+  Adding a staff notification means adding one entry here.
 - `notification.types.ts` — `NotificationRecord` (the service/repository-level shape, `metadata`
   parsed to `NotificationMetadata`, not raw `Json`), `NotificationActorSnapshot` (the denormalized
   actor fields stored in `metadata`), `CreateIndividualNotificationInput`/`UpsertGroupInput`/
   `RetractGroupActorInput` (the three write shapes the service accepts).
 - `notification.utils.ts` — pure functions only, no DB access: `toNotificationRecord`/
   `toBroadcastPayload` (row ↔ record ↔ socket-payload mapping), `mergeRecentActors`/
-  `removeRecentActor` (the capped, deduped, most-recent-first actor list join/leave a group).
+  `removeRecentActor` (the capped, deduped, most-recent-first actor list join/leave a group),
+  `buildNotificationDedupeKey` (event id + type + entity id, see the retry note below).
 - `notification.targets.ts` — `resolveNotificationTarget({ type, entityId, metadata,
 recipientIsStaff })`: pure, the single place that decides where a notification click lands.
   Returns `{ surface: "WEB" | "ADMIN", path }` or `null`. The repository calls it on every write
@@ -51,6 +55,11 @@ recipientIsStaff })`: pure, the single place that decides where a notification c
   `retractGroupActor`/`notifySystemReminder`: the mute-check + write + realtime-handoff
   orchestration every event handler calls into. Never called directly by another module — only by
   `notification.events.ts`. `notifySystemReminder` is the digest path (see `PRODUCT_TAG_REVIEW_REMINDER`).
+  `notifyPlatformStaff` and `notifyTenantStaff` send a staff notification to everyone in that
+  organization whose role holds the rule's permissions (plus the owner, minus the actor), and tag
+  each row with the organization. `notifyPlatformStaffMember` does the same for one named staff
+  member, such as the assigned support agent. `clearOrganizationNotificationsFor` removes one
+  organization's notifications from a person's bell.
 - `notification.events.ts` — `registerNotificationEventConsumers()`: one domain-event handler per
   row in plan §5's event catalog, each resolving the right recipient(s), building the denormalized
   `metadata` snapshot, and calling into `notification.service.ts`. A second, independent consumer
@@ -243,6 +252,43 @@ earlier. Every write that counts as new activity now sets `updatedAt` itself. Mi
 `20260926130000_notification_activity_time` reset the times that marking read had already moved,
 for rows with no `groupKey`. Those rows are only ever changed by marking read, so their creation
 time is their true activity time.
+
+**Platform and tenant staff notifications go through one set of rules.** The platform is itself
+an organization with members and roles, so "platform staff who can manage brands" and "tenant
+staff who can manage billing" are the same question. The two rule lists in
+`notification.constants.ts` answer it. Both `notifyPlatformStaff` and `notifyTenantStaff` use
+`crmAccessRepository.findActiveMemberUserIdsHoldingAnyPermission`, which always includes the
+owner (and, for the platform, co-founders). The person who caused the event is never notified.
+Every staff notification is tagged with its organization. Platform ones carry the platform
+organization, so removing someone from the platform team clears them too, and a tenant's bell never
+shows them. The billing renewal email uses the same lookup, so the email and the bell always reach
+the same people.
+
+Tenant staff notifications today:
+
+| Event                                                                   | Notification                                              | Who gets it      |
+| ----------------------------------------------------------------------- | --------------------------------------------------------- | ---------------- |
+| A ticket is created with no one assigned (`CRM_TICKET_CREATED`)         | `CRM_TICKET_UNASSIGNED`                                   | `tickets:manage` |
+| Someone accepts an invite (`CRM_MEMBER_JOINED`)                         | `CRM_MEMBER_JOINED`                                       | `members:manage` |
+| A renewal invoice opens (`CRM_INVOICE_OPENED`)                          | `CRM_INVOICE_DUE`                                         | `billing:manage` |
+| A subscription goes past due or is canceled (`CRM_SUBSCRIPTION_LAPSED`) | `CRM_SUBSCRIPTION_PAST_DUE` / `CRM_SUBSCRIPTION_CANCELED` | `billing:manage` |
+
+Letting admins choose which roles get which notification, and muting a type for one tenant only,
+are planned for when tenants ask for them. The rule lists are the defaults a per-organization
+setting would override, so neither needs this design changed.
+
+**A retried event never sends the same notification twice.** Redis Streams redelivers an event
+whose handler failed partway, for example after notifying half the recipients. Each handler passes
+the event's id (`sourceEventId`, from the consumer's `{ eventId }` context), and
+`createIndividual` stores `buildNotificationDedupeKey(eventId, type, entityId)` in `dedupe_key`.
+A unique index on `(recipient_id, dedupe_key)` makes the database refuse the second copy, and the
+repository treats that refusal as "already sent". Rows written without an event id (announcements,
+tests) have no key, and a unique index allows any number of those.
+
+**Losing access to an organization clears its notifications.** `crm-access` publishes
+`CRM_MEMBERSHIP_ENDED` when a membership is deactivated, or when the previous owner is removed
+after an ownership transfer. The handler deletes that organization's notifications from the
+person's bell. Reactivating someone does not bring them back.
 
 **The staff permission check happens once, when a notification is sent.** Before role-based
 platform access existed, the staff notifications listed at the top of this section went to every
