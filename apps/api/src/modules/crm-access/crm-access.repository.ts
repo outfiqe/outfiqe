@@ -84,6 +84,36 @@ export const crmAccessRepository = {
     return membership !== null;
   },
 
+  async findActiveMemberUserIdsHoldingAnyPermission(
+    organization: Pick<OrganizationRecord, "id" | "superAdminMembershipId">,
+    permissionKeys: readonly string[],
+  ): Promise<string[]> {
+    const memberships = await prisma.membership.findMany({
+      where: {
+        organizationId: organization.id,
+        status: "ACTIVE",
+        OR: [
+          { isPlatformSuperAdmin: true },
+          ...(organization.superAdminMembershipId
+            ? [{ id: organization.superAdminMembershipId }]
+            : []),
+          { role: { permissions: { some: { permissionKey: { in: [...permissionKeys] } } } } },
+        ],
+      },
+      select: { userId: true },
+    });
+    return memberships.map(({ userId }) => userId);
+  },
+
+  async findHomeTenantSubdomain(userId: string): Promise<string | null> {
+    const membership = await prisma.membership.findFirst({
+      where: { userId, status: "ACTIVE", organization: { isPlatformOrg: false } },
+      orderBy: { createdAt: "asc" },
+      select: { organization: { select: { subdomain: true } } },
+    });
+    return membership?.organization.subdomain ?? null;
+  },
+
   async hasActiveMembership(userId: string): Promise<boolean> {
     const membership = await prisma.membership.findFirst({
       where: { userId, status: "ACTIVE" },

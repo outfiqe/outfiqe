@@ -20,6 +20,7 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
 import { crmBillingRepository } from "#modules/crm-billing/crm-billing.repository.js";
+import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 import { describeError } from "#redis/redis.utils.js";
 import type { DbClient } from "#types/db.types.js";
@@ -28,7 +29,6 @@ import {
   BUILT_IN_ROLE_NAME,
   ORGANIZATION_INVITE_TTL_MS,
   OWNERSHIP_TRANSFER_REQUEST_TTL_MS,
-  PLATFORM_ACCESS_PERMISSION_KEY,
   RESERVED_SUBDOMAINS,
 } from "./crm-access.constants.js";
 import { crmAccessRepository } from "./crm-access.repository.js";
@@ -139,18 +139,12 @@ const withLinkedBrandName = async (
 
 export const crmAccessService = {
   async resolveHasPlatformAccess(userId: string): Promise<boolean> {
-    const platformOrganization = await crmAccessRepository.findPlatformOrganization();
-    const platformMembership = platformOrganization
-      ? await crmAccessRepository.findMembershipByUserAndOrg(userId, platformOrganization.id)
-      : null;
+    const { hasStaffAccess } = await platformAccessService.resolveAccess(userId);
+    return hasStaffAccess;
+  },
 
-    if (!platformMembership || platformMembership.status !== "ACTIVE") return false;
-
-    const isSuperAdmin = platformOrganization?.superAdminMembershipId === platformMembership.id;
-    const hasPlatformPermission = platformMembership.role.permissionKeys.includes(
-      PLATFORM_ACCESS_PERMISSION_KEY,
-    );
-    return isSuperAdmin || platformMembership.isPlatformSuperAdmin || hasPlatformPermission;
+  async findHomeTenantSubdomain(userId: string): Promise<string | null> {
+    return crmAccessRepository.findHomeTenantSubdomain(userId);
   },
 
   async resolveHasCrmAccess(userId: string): Promise<boolean> {

@@ -2,9 +2,8 @@ import { Router } from "express";
 
 import { optionalAuth } from "#middlewares/optional-auth.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
-import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 
 import { tagReportController } from "./tagReport.controller.js";
 import {
@@ -25,8 +24,6 @@ const reportRateLimit = rateLimit({
   message: "You've reported a lot of tags recently. Please try again later.",
 });
 
-const requireAdmin = [requireAuth, requirePlatformAccess];
-
 export const tagReportRoutes = Router();
 
 tagReportRoutes.post(
@@ -37,18 +34,22 @@ tagReportRoutes.post(
   tagReportController.submit,
 );
 
-tagReportRoutes.get("/open-count", ...requireAdmin, tagReportController.openCount);
+tagReportRoutes.get(
+  "/open-count",
+  ...platformGuards.reviewsModerate,
+  tagReportController.openCount,
+);
 
 tagReportRoutes.get(
   "/",
-  ...requireAdmin,
+  ...platformGuards.reviewsModerate,
   validate({ query: listTagReportsQuerySchema }),
   tagReportController.list,
 );
 
 tagReportRoutes.post(
   "/:id/resolve",
-  ...requireAdmin,
+  ...platformGuards.reviewsModerate,
   validate({ params: tagReportIdParamSchema, body: resolveTagReportSchema }),
   tagReportController.resolve,
 );

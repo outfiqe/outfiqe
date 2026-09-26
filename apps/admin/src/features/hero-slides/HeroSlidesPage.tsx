@@ -20,7 +20,9 @@ import { useForm } from "react-hook-form";
 import { ImageUpload } from "@/components/ImageUpload";
 import { ImageUploadSkeleton } from "@/components/ImageUploadSkeleton";
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { heroSlidesApi } from "./api";
 import {
@@ -55,6 +57,8 @@ const HeroSlideRowSkeleton = () => (
 );
 
 export const HeroSlidesPage = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageCatalog = canUse(PLATFORM_MANAGE_PERMISSION.CATALOG);
   const { data: heroSlides, isLoading } = useQuery({
     queryKey: HERO_SLIDES_QUERY_KEY,
     queryFn: heroSlidesApi.list,
@@ -112,105 +116,107 @@ export const HeroSlidesPage = () => {
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Hero slides</h1>
 
-      <Form {...form}>
-        <form
-          onSubmit={submitHeroSlide}
-          noValidate
-          className="mt-5 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
-        >
-          <FormField
-            control={form.control}
-            name="tag"
-            render={({ field }) => (
-              <FormItem className="mt-0 w-56 space-y-1.5">
-                <FormLabel className="text-xs font-normal text-muted-foreground">Tag</FormLabel>
-                <FormControl>
-                  <Input placeholder="Collection 01: Festive" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="title"
-            render={({ field }) => (
-              <FormItem className="mt-0 w-56 space-y-1.5">
-                <FormLabel className="text-xs font-normal text-muted-foreground">Title</FormLabel>
-                <FormControl>
-                  <Input placeholder="Dashain Edit '26" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem className="mt-0 w-72 space-y-1.5">
-                <FormLabel className="text-xs font-normal text-muted-foreground">
-                  Description
-                </FormLabel>
-                <FormControl>
-                  <Input placeholder="Styled full looks from Kathmandu labels." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="ctaLabel"
-            render={({ field }) => (
-              <FormItem className="mt-0 w-44 space-y-1.5">
-                <FormLabel className="text-xs font-normal text-muted-foreground">
-                  CTA label
-                </FormLabel>
-                <FormControl>
-                  <Input placeholder="Explore collection" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="ctaHref"
-            render={({ field }) => (
-              <FormItem className="mt-0 w-56 space-y-1.5">
-                <FormLabel className="text-xs font-normal text-muted-foreground">
-                  CTA link
-                </FormLabel>
-                <FormControl>
-                  <Input placeholder="/collections/dashain-edit-26" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="imageUrl"
-            render={({ field }) => (
-              <FormItem className="mt-0 space-y-1.5">
-                <span className="block text-xs text-muted-foreground">Image</span>
-                <ImageUpload
-                  value={field.value}
-                  onUploaded={({ url, imageAssetId: assetId }) => {
-                    field.onChange(url);
-                    form.setValue("imageAssetId", assetId);
-                  }}
-                />
-              </FormItem>
-            )}
-          />
+      {canManageCatalog && (
+        <Form {...form}>
+          <form
+            onSubmit={submitHeroSlide}
+            noValidate
+            className="mt-5 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+          >
+            <FormField
+              control={form.control}
+              name="tag"
+              render={({ field }) => (
+                <FormItem className="mt-0 w-56 space-y-1.5">
+                  <FormLabel className="text-xs font-normal text-muted-foreground">Tag</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Collection 01: Festive" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem className="mt-0 w-56 space-y-1.5">
+                  <FormLabel className="text-xs font-normal text-muted-foreground">Title</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Dashain Edit '26" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem className="mt-0 w-72 space-y-1.5">
+                  <FormLabel className="text-xs font-normal text-muted-foreground">
+                    Description
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="Styled full looks from Kathmandu labels." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="ctaLabel"
+              render={({ field }) => (
+                <FormItem className="mt-0 w-44 space-y-1.5">
+                  <FormLabel className="text-xs font-normal text-muted-foreground">
+                    CTA label
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="Explore collection" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="ctaHref"
+              render={({ field }) => (
+                <FormItem className="mt-0 w-56 space-y-1.5">
+                  <FormLabel className="text-xs font-normal text-muted-foreground">
+                    CTA link
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="/collections/dashain-edit-26" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem className="mt-0 space-y-1.5">
+                  <span className="block text-xs text-muted-foreground">Image</span>
+                  <ImageUpload
+                    value={field.value}
+                    onUploaded={({ url, imageAssetId: assetId }) => {
+                      field.onChange(url);
+                      form.setValue("imageAssetId", assetId);
+                    }}
+                  />
+                </FormItem>
+              )}
+            />
 
-          <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
-            Create slide
-          </Button>
-        </form>
-      </Form>
+            <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+              Create slide
+            </Button>
+          </form>
+        </Form>
+      )}
 
       {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
@@ -234,6 +240,7 @@ export const HeroSlidesPage = () => {
                 onUploaded={({ url, imageAssetId: assetId }) =>
                   setSlideImage.mutate({ id, imageUrl: url, imageAssetId: assetId })
                 }
+                isReadOnly={!canManageCatalog}
               />
 
               <div className="min-w-0 flex-1">
@@ -248,13 +255,15 @@ export const HeroSlidesPage = () => {
                 </p>
               </div>
 
-              <Button
-                variant={status === "PUBLISHED" ? "ghost" : "default"}
-                onClick={() => toggleStatus.mutate(slide)}
-                disabled={toggleStatus.isPending}
-              >
-                {status === "PUBLISHED" ? "Unpublish" : "Publish"}
-              </Button>
+              {canManageCatalog && (
+                <Button
+                  variant={status === "PUBLISHED" ? "ghost" : "default"}
+                  onClick={() => toggleStatus.mutate(slide)}
+                  disabled={toggleStatus.isPending}
+                >
+                  {status === "PUBLISHED" ? "Unpublish" : "Publish"}
+                </Button>
+              )}
             </div>
           );
         })}

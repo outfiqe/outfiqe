@@ -9,6 +9,7 @@ import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { previousIsoWeekKey } from "#lib/iso-week.utils.js";
 import { creatorLeaderboardRepository } from "#modules/creator-leaderboard/creatorLeaderboard.repository.js";
 import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
+import { grantLimitedPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -235,7 +236,7 @@ describe("creator competitions admin API", () => {
 
   it("blocks a platform staffer without platform:gamification:manage", async () => {
     const staffer = await createUser();
-    await grantPlatformStaffMembership(staffer.id);
+    await grantLimitedPlatformStaffMembership(staffer.id);
 
     const response = await request(testApp)
       .post("/api/creator-competitions")

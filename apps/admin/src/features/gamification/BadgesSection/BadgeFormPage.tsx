@@ -15,7 +15,10 @@ import { ArrowLeft } from "lucide-react";
 import { type FormEvent, useMemo, useRef, useState } from "react";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { NoSectionAccess } from "@/components/NoSectionAccess";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { validateWithSchema } from "@/lib/zodFieldErrors";
 
 import type { UpdateBadgeFormInput } from "../api";
@@ -223,6 +226,10 @@ export const BadgeFormPage = (props: BadgeFormPageProps) => {
     queryFn: () => gamificationApi.getBadgeAdmin(sourceBadgeId as string),
     enabled: Boolean(sourceBadgeId),
   });
+  const { canUse } = usePlatformPermissions();
+  const canManageGamification = canUse(PLATFORM_MANAGE_PERMISSION.GAMIFICATION);
+
+  if (!canManageGamification) return <NoSectionAccess homeHref={BADGES_LIST_HREF} />;
 
   if (props.mode === "create" && !props.duplicateFromId) {
     return <BadgeForm mode="create" badge={null} initialForm={EMPTY_FORM} />;
@@ -257,6 +264,8 @@ export const BadgeFormPage = (props: BadgeFormPageProps) => {
     />
   );
 };
+
+const BADGES_LIST_HREF = "/gamification/badges";
 
 const newRouteApi = getRouteApi("/_authenticated/gamification/badges/new");
 const editRouteApi = getRouteApi("/_authenticated/gamification/badges/$badgeId/edit");

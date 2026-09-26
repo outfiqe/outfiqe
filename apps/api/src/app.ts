@@ -67,6 +67,7 @@ import { platformFeaturesRoutes } from "./modules/platform-features/platform-fea
 import { impersonationRequestAudit } from "./modules/platform-impersonation/platform-impersonation.audit.js";
 import { platformImpersonationRoutes } from "./modules/platform-impersonation/platform-impersonation.routes.js";
 import { platformMetricsRoutes } from "./modules/platform-metrics/platform-metrics.routes.js";
+import { requireCoFounder } from "./modules/platform-nav-access/platform-nav-access.middleware.js";
 import { platformNavAccessRoutes } from "./modules/platform-nav-access/platform-nav-access.routes.js";
 import { platformRolesRoutes } from "./modules/platform-roles/platform-roles.routes.js";
 import { platformSuspensionsRoutes } from "./modules/platform-suspensions/platform-suspensions.routes.js";
@@ -89,8 +90,6 @@ import { withdrawRoutes } from "./modules/withdraw/withdraw.routes.js";
 import { xpRoutes } from "./modules/xp/xp.routes.js";
 import { errorHandler } from "./shared/middlewares/error-handler.js";
 import { httpLogger } from "./shared/middlewares/http-logger.js";
-import { requireAuth } from "./shared/middlewares/require-auth.js";
-import { requireRole } from "./shared/middlewares/require-role.js";
 import { resolvedUploadsDir } from "./shared/storage/storage.factory.js";
 
 const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
@@ -144,12 +143,7 @@ export const createApp = () => {
       setHeaders: (res) => res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"),
     }),
   );
-  app.use(
-    "/internal/queues",
-    requireAuth,
-    requireRole("ADMIN"),
-    createImageProcessingBullBoardRouter(),
-  );
+  app.use("/internal/queues", ...requireCoFounder, createImageProcessingBullBoardRouter());
 
   app.get("/health", (_req, res) => {
     sendSuccess(res, { status: "ok" }, "Service is healthy");

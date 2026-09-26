@@ -1,9 +1,8 @@
 import { Router } from "express";
 
 import { crmWriteRateLimit } from "#middlewares/crm-rate-limit.js";
-import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 import { requireCoFounder } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import { platformRolesController } from "./platform-roles.controller.js";
@@ -17,10 +16,12 @@ import {
 
 export const platformRolesRoutes = Router();
 
-platformRolesRoutes.use(requireAuth, requirePlatformAccess);
-
-platformRolesRoutes.get("/permissions", platformRolesController.listPermissions);
-platformRolesRoutes.get("/roles", platformRolesController.listRoles);
+platformRolesRoutes.get(
+  "/permissions",
+  ...platformGuards.teamManage,
+  platformRolesController.listPermissions,
+);
+platformRolesRoutes.get("/roles", ...platformGuards.teamManage, platformRolesController.listRoles);
 platformRolesRoutes.post(
   "/roles",
   ...requireCoFounder,
@@ -43,7 +44,7 @@ platformRolesRoutes.delete(
   platformRolesController.deleteRole,
 );
 
-platformRolesRoutes.get("/team", platformRolesController.listTeam);
+platformRolesRoutes.get("/team", ...platformGuards.teamManage, platformRolesController.listTeam);
 platformRolesRoutes.patch(
   "/team/:membershipId",
   ...requireCoFounder,

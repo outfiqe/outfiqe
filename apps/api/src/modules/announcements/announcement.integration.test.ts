@@ -7,10 +7,9 @@ import { describe, expect, it } from "vitest";
 
 import { prisma } from "#db/prisma.js";
 import { UserRole } from "#generated/prisma/enums.js";
-import {
-  createAdminSession,
-  createAdminSessionWithPlatformPermissions,
-} from "#test/integration/authHelpers.js";
+import { createRoleLimitedStaffSession } from "#test/integration/authHelpers.js";
+import { createAdminSessionWithPlatformPermissions } from "#test/integration/authHelpers.js";
+import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -53,7 +52,7 @@ const createDraft = async (authHeader: string, overrides: Record<string, unknown
 
 describe("POST /api/admin/announcements", () => {
   it("blocks a platform staffer without platform:announcements:manage", async () => {
-    const staffer = await createAdminSession();
+    const staffer = await createRoleLimitedStaffSession(UNRELATED_PLATFORM_PERMISSION_KEY);
 
     const response = await request(testApp)
       .post("/api/admin/announcements")

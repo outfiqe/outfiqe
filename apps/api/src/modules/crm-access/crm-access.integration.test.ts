@@ -9,6 +9,7 @@ import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
+import { grantLimitedPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import {
   ensurePlatformOrganizationExists,
   grantPlatformStaffMembership,
@@ -267,7 +268,7 @@ describe("POST /api/crm/organizations", () => {
 
   it("blocks a platform staffer without platform:organizations:manage", async () => {
     const staff = await createStaffUser("No Organizations Permission");
-    await grantPlatformStaffMembership(staff.id);
+    await grantLimitedPlatformStaffMembership(staff.id);
 
     const response = await request(testApp)
       .post("/api/crm/organizations")

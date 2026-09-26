@@ -3,7 +3,9 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
+import { createRoleLimitedStaffSession } from "#test/integration/authHelpers.js";
 import { createAdminSession, grantPlatformPermissions } from "#test/integration/authHelpers.js";
+import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
 const createCommissionsAdmin = async () => {
@@ -32,7 +34,7 @@ describe("POST /api/commissions/tiers", () => {
   });
 
   it("blocks a platform staffer without platform:commissions:manage", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createRoleLimitedStaffSession(UNRELATED_PLATFORM_PERMISSION_KEY);
 
     const response = await request(testApp)
       .post("/api/commissions/tiers")
@@ -45,7 +47,7 @@ describe("POST /api/commissions/tiers", () => {
 
 describe("commission review mutations", () => {
   it("blocks approve, void, and mark-paid for a platform staffer without platform:commissions:manage", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createRoleLimitedStaffSession(UNRELATED_PLATFORM_PERMISSION_KEY);
     const commissionId = randomUUID();
 
     const approve = await request(testApp)

@@ -4,6 +4,7 @@ import { env } from "#config/env.config.js";
 import { UserRole } from "#generated/prisma/enums.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
+import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 
 import { crmAccessRepository } from "./crm-access.repository.js";
 import { crmAccessService } from "./crm-access.service.js";
@@ -97,11 +98,12 @@ export const requirePlatformAccess = async (_req: Request, res: Response, next: 
     return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, FORBIDDEN_STATUS));
   }
 
-  const hasPlatformAccess = await crmAccessService.resolveHasPlatformAccess(principal.userId);
-  if (!hasPlatformAccess) {
+  const platformAccess = await platformAccessService.resolveAccess(principal.userId);
+  if (!platformAccess.hasStaffAccess) {
     return next(new AppError("FORBIDDEN", FORBIDDEN_MESSAGE, FORBIDDEN_STATUS));
   }
 
+  res.locals.platformAccess = platformAccess;
   next();
 };
 

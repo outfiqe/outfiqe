@@ -8,6 +8,7 @@ import {
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 
 import { bankAccountController } from "./bankAccount.controller.js";
@@ -60,7 +61,7 @@ bankAccountRoutes.get(
 
 bankAccountRoutes.get(
   "/admin",
-  ...requireBankAccountMutationAdmin,
+  ...platformGuards.withdrawRead,
   validate({ query: listAdminBankAccountsQuerySchema }),
   bankAccountController.listAllAdmin,
 );

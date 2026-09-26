@@ -271,9 +271,11 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   automatically — it's granted only to Outfiqe's own built-in Admin role via a dedicated seed step,
   the same "special, not automatic" treatment `org:transfer_ownership` already gets.
   `requirePlatformAccess` resolves in order: not `UserRole.ADMIN` → `403`; an active `Membership`
-  in the platform org that's either its SUPERADMIN, a co-founder (`isPlatformSuperAdmin`, whatever role they hold), or holds `platform:access` → **allow**; any
+  in the platform org that's either its SUPERADMIN, a co-founder (`isPlatformSuperAdmin`, whatever role they hold), or whose role holds any `platform:*` permission (or the legacy `platform:access` key) → **allow**; any
   other combination (including zero memberships anywhere, or a `Membership` only in a tenant org)
-  → **deny**. `crm-access.service.ts`'s `resolveHasPlatformAccess` holds this resolution once,
+  → **deny**. Passing this gate only means "platform staff" — every platform route then checks
+  its own permission (see `platform-access/README.md`). `platformAccessService.resolveAccess`
+  holds this resolution once, and `crm-access.service.ts`'s `resolveHasPlatformAccess` delegates to it,
   reused by both the middleware and `auth.service.ts`'s `getCurrentUser` (which exposes it to
   `apps/admin` as `hasPlatformAccess` on `/api/auth/me`, so `AdminSidebar` can hide non-CRM
   navigation for tenant-only staff).

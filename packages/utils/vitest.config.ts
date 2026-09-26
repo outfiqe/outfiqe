@@ -10,6 +10,8 @@ export default defineConfig({
         "src/uuid/index.ts",
         "src/notifications/isExternalNotificationPath.ts",
         "src/post-layout/index.ts",
+        "src/platform-access/index.ts",
+        "src/user-role/index.ts",
       ],
       thresholds: {
         lines: COVERAGE_THRESHOLD,

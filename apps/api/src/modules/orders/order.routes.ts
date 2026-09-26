@@ -3,10 +3,10 @@ import { Router } from "express";
 import { UserRole } from "#generated/prisma/enums.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { requireActiveAuth } from "#middlewares/require-active-account.js";
-import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
+import { getAuthPrincipal } from "#middlewares/require-auth.js";
 import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 
 import { orderController } from "./order.controller.js";
 import {
@@ -56,7 +56,6 @@ const brandFulfilmentRateLimit = rateLimit({
   message: "Too many shipment updates. Please wait a moment and try again.",
 });
 
-const requireAdmin = [requireAuth, requirePlatformAccess];
 const requireBrandOwner = [...requireActiveAuth, requireRole(UserRole.BRAND_OWNER)];
 const requireShopper = [...requireActiveAuth, requireRole(UserRole.CUSTOMER)];
 
@@ -68,28 +67,28 @@ export const orderRoutes = Router();
  */
 orderRoutes.get(
   "/admin",
-  ...requireAdmin,
+  ...platformGuards.ordersRead,
   validate({ query: listAdminOrdersQuerySchema }),
   orderController.listAllAdmin,
 );
 
 orderRoutes.get(
   "/admin/:orderId",
-  ...requireAdmin,
+  ...platformGuards.ordersRead,
   validate({ params: orderIdParamSchema }),
   orderController.getAdmin,
 );
 
 orderRoutes.patch(
   "/admin/:orderId/fulfilment",
-  ...requireAdmin,
+  ...platformGuards.ordersManage,
   validate({ params: orderIdParamSchema, body: advanceFulfilmentSchema }),
   orderController.advanceFulfilment,
 );
 
 orderRoutes.post(
   "/admin/:orderId/cancel",
-  ...requireAdmin,
+  ...platformGuards.ordersManage,
   validate({ params: orderIdParamSchema, body: cancelOrderSchema }),
   orderController.cancel,
 );

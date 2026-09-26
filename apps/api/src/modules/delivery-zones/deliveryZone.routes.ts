@@ -1,9 +1,8 @@
 ﻿import { Router } from "express";
 
 import { cache, refreshCacheOnWrite } from "#middlewares/cache.js";
-import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 import { CACHE_TTL } from "#redis/redis.keys.js";
 
 import { deliveryZoneController } from "./deliveryZone.controller.js";
@@ -15,8 +14,6 @@ import {
   updateDeliveryZoneSchema,
 } from "./deliveryZone.schemas.js";
 import { deliveryZoneService } from "./deliveryZone.service.js";
-
-const requireAdmin = [requireAuth, requirePlatformAccess];
 
 const CACHE_NAMESPACE = "delivery-zones";
 
@@ -44,14 +41,14 @@ deliveryZoneRoutes.get(
 
 deliveryZoneRoutes.get(
   "/history",
-  ...requireAdmin,
+  ...platformGuards.ordersRead,
   validate({ query: listDeliveryZoneHistoryQuerySchema }),
   deliveryZoneController.listHistory,
 );
 
 deliveryZoneRoutes.post(
   "/",
-  ...requireAdmin,
+  ...platformGuards.ordersManage,
   validate({ body: createDeliveryZoneSchema }),
   refreshDeliveryZonesPublicCache,
   deliveryZoneController.create,
@@ -59,7 +56,7 @@ deliveryZoneRoutes.post(
 
 deliveryZoneRoutes.patch(
   "/:zoneId",
-  ...requireAdmin,
+  ...platformGuards.ordersManage,
   validate({ params: deliveryZoneIdParamSchema, body: updateDeliveryZoneSchema }),
   refreshDeliveryZonesPublicCache,
   deliveryZoneController.update,
@@ -67,7 +64,7 @@ deliveryZoneRoutes.patch(
 
 deliveryZoneRoutes.patch(
   "/:zoneId/default",
-  ...requireAdmin,
+  ...platformGuards.ordersManage,
   validate({ params: deliveryZoneIdParamSchema }),
   refreshDeliveryZonesPublicCache,
   deliveryZoneController.setDefault,
@@ -75,7 +72,7 @@ deliveryZoneRoutes.patch(
 
 deliveryZoneRoutes.delete(
   "/:zoneId",
-  ...requireAdmin,
+  ...platformGuards.ordersManage,
   validate({ params: deliveryZoneIdParamSchema }),
   refreshDeliveryZonesPublicCache,
   deliveryZoneController.remove,

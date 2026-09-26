@@ -18,10 +18,12 @@ import {
   WithdrawWindowType,
 } from "#generated/prisma/enums.js";
 import { redis } from "#redis/redis.client.js";
+import { createRoleLimitedStaffSession } from "#test/integration/authHelpers.js";
 import {
   createAdminSession,
   createAdminSessionWithPlatformPermissions,
 } from "#test/integration/authHelpers.js";
+import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crmFixtures.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -222,7 +224,7 @@ describe("PATCH /api/withdraw/admin/requests/:id/approve", () => {
   });
 
   it("blocks a platform staffer without platform:withdraw:manage", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createRoleLimitedStaffSession(UNRELATED_PLATFORM_PERMISSION_KEY);
     const policy = await createOpenPolicy(WithdrawOwnerType.CREATOR);
     const creator = await createUser();
     const bankAccount = await createVerifiedBankAccount(creator.id);

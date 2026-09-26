@@ -19,8 +19,10 @@ import { useForm } from "react-hook-form";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { productTypesApi } from "@/features/product-types/api";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { sizeOptionsApi } from "./api";
 import type { SizeOption } from "./schemas";
@@ -41,6 +43,8 @@ const SizeOptionRowSkeleton = () => (
 );
 
 export const SizeOptionsPage = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageCatalog = canUse(PLATFORM_MANAGE_PERMISSION.CATALOG);
   const { data: productTypes } = useQuery({
     queryKey: ["admin-product-types"],
     queryFn: productTypesApi.list,
@@ -114,33 +118,35 @@ export const SizeOptionsPage = () => {
 
       {type && (
         <>
-          <Form {...form}>
-            <form
-              onSubmit={submitSizeOption}
-              noValidate
-              className="mt-5 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
-            >
-              <FormField
-                control={form.control}
-                name="label"
-                render={({ field }) => (
-                  <FormItem className="mt-0 w-32 space-y-1.5">
-                    <FormLabel className="text-xs font-normal text-muted-foreground">
-                      Size label
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="M" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          {canManageCatalog && (
+            <Form {...form}>
+              <form
+                onSubmit={submitSizeOption}
+                noValidate
+                className="mt-5 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="label"
+                  render={({ field }) => (
+                    <FormItem className="mt-0 w-32 space-y-1.5">
+                      <FormLabel className="text-xs font-normal text-muted-foreground">
+                        Size label
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder="M" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
-                Add to {labelForType(type)}
-              </Button>
-            </form>
-          </Form>
+                <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+                  Add to {labelForType(type)}
+                </Button>
+              </form>
+            </Form>
+          )}
 
           {create.isError && (
             <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>
@@ -164,9 +170,11 @@ export const SizeOptionsPage = () => {
                   {sizeOption.label}
                 </Badge>
 
-                <Button variant="outline" size="sm" onClick={() => setDeleteTarget(sizeOption)}>
-                  Delete
-                </Button>
+                {canManageCatalog && (
+                  <Button variant="outline" size="sm" onClick={() => setDeleteTarget(sizeOption)}>
+                    Delete
+                  </Button>
+                )}
               </div>
             ))}
           </div>

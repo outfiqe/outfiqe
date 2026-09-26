@@ -7,7 +7,7 @@ import { requireAuth } from "#middlewares/require-auth.js";
 import { requireRole } from "#middlewares/require-role.js";
 import { revalidateWebCacheOnWrite } from "#middlewares/revalidate-web-cache.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 import { CACHE_TTL } from "#redis/redis.keys.js";
 
 import { productTypeController } from "./product-type.controller.js";
@@ -19,7 +19,6 @@ import {
 } from "./product-type.schemas.js";
 import { productTypeService } from "./product-type.service.js";
 
-const requireAdmin = [requireAuth, requirePlatformAccess];
 const requireBrandOwner = [requireAuth, requireRole(UserRole.BRAND_OWNER)];
 
 const CACHE_NAMESPACE = "product-types";
@@ -40,7 +39,7 @@ const revalidateProductTypesWebCache = revalidateWebCacheOnWrite(WEB_REVALIDATE_
 
 export const productTypeRoutes = Router();
 
-productTypeRoutes.get("/admin", ...requireAdmin, productTypeController.listAll);
+productTypeRoutes.get("/admin", ...platformGuards.catalogRead, productTypeController.listAll);
 
 productTypeRoutes.get("/assignable", ...requireBrandOwner, productTypeController.listAssignable);
 
@@ -48,7 +47,7 @@ productTypeRoutes.get("/", productTypesPublicCache, productTypeController.listAc
 
 productTypeRoutes.post(
   "/",
-  ...requireAdmin,
+  ...platformGuards.catalogManage,
   validate({ body: createProductTypeSchema }),
   refreshProductTypesPublicCache,
   revalidateProductTypesWebCache,
@@ -56,7 +55,7 @@ productTypeRoutes.post(
 );
 productTypeRoutes.post(
   "/reorder",
-  ...requireAdmin,
+  ...platformGuards.catalogManage,
   validate({ body: reorderProductTypesSchema }),
   refreshProductTypesPublicCache,
   revalidateProductTypesWebCache,
@@ -64,7 +63,7 @@ productTypeRoutes.post(
 );
 productTypeRoutes.patch(
   "/:id",
-  ...requireAdmin,
+  ...platformGuards.catalogManage,
   validate({ params: productTypeIdParamSchema, body: updateProductTypeSchema }),
   refreshProductTypesPublicCache,
   revalidateProductTypesWebCache,

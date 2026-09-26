@@ -60,6 +60,7 @@ import {
 
 import { useAuth } from "@/features/auth/AuthContext";
 import { crmApi } from "@/features/crm/api";
+import { canOpenPlatformOverview } from "@/lib/platformPermissions";
 
 import { AdminModuleSearch } from "./AdminModuleSearch";
 import {
@@ -431,7 +432,7 @@ export const AdminSidebar = () => {
     crmRoleName: crmOrganization?.viewerRoleName,
   });
   const platformNavItems: SidebarNavItem[] = [
-    PLATFORM_OVERVIEW_NAV_ITEM,
+    ...(user && canOpenPlatformOverview(user) ? [PLATFORM_OVERVIEW_NAV_ITEM] : []),
     ...groupPlatformNavItems(
       PLATFORM_NAV_ITEMS,
       { isCoFounder, hiddenNavKeys: user?.hiddenPlatformNavKeys ?? [] },
