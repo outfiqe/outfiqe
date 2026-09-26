@@ -24,13 +24,24 @@ type InfiniteNotificationsData = {
   pageParams: (string | undefined)[];
 };
 
-export const useNotificationSocket = (socket: NotificationSocket | null | undefined): void => {
+type NotificationReadAllPayload = { readAt: string; organizationId?: string };
+
+export type NotificationAcceptancePredicate = (notification: Notification) => boolean;
+
+const acceptEveryNotification: NotificationAcceptancePredicate = () => true;
+
+export const useNotificationSocket = (
+  socket: NotificationSocket | null | undefined,
+  acceptsNotification: NotificationAcceptancePredicate = acceptEveryNotification,
+): void => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!socket) return;
 
     const handleCreated = (notification: Notification): void => {
+      if (!acceptsNotification(notification)) return;
+
       queryClient.setQueryData<InfiniteNotificationsData>(NOTIFICATIONS_QUERY_KEY, (data) => {
         if (!data) return data;
         const firstPage = data.pages[0];
@@ -58,6 +69,8 @@ export const useNotificationSocket = (socket: NotificationSocket | null | undefi
     };
 
     const handleUpdated = (notification: Notification): void => {
+      if (!acceptsNotification(notification)) return;
+
       queryClient.setQueryData<InfiniteNotificationsData>(NOTIFICATIONS_QUERY_KEY, (data) => {
         if (!data) return data;
 
@@ -109,7 +122,10 @@ export const useNotificationSocket = (socket: NotificationSocket | null | undefi
       }
     };
 
-    const handleReadAll = ({ readAt }: { readAt: string }): void => {
+    const handleReadAll = ({ readAt, organizationId }: NotificationReadAllPayload): void => {
+      const isMarkedRead = (existing: Notification): boolean =>
+        !organizationId || existing.organizationId === organizationId;
+
       queryClient.setQueryData<InfiniteNotificationsData>(NOTIFICATIONS_QUERY_KEY, (data) => {
         if (!data) return data;
         return {
@@ -117,12 +133,19 @@ export const useNotificationSocket = (socket: NotificationSocket | null | undefi
           pages: data.pages.map((page) => ({
             ...page,
             notifications: page.notifications.map((existing) =>
-              existing.isRead ? existing : { ...existing, isRead: true, readAt },
+              existing.isRead || !isMarkedRead(existing)
+                ? existing
+                : { ...existing, isRead: true, readAt },
             ),
           })),
         };
       });
-      queryClient.setQueryData<number>(NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY, 0);
+
+      if (organizationId) {
+        void queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY });
+      } else {
+        queryClient.setQueryData<number>(NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY, 0);
+      }
     };
 
     const reconcileUnreadCount = (): void => {
@@ -142,5 +165,5 @@ export const useNotificationSocket = (socket: NotificationSocket | null | undefi
       socket.off(NOTIFICATION_SOCKET_EVENTS.READ_ALL, handleReadAll);
       socket.off("connect", reconcileUnreadCount);
     };
-  }, [socket, queryClient]);
+  }, [socket, queryClient, acceptsNotification]);
 };

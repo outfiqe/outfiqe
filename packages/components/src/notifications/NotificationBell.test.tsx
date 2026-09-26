@@ -32,6 +32,9 @@ const buildNotification = (isRead = false): Notification => ({
   type: "LOOK_LIKED",
   entityType: null,
   entityId: null,
+  targetSurface: null,
+  targetPath: null,
+  organizationId: null,
   metadata: {},
   groupKey: null,
   actorCount: 1,
@@ -50,15 +53,16 @@ const buildNotificationsApi = (unreadCount: number): NotificationsApi => ({
   setPreference: async () => {},
 });
 
-type SocketHandler = (notification: Notification) => void;
+type SocketHandler = (...args: never[]) => void;
 
 const buildSocket = () => {
   const handlers = new Set<SocketHandler>();
   return {
     on: (_event: string, handler: SocketHandler) => handlers.add(handler),
     off: (_event: string, handler: SocketHandler) => handlers.delete(handler),
+    emit: () => undefined,
     emitCreated: (notification: Notification) =>
-      handlers.forEach((handler) => handler(notification)),
+      handlers.forEach((handler) => Reflect.apply(handler, undefined, [notification])),
     handlerCount: () => handlers.size,
   };
 };
@@ -67,9 +71,15 @@ type RenderBellOptions = {
   unreadCount?: number;
   socket?: ReturnType<typeof buildSocket>;
   onSelect?: (notification: Notification) => void;
+  acceptsNotification?: (notification: Notification) => boolean;
 };
 
-const renderBell = ({ unreadCount = 0, socket, onSelect = vi.fn() }: RenderBellOptions = {}) => {
+const renderBell = ({
+  unreadCount = 0,
+  socket,
+  onSelect = vi.fn(),
+  acceptsNotification,
+}: RenderBellOptions = {}) => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
@@ -80,6 +90,7 @@ const renderBell = ({ unreadCount = 0, socket, onSelect = vi.fn() }: RenderBellO
       notificationsApi={buildNotificationsApi(unreadCount)}
       socket={socket}
       onSelect={onSelect}
+      acceptsNotification={acceptsNotification}
     />,
     { wrapper: Wrapper },
   );
@@ -135,6 +146,17 @@ describe("NotificationBell", () => {
     renderBell({ socket });
 
     socket.emitCreated(buildNotification(true));
+
+    await waitFor(() =>
+      expect(screen.queryByText("Someone liked your look")).not.toBeInTheDocument(),
+    );
+  });
+
+  it("stays silent for a notification this bell does not show", async () => {
+    const socket = buildSocket();
+    renderBell({ socket, acceptsNotification: () => false });
+
+    socket.emitCreated(buildNotification());
 
     await waitFor(() =>
       expect(screen.queryByText("Someone liked your look")).not.toBeInTheDocument(),

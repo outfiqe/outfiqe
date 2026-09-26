@@ -5,9 +5,9 @@ import type {
   NotificationSurface,
   NotificationType,
 } from "#generated/prisma/enums.js";
-import { CreatorStatus } from "#generated/prisma/enums.js";
+import { CreatorStatus, MembershipStatus } from "#generated/prisma/enums.js";
 import { decodeCursor } from "#lib/pagination.utils.js";
-import { isForeignKeyConstraintError } from "#lib/prisma.utils.js";
+import { isForeignKeyConstraintError, isUniqueConstraintError } from "#lib/prisma.utils.js";
 import logger from "#lib/winston.utils.js";
 import { describeError } from "#redis/redis.utils.js";
 
@@ -18,12 +18,18 @@ import type {
   NotificationActorSnapshot,
   NotificationChannelChanges,
   NotificationFeedCursor,
+  NotificationMembershipGrant,
   NotificationMetadata,
+  NotificationOrganizationFilter,
   NotificationRecord,
   RetractGroupActorInput,
   UpsertGroupInput,
 } from "./notification.types.js";
-import { removeRecentActor, toNotificationRecord } from "./notification.utils.js";
+import {
+  buildNotificationDedupeKey,
+  removeRecentActor,
+  toNotificationRecord,
+} from "./notification.utils.js";
 
 type RawGroupRow = {
   id: string;
@@ -34,6 +40,7 @@ type RawGroupRow = {
   entity_id: string | null;
   target_surface: NotificationSurface | null;
   target_path: string | null;
+  organization_id: string | null;
   metadata: unknown;
   group_key: string | null;
   actor_count: number;
@@ -55,6 +62,7 @@ const toRecordFromRaw = (row: RawGroupRow): NotificationRecord => ({
   entityId: row.entity_id,
   targetSurface: row.target_surface,
   targetPath: row.target_path,
+  organizationId: row.organization_id,
   metadata: (row.metadata ?? {}) as NotificationMetadata,
   groupKey: row.group_key,
   actorCount: row.actor_count,
@@ -63,6 +71,9 @@ const toRecordFromRaw = (row: RawGroupRow): NotificationRecord => ({
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
+
+const toOrganizationWhere = ({ organizationId }: NotificationOrganizationFilter) =>
+  organizationId ? { organizationId } : {};
 
 export const notificationRepository = {
   async createIndividual(
@@ -84,11 +95,21 @@ export const notificationRepository = {
           entityId: input.entityId ?? undefined,
           targetSurface: target?.surface ?? undefined,
           targetPath: target?.path ?? undefined,
+          organizationId: input.organizationId ?? undefined,
+          dedupeKey: input.sourceEventId
+            ? buildNotificationDedupeKey(input.sourceEventId, input.type, input.entityId)
+            : undefined,
           metadata: input.metadata as Prisma.InputJsonValue,
         },
       });
       return toNotificationRecord(created);
     } catch (error) {
+      if (input.sourceEventId && isUniqueConstraintError(error)) {
+        logger.info(
+          `Skipped a repeat notification for an already-handled event: type=${input.type} recipient=${input.recipientId}`,
+        );
+        return null;
+      }
       if (!isForeignKeyConstraintError(error)) throw error;
       logger.warn(
         `Skipped notification for a since-deleted recipient or actor: type=${input.type} recipient=${input.recipientId}`,
@@ -286,7 +307,7 @@ export const notificationRepository = {
           };
           const updated = await tx.notification.update({
             where: { id: existing.id },
-            data: { metadata: merged as Prisma.InputJsonValue },
+            data: { metadata: merged as Prisma.InputJsonValue, updatedAt: new Date() },
           });
           return { record: toNotificationRecord(updated), wasCreated: false };
         }
@@ -416,13 +437,14 @@ export const notificationRepository = {
 
   async listForRecipient(
     recipientId: string,
-    params: { cursor?: string; limit: number },
+    params: NotificationOrganizationFilter & { cursor?: string; limit: number },
   ): Promise<NotificationRecord[]> {
     const decoded = decodeCursor<NotificationFeedCursor>(params.cursor);
 
     const rows = await prisma.notification.findMany({
       where: {
         recipientId,
+        ...toOrganizationWhere(params),
         ...(decoded
           ? {
               OR: [
@@ -438,8 +460,13 @@ export const notificationRepository = {
     return rows.map(toNotificationRecord);
   },
 
-  async countUnread(recipientId: string): Promise<number> {
-    return prisma.notification.count({ where: { recipientId, isRead: false } });
+  async countUnread(
+    recipientId: string,
+    filter: NotificationOrganizationFilter = {},
+  ): Promise<number> {
+    return prisma.notification.count({
+      where: { recipientId, isRead: false, ...toOrganizationWhere(filter) },
+    });
   },
 
   async markRead(recipientId: string, notificationId: string): Promise<NotificationRecord | null> {
@@ -456,13 +483,43 @@ export const notificationRepository = {
     return toNotificationRecord(updated);
   },
 
-  async markAllRead(recipientId: string): Promise<Date> {
+  async markAllRead(
+    recipientId: string,
+    filter: NotificationOrganizationFilter = {},
+  ): Promise<Date> {
     const readAt = new Date();
     await prisma.notification.updateMany({
-      where: { recipientId, isRead: false },
+      where: { recipientId, isRead: false, ...toOrganizationWhere(filter) },
       data: { isRead: true, readAt },
     });
     return readAt;
+  },
+
+  async findActiveMembershipGrants(userId: string): Promise<NotificationMembershipGrant[]> {
+    const memberships = await prisma.membership.findMany({
+      where: { userId, status: MembershipStatus.ACTIVE },
+      select: {
+        id: true,
+        isPlatformSuperAdmin: true,
+        organization: { select: { isPlatformOrg: true, superAdminMembershipId: true } },
+        role: { select: { permissions: { select: { permissionKey: true } } } },
+      },
+    });
+    return memberships.map(({ id, isPlatformSuperAdmin, organization, role }) => ({
+      isPlatformOrganization: organization.isPlatformOrg,
+      isOwner: isPlatformSuperAdmin || organization.superAdminMembershipId === id,
+      permissionKeys: role.permissions.map(({ permissionKey }) => permissionKey),
+    }));
+  },
+
+  async deleteForRecipientInOrganization(
+    recipientId: string,
+    organizationId: string,
+  ): Promise<number> {
+    const { count } = await prisma.notification.deleteMany({
+      where: { recipientId, organizationId },
+    });
+    return count;
   },
 
   async listPreferenceOverrides(

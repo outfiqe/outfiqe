@@ -17,13 +17,17 @@ activity to an open bell/panel live.
   module registers — write path and socket relay), `CRITICAL_RETENTION_NOTIFICATION_TYPES` +
   `STANDARD_READ_RETENTION_DAYS`/`CRITICAL_READ_RETENTION_DAYS` (chunk 10's retention job reads
   these), `NOTIFICATION_GROUP_KEYS` (the three `groupKey` builders — see rationale below).
+  `PLATFORM_STAFF_NOTIFICATION_PERMISSIONS` and `TENANT_STAFF_NOTIFICATION_PERMISSIONS` are the
+  notification rules: for each staff notification type, the permissions whose holders receive it.
+  Adding a staff notification means adding one entry here.
 - `notification.types.ts` — `NotificationRecord` (the service/repository-level shape, `metadata`
   parsed to `NotificationMetadata`, not raw `Json`), `NotificationActorSnapshot` (the denormalized
   actor fields stored in `metadata`), `CreateIndividualNotificationInput`/`UpsertGroupInput`/
   `RetractGroupActorInput` (the three write shapes the service accepts).
 - `notification.utils.ts` — pure functions only, no DB access: `toNotificationRecord`/
   `toBroadcastPayload` (row ↔ record ↔ socket-payload mapping), `mergeRecentActors`/
-  `removeRecentActor` (the capped, deduped, most-recent-first actor list join/leave a group).
+  `removeRecentActor` (the capped, deduped, most-recent-first actor list join/leave a group),
+  `buildNotificationDedupeKey` (event id + type + entity id, see the retry note below).
 - `notification.targets.ts` — `resolveNotificationTarget({ type, entityId, metadata,
 recipientIsStaff })`: pure, the single place that decides where a notification click lands.
   Returns `{ surface: "WEB" | "ADMIN", path }` or `null`. The repository calls it on every write
@@ -51,6 +55,11 @@ recipientIsStaff })`: pure, the single place that decides where a notification c
   `retractGroupActor`/`notifySystemReminder`: the mute-check + write + realtime-handoff
   orchestration every event handler calls into. Never called directly by another module — only by
   `notification.events.ts`. `notifySystemReminder` is the digest path (see `PRODUCT_TAG_REVIEW_REMINDER`).
+  `notifyPlatformStaff` and `notifyTenantStaff` send a staff notification to everyone in that
+  organization whose role holds the rule's permissions (plus the owner, minus the actor), and tag
+  each row with the organization. `notifyPlatformStaffMember` does the same for one named staff
+  member, such as the assigned support agent. `clearOrganizationNotificationsFor` removes one
+  organization's notifications from a person's bell.
 - `notification.events.ts` — `registerNotificationEventConsumers()`: one domain-event handler per
   row in plan §5's event catalog, each resolving the right recipient(s), building the denormalized
   `metadata` snapshot, and calling into `notification.service.ts`. A second, independent consumer
@@ -70,7 +79,10 @@ recipientIsStaff })`: pure, the single place that decides where a notification c
   swallow them: `GET /` (cursor-paginated feed), `GET /unread-count`, `PATCH /:id/read` (404s for a
   notification that isn't the caller's, same as any other id-not-found — never a distinguishable
   403, which would leak that the id exists), `PATCH /read-all` (idempotent), plus the mute
-  preferences pair `GET /preferences` / `PATCH /preferences/:type`.
+  preferences pair `GET /preferences` / `PATCH /preferences/:type`. The feed, unread count and
+  read-all accept `?scope=all|tenant` (see the tenant bell note below).
+- `notification.middleware.ts` — `resolveTenantForTenantScope`: runs `resolveTenant` only when the
+  request asks for `scope=tenant`.
 - `notification.retention.ts` — `runNotificationRetentionSweep()`: deletes read notifications past
   their retention window (`STANDARD_READ_RETENTION_DAYS`/`CRITICAL_READ_RETENTION_DAYS`, plan §13's
   answer). Composed into `apps/api/src/jobs/scheduled-jobs.ts`'s `INTERVAL_JOBS` (daily), same
@@ -231,6 +243,74 @@ until the next REST fetch (panel reopen, pagination, or the existing reconnect-s
 accepted as a narrow, self-healing gap consistent with this build's own "resilience" bar (plan
 §10: "a missed live event self-heals within one interaction"), not a silent oversight.
 
+**`updatedAt` is the notification's activity time, not "the row last changed".** The bell shows
+it and the feed is sorted by it. So it moves only when something new happens: a row is created, a
+group gains or loses a person, or a reminder's count is refreshed. It does not move when a
+notification is marked read. It used to be a Prisma `@updatedAt`, which moved on every write. That
+made a notification opened today show "1m ago" and jump to the top, even if it was sent days
+earlier. Every write that counts as new activity now sets `updatedAt` itself. Migration
+`20260926130000_notification_activity_time` reset the times that marking read had already moved,
+for rows with no `groupKey`. Those rows are only ever changed by marking read, so their creation
+time is their true activity time.
+
+**Platform and tenant staff notifications go through one set of rules.** The platform is itself
+an organization with members and roles, so "platform staff who can manage brands" and "tenant
+staff who can manage billing" are the same question. The two rule lists in
+`notification.constants.ts` answer it. Both `notifyPlatformStaff` and `notifyTenantStaff` use
+`crmAccessRepository.findActiveMemberUserIdsHoldingAnyPermission`, which always includes the
+owner (and, for the platform, co-founders). The person who caused the event is never notified.
+Every staff notification is tagged with its organization. Platform ones carry the platform
+organization, so removing someone from the platform team clears them too, and a tenant's bell never
+shows them. The billing renewal email uses the same lookup, so the email and the bell always reach
+the same people.
+
+Tenant staff notifications today:
+
+| Event                                                                   | Notification                                              | Who gets it      |
+| ----------------------------------------------------------------------- | --------------------------------------------------------- | ---------------- |
+| A ticket is created with no one assigned (`CRM_TICKET_CREATED`)         | `CRM_TICKET_UNASSIGNED`                                   | `tickets:manage` |
+| Someone accepts an invite (`CRM_MEMBER_JOINED`)                         | `CRM_MEMBER_JOINED`                                       | `members:manage` |
+| A renewal invoice opens (`CRM_INVOICE_OPENED`)                          | `CRM_INVOICE_DUE`                                         | `billing:manage` |
+| A subscription goes past due or is canceled (`CRM_SUBSCRIPTION_LAPSED`) | `CRM_SUBSCRIPTION_PAST_DUE` / `CRM_SUBSCRIPTION_CANCELED` | `billing:manage` |
+
+Letting admins choose which roles get which notification, and muting a type for one tenant only,
+are planned for when tenants ask for them. The rule lists are the defaults a per-organization
+setting would override, so neither needs this design changed.
+
+**A retried event never sends the same notification twice.** Redis Streams redelivers an event
+whose handler failed partway, for example after notifying half the recipients. Each handler passes
+the event's id (`sourceEventId`, from the consumer's `{ eventId }` context), and
+`createIndividual` stores `buildNotificationDedupeKey(eventId, type, entityId)` in `dedupe_key`.
+A unique index on `(recipient_id, dedupe_key)` makes the database refuse the second copy, and the
+repository treats that refusal as "already sent". Rows written without an event id (announcements,
+tests) have no key, and a unique index allows any number of those.
+
+**Losing access to an organization clears its notifications.** `crm-access` publishes
+`CRM_MEMBERSHIP_ENDED` when a membership is deactivated, or when the previous owner is removed
+after an ownership transfer. The handler deletes that organization's notifications from the
+person's bell. Reactivating someone does not bring them back.
+
+**The staff permission check happens once, when a notification is sent.** Before role-based
+platform access existed, the staff notifications listed at the top of this section went to every
+admin account, so a support-only person could hold a brand application. Migration
+`20260926130000_notification_activity_time` deleted those leftovers wherever the recipient does not
+hold the matching permission today. If someone's role later loses a permission, notifications they
+already received stay in their bell. Opening one lands on a page that shows the "no access" screen,
+so nothing is exposed.
+
+**A tenant's admin bell shows only that tenant's notifications.** A row written for one
+organization's CRM carries `organizationId` (today only `CRM_ITEM_ASSIGNED` sets it). `GET /`,
+`GET /unread-count` and `PATCH /read-all` take `?scope=tenant`. With it,
+`notification.middleware.ts`'s `resolveTenantForTenantScope` runs the same host-based
+`resolveTenant` the CRM routes use, and the query keeps only rows for that organization. It fails
+closed: an unknown tenant host is a 404, never the unfiltered feed. Without a scope, or with
+`scope=all`, the feed is unchanged, so the storefront and the platform admin still see everything.
+Filtering only narrows the caller's own rows, so no membership check is needed. A scoped
+`read-all` sends `organizationId` in its `notification:read-all` socket payload. Other open bells
+then mark only that tenant's cards read and refetch their count, instead of clearing everything.
+Storefront notifications (likes, orders, messages) stay in the storefront bell. Before this, the
+tenant bell showed them and sent the click to the main domain.
+
 **Retention is two-tiered, and unread rows are exempt from both tiers.** Read notifications for
 money/business-decision types (`NEW_ORDER`, `ORDER_STATUS_CHANGED`, `COMMISSION_EARNED`,
 `BRAND_APPLICATION_SUBMITTED`) live 180 days; every other read type lives 90. An unread
@@ -240,11 +320,13 @@ true`, so a user who never opens the panel doesn't silently lose activity they h
 **Notification preferences are opt-out, not opt-in.** No `NotificationPreference` row for a
 `(userId, type)` pair means that type is enabled — most users will never have any rows here at
 all. `findMutedRecipientIds` is the only read on the in-app path; a missing row is never treated
-as "muted." `GET /preferences` returns every `NotificationType` value (not filtered by the
-caller's role) — toggling a type that could never apply to that user (e.g. a plain customer
-muting `NEW_ORDER`) is harmless, and skipping per-role filtering avoids a second "which types
-apply to which surface" classification that would have to be kept in sync with the frontend's own
-per-app type usage.
+as "muted." `GET /preferences` leaves out staff notification types the caller can never
+receive. It checks the same rule lists delivery uses (`canReceiveNotificationType`, with
+`PLATFORM_STAFF_ONLY_NOTIFICATION_PERMISSIONS` for platform staff types and
+`TENANT_STAFF_NOTIFICATION_PERMISSIONS` for tenant ones), so a shopper never sees "New brand
+applications" and a billing manager sees billing alerts but not ticket alerts. Personal
+notification types stay listed for everyone. `SUPPORT_TICKET_REPLY` counts as personal, because
+customers receive it too. Adding a staff type to a rule list updates the mute list automatically.
 
 **`pushEnabled` is a second channel on the same row, read only by the `push` module.** The row
 carries `enabled` (in-app) and `pushEnabled` (phone), both defaulting to true. The in-app path

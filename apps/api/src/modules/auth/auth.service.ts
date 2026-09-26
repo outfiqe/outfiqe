@@ -1023,6 +1023,7 @@ export const authService = {
     });
 
     await eventBus.publish(DomainEvents.ADMIN_REGISTERED, { userId: user.id, email: user.email });
+    await crmAccessService.announceMemberJoined(membership);
 
     const tokens = await issueTokens(user);
 

@@ -5,6 +5,7 @@ import type {
   NotificationEntityType,
   NotificationSurface,
   NotificationType,
+  SubscriptionStatus,
   SupportCategory,
   TagRejectionReason,
   UserRole,
@@ -26,6 +27,7 @@ export type NotificationBroadcastPayload = {
   entityId: string | null;
   targetSurface: NotificationSurface | null;
   targetPath: string | null;
+  organizationId: string | null;
   metadata: Record<string, unknown>;
   groupKey: string | null;
   actorCount: number;
@@ -178,6 +180,32 @@ export type DomainEventPayloads = {
     assigneeUserId: string;
     assignedByUserId: string | null;
   };
+  [DomainEvents.CRM_TICKET_CREATED]: {
+    organizationId: string;
+    ticketId: string;
+    title: string;
+    assigneeUserId: string | null;
+    createdByUserId: string | null;
+  };
+  [DomainEvents.CRM_MEMBER_JOINED]: {
+    organizationId: string;
+    membershipId: string;
+    userId: string;
+  };
+  [DomainEvents.CRM_MEMBERSHIP_ENDED]: {
+    organizationId: string;
+    userId: string;
+  };
+  [DomainEvents.CRM_INVOICE_OPENED]: {
+    organizationId: string;
+    invoiceId: string;
+    amount: number;
+  };
+  [DomainEvents.CRM_SUBSCRIPTION_LAPSED]: {
+    organizationId: string;
+    subscriptionId: string;
+    status: CrmLapsedSubscriptionStatus;
+  };
   [DomainEvents.SUPPORT_TICKET_CREATED]: {
     ticketId: string;
     ticketNumber: number;
@@ -239,6 +267,11 @@ export type DomainEventPayloads = {
   [DomainEvents.BRAND_UNSUSPENDED]: { brandId: string };
 };
 
+export type CrmLapsedSubscriptionStatus = Extract<SubscriptionStatus, "PAST_DUE" | "CANCELED">;
+
+export type DomainEventContext = { eventId: string };
+
 export type DomainEventHandler<E extends DomainEvent> = (
   payload: DomainEventPayloads[E],
+  context: DomainEventContext,
 ) => Promise<void>;

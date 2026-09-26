@@ -70,6 +70,7 @@ import {
   type PlatformNavGroupKey,
   type PlatformNavItem,
   resolveAccountLabel,
+  shouldRefetchCrmOrganizationOnFocus,
   shouldShowCrmSection,
   shouldShowPlatformSection,
 } from "./AdminSidebar.utils";
@@ -403,14 +404,15 @@ export const AdminSidebar = () => {
   const navigation = useTanStackSidebarNavigation();
   const { collapsed, toggle } = useSidebarCollapse("outfiqe:admin-sidebar-collapsed");
 
-  const { data: crmOrganization, status: crmOrganizationStatus } = useQuery({
+  const { data: crmOrganization, isFetched: hasCrmOrganizationAnswered } = useQuery({
     queryKey: ["crm-organization"],
     queryFn: crmApi.getOrganization,
     retry: false,
     staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: shouldRefetchCrmOrganizationOnFocus,
   });
 
-  if (!isAdminNavReady(state.status !== "loading", crmOrganizationStatus)) {
+  if (!isAdminNavReady(state.status !== "loading", hasCrmOrganizationAnswered)) {
     return (
       <SidebarSkeleton
         ariaLabel="Admin"

@@ -30,6 +30,11 @@ export const NotificationType = {
   PRODUCT_TAG_REVOKED: "PRODUCT_TAG_REVOKED",
   PRODUCT_TAG_REVIEW_REMINDER: "PRODUCT_TAG_REVIEW_REMINDER",
   ANNOUNCEMENT: "ANNOUNCEMENT",
+  CRM_TICKET_UNASSIGNED: "CRM_TICKET_UNASSIGNED",
+  CRM_MEMBER_JOINED: "CRM_MEMBER_JOINED",
+  CRM_INVOICE_DUE: "CRM_INVOICE_DUE",
+  CRM_SUBSCRIPTION_PAST_DUE: "CRM_SUBSCRIPTION_PAST_DUE",
+  CRM_SUBSCRIPTION_CANCELED: "CRM_SUBSCRIPTION_CANCELED",
 } as const;
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
@@ -48,6 +53,8 @@ export const NotificationEntityType = {
   CRM_TICKET: "CRM_TICKET",
   SUPPORT_TICKET: "SUPPORT_TICKET",
   ANNOUNCEMENT: "ANNOUNCEMENT",
+  CRM_SUBSCRIPTION: "CRM_SUBSCRIPTION",
+  CRM_SUBSCRIPTION_INVOICE: "CRM_SUBSCRIPTION_INVOICE",
 } as const;
 
 export type NotificationEntityType =
@@ -66,6 +73,14 @@ export const NotificationSurface = {
 } as const;
 
 export type NotificationSurface = (typeof NotificationSurface)[keyof typeof NotificationSurface];
+
+export const NotificationFeedScope = {
+  ALL: "all",
+  TENANT: "tenant",
+} as const;
+
+export type NotificationFeedScope =
+  (typeof NotificationFeedScope)[keyof typeof NotificationFeedScope];
 
 export type RecentActor = {
   id: string;
@@ -101,6 +116,9 @@ export type NotificationMetadata = {
   crmItemTitle?: string;
   crmOrganizationSubdomain?: string | null;
   crmOrganizationIsPlatformOrg?: boolean;
+  crmOrganizationName?: string;
+  crmMemberName?: string;
+  crmInvoiceAmount?: number;
   supportSubject?: string;
   couponCode?: string;
   totalBudgetAmount?: number;
@@ -127,6 +145,7 @@ export type Notification = {
   entityId: string | null;
   targetSurface: NotificationSurface | null;
   targetPath: string | null;
+  organizationId: string | null;
   metadata: NotificationMetadata;
   groupKey: string | null;
   actorCount: number;
