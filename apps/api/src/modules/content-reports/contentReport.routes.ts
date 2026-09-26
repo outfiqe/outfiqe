@@ -2,9 +2,8 @@ import { Router } from "express";
 
 import { optionalAuth } from "#middlewares/optional-auth.js";
 import { rateLimit } from "#middlewares/rate-limit.js";
-import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 
 import { contentReportController } from "./contentReport.controller.js";
 import {
@@ -25,8 +24,6 @@ const reportRateLimit = rateLimit({
   message: "You've reported a lot of content recently. Please try again later.",
 });
 
-const requireAdmin = [requireAuth, requirePlatformAccess];
-
 export const contentReportRoutes = Router();
 
 contentReportRoutes.post(
@@ -37,18 +34,22 @@ contentReportRoutes.post(
   contentReportController.submit,
 );
 
-contentReportRoutes.get("/open-count", ...requireAdmin, contentReportController.openCount);
+contentReportRoutes.get(
+  "/open-count",
+  ...platformGuards.contentModerate,
+  contentReportController.openCount,
+);
 
 contentReportRoutes.get(
   "/",
-  ...requireAdmin,
+  ...platformGuards.contentModerate,
   validate({ query: listContentReportsQuerySchema }),
   contentReportController.list,
 );
 
 contentReportRoutes.post(
   "/:id/resolve",
-  ...requireAdmin,
+  ...platformGuards.contentModerate,
   validate({ params: contentReportIdParamSchema, body: resolveContentReportSchema }),
   contentReportController.resolve,
 );

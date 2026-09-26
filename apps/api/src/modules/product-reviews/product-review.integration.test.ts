@@ -8,7 +8,10 @@ import { FulfilmentStatus, PaymentMethod, ProductStatus } from "#generated/prism
 import { UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
-import { createAdminSession } from "#test/integration/authHelpers.js";
+import {
+  createAdminSession,
+  createRoleLimitedStaffSession,
+} from "#test/integration/authHelpers.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -379,6 +382,42 @@ describe("DELETE /api/products/:productId/reviews/:reviewId", () => {
       .set("Authorization", authHeaderFor(stranger.id));
 
     expect(response.status).toBe(403);
+  });
+
+  it("does not let a staff member without the review moderation permission delete someone else's review", async () => {
+    const { product, size } = await createProduct("Unmoderated Jacket");
+    const buyer = await createUser("Unmoderated Reviewer", "unmoderated-reviewer");
+    await createDeliveredOrderItem(buyer.id, product.id, size.id);
+    const supportAgent = await createRoleLimitedStaffSession("platform:support:respond");
+
+    const created = await request(testApp)
+      .post(`/api/products/${product.id}/reviews`)
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ rating: 2, body: "A review that a support agent has no business removing." });
+
+    const response = await request(testApp)
+      .delete(`/api/products/${product.id}/reviews/${created.body.data.id}`)
+      .set("Authorization", supportAgent.authHeader);
+
+    expect(response.status).toBe(403);
+  });
+
+  it("lets a staff member holding the review moderation permission delete any review", async () => {
+    const { product, size } = await createProduct("Moderator Jacket");
+    const buyer = await createUser("Moderated Buyer", "moderated-buyer");
+    await createDeliveredOrderItem(buyer.id, product.id, size.id);
+    const moderator = await createRoleLimitedStaffSession("platform:reviews:moderate");
+
+    const created = await request(testApp)
+      .post(`/api/products/${product.id}/reviews`)
+      .set("Authorization", authHeaderFor(buyer.id))
+      .send({ rating: 1, body: "A review that the moderation role is allowed to remove." });
+
+    const response = await request(testApp)
+      .delete(`/api/products/${product.id}/reviews/${created.body.data.id}`)
+      .set("Authorization", moderator.authHeader);
+
+    expect(response.status).toBe(200);
   });
 
   it("lets an admin delete any review and leaves an audit trail", async () => {

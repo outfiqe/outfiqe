@@ -2,7 +2,6 @@
 
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
@@ -17,7 +16,10 @@ import {
   voidCommissionSchema,
 } from "./commission.schemas.js";
 
-const requireAdmin = [requireAuth, requirePlatformAccess, requirePlatformNavItem("commissions")];
+const requireCommissionRead = [
+  ...requirePlatformRole("platform:commissions:read", "platform:commissions:manage"),
+  requirePlatformNavItem("commissions"),
+];
 const requireCommissionMutationAdmin = [
   ...requirePlatformRole("platform:commissions:manage"),
   requirePlatformNavItem("commissions"),
@@ -34,7 +36,7 @@ commissionRoutes.get(
   commissionController.listMine,
 );
 
-commissionRoutes.get("/tiers", ...requireAdmin, commissionController.listTiers);
+commissionRoutes.get("/tiers", ...requireCommissionRead, commissionController.listTiers);
 
 commissionRoutes.post(
   "/tiers",
@@ -59,7 +61,7 @@ commissionRoutes.delete(
 
 commissionRoutes.get(
   "/",
-  ...requireAdmin,
+  ...requireCommissionRead,
   validate({ query: listAdminCommissionsQuerySchema }),
   commissionController.listAll,
 );

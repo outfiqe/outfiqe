@@ -19,6 +19,11 @@ to any one app.
   (`useTenantHost`) and `apps/admin` (`isOnTenantHost`) use them to only show the storefront ⇄ CRM
   cross-links, and only honour a cross-app `?redirect=` after login, when the browser is actually on
   a tenant subdomain rather than the apex domain.
+- `platform-access/` — `PLATFORM_SECTION_ACCESS`, the one map from every platform menu section
+  (`PlatformNavKey`) to the permissions that open it (or co-founder only), with
+  `canAccessPlatformSection` and `findInaccessiblePlatformSections`. `apps/api` builds each
+  session's hidden sections from it, and `apps/admin`'s menu, page guard and landing page read the
+  result, so the menu and the server can't disagree about who sees a section.
 - `user-role/` — `STAFF_USER_ROLES` and `isStaffUserRole(role)`, the one definition of "either kind of staff account" (`ADMIN` platform staff or `TENANT_STAFF`). `apps/api`'s engagement guard and CRM invite check, `apps/web`'s sign-in destination and auth context, and `apps/admin`'s app gate all use it instead of comparing against `ADMIN` directly.
 - `post-layout/` — `POST_LAYOUT_VALUES`/`POST_LAYOUT`/`PostLayout`, the creator post's layout
   enum (`PORTRAIT`/`SQUARE`/`TALL`), plus `POST_LAYOUT_ASPECT` (the crop/display aspect ratio for

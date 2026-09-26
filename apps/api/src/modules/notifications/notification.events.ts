@@ -5,16 +5,25 @@ import {
   FulfilmentStatus,
   NotificationEntityType,
   NotificationType,
-  UserRole,
   WithdrawRequestStatus,
 } from "#generated/prisma/enums.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
+import {
+  BRAND_REVIEW_PERMISSION_KEYS,
+  COUPON_MANAGEMENT_PERMISSION_KEYS,
+  type PlatformPermissionKey,
+  SUPPORT_AGENT_PERMISSION_KEYS,
+} from "#modules/platform-access/platform-access.constants.js";
+import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import { NOTIFICATION_CONSUMER_GROUP, NOTIFICATION_GROUP_KEYS } from "./notification.constants.js";
 import { notificationRepository } from "./notification.repository.js";
 import { notificationService } from "./notification.service.js";
 import type { CreateIndividualNotificationInput } from "./notification.types.js";
+
+const findPlatformRecipientIds = (permissionKeys: readonly PlatformPermissionKey[]) =>
+  platformAccessService.findUserIdsHoldingAnyPermission(permissionKeys);
 
 const isApprovedCreator = async (userId: string): Promise<boolean> => {
   const user = await userRepository.findById(userId);
@@ -298,7 +307,7 @@ export const registerNotificationEventConsumers = (): void => {
     event: DomainEvents.BRAND_APPLICATION_SUBMITTED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
     handler: async ({ applicationId, brandName }): Promise<void> => {
-      const adminIds = await userRepository.findIdsByRole(UserRole.ADMIN);
+      const adminIds = await findPlatformRecipientIds(BRAND_REVIEW_PERMISSION_KEYS);
       if (adminIds.length === 0) return;
 
       const inputs: CreateIndividualNotificationInput[] = adminIds.map((recipientId) => ({
@@ -378,7 +387,7 @@ export const registerNotificationEventConsumers = (): void => {
     event: DomainEvents.SUPPORT_TICKET_CREATED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
     handler: async ({ ticketId, subject }): Promise<void> => {
-      const adminIds = await userRepository.findIdsByRole(UserRole.ADMIN);
+      const adminIds = await findPlatformRecipientIds(SUPPORT_AGENT_PERMISSION_KEYS);
       if (adminIds.length === 0) return;
 
       await notificationService.notifyManyIndividual(
@@ -432,7 +441,7 @@ export const registerNotificationEventConsumers = (): void => {
     handler: async ({ ticketId, subject, assigneeUserId }): Promise<void> => {
       const recipientIds = assigneeUserId
         ? [assigneeUserId]
-        : await userRepository.findIdsByRole(UserRole.ADMIN);
+        : await findPlatformRecipientIds(SUPPORT_AGENT_PERMISSION_KEYS);
       if (recipientIds.length === 0) return;
 
       await notificationService.notifyManyIndividual(
@@ -468,7 +477,7 @@ export const registerNotificationEventConsumers = (): void => {
     event: DomainEvents.COUPON_APPROVAL_REQUESTED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
     handler: async ({ couponId, code, createdById, totalBudgetAmount }): Promise<void> => {
-      const adminIds = await userRepository.findIdsByRole(UserRole.ADMIN);
+      const adminIds = await findPlatformRecipientIds(COUPON_MANAGEMENT_PERMISSION_KEYS);
       const recipientIds = adminIds.filter((adminId) => adminId !== createdById);
       if (recipientIds.length === 0) return;
 
@@ -488,7 +497,7 @@ export const registerNotificationEventConsumers = (): void => {
     event: DomainEvents.COUPON_REDEMPTION_FLAGGED,
     groupName: NOTIFICATION_CONSUMER_GROUP,
     handler: async ({ orderId, flagReason }): Promise<void> => {
-      const adminIds = await userRepository.findIdsByRole(UserRole.ADMIN);
+      const adminIds = await findPlatformRecipientIds(COUPON_MANAGEMENT_PERMISSION_KEYS);
       if (adminIds.length === 0) return;
 
       await notificationService.notifyManyIndividual(
@@ -513,7 +522,7 @@ export const registerNotificationEventConsumers = (): void => {
       spentAmount,
       totalBudgetAmount,
     }): Promise<void> => {
-      const adminIds = await userRepository.findIdsByRole(UserRole.ADMIN);
+      const adminIds = await findPlatformRecipientIds(COUPON_MANAGEMENT_PERMISSION_KEYS);
       if (adminIds.length === 0) return;
 
       await notificationService.notifyManyIndividual(

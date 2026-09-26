@@ -14,6 +14,10 @@ import type {
   OrganizationRecord,
   RoleWithPermissions,
 } from "#modules/crm-access/crm-access.types.js";
+import {
+  PLATFORM_PERMISSION_CATALOG,
+  PLATFORM_PERMISSION_KEYS,
+} from "#modules/platform-access/platform-access.constants.js";
 
 const PLATFORM_ORGANIZATION_SUBDOMAIN = "platform-org";
 
@@ -23,6 +27,10 @@ export const seedPlatformOrganization = async (): Promise<{
   memberRole: RoleWithPermissions;
 }> => {
   await prisma.permission.createMany({ data: PERMISSION_CATALOG, skipDuplicates: true });
+  await prisma.permission.createMany({
+    data: PLATFORM_PERMISSION_CATALOG.map((permission) => ({ ...permission })),
+    skipDuplicates: true,
+  });
   const organization = await prisma.organization.create({
     data: {
       name: `Platform Org ${randomUUID()}`,
@@ -39,6 +47,7 @@ export const seedPlatformOrganization = async (): Promise<{
     permissionKeys: [
       ...BUILT_IN_ROLE_PERMISSIONS[BUILT_IN_ROLE_NAME.ADMIN],
       PLATFORM_ACCESS_PERMISSION_KEY,
+      ...PLATFORM_PERMISSION_KEYS,
     ],
   });
   const memberRole = await crmAccessRepository.createRole({

@@ -1,9 +1,7 @@
 import { Router } from "express";
 
 import { crmWriteRateLimit } from "#middlewares/crm-rate-limit.js";
-import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 
 import { platformNavAccessController } from "./platform-nav-access.controller.js";
 import { requireCoFounder } from "./platform-nav-access.middleware.js";
@@ -17,8 +15,7 @@ export const platformNavAccessRoutes = Router();
 
 platformNavAccessRoutes.get(
   "/nav-access",
-  requireAuth,
-  requirePlatformAccess,
+  ...requireCoFounder,
   platformNavAccessController.getOverview,
 );
 

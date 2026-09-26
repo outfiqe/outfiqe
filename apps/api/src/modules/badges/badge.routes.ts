@@ -5,7 +5,6 @@ import multer from "multer";
 import { AppError } from "#middlewares/error-handler.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
@@ -23,7 +22,10 @@ import {
   userBadgeIdParamSchema,
 } from "./badge.schemas.js";
 
-const requireAdmin = [requireAuth, requirePlatformAccess, requirePlatformNavItem("gamification")];
+const requireGamificationRead = [
+  ...requirePlatformRole("platform:gamification:read", "platform:gamification:manage"),
+  requirePlatformNavItem("gamification"),
+];
 const requireGamificationMutationAdmin = [
   ...requirePlatformRole("platform:gamification:manage"),
   requirePlatformNavItem("gamification"),
@@ -72,7 +74,7 @@ export const badgeRoutes = Router();
 
 badgeRoutes.get("/collection", requireAuth, badgeController.listMyCollection);
 
-badgeRoutes.get("/admin", ...requireAdmin, badgeController.listAllAdmin);
+badgeRoutes.get("/admin", ...requireGamificationRead, badgeController.listAllAdmin);
 
 badgeRoutes.post(
   "/admin/icon-image",
@@ -83,14 +85,18 @@ badgeRoutes.post(
 
 badgeRoutes.get(
   "/admin/:badgeId",
-  ...requireAdmin,
+  ...requireGamificationRead,
   validate({ params: badgeIdParamSchema }),
   badgeController.getAdminById,
 );
 
-badgeRoutes.get("/stats", ...requireAdmin, badgeController.getAdminStats);
+badgeRoutes.get("/stats", ...requireGamificationRead, badgeController.getAdminStats);
 
-badgeRoutes.get("/user-badges/manual", ...requireAdmin, badgeController.listManualAwards);
+badgeRoutes.get(
+  "/user-badges/manual",
+  ...requireGamificationRead,
+  badgeController.listManualAwards,
+);
 
 badgeRoutes.post(
   "/",

@@ -2,10 +2,9 @@
 import { Router } from "express";
 
 import { cache, refreshCacheOnWrite } from "#middlewares/cache.js";
-import { requireAuth } from "#middlewares/require-auth.js";
 import { revalidateWebCacheOnWrite } from "#middlewares/revalidate-web-cache.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 import { CACHE_TTL } from "#redis/redis.keys.js";
 
 import { heroSlideController } from "./heroSlide.controller.js";
@@ -15,8 +14,6 @@ import {
   updateHeroSlideSchema,
 } from "./heroSlide.schemas.js";
 import { heroSlideService } from "./heroSlide.service.js";
-
-const requireAdmin = [requireAuth, requirePlatformAccess];
 
 const CACHE_NAMESPACE = "hero-slides";
 
@@ -36,13 +33,13 @@ const revalidateHeroSlidesWebCache = revalidateWebCacheOnWrite(WEB_REVALIDATE_TA
 
 export const heroSlideRoutes = Router();
 
-heroSlideRoutes.get("/admin", ...requireAdmin, heroSlideController.listAll);
+heroSlideRoutes.get("/admin", ...platformGuards.catalogRead, heroSlideController.listAll);
 
 heroSlideRoutes.get("/", heroSlidesPublicCache, heroSlideController.listPublic);
 
 heroSlideRoutes.post(
   "/",
-  ...requireAdmin,
+  ...platformGuards.catalogManage,
   validate({ body: createHeroSlideSchema }),
   refreshHeroSlidesPublicCache,
   revalidateHeroSlidesWebCache,
@@ -50,7 +47,7 @@ heroSlideRoutes.post(
 );
 heroSlideRoutes.patch(
   "/:id",
-  ...requireAdmin,
+  ...platformGuards.catalogManage,
   validate({ params: heroSlideIdParamSchema, body: updateHeroSlideSchema }),
   refreshHeroSlidesPublicCache,
   revalidateHeroSlidesWebCache,
