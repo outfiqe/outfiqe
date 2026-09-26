@@ -18,6 +18,7 @@ import { currentIsoWeekKey, previousIsoWeekKey } from "#lib/iso-week.utils.js";
 import { redis } from "#redis/redis.client.js";
 import { redisKeys } from "#redis/redis.keys.js";
 import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
+import { grantLimitedPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
@@ -465,7 +466,7 @@ describe("PATCH /api/creator-leaderboard/categories/:category (admin)", () => {
 
   it("blocks a platform staffer without platform:gamification:manage", async () => {
     const staffer = await createCreator();
-    await grantPlatformStaffMembership(staffer.id);
+    await grantLimitedPlatformStaffMembership(staffer.id);
     const { accessToken } = generateTokenpair({ sub: staffer.id, role: UserRole.ADMIN });
 
     const response = await request(testApp)

@@ -117,3 +117,18 @@ export const seedTenantOrganization = async (
 
   return { organization, adminRole, memberRole };
 };
+
+export const UNRELATED_PLATFORM_PERMISSION_KEY = "platform:audit:read";
+
+export const grantLimitedPlatformStaffMembership = async (
+  userId: string,
+): Promise<MembershipRecord | null> => {
+  const platformOrganization = await ensurePlatformOrganizationExists();
+  const limitedRole = await crmAccessRepository.createRole({
+    organizationId: platformOrganization.id,
+    name: `Audit only ${randomUUID().slice(0, 8)}`,
+    isBuiltIn: false,
+    permissionKeys: [UNRELATED_PLATFORM_PERMISSION_KEY],
+  });
+  return crmAccessRepository.grantPlatformStaffMembership(userId, limitedRole.id);
+};

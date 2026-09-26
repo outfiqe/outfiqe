@@ -6,7 +6,9 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { CouponType, PaymentMethod, ProductStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
+import { createRoleLimitedStaffSession } from "#test/integration/authHelpers.js";
 import { createAdminSession, grantPlatformPermissions } from "#test/integration/authHelpers.js";
+import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crmFixtures.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -327,7 +329,9 @@ describe("PATCH /api/admin/coupons/:id/status", () => {
   });
 
   it("blocks a platform staffer without platform:coupons:manage", async () => {
-    const { authHeader, userId } = await createAdminSession();
+    const { authHeader, userId } = await createRoleLimitedStaffSession(
+      UNRELATED_PLATFORM_PERMISSION_KEY,
+    );
     const coupon = await createCoupon({ createdById: userId });
 
     const response = await request(testApp)

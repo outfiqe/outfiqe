@@ -14,7 +14,9 @@ import {
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { redis } from "#redis/redis.client.js";
+import { createRoleLimitedStaffSession } from "#test/integration/authHelpers.js";
 import { createAdminSession, grantPlatformPermissions } from "#test/integration/authHelpers.js";
+import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crmFixtures.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -364,7 +366,7 @@ describe("brand commission exemptions (admin)", () => {
 
 describe("brand-payout mutations require platform:commissions:manage", () => {
   it("blocks a platform staffer without the permission from every mutation", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createRoleLimitedStaffSession(UNRELATED_PLATFORM_PERMISSION_KEY);
     const { brand } = await createBrandWithMember();
 
     const commissionRuleResponse = await request(testApp)
