@@ -258,7 +258,7 @@ describe("ProductDetail buy controls by account type", () => {
     expect(screen.queryByRole("button", { name: /add to cart/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /buy now/i })).not.toBeInTheDocument();
     expect(screen.getByText("Shopping is available on customer accounts.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Stash" })).toBeInTheDocument();
   });
 
   it("hides the buy controls from an admin too, and disables saving", () => {
@@ -267,7 +267,7 @@ describe("ProductDetail buy controls by account type", () => {
 
     expect(screen.queryByRole("button", { name: /add to cart/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /buy now/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Stash" })).toBeDisabled();
   });
 
   it("keeps the buy controls for a shopper", () => {
@@ -287,7 +287,7 @@ describe("ProductDetail save button", () => {
     wishlistMutationState.isPending = true;
     render(<ProductDetail product={buildProduct([{ id: "m", label: "M", inStock: true }])} />);
 
-    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Stash" })).toBeDisabled();
   });
 
   it("picks up a fresh isSaved prop from a later fetch, not just the value it first mounted with", () => {
@@ -295,10 +295,10 @@ describe("ProductDetail save button", () => {
     const { rerender } = render(
       <ProductDetail product={buildProduct(sizes, { isSaved: false })} />,
     );
-    expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Stash" })).toHaveAttribute("aria-pressed", "false");
 
     rerender(<ProductDetail product={buildProduct(sizes, { isSaved: true })} />);
 
-    expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Stash" })).toHaveAttribute("aria-pressed", "true");
   });
 });

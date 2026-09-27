@@ -45,7 +45,7 @@ export const BrandTagPolicyCard = ({ profile }: { profile: BrandProfile }) => {
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6">
-      <h2 className="font-display text-lg font-bold text-foreground">Creator tagging</h2>
+      <h2 className="font-display text-lg font-bold text-foreground">Muse tagging</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         Decide whose product tags go live on their looks straight away, and whose wait for your
         review.
@@ -57,7 +57,7 @@ export const BrandTagPolicyCard = ({ profile }: { profile: BrandProfile }) => {
             htmlFor="brand-tag-policy"
             className="mb-1.5 block text-sm font-medium text-foreground"
           >
-            When a creator tags one of your products
+            When a muse tags one of your products
           </label>
           <Select
             id="brand-tag-policy"
@@ -81,8 +81,8 @@ export const BrandTagPolicyCard = ({ profile }: { profile: BrandProfile }) => {
               Auto-approve verified buyers
             </span>
             <span className="mt-0.5 block text-xs text-muted-foreground">
-              A creator who bought the exact product on Outfiqe gets tagged automatically, even
-              under &ldquo;Review every tag&rdquo;.
+              A muse who bought the exact product on Outfiqe gets tagged automatically, even under
+              &ldquo;Review every tag&rdquo;.
             </span>
           </span>
           <Switch

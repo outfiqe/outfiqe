@@ -35,7 +35,7 @@ export const ProgressSection = () => {
       <div>
         <h1 className="font-display text-2xl font-bold text-foreground">Your progress</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          XP from everyday activity on Outfiqe — posting, engaging, and selling.
+          XP from everyday activity on Outfiqe — dropping, engaging, and selling.
         </p>
       </div>
 
@@ -72,7 +72,7 @@ export const ProgressSection = () => {
       {!isPending && !isError && transactions.length === 0 && (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-10 text-center">
           <p className="text-sm text-muted-foreground">
-            No XP yet — post a look, follow a creator, or make a purchase to start earning.
+            No XP yet — drop a look, follow a muse, or make a purchase to start earning.
           </p>
         </div>
       )}

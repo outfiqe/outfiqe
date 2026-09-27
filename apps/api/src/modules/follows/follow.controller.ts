@@ -33,7 +33,7 @@ export const followController = {
     const { userId } = requireAuthPrincipal(res);
     const query = validated.query<ListSuggestedCreatorsQuery>(res);
     const { items, nextCursor } = await followService.suggestedCreators(userId, query);
-    sendSuccess(res, { creators: items, nextCursor }, "Suggested creators.");
+    sendSuccess(res, { creators: items, nextCursor }, "Suggested muses.");
   },
 
   async listFollowers(_req: Request, res: Response) {

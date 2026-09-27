@@ -368,7 +368,7 @@ describe("GET /api/withdraw/eligibility", () => {
     expect(response.body.data.windowOpen).toBe(false);
   });
 
-  it("forbids a shopper who is not an approved creator from the creator withdraw flow", async () => {
+  it("forbids a shopper who is not an approved muse from the muse withdraw flow", async () => {
     await createOpenPolicy(WithdrawOwnerType.CREATOR);
     const shopper = await createUser(UserRole.CUSTOMER, "Shopper", { approvedCreator: false });
     const authHeader = authHeaderFor(shopper.id, UserRole.CUSTOMER);
@@ -394,7 +394,7 @@ describe("GET /api/withdraw/eligibility", () => {
   });
 });
 
-describe("POST /api/withdraw/requests — creator", () => {
+describe("POST /api/withdraw/requests — muse", () => {
   it("creates a PENDING request within policy bounds and balance", async () => {
     await createOpenPolicy(WithdrawOwnerType.CREATOR);
     const creator = await createUser();
@@ -440,7 +440,7 @@ describe("POST /api/withdraw/requests — creator", () => {
     expect(response.body.code).toBe("AMOUNT_TOO_LOW");
   });
 
-  it("hard-rejects an amount above the policy maximum for a creator", async () => {
+  it("hard-rejects an amount above the policy maximum for a muse", async () => {
     await createOpenPolicy(WithdrawOwnerType.CREATOR, { maxAmount: 1000 });
     const creator = await createUser();
     await grantAvailableCommission(creator.id, 5000);

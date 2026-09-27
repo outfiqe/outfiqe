@@ -15,7 +15,7 @@ const resolve = (
 ) => resolveNotificationTarget({ type, entityId, metadata, recipientIsStaff });
 
 describe("resolveNotificationTarget", () => {
-  it("deep-links a like or comment on your own look to that post on your profile", () => {
+  it("deep-links a like or comment on your own look to that drop on your profile", () => {
     expect(resolve(NotificationType.LOOK_LIKED, "look-1", { lookOwnerHandle: "mun" })).toEqual({
       surface: NotificationSurface.WEB,
       path: "/creator/mun?look=look-1",
@@ -27,13 +27,13 @@ describe("resolveNotificationTarget", () => {
     });
   });
 
-  it("deep-links a comment reply to the look owner's post", () => {
+  it("deep-links a comment reply to the look owner's drop", () => {
     expect(
       resolve(NotificationType.COMMENT_REPLIED, "look-3", { lookOwnerHandle: "jane" }),
     ).toEqual({ surface: NotificationSurface.WEB, path: "/creator/jane?look=look-3" });
   });
 
-  it("deep-links a comment reply to the replier's post when the look owner handle is missing", () => {
+  it("deep-links a comment reply to the replier's drop when the look owner handle is missing", () => {
     expect(
       resolve(NotificationType.COMMENT_REPLIED, "look-3", {
         actor: { id: "u2", name: "Jane", handle: "jane", avatarUrl: null, isCreator: true },
@@ -55,7 +55,7 @@ describe("resolveNotificationTarget", () => {
     });
   });
 
-  it("routes a new follower who is a creator to their creator profile", () => {
+  it("routes a new follower who is a muse to their muse profile", () => {
     expect(
       resolve(NotificationType.NEW_FOLLOWER, "u1", {
         recentActors: [
@@ -82,7 +82,7 @@ describe("resolveNotificationTarget", () => {
     ).toEqual({ surface: NotificationSurface.WEB, path: "/brand/brand-7" });
   });
 
-  it("routes a new brand follower who is a creator to their creator profile", () => {
+  it("routes a new brand follower who is a muse to their muse profile", () => {
     expect(
       resolve(NotificationType.NEW_BRAND_FOLLOWER, "u1", {
         recentActors: [
@@ -92,7 +92,7 @@ describe("resolveNotificationTarget", () => {
     ).toEqual({ surface: NotificationSurface.WEB, path: "/creator/anjeshghimire" });
   });
 
-  it("routes a follower with neither a creator profile nor a brand to the dashboard profile", () => {
+  it("routes a follower with neither a muse profile nor a brand to the dashboard profile", () => {
     expect(
       resolve(NotificationType.NEW_FOLLOWER, "u1", {
         recentActors: [

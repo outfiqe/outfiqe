@@ -130,7 +130,7 @@ describe("AccountMenu", () => {
     expect(profileLinks.every((link) => link.getAttribute("href") === "/profile")).toBe(true);
   });
 
-  it("sends a creator's avatar and Dashboard entry to the overview page", () => {
+  it("sends a muse's avatar and Dashboard entry to the overview page", () => {
     const creator = buildUser({ isCreator: true });
     mockAuth({
       state: { status: AuthStatus.AUTHENTICATED, user: creator, accessToken: "token" },
@@ -158,7 +158,7 @@ describe("AccountMenu", () => {
     expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/overview");
   });
 
-  it("does not offer a creator a way to switch to creator mode", () => {
+  it("does not offer a muse a way to switch to muse mode", () => {
     const creator = buildUser({ isCreator: true, creatorStatus: CreatorStatus.APPROVED });
     mockAuth({
       state: { status: AuthStatus.AUTHENTICATED, user: creator, accessToken: "token" },
@@ -168,11 +168,11 @@ describe("AccountMenu", () => {
 
     render(<AccountMenu />);
 
-    expect(screen.queryByText(/switch to creator mode/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Become a creator" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/switch to muse mode/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Become a muse" })).not.toBeInTheDocument();
   });
 
-  it("offers a non-creator shopper the Become a creator link", () => {
+  it("offers a non-creator shopper the Become a muse link", () => {
     const shopper = buildUser();
     mockAuth({
       state: { status: AuthStatus.AUTHENTICATED, user: shopper, accessToken: "token" },
@@ -181,10 +181,7 @@ describe("AccountMenu", () => {
 
     render(<AccountMenu />);
 
-    expect(screen.getByRole("link", { name: "Become a creator" })).toHaveAttribute(
-      "href",
-      "/profile",
-    );
+    expect(screen.getByRole("link", { name: "Become a muse" })).toHaveAttribute("href", "/profile");
   });
 
   it("offers a CRM link to a tenant user who has CRM access", () => {

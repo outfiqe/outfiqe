@@ -168,7 +168,7 @@ export const creatorLeaderboardService = {
     try {
       await recomputeAll(new Date());
     } catch (error) {
-      logger.error(`Creator leaderboard recompute failed: ${describeError(error)}`);
+      logger.error(`Muse leaderboard recompute failed: ${describeError(error)}`);
     }
   },
   getTop,

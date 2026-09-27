@@ -62,7 +62,7 @@ const settleWeeklyCompetitions = async (now: Date): Promise<void> => {
       await settleOneCompetition(competition, week);
     } catch (error) {
       logger.error(
-        `Failed to settle creator competition ${competition.id} for week ${week}: ${describeError(error)}`,
+        `Failed to settle muse competition ${competition.id} for week ${week}: ${describeError(error)}`,
       );
     }
   }

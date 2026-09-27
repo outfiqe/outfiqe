@@ -27,7 +27,7 @@ const PrivacyPage = () => (
     >
       <h2>Who we are</h2>
       <p>
-        Outfiqe operates a fashion marketplace connecting shoppers, creators and clothing brands in
+        Outfiqe operates a fashion marketplace connecting shoppers, muses and clothing brands in
         Nepal. In this policy, &ldquo;Outfiqe&rdquo;, &ldquo;we&rdquo; and &ldquo;us&rdquo; refer to
         the Outfiqe team operating the outfiqe.com platform from Nepal. For any privacy question,
         request or complaint, contact us at{" "}
@@ -42,16 +42,16 @@ const PrivacyPage = () => (
         </li>
         <li>Order details: delivery name, address, landmark, city and contact phone number.</li>
         <li>
-          Creator and brand details: profile information, and, for withdrawals, bank account
+          Muse and brand details: profile information, and, for withdrawals, bank account
           information, which is encrypted at rest and only decrypted for a payout.
         </li>
-        <li>Content you post: looks, photos, reviews, messages and support requests.</li>
+        <li>Content you share: looks, photos, reviews, messages and support requests.</li>
       </ul>
       <h3>Information collected automatically</h3>
       <ul>
         <li>
-          Device and usage data: pages viewed, taps on creator tags and links, and session
-          identifiers used for attribution.
+          Device and usage data: pages viewed, taps on muse tags and links, and session identifiers
+          used for attribution.
         </li>
         <li>Cookies and similar technologies. See our cookie policy.</li>
         <li>Error and performance diagnostics through our error-reporting provider.</li>
@@ -73,7 +73,7 @@ const PrivacyPage = () => (
         <li>To create and secure your account, and to authenticate you.</li>
         <li>To process orders, arrange delivery, and handle cancellations, returns and refunds.</li>
         <li>
-          To attribute sales to creators and calculate and pay commissions and brand settlements.
+          To attribute sales to muses and calculate and pay commissions and brand settlements.
         </li>
         <li>
           To provide support, and to send transactional messages about your orders and account.
@@ -131,7 +131,7 @@ const PrivacyPage = () => (
         We keep personal information for as long as your account is active and as needed to provide
         the service. After an account is closed, we retain order, payment and payout records, and
         the bank-account details tied to them, for as long as required by applicable Nepal tax,
-        accounting and anti-fraud law, and to resolve any open dispute. Content you posted publicly
+        accounting and anti-fraud law, and to resolve any open dispute. Content you shared publicly
         may remain visible until you delete it or your account. We then delete or irreversibly
         anonymise the information.
       </p>
@@ -173,9 +173,9 @@ const PrivacyPage = () => (
 
       <h2>Changes to this policy</h2>
       <p>
-        We will update this policy as the product and the law change, and will post the new version
-        here with a revised review date. Material changes will be communicated in the app or by
-        email.
+        We will update this policy as the product and the law change, and will publish the new
+        version here with a revised review date. Material changes will be communicated in the app or
+        by email.
       </p>
     </LegalDocument>
   </MarketingShell>

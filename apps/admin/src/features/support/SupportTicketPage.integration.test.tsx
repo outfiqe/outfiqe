@@ -82,7 +82,7 @@ const renderTicket = () => {
 };
 
 describe("SupportTicketPage", () => {
-  it("only offers legal status transitions and posts the expected status", async () => {
+  it("only offers legal status transitions and drops the expected status", async () => {
     let statusBody: unknown;
     mswServer.use(
       http.get(`${API_BASE}/support/admin/tickets/t-1`, () =>

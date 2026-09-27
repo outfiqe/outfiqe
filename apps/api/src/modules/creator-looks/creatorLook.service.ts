@@ -88,7 +88,7 @@ const requireActiveLook = async (lookId: string): Promise<{ id: string; creatorI
 
 const requireOwnedLook = async (lookId: string, userId: string): Promise<CreatorLookEditDetail> => {
   const look = await creatorLookRepository.findOwnedById(lookId, userId);
-  if (!look) throw new AppError("LOOK_NOT_FOUND", "This post no longer exists.", NOT_FOUND_STATUS);
+  if (!look) throw new AppError("LOOK_NOT_FOUND", "This drop no longer exists.", NOT_FOUND_STATUS);
   return look;
 };
 
@@ -98,12 +98,12 @@ const requireTopLevelComment = async (
 ): Promise<{ id: string; creatorLookId: string; userId: string }> => {
   const comment = await creatorLookRepository.findCommentById(commentId);
   if (!comment || comment.creatorLookId !== lookId) {
-    throw new AppError("COMMENT_NOT_FOUND", "This comment no longer exists.", NOT_FOUND_STATUS);
+    throw new AppError("COMMENT_NOT_FOUND", "This chime no longer exists.", NOT_FOUND_STATUS);
   }
   if (comment.parentCommentId !== null) {
     throw new AppError(
       "COMMENT_NOT_TOP_LEVEL",
-      "You can only reply to a top-level comment.",
+      "You can only reply to a top-level chime.",
       VALIDATION_STATUS,
     );
   }
@@ -175,7 +175,7 @@ export const creatorLookService = {
     userId: string,
     { taggedProducts, imageUrls, imageAssetIds, caption, layout }: CreateCreatorLookBody,
   ): Promise<CreatorLookSummary> {
-    await requireApprovedCreator(userId, "Only approved creators can post looks.");
+    await requireApprovedCreator(userId, "Only approved muses can drop looks.");
     const productIds = taggedProducts.map((tag) => tag.productId);
     const productsById = await requireApprovedProducts(productIds);
     if (imageAssetIds?.length) {
@@ -321,13 +321,13 @@ export const creatorLookService = {
   async remove(lookId: string, principal: { userId: string; role: UserRole }): Promise<void> {
     const existing = await creatorLookRepository.findActiveByIdForRemoval(lookId);
     if (!existing) {
-      throw new AppError("LOOK_NOT_FOUND", "This post no longer exists.", NOT_FOUND_STATUS);
+      throw new AppError("LOOK_NOT_FOUND", "This drop no longer exists.", NOT_FOUND_STATUS);
     }
 
     const isOwner = existing.creatorId === principal.userId;
     const isModerator = !isOwner && (await isPlatformModerator(principal));
     if (!isOwner && !isModerator) {
-      throw new AppError("LOOK_NOT_FOUND", "This post no longer exists.", NOT_FOUND_STATUS);
+      throw new AppError("LOOK_NOT_FOUND", "This drop no longer exists.", NOT_FOUND_STATUS);
     }
 
     await creatorLookRepository.softDelete(lookId);
@@ -340,7 +340,7 @@ export const creatorLookService = {
       await platformAudit.record({
         actorUserId: principal.userId,
         action: PLATFORM_AUDIT_ACTION.CREATOR_LOOK_REMOVED_BY_ADMIN,
-        summary: `Removed a post by ${existing.creatorId}`,
+        summary: `Removed a drop by ${existing.creatorId}`,
         onBehalfOfUserId: existing.creatorId,
         targetType: "CreatorLook",
         targetId: lookId,
@@ -355,13 +355,13 @@ export const creatorLookService = {
   ): Promise<void> {
     const comment = await creatorLookRepository.findCommentById(commentId);
     if (!comment || comment.creatorLookId !== lookId) {
-      throw new AppError("COMMENT_NOT_FOUND", "This comment no longer exists.", NOT_FOUND_STATUS);
+      throw new AppError("COMMENT_NOT_FOUND", "This chime no longer exists.", NOT_FOUND_STATUS);
     }
 
     const isOwner = comment.userId === principal.userId;
     const isModerator = !isOwner && (await isPlatformModerator(principal));
     if (!isOwner && !isModerator) {
-      throw new AppError("COMMENT_NOT_FOUND", "This comment no longer exists.", NOT_FOUND_STATUS);
+      throw new AppError("COMMENT_NOT_FOUND", "This chime no longer exists.", NOT_FOUND_STATUS);
     }
 
     await creatorLookRepository.softDeleteComment({
@@ -374,7 +374,7 @@ export const creatorLookService = {
       await platformAudit.record({
         actorUserId: principal.userId,
         action: PLATFORM_AUDIT_ACTION.CREATOR_LOOK_COMMENT_REMOVED_BY_ADMIN,
-        summary: `Removed a comment by ${comment.userId}`,
+        summary: `Removed a chime by ${comment.userId}`,
         onBehalfOfUserId: comment.userId,
         targetType: "CreatorLookComment",
         targetId: commentId,
@@ -409,7 +409,7 @@ export const creatorLookService = {
   async getPublicById(lookId: string, viewerId: string | undefined): Promise<CreatorLookFeedPost> {
     await requireActiveLook(lookId);
     const post = await creatorLookRepository.findPublicById(lookId, viewerId);
-    if (!post) throw new AppError("NOT_FOUND", "Post not found.", NOT_FOUND_STATUS);
+    if (!post) throw new AppError("NOT_FOUND", "Drop not found.", NOT_FOUND_STATUS);
     return post;
   },
 
@@ -421,7 +421,7 @@ export const creatorLookService = {
       if (!viewerId) {
         throw new AppError(
           "UNAUTHORIZED",
-          "Sign in to see posts from creators you follow.",
+          "Sign in to see drops from muses you follow.",
           UNAUTHORIZED_STATUS,
         );
       }
@@ -551,7 +551,7 @@ export const creatorLookService = {
     const { postScores, creatorMomentum } =
       await creatorLookRepository.computeRankedTrendingScoreAndCreatorMomentum();
     if (postScores.length === 0) {
-      logger.warn("explore-trending-scoring produced zero scored posts this cycle");
+      logger.warn("explore-trending-scoring produced zero scored drops this cycle");
     }
     await Promise.all([
       creatorLookRepository.cacheRankedTrendingScore(postScores),

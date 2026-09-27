@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart } from "lucide-react";
+import { CheriqIcon } from "@outfiqe/design-system";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -61,7 +61,7 @@ export const LookCard = ({ look }: LookCardProps) => {
         alt={`Look by ${creator.name}`}
       >
         <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-xs font-semibold text-white">
-          <Heart className="size-3.5 fill-white" />
+          <CheriqIcon className="size-3.5" isCheriqed />
           {likeCount.toLocaleString()}
         </span>
       </LookImageFrame>

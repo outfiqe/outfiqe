@@ -54,7 +54,7 @@ describe("CreatorPostThumbnail", () => {
   it("falls back to a generic label when there's no caption", () => {
     render(<CreatorPostThumbnail post={buildPost({ caption: null })} onClick={vi.fn()} />);
 
-    expect(screen.getByRole("button", { name: "View post" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View drop" })).toBeInTheDocument();
   });
 
   it("renders the caption text when present", () => {
@@ -79,19 +79,19 @@ describe("CreatorPostThumbnail", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Post options" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Drop options" })).toBeInTheDocument();
   });
 
   it("hides the post-actions menu on someone else's profile", () => {
     render(<CreatorPostThumbnail post={buildPost()} onClick={vi.fn()} isOwnProfile={false} />);
 
-    expect(screen.queryByRole("button", { name: "Post options" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Drop options" })).not.toBeInTheDocument();
   });
 
   it("hides the post-actions menu when isOwnProfile is true but no handlers are given", () => {
     render(<CreatorPostThumbnail post={buildPost()} onClick={vi.fn()} isOwnProfile />);
 
-    expect(screen.queryByRole("button", { name: "Post options" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Drop options" })).not.toBeInTheDocument();
   });
 
   it.each([

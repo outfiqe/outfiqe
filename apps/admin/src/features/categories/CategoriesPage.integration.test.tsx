@@ -47,7 +47,7 @@ const stubEmptyList = () => {
 };
 
 describe("CategoriesPage", () => {
-  it("posts the swapped id order when a category is moved down", async () => {
+  it("drops the swapped id order when a category is moved down", async () => {
     let reorderBody: unknown;
     mswServer.use(
       http.get(`${API_BASE}/categories/admin`, () =>
@@ -76,7 +76,7 @@ describe("CategoriesPage", () => {
     await waitFor(() => expect(reorderBody).toEqual({ orderedIds: ["id-b", "id-a", "id-c"] }));
   });
 
-  it("posts the dragged id order when a category is dropped onto another", async () => {
+  it("drops the dragged id order when a category is dropped onto another", async () => {
     let reorderBody: unknown;
     mswServer.use(
       http.get(`${API_BASE}/categories/admin`, () =>

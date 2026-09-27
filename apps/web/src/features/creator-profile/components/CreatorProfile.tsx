@@ -240,7 +240,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
       onSuccess: () => {
         setPostsCount((count) => Math.max(0, count - 1));
         setDeletingLookId(null);
-        toast.success("Post deleted");
+        toast.success("Drop deleted");
       },
       onError: (error) => toast.error(getErrorMessage(error)),
     });
@@ -291,7 +291,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
             {creatorStatus === "APPROVED" && (
               <span
                 role="img"
-                aria-label="Approved creator"
+                aria-label="Approved muse"
                 className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground sm:size-6"
               >
                 <Check className="size-2.5 sm:size-3.5" strokeWidth={3} />
@@ -369,7 +369,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
               <p className="font-display text-base font-extrabold text-foreground sm:text-lg">
                 {postsCount}
               </p>
-              <p className="text-[11px] text-muted-foreground sm:text-[11.5px]">Posts</p>
+              <p className="text-[11px] text-muted-foreground sm:text-[11.5px]">Drops</p>
             </div>
             <button
               type="button"
@@ -448,7 +448,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
       {isLoading ? (
         <CreatorPostGridSkeleton />
       ) : posts.length === 0 ? (
-        <p className="py-10 text-sm text-muted-foreground">No posts yet.</p>
+        <p className="py-10 text-sm text-muted-foreground">No drops yet.</p>
       ) : (
         <Masonry
           breakpointCols={CREATOR_POST_GRID_BREAKPOINT_COLUMNS}
@@ -615,7 +615,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
           <Modal
             open={deletingLookId !== null}
             onClose={() => setDeletingLookId(null)}
-            title="Delete post?"
+            title="Delete drop?"
             description="This can't be undone."
             footer={
               <div className="flex justify-end gap-2">
@@ -633,7 +633,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
             }
           >
             <p className="text-sm text-muted-foreground">
-              Likes, comments, and tags on this post will be removed too.
+              Cheriqs, chimes, and tags on this drop will be removed too.
             </p>
           </Modal>
         </>

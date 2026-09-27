@@ -16,7 +16,7 @@ import { useReportContent } from "./useReportContent";
 import { useSaveLook } from "./useSaveLook";
 
 const ADMIN_CANNOT_LIKE_MESSAGE =
-  "Platform staff accounts can't like posts — this keeps trending and payouts based on real audience activity.";
+  "Platform staff accounts can't cheriq drops — this keeps trending and payouts based on real audience activity.";
 
 export const usePostCardState = ({ id, creator, caption, taggedProducts }: FeedPost) => {
   const { state, isAdmin } = useAuth();

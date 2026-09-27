@@ -21,7 +21,7 @@ const requireApprovedProduct = async (productId: string): Promise<{ name: string
 
 export const creatorLinkService = {
   async createInternal(creatorId: string, productId: string): Promise<CreatorLinkView> {
-    await requireApprovedCreator(creatorId, "Only approved creators can generate links.");
+    await requireApprovedCreator(creatorId, "Only approved muses can generate links.");
     const product = await requireApprovedProduct(productId);
 
     const link = await creatorLinkRepository.create({
@@ -35,7 +35,7 @@ export const creatorLinkService = {
   },
 
   async getOrCreateExternal(creatorId: string, productId?: string): Promise<CreatorLinkView> {
-    await requireApprovedCreator(creatorId, "Only approved creators can generate links.");
+    await requireApprovedCreator(creatorId, "Only approved muses can generate links.");
     const product = productId ? await requireApprovedProduct(productId) : null;
 
     const existing = await creatorLinkRepository.findActiveExternalLink(
@@ -60,7 +60,7 @@ export const creatorLinkService = {
     creatorId: string,
     { cursor, limit }: { cursor?: string; limit: number },
   ): Promise<{ items: CreatorLinkView[]; nextCursor: string | null }> {
-    await requireApprovedCreator(creatorId, "Only approved creators can generate links.");
+    await requireApprovedCreator(creatorId, "Only approved muses can generate links.");
     const rows = await creatorLinkRepository.listForCreator(creatorId, { cursor, limit });
     const { items: pagedRows, nextCursor } = buildCursorPage(rows, limit, (row) => row.id);
 
@@ -73,7 +73,7 @@ export const creatorLinkService = {
   },
 
   async deleteMine(creatorId: string, linkId: string): Promise<void> {
-    await requireApprovedCreator(creatorId, "Only approved creators can manage links.");
+    await requireApprovedCreator(creatorId, "Only approved muses can manage links.");
     const link = await creatorLinkRepository.findOwned(linkId, creatorId);
     if (!link) {
       throw new AppError("LINK_NOT_FOUND", "This link is no longer available.", NOT_FOUND_STATUS);

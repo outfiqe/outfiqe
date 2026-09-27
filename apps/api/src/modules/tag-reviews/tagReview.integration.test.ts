@@ -64,7 +64,7 @@ const createCreator = () =>
   prisma.user.create({
     data: {
       email: `${randomUUID()}@creator.outfiqe.test`,
-      name: "Creator",
+      name: "Muse",
       handle: `cr-${randomUUID().slice(0, 8)}`,
       phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
@@ -158,7 +158,7 @@ describe("GET /api/tag-reviews", () => {
     expect(response.status).toBe(403);
   });
 
-  it("flags a queue item when the creator bought the product or the brand trusts them", async () => {
+  it("flags a queue item when the muse bought the product or the brand trusts them", async () => {
     const { brand, owner, creator, product, tag } = await seedPendingTag();
     await recordSettledPurchase(creator.id, product.id);
     await prisma.brandTrustedCreator.create({
@@ -230,7 +230,7 @@ describe("POST /api/tag-reviews/:id/approve", () => {
     );
   });
 
-  it("optionally trusts the creator for that brand", async () => {
+  it("optionally trusts the muse for that brand", async () => {
     const { brand, owner, creator, tag } = await seedPendingTag();
 
     await request(testApp)

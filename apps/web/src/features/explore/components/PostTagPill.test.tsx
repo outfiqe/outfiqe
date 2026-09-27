@@ -24,14 +24,14 @@ const aTag = (overrides: Partial<FeedTaggedProduct> = {}): FeedTaggedProduct => 
 });
 
 describe("PostTagPill", () => {
-  it("shows the creator's height and the tagged size when both are known", () => {
+  it("shows the muse's height and the tagged size when both are known", () => {
     render(<PostTagPill lookId="look-1" tag={aTag()} creatorHeightCm={168} />);
 
     expect(screen.getByText("Linen Shirt")).toBeInTheDocument();
     expect(screen.getByText(`5'6" · size M`)).toBeInTheDocument();
   });
 
-  it("shows only the size when the creator has hidden their height", () => {
+  it("shows only the size when the muse has hidden their height", () => {
     render(<PostTagPill lookId="look-1" tag={aTag()} creatorHeightCm={null} />);
 
     expect(screen.getByText("size M")).toBeInTheDocument();

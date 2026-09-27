@@ -60,7 +60,7 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
     return (
       <CreatorStatusGate
         creatorStatus={creatorStatus}
-        pitch="Approved creators get their own share links and earn commission when someone buys through them."
+        pitch="Approved muses get their own share links and earn commission when someone buys through them."
       />
     );
   }
@@ -101,7 +101,7 @@ export const ShareSection = ({ creatorStatus }: ShareSectionProps) => {
         <h2 className="font-display text-sm font-bold text-foreground">Share a product</h2>
         <p className="mt-1 text-xs text-muted-foreground">
           A one-time link dies after its first click — good for sending to one person. A reusable
-          link works for posting anywhere and can be clicked as many times as you like.
+          link works for sharing anywhere and can be clicked as many times as you like.
         </p>
 
         <div className="mt-3">

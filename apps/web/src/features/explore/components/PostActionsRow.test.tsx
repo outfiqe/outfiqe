@@ -15,11 +15,11 @@ const baseProps = {
 };
 
 describe("PostActionsRow", () => {
-  it("shares the post when the share button is pressed", async () => {
+  it("shares the drop when the share button is pressed", async () => {
     const onShare = vi.fn();
     render(<PostActionsRow {...baseProps} onShare={onShare} />);
 
-    await userEvent.click(screen.getByRole("button", { name: /share post/i }));
+    await userEvent.click(screen.getByRole("button", { name: /share drop/i }));
 
     expect(onShare).toHaveBeenCalledTimes(1);
   });
@@ -29,7 +29,7 @@ describe("PostActionsRow", () => {
     const onSave = vi.fn();
     render(<PostActionsRow {...baseProps} onShare={onShare} onSave={onSave} />);
 
-    await userEvent.click(screen.getByRole("button", { name: /save post/i }));
+    await userEvent.click(screen.getByRole("button", { name: /stash drop/i }));
 
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(onShare).not.toHaveBeenCalled();
@@ -41,7 +41,7 @@ describe("PostActionsRow", () => {
       <PostActionsRow
         {...baseProps}
         onLike={onLike}
-        likeDisabledReason="Platform staff accounts can't like posts."
+        likeDisabledReason="Platform staff accounts can't like drops."
       />,
     );
 
@@ -52,7 +52,7 @@ describe("PostActionsRow", () => {
 
     fireEvent.focus(likeButton);
     expect(await screen.findByRole("tooltip")).toHaveTextContent(
-      "Platform staff accounts can't like posts.",
+      "Platform staff accounts can't like drops.",
     );
   });
 

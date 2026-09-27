@@ -49,7 +49,7 @@ const KPI_HINT = {
   gatewayNetHeld:
     "Money the payment gateways collected in the last 30 days, minus refunds. This is what should be sitting with us.",
   ledgerOwed:
-    "What the ledger says we still owe to brands and creators from the last 30 days, in payouts and commissions that have not been paid out yet.",
+    "What the ledger says we still owe to brands and muses from the last 30 days, in payouts and commissions that have not been paid out yet.",
   settlementGap:
     "Gateway money held minus what the ledger owes. Under 2% counts as reconciled; anything larger needs a review.",
 } as const;

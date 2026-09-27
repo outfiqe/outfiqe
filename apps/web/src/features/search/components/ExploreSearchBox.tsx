@@ -103,12 +103,12 @@ export const ExploreSearchBox = ({
 
           {!isLoading && !hasSuggestions && (
             <p className="px-2 py-4 text-center text-xs text-muted-foreground">
-              No creators or posts found for &ldquo;{debouncedQuery}&rdquo;
+              No muses or drops found for &ldquo;{debouncedQuery}&rdquo;
             </p>
           )}
 
           {!isLoading && creatorSuggestions && creatorSuggestions.length > 0 && (
-            <AutocompleteGroup label="Creators">
+            <AutocompleteGroup label="Muses">
               {creatorSuggestions.map(({ userId, name, handle, avatarUrl }) => (
                 <AutocompleteItem
                   key={userId}
@@ -139,7 +139,7 @@ export const ExploreSearchBox = ({
           )}
 
           {!isLoading && postSuggestions && postSuggestions.length > 0 && (
-            <AutocompleteGroup label="Posts">
+            <AutocompleteGroup label="Drops">
               {postSuggestions.map((post) => (
                 <AutocompleteItem
                   key={post.id}

@@ -249,7 +249,7 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
           imageAssetIds: [...existingUrls.map(() => null), ...uploadedNewAssetIds],
         },
       });
-      toast.success("Post updated");
+      toast.success("Drop updated");
       close();
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -372,9 +372,9 @@ export const EditPostForm = ({ lookId, detail, onClose }: EditPostFormProps) => 
 
         {hasUnresolvedTag && (
           <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-            Your post is live. Tags marked <span className="font-medium">In review</span> or{" "}
-            <span className="font-medium">Declined</span> stay hidden on the post until the brand
-            approves them — everything else about the post is unaffected.
+            Your drop is live. Tags marked <span className="font-medium">In review</span> or{" "}
+            <span className="font-medium">Declined</span> stay hidden on the drop until the brand
+            approves them — everything else about the drop is unaffected.
           </p>
         )}
 

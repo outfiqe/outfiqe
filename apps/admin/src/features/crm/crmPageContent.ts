@@ -9,7 +9,7 @@ export const CRM_PAGE_TEXT = {
   },
   partners: {
     title: "Partners",
-    description: "Creators who have linked, tagged, or driven a sale of your brand's products.",
+    description: "Muses who have linked, tagged, or driven a sale of your brand's products.",
   },
   audit: {
     title: "Audit log",
@@ -48,7 +48,7 @@ export const CRM_PAGE_TEXT = {
 export const CONTACT_TABLE_HEADERS = ["Name", "Company", "Stage", "Owner", "Added", ""];
 export const CUSTOMER_TABLE_HEADERS = ["Shopper", "Orders", "Items", "Total paid", "Last order"];
 export const PARTNER_TABLE_HEADERS = [
-  "Creator",
+  "Muse",
   "Tag clicks",
   "Attributed orders",
   "Attributed revenue",

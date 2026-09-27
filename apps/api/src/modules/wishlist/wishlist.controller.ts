@@ -29,6 +29,6 @@ export const wishlistController = {
     const query = validated.query<ListWishlistQuery>(res);
 
     const page = await wishlistService.list(userId, query);
-    sendSuccess(res, page, "Saved items.");
+    sendSuccess(res, page, "Your stash.");
   },
 };

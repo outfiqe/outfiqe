@@ -27,7 +27,7 @@ export const CATEGORY_LABELS: Record<SupportCategoryValue, string> = {
   RETURN_REFUND: "Return / refund",
   DELIVERY: "Delivery",
   ACCOUNT_ACCESS: "Account access",
-  CREATOR_PROGRAM: "Creator programme",
+  CREATOR_PROGRAM: "Muse programme",
   BRAND_PARTNER: "Brand / partner",
   REPORT_CONTENT: "Report content",
   FEEDBACK: "Feedback",
@@ -36,7 +36,7 @@ export const CATEGORY_LABELS: Record<SupportCategoryValue, string> = {
 
 export const SEGMENT_LABELS: Record<SupportSegmentValue, string> = {
   SHOPPER: "Shopper",
-  CREATOR: "Creator",
+  CREATOR: "Muse",
   BRAND: "Brand",
   GUEST: "Guest",
 };

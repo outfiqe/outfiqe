@@ -43,6 +43,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 vi.mock("@outfiqe/design-system", () => ({
+  CheriqIcon: ({ className }: { className?: string }) => <svg className={className} />,
   Modal: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   Skeleton: ({ className }: { className?: string }) => <div className={className} />,
   Tooltip: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -83,7 +84,7 @@ describe("PostDetailModal caption spacing", () => {
   it("adds a divider above the actions row when there is a caption", () => {
     render(<PostDetailModal post={aPost({ caption: "Streetwear fit" })} onClose={vi.fn()} />);
 
-    const actionsRow = screen.getByRole("button", { name: "Save post" }).parentElement
+    const actionsRow = screen.getByRole("button", { name: "Stash drop" }).parentElement
       ?.parentElement;
 
     expect(actionsRow).toHaveClass("border-t");
@@ -93,7 +94,7 @@ describe("PostDetailModal caption spacing", () => {
   it("omits the extra divider and spacing when there is no caption or tagged products", () => {
     render(<PostDetailModal post={aPost({ caption: null })} onClose={vi.fn()} />);
 
-    const actionsRow = screen.getByRole("button", { name: "Save post" }).parentElement
+    const actionsRow = screen.getByRole("button", { name: "Stash drop" }).parentElement
       ?.parentElement;
 
     expect(actionsRow).not.toHaveClass("border-t");
@@ -107,9 +108,9 @@ describe("PostDetailModal for a platform admin viewer", () => {
     render(<PostDetailModal post={aPost({ likeCount: 5 })} onClose={vi.fn()} />);
 
     expect(screen.queryByRole("button", { name: "Follow" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Post options" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Drop options" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "5" })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.queryByRole("button", { name: "Post" })).not.toBeInTheDocument();
-    expect(screen.queryByPlaceholderText("Add a comment…")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Drop" })).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Add a chime…")).not.toBeInTheDocument();
   });
 });

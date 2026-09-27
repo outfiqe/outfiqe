@@ -11,8 +11,8 @@ export type SavedTabValue = (typeof SAVED_TAB)[keyof typeof SAVED_TAB];
 
 export const SAVED_TABS: { value: SavedTabValue; label: string }[] = [
   { value: SAVED_TAB.PRODUCTS, label: "Products" },
-  { value: SAVED_TAB.POSTS, label: "Posts" },
+  { value: SAVED_TAB.POSTS, label: "Drops" },
 ];
 
 export const ADMIN_CANNOT_SAVE_PRODUCT_MESSAGE =
-  "Platform staff accounts can't save products — this keeps trending based on real audience activity.";
+  "Platform staff accounts can't stash products — this keeps trending based on real audience activity.";

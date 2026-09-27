@@ -126,8 +126,8 @@ const seedCommission = async (
 const getOverview = (authHeader: string) =>
   request(testApp).get("/api/creators/me/overview").set("Authorization", authHeader);
 
-describe("GET /api/creators/me/overview", () => {
-  it("rejects a user who is not an approved creator", async () => {
+describe("GET /api/muses/me/overview", () => {
+  it("rejects a user who is not an approved muse", async () => {
     const shopper = await createUser();
 
     const response = await getOverview(authHeaderFor(shopper.id));
@@ -135,7 +135,7 @@ describe("GET /api/creators/me/overview", () => {
     expect(response.status).toBe(FORBIDDEN_STATUS);
   });
 
-  it("returns a full 30-day zero-filled trend for a creator with no activity", async () => {
+  it("returns a full 30-day zero-filled trend for a muse with no activity", async () => {
     const creator = await createApprovedCreator();
 
     const response = await getOverview(authHeaderFor(creator.id));

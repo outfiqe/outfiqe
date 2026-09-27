@@ -37,7 +37,7 @@ export const PartnersPage = () => {
         </h1>
         <Input
           type="search"
-          placeholder="Search creators"
+          placeholder="Search muses"
           value={searchTerm}
           onChange={(event) => {
             setSearchTerm(event.target.value);
@@ -70,7 +70,7 @@ export const PartnersPage = () => {
             <table className="w-full text-left text-sm">
               <thead className="text-xs uppercase text-muted-foreground">
                 <tr>
-                  <th className="py-2 pr-4">Creator</th>
+                  <th className="py-2 pr-4">Muse</th>
                   <th className="py-2 pr-4">Tag clicks</th>
                   <th className="py-2 pr-4">Attributed orders</th>
                   <th className="py-2 pr-4">Attributed revenue</th>

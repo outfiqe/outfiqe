@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, useTheme } from "@outfiqe/design-system";
-import { ChevronDown, ChevronRight, Heart, Menu, Moon, ShoppingBag, Sun, X } from "lucide-react";
+import { Button, CheriqIcon, useTheme } from "@outfiqe/design-system";
+import { ChevronDown, ChevronRight, Menu, Moon, ShoppingBag, Sun, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -157,8 +157,8 @@ export const MobileNav = () => {
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
               >
-                <Heart className="size-4 shrink-0" />
-                Wishlist
+                <CheriqIcon className="size-4" />
+                Your stash
               </Link>
               {isShopper && (
                 <Link
@@ -200,7 +200,7 @@ export const MobileNav = () => {
                         : state.user.role === UserRole.BRAND_OWNER
                           ? "Manage your brand"
                           : isCreator
-                            ? "Your creator space"
+                            ? "Your muse space"
                             : "Your account"
                     }
                     href={isAdmin ? ADMIN_URL : "/overview"}

@@ -53,18 +53,18 @@ describe("requireAuthedSession", () => {
 });
 
 describe("requireDashboardSession", () => {
-  it("lets a creator through", async () => {
+  it("lets a muse through", async () => {
     getServerSessionWithToken.mockResolvedValue(sessionFor({ isCreator: true }));
     await requireDashboardSession("/earnings");
     expect(redirect).not.toHaveBeenCalled();
   });
 
-  it("sends an admin with no creator or brand dashboard to the admin app", async () => {
+  it("sends an admin with no muse or brand dashboard to the admin app", async () => {
     getServerSessionWithToken.mockResolvedValue(sessionFor({ role: UserRole.ADMIN }));
     await expect(requireDashboardSession("/earnings")).rejects.toThrow("REDIRECT:/admin");
   });
 
-  it("lets an admin who is also an approved creator reach the dashboard", async () => {
+  it("lets an admin who is also an approved muse reach the dashboard", async () => {
     getServerSessionWithToken.mockResolvedValue(
       sessionFor({
         role: UserRole.ADMIN,

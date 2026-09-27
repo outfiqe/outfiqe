@@ -9,11 +9,11 @@ export const resolveNotificationMessage = (notification: Notification): string =
 
   switch (type) {
     case NotificationType.LOOK_LIKED:
-      return `${actorList(notification)} liked your look`;
+      return `${actorList(notification)} cheriqed your drop`;
     case NotificationType.LOOK_COMMENTED:
-      return `${metadata.actor?.name ?? "Someone"} commented on your look`;
+      return `${metadata.actor?.name ?? "Someone"} chimed on your drop`;
     case NotificationType.COMMENT_REPLIED:
-      return `${metadata.actor?.name ?? "Someone"} replied to your comment`;
+      return `${metadata.actor?.name ?? "Someone"} replied to your chime`;
     case NotificationType.NEW_FOLLOWER:
       return `${actorList(notification)} started following you`;
     case NotificationType.NEW_BRAND_FOLLOWER:
@@ -71,8 +71,8 @@ export const resolveNotificationMessage = (notification: Notification): string =
     case NotificationType.PRODUCT_TAG_REVIEW_REMINDER: {
       const count = metadata.pendingTagReviewCount ?? 0;
       return count === 1
-        ? "1 creator tag is still waiting for your review"
-        : `${count} creator tags are still waiting for your review`;
+        ? "1 muse tag is still waiting for your review"
+        : `${count} muse tags are still waiting for your review`;
     }
     case NotificationType.PRODUCT_TAG_APPROVED:
       return metadata.tagAutoApproved

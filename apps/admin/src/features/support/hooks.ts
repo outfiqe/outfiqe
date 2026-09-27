@@ -75,7 +75,7 @@ export const useSupportReply = (id: string) => {
       visibility: SupportVisibilityValue;
       moveToWaitingOnCustomer?: boolean;
     }) => supportApi.reply(id, input),
-    "Message posted.",
+    "Message sent.",
     (ticket, input) => ({
       ...ticket,
       messages: [

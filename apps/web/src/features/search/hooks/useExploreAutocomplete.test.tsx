@@ -31,7 +31,7 @@ const createWrapper = () => {
 };
 
 describe("useExploreAutocomplete", () => {
-  it("fires both creator and post autocomplete queries and combines their results", async () => {
+  it("fires both muse and drop autocomplete queries and combines their results", async () => {
     vi.mocked(exploreSearchApi.autocompleteCreators).mockResolvedValue([
       { userId: "u1", name: "Ava Martinez", handle: "ava", avatarUrl: null, followerCount: 10 },
     ]);

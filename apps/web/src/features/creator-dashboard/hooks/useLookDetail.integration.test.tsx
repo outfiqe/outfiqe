@@ -18,7 +18,7 @@ describe("useLookDetail", () => {
       http.get("/api/creator-looks/look-1", () =>
         HttpResponse.json({
           success: true,
-          message: "Post detail.",
+          message: "Drop detail.",
           data: {
             id: "look-1",
             imageUrls: ["https://cdn.outfiqe.test/a.jpg"],

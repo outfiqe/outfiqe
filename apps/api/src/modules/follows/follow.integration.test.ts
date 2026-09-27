@@ -85,7 +85,7 @@ const requestSuggestions = (viewerId: string) =>
     .get("/api/follows/suggested-creators")
     .set("Authorization", authHeaderFor(viewerId));
 
-describe("GET /api/follows/suggested-creators", () => {
+describe("GET /api/follows/suggested-muses", () => {
   it("ranks a mutual-follow candidate above an equally-popular stranger", async () => {
     const viewer = await createCreator("Suggestion Viewer", "suggestion-viewer");
     const candidateA = await createCreator("Mutual Candidate", "mutual-candidate", 100);
@@ -93,7 +93,7 @@ describe("GET /api/follows/suggested-creators", () => {
     const fan = await createCreator("Momentum Fan", "momentum-fan-parity");
 
     for (const candidate of [candidateA, candidateB]) {
-      const look = await createLook(candidate.id, "Equal momentum post");
+      const look = await createLook(candidate.id, "Equal momentum drop");
       await prisma.creatorLookLike.create({
         data: { creatorLookId: look.id, userId: fan.id },
       });
@@ -120,13 +120,13 @@ describe("GET /api/follows/suggested-creators", () => {
     expect(ids.indexOf(candidateA.id)).toBeLessThan(ids.indexOf(candidateB.id));
   });
 
-  it("excludes the viewer and creators already followed", async () => {
+  it("excludes the viewer and muses already followed", async () => {
     const viewer = await createCreator("Excluding Viewer", "excluding-viewer", 50);
     const alreadyFollowed = await createCreator("Already Followed", "already-followed", 50);
-    const discoverable = await createCreator("Discoverable Creator", "discoverable-creator", 50);
+    const discoverable = await createCreator("Discoverable Muse", "discoverable-creator", 50);
     await followUser(viewer.id, alreadyFollowed.id);
 
-    await createLook(discoverable.id, "Discoverable post");
+    await createLook(discoverable.id, "Discoverable drop");
     await creatorLookService.runTrendingAggregation();
     await creatorLookService.runTrendingScoring();
 
@@ -140,7 +140,7 @@ describe("GET /api/follows/suggested-creators", () => {
 
   it("falls back to the legacy popularity list when there's no signal and no scored momentum yet", async () => {
     const viewer = await createCreator("Cold Start Viewer", "cold-start-viewer");
-    const onlyCreator = await createCreator("Only Creator", "only-creator", 5);
+    const onlyCreator = await createCreator("Only Muse", "only-creator", 5);
 
     const response = await requestSuggestions(viewer.id);
 
@@ -149,12 +149,12 @@ describe("GET /api/follows/suggested-creators", () => {
     expect(ids).toContain(onlyCreator.id);
   });
 
-  it("surfaces a creator through the momentum pool alone, with no personalization signal", async () => {
+  it("surfaces a muse through the momentum pool alone, with no personalization signal", async () => {
     const viewer = await createCreator("Discovery Viewer", "discovery-viewer");
     const someoneElse = await createCreator("Momentum Fan", "momentum-fan");
-    const momentumCreator = await createCreator("Momentum Creator", "momentum-creator", 20);
+    const momentumCreator = await createCreator("Momentum Muse", "momentum-creator", 20);
 
-    const look = await createLook(momentumCreator.id, "Momentum post");
+    const look = await createLook(momentumCreator.id, "Momentum drop");
     await prisma.creatorLookLike.create({
       data: { creatorLookId: look.id, userId: someoneElse.id },
     });
@@ -169,13 +169,13 @@ describe("GET /api/follows/suggested-creators", () => {
     expect(ids).toContain(momentumCreator.id);
   });
 
-  it("surfaces a creator through topical hashtag affinity, without the viewer ever engaging with them directly", async () => {
+  it("surfaces a muse through topical hashtag affinity, without the viewer ever engaging with them directly", async () => {
     const viewer = await createCreator("Hashtag Viewer", "hashtag-viewer");
-    const engagedCreator = await createCreator("Engaged Creator", "engaged-creator");
-    const hashtagCreator = await createCreator("Hashtag Match Creator", "hashtag-match-creator");
+    const engagedCreator = await createCreator("Engaged Muse", "engaged-creator");
+    const hashtagCreator = await createCreator("Hashtag Match Muse", "hashtag-match-creator");
     const marker = randomUUID().slice(0, 8);
 
-    const engagedLook = await createLook(engagedCreator.id, `Engaged post #shared${marker}`);
+    const engagedLook = await createLook(engagedCreator.id, `Engaged drop #shared${marker}`);
     await prisma.creatorLookHashtag.create({
       data: { creatorLookId: engagedLook.id, tag: `shared${marker}` },
     });
@@ -183,7 +183,7 @@ describe("GET /api/follows/suggested-creators", () => {
       data: { creatorLookId: engagedLook.id, userId: viewer.id },
     });
 
-    const hashtagLook = await createLook(hashtagCreator.id, `Unengaged post #shared${marker}`);
+    const hashtagLook = await createLook(hashtagCreator.id, `Unengaged drop #shared${marker}`);
     await prisma.creatorLookHashtag.create({
       data: { creatorLookId: hashtagLook.id, tag: `shared${marker}` },
     });
@@ -210,7 +210,7 @@ describe("GET /api/follows/suggested-creators", () => {
     expect(response.status).toBe(403);
   });
 
-  it("paginates through the full ranked pool with a stable session snapshot, without repeating a creator", async () => {
+  it("paginates through the full ranked pool with a stable session snapshot, without repeating a muse", async () => {
     const viewer = await createCreator("Pagination Viewer", "pagination-viewer");
     const fan = await createCreator("Pagination Fan", "pagination-fan");
     const candidates = await Promise.all(
@@ -219,7 +219,7 @@ describe("GET /api/follows/suggested-creators", () => {
       ),
     );
     for (const candidate of candidates) {
-      const look = await createLook(candidate.id, "Pagination post");
+      const look = await createLook(candidate.id, "Pagination drop");
       await prisma.creatorLookLike.create({ data: { creatorLookId: look.id, userId: fan.id } });
     }
     await creatorLookService.runTrendingAggregation();
@@ -262,7 +262,7 @@ describe("GET /api/follows/suggested-creators", () => {
       10,
     );
 
-    const topLook = await createLook(topCandidate.id, "Resume top post");
+    const topLook = await createLook(topCandidate.id, "Resume top drop");
     await prisma.creatorLookLike.createMany({
       data: [
         { creatorLookId: topLook.id, userId: strongFan.id },
@@ -270,7 +270,7 @@ describe("GET /api/follows/suggested-creators", () => {
         { creatorLookId: topLook.id, userId: extraFan.id },
       ],
     });
-    const secondLook = await createLook(secondCandidate.id, "Resume second post");
+    const secondLook = await createLook(secondCandidate.id, "Resume second drop");
     await prisma.creatorLookLike.create({
       data: { creatorLookId: secondLook.id, userId: strongFan.id },
     });
@@ -297,7 +297,7 @@ describe("GET /api/follows/suggested-creators", () => {
     expect(second.body.data.creators[0]?.id).toBe(secondCandidate.id);
   });
 
-  it("never suggests a creator through a fresh candidate-pool build once their account is banned", async () => {
+  it("never suggests a muse through a fresh candidate-pool build once their account is banned", async () => {
     const viewer = await createCreator("Banned Pool Viewer", "banned-pool-viewer");
     const connectors = await Promise.all([
       createCreator("Banned Pool Connector One", "banned-pool-connector-one"),
@@ -325,7 +325,7 @@ describe("GET /api/follows/suggested-creators", () => {
     expect(ids).not.toContain(bannedCandidate.id);
   });
 
-  it("drops a creator from a cached suggestion snapshot once their account is banned mid-session", async () => {
+  it("drops a muse from a cached suggestion snapshot once their account is banned mid-session", async () => {
     const viewer = await createCreator("Mid-Session Ban Viewer", "mid-session-ban-viewer");
     const strongFan = await createCreator("Mid-Session Ban Strong Fan", "mid-session-ban-strong");
     const weakFan = await createCreator("Mid-Session Ban Weak Fan", "mid-session-ban-weak");
@@ -339,14 +339,14 @@ describe("GET /api/follows/suggested-creators", () => {
       "mid-session-ban-second",
       10,
     );
-    const topLook = await createLook(topCandidate.id, "Mid-session ban top post");
+    const topLook = await createLook(topCandidate.id, "Mid-session ban top drop");
     await prisma.creatorLookLike.createMany({
       data: [
         { creatorLookId: topLook.id, userId: strongFan.id },
         { creatorLookId: topLook.id, userId: weakFan.id },
       ],
     });
-    const secondLook = await createLook(soonBannedCandidate.id, "Mid-session ban second post");
+    const secondLook = await createLook(soonBannedCandidate.id, "Mid-session ban second drop");
     await prisma.creatorLookLike.create({
       data: { creatorLookId: secondLook.id, userId: strongFan.id },
     });
@@ -378,7 +378,7 @@ describe("GET /api/follows/suggested-creators", () => {
     expect(secondIds).not.toContain(soonBannedCandidate.id);
   });
 
-  it("drops a creator from a cached suggestion snapshot once they're de-approved mid-session", async () => {
+  it("drops a muse from a cached suggestion snapshot once they're de-approved mid-session", async () => {
     const viewer = await createCreator("Mid-Session Reject Viewer", "mid-session-reject-viewer");
     const strongFan = await createCreator(
       "Mid-Session Reject Strong Fan",
@@ -395,14 +395,14 @@ describe("GET /api/follows/suggested-creators", () => {
       "mid-session-reject-second",
       10,
     );
-    const topLook = await createLook(topCandidate.id, "Mid-session reject top post");
+    const topLook = await createLook(topCandidate.id, "Mid-session reject top drop");
     await prisma.creatorLookLike.createMany({
       data: [
         { creatorLookId: topLook.id, userId: strongFan.id },
         { creatorLookId: topLook.id, userId: weakFan.id },
       ],
     });
-    const secondLook = await createLook(soonRejectedCandidate.id, "Mid-session reject second post");
+    const secondLook = await createLook(soonRejectedCandidate.id, "Mid-session reject second drop");
     await prisma.creatorLookLike.create({
       data: { creatorLookId: secondLook.id, userId: strongFan.id },
     });
@@ -434,12 +434,12 @@ describe("GET /api/follows/suggested-creators", () => {
     expect(secondIds).not.toContain(soonRejectedCandidate.id);
   });
 
-  it("excludes a not-yet-approved or banned creator from the legacy fallback list, not just ranks them lower", async () => {
+  it("excludes a not-yet-approved or banned muse from the legacy fallback list, not just ranks them lower", async () => {
     const viewer = await createCreator("Legacy Filter Viewer", "legacy-filter-viewer");
     const pendingCreator = await prisma.user.create({
       data: {
         email: `legacy-pending-${randomUUID()}@outfiqe.test`,
-        name: "Legacy Pending Creator",
+        name: "Legacy Pending Muse",
         handle: `legacy-pending-${randomUUID().slice(0, 6)}`,
         phone: uniquePhone(),
         passwordHash: "not-used-in-tests",
@@ -448,17 +448,13 @@ describe("GET /api/follows/suggested-creators", () => {
         followerCount: 1000,
       },
     });
-    const bannedCreator = await createCreator(
-      "Legacy Banned Creator",
-      "legacy-banned-creator",
-      1000,
-    );
+    const bannedCreator = await createCreator("Legacy Banned Muse", "legacy-banned-creator", 1000);
     await prisma.user.update({
       where: { id: bannedCreator.id },
       data: { accountStatus: AccountStatus.BANNED },
     });
     const approvedCreator = await createCreator(
-      "Legacy Approved Creator",
+      "Legacy Approved Muse",
       "legacy-approved-creator",
       1,
     );
@@ -570,7 +566,7 @@ describe("POST /api/follows/:targetType/:targetId", () => {
     expect(response.status).toBe(401);
   });
 
-  it("rejects a platform admin following a creator", async () => {
+  it("rejects a platform admin following a muse", async () => {
     const admin = await createPlainUser("Following Admin", "following-admin", UserRole.ADMIN);
     const target = await createCreator("Admin Follow Target", "admin-follow-target");
 

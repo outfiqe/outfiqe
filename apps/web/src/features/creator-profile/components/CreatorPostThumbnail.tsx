@@ -41,7 +41,7 @@ export const CreatorPostThumbnail = ({
       <button
         type="button"
         onClick={onClick}
-        aria-label={post.caption ?? "View post"}
+        aria-label={post.caption ?? "View drop"}
         className="absolute inset-0 cursor-pointer"
       />
     </div>

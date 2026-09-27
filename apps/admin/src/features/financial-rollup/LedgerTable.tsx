@@ -50,7 +50,7 @@ const columns: TableColumn<LedgerRow>[] = [
   },
   {
     key: "creatorCommission",
-    header: "Creator commission",
+    header: "Muse commission",
     align: "right",
     render: (row) => amountOrDash(row.creatorCommissionAmount),
   },

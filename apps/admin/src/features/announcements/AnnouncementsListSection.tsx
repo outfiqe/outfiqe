@@ -46,7 +46,7 @@ const STATUS_TONE: Record<AnnouncementStatusValue, "neutral" | "positive" | "neg
 const AUDIENCE_LABELS: Record<AnnouncementAudienceValue, string> = {
   [AnnouncementAudience.EVERYONE]: "Everyone",
   [AnnouncementAudience.CUSTOMERS]: "Customers",
-  [AnnouncementAudience.APPROVED_CREATORS]: "Approved creators",
+  [AnnouncementAudience.APPROVED_CREATORS]: "Approved muses",
   [AnnouncementAudience.BRAND_OWNERS]: "Brand owners",
   [AnnouncementAudience.STAFF]: "Staff",
 };

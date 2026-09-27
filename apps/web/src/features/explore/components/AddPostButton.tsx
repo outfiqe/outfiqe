@@ -49,14 +49,14 @@ export const AddPostButton = () => {
       <button
         type="button"
         onClick={handleClick}
-        aria-label="Add a post"
+        aria-label="Add a drop"
         className={cn(
           "fixed right-4 z-40 flex size-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground shadow-xl transition hover:scale-105 hover:bg-primary-hover active:scale-95 sm:h-14 sm:w-auto sm:px-6 lg:right-8",
           isAuthenticated ? FAB_POSITION_ABOVE_CHAT_LAUNCHER : FAB_POSITION_DEFAULT,
         )}
       >
         <Plus className="size-5 shrink-0 sm:size-6" />
-        <span className="hidden text-[15px] font-semibold sm:inline">Post</span>
+        <span className="hidden text-[15px] font-semibold sm:inline">Drop</span>
       </button>
 
       {isApprovedCreator && <PostModal open={target === COMPOSE_TARGET.LOOK} onClose={close} />}
@@ -66,15 +66,13 @@ export const AddPostButton = () => {
           open
           onClose={close}
           title={
-            creatorStatus === CreatorStatus.PENDING
-              ? "Application under review"
-              : "Become a creator"
+            creatorStatus === CreatorStatus.PENDING ? "Application under review" : "Become a muse"
           }
         >
           <p className="text-sm text-muted-foreground">
             {creatorStatus === CreatorStatus.PENDING
-              ? "We're looking at your creator application. We'll email you once it's reviewed."
-              : "Apply to post your fits, tag the pieces you're wearing, and get credit when someone buys through your post."}
+              ? "We're looking at your muse application. We'll email you once it's reviewed."
+              : "Apply to drop your fits, tag the pieces you're wearing, and get credit when someone buys through your drop."}
           </p>
           {creatorStatus !== CreatorStatus.PENDING && (
             <div className="mt-4">

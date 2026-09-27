@@ -37,7 +37,7 @@ const createUser = async (role: UserRole = UserRole.CUSTOMER) => {
 
 const draftBody = (overrides: Record<string, unknown> = {}) => ({
   title: "Livestream tomorrow",
-  body: "Join us at 6pm for a live drop with our top creators.",
+  body: "Join us at 6pm for a live drop with our top muses.",
   audiences: ["CUSTOMERS"],
   ...overrides,
 });

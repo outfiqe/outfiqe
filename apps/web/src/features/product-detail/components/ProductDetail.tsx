@@ -1,8 +1,8 @@
 "use client";
 
-import { Button, toast, Tooltip } from "@outfiqe/design-system";
+import { Button, CheriqIcon, toast, Tooltip } from "@outfiqe/design-system";
 import { THRIFT_CONDITION_LABEL } from "@outfiqe/utils";
-import { ChevronLeft, Heart, Share2, Shirt, Zap } from "lucide-react";
+import { ChevronLeft, Share2, Shirt, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -272,11 +272,11 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
                 <Button
                   variant="outline"
                   size="icon"
-                  aria-label="Save"
+                  aria-label="Stash"
                   disabled
                   className="size-11 shrink-0"
                 >
-                  <Heart className="size-[18px]" />
+                  <CheriqIcon className="size-[18px]" />
                 </Button>
               </Tooltip>
             ) : (
@@ -284,12 +284,12 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
                 variant="outline"
                 size="icon"
                 aria-pressed={isSaved}
-                aria-label="Save"
+                aria-label="Stash"
                 onClick={() => gated(toggleSaved)}
                 disabled={wishlistMutation.isPending}
                 className={cn("size-11 shrink-0", isSaved && "border-primary text-primary")}
               >
-                <Heart className={cn("size-[18px]", isSaved && "fill-primary")} />
+                <CheriqIcon className="size-[18px]" isCheriqed={isSaved} />
               </Button>
             )}
             <Button

@@ -59,7 +59,7 @@ export const noIndexMetadata = (title: string): Metadata => ({
 });
 
 const rootDescription =
-  "Clothing from Nepali brands, shown in real creator looks so you can see the fit before you buy. One cart across every brand, delivered anywhere in Nepal.";
+  "Clothing from Nepali brands, shown in real muse looks so you can see the fit before you buy. One cart across every brand, delivered anywhere in Nepal.";
 
 export const rootMetadataDefaults: Metadata = {
   applicationName: siteName,

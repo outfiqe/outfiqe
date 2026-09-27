@@ -14,7 +14,7 @@ export const primaryCommerceRoutes: MarketingRoute[] = [
   { path: "/leaderboard", label: "Brand leaderboard", changeFrequency: "daily", priority: 0.5 },
   {
     path: "/leaderboard/creators",
-    label: "Creator leaderboard",
+    label: "Muse leaderboard",
     changeFrequency: "daily",
     priority: 0.5,
   },
@@ -27,7 +27,7 @@ export const companyRoutes: MarketingRoute[] = [
 ];
 
 export const audienceRoutes: MarketingRoute[] = [
-  { path: "/for-creators", label: "Become a creator", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/for-creators", label: "Become a muse", changeFrequency: "monthly", priority: 0.7 },
   {
     path: "/for-creators/how-commissions-work",
     label: "How commissions work",
@@ -61,7 +61,7 @@ export const legalRoutes: MarketingRoute[] = [
   },
   {
     path: "/legal/creator-terms",
-    label: "Creator & affiliate terms",
+    label: "Muse & affiliate terms",
     changeFrequency: "yearly",
     priority: 0.3,
   },

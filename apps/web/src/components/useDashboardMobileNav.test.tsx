@@ -21,7 +21,7 @@ beforeEach(() => {
   vi.mocked(useDashboardNav).mockReturnValue({
     navItems,
     isBrand: false,
-    accountLabel: "Creator account",
+    accountLabel: "Muse account",
   });
   vi.mocked(useNavPreferences).mockReturnValue({
     pinnedIds: null,

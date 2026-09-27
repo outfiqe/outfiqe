@@ -60,7 +60,7 @@ describe("pickBadgeFormSchema", () => {
 describe("challengeFormSchema", () => {
   const challenge = {
     challengeName: "Summer Sprint",
-    challengeDescription: "Post three looks.",
+    challengeDescription: "Drop three looks.",
     activeFrom: "2030-01-01T10:00",
     activeUntil: "2030-01-08T10:00",
     name: "Sprinter",

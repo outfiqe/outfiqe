@@ -38,7 +38,7 @@ export const ContentBrowserPage = () => {
   const detailPost = detailPostId ? (looks.find((look) => look.id === detailPostId) ?? null) : null;
 
   const deleteLook = useApiMutation({
-    successMessage: "Post deleted.",
+    successMessage: "Drop deleted.",
     mutationFn: (lookId: string) => contentBrowserApi.deleteLook(lookId),
     invalidateKeys: [["content-browser", "looks"]],
     onSuccess: (_result, lookId) => {
@@ -49,7 +49,7 @@ export const ContentBrowserPage = () => {
   });
 
   const deleteComment = useApiMutation({
-    successMessage: "Comment deleted.",
+    successMessage: "Chime deleted.",
     mutationFn: ({ lookId, commentId }: DeleteCommentTarget) =>
       contentBrowserApi.deleteComment(lookId, commentId),
     invalidateKeys: (_result, { lookId }) => [
@@ -63,14 +63,14 @@ export const ContentBrowserPage = () => {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold text-foreground">Browse posts</h1>
+      <h1 className="font-display text-2xl font-bold text-foreground">Browse drops</h1>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Search creator posts and comments directly and take one down without waiting for a report.
+        Search muse drops and chimes directly and take one down without waiting for a report.
       </p>
 
       <Input
         className="mt-5 max-w-sm"
-        placeholder="Search by caption or creator…"
+        placeholder="Search by caption or muse…"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
       />
@@ -89,10 +89,10 @@ export const ContentBrowserPage = () => {
             ))}
           </div>
         )}
-        {error && <p className="text-sm text-destructive">Couldn&apos;t load posts.</p>}
+        {error && <p className="text-sm text-destructive">Couldn&apos;t load drops.</p>}
         {!isLoading && !error && looks.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            {debouncedQuery.trim() ? `No posts match "${debouncedQuery.trim()}".` : "No posts yet."}
+            {debouncedQuery.trim() ? `No drops match "${debouncedQuery.trim()}".` : "No drops yet."}
           </p>
         )}
 
@@ -132,10 +132,10 @@ export const ContentBrowserPage = () => {
 
       <ConfirmModal
         open={deleteLookTarget !== null}
-        title="Delete post"
+        title="Delete drop"
         description={
           deleteLookTarget
-            ? `Delete @${deleteLookTarget.creator.handle}'s post? This can't be undone.`
+            ? `Delete @${deleteLookTarget.creator.handle}'s drop? This can't be undone.`
             : undefined
         }
         confirmLabel="Delete"
@@ -150,7 +150,7 @@ export const ContentBrowserPage = () => {
 
       <ConfirmModal
         open={deleteCommentTarget !== null}
-        title="Delete comment"
+        title="Delete chime"
         description={
           deleteCommentTarget
             ? `Delete "${deleteCommentTarget.preview}"? This can't be undone.`

@@ -5,7 +5,7 @@ import { userRepository } from "#modules/users/user.repository.js";
 const FORBIDDEN_STATUS = 403;
 const DEFAULT_CODE = "ADMIN_CANNOT_ENGAGE";
 const DEFAULT_MESSAGE =
-  "Platform staff accounts can't like, comment, or post — this keeps trending and payouts based on real audience activity.";
+  "Platform staff accounts can't cheriq, chime, or drop — this keeps trending and payouts based on real audience activity.";
 
 export const assertCanEngage = async (
   userId: string,

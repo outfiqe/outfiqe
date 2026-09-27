@@ -13,7 +13,7 @@ interface BrandPageProps {
 
 const describeBrand = (brand: { name: string; productCount: number }): string => {
   const pieceCount = brand.productCount > 0 ? `${brand.productCount} pieces from` : "Pieces from";
-  return `${pieceCount} ${brand.name}, a Nepali brand, each shown in real creator looks. Follow the brand and shop the full range with one checkout.`;
+  return `${pieceCount} ${brand.name}, a Nepali brand, each shown in real muse looks. Follow the brand and shop the full range with one checkout.`;
 };
 
 export const generateMetadata = async ({ params }: BrandPageProps): Promise<Metadata> => {

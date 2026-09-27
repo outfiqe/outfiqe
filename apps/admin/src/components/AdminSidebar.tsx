@@ -266,7 +266,7 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
   {
     id: "content-browser",
     href: "/content-browser",
-    label: "Browse posts",
+    label: "Browse drops",
     icon: Images,
     group: "moderation",
   },
@@ -278,7 +278,7 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     group: "growth",
   },
   { id: "users", href: "/users", label: "Users", icon: ShieldAlert, group: "moderation" },
-  { id: "creators", href: "/creators", label: "Creators", icon: Users, group: "growth" },
+  { id: "creators", href: "/creators", label: "Muses", icon: Users, group: "growth" },
   {
     id: "commissions",
     href: "/commissions",

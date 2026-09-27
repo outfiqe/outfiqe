@@ -16,7 +16,7 @@ export const ConfirmDeleteCommentModal = ({
   <Modal
     open
     onClose={onCancel}
-    title="Delete comment?"
+    title="Delete chime?"
     footer={
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel}>

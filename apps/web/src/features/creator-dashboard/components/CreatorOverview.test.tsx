@@ -89,14 +89,14 @@ beforeEach(() => {
 });
 
 describe("CreatorOverview", () => {
-  it("shows the creator status gate for a non-approved creator", () => {
+  it("shows the muse status gate for a non-approved muse", () => {
     render(<CreatorOverview creatorStatus={CreatorStatus.PENDING} />);
 
     expect(screen.getByText("Status gate for PENDING")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Overview" })).not.toBeInTheDocument();
   });
 
-  it("renders the KPI row, trend chart and recent commissions for an approved creator", () => {
+  it("renders the KPI row, trend chart and recent commissions for an approved muse", () => {
     render(<CreatorOverview creatorStatus={CreatorStatus.APPROVED} />);
 
     expect(screen.getByText("Total earnings")).toBeInTheDocument();
@@ -108,11 +108,11 @@ describe("CreatorOverview", () => {
     expect(screen.getByRole("link", { name: "View all" })).toHaveAttribute("href", "/earnings");
     expect(screen.getByRole("button", { name: "How Available is calculated" })).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "How Total likes is calculated" }),
+      screen.getByRole("button", { name: "How Total cheriqs is calculated" }),
     ).toBeInTheDocument();
   });
 
-  it("lets an approved creator replay the dashboard tour from the header", () => {
+  it("lets an approved muse replay the dashboard tour from the header", () => {
     render(<CreatorOverview creatorStatus={CreatorStatus.APPROVED} />);
 
     expect(screen.getByRole("link", { name: "Take the tour" })).toHaveAttribute(
@@ -145,7 +145,7 @@ describe("CreatorOverview", () => {
     expect(screen.queryByTestId("creator-dashboard-tour")).not.toBeInTheDocument();
   });
 
-  it("shows the chart empty state when the creator has no earnings", () => {
+  it("shows the chart empty state when the muse has no earnings", () => {
     mockOverview({
       data: buildOverview({
         kpis: { ...buildOverview().kpis, totalEarnings: 0 },
@@ -156,10 +156,10 @@ describe("CreatorOverview", () => {
     render(<CreatorOverview creatorStatus={CreatorStatus.APPROVED} />);
 
     expect(
-      screen.getByText(/commission from your tagged posts will show here/i),
+      screen.getByText(/commission from your tagged drops will show here/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("No commissions yet — tag products in your posts to start earning."),
+      screen.getByText("No commissions yet — tag products in your drops to start earning."),
     ).toBeInTheDocument();
   });
 

@@ -615,7 +615,7 @@ describe("GET /api/admin/financial-rollup/ledger/export", () => {
 
     const lines = (response.text as string).split("\r\n");
     expect(lines[0]).toBe(
-      "Order ID,Order Item ID,Date,Payment Method,Gross,Platform Fee,Gateway Fee,Creator Commission,Brand Net,Brand Payout Status",
+      "Order ID,Order Item ID,Date,Payment Method,Gross,Platform Fee,Gateway Fee,Muse Commission,Brand Net,Brand Payout Status",
     );
     expect(lines).toHaveLength(2);
     expect(lines[1]).toContain(orderId);

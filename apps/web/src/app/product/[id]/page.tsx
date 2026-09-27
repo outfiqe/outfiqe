@@ -19,7 +19,7 @@ const describeProduct = (product: {
   price: number;
 }): string =>
   `${product.name} by ${product.brand.name}, a Nepali brand. ${priceLabel(product.price)}. ` +
-  "See it worn in real creator looks, pick your size, and check out on Outfiqe.";
+  "See it worn in real muse looks, pick your size, and check out on Outfiqe.";
 
 export const generateMetadata = async ({ params }: ProductPageProps): Promise<Metadata> => {
   const { id } = await params;

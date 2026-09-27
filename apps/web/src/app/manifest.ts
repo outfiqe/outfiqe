@@ -21,7 +21,7 @@ const manifest = (): MetadataRoute.Manifest => ({
   name: `${siteName}: ${siteTagline}`,
   short_name: siteName,
   description:
-    "Shop clothing from Nepali brands, paired with real creator looks. One cart, delivered across Nepal.",
+    "Shop clothing from Nepali brands, paired with real muse looks. One cart, delivered across Nepal.",
   start_url: PWA_START_URL,
   scope: PWA_SCOPE,
   display: "standalone",

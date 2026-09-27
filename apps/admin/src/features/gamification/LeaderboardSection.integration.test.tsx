@@ -50,11 +50,11 @@ describe("LeaderboardSection", () => {
     const { container } = render(<LeaderboardSection />, { wrapper });
 
     expect(await screen.findByText("Top XP")).toBeInTheDocument();
-    expect(screen.getByText("Most Likes")).toBeInTheDocument();
+    expect(screen.getByText("Most Cheriqs")).toBeInTheDocument();
     expect(container.querySelectorAll(".animate-pulse")).toHaveLength(0);
 
     expect(getCategoryToggle("Top XP")).toBeChecked();
-    expect(getCategoryToggle("Most Likes")).not.toBeChecked();
+    expect(getCategoryToggle("Most Cheriqs")).not.toBeChecked();
   });
 
   it("sends the new enabled state when a toggle is flipped", async () => {
@@ -73,8 +73,8 @@ describe("LeaderboardSection", () => {
 
     render(<LeaderboardSection />, { wrapper });
 
-    await screen.findByText("Most Likes");
-    await user.click(getCategoryToggle("Most Likes"));
+    await screen.findByText("Most Cheriqs");
+    await user.click(getCategoryToggle("Most Cheriqs"));
 
     await waitFor(() => expect(patchBody).toHaveBeenCalledWith({ enabled: true }));
   });
@@ -94,8 +94,8 @@ describe("LeaderboardSection", () => {
 
     render(<LeaderboardSection />, { wrapper });
 
-    await screen.findByText("Most Likes");
-    await user.click(getCategoryToggle("Most Likes"));
+    await screen.findByText("Most Cheriqs");
+    await user.click(getCategoryToggle("Most Cheriqs"));
 
     expect(await screen.findByText("Update rejected")).toBeInTheDocument();
   });

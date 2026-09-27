@@ -44,7 +44,7 @@ const SuggestedCreators = () => {
     <div className="rounded-xl border border-border p-4">
       <div className="flex items-center justify-between">
         <h4 className="text-[11px] font-bold uppercase tracking-widest text-foreground">
-          Creators to follow
+          Muses to follow
         </h4>
         {isAuthenticated && (
           <button

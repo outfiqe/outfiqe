@@ -10,9 +10,9 @@ import { LeaderboardListSkeleton } from "@/features/leaderboard";
 import { buildPageMetadata } from "@/shared/seo";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Creator leaderboard",
+  title: "Muse leaderboard",
   description:
-    "The Outfiqe creators driving the most engagement and sales this week, ranked across categories.",
+    "The Outfiqe muses driving the most engagement and sales this week, ranked across categories.",
   path: "/leaderboard/creators",
 });
 
@@ -26,7 +26,7 @@ const CreatorLeaderboardPage = () => {
             Weekly rankings
           </span>
           <h1 className="mt-2 font-display text-2xl font-extrabold uppercase tracking-tight text-foreground sm:text-3xl lg:text-4xl">
-            Creator leaderboard
+            Muse leaderboard
           </h1>
           <p className="mt-2 max-w-xl text-sm text-muted-foreground">
             Who&apos;s leading this week, by category. Resets every Monday.

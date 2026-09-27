@@ -71,7 +71,7 @@ export const PLATFORM_PERMISSION_CATALOG = [
   },
   {
     key: "platform:gamification:manage",
-    label: "Manage badges, challenges, and creator competitions",
+    label: "Manage badges, challenges, and muse competitions",
     group: "Gamification",
   },
   {
@@ -86,7 +86,7 @@ export const PLATFORM_PERMISSION_CATALOG = [
   },
   {
     key: "platform:content:moderate",
-    label: "Remove reported creator-look posts and comments",
+    label: "Remove reported drops and chimes",
     group: "Moderation",
   },
 ] as const;

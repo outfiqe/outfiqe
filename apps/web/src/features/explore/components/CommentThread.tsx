@@ -94,7 +94,7 @@ const ReplyRow = ({ lookId, reply }: { lookId: string; reply: FeedCommentReply }
 
       {reporting && (
         <ReportContentModal
-          targetLabel="comment"
+          targetLabel="chime"
           isPending={isReporting}
           onConfirm={(input) =>
             submitReport({ targetType: "CREATOR_LOOK_COMMENT", targetId: reply.id, ...input })
@@ -227,7 +227,7 @@ export const CommentThread = ({ lookId, comment, isAuthenticated }: CommentThrea
               disabled={!draft.trim()}
               className="shrink-0 cursor-pointer rounded-full bg-foreground px-3 py-1.5 text-[11.5px] font-semibold text-background disabled:cursor-default disabled:opacity-40"
             >
-              Post
+              Chime
             </button>
           </form>
         )}
@@ -248,7 +248,7 @@ export const CommentThread = ({ lookId, comment, isAuthenticated }: CommentThrea
 
       {reporting && (
         <ReportContentModal
-          targetLabel="comment"
+          targetLabel="chime"
           isPending={isReporting}
           onConfirm={(input) =>
             submitReport({ targetType: "CREATOR_LOOK_COMMENT", targetId: id, ...input })

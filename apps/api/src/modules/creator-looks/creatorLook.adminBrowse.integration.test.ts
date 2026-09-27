@@ -13,7 +13,7 @@ import {
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
-const createCreator = (name = "Creator", handle?: string) =>
+const createCreator = (name = "Muse", handle?: string) =>
   prisma.user.create({
     data: {
       email: `${randomUUID()}@creator.outfiqe.test`,
@@ -47,7 +47,7 @@ describe("GET /api/creator-looks/admin", () => {
     expect(response.status).toBe(403);
   });
 
-  it("lists live posts newest-first for a moderator, hiding removed posts", async () => {
+  it("lists live drops newest-first for a moderator, hiding removed drops", async () => {
     const { authHeader } = await createAdminSessionWithPlatformPermissions(
       CONTENT_MODERATE_PERMISSION_KEY,
     );
@@ -89,14 +89,14 @@ describe("GET /api/creator-looks/admin", () => {
     expect(ids).toEqual([match.id]);
   });
 
-  it("filters by creator handle", async () => {
+  it("filters by muse handle", async () => {
     const { authHeader } = await createAdminSessionWithPlatformPermissions(
       CONTENT_MODERATE_PERMISSION_KEY,
     );
-    const targetCreator = await createCreator("Target Creator", "target-handle");
+    const targetCreator = await createCreator("Target Muse", "target-handle");
     const otherCreator = await createCreator();
-    const match = await createLook(targetCreator.id, "A post");
-    await createLook(otherCreator.id, "Another post");
+    const match = await createLook(targetCreator.id, "A drop");
+    await createLook(otherCreator.id, "Another drop");
 
     const response = await request(testApp)
       .get("/api/creator-looks/admin")

@@ -147,7 +147,7 @@ const createBrandOwner = async (brandId: string) => {
 describe("POST /api/crm/organizations", () => {
   it("creates an organization and makes the caller its SUPERADMIN", async () => {
     await prisma.permission.createMany({ data: PERMISSION_CATALOG, skipDuplicates: true });
-    const creator = await createPlatformStaffUser("Org Creator");
+    const creator = await createPlatformStaffUser("Org Muse");
 
     const response = await request(testApp)
       .post("/api/crm/organizations")
@@ -177,7 +177,7 @@ describe("POST /api/crm/organizations", () => {
 
   it("starts a 60-day advanced-features trial for a newly created organization", async () => {
     await prisma.permission.createMany({ data: PERMISSION_CATALOG, skipDuplicates: true });
-    const creator = await createPlatformStaffUser("Trial Org Creator");
+    const creator = await createPlatformStaffUser("Trial Org Muse");
     const subdomain = `trial-${randomUUID().slice(0, 8)}`;
 
     const response = await request(testApp)
@@ -204,7 +204,7 @@ describe("POST /api/crm/organizations", () => {
 
   it("rejects a reserved subdomain", async () => {
     await prisma.permission.createMany({ data: PERMISSION_CATALOG, skipDuplicates: true });
-    const creator = await createPlatformStaffUser("Reserved Subdomain Creator");
+    const creator = await createPlatformStaffUser("Reserved Subdomain Muse");
 
     const response = await request(testApp)
       .post("/api/crm/organizations")
@@ -217,7 +217,7 @@ describe("POST /api/crm/organizations", () => {
 
   it("rejects a subdomain that's already taken", async () => {
     const { organization: existing } = await seedOrganization();
-    const creator = await createPlatformStaffUser("Duplicate Subdomain Creator");
+    const creator = await createPlatformStaffUser("Duplicate Subdomain Muse");
 
     const response = await request(testApp)
       .post("/api/crm/organizations")
@@ -229,7 +229,7 @@ describe("POST /api/crm/organizations", () => {
   });
 
   it("rejects a malformed subdomain", async () => {
-    const creator = await createPlatformStaffUser("Malformed Subdomain Creator");
+    const creator = await createPlatformStaffUser("Malformed Subdomain Muse");
 
     const response = await request(testApp)
       .post("/api/crm/organizations")
@@ -1197,7 +1197,7 @@ describe("Platform access", () => {
 
   it("rejects a tenant-only staff member from creating or listing organizations", async () => {
     const { organization, memberRole } = await seedOrganization();
-    const staff = await createStaffUser("Tenant Only Org Creator");
+    const staff = await createStaffUser("Tenant Only Org Muse");
     await addMembership(organization.id, staff.id, memberRole.id);
 
     const listResponse = await request(testApp)

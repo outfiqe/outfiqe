@@ -201,7 +201,7 @@ describe("toEditDetail", () => {
     expect(detail.taggedProducts[0]?.sizeWorn).toBe("");
   });
 
-  it("lets a creator re-request a rejected tag until the cap is reached", () => {
+  it("lets a muse re-request a rejected tag until the cap is reached", () => {
     const detail = toEditDetail({
       id: "look-1",
       imageUrl: "https://cdn.example.com/cover.png",
@@ -447,7 +447,7 @@ describe("scorePost", () => {
 });
 
 describe("scoreCreatorMomentum", () => {
-  it("falls back to the global baseline when the creator lacks enough history", () => {
+  it("falls back to the global baseline when the muse lacks enough history", () => {
     const buckets = [bucketAgeHoursAgo("look-1", 2, { likes: 3 })];
 
     const momentum = scoreCreatorMomentum({
@@ -461,7 +461,7 @@ describe("scoreCreatorMomentum", () => {
     expect(Number.isFinite(momentum.momentum)).toBe(true);
   });
 
-  it("uses the creator's own baseline once it has enough non-empty windows", () => {
+  it("uses the muse's own baseline once it has enough non-empty windows", () => {
     const buckets = Array.from({ length: TREND_MIN_BUCKETS_FOR_OWN_BASELINE }, (_, index) =>
       bucketAgeHoursAgo("look-1", 10 + index * 10, { likes: 5 }),
     );
@@ -478,7 +478,7 @@ describe("scoreCreatorMomentum", () => {
 });
 
 describe("tagBucketActivity", () => {
-  it("scales log-dampened post counts by the tag signal weight", () => {
+  it("scales log-dampened drop counts by the tag signal weight", () => {
     expect(tagBucketActivity({ postCount: 5 })).toBeCloseTo(1 * Math.log1p(5));
   });
 });

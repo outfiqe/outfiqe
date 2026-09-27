@@ -223,7 +223,7 @@ describe("DashboardSidebar", () => {
     }
   });
 
-  it("marks each creator nav row with its id so the tour can point at it", () => {
+  it("marks each muse nav row with its id so the tour can point at it", () => {
     mockAuth({
       state: {
         status: AuthStatus.AUTHENTICATED,
@@ -249,7 +249,7 @@ describe("DashboardSidebar", () => {
     }
   });
 
-  it("shows Overview to a shopper who is not an approved creator", () => {
+  it("shows Overview to a shopper who is not an approved muse", () => {
     mockAuth({
       state: {
         status: AuthStatus.AUTHENTICATED,
@@ -265,7 +265,7 @@ describe("DashboardSidebar", () => {
     expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/overview");
   });
 
-  it("hides Share, Earnings and Withdraw from a shopper who is not an approved creator", () => {
+  it("hides Share, Earnings and Withdraw from a shopper who is not an approved muse", () => {
     mockAuth({
       state: {
         status: AuthStatus.AUTHENTICATED,
@@ -284,7 +284,7 @@ describe("DashboardSidebar", () => {
     expect(screen.queryByRole("link", { name: "Withdraw" })).not.toBeInTheDocument();
   });
 
-  it("shows Share, Earnings and Withdraw to an approved creator", () => {
+  it("shows Share, Earnings and Withdraw to an approved muse", () => {
     mockAuth({
       state: {
         status: AuthStatus.AUTHENTICATED,

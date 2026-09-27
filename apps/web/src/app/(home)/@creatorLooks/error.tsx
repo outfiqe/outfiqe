@@ -8,6 +8,6 @@ const CreatorLooksError = ({
 }: {
   error: Error & { digest?: string };
   reset: () => void;
-}) => <HomeSectionError sectionName="Creator looks" error={error} retry={reset} />;
+}) => <HomeSectionError sectionName="Muse looks" error={error} retry={reset} />;
 
 export default CreatorLooksError;

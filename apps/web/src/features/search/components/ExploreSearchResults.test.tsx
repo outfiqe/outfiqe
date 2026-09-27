@@ -114,7 +114,7 @@ beforeEach(() => {
 });
 
 describe("ExploreSearchResults", () => {
-  it("shows matched posts once the search resolves", () => {
+  it("shows matched drops once the search resolves", () => {
     render(<ExploreSearchResults />);
 
     expect(screen.getByText("Everyday fit")).toBeInTheDocument();

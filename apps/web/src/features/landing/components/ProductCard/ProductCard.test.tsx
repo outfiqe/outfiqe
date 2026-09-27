@@ -83,7 +83,7 @@ describe("ProductCard save button", () => {
   it("sends an unauthenticated shopper to login with a redirect back", async () => {
     render(<ProductCard product={buildProduct()} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Save to wishlist" }));
+    await userEvent.click(screen.getByRole("button", { name: "Stash it" }));
 
     expect(push).toHaveBeenCalledWith("/login?redirect=%2Fshop");
     expect(mutate).not.toHaveBeenCalled();
@@ -94,7 +94,7 @@ describe("ProductCard save button", () => {
     const onToggleSaved = vi.fn();
     render(<ProductCard product={buildProduct()} onToggleSaved={onToggleSaved} />);
 
-    const button = screen.getByRole("button", { name: "Save to wishlist" });
+    const button = screen.getByRole("button", { name: "Stash it" });
     await userEvent.click(button);
 
     expect(mutate).toHaveBeenCalledWith(
@@ -102,7 +102,7 @@ describe("ProductCard save button", () => {
       expect.anything(),
     );
     expect(onToggleSaved).toHaveBeenCalledWith("product-1", true);
-    expect(screen.getByRole("button", { name: "Remove from wishlist" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Remove from stash" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -111,11 +111,11 @@ describe("ProductCard save button", () => {
   it("picks up a fresh isSaved prop from a later fetch, not just the value it first mounted with", () => {
     useAuthMock.mockReturnValue({ isAuthenticated: true });
     const { rerender } = render(<ProductCard product={buildProduct({ isSaved: false })} />);
-    expect(screen.getByRole("button", { name: "Save to wishlist" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Stash it" })).toBeInTheDocument();
 
     rerender(<ProductCard product={buildProduct({ isSaved: true })} />);
 
-    expect(screen.getByRole("button", { name: "Remove from wishlist" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Remove from stash" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -126,7 +126,7 @@ describe("ProductCard save button", () => {
     wishlistMutationState.isPending = true;
     render(<ProductCard product={buildProduct()} />);
 
-    expect(screen.getByRole("button", { name: "Save to wishlist" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Stash it" })).toBeDisabled();
   });
 
   it("rolls the pressed state back if the wishlist mutation errors", async () => {
@@ -134,9 +134,9 @@ describe("ProductCard save button", () => {
     mutate.mockImplementation((_vars, opts?: { onError?: () => void }) => opts?.onError?.());
     render(<ProductCard product={buildProduct({ isSaved: true })} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Remove from wishlist" }));
+    await userEvent.click(screen.getByRole("button", { name: "Remove from stash" }));
 
-    expect(screen.getByRole("button", { name: "Remove from wishlist" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Remove from stash" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -146,7 +146,7 @@ describe("ProductCard save button", () => {
     useAuthMock.mockReturnValue({ isAuthenticated: true, isAdmin: true });
     render(<ProductCard product={buildProduct()} />);
 
-    const button = screen.getByRole("button", { name: "Save to wishlist" });
+    const button = screen.getByRole("button", { name: "Stash it" });
     expect(button).toBeDisabled();
     expect(mutate).not.toHaveBeenCalled();
   });
@@ -168,13 +168,13 @@ describe("ProductCard badges and social proof", () => {
     expect(screen.queryByText("New")).not.toBeInTheDocument();
   });
 
-  it("summarises creator and buyer counts, singular and combined", () => {
+  it("summarises muse and buyer counts, singular and combined", () => {
     render(<ProductCard product={buildProduct({ creatorBuyerCount: 1, unitsSold: 20 })} />);
-    expect(screen.getByText(/Worn by 1 creator/)).toBeInTheDocument();
+    expect(screen.getByText(/Worn by 1 muse/)).toBeInTheDocument();
     expect(screen.getByText(/20 bought/)).toBeInTheDocument();
   });
 
-  it("shows only the units-sold line when no creators have worn it", () => {
+  it("shows only the units-sold line when no muses have worn it", () => {
     render(<ProductCard product={buildProduct({ creatorBuyerCount: 0, unitsSold: 5 })} />);
     expect(screen.getByText(/5 bought/)).toBeInTheDocument();
     expect(screen.queryByText(/Worn by/)).not.toBeInTheDocument();

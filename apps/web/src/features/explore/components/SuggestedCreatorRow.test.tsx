@@ -16,7 +16,7 @@ const buildCreator = (overrides: Partial<SuggestedCreator> = {}): SuggestedCreat
 });
 
 describe("SuggestedCreatorRow", () => {
-  it("renders the creator's name, handle link, and formatted follower count", () => {
+  it("renders the muse's name, handle link, and formatted follower count", () => {
     render(<SuggestedCreatorRow creator={buildCreator()} onFollow={vi.fn()} />);
 
     expect(screen.getByText("Priya Shah")).toBeInTheDocument();
@@ -24,7 +24,7 @@ describe("SuggestedCreatorRow", () => {
     expect(screen.getAllByRole("link")[0]).toHaveAttribute("href", "/creator/priya-shah");
   });
 
-  it("calls onFollow with the creator's id when the Follow button is clicked", async () => {
+  it("calls onFollow with the muse's id when the Follow button is clicked", async () => {
     const user = userEvent.setup();
     const onFollow = vi.fn();
     render(

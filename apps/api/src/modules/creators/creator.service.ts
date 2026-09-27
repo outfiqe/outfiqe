@@ -61,7 +61,7 @@ const requirePendingCreator = async (userId: string): Promise<UserRecord> => {
   if (user.creatorStatus !== CreatorStatus.PENDING) {
     throw new AppError(
       "NOT_PENDING",
-      "This creator application is not pending review.",
+      "This muse application is not pending review.",
       CONFLICT_STATUS,
     );
   }
@@ -72,7 +72,7 @@ const assertCanBeCreator = (user: UserRecord): void => {
   if (user.role !== UserRole.CUSTOMER) {
     throw new AppError(
       "STAFF_CANNOT_APPLY",
-      "Staff and brand accounts can't apply to become a creator.",
+      "Staff and brand accounts can't apply to become a muse.",
       FORBIDDEN_STATUS,
     );
   }
@@ -89,7 +89,7 @@ export const creatorService = {
     ) {
       throw new AppError(
         "ALREADY_APPLIED",
-        "You've already applied to become a creator.",
+        "You've already applied to become a muse.",
         CONFLICT_STATUS,
       );
     }
@@ -98,7 +98,7 @@ export const creatorService = {
       creatorStatus: CreatorStatus.PENDING,
     });
 
-    logger.info(`Creator application submitted: ${userId}`);
+    logger.info(`Muse application submitted: ${userId}`);
     return toProfile(updated);
   },
 
@@ -124,7 +124,7 @@ export const creatorService = {
   async getPublicProfile(handle: string, viewerId?: string): Promise<PublicCreatorProfile> {
     const user = await userRepository.findWithAvatarAssetByHandle(handle);
     if (!user || !user.isCreator) {
-      throw new AppError("NOT_FOUND", "Creator not found.", NOT_FOUND_STATUS);
+      throw new AppError("NOT_FOUND", "Muse not found.", NOT_FOUND_STATUS);
     }
 
     const {
@@ -258,11 +258,11 @@ export const creatorService = {
     await sendEmail({
       to: user.email,
       subject,
-      body: "Your Outfiqe creator account is approved.",
+      body: "Your Outfiqe muse account is approved.",
       html,
     });
 
-    logger.info(`Creator approved: ${userId} by admin ${adminUserId}`);
+    logger.info(`Muse approved: ${userId} by admin ${adminUserId}`);
   },
 
   async reject(userId: string, adminUserId: string): Promise<void> {
@@ -277,10 +277,10 @@ export const creatorService = {
     await sendEmail({
       to: user.email,
       subject,
-      body: "An update on your Outfiqe creator application.",
+      body: "An update on your Outfiqe muse application.",
       html,
     });
 
-    logger.info(`Creator rejected: ${userId} by admin ${adminUserId}`);
+    logger.info(`Muse rejected: ${userId} by admin ${adminUserId}`);
   },
 };

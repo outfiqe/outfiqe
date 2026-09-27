@@ -97,7 +97,7 @@ describe("toWithdrawRequestView", () => {
 });
 
 describe("toAdminWithdrawRequestView", () => {
-  it("names a creator-owned request after the creator and their bank account", () => {
+  it("names a creator-owned request after the muse and their bank account", () => {
     const view = toAdminWithdrawRequestView(
       adminRow({
         creator: { name: "Priya" },
@@ -108,7 +108,7 @@ describe("toAdminWithdrawRequestView", () => {
     expect(view.bankAccountLast4).toBe("1234");
   });
 
-  it("falls back to the brand name and brand bank account when there is no creator", () => {
+  it("falls back to the brand name and brand bank account when there is no muse", () => {
     const view = toAdminWithdrawRequestView(
       adminRow({
         brand: { name: "Kastha" },

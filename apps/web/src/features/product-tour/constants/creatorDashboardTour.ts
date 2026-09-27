@@ -17,7 +17,7 @@ export const CREATOR_KPI_TOUR_ANCHOR = "creator-kpis";
 export const CREATOR_DASHBOARD_TOUR_STEPS: TourStep[] = [
   {
     id: "welcome",
-    title: "Welcome to your creator dashboard",
+    title: "Welcome to your muse dashboard",
     body: "Here is a quick look at where everything lives. It takes about a minute, and you can skip it at any time.",
   },
   {
@@ -30,7 +30,7 @@ export const CREATOR_DASHBOARD_TOUR_STEPS: TourStep[] = [
     id: "profile",
     anchorSelector: sidebarItemSelector("profile"),
     title: "Your profile",
-    body: "This is where you post. Use the add-post button on your profile to share a new look, tag the products in it, and pick a layout.",
+    body: "This is where you drop looks. Use the Drop button on your profile to share a new look, tag the products in it, and pick a layout.",
   },
   {
     id: "share",
@@ -54,7 +54,7 @@ export const CREATOR_DASHBOARD_TOUR_STEPS: TourStep[] = [
     id: "progress",
     anchorSelector: sidebarItemSelector("progress"),
     title: "Progress",
-    body: "Track your level and XP as you post, sell and grow your reach.",
+    body: "Track your level and XP as you drop, sell and grow your reach.",
   },
   {
     id: "badges",

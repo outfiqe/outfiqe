@@ -97,9 +97,9 @@ export const ResolveReportModal = ({
               className="mt-0.5"
             />
             <span>
-              Remove this tag from the creator&apos;s look
+              Remove this tag from the muse&apos;s look
               <span className="block text-xs text-muted-foreground">
-                Revokes the live tag now. The creator is notified.
+                Revokes the live tag now. The muse is notified.
               </span>
             </span>
           </label>

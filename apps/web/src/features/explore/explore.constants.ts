@@ -22,7 +22,7 @@ export const ADMIN_LOCKED_EXPLORE_TABS: readonly ExploreTabValue[] = [
 ];
 
 export const ADMIN_LOCKED_TAB_TOOLTIP =
-  "For you and Following are built from a member's own follows and likes, which admin accounts don't have. Browse Trending to see what's popular.";
+  "For you and Following are built from a member's own follows and cheriqs, which admin accounts don't have. Browse Trending to see what's popular.";
 
 export const FEED_LAYOUT = {
   GRID: "grid",

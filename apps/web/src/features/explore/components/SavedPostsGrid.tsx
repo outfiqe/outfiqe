@@ -39,7 +39,7 @@ export const SavedPostsGrid = () => {
   if (posts.length === 0) {
     return (
       <p className="py-10 text-sm text-muted-foreground">
-        Nothing saved yet — tap the bookmark on a post to keep it here.
+        Nothing stashed yet — tap the stash icon on a drop to keep it here.
       </p>
     );
   }

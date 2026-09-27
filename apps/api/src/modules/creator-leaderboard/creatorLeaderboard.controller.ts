@@ -15,12 +15,12 @@ export const creatorLeaderboardController = {
     const { category } = validated.query<ListCreatorLeaderboardQuery>(res);
 
     const snapshot = await creatorLeaderboardService.getTop(category);
-    sendSuccess(res, snapshot, "Creator leaderboard.");
+    sendSuccess(res, snapshot, "Muse leaderboard.");
   },
 
   async listCategories(_req: Request, res: Response) {
     const categories = await creatorLeaderboardService.listCategoryStates();
-    sendSuccess(res, categories, "Creator leaderboard categories.");
+    sendSuccess(res, categories, "Muse leaderboard categories.");
   },
 
   async updateCategory(_req: Request, res: Response) {
@@ -28,6 +28,6 @@ export const creatorLeaderboardController = {
     const { enabled } = validated.body<UpdateCreatorLeaderboardCategoryBody>(res);
 
     const state = await creatorLeaderboardService.setCategoryEnabled(category, enabled);
-    sendSuccess(res, state, "Creator leaderboard category updated.");
+    sendSuccess(res, state, "Muse leaderboard category updated.");
   },
 };

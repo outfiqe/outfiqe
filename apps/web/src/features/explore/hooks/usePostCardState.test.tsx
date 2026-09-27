@@ -67,13 +67,13 @@ describe("usePostCardState admin gating", () => {
 
     expect(result.current.isAdmin).toBe(true);
     expect(result.current.likeDisabledReason).toBe(
-      "Platform staff accounts can't like posts — this keeps trending and payouts based on real audience activity.",
+      "Platform staff accounts can't cheriq drops — this keeps trending and payouts based on real audience activity.",
     );
   });
 });
 
 describe("usePostCardState shareLook", () => {
-  it("shares a permalink to the look on its creator's profile", async () => {
+  it("shares a permalink to the look on its muse's profile", async () => {
     const { result } = renderHook(() => usePostCardState(aPost()));
 
     await result.current.shareLook();
@@ -94,7 +94,7 @@ describe("usePostCardState shareLook", () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Link copied"));
   });
 
-  it("falls back to the creator's handle when the look has no caption", async () => {
+  it("falls back to the muse's handle when the look has no caption", async () => {
     const { result } = renderHook(() => usePostCardState(aPost({ caption: null })));
 
     await result.current.shareLook();

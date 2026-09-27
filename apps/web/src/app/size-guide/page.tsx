@@ -7,7 +7,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Size guide",
   description:
-    "How sizing works on Outfiqe: sizes are set by each brand, every product lists the sizes it comes in, and creator looks show the fit on a real person so you can judge before you buy.",
+    "How sizing works on Outfiqe: sizes are set by each brand, every product lists the sizes it comes in, and muse looks show the fit on a real person so you can judge before you buy.",
   path: "/size-guide",
   keywords: ["clothing size guide Nepal", "how to find your size online", "Outfiqe sizing"],
 });
@@ -40,15 +40,15 @@ const SizeGuidePage = () => (
       </div>
     </MarketingSection>
 
-    <MarketingSection heading="Use the creator looks">
+    <MarketingSection heading="Use the muse looks">
       <div className="max-w-2xl space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
         <p>
-          The fastest way to judge fit is to look at the piece on a real person. Many creator looks
-          note the size worn and the creator&apos;s height, so you can compare against your own
-          frame instead of guessing from a flat photo.
+          The fastest way to judge fit is to look at the piece on a real person. Many muse looks
+          note the size worn and the muse&apos;s height, so you can compare against your own frame
+          instead of guessing from a flat photo.
         </p>
         <p>
-          Open a product and check the <strong>Seen on creators</strong> section for looks featuring
+          Open a product and check the <strong>Seen on muses</strong> section for looks featuring
           that exact piece.
         </p>
       </div>

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { creatorProfileApi } from "@/features/creator-profile/api/creatorProfileApi";
 
 describe("creatorProfileApi.get", () => {
-  it("fetches and parses a creator's public profile by handle", async () => {
+  it("fetches and parses a muse's public profile by handle", async () => {
     mswServer.use(
       http.get("/api/creators/by-handle/ava-martinez", () =>
         HttpResponse.json({

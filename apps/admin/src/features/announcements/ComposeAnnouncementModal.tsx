@@ -28,7 +28,7 @@ type ComposeAnnouncementModalProps = {
 const AUDIENCE_OPTIONS: { value: AnnouncementAudienceValue; label: string }[] = [
   { value: AnnouncementAudience.EVERYONE, label: "Everyone" },
   { value: AnnouncementAudience.CUSTOMERS, label: "Customers" },
-  { value: AnnouncementAudience.APPROVED_CREATORS, label: "Approved creators" },
+  { value: AnnouncementAudience.APPROVED_CREATORS, label: "Approved muses" },
   { value: AnnouncementAudience.BRAND_OWNERS, label: "Brand owners" },
   { value: AnnouncementAudience.STAFF, label: "Staff" },
 ];
@@ -142,7 +142,7 @@ export const ComposeAnnouncementModal = ({
             id="announcement-body"
             value={body}
             onChange={(event) => setBody(event.target.value)}
-            placeholder="Join us tomorrow at 6pm for a live drop with our top creators."
+            placeholder="Join us tomorrow at 6pm for a live drop with our top muses."
           />
         </div>
 

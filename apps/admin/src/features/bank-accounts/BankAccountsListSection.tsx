@@ -18,7 +18,7 @@ import {
 
 const OWNER_TABS: OwnerTypeValue[] = ownerTypeSchema.options;
 const OWNER_TAB_LABEL: Record<OwnerTypeValue, string> = {
-  CREATOR: "Creator",
+  CREATOR: "Muse",
   BUSINESS: "Business",
 };
 const VERIFIED_FILTER_LABEL: Record<VerifiedFilterValue, string> = {

@@ -97,7 +97,7 @@ describe("PostCard caption spacing", () => {
   it("adds a divider above the actions row when there is a caption", () => {
     render(<PostCard post={aPost({ caption: "Streetwear fit" })} />);
 
-    const actionsRow = screen.getByRole("button", { name: "Save post" }).parentElement
+    const actionsRow = screen.getByRole("button", { name: "Stash drop" }).parentElement
       ?.parentElement;
 
     expect(actionsRow).toHaveClass("border-t");
@@ -107,7 +107,7 @@ describe("PostCard caption spacing", () => {
   it("omits the extra divider and spacing when there is no caption or tagged products", () => {
     render(<PostCard post={aPost({ caption: null })} />);
 
-    const actionsRow = screen.getByRole("button", { name: "Save post" }).parentElement
+    const actionsRow = screen.getByRole("button", { name: "Stash drop" }).parentElement
       ?.parentElement;
 
     expect(actionsRow).not.toHaveClass("border-t");
@@ -136,7 +136,7 @@ describe("PostCard for a platform admin viewer", () => {
     render(<PostCard post={aPost({ likeCount: 5, commentCount: 3 })} />);
 
     expect(screen.queryByRole("button", { name: "Follow" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Post options" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Drop options" })).not.toBeInTheDocument();
 
     const likeButton = screen.getByRole("button", { name: "5" });
     expect(likeButton).toHaveAttribute("aria-disabled", "true");

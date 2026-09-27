@@ -143,7 +143,7 @@ export const CommissionTiersSection = () => {
     <div>
       <h2 className="font-display text-lg font-bold text-foreground">Commission tiers</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Fixed commission a creator earns per attributed sale, by the sold item&apos;s price band.
+        Fixed commission a muse earns per attributed sale, by the sold item&apos;s price band.
       </p>
 
       <Form {...form}>

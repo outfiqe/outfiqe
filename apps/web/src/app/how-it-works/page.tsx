@@ -14,20 +14,20 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "How Outfiqe works",
   description:
-    "How to shop on Outfiqe. Browse creator looks, pick the exact pieces from Nepali brands, add to one cart, and pay cash on delivery or by wallet.",
+    "How to shop on Outfiqe. Browse muse looks, pick the exact pieces from Nepali brands, add to one cart, and pay cash on delivery or by wallet.",
   path: "/how-it-works",
   keywords: [
     "how Outfiqe works",
     "how to shop on Outfiqe",
     "cash on delivery fashion Nepal",
-    "creator looks shopping",
+    "muse looks shopping",
   ],
 });
 
 const shopperSteps = [
   {
     title: "Find a look",
-    body: "Browse the feed of creator looks or search by brand, style or piece. Every look shows the exact products worn.",
+    body: "Browse the feed of muse looks or search by brand, style or piece. Every look shows the exact products worn.",
   },
   {
     title: "Add to one cart",
@@ -43,7 +43,7 @@ const faqs = [
   {
     question: "Do I need an account to shop?",
     answer:
-      "You can browse everything without an account. You'll need to sign up and verify your email to save items, check out and track orders.",
+      "You can browse everything without an account. You'll need to sign up and verify your email to stash items, check out and track orders.",
   },
   {
     question: "Can I buy from more than one brand in a single order?",
@@ -61,9 +61,9 @@ const faqs = [
       "You can cancel an order yourself while it hasn't shipped yet. Once it's on the way, contact us. Return and refund handling is covered in our returns policy.",
   },
   {
-    question: "What are the creator looks?",
+    question: "What are the muse looks?",
     answer:
-      "Approved Outfiqe creators photograph and post outfits using products from our brands, and tag the exact pieces. It is how you judge the fit and styling before you buy. Creators earn a commission when a look sells a product.",
+      "Approved Outfiqe muses photograph and drop outfits using products from our brands, and tag the exact pieces. It is how you judge the fit and styling before you buy. Muses earn a commission when a look sells a product.",
   },
 ];
 
@@ -90,14 +90,14 @@ const HowItWorksPage = () => (
       <StepList steps={shopperSteps} />
     </MarketingSection>
 
-    <MarketingSection heading="For creators & brands">
+    <MarketingSection heading="For muses & brands">
       <div className="grid gap-10 sm:grid-cols-2">
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-wide text-foreground">Creators</h3>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-foreground">Muses</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Approved creators post looks using products from our brands and tag the pieces. When
-            someone taps a tagged product or follows a creator&apos;s link and buys it within the
-            attribution window, the creator earns a commission. It&apos;s tracked automatically and
+            Approved muses drop looks using products from our brands and tag the pieces. When
+            someone taps a tagged product or follows a muse&apos;s link and buys it within the
+            attribution window, the muse earns a commission. It&apos;s tracked automatically and
             paid out to a verified bank account. See{" "}
             <Link
               href="/for-creators/how-commissions-work"
@@ -113,7 +113,7 @@ const HowItWorksPage = () => (
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
             Brands list their catalogue, set stock and pricing, and manage orders from a dashboard.
             Listing is free. Outfiqe takes a small commission on completed sales, and a share of
-            that funds the creator who sourced the sale. More on the{" "}
+            that funds the muse who sourced the sale. More on the{" "}
             <Link
               href="/for-brands"
               className="font-medium text-foreground underline underline-offset-2"

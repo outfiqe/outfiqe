@@ -38,7 +38,7 @@ afterEach(() => {
 });
 
 describe("sendEmail", () => {
-  it("posts the message to the Resend API when RESEND_API_KEY is set", async () => {
+  it("drops the message to the Resend API when RESEND_API_KEY is set", async () => {
     let capturedInit: RequestInit | undefined;
     const fetchMock = vi.fn((_url: string, init?: RequestInit) => {
       capturedInit = init;

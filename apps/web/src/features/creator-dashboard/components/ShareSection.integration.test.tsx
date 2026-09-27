@@ -115,13 +115,13 @@ beforeEach(() => {
 });
 
 describe("ShareSection", () => {
-  it("shows the creator status gate for a non-approved creator", () => {
+  it("shows the muse status gate for a non-approved muse", () => {
     renderSection(CreatorStatus.PENDING);
 
     expect(screen.getByText("Status gate for PENDING")).toBeInTheDocument();
   });
 
-  it("shows an empty state when the creator has no links yet", () => {
+  it("shows an empty state when the muse has no links yet", () => {
     renderSection();
 
     expect(

@@ -44,10 +44,10 @@ beforeEach(() => {
 });
 
 const renderBox = () =>
-  render(<ExploreSearchBox placeholder="Search creators & posts" formClassName="" />);
+  render(<ExploreSearchBox placeholder="Search muses & drops" formClassName="" />);
 
 describe("ExploreSearchBox", () => {
-  it("renders creators and posts as two labeled groups", async () => {
+  it("renders muses and drops as two labeled groups", async () => {
     mockSuggestions({
       creators: [
         { userId: "u1", name: "Ava Martinez", handle: "ava", avatarUrl: null, followerCount: 10 },
@@ -64,25 +64,25 @@ describe("ExploreSearchBox", () => {
 
     const user = userEvent.setup();
     renderBox();
-    await user.type(screen.getByPlaceholderText("Search creators & posts"), "ava");
+    await user.type(screen.getByPlaceholderText("Search muses & drops"), "ava");
 
-    expect(await screen.findByText("Creators")).toBeInTheDocument();
-    expect(screen.getByText("Posts")).toBeInTheDocument();
+    expect(await screen.findByText("Muses")).toBeInTheDocument();
+    expect(screen.getByText("Drops")).toBeInTheDocument();
     expect(screen.getByText("Ava Martinez")).toBeInTheDocument();
     expect(screen.getByText("Winter layers")).toBeInTheDocument();
   });
 
-  it("shows an empty state when neither creators nor posts match", async () => {
+  it("shows an empty state when neither muses nor drops match", async () => {
     mockSuggestions({ creators: [], posts: [] });
 
     const user = userEvent.setup();
     renderBox();
-    await user.type(screen.getByPlaceholderText("Search creators & posts"), "zzz");
+    await user.type(screen.getByPlaceholderText("Search muses & drops"), "zzz");
 
-    expect(await screen.findByText(/No creators or posts found/)).toBeInTheDocument();
+    expect(await screen.findByText(/No muses or drops found/)).toBeInTheDocument();
   });
 
-  it("navigates to the creator's profile when a creator suggestion is selected", async () => {
+  it("navigates to the muse's profile when a muse suggestion is selected", async () => {
     mockSuggestions({
       creators: [
         { userId: "u1", name: "Ava Martinez", handle: "ava", avatarUrl: null, followerCount: 10 },
@@ -91,14 +91,14 @@ describe("ExploreSearchBox", () => {
 
     const user = userEvent.setup();
     renderBox();
-    await user.type(screen.getByPlaceholderText("Search creators & posts"), "ava");
+    await user.type(screen.getByPlaceholderText("Search muses & drops"), "ava");
 
     await user.click(await screen.findByText("Ava Martinez"));
 
     expect(push).toHaveBeenCalledWith("/creator/ava");
   });
 
-  it("navigates to the post's creator profile when a post suggestion is selected", async () => {
+  it("navigates to the drop's muse profile when a drop suggestion is selected", async () => {
     mockSuggestions({
       posts: [
         {
@@ -112,7 +112,7 @@ describe("ExploreSearchBox", () => {
 
     const user = userEvent.setup();
     renderBox();
-    await user.type(screen.getByPlaceholderText("Search creators & posts"), "winter");
+    await user.type(screen.getByPlaceholderText("Search muses & drops"), "winter");
 
     await user.click(await screen.findByText("Winter layers"));
 
@@ -122,7 +122,7 @@ describe("ExploreSearchBox", () => {
   it("falls through to the full results page on submit with nothing highlighted", async () => {
     const user = userEvent.setup();
     renderBox();
-    const input = screen.getByPlaceholderText("Search creators & posts");
+    const input = screen.getByPlaceholderText("Search muses & drops");
     await user.type(input, "ava{Enter}");
 
     await waitFor(() =>

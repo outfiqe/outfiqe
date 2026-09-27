@@ -3,7 +3,7 @@ import { AppError } from "#middlewares/error-handler.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 const FORBIDDEN_STATUS = 403;
-const DEFAULT_MESSAGE = "Only approved creators can do this.";
+const DEFAULT_MESSAGE = "Only approved muses can do this.";
 
 export const requireApprovedCreator = async (
   userId: string,
@@ -13,7 +13,7 @@ export const requireApprovedCreator = async (
   if (user && user.role !== UserRole.CUSTOMER) {
     throw new AppError(
       "STAFF_CANNOT_BE_CREATOR",
-      "Staff and brand accounts can't post as a creator.",
+      "Staff and brand accounts can't drop as a muse.",
       FORBIDDEN_STATUS,
     );
   }

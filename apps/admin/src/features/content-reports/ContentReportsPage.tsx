@@ -62,7 +62,7 @@ export const ContentReportsPage = () => {
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Content reports</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Posts and comments flagged by viewers.
+        Drops and chimes flagged by viewers.
         {openCount.data ? ` ${openCount.data} open.` : ""}
       </p>
 
@@ -93,7 +93,7 @@ export const ContentReportsPage = () => {
 
         {reports.map((report) => {
           const { target } = report;
-          const targetNoun = report.targetType === "CREATOR_LOOK" ? "post" : "comment";
+          const targetNoun = report.targetType === "CREATOR_LOOK" ? "drop" : "chime";
           return (
             <div key={report.id} className="flex gap-4 rounded-xl border border-border bg-card p-4">
               {target?.imageUrl && (

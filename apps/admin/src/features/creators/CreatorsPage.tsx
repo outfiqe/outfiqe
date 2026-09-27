@@ -45,14 +45,14 @@ export const CreatorsPage = () => {
   const creators = creatorsQuery?.pages.flatMap((page) => page.creators) ?? [];
 
   const approve = useApiMutation({
-    successMessage: "Creator approved.",
+    successMessage: "Muse approved.",
     mutationFn: (userId: string) => creatorsApi.approve(userId),
     invalidateKeys: [["creators"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
   });
 
   const reject = useApiMutation({
-    successMessage: "Creator rejected.",
+    successMessage: "Muse rejected.",
     mutationFn: (userId: string) => creatorsApi.reject(userId),
     invalidateKeys: [["creators"]],
     onError: (mutationError) => toast.error(getErrorMessage(mutationError)),
@@ -60,7 +60,7 @@ export const CreatorsPage = () => {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold text-foreground">Creators</h1>
+      <h1 className="font-display text-2xl font-bold text-foreground">Muses</h1>
 
       <div className="mt-5 flex gap-2">
         {TABS.map((status) => (
@@ -84,7 +84,7 @@ export const CreatorsPage = () => {
           Array.from({ length: CREATOR_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
             <CreatorRowSkeleton key={rowIndex} hasReviewActions={tab === "PENDING"} />
           ))}
-        {error && <p className="text-sm text-destructive">Couldn&apos;t load creators.</p>}
+        {error && <p className="text-sm text-destructive">Couldn&apos;t load muses.</p>}
         {!isLoading && creators.length === 0 && (
           <p className="text-sm text-muted-foreground">Nothing here right now.</p>
         )}

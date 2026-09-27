@@ -29,16 +29,16 @@ const thresholdPercentFrom = (payload: NotificationBroadcastPayload): string =>
 
 const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
   [NotificationType.LOOK_LIKED]: {
-    title: "New like",
-    body: (payload) => withOthers(payload, "liked your look"),
+    title: "New cheriq",
+    body: (payload) => withOthers(payload, "cheriqed your drop"),
   },
   [NotificationType.LOOK_COMMENTED]: {
-    title: "New comment",
-    body: () => "Someone commented on your look",
+    title: "New chime",
+    body: () => "Someone chimed on your drop",
   },
   [NotificationType.COMMENT_REPLIED]: {
     title: "New reply",
-    body: () => "Someone replied to your comment",
+    body: () => "Someone replied to your chime",
   },
   [NotificationType.NEW_FOLLOWER]: {
     title: "New follower",
@@ -58,7 +58,7 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
   },
   [NotificationType.COMMISSION_EARNED]: {
     title: "You earned a commission",
-    body: () => "A sale from one of your looks came through",
+    body: () => "A sale from one of your drops came through",
   },
   [NotificationType.NEW_ORDER]: {
     title: "New order",
@@ -138,8 +138,8 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     body: (payload) => {
       const count = payload.metadata.pendingTagReviewCount;
       return typeof count === "number"
-        ? `${count} creator tag${count === 1 ? "" : "s"} still need your review`
-        : "You have creator tags waiting for review";
+        ? `${count} muse tag${count === 1 ? "" : "s"} still need your review`
+        : "You have muse tags waiting for review";
     },
   },
   [NotificationType.PRODUCT_TAG_APPROVED]: {

@@ -5,15 +5,15 @@ import { parsePushMessage } from "./pushMessage";
 describe("parsePushMessage", () => {
   it("reads the title, body, url, and tag the server sent", () => {
     const raw = JSON.stringify({
-      title: "New like",
-      body: "Someone liked your look",
+      title: "New cheriq",
+      body: "Someone cheriqed your drop",
       url: "/profile",
       tag: "LOOK_LIKED:look-1",
     });
 
     expect(parsePushMessage(raw)).toEqual({
-      title: "New like",
-      body: "Someone liked your look",
+      title: "New cheriq",
+      body: "Someone cheriqed your drop",
       url: "/profile",
       tag: "LOOK_LIKED:look-1",
     });
