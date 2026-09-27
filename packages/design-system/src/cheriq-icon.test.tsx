@@ -14,13 +14,14 @@ describe("CheriqIcon", () => {
     expect(container.querySelector(".fill-primary")).not.toBeInTheDocument();
   });
 
-  it("fills the cherries with primary, outlines them in primary-strong and adds a white shine once cheriqed", () => {
+  it("fills the cherries and leaf with primary and keeps a white shine once cheriqed", () => {
     const { container } = render(<CheriqIcon isCheriqed />);
+    const filledParts = container.querySelectorAll(".fill-primary");
 
     expect(container.querySelector("svg")).toHaveAttribute("data-cheriqed", "true");
-    expect(container.querySelector(".fill-primary")).toHaveClass("stroke-primary-strong");
-    expect(container.querySelector(".fill-primary-strong")).toBeInTheDocument();
-    expect(container.querySelectorAll(".stroke-white")).toHaveLength(2);
+    expect(filledParts).toHaveLength(2);
+    filledParts.forEach((part) => expect(part).toHaveClass("stroke-primary"));
+    expect(container.querySelectorAll(".stroke-white")).toHaveLength(1);
   });
 
   it("forwards svg props such as sizing classes and animation handlers", () => {
