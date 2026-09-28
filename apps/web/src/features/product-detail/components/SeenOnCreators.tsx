@@ -23,7 +23,7 @@ export const SeenOnCreators = ({ productId, creators }: SeenOnCreatorsProps) => 
   return (
     <section id="seen-on-creators" className="border-t border-border py-10">
       <h2 className="font-display text-xl font-extrabold uppercase tracking-tight text-foreground">
-        Seen on {creators.length} {creators.length === 1 ? "creator" : "creators"}
+        Seen on {creators.length} {creators.length === 1 ? "muse" : "muses"}
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
         Real fits, real sizes — from people who bought it.

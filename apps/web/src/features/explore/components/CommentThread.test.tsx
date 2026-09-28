@@ -149,7 +149,7 @@ describe("CommentThread", () => {
 
     render(<CommentThread lookId="look-1" comment={buildComment()} isAuthenticated />);
     await user.click(screen.getByRole("button", { name: "Reply" }));
-    await user.click(screen.getByRole("button", { name: "Post" }));
+    await user.click(screen.getByRole("button", { name: "Chime" }));
 
     expect(submitReply).toHaveBeenCalledTimes(1);
   });

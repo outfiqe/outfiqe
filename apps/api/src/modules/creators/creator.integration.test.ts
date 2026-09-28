@@ -76,8 +76,8 @@ const createAdmin = async (name: string, handle: string) => {
   return admin;
 };
 
-describe("GET /api/creators/autocomplete", () => {
-  it("returns approved creators ranked by name/handle match", async () => {
+describe("GET /api/muses/autocomplete", () => {
+  it("returns approved muses ranked by name/handle match", async () => {
     await createApprovedCreator("Ava Martinez", "ava-martinez");
     await createApprovedCreator("Noah Chen", "noah-chen");
 
@@ -93,11 +93,11 @@ describe("GET /api/creators/autocomplete", () => {
     expect(response.body.data[0]).toHaveProperty("followerCount");
   });
 
-  it("excludes users who aren't approved creators", async () => {
+  it("excludes users who aren't approved muses", async () => {
     await prisma.user.create({
       data: {
         email: `pending-${randomUUID()}@outfiqe.test`,
-        name: "Pending Creator",
+        name: "Pending Muse",
         handle: `pending-creator-${randomUUID().slice(0, 6)}`,
         phone: uniquePhone(),
         passwordHash: "not-used-in-tests",
@@ -108,7 +108,7 @@ describe("GET /api/creators/autocomplete", () => {
 
     const response = await request(testApp)
       .get("/api/creators/autocomplete")
-      .query({ q: "Pending Creator" });
+      .query({ q: "Pending Muse" });
 
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(0);
@@ -130,8 +130,8 @@ describe("GET /api/creators/autocomplete", () => {
   });
 });
 
-describe("PATCH /api/creators/me", () => {
-  it("updates the creator's height and show-height preference", async () => {
+describe("PATCH /api/muses/me", () => {
+  it("updates the muse's height and show-height preference", async () => {
     const creator = await createApprovedCreator("Height Setter", "height-setter");
 
     const response = await request(testApp)
@@ -167,7 +167,7 @@ describe("PATCH /api/creators/me", () => {
   });
 });
 
-describe("PATCH /api/creators/me — username change", () => {
+describe("PATCH /api/muses/me — username change", () => {
   it("updates the handle and records when it changed", async () => {
     const creator = await createApprovedCreator("Handle Changer", "handle-changer");
     const nextHandle = `freshhandle${randomUUID().slice(0, 8)}`;
@@ -274,8 +274,8 @@ describe("PATCH /api/creators/me — username change", () => {
   });
 });
 
-describe("GET /api/creators/by-handle/:handle", () => {
-  it("hides height from other viewers when the creator has not opted in", async () => {
+describe("GET /api/muses/by-handle/:handle", () => {
+  it("hides height from other viewers when the muse has not opted in", async () => {
     const creator = await createApprovedCreator("Hidden Height", "hidden-height", {
       heightCm: 165,
       showHeight: false,
@@ -291,7 +291,7 @@ describe("GET /api/creators/by-handle/:handle", () => {
     expect(response.body.data.showHeight).toBe(false);
   });
 
-  it("shows height to other viewers when the creator has opted in", async () => {
+  it("shows height to other viewers when the muse has opted in", async () => {
     const creator = await createApprovedCreator("Shown Height", "shown-height", {
       heightCm: 172,
       showHeight: true,
@@ -325,8 +325,8 @@ describe("GET /api/creators/by-handle/:handle", () => {
     expect(response.status).toBe(404);
   });
 
-  it("returns 404 for a user who exists but isn't a creator", async () => {
-    const user = await createPlainUser("Not A Creator", "not-a-creator");
+  it("returns 404 for a user who exists but isn't a muse", async () => {
+    const user = await createPlainUser("Not A Muse", "not-a-creator");
 
     const response = await request(testApp).get(`/api/creators/by-handle/${user.handle}`);
 
@@ -376,8 +376,8 @@ describe("GET /api/creators/by-handle/:handle", () => {
   });
 });
 
-describe("GET /api/creators/by-handle/:handle/looks", () => {
-  it("returns the creator's published looks", async () => {
+describe("GET /api/muses/by-handle/:handle/looks", () => {
+  it("returns the muse's published looks", async () => {
     const creator = await createApprovedCreator("Look Poster", "look-poster");
     await prisma.creatorLook.create({
       data: {
@@ -402,7 +402,7 @@ describe("GET /api/creators/by-handle/:handle/looks", () => {
   });
 });
 
-describe("POST /api/creators/apply", () => {
+describe("POST /api/muses/apply", () => {
   it("moves a plain user into PENDING", async () => {
     const user = await createPlainUser("Applying User", "applying-user");
 
@@ -443,7 +443,7 @@ describe("POST /api/creators/apply", () => {
     expect(response.status).toBe(401);
   });
 
-  it("rejects a platform admin applying to become a creator", async () => {
+  it("rejects a platform admin applying to become a muse", async () => {
     const admin = await createUserWithRole("Admin Applicant", "admin-applicant", UserRole.ADMIN);
 
     const response = await request(testApp)
@@ -457,7 +457,7 @@ describe("POST /api/creators/apply", () => {
     expect(stored.creatorStatus).toBe(CreatorStatus.NONE);
   });
 
-  it("rejects a brand owner applying to become a creator", async () => {
+  it("rejects a brand owner applying to become a muse", async () => {
     const brandOwner = await createUserWithRole(
       "Brand Owner Applicant",
       "brand-owner-applicant",
@@ -473,7 +473,7 @@ describe("POST /api/creators/apply", () => {
   });
 });
 
-describe("GET /api/creators/me", () => {
+describe("GET /api/muses/me", () => {
   it("returns the caller's own profile", async () => {
     const creator = await createApprovedCreator("Self Viewer", "self-viewer");
 
@@ -500,7 +500,7 @@ describe("GET /api/creators/me", () => {
   });
 });
 
-describe("GET /api/creators/search", () => {
+describe("GET /api/muses/search", () => {
   it("returns matches with a total count", async () => {
     await createApprovedCreator("Search Target One", "search-target-one");
 
@@ -547,8 +547,8 @@ describe("GET /api/creators/search", () => {
   });
 });
 
-describe("GET /api/creators (admin list)", () => {
-  it("lists creators filtered by status for an admin", async () => {
+describe("GET /api/muses (admin list)", () => {
+  it("lists muses filtered by status for an admin", async () => {
     const admin = await createAdmin("List Admin", "list-admin");
     const pending = await createPendingCreator("Listed Pending", "listed-pending");
 
@@ -580,8 +580,8 @@ describe("GET /api/creators (admin list)", () => {
   });
 });
 
-describe("POST /api/creators/:userId/approve", () => {
-  it("approves a pending creator", async () => {
+describe("POST /api/muses/:userId/approve", () => {
+  it("approves a pending muse", async () => {
     const admin = await createAdmin("Approving Admin", "approving-admin");
     const pending = await createPendingCreator("To Be Approved", "to-be-approved");
 
@@ -596,7 +596,7 @@ describe("POST /api/creators/:userId/approve", () => {
     expect(stored.isCreator).toBe(true);
   });
 
-  it("rejects approving a creator who isn't pending", async () => {
+  it("rejects approving a muse who isn't pending", async () => {
     const admin = await createAdmin("Approving Admin Two", "approving-admin-two");
     const creator = await createApprovedCreator("Already Done", "already-done");
 
@@ -653,8 +653,8 @@ describe("POST /api/creators/:userId/approve", () => {
   });
 });
 
-describe("POST /api/creators/:userId/reject", () => {
-  it("rejects a pending creator", async () => {
+describe("POST /api/muses/:userId/reject", () => {
+  it("rejects a pending muse", async () => {
     const admin = await createAdmin("Rejecting Admin", "rejecting-admin");
     const pending = await createPendingCreator("To Be Rejected", "to-be-rejected");
 
@@ -669,7 +669,7 @@ describe("POST /api/creators/:userId/reject", () => {
     expect(stored.isCreator).toBe(false);
   });
 
-  it("rejects rejecting a creator who isn't pending", async () => {
+  it("rejects rejecting a muse who isn't pending", async () => {
     const admin = await createAdmin("Rejecting Admin Two", "rejecting-admin-two");
     const creator = await createApprovedCreator("Not Pending", "not-pending-reject");
 

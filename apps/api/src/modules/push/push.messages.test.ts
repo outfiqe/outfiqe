@@ -33,13 +33,13 @@ const aNotification = (
 });
 
 describe("toPushMessage", () => {
-  it("names the single person behind a like", () => {
+  it("names the single person behind a cheriq", () => {
     const message = toPushMessage(
       aNotification({ type: NotificationType.LOOK_LIKED, actorCount: 1 }),
     );
 
-    expect(message.title).toBe("New like");
-    expect(message.body).toBe("Someone liked your look");
+    expect(message.title).toBe("New cheriq");
+    expect(message.body).toBe("Someone cheriqed your drop");
   });
 
   it("counts the group once more than one person did the same thing", () => {

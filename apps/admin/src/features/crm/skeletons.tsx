@@ -213,7 +213,7 @@ export const PartnersRouteSkeleton = () => (
   <div>
     <SearchHeading
       {...CRM_PAGE_TEXT.partners}
-      controls={<DisabledSearchInput placeholder="Search creators" widthClass="w-64" />}
+      controls={<DisabledSearchInput placeholder="Search muses" widthClass="w-64" />}
     />
     <div className="mt-6">
       <TableSkeleton headers={PARTNER_TABLE_HEADERS} />

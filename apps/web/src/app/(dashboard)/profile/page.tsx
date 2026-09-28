@@ -45,7 +45,7 @@ const CreatorProfileSection = async ({ accessToken }: { accessToken: string }) =
         />
         <CreatorStatusGate
           creatorStatus={profile.creatorStatus}
-          pitch="Set up your public creator profile — post your fits and let people discover what you're wearing."
+          pitch="Set up your public muse profile — drop your fits and let people discover what you're wearing."
         />
       </>
     );

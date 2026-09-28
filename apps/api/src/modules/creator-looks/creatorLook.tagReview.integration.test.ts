@@ -35,7 +35,7 @@ const createCreator = () =>
   prisma.user.create({
     data: {
       email: `${randomUUID()}@creator.outfiqe.test`,
-      name: "Tag Review Creator",
+      name: "Tag Review Muse",
       handle: `trc-${randomUUID().slice(0, 8)}`,
       phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
@@ -132,7 +132,7 @@ describe("tag review on create", () => {
     expect((await tagFor(look.id, product.id)).approvalSource).toBe("POLICY_OPEN");
   });
 
-  it("holds an untrusted creator's tag under TRUSTED_ONLY and emits PRODUCT_TAG_SUBMITTED", async () => {
+  it("holds an untrusted muse's tag under TRUSTED_ONLY and emits PRODUCT_TAG_SUBMITTED", async () => {
     const publishSpy = vi.spyOn(eventBus, "publish");
     const [creator, brand] = await Promise.all([
       createCreator(),
@@ -160,7 +160,7 @@ describe("tag review on create", () => {
     ).toBe(0);
   });
 
-  it("auto-approves a creator the brand explicitly trusts under TRUSTED_ONLY", async () => {
+  it("auto-approves a muse the brand explicitly trusts under TRUSTED_ONLY", async () => {
     const [creator, brand] = await Promise.all([
       createCreator(),
       createBrand(BrandTagReviewPolicy.TRUSTED_ONLY),

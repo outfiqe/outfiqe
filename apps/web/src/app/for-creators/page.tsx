@@ -12,25 +12,25 @@ import {
 import { buildPageMetadata } from "@/shared/seo";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Become an Outfiqe creator",
+  title: "Become an Outfiqe muse",
   description:
-    "Post your outfits, tag real products from Nepali brands, and earn a commission every time a look sells a piece. Here's how the Outfiqe creator programme works and how to apply.",
+    "Drop your outfits, tag real products from Nepali brands, and earn a commission every time a look sells a piece. Here's how the Outfiqe muse programme works and how to apply.",
   path: "/for-creators",
   keywords: [
-    "become a fashion creator Nepal",
-    "earn money posting outfits",
+    "become a fashion muse Nepal",
+    "earn money dropping outfits",
     "fashion affiliate Nepal",
-    "Outfiqe creator programme",
+    "Outfiqe muse programme",
   ],
 });
 
 const steps = [
   {
     title: "Apply and get approved",
-    body: "Sign up, then apply to become a creator from your dashboard. We review new creators before your profile goes live.",
+    body: "Sign up, then apply to become a muse from your dashboard. We review new muses before your profile goes live.",
   },
   {
-    title: "Post looks, tag products",
+    title: "Drop looks, tag products",
     body: "Photograph your outfits and tag the exact pieces from Outfiqe brands. Your looks appear in the feed and on each product's page.",
   },
   {
@@ -50,11 +50,11 @@ const perks = [
   },
   {
     title: "Own your profile",
-    body: "A public creator profile at outfiqe with your looks, the brands you wear, and a shareable link for every product.",
+    body: "A public muse profile at outfiqe with your looks, the brands you wear, and a shareable link for every product.",
   },
   {
     title: "Badges and leaderboards",
-    body: "Earn XP and badges for posting, styling and selling, and climb the weekly creator leaderboards.",
+    body: "Earn XP and badges for dropping, styling and selling, and climb the weekly muse leaderboards.",
   },
 ];
 
@@ -62,11 +62,11 @@ const ForCreatorsPage = () => (
   <MarketingShell
     breadcrumbs={[
       { name: "Home", path: "/" },
-      { name: "Become a creator", path: "/for-creators" },
+      { name: "Become a muse", path: "/for-creators" },
     ]}
   >
     <MarketingHero
-      eyebrow="For creators"
+      eyebrow="For muses"
       title={
         <>
           Get paid for
@@ -74,7 +74,7 @@ const ForCreatorsPage = () => (
           your taste.
         </>
       }
-      lede="Outfiqe turns the outfits you already post into income. Tag real products from Nepali brands, and earn a commission every time one of your looks sells a piece."
+      lede="Outfiqe turns the outfits you already drop into income. Tag real products from Nepali brands, and earn a commission every time one of your looks sells a piece."
     />
 
     <MarketingSection heading="How it works">
@@ -102,10 +102,10 @@ const ForCreatorsPage = () => (
     </MarketingSection>
 
     <MarketingCta
-      title="Apply to become a creator"
+      title="Apply to become a muse"
       body="Create an account, then apply from your dashboard. Approval usually takes a couple of days."
       primary={{ href: "/register", label: "Create an account" }}
-      secondary={{ href: "/explore", label: "See creator looks" }}
+      secondary={{ href: "/explore", label: "See muse looks" }}
     />
   </MarketingShell>
 );

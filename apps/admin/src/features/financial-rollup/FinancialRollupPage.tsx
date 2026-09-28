@@ -64,7 +64,7 @@ const ROLLUP_CARD_COPY = [
   { title: "Gateway", description: "Money actually collected via payment gateways.", rowCount: 3 },
   {
     title: "Ledger",
-    description: "What's owed to creators and brands per the settlement ledger.",
+    description: "What's owed to muses and brands per the settlement ledger.",
     rowCount: LEDGER_CARD_SKELETON_ROW_COUNT,
   },
 ];
@@ -168,7 +168,7 @@ export const FinancialRollupPage = () => {
               </span>
             </>
           }
-          hint="Order items whose attributedCreatorId is set — came through a creator's tag or link."
+          hint="Order items whose attributedCreatorId is set — came through a muse's tag or link."
         />
       )}
 
@@ -193,7 +193,7 @@ export const FinancialRollupPage = () => {
               Ledger
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              What&apos;s owed to creators and brands per the settlement ledger.
+              What&apos;s owed to muses and brands per the settlement ledger.
             </p>
             <div className="mt-3">
               <StatRow
@@ -201,7 +201,7 @@ export const FinancialRollupPage = () => {
                 value={money(rollup.ledger.platformRevenueRealized)}
               />
               <StatRow
-                label="Owed to creators (outstanding)"
+                label="Owed to muses (outstanding)"
                 value={money(rollup.ledger.owedToCreators)}
               />
               <StatRow
@@ -209,7 +209,7 @@ export const FinancialRollupPage = () => {
                 value={money(rollup.ledger.owedToBrands)}
               />
               {Object.entries(rollup.ledger.creatorCommissionsByStatus).map(([status, amount]) => (
-                <StatRow key={status} label={`Creators — ${status}`} value={money(amount)} />
+                <StatRow key={status} label={`Muses — ${status}`} value={money(amount)} />
               ))}
               {Object.entries(rollup.ledger.brandPayoutsByStatus).map(([status, amount]) => (
                 <StatRow key={status} label={`Brands — ${status}`} value={money(amount)} />

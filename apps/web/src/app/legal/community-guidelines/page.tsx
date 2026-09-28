@@ -6,7 +6,7 @@ import { buildPageMetadata } from "@/shared/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Community guidelines",
   description:
-    "The standards for content and behaviour on Outfiqe, for creators posting looks, shoppers writing reviews, and everyone using chat.",
+    "The standards for content and behaviour on Outfiqe, for muses dropping looks, shoppers writing reviews, and everyone using chat.",
   path: "/legal/community-guidelines",
 });
 
@@ -25,7 +25,7 @@ const CommunityGuidelinesPage = () => (
       lastReviewed="[NEEDS INPUT: effective date]"
       status="draft"
     >
-      <h2>Post real, honest content</h2>
+      <h2>Drop real, honest content</h2>
       <ul>
         <li>Looks should show real products, worn or styled genuinely.</li>
         <li>Reviews should reflect your actual experience with a product you received.</li>
@@ -50,14 +50,14 @@ const CommunityGuidelinesPage = () => (
       <h2>Don&apos;t game the system</h2>
       <ul>
         <li>No fake reviews, fake engagement, or coordinated manipulation of rankings.</li>
-        <li>No manipulating creator attribution or commissions.</li>
+        <li>No manipulating muse attribution or commissions.</li>
         <li>No multiple accounts to evade limits or bans.</li>
       </ul>
 
       <h2>Chat</h2>
       <p>
-        Direct messages are for coordinating between shoppers, creators and brands. The same
-        standards apply. You can block another user, and turn chat off entirely, from your settings.
+        Direct messages are for coordinating between shoppers, muses and brands. The same standards
+        apply. You can block another user, and turn chat off entirely, from your settings.
       </p>
 
       <h2>Enforcement</h2>

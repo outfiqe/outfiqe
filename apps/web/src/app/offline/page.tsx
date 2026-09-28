@@ -13,7 +13,7 @@ const savedDestinations = [
   { href: "/", label: "Home" },
   { href: "/explore", label: "Explore looks" },
   { href: "/shop", label: "Shop" },
-  { href: "/wishlist", label: "Wishlist" },
+  { href: "/wishlist", label: "Your stash" },
 ];
 
 const OfflinePage = () => (

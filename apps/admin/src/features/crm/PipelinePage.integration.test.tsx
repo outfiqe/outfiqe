@@ -35,7 +35,7 @@ const DEALS = [
     ownerMembershipId: null,
     ownerName: null,
     partnerCreatorId: "c-1",
-    partnerName: "Aasha Creator",
+    partnerName: "Aasha Muse",
     partnerHandle: "aasha",
     status: "OPEN",
     closedAt: null,

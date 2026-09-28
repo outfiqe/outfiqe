@@ -29,7 +29,7 @@ const authFor = (userId: string, role: UserRole = UserRole.CUSTOMER) => {
   return `Bearer ${accessToken}`;
 };
 
-const createCreator = (name = "Creator") =>
+const createCreator = (name = "Muse") =>
   prisma.user.create({
     data: {
       email: `${randomUUID()}@creator.outfiqe.test`,
@@ -51,7 +51,7 @@ const createComment = async (creatorLookId: string, userId: string, body = "A co
   prisma.creatorLookComment.create({ data: { creatorLookId, userId, body } });
 
 describe("POST /api/content-reports", () => {
-  it("records a public report against a live post", async () => {
+  it("records a public report against a live drop", async () => {
     const creator = await createCreator();
     const look = await createLook(creator.id, "Reported look");
 
@@ -96,7 +96,7 @@ describe("POST /api/content-reports", () => {
     });
   });
 
-  it("404s a report for a post that's already been removed", async () => {
+  it("404s a report for a drop that's already been removed", async () => {
     const creator = await createCreator();
     const look = await createLook(creator.id);
     await prisma.creatorLook.update({ where: { id: look.id }, data: { deletedAt: new Date() } });
@@ -174,7 +174,7 @@ describe("GET /api/content-reports", () => {
 
   it("lists reports with the target preview, author, and reporter name", async () => {
     const { authHeader } = await createAdminSession();
-    const creator = await createCreator("Flagged Creator");
+    const creator = await createCreator("Flagged Muse");
     const look = await createLook(creator.id, "Reported caption");
     await request(testApp)
       .post("/api/content-reports")
@@ -277,7 +277,7 @@ describe("POST /api/content-reports/:id/resolve", () => {
     expect(storedLook.deletedAt).toBeNull();
   });
 
-  it("removes a reported post, bumps the author's flag count, and audit-logs it", async () => {
+  it("removes a reported drop, bumps the author's flag count, and audit-logs it", async () => {
     const { authHeader, userId: moderatorId } = await createAdminSessionWithPlatformPermissions(
       CONTENT_MODERATE_PERMISSION_KEY,
     );

@@ -9,7 +9,7 @@ const WishlistLoading = () => {
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-4 pt-8 sm:px-6 lg:px-8">
         <h1 className="font-display text-2xl font-extrabold uppercase tracking-tight text-foreground">
-          Saved
+          Your stash
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">Pieces you&apos;ve kept for later.</p>
         <ProductGridSkeleton className="mt-8 gap-x-4 gap-y-8 pb-16" />

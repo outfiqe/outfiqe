@@ -39,7 +39,7 @@ export const CreatorLeaderboardList = ({ category }: CreatorLeaderboardListProps
   if (entries.length === 0) {
     return (
       <p className="py-12 text-center text-sm text-muted-foreground">
-        No creators ranked yet this week.
+        No muses ranked yet this week.
       </p>
     );
   }

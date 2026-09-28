@@ -7,7 +7,7 @@ import { buildPageMetadata, contactEmail, socialProfileUrls } from "@/shared/seo
 export const metadata: Metadata = buildPageMetadata({
   title: "Contact Outfiqe",
   description:
-    "Reach Outfiqe for order help, brand and creator enquiries, or press. The right channel for each, and how to get to us.",
+    "Reach Outfiqe for order help, brand and muse enquiries, or press. The right channel for each, and how to get to us.",
   path: "/contact",
   keywords: ["contact Outfiqe", "Outfiqe support", "Outfiqe customer service"],
 });
@@ -24,9 +24,9 @@ const channels = [
     action: { href: "/apply", label: "Apply to list your brand" },
   },
   {
-    heading: "Become a creator",
-    body: "Want to earn from the outfits you post? Create an account and apply from your dashboard.",
-    action: { href: "/for-creators", label: "Learn about the creator programme" },
+    heading: "Become a muse",
+    body: "Want to earn from the outfits you drop? Create an account and apply from your dashboard.",
+    action: { href: "/for-creators", label: "Learn about the muse programme" },
   },
 ];
 

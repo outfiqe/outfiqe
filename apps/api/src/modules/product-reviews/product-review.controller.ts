@@ -30,7 +30,7 @@ export const productReviewController = {
     const body = validated.body<WriteProductReviewBody>(res);
 
     const review = await productReviewService.create(productId, userId, body);
-    sendSuccess(res, review, "Review posted.", CREATED_STATUS);
+    sendSuccess(res, review, "Review published.", CREATED_STATUS);
   },
 
   async update(_req: Request, res: Response) {

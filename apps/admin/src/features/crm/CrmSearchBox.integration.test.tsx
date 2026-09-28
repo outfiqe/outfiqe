@@ -79,7 +79,7 @@ describe("CrmSearchBox", () => {
         HttpResponse.json({
           success: true,
           data: {
-            partners: [{ creatorId: "p1", name: "Spring Creator", handle: "springco" }],
+            partners: [{ creatorId: "p1", name: "Spring Muse", handle: "springco" }],
             customers: [{ userId: "u1", name: "Spring Shopper", handle: "springshop" }],
             deals: [
               { id: "d1", title: "Spring collab", value: 4000, status: "OPEN", stageName: "Lead" },
@@ -98,14 +98,14 @@ describe("CrmSearchBox", () => {
 
     expect(await screen.findByText("Spring collab")).toBeInTheDocument();
     expect(screen.getByText("Spring order issue")).toBeInTheDocument();
-    expect(screen.getByText("Spring Creator")).toBeInTheDocument();
+    expect(screen.getByText("Spring Muse")).toBeInTheDocument();
     expect(screen.getByText("Spring Shopper")).toBeInTheDocument();
     expect(screen.getByText("Partners")).toBeInTheDocument();
     expect(screen.getByText("Customers")).toBeInTheDocument();
     expect(screen.getByText("Deals")).toBeInTheDocument();
     expect(screen.getByText("Tickets")).toBeInTheDocument();
 
-    await user.click(screen.getByText("Spring Creator"));
+    await user.click(screen.getByText("Spring Muse"));
     await waitFor(() => expect(screen.getByLabelText("Search the CRM")).toHaveValue(""));
   }, 15000);
 

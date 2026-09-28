@@ -96,8 +96,8 @@ test.describe("push notifications", () => {
       origin,
       registrationId,
       JSON.stringify({
-        title: "New like",
-        body: "Someone liked your look",
+        title: "New cheriq",
+        body: "Someone cheriqed your drop",
         url: "/profile",
         tag: "LOOK_LIKED:look-1",
       }),

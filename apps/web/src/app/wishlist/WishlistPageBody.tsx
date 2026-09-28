@@ -40,8 +40,8 @@ export const WishlistPageBody = () => {
           >
             Sign in
           </button>{" "}
-          to see everything you&apos;ve saved. It lives with your account, so it&apos;s there on any
-          device.
+          to see everything you&apos;ve stashed. It lives with your account, so it&apos;s there on
+          any device.
         </p>
       </div>
     );

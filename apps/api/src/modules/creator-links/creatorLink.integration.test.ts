@@ -45,7 +45,7 @@ const deleteLink = (linkId: string, authHeader: string) =>
   request(testApp).delete(`/api/creator-links/${linkId}`).set("Authorization", authHeader);
 
 describe("DELETE /api/creator-links/:id", () => {
-  it("revokes the creator's own link, hides it from their list and stops it working", async () => {
+  it("revokes the muse's own link, hides it from their list and stops it working", async () => {
     const creator = await createUser("link-owner");
     const link = await createLink(creator.id);
 
@@ -107,7 +107,7 @@ describe("DELETE /api/creator-links/:id", () => {
     expect(secondResponse.status).toBe(OK_STATUS);
   });
 
-  it("answers 404 and leaves the link alone when it belongs to another creator", async () => {
+  it("answers 404 and leaves the link alone when it belongs to another muse", async () => {
     const owner = await createUser("real-owner");
     const otherCreator = await createUser("other-creator");
     const link = await createLink(owner.id);
@@ -136,7 +136,7 @@ describe("DELETE /api/creator-links/:id", () => {
     expect(response.status).toBeLessThan(500);
   });
 
-  it("rejects a creator who is not approved", async () => {
+  it("rejects a muse who is not approved", async () => {
     const pendingCreator = await createUser("pending-creator", {
       creatorStatus: CreatorStatus.PENDING,
     });
@@ -156,7 +156,7 @@ describe("DELETE /api/creator-links/:id", () => {
     expect(response.status).toBe(401);
   });
 
-  it("lets the creator generate a fresh reusable link after deleting the old one", async () => {
+  it("lets the muse generate a fresh reusable link after deleting the old one", async () => {
     const creator = await createUser("regenerate");
     const oldLink = await createLink(creator.id);
     await deleteLink(oldLink.id, authHeaderFor(creator.id));

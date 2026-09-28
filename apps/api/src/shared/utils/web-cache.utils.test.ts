@@ -42,7 +42,7 @@ describe("revalidateWebCache", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("posts the tags to the web revalidate endpoint with the bearer secret", async () => {
+  it("drops the tags to the web revalidate endpoint with the bearer secret", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal("fetch", fetchMock);
 

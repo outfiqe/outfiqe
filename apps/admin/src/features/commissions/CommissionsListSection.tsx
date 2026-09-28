@@ -25,8 +25,8 @@ const STATUS_TONE: Record<CommissionStatusValue, "neutral" | "positive" | "negat
 };
 
 const SOURCE_LABEL: Record<string, string> = {
-  TAG_CLICK: "Tagged post",
-  INTERNAL_LINK: "Creator link",
+  TAG_CLICK: "Tagged drop",
+  INTERNAL_LINK: "Muse link",
   EXTERNAL_LINK: "Shared link",
 };
 
@@ -74,7 +74,7 @@ export const CommissionsListSection = () => {
 
   return (
     <div>
-      <h2 className="font-display text-lg font-bold text-foreground">Creator commissions</h2>
+      <h2 className="font-display text-lg font-bold text-foreground">Muse commissions</h2>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {TABS.map((status) => (

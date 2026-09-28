@@ -56,7 +56,7 @@ describe("ShareTargetComposer", () => {
     expect(screen.getByText("Application under review")).toBeInTheDocument();
   });
 
-  it("asks someone who isn't a creator yet to apply", () => {
+  it("asks someone who isn't a muse yet to apply", () => {
     vi.mocked(useSharedPhoto).mockReturnValue(sharedPhotoQuery());
 
     render(<ShareTargetComposer creatorStatus={CreatorStatus.NONE} />);
@@ -64,7 +64,7 @@ describe("ShareTargetComposer", () => {
     expect(screen.getByRole("button", { name: "Apply now" })).toBeInTheDocument();
   });
 
-  it("explains that nothing was shared when an approved creator arrives with no photo", () => {
+  it("explains that nothing was shared when an approved muse arrives with no photo", () => {
     vi.mocked(useSharedPhoto).mockReturnValue(sharedPhotoQuery({ data: null }));
 
     render(<ShareTargetComposer creatorStatus={CreatorStatus.APPROVED} />);
@@ -72,7 +72,7 @@ describe("ShareTargetComposer", () => {
     expect(screen.getByText("Nothing was shared")).toBeInTheDocument();
   });
 
-  it("opens the compose modal pre-loaded with the shared photo for an approved creator", () => {
+  it("opens the compose modal pre-loaded with the shared photo for an approved muse", () => {
     const sharedPhoto = new File(["bytes"], "shared-photo", { type: "image/jpeg" });
     vi.mocked(useSharedPhoto).mockReturnValue(sharedPhotoQuery({ data: sharedPhoto }));
 

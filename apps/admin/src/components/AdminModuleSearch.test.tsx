@@ -24,7 +24,7 @@ const SECTIONS: SidebarNavSection[] = [
         id: "platform-group-growth",
         href: "/creators",
         label: "Growth",
-        items: [{ id: "creators", href: "/creators", label: "Creators" }],
+        items: [{ id: "creators", href: "/creators", label: "Muses" }],
       },
     ],
   },
@@ -38,7 +38,7 @@ describe("AdminModuleSearch", () => {
     const input = await screen.findByLabelText("Search admin modules");
     await user.type(input, "c");
 
-    expect(screen.queryByText("Creators")).not.toBeInTheDocument();
+    expect(screen.queryByText("Muses")).not.toBeInTheDocument();
     expect(screen.queryByText(/No modules match/i)).not.toBeInTheDocument();
   });
 
@@ -59,9 +59,9 @@ describe("AdminModuleSearch", () => {
     renderWithRouter(<AdminModuleSearch sections={SECTIONS} />);
 
     const input = await screen.findByLabelText("Search admin modules");
-    await user.type(input, "creators");
+    await user.type(input, "muses");
 
-    expect(await screen.findByText("Creators")).toBeInTheDocument();
+    expect(await screen.findByText("Muses")).toBeInTheDocument();
     expect(screen.getByText("Platform")).toBeInTheDocument();
   });
 

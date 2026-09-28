@@ -18,8 +18,8 @@ type TagReviewCardProps = {
 
 const APPROVAL_SOURCE_LABELS: Record<string, string> = {
   BRAND: "You approved this",
-  POLICY_OPEN: "Auto-approved — your policy is open to all creators",
-  TRUSTED_CREATOR: "Auto-approved — trusted creator",
+  POLICY_OPEN: "Auto-approved — your policy is open to all muses",
+  TRUSTED_CREATOR: "Auto-approved — trusted muse",
   VERIFIED_BUYER: "Auto-approved — bought on Outfiqe",
   SLA: "Auto-approved — not reviewed within 7 days",
   GRANDFATHERED: "Already live before tag review launched",
@@ -69,7 +69,7 @@ export const TagReviewCard = ({ item, isBusy, onApprove, onReject }: TagReviewCa
             {item.isTrustedCreator && (
               <Badge showDot={false} variant="outline" className="gap-1">
                 <ShieldCheck className="size-3" />
-                Trusted creator
+                Trusted muse
               </Badge>
             )}
           </div>
@@ -96,7 +96,7 @@ export const TagReviewCard = ({ item, isBusy, onApprove, onReject }: TagReviewCa
               variant="outline"
               disabled={isBusy}
               onClick={() => onApprove(true)}
-              title="Approve this tag and let this creator's future tags skip the queue"
+              title="Approve this tag and let this muse's future tags skip the queue"
             >
               Approve &amp; trust
             </Button>

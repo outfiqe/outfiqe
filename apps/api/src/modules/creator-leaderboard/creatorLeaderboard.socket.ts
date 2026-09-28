@@ -55,7 +55,7 @@ export const registerCreatorLeaderboardEventConsumer = (): void => {
           .to(creatorLeaderboardRoom(event.category))
           .emit(SOCKET_EVENTS.CREATOR_LEADERBOARD_UPDATED, payload);
       } catch (error) {
-        logger.error(`Failed to broadcast creator leaderboard update: ${describeError(error)}`);
+        logger.error(`Failed to broadcast muse leaderboard update: ${describeError(error)}`);
       }
     },
   });

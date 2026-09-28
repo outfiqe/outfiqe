@@ -157,7 +157,7 @@ export const PostCard = ({ post, onImageClick, trendingRank }: PostCardProps) =>
 
       {reportOpen && (
         <ReportContentModal
-          targetLabel="post"
+          targetLabel="drop"
           isPending={isReporting}
           onConfirm={(input) =>
             submitReport({ targetType: "CREATOR_LOOK", targetId: id, ...input })

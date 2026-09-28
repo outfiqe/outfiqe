@@ -94,12 +94,12 @@ export const supportController = {
     await platformAudit.record({
       actorUserId,
       action: "support.ticket.replied",
-      summary: `Posted a ${body.visibility.toLowerCase()} message on ${ticket.reference}`,
+      summary: `Sent a ${body.visibility.toLowerCase()} message on ${ticket.reference}`,
       targetType: SUPPORT_AUDIT_TARGET,
       targetId: id,
     });
 
-    sendSuccess(res, ticket, "Reply posted.", CREATED_STATUS);
+    sendSuccess(res, ticket, "Reply sent.", CREATED_STATUS);
   },
 
   async adminChangeStatus(_req: Request, res: Response) {

@@ -37,7 +37,7 @@ const postFromInfinite = (
   data?.pages.flatMap((page) => page.posts).find((post) => post.id === lookId);
 
 describe("patchPostInFeedCaches", () => {
-  it("patches the post across the explore feed, saved grid, creator grid and look search caches", () => {
+  it("patches the drop across the explore feed, saved grid, muse grid and look search caches", () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(["explore-feed", "for_you"], asInfinitePage([buildPost()]));
     queryClient.setQueryData(["saved-posts"], asInfinitePage([buildPost()]));
@@ -76,7 +76,7 @@ describe("patchPostInFeedCaches", () => {
     );
   });
 
-  it("leaves unrelated posts and non-feed caches under the same key prefix untouched", () => {
+  it("leaves unrelated drops and non-feed caches under the same key prefix untouched", () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(
       ["creator-looks", "asha"],
@@ -97,7 +97,7 @@ describe("patchPostInFeedCaches", () => {
 });
 
 describe("patchCreatorInFeedCaches", () => {
-  it("updates isFollowingCreator on every post by that creator, across caches", () => {
+  it("updates isFollowingCreator on every drop by that muse, across caches", () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(
       ["explore-feed", "for_you"],

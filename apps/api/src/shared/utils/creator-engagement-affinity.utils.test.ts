@@ -21,7 +21,7 @@ describe("computeViewerEngagementAffinity", () => {
     expect(affinity.hashtagWeights.size).toBe(0);
   });
 
-  it("collects distinct creators and tallies hashtag weight across repeats", async () => {
+  it("collects distinct muses and tallies hashtag weight across repeats", async () => {
     prismaMock.$queryRaw.mockResolvedValue([
       { creator_id: "creator-1", tag: "summer" },
       { creator_id: "creator-1", tag: "summer" },

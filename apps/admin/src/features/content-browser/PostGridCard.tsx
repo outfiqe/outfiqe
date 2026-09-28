@@ -15,7 +15,7 @@ export const PostGridCard = ({ look, onClick }: PostGridCardProps) => {
       <button
         type="button"
         onClick={onClick}
-        aria-label={caption ?? `Post by @${creator.handle}`}
+        aria-label={caption ?? `Drop by @${creator.handle}`}
         className="relative block w-full cursor-pointer overflow-hidden rounded-2xl border border-border bg-muted bg-cover bg-center transition-colors hover:border-foreground/30"
         style={{
           aspectRatio: String(POST_LAYOUT_ASPECT[layout]),

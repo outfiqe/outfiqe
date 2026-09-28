@@ -11,7 +11,7 @@ import { useTourProgress } from "../hooks/useTourProgress";
 import { CreatorDashboardTour } from "./CreatorDashboardTour";
 
 const { CURRENT_TOUR_VERSION } = vi.hoisted(() => ({ CURRENT_TOUR_VERSION: 2 }));
-const WELCOME_TITLE = "Welcome to your creator dashboard";
+const WELCOME_TITLE = "Welcome to your muse dashboard";
 const LAST_STEP_INDEX_LABEL = "10 of 10";
 
 vi.mock("@/features/auth", () => ({ useAuth: vi.fn() }));
@@ -85,7 +85,7 @@ beforeEach(() => {
 });
 
 describe("CreatorDashboardTour", () => {
-  it("opens by itself for an approved creator who has never seen the tour", () => {
+  it("opens by itself for an approved muse who has never seen the tour", () => {
     render(<CreatorDashboardTour />);
 
     expect(openedTour()).toBeInTheDocument();
@@ -100,7 +100,7 @@ describe("CreatorDashboardTour", () => {
     expect(openedTour()).not.toBeInTheDocument();
   });
 
-  it("does not open for anyone who is not an approved creator", () => {
+  it("does not open for anyone who is not an approved muse", () => {
     mockAuth(false);
 
     render(<CreatorDashboardTour />);

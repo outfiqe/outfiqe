@@ -22,7 +22,7 @@ const stats = (overrides: Partial<CreatorStatsRow> = {}): CreatorStatsRow => ({
 });
 
 describe("scoreForCategory", () => {
-  it("TOP_XP is the creator's raw totalXp", () => {
+  it("TOP_XP is the muse's raw totalXp", () => {
     expect(scoreForCategory(CreatorLeaderboardCategory.TOP_XP, stats({ totalXp: 500 }))).toBe(500);
   });
 
@@ -34,25 +34,25 @@ describe("scoreForCategory", () => {
     expect(score).toBe(500 + 20 * 10);
   });
 
-  it("MOST_LIKES is the creator's totalLikes", () => {
+  it("MOST_LIKES is the muse's totalLikes", () => {
     expect(
       scoreForCategory(CreatorLeaderboardCategory.MOST_LIKES, stats({ totalLikes: 300 })),
     ).toBe(300);
   });
 
-  it("MOST_ENGAGED is the creator's totalEngagement", () => {
+  it("MOST_ENGAGED is the muse's totalEngagement", () => {
     expect(
       scoreForCategory(CreatorLeaderboardCategory.MOST_ENGAGED, stats({ totalEngagement: 450 })),
     ).toBe(450);
   });
 
-  it("TOP_SELLER is the creator's totalSales", () => {
+  it("TOP_SELLER is the muse's totalSales", () => {
     expect(
       scoreForCategory(CreatorLeaderboardCategory.TOP_SELLER, stats({ totalSales: 5000 })),
     ).toBe(5000);
   });
 
-  it("MOST_ACHIEVEMENTS is the creator's achievementCount", () => {
+  it("MOST_ACHIEVEMENTS is the muse's achievementCount", () => {
     expect(
       scoreForCategory(
         CreatorLeaderboardCategory.MOST_ACHIEVEMENTS,
@@ -72,7 +72,7 @@ describe("deriveGrowthScore", () => {
     expect(deriveGrowthScore(50, 100)).toBe(-50);
   });
 
-  it("returns the surge score for a creator with no previous-week score", () => {
+  it("returns the surge score for a muse with no previous-week score", () => {
     expect(deriveGrowthScore(200, 0)).toBe(999);
   });
 });

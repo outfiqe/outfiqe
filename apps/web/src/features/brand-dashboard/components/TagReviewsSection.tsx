@@ -20,9 +20,9 @@ import { RejectTagModal } from "./RejectTagModal";
 import { TagReviewCard } from "./TagReviewCard";
 
 const EMPTY_COPY: Record<string, string> = {
-  PENDING: "No tags waiting for review. New creator tags on your products will show up here.",
-  APPROVED: "No approved creator tags yet.",
-  REJECTED: "You haven't declined any creator tags.",
+  PENDING: "No tags waiting for review. New muse tags on your products will show up here.",
+  APPROVED: "No approved muse tags yet.",
+  REJECTED: "You haven't declined any muse tags.",
 };
 
 const DEFAULT_TAB = TAG_REVIEW_QUEUE_TABS[0]!.status;
@@ -102,7 +102,7 @@ export const TagReviewsSection = () => {
       <div>
         <h1 className="font-display text-2xl font-bold text-foreground">Tag reviews</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Creators can tag your products in their looks. A tag only goes live once you approve it —
+          Muses can tag your products in their looks. A tag only goes live once you approve it —
           {pendingCount.data ? ` ${pendingCount.data} waiting now.` : " nothing waiting right now."}
         </p>
       </div>

@@ -28,7 +28,7 @@ import { type OwnerTypeValue, type WindowTypeValue, type WithdrawPolicy } from "
 
 const OWNER_TABS: OwnerTypeValue[] = ["CREATOR", "BUSINESS"];
 const OWNER_TAB_LABEL: Record<OwnerTypeValue, string> = {
-  CREATOR: "Creator",
+  CREATOR: "Muse",
   BUSINESS: "Business",
 };
 const WINDOW_TYPES: WindowTypeValue[] = ["MONTHLY", "WEEKLY", "CUSTOM_DAYS"];

@@ -30,7 +30,7 @@ const renderPage = () =>
   );
 
 describe("CreatorsPage", () => {
-  it("approves a pending creator", async () => {
+  it("approves a pending muse", async () => {
     let approveCalled = false;
     mswServer.use(
       http.get(`${API_BASE}/creators`, () =>
@@ -48,17 +48,17 @@ describe("CreatorsPage", () => {
     await user.click(await screen.findByRole("button", { name: "Approve" }));
 
     expect(approveCalled).toBe(true);
-    expect(await screen.findByText("Creator approved.")).toBeInTheDocument();
+    expect(await screen.findByText("Muse approved.")).toBeInTheDocument();
   });
 
-  it("shows an error toast when approving a creator fails", async () => {
+  it("shows an error toast when approving a muse fails", async () => {
     mswServer.use(
       http.get(`${API_BASE}/creators`, () =>
         okJson({ creators: [creator("user-1", "Ava")], nextCursor: null }),
       ),
       http.post(`${API_BASE}/creators/user-1/approve`, () =>
         HttpResponse.json(
-          { success: false, message: "Only platform staff can approve creators." },
+          { success: false, message: "Only platform staff can approve muses." },
           { status: 403 },
         ),
       ),
@@ -69,19 +69,17 @@ describe("CreatorsPage", () => {
 
     await user.click(await screen.findByRole("button", { name: "Approve" }));
 
-    expect(
-      await screen.findByText("Only platform staff can approve creators."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Only platform staff can approve muses.")).toBeInTheDocument();
   });
 
-  it("shows an error toast when rejecting a creator fails", async () => {
+  it("shows an error toast when rejecting a muse fails", async () => {
     mswServer.use(
       http.get(`${API_BASE}/creators`, () =>
         okJson({ creators: [creator("user-1", "Ava")], nextCursor: null }),
       ),
       http.post(`${API_BASE}/creators/user-1/reject`, () =>
         HttpResponse.json(
-          { success: false, message: "Only platform staff can reject creators." },
+          { success: false, message: "Only platform staff can reject muses." },
           { status: 403 },
         ),
       ),
@@ -92,10 +90,10 @@ describe("CreatorsPage", () => {
 
     await user.click(await screen.findByRole("button", { name: "Reject" }));
 
-    expect(await screen.findByText("Only platform staff can reject creators.")).toBeInTheDocument();
+    expect(await screen.findByText("Only platform staff can reject muses.")).toBeInTheDocument();
   });
 
-  it("shows an empty state when there are no creators in the tab", async () => {
+  it("shows an empty state when there are no muses in the tab", async () => {
     mswServer.use(
       http.get(`${API_BASE}/creators`, () => okJson({ creators: [], nextCursor: null })),
     );

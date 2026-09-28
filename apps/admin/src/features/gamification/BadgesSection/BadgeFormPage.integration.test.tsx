@@ -131,7 +131,7 @@ describe("BadgeFormPage", () => {
     expect(nameInput).toHaveValue("Copy of Fashion Warrior");
   });
 
-  it("posts a new badge and returns to the list on success", async () => {
+  it("drops a new badge and returns to the list on success", async () => {
     const createHandler = vi.fn(async ({ request }: { request: Request }) => {
       await request.json();
       return HttpResponse.json(

@@ -24,7 +24,7 @@ const POLICY_LABEL: Record<TagReviewMetrics["reviewLatencyByPolicy"][number]["po
 const SOURCE_LABEL: Record<TagReviewMetrics["approvalSourceMix"][number]["source"], string> = {
   BRAND: "Brand approved",
   POLICY_OPEN: "Auto — open policy",
-  TRUSTED_CREATOR: "Auto — trusted creator",
+  TRUSTED_CREATOR: "Auto — trusted muse",
   VERIFIED_BUYER: "Auto — verified buyer",
   SLA: "Auto — SLA lapsed",
   GRANDFATHERED: "Legacy approval",
@@ -51,7 +51,7 @@ const SLA_LAPSED_HINT =
 const PERCENTILE_HINT =
   "p50 (median) is the typical case — half of decisions were faster, half slower. p90 shows the slow tail: 90% of decisions finished within this time.";
 const TRUSTED_CREATOR_HINT =
-  "The brand has explicitly marked this creator as trusted, so future tags from them skip the review queue.";
+  "The brand has explicitly marked this muse as trusted, so future tags from them skip the review queue.";
 
 const formatHours = (hours: number | null): string => {
   if (hours === null) return "—";
@@ -155,19 +155,19 @@ const OverviewStrip = ({ data }: { data: TagReviewMetrics }) => {
         label="Tags live"
         value={tagsLive.value === null ? "—" : tagsLive.value.toLocaleString()}
         delta={buildTrendDelta(tagsLive, "higherIsBetter")}
-        hint="How many creator product tags are currently approved and shoppable on the storefront right now."
+        hint="How many muse product tags are currently approved and shoppable on the storefront right now."
       />
       <StatCard
         label="Manual review rate"
         value={formatPercent(manualReviewRatePercent.value)}
         delta={buildTrendDelta(manualReviewRatePercent, "neutral")}
-        hint="Of the tags approved in the last 7 days, the share a brand staffer reviewed by hand rather than an automatic rule (open policy, trusted creator, verified buyer, or the SLA sweep)."
+        hint="Of the tags approved in the last 7 days, the share a brand staffer reviewed by hand rather than an automatic rule (open policy, trusted muse, verified buyer, or the SLA sweep)."
       />
       <StatCard
         label="Median time to live"
         value={formatHours(medianTimeToLiveHours.value)}
         delta={buildTrendDelta(medianTimeToLiveHours, "lowerIsBetter")}
-        hint={`Typical (median) time from a creator posting a look to that look's first tag going live, for tags that went live in the last 7 days. Target: under ${formatHours(MEDIAN_TIME_TO_LIVE_TARGET_HOURS)}.`}
+        hint={`Typical (median) time from a muse dropping a look to that look's first tag going live, for tags that went live in the last 7 days. Target: under ${formatHours(MEDIAN_TIME_TO_LIVE_TARGET_HOURS)}.`}
       />
       <StatCard
         label="Open issues"
@@ -323,7 +323,7 @@ const FunnelSpeedSection = ({ data }: { data: TagReviewMetrics }) => (
 
     <Card title="Time to first shoppable tag">
       <p className="mb-2 text-xs text-muted-foreground">
-        From a creator&apos;s post going up to its first tag going live.
+        From a muse&apos;s drop going up to its first tag going live.
       </p>
       {data.timeToFirstShoppable.looksWithApprovedTag === 0 ? (
         <EmptyState>No looks with an approved tag yet — expected pre-launch.</EmptyState>
@@ -359,7 +359,7 @@ const DetailSections = ({ data }: { data: TagReviewMetrics }) => {
           label={
             <span className="inline-flex items-center gap-1.5">
               Stuck &gt; 7d under Review-every-tag
-              <JargonHint term="Trusted creator">{TRUSTED_CREATOR_HINT}</JargonHint>
+              <JargonHint term="Trusted muse">{TRUSTED_CREATOR_HINT}</JargonHint>
             </span>
           }
           value={String(data.stuckApprovalRequiredCount)}

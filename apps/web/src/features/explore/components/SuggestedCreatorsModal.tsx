@@ -28,8 +28,8 @@ export const SuggestedCreatorsModal = ({ onClose }: SuggestedCreatorsModalProps)
     <Modal
       open
       onClose={onClose}
-      title="Creators to follow"
-      description="Find more creators similar to who you already follow and engage with."
+      title="Muses to follow"
+      description="Find more muses similar to who you already follow and engage with."
       className="max-h-[60vh] sm:max-w-2xl"
     >
       <div className="flex flex-col">

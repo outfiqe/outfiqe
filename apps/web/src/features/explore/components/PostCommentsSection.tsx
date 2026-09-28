@@ -59,13 +59,13 @@ export const PostCommentsSection = ({
   return (
     <div className={className}>
       {isLoading && (
-        <div className="space-y-2" role="status" aria-label="Loading comments">
+        <div className="space-y-2" role="status" aria-label="Loading chimes">
           <Skeleton className="h-3 w-4/5" />
           <Skeleton className="h-3 w-3/5" />
         </div>
       )}
       {comments?.length === 0 && (
-        <p className="text-[12px] text-muted-foreground">No comments yet.</p>
+        <p className="text-[12px] text-muted-foreground">No chimes yet.</p>
       )}
       <ul className="flex flex-col gap-5">
         {comments?.map((comment) => (
@@ -96,7 +96,7 @@ export const PostCommentsSection = ({
           <input
             value={draft}
             onChange={(event) => onDraftChange(event.target.value)}
-            placeholder={isAuthenticated ? "Add a comment…" : "Sign in to comment"}
+            placeholder={isAuthenticated ? "Add a chime…" : "Sign in to chime"}
             disabled={!isAuthenticated}
             className={cn(
               "min-w-0 flex-1 rounded-full border border-transparent bg-muted px-3.5 py-2 text-[13px] outline-none focus:border-foreground",
@@ -108,7 +108,7 @@ export const PostCommentsSection = ({
             disabled={!isAuthenticated || !draft.trim()}
             className="shrink-0 cursor-pointer rounded-full bg-foreground px-3.5 py-2 text-[12.5px] font-semibold text-background disabled:cursor-default disabled:opacity-40"
           >
-            Post
+            Chime
           </button>
         </form>
       )}

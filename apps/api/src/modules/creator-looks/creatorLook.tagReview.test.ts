@@ -49,7 +49,7 @@ describe("resolveTagReviewStatus", () => {
     });
   });
 
-  it("auto-approves a trusted creator under TRUSTED_ONLY, holds an untrusted one", () => {
+  it("auto-approves a trusted muse under TRUSTED_ONLY, holds an untrusted one", () => {
     expect(resolveTagReviewStatus({ ...base, isTrustedCreator: true })).toEqual({
       reviewStatus: "APPROVED",
       approvalSource: "TRUSTED_CREATOR",

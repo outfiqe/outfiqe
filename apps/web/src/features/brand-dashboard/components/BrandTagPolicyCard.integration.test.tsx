@@ -62,7 +62,7 @@ const renderCard = (profile = buildProfile()) => {
   return render(<BrandTagPolicyCard profile={profile} />, { wrapper });
 };
 
-const POLICY_LABEL = /When a creator tags one of your products/;
+const POLICY_LABEL = /When a muse tags one of your products/;
 
 describe("BrandTagPolicyCard", () => {
   it("shows the current policy and keeps Save disabled until something changes", () => {

@@ -61,7 +61,7 @@ const mockFeedResponse = (posts: FeedPost[]) => {
       HttpResponse.json({ success: true, message: "Tags.", data: { tags: [] } }),
     ),
     http.get(SUGGESTED_CREATORS_URL, () =>
-      HttpResponse.json({ success: true, message: "Suggested creators.", data: { creators: [] } }),
+      HttpResponse.json({ success: true, message: "Suggested muses.", data: { creators: [] } }),
     ),
   );
 };
@@ -71,7 +71,7 @@ beforeEach(() => {
 });
 
 describe("ExploreFeed trending section split", () => {
-  it("shows the recent & popular divider once, right before the first non-trending post", async () => {
+  it("shows the recent & popular divider once, right before the first non-trending drop", async () => {
     setTab("trending");
     mockFeedResponse([
       buildPost({ id: "trend-1", isTrending: true }),
@@ -85,7 +85,7 @@ describe("ExploreFeed trending section split", () => {
     expect(await screen.findAllByText("Recent & popular")).toHaveLength(1);
   });
 
-  it("does not show a divider when every trending post is genuinely trending", async () => {
+  it("does not show a divider when every trending drop is genuinely trending", async () => {
     setTab("trending");
     mockFeedResponse([
       buildPost({ id: "trend-1", isTrending: true }),

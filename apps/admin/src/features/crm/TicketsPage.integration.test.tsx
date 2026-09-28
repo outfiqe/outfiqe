@@ -133,7 +133,7 @@ describe("TicketsPage", () => {
     expect(screen.getByRole("button", { name: "in progress" })).toBeEnabled();
   });
 
-  it("posts an internal comment from the detail view", async () => {
+  it("drops an internal comment from the detail view", async () => {
     mockCommon();
     let postedBody: unknown;
     mswServer.use(

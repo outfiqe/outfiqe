@@ -3,12 +3,13 @@
 import {
   Button,
   ChartCard,
+  CheriqIcon,
   FormBanner,
   Skeleton,
   StatCard,
   TrendChart,
 } from "@outfiqe/design-system";
-import { Heart, Image as ImageIcon, Users, Wallet } from "lucide-react";
+import { Image as ImageIcon, Users, Wallet } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -38,8 +39,8 @@ const KPI_HINT = {
   pendingEarnings:
     "Commission from recent sales that is still maturing. It moves to available once it clears.",
   followerCount: "People who currently follow you.",
-  lookCount: "Looks you have posted that are still live. Deleted looks are not counted.",
-  totalLikes: "Likes across all of your live looks.",
+  lookCount: "Looks you have dropped that are still live. Deleted looks are not counted.",
+  totalLikes: "Cheriqs across all of your live looks.",
 } as const;
 
 const formatRupees = (amount: number) => `Rs. ${amount.toLocaleString()}`;
@@ -99,9 +100,9 @@ const OverviewKpiRow = ({ overview }: { overview: CreatorOverviewData }) => {
         hint={KPI_HINT.lookCount}
       />
       <StatCard
-        label="Total likes"
+        label="Total cheriqs"
         value={kpis.totalLikes.toLocaleString()}
-        icon={Heart}
+        icon={CheriqIcon}
         hint={KPI_HINT.totalLikes}
       />
     </div>
@@ -138,7 +139,7 @@ const EarningsTrendCard = ({ overview }: { overview: CreatorOverviewData }) => {
       description="Commission per day, last 30 days"
       ariaLabel="Commission earnings per day over the last 30 days"
       isEmpty={!hasEarnings}
-      emptyMessage="Not enough data yet — commission from your tagged posts will show here."
+      emptyMessage="Not enough data yet — commission from your tagged drops will show here."
       dataTable={<EarningsTrendTable trend={trend} />}
     >
       <TrendChart
@@ -169,7 +170,7 @@ const RecentCommissions = ({ overview }: { overview: CreatorOverviewData }) => {
 
       {recentCommissions.length === 0 ? (
         <p className="mt-4 rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-          No commissions yet — tag products in your posts to start earning.
+          No commissions yet — tag products in your drops to start earning.
         </p>
       ) : (
         <div className="mt-4 space-y-3">
@@ -209,7 +210,7 @@ export const CreatorOverview = ({ creatorStatus }: CreatorOverviewProps) => {
     return (
       <CreatorStatusGate
         creatorStatus={creatorStatus}
-        pitch="Post your fits, tag the pieces you're wearing, and track your earnings and reach from one place."
+        pitch="Drop your fits, tag the pieces you're wearing, and track your earnings and reach from one place."
       />
     );
   }

@@ -20,7 +20,7 @@ const WELCOME_STEP: CrmTourStep = {
   id: "welcome",
   permissionKey: null,
   title: "Welcome to the CRM",
-  body: "This is Outfiqe's internal tool for running this organization: your creators and shoppers, your deals, your support queue and your team. It's separate from anything a customer or creator sees. This walkthrough takes about a minute, and you can skip it at any time.",
+  body: "This is Outfiqe's internal tool for running this organization: your muses and shoppers, your deals, your support queue and your team. It's separate from anything a customer or muse sees. This walkthrough takes about a minute, and you can skip it at any time.",
 };
 
 const SEARCH_STEP: CrmTourStep = {
@@ -45,7 +45,7 @@ const SIDEBAR_ITEM_STEPS: CrmTourStep[] = [
     permissionKey: "accounts:read",
     requiresLinkedBrand: true,
     title: "Partners",
-    body: "Every creator who has tagged or sold this brand's products, with a breakdown of which products drove revenue for each one.",
+    body: "Every muse who has tagged or sold this brand's products, with a breakdown of which products drove revenue for each one.",
   },
   {
     id: "customers",
@@ -60,7 +60,7 @@ const SIDEBAR_ITEM_STEPS: CrmTourStep[] = [
     anchorSelector: sidebarItemSelector("crm-contacts"),
     permissionKey: "contacts:read",
     title: "Contacts",
-    body: "A manually-kept address book for people who aren't a creator or a shopper on Outfiqe yet — a lead, a vendor, anyone worth tracking outside the platform's own accounts.",
+    body: "A manually-kept address book for people who aren't a muse or a shopper on Outfiqe yet — a lead, a vendor, anyone worth tracking outside the platform's own accounts.",
   },
   {
     id: "pipeline",

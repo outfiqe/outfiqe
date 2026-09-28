@@ -31,7 +31,7 @@ export const CATEGORY_LABELS: Record<SupportCategoryValue, string> = {
   RETURN_REFUND: "Return or refund",
   DELIVERY: "Delivery",
   ACCOUNT_ACCESS: "Account access",
-  CREATOR_PROGRAM: "Creator programme",
+  CREATOR_PROGRAM: "Muse programme",
   BRAND_PARTNER: "Selling on Outfiqe",
   REPORT_CONTENT: "Report something",
   FEEDBACK: "Feedback",

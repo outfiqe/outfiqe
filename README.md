@@ -93,6 +93,21 @@ packages/
 docker-compose.yml  Local Postgres
 ```
 
+## Product vocabulary
+
+Every word a user reads uses Outfiqe's own terms, but code, routes, API shapes and the database keep the original names. That way the rename needed no migration and no API break. When you write copy, use the left column. When you write code, use the right.
+
+| Users see         | Code, routes, DB and enums say                            |
+| ----------------- | --------------------------------------------------------- |
+| Muse              | creator (`/creator/[handle]`, `CreatorLook`, `isCreator`) |
+| Drop              | post / look (`CREATOR_LOOK`, `PostCard`)                  |
+| Cheriq / cheriqed | like (`LOOK_LIKED`, `isLiked`, `likeCount`)               |
+| Chime / chimed on | comment (`LOOK_COMMENTED`, `CommentThread`)               |
+| Stash / stashed   | save and wishlist (`isSaved`, `/wishlist`)                |
+| Share             | share                                                     |
+
+This only covers the social actions. A form's "Save changes" button, saved addresses, CRM ticket comments and HTTP `POST` keep their ordinary meaning. The cheriq icon is `CheriqIcon` in `@outfiqe/design-system`.
+
 ## Admin access
 
 There's no self-serve signup for the admin panel, and no separate login form either — `apps/admin`

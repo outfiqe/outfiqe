@@ -176,7 +176,7 @@ export const ExploreFeed = () => {
         <div>
           {showForYouPersonalizationHint && (
             <FormBanner tone="neutral" onDismiss={dismissForYouHint}>
-              For You gets more personalized as you follow creators and like or save looks you love.
+              For You gets more personalized as you follow muses and cheriq or stash looks you love.
             </FormBanner>
           )}
 
@@ -193,7 +193,7 @@ export const ExploreFeed = () => {
           {followingGated ? (
             <div className="flex flex-col items-center gap-3 py-16 text-center">
               <p className="text-sm text-muted-foreground">
-                Sign in to see looks from creators you follow.
+                Sign in to see looks from muses you follow.
               </p>
               <button
                 type="button"
@@ -211,8 +211,8 @@ export const ExploreFeed = () => {
             </p>
           ) : posts.length === 0 && isFollowingTab ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
-              No posts from creators you follow yet. Follow creators from &ldquo;Creators to
-              follow&rdquo; to fill this tab.
+              No drops from muses you follow yet. Follow muses from &ldquo;Muses to follow&rdquo; to
+              fill this tab.
             </p>
           ) : posts.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">

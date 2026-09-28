@@ -98,21 +98,21 @@ beforeEach(() => {
 });
 
 describe("PostModal", () => {
-  it("disables Post look until at least one photo is staged", () => {
+  it("disables Drop look until at least one photo is staged", () => {
     mockPending([]);
     renderModal();
 
-    expect(screen.getByRole("button", { name: "Post look" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Drop look" })).toBeDisabled();
   });
 
-  it("enables Post look once a photo is staged", () => {
+  it("enables Drop look once a photo is staged", () => {
     mockPending([buildExistingPhoto("p1")]);
     renderModal();
 
-    expect(screen.getByRole("button", { name: "Post look" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Drop look" })).toBeEnabled();
   });
 
-  it("posts the look through the real API and closes on success", async () => {
+  it("drops the look through the real API and closes on success", async () => {
     resolvePendingPhotoAssets.mockResolvedValue({
       urls: ["https://cdn.outfiqe.test/p1.jpg"],
       imageAssetIds: [null],
@@ -124,7 +124,7 @@ describe("PostModal", () => {
         expect(body.imageUrls).toEqual(["https://cdn.outfiqe.test/p1.jpg"]);
         return HttpResponse.json({
           success: true,
-          message: "Look posted.",
+          message: "Look dropped.",
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/p1.jpg",
@@ -140,13 +140,13 @@ describe("PostModal", () => {
     const user = userEvent.setup();
     renderModal();
 
-    await user.click(screen.getByRole("button", { name: "Post look" }));
+    await user.click(screen.getByRole("button", { name: "Drop look" }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(reset).toHaveBeenCalledOnce();
   });
 
-  it("invalidates the explore feed and saved posts caches too, not just the creator's own looks", async () => {
+  it("invalidates the explore feed and saved drops caches too, not just the muse's own looks", async () => {
     resolvePendingPhotoAssets.mockResolvedValue({
       urls: ["https://cdn.outfiqe.test/p1.jpg"],
       imageAssetIds: [null],
@@ -156,7 +156,7 @@ describe("PostModal", () => {
       http.post("/api/creator-looks", () =>
         HttpResponse.json({
           success: true,
-          message: "Look posted.",
+          message: "Look dropped.",
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/p1.jpg",
@@ -173,7 +173,7 @@ describe("PostModal", () => {
     const { queryClient } = renderModal();
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
 
-    await user.click(screen.getByRole("button", { name: "Post look" }));
+    await user.click(screen.getByRole("button", { name: "Drop look" }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["creator-looks"] });
@@ -199,7 +199,7 @@ describe("PostModal", () => {
     const user = userEvent.setup();
     renderModal();
 
-    await user.click(screen.getByRole("button", { name: "Post look" }));
+    await user.click(screen.getByRole("button", { name: "Drop look" }));
 
     expect(await screen.findByText("Each image must be 5 MB or smaller.")).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
@@ -214,7 +214,7 @@ describe("PostModal", () => {
     mswServer.use(
       http.post("/api/creator-looks", () =>
         HttpResponse.json(
-          { success: false, message: "Only approved creators can post looks." },
+          { success: false, message: "Only approved muses can drop looks." },
           { status: 403 },
         ),
       ),
@@ -223,9 +223,9 @@ describe("PostModal", () => {
     const user = userEvent.setup();
     renderModal();
 
-    await user.click(screen.getByRole("button", { name: "Post look" }));
+    await user.click(screen.getByRole("button", { name: "Drop look" }));
 
-    expect(await screen.findByText("Only approved creators can post looks.")).toBeInTheDocument();
+    expect(await screen.findByText("Only approved muses can drop looks.")).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
   });
 
@@ -423,7 +423,7 @@ describe("PostModal", () => {
     expect(screen.getByRole("button", { name: "Tag a product" })).toBeInTheDocument();
   });
 
-  it("shows a posting state while the create request is in flight", async () => {
+  it("shows a dropping state while the create request is in flight", async () => {
     resolvePendingPhotoAssets.mockResolvedValue({
       urls: ["https://cdn.outfiqe.test/p1.jpg"],
       imageAssetIds: [null],
@@ -434,7 +434,7 @@ describe("PostModal", () => {
         await delay(200);
         return HttpResponse.json({
           success: true,
-          message: "Look posted.",
+          message: "Look dropped.",
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/p1.jpg",
@@ -450,7 +450,7 @@ describe("PostModal", () => {
     const user = userEvent.setup();
     renderModal();
 
-    await user.click(screen.getByRole("button", { name: "Post look" }));
+    await user.click(screen.getByRole("button", { name: "Drop look" }));
 
     expect(await screen.findByRole("button", { name: "Loading" })).toBeInTheDocument();
   });
@@ -470,7 +470,7 @@ describe("PostModal", () => {
       http.post("/api/creator-looks", () =>
         HttpResponse.json({
           success: true,
-          message: "Look posted.",
+          message: "Look dropped.",
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/p1.jpg",
@@ -486,12 +486,12 @@ describe("PostModal", () => {
     const user = userEvent.setup();
     renderModal();
 
-    await user.click(screen.getByRole("button", { name: "Post look" }));
+    await user.click(screen.getByRole("button", { name: "Drop look" }));
 
     expect(await screen.findByRole("button", { name: "Loading" })).toBeInTheDocument();
   });
 
-  it("defaults to Portrait and lets the creator switch layout before adding a photo", async () => {
+  it("defaults to Portrait and lets the muse switch layout before adding a photo", async () => {
     mockPending([]);
     const user = userEvent.setup();
     renderModal();
@@ -520,7 +520,7 @@ describe("PostModal", () => {
     expect(screen.getByRole("button", { name: "Tall" })).toBeDisabled();
   });
 
-  it("submits the chosen layout along with the rest of the post", async () => {
+  it("submits the chosen layout along with the rest of the drop", async () => {
     resolvePendingPhotoAssets.mockResolvedValue({
       urls: ["https://cdn.outfiqe.test/p1.jpg"],
       imageAssetIds: [null],
@@ -533,7 +533,7 @@ describe("PostModal", () => {
         requestedLayout = body.layout;
         return HttpResponse.json({
           success: true,
-          message: "Look posted.",
+          message: "Look dropped.",
           data: {
             id: "look-1",
             imageUrl: "https://cdn.outfiqe.test/p1.jpg",
@@ -553,7 +553,7 @@ describe("PostModal", () => {
 
     mockPending([buildExistingPhoto("p1")]);
     rerenderWith();
-    await user.click(screen.getByRole("button", { name: "Post look" }));
+    await user.click(screen.getByRole("button", { name: "Drop look" }));
 
     await waitFor(() => expect(requestedLayout).toBe("TALL"));
   });

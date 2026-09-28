@@ -97,7 +97,7 @@ describe("POST /api/products/:productId/reviews", () => {
     expect(response.body.code).toBe("PURCHASE_REQUIRED");
   });
 
-  it("lets a verified buyer post a review and updates the product's rating summary", async () => {
+  it("lets a verified buyer drop a review and updates the product's rating summary", async () => {
     const { product, size } = await createProduct("Verified Jacket");
     const buyer = await createUser("Real Buyer", "real-buyer");
     await createDeliveredOrderItem(buyer.id, product.id, size.id);

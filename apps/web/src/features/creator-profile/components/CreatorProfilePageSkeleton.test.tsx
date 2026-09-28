@@ -8,6 +8,6 @@ describe("CreatorProfilePageSkeleton", () => {
     render(<CreatorProfilePageSkeleton />);
 
     expect(screen.getByRole("status", { name: "Loading profile" })).toBeInTheDocument();
-    expect(screen.getByRole("status", { name: "Loading posts" })).toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "Loading drops" })).toBeInTheDocument();
   });
 });

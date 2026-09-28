@@ -13,8 +13,7 @@ export const CreatorStatusGate = ({ creatorStatus, pitch }: CreatorStatusGatePro
       <div className="rounded-2xl border border-border bg-card p-6">
         <h1 className="font-display text-xl font-bold text-foreground">Application under review</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          We&apos;re looking at your creator application. We&apos;ll email you once it&apos;s
-          reviewed.
+          We&apos;re looking at your muse application. We&apos;ll email you once it&apos;s reviewed.
         </p>
       </div>
     );
@@ -22,7 +21,7 @@ export const CreatorStatusGate = ({ creatorStatus, pitch }: CreatorStatusGatePro
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6">
-      <h1 className="font-display text-xl font-bold text-foreground">Become a creator</h1>
+      <h1 className="font-display text-xl font-bold text-foreground">Become a muse</h1>
       <p className="mt-2 max-w-md text-sm text-muted-foreground">{pitch}</p>
       {creatorStatus === CreatorStatus.REJECTED && (
         <p className="mt-2 text-sm text-muted-foreground">

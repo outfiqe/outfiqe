@@ -15,24 +15,24 @@ const CREATED_STATUS = 201;
 export const creatorCompetitionController = {
   async listActive(_req: Request, res: Response) {
     const competitions = await creatorCompetitionService.listActiveForViewers();
-    sendSuccess(res, competitions, "Active creator competitions.");
+    sendSuccess(res, competitions, "Active muse competitions.");
   },
 
   async listAllAdmin(_req: Request, res: Response) {
     const competitions = await creatorCompetitionService.listAllAdmin();
-    sendSuccess(res, competitions, "Creator competitions.");
+    sendSuccess(res, competitions, "Muse competitions.");
   },
 
   async create(_req: Request, res: Response) {
     const body = validated.body<CreateCreatorCompetitionBody>(res);
     const competition = await creatorCompetitionService.createCompetition(body);
-    sendSuccess(res, competition, "Creator competition created.", CREATED_STATUS);
+    sendSuccess(res, competition, "Muse competition created.", CREATED_STATUS);
   },
 
   async update(_req: Request, res: Response) {
     const { competitionId } = validated.params<CreatorCompetitionIdParam>(res);
     const body = validated.body<UpdateCreatorCompetitionBody>(res);
     const competition = await creatorCompetitionService.updateCompetition(competitionId, body);
-    sendSuccess(res, competition, "Creator competition updated.");
+    sendSuccess(res, competition, "Muse competition updated.");
   },
 };

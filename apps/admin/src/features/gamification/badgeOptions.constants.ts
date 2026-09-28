@@ -95,10 +95,10 @@ export const LEADERBOARD_CATEGORY_OPTIONS: CreatorLeaderboardCategoryValue[] = [
 
 export const LEADERBOARD_CATEGORY_LABEL: Record<CreatorLeaderboardCategoryValue, string> = {
   TOP_XP: "Top XP",
-  TOP_CREATOR: "Top Creator",
-  MOST_LIKES: "Most Likes",
+  TOP_CREATOR: "Top Muse",
+  MOST_LIKES: "Most Cheriqs",
   MOST_ENGAGED: "Most Engaged",
   TOP_SELLER: "Top Seller",
-  RISING_CREATOR: "Rising Creator",
+  RISING_CREATOR: "Rising Muse",
   MOST_ACHIEVEMENTS: "Most Achievements",
 };

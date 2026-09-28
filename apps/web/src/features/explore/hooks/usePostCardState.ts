@@ -16,7 +16,7 @@ import { useReportContent } from "./useReportContent";
 import { useSaveLook } from "./useSaveLook";
 
 const STAFF_CANNOT_LIKE_MESSAGE =
-  "Staff accounts can't like posts — this keeps trending and payouts based on real audience activity.";
+  "Staff accounts can't cheriq drops — this keeps trending and payouts based on real audience activity.";
 
 export const usePostCardState = ({ id, creator, caption, taggedProducts }: FeedPost) => {
   const { state, isStaff } = useAuth();

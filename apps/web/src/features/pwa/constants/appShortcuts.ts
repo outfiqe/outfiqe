@@ -13,18 +13,18 @@ export const appShortcuts: ManifestShortcut[] = [
     name: "Explore looks",
     short_name: "Explore",
     url: "/explore",
-    description: "See what creators are wearing right now",
+    description: "See what muses are wearing right now",
   },
   {
     name: "Search",
     short_name: "Search",
     url: "/search",
-    description: "Find a product, brand, or creator",
+    description: "Find a product, brand, or muse",
   },
   {
-    name: "Wishlist",
-    short_name: "Wishlist",
+    name: "Your stash",
+    short_name: "Stash",
     url: "/wishlist",
-    description: "Everything you saved for later",
+    description: "Everything you stashed for later",
   },
 ];

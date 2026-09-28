@@ -11,7 +11,7 @@ export const FOOTER_LINK_GROUPS: FooterLinkGroup[] = [
       { label: "Collections", href: "/collections" },
       { label: "Brands", href: "/brands" },
       { label: "Explore looks", href: "/explore" },
-      { label: "Creator leaderboard", href: "/leaderboard/creators" },
+      { label: "Muse leaderboard", href: "/leaderboard/creators" },
     ],
   },
   {
@@ -23,9 +23,9 @@ export const FOOTER_LINK_GROUPS: FooterLinkGroup[] = [
     ],
   },
   {
-    title: "Creators & brands",
+    title: "Muses & brands",
     links: [
-      { label: "Become a creator", href: "/for-creators" },
+      { label: "Become a muse", href: "/for-creators" },
       { label: "How commissions work", href: "/for-creators/how-commissions-work" },
       { label: "Sell on Outfiqe", href: "/for-brands" },
       { label: "Apply to list your brand", href: "/apply" },
@@ -47,7 +47,7 @@ export const FOOTER_LINK_GROUPS: FooterLinkGroup[] = [
       { label: "Privacy policy", href: "/legal/privacy" },
       { label: "Cookie policy", href: "/legal/cookies" },
       { label: "Community guidelines", href: "/legal/community-guidelines" },
-      { label: "Creator terms", href: "/legal/creator-terms" },
+      { label: "Muse terms", href: "/legal/creator-terms" },
       { label: "Seller terms", href: "/legal/brand-terms" },
     ],
   },

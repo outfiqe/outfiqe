@@ -43,8 +43,7 @@ const CookiesPage = () => (
       <ul>
         <li>Remembering your theme and display preferences.</li>
         <li>
-          A session identifier used to attribute a sale to the creator whose look or link you
-          followed.
+          A session identifier used to attribute a sale to the muse whose look or link you followed.
         </li>
       </ul>
       <h3>Analytics and diagnostics</h3>
@@ -65,7 +64,9 @@ const CookiesPage = () => (
       </p>
 
       <h2>Changes</h2>
-      <p>We will update this policy as our use of cookies changes and post the new version here.</p>
+      <p>
+        We will update this policy as our use of cookies changes and publish the new version here.
+      </p>
     </LegalDocument>
   </MarketingShell>
 );

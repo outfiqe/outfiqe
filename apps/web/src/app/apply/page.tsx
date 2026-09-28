@@ -20,8 +20,8 @@ const brandPerks = [
     body: "Send us photos and prices. We build your page and your first looks ourselves.",
   },
   {
-    title: "Creators included",
-    body: "Get your pieces in front of Nepali creators who post real fits and tag your products.",
+    title: "Muses included",
+    body: "Get your pieces in front of Nepali muses who drop real fits and tag your products.",
   },
 ];
 
