@@ -2,7 +2,9 @@ import { Button, Skeleton, toast } from "@outfiqe/design-system";
 import { useApiMutation } from "@outfiqe/hooks";
 
 import { SkeletonButton } from "@/components/SkeletonControls";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { creatorsApi } from "./api";
@@ -32,6 +34,8 @@ const CreatorRowSkeleton = ({ hasReviewActions }: { hasReviewActions: boolean })
 );
 
 export const CreatorsPage = () => {
+  const { canUse } = usePlatformPermissions();
+  const canReviewCreators = canUse(PLATFORM_MANAGE_PERMISSION.CREATORS);
   const [tab, setTab] = useSearchFilter("status", CREATORS_STATUS_FILTER);
 
   const {
@@ -99,7 +103,7 @@ export const CreatorsPage = () => {
                 <p className="mt-1 text-sm text-muted-foreground">{email}</p>
               </div>
 
-              {creatorStatus === "PENDING" && (
+              {canReviewCreators && creatorStatus === "PENDING" && (
                 <div className="flex gap-2">
                   <Button
                     onClick={() => approve.mutate(userId)}

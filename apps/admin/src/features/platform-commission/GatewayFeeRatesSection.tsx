@@ -15,7 +15,9 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { platformCommissionApi } from "./api";
 import { gatewayRateFormSchema, type GatewayRateFormValues } from "./gatewayRateForm.schema";
@@ -29,6 +31,8 @@ const PROVIDER_LABEL: Record<GatewayPaymentMethodValue, string> = {
 };
 
 const ProviderRateForm = ({ paymentMethod }: { paymentMethod: GatewayPaymentMethodValue }) => {
+  const { canUse } = usePlatformPermissions();
+  const canManageCommissions = canUse(PLATFORM_MANAGE_PERMISSION.COMMISSIONS);
   const { data: rates, isLoading: isRatesLoading } = useQuery({
     queryKey: RATES_QUERY_KEY,
     queryFn: platformCommissionApi.listGatewayFeeRates,
@@ -75,24 +79,28 @@ const ProviderRateForm = ({ paymentMethod }: { paymentMethod: GatewayPaymentMeth
             </p>
           )}
         </div>
-        <FormField
-          control={form.control}
-          name="ratePercent"
-          render={({ field }) => (
-            <FormItem className="mt-0 w-28 space-y-1.5">
-              <FormLabel className="text-xs font-normal text-muted-foreground">
-                New rate (%)
-              </FormLabel>
-              <FormControl>
-                <Input inputMode="decimal" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" size="sm" isLoading={createRate.isPending} className="mt-[22px]">
-          Update
-        </Button>
+        {canManageCommissions && (
+          <>
+            <FormField
+              control={form.control}
+              name="ratePercent"
+              render={({ field }) => (
+                <FormItem className="mt-0 w-28 space-y-1.5">
+                  <FormLabel className="text-xs font-normal text-muted-foreground">
+                    New rate (%)
+                  </FormLabel>
+                  <FormControl>
+                    <Input inputMode="decimal" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" size="sm" isLoading={createRate.isPending} className="mt-[22px]">
+              Update
+            </Button>
+          </>
+        )}
         {createRate.isError && (
           <FormBanner className="w-full">{getErrorMessage(createRate.error)}</FormBanner>
         )}

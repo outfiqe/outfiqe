@@ -2,6 +2,9 @@ import { Button } from "@outfiqe/design-system";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+
 import { gamificationApi } from "../api";
 import type { ChallengeAdmin } from "../schemas";
 import { TitleActionCardSkeleton } from "../skeletons";
@@ -12,6 +15,8 @@ import { CreateChallengeModal } from "./CreateChallengeModal";
 import { EditChallengeModal } from "./EditChallengeModal";
 
 export const ChallengesSection = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageGamification = canUse(PLATFORM_MANAGE_PERMISSION.GAMIFICATION);
   const { data: challenges, isLoading } = useQuery({
     queryKey: CHALLENGES_QUERY_KEY,
     queryFn: gamificationApi.listChallengesAdmin,
@@ -30,13 +35,15 @@ export const ChallengesSection = () => {
             catalog.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCreateForm(createEmptyChallengeForm())}
-        >
-          New challenge
-        </Button>
+        {canManageGamification && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCreateForm(createEmptyChallengeForm())}
+          >
+            New challenge
+          </Button>
+        )}
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -47,7 +54,11 @@ export const ChallengesSection = () => {
         )}
 
         {challenges?.map((challenge) => (
-          <ChallengeCard key={challenge.id} challenge={challenge} onEdit={setEditingChallenge} />
+          <ChallengeCard
+            key={challenge.id}
+            challenge={challenge}
+            onEdit={canManageGamification ? setEditingChallenge : undefined}
+          />
         ))}
       </div>
 

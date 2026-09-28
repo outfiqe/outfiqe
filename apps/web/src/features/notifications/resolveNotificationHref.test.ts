@@ -18,6 +18,7 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
   entityId: null,
   targetSurface: null,
   targetPath: null,
+  organizationId: null,
   metadata: {},
   groupKey: null,
   actorCount: 1,

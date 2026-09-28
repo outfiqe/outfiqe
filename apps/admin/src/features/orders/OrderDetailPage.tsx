@@ -5,7 +5,9 @@ import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
 import { TextPromptModal } from "@/components/TextPromptModal";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { ordersApi } from "./api";
 import { useOrder } from "./hooks/useOrder";
@@ -26,6 +28,8 @@ type OrderDetailPageProps = {
 };
 
 export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
+  const { canUse } = usePlatformPermissions();
+  const canManageOrders = canUse(PLATFORM_MANAGE_PERMISSION.ORDERS);
   const { data: order, isLoading, error } = useOrder(orderId);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
@@ -105,7 +109,7 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        {nextStatus && (
+        {canManageOrders && nextStatus && (
           <Button
             onClick={() => advance.mutate(nextStatus)}
             disabled={isActing}
@@ -114,7 +118,7 @@ export const OrderDetailPage = ({ orderId }: OrderDetailPageProps) => {
             Mark as {nextStatus.toLowerCase()}
           </Button>
         )}
-        {CANCELLABLE_STATUSES.includes(fulfilmentStatus) && (
+        {canManageOrders && CANCELLABLE_STATUSES.includes(fulfilmentStatus) && (
           <Button variant="outline" onClick={() => setIsCancelModalOpen(true)} disabled={isActing}>
             Cancel order
           </Button>

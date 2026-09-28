@@ -18,7 +18,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import {
   type CreatorCompetitionFormInput,
@@ -336,6 +338,8 @@ const EditCompetitionModal = ({
 };
 
 export const CompetitionsSection = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageGamification = canUse(PLATFORM_MANAGE_PERMISSION.GAMIFICATION);
   const { data: competitions, isLoading } = useQuery({
     queryKey: COMPETITIONS_QUERY_KEY,
     queryFn: gamificationApi.listCreatorCompetitionsAdmin,
@@ -369,18 +373,20 @@ export const CompetitionsSection = () => {
         Deactivating a competition stops future settlements without taking back badges already won.
       </p>
 
-      <Form {...form}>
-        <form
-          onSubmit={submitCompetition}
-          noValidate
-          className="mt-4 space-y-4 rounded-xl border border-border bg-card p-4"
-        >
-          <CompetitionFields form={form} />
-          <Button type="submit" isLoading={create.isPending}>
-            Create competition
-          </Button>
-        </form>
-      </Form>
+      {canManageGamification && (
+        <Form {...form}>
+          <form
+            onSubmit={submitCompetition}
+            noValidate
+            className="mt-4 space-y-4 rounded-xl border border-border bg-card p-4"
+          >
+            <CompetitionFields form={form} />
+            <Button type="submit" isLoading={create.isPending}>
+              Create competition
+            </Button>
+          </form>
+        </Form>
+      )}
 
       {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
@@ -397,13 +403,15 @@ export const CompetitionsSection = () => {
               <p className="text-sm font-medium text-foreground">
                 {competition.badge.icon} {competition.name}
               </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setEditingCompetition(competition)}
-              >
-                Edit
-              </Button>
+              {canManageGamification && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingCompetition(competition)}
+                >
+                  Edit
+                </Button>
+              )}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
               Top {competition.topN} in {LEADERBOARD_CATEGORY_LABEL[competition.category]}

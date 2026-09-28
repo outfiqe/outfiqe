@@ -1,6 +1,7 @@
 import type {
   Notification,
   NotificationChannelChanges,
+  NotificationFeedScope,
   NotificationPage,
   NotificationPreference,
   NotificationType,
@@ -8,38 +9,55 @@ import type {
 
 import type { ApiClient } from "../client";
 
-export const createNotificationsApi = (client: ApiClient) => ({
-  list: async (params: { cursor?: string; limit?: number } = {}): Promise<NotificationPage> => {
-    const res = await client.get<NotificationPage>("/notifications", { params });
-    return res.data;
-  },
+type NotificationsApiOptions = {
+  scope?: NotificationFeedScope;
+};
 
-  unreadCount: async (): Promise<number> => {
-    const res = await client.get<{ count: number }>("/notifications/unread-count");
-    return res.data.count;
-  },
+export const createNotificationsApi = (
+  client: ApiClient,
+  { scope }: NotificationsApiOptions = {},
+) => {
+  const scopeParams = scope ? { scope } : {};
 
-  markRead: async (id: string): Promise<void> => {
-    await client.patch<Notification>(`/notifications/${id}/read`);
-  },
+  return {
+    list: async (params: { cursor?: string; limit?: number } = {}): Promise<NotificationPage> => {
+      const res = await client.get<NotificationPage>("/notifications", {
+        params: { ...params, ...scopeParams },
+      });
+      return res.data;
+    },
 
-  markAllRead: async (): Promise<void> => {
-    await client.patch<Record<string, never>>("/notifications/read-all");
-  },
+    unreadCount: async (): Promise<number> => {
+      const res = await client.get<{ count: number }>("/notifications/unread-count", {
+        params: scopeParams,
+      });
+      return res.data.count;
+    },
 
-  listPreferences: async (): Promise<NotificationPreference[]> => {
-    const res = await client.get<{ preferences: NotificationPreference[] }>(
-      "/notifications/preferences",
-    );
-    return res.data.preferences;
-  },
+    markRead: async (id: string): Promise<void> => {
+      await client.patch<Notification>(`/notifications/${id}/read`);
+    },
 
-  setPreference: async (
-    type: NotificationType,
-    changes: NotificationChannelChanges,
-  ): Promise<void> => {
-    await client.patch<NotificationPreference>(`/notifications/preferences/${type}`, changes);
-  },
-});
+    markAllRead: async (): Promise<void> => {
+      await client.patch<Record<string, never>>("/notifications/read-all", undefined, {
+        params: scopeParams,
+      });
+    },
+
+    listPreferences: async (): Promise<NotificationPreference[]> => {
+      const res = await client.get<{ preferences: NotificationPreference[] }>(
+        "/notifications/preferences",
+      );
+      return res.data.preferences;
+    },
+
+    setPreference: async (
+      type: NotificationType,
+      changes: NotificationChannelChanges,
+    ): Promise<void> => {
+      await client.patch<NotificationPreference>(`/notifications/preferences/${type}`, changes);
+    },
+  };
+};
 
 export type NotificationsApi = ReturnType<typeof createNotificationsApi>;

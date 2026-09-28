@@ -4,7 +4,7 @@ import { Skeleton } from "@outfiqe/design-system";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { useAdminViewerHint } from "@/features/auth/utils/adminViewerHint";
+import { useStaffViewerHint } from "@/features/auth/utils/staffViewerHint";
 import { TRENDING_RANKS, TrendingRankChip } from "@/shared/components/TrendingRankBadge";
 import { cn } from "@/shared/lib/cn";
 
@@ -31,14 +31,14 @@ export const Sidebar = ({ activeTag, onTagClick }: SidebarProps) => {
 
 const SuggestedCreators = () => {
   const { isAuthenticated, isAuthResolved, goToSignIn } = useExploreAuthGate();
-  const { isAdmin } = useAuth();
-  const isLastViewerAdmin = useAdminViewerHint();
-  const isAdminViewer = isAuthResolved ? isAdmin : isLastViewerAdmin;
+  const { isStaff } = useAuth();
+  const isLastViewerStaff = useStaffViewerHint();
+  const isStaffViewer = isAuthResolved ? isStaff : isLastViewerStaff;
   const { data: creators, isLoading } = useSuggestedCreators();
   const followMutation = useFollowCreator();
   const [isFindMoreOpen, setIsFindMoreOpen] = useState(false);
 
-  if (isAdminViewer) return null;
+  if (isStaffViewer) return null;
 
   return (
     <div className="rounded-xl border border-border p-4">

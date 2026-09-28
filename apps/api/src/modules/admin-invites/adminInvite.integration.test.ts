@@ -7,7 +7,9 @@ import { hashToken } from "#lib/opaque-token.utils.js";
 import { BUILT_IN_ROLE_NAME } from "#modules/crm-access/crm-access.constants.js";
 import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
 import { PLATFORM_PERMISSION_CATALOG } from "#modules/platform-access/platform-access.constants.js";
+import { createRoleLimitedStaffSession } from "#test/integration/authHelpers.js";
 import { createAdminSession } from "#test/integration/authHelpers.js";
+import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
 const TEAM_MANAGE_PERMISSION_KEY = "platform:team:manage";
@@ -120,8 +122,20 @@ describe("GET /api/admin/invites", () => {
     expect(invite?.roleName).toBe(BUILT_IN_ROLE_NAME.MEMBER);
   });
 
+  it("refuses the invite list to staff who can't manage the team", async () => {
+    const requester = await createRoleLimitedStaffSession(UNRELATED_PLATFORM_PERMISSION_KEY);
+
+    await request(testApp)
+      .get("/api/admin/invites")
+      .set("Authorization", requester.authHeader)
+      .expect(403);
+  });
+
   it("reports the requester's own platform permission keys alongside the invites", async () => {
-    const requester = await createAdminSession();
+    const requester = await createRoleLimitedStaffSession(
+      UNRELATED_PLATFORM_PERMISSION_KEY,
+      TEAM_MANAGE_PERMISSION_KEY,
+    );
 
     const response = await request(testApp)
       .get("/api/admin/invites")
@@ -129,16 +143,9 @@ describe("GET /api/admin/invites", () => {
       .expect(200);
 
     const { viewerPermissionKeys }: { viewerPermissionKeys: string[] } = response.body.data;
-    expect(viewerPermissionKeys).not.toContain(TEAM_MANAGE_PERMISSION_KEY);
-
-    await grantPlatformPermission(requester.userId, TEAM_MANAGE_PERMISSION_KEY);
-
-    const responseAfterGrant = await request(testApp)
-      .get("/api/admin/invites")
-      .set("Authorization", requester.authHeader)
-      .expect(200);
-
-    expect(responseAfterGrant.body.data.viewerPermissionKeys).toContain(TEAM_MANAGE_PERMISSION_KEY);
+    expect([...viewerPermissionKeys].sort()).toEqual(
+      [UNRELATED_PLATFORM_PERMISSION_KEY, TEAM_MANAGE_PERMISSION_KEY].sort(),
+    );
   });
 });
 
@@ -165,7 +172,7 @@ describe("POST /api/admin/invites", () => {
   });
 
   it("blocks a staffer holding platform:team:manage who isn't a co-founder", async () => {
-    const staffer = await createAdminSession();
+    const staffer = await createRoleLimitedStaffSession(UNRELATED_PLATFORM_PERMISSION_KEY);
     await grantPlatformPermission(staffer.userId, TEAM_MANAGE_PERMISSION_KEY);
 
     const response = await request(testApp)

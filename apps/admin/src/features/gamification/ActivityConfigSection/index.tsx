@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { gamificationApi } from "../api";
 import type { ActivityXpConfig } from "../schemas";
@@ -10,6 +12,8 @@ import { ACTIVITY_CONFIG_QUERY_KEY } from "./activityConfigForm.constants";
 import { EditActivityConfigModal } from "./EditActivityConfigModal";
 
 export const ActivityConfigSection = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageGamification = canUse(PLATFORM_MANAGE_PERMISSION.GAMIFICATION);
   const { data: configs, isLoading } = useQuery({
     queryKey: ACTIVITY_CONFIG_QUERY_KEY,
     queryFn: gamificationApi.listActivityConfigs,
@@ -28,7 +32,11 @@ export const ActivityConfigSection = () => {
           Array.from({ length: 3 }).map((_, index) => <ActionRowSkeleton key={index} hasSubLine />)}
 
         {configs?.map((config) => (
-          <ActivityConfigCard key={config.activityType} config={config} onEdit={setEditingConfig} />
+          <ActivityConfigCard
+            key={config.activityType}
+            config={config}
+            onEdit={canManageGamification ? setEditingConfig : undefined}
+          />
         ))}
       </div>
 

@@ -21,10 +21,10 @@ vi.mock("@/features/auth/context/AuthContext", () => ({
 
 const push = vi.fn();
 
-const mockAuth = (isAuthenticated: boolean, isAdmin = false) => {
+const mockAuth = (isAuthenticated: boolean, isStaff = false) => {
   vi.mocked(useAuth).mockReturnValue({
     isAuthenticated,
-    isAdmin,
+    isStaff,
   } as ReturnType<typeof useAuth>);
 };
 

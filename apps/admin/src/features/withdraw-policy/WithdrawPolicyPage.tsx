@@ -18,7 +18,9 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { SkeletonButton } from "@/components/SkeletonControls";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { type UpdateWithdrawPolicyInput, withdrawPolicyApi } from "./api";
 import { policyFormSchema, type PolicyFormValues } from "./policyForm.schema";
@@ -80,6 +82,8 @@ const PolicyFormFields = ({
 }) => {
   const queryClient = useQueryClient();
   const queryKey = ["withdraw-policy", ownerType];
+  const { canUse } = usePlatformPermissions();
+  const canManageWithdrawals = canUse(PLATFORM_MANAGE_PERMISSION.WITHDRAWALS);
 
   const form = useForm<PolicyFormValues>({
     resolver: zodResolver(policyFormSchema),
@@ -123,52 +127,56 @@ const PolicyFormFields = ({
         noValidate
         className="space-y-4 rounded-xl border border-border bg-card p-5"
       >
-        <div className="grid gap-3 sm:grid-cols-2">
-          {numberField("minAmount", "Min amount (Rs.)")}
-          {numberField("maxAmount", "Max amount (Rs.)")}
+        <fieldset disabled={!canManageWithdrawals} className="contents">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {numberField("minAmount", "Min amount (Rs.)")}
+            {numberField("maxAmount", "Max amount (Rs.)")}
+            <FormField
+              control={form.control}
+              name="windowType"
+              render={({ field }) => (
+                <FormItem className="mt-0 space-y-1.5">
+                  <FormLabel className={LABEL_CLASS}>Window type</FormLabel>
+                  <FormControl>
+                    <Select {...field}>
+                      {WINDOW_TYPES.map((windowType) => (
+                        <option key={windowType} value={windowType}>
+                          {windowType}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {numberField("windowValue", "Window value (days before month end / every N days)")}
+            {numberField("maxAttemptsPerWindow", "Attempts per window")}
+            {numberField("cooldownAfterRejectionDays", "Cooldown after rejection (days)")}
+          </div>
+
           <FormField
             control={form.control}
-            name="windowType"
+            name="processingNoteText"
             render={({ field }) => (
               <FormItem className="mt-0 space-y-1.5">
-                <FormLabel className={LABEL_CLASS}>Window type</FormLabel>
+                <FormLabel className={LABEL_CLASS}>Processing note</FormLabel>
                 <FormControl>
-                  <Select {...field}>
-                    {WINDOW_TYPES.map((windowType) => (
-                      <option key={windowType} value={windowType}>
-                        {windowType}
-                      </option>
-                    ))}
-                  </Select>
+                  <Input {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          {numberField("windowValue", "Window value (days before month end / every N days)")}
-          {numberField("maxAttemptsPerWindow", "Attempts per window")}
-          {numberField("cooldownAfterRejectionDays", "Cooldown after rejection (days)")}
-        </div>
 
-        <FormField
-          control={form.control}
-          name="processingNoteText"
-          render={({ field }) => (
-            <FormItem className="mt-0 space-y-1.5">
-              <FormLabel className={LABEL_CLASS}>Processing note</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          {update.isError && <FormBanner>{getErrorMessage(update.error)}</FormBanner>}
+
+          {canManageWithdrawals && (
+            <Button type="submit" isLoading={update.isPending}>
+              Save policy
+            </Button>
           )}
-        />
-
-        {update.isError && <FormBanner>{getErrorMessage(update.error)}</FormBanner>}
-
-        <Button type="submit" isLoading={update.isPending}>
-          Save policy
-        </Button>
+        </fieldset>
       </form>
     </Form>
   );

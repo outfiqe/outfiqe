@@ -1,9 +1,11 @@
 import { DomainEvents, eventBus } from "#events/event-bus.js";
-import { UserRole } from "#generated/prisma/enums.js";
+import type { UserRole } from "#generated/prisma/enums.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { isUniqueConstraintError } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { imageProcessingService } from "#modules/image-processing/image-processing.service.js";
+import { REVIEW_MODERATE_PERMISSION_KEY } from "#modules/platform-access/platform-access.constants.js";
+import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 import { PLATFORM_AUDIT_ACTION } from "#modules/platform-audit/platform-audit.constants.js";
 import { platformAudit } from "#modules/platform-audit/platform-audit.service.js";
 import { productRepository } from "#modules/products/product.repository.js";
@@ -152,15 +154,18 @@ export const productReviewService = {
     }
 
     const isOwner = review.userId === principal.userId;
-    const isAdmin = principal.role === UserRole.ADMIN;
-    if (!isOwner && !isAdmin) {
+    const canModerate = await platformAccessService.principalHasPermission(
+      principal,
+      REVIEW_MODERATE_PERMISSION_KEY,
+    );
+    if (!isOwner && !canModerate) {
       throw new AppError("FORBIDDEN", "You can only delete your own review.", FORBIDDEN_STATUS);
     }
 
     await productReviewRepository.softDelete(reviewId);
     await productService.recomputeRatingSummary(productId);
 
-    if (isAdmin && !isOwner) {
+    if (canModerate && !isOwner) {
       await platformAudit.record({
         actorUserId: principal.userId,
         action: PLATFORM_AUDIT_ACTION.PRODUCT_REVIEW_REMOVED_BY_ADMIN,

@@ -50,7 +50,7 @@ export const PostDetailModal = ({
   const {
     isAuthenticated,
     isOwnPost,
-    isAdmin,
+    isStaff,
     likeDisabledReason,
     taggedProducts,
     gated,
@@ -112,7 +112,7 @@ export const PostDetailModal = ({
               creatorHandle={creatorHandle}
               creatorName={creatorName}
               isOwnPost={isOwnPost}
-              isAdmin={isAdmin}
+              isStaff={isStaff}
               isFollowingCreator={isFollowingCreator}
               onFollowToggle={() =>
                 gated(() => toggleFollow({ creatorId, following: isFollowingCreator }))

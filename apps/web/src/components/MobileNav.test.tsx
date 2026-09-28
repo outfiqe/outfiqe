@@ -41,7 +41,7 @@ const mockAuth = (overrides: Partial<ReturnType<typeof useAuth>> = {}) => {
     state: { status: AuthStatus.UNAUTHENTICATED, user: null, accessToken: null },
     isAuthenticated: false,
     isAuthResolved: true,
-    isAdmin: false,
+    isStaff: false,
     isBrandOwner: false,
     isCreator: false,
     isShopper: true,
@@ -134,7 +134,7 @@ describe("MobileNav", () => {
         accessToken: "t",
       },
       isAuthenticated: true,
-      isAdmin: true,
+      isStaff: true,
     } as Partial<ReturnType<typeof useAuth>>);
     render(<MobileNav />);
     await openMenu();

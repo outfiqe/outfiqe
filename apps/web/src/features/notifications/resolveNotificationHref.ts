@@ -28,7 +28,7 @@ const adminAppPath = (path: string): string => `${ADMIN_URL}${path}`;
 export const resolveNotificationHref = (
   notification: Notification,
   ownHandle: string | undefined,
-  isAdmin = false,
+  isStaff = false,
 ): string | null => {
   const { metadata, entityId } = notification;
 
@@ -75,7 +75,7 @@ export const resolveNotificationHref = (
       return entityId ? conversationPath(entityId) : WEB_NOTIFICATION_ROUTES.messagesList;
     case NotificationType.SUPPORT_TICKET_REPLY:
     case NotificationType.SUPPORT_TICKET_RESOLVED:
-      return isAdmin
+      return isStaff
         ? adminSupportTicketPath(ADMIN_URL, entityId)
         : customerSupportTicketPath(entityId);
     case NotificationType.BRAND_APPLICATION_SUBMITTED:
@@ -133,7 +133,7 @@ const isExpiredAnnouncement = (notification: Notification): boolean => {
 export const resolveNotificationNavigation = (
   notification: Notification,
   ownHandle: string | undefined,
-  isAdmin: boolean,
+  isStaff: boolean,
 ): NotificationNavigation | null => {
   if (isExpiredAnnouncement(notification)) return null;
 
@@ -149,7 +149,7 @@ export const resolveNotificationNavigation = (
       : { href: `${ADMIN_URL}${notification.targetPath}`, fullPage: true, external: false };
   }
 
-  const legacyHref = resolveNotificationHref(notification, ownHandle, isAdmin);
+  const legacyHref = resolveNotificationHref(notification, ownHandle, isStaff);
   if (!legacyHref) return null;
   return { href: legacyHref, fullPage: isFullPageNavHref(legacyHref), external: false };
 };

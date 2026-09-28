@@ -10,5 +10,5 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
-export type UserRole = "CUSTOMER" | "BRAND_OWNER" | "ADMIN";
+export type UserRole = "CUSTOMER" | "BRAND_OWNER" | "ADMIN" | "TENANT_STAFF";
 export type CreatorStatus = "NONE" | "PENDING" | "APPROVED" | "REJECTED";

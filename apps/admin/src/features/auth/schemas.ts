@@ -1,7 +1,7 @@
 import type { UserRole } from "@outfiqe/types";
 import { z } from "zod";
 
-const userRoleValues = ["CUSTOMER", "BRAND_OWNER", "ADMIN"] satisfies UserRole[];
+const userRoleValues = ["CUSTOMER", "BRAND_OWNER", "ADMIN", "TENANT_STAFF"] satisfies UserRole[];
 export const userRoleSchema = z.enum(userRoleValues);
 
 export const adminUserSchema = z.object({
@@ -13,6 +13,8 @@ export const adminUserSchema = z.object({
   hasPlatformAccess: z.boolean(),
   isCoFounder: z.boolean(),
   hiddenPlatformNavKeys: z.array(z.string()),
+  platformPermissionKeys: z.array(z.string()).default([]),
+  crmHomeSubdomain: z.string().nullable().default(null),
 });
 export type AdminUser = z.infer<typeof adminUserSchema>;
 

@@ -1,6 +1,7 @@
 import { Toaster } from "@outfiqe/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mswServer } from "@test/integration/msw/server";
+import { grantOnlyPlatformPermissions } from "@test/platformPermissionsMock";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
@@ -252,5 +253,22 @@ describe("CategoriesPage", () => {
     await user.click(await screen.findByRole("button", { name: "Unpublish" }));
 
     expect(await screen.findByText("Category unpublished.")).toBeInTheDocument();
+  });
+
+  it("shows a view-only catalog role the list without any way to change it", async () => {
+    grantOnlyPlatformPermissions("platform:catalog:read");
+    mswServer.use(
+      http.get(`${API_BASE}/categories/admin`, () =>
+        okJson([category("id-a", "Alpha", 0), category("id-b", "Beta", 1)]),
+      ),
+    );
+    stubPopularity();
+
+    renderPage();
+
+    expect(await screen.findByText("Alpha")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Create category" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Unpublish" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Move Alpha down" })).not.toBeInTheDocument();
   });
 });

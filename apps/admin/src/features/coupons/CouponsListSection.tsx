@@ -5,7 +5,9 @@ import { useState } from "react";
 
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
 import { TextPromptModal } from "@/components/TextPromptModal";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { couponsApi } from "./api";
@@ -86,6 +88,8 @@ const CouponRowSkeleton = ({ hasBudget }: { hasBudget: boolean }) => (
 );
 
 export const CouponsListSection = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageCoupons = canUse(PLATFORM_MANAGE_PERMISSION.COUPONS);
   const [tab, setTab] = useSearchFilter("status", COUPON_STATUS_FILTER);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [performanceCoupon, setPerformanceCoupon] = useState<Coupon | null>(null);
@@ -154,9 +158,11 @@ export const CouponsListSection = () => {
             </button>
           ))}
         </div>
-        <Button size="sm" onClick={() => setIsCreateOpen(true)}>
-          New coupon
-        </Button>
+        {canManageCoupons && (
+          <Button size="sm" onClick={() => setIsCreateOpen(true)}>
+            New coupon
+          </Button>
+        )}
       </div>
 
       <div className="mt-4 space-y-3">
@@ -201,12 +207,12 @@ export const CouponsListSection = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {pendingApproval && (
+                  {canManageCoupons && pendingApproval && (
                     <Button size="sm" onClick={() => approve.mutate(coupon.id)} disabled={isActing}>
                       Approve
                     </Button>
                   )}
-                  {!pendingApproval && coupon.status !== "ARCHIVED" && (
+                  {canManageCoupons && !pendingApproval && coupon.status !== "ARCHIVED" && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -221,7 +227,7 @@ export const CouponsListSection = () => {
                       {coupon.status === "ACTIVE" ? "Pause" : "Activate"}
                     </Button>
                   )}
-                  {coupon.status !== "ARCHIVED" && (
+                  {canManageCoupons && coupon.status !== "ARCHIVED" && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -231,9 +237,11 @@ export const CouponsListSection = () => {
                       Archive
                     </Button>
                   )}
-                  <Button size="sm" variant="outline" onClick={() => setBudgetEditCoupon(coupon)}>
-                    Edit budget
-                  </Button>
+                  {canManageCoupons && (
+                    <Button size="sm" variant="outline" onClick={() => setBudgetEditCoupon(coupon)}>
+                      Edit budget
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" onClick={() => setPerformanceCoupon(coupon)}>
                     Performance
                   </Button>

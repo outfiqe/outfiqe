@@ -24,7 +24,9 @@ import { useForm } from "react-hook-form";
 
 import { ActionRowSkeleton } from "@/components/ActionRowSkeleton";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { platformCommissionApi } from "./api";
 import {
@@ -131,6 +133,8 @@ const BrandPickerField = ({
 const LABEL_CLASS = "text-xs font-normal text-muted-foreground";
 
 export const BrandExemptionsSection = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageCommissions = canUse(PLATFORM_MANAGE_PERMISSION.COMMISSIONS);
   const { data: exemptions, isLoading } = useQuery({
     queryKey: EXEMPTIONS_QUERY_KEY,
     queryFn: platformCommissionApi.listExemptions,
@@ -180,73 +184,75 @@ export const BrandExemptionsSection = () => {
         estimate still applies for non-cash payments.
       </p>
 
-      <Form {...form}>
-        <form
-          onSubmit={submitExemption}
-          noValidate
-          className="mt-4 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
-        >
-          <FormField
-            control={form.control}
-            name="brandId"
-            render={({ field }) => (
-              <FormItem className="mt-0 space-y-1.5">
-                <BrandPickerField
-                  brandId={field.value || null}
-                  brandName={pickedBrandName}
-                  onChange={(brand) => {
-                    setPickedBrandName(brand?.name ?? "");
-                    field.onChange(brand?.id ?? "");
-                  }}
-                />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="startsAt"
-            render={({ field }) => (
-              <FormItem className="mt-0 space-y-1.5">
-                <FormLabel className={LABEL_CLASS}>Starts</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="endsAt"
-            render={({ field }) => (
-              <FormItem className="mt-0 space-y-1.5">
-                <FormLabel className={LABEL_CLASS}>Ends</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="reason"
-            render={({ field }) => (
-              <FormItem className="mt-0 min-w-[14rem] flex-1 space-y-1.5">
-                <FormLabel className={LABEL_CLASS}>Reason</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. Launch-cohort waiver, first 10 brands" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
-            Add exemption
-          </Button>
-        </form>
-      </Form>
+      {canManageCommissions && (
+        <Form {...form}>
+          <form
+            onSubmit={submitExemption}
+            noValidate
+            className="mt-4 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+          >
+            <FormField
+              control={form.control}
+              name="brandId"
+              render={({ field }) => (
+                <FormItem className="mt-0 space-y-1.5">
+                  <BrandPickerField
+                    brandId={field.value || null}
+                    brandName={pickedBrandName}
+                    onChange={(brand) => {
+                      setPickedBrandName(brand?.name ?? "");
+                      field.onChange(brand?.id ?? "");
+                    }}
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="startsAt"
+              render={({ field }) => (
+                <FormItem className="mt-0 space-y-1.5">
+                  <FormLabel className={LABEL_CLASS}>Starts</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="endsAt"
+              render={({ field }) => (
+                <FormItem className="mt-0 space-y-1.5">
+                  <FormLabel className={LABEL_CLASS}>Ends</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="reason"
+              render={({ field }) => (
+                <FormItem className="mt-0 min-w-[14rem] flex-1 space-y-1.5">
+                  <FormLabel className={LABEL_CLASS}>Reason</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Launch-cohort waiver, first 10 brands" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+              Add exemption
+            </Button>
+          </form>
+        </Form>
+      )}
 
       {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
@@ -276,7 +282,7 @@ export const BrandExemptionsSection = () => {
                   {new Date(exemption.endsAt).toLocaleDateString()} · {exemption.reason}
                 </p>
               </div>
-              {!isRevoked && (
+              {canManageCommissions && !isRevoked && (
                 <Button
                   variant="outline"
                   size="sm"

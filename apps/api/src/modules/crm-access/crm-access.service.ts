@@ -1,10 +1,13 @@
+import { isStaffUserRole } from "@outfiqe/utils";
+
 import { env } from "#config/env.config.js";
 import { prisma } from "#db/prisma.js";
 import {
   crmOrganizationInviteTemplate,
   crmOwnershipTransferRequestTemplate,
 } from "#email-templates/templates.js";
-import { type MembershipStatus, UserRole } from "#generated/prisma/enums.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
+import { MembershipStatus } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
@@ -18,6 +21,7 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { brandRepository } from "#modules/brands/brand.repository.js";
 import { crmBillingRepository } from "#modules/crm-billing/crm-billing.repository.js";
+import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 import { describeError } from "#redis/redis.utils.js";
 import type { DbClient } from "#types/db.types.js";
@@ -26,7 +30,6 @@ import {
   BUILT_IN_ROLE_NAME,
   ORGANIZATION_INVITE_TTL_MS,
   OWNERSHIP_TRANSFER_REQUEST_TTL_MS,
-  PLATFORM_ACCESS_PERMISSION_KEY,
   RESERVED_SUBDOMAINS,
 } from "./crm-access.constants.js";
 import { crmAccessRepository } from "./crm-access.repository.js";
@@ -137,18 +140,12 @@ const withLinkedBrandName = async (
 
 export const crmAccessService = {
   async resolveHasPlatformAccess(userId: string): Promise<boolean> {
-    const platformOrganization = await crmAccessRepository.findPlatformOrganization();
-    const platformMembership = platformOrganization
-      ? await crmAccessRepository.findMembershipByUserAndOrg(userId, platformOrganization.id)
-      : null;
+    const { hasStaffAccess } = await platformAccessService.resolveAccess(userId);
+    return hasStaffAccess;
+  },
 
-    if (!platformMembership || platformMembership.status !== "ACTIVE") return false;
-
-    const isSuperAdmin = platformOrganization?.superAdminMembershipId === platformMembership.id;
-    const hasPlatformPermission = platformMembership.role.permissionKeys.includes(
-      PLATFORM_ACCESS_PERMISSION_KEY,
-    );
-    return isSuperAdmin || platformMembership.isPlatformSuperAdmin || hasPlatformPermission;
+  async findHomeTenantSubdomain(userId: string): Promise<string | null> {
+    return crmAccessRepository.findHomeTenantSubdomain(userId);
   },
 
   async resolveHasCrmAccess(userId: string): Promise<boolean> {
@@ -414,7 +411,23 @@ export const crmAccessService = {
       assertPermissionKeysWithinActorGrant(role.permissionKeys, actingGrant);
     }
 
-    return crmAccessRepository.updateMembership(organization.id, membershipId, data);
+    const updatedMembership = await crmAccessRepository.updateMembership(
+      organization.id,
+      membershipId,
+      data,
+    );
+
+    const hasLostAccess =
+      membership.status === MembershipStatus.ACTIVE &&
+      updatedMembership.status !== MembershipStatus.ACTIVE;
+    if (hasLostAccess) {
+      await eventBus.publish(DomainEvents.CRM_MEMBERSHIP_ENDED, {
+        organizationId: organization.id,
+        userId: membership.userId,
+      });
+    }
+
+    return updatedMembership;
   },
 
   async listInvites(organizationId: string): Promise<OrganizationInviteSummary[]> {
@@ -436,7 +449,7 @@ export const crmAccessService = {
     assertPermissionKeysWithinActorGrant(role.permissionKeys, actingGrant);
 
     const invitedUser = await userRepository.findByEmail(email);
-    if (invitedUser && invitedUser.role !== UserRole.ADMIN) {
+    if (invitedUser && !isStaffUserRole(invitedUser.role)) {
       throw new AppError(
         "EMAIL_IN_USE",
         "That email already belongs to a non-staff Outfiqe account and can't be added as staff.",
@@ -579,6 +592,14 @@ export const crmAccessService = {
     return crmAccessRepository.acceptInviteWithClient(invite, acceptingUserId, client);
   },
 
+  async announceMemberJoined(membership: MembershipRecord): Promise<void> {
+    await eventBus.publish(DomainEvents.CRM_MEMBER_JOINED, {
+      organizationId: membership.organizationId,
+      membershipId: membership.id,
+      userId: membership.userId,
+    });
+  },
+
   async acceptInvite(rawToken: string, acceptingUserId: string): Promise<MembershipRecord> {
     const invite = await crmAccessService.findAcceptableInvite(rawToken);
 
@@ -599,14 +620,18 @@ export const crmAccessService = {
       throw new AppError("MEMBER_EXISTS", "You already have CRM access.", CONFLICT_STATUS);
     }
 
+    let membership: MembershipRecord;
     try {
-      return await crmAccessRepository.acceptInvite(invite, acceptingUserId);
+      membership = await crmAccessRepository.acceptInvite(invite, acceptingUserId);
     } catch (err) {
       if (isUniqueConstraintError(err)) {
         throw new AppError("MEMBER_EXISTS", "You already have CRM access.", CONFLICT_STATUS);
       }
       throw err;
     }
+
+    await crmAccessService.announceMemberJoined(membership);
+    return membership;
   },
 
   async getPendingOwnershipTransfer(
@@ -716,7 +741,19 @@ export const crmAccessService = {
       );
     }
 
+    const previousOwnerMembership = await crmAccessRepository.findMembershipById(
+      organization.id,
+      request.fromMembershipId,
+    );
+
     await crmAccessRepository.acceptOwnershipTransfer(request);
+
+    if (request.removeSenderMembershipOnAccept && previousOwnerMembership) {
+      await eventBus.publish(DomainEvents.CRM_MEMBERSHIP_ENDED, {
+        organizationId: organization.id,
+        userId: previousOwnerMembership.userId,
+      });
+    }
   },
 
   async declineOwnershipTransfer(

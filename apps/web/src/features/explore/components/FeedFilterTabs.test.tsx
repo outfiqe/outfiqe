@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ADMIN_LOCKED_TAB_TOOLTIP, EXPLORE_TAB, FEED_LAYOUT } from "../explore.constants";
+import { EXPLORE_TAB, FEED_LAYOUT, STAFF_LOCKED_TAB_TOOLTIP } from "../explore.constants";
 import { useTrendingTags } from "../hooks/useTrendingTags";
 import { FeedFilterTabs } from "./FeedFilterTabs";
 
@@ -84,7 +84,7 @@ describe("FeedFilterTabs", () => {
       onChange,
       tab: EXPLORE_TAB.TRENDING,
       lockedTabs: [EXPLORE_TAB.FOR_YOU, EXPLORE_TAB.FOLLOWING],
-      lockedTabTooltip: ADMIN_LOCKED_TAB_TOOLTIP,
+      lockedTabTooltip: STAFF_LOCKED_TAB_TOOLTIP,
     });
 
     const forYouTab = screen.getByRole("button", { name: "For you" });
@@ -99,7 +99,7 @@ describe("FeedFilterTabs", () => {
     expect(onChange).not.toHaveBeenCalled();
 
     fireEvent.focus(forYouTab);
-    expect(await screen.findByRole("tooltip")).toHaveTextContent(ADMIN_LOCKED_TAB_TOOLTIP);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(STAFF_LOCKED_TAB_TOOLTIP);
   });
 
   it("keeps locked tabs inert without a tooltip while no explanation is given", async () => {

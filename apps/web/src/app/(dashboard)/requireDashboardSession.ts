@@ -1,9 +1,10 @@
 import "server-only";
 
+import { isStaffUserRole } from "@outfiqe/utils";
 import { redirect } from "next/navigation";
 
 import { getServerSessionWithToken, type ServerSession } from "@/features/auth/api/serverAuth";
-import { CreatorStatus, UserRole } from "@/features/auth/types";
+import { CreatorStatus } from "@/features/auth/types";
 import { ADMIN_URL } from "@/features/auth/utils/getDefaultRoute";
 
 export const requireAuthedSession = async (currentPath: string): Promise<ServerSession> => {
@@ -22,6 +23,6 @@ const hasOwnDashboard = (session: ServerSession): boolean =>
 
 export const requireDashboardSession = async (currentPath: string): Promise<ServerSession> => {
   const session = await requireAuthedSession(currentPath);
-  if (session.user.role === UserRole.ADMIN && !hasOwnDashboard(session)) redirect(ADMIN_URL);
+  if (isStaffUserRole(session.user.role) && !hasOwnDashboard(session)) redirect(ADMIN_URL);
   return session;
 };

@@ -5,9 +5,9 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../api/exploreFeedSchemas";
 import { PostCard } from "./PostCard";
 
-const { authState } = vi.hoisted(() => ({ authState: { isAdmin: false } }));
+const { authState } = vi.hoisted(() => ({ authState: { isStaff: false } }));
 vi.mock("@/features/auth/context/AuthContext", () => ({
-  useAuth: () => ({ state: { user: { id: "viewer-1" } }, isAdmin: authState.isAdmin }),
+  useAuth: () => ({ state: { user: { id: "viewer-1" } }, isStaff: authState.isStaff }),
 }));
 vi.mock("@/features/pwa", () => ({ shareOrCopyLink: vi.fn() }));
 vi.mock("../hooks/useExploreAuthGate", () => ({
@@ -90,7 +90,7 @@ beforeAll(() => {
 
 afterEach(() => {
   followMutationState.isPending = false;
-  authState.isAdmin = false;
+  authState.isStaff = false;
 });
 
 describe("PostCard caption spacing", () => {
@@ -132,7 +132,7 @@ describe("PostCard follow button", () => {
 
 describe("PostCard for a platform admin viewer", () => {
   it("hides follow and report, disables like, and hides the comment trigger", () => {
-    authState.isAdmin = true;
+    authState.isStaff = true;
     render(<PostCard post={aPost({ likeCount: 5, commentCount: 3 })} />);
 
     expect(screen.queryByRole("button", { name: "Follow" })).not.toBeInTheDocument();

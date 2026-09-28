@@ -172,6 +172,72 @@ jobs:
       - name: Run integration tests (no coverage)
         run: pnpm exec turbo run test:integration --concurrency=1
 
+  api-boot:
+    name: API starts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: outfiqe
+          POSTGRES_PASSWORD: outfiqe
+          POSTGRES_DB: outfiqe_boot_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U outfiqe -d outfiqe_boot_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+          --tmpfs /var/lib/postgresql/data:rw
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://outfiqe:outfiqe@localhost:5432/outfiqe_boot_db
+      REDIS_URL: redis://localhost:6379
+      PORT: "4000"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Generate the Prisma client
+        run: pnpm --filter @outfiqe/api db:generate
+      - name: Apply migrations
+        working-directory: apps/api
+        run: pnpm exec prisma migrate deploy
+      - name: Start the API the way the production image does and wait for /ready
+        working-directory: apps/api
+        run: |
+          node --import tsx --import ./src/instrument.ts src/index.ts > api-boot.log 2>&1 &
+          api_pid=$!
+          for attempt in $(seq 1 45); do
+            if curl -fsS "http://127.0.0.1:${PORT}/ready" >/dev/null; then
+              echo "API ready after ${attempt} attempt(s)"
+              kill "$api_pid"
+              exit 0
+            fi
+            if ! kill -0 "$api_pid" 2>/dev/null; then
+              echo "::error::the API process exited during startup"
+              cat api-boot.log
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "::error::the API did not report ready within 90s"
+          cat api-boot.log
+          kill "$api_pid"
+          exit 1
+
   lighthouse:
     name: Lighthouse
     continue-on-error: true
@@ -203,7 +269,7 @@ jobs:
   ci:
     name: CI
     if: always()
-    needs: [lint, typecheck, build, unit, integration]
+    needs: [lint, typecheck, build, unit, integration, api-boot]
     runs-on: ubuntu-latest
     steps:
       - name: Fail unless every required job succeeded

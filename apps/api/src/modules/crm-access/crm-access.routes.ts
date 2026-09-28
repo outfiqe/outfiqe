@@ -18,11 +18,7 @@ import {
   CRM_ROLE_RATE_LIMIT_WINDOW_MS,
 } from "./crm-access.constants.js";
 import { crmAccessController } from "./crm-access.controller.js";
-import {
-  requirePermission,
-  requirePlatformAccess,
-  resolveTenant,
-} from "./crm-access.middleware.js";
+import { requirePermission, resolveTenant } from "./crm-access.middleware.js";
 import {
   acceptOrganizationInviteSchema,
   createOrganizationInviteSchema,
@@ -74,9 +70,8 @@ const crmRoleRateLimit = rateLimit({
 
 export const crmAccessRoutes = Router();
 
-const requireOrganizationsAdmin = [
-  requireAuth,
-  requirePlatformAccess,
+const requireOrganizationsRead = [
+  ...requirePlatformRole("platform:organizations:read", "platform:organizations:manage"),
   requirePlatformNavItem("organizations"),
 ];
 const requireOrganizationsMutationAdmin = [
@@ -86,13 +81,13 @@ const requireOrganizationsMutationAdmin = [
 
 crmAccessRoutes.get(
   "/organizations",
-  ...requireOrganizationsAdmin,
+  ...requireOrganizationsRead,
   validate({ query: listOrganizationsQuerySchema }),
   crmAccessController.listOrganizations,
 );
 crmAccessRoutes.get(
   "/organizations/suggest",
-  ...requireOrganizationsAdmin,
+  ...requireOrganizationsRead,
   validate({ query: suggestOrganizationQuerySchema }),
   crmAccessController.suggestOrganization,
 );

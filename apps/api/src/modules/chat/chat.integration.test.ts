@@ -181,6 +181,52 @@ describe("GET /api/chat/blocks/search", () => {
   });
 });
 
+describe("GET /api/chat/blocks/search for tenant staff", () => {
+  it("does not list tenant staff accounts as people to chat with", async () => {
+    const caller = await createUser("Tenant Search Caller", "tenant-search-caller-zeta");
+    const tenantStaff = await createUser(
+      "Tenant Zeta Staff",
+      "tenant-zeta-staff",
+      UserRole.TENANT_STAFF,
+    );
+    const match = await createUser("Tenant Zeta Match", "tenant-zeta-match");
+
+    const response = await request(testApp)
+      .get("/api/chat/blocks/search")
+      .query({ q: "Tenant Zeta" })
+      .set("Authorization", authHeaderFor(caller.id, caller.role));
+
+    const resultIds = response.body.data.contacts.map((contact: { id: string }) => contact.id);
+    expect(resultIds).toContain(match.id);
+    expect(resultIds).not.toContain(tenantStaff.id);
+  });
+});
+
+describe("chatService.isChatAvailableBetween for tenant staff", () => {
+  it("is false between tenant staff and a shopper", async () => {
+    const shopper = await createUser("Tenant Chat Shopper", "tenant-chat-shopper");
+    const tenantStaff = await createUser(
+      "Tenant Chat Staff",
+      "tenant-chat-staff",
+      UserRole.TENANT_STAFF,
+    );
+
+    expect(await chatService.isChatAvailableBetween(shopper.id, tenantStaff.id)).toBe(false);
+    expect(await chatService.isChatAvailableBetween(tenantStaff.id, shopper.id)).toBe(false);
+  });
+
+  it("stays true between tenant staff and platform support", async () => {
+    const admin = await createUser("Tenant Chat Admin", "tenant-chat-admin", UserRole.ADMIN);
+    const tenantStaff = await createUser(
+      "Tenant Chat Staff Two",
+      "tenant-chat-staff-two",
+      UserRole.TENANT_STAFF,
+    );
+
+    expect(await chatService.isChatAvailableBetween(admin.id, tenantStaff.id)).toBe(true);
+  });
+});
+
 describe("chatService.isChatAvailableBetween", () => {
   it("is false when either side has chat turned off globally", async () => {
     const userA = await createUser("Availability A", "availability-a");

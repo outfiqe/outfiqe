@@ -2,7 +2,6 @@
 
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
@@ -20,7 +19,10 @@ import {
   xpMultiplierIdParamSchema,
 } from "./xp.schemas.js";
 
-const requireAdmin = [requireAuth, requirePlatformAccess, requirePlatformNavItem("gamification")];
+const requireGamificationRead = [
+  ...requirePlatformRole("platform:gamification:read", "platform:gamification:manage"),
+  requirePlatformNavItem("gamification"),
+];
 const requireGamificationMutationAdmin = [
   ...requirePlatformRole("platform:gamification:manage"),
   requirePlatformNavItem("gamification"),
@@ -37,7 +39,7 @@ xpRoutes.get(
   xpController.listMyTransactions,
 );
 
-xpRoutes.get("/levels", ...requireAdmin, xpController.listLevels);
+xpRoutes.get("/levels", ...requireGamificationRead, xpController.listLevels);
 
 xpRoutes.post(
   "/levels",
@@ -55,7 +57,7 @@ xpRoutes.patch(
 
 xpRoutes.get("/multiplier/active", requireAuth, xpController.getActiveMultiplier);
 
-xpRoutes.get("/multipliers", ...requireAdmin, xpController.listMultipliers);
+xpRoutes.get("/multipliers", ...requireGamificationRead, xpController.listMultipliers);
 
 xpRoutes.post(
   "/multipliers",
@@ -71,7 +73,7 @@ xpRoutes.patch(
   xpController.updateMultiplier,
 );
 
-xpRoutes.get("/activity-config", ...requireAdmin, xpController.listActivityConfigs);
+xpRoutes.get("/activity-config", ...requireGamificationRead, xpController.listActivityConfigs);
 
 xpRoutes.patch(
   "/activity-config/:activityType",
@@ -88,4 +90,4 @@ xpRoutes.post(
   xpController.adjustXp,
 );
 
-xpRoutes.get("/stats", ...requireAdmin, xpController.getAdminStats);
+xpRoutes.get("/stats", ...requireGamificationRead, xpController.getAdminStats);

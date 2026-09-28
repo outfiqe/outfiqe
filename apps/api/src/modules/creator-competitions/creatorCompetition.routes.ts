@@ -1,8 +1,6 @@
 ﻿import { Router } from "express";
 
-import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
@@ -13,7 +11,10 @@ import {
   updateCreatorCompetitionSchema,
 } from "./creatorCompetition.schemas.js";
 
-const requireAdmin = [requireAuth, requirePlatformAccess, requirePlatformNavItem("gamification")];
+const requireGamificationRead = [
+  ...requirePlatformRole("platform:gamification:read", "platform:gamification:manage"),
+  requirePlatformNavItem("gamification"),
+];
 const requireGamificationMutationAdmin = [
   ...requirePlatformRole("platform:gamification:manage"),
   requirePlatformNavItem("gamification"),
@@ -23,7 +24,11 @@ export const creatorCompetitionRoutes = Router();
 
 creatorCompetitionRoutes.get("/", creatorCompetitionController.listActive);
 
-creatorCompetitionRoutes.get("/admin", ...requireAdmin, creatorCompetitionController.listAllAdmin);
+creatorCompetitionRoutes.get(
+  "/admin",
+  ...requireGamificationRead,
+  creatorCompetitionController.listAllAdmin,
+);
 
 creatorCompetitionRoutes.post(
   "/",

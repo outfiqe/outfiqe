@@ -51,3 +51,9 @@ export const SUPPORT_PERMISSION = {
   RESPOND: "platform:support:respond",
   MANAGE: "platform:support:manage",
 } as const;
+
+export const SUPPORT_READ_PERMISSIONS = [
+  SUPPORT_PERMISSION.READ,
+  SUPPORT_PERMISSION.RESPOND,
+  SUPPORT_PERMISSION.MANAGE,
+] as const;

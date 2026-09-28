@@ -12,12 +12,12 @@ import { OrderRow } from "./OrderRow";
 
 export const OrdersListBody = () => {
   const router = useRouter();
-  const { isAuthenticated, isAuthResolved, isBrandOwner, isAdmin } = useAuth();
+  const { isAuthenticated, isAuthResolved, isBrandOwner, isStaff } = useAuth();
   const ordersQuery = useInfiniteOrders();
 
   if (!isAuthResolved) return null;
 
-  if (isBrandOwner || isAdmin) return <NotAShopperNotice />;
+  if (isBrandOwner || isStaff) return <NotAShopperNotice />;
 
   if (!isAuthenticated) {
     return (

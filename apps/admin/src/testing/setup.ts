@@ -1,9 +1,17 @@
 import "@testing-library/jest-dom/vitest";
 
 import { cleanup } from "@testing-library/react";
-import { afterEach } from "vitest";
+import { afterEach, vi } from "vitest";
+
+import { grantEveryPlatformPermission } from "./platformPermissionsMock";
+
+vi.mock("@/features/auth/usePlatformPermissions", async () => {
+  const { mockedUsePlatformPermissions } = await import("./platformPermissionsMock");
+  return { usePlatformPermissions: mockedUsePlatformPermissions };
+});
 
 afterEach(cleanup);
+afterEach(grantEveryPlatformPermission);
 
 class ResizeObserverStub {
   constructor(_callback: ResizeObserverCallback) {}

@@ -11,7 +11,7 @@ const mutate = vi.fn();
 
 type AuthMockState = {
   isAuthenticated: boolean;
-  isAdmin?: boolean;
+  isStaff?: boolean;
   state: { user: { id: string } | null };
 };
 type ToggleFollowMockState = { mutate: typeof mutate; isPending: boolean };
@@ -105,7 +105,7 @@ describe("FollowersModal", () => {
   it("hides the Follow button on every row for a platform admin viewer", () => {
     authMock.mockReturnValue({
       isAuthenticated: true,
-      isAdmin: true,
+      isStaff: true,
       state: { user: { id: "admin-1" } },
     });
 

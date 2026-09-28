@@ -7,11 +7,11 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { exploreFeedApi } from "../api/exploreFeedApi";
 
 export const useSuggestedCreators = () => {
-  const { isAuthenticated, isAuthResolved, isAdmin } = useAuth();
+  const { isAuthenticated, isAuthResolved, isStaff } = useAuth();
 
   return useQuery({
     queryKey: ["suggested-creators"],
     queryFn: () => exploreFeedApi.suggestedCreators(),
-    enabled: isAuthResolved && isAuthenticated && !isAdmin,
+    enabled: isAuthResolved && isAuthenticated && !isStaff,
   });
 };

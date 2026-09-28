@@ -41,7 +41,7 @@ describe("PostActionsRow", () => {
       <PostActionsRow
         {...baseProps}
         onLike={onLike}
-        likeDisabledReason="Platform staff accounts can't like drops."
+        likeDisabledReason="Staff accounts can't cheriq drops."
       />,
     );
 
@@ -52,7 +52,7 @@ describe("PostActionsRow", () => {
 
     fireEvent.focus(likeButton);
     expect(await screen.findByRole("tooltip")).toHaveTextContent(
-      "Platform staff accounts can't like drops.",
+      "Staff accounts can't cheriq drops.",
     );
   });
 

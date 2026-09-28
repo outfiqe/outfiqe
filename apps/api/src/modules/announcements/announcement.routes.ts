@@ -1,8 +1,6 @@
 import { Router } from "express";
 
-import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
@@ -15,12 +13,11 @@ import {
   updateAnnouncementSchema,
 } from "./announcement.schemas.js";
 
-const requireAnnouncementAdmin = [
-  requireAuth,
-  requirePlatformAccess,
+const requireAnnouncementRead = [
+  ...requirePlatformRole("platform:announcements:read", "platform:announcements:manage"),
   requirePlatformNavItem("announcements"),
 ];
-const requireAnnouncementMutationAdmin = [
+const requireAnnouncementManage = [
   ...requirePlatformRole("platform:announcements:manage"),
   requirePlatformNavItem("announcements"),
 ];
@@ -29,37 +26,37 @@ export const announcementRoutes = Router();
 
 announcementRoutes.post(
   "/",
-  ...requireAnnouncementMutationAdmin,
+  ...requireAnnouncementManage,
   validate({ body: createAnnouncementSchema }),
   announcementController.create,
 );
 announcementRoutes.get(
   "/",
-  ...requireAnnouncementAdmin,
+  ...requireAnnouncementRead,
   validate({ query: listAnnouncementsQuerySchema }),
   announcementController.list,
 );
 announcementRoutes.get(
   "/:id",
-  ...requireAnnouncementAdmin,
+  ...requireAnnouncementRead,
   validate({ params: announcementIdParamSchema }),
   announcementController.getById,
 );
 announcementRoutes.patch(
   "/:id",
-  ...requireAnnouncementMutationAdmin,
+  ...requireAnnouncementManage,
   validate({ params: announcementIdParamSchema, body: updateAnnouncementSchema }),
   announcementController.update,
 );
 announcementRoutes.post(
   "/:id/send",
-  ...requireAnnouncementMutationAdmin,
+  ...requireAnnouncementManage,
   validate({ params: announcementIdParamSchema, body: sendAnnouncementSchema }),
   announcementController.send,
 );
 announcementRoutes.post(
   "/:id/cancel",
-  ...requireAnnouncementMutationAdmin,
+  ...requireAnnouncementManage,
   validate({ params: announcementIdParamSchema }),
   announcementController.cancel,
 );

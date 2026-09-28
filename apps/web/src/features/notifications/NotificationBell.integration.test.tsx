@@ -44,6 +44,7 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
   entityId: "look-1",
   targetSurface: null,
   targetPath: null,
+  organizationId: null,
   metadata: {
     recentActors: [{ id: "actor-1", name: "Jane", handle: "jane", avatarUrl: null }],
   },

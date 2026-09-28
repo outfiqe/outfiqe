@@ -60,7 +60,7 @@ const badgeAccentColor = (designConfig: FeaturedBadge["designConfig"]): string =
 export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, isAuthResolved, isAdmin, state, updateUser } = useAuth();
+  const { isAuthenticated, isAuthResolved, isStaff, state, updateUser } = useAuth();
   const followMutation = useToggleFollow("user");
   const { openConversationWith, isStartingConversation } = useChatPanel();
   const updateProfile = useUpdateCreatorProfile();
@@ -411,7 +411,7 @@ export const CreatorProfile = ({ creator }: CreatorProfileProps) => {
             </Button>
           ) : (
             <>
-              {!isAdmin && (
+              {!isStaff && (
                 <Button
                   variant="outline"
                   size="sm"

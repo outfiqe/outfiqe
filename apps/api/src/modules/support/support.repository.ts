@@ -341,9 +341,9 @@ export const supportRepository = {
     return membership?.brandId ?? null;
   },
 
-  async listAgents(): Promise<{ userId: string; name: string }[]> {
+  async listAgents(agentUserIds: string[]): Promise<{ userId: string; name: string }[]> {
     const rows = await prisma.user.findMany({
-      where: { role: "ADMIN" },
+      where: { id: { in: agentUserIds }, role: "ADMIN" },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     });

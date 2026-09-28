@@ -3,10 +3,9 @@ import { Router } from "express";
 import { UserRole } from "#generated/prisma/enums.js";
 import { optionalAuth } from "#middlewares/optional-auth.js";
 import { requireActiveAuth } from "#middlewares/require-active-account.js";
-import { requireAuth } from "#middlewares/require-auth.js";
 import { requireRole } from "#middlewares/require-role.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 
 import { productController } from "./product.controller.js";
 import {
@@ -23,7 +22,6 @@ import {
 } from "./product.schemas.js";
 
 const requireBrandOwner = [...requireActiveAuth, requireRole(UserRole.BRAND_OWNER)];
-const requireAdmin = [requireAuth, requirePlatformAccess];
 
 export const productRoutes = Router();
 
@@ -35,7 +33,7 @@ productRoutes.get(
 );
 productRoutes.get(
   "/review",
-  ...requireAdmin,
+  ...platformGuards.catalogRead,
   validate({ query: listReviewProductsQuerySchema }),
   productController.listForReview,
 );
@@ -105,13 +103,13 @@ productRoutes.delete(
 );
 productRoutes.post(
   "/:id/approve",
-  ...requireAdmin,
+  ...platformGuards.catalogManage,
   validate({ params: productIdParamSchema }),
   productController.approve,
 );
 productRoutes.post(
   "/:id/reject",
-  ...requireAdmin,
+  ...platformGuards.catalogManage,
   validate({ params: productIdParamSchema }),
   productController.reject,
 );

@@ -10,7 +10,11 @@ import {
   wrapExpandedClass,
 } from "./styles";
 
-const firstClassOf = (classNames: string): string => classNames.split(" ")[0];
+const firstClassOf = (classNames: string): string => {
+  const [firstClass] = classNames.split(" ");
+  if (!firstClass) throw new Error(`Expected at least one class in "${classNames}"`);
+  return firstClass;
+};
 
 describe("HeaderBar", () => {
   it("renders its children inside a banner landmark", () => {

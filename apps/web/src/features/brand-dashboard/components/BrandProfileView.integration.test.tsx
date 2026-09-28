@@ -48,7 +48,7 @@ const mockAuth = (updateUser = vi.fn()) => {
     isAuthenticated: true,
     isAuthResolved: true,
     isBrandOwner: true,
-    isAdmin: false,
+    isStaff: false,
     isCreator: false,
     isShopper: false,
     hasCrmAccess: false,

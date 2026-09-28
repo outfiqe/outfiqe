@@ -32,4 +32,9 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   [NotificationType.PRODUCT_TAG_REJECTED]: "Your tags declined by brands",
   [NotificationType.PRODUCT_TAG_REVOKED]: "Your live tags removed by brands",
   [NotificationType.ANNOUNCEMENT]: "Broadcast announcements",
+  [NotificationType.CRM_TICKET_UNASSIGNED]: "New CRM tickets with no one assigned",
+  [NotificationType.CRM_MEMBER_JOINED]: "New team members joining",
+  [NotificationType.CRM_INVOICE_DUE]: "Subscription renewals due",
+  [NotificationType.CRM_SUBSCRIPTION_PAST_DUE]: "Overdue subscription payments",
+  [NotificationType.CRM_SUBSCRIPTION_CANCELED]: "Canceled subscriptions",
 };

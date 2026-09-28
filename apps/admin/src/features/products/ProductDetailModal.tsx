@@ -15,6 +15,7 @@ type ProductDetailModalProps = {
   onApprove: () => void;
   onReject: () => void;
   isMutating: boolean;
+  canReview: boolean;
 };
 
 export const ProductDetailModal = ({
@@ -23,6 +24,7 @@ export const ProductDetailModal = ({
   onApprove,
   onReject,
   isMutating,
+  canReview,
 }: ProductDetailModalProps) => {
   const {
     name,
@@ -101,7 +103,7 @@ export const ProductDetailModal = ({
             })}
           </p>
 
-          {status === "PENDING" && (
+          {canReview && status === "PENDING" && (
             <div className="mt-auto flex gap-2 pt-4">
               <Button onClick={onApprove} disabled={isMutating}>
                 Approve

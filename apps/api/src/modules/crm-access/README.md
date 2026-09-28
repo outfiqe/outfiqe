@@ -22,6 +22,8 @@ activities/tasks, support/ticketing, reporting, audit log) lives in the sibling 
   `SELECTABLE_ROLE_PERMISSION_KEYS` (the catalog minus `platform:access` and
   `org:transfer_ownership` — the set a custom role is allowed to grant), and
   `BUILT_IN_ROLE_PERMISSIONS` (the Admin/Member built-in role presets derived from it).
+  `TICKET_ASSIGNMENT_PERMISSION_KEYS`, `MEMBER_MANAGEMENT_PERMISSION_KEYS` and
+  `BILLING_MANAGEMENT_PERMISSION_KEYS` name the tenant permissions the notification rules use.
 - `crm-access.repository.ts` — Prisma queries, every one scoped by `organizationId` where
   applicable. `acceptInvite` wraps the Membership-create + invite-accept pair in a transaction, as
   does `acceptOwnershipTransfer` (moves `Organization.superAdminMembershipId` + marks the request
@@ -208,7 +210,7 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   it has no way to know the admin SPA's `/admin` basepath is mandatory.** The admin app's own
   `vite.config.ts` (`base: "/admin/"`) and `main.tsx` (`basepath: "/admin"`) hard-require every URL
   that reaches it to include `/admin`, on any hostname. A bare `ADMIN_URL` (no path at all, e.g.
-  `https://admin.outfiqe.com`) produces a link that is missing `/admin` entirely
+  `https://outfiqe.com`) produces a link that is missing `/admin` entirely
   (`daraz.outfiqe.com/crm`) rather than doubled — same root cause as the bug above, just without a
   trailing slash to trigger it. `deploy/.env.prod.example` and `deploy/.env.dev.example` previously
   set exactly this bare form; they're fixed to include `/admin` now, but an already-deployed
@@ -261,7 +263,7 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   run more than one business, but never silent.
 - **Tenant organizations must never reach Outfiqe's own commerce-admin sections** (Products,
   Orders, Brand applications, Commissions, Withdrawals, etc.). Once real tenant orgs exist with
-  their own `UserRole.ADMIN` staff (e.g. a Meridian Apparel employee), gating every non-CRM
+  their own `UserRole.TENANT_STAFF` staff (e.g. a Meridian Apparel employee), gating every non-CRM
   `apps/admin` route on a flat `requireRole(UserRole.ADMIN)` — the same check CRM membership
   eligibility uses — would let that staff member see Outfiqe's own data. `requirePlatformAccess`
   fixes this as PBAC, not a hardcoded organization-id check: `Organization.isPlatformOrg` marks
@@ -271,9 +273,11 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   automatically — it's granted only to Outfiqe's own built-in Admin role via a dedicated seed step,
   the same "special, not automatic" treatment `org:transfer_ownership` already gets.
   `requirePlatformAccess` resolves in order: not `UserRole.ADMIN` → `403`; an active `Membership`
-  in the platform org that's either its SUPERADMIN, a co-founder (`isPlatformSuperAdmin`, whatever role they hold), or holds `platform:access` → **allow**; any
+  in the platform org that's either its SUPERADMIN, a co-founder (`isPlatformSuperAdmin`, whatever role they hold), or whose role holds any `platform:*` permission (or the legacy `platform:access` key) → **allow**; any
   other combination (including zero memberships anywhere, or a `Membership` only in a tenant org)
-  → **deny**. `crm-access.service.ts`'s `resolveHasPlatformAccess` holds this resolution once,
+  → **deny**. Passing this gate only means "platform staff" — every platform route then checks
+  its own permission (see `platform-access/README.md`). `platformAccessService.resolveAccess`
+  holds this resolution once, and `crm-access.service.ts`'s `resolveHasPlatformAccess` delegates to it,
   reused by both the middleware and `auth.service.ts`'s `getCurrentUser` (which exposes it to
   `apps/admin` as `hasPlatformAccess` on `/api/auth/me`, so `AdminSidebar` can hide non-CRM
   navigation for tenant-only staff).
@@ -303,7 +307,7 @@ falls back to the single seeded org) → `requireAuth` (existing JWT session) �
   `PLATFORM_PERMISSION_CATALOG` key regardless of their assigned role. Without this, a co-founder
   freshly bootstrapped onto the now-zero-access "Member" role (see above) would have no real
   platform access despite being flagged a co-founder.
-- **Inviting an existing `UserRole.ADMIN` account** takes the logged-in accept path: `acceptInvite`
+- **Inviting an existing staff account (`UserRole.ADMIN` or `UserRole.TENANT_STAFF`)** takes the logged-in accept path: `acceptInvite`
   checks the accepting account's email matches the invite's email, so a valid token can't be
   redeemed by a different logged-in staff member than the one it was addressed to. An email that
   already belongs to a **non-staff** account (a storefront shopper/creator) is rejected outright
@@ -460,3 +464,11 @@ transfers to Membership B`. Rather than guessing, the person initiating the tran
   repository.
 
 **Creating an organization returns the same shape as the organization list.** `createOrganization` now returns the linked business name (`linkedBrandName`, or `null`) as well as the stored row. The admin Organizations page validates the create response against the list-row shape, so when the field was missing the check failed after the organization had already been saved and the form showed "Something went wrong" until the page was refreshed.
+
+**Joining and leaving are announced as events.** Accepting an invite, whether as an existing
+account or while registering, publishes `CRM_MEMBER_JOINED` (`crmAccessService.announceMemberJoined`),
+so people who manage members are notified. Deactivating a membership, or removing the previous
+owner after an ownership transfer, publishes `CRM_MEMBERSHIP_ENDED`, which clears that
+organization's notifications from the person's bell. A role change alone publishes nothing. The
+notifications module listens for these; this module never imports it, which keeps the dependency
+one-way.

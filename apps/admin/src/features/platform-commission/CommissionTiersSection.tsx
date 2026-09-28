@@ -4,7 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useRef, useState } from "react";
 
 import { SkeletonButton } from "@/components/SkeletonControls";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { type CreateTierInput, platformCommissionApi } from "./api";
 import { type TierRowErrors, type TierRowState, validateLadder } from "./ladder.schema";
@@ -135,6 +137,8 @@ const TierRowFields = ({
 };
 
 export const CommissionTiersSection = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageCommissions = canUse(PLATFORM_MANAGE_PERMISSION.COMMISSIONS);
   const nextTierRowKey = useRef(0);
 
   const { data: rules, isLoading } = useQuery({
@@ -209,35 +213,37 @@ export const CommissionTiersSection = () => {
       )}
 
       <form onSubmit={handleSubmit} noValidate className="mt-4 space-y-3">
-        {isLoading &&
-          Array.from({ length: TIER_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
-            <TierRowSkeleton key={rowIndex} />
-          ))}
+        <fieldset disabled={!canManageCommissions} className="contents">
+          {isLoading &&
+            Array.from({ length: TIER_ROW_SKELETON_COUNT }, (_unused, rowIndex) => (
+              <TierRowSkeleton key={rowIndex} />
+            ))}
 
-        {!isLoading &&
-          activeTierRows.map((tierRow) => (
-            <TierRowFields
-              key={tierRow.key}
-              tierRow={tierRow}
-              errors={rowErrorsByKey[tierRow.key] ?? {}}
-              onChange={(updatedTierRow) => updateTierRow(tierRow.key, updatedTierRow)}
-              onRemove={() => removeTierRow(tierRow.key)}
-            />
-          ))}
+          {!isLoading &&
+            activeTierRows.map((tierRow) => (
+              <TierRowFields
+                key={tierRow.key}
+                tierRow={tierRow}
+                errors={rowErrorsByKey[tierRow.key] ?? {}}
+                onChange={(updatedTierRow) => updateTierRow(tierRow.key, updatedTierRow)}
+                onRemove={() => removeTierRow(tierRow.key)}
+              />
+            ))}
 
-        {!isLoading && (
-          <div className="flex flex-wrap items-center gap-3">
-            <Button type="button" variant="outline" size="sm" onClick={addTierRow}>
-              Add band
-            </Button>
-            <Button type="submit" isLoading={createRule.isPending}>
-              Save as new version
-            </Button>
-          </div>
-        )}
+          {canManageCommissions && !isLoading && (
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="button" variant="outline" size="sm" onClick={addTierRow}>
+                Add band
+              </Button>
+              <Button type="submit" isLoading={createRule.isPending}>
+                Save as new version
+              </Button>
+            </div>
+          )}
 
-        {ladderError && <FormBanner>{ladderError}</FormBanner>}
-        {createRule.isError && <FormBanner>{getErrorMessage(createRule.error)}</FormBanner>}
+          {ladderError && <FormBanner>{ladderError}</FormBanner>}
+          {createRule.isError && <FormBanner>{getErrorMessage(createRule.error)}</FormBanner>}
+        </fieldset>
       </form>
     </div>
   );

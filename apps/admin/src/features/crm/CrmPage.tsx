@@ -25,7 +25,7 @@ const MEMBERS_INVITE_PERMISSION_KEY = "members:invite";
 const REPORTS_READ_PERMISSION_KEY = "reports:read";
 const FORBIDDEN_ERROR_CODE = "FORBIDDEN";
 const NO_ORGANIZATION_ACCESS_MESSAGE =
-  "You don't have CRM access on this organization. If you were invited to a different organization, make sure you're on that organization's own subdomain.";
+  "You aren't a member of the CRM at this address, or your role doesn't include the CRM. If a company invited you to its CRM, open the link from your invite email, which uses that company's own address.";
 
 const isNoOrganizationAccessError = (error: unknown): boolean =>
   error instanceof ApiClientError && error.code === FORBIDDEN_ERROR_CODE;

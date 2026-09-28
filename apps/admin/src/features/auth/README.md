@@ -18,7 +18,11 @@ exposes, and clears the resulting session.
   `"impersonation-code-invalid"`) — see rationale below.
 - `api.ts` — `authApi`: refresh, me, logout, profile/password updates, the admin- and
   CRM-invite registration calls, and `redeemImpersonationCode`.
-- `schemas.ts` — Zod schemas / types for the admin user, invites, and profile/password inputs.
+- `schemas.ts` — Zod schemas / types for the admin user (including `platformPermissionKeys` and
+  `crmHomeSubdomain` from the session), invites, and profile/password inputs.
+- `usePlatformPermissions.ts` — `canUse(...keys)` for hiding buttons and forms the viewer's role
+  can't use, plus `viewerUserId`. Co-founders pass every check. Pages call it with a key from
+  `lib/platformManagePermissions.ts`.
 - `RegisterInvitePage.tsx` — the one auth screen the admin app does own: completing an
   admin/CRM invite (`/register?token=…`).
 
@@ -36,6 +40,19 @@ token on `@/lib/apiClient`, `authApi.me()` loads the user → `useAuth()` state 
 `<web-origin>/login`. `@/lib/apiClient`'s 401 handler also flips the context to `signed-out`.
 
 ## Non-obvious rationale
+
+- **The admin app follows the server's permissions, it never decides them.** After sign-in,
+  `components/AdminHomeRedirect.tsx` sends platform staff to the platform overview if they can
+  read cross-tenant metrics, otherwise to their first allowed section; tenant staff on the bare
+  platform address are sent to their own tenant's `/admin/crm` (the session cookie is set on the
+  base domain, so they stay signed in). `components/PlatformSectionGuard.tsx` shows
+  `NoSectionAccess` for any platform page the role can't open, using the same visibility rule as
+  the menu (`components/adminLanding.ts`), and `adminLanding.test.ts` fails if a platform page is
+  added without a menu section to guard it. The CRM menu hides every item when the organization
+  can't be identified, instead of showing them all. Hiding is for a clean experience; the API
+  refuses the action regardless. Tests get every permission by default from
+  `testing/platformPermissionsMock.ts`, and `grantOnlyPlatformPermissions` restricts it for a
+  view-only case.
 
 - **Why `signed-out` has a `reason`:** `ProtectedRoute` sends a signed-out admin to the web
   `/login`. When the session ended on its own (401, failed refresh, non-admin role) it appends

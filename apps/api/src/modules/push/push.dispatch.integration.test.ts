@@ -64,6 +64,7 @@ const aNotificationFor = (
   entityId: randomUUID(),
   targetSurface: null,
   targetPath: null,
+  organizationId: null,
   metadata: {},
   groupKey: null,
   actorCount: 1,

@@ -4,7 +4,9 @@ import { useState } from "react";
 
 import { CardRowSkeleton } from "@/components/CardRowSkeleton";
 import { TextPromptModal } from "@/components/TextPromptModal";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { oneOfFilter, useSearchFilter } from "@/lib/useSearchFilter";
 
 import { commissionsApi } from "./api";
@@ -29,6 +31,8 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 export const CommissionsListSection = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageCommissions = canUse(PLATFORM_MANAGE_PERMISSION.COMMISSIONS);
   const [tab, setTab] = useSearchFilter("status", COMMISSIONS_STATUS_FILTER);
   const [voidTargetId, setVoidTargetId] = useState<string | null>(null);
 
@@ -131,38 +135,40 @@ export const CommissionsListSection = () => {
                 </p>
               </div>
 
-              <div className="flex gap-2">
-                {status === "PENDING" && (
-                  <Button
-                    size="sm"
-                    onClick={() => approve.mutate(id)}
-                    disabled={isActing}
-                    isLoading={approve.isPending && approve.variables === id}
-                  >
-                    Approve
-                  </Button>
-                )}
-                {status === "AVAILABLE" && (
-                  <Button
-                    size="sm"
-                    onClick={() => markPaid.mutate(id)}
-                    disabled={isActing}
-                    isLoading={markPaid.isPending && markPaid.variables === id}
-                  >
-                    Mark paid
-                  </Button>
-                )}
-                {(status === "PENDING" || status === "APPROVED" || status === "AVAILABLE") && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setVoidTargetId(id)}
-                    disabled={isActing}
-                  >
-                    Void
-                  </Button>
-                )}
-              </div>
+              {canManageCommissions && (
+                <div className="flex gap-2">
+                  {status === "PENDING" && (
+                    <Button
+                      size="sm"
+                      onClick={() => approve.mutate(id)}
+                      disabled={isActing}
+                      isLoading={approve.isPending && approve.variables === id}
+                    >
+                      Approve
+                    </Button>
+                  )}
+                  {status === "AVAILABLE" && (
+                    <Button
+                      size="sm"
+                      onClick={() => markPaid.mutate(id)}
+                      disabled={isActing}
+                      isLoading={markPaid.isPending && markPaid.variables === id}
+                    >
+                      Mark paid
+                    </Button>
+                  )}
+                  {(status === "PENDING" || status === "APPROVED" || status === "AVAILABLE") && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setVoidTargetId(id)}
+                      disabled={isActing}
+                    >
+                      Void
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}

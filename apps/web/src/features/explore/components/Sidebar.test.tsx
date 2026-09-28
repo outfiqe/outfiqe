@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { ADMIN_VIEWER_HINT_KEY } from "@/features/auth/utils/adminViewerHint";
+import { STAFF_VIEWER_HINT_KEY } from "@/features/auth/utils/staffViewerHint";
 
 import { useExploreAuthGate } from "../hooks/useExploreAuthGate";
 import { useFollowCreator } from "../hooks/useFollowCreator";
@@ -114,7 +114,7 @@ const buildPendingMutationResult = () => ({
 });
 
 beforeEach(() => {
-  vi.mocked(useAuth).mockReturnValue({ isAdmin: false } as ReturnType<typeof useAuth>);
+  vi.mocked(useAuth).mockReturnValue({ isStaff: false } as ReturnType<typeof useAuth>);
   vi.mocked(useSuggestedCreators).mockReturnValue(
     buildQuerySuccessResult([]) as ReturnType<typeof useSuggestedCreators>,
   );
@@ -127,7 +127,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  localStorage.removeItem(ADMIN_VIEWER_HINT_KEY);
+  localStorage.removeItem(STAFF_VIEWER_HINT_KEY);
 });
 
 describe("Sidebar", () => {
@@ -187,7 +187,7 @@ describe("Sidebar", () => {
 
   it("hides the entire creators-to-follow widget for a platform admin viewer", () => {
     mockAuthGate(true);
-    vi.mocked(useAuth).mockReturnValue({ isAdmin: true } as ReturnType<typeof useAuth>);
+    vi.mocked(useAuth).mockReturnValue({ isStaff: true } as ReturnType<typeof useAuth>);
     vi.mocked(useSuggestedCreators).mockReturnValue(
       buildQuerySuccessResult([
         {
@@ -208,9 +208,9 @@ describe("Sidebar", () => {
   });
 
   it("hides the widget immediately for a returning admin, before auth has resolved", () => {
-    localStorage.setItem(ADMIN_VIEWER_HINT_KEY, "1");
+    localStorage.setItem(STAFF_VIEWER_HINT_KEY, "1");
     mockAuthGate(false, false);
-    vi.mocked(useAuth).mockReturnValue({ isAdmin: false } as ReturnType<typeof useAuth>);
+    vi.mocked(useAuth).mockReturnValue({ isStaff: false } as ReturnType<typeof useAuth>);
 
     render(<Sidebar activeTag="" onTagClick={vi.fn()} />);
 
@@ -219,7 +219,7 @@ describe("Sidebar", () => {
 
   it("still shows the loading skeleton for a non-admin while auth is resolving", () => {
     mockAuthGate(false, false);
-    vi.mocked(useAuth).mockReturnValue({ isAdmin: false } as ReturnType<typeof useAuth>);
+    vi.mocked(useAuth).mockReturnValue({ isStaff: false } as ReturnType<typeof useAuth>);
 
     render(<Sidebar activeTag="" onTagClick={vi.fn()} />);
 

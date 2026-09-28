@@ -104,7 +104,7 @@ describe("CrmPage", () => {
     expect(screen.getByText("Invite a staff member")).toBeInTheDocument();
   });
 
-  it("tells the viewer to check their subdomain when they have no access to this organization", async () => {
+  it("tells the viewer to use their invite link when they have no access to this organization", async () => {
     mswServer.use(
       http.get(
         `${API_BASE}/crm/organization`,
@@ -122,9 +122,7 @@ describe("CrmPage", () => {
 
     render(<CrmPage />, { wrapper });
 
-    expect(
-      await screen.findByText(/make sure you're on that organization's own subdomain/),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/open the link from your invite email/)).toBeInTheDocument();
   });
 
   it("hides members and invite sections for a role without those permissions", async () => {

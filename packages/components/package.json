@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
     "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {
     "react": "^19.2.8"
@@ -27,6 +28,7 @@
     "jsdom": "^27.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "typescript": "~6.0.2",
     "vitest": "^4.1.10"
   },
   "dependencies": {

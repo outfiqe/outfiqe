@@ -1,7 +1,13 @@
 import { prisma } from "#db/prisma.js";
 import { Prisma } from "#generated/prisma/client.js";
 import type { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
-import { slugifyHandle, withHandleSuffix } from "#lib/handle.utils.js";
+import {
+  HandleCollisionError,
+  runWithHandleCollisionRetry,
+  slugifyHandle,
+  withHandleSuffix,
+} from "#lib/handle.utils.js";
+import { uniqueConstraintTargetIncludes } from "#lib/prisma.utils.js";
 import {
   type ImageAssetForResponsiveImage,
   RESPONSIVE_IMAGE_ASSET_SELECT,
@@ -16,61 +22,82 @@ import type {
 } from "./user.types.js";
 
 const MAX_HANDLE_ATTEMPTS = 5;
+const UNSUFFIXED_HANDLE_ATTEMPT = 0;
+const HANDLE_COLUMN_NAME = "handle";
+
+const findAvailableHandle = async (client: DbClient, base: string): Promise<string> => {
+  for (let attempt = 0; attempt < MAX_HANDLE_ATTEMPTS; attempt++) {
+    const candidate = attempt === UNSUFFIXED_HANDLE_ATTEMPT ? base : withHandleSuffix(base);
+    const holder = await client.user.findUnique({
+      where: { handle: candidate },
+      select: { id: true },
+    });
+    if (!holder) return candidate;
+  }
+
+  throw new HandleCollisionError();
+};
 
 const createWithUniqueHandle = async (
   client: DbClient,
   userData: Omit<Prisma.UserUncheckedCreateInput, "handle">,
   name: string,
 ): Promise<UserRecord> => {
-  const base = slugifyHandle(name);
-
-  for (let attempt = 0; attempt < MAX_HANDLE_ATTEMPTS; attempt++) {
-    const handle = attempt === 0 ? base : withHandleSuffix(base);
-    try {
-      return await client.user.create({ data: { ...userData, handle } });
-    } catch (error) {
-      const isHandleCollision = error instanceof Error && "code" in error && error.code === "P2002";
-      if (!isHandleCollision || attempt === MAX_HANDLE_ATTEMPTS - 1) throw error;
-    }
+  const handle = await findAvailableHandle(client, slugifyHandle(name));
+  try {
+    return await client.user.create({ data: { ...userData, handle } });
+  } catch (error) {
+    if (uniqueConstraintTargetIncludes(error, HANDLE_COLUMN_NAME)) throw new HandleCollisionError();
+    throw error;
   }
-
-  throw new Error("unreachable");
 };
+
+const createRetryingWhenOwningConnection = (
+  callerTransaction: DbClient | undefined,
+  createWithClient: (client: DbClient) => Promise<UserRecord>,
+): Promise<UserRecord> =>
+  callerTransaction
+    ? createWithClient(callerTransaction)
+    : runWithHandleCollisionRetry(() => createWithClient(prisma));
 
 export const userRepository = {
   async create(
     input: CreateUserInput & { passwordHash: string },
-    client: DbClient = prisma,
+    client?: DbClient,
   ): Promise<UserRecord> {
-    return createWithUniqueHandle(
-      client,
-      {
-        email: input.email,
-        name: input.name,
-        phone: input.phone,
-        passwordHash: input.passwordHash,
-        ...(input.role !== undefined ? { role: input.role } : {}),
-        ...(input.emailVerified !== undefined ? { emailVerified: input.emailVerified } : {}),
-      },
-      input.name,
+    return createRetryingWhenOwningConnection(client, (dbClient) =>
+      createWithUniqueHandle(
+        dbClient,
+        {
+          email: input.email,
+          name: input.name,
+          phone: input.phone,
+          passwordHash: input.passwordHash,
+          ...(input.role !== undefined ? { role: input.role } : {}),
+          ...(input.emailVerified !== undefined ? { emailVerified: input.emailVerified } : {}),
+        },
+        input.name,
+      ),
     );
   },
 
   async createOAuthOnlyUser(
     input: { name: string; email: string; avatarUrl: string | null },
-    client: DbClient = prisma,
+    client?: DbClient,
   ): Promise<UserRecord> {
-    return createWithUniqueHandle(
-      client,
-      {
-        email: input.email,
-        name: input.name,
-        phone: null,
-        passwordHash: null,
-        avatarUrl: input.avatarUrl,
-        emailVerified: true,
-      },
-      input.name,
+    return createRetryingWhenOwningConnection(client, (dbClient) =>
+      createWithUniqueHandle(
+        dbClient,
+        {
+          email: input.email,
+          name: input.name,
+          phone: null,
+          passwordHash: null,
+          avatarUrl: input.avatarUrl,
+          emailVerified: true,
+        },
+        input.name,
+      ),
     );
   },
 

@@ -78,6 +78,8 @@ export type PlatformNavAccessFields = {
   hasPlatformAccess: boolean;
   isCoFounder: boolean;
   hiddenPlatformNavKeys: string[];
+  platformPermissionKeys: string[];
+  crmHomeSubdomain: string | null;
 };
 
 export type AuthUser = {

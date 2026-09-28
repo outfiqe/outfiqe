@@ -9,8 +9,9 @@ rest and only ever decrypted through one narrow, audited admin path.
 
 ## Structure
 
-- `bankAccount.routes.ts` — `POST /`, `GET /`, `PATCH /:id/default` (owner-only); `GET /admin`,
-  `PATCH /:id/verify`, `GET /:id/reveal` need `platform:withdraw:manage` (`requirePlatformRole`,
+- `bankAccount.routes.ts` — `POST /`, `GET /`, `PATCH /:id/default` (owner-only); `GET /admin` needs `platform:withdraw:read` or
+  `platform:withdraw:manage` (it only shows masked account numbers), while
+  `PATCH /:id/verify` and `GET /:id/reveal` need `platform:withdraw:manage` (`requirePlatformRole`,
   see `platform-access/README.md` — reused from the withdraw module, since verifying/revealing a
   bank account is part of the same "clear money out to a real bank" workflow, not a separate
   concern). `GET /admin` is the cursor-paginated queue the admin `bank-accounts` feature reads,

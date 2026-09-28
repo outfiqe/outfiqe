@@ -3,6 +3,8 @@ import { getRouteApi, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { useAuth } from "@/features/auth/AuthContext";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import {
   useSupportAgents,
@@ -80,6 +82,9 @@ export const SupportTicketPage = () => {
   const { ticketId } = routeApi.useParams();
   const { state } = useAuth();
   const meId = state.status === "signed-in" ? state.user.id : undefined;
+  const { canUse } = usePlatformPermissions();
+  const canRespond = canUse(PLATFORM_MANAGE_PERMISSION.SUPPORT_RESPOND);
+  const canAssignOthers = canUse(PLATFORM_MANAGE_PERMISSION.SUPPORT_SETTINGS);
 
   const { data: ticket, isLoading, error } = useSupportTicket(ticketId);
   const agents = useSupportAgents();
@@ -138,62 +143,64 @@ export const SupportTicketPage = () => {
             <MessageBubble key={message.id} message={message} />
           ))}
 
-          <div className="rounded-xl border border-border bg-card p-3.5">
-            <div className="mb-2 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setVisibility("PUBLIC")}
-                className={`rounded-full px-3 py-1 text-xs font-medium ${
+          {canRespond && (
+            <div className="rounded-xl border border-border bg-card p-3.5">
+              <div className="mb-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setVisibility("PUBLIC")}
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${
+                    visibility === "PUBLIC"
+                      ? "bg-foreground text-background"
+                      : "border border-border text-muted-foreground"
+                  }`}
+                >
+                  Reply to customer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVisibility("INTERNAL")}
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${
+                    visibility === "INTERNAL"
+                      ? "bg-foreground text-background"
+                      : "border border-border text-muted-foreground"
+                  }`}
+                >
+                  Internal note
+                </button>
+              </div>
+              <textarea
+                rows={4}
+                value={body}
+                onChange={(event) => setBody(event.target.value)}
+                placeholder={
                   visibility === "PUBLIC"
-                    ? "bg-foreground text-background"
-                    : "border border-border text-muted-foreground"
-                }`}
+                    ? "This reply is emailed to the customer…"
+                    : "Only the support team sees this…"
+                }
+                className="w-full resize-none rounded-lg border border-border bg-background p-2.5 text-sm text-foreground outline-none focus-visible:border-foreground"
+              />
+              {visibility === "PUBLIC" && (
+                <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={moveToWaiting}
+                    onChange={(event) => setMoveToWaiting(event.target.checked)}
+                  />
+                  Move to &ldquo;waiting on customer&rdquo; after sending
+                </label>
+              )}
+              <Button
+                size="sm"
+                onClick={submitReply}
+                disabled={!body.trim()}
+                isLoading={reply.isPending}
+                className="mt-2"
               >
-                Reply to customer
-              </button>
-              <button
-                type="button"
-                onClick={() => setVisibility("INTERNAL")}
-                className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  visibility === "INTERNAL"
-                    ? "bg-foreground text-background"
-                    : "border border-border text-muted-foreground"
-                }`}
-              >
-                Internal note
-              </button>
+                {visibility === "PUBLIC" ? "Send reply" : "Add note"}
+              </Button>
             </div>
-            <textarea
-              rows={4}
-              value={body}
-              onChange={(event) => setBody(event.target.value)}
-              placeholder={
-                visibility === "PUBLIC"
-                  ? "This reply is emailed to the customer…"
-                  : "Only the support team sees this…"
-              }
-              className="w-full resize-none rounded-lg border border-border bg-background p-2.5 text-sm text-foreground outline-none focus-visible:border-foreground"
-            />
-            {visibility === "PUBLIC" && (
-              <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={moveToWaiting}
-                  onChange={(event) => setMoveToWaiting(event.target.checked)}
-                />
-                Move to &ldquo;waiting on customer&rdquo; after sending
-              </label>
-            )}
-            <Button
-              size="sm"
-              onClick={submitReply}
-              disabled={!body.trim()}
-              isLoading={reply.isPending}
-              className="mt-2"
-            >
-              {visibility === "PUBLIC" ? "Send reply" : "Add note"}
-            </Button>
-          </div>
+          )}
         </div>
 
         <aside className="space-y-4">
@@ -205,7 +212,7 @@ export const SupportTicketPage = () => {
                   key={next}
                   variant="outline"
                   size="sm"
-                  disabled={changeStatus.isPending}
+                  disabled={!canRespond || changeStatus.isPending}
                   onClick={() =>
                     changeStatus.mutate({ status: next, expectedStatus: ticket.status })
                   }
@@ -223,7 +230,7 @@ export const SupportTicketPage = () => {
             <p className="mb-1.5 text-xs uppercase tracking-wide text-muted-foreground">Assignee</p>
             <Select
               value={ticket.assigneeUserId ?? ""}
-              disabled={assign.isPending}
+              disabled={!canRespond || assign.isPending}
               onChange={(event) =>
                 assign.mutate({
                   assigneeUserId: event.target.value || null,
@@ -236,11 +243,18 @@ export const SupportTicketPage = () => {
               {meId && !agents.data?.some((agent) => agent.userId === meId) && (
                 <option value={meId}>Me</option>
               )}
-              {agents.data?.map((agent) => (
-                <option key={agent.userId} value={agent.userId}>
-                  {agent.userId === meId ? `${agent.name} (me)` : agent.name}
-                </option>
-              ))}
+              {agents.data
+                ?.filter(
+                  (agent) =>
+                    canAssignOthers ||
+                    agent.userId === meId ||
+                    agent.userId === ticket.assigneeUserId,
+                )
+                .map((agent) => (
+                  <option key={agent.userId} value={agent.userId}>
+                    {agent.userId === meId ? `${agent.name} (me)` : agent.name}
+                  </option>
+                ))}
             </Select>
           </div>
 
@@ -248,7 +262,7 @@ export const SupportTicketPage = () => {
             <p className="mb-1.5 text-xs uppercase tracking-wide text-muted-foreground">Priority</p>
             <Select
               value={ticket.priority}
-              disabled={setPriority.isPending}
+              disabled={!canRespond || setPriority.isPending}
               onChange={(event) =>
                 setPriority.mutate({
                   priority: event.target.value as SupportPriorityValue,

@@ -3,6 +3,7 @@
 import type { NotificationsApi } from "@outfiqe/client";
 import { Button, Popover, PopoverContent, PopoverTrigger } from "@outfiqe/design-system";
 import {
+  type NotificationAcceptancePredicate,
   NOTIFICATIONS_UNREAD_COUNT_QUERY_KEY,
   type NotificationSocket,
   useNotificationSocket,
@@ -22,7 +23,10 @@ type NotificationBellProps = {
   socket?: NotificationSocket | null;
   onSelect: (notification: Notification) => void;
   showPushChannel?: boolean;
+  acceptsNotification?: NotificationAcceptancePredicate;
 };
+
+const acceptEveryNotification: NotificationAcceptancePredicate = () => true;
 
 const formatBadgeCount = (count: number): string =>
   count > MAX_DISPLAYED_UNREAD_COUNT ? `${MAX_DISPLAYED_UNREAD_COUNT}+` : `${count}`;
@@ -32,6 +36,7 @@ export const NotificationBell = ({
   socket,
   onSelect,
   showPushChannel,
+  acceptsNotification = acceptEveryNotification,
 }: NotificationBellProps) => {
   const [open, setOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
@@ -41,20 +46,21 @@ export const NotificationBell = ({
     queryFn: () => notificationsApi.unreadCount(),
   });
 
-  useNotificationSocket(socket);
+  useNotificationSocket(socket, acceptsNotification);
 
   useEffect(() => {
     if (!socket) return;
 
     const handleCreated = (notification: Notification): void => {
-      if (!notification.isRead) setAnnouncement(resolveNotificationMessage(notification));
+      if (notification.isRead || !acceptsNotification(notification)) return;
+      setAnnouncement(resolveNotificationMessage(notification));
     };
 
     socket.on("notification:created", handleCreated);
     return () => {
       socket.off("notification:created", handleCreated);
     };
-  }, [socket]);
+  }, [socket, acceptsNotification]);
 
   const unreadCount = unreadCountQuery.data ?? 0;
 

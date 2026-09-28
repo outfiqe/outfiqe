@@ -50,7 +50,7 @@ export const followService = {
     await assertCanEngage(followerId, {
       code: "ADMIN_CANNOT_FOLLOW",
       message:
-        "Platform staff accounts can't follow — this keeps follower counts and the leaderboard based on real audience activity.",
+        "Staff accounts can't follow — this keeps follower counts and the leaderboard based on real audience activity.",
     });
 
     const targetType = toPrismaTargetType(targetTypeParam);

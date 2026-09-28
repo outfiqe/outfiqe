@@ -6,10 +6,9 @@ import { describe, expect, it } from "vitest";
 import { prisma } from "#db/prisma.js";
 import { CreatorStatus } from "#generated/prisma/enums.js";
 import { CONTENT_MODERATE_PERMISSION_KEY } from "#modules/platform-access/platform-access.constants.js";
-import {
-  createAdminSession,
-  createAdminSessionWithPlatformPermissions,
-} from "#test/integration/authHelpers.js";
+import { createRoleLimitedStaffSession } from "#test/integration/authHelpers.js";
+import { createAdminSessionWithPlatformPermissions } from "#test/integration/authHelpers.js";
+import { UNRELATED_PLATFORM_PERMISSION_KEY } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
 
@@ -38,7 +37,7 @@ describe("GET /api/creator-looks/admin", () => {
   });
 
   it("403s a coarse admin without the content-moderate permission", async () => {
-    const { authHeader } = await createAdminSession();
+    const { authHeader } = await createRoleLimitedStaffSession(UNRELATED_PLATFORM_PERMISSION_KEY);
 
     const response = await request(testApp)
       .get("/api/creator-looks/admin")

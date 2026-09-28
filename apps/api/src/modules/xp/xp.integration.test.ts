@@ -7,6 +7,7 @@ import { prisma } from "#db/prisma.js";
 import { CreatorStatus, UserRole } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
 import { grantPlatformPermissions } from "#test/integration/authHelpers.js";
+import { grantLimitedPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { grantPlatformStaffMembership } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 import { uniquePhone } from "#test/integration/uniqueValues.js";
@@ -32,6 +33,12 @@ const authHeaderFor = (userId: string, role: UserRole = UserRole.CUSTOMER) => {
 const createAdmin = async () => {
   const admin = await createUser("Test Admin");
   await grantPlatformStaffMembership(admin.id);
+  return { ...admin, header: authHeaderFor(admin.id, UserRole.ADMIN) };
+};
+
+const createAuditOnlyAdmin = async () => {
+  const admin = await createUser("Audit Only Admin");
+  await grantLimitedPlatformStaffMembership(admin.id);
   return { ...admin, header: authHeaderFor(admin.id, UserRole.ADMIN) };
 };
 
@@ -95,7 +102,7 @@ describe("POST /api/xp/levels (admin)", () => {
   });
 
   it("blocks a platform staffer without platform:gamification:manage", async () => {
-    const admin = await createAdmin();
+    const admin = await createAuditOnlyAdmin();
 
     const response = await request(testApp)
       .post("/api/xp/levels")
@@ -228,7 +235,7 @@ describe("POST /api/xp/adjust (admin)", () => {
   });
 
   it("blocks a platform staffer without platform:xp:manage", async () => {
-    const admin = await createAdmin();
+    const admin = await createAuditOnlyAdmin();
     const target = await createUser("Adjust Target 3");
 
     const response = await request(testApp)

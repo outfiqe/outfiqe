@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { findInaccessiblePlatformSections, isStaffUserRole } from "@outfiqe/utils";
 import { addMilliseconds } from "date-fns/addMilliseconds";
 import { fromUnixTime } from "date-fns/fromUnixTime";
 import { getUnixTime } from "date-fns/getUnixTime";
@@ -11,10 +12,12 @@ import { TokenPurpose, TokenTypeEnum } from "#constants/enums/auth.enum.js";
 import { prisma } from "#db/prisma.js";
 import { passwordResetTemplate, verifyEmailTemplate } from "#email-templates/templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
+import type { Prisma } from "#generated/prisma/client.js";
 import { AccountStatus, BrandRole, UserRole } from "#generated/prisma/enums.js";
 import { parseDurationMs } from "#lib/duration.utils.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { generateToken } from "#lib/generate-token.utils.js";
+import { runWithHandleCollisionRetry } from "#lib/handle.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { hashPassword, needsRehash, verifyPassword } from "#lib/password.utils.js";
 import { isPasswordBreached } from "#lib/password-breach.utils.js";
@@ -23,6 +26,7 @@ import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { adminInviteRepository } from "#modules/admin-invites/adminInvite.repository.js";
 import { crmAccessService } from "#modules/crm-access/crm-access.service.js";
+import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 import { platformNavAccessService } from "#modules/platform-nav-access/platform-nav-access.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 import type { UserRecord } from "#modules/users/user.types.js";
@@ -49,6 +53,7 @@ import type {
   CrmInviteAuthSession,
   CrmInviteInfo,
   IssuedTokens,
+  PlatformNavAccessFields,
   RegisterAdminInput,
   RegisterBrandInput,
   RegisterCrmInviteInput,
@@ -182,19 +187,46 @@ const auditLog = (
   logger[level](message, { ...fields, outcome });
 };
 
+const runRegistrationTransaction = <Result>(
+  createAccount: (transaction: Prisma.TransactionClient) => Promise<Result>,
+): Promise<Result> => runWithHandleCollisionRetry(() => prisma.$transaction(createAccount));
+
+const NO_PLATFORM_SESSION_FIELDS: PlatformNavAccessFields = {
+  hasPlatformAccess: false,
+  isCoFounder: false,
+  hiddenPlatformNavKeys: [],
+  platformPermissionKeys: [],
+  crmHomeSubdomain: null,
+};
+
 const resolvePlatformFields = async (
   userId: string,
-): Promise<{
-  hasPlatformAccess: boolean;
-  isCoFounder: boolean;
-  hiddenPlatformNavKeys: string[];
-}> => {
-  const hasPlatformAccess = await crmAccessService.resolveHasPlatformAccess(userId);
-  if (!hasPlatformAccess) {
-    return { hasPlatformAccess, isCoFounder: false, hiddenPlatformNavKeys: [] };
-  }
+  role: UserRole,
+): Promise<PlatformNavAccessFields> => {
+  if (!isStaffUserRole(role)) return NO_PLATFORM_SESSION_FIELDS;
+
+  const tenantHome = async (): Promise<PlatformNavAccessFields> => ({
+    ...NO_PLATFORM_SESSION_FIELDS,
+    crmHomeSubdomain: await crmAccessService.findHomeTenantSubdomain(userId),
+  });
+  if (role !== UserRole.ADMIN) return tenantHome();
+
+  const platformAccess = await platformAccessService.resolveAccess(userId);
+  if (!platformAccess.hasStaffAccess) return tenantHome();
+
   const { isCoFounder, hiddenNavKeys } = await platformNavAccessService.resolveFor(userId);
-  return { hasPlatformAccess, isCoFounder, hiddenPlatformNavKeys: hiddenNavKeys };
+  const sectionsHiddenByRole = findInaccessiblePlatformSections({
+    isCoFounder,
+    permissionKeys: platformAccess.permissionKeys,
+  });
+
+  return {
+    hasPlatformAccess: true,
+    isCoFounder,
+    hiddenPlatformNavKeys: [...new Set([...hiddenNavKeys, ...sectionsHiddenByRole])],
+    platformPermissionKeys: platformAccess.permissionKeys,
+    crmHomeSubdomain: null,
+  };
 };
 
 const rehashPasswordInBackground = (userId: string, plaintextPassword: string): void => {
@@ -407,7 +439,7 @@ export const authService = {
       ...tokens,
       user: {
         ...toAuthUser(user),
-        ...(await resolvePlatformFields(id)),
+        ...(await resolvePlatformFields(id, user.role)),
         hasCrmAccess: await crmAccessService.resolveHasCrmAccess(id),
       },
     };
@@ -700,7 +732,7 @@ export const authService = {
           avatarUrl: membership.brandAvatarUrl,
           role,
           brandId: membership.brandId,
-          ...(await resolvePlatformFields(id)),
+          ...(await resolvePlatformFields(id, role)),
           hasCrmAccess,
         };
       }
@@ -709,11 +741,11 @@ export const authService = {
     }
 
     const authUser = { ...toAuthUser(user), hasCrmAccess };
-    if (role !== UserRole.ADMIN) return authUser;
+    if (!isStaffUserRole(role)) return authUser;
 
     return {
       ...authUser,
-      ...(await resolvePlatformFields(id)),
+      ...(await resolvePlatformFields(id, role)),
     };
   },
 
@@ -766,7 +798,7 @@ export const authService = {
     }
 
     const passwordHash = await hashPassword(password);
-    const user = await prisma.$transaction(async (tx) => {
+    const user = await runRegistrationTransaction(async (tx) => {
       const createdUser = await userRepository.create(
         {
           name,
@@ -813,7 +845,7 @@ export const authService = {
         avatarUrl: brand.avatarUrl,
         role: user.role,
         brandId,
-        ...(await resolvePlatformFields(user.id)),
+        ...(await resolvePlatformFields(user.id, user.role)),
         hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
       },
     };
@@ -893,7 +925,7 @@ export const authService = {
     }
 
     const passwordHash = await hashPassword(password);
-    const user = await prisma.$transaction(async (tx) => {
+    const user = await runRegistrationTransaction(async (tx) => {
       const createdUser = await userRepository.create(
         {
           name: inviteName,
@@ -933,7 +965,7 @@ export const authService = {
       ...tokens,
       user: {
         ...toAuthUser(user),
-        ...(await resolvePlatformFields(user.id)),
+        ...(await resolvePlatformFields(user.id, user.role)),
         hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
       },
     };
@@ -967,7 +999,7 @@ export const authService = {
     }
 
     const passwordHash = await hashPassword(password);
-    const { user, membership } = await prisma.$transaction(async (tx) => {
+    const { user, membership } = await runRegistrationTransaction(async (tx) => {
       const createdUser = await userRepository.create(
         {
           name,
@@ -975,7 +1007,7 @@ export const authService = {
           phone,
           password,
           passwordHash,
-          role: UserRole.ADMIN,
+          role: UserRole.TENANT_STAFF,
           emailVerified: true,
         },
         tx,
@@ -991,6 +1023,7 @@ export const authService = {
     });
 
     await eventBus.publish(DomainEvents.ADMIN_REGISTERED, { userId: user.id, email: user.email });
+    await crmAccessService.announceMemberJoined(membership);
 
     const tokens = await issueTokens(user);
 
@@ -1002,7 +1035,7 @@ export const authService = {
       ...tokens,
       user: {
         ...toAuthUser(user),
-        ...(await resolvePlatformFields(user.id)),
+        ...(await resolvePlatformFields(user.id, user.role)),
         hasCrmAccess: await crmAccessService.resolveHasCrmAccess(user.id),
       },
       crmMembership: { id: membership.id, organizationId: membership.organizationId },

@@ -4,7 +4,7 @@ import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
 import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 
-import { SUPPORT_PERMISSION } from "./support.constants.js";
+import { SUPPORT_PERMISSION, SUPPORT_READ_PERMISSIONS } from "./support.constants.js";
 import { supportController } from "./support.controller.js";
 import { supportCreateRateLimit, supportReplyRateLimit } from "./support.rate-limit.js";
 import {
@@ -60,14 +60,14 @@ supportRoutes.post(
 
 supportRoutes.get(
   "/admin/tickets",
-  ...requirePlatformRole(SUPPORT_PERMISSION.READ),
+  ...requirePlatformRole(...SUPPORT_READ_PERMISSIONS),
   validate({ query: adminListQuerySchema }),
   supportController.adminList,
 );
 
 supportRoutes.get(
   "/admin/tickets/:id",
-  ...requirePlatformRole(SUPPORT_PERMISSION.READ),
+  ...requirePlatformRole(...SUPPORT_READ_PERMISSIONS),
   validate({ params: ticketIdParamsSchema }),
   supportController.adminGet,
 );
@@ -108,6 +108,6 @@ supportRoutes.get(
 
 supportRoutes.get(
   "/admin/agents",
-  ...requirePlatformRole(SUPPORT_PERMISSION.READ),
+  ...requirePlatformRole(...SUPPORT_READ_PERMISSIONS),
   supportController.adminAgents,
 );

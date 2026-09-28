@@ -17,6 +17,8 @@ import {
 import { sendEmail } from "#lib/email.utils.js";
 import { generateOpaqueToken, hashToken } from "#lib/opaque-token.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
+import { SUPPORT_AGENT_PERMISSION_KEYS } from "#modules/platform-access/platform-access.constants.js";
+import { platformAccessService } from "#modules/platform-access/platform-access.service.js";
 import { userRepository } from "#modules/users/user.repository.js";
 
 import {
@@ -364,7 +366,13 @@ export const supportService = {
 
     if (assigneeUserId) {
       const assignee = await userRepository.findById(assigneeUserId);
-      if (!assignee || assignee.role !== UserRole.ADMIN) {
+      const assigneeAccess = assignee
+        ? await platformAccessService.resolveAccess(assigneeUserId)
+        : null;
+      const assigneeIsSupportAgent =
+        assignee?.role === UserRole.ADMIN &&
+        SUPPORT_AGENT_PERMISSION_KEYS.some((key) => assigneeAccess?.permissionKeys.includes(key));
+      if (!assigneeIsSupportAgent) {
         throw new AppError(
           "SUPPORT_ASSIGNEE_INVALID",
           "That account can't be assigned support requests.",
@@ -433,7 +441,10 @@ export const supportService = {
     return supportRepository.inboxStats();
   },
 
-  listAgents(): Promise<{ userId: string; name: string }[]> {
-    return supportRepository.listAgents();
+  async listAgents(): Promise<{ userId: string; name: string }[]> {
+    const agentUserIds = await platformAccessService.findUserIdsHoldingAnyPermission(
+      SUPPORT_AGENT_PERMISSION_KEYS,
+    );
+    return supportRepository.listAgents(agentUserIds);
   },
 };

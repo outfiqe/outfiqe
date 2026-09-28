@@ -12,13 +12,13 @@ import { AddressFormModal } from "./AddressFormModal";
 const SKELETON_ROW_COUNT = 2;
 
 export const AddressList = () => {
-  const { isAuthResolved, isBrandOwner, isAdmin } = useAuth();
+  const { isAuthResolved, isBrandOwner, isStaff } = useAuth();
   const { data: addresses, isPending, isError } = useAddresses();
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   if (!isAuthResolved) return null;
 
-  if (isBrandOwner || isAdmin) return <NotAShopperNotice />;
+  if (isBrandOwner || isStaff) return <NotAShopperNotice />;
 
   return (
     <div className="rounded-2xl border border-border p-5">

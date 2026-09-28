@@ -28,7 +28,10 @@ CRM is gated here; only the advanced feature set is.
   `requirePermission("billing:read" | "billing:manage")` from `crm-access`.
 - `crm-billing.schemas.ts` — Zod request validation.
 - `crm-billing.jobs.ts` — `runCrmSubscriptionRenewalSweep` and `runCrmBillingReconciliationSweep`;
-  their `{ name, run, intervalMs }` entries are composed into `src/jobs/scheduled-jobs.ts`.
+  their `{ name, run, intervalMs }` entries are composed into `src/jobs/scheduled-jobs.ts`. The
+  renewal sweep publishes `CRM_INVOICE_OPENED` for each renewal invoice and
+  `CRM_SUBSCRIPTION_LAPSED` when a subscription goes past due or is canceled, so billing
+  managers also get a bell notification.
 - `crm-billing.middleware.ts` — `requireAdvancedCrmFeatures`, a `402 ADVANCED_FEATURES_LOCKED`
   gate the advanced CRM modules (`crm-relationships`, `crm-pipeline`, `crm-activities`,
   `crm-tickets`, `crm-reporting`) stack after `resolveTenant` to block advanced features on a
@@ -53,6 +56,10 @@ after a grace window, `CANCELED` — at which point advanced CRM features are ga
 
 ## Non-obvious rationale
 
+- **The renewal email and the bell reach the same people.** Both use
+  `crmAccessRepository.findActiveMemberUserIdsHoldingAnyPermission` with
+  `billing:manage`, which always includes the owner. Before, the email had its own copy of that
+  rule.
 - **In-house subscription state, because neither gateway has a recurring-billing object.** eSewa
   and Khalti are one-time-payment gateways — there's no provider-side subscription to mirror. The
   `Subscription` row (`status`, `currentPeriodEnd`, `cancelAtPeriodEnd`) is the source of truth;

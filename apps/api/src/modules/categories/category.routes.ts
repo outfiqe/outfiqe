@@ -2,10 +2,9 @@
 import { Router } from "express";
 
 import { cache, refreshCacheOnWrite } from "#middlewares/cache.js";
-import { requireAuth } from "#middlewares/require-auth.js";
 import { revalidateWebCacheOnWrite } from "#middlewares/revalidate-web-cache.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 import { CACHE_TTL } from "#redis/redis.keys.js";
 
 import { categoryController } from "./category.controller.js";
@@ -16,8 +15,6 @@ import {
   updateCategorySchema,
 } from "./category.schemas.js";
 import { categoryService } from "./category.service.js";
-
-const requireAdmin = [requireAuth, requirePlatformAccess];
 
 const CACHE_NAMESPACE = "categories";
 
@@ -37,13 +34,13 @@ const revalidateCategoriesWebCache = revalidateWebCacheOnWrite(WEB_REVALIDATE_TA
 
 export const categoryRoutes = Router();
 
-categoryRoutes.get("/admin", ...requireAdmin, categoryController.listAll);
+categoryRoutes.get("/admin", ...platformGuards.catalogRead, categoryController.listAll);
 
 categoryRoutes.get("/", categoriesPublicCache, categoryController.listPublic);
 
 categoryRoutes.post(
   "/",
-  ...requireAdmin,
+  ...platformGuards.catalogManage,
   validate({ body: createCategorySchema }),
   refreshCategoriesPublicCache,
   revalidateCategoriesWebCache,
@@ -51,7 +48,7 @@ categoryRoutes.post(
 );
 categoryRoutes.post(
   "/reorder",
-  ...requireAdmin,
+  ...platformGuards.catalogManage,
   validate({ body: reorderCategoriesSchema }),
   refreshCategoriesPublicCache,
   revalidateCategoriesWebCache,
@@ -59,7 +56,7 @@ categoryRoutes.post(
 );
 categoryRoutes.patch(
   "/:id",
-  ...requireAdmin,
+  ...platformGuards.catalogManage,
   validate({ params: categoryIdParamSchema, body: updateCategorySchema }),
   refreshCategoriesPublicCache,
   revalidateCategoriesWebCache,

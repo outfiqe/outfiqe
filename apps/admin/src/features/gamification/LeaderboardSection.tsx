@@ -3,6 +3,9 @@ import { useApiMutation } from "@outfiqe/hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
+
 import { gamificationApi } from "./api";
 import { LEADERBOARD_CATEGORY_LABEL } from "./badgeOptions.constants";
 import { CategoryToggleRowSkeleton } from "./skeletons";
@@ -12,6 +15,8 @@ const LEADERBOARD_CATEGORIES_QUERY_KEY = ["admin-creator-leaderboard-categories"
 const CATEGORY_ROW_PLACEHOLDER_COUNT = 5;
 
 export const LeaderboardSection = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageGamification = canUse(PLATFORM_MANAGE_PERMISSION.GAMIFICATION);
   const { data: categories, isLoading } = useQuery({
     queryKey: LEADERBOARD_CATEGORIES_QUERY_KEY,
     queryFn: gamificationApi.listCreatorLeaderboardCategories,
@@ -55,7 +60,7 @@ export const LeaderboardSection = () => {
             </span>
             <Checkbox
               checked={enabled}
-              disabled={toggle.isPending}
+              disabled={!canManageGamification || toggle.isPending}
               onChange={(e) => toggle.mutate({ category, enabled: e.target.checked })}
             />
           </label>

@@ -3,7 +3,7 @@ import { Router } from "express";
 import { rateLimit } from "#middlewares/rate-limit.js";
 import { getAuthPrincipal, requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 
 import { tastePreferenceController } from "./tastePreference.controller.js";
 import { setTastePreferenceSchema } from "./tastePreference.schemas.js";
@@ -17,8 +17,6 @@ const mutationRateLimit = rateLimit({
   max: MUTATION_RATE_LIMIT_MAX_REQUESTS,
   keyGenerator: (_req, res) => getAuthPrincipal(res)?.userId,
 });
-
-const requireAdmin = [requireAuth, requirePlatformAccess];
 
 export const tastePreferenceRoutes = Router();
 
@@ -39,4 +37,8 @@ tastePreferenceRoutes.delete(
   tastePreferenceController.clearMine,
 );
 
-tastePreferenceRoutes.get("/popularity", ...requireAdmin, tastePreferenceController.listPopularity);
+tastePreferenceRoutes.get(
+  "/popularity",
+  ...platformGuards.catalogRead,
+  tastePreferenceController.listPopularity,
+);

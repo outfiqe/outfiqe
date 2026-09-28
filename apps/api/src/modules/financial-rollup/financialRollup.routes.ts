@@ -1,8 +1,7 @@
 ﻿import { Router } from "express";
 
-import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
 import { financialRollupController } from "./financialRollup.controller.js";
@@ -16,8 +15,7 @@ export const financialRollupRoutes = Router();
 
 financialRollupRoutes.get(
   "/",
-  requireAuth,
-  requirePlatformAccess,
+  ...platformGuards.financeRead,
   requirePlatformNavItem("financial-rollup"),
   validate({ query: financialRollupQuerySchema }),
   financialRollupController.get,
@@ -25,8 +23,7 @@ financialRollupRoutes.get(
 
 financialRollupRoutes.get(
   "/ledger",
-  requireAuth,
-  requirePlatformAccess,
+  ...platformGuards.financeRead,
   requirePlatformNavItem("financial-rollup"),
   validate({ query: financialLedgerQuerySchema }),
   financialRollupController.ledger,
@@ -34,8 +31,7 @@ financialRollupRoutes.get(
 
 financialRollupRoutes.get(
   "/ledger/export",
-  requireAuth,
-  requirePlatformAccess,
+  ...platformGuards.financeRead,
   requirePlatformNavItem("financial-rollup"),
   validate({ query: financialLedgerExportQuerySchema }),
   financialRollupController.exportLedger,

@@ -59,10 +59,10 @@ letting them hit this error.
 stopped the endpoint itself from being called directly — the same "hide it in the UI and also
 restrict it at the API" pattern used everywhere else an admin shouldn't touch a real-user feature.
 On the client, `useSuggestedCreators` also skips the query entirely for an admin (`enabled: ...
-&& !isAdmin`), so this 403 is never actually hit through the app; it only matters for a direct
-API call. Separately, the widget's own `isAdmin` check briefly read `false` while auth was still
+&& !isStaff`), so this 403 is never actually hit through the app; it only matters for a direct
+API call. Separately, the widget's own `isStaff` check briefly read `false` while auth was still
 resolving (before `state.user` loads), showing its loading skeleton for a moment before
-disappearing — `Sidebar.tsx` now also consults `useAdminViewerHint` (the same localStorage
+disappearing — `Sidebar.tsx` now also consults `useStaffViewerHint` (the same localStorage
 "was the last session on this browser an admin" signal `ExploreFeed.tsx` already uses for its
 locked-tab check) so a _returning_ admin skips the flash too; a brand-new admin session on a
 fresh browser still sees one flash, since there is nothing to persist yet.

@@ -6,6 +6,8 @@ import {
   SubscriptionInvoiceStatus,
   SubscriptionStatus,
 } from "#generated/prisma/enums.js";
+import { BILLING_MANAGEMENT_PERMISSION_KEYS } from "#modules/crm-access/crm-access.constants.js";
+import { crmAccessRepository } from "#modules/crm-access/crm-access.repository.js";
 import type { DbClient } from "#types/db.types.js";
 
 import { PAST_DUE_GRACE_DAYS } from "./crm-billing.constants.js";
@@ -260,35 +262,29 @@ export const crmBillingRepository = {
   },
 
   async findOrganizationBillingRecipientEmails(organizationId: string): Promise<string[]> {
-    const organization = await prisma.organization.findUnique({
-      where: { id: organizationId },
-      select: { superAdminMembershipId: true },
-    });
+    const organization = await crmAccessRepository.findOrganizationById(organizationId);
+    if (!organization) return [];
 
-    const memberships = await prisma.membership.findMany({
-      where: {
-        organizationId,
-        status: "ACTIVE",
-        OR: [
-          { id: organization?.superAdminMembershipId ?? "" },
-          { role: { permissions: { some: { permissionKey: "billing:manage" } } } },
-        ],
-      },
-      select: { user: { select: { email: true } } },
+    const billingManagerIds = await crmAccessRepository.findActiveMemberUserIdsHoldingAnyPermission(
+      organization,
+      BILLING_MANAGEMENT_PERMISSION_KEYS,
+    );
+    const billingManagers = await prisma.user.findMany({
+      where: { id: { in: billingManagerIds } },
+      select: { email: true },
     });
-
-    return [...new Set(memberships.map((membership) => membership.user.email))];
+    return billingManagers.map(({ email }) => email);
   },
 
-  async cancelLapsedPastDueSubscriptions(): Promise<number> {
+  async cancelLapsedPastDueSubscriptions(): Promise<{ id: string; organizationId: string }[]> {
     const graceCutoff = addDays(new Date(), -PAST_DUE_GRACE_DAYS);
-    const result = await prisma.subscription.updateMany({
+    return prisma.subscription.updateManyAndReturn({
       where: {
         status: SubscriptionStatus.PAST_DUE,
         currentPeriodEnd: { lte: graceCutoff },
       },
       data: { status: SubscriptionStatus.CANCELED },
+      select: { id: true, organizationId: true },
     });
-    return result.count;
   },
 };

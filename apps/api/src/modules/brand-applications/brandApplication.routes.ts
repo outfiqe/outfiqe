@@ -1,9 +1,8 @@
 ﻿import { Router } from "express";
 
 import { rateLimit } from "#middlewares/rate-limit.js";
-import { requireAuth } from "#middlewares/require-auth.js";
 import { validate, validated } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 
 import { brandApplicationController } from "./brandApplication.controller.js";
 import type { CreateBrandApplicationBody } from "./brandApplication.schemas.js";
@@ -25,8 +24,6 @@ const brandApplicationRateLimit = rateLimit({
   message: "Too many applications from this number. Please try again tomorrow.",
 });
 
-const requireAdmin = [requireAuth, requirePlatformAccess];
-
 export const brandApplicationRoutes = Router();
 
 brandApplicationRoutes.post(
@@ -38,21 +35,21 @@ brandApplicationRoutes.post(
 
 brandApplicationRoutes.get(
   "/",
-  ...requireAdmin,
+  ...platformGuards.brandsRead,
   validate({ query: listBrandApplicationsQuerySchema }),
   brandApplicationController.list,
 );
 
 brandApplicationRoutes.post(
   "/:id/approve",
-  ...requireAdmin,
+  ...platformGuards.brandsManage,
   validate({ params: brandApplicationIdParamSchema }),
   brandApplicationController.approve,
 );
 
 brandApplicationRoutes.post(
   "/:id/reject",
-  ...requireAdmin,
+  ...platformGuards.brandsManage,
   validate({ params: brandApplicationIdParamSchema, body: rejectBrandApplicationSchema }),
   brandApplicationController.reject,
 );

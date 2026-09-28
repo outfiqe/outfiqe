@@ -1,10 +1,9 @@
 ﻿import { WEB_REVALIDATE_TAGS } from "@outfiqe/utils";
 import { Router } from "express";
 
-import { requireAuth } from "#middlewares/require-auth.js";
 import { revalidateWebCacheOnWrite } from "#middlewares/revalidate-web-cache.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 
 import { collectionController } from "./collection.controller.js";
 import {
@@ -17,16 +16,14 @@ import {
   updateCollectionSchema,
 } from "./collection.schemas.js";
 
-const requireAdmin = [requireAuth, requirePlatformAccess];
-
 const revalidateCollectionsWebCache = revalidateWebCacheOnWrite(WEB_REVALIDATE_TAGS.collections);
 
 export const collectionRoutes = Router();
 
-collectionRoutes.get("/admin", ...requireAdmin, collectionController.listAll);
+collectionRoutes.get("/admin", ...platformGuards.catalogRead, collectionController.listAll);
 collectionRoutes.get(
   "/admin/:id/products",
-  ...requireAdmin,
+  ...platformGuards.catalogRead,
   validate({ params: collectionIdParamSchema }),
   collectionController.listProductsForAdmin,
 );
@@ -49,21 +46,21 @@ collectionRoutes.get(
 
 collectionRoutes.post(
   "/",
-  ...requireAdmin,
+  ...platformGuards.catalogManage,
   validate({ body: createCollectionSchema }),
   revalidateCollectionsWebCache,
   collectionController.create,
 );
 collectionRoutes.patch(
   "/:id",
-  ...requireAdmin,
+  ...platformGuards.catalogManage,
   validate({ params: collectionIdParamSchema, body: updateCollectionSchema }),
   revalidateCollectionsWebCache,
   collectionController.update,
 );
 collectionRoutes.patch(
   "/:id/products",
-  ...requireAdmin,
+  ...platformGuards.catalogManage,
   validate({ params: collectionIdParamSchema, body: setCollectionProductsSchema }),
   revalidateCollectionsWebCache,
   collectionController.setProducts,

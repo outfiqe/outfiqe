@@ -23,8 +23,9 @@ or access.
   `platformAudit.record` for every mutation (role create/update/delete, team member role/status
   change).
 - `platform-roles.routes.ts` — mounted at `/api/platform`. Reads (`GET /permissions`, `GET /roles`,
-  `GET /team`) are `requireAuth` + `requirePlatformAccess` — any platform staff member can see the
-  roster and role catalog. Every write is `requireCoFounder` + `crmWriteRateLimit`.
+  `GET /team`) need `platform:team:manage` (`platformGuards.teamManage`) — the roster and role
+  catalog belong to whoever manages staff, not to every staff member. Every write is
+  `requireCoFounder` + `crmWriteRateLimit`.
 - `platform-roles.schemas.ts` — Zod for the write bodies/params, mirroring `crm-access.schemas.ts`'s
   role schemas.
 - `platform-roles.types.ts` — re-exports `crm-access.types.ts`'s `RoleWithPermissions`/
@@ -48,6 +49,13 @@ platform organization — its existing guards (can't edit your own membership, c
 beyond the actor's own grant) apply unchanged.
 
 ## Non-obvious rationale
+
+- **A role saved here now limits exactly what its members can do.** The ticked permissions are
+  stored as-is; there is no hidden key added behind the scenes. Holding any platform permission
+  makes someone platform staff, and every platform route checks its own permission (see
+  `platform-access/README.md`), so a role with only the support permissions reaches the support
+  pages and is refused everywhere else. The menu and the login landing page follow the same
+  permissions through the session.
 
 - **Co-founder-gated, not permission-gated.** Every write here requires `requireCoFounder`, not the
   delegable `platform:team:manage` permission that gates sending an invite's _email_. A role that

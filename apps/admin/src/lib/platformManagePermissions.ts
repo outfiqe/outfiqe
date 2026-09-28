@@ -1,0 +1,18 @@
+export const PLATFORM_MANAGE_PERMISSION = {
+  ANNOUNCEMENTS: "platform:announcements:manage",
+  BRANDS: "platform:brands:manage",
+  CATALOG: "platform:catalog:manage",
+  COMMISSIONS: "platform:commissions:manage",
+  COUPONS: "platform:coupons:manage",
+  CREATORS: "platform:creators:manage",
+  GAMIFICATION: "platform:gamification:manage",
+  IMPERSONATION_SESSIONS: "platform:impersonate:manage",
+  ORDERS: "platform:orders:manage",
+  ORGANIZATIONS: "platform:organizations:manage",
+  SUPPORT_RESPOND: "platform:support:respond",
+  SUPPORT_SETTINGS: "platform:support:manage",
+  SUSPENSIONS: "platform:suspensions:manage",
+  USERS: "platform:users:manage",
+  WITHDRAWALS: "platform:withdraw:manage",
+  XP_ADJUSTMENTS: "platform:xp:manage",
+} as const;

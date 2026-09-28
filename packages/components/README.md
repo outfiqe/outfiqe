@@ -43,7 +43,12 @@ passed in.
   `SiteNotificationBell` and `apps/admin`'s `AdminNotificationBell` (each app supplies its own
   `NotificationsApi`, socket, and `type -> route` resolver — see those features' own READMEs):
   - `NotificationBell.tsx` — the header icon + unread badge + popover trigger. Owns its own
-    `unreadCount` react-query fetch independent of the panel's queries below.
+    `unreadCount` react-query fetch independent of the panel's queries below. Its optional
+    `acceptsNotification` prop is passed to `useNotificationSocket` and also keeps the screen-reader
+    announcement quiet for notifications this bell doesn't show.
+  - `useNotificationSocket.test.tsx` — tests for `@outfiqe/hooks`' `useNotificationSocket` cache
+    updates. They live here because `packages/hooks` has no test runner of its own, and this
+    package is where the hook is used.
   - `NotificationPanel.tsx` — the open popover's list: infinite-scroll feed, mark-read/mark-all-read.
   - `NotificationRow.tsx` / `NotificationAvatar.tsx` — one notification row and its actor avatar
     (or avatar stack, for a grouped notification).
@@ -51,6 +56,8 @@ passed in.
   - `resolveNotificationMessage.ts` / `notificationTypeLabels.ts` / `formatNotificationTimestamp.ts`
     — pure formatting helpers: the row's display text, its type label, and its relative timestamp
     (`"2m"` / `"3h"` / `"Aug 20"`).
+- `pnpm typecheck` (`tsc --noEmit`) checks the whole package, tests included. The apps only
+  typecheck the files they import, so test files here were never checked before.
 - `testing/setup.tsx` — vitest jsdom setup for this package's own component tests (`jest-dom`
   matchers, RTL `cleanup`, and a `ResizeObserver` stub). Unlike a plain stub, this one keeps a
   registry of the observer callbacks so a test can drive them: `triggerResizeObservers()` fires

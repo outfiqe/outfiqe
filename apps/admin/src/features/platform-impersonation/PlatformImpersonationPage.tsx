@@ -18,8 +18,10 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { TableSkeleton } from "@/components/TableSkeleton";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { buildImpersonationHandoffUrl } from "@/lib/impersonationHandoff";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { platformMetricsApi } from "../platform-metrics/api";
 import { platformImpersonationApi } from "./api";
@@ -41,8 +43,10 @@ const SessionTable = ({
   revokingId,
   onOpen,
   openingId,
+  canRevoke,
 }: {
   sessions: ImpersonationSession[];
+  canRevoke?: (session: ImpersonationSession) => boolean;
   onRevoke?: (sessionId: string) => void;
   revokingId?: string;
   onOpen?: (sessionId: string) => void;
@@ -88,14 +92,16 @@ const SessionTable = ({
                         Open
                       </Button>
                     )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={revokingId === session.id}
-                      onClick={() => onRevoke(session.id)}
-                    >
-                      Revoke
-                    </Button>
+                    {canRevoke?.(session) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={revokingId === session.id}
+                        onClick={() => onRevoke(session.id)}
+                      >
+                        Revoke
+                      </Button>
+                    )}
                   </div>
                 )}
               </td>
@@ -121,6 +127,10 @@ const ACTIVE_SESSION_ACTION_COLUMN = { header: "Actions", label: "Revoke" };
 const ACTIVE_SESSION_SKELETON_ROW_COUNT = 3;
 
 export const PlatformImpersonationPage = () => {
+  const { canUse, viewerUserId } = usePlatformPermissions();
+  const canRevokeAnySession = canUse(PLATFORM_MANAGE_PERMISSION.IMPERSONATION_SESSIONS);
+  const canRevokeSession = (session: ImpersonationSession) =>
+    canRevokeAnySession || session.impersonatorId === viewerUserId;
   const form = useForm<ImpersonationFormValues>({
     resolver: zodResolver(impersonationFormSchema),
     defaultValues: EMPTY_IMPERSONATION_FORM,
@@ -364,6 +374,7 @@ export const PlatformImpersonationPage = () => {
           {activeSessions.data && activeSessions.data.length > 0 && (
             <SessionTable
               sessions={activeSessions.data}
+              canRevoke={canRevokeSession}
               onRevoke={(sessionId) => revokeSession.mutate(sessionId)}
               revokingId={revokeSession.isPending ? revokeSession.variables : undefined}
               onOpen={(sessionId) => openSession.mutate(sessionId)}

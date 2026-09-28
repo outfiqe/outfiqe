@@ -1,8 +1,6 @@
 import { Router } from "express";
 
-import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
 import { requirePlatformRole } from "#modules/platform-access/platform-access.middleware.js";
 import { requirePlatformNavItem } from "#modules/platform-nav-access/platform-nav-access.middleware.js";
 
@@ -16,7 +14,10 @@ import {
   updateCouponStatusSchema,
 } from "./coupon.schemas.js";
 
-const requireAdmin = [requireAuth, requirePlatformAccess, requirePlatformNavItem("coupons")];
+const requireCouponRead = [
+  ...requirePlatformRole("platform:coupons:read", "platform:coupons:manage"),
+  requirePlatformNavItem("coupons"),
+];
 const requireCouponMutationAdmin = [
   ...requirePlatformRole("platform:coupons:manage"),
   requirePlatformNavItem("coupons"),
@@ -32,25 +33,25 @@ couponRoutes.post(
 );
 couponRoutes.get(
   "/",
-  ...requireAdmin,
+  ...requireCouponRead,
   validate({ query: listCouponsQuerySchema }),
   couponController.list,
 );
 couponRoutes.get(
   "/redemptions",
-  ...requireAdmin,
+  ...requireCouponRead,
   validate({ query: redemptionSearchQuerySchema }),
   couponController.searchRedemptions,
 );
 couponRoutes.get(
   "/:id",
-  ...requireAdmin,
+  ...requireCouponRead,
   validate({ params: couponIdParamSchema }),
   couponController.getById,
 );
 couponRoutes.get(
   "/:id/performance",
-  ...requireAdmin,
+  ...requireCouponRead,
   validate({ params: couponIdParamSchema }),
   couponController.getPerformance,
 );

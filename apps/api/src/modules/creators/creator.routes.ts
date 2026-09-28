@@ -4,7 +4,7 @@ import { rateLimitHandleChangesOnly } from "#middlewares/handle-change-rate-limi
 import { optionalAuth } from "#middlewares/optional-auth.js";
 import { requireAuth } from "#middlewares/require-auth.js";
 import { validate } from "#middlewares/validate.js";
-import { requirePlatformAccess } from "#modules/crm-access/crm-access.middleware.js";
+import { platformGuards } from "#modules/platform-access/platform-access.guards.js";
 
 import { creatorController } from "./creator.controller.js";
 import {
@@ -16,8 +16,6 @@ import {
   searchCreatorsQuerySchema,
   updateCreatorProfileSchema,
 } from "./creator.schemas.js";
-
-const requireAdmin = [requireAuth, requirePlatformAccess];
 
 export const creatorRoutes = Router();
 
@@ -54,19 +52,19 @@ creatorRoutes.get(
 );
 creatorRoutes.get(
   "/",
-  ...requireAdmin,
+  ...platformGuards.creatorsRead,
   validate({ query: listCreatorsQuerySchema }),
   creatorController.list,
 );
 creatorRoutes.post(
   "/:userId/approve",
-  ...requireAdmin,
+  ...platformGuards.creatorsManage,
   validate({ params: creatorUserIdParamSchema }),
   creatorController.approve,
 );
 creatorRoutes.post(
   "/:userId/reject",
-  ...requireAdmin,
+  ...platformGuards.creatorsManage,
   validate({ params: creatorUserIdParamSchema }),
   creatorController.reject,
 );

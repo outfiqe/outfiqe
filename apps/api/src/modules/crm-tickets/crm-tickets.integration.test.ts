@@ -266,6 +266,36 @@ describe("CRM tickets", () => {
     publishSpy.mockRestore();
   });
 
+  it("announces a new ticket, saying when no one is assigned yet", async () => {
+    const tenant = await seedTicketsTenant();
+    const publishSpy = vi.spyOn(eventBus, "publish").mockResolvedValue(undefined);
+
+    const created = await request(testApp)
+      .post("/api/crm/tickets")
+      .set("Host", tenant.host)
+      .set("Authorization", tenant.auth)
+      .send({
+        type: "COMPLAINT",
+        title: "Wrong size sent",
+        description: "Ordered M, got L",
+        subjectType: "customer",
+        subjectId: tenant.customer.id,
+      });
+
+    expect(created.status).toBe(201);
+    expect(publishSpy).toHaveBeenCalledWith(
+      "crm.ticket.created",
+      expect.objectContaining({
+        organizationId: tenant.organization.id,
+        ticketId: created.body.data.id,
+        title: "Wrong size sent",
+        assigneeUserId: null,
+        createdByUserId: tenant.staff.id,
+      }),
+    );
+    publishSpy.mockRestore();
+  });
+
   it("rejects a ticket against a subject that isn't in this CRM and isolates tenants", async () => {
     const tenant = await seedTicketsTenant();
     const stranger = await createUser("Outsider", UserRole.CUSTOMER);

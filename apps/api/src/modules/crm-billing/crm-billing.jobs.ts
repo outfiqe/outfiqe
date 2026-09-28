@@ -3,6 +3,8 @@ import { addMonths } from "date-fns/addMonths";
 
 import { env } from "#config/env.config.js";
 import { crmSubscriptionRenewalDueTemplate } from "#email-templates/templates.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
+import { SubscriptionStatus } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import logger from "#lib/winston.utils.js";
 import { buildOrganizationAdminUrl } from "#modules/crm-access/crm-access.utils.js";
@@ -77,7 +79,7 @@ export const runCrmSubscriptionRenewalSweep = async (): Promise<{
     const amount = calculateInvoiceAmount(plan.id, subscription.seats);
 
     try {
-      await crmBillingRepository.createInvoice({
+      const invoice = await crmBillingRepository.createInvoice({
         subscriptionId: subscription.id,
         plan: subscription.plan,
         seats: subscription.seats,
@@ -88,8 +90,20 @@ export const runCrmSubscriptionRenewalSweep = async (): Promise<{
       invoicesOpened += 1;
 
       await notifyBillingContacts(subscription.organization, amount);
+      await eventBus.publish(DomainEvents.CRM_INVOICE_OPENED, {
+        organizationId: subscription.organization.id,
+        invoiceId: invoice.id,
+        amount,
+      });
 
-      if (await crmBillingRepository.markSubscriptionPastDue(subscription.id)) markedPastDue += 1;
+      if (await crmBillingRepository.markSubscriptionPastDue(subscription.id)) {
+        markedPastDue += 1;
+        await eventBus.publish(DomainEvents.CRM_SUBSCRIPTION_LAPSED, {
+          organizationId: subscription.organization.id,
+          subscriptionId: subscription.id,
+          status: SubscriptionStatus.PAST_DUE,
+        });
+      }
     } catch (error) {
       logger.error(
         `CRM renewal failed for subscription ${subscription.id}: ${describeError(error)}`,
@@ -97,9 +111,16 @@ export const runCrmSubscriptionRenewalSweep = async (): Promise<{
     }
   }
 
-  const canceled = await crmBillingRepository.cancelLapsedPastDueSubscriptions();
+  const canceledSubscriptions = await crmBillingRepository.cancelLapsedPastDueSubscriptions();
+  for (const { id, organizationId } of canceledSubscriptions) {
+    await eventBus.publish(DomainEvents.CRM_SUBSCRIPTION_LAPSED, {
+      organizationId,
+      subscriptionId: id,
+      status: SubscriptionStatus.CANCELED,
+    });
+  }
 
-  return { invoicesOpened, markedPastDue, canceled };
+  return { invoicesOpened, markedPastDue, canceled: canceledSubscriptions.length };
 };
 
 export const runCrmBillingReconciliationSweep = async (): Promise<{

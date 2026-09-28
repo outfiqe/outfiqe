@@ -82,10 +82,12 @@ describe("CrmInviteRegisterPage", () => {
       name: "New Hire",
       email: validInvite.email,
       avatarUrl: null,
-      role: "ADMIN",
+      role: "TENANT_STAFF",
       hasPlatformAccess: false,
       isCoFounder: false,
       hiddenPlatformNavKeys: [],
+      platformPermissionKeys: [],
+      crmHomeSubdomain: null,
     };
     mswServer.use(
       http.get(`${API_BASE}/auth/invite/crm`, () =>

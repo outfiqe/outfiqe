@@ -21,7 +21,9 @@ import { useForm, type UseFormReturn } from "react-hook-form";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { SkeletonButton } from "@/components/SkeletonControls";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 
 import { type DeliveryZoneInput, deliveryZonesApi, type UpdateDeliveryZoneInput } from "./api";
 import { CityListInput } from "./CityListInput";
@@ -167,6 +169,8 @@ const ZoneRowSkeleton = () => (
 
 export const DeliveryZonesSection = () => {
   const queryClient = useQueryClient();
+  const { canUse } = usePlatformPermissions();
+  const canManageZones = canUse(PLATFORM_MANAGE_PERMISSION.ORDERS);
   const {
     data: zones,
     isLoading,
@@ -222,18 +226,20 @@ export const DeliveryZonesSection = () => {
         match any zone uses the default zone&apos;s rates.
       </p>
 
-      <Form {...form}>
-        <form
-          onSubmit={submitZone}
-          noValidate
-          className="mt-4 rounded-xl border border-border bg-card p-4"
-        >
-          <ZoneFields form={form} />
-          <Button type="submit" isLoading={create.isPending} className="mt-3">
-            Add zone
-          </Button>
-        </form>
-      </Form>
+      {canManageZones && (
+        <Form {...form}>
+          <form
+            onSubmit={submitZone}
+            noValidate
+            className="mt-4 rounded-xl border border-border bg-card p-4"
+          >
+            <ZoneFields form={form} />
+            <Button type="submit" isLoading={create.isPending} className="mt-3">
+              Add zone
+            </Button>
+          </form>
+        </Form>
+      )}
 
       {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
@@ -279,31 +285,33 @@ export const DeliveryZonesSection = () => {
                   </div>
                 )}
               </div>
-              <div className="flex shrink-0 gap-2">
-                {!zone.isDefault && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDefault.mutate(zone.id)}
-                    disabled={setDefault.isPending}
-                  >
-                    Set as default
+              {canManageZones && (
+                <div className="flex shrink-0 gap-2">
+                  {!zone.isDefault && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDefault.mutate(zone.id)}
+                      disabled={setDefault.isPending}
+                    >
+                      Set as default
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => setEditingZone(zone)}>
+                    Edit
                   </Button>
-                )}
-                <Button variant="outline" size="sm" onClick={() => setEditingZone(zone)}>
-                  Edit
-                </Button>
-                {!zone.isDefault && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDeleteTarget(zone)}
-                    disabled={remove.isPending}
-                  >
-                    Delete
-                  </Button>
-                )}
-              </div>
+                  {!zone.isDefault && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeleteTarget(zone)}
+                      disabled={remove.isPending}
+                    >
+                      Delete
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         ))}

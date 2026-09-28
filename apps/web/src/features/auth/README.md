@@ -35,7 +35,7 @@ client-side session/user context the rest of the app reads.
   their own dashboard via `getDefaultRouteForUser`.
 - `context/AuthContext.tsx` + `context/authReducer.ts` — the client-side auth state (current user,
   auth status) and its reducer, exposed via `useAuth()`. Derives the role booleans consumers gate
-  on: `isBrandOwner` / `isAdmin` / `isCreator` / `isShopper` (`role === CUSTOMER`).
+  on: `isBrandOwner` / `isStaff` (platform staff or tenant staff, from `isStaffUserRole`) / `isCreator` / `isShopper` (`role === CUSTOMER`). `isStaff` means "a staff account, not a shopper", so every consumer that blocks shopping, following or liking, or that sends someone to the admin app, covers both staff types; only checks that truly mean Outfiqe platform staff, like review moderation, compare against `UserRole.ADMIN` directly.
 - `context/authTestWrapper.tsx` — test-only support for hooks that read/write `AuthContext`:
   `createAuthQueryClientWrapper()` (a `renderHook`/`render` wrapper combining `AuthProvider` with
   the shared `createTestQueryClient()` from `apps/web/src/testing/integration/queryClientWrapper.tsx`),

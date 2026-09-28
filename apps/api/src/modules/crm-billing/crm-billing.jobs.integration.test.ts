@@ -4,6 +4,7 @@ import { addDays } from "date-fns/addDays";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { prisma } from "#db/prisma.js";
+import { eventBus } from "#events/event-bus.js";
 import { seedTenantOrganization } from "#test/integration/crmFixtures.js";
 
 import {
@@ -75,6 +76,52 @@ describe("runCrmSubscriptionRenewalSweep", () => {
     });
     expect(invoice.amount).toBe(2700);
     expect(invoice.provider).toBeNull();
+  });
+
+  it("announces the renewal invoice so billing managers are notified", async () => {
+    const { organization, subscription } = await createActiveSubscription(addDays(new Date(), 2));
+    const publishSpy = vi.spyOn(eventBus, "publish").mockResolvedValue(undefined);
+
+    await runCrmSubscriptionRenewalSweep();
+
+    const invoice = await prisma.subscriptionInvoice.findFirstOrThrow({
+      where: { subscriptionId: subscription.id, status: "OPEN" },
+    });
+    expect(publishSpy).toHaveBeenCalledWith("crm.invoice.opened", {
+      organizationId: organization.id,
+      invoiceId: invoice.id,
+      amount: 2700,
+    });
+    publishSpy.mockRestore();
+  });
+
+  it("announces a subscription going past due and then being canceled", async () => {
+    const { organization, subscription } = await createActiveSubscription(addDays(new Date(), -1));
+    const publishSpy = vi.spyOn(eventBus, "publish").mockResolvedValue(undefined);
+
+    await runCrmSubscriptionRenewalSweep();
+    expect(publishSpy).toHaveBeenCalledWith("crm.subscription.lapsed", {
+      organizationId: organization.id,
+      subscriptionId: subscription.id,
+      status: "PAST_DUE",
+    });
+
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: { currentPeriodEnd: addDays(new Date(), -30) },
+    });
+    await prisma.subscriptionInvoice.updateMany({
+      where: { subscriptionId: subscription.id },
+      data: { status: "VOID" },
+    });
+
+    await runCrmSubscriptionRenewalSweep();
+    expect(publishSpy).toHaveBeenCalledWith("crm.subscription.lapsed", {
+      organizationId: organization.id,
+      subscriptionId: subscription.id,
+      status: "CANCELED",
+    });
+    publishSpy.mockRestore();
   });
 
   it("moves a lapsed subscription to PAST_DUE and cancels it past the grace window", async () => {

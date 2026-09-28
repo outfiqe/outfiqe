@@ -32,6 +32,7 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
   entityId: null,
   targetSurface: null,
   targetPath: null,
+  organizationId: null,
   metadata: {},
   groupKey: null,
   actorCount: 1,
@@ -97,7 +98,7 @@ describe("SiteNotificationBell handleSelect", () => {
     vi.mocked(useAuth).mockReturnValue({
       isAuthenticated: true,
       isAuthResolved: true,
-      isAdmin: false,
+      isStaff: false,
       state: { user: { handle: "ada" } },
     } as ReturnType<typeof useAuth>);
     render(<SiteNotificationBell />);

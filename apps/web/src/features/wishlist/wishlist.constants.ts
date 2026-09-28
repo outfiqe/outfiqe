@@ -14,5 +14,5 @@ export const SAVED_TABS: { value: SavedTabValue; label: string }[] = [
   { value: SAVED_TAB.POSTS, label: "Drops" },
 ];
 
-export const ADMIN_CANNOT_SAVE_PRODUCT_MESSAGE =
-  "Platform staff accounts can't stash products — this keeps trending based on real audience activity.";
+export const STAFF_CANNOT_SAVE_PRODUCT_MESSAGE =
+  "Staff accounts can't stash products — this keeps trending based on real audience activity.";

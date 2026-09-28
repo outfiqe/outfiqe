@@ -60,6 +60,7 @@ import {
 
 import { useAuth } from "@/features/auth/AuthContext";
 import { crmApi } from "@/features/crm/api";
+import { canOpenPlatformOverview } from "@/lib/platformPermissions";
 
 import { AdminModuleSearch } from "./AdminModuleSearch";
 import {
@@ -69,6 +70,7 @@ import {
   type PlatformNavGroupKey,
   type PlatformNavItem,
   resolveAccountLabel,
+  shouldRefetchCrmOrganizationOnFocus,
   shouldShowCrmSection,
   shouldShowPlatformSection,
 } from "./AdminSidebar.utils";
@@ -402,14 +404,15 @@ export const AdminSidebar = () => {
   const navigation = useTanStackSidebarNavigation();
   const { collapsed, toggle } = useSidebarCollapse("outfiqe:admin-sidebar-collapsed");
 
-  const { data: crmOrganization, status: crmOrganizationStatus } = useQuery({
+  const { data: crmOrganization, isFetched: hasCrmOrganizationAnswered } = useQuery({
     queryKey: ["crm-organization"],
     queryFn: crmApi.getOrganization,
     retry: false,
     staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: shouldRefetchCrmOrganizationOnFocus,
   });
 
-  if (!isAdminNavReady(state.status !== "loading", crmOrganizationStatus)) {
+  if (!isAdminNavReady(state.status !== "loading", hasCrmOrganizationAnswered)) {
     return (
       <SidebarSkeleton
         ariaLabel="Admin"
@@ -431,7 +434,7 @@ export const AdminSidebar = () => {
     crmRoleName: crmOrganization?.viewerRoleName,
   });
   const platformNavItems: SidebarNavItem[] = [
-    PLATFORM_OVERVIEW_NAV_ITEM,
+    ...(user && canOpenPlatformOverview(user) ? [PLATFORM_OVERVIEW_NAV_ITEM] : []),
     ...groupPlatformNavItems(
       PLATFORM_NAV_ITEMS,
       { isCoFounder, hiddenNavKeys: user?.hiddenPlatformNavKeys ?? [] },

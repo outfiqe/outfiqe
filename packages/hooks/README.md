@@ -41,7 +41,11 @@ fetch/mutate/socket-sync logic.
   depends on instead of the full `socket.io-client` `Socket`), `toNotificationSocket` (the
   `Socket` -> `NotificationSocket` adapter), and `useNotificationSocket` itself: wires a
   connected socket's `notification:created`/`updated`/`read`/`read-all` events into the same
-  react-query cache `useNotifications` reads. `NOTIFICATION_SOCKET_EVENTS`' string literals must
+  react-query cache `useNotifications` reads. An optional `acceptsNotification` predicate drops
+  created/updated events the bell doesn't show. A tenant's admin bell passes one that keeps only
+  that tenant's `organizationId`. A `read-all` payload that carries an `organizationId` marks only
+  that organization's cards read and refetches the unread count, because the cache can't know how
+  many unread notifications outside the loaded pages belonged to it. `NOTIFICATION_SOCKET_EVENTS`' string literals must
   stay in sync with `SOCKET_EVENTS` in the API's `apps/api/src/shared/socket/socket.keys.ts` — they
   aren't shared across the two packages since the API doesn't depend on `@outfiqe/hooks`.
 - `index.ts` — re-exports everything above; both apps only ever import from `@outfiqe/hooks`.

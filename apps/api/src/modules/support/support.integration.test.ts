@@ -12,6 +12,7 @@ import {
   PLATFORM_PERMISSION_CATALOG,
   PLATFORM_PERMISSION_KEYS,
 } from "#modules/platform-access/platform-access.constants.js";
+import { createRoleLimitedStaffSession } from "#test/integration/authHelpers.js";
 import { seedPlatformOrganization } from "#test/integration/crmFixtures.js";
 import { testApp } from "#test/integration/testApp.js";
 
@@ -447,6 +448,22 @@ describe("admin ticket detail, priority, stats and agents", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data.open).toBeGreaterThanOrEqual(1);
+  });
+
+  it("lists only staff who can respond to or manage requests as agents", async () => {
+    const respondingAgent = await createRoleLimitedStaffSession("platform:support:respond");
+    const readOnlyStaff = await createRoleLimitedStaffSession("platform:support:read");
+    const financeStaff = await createRoleLimitedStaffSession("platform:finance:read");
+
+    const response = await request(testApp)
+      .get("/api/support/admin/agents")
+      .set("Authorization", respondingAgent.authHeader);
+
+    expect(response.status).toBe(200);
+    const agentIds = response.body.data.map((agent: { userId: string }) => agent.userId);
+    expect(agentIds).toContain(respondingAgent.userId);
+    expect(agentIds).not.toContain(readOnlyStaff.userId);
+    expect(agentIds).not.toContain(financeStaff.userId);
   });
 
   it("lists support agents", async () => {

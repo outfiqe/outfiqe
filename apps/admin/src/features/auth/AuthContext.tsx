@@ -7,7 +7,7 @@ import { authApi } from "./api";
 import type { AdminUser } from "./schemas";
 
 const canAccessAdminApp = (role: AdminUser["role"]): boolean =>
-  role === "ADMIN" || role === "BRAND_OWNER";
+  role === "ADMIN" || role === "BRAND_OWNER" || role === "TENANT_STAFF";
 
 export type SignedOutReason = "session-ended" | "user-signed-out" | "impersonation-code-invalid";
 

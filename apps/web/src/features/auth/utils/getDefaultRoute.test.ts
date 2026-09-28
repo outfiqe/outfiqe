@@ -8,6 +8,10 @@ describe("getDefaultRouteForUser", () => {
     expect(getDefaultRouteForUser({ role: UserRole.ADMIN })).toBe(ADMIN_URL);
   });
 
+  it("sends tenant staff to the admin app", () => {
+    expect(getDefaultRouteForUser({ role: UserRole.TENANT_STAFF })).toBe(ADMIN_URL);
+  });
+
   it("sends a brand owner to the overview dashboard", () => {
     expect(getDefaultRouteForUser({ role: UserRole.BRAND_OWNER })).toBe("/overview");
   });

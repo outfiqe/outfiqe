@@ -21,7 +21,9 @@ import { useForm } from "react-hook-form";
 import { ImageUpload } from "@/components/ImageUpload";
 import { ImageUploadSkeleton } from "@/components/ImageUploadSkeleton";
 import { SkeletonBadge, SkeletonButton } from "@/components/SkeletonControls";
+import { usePlatformPermissions } from "@/features/auth/usePlatformPermissions";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { PLATFORM_MANAGE_PERMISSION } from "@/lib/platformManagePermissions";
 import { slugify } from "@/lib/slugify";
 
 import { collectionsApi } from "./api";
@@ -58,6 +60,8 @@ const CollectionRowSkeleton = () => (
 );
 
 export const CollectionsPage = () => {
+  const { canUse } = usePlatformPermissions();
+  const canManageCatalog = canUse(PLATFORM_MANAGE_PERMISSION.CATALOG);
   const { data: collections, isLoading } = useQuery({
     queryKey: COLLECTIONS_QUERY_KEY,
     queryFn: collectionsApi.list,
@@ -121,93 +125,95 @@ export const CollectionsPage = () => {
     <div>
       <h1 className="font-display text-2xl font-bold text-foreground">Collections</h1>
 
-      <Form {...form}>
-        <form
-          onSubmit={submitCollection}
-          noValidate
-          className="mt-5 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
-        >
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem className="mt-0 w-56 space-y-1.5">
-                <FormLabel className="text-xs font-normal text-muted-foreground">Name</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Dashain Edit"
-                    {...field}
-                    onChange={(event) => {
-                      field.onChange(event);
-                      if (!slugTouched) {
-                        form.setValue("slug", slugify(event.target.value), {
-                          shouldValidate: form.formState.touchedFields.slug === true,
-                        });
-                      }
+      {canManageCatalog && (
+        <Form {...form}>
+          <form
+            onSubmit={submitCollection}
+            noValidate
+            className="mt-5 flex flex-wrap items-start gap-3 rounded-xl border border-border bg-card p-4"
+          >
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem className="mt-0 w-56 space-y-1.5">
+                  <FormLabel className="text-xs font-normal text-muted-foreground">Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Dashain Edit"
+                      {...field}
+                      onChange={(event) => {
+                        field.onChange(event);
+                        if (!slugTouched) {
+                          form.setValue("slug", slugify(event.target.value), {
+                            shouldValidate: form.formState.touchedFields.slug === true,
+                          });
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem className="mt-0 w-48 space-y-1.5">
+                  <FormLabel className="text-xs font-normal text-muted-foreground">Slug</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="dashain-edit"
+                      {...field}
+                      onChange={(event) => {
+                        field.onChange(slugify(event.target.value));
+                        setSlugTouched(true);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem className="mt-0 w-72 space-y-1.5">
+                  <FormLabel className="text-xs font-normal text-muted-foreground">
+                    Description
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="Optional" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem className="mt-0 space-y-1.5">
+                  <span className="block text-xs text-muted-foreground">Image</span>
+                  <ImageUpload
+                    value={field.value}
+                    onUploaded={({ url, imageAssetId: assetId }) => {
+                      field.onChange(url);
+                      form.setValue("imageAssetId", assetId);
                     }}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="slug"
-            render={({ field }) => (
-              <FormItem className="mt-0 w-48 space-y-1.5">
-                <FormLabel className="text-xs font-normal text-muted-foreground">Slug</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="dashain-edit"
-                    {...field}
-                    onChange={(event) => {
-                      field.onChange(slugify(event.target.value));
-                      setSlugTouched(true);
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem className="mt-0 w-72 space-y-1.5">
-                <FormLabel className="text-xs font-normal text-muted-foreground">
-                  Description
-                </FormLabel>
-                <FormControl>
-                  <Input placeholder="Optional" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="imageUrl"
-            render={({ field }) => (
-              <FormItem className="mt-0 space-y-1.5">
-                <span className="block text-xs text-muted-foreground">Image</span>
-                <ImageUpload
-                  value={field.value}
-                  onUploaded={({ url, imageAssetId: assetId }) => {
-                    field.onChange(url);
-                    form.setValue("imageAssetId", assetId);
-                  }}
-                />
-              </FormItem>
-            )}
-          />
+                </FormItem>
+              )}
+            />
 
-          <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
-            Create collection
-          </Button>
-        </form>
-      </Form>
+            <Button type="submit" isLoading={create.isPending} className="mt-[22px]">
+              Create collection
+            </Button>
+          </form>
+        </Form>
+      )}
 
       {create.isError && <FormBanner className="mt-3">{getErrorMessage(create.error)}</FormBanner>}
 
@@ -229,6 +235,7 @@ export const CollectionsPage = () => {
                   onUploaded={({ url, imageAssetId: assetId }) =>
                     setCollectionImage.mutate({ id, imageUrl: url, imageAssetId: assetId })
                   }
+                  isReadOnly={!canManageCatalog}
                 />
 
                 <div className="min-w-0 flex-1">
@@ -243,22 +250,26 @@ export const CollectionsPage = () => {
                   </p>
                 </div>
 
-                <Button
-                  variant="outline"
-                  onClick={() => setManagingId((currentId) => (currentId === id ? null : id))}
-                >
-                  {managingId === id ? "Close" : "Manage products"}
-                </Button>
-                <Button
-                  variant={status === "PUBLISHED" ? "ghost" : "default"}
-                  onClick={() => toggleStatus.mutate(collection)}
-                  disabled={toggleStatus.isPending}
-                >
-                  {status === "PUBLISHED" ? "Unpublish" : "Publish"}
-                </Button>
+                {canManageCatalog && (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => setManagingId((currentId) => (currentId === id ? null : id))}
+                    >
+                      {managingId === id ? "Close" : "Manage products"}
+                    </Button>
+                    <Button
+                      variant={status === "PUBLISHED" ? "ghost" : "default"}
+                      onClick={() => toggleStatus.mutate(collection)}
+                      disabled={toggleStatus.isPending}
+                    >
+                      {status === "PUBLISHED" ? "Unpublish" : "Publish"}
+                    </Button>
+                  </>
+                )}
               </div>
 
-              {managingId === id && (
+              {canManageCatalog && managingId === id && (
                 <ProductPicker collection={collection} onClose={() => setManagingId(null)} />
               )}
             </div>

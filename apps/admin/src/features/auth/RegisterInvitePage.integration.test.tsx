@@ -81,6 +81,8 @@ describe("RegisterInvitePage", () => {
       hasPlatformAccess: true,
       isCoFounder: false,
       hiddenPlatformNavKeys: [],
+      platformPermissionKeys: [],
+      crmHomeSubdomain: null,
     };
     mswServer.use(
       http.get(`${API_BASE}/auth/invite/admin`, () =>

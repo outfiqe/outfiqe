@@ -86,6 +86,6 @@ class of race.
 **Moderation is admin-delete only — there's no user-facing "report" flow.** No report/flag system
 exists anywhere else in this codebase (product listing moderation is admin approve/reject on the
 listing itself, not a report queue) at the time this module was built, so one wasn't invented for
-reviews either. `productReviewService.remove` allows the review's own author or `UserRole.ADMIN` —
-enforced in the service, not the route, since a route-level `requireRole` can't express "owner OR
-admin."
+reviews either. `productReviewService.remove` allows the review's own author or platform staff holding
+`platform:reviews:moderate` — enforced in the service, not the route, since a route guard can't
+express "owner OR moderator." Any other staff member, including tenant staff, gets `403`.
