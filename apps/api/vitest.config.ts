@@ -123,6 +123,7 @@ export default defineConfig({
         "src/modules/push/**/*.ts",
         "src/modules/image-processing/**/*.ts",
         "src/modules/chat/**/*.ts",
+        "src/shared/constants/http.constants.ts",
         "src/modules/crm-access/**/*.ts",
         "src/modules/crm-billing/**/*.ts",
         "src/modules/crm-contacts/**/*.ts",

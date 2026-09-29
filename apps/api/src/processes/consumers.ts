@@ -2,6 +2,7 @@ import { registerAchievementEventConsumers } from "#modules/achievements/achieve
 import { registerAchievementSocketEventConsumer } from "#modules/achievements/achievement.socket.js";
 import { registerChatSocketEventConsumer } from "#modules/chat/chat.socket.js";
 import {
+  registerConversationMembershipConsumer,
   registerConversationSocketHandlers,
   registerMessageEventConsumer,
   registerPresenceSocketConsumer,
@@ -42,6 +43,7 @@ export const registerRealtimeConsumers = (): void => {
   registerChatSocketEventConsumer();
   registerConversationSocketHandlers();
   registerMessageEventConsumer();
+  registerConversationMembershipConsumer();
   registerPresenceSocketConsumer();
   registerSuspensionSocketEventConsumer();
 };

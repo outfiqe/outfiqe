@@ -1,6 +1,6 @@
 import { subscribeToDomainEvent } from "#events/event-bus.consumer.js";
 import { DomainEvents } from "#events/event-bus.js";
-import { NotificationEntityType, NotificationType } from "#generated/prisma/enums.js";
+import { MessageKind, NotificationEntityType, NotificationType } from "#generated/prisma/enums.js";
 import logger from "#lib/winston.utils.js";
 import { notificationService } from "#modules/notifications/notification.service.js";
 import { describeError } from "#redis/redis.utils.js";
@@ -11,7 +11,12 @@ import type { ConversationSubscriptionPayload } from "#socket/socket.types.js";
 
 import { CHAT_SOCKET_CONSUMER_GROUP } from "./chat.constants.js";
 import { conversationRepository } from "./conversation.repository.js";
-import { messagePreviewFor } from "./message.utils.js";
+import {
+  describeSystemEvent,
+  messagePreviewFor,
+  parseSystemEvent,
+  usersNotifiedBySystemEvent,
+} from "./message.utils.js";
 
 export const registerConversationSocketHandlers = (): void => {
   getIO().on("connection", (socket) => {
@@ -62,7 +67,17 @@ export const registerMessageEventConsumer = (): void => {
         );
       }
 
-      for (const recipientId of payload.recipientIds) {
+      const systemEvent = parseSystemEvent(payload.systemEvent);
+      const isSystemMessage = payload.kind === MessageKind.SYSTEM;
+      const notifiedRecipientIds = isSystemMessage
+        ? usersNotifiedBySystemEvent(systemEvent)
+        : payload.recipientIds;
+      const messagePreview =
+        isSystemMessage && systemEvent
+          ? describeSystemEvent(systemEvent, payload.senderName)
+          : messagePreviewFor(payload.body);
+
+      for (const recipientId of notifiedRecipientIds) {
         try {
           if (await isUserOnline(recipientId)) continue;
 
@@ -72,13 +87,30 @@ export const registerMessageEventConsumer = (): void => {
             type: NotificationType.NEW_MESSAGE,
             entityType: NotificationEntityType.CONVERSATION,
             entityId: payload.conversationId,
-            metadata: { messagePreview: messagePreviewFor(payload.body) },
+            metadata: { messagePreview },
           });
         } catch (error) {
           logger.error(
             `Failed to create offline message notification for ${recipientId}: ${describeError(error)}`,
           );
         }
+      }
+    },
+  });
+};
+
+export const registerConversationMembershipConsumer = (): void => {
+  subscribeToDomainEvent({
+    event: DomainEvents.CONVERSATION_MEMBER_REMOVED,
+    groupName: CHAT_SOCKET_CONSUMER_GROUP,
+    handler: async ({ conversationId, userId }): Promise<void> => {
+      try {
+        getIO().in(userRoom(userId)).socketsLeave(conversationRoom(conversationId));
+        getIO().to(userRoom(userId)).emit(SOCKET_EVENTS.CONVERSATION_REMOVED, { conversationId });
+      } catch (error) {
+        logger.error(
+          `Failed to remove ${userId} from conversation ${conversationId} sockets: ${describeError(error)}`,
+        );
       }
     },
   });

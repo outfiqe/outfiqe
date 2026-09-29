@@ -14,6 +14,7 @@ const fns = vi.hoisted(() => ({
   registerChatSocketEventConsumer: vi.fn(),
   registerConversationSocketHandlers: vi.fn(),
   registerMessageEventConsumer: vi.fn(),
+  registerConversationMembershipConsumer: vi.fn(),
   registerPresenceSocketConsumer: vi.fn(),
   registerXpEventConsumers: vi.fn(),
   registerAchievementEventConsumers: vi.fn(),
@@ -50,6 +51,7 @@ vi.mock("#modules/chat/chat.socket.js", () => ({
 vi.mock("#modules/chat/conversation.socket.js", () => ({
   registerConversationSocketHandlers: fns.registerConversationSocketHandlers,
   registerMessageEventConsumer: fns.registerMessageEventConsumer,
+  registerConversationMembershipConsumer: fns.registerConversationMembershipConsumer,
   registerPresenceSocketConsumer: fns.registerPresenceSocketConsumer,
 }));
 vi.mock("#modules/xp/xp.events.js", () => ({
@@ -78,6 +80,7 @@ const REALTIME_REGISTRATIONS = [
   "registerChatSocketEventConsumer",
   "registerConversationSocketHandlers",
   "registerMessageEventConsumer",
+  "registerConversationMembershipConsumer",
   "registerPresenceSocketConsumer",
 ] as const satisfies ReadonlyArray<keyof typeof fns>;
 

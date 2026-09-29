@@ -46,6 +46,7 @@ export const DomainEvents = {
   CHAT_SETTINGS_UPDATED: "chat.settings.updated",
   CHAT_BLOCK_LIST_UPDATED: "chat.block-list.updated",
   MESSAGE_CREATED: "message.created",
+  CONVERSATION_MEMBER_REMOVED: "conversation.member.removed",
   PRESENCE_CHANGED: "presence.changed",
   CRM_ITEM_ASSIGNED: "crm.item.assigned",
   CRM_TICKET_CREATED: "crm.ticket.created",

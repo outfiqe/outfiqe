@@ -149,6 +149,7 @@ export type ServerToClientEvents = {
   "chat:block-list:updated": (payload: ChatBlockListUpdatedPayload) => void;
   "message:created": (payload: MessageBroadcastPayload) => void;
   "conversation:updated": (payload: MessageBroadcastPayload) => void;
+  "conversation:removed": (payload: ConversationSubscriptionPayload) => void;
   "presence:changed": (payload: PresenceChangedPayload) => void;
   "account:suspended": (payload: AccountSuspendedPayload) => void;
 };

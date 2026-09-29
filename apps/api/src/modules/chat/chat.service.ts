@@ -154,6 +154,13 @@ export const chatService = {
 
   resolveChatAvailability: computeChatAvailability,
 
+  async resolveOwnChatAvailability(userId: string): Promise<ChatAvailability> {
+    const settings = await chatRepository.getSettings(userId);
+    return (settings?.isChatEnabled ?? true)
+      ? { isAvailable: true }
+      : { isAvailable: false, reason: ChatUnavailableReason.YOUR_CHAT_DISABLED };
+  },
+
   async isChatAvailableBetween(userAId: string, userBId: string): Promise<boolean> {
     return (await computeChatAvailability(userAId, userBId)).isAvailable;
   },

@@ -62,17 +62,22 @@ export const conversationRepository = {
           ...(params.q
             ? [
                 {
-                  participants: {
-                    some: {
-                      userId: { not: userId },
-                      user: {
-                        OR: [
-                          { name: { contains: params.q, mode: "insensitive" as const } },
-                          { handle: { contains: params.q, mode: "insensitive" as const } },
-                        ],
+                  OR: [
+                    { name: { contains: params.q, mode: "insensitive" as const } },
+                    {
+                      participants: {
+                        some: {
+                          userId: { not: userId },
+                          user: {
+                            OR: [
+                              { name: { contains: params.q, mode: "insensitive" as const } },
+                              { handle: { contains: params.q, mode: "insensitive" as const } },
+                            ],
+                          },
+                        },
                       },
                     },
-                  },
+                  ],
                 },
               ]
             : []),

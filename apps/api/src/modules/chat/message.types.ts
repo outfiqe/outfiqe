@@ -1,4 +1,7 @@
+import type { MessageKind } from "#generated/prisma/enums.js";
+
 import type { ConversationParticipantSummary } from "./conversation.types.js";
+import type { ChatSystemEvent } from "./message.schemas.js";
 
 export type MessageAttachmentRecord = {
   id: string;
@@ -20,6 +23,8 @@ export type MessageRecord = {
   conversationId: string;
   senderId: string;
   sender: ConversationParticipantSummary;
+  kind: MessageKind;
+  systemEvent: ChatSystemEvent | null;
   body: string | null;
   attachments: MessageAttachmentRecord[];
   createdAt: string;

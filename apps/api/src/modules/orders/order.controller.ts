@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { IDEMPOTENCY_HEADER } from "#constants/http.constants.js";
 import { sendSuccess } from "#lib/api-response.utils.js";
 import { requireAuthPrincipal } from "#middlewares/require-auth.js";
 import { validated } from "#middlewares/validate.js";
@@ -19,7 +20,6 @@ import type {
 } from "./order.schemas.js";
 import { orderService } from "./order.service.js";
 
-const IDEMPOTENCY_HEADER = "Idempotency-Key";
 const CREATED_STATUS = 201;
 const BUYER_CANCEL_DEFAULT_REASON = "Cancelled by buyer";
 

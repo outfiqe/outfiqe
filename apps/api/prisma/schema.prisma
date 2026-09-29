@@ -136,6 +136,7 @@ model User {
   contentReportsMade                       ContentReport[]             @relation("ContentReportReporter")
   contentReportsResolved                   ContentReport[]             @relation("ContentReportResolver")
   appSettingEdits                          AppSetting[]                @relation("AppSettingUpdatedBy")
+  conversationsCreated                     Conversation[]              @relation("ConversationCreatedBy")
   featureFlagEdits                         FeatureFlag[]               @relation("FeatureFlagUpdatedBy")
 
   @@index([isCreator, creatorStatus, followerCount])
@@ -1972,9 +1973,9 @@ model Notification {
   createdAt      DateTime                @default(now()) @map("created_at")
   updatedAt      DateTime                @default(now()) @map("updated_at")
 
+  @@unique([recipientId, dedupeKey])
   @@index([recipientId, updatedAt])
   @@index([recipientId, isRead])
-  @@unique([recipientId, dedupeKey])
   @@index([recipientId, organizationId, updatedAt])
   @@map("notifications")
 }
@@ -2406,6 +2407,9 @@ enum ConversationType {
 model Conversation {
   id                 String                    @id @default(uuid()) @db.Uuid
   type               ConversationType          @default(DIRECT)
+  name               String?
+  createdById        String?                   @map("created_by_id") @db.Uuid
+  createdBy          User?                     @relation("ConversationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   directKey          String?                   @unique @map("direct_key")
   lastMessageAt      DateTime?                 @map("last_message_at")
   lastMessagePreview String?                   @map("last_message_preview")
@@ -2418,27 +2422,40 @@ model Conversation {
   @@map("conversations")
 }
 
+enum ConversationMemberRole {
+  ADMIN
+  MEMBER
+}
+
 model ConversationParticipant {
-  conversationId         String       @map("conversation_id") @db.Uuid
-  userId                 String       @map("user_id") @db.Uuid
-  joinedAt               DateTime     @default(now()) @map("joined_at")
-  lastReadAt             DateTime?    @map("last_read_at")
-  lastReadMessageId      String?      @map("last_read_message_id") @db.Uuid
-  lastDeliveredAt        DateTime?    @map("last_delivered_at")
-  lastDeliveredMessageId String?      @map("last_delivered_message_id") @db.Uuid
-  unreadCount            Int          @default(0) @map("unread_count")
-  conversation           Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user                   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId         String                 @map("conversation_id") @db.Uuid
+  userId                 String                 @map("user_id") @db.Uuid
+  role                   ConversationMemberRole @default(MEMBER)
+  joinedAt               DateTime               @default(now()) @map("joined_at")
+  lastReadAt             DateTime?              @map("last_read_at")
+  lastReadMessageId      String?                @map("last_read_message_id") @db.Uuid
+  lastDeliveredAt        DateTime?              @map("last_delivered_at")
+  lastDeliveredMessageId String?                @map("last_delivered_message_id") @db.Uuid
+  unreadCount            Int                    @default(0) @map("unread_count")
+  conversation           Conversation           @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user                   User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([conversationId, userId])
   @@index([userId, conversationId])
   @@map("conversation_participants")
 }
 
+enum MessageKind {
+  USER
+  SYSTEM
+}
+
 model Message {
   id             String              @id @default(uuid()) @db.Uuid
   conversationId String              @map("conversation_id") @db.Uuid
   senderId       String              @map("sender_id") @db.Uuid
+  kind           MessageKind         @default(USER)
+  systemEvent    Json?               @map("system_event")
   body           String?
   createdAt      DateTime            @default(now()) @map("created_at")
   deletedAt      DateTime?           @map("deleted_at")

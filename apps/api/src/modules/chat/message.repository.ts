@@ -1,8 +1,11 @@
 import { prisma } from "#db/prisma.js";
+import type { Prisma } from "#generated/prisma/client.js";
+import { MessageKind } from "#generated/prisma/enums.js";
 
 import { participantUserSelect } from "./conversation.utils.js";
+import type { ChatSystemEvent } from "./message.schemas.js";
 import type { NewMessageAttachmentInput } from "./message.types.js";
-import { messagePreviewFor } from "./message.utils.js";
+import type { ReaderCursor } from "./message.utils.js";
 
 const messageInclude = {
   sender: { select: participantUserSelect },
@@ -17,6 +20,7 @@ export const messageRepository = {
     senderId: string,
     body: string | null,
     attachments: NewMessageAttachmentInput[],
+    conversationPreview: string,
   ) {
     return prisma.$transaction(async (tx) => {
       const message = await tx.message.create({
@@ -31,7 +35,7 @@ export const messageRepository = {
 
       await tx.conversation.update({
         where: { id: conversationId },
-        data: { lastMessageAt: message.createdAt, lastMessagePreview: messagePreviewFor(body) },
+        data: { lastMessageAt: message.createdAt, lastMessagePreview: conversationPreview },
       });
 
       await tx.conversationParticipant.updateMany({
@@ -40,6 +44,33 @@ export const messageRepository = {
       });
 
       return message;
+    });
+  },
+
+  async createSystemMessage(
+    tx: Prisma.TransactionClient,
+    {
+      conversationId,
+      actorId,
+      systemEvent,
+      preview,
+    }: { conversationId: string; actorId: string; systemEvent: ChatSystemEvent; preview: string },
+  ) {
+    const message = await tx.message.create({
+      data: { conversationId, senderId: actorId, kind: MessageKind.SYSTEM, systemEvent },
+      include: messageInclude,
+    });
+    await tx.conversation.update({
+      where: { id: conversationId },
+      data: { lastMessageAt: message.createdAt, lastMessagePreview: preview },
+    });
+    return message;
+  },
+
+  async listOtherReaderCursors(conversationId: string, callerId: string): Promise<ReaderCursor[]> {
+    return prisma.conversationParticipant.findMany({
+      where: { conversationId, userId: { not: callerId } },
+      select: { lastReadAt: true, lastDeliveredAt: true },
     });
   },
 

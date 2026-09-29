@@ -1,6 +1,7 @@
 import type { PlatformSettingDefinition } from "./platform-settings.types.js";
 
 const OUTFIT_BUILD_GROUP = "Outfit Build";
+const CHAT_GROUP = "Chat";
 
 export const PLATFORM_SETTING_REGISTRY = {
   "outfit.maxItemsPerBoard": {
@@ -58,6 +59,14 @@ export const PLATFORM_SETTING_REGISTRY = {
     defaultValue: 6,
     minimum: 0,
     maximum: 10,
+  },
+  "chat.maxGroupMembers": {
+    label: "People per group chat",
+    description: "The most people one group chat can hold, including whoever started it.",
+    group: CHAT_GROUP,
+    defaultValue: 50,
+    minimum: 3,
+    maximum: 256,
   },
 } as const satisfies Record<string, PlatformSettingDefinition>;
 

@@ -41,6 +41,7 @@ export const SOCKET_EVENTS = {
   CONVERSATION_UNSUBSCRIBE: "conversation:unsubscribe",
   MESSAGE_CREATED: "message:created",
   CONVERSATION_UPDATED: "conversation:updated",
+  CONVERSATION_REMOVED: "conversation:removed",
   PRESENCE_CHANGED: "presence:changed",
   ACCOUNT_SUSPENDED: "account:suspended",
 } as const;
