@@ -11,6 +11,7 @@ export * from "./useConversationSocket";
 export * from "./useConversationThread";
 export * from "./useDebouncedValue";
 export * from "./useDragReorder";
+export * from "./useGroupChat";
 export * from "./useInfiniteCursorPage";
 export * from "./useMarkConversationRead";
 export * from "./useNotificationPreferences";

@@ -2,7 +2,7 @@
 
 import { Button, Input, Skeleton } from "@outfiqe/design-system";
 import { useConversations, useDebouncedValue } from "@outfiqe/hooks";
-import { Search } from "lucide-react";
+import { Search, Users } from "lucide-react";
 import { useState } from "react";
 
 import { AppImage } from "@/shared/components/AppImage";
@@ -10,6 +10,9 @@ import { getAvatarColor, initialsFor } from "@/shared/lib/avatarColor";
 import { cn } from "@/shared/lib/cn";
 import { conversationsApi } from "@/shared/lib/conversationsApi";
 import { formatRelativeTime } from "@/shared/lib/formatRelativeTime";
+
+import { GroupAvatar } from "./GroupAvatar";
+import { NewGroupModal } from "./NewGroupModal";
 
 const SKELETON_ROW_COUNT = 4;
 const MAX_DISPLAYED_ROW_UNREAD_COUNT = 9;
@@ -32,13 +35,19 @@ type ConversationListProps = {
 
 export const ConversationList = ({ onSelect, activeConversationId }: ConversationListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
   const debouncedSearchQuery = useDebouncedValue(searchQuery, SEARCH_DEBOUNCE_MS);
   const conversationsQuery = useConversations(conversationsApi, true, debouncedSearchQuery);
   const conversations = conversationsQuery.data?.pages.flatMap((page) => page.items) ?? [];
   const isSearching = debouncedSearchQuery.trim().length > 0;
 
+  const openCreatedGroup = (conversationId: string): void => {
+    setIsNewGroupOpen(false);
+    onSelect(conversationId);
+  };
+
   const searchInput = (
-    <div className="shrink-0 border-b border-border px-3 py-2">
+    <div className="shrink-0 space-y-2 border-b border-border px-3 py-2">
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -50,6 +59,20 @@ export const ConversationList = ({ onSelect, activeConversationId }: Conversatio
           className="pl-9"
         />
       </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="w-full justify-start"
+        onClick={() => setIsNewGroupOpen(true)}
+      >
+        <Users aria-hidden />
+        New group
+      </Button>
+      <NewGroupModal
+        open={isNewGroupOpen}
+        onClose={() => setIsNewGroupOpen(false)}
+        onCreated={openCreatedGroup}
+      />
     </div>
   );
 
@@ -100,7 +123,7 @@ export const ConversationList = ({ onSelect, activeConversationId }: Conversatio
             <>
               <p className="text-sm font-medium text-foreground">No messages yet</p>
               <p className="text-xs text-muted-foreground">
-                Start a conversation from someone&apos;s profile.
+                Start a conversation from someone&apos;s profile, or start a group above.
               </p>
             </>
           )}
@@ -115,6 +138,7 @@ export const ConversationList = ({ onSelect, activeConversationId }: Conversatio
       <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
         {conversations.map((conversation) => {
           const participant = conversation.otherParticipant;
+          const { group } = conversation;
           return (
             <li key={conversation.id}>
               <button
@@ -125,33 +149,41 @@ export const ConversationList = ({ onSelect, activeConversationId }: Conversatio
                   activeConversationId === conversation.id && "bg-muted",
                 )}
               >
-                <span className="relative shrink-0">
-                  <span
-                    aria-hidden
-                    className="relative flex size-11 items-center justify-center overflow-hidden rounded-full text-sm font-bold text-white"
-                    style={
-                      participant?.avatarUrl
-                        ? undefined
-                        : { backgroundColor: getAvatarColor(participant?.id ?? conversation.id) }
-                    }
-                  >
-                    {participant?.avatarUrl ? (
-                      <AppImage src={participant.avatarUrl} alt="" fill sizes="44px" />
-                    ) : (
-                      initialsFor(participant?.name ?? "?")
-                    )}
-                  </span>
-                  {participant?.isOnline && (
+                {group ? (
+                  <GroupAvatar
+                    members={group.members}
+                    fallbackKey={conversation.id}
+                    sizeClassName="size-11"
+                  />
+                ) : (
+                  <span className="relative shrink-0">
                     <span
                       aria-hidden
-                      className="absolute bottom-0 right-0 size-3 rounded-full border-2 border-card bg-emerald-500"
-                    />
-                  )}
-                </span>
+                      className="relative flex size-11 items-center justify-center overflow-hidden rounded-full text-sm font-bold text-white"
+                      style={
+                        participant?.avatarUrl
+                          ? undefined
+                          : { backgroundColor: getAvatarColor(participant?.id ?? conversation.id) }
+                      }
+                    >
+                      {participant?.avatarUrl ? (
+                        <AppImage src={participant.avatarUrl} alt="" fill sizes="44px" />
+                      ) : (
+                        initialsFor(participant?.name ?? "?")
+                      )}
+                    </span>
+                    {participant?.isOnline && (
+                      <span
+                        aria-hidden
+                        className="absolute bottom-0 right-0 size-3 rounded-full border-2 border-card bg-emerald-500"
+                      />
+                    )}
+                  </span>
+                )}
                 <span className="min-w-0 flex-1 leading-tight">
                   <span className="flex items-center justify-between gap-2">
                     <span className="truncate text-[13.5px] font-semibold text-foreground">
-                      {participant?.name ?? "Unknown"}
+                      {group?.name ?? participant?.name ?? "Unknown"}
                     </span>
                     {conversation.lastMessageAt && (
                       <span className="shrink-0 text-[11px] text-muted-foreground">

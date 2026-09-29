@@ -48,6 +48,12 @@ fetch/mutate/socket-sync logic.
   many unread notifications outside the loaded pages belonged to it. `NOTIFICATION_SOCKET_EVENTS`' string literals must
   stay in sync with `SOCKET_EVENTS` in the API's `apps/api/src/shared/socket/socket.keys.ts` — they
   aren't shared across the two packages since the API doesn't depend on `@outfiqe/hooks`.
+- Chat hooks — `useConversations`, `useConversation`, `useConversationThread`, `useSendMessage`,
+  `useMarkConversationRead`, `useStartConversation`, the socket bridges
+  (`useConversationSocket`, `usePresenceSocket`, `useConversationRoomSubscription`) and
+  `useGroupChat.ts` (`useCreateGroup`, `useGroupMembers`, `useGroupActions`, plus
+  `forgetConversation`, which clears a conversation someone was removed from or left). How they
+  fit together is described in `apps/web/src/features/messaging/README.md`.
 - `index.ts` — re-exports everything above; both apps only ever import from `@outfiqe/hooks`.
 
 ## Non-obvious rationale

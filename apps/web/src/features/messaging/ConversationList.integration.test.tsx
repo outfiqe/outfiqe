@@ -19,6 +19,7 @@ const buildConversation = (overrides: Partial<ConversationPreview> = {}): Conver
     isOnline: false,
     lastSeenAt: null,
   },
+  group: null,
   lastMessagePreview: "Hey there!",
   lastMessageAt: "2026-08-24T10:00:00.000Z",
   unreadCount: 0,
@@ -114,5 +115,39 @@ describe("ConversationList", () => {
 
     await waitFor(() => expect(screen.getByText("John Smith")).toBeInTheDocument());
     expect(screen.getByText("Jane Doe")).toBeInTheDocument();
+  });
+
+  it("shows a group by its name with the sender-prefixed preview", async () => {
+    mockConversations([
+      buildConversation({
+        id: "group-1",
+        type: "GROUP",
+        otherParticipant: null,
+        group: {
+          name: "Dashain outfits",
+          memberCount: 3,
+          members: [{ id: "user-2", name: "Jane Doe", handle: "jane", avatarUrl: null }],
+          myRole: "MEMBER",
+        },
+        lastMessagePreview: "Jane Doe: Gold or maroon?",
+      }),
+    ]);
+    const user = userEvent.setup();
+    const { onSelect } = renderList();
+
+    await user.click(await screen.findByRole("button", { name: /Dashain outfits/ }));
+
+    expect(screen.getByText("Jane Doe: Gold or maroon?")).toBeInTheDocument();
+    expect(onSelect).toHaveBeenCalledWith("group-1");
+  });
+
+  it("opens the new-group form from the list", async () => {
+    mockConversations([]);
+    const user = userEvent.setup();
+    renderList();
+
+    await user.click(await screen.findByRole("button", { name: "New group" }));
+
+    expect(await screen.findByLabelText("Group name")).toBeInTheDocument();
   });
 });
