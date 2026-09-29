@@ -80,7 +80,15 @@ already-placed checkout is never retroactively affected — proven directly
 
 ## Idempotency is claim-first, not check-then-write
 
-`withIdempotency` inserts a `RequestIdempotency` row with a pending sentinel _before_ running the handler — the unique constraint on `(userId, endpoint, key)` is what makes the claim atomic. A losing concurrent request gets a `DUPLICATE_REQUEST` 409, not a silently-created second order. An earlier check-then-write version of this was tested and proven to let two concurrent requests both create orders; this version was verified to produce exactly one success and one 409 under the same conditions.
+`withIdempotency` (`#lib/idempotency.utils.js`) inserts a `RequestIdempotency` row with a pending sentinel _before_ running the handler — the unique constraint on `(userId, endpoint, key)` is what makes the claim atomic, done as an `INSERT ... ON CONFLICT DO NOTHING` so the loser finds out from the insert itself rather than from a second read. A losing concurrent request gets a `DUPLICATE_REQUEST` 409, not a silently-created second order. An earlier check-then-write version of this was tested and proven to let two concurrent requests both create orders; this version was verified to produce exactly one success and one 409 under the same conditions.
+
+**A failed request frees its key only when the failure was a business rejection.** When the handler throws an `AppError` (items sold out, coupon exhausted, and so on), nothing was committed, so the claim is deleted and the shopper can retry with the same key. Before this, the pending row stayed forever and every retry with that key got a 409. Any other error keeps the claim: an unexpected failure might have happened after the order was already committed, and freeing the key then could create a second order on retry. Such keys expire with the 24-hour cleanup (`runIdempotencyKeyRetentionSweep`, wired in `src/jobs/scheduled-jobs.ts`).
+
+**Callers can also pass the request body**, which is stored as a hash. The same key sent with a different body is then refused with `422 IDEMPOTENCY_KEY_REUSED` instead of silently replaying the first answer. Checkout doesn't pass a body yet, so its behaviour is unchanged; new endpoints should.
+
+## Every stock change points back at its order
+
+Checkout generates the order id before its transaction starts, so the stock decrement it makes can be written to the inventory ledger against that order in the same transaction (`../products/README.md`, "Inventory ledger"). Payment settlement and cancellation record their stock changes against the same order id.
 
 ## Buy Now — a second, cart-bypassing line-item source
 

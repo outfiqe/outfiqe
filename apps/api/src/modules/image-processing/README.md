@@ -32,8 +32,9 @@ that lives in the shared package; this module only supplies the app-specific dep
   attaches a `CircuitBreaker` per downstream-dependent stage (resize/optimize/thumbnail all read
   from storage or write to Postgres); attaches dead-letter-on-exhaustion listeners for every stage
   queue; schedules the cleanup repeatable job. Called once from `src/index.ts` at boot.
-- `image-processing.bull-board.ts` — mounts Bull Board's Express router (internal-only, behind
-  `requireAuth` + `requireRole("ADMIN")` at `/internal/queues` in `app.ts`).
+- `image-processing.queue.ts` — the image queues, which `app.ts` hands to the shared queue
+  dashboard (`#lib/queue-dashboard.utils.js`) together with the outbox queues, so every BullMQ
+  queue shows up in one Bull Board at `/internal/queues`.
 - `image-processing.constants.ts` / `.schemas.ts` / `.types.ts` — upload limits/allowed mime types,
   the `:assetId` param schema, and the public (frontend-facing) asset/variant response shapes.
 
@@ -113,7 +114,7 @@ for something that affects queue fairness.
 row or a second job is ever created, and a retried enqueue for an already-queued checksum is a
 no-op at the BullMQ layer even if the DB check somehow raced.
 
-**Bull Board is mounted at `/internal/queues`, guarded by `requireAuth` + `requireRole("ADMIN")`**
+**Bull Board is mounted at `/internal/queues`, guarded by `requireCoFounder`**
 — explicitly not a public route. It's the operational surface for inspecting stuck jobs / manually
 retrying dead-lettered ones; anyone able to reach it can see job payloads (including
 `ownerId`/`checksum`), which is why it isn't just "internal-only by convention" but actually

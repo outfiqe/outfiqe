@@ -150,6 +150,12 @@ export default defineConfig({
         "src/modules/payments/providers/esewa.provider.ts",
         "src/modules/commissions/commission.routes.ts",
         "src/modules/announcements/**/*.ts",
+        "src/shared/outbox/**/*.ts",
+        "src/shared/utils/idempotency.utils.ts",
+        "src/shared/utils/queue-dashboard.utils.ts",
+        "src/modules/platform-settings/**/*.ts",
+        "src/modules/feature-flags/**/*.ts",
+        "src/modules/products/product.jobs.ts",
       ],
       thresholds: {
         lines: 80,

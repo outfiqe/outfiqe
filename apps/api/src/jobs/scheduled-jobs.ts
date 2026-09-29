@@ -1,4 +1,8 @@
 import { CRM_COUNTER_RECONCILE_INTERVAL_MS, recomputeCrmCounters } from "#lib/crm-counters.js";
+import {
+  IDEMPOTENCY_KEY_RETENTION_SWEEP_INTERVAL_MS,
+  runIdempotencyKeyRetentionSweep,
+} from "#lib/idempotency.utils.js";
 import { nextIsoWeekStart } from "#lib/iso-week.utils.js";
 import { DYNAMIC_BADGE_RECHECK_INTERVAL_MS } from "#modules/achievements/achievement.constants.js";
 import { achievementService } from "#modules/achievements/achievement.service.js";
@@ -45,6 +49,8 @@ import { PLATFORM_METRICS_SNAPSHOT_INTERVAL_MS } from "#modules/platform-metrics
 import { platformMetricsService } from "#modules/platform-metrics/platform-metrics.service.js";
 import { SUSPENSION_EXPIRY_SWEEP_INTERVAL_MS } from "#modules/platform-suspensions/platform-suspensions.constants.js";
 import { runSuspensionExpirySweep } from "#modules/platform-suspensions/platform-suspensions.expiry.js";
+import { INVENTORY_RECONCILIATION_INTERVAL_MS } from "#modules/products/product.constants.js";
+import { runInventoryLedgerReconciliation } from "#modules/products/product.jobs.js";
 import { SALE_SCORING_INTERVAL_MS } from "#modules/sale/sale.constants.js";
 import { saleService } from "#modules/sale/sale.service.js";
 import { SUPPORT_AUTO_CLOSE_JOB_INTERVAL_MS } from "#modules/support/support.constants.js";
@@ -62,9 +68,34 @@ import {
   SCORING_INTERVAL_MS,
 } from "#modules/trending/trending.constants.js";
 import { trendingService } from "#modules/trending/trending.service.js";
+import {
+  OUTBOX_RELAY_INTERVAL_MS,
+  OUTBOX_RETENTION_SWEEP_INTERVAL_MS,
+} from "#outbox/outbox.constants.js";
+import { runOutboxRelay, runOutboxRetentionSweep } from "#outbox/outbox.service.js";
 import type { BoundaryJob, RecurringJob } from "#scheduling/scheduler.types.js";
 
 export const INTERVAL_JOBS: RecurringJob[] = [
+  {
+    name: "outbox-relay",
+    run: runOutboxRelay,
+    intervalMs: OUTBOX_RELAY_INTERVAL_MS,
+  },
+  {
+    name: "outbox-retention-sweep",
+    run: runOutboxRetentionSweep,
+    intervalMs: OUTBOX_RETENTION_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "idempotency-key-retention-sweep",
+    run: runIdempotencyKeyRetentionSweep,
+    intervalMs: IDEMPOTENCY_KEY_RETENTION_SWEEP_INTERVAL_MS,
+  },
+  {
+    name: "inventory-ledger-reconciliation",
+    run: runInventoryLedgerReconciliation,
+    intervalMs: INVENTORY_RECONCILIATION_INTERVAL_MS,
+  },
   {
     name: "announcement-scheduled-dispatch",
     run: runAnnouncementScheduledDispatch,

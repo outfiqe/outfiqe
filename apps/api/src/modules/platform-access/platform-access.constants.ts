@@ -179,6 +179,16 @@ export const PLATFORM_PERMISSION_CATALOG = [
     label: "View broadcast announcements",
     group: "Platform",
   },
+  {
+    key: "platform:settings:manage",
+    label: "Change platform-wide settings and limits",
+    group: "Platform",
+  },
+  {
+    key: "platform:flags:manage",
+    label: "Turn platform features on or off and manage who can see them",
+    group: "Platform",
+  },
 ] as const;
 
 export type PlatformPermissionKey = (typeof PLATFORM_PERMISSION_CATALOG)[number]["key"];

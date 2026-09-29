@@ -28,6 +28,7 @@ export type CreateOrderItemInput = {
 };
 
 export type CreateOrderInput = {
+  id: string;
   userId: string;
   fullName: string;
   phone: string;

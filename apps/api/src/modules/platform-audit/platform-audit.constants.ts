@@ -25,4 +25,7 @@ export const PLATFORM_AUDIT_ACTION = {
   PLATFORM_ROLE_DELETED: "platform-role.deleted",
   PLATFORM_TEAM_MEMBER_ROLE_CHANGED: "platform-team.member-role-changed",
   ADMIN_INVITE_CREATED: "admin-invite.created",
+  PLATFORM_SETTING_UPDATED: "platform-setting.updated",
+  PLATFORM_SETTING_RESET: "platform-setting.reset",
+  FEATURE_FLAG_UPDATED: "feature-flag.updated",
 } as const;

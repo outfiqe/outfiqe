@@ -8,6 +8,8 @@ import {
   BrandPayoutStatus,
   DiscountType,
   FulfilmentStatus,
+  InventoryMovementKind,
+  InventoryMovementSource,
   OrderFulfilmentSummary,
   PaymentMethod,
   PaymentStatus,
@@ -17,6 +19,7 @@ import {
   UserRole,
 } from "#generated/prisma/enums.js";
 import { generateTokenpair } from "#lib/generate-token-pair.utils.js";
+import { OUTBOX_TOPIC } from "#outbox/outbox.constants.js";
 import { redis } from "#redis/redis.client.js";
 import { createAdminSession, grantPlatformPermissions } from "#test/integration/authHelpers.js";
 import { ensureProductType } from "#test/integration/productFixtures.js";
@@ -878,6 +881,31 @@ describe("POST /api/orders/:orderId/cancel — buyer self-service", () => {
     const payout = await prisma.brandPayout.findFirstOrThrow({ where: { orderItem: { orderId } } });
     expect(payout.status).toBe(BrandPayoutStatus.VOIDED);
     expect(payout.voidedReason).toBe("Cancelled by buyer");
+  });
+
+  it("records the sale and its reversal in the inventory ledger against the order", async () => {
+    const { userId: adminId } = await createAdminSession();
+    const buyer = await createBuyer();
+    const { orderId, size } = await placeOrder(adminId, buyer);
+
+    await request(testApp)
+      .post(`/api/orders/${orderId}/cancel`)
+      .set("Authorization", authHeaderFor(buyer.id, UserRole.CUSTOMER))
+      .send({});
+
+    const ledgerEntries = await prisma.inventoryLedgerEntry.findMany({
+      where: { sizeId: size.id, sourceType: InventoryMovementSource.ORDER, sourceId: orderId },
+      orderBy: { createdAt: "asc" },
+    });
+    expect(ledgerEntries.map(({ kind, delta }) => ({ kind, delta }))).toEqual([
+      { kind: InventoryMovementKind.ORDER_COMMIT, delta: -1 },
+      { kind: InventoryMovementKind.ORDER_RESTORE, delta: 1 },
+    ]);
+
+    const stockChangedEvents = await prisma.outboxEvent.count({
+      where: { topic: OUTBOX_TOPIC.STOCK_CHANGED, aggregateId: orderId },
+    });
+    expect(stockChangedEvents).toBe(2);
   });
 
   it("does not credit stock when cancelling a wallet order that never settled", async () => {

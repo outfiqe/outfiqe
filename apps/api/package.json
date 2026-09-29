@@ -18,6 +18,7 @@
     "#socket/*": "./src/shared/socket/*",
     "#email-templates/*": "./src/shared/email-templates/*",
     "#scheduling/*": "./src/shared/scheduling/*",
+    "#outbox/*": "./src/shared/outbox/*",
     "#modules/*": "./src/modules/*",
     "#test/*": "./src/testing/*"
   },

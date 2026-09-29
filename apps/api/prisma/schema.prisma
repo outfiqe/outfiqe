@@ -135,6 +135,8 @@ model User {
   pushSubscriptions                        PushSubscription[]
   contentReportsMade                       ContentReport[]             @relation("ContentReportReporter")
   contentReportsResolved                   ContentReport[]             @relation("ContentReportResolver")
+  appSettingEdits                          AppSetting[]                @relation("AppSettingUpdatedBy")
+  featureFlagEdits                         FeatureFlag[]               @relation("FeatureFlagUpdatedBy")
 
   @@index([isCreator, creatorStatus, followerCount])
   @@index([handle(ops: raw("gin_trgm_ops"))], type: Gin, map: "users_handle_trgm_idx")
@@ -1367,12 +1369,84 @@ model RequestIdempotency {
   userId       String   @map("user_id") @db.Uuid
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   endpoint     String
+  requestHash  String?  @map("request_hash")
   statusCode   Int      @map("status_code")
   responseBody Json     @map("response_body")
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@unique([userId, endpoint, key])
+  @@index([createdAt])
   @@map("request_idempotency")
+}
+
+model OutboxEvent {
+  id          String    @id @default(uuid()) @db.Uuid
+  topic       String
+  aggregateId String    @map("aggregate_id")
+  payload     Json
+  attempts    Int       @default(0)
+  lastError   String?   @map("last_error")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@index([publishedAt])
+  @@map("outbox_events")
+}
+
+enum InventoryMovementKind {
+  OPENING_BALANCE
+  SIZE_CREATED
+  ORDER_COMMIT
+  ORDER_RESTORE
+  BRAND_ADJUSTMENT
+}
+
+enum InventoryMovementSource {
+  PRODUCT_SIZE
+  ORDER
+  BRAND_ADJUSTMENT
+}
+
+model InventoryLedgerEntry {
+  id         String                  @id @default(uuid()) @db.Uuid
+  sizeId     String                  @map("size_id") @db.Uuid
+  delta      Int
+  kind       InventoryMovementKind
+  sourceType InventoryMovementSource @map("source_type")
+  sourceId   String                  @map("source_id")
+  createdAt  DateTime                @default(now()) @map("created_at")
+
+  @@unique([sourceType, sourceId, kind, sizeId])
+  @@index([sizeId, createdAt])
+  @@map("inventory_ledger_entries")
+}
+
+model AppSetting {
+  key         String   @id
+  value       Json
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  updatedBy   User?    @relation("AppSettingUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
+}
+
+enum FeatureFlagRollout {
+  OFF
+  ALLOW_LIST
+  EVERYONE
+}
+
+model FeatureFlag {
+  key             String             @id
+  rollout         FeatureFlagRollout @default(OFF)
+  allowedUserIds  String[]           @default([]) @map("allowed_user_ids") @db.Uuid
+  allowedBrandIds String[]           @default([]) @map("allowed_brand_ids") @db.Uuid
+  updatedById     String?            @map("updated_by_id") @db.Uuid
+  updatedBy       User?              @relation("FeatureFlagUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  @@map("feature_flags")
 }
 
 enum CommissionStatus {

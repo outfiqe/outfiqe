@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { env } from "#config/env.config.js";
 import { prisma } from "#db/prisma.js";
 import {
@@ -11,6 +13,8 @@ import {
   CommissionSource,
   CouponRedemptionStatus,
   FulfilmentStatus,
+  InventoryMovementKind,
+  InventoryMovementSource,
   OrderFulfilmentSummary,
   PaymentMethod,
   PaymentStatus,
@@ -300,12 +304,18 @@ const checkoutOnce = async (
   );
 
   const createdCommissions: { creatorId: string; orderItemId: string; amount: number }[] = [];
+  const orderId = randomUUID();
 
   const order = await prisma.$transaction(async (tx) => {
     if (paymentMethod === PaymentMethod.COD) {
       const insufficientSizeIds = await productService.decrementStockForItems(
         tx,
         lines.map(({ sizeId, qty }) => ({ sizeId, qty })),
+        {
+          kind: InventoryMovementKind.ORDER_COMMIT,
+          sourceType: InventoryMovementSource.ORDER,
+          sourceId: orderId,
+        },
       );
       if (insufficientSizeIds.length > 0) {
         throw new AppError(
@@ -320,6 +330,7 @@ const checkoutOnce = async (
     }
 
     const createdOrder = await orderRepository.create(tx, {
+      id: orderId,
       userId,
       fullName,
       phone,
@@ -585,7 +596,11 @@ export const orderService = {
       }
 
       if (stockWasCommitted) {
-        await productService.restoreStockForItems(tx, order.items);
+        await productService.restoreStockForItems(tx, order.items, {
+          kind: InventoryMovementKind.ORDER_RESTORE,
+          sourceType: InventoryMovementSource.ORDER,
+          sourceId: orderId,
+        });
       }
       await commissionRepository.voidForOrder(tx, orderId, reason);
       await brandPayoutRepository.voidForOrder(tx, orderId, reason);

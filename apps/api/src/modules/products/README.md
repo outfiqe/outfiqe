@@ -8,6 +8,28 @@
 
 `decrementStockForItems`/`restoreStockForItems` (in `product.service.ts`) process multi-item lines sorted by `sizeId`. This isn't cosmetic: two transactions that lock the same set of `ProductSize` rows in different orders can deadlock under Postgres; sorting first guarantees every caller acquires locks in the same order.
 
+## Inventory ledger — every stock change is written down
+
+`InventoryLedgerEntry` is an append-only record of every change to `ProductSize.stock`: the size, the change (`delta`), what kind of change it was (`InventoryMovementKind`) and what caused it (`sourceType` + `sourceId`). Summing a size's entries always gives its current stock, so we can explain any stock number after the fact.
+
+**Written in the same transaction as the stock change, never after.** `decrementStockForItems`/`restoreStockForItems` take the caller's transaction and a `StockMovement` (kind + source), and `recordStockChanges` in `product.service.ts` writes the ledger rows and a `stock.changed` outbox event (`#outbox/*`) inside that transaction. If the stock update rolls back, so do its ledger rows and its event. The callers are:
+
+| What happened                                                     | Kind               | Source                                     |
+| ----------------------------------------------------------------- | ------------------ | ------------------------------------------ |
+| A brand creates a product, or changes its type and gets new sizes | `SIZE_CREATED`     | `PRODUCT_SIZE`, the product id             |
+| A COD checkout, or a wallet payment settling                      | `ORDER_COMMIT`     | `ORDER`, the order id                      |
+| An order is cancelled after its stock was taken                   | `ORDER_RESTORE`    | `ORDER`, the order id                      |
+| A brand restocks or corrects stock                                | `BRAND_ADJUSTMENT` | `BRAND_ADJUSTMENT`, a fresh id per request |
+| Stock that existed before the ledger did                          | `OPENING_BALANCE`  | `PRODUCT_SIZE`, the size id                |
+
+**The same movement can never be applied twice.** `(sourceType, sourceId, kind, sizeId)` is unique, so replaying the same sale for the same order fails the whole transaction, stock update included. That is also why `decrementStockForItems`/`restoreStockForItems` merge repeated lines for one size into a single line first (`mergeStockLinesBySize`), and why `adjustStockSchema` refuses a request that names the same size twice.
+
+**Stock can't go below zero, whatever writes it.** The `product_sizes_stock_non_negative` CHECK constraint is the last safety net behind the conditional `decrementStock`. It was added `NOT VALID` and then validated, so it didn't hold a long lock on `product_sizes`. Prisma doesn't model CHECK constraints or partial indexes, and a `prisma migrate diff` against the live database confirmed it doesn't propose dropping either.
+
+**No foreign key from the ledger to `product_sizes`, on purpose.** Changing a product's type deletes its old sizes (see "Editing a product's type replaces its sizes" below). A foreign key would either block that for every size (they all have ledger rows) or cascade and erase their history. The ledger keeps a plain `sizeId` instead. A removed size gets no "removed" entry, because deleting a size that never sold is a catalog change, not goods leaving the warehouse. Reconciliation only checks sizes that still exist.
+
+**Nightly reconciliation.** `runInventoryLedgerReconciliation` (`product.jobs.ts`, every 24 hours from `src/jobs/scheduled-jobs.ts`) first gives an `OPENING_BALANCE` to any size with no ledger history at all. Only seed scripts and test fixtures create sizes that way; every app path writes the ledger. That step is logged as a warning. It then compares every tracked size's stock with its ledger total and alerts Sentry about any size that doesn't match.
+
 ## Low stock is computed, not stored
 
 `Product.lowStock` and `ProductSize.inStock` are still columns in the schema and `create` still writes a best-effort `inStock` at creation time, but the `products` module no longer reads either column for anything customer-facing. Instead, `totalStock` is summed live from `ProductSize.stock` at query time, and `lowStock`/`inStock` are derived from that (`isLowStock`, `stock > 0`). A stored flag can drift from the real stock count; a live sum can't.

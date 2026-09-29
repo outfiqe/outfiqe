@@ -2,7 +2,13 @@ import { env } from "#config/env.config.js";
 import { prisma } from "#db/prisma.js";
 import { manualRefundNeededTemplate, paymentSettledTemplate } from "#email-templates/templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
-import { FulfilmentStatus, PaymentMethod, PaymentStatus } from "#generated/prisma/enums.js";
+import {
+  FulfilmentStatus,
+  InventoryMovementKind,
+  InventoryMovementSource,
+  PaymentMethod,
+  PaymentStatus,
+} from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { productService } from "#modules/products/product.service.js";
@@ -78,6 +84,11 @@ const settleVerified = async (
     const insufficientSizeIds = await productService.decrementStockForItems(
       tx,
       order.items.map(({ sizeId, qty }) => ({ sizeId, qty })),
+      {
+        kind: InventoryMovementKind.ORDER_COMMIT,
+        sourceType: InventoryMovementSource.ORDER,
+        sourceId: order.id,
+      },
     );
 
     if (insufficientSizeIds.length > 0) {
