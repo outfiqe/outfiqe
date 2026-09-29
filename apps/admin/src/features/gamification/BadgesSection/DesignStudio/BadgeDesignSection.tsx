@@ -272,7 +272,7 @@ export const BadgeDesignSection = ({
 
             <p className="text-xs text-muted-foreground">
               Color fills the shape, and also tints the badge&apos;s glow and the accent ring and
-              label shown on a creator&apos;s profile — it still applies under a custom image.
+              label shown on a muse&apos;s profile — it still applies under a custom image.
             </p>
 
             <div className="space-y-1.5">

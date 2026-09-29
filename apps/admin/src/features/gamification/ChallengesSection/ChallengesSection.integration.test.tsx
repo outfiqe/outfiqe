@@ -14,7 +14,7 @@ const API_BASE = "*/api";
 const challenge = {
   id: "challenge-1",
   name: "Summer Sprint",
-  description: "Post three looks this week.",
+  description: "Drop three looks this week.",
   bannerImageUrl: null,
   isActive: true,
   badge: {
@@ -59,7 +59,7 @@ const stubChallenges = (rows: unknown[] = []) =>
 
 const fillValidChallenge = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.type(await screen.findByLabelText("Challenge name"), "Summer Sprint");
-  await user.type(screen.getByLabelText("Challenge description"), "Post three looks.");
+  await user.type(screen.getByLabelText("Challenge description"), "Drop three looks.");
   await user.type(screen.getByLabelText("Badge name"), "Sprinter");
   await user.type(screen.getByLabelText("Icon (emoji)"), "🏃");
   await user.type(screen.getByLabelText("Badge description"), "Finished the sprint.");

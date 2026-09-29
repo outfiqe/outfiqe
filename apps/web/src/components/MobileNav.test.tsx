@@ -80,11 +80,11 @@ describe("MobileNav", () => {
     expect(toggle).not.toHaveClass("[&_svg]:size-4");
   });
 
-  it("moves wishlist, bag, and the theme toggle into the drawer", async () => {
+  it("moves the stash, bag, and the theme toggle into the drawer", async () => {
     render(<MobileNav />);
     await openMenu();
 
-    expect(screen.getByRole("link", { name: /wishlist/i })).toHaveAttribute("href", "/wishlist");
+    expect(screen.getByRole("link", { name: /your stash/i })).toHaveAttribute("href", "/wishlist");
     expect(screen.getByRole("link", { name: /bag/i })).toHaveAttribute("href", "/cart");
     expect(
       screen.getByRole("button", { name: /switch to (light|dark) mode/i }),
@@ -108,7 +108,7 @@ describe("MobileNav", () => {
     expect(bagLink).toHaveTextContent("3");
   });
 
-  it("gives a signed-in creator a labelled account link to their space", async () => {
+  it("gives a signed-in muse a labelled account link to their space", async () => {
     mockAuth({
       state: {
         status: AuthStatus.AUTHENTICATED,
@@ -123,7 +123,7 @@ describe("MobileNav", () => {
 
     const accountLink = screen.getByRole("link", { name: /Sabin Shrestha/ });
     expect(accountLink).toHaveAttribute("href", "/overview");
-    expect(accountLink).toHaveTextContent("Your creator space");
+    expect(accountLink).toHaveTextContent("Your muse space");
   });
 
   it("sends a signed-in admin to the admin console", async () => {

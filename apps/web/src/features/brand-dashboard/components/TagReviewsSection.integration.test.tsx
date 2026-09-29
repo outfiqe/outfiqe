@@ -118,7 +118,7 @@ describe("TagReviewsSection", () => {
     expect(screen.getByRole("tab", { name: /Waiting \(1\)/ })).toBeInTheDocument();
   });
 
-  it("approves a tag and trusts the creator through the API", async () => {
+  it("approves a tag and trusts the muse through the API", async () => {
     let approveBody: unknown;
     stubQueue({ PENDING: [anItem()] }, 1);
     mswServer.use(
@@ -153,7 +153,7 @@ describe("TagReviewsSection", () => {
     const dialog = await screen.findByRole("dialog");
     await userEvent.selectOptions(within(dialog).getByLabelText("Reason"), "MISREPRESENTS_PRODUCT");
     await userEvent.type(
-      within(dialog).getByLabelText(/Note to the creator/),
+      within(dialog).getByLabelText(/Note to the muse/),
       "Different colourway than ours.",
     );
     await userEvent.click(within(dialog).getByRole("button", { name: "Decline tag" }));
@@ -260,7 +260,7 @@ describe("TagReviewsSection", () => {
 
     expect(screen.getByRole("tab", { name: "Declined", selected: true })).toBeInTheDocument();
     expect(await screen.findByRole("status", { name: "Loading tags" })).toBeInTheDocument();
-    expect(await screen.findByText(/haven't declined any creator tags/i)).toBeInTheDocument();
+    expect(await screen.findByText(/haven't declined any muse tags/i)).toBeInTheDocument();
   });
 
   it("preloads the other tabs after the first one loads, so switching shows data with no skeleton", async () => {

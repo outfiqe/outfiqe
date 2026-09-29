@@ -31,7 +31,7 @@ const createCreator = async (overrides: { hideFromLeaderboards?: boolean } = {})
   prisma.user.create({
     data: {
       email: `creator-${randomUUID()}@outfiqe.test`,
-      name: "Leaderboard Creator",
+      name: "Leaderboard Muse",
       handle: `creator-${randomUUID().slice(0, 8)}`,
       phone: uniquePhone(),
       passwordHash: "not-used-in-tests",
@@ -153,7 +153,7 @@ const giveSale = async (creatorId: string, amount: number, status: CommissionSta
 };
 
 describe("creatorLeaderboardService.runRecompute + getTop", () => {
-  it("ranks creators by XP for TOP_XP", async () => {
+  it("ranks muses by XP for TOP_XP", async () => {
     const [low, high] = await Promise.all([createCreator(), createCreator()]);
     await giveXp(low.id, 100);
     await giveXp(high.id, 900);
@@ -169,7 +169,7 @@ describe("creatorLeaderboardService.runRecompute + getTop", () => {
     expect(ranked.find((entry) => entry.creatorId === high.id)?.score).toBe(900);
   });
 
-  it("ranks creators by summed likes for MOST_LIKES", async () => {
+  it("ranks muses by summed likes for MOST_LIKES", async () => {
     const creator = await createCreator();
     await giveLook(creator.id, 40);
     await giveLook(creator.id, 60);
@@ -197,7 +197,7 @@ describe("creatorLeaderboardService.runRecompute + getTop", () => {
     expect(entry?.score).toBe(2);
   });
 
-  it("sums a creator's real order-driven commissions for TOP_SELLER, excluding voided ones", async () => {
+  it("sums a muse's real order-driven commissions for TOP_SELLER, excluding voided ones", async () => {
     const creator = await createCreator();
     await giveSale(creator.id, 500, CommissionStatus.APPROVED);
     await giveSale(creator.id, 300, CommissionStatus.PENDING);
@@ -226,7 +226,7 @@ describe("creatorLeaderboardService.runRecompute + getTop", () => {
     expect(entry?.score).toBe(200 + 5 * 10);
   });
 
-  it("excludes a creator who opted out of leaderboards entirely", async () => {
+  it("excludes a muse who opted out of leaderboards entirely", async () => {
     const optedOut = await createCreator({ hideFromLeaderboards: true });
     await giveXp(optedOut.id, 5000);
 
@@ -236,7 +236,7 @@ describe("creatorLeaderboardService.runRecompute + getTop", () => {
     expect(entries.some((entry) => entry.creatorId === optedOut.id)).toBe(false);
   });
 
-  it("excludes a creator with zero activity from every stats-derived category, not just RISING_CREATOR", async () => {
+  it("excludes a muse with zero activity from every stats-derived category, not just RISING_CREATOR", async () => {
     const zeroActivity = await createCreator();
     const active = await createCreator();
     await giveXp(active.id, 50);
@@ -260,7 +260,7 @@ describe("creatorLeaderboardService.runRecompute + getTop", () => {
     }
   });
 
-  it("drops a creator from the public ranking the moment they're banned, even while the cached ZSET is still warm", async () => {
+  it("drops a muse from the public ranking the moment they're banned, even while the cached ZSET is still warm", async () => {
     const banned = await createCreator();
     await giveXp(banned.id, 5000);
 
@@ -277,7 +277,7 @@ describe("creatorLeaderboardService.runRecompute + getTop", () => {
     expect(after.entries.some((entry) => entry.creatorId === banned.id)).toBe(false);
   });
 
-  it("renumbers ranks with no gaps once an ineligible creator is filtered out mid-list", async () => {
+  it("renumbers ranks with no gaps once an ineligible muse is filtered out mid-list", async () => {
     const first = await createCreator();
     const bannedSecond = await createCreator();
     const third = await createCreator();
@@ -299,7 +299,7 @@ describe("creatorLeaderboardService.runRecompute + getTop", () => {
     expect(thirdEntry?.rank).toBe(2);
   });
 
-  it("computes rank movement off the creator's displayed position, not their pre-filter index, once someone ahead of them is filtered out", async () => {
+  it("computes rank movement off the muse's displayed position, not their pre-filter index, once someone ahead of them is filtered out", async () => {
     const first = await createCreator();
     const bannedSecond = await createCreator();
     const third = await createCreator();
@@ -331,7 +331,7 @@ describe("creatorLeaderboardService.runRecompute + getTop", () => {
     expect(thirdEntry?.movement).toBe(1);
   });
 
-  it("excludes a creator whose XP dropped week-over-week from RISING_CREATOR instead of showing a negative surge", async () => {
+  it("excludes a muse whose XP dropped week-over-week from RISING_CREATOR instead of showing a negative surge", async () => {
     const demoted = await createCreator();
     const now = new Date();
 

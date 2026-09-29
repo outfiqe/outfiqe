@@ -26,7 +26,7 @@ export const PostGridCard = ({ post, onClick, trendingRank, eager }: PostGridCar
       <button
         type="button"
         onClick={onClick}
-        aria-label={caption ?? "View post"}
+        aria-label={caption ?? "View drop"}
         className="relative block w-full cursor-pointer overflow-hidden rounded-2xl border border-border transition-colors hover:border-foreground/30"
         style={{
           aspectRatio: String(POST_LAYOUT_ASPECT[layout]),

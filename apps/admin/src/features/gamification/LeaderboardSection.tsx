@@ -35,7 +35,7 @@ export const LeaderboardSection = () => {
 
   return (
     <div>
-      <h2 className="font-display text-lg font-bold text-foreground">Creator leaderboard</h2>
+      <h2 className="font-display text-lg font-bold text-foreground">Muse leaderboard</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         Each ranking can be shown or hidden independently on the public leaderboard page — turning
         one off removes it from the page immediately, it doesn&apos;t stop the numbers behind it

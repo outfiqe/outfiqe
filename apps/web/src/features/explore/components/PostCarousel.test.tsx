@@ -27,7 +27,7 @@ afterEach(() => {
 });
 
 describe("PostCarousel", () => {
-  it("likes the post on a double tap without opening the detail view", () => {
+  it("likes the drop on a double tap without opening the detail view", () => {
     const onImageClick = vi.fn();
     const onDoubleTapLike = vi.fn();
     const { container } = render(

@@ -22,7 +22,7 @@ export const WishlistGrid = () => {
   if (products.length === 0) {
     return (
       <p className="py-10 text-sm text-muted-foreground">
-        Nothing saved yet — tap the heart on a product to keep it here.
+        Nothing stashed yet — tap the cherry on a product to keep it here.
       </p>
     );
   }

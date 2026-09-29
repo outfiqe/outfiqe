@@ -10,6 +10,7 @@ export * from "./carousel";
 export * from "./chart";
 export * from "./chart-card";
 export * from "./checkbox";
+export * from "./cheriq-icon";
 export * from "./cn";
 export * from "./crop-image";
 export * from "./crop-surface";

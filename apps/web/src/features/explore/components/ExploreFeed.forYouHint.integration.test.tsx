@@ -21,7 +21,7 @@ const TRENDING_TAGS_URL = "/api/creator-looks/tags/trending";
 const SUGGESTED_CREATORS_URL = "/api/follows/suggested-creators";
 
 const HINT_TEXT =
-  "For You gets more personalized as you follow creators and like or save looks you love.";
+  "For You gets more personalized as you follow muses and cheriq or stash looks you love.";
 
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(),
@@ -42,7 +42,7 @@ beforeEach(() => {
       HttpResponse.json({ success: true, message: "Tags.", data: { tags: [] } }),
     ),
     http.get(SUGGESTED_CREATORS_URL, () =>
-      HttpResponse.json({ success: true, message: "Suggested creators.", data: { creators: [] } }),
+      HttpResponse.json({ success: true, message: "Suggested muses.", data: { creators: [] } }),
     ),
   );
 });

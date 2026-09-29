@@ -17,7 +17,7 @@ const DashboardWithdrawPage = async () => {
     return (
       <CreatorStatusGate
         creatorStatus={user.creatorStatus}
-        pitch="Post your fits, tag the pieces you're wearing, and earn commission when someone buys through your post or link."
+        pitch="Drop your fits, tag the pieces you're wearing, and earn commission when someone buys through your drop or link."
       />
     );
   }

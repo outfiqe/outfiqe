@@ -10,7 +10,7 @@ import {
 } from "./image-processing.utils.js";
 
 describe("resolvePriorityTier", () => {
-  it("ranks admins as bulkAdmin regardless of creator status", () => {
+  it("ranks admins as bulkAdmin regardless of muse status", () => {
     expect(
       resolvePriorityTier({
         role: UserRole.ADMIN,
@@ -20,7 +20,7 @@ describe("resolvePriorityTier", () => {
     ).toBe("bulkAdmin");
   });
 
-  it("ranks an approved creator as paidCreator", () => {
+  it("ranks an approved muse as paidCreator", () => {
     expect(
       resolvePriorityTier({
         role: UserRole.CUSTOMER,
@@ -30,7 +30,7 @@ describe("resolvePriorityTier", () => {
     ).toBe("paidCreator");
   });
 
-  it("ranks a pending (not-yet-approved) creator as standard", () => {
+  it("ranks a pending (not-yet-approved) muse as standard", () => {
     expect(
       resolvePriorityTier({
         role: UserRole.CUSTOMER,

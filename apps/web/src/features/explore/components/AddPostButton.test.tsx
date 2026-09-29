@@ -51,7 +51,7 @@ describe("AddPostButton", () => {
     const { container } = render(<AddPostButton />);
 
     expect(container).toBeEmptyDOMElement();
-    expect(screen.queryByRole("button", { name: "Add a post" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add a drop" })).not.toBeInTheDocument();
   });
 
   it("renders nothing for a platform admin", () => {
@@ -60,15 +60,15 @@ describe("AddPostButton", () => {
     const { container } = render(<AddPostButton />);
 
     expect(container).toBeEmptyDOMElement();
-    expect(screen.queryByRole("button", { name: "Add a post" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add a drop" })).not.toBeInTheDocument();
   });
 
-  it("shows the post button for an approved creator", () => {
+  it("shows the drop button for an approved muse", () => {
     mockAuth(UserRole.CUSTOMER, CreatorStatus.APPROVED);
 
     render(<AddPostButton />);
 
-    expect(screen.getByRole("button", { name: "Add a post" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add a drop" })).toBeInTheDocument();
   });
 
   const LIFTED_FAB_CLASS = "bottom-[calc(9rem+env(safe-area-inset-bottom))]";
@@ -79,7 +79,7 @@ describe("AddPostButton", () => {
 
     render(<AddPostButton />);
 
-    expect(screen.getByRole("button", { name: "Add a post" })).toHaveClass(LIFTED_FAB_CLASS);
+    expect(screen.getByRole("button", { name: "Add a drop" })).toHaveClass(LIFTED_FAB_CLASS);
   });
 
   it("keeps the default FAB position when there is no session (no chat launcher on screen)", () => {
@@ -94,7 +94,7 @@ describe("AddPostButton", () => {
 
     render(<AddPostButton />);
 
-    const button = screen.getByRole("button", { name: "Add a post" });
+    const button = screen.getByRole("button", { name: "Add a drop" });
     expect(button).toHaveClass(DEFAULT_FAB_CLASS);
     expect(button).not.toHaveClass(LIFTED_FAB_CLASS);
   });

@@ -32,7 +32,7 @@ export const PostReportMenu = ({ onReport, className }: PostReportMenuProps) => 
           event.stopPropagation();
           setOpen((current) => !current);
         }}
-        aria-label="Post options"
+        aria-label="Drop options"
         aria-haspopup="menu"
         aria-expanded={open}
         className="flex size-7 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"

@@ -22,7 +22,7 @@ const TermsPage = () => (
   >
     <LegalDocument
       title="Terms of service"
-      summary="These terms are a contract between you and Outfiqe covering how you may use the platform as a shopper. Separate terms apply to creators and to brands."
+      summary="These terms are a contract between you and Outfiqe covering how you may use the platform as a shopper. Separate terms apply to muses and to brands."
       lastReviewed="7 September 2026"
       status="published"
     >
@@ -92,9 +92,9 @@ const TermsPage = () => (
 
       <h2>8. Content and reviews</h2>
       <p>
-        You may only review products you have received. You are responsible for content you post,
+        You may only review products you have received. You are responsible for content you share,
         which must follow the <Link href="/legal/community-guidelines">community guidelines</Link>.
-        You grant Outfiqe a licence to display content you post on the platform.
+        You grant Outfiqe a licence to display content you share on the platform.
       </p>
 
       <h2>9. Acceptable use</h2>
@@ -104,7 +104,7 @@ const TermsPage = () => (
           is not yours.
         </li>
         <li>Do not scrape, resell or misrepresent the service.</li>
-        <li>Do not attempt to manipulate creator attribution, commissions, reviews or rankings.</li>
+        <li>Do not attempt to manipulate muse attribution, commissions, reviews or rankings.</li>
       </ul>
 
       <h2>10. Liability</h2>
@@ -124,7 +124,7 @@ const TermsPage = () => (
 
       <h2>12. Changes and governing law</h2>
       <p>
-        We may update these terms and will post the new version here, with a revised review date.
+        We may update these terms and will publish the new version here, with a revised review date.
         Material changes will be communicated in the app or by email. These terms are governed by
         the laws of Nepal, and the courts of Kathmandu have exclusive jurisdiction over any dispute,
         without affecting any mandatory consumer-protection right to bring a claim locally.

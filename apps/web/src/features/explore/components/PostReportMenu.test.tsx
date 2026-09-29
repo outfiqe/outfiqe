@@ -16,7 +16,7 @@ describe("PostReportMenu", () => {
     const onReport = vi.fn();
     render(<PostReportMenu onReport={onReport} />);
 
-    await user.click(screen.getByRole("button", { name: "Post options" }));
+    await user.click(screen.getByRole("button", { name: "Drop options" }));
     await user.click(screen.getByRole("menuitem", { name: "Report" }));
 
     expect(onReport).toHaveBeenCalledTimes(1);
@@ -32,7 +32,7 @@ describe("PostReportMenu", () => {
       </div>,
     );
 
-    await user.click(screen.getByRole("button", { name: "Post options" }));
+    await user.click(screen.getByRole("button", { name: "Drop options" }));
     expect(screen.getByRole("menuitem", { name: "Report" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "outside" }));

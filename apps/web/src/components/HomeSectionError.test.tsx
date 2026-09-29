@@ -34,9 +34,7 @@ describe("HomeSectionError", () => {
 
   it("re-renders the section when the retry button is pressed", async () => {
     const retry = vi.fn();
-    render(
-      <HomeSectionError sectionName="Creator looks" error={new Error("boom")} retry={retry} />,
-    );
+    render(<HomeSectionError sectionName="Muse looks" error={new Error("boom")} retry={retry} />);
 
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
 

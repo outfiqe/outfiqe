@@ -107,7 +107,7 @@ export const AccountMenu = () => {
             href="/wishlist"
             className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
           >
-            Saved items
+            Your stash
           </Link>
           {isShopper && (
             <>
@@ -133,7 +133,7 @@ export const AccountMenu = () => {
                 href="/profile"
                 className="block rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted"
               >
-                Become a creator
+                Become a muse
               </Link>
             </>
           )}

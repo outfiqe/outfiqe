@@ -7,7 +7,7 @@ import { RECENT_COMMISSION_LIMIT } from "./creator-overview.constants.js";
 import { creatorOverviewRepository } from "./creator-overview.repository.js";
 import type { CreatorOverview } from "./creator-overview.types.js";
 
-const NOT_A_CREATOR_MESSAGE = "Only approved creators have a creator overview.";
+const NOT_A_CREATOR_MESSAGE = "Only approved muses have a muse overview.";
 
 export const creatorOverviewService = {
   async getOverview(creatorId: string): Promise<CreatorOverview> {

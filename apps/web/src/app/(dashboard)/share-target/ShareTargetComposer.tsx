@@ -35,7 +35,7 @@ export const ShareTargetComposer = ({ creatorStatus }: ShareTargetComposerProps)
     return (
       <InfoMessage
         title="Application under review"
-        description="We're looking at your creator application. We'll email you once it's reviewed."
+        description="We're looking at your muse application. We'll email you once it's reviewed."
       />
     );
   }
@@ -43,10 +43,10 @@ export const ShareTargetComposer = ({ creatorStatus }: ShareTargetComposerProps)
   if (creatorStatus !== CreatorStatus.APPROVED) {
     return (
       <div className="mx-auto max-w-md px-4 py-10 text-center">
-        <h1 className="font-display text-lg font-bold text-foreground">Become a creator to post</h1>
+        <h1 className="font-display text-lg font-bold text-foreground">Become a muse to drop</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Apply to post your fits, tag the pieces you&apos;re wearing, and get credit when someone
-          buys through your post.
+          Apply to drop your fits, tag the pieces you&apos;re wearing, and get credit when someone
+          buys through your drop.
         </p>
         <div className="mt-4 flex justify-center">
           <ApplyAsCreatorButton />

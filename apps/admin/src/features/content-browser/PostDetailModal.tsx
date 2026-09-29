@@ -35,7 +35,7 @@ export const PostDetailModal = ({
     <Modal
       open
       onClose={onClose}
-      ariaLabel={`Post by @${creator.handle}`}
+      ariaLabel={`Drop by @${creator.handle}`}
       className="h-dvh max-h-dvh rounded-none sm:h-auto sm:max-h-[85vh] sm:max-w-4xl sm:rounded-2xl"
     >
       <div className="-mx-6 -my-5 flex flex-col sm:h-[32rem] sm:flex-row">
@@ -59,15 +59,15 @@ export const PostDetailModal = ({
               )}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              {likeCount} likes &middot; {commentCount} comments &middot; {saveCount} saves &middot;{" "}
-              {formatCreatedAt(createdAt)} &middot;{" "}
+              {likeCount} cheriqs &middot; {commentCount} chimes &middot; {saveCount} stashes
+              &middot; {formatCreatedAt(createdAt)} &middot;{" "}
               <a
                 href={`${WEB_URL}/creator/${creator.handle}?look=${id}`}
                 target="_blank"
                 rel="noreferrer"
                 className="underline underline-offset-2 hover:text-foreground"
               >
-                View post
+                View drop
               </a>
             </p>
           </div>
@@ -80,7 +80,7 @@ export const PostDetailModal = ({
               onClick={onDeletePost}
               className="mt-3 border-destructive text-destructive hover:bg-destructive hover:text-white"
             >
-              Delete post
+              Delete drop
             </Button>
 
             <PostCommentsPanel

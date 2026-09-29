@@ -21,7 +21,7 @@ export const ResolveContentReportModal = ({
   onCancel,
 }: ResolveContentReportModalProps) => {
   const noteId = useId();
-  const targetNoun = report.targetType === "CREATOR_LOOK" ? "post" : "comment";
+  const targetNoun = report.targetType === "CREATOR_LOOK" ? "drop" : "chime";
   const contentIsLive = report.target !== null && !report.target.isRemoved;
   const [action, setAction] = useState<"REMOVE_CONTENT" | "DISMISS">(
     contentIsLive ? "REMOVE_CONTENT" : "DISMISS",
@@ -37,7 +37,7 @@ export const ResolveContentReportModal = ({
       open
       onClose={onCancel}
       title="Resolve report"
-      description={report.target ? `Posted by @${report.target.author.handle}` : undefined}
+      description={report.target ? `Dropped by @${report.target.author.handle}` : undefined}
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel}>

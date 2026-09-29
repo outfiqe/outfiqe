@@ -35,7 +35,7 @@ const STATUS_TONE: Record<WithdrawRequestStatusValue, "neutral" | "positive" | "
 };
 
 const OWNER_TYPE_LABEL: Record<string, string> = {
-  CREATOR: "Creator",
+  CREATOR: "Muse",
   BUSINESS: "Business",
 };
 

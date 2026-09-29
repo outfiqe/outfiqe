@@ -94,7 +94,7 @@ const createCompetitionDirect = async (
 };
 
 describe("creatorCompetitionService.settleWeeklyCompetitions", () => {
-  it("awards the badge to the top N creators from the just-ended week", async () => {
+  it("awards the badge to the top N muses from the just-ended week", async () => {
     const [first, second, third, fourth] = await Promise.all([
       createUser(),
       createUser(),
@@ -179,7 +179,7 @@ describe("creatorCompetitionService.settleWeeklyCompetitions", () => {
     expect(winnerBadge).toBeNull();
   });
 
-  it("leaves an already-won badge untouched when the same creator wins again", async () => {
+  it("leaves an already-won badge untouched when the same muse wins again", async () => {
     const winner = await createUser();
     const { badge } = await createCompetitionDirect(
       CreatorLeaderboardCategory.MOST_ACHIEVEMENTS,
@@ -199,7 +199,7 @@ describe("creatorCompetitionService.settleWeeklyCompetitions", () => {
   });
 });
 
-describe("creator competitions admin API", () => {
+describe("muse competitions admin API", () => {
   it("creates, lists, and updates a competition", async () => {
     const admin = await createAdmin();
 

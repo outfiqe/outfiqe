@@ -99,7 +99,7 @@ export const RejectTagModal = ({
             htmlFor="reject-tag-note"
             className="mb-1.5 block text-sm font-medium text-foreground"
           >
-            Note to the creator {reason === "OTHER" ? "(required)" : "(optional)"}
+            Note to the muse {reason === "OTHER" ? "(required)" : "(optional)"}
           </label>
           <textarea
             id="reject-tag-note"

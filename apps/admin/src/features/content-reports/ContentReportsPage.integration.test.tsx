@@ -15,7 +15,7 @@ const aReport = (overrides: Partial<ContentReport> = {}): ContentReport => ({
   targetType: "CREATOR_LOOK",
   targetId: "look-1",
   reason: "SPAM",
-  note: "This is a bot post.",
+  note: "This is a bot drop.",
   status: "OPEN",
   createdAt: "2026-09-08T00:00:00.000Z",
   resolvedAt: null,
@@ -56,7 +56,7 @@ describe("ContentReportsPage", () => {
 
     expect(await screen.findByText(/Buy followers at cheapfollowers\.test/)).toBeInTheDocument();
     expect(screen.getByText("2 prior removals")).toBeInTheDocument();
-    expect(screen.getByText(/This is a bot post\./)).toBeInTheDocument();
+    expect(screen.getByText(/This is a bot drop\./)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Open (1)" })).toBeInTheDocument();
     expect(screen.getByText(/1 open\./)).toBeInTheDocument();
   });

@@ -55,7 +55,7 @@ describe("useInfiniteBrandApplications", () => {
 });
 
 describe("brandApplicationsApi.approve", () => {
-  it("posts to the approve endpoint for the given application id", async () => {
+  it("drops to the approve endpoint for the given application id", async () => {
     let requestedId: string | readonly string[] | undefined;
     mswServer.use(
       http.post(`${API_BASE}/brand-applications/:id/approve`, ({ params }) => {
@@ -71,7 +71,7 @@ describe("brandApplicationsApi.approve", () => {
 });
 
 describe("brandApplicationsApi.reject", () => {
-  it("posts a reason when one is given", async () => {
+  it("drops a reason when one is given", async () => {
     let requestedBody: unknown;
     mswServer.use(
       http.post(`${API_BASE}/brand-applications/:id/reject`, async ({ request }) => {
@@ -85,7 +85,7 @@ describe("brandApplicationsApi.reject", () => {
     expect(requestedBody).toEqual({ reason: "Not a fit right now." });
   });
 
-  it("posts no body when no reason is given", async () => {
+  it("drops no body when no reason is given", async () => {
     let requestedBody: unknown;
     mswServer.use(
       http.post(`${API_BASE}/brand-applications/:id/reject`, async ({ request }) => {

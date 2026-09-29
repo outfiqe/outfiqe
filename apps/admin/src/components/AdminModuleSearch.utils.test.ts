@@ -26,7 +26,7 @@ const SECTIONS: SidebarNavSection[] = [
         href: "/creators",
         label: "Growth",
         items: [
-          { id: "creators", href: "/creators", label: "Creators" },
+          { id: "creators", href: "/creators", label: "Muses" },
           { id: "gamification", href: "/gamification", label: "Gamification" },
         ],
       },
@@ -74,7 +74,7 @@ describe("searchAdminModules", () => {
   const searchableModules = flattenSidebarSections(SECTIONS);
 
   it("matches case-insensitively anywhere in the label", () => {
-    const results = searchAdminModules(searchableModules, "CREAT");
+    const results = searchAdminModules(searchableModules, "MUS");
 
     expect(results.map((result) => result.id)).toEqual(["creators"]);
   });
@@ -98,7 +98,7 @@ describe("searchAdminModules", () => {
   });
 
   it("trims surrounding whitespace before matching", () => {
-    const results = searchAdminModules(searchableModules, "  creators  ");
+    const results = searchAdminModules(searchableModules, "  muses  ");
 
     expect(results.map((result) => result.id)).toEqual(["creators"]);
   });

@@ -80,7 +80,7 @@ afterEach(() => {
 });
 
 describe("useDeleteComment", () => {
-  it("removes a top-level comment and decrements the post's comment count by the full cascade size", async () => {
+  it("removes a top-level comment and decrements the drop's comment count by the full cascade size", async () => {
     vi.mocked(exploreFeedApi.deleteComment).mockResolvedValue(undefined);
     const { result, queryClient } = renderUseDeleteComment();
     queryClient.setQueryData<CommentPage>(lookCommentsQueryKey(LOOK_ID), {
@@ -108,7 +108,7 @@ describe("useDeleteComment", () => {
     expect(queryClient.getQueryData<FeedPost>(PUBLIC_LOOK_KEY)?.commentCount).toBe(0);
   });
 
-  it("removes a reply and decrements the parent's reply count and the post's comment count by one", async () => {
+  it("removes a reply and decrements the parent's reply count and the drop's comment count by one", async () => {
     vi.mocked(exploreFeedApi.deleteComment).mockResolvedValue(undefined);
     const { result, queryClient } = renderUseDeleteComment();
     queryClient.setQueryData<CommentPage>(lookCommentsQueryKey(LOOK_ID), {

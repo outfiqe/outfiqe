@@ -3,7 +3,7 @@ import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { LEADERBOARD_TABS } from "../leaderboard.constants";
 
 const CATEGORY_EXPLANATIONS: Record<string, string> = {
-  trending: "Blends recent sales, saves, and creator tags into one momentum score.",
+  trending: "Blends recent sales, stashes, and muse tags into one momentum score.",
   "most-purchased": "Total units sold across all of a brand's products this week.",
   "most-loved": "Net new followers gained this week.",
   "fastest-growing": "Percentage growth in sales compared to last week.",

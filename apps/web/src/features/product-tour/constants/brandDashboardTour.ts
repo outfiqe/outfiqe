@@ -33,7 +33,7 @@ export const BRAND_DASHBOARD_TOUR_STEPS: TourStep[] = [
     id: "tag-reviews",
     anchorSelector: sidebarItemSelector("tag-reviews"),
     title: "Tag reviews",
-    body: "Creators tag your products in their looks. Approve or decline each tag here. You decide who can tag your products in your profile settings.",
+    body: "Muses tag your products in their looks. Approve or decline each tag here. You decide who can tag your products in your profile settings.",
   },
   {
     id: "orders",

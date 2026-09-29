@@ -204,7 +204,7 @@ describe("scoreSuggestionCandidate", () => {
     expect(score).toBeCloseTo(Math.log1p(10) + 0.5 * Math.log1p(100), 10);
   });
 
-  it("floors a brand-new creator's zero base score instead of leaving it at zero", () => {
+  it("floors a brand-new muse's zero base score instead of leaving it at zero", () => {
     const approvedAt = new Date(NOW.getTime() - DAY_MS);
     const score = scoreSuggestionCandidate(baseSignals({ creatorApprovedAt: approvedAt }), NOW);
     expect(score).toBe(0.25);
@@ -288,7 +288,7 @@ describe("scoreSuggestionCandidate", () => {
     expect(scoreSuggestionCandidate(baseSignals(), NOW)).toBe(0);
   });
 
-  it("uses the freshness floor (not a separate signal floor) for a newly-approved creator with a signal", () => {
+  it("uses the freshness floor (not a separate signal floor) for a newly-approved muse with a signal", () => {
     const approvedAt = new Date(NOW.getTime() - DAY_MS);
     const score = scoreSuggestionCandidate(
       baseSignals({ mutualFollowCount: 3, creatorApprovedAt: approvedAt }),
@@ -357,7 +357,7 @@ describe("compareSuggestionCandidatesByScore", () => {
     ).toEqual(["creator-high", "creator-low"]);
   });
 
-  it("breaks an equal-score tie by creator id, regardless of which order they arrived in", () => {
+  it("breaks an equal-score tie by muse id, regardless of which order they arrived in", () => {
     const first = candidateOf("creator-a", 5, baseSignals({ momentum: 5 }));
     const second = candidateOf("creator-b", 5, baseSignals({ momentum: 5 }));
 

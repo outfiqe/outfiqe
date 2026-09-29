@@ -34,7 +34,7 @@ export const appScreenshots: AppScreenshot[] = [
     route: "/explore?tab=madeinnepal",
     formFactor: "narrow",
     size: NARROW_SCREENSHOT_SIZE,
-    label: "See real creator looks",
+    label: "See real muse looks",
   },
   {
     fileName: "home-wide.png",

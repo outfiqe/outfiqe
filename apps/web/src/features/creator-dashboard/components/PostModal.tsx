@@ -97,7 +97,7 @@ export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) =
   const submitLook = form.handleSubmit(async (values) => {
     try {
       await create.mutateAsync(values);
-      toast.success("Look posted");
+      toast.success("Look dropped");
       close();
     } catch {
       return;
@@ -170,7 +170,7 @@ export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) =
     <Modal
       open={open}
       onClose={close}
-      title="New post"
+      title="New drop"
       description="Share a fit and tag the pieces you're wearing."
       className="h-dvh max-h-dvh rounded-none sm:h-auto sm:max-h-[90vh] sm:max-w-4xl sm:rounded-2xl"
     >
@@ -197,7 +197,7 @@ export const PostModal = ({ open, onClose, initialPhotoFile }: PostModalProps) =
               disabled={pending.photos.length === 0 || pending.hasUnresolvedCrop}
               isLoading={isProcessingPhotos || create.isPending}
             >
-              Post look
+              Drop look
             </Button>
           </>
         }

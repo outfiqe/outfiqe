@@ -30,8 +30,8 @@ export const generateMetadata = async ({ params }: CreatorPageProps): Promise<Me
 
   if (!creator) {
     return buildPageMetadata({
-      title: "Creator not found",
-      description: "This creator profile is not available on Outfiqe.",
+      title: "Muse not found",
+      description: "This muse profile is not available on Outfiqe.",
       path: `/creator/${handle}`,
       noIndex: true,
     });
@@ -43,7 +43,7 @@ export const generateMetadata = async ({ params }: CreatorPageProps): Promise<Me
     path: `/creator/${creator.handle}`,
     ogType: "profile",
     image: creator.avatarUrl ? { url: creator.avatarUrl, alt: creator.name } : undefined,
-    keywords: [creator.name, `@${creator.handle}`, "Nepali fashion creator", "creator looks"],
+    keywords: [creator.name, `@${creator.handle}`, "Nepali fashion muse", "muse looks"],
   });
 };
 
@@ -62,7 +62,7 @@ const CreatorPage = async ({ params }: CreatorPageProps) => {
           <Breadcrumbs
             crumbs={[
               { name: "Home", path: "/" },
-              { name: "Creators", path: "/leaderboard/creators" },
+              { name: "Muses", path: "/leaderboard/creators" },
               { name: creator.name, path },
             ]}
           />

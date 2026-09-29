@@ -21,14 +21,14 @@ export const creatorController = {
     const { userId } = requireAuthPrincipal(res);
     const profile = await creatorService.apply(userId);
 
-    sendSuccess(res, profile, "Creator application submitted.");
+    sendSuccess(res, profile, "Muse application submitted.");
   },
 
   async me(_req: Request, res: Response) {
     const { userId } = requireAuthPrincipal(res);
     const profile = await creatorService.getMine(userId);
 
-    sendSuccess(res, profile, "Your creator profile.");
+    sendSuccess(res, profile, "Your muse profile.");
   },
 
   async updateMe(_req: Request, res: Response) {
@@ -65,7 +65,7 @@ export const creatorController = {
     const principal = requireAuthPrincipal(res);
 
     await creatorService.approve(userId, principal.userId);
-    sendSuccess(res, null, "Creator approved.");
+    sendSuccess(res, null, "Muse approved.");
   },
 
   async reject(_req: Request, res: Response) {
@@ -73,7 +73,7 @@ export const creatorController = {
     const principal = requireAuthPrincipal(res);
 
     await creatorService.reject(userId, principal.userId);
-    sendSuccess(res, null, "Creator rejected.");
+    sendSuccess(res, null, "Muse rejected.");
   },
 
   async getPublicByHandle(_req: Request, res: Response) {
@@ -95,6 +95,6 @@ export const creatorController = {
       query,
       principal?.userId,
     );
-    sendSuccess(res, page, "Creator's posts.");
+    sendSuccess(res, page, "Muse's drops.");
   },
 };

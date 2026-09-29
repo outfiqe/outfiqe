@@ -20,7 +20,7 @@ export const ApplyAsCreatorButton = () => {
   return (
     <div>
       <Button onClick={() => apply.mutate()} isLoading={apply.isPending} disabled={apply.isPending}>
-        Apply to become a creator
+        Apply to become a muse
       </Button>
       {apply.isError && (
         <p className="mt-2 text-sm text-destructive">{getErrorMessage(apply.error)}</p>

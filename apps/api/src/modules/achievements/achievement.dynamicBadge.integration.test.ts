@@ -82,7 +82,7 @@ const findUserBadge = (userId: string, badgeId: string) =>
   prisma.userBadge.findUnique({ where: { userId_badgeId: { userId, badgeId } } });
 
 describe("achievementService.recheckDynamicBadges", () => {
-  it("awards a dynamic rank badge to the currently top-ranked creator", async () => {
+  it("awards a dynamic rank badge to the currently top-ranked muse", async () => {
     const [high, low] = await Promise.all([createCreator(), createCreator()]);
     await giveXp(high.id, 50_000_000);
     await giveXp(low.id, 1);

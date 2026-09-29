@@ -29,25 +29,25 @@ export const BRAND_TAG_POLICY_OPTIONS: {
 }[] = [
   {
     value: "TRUSTED_ONLY",
-    label: "Trusted creators only",
+    label: "Trusted muses only",
     description:
-      "Creators you've worked with before or who've bought from you get tagged automatically. Everyone else waits for your review.",
+      "Muses you've worked with before or who've bought from you get tagged automatically. Everyone else waits for your review.",
   },
   {
     value: "APPROVAL_REQUIRED",
     label: "Review every tag",
-    description: "Every creator tag waits for you to approve it, with no automatic exceptions.",
+    description: "Every muse tag waits for you to approve it, with no automatic exceptions.",
   },
   {
     value: "OPEN",
-    label: "Open to all creators",
+    label: "Open to all muses",
     description:
-      "Any approved creator can tag your products and they go live immediately. You're still notified and can remove any tag.",
+      "Any approved muse can tag your products and they go live immediately. You're still notified and can remove any tag.",
   },
 ];
 
 export const BRAND_TAG_POLICY_LABELS: Record<BrandTagReviewPolicyValue, string> = {
-  TRUSTED_ONLY: "Trusted creators only",
+  TRUSTED_ONLY: "Trusted muses only",
   APPROVAL_REQUIRED: "Review every tag",
-  OPEN: "Open to all creators",
+  OPEN: "Open to all muses",
 };

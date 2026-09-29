@@ -32,7 +32,7 @@ export const creatorLookController = {
     const body = validated.body<CreateCreatorLookBody>(res);
 
     const look = await creatorLookService.create(userId, body);
-    sendSuccess(res, look, "Look posted.", CREATED_STATUS);
+    sendSuccess(res, look, "Look dropped.", CREATED_STATUS);
   },
 
   async getOwn(_req: Request, res: Response) {
@@ -40,7 +40,7 @@ export const creatorLookController = {
     const { lookId } = validated.params<LookIdParams>(res);
 
     const look = await creatorLookService.getOwn(lookId, userId);
-    sendSuccess(res, look, "Post detail.");
+    sendSuccess(res, look, "Drop detail.");
   },
 
   async getPublic(_req: Request, res: Response) {
@@ -57,7 +57,7 @@ export const creatorLookController = {
     const body = validated.body<CreateCreatorLookBody>(res);
 
     const look = await creatorLookService.update(lookId, userId, body);
-    sendSuccess(res, look, "Post updated.");
+    sendSuccess(res, look, "Drop updated.");
   },
 
   async remove(_req: Request, res: Response) {
@@ -65,7 +65,7 @@ export const creatorLookController = {
     const { lookId } = validated.params<LookIdParams>(res);
 
     await creatorLookService.remove(lookId, principal);
-    sendSuccess(res, { deleted: true }, "Post deleted.");
+    sendSuccess(res, { deleted: true }, "Drop deleted.");
   },
 
   async listSaved(_req: Request, res: Response) {
@@ -73,13 +73,13 @@ export const creatorLookController = {
     const query = validated.query<ListSavedQuery>(res);
     const page = await creatorLookService.listMySaved(userId, query);
 
-    sendSuccess(res, page, "Saved looks.");
+    sendSuccess(res, page, "Stashed looks.");
   },
 
   async listFeatured(_req: Request, res: Response) {
     const query = validated.query<ListCreatorLooksQuery>(res);
     const page = await creatorLookService.listPublic(query);
-    sendSuccess(res, page, "Creator looks.");
+    sendSuccess(res, page, "Muse looks.");
   },
 
   async feed(_req: Request, res: Response) {
@@ -162,7 +162,7 @@ export const creatorLookController = {
     const { body } = validated.body<CreateCommentBody>(res);
 
     const comment = await creatorLookService.addComment(lookId, userId, body);
-    sendSuccess(res, comment, "Comment added.", CREATED_STATUS);
+    sendSuccess(res, comment, "Chime added.", CREATED_STATUS);
   },
 
   async listReplies(_req: Request, res: Response) {
@@ -187,7 +187,7 @@ export const creatorLookController = {
     const { lookId, commentId } = validated.params<CommentIdParams>(res);
 
     await creatorLookService.removeComment(lookId, commentId, principal);
-    sendSuccess(res, { deleted: true }, "Comment deleted.");
+    sendSuccess(res, { deleted: true }, "Chime deleted.");
   },
 
   async recordTagClick(_req: Request, res: Response) {

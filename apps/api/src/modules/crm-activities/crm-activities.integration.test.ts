@@ -188,7 +188,7 @@ describe("CRM activities & timeline", () => {
   it("logs against a partner and a deal subject, and lists then deletes an activity", async () => {
     const tenant = await seedActivitiesTenant();
 
-    const partner = await createUser("Partner Creator", UserRole.CUSTOMER);
+    const partner = await createUser("Partner Muse", UserRole.CUSTOMER);
     const product = await prisma.product.findFirstOrThrow({
       where: { brand: { linkedOrganization: { id: tenant.organization.id } } },
     });

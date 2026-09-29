@@ -76,7 +76,7 @@ describe("ApplyAsCreatorButton", () => {
       http.post("/api/creators/apply", () =>
         HttpResponse.json({
           success: true,
-          message: "Creator application submitted.",
+          message: "Muse application submitted.",
           data: {
             userId: "user-1",
             name: "Ava Martinez",
@@ -96,7 +96,7 @@ describe("ApplyAsCreatorButton", () => {
     const user = userEvent.setup();
     renderButton();
 
-    await user.click(screen.getByRole("button", { name: "Apply to become a creator" }));
+    await user.click(screen.getByRole("button", { name: "Apply to become a muse" }));
 
     await waitFor(() => expect(refresh).toHaveBeenCalledOnce());
     expect(updateUser).toHaveBeenCalledWith({ creatorStatus: "PENDING" });
@@ -107,7 +107,7 @@ describe("ApplyAsCreatorButton", () => {
       http.post("/api/creators/apply", () =>
         HttpResponse.json({
           success: true,
-          message: "Creator application submitted.",
+          message: "Muse application submitted.",
           data: {
             userId: "user-1",
             name: "Ava Martinez",
@@ -127,11 +127,11 @@ describe("ApplyAsCreatorButton", () => {
     const user = userEvent.setup();
     renderButton();
 
-    await user.click(screen.getByRole("button", { name: "Apply to become a creator" }));
+    await user.click(screen.getByRole("button", { name: "Apply to become a muse" }));
 
     expect(await screen.findByText(/application submitted/i)).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Apply to become a creator" }),
+      screen.queryByRole("button", { name: "Apply to become a muse" }),
     ).not.toBeInTheDocument();
   });
 
@@ -141,7 +141,7 @@ describe("ApplyAsCreatorButton", () => {
         await delay(200);
         return HttpResponse.json({
           success: true,
-          message: "Creator application submitted.",
+          message: "Muse application submitted.",
           data: {
             userId: "user-1",
             name: "Ava Martinez",
@@ -161,7 +161,7 @@ describe("ApplyAsCreatorButton", () => {
     const user = userEvent.setup();
     renderButton();
 
-    await user.click(screen.getByRole("button", { name: "Apply to become a creator" }));
+    await user.click(screen.getByRole("button", { name: "Apply to become a muse" }));
 
     expect(await screen.findByRole("button", { name: "Loading" })).toBeDisabled();
   });
@@ -176,7 +176,7 @@ describe("ApplyAsCreatorButton", () => {
     const user = userEvent.setup();
     renderButton();
 
-    await user.click(screen.getByRole("button", { name: "Apply to become a creator" }));
+    await user.click(screen.getByRole("button", { name: "Apply to become a muse" }));
 
     expect(await screen.findByText("You've already applied.")).toBeInTheDocument();
   });

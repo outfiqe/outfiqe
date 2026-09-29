@@ -51,7 +51,7 @@ export const ExploreSearchResults = () => {
 
   if (!hasQuery) {
     return (
-      <p className="mt-12 text-sm text-muted-foreground">Search for a creator, post, or hashtag.</p>
+      <p className="mt-12 text-sm text-muted-foreground">Search for a muse, drop, or hashtag.</p>
     );
   }
 
@@ -74,14 +74,14 @@ export const ExploreSearchResults = () => {
         </div>
       ) : creators.length === 0 && posts.length === 0 ? (
         <p className="mt-12 text-sm text-muted-foreground">
-          No creators or posts matched. Try a different search.
+          No muses or drops matched. Try a different search.
         </p>
       ) : (
         <>
           {creators.length > 0 && (
             <section className="mt-8">
               <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                Creators
+                Muses
               </h2>
               <div className="mt-3 flex flex-col">
                 {creators.map(({ userId, handle, name, avatarUrl, followerCount }) => (
@@ -125,7 +125,7 @@ export const ExploreSearchResults = () => {
           {posts.length > 0 && (
             <section className="mt-8">
               <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                Posts
+                Drops
               </h2>
               <Masonry
                 breakpointCols={EXPLORE_GRID_BREAKPOINT_COLUMNS}

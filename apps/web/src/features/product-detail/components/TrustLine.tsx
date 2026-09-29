@@ -30,7 +30,7 @@ export const TrustLine = ({ wornByCount, creators, onClick }: TrustLineProps) =>
       </div>
       <span className="text-[13.5px] text-muted-foreground">
         Worn by <span className="font-semibold text-foreground">{wornByCount}</span>{" "}
-        {wornByCount === 1 ? "creator" : "creators"}
+        {wornByCount === 1 ? "muse" : "muses"}
       </span>
     </button>
   );

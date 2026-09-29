@@ -67,7 +67,7 @@ const mockAncillaryFeedEndpoints = () => {
       HttpResponse.json({ success: true, message: "Tags.", data: { tags: [] } }),
     ),
     http.get(SUGGESTED_CREATORS_URL, () =>
-      HttpResponse.json({ success: true, message: "Suggested creators.", data: { creators: [] } }),
+      HttpResponse.json({ success: true, message: "Suggested muses.", data: { creators: [] } }),
     ),
   );
 };
@@ -176,7 +176,7 @@ describe("ExploreFeed auth-resolution timing", () => {
     });
   });
 
-  it("shows a follow-creators empty state, not other creators' posts, on the following tab when it has no posts", async () => {
+  it("shows a follow-muses empty state, not other muses' drops, on the following tab when it has no drops", async () => {
     setHasSessionCookie();
     mockAncillaryFeedEndpoints();
     vi.mocked(useSearchParams).mockReturnValue(
@@ -201,7 +201,7 @@ describe("ExploreFeed auth-resolution timing", () => {
 
     render(<ExploreFeed />, { wrapper: createAuthQueryClientWrapper() });
 
-    expect(await screen.findByText(/No posts from creators you follow yet/)).toBeInTheDocument();
+    expect(await screen.findByText(/No drops from muses you follow yet/)).toBeInTheDocument();
   });
 
   it("rewrites a locked tab in the URL to tab=trending for an admin, so the address matches the tab shown", async () => {

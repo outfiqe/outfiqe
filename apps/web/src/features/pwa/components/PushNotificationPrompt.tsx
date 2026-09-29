@@ -70,7 +70,7 @@ export const PushNotificationPrompt = () => {
         <p className="text-sm text-foreground">
           {state === "failed"
             ? "Something went wrong turning on notifications."
-            : "Get notified when people like, follow, or message you."}
+            : "Get notified when people cheriq, follow, or message you."}
         </p>
         <div className="flex shrink-0 items-center gap-2">
           <button
@@ -107,7 +107,7 @@ export const PushNotificationPrompt = () => {
         }
       >
         <p className="text-sm text-muted-foreground">
-          Outfiqe will send a notification when someone likes your look, follows you, sends a
+          Outfiqe will send a notification when someone cheriqs your look, follows you, sends a
           message, or there&apos;s an update on your orders. Nothing else.
         </p>
       </Modal>

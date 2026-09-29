@@ -6,7 +6,7 @@ import { CommissionSource, type CreatorCommission } from "../api/commissionSchem
 import { CommissionStatusBadge } from "./CommissionStatusBadge";
 
 const SOURCE_LABEL: Record<CreatorCommission["source"], string> = {
-  [CommissionSource.TAG_CLICK]: "via tagged post",
+  [CommissionSource.TAG_CLICK]: "via tagged drop",
   [CommissionSource.INTERNAL_LINK]: "via your link",
   [CommissionSource.EXTERNAL_LINK]: "via shared link",
 };

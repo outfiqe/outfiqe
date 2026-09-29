@@ -22,7 +22,7 @@ describe("MarketingCta", () => {
     const { rerender } = render(
       <MarketingCta
         title="Start with a look you like"
-        body="Browse creator looks."
+        body="Browse muse looks."
         primary={{ href: "/shop", label: "Shop everything" }}
       />,
     );
@@ -31,7 +31,7 @@ describe("MarketingCta", () => {
     rerender(
       <MarketingCta
         title="Start with a look you like"
-        body="Browse creator looks."
+        body="Browse muse looks."
         primary={{ href: "/shop", label: "Shop everything" }}
         secondary={{ href: "/explore", label: "Explore looks" }}
       />,

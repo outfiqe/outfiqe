@@ -74,7 +74,7 @@ describe("useLikeLook", () => {
     expect(enqueueOfflineAction).not.toHaveBeenCalled();
   });
 
-  it("optimistically patches the like into the creator profile grid cache, not just the feed", async () => {
+  it("optimistically patches the like into the muse profile grid cache, not just the feed", async () => {
     vi.mocked(exploreFeedApi.unlike).mockResolvedValue({ liked: false, likeCount: 1 });
     const { result, queryClient } = renderUseLikeLook();
 

@@ -71,7 +71,7 @@ export const PLATFORM_PERMISSION_CATALOG = [
   },
   {
     key: "platform:gamification:manage",
-    label: "Manage badges, challenges, and creator competitions",
+    label: "Manage badges, challenges, and muse competitions",
     group: "Gamification",
   },
   {
@@ -86,7 +86,7 @@ export const PLATFORM_PERMISSION_CATALOG = [
   },
   {
     key: "platform:content:moderate",
-    label: "Remove reported creator-look posts and comments",
+    label: "Remove reported drops and chimes",
     group: "Moderation",
   },
   {
@@ -121,13 +121,13 @@ export const PLATFORM_PERMISSION_CATALOG = [
   },
   {
     key: "platform:creators:read",
-    label: "View creators and creator applications",
-    group: "Creators",
+    label: "View muses and muse applications",
+    group: "Muses",
   },
   {
     key: "platform:creators:manage",
-    label: "Approve or reject creator applications",
-    group: "Creators",
+    label: "Approve or reject muse applications",
+    group: "Muses",
   },
   {
     key: "platform:brands:read",

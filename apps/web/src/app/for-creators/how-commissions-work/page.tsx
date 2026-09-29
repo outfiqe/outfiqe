@@ -11,14 +11,14 @@ import {
 import { buildPageMetadata } from "@/shared/seo";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "How Outfiqe creator commissions work",
+  title: "How Outfiqe muse commissions work",
   description:
-    "A plain explanation of Outfiqe creator commissions: how a sale is attributed to your look or link, the attribution window, when a commission is approved, and how withdrawals are paid.",
+    "A plain explanation of Outfiqe muse commissions: how a sale is attributed to your look or link, the attribution window, when a commission is approved, and how withdrawals are paid.",
   path: "/for-creators/how-commissions-work",
   keywords: [
     "how affiliate commissions work",
-    "fashion creator commission Nepal",
-    "Outfiqe creator payout",
+    "fashion muse commission Nepal",
+    "Outfiqe muse payout",
   ],
 });
 
@@ -46,7 +46,7 @@ const faqs = [
   {
     question: "Do I earn if I buy through my own link?",
     answer:
-      "No. A purchase where the buyer is the creator is never attributed. Self-referrals earn nothing.",
+      "No. A purchase where the buyer is the muse is never attributed. Self-referrals earn nothing.",
   },
   {
     question: "What happens if the order is cancelled or refunded?",
@@ -70,12 +70,12 @@ const HowCommissionsWorkPage = () => (
     width="prose"
     breadcrumbs={[
       { name: "Home", path: "/" },
-      { name: "Become a creator", path: "/for-creators" },
+      { name: "Become a muse", path: "/for-creators" },
       { name: "How commissions work", path: "/for-creators/how-commissions-work" },
     ]}
   >
     <MarketingHero
-      eyebrow="For creators"
+      eyebrow="For muses"
       title="How commissions work"
       lede="Everything you earn on Outfiqe is tracked automatically. This is exactly how a sale becomes a commission, and how that commission becomes money in your account."
     />
@@ -92,7 +92,7 @@ const HowCommissionsWorkPage = () => (
           product links. They then buy that product within <strong>7 days</strong>.
         </p>
         <p>
-          If more than one creator&apos;s tap or link qualifies, the most recent one is credited. A
+          If more than one muse&apos;s tap or link qualifies, the most recent one is credited. A
           general profile link counts for whatever the shopper buys. A product-specific link only
           counts for that product.
         </p>
@@ -110,7 +110,7 @@ const HowCommissionsWorkPage = () => (
           href="/for-creators"
           className="font-medium text-foreground underline underline-offset-2"
         >
-          creator dashboard
+          muse dashboard
         </Link>{" "}
         shows every attributed sale, its commission and its payout status in real time.
       </p>

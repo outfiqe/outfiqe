@@ -79,7 +79,7 @@ export const ReviewForm = ({
           isLoading={isSubmitting}
           onClick={() => void submit()}
         >
-          {isEditing ? "Save changes" : "Post review"}
+          {isEditing ? "Save changes" : "Publish review"}
         </Button>
       }
     >
