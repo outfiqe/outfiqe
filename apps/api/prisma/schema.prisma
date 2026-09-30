@@ -101,6 +101,7 @@ model User {
   oauthIdentities                          OAuthIdentity[]
   chatSettings                             ChatSettings?
   tastePreference                          TastePreference?
+  savedSizes                               SavedSize[]
   tourProgress                             UserTourProgress[]
   chatBlocksInitiated                      ChatBlock[]                 @relation("ChatBlocksInitiated")
   chatBlocksReceived                       ChatBlock[]                 @relation("ChatBlocksReceived")
@@ -638,9 +639,23 @@ model ProductType {
   products        Product[]
   sizeOptions     SizeOption[]
   outfitSlotTypes OutfitSlotTypeProductType[]
+  savedSizes      SavedSize[]
 
   @@index([isActive, sortOrder])
   @@map("product_types")
+}
+
+model SavedSize {
+  userId        String      @map("user_id") @db.Uuid
+  productTypeId String      @map("product_type_id") @db.Uuid
+  sizeLabel     String      @map("size_label")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productType   ProductType @relation(fields: [productTypeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, productTypeId])
+  @@index([productTypeId])
+  @@map("saved_sizes")
 }
 
 model TastePreference {
@@ -1949,6 +1964,13 @@ enum NotificationType {
   CRM_INVOICE_DUE
   CRM_SUBSCRIPTION_PAST_DUE
   CRM_SUBSCRIPTION_CANCELED
+  OUTFIT_BOARD_ACTIVITY
+  OUTFIT_READY_TO_LOCK
+  OUTFIT_LOCKED
+  OUTFIT_INVITED
+  OUTFIT_SHARED
+  OUTFIT_MADE_PUBLIC
+  OUTFIT_ITEMS_SOLD_OUT
 }
 
 enum NotificationEntityType {
@@ -1967,6 +1989,7 @@ enum NotificationEntityType {
   ANNOUNCEMENT
   CRM_SUBSCRIPTION
   CRM_SUBSCRIPTION_INVOICE
+  OUTFIT
 }
 
 enum NotificationSurface {
@@ -2688,17 +2711,18 @@ model OutfitSlot {
 }
 
 model OutfitItem {
-  id           String     @id @default(uuid()) @db.Uuid
-  outfitId     String     @map("outfit_id") @db.Uuid
-  outfitSlotId String     @map("outfit_slot_id") @db.Uuid
-  position     Int
-  productId    String     @map("product_id") @db.Uuid
-  addedById    String?    @map("added_by_id") @db.Uuid
-  addedAt      DateTime   @default(now()) @map("added_at")
-  outfit       Outfit     @relation(fields: [outfitId], references: [id], onDelete: Cascade)
-  slot         OutfitSlot @relation(fields: [outfitSlotId, outfitId], references: [id, outfitId], onDelete: Cascade)
-  product      Product    @relation(fields: [productId], references: [id], onDelete: Restrict)
-  addedBy      User?      @relation("OutfitItemsAdded", fields: [addedById], references: [id], onDelete: SetNull)
+  id               String     @id @default(uuid()) @db.Uuid
+  outfitId         String     @map("outfit_id") @db.Uuid
+  outfitSlotId     String     @map("outfit_slot_id") @db.Uuid
+  position         Int
+  productId        String     @map("product_id") @db.Uuid
+  addedById        String?    @map("added_by_id") @db.Uuid
+  addedAt          DateTime   @default(now()) @map("added_at")
+  soldOutAlertedAt DateTime?  @map("sold_out_alerted_at")
+  outfit           Outfit     @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  slot             OutfitSlot @relation(fields: [outfitSlotId, outfitId], references: [id, outfitId], onDelete: Cascade)
+  product          Product    @relation(fields: [productId], references: [id], onDelete: Restrict)
+  addedBy          User?      @relation("OutfitItemsAdded", fields: [addedById], references: [id], onDelete: SetNull)
 
   @@unique([outfitSlotId, position])
   @@unique([outfitId, productId])

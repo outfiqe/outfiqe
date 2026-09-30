@@ -27,6 +27,16 @@ export const chatSystemEventSchema = z.discriminatedUnion("type", [
     member: chatMemberReferenceSchema,
   }),
   z.object({ type: z.literal(CHAT_SYSTEM_EVENT.ADMIN_REMOVED), member: chatMemberReferenceSchema }),
+  z.object({
+    type: z.literal(CHAT_SYSTEM_EVENT.OUTFIT_EDITORS_ADDED),
+    members: z.array(chatMemberReferenceSchema),
+  }),
+  z.object({ type: z.literal(CHAT_SYSTEM_EVENT.OUTFIT_ITEM_ADDED), productName: z.string() }),
+  z.object({ type: z.literal(CHAT_SYSTEM_EVENT.OUTFIT_ITEM_SWAPPED), productName: z.string() }),
+  z.object({ type: z.literal(CHAT_SYSTEM_EVENT.OUTFIT_ITEM_REMOVED), productName: z.string() }),
+  z.object({ type: z.literal(CHAT_SYSTEM_EVENT.OUTFIT_EVERYONE_HAPPY) }),
+  z.object({ type: z.literal(CHAT_SYSTEM_EVENT.OUTFIT_LOCKED) }),
+  z.object({ type: z.literal(CHAT_SYSTEM_EVENT.OUTFIT_UNLOCKED) }),
 ]);
 
 export type ChatSystemEvent = z.infer<typeof chatSystemEventSchema>;

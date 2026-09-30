@@ -14,6 +14,8 @@ const messageInclude = {
   },
 } as const;
 
+const UNREAD_STEP = 1;
+
 export const messageRepository = {
   async send(
     conversationId: string,
@@ -47,6 +49,30 @@ export const messageRepository = {
     });
   },
 
+  async createOutfitCard(
+    tx: Prisma.TransactionClient,
+    {
+      conversationId,
+      senderId,
+      outfitId,
+      preview,
+    }: { conversationId: string; senderId: string; outfitId: string; preview: string },
+  ) {
+    const message = await tx.message.create({
+      data: { conversationId, senderId, kind: MessageKind.OUTFIT_CARD, outfitId },
+      include: messageInclude,
+    });
+    await tx.conversation.update({
+      where: { id: conversationId },
+      data: { lastMessageAt: message.createdAt, lastMessagePreview: preview },
+    });
+    await tx.conversationParticipant.updateMany({
+      where: { conversationId, userId: { not: senderId } },
+      data: { unreadCount: { increment: UNREAD_STEP } },
+    });
+    return message;
+  },
+
   async createSystemMessage(
     tx: Prisma.TransactionClient,
     {
@@ -65,6 +91,10 @@ export const messageRepository = {
       data: { lastMessageAt: message.createdAt, lastMessagePreview: preview },
     });
     return message;
+  },
+
+  async findById(messageId: string) {
+    return prisma.message.findUnique({ where: { id: messageId }, include: messageInclude });
   },
 
   async listOtherReaderCursors(conversationId: string, callerId: string): Promise<ReaderCursor[]> {

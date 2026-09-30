@@ -16,9 +16,14 @@ const fns = vi.hoisted(() => ({
   registerMessageEventConsumer: vi.fn(),
   registerConversationMembershipConsumer: vi.fn(),
   registerPresenceSocketConsumer: vi.fn(),
+  registerChatOutboxHandlers: vi.fn(),
+  registerOutfitSocketHandlers: vi.fn(),
+  registerOutfitRealtimeHandlers: vi.fn(),
   registerXpEventConsumers: vi.fn(),
   registerAchievementEventConsumers: vi.fn(),
   registerNotificationEventConsumers: vi.fn(),
+  registerOutfitNotificationHandlers: vi.fn(),
+  registerOutfitStockHandlers: vi.fn(),
 }));
 
 vi.mock("#socket/socket.listeners.js", () => ({
@@ -54,6 +59,21 @@ vi.mock("#modules/chat/conversation.socket.js", () => ({
   registerConversationMembershipConsumer: fns.registerConversationMembershipConsumer,
   registerPresenceSocketConsumer: fns.registerPresenceSocketConsumer,
 }));
+vi.mock("#modules/chat/chat.outbox.js", () => ({
+  registerChatOutboxHandlers: fns.registerChatOutboxHandlers,
+}));
+vi.mock("#modules/outfits/outfit.socket.js", () => ({
+  registerOutfitSocketHandlers: fns.registerOutfitSocketHandlers,
+}));
+vi.mock("#modules/outfits/outfit.realtime.js", () => ({
+  registerOutfitRealtimeHandlers: fns.registerOutfitRealtimeHandlers,
+}));
+vi.mock("#modules/outfits/outfit.notifications.js", () => ({
+  registerOutfitNotificationHandlers: fns.registerOutfitNotificationHandlers,
+}));
+vi.mock("#modules/outfits/outfit.stock.js", () => ({
+  registerOutfitStockHandlers: fns.registerOutfitStockHandlers,
+}));
 vi.mock("#modules/xp/xp.events.js", () => ({
   registerXpEventConsumers: fns.registerXpEventConsumers,
 }));
@@ -82,12 +102,17 @@ const REALTIME_REGISTRATIONS = [
   "registerMessageEventConsumer",
   "registerConversationMembershipConsumer",
   "registerPresenceSocketConsumer",
+  "registerChatOutboxHandlers",
+  "registerOutfitSocketHandlers",
+  "registerOutfitRealtimeHandlers",
 ] as const satisfies ReadonlyArray<keyof typeof fns>;
 
 const BACKGROUND_REGISTRATIONS = [
   "registerXpEventConsumers",
   "registerAchievementEventConsumers",
   "registerNotificationEventConsumers",
+  "registerOutfitNotificationHandlers",
+  "registerOutfitStockHandlers",
 ] as const satisfies ReadonlyArray<keyof typeof fns>;
 
 beforeEach(() => {

@@ -138,6 +138,47 @@ describe("feature flags API", () => {
   });
 });
 
+describe("GET /api/feature-flags/mine", () => {
+  const MY_FLAGS_PATH = "/api/feature-flags/mine";
+
+  it("returns no features for a signed-out visitor while everything is off", async () => {
+    const response = await request(testApp).get(MY_FLAGS_PATH);
+
+    expect(response.status).toBe(OK_STATUS);
+    expect(response.body.data).toEqual({ enabledKeys: [] });
+  });
+
+  it("returns a feature only to people it is rolled out to, including through their brand", async () => {
+    const { authHeader: adminAuth } = await createAdminSession();
+    const brandMember = await createShopper();
+    const outsider = await createShopper();
+    const brand = await createBrandWithMember(brandMember.shopper.id);
+    await setOutfitBuilderFlag(adminAuth, {
+      rollout: FeatureFlagRollout.ALLOW_LIST,
+      allowedBrandIds: [brand.id],
+    });
+
+    const enabledKeysFor = async (authHeader: string) =>
+      (await request(testApp).get(MY_FLAGS_PATH).set("Authorization", authHeader)).body.data
+        .enabledKeys;
+
+    expect(await enabledKeysFor(brandMember.authHeader)).toEqual([OUTFIT_BUILDER_FLAG]);
+    expect(await enabledKeysFor(outsider.authHeader)).toEqual([]);
+  });
+
+  it("treats a bad token as a signed-out visitor instead of failing", async () => {
+    const { authHeader: adminAuth } = await createAdminSession();
+    await setOutfitBuilderFlag(adminAuth, { rollout: FeatureFlagRollout.EVERYONE });
+
+    const response = await request(testApp)
+      .get(MY_FLAGS_PATH)
+      .set("Authorization", "Bearer not-a-real-token");
+
+    expect(response.status).toBe(OK_STATUS);
+    expect(response.body.data.enabledKeys).toEqual([OUTFIT_BUILDER_FLAG]);
+  });
+});
+
 describe("requireFeatureFlag", () => {
   it("hides the route from everyone while the flag is off", async () => {
     const { authHeader } = await createShopper();

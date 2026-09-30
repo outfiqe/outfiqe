@@ -141,6 +141,13 @@ const RECEIVING_AUDIENCE_BY_TYPE: Record<NotificationType, AudienceRule> = {
   [NotificationType.CRM_SUBSCRIPTION_CANCELED]: organizationStaffHolding(
     TENANT_STAFF_NOTIFICATION_PERMISSIONS[NotificationType.CRM_SUBSCRIPTION_CANCELED],
   ),
+  [NotificationType.OUTFIT_BOARD_ACTIVITY]: storefrontAccounts,
+  [NotificationType.OUTFIT_READY_TO_LOCK]: storefrontAccounts,
+  [NotificationType.OUTFIT_LOCKED]: storefrontAccounts,
+  [NotificationType.OUTFIT_INVITED]: storefrontAccounts,
+  [NotificationType.OUTFIT_SHARED]: storefrontAccounts,
+  [NotificationType.OUTFIT_MADE_PUBLIC]: storefrontAccounts,
+  [NotificationType.OUTFIT_ITEMS_SOLD_OUT]: storefrontAccounts,
 };
 
 export const canReceiveNotificationType = (

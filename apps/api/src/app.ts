@@ -56,7 +56,10 @@ import { crmRelationshipsRoutes } from "./modules/crm-relationships/crm-relation
 import { crmReportingRoutes } from "./modules/crm-reporting/crm-reporting.routes.js";
 import { crmTicketsRoutes } from "./modules/crm-tickets/crm-tickets.routes.js";
 import { deliveryZoneRoutes } from "./modules/delivery-zones/deliveryZone.routes.js";
-import { featureFlagsRoutes } from "./modules/feature-flags/feature-flags.routes.js";
+import {
+  featureFlagsRoutes,
+  viewerFeatureFlagsRoutes,
+} from "./modules/feature-flags/feature-flags.routes.js";
 import { financialRollupRoutes } from "./modules/financial-rollup/financialRollup.routes.js";
 import { followRoutes } from "./modules/follows/follow.routes.js";
 import { heroSlideRoutes } from "./modules/hero-slides/heroSlide.routes.js";
@@ -68,6 +71,7 @@ import { nepalBankRoutes } from "./modules/nepal-banks/nepalBank.routes.js";
 import { notificationRoutes } from "./modules/notifications/notification.routes.js";
 import { orderRoutes } from "./modules/orders/order.routes.js";
 import { outfitSlotTypeRoutes } from "./modules/outfit-slot-types/outfit-slot-type.routes.js";
+import { outfitRoutes } from "./modules/outfits/outfit.routes.js";
 import { paymentRoutes } from "./modules/payments/payment.routes.js";
 import { platformAuditRoutes } from "./modules/platform-audit/platform-audit.routes.js";
 import { platformFeaturesRoutes } from "./modules/platform-features/platform-features.routes.js";
@@ -84,6 +88,7 @@ import { productTypeRoutes } from "./modules/product-types/product-type.routes.j
 import { productRoutes } from "./modules/products/product.routes.js";
 import { pushRoutes } from "./modules/push/push.routes.js";
 import { saleRoutes } from "./modules/sale/sale.routes.js";
+import { savedSizeRoutes } from "./modules/saved-sizes/savedSize.routes.js";
 import { sizeOptionRoutes } from "./modules/size-options/size-option.routes.js";
 import { supportRoutes } from "./modules/support/support.routes.js";
 import { tagReportRoutes } from "./modules/tag-reports/tagReport.routes.js";
@@ -187,7 +192,9 @@ export const createApp = () => {
   app.use("/api/products/:productId/reviews", productReviewRoutes);
   app.use("/api/product-types", productTypeRoutes);
   app.use("/api/size-options", sizeOptionRoutes);
+  app.use("/api/feature-flags", viewerFeatureFlagsRoutes);
   app.use("/api/outfit-slot-types", outfitSlotTypeRoutes);
+  app.use("/api/outfits", outfitRoutes);
   app.use("/api/cart", cartRoutes);
   app.use("/api/addresses", addressRoutes);
   app.use("/api/orders", orderRoutes);
@@ -221,6 +228,7 @@ export const createApp = () => {
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/categories", categoryRoutes);
   app.use("/api/taste-preferences", tastePreferenceRoutes);
+  app.use("/api/saved-sizes", savedSizeRoutes);
   app.use("/api/tours", tourRoutes);
   app.use("/api/hero-slides", heroSlideRoutes);
   app.use("/api/image-processing", imageProcessingRoutes);

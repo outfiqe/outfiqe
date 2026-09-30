@@ -24,6 +24,11 @@ const withOthers = (payload: NotificationBroadcastPayload, singular: string): st
 const couponCodeFrom = (payload: NotificationBroadcastPayload): string =>
   typeof payload.metadata.couponCode === "string" ? payload.metadata.couponCode : "A coupon";
 
+const outfitNameFrom = (payload: NotificationBroadcastPayload): string =>
+  typeof payload.metadata.outfitTitle === "string" && payload.metadata.outfitTitle
+    ? `"${payload.metadata.outfitTitle}"`
+    : "an outfit build";
+
 const organizationNameFrom = (payload: NotificationBroadcastPayload): string =>
   typeof payload.metadata.crmOrganizationName === "string"
     ? payload.metadata.crmOrganizationName
@@ -188,6 +193,34 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     title: "Subscription canceled",
     body: (payload) =>
       `The ${organizationNameFrom(payload)} subscription was canceled because it wasn't renewed`,
+  },
+  [NotificationType.OUTFIT_BOARD_ACTIVITY]: {
+    title: "Build updated",
+    body: (payload) => `${withOthers(payload, "changed")} ${outfitNameFrom(payload)}`,
+  },
+  [NotificationType.OUTFIT_READY_TO_LOCK]: {
+    title: "Ready to lock",
+    body: (payload) => `Everyone's happy with ${outfitNameFrom(payload)}`,
+  },
+  [NotificationType.OUTFIT_LOCKED]: {
+    title: "Build locked",
+    body: (payload) => `${outfitNameFrom(payload)} was locked`,
+  },
+  [NotificationType.OUTFIT_INVITED]: {
+    title: "You're invited to a build",
+    body: (payload) => `Help put together ${outfitNameFrom(payload)}`,
+  },
+  [NotificationType.OUTFIT_SHARED]: {
+    title: "A build was shared with you",
+    body: (payload) => `Take a look at ${outfitNameFrom(payload)}`,
+  },
+  [NotificationType.OUTFIT_MADE_PUBLIC]: {
+    title: "Build is public",
+    body: (payload) => `${outfitNameFrom(payload)} is now public`,
+  },
+  [NotificationType.OUTFIT_ITEMS_SOLD_OUT]: {
+    title: "Something in your build sold out",
+    body: (payload) => `Swap it in ${outfitNameFrom(payload)} before you lock`,
   },
 };
 

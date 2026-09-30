@@ -27,6 +27,7 @@ const WEB_ROUTES = {
   brandProducts: "/products",
   messagesList: "/messages",
   supportList: "/support",
+  buildsList: "/builds",
 } as const;
 
 const ADMIN_ROUTES = {
@@ -181,6 +182,14 @@ export const resolveNotificationTarget = ({
         : admin(ADMIN_ROUTES.coupons);
     case NotificationType.ANNOUNCEMENT:
       return announcementTarget(metadata);
+    case NotificationType.OUTFIT_BOARD_ACTIVITY:
+    case NotificationType.OUTFIT_READY_TO_LOCK:
+    case NotificationType.OUTFIT_LOCKED:
+    case NotificationType.OUTFIT_INVITED:
+    case NotificationType.OUTFIT_SHARED:
+    case NotificationType.OUTFIT_MADE_PUBLIC:
+    case NotificationType.OUTFIT_ITEMS_SOLD_OUT:
+      return entityId ? web(`${WEB_ROUTES.buildsList}/${entityId}`) : web(WEB_ROUTES.buildsList);
     default:
       return null;
   }

@@ -1,12 +1,17 @@
 import { addMilliseconds } from "date-fns/addMilliseconds";
 import { isFuture } from "date-fns/isFuture";
 
+import { FeatureFlagRollout } from "#generated/prisma/enums.js";
 import logger from "#lib/winston.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 import { describeError } from "#redis/redis.utils.js";
 
 import { FEATURE_FLAG_CACHE_TTL_MS } from "./feature-flags.constants.js";
-import { FEATURE_FLAG_REGISTRY, type FeatureFlagKey } from "./feature-flags.registry.js";
+import {
+  FEATURE_FLAG_KEYS,
+  FEATURE_FLAG_REGISTRY,
+  type FeatureFlagKey,
+} from "./feature-flags.registry.js";
 import { featureFlagsRepository } from "./feature-flags.repository.js";
 import type {
   FeatureFlagChange,
@@ -73,6 +78,23 @@ export const featureFlagsService = {
         ? await featureFlagsRepository.listBrandIdsForUser(userId)
         : [];
     return isFlagOnFor(state, { userId, brandIds });
+  },
+
+  async listEnabledKeysForUser(userId: string | null): Promise<FeatureFlagKey[]> {
+    const flags = await Promise.all(
+      FEATURE_FLAG_KEYS.map(async (key) => ({ key, state: await readFlagState(key) })),
+    );
+    const needsBrandIds =
+      userId !== null && flags.some(({ state }) => needsBrandMembershipLookup(state));
+    const brandIds = needsBrandIds ? await featureFlagsRepository.listBrandIdsForUser(userId) : [];
+    return flags
+      .filter(({ state }) => isFlagOnFor(state, { userId, brandIds }))
+      .map(({ key }) => key);
+  },
+
+  async isRolledOutToAnyone(key: FeatureFlagKey): Promise<boolean> {
+    const { rollout } = await readFlagState(key);
+    return rollout !== FeatureFlagRollout.OFF;
   },
 
   async list(): Promise<FeatureFlagView[]> {

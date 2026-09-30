@@ -25,6 +25,7 @@ export type MessageRecord = {
   sender: ConversationParticipantSummary;
   kind: MessageKind;
   systemEvent: ChatSystemEvent | null;
+  outfitId: string | null;
   body: string | null;
   attachments: MessageAttachmentRecord[];
   createdAt: string;

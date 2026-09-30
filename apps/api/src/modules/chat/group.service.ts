@@ -48,6 +48,13 @@ const requireGroupMembership = async (
   }
   const callerMember = await groupRepository.findMember(tx, conversationId, callerId);
   if (!callerMember) throw groupNotFound();
+  if (await groupRepository.isBuildChat(tx, conversationId)) {
+    throw new AppError(
+      "BUILD_CHAT_MANAGED_BY_BUILD",
+      "This chat belongs to an outfit build. Change who is in it from the build instead.",
+      CONFLICT_STATUS,
+    );
+  }
   return callerMember;
 };
 

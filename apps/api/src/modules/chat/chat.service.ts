@@ -86,6 +86,11 @@ const computeChatAvailability = async (
 };
 
 export const chatService = {
+  async hasBlockBetween(userAId: string, userBId: string): Promise<boolean> {
+    const block = await chatRepository.findBlockBetween(userAId, userBId);
+    return block !== null;
+  },
+
   async getSettings(userId: string, role: UserRole): Promise<ChatSettingsView> {
     if (role === UserRole.ADMIN) return { isChatEnabled: true };
 

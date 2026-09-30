@@ -89,6 +89,20 @@ false, reason }` — one of `YOU_TURNED_OFF_THIS_PERSON` (the caller owns the bl
   `CONVERSATION_MEMBER_REMOVED`, pulls every open socket of the removed person out of the
   conversation room and tells their devices to drop the chat (`conversation:removed`).
 
+**Build chats (Outfit Build)**
+
+- `build-chat.service.ts` — `buildChatService`, used only by `../outfits` inside a build's
+  transaction: create the build's group chat when its first editor joins, add editors, remove a
+  removed or leaving editor, rename it with the build. Each change writes its event line and an
+  outbox row instead of publishing straight away.
+- `chat.outbox.ts` — the outbox handlers for `chat.message-created` and `chat.member-removed`.
+  They reload the event line (`messageRepository.findById`) and republish the ordinary
+  `MESSAGE_CREATED` / `CONVERSATION_MEMBER_REMOVED` domain events, so delivery, ticks and offline
+  notifications work exactly as for any group.
+- `group.service.ts` refuses every group-management action (rename, add, remove, change admin,
+  leave) on a build's chat with `409 BUILD_CHAT_MANAGED_BY_BUILD`; reading its members still works.
+- `chat.service.ts`'s `hasBlockBetween` — the block check builds use for invites and shares.
+
 **Presence (Phase 2, pulled forward from the original roadmap)**
 
 - `apps/api/src/shared/socket/socket.presence.ts` — `isUserOnline(userId)`, a live
@@ -213,6 +227,18 @@ group or adding others doesn't buzz everyone.
 **Group previews name the sender.** A group's `lastMessagePreview` is stored as "Sita: see you
 there" (`conversationPreviewFor`), and event lines store their sentence ("Sita added Ram"), so the
 chat list reads well without the client knowing who sent the last message.
+
+**A build's chat belongs to the build.** Only the build's owner and editors are ever in it, and
+viewers must never get in, so membership changes only through the build
+(`buildChatService`). Letting a chat admin add someone from the chat side would quietly give a
+non-editor access to the working chat. Build chat changes go through the outbox because they
+happen inside the build's transaction; publishing straight away would announce changes that
+could still roll back.
+
+**Build invites don't need chat switched on.** The PRD sends a build invite "with a direct link —
+no chat needed", so invites and shares check only that the person is an active shopper or brand
+account and that neither side has blocked the other (`hasBlockBetween`), not the full
+`isChatAvailableBetween` rules.
 
 ## Follow-ups
 

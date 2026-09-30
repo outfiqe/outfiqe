@@ -51,6 +51,14 @@ export const groupRepository = {
     await tx.conversation.update({ where: { id: conversationId }, data: { name } });
   },
 
+  async isBuildChat(client: DbClient, conversationId: string): Promise<boolean> {
+    const owningBuild = await client.outfit.findUnique({
+      where: { conversationId },
+      select: { id: true },
+    });
+    return owningBuild !== null;
+  },
+
   async findMember(client: DbClient, conversationId: string, userId: string) {
     return client.conversationParticipant.findUnique({
       where: { conversationId_userId: { conversationId, userId } },

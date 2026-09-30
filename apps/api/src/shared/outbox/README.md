@@ -71,6 +71,25 @@ update. See `src/processes/README.md`.
 partial index `outbox_events_unpublished_created_at_idx` covers only unpublished rows, so the
 relay's query stays fast however many published rows are waiting to be cleaned up.
 
-**Topics in use:** `stock.changed`, written by every stock change in `../../modules/products`
-(`recordStockChanges`), carrying the changed size ids. Nothing handles it yet; the Outfit Build
-stock watcher will. A job for a topic with no handler completes with a warning and does nothing.
+**Topics in use:**
+
+- `stock.changed` (inventory queue), written by every stock change in `../../modules/products`
+  (`recordStockChanges`), carrying the changed size ids.
+  `../../modules/outfits/outfit.stock.ts` flags draft-build items that just sold out or came back.
+- `outfit.items-sold-out` (notify queue) and `outfit.availability-changed` (realtime queue),
+  written by that handler: the first becomes a notification to the build's owner and editors, the
+  second an `outfit:availability-changed` socket event so open boards refetch.
+- `outfit.changed` (realtime queue), written by every change to an Outfit Build
+  (`../../modules/outfits`), carrying the build id, its new version, the kind of change and who
+  made it. `../../modules/outfits/outfit.realtime.ts` turns it into an `outfit:updated` socket
+  event for everyone watching the board.
+- `outfit.activity` (notify queue), written alongside every `outfit.changed` with the same
+  payload. `../../modules/outfits/outfit.notifications.ts` turns it into notifications, so a slow
+  notification can never delay a live board update.
+- `chat.message-created` and `chat.member-removed` (realtime queue), written when a build's group
+  chat changes inside a build transaction (`../../modules/chat/build-chat.service.ts`). Their
+  handlers (`../../modules/chat/chat.outbox.ts`, registered by the realtime consumers) republish
+  the existing `MESSAGE_CREATED` / `CONVERSATION_MEMBER_REMOVED` domain events, so chat's own
+  socket delivery and offline notifications do the rest.
+
+A job for a topic with no handler completes with a warning and does nothing.

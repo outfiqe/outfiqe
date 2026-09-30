@@ -9,7 +9,7 @@ import { isUserOnline } from "#socket/socket.presence.js";
 import { getIO } from "#socket/socket.server.js";
 import type { ConversationSubscriptionPayload } from "#socket/socket.types.js";
 
-import { CHAT_SOCKET_CONSUMER_GROUP } from "./chat.constants.js";
+import { CHAT_SOCKET_CONSUMER_GROUP, OUTFIT_CARD_PREVIEW_TEXT } from "./chat.constants.js";
 import { conversationRepository } from "./conversation.repository.js";
 import {
   describeSystemEvent,
@@ -72,10 +72,14 @@ export const registerMessageEventConsumer = (): void => {
       const notifiedRecipientIds = isSystemMessage
         ? usersNotifiedBySystemEvent(systemEvent)
         : payload.recipientIds;
-      const messagePreview =
-        isSystemMessage && systemEvent
-          ? describeSystemEvent(systemEvent, payload.senderName)
-          : messagePreviewFor(payload.body);
+      const describeMessage = (): string => {
+        if (payload.kind === MessageKind.OUTFIT_CARD) return OUTFIT_CARD_PREVIEW_TEXT;
+        if (isSystemMessage && systemEvent) {
+          return describeSystemEvent(systemEvent, payload.senderName);
+        }
+        return messagePreviewFor(payload.body);
+      };
+      const messagePreview = describeMessage();
 
       for (const recipientId of notifiedRecipientIds) {
         try {

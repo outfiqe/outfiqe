@@ -16,6 +16,7 @@ once if something goes wrong.
 - `feature-flags.repository.ts` — reads and writes `feature_flags`, checks allow-list ids exist,
   and looks up a person's brand memberships.
 - `feature-flags.service.ts` — `isEnabledForUser(key, userId)` for the rest of the app,
+  `listEnabledKeysForUser(userId)` for the web app's own view,
   `list()` and `update()` for admins.
 - `feature-flags.middleware.ts` — `requireFeatureFlag(key)`, for any route that belongs to a
   flagged feature.
@@ -25,7 +26,12 @@ once if something goes wrong.
 
 ## HTTP surface
 
-Both require `platform:flags:manage`, which only super admins have unless a role grants it.
+- `GET /api/feature-flags/mine` — `{ enabledKeys }`, the flags that are on for the caller. It is
+  open to signed-out visitors, and a bad token counts as signed out. The web app uses it to show or
+  hide links such as My Builds. It only says what is on, never the allow lists.
+
+The two admin routes below require `platform:flags:manage`, which only super admins have unless a
+role grants it.
 
 - `GET /api/platform/feature-flags` — every flag with its rollout and allow lists.
 - `PUT /api/platform/feature-flags/:key` with `{ rollout, allowedUserIds, allowedBrandIds }` —

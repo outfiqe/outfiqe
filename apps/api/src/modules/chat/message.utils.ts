@@ -42,6 +42,20 @@ export const describeSystemEvent = (event: ChatSystemEvent, actorName: string): 
       return `${actorName} made ${event.member.name} an admin`;
     case CHAT_SYSTEM_EVENT.ADMIN_REMOVED:
       return `${actorName} removed ${event.member.name} as an admin`;
+    case CHAT_SYSTEM_EVENT.OUTFIT_EDITORS_ADDED:
+      return `${actorName} added ${joinNames(event.members)} to the build`;
+    case CHAT_SYSTEM_EVENT.OUTFIT_ITEM_ADDED:
+      return `${actorName} added ${event.productName}`;
+    case CHAT_SYSTEM_EVENT.OUTFIT_ITEM_SWAPPED:
+      return `${actorName} swapped in ${event.productName}`;
+    case CHAT_SYSTEM_EVENT.OUTFIT_ITEM_REMOVED:
+      return `${actorName} removed ${event.productName}`;
+    case CHAT_SYSTEM_EVENT.OUTFIT_EVERYONE_HAPPY:
+      return "Everyone's happy. The build is ready to lock";
+    case CHAT_SYSTEM_EVENT.OUTFIT_LOCKED:
+      return `${actorName} locked the build`;
+    case CHAT_SYSTEM_EVENT.OUTFIT_UNLOCKED:
+      return `${actorName} unlocked the build`;
   }
 };
 
@@ -61,6 +75,7 @@ type MessageRow = {
   sender: ConversationParticipantSummary;
   kind: MessageKind;
   systemEvent: unknown;
+  outfitId: string | null;
   body: string | null;
   attachments: MessageAttachmentRecord[];
   createdAt: Date;
@@ -101,6 +116,7 @@ export const toMessageBroadcast = (
     senderAvatarUrl: sender.avatarUrl,
     kind,
     systemEvent: kind === MessageKind.SYSTEM ? parseSystemEvent(message.systemEvent) : null,
+    outfitId: message.outfitId,
     body,
     attachments: attachments.map((attachment) => ({
       id: attachment.id,
@@ -130,7 +146,8 @@ export const toMessageRecord = (
     senderId: row.senderId,
     sender: row.sender,
     kind: row.kind,
-    systemEvent: isUserMessage ? null : parseSystemEvent(row.systemEvent),
+    systemEvent: row.kind === MessageKind.SYSTEM ? parseSystemEvent(row.systemEvent) : null,
+    outfitId: row.outfitId,
     body: row.body,
     attachments: row.attachments,
     createdAt: row.createdAt.toISOString(),

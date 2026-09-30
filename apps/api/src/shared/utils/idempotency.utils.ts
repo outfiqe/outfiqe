@@ -5,6 +5,7 @@ import { subHours } from "date-fns/subHours";
 
 import { prisma } from "#db/prisma.js";
 import type { Prisma } from "#generated/prisma/client.js";
+import { runWithDeadlockRetry } from "#lib/prisma.utils.js";
 import { AppError } from "#middlewares/error-handler.js";
 
 const PROCESSING_STATUS_CODE = 0;
@@ -15,6 +16,7 @@ const UNPROCESSABLE_STATUS = 422;
 export const IDEMPOTENCY_KEY_RETENTION_HOURS = 24;
 export const IDEMPOTENCY_KEY_RETENTION_SWEEP_INTERVAL_MS = hoursToMilliseconds(1);
 const RETENTION_DELETE_BATCH_SIZE = 1000;
+const IDEMPOTENT_TRANSACTION_TIMEOUT_MS = 5_000;
 
 type IdempotencyClaimKey = { userId: string; endpoint: string; key: string };
 
@@ -116,6 +118,46 @@ export const withIdempotency = async <T>(
     data: { statusCode: COMPLETED_STATUS_CODE, responseBody: result as Prisma.InputJsonValue },
   });
   return result;
+};
+
+export type IdempotentTransactionRequest = {
+  userId: string;
+  endpoint: string;
+  key: string;
+  requestBody: unknown;
+};
+
+export const withIdempotentTransaction = async <T>(
+  { userId, endpoint, key, requestBody }: IdempotentTransactionRequest,
+  work: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> => {
+  const claimKeyFields = { userId, endpoint, key };
+  const requestHash = hashIdempotentRequest(endpoint, requestBody);
+
+  const isClaimed = await claimKey(claimKeyFields, requestHash);
+  if (!isClaimed) return replayOrReject<T>(claimKeyFields, requestHash);
+
+  try {
+    return await runWithDeadlockRetry(() =>
+      prisma.$transaction(
+        async (tx) => {
+          const result = await work(tx);
+          await tx.requestIdempotency.update({
+            where: { userId_endpoint_key: claimKeyFields },
+            data: {
+              statusCode: COMPLETED_STATUS_CODE,
+              responseBody: result as Prisma.InputJsonValue,
+            },
+          });
+          return result;
+        },
+        { timeout: IDEMPOTENT_TRANSACTION_TIMEOUT_MS },
+      ),
+    );
+  } catch (error) {
+    await releaseClaim(claimKeyFields);
+    throw error;
+  }
 };
 
 export const runIdempotencyKeyRetentionSweep = async (): Promise<{ deleted: number }> => {

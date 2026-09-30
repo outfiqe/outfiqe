@@ -56,6 +56,7 @@ export type MessageBroadcastPayload = {
   senderAvatarUrl: string | null;
   kind: MessageKind;
   systemEvent: ChatSystemEventBroadcast | null;
+  outfitId: string | null;
   body: string | null;
   attachments: MessageAttachmentBroadcast[];
   createdAt: string;

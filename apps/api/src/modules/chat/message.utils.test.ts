@@ -33,6 +33,7 @@ const baseRow = {
   sender: SENDER,
   kind: MessageKind.USER,
   systemEvent: null,
+  outfitId: null,
   body: "hello",
   attachments: [],
   createdAt: CREATED_AT,
