@@ -1,5 +1,10 @@
 import { prisma } from "#db/prisma.js";
-import { CommissionStatus, FulfilmentStatus, PaymentStatus } from "#generated/prisma/enums.js";
+import {
+  type CommissionScope,
+  CommissionStatus,
+  FulfilmentStatus,
+  PaymentStatus,
+} from "#generated/prisma/enums.js";
 import type { DbClient } from "#types/db.types.js";
 
 import type {
@@ -11,9 +16,13 @@ import type {
 } from "./commission.types.js";
 
 export const commissionRepository = {
-  async findTierForPrice(price: number): Promise<CommissionTierRecord | null> {
+  async findTierForPrice(
+    price: number,
+    scope: CommissionScope,
+  ): Promise<CommissionTierRecord | null> {
     return prisma.commissionTier.findFirst({
       where: {
+        scope,
         minPrice: { lte: price },
         OR: [{ maxPrice: null }, { maxPrice: { gte: price } }],
       },
@@ -129,16 +138,22 @@ export const commissionRepository = {
     return sums;
   },
 
-  async listTiers(): Promise<CommissionTierAdminView[]> {
-    return prisma.commissionTier.findMany({ orderBy: [{ sortOrder: "asc" }, { minPrice: "asc" }] });
+  async listTiers(scope: CommissionScope): Promise<CommissionTierAdminView[]> {
+    return prisma.commissionTier.findMany({
+      where: { scope },
+      orderBy: [{ sortOrder: "asc" }, { minPrice: "asc" }],
+    });
   },
 
-  async findTierById(id: string): Promise<CommissionTierAdminView | null> {
-    return prisma.commissionTier.findUnique({ where: { id } });
+  async findTierById(id: string, scope: CommissionScope): Promise<CommissionTierAdminView | null> {
+    return prisma.commissionTier.findFirst({ where: { id, scope } });
   },
 
-  async createTier(input: CreateCommissionTierInput): Promise<CommissionTierAdminView> {
-    return prisma.commissionTier.create({ data: input });
+  async createTier(
+    input: CreateCommissionTierInput,
+    scope: CommissionScope,
+  ): Promise<CommissionTierAdminView> {
+    return prisma.commissionTier.create({ data: { ...input, scope } });
   },
 
   async updateTier(id: string, input: UpdateCommissionTierInput): Promise<CommissionTierAdminView> {

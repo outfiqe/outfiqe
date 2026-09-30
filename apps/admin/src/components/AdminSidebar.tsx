@@ -40,6 +40,7 @@ import {
   QrCode,
   Ruler,
   ScrollText,
+  Shapes,
   ShieldAlert,
   ShieldCheck,
   Shirt,
@@ -222,6 +223,13 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     group: "catalog",
   },
   { id: "size-options", href: "/size-options", label: "Sizes", icon: Ruler, group: "catalog" },
+  {
+    id: "outfit-slot-types",
+    href: "/outfit-slot-types",
+    label: "Outfit slots",
+    icon: Shapes,
+    group: "catalog",
+  },
   {
     id: "hero-slides",
     href: "/hero-slides",

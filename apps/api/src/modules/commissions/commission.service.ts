@@ -1,4 +1,4 @@
-import { CommissionStatus } from "#generated/prisma/enums.js";
+import { CommissionScope, CommissionStatus } from "#generated/prisma/enums.js";
 import { requireApprovedCreator } from "#lib/creator-guard.utils.js";
 import { buildCursorPage } from "#lib/pagination.utils.js";
 import { isForeignKeyConstraintError } from "#lib/prisma.utils.js";
@@ -24,7 +24,7 @@ const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
 
 const requireTier = async (id: string): Promise<CommissionTierAdminView> => {
-  const tier = await commissionRepository.findTierById(id);
+  const tier = await commissionRepository.findTierById(id, CommissionScope.CREATOR_LOOK);
   if (!tier) throw new AppError("TIER_NOT_FOUND", "Commission tier not found.", NOT_FOUND_STATUS);
   return tier;
 };
@@ -52,11 +52,11 @@ export const commissionService = {
   },
 
   async listTiers(): Promise<CommissionTierAdminView[]> {
-    return commissionRepository.listTiers();
+    return commissionRepository.listTiers(CommissionScope.CREATOR_LOOK);
   },
 
   async createTier(input: CreateCommissionTierBody): Promise<CommissionTierAdminView> {
-    return commissionRepository.createTier(input);
+    return commissionRepository.createTier(input, CommissionScope.CREATOR_LOOK);
   },
 
   async updateTier(id: string, input: UpdateCommissionTierBody): Promise<CommissionTierAdminView> {

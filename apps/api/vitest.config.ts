@@ -93,6 +93,7 @@ export default defineConfig({
         "src/modules/brands/**/*.ts",
         "src/modules/categories/**/*.ts",
         "src/modules/product-types/**/*.ts",
+        "src/modules/outfit-slot-types/**/*.ts",
         "src/modules/taste-preferences/**/*.ts",
         "src/modules/tours/**/*.ts",
         "src/modules/follows/**/*.ts",

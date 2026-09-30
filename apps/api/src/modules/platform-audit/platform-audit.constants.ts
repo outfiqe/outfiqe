@@ -28,4 +28,7 @@ export const PLATFORM_AUDIT_ACTION = {
   PLATFORM_SETTING_UPDATED: "platform-setting.updated",
   PLATFORM_SETTING_RESET: "platform-setting.reset",
   FEATURE_FLAG_UPDATED: "feature-flag.updated",
+  OUTFIT_SLOT_TYPE_CREATED: "outfit-slot-type.created",
+  OUTFIT_SLOT_TYPE_UPDATED: "outfit-slot-type.updated",
+  OUTFIT_SLOT_TYPES_REORDERED: "outfit-slot-types.reordered",
 } as const;

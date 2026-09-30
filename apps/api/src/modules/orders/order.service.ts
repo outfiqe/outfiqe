@@ -10,6 +10,7 @@ import {
 } from "#email-templates/templates.js";
 import { DomainEvents, eventBus } from "#events/event-bus.js";
 import {
+  CommissionScope,
   CommissionSource,
   CouponRedemptionStatus,
   FulfilmentStatus,
@@ -255,7 +256,7 @@ const checkoutOnce = async (
   const tiers = await Promise.all(
     pricedLines.map((line, index) =>
       attributions[index]
-        ? commissionRepository.findTierForPrice(line.unitPrice)
+        ? commissionRepository.findTierForPrice(line.unitPrice, CommissionScope.CREATOR_LOOK)
         : Promise.resolve(null),
     ),
   );

@@ -3,6 +3,7 @@ export * from "./format";
 export * from "./landing";
 export * from "./notifications/formatActorList";
 export * from "./notifications/isExternalNotificationPath";
+export * from "./outfit-slots";
 export * from "./phone";
 export * from "./platform-access";
 export * from "./platform-nav";

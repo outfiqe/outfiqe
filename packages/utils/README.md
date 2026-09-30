@@ -31,7 +31,18 @@ to any one app.
 - `product-sort/` — `PRODUCT_SORT_VALUES`/`PRODUCT_SORT`/`ProductSort`, the shop's sort-order enum.
 - `product-type/` — `DEFAULT_PRODUCT_TYPES`, the seed/migration list of garment types. Garment
   types are now an admin-managed table (`apps/api/src/modules/product-types`); this constant only
-  bootstraps the six originals.
+  bootstraps the defaults: the six originals plus footwear, accessories, saree, kurta set and
+  lehenga, which Outfit Build slots need.
+- `outfit-slots/` — the Outfit Build slot rules, shared by the API (which enforces them inside the
+  transaction) and the web board (which uses them to grey out slots and explain a refusal before a
+  request is sent). `findPlacementRefusal` returns the first rule a placement breaks, as a named
+  `OUTFIT_PLACEMENT_REFUSAL` code: unknown slot, position outside the slot (`SLOT_FULL`), wrong
+  product type, blocked by an exclusive slot (a filled Full Outfit blocks Top and Bottom, and the
+  other way round), the same product already on the board, the board cap, or the per-person limit.
+  A placement onto a filled position is a swap: the replaced item stops counting, and the new one
+  counts towards whoever placed it. `findBlockedSlotKeys` lists the slots that can't be filled
+  right now. `OUTFIT_SLOT_ICONS` is the fixed icon set admins pick from, and
+  `OUTFIT_ITEMS_PER_MEMBER_CHOICES` the owner's per-person limit options.
 - `notifications/` — `formatActorList`, the grouped-notification actor-list formatter (`"Jane"` ->
   `"Jane and John"` -> `"Jane, John and 3 others"`), used by `@outfiqe/components`'
   `resolveNotificationMessage.ts`.

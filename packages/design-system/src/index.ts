@@ -24,6 +24,7 @@ export * from "./label";
 export * from "./logo-mark";
 export * from "./modal";
 export * from "./multi-select";
+export * from "./outfit-slot-icon";
 export * from "./popover";
 export * from "./progress-bar";
 export * from "./rating";

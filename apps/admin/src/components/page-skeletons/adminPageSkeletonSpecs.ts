@@ -505,6 +505,14 @@ export const ADMIN_PAGE_SKELETON_SPECS: Record<string, AdminPageSkeletonSpec> = 
     ],
     sourceFiles: [`${FEATURES_DIR}/size-options/SizeOptionsPage.tsx`],
   },
+
+  "/outfit-slot-types": {
+    title: "Outfit slots",
+    description:
+      "The slots every new Outfit Build starts with, in this order. Each slot says which garment types can fill it and how many items it holds.",
+    blocks: [{ kind: "reorderRows", count: ROW_COUNT, actionLabel: "Switch off" }],
+    sourceFiles: [`${FEATURES_DIR}/outfit-slot-types/OutfitSlotTypesPage.tsx`],
+  },
   "/announcements": {
     title: "Announcements",
     blocks: [

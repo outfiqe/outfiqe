@@ -12,6 +12,7 @@ export default defineConfig({
         "src/post-layout/index.ts",
         "src/platform-access/index.ts",
         "src/user-role/index.ts",
+        "src/outfit-slots/index.ts",
       ],
       thresholds: {
         lines: COVERAGE_THRESHOLD,

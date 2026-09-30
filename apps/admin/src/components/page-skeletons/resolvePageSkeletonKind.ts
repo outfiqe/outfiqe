@@ -65,6 +65,7 @@ const LIST_PATHS = new Set([
   "/hero-slides",
   "/orders",
   "/organizations",
+  "/outfit-slot-types",
   "/platform/brand-applications",
   "/platform/features",
   "/platform/impersonation",

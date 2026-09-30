@@ -67,6 +67,7 @@ import { leaderboardRoutes } from "./modules/leaderboard/leaderboard.routes.js";
 import { nepalBankRoutes } from "./modules/nepal-banks/nepalBank.routes.js";
 import { notificationRoutes } from "./modules/notifications/notification.routes.js";
 import { orderRoutes } from "./modules/orders/order.routes.js";
+import { outfitSlotTypeRoutes } from "./modules/outfit-slot-types/outfit-slot-type.routes.js";
 import { paymentRoutes } from "./modules/payments/payment.routes.js";
 import { platformAuditRoutes } from "./modules/platform-audit/platform-audit.routes.js";
 import { platformFeaturesRoutes } from "./modules/platform-features/platform-features.routes.js";
@@ -186,6 +187,7 @@ export const createApp = () => {
   app.use("/api/products/:productId/reviews", productReviewRoutes);
   app.use("/api/product-types", productTypeRoutes);
   app.use("/api/size-options", sizeOptionRoutes);
+  app.use("/api/outfit-slot-types", outfitSlotTypeRoutes);
   app.use("/api/cart", cartRoutes);
   app.use("/api/addresses", addressRoutes);
   app.use("/api/orders", orderRoutes);

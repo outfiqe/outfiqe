@@ -23,6 +23,7 @@ const EVERY_SECTION_BUT_SUPPORT = [
   "categories",
   "product-types",
   "size-options",
+  "outfit-slot-types",
   "hero-slides",
   "orders",
   "product-reviews",

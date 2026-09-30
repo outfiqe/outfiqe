@@ -14,6 +14,16 @@ their own `requirePlatformAccess` + `requirePlatformNavItem("commissions")` gate
 exemption writes, since both modules mutate the same "how much the platform takes or pays out"
 surface.
 
+## Tiers have a scope: Creator Look or Build
+
+`CommissionTier.scope` is `CREATOR_LOOK` or `OUTFIT_BUILD`. Outfit Build commission uses its own
+price bands, set separately by admin, rather than a second commission system. Every repository
+tier method takes the scope, and everything that exists today (checkout's `findTierForPrice`,
+this module's tier list/create/edit/delete) passes `CREATOR_LOOK`, so a Build tier can never set
+a Creator Look commission and can't be seen or changed from the Creator Look tier screen (a Build
+tier id there answers `404 TIER_NOT_FOUND`). Existing tiers were given `CREATOR_LOOK` by the
+column default.
+
 ## Commission creation isn't deferred like stock is
 
 `orders`' checkout creates a `PENDING` `CreatorCommission` at order-placement time regardless of payment method, unlike stock (which `payments` defers to verification for eSewa/Khalti — see that module's README). This is intentional, not an inconsistency: stock is a scarce physical resource that must never be double-allocated, so it can't be claimed speculatively. A commission is just an accounting record — it's fine to create it speculatively and void it later if the sale falls through. That's what this module's lifecycle sweep is for: a `PENDING` commission attached to an order whose payment ultimately fails or expires (chunk 8's reconciliation sweep marking it `FAILED`) gets voided here, not left dangling.
