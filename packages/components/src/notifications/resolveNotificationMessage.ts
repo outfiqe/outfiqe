@@ -4,6 +4,22 @@ import { formatActorList } from "@outfiqe/utils";
 const actorList = (notification: Notification): string =>
   formatActorList(notification.metadata.recentActors ?? [], notification.actorCount);
 
+const outfitName = (notification: Notification): string => {
+  const { outfitTitle } = notification.metadata;
+  return outfitTitle ? `"${outfitTitle}"` : "an outfit build";
+};
+
+const SINGLE_SOLD_OUT_ITEM = 1;
+
+const soldOutMessage = (notification: Notification): string => {
+  const { productName, soldOutItemCount = SINGLE_SOLD_OUT_ITEM } = notification.metadata;
+  const soldOutSubject =
+    soldOutItemCount > SINGLE_SOLD_OUT_ITEM
+      ? `${soldOutItemCount} items`
+      : (productName ?? "An item");
+  return `${soldOutSubject} in ${outfitName(notification)} sold out. Swap to lock`;
+};
+
 export const resolveNotificationMessage = (notification: Notification): string => {
   const { type, metadata } = notification;
 
@@ -102,6 +118,20 @@ export const resolveNotificationMessage = (notification: Notification): string =
       return "Your subscription payment is overdue. Pay now to keep advanced features";
     case NotificationType.CRM_SUBSCRIPTION_CANCELED:
       return "Your subscription was canceled because it wasn't renewed";
+    case NotificationType.OUTFIT_BOARD_ACTIVITY:
+      return `${actorList(notification)} changed ${outfitName(notification)}`;
+    case NotificationType.OUTFIT_READY_TO_LOCK:
+      return `Everyone's happy with ${outfitName(notification)}. It's ready to lock`;
+    case NotificationType.OUTFIT_LOCKED:
+      return `${metadata.actor?.name ?? "The owner"} locked ${outfitName(notification)}`;
+    case NotificationType.OUTFIT_INVITED:
+      return `${metadata.actor?.name ?? "Someone"} invited you to build ${outfitName(notification)}`;
+    case NotificationType.OUTFIT_SHARED:
+      return `${metadata.actor?.name ?? "Someone"} shared ${outfitName(notification)} with you`;
+    case NotificationType.OUTFIT_MADE_PUBLIC:
+      return `${outfitName(notification)} is now public`;
+    case NotificationType.OUTFIT_ITEMS_SOLD_OUT:
+      return soldOutMessage(notification);
     default:
       return "You have a new notification";
   }

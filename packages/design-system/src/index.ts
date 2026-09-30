@@ -27,6 +27,7 @@ export * from "./multi-select";
 export * from "./outfit-slot-icon";
 export * from "./popover";
 export * from "./progress-bar";
+export * from "./radio-group";
 export * from "./rating";
 export * from "./select";
 export * from "./skeleton";

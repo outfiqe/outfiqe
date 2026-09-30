@@ -37,4 +37,11 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   [NotificationType.CRM_INVOICE_DUE]: "Subscription renewals due",
   [NotificationType.CRM_SUBSCRIPTION_PAST_DUE]: "Overdue subscription payments",
   [NotificationType.CRM_SUBSCRIPTION_CANCELED]: "Canceled subscriptions",
+  [NotificationType.OUTFIT_BOARD_ACTIVITY]: "Changes to outfit builds you're on",
+  [NotificationType.OUTFIT_READY_TO_LOCK]: "Outfit builds ready to lock",
+  [NotificationType.OUTFIT_LOCKED]: "Outfit builds being locked",
+  [NotificationType.OUTFIT_INVITED]: "Invitations to outfit builds",
+  [NotificationType.OUTFIT_SHARED]: "Outfit builds shared with you",
+  [NotificationType.OUTFIT_MADE_PUBLIC]: "Your outfit builds going public",
+  [NotificationType.OUTFIT_ITEMS_SOLD_OUT]: "Items selling out in your outfit builds",
 };

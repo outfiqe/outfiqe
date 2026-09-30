@@ -23,6 +23,85 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
   ...overrides,
 });
 
+describe("resolveNotificationMessage for outfit builds", () => {
+  const sita = { id: "user-2", name: "Sita", handle: "sita", avatarUrl: null };
+
+  it("names the build, or calls it an outfit build when it has no title", () => {
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "OUTFIT_INVITED",
+          metadata: { actor: sita, outfitTitle: "Dashain look" },
+        }),
+      ),
+    ).toBe('Sita invited you to build "Dashain look"');
+    expect(
+      resolveNotificationMessage(
+        buildNotification({ type: "OUTFIT_SHARED", metadata: { actor: sita } }),
+      ),
+    ).toBe("Sita shared an outfit build with you");
+  });
+
+  it("groups board changes by the people who made them", () => {
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "OUTFIT_BOARD_ACTIVITY",
+          actorCount: 2,
+          metadata: {
+            outfitTitle: "Dashain look",
+            recentActors: [sita, { id: "user-3", name: "Ram", handle: "ram", avatarUrl: null }],
+          },
+        }),
+      ),
+    ).toBe('Sita and Ram changed "Dashain look"');
+  });
+
+  it("describes ready to lock, locked and public", () => {
+    const withTitle = { outfitTitle: "Dashain look", actor: sita };
+    expect(
+      resolveNotificationMessage(
+        buildNotification({ type: "OUTFIT_READY_TO_LOCK", metadata: withTitle }),
+      ),
+    ).toBe(`Everyone's happy with "Dashain look". It's ready to lock`);
+    expect(
+      resolveNotificationMessage(buildNotification({ type: "OUTFIT_LOCKED", metadata: withTitle })),
+    ).toBe('Sita locked "Dashain look"');
+    expect(
+      resolveNotificationMessage(
+        buildNotification({ type: "OUTFIT_MADE_PUBLIC", metadata: withTitle }),
+      ),
+    ).toBe('"Dashain look" is now public');
+  });
+
+  it("names the sold-out item, or counts them when several sold out together", () => {
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "OUTFIT_ITEMS_SOLD_OUT",
+          metadata: {
+            outfitTitle: "Dashain look",
+            productName: "Maroon Kurta",
+            soldOutItemCount: 1,
+          },
+        }),
+      ),
+    ).toBe('Maroon Kurta in "Dashain look" sold out. Swap to lock');
+    expect(
+      resolveNotificationMessage(
+        buildNotification({
+          type: "OUTFIT_ITEMS_SOLD_OUT",
+          metadata: {
+            outfitTitle: "Dashain look",
+            productName: "Maroon Kurta",
+            soldOutItemCount: 3,
+          },
+        }),
+      ),
+    ).toBe('3 items in "Dashain look" sold out. Swap to lock');
+  });
+});
+
 describe("resolveNotificationMessage", () => {
   it("names the coupon awaiting approval", () => {
     const message = resolveNotificationMessage(

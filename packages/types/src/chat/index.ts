@@ -22,7 +22,7 @@ export type ConversationType = "DIRECT" | "GROUP" | "SUPPORT";
 
 export type ConversationMemberRole = "ADMIN" | "MEMBER";
 
-export type MessageKind = "USER" | "SYSTEM";
+export type MessageKind = "USER" | "SYSTEM" | "OUTFIT_CARD";
 
 export type ConversationParticipantView = ChatContact & {
   isOnline: boolean;
@@ -65,7 +65,14 @@ export type ChatSystemEvent =
   | { type: "MEMBER_REMOVED"; member: ChatMemberReference }
   | { type: "MEMBER_LEFT" }
   | { type: "ADMIN_ASSIGNED"; member: ChatMemberReference }
-  | { type: "ADMIN_REMOVED"; member: ChatMemberReference };
+  | { type: "ADMIN_REMOVED"; member: ChatMemberReference }
+  | { type: "OUTFIT_EDITORS_ADDED"; members: ChatMemberReference[] }
+  | { type: "OUTFIT_ITEM_ADDED"; productName: string }
+  | { type: "OUTFIT_ITEM_SWAPPED"; productName: string }
+  | { type: "OUTFIT_ITEM_REMOVED"; productName: string }
+  | { type: "OUTFIT_EVERYONE_HAPPY" }
+  | { type: "OUTFIT_LOCKED" }
+  | { type: "OUTFIT_UNLOCKED" };
 
 export type ChatSystemEventType = ChatSystemEvent["type"];
 
@@ -96,6 +103,7 @@ export type Message = {
   sender: ChatContact;
   kind: MessageKind;
   systemEvent: ChatSystemEvent | null;
+  outfitId: string | null;
   body: string | null;
   attachments: MessageAttachment[];
   createdAt: string;

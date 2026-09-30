@@ -35,6 +35,7 @@ type MessageBroadcast = {
   senderAvatarUrl: string | null;
   kind: MessageKind;
   systemEvent: ChatSystemEvent | null;
+  outfitId: string | null;
   body: string | null;
   attachments: MessageAttachmentBroadcast[];
   createdAt: string;
@@ -62,6 +63,7 @@ const toBroadcastMessage = (
   },
   kind: payload.kind,
   systemEvent: payload.systemEvent,
+  outfitId: payload.outfitId ?? null,
   body: payload.body,
   attachments: payload.attachments,
   createdAt: payload.createdAt,

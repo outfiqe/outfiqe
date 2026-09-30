@@ -35,6 +35,13 @@ export const NotificationType = {
   CRM_INVOICE_DUE: "CRM_INVOICE_DUE",
   CRM_SUBSCRIPTION_PAST_DUE: "CRM_SUBSCRIPTION_PAST_DUE",
   CRM_SUBSCRIPTION_CANCELED: "CRM_SUBSCRIPTION_CANCELED",
+  OUTFIT_BOARD_ACTIVITY: "OUTFIT_BOARD_ACTIVITY",
+  OUTFIT_READY_TO_LOCK: "OUTFIT_READY_TO_LOCK",
+  OUTFIT_LOCKED: "OUTFIT_LOCKED",
+  OUTFIT_INVITED: "OUTFIT_INVITED",
+  OUTFIT_SHARED: "OUTFIT_SHARED",
+  OUTFIT_MADE_PUBLIC: "OUTFIT_MADE_PUBLIC",
+  OUTFIT_ITEMS_SOLD_OUT: "OUTFIT_ITEMS_SOLD_OUT",
 } as const;
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
@@ -55,6 +62,7 @@ export const NotificationEntityType = {
   ANNOUNCEMENT: "ANNOUNCEMENT",
   CRM_SUBSCRIPTION: "CRM_SUBSCRIPTION",
   CRM_SUBSCRIPTION_INVOICE: "CRM_SUBSCRIPTION_INVOICE",
+  OUTFIT: "OUTFIT",
 } as const;
 
 export type NotificationEntityType =
@@ -108,6 +116,8 @@ export type NotificationMetadata = {
   status?: string;
   productName?: string;
   productImageUrl?: string | null;
+  outfitTitle?: string | null;
+  soldOutItemCount?: number;
   rating?: number;
   withdrawAmount?: number;
   rejectionReason?: string;
