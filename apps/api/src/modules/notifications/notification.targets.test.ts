@@ -109,6 +109,13 @@ describe("resolveNotificationTarget", () => {
     ).toEqual({ surface: NotificationSurface.WEB, path: "/profile" });
   });
 
+  it("sends a welcome after approval to the web dashboard overview", () => {
+    expect(resolve(NotificationType.ACCOUNT_APPROVED)).toEqual({
+      surface: NotificationSurface.WEB,
+      path: "/overview",
+    });
+  });
+
   it("routes gamification, commission and order types to their web dashboard pages", () => {
     expect(resolve(NotificationType.ACHIEVEMENT_UNLOCKED)).toEqual({
       surface: NotificationSurface.WEB,

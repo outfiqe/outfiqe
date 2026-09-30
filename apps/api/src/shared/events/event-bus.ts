@@ -13,6 +13,7 @@ export const DomainEvents = {
   USER_EMAIL_VERIFIED: "user.email.verified",
   USER_PASSWORD_RESET: "user.password.reset",
   BRAND_OWNER_REGISTERED: "brand.owner.registered",
+  CREATOR_APPROVED: "creator.approved",
   ADMIN_REGISTERED: "admin.registered",
   LOOK_CREATED: "look.created",
   LOOK_LIKED: "look.liked",

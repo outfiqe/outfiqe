@@ -1,4 +1,7 @@
+import { EMAIL_LOGO_DISPLAY_SIZE, emailLogoUrl } from "@outfiqe/utils";
 import { describe, expect, it } from "vitest";
+
+import { env } from "#config/env.config.js";
 
 import {
   emailButtonHtml,
@@ -122,14 +125,16 @@ describe("emailDivider", () => {
 });
 
 describe("renderEmailLayout", () => {
-  it("includes the preheader, wordmark, and body html", () => {
+  it("includes the preheader, logo, and body html", () => {
     const html = renderEmailLayout({
       preheader: "You have a new notification.",
       bodyHtml: "<p>Body content</p>",
     });
     expect(html).toContain("You have a new notification.");
-    expect(html).toContain(">out</span>");
-    expect(html).toContain(">fiqe.</span>");
+    expect(html).toContain(`src="${emailLogoUrl(env.FRONTEND_URL)}"`);
+    expect(html).toContain(`width="${EMAIL_LOGO_DISPLAY_SIZE.width}"`);
+    expect(html).toContain(`height="${EMAIL_LOGO_DISPLAY_SIZE.height}"`);
+    expect(html).toContain('alt="outfiqe."');
     expect(html).toContain("<p>Body content</p>");
     expect(html).toContain("Outfiqe. Fashion discovery, made in Nepal.");
   });
