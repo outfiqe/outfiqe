@@ -169,6 +169,7 @@ describe("canReceiveNotificationType", () => {
     expect(types).not.toContain(NotificationType.LOOK_LIKED);
     expect(types).not.toContain(NotificationType.NEW_ORDER);
     expect(types).not.toContain(NotificationType.WITHDRAW_REQUEST_PAID);
+    expect(types).not.toContain(NotificationType.ACCOUNT_APPROVED);
   });
 
   it("adds looks, followers, commissions, tag results and withdrawals for an approved creator", () => {
@@ -181,6 +182,7 @@ describe("canReceiveNotificationType", () => {
       NotificationType.PRODUCT_TAG_APPROVED,
       NotificationType.WITHDRAW_REQUEST_PAID,
       NotificationType.ORDER_STATUS_CHANGED,
+      NotificationType.ACCOUNT_APPROVED,
     ]) {
       expect(types).toContain(creatorType);
     }
@@ -197,6 +199,7 @@ describe("canReceiveNotificationType", () => {
       NotificationType.PRODUCT_TAG_SUBMITTED,
       NotificationType.PRODUCT_TAG_REVIEW_REMINDER,
       NotificationType.WITHDRAW_REQUEST_PAID,
+      NotificationType.ACCOUNT_APPROVED,
     ]) {
       expect(types).toContain(businessType);
     }

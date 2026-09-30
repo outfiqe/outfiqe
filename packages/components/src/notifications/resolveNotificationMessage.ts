@@ -1,4 +1,9 @@
-import { CrmItemKind, type Notification, NotificationType } from "@outfiqe/types";
+import {
+  ApprovedAccountKind,
+  CrmItemKind,
+  type Notification,
+  NotificationType,
+} from "@outfiqe/types";
 import { formatActorList } from "@outfiqe/utils";
 
 const actorList = (notification: Notification): string =>
@@ -102,6 +107,10 @@ export const resolveNotificationMessage = (notification: Notification): string =
       return "Your subscription payment is overdue. Pay now to keep advanced features";
     case NotificationType.CRM_SUBSCRIPTION_CANCELED:
       return "Your subscription was canceled because it wasn't renewed";
+    case NotificationType.ACCOUNT_APPROVED:
+      return metadata.approvedAccountKind === ApprovedAccountKind.BRAND
+        ? `Welcome to Outfiqe! ${metadata.brandName ?? "Your brand"} is set up. Add your first products to start selling.`
+        : "Welcome to Outfiqe! You're now an approved muse. Drop your first look and tag the pieces you're wearing.";
     default:
       return "You have a new notification";
   }

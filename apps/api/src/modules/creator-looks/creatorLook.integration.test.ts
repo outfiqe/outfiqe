@@ -2529,7 +2529,7 @@ describe("creatorLookService trending pipeline", () => {
   });
 });
 
-describe("GET /api/muses/by-handle/:handle/looks integration with feed", () => {
+describe("GET /api/creators/by-handle/:handle/looks integration with feed", () => {
   it("hydrates a muse's public drop list with tagged products and hashtags", async () => {
     const creator = await createCreator("Handle Feed Muse", "handle-feed-creator");
     const product = await createApprovedProduct("Handle Feed Product");

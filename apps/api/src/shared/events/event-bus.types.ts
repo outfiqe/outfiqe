@@ -63,6 +63,7 @@ export type DomainEventPayloads = {
   [DomainEvents.USER_EMAIL_VERIFIED]: { userId: string; email: string };
   [DomainEvents.USER_PASSWORD_RESET]: { userId: string };
   [DomainEvents.BRAND_OWNER_REGISTERED]: { userId: string; brandId: string; email: string };
+  [DomainEvents.CREATOR_APPROVED]: { userId: string };
   [DomainEvents.ADMIN_REGISTERED]: { userId: string; email: string };
   [DomainEvents.LOOK_CREATED]: { lookId: string; creatorId: string; createdAt: string };
   [DomainEvents.LOOK_LIKED]: { lookId: string; creatorId: string; userId: string };

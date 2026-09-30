@@ -37,4 +37,5 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   [NotificationType.CRM_INVOICE_DUE]: "Subscription renewals due",
   [NotificationType.CRM_SUBSCRIPTION_PAST_DUE]: "Overdue subscription payments",
   [NotificationType.CRM_SUBSCRIPTION_CANCELED]: "Canceled subscriptions",
+  [NotificationType.ACCOUNT_APPROVED]: "Account approval and welcome",
 };

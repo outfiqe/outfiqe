@@ -2,6 +2,7 @@ import { isExternalNotificationPath } from "@outfiqe/utils";
 
 import type { NotificationBroadcastPayload } from "#events/event-bus.types.js";
 import { NotificationSurface, NotificationType } from "#generated/prisma/enums.js";
+import { ApprovedAccountKind } from "#modules/notifications/notification.constants.js";
 
 export type PushMessage = {
   title: string;
@@ -189,6 +190,13 @@ const COPY_BY_TYPE: Record<NotificationType, MessageCopy> = {
     body: (payload) =>
       `The ${organizationNameFrom(payload)} subscription was canceled because it wasn't renewed`,
   },
+  [NotificationType.ACCOUNT_APPROVED]: {
+    title: "Welcome to Outfiqe",
+    body: (payload) =>
+      payload.metadata.approvedAccountKind === ApprovedAccountKind.BRAND
+        ? `${typeof payload.metadata.brandName === "string" ? payload.metadata.brandName : "Your brand"} is set up. Add your first products`
+        : "You're now an approved muse. Drop your first look",
+  },
 };
 
 const urlFor = (payload: NotificationBroadcastPayload): string => {
@@ -219,6 +227,8 @@ const urlFor = (payload: NotificationBroadcastPayload): string => {
     case NotificationType.WITHDRAW_REQUEST_REJECTED:
     case NotificationType.WITHDRAW_REQUEST_PAID:
       return "/wallet";
+    case NotificationType.ACCOUNT_APPROVED:
+      return "/overview";
     case NotificationType.NEW_MESSAGE:
       return "/messages";
     case NotificationType.SUPPORT_TICKET_REPLY:

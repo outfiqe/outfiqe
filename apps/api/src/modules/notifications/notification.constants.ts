@@ -1,4 +1,7 @@
-import type { NotificationFeedScope as SharedNotificationFeedScope } from "@outfiqe/types";
+import type {
+  ApprovedAccountKind as SharedApprovedAccountKind,
+  NotificationFeedScope as SharedNotificationFeedScope,
+} from "@outfiqe/types";
 
 import { NotificationType } from "#generated/prisma/enums.js";
 import {
@@ -33,6 +36,13 @@ export const NotificationFeedScope = {
   ALL: "all",
   TENANT: "tenant",
 } as const satisfies Record<string, SharedNotificationFeedScope>;
+
+export const ApprovedAccountKind = {
+  CREATOR: "creator",
+  BRAND: "brand",
+} as const satisfies Record<string, SharedApprovedAccountKind>;
+
+export type ApprovedAccountKind = (typeof ApprovedAccountKind)[keyof typeof ApprovedAccountKind];
 
 export type NotificationFeedScope =
   (typeof NotificationFeedScope)[keyof typeof NotificationFeedScope];

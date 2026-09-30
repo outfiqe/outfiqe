@@ -71,6 +71,12 @@ describe("resolveNotificationHref", () => {
     expect(resolveNotificationHref(noEntity, OWN_HANDLE)).toBe("/profile");
   });
 
+  it("sends an account-approved welcome to the dashboard overview", () => {
+    expect(
+      resolveNotificationHref(buildNotification({ type: "ACCOUNT_APPROVED" }), OWN_HANDLE),
+    ).toBe("/overview");
+  });
+
   it("routes a new follower who is a muse to their muse profile", () => {
     const notification = buildNotification({
       type: "NEW_FOLLOWER",

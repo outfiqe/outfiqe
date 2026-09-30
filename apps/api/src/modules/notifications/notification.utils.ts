@@ -141,6 +141,7 @@ const RECEIVING_AUDIENCE_BY_TYPE: Record<NotificationType, AudienceRule> = {
   [NotificationType.CRM_SUBSCRIPTION_CANCELED]: organizationStaffHolding(
     TENANT_STAFF_NOTIFICATION_PERMISSIONS[NotificationType.CRM_SUBSCRIPTION_CANCELED],
   ),
+  [NotificationType.ACCOUNT_APPROVED]: creatorsAndBusinesses,
 };
 
 export const canReceiveNotificationType = (

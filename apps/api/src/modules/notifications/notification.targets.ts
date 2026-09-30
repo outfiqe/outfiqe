@@ -17,6 +17,7 @@ type ResolveNotificationTargetInput = {
 };
 
 const WEB_ROUTES = {
+  dashboardOverview: "/overview",
   dashboardProfile: "/profile",
   badges: "/badges",
   progress: "/progress",
@@ -150,6 +151,8 @@ export const resolveNotificationTarget = ({
     case NotificationType.WITHDRAW_REQUEST_REJECTED:
     case NotificationType.WITHDRAW_REQUEST_PAID:
       return web(WEB_ROUTES.wallet);
+    case NotificationType.ACCOUNT_APPROVED:
+      return web(WEB_ROUTES.dashboardOverview);
     case NotificationType.NEW_MESSAGE:
       return entityId
         ? web(`${WEB_ROUTES.messagesList}/${entityId}`)

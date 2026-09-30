@@ -1,6 +1,7 @@
 import { LRUCache } from "lru-cache";
 
 import { creatorApprovedTemplate, creatorRejectedTemplate } from "#email-templates/templates.js";
+import { DomainEvents, eventBus } from "#events/event-bus.js";
 import { CreatorStatus, FollowTargetType, UserRole } from "#generated/prisma/enums.js";
 import { sendEmail } from "#lib/email.utils.js";
 import { buildCursorPage, decodeCursor, encodeCursor } from "#lib/pagination.utils.js";
@@ -253,6 +254,7 @@ export const creatorService = {
       creatorApprovedAt: new Date(),
     });
     await productService.recountWornByForCreator(userId);
+    await eventBus.publish(DomainEvents.CREATOR_APPROVED, { userId });
 
     const { subject, html } = creatorApprovedTemplate();
     await sendEmail({

@@ -1851,6 +1851,7 @@ enum NotificationType {
   CRM_INVOICE_DUE
   CRM_SUBSCRIPTION_PAST_DUE
   CRM_SUBSCRIPTION_CANCELED
+  ACCOUNT_APPROVED
 }
 
 enum NotificationEntityType {

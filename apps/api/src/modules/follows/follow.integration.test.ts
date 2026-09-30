@@ -85,7 +85,7 @@ const requestSuggestions = (viewerId: string) =>
     .get("/api/follows/suggested-creators")
     .set("Authorization", authHeaderFor(viewerId));
 
-describe("GET /api/follows/suggested-muses", () => {
+describe("GET /api/follows/suggested-creators", () => {
   it("ranks a mutual-follow candidate above an equally-popular stranger", async () => {
     const viewer = await createCreator("Suggestion Viewer", "suggestion-viewer");
     const candidateA = await createCreator("Mutual Candidate", "mutual-candidate", 100);
